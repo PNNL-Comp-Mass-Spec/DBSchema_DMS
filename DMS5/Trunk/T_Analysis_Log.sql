@@ -1,0 +1,18 @@
+/****** Object:  Table [dbo].[T_Analysis_Log] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[T_Analysis_Log](
+	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
+	[posted_by] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[posting_time] [smalldatetime] NULL,
+	[type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[message] [varchar](244) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+ CONSTRAINT [PK_T_Analysis_Log] PRIMARY KEY NONCLUSTERED 
+(
+	[Entry_ID] ASC
+) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
