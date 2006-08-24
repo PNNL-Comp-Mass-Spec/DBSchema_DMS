@@ -1,0 +1,328 @@
+/****** Object:  StoredProcedure [dbo].[UpadateAnalysisJobs] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE UpadateAnalysisJobs
+/****************************************************
+**
+**	Desc:
+**   Updates parameters to new values for jobs in list
+**
+**	Return values: 0: success, otherwise, error code
+**
+**	Parameters:
+**
+**		Auth: grk
+**		Date: 04/06/2006
+**		      04/10/2006 grk - widened size of list argument to 6000 characters
+**		      04/12/2006 grk - eliminated forcing null for blank assigned processor
+**		      06/20/2006 jds - added support to find/replace text in the comment field
+**		      08/02/2006 grk - clear the AJ_ResultsFolderName, AJ_extractionProcessor, 
+**                             AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
+**    
+*****************************************************/
+    @JobList varchar(6000),
+    @state varchar(32) = '',
+    @priority varchar(12) = '',
+    @comment varchar(255) = '',
+    @findText varchar(255) = '',
+    @replaceText varchar(255) = '',
+    @assignedProcessor varchar(64),
+    @mode varchar(12) = 'update',
+    @message varchar(512) output
+As
+  set nocount on
+
+  declare @myError int
+  set @myError = 0
+
+  declare @myRowCount int
+  set @myRowCount = 0
+  
+  set @message = ''
+
+  declare @msg varchar(512)
+  declare @list varchar(1024)
+
+
+  ---------------------------------------------------
+  -- 
+  ---------------------------------------------------
+
+	if @JobList = ''
+	begin
+		set @msg = 'Job list is empty'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
+
+
+	if (@findText = '[no change]' and @replaceText <> '[no change]') OR (@findText <> '[no change]' and @replaceText = '[no change]')
+	begin
+		set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
+
+	---------------------------------------------------
+	--  Create temporary table to hold list of jobs
+	---------------------------------------------------
+ 
+ 	CREATE TABLE #TAJ (
+		Job int
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Failed to create temporary job table'
+		RAISERROR (@msg, 10, 1)
+		return 51007
+	end
+
+ 	---------------------------------------------------
+	-- Populate table from job list  
+	---------------------------------------------------
+
+	INSERT INTO #TAJ
+	(Job)
+	SELECT Item
+	FROM MakeTableFromList(@JobList)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error populating temporary job table'
+		RAISERROR (@msg, 10, 1)
+		return 51007
+	end
+
+ 	---------------------------------------------------
+	-- Verify that all jobs exist 
+	---------------------------------------------------
+	--
+	set @list = ''
+	--
+	SELECT 
+		@list = @list + CASE 
+		WHEN @list = '' THEN cast(Job as varchar(12))
+		ELSE ', ' + cast(Job as varchar(12))
+		END
+	FROM
+		#TAJ
+	WHERE 
+		NOT Job IN (SELECT AJ_jobID FROM T_Analysis_Job)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error checking job existence'
+		return 51007
+	end
+	--
+	if @list <> ''
+	begin
+		set @message = 'The following jobs from list were not in database:"' + @list + '"'
+		return 51007
+	end
+	
+	declare @jobCount int
+	SELECT @jobCount = count(*) FROM #TAJ
+	set @message = 'Number of affected jobs:' + cast(@jobCount as varchar(12))
+
+	---------------------------------------------------
+	-- Resolve state name
+	---------------------------------------------------
+	declare @stateID int
+	set @stateID = 0
+	--
+	if @state <> '[no change]'
+	begin
+		--
+		SELECT @stateID = AJS_stateID
+		FROM  T_Analysis_State_Name
+		WHERE (AJS_name = @state)	
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error looking up state name'
+			RAISERROR (@msg, 10, 1)
+			return 51007
+		end
+		--
+		if @stateID = 0
+		begin
+			set @msg = 'Could not find state'
+			RAISERROR (@msg, 10, 1)
+			return 51007
+		end
+	end -- if @state
+
+	
+ 	---------------------------------------------------
+	-- Update jobs from temporary table
+	-- in cases where parameter has changed
+	---------------------------------------------------
+	--
+	if @Mode = 'update' 
+	begin
+		set @myError = 0
+
+		---------------------------------------------------
+		declare @transName varchar(32)
+		set @transName = 'UpadateAnalysisJobs'
+		begin transaction @transName
+
+		-----------------------------------------------
+		if @state <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_StateID = @stateID
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+
+		-----------------------------------------------
+		if @priority <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_priority =  CAST(@priority AS int) 
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+
+		-----------------------------------------------
+		if @comment <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_comment = AJ_comment + ' ' + @comment
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+
+		-----------------------------------------------
+		if @findText <> '[no change]' and @replaceText <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_comment = replace(AJ_comment, @findText, @replaceText)
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+
+		-----------------------------------------------
+		if @assignedProcessor <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_assignedProcessorName =  @assignedProcessor
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+
+-- future: append/replace comments
+
+-- future: clear run times
+
+		commit transaction @transName
+	end -- update mode
+
+ 	---------------------------------------------------
+	-- Update jobs from temporary table
+	-- in cases where parameter has changed
+	---------------------------------------------------
+	--
+	if @Mode = 'reset' 
+	begin
+		set @myError = 0
+		
+		UPDATE T_Analysis_Job 
+		SET 
+			AJ_StateID = 1, 
+			AJ_start = NULL, 
+			AJ_finish = NULL,
+			AJ_resultsFolderName = '',
+			AJ_extractionProcessor = '', 
+			AJ_extractionStart = NULL, 
+			AJ_extractionFinish = NULL,
+			AJ_priority =  CASE WHEN @priority = '[no change]' THEN AJ_priority ELSE CAST(@priority AS int) END, 
+			AJ_comment = AJ_comment + CASE WHEN @comment = '[no change]' THEN '' ELSE ' ' + @comment END,
+			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = '[no change]' THEN AJ_assignedProcessorName ELSE @assignedProcessor END
+		WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Update operation failed'
+			rollback transaction @transName
+			RAISERROR (@msg, 10, 1)
+			return 51004
+		end
+	end -- reset mode
+ 
+ 	---------------------------------------------------
+	-- 
+	---------------------------------------------------
+	
+	return @myError
+
+
+GO
+GRANT EXECUTE ON [dbo].[UpadateAnalysisJobs] TO [RBAC-Web_Analysis]
+GO
