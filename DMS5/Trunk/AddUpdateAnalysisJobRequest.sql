@@ -20,6 +20,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			  04/04/2006 grk - modified to use ValidateAnalysisJobParameters
 **			  04/10/2006 grk - widened size of list argument to 6000 characters
 **			  04/11/2006 grk - modified logic to allow changing name of exising request
+**			  08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
 **    
 *****************************************************/
     @datasets varchar(6000),
@@ -248,6 +249,7 @@ As
 		--
 		UPDATE T_Analysis_Job_Request
 		SET 
+		AJR_requestName = @requestName,
 		AJR_analysisToolName = @toolName, 
 		AJR_parmFileName = @parmFileName, 
 		AJR_settingsFileName = @settingsFileName, 

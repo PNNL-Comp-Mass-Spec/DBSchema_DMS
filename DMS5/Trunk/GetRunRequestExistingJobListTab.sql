@@ -18,6 +18,7 @@ CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 **		Auth: grk, mem
 **		Date: 12/06/2005
 **			  03/28/2006 grk - added protein collection fields
+**			  08/30/2006 grk - fixed selection logic to handle auto-generated fasta file names https://prismtrac.pnl.gov/trac/ticket/218
 **    
 *****************************************************/
 (
@@ -96,10 +97,17 @@ AS
 			WHERE	AJT.AJT_toolName = @analysisToolName AND 
 					AJ.AJ_parmFileName = @parmFileName AND 
 					AJ.AJ_settingsFileName = @settingsFileName AND 
-					AJ.AJ_organismDBName = IsNull(@organismDBName, AJ.AJ_organismDBName) AND 
-					Org.OG_name = IsNull(@organismName, Org.OG_name) AND
-					AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
-					AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)  
+					(	(AJ.AJ_organismDBName = IsNull(@organismDBName, AJ.AJ_organismDBName) AND
+						 AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
+						 AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)
+						) OR
+						(AJ.AJ_organismDBName <> 'na' AND AJ.AJ_organismDBName = IsNull(@organismDBName, AJ.AJ_organismDBName)) OR
+						(AJ.AJ_proteinCollectionList <> 'na' AND
+						 AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
+						 AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)
+						)
+					) AND 
+					Org.OG_name = IsNull(@organismName, Org.OG_name)
 			GROUP BY AJ.AJ_jobID
 			ORDER BY AJ.AJ_jobID
 
