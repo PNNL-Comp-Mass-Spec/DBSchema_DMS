@@ -9,7 +9,11 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Updates](
 	[System_Account] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Date_of_Change] [datetime] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Updates_Date_of_Change]  DEFAULT (getdate()),
 	[Beginning_State_ID] [tinyint] NOT NULL,
-	[End_State_ID] [tinyint] NOT NULL
+	[End_State_ID] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Sample_Prep_Request_Updates] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

@@ -51,6 +51,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset]
 ) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_Exp_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Exp_ID] ON [dbo].[T_Dataset] 
+(
+	[Exp_ID] ASC
+) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_State_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset] 
 (

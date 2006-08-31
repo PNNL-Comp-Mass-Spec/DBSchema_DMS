@@ -23,6 +23,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **		Date: 05/01/2006 grk - modified to conditionally call 
 **                             Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
 **		Date: 06/01/2006 grk - removed dataset archive state restriction 
+**		Date: 08/30/2006 grk - removed restrition for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
 **    
 *****************************************************/
 	@toolName varchar(64),
@@ -111,34 +112,31 @@ As
 	-- if we are actually going to be making jobs
 	---------------------------------------------------
 	--
-	if @mode = 'add'
+	set @list = ''
+	--
+	SELECT 
+		@list = @list + CASE 
+		WHEN @list = '' THEN Dataset_Num
+		ELSE ', ' + Dataset_Num
+		END
+	FROM
+		#TD
+	WHERE 
+		(DS_state_ID <> 3)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
 	begin
-		set @list = ''
-		--
-		SELECT 
-			@list = @list + CASE 
-			WHEN @list = '' THEN Dataset_Num
-			ELSE ', ' + Dataset_Num
-			END
-		FROM
-			#TD
-		WHERE 
-			(DS_state_ID <> 3)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error checking dataset Existence'
-			return 51007
-		end
-		--
-		if @list <> ''
-		begin
-			set @message = 'The following datasets were not in correct state:"' + @list + '"'
-			return 51007
-		end	
-	end -- mode = 'add'
+		set @message = 'Error checking dataset Existence'
+		return 51007
+	end
+	--
+	if @list <> ''
+	begin
+		set @message = 'The following datasets were not in correct state:"' + @list + '"'
+		return 51007
+	end	
 		
 	---------------------------------------------------
 	-- Resolve user ID for operator PRN
