@@ -20,6 +20,7 @@ CREATE Procedure DoDatasetOperation
 **		8/7/2003  grk - allowed reset from "Not Ready" state
 **		5/5/2005  grk - removed default value from mode
 **		3/24/2006 grk - added "restore" mode
+**		9/15/2006 grk - repair "restore" mode
 **    
 *****************************************************/
 (
@@ -179,7 +180,7 @@ As
 		-- Update state of dataset to "Restore Requested"
 		--
 		UPDATE T_Dataset 
-		SET DS_state_ID = 14 -- "" state
+		SET DS_state_ID = 10 -- "restore required" state
 		WHERE (Dataset_Num = @datasetNum)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

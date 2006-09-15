@@ -271,3 +271,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS_EUS_Admin]
+GO
