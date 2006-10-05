@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_organismName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJR_datasets] [varchar](3500) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJR_datasets] [varchar](6000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_requestor] [int] NOT NULL,
 	[AJR_comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_state] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT (0),
@@ -85,9 +85,13 @@ GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Li
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Limited_Table_Write]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
+ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
 REFERENCES [T_Analysis_Job_Request_State] ([ID])
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Users] FOREIGN KEY([AJR_requestor])
+ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Users] FOREIGN KEY([AJR_requestor])
 REFERENCES [T_Users] ([ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Users]
 GO
