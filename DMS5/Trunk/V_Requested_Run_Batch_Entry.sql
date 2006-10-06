@@ -3,15 +3,17 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Requested_Run_Batch_Entry
+
+CREATE VIEW V_Requested_Run_Batch_Entry
 AS
-SELECT     
-T_Requested_Run_Batches.ID AS ID, 
-T_Requested_Run_Batches.Batch AS Name, 
-T_Requested_Run_Batches.Description AS Description, 
-dbo.GetBatchRequestedRunList(T_Requested_Run_Batches.ID) AS RequestedRunList, 
-T_Users.U_PRN AS OwnerPRN
-FROM         T_Requested_Run_Batches INNER JOIN
-                      T_Users ON T_Requested_Run_Batches.Owner = T_Users.ID
+SELECT R.ID AS ID, R.Batch AS Name, R.Description AS Description, 
+dbo.GetBatchRequestedRunList(R.ID) AS RequestedRunList, 
+U.U_PRN AS OwnerPRN, R.Requested_Batch_Priority AS [RequestedBatchPriority],
+R.Requested_Completion_Date AS [RequestedCompletionDate],
+R.Justification_for_High_Priority AS [JustificationHighPriority],
+R.Comment AS [Comment]
+FROM T_Requested_Run_Batches R 
+     JOIN T_Users U ON R.Owner = U.ID
+
 
 GO

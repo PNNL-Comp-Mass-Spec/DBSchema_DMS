@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure DoRequestedRunBatchOperation
+
+CREATE  Procedure DoRequestedRunBatchOperation
 /****************************************************
 **
 **	Desc: 
@@ -19,11 +20,15 @@ create Procedure DoRequestedRunBatchOperation
 **		Auth: grk
 **		Date: 1/12/2006
 **    
+**		jds 9/20/2006 - Added support for Granting High Priority 
+**		and Denying High Priority for fields Actual_Bath_Priority
+**		and Requested_Batch_Priority
+**    
 *****************************************************/
 (
 	@batchID int,
 	@mode varchar(12), -- '', '', ''
-    @message varchar(512) output
+	@message varchar(512) output
 )
 As
 	set nocount on
@@ -194,6 +199,51 @@ As
 
 
 	---------------------------------------------------
+	-- Grant High Priority
+	---------------------------------------------------
+
+	if @mode = 'GrantHiPri'
+	begin
+		UPDATE T_Requested_Run_Batches
+			Set Actual_Batch_Priority = 'High'
+		WHERE     (ID = @batchID)			
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Failed trying to set Actual Batch Priority to - High'
+			RAISERROR (@message, 10, 1)
+			return 51145
+		end
+		return 0
+	end
+
+
+	---------------------------------------------------
+	-- Deny High Priority
+	---------------------------------------------------
+
+	if @mode = 'DenyHiPri'
+	begin
+		UPDATE T_Requested_Run_Batches
+			Set Actual_Batch_Priority = 'Normal',
+			    Requested_Batch_Priority = 'Normal'
+		WHERE     (ID = @batchID)			
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Failed trying to set Actual Batch Priority and Requested Batch Priority to - Normal'
+			RAISERROR (@message, 10, 1)
+			return 51150
+		end
+		return 0
+	end
+
+
+	---------------------------------------------------
 	-- 
 	---------------------------------------------------
 
@@ -210,6 +260,7 @@ As
 	set @message = 'Mode "' + @mode +  '" was unrecognized'
 	RAISERROR (@message, 10, 1)
 	return 51222
+
 
 GO
 GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler]

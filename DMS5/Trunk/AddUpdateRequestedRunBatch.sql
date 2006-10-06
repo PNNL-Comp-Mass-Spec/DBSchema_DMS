@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE AddUpdateRequestedRunBatch
+
+CREATE  PROCEDURE AddUpdateRequestedRunBatch
 /****************************************************
 **
 **  Desc: Adds new or edits existing requested run batch
@@ -15,6 +16,10 @@ create PROCEDURE AddUpdateRequestedRunBatch
 **    Auth: grk
 **    Date: 01/11/2006
 **    
+**    jds 9/15/06 Added support for five new variables and fields
+**        @RequestedBatchPriority, @ActualBathPriority,
+**        @RequestedCompletionDate, @JustificationHighPriority, @Comment
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -23,6 +28,10 @@ create PROCEDURE AddUpdateRequestedRunBatch
 	@Description varchar(256),
 	@RequestedRunList varchar(4000),
 	@OwnerPRN varchar(24),
+        @RequestedBatchPriority varchar(24),
+        @RequestedCompletionDate varchar(10),
+        @JustificationHighPriority varchar(512),
+        @Comment varchar(512),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 As
@@ -40,6 +49,25 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+
+	if len(@RequestedCompletionDate) < 1 
+	begin
+		set @RequestedCompletionDate = null
+	end
+	else if (SELECT ISDATE(@RequestedCompletionDate)) = 0
+	begin
+		set @myError = 51000
+		RAISERROR ('Requested completion date is not a valid date.', 10, 1)
+	end
+
+	--
+	if @myError <> 0
+		return @myError
+
+	declare @tempRequestedCompletionDate smalldatetime
+	set @tempRequestedCompletionDate = cast(@RequestedCompletionDate AS smalldatetime)
+
+
 
 	-- future: this could get more complicated
 	
@@ -215,12 +243,22 @@ As
 			Batch, 
 			Description, 
 			Owner, 
-			Locked
+			Locked,
+                        Requested_Batch_Priority,
+                        Actual_Batch_Priority,
+                        Requested_Completion_Date,
+                        Justification_for_High_Priority,
+                        Comment
 		) VALUES (
 			@Name, 
 			@Description, 
 			@userID, 
-			'No'
+			'No',
+                        @RequestedBatchPriority,
+                        'Normal',
+                        @RequestedCompletionDate,
+                        @JustificationHighPriority,
+                        @Comment
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -250,7 +288,11 @@ As
 		SET 
 		Batch = @Name, 
 		Description = @Description, 
-		Owner = @userID
+		Owner = @userID,
+                Requested_Batch_Priority = @RequestedBatchPriority,
+                Requested_Completion_Date = @RequestedCompletionDate,
+                Justification_for_High_Priority = @JustificationHighPriority,
+                Comment = @Comment
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -307,6 +349,7 @@ As
 	commit transaction @transName
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User]

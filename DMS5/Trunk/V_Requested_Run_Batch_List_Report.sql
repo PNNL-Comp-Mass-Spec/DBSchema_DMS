@@ -3,22 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Requested_Run_Batch_List_Report
+CREATE VIEW dbo.V_Requested_Run_Batch_List_Report
 AS
-
-SELECT     
-T_Requested_Run_Batches.ID, T_Requested_Run_Batches.Batch AS Name, T.Requests, H.Runs, 
-T_Requested_Run_Batches.Description, T_Users.U_PRN AS OwnerPRN, T_Requested_Run_Batches.Created, 
-T_Requested_Run_Batches.Locked
-FROM        
- T_Requested_Run_Batches LEFT OUTER JOIN
+SELECT     dbo.T_Requested_Run_Batches.ID, dbo.T_Requested_Run_Batches.Batch AS Name, T.Requests, H.Runs, 
+                      dbo.T_Requested_Run_Batches.Actual_Batch_Priority AS Priority, dbo.T_Requested_Run_Batches.Description, dbo.T_Users.U_PRN AS OwnerPRN, 
+                      dbo.T_Requested_Run_Batches.Created, dbo.T_Requested_Run_Batches.Locked
+FROM         dbo.T_Requested_Run_Batches LEFT OUTER JOIN
                           (SELECT     RDS_BatchID AS batchID, COUNT(*) AS Requests
                             FROM          T_Requested_Run
-                            GROUP BY RDS_BatchID) T ON T.batchID = T_Requested_Run_Batches.ID INNER JOIN
-                      T_Users ON T_Requested_Run_Batches.Owner = T_Users.ID LEFT OUTER JOIN
+                            GROUP BY RDS_BatchID) T ON T.batchID = dbo.T_Requested_Run_Batches.ID INNER JOIN
+                      dbo.T_Users ON dbo.T_Requested_Run_Batches.Owner = dbo.T_Users.ID LEFT OUTER JOIN
                           (SELECT     RDS_BatchID AS batchID, COUNT(*) AS Runs
                             FROM          T_Requested_Run_History
-                            GROUP BY RDS_BatchID) H ON H.batchID = T_Requested_Run_Batches.ID
-WHERE     (T_Requested_Run_Batches.ID > 0)
+                            GROUP BY RDS_BatchID) H ON H.batchID = dbo.T_Requested_Run_Batches.ID
+WHERE     (dbo.T_Requested_Run_Batches.ID > 0)
 
 GO

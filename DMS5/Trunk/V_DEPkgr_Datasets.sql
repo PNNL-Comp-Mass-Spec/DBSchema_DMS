@@ -13,7 +13,7 @@ SELECT     TOP 100 PERCENT dbo.T_Dataset.Dataset_ID, dbo.T_Dataset.Dataset_Num A
                       dbo.T_Archive_Path.AP_archive_path + '/' + dbo.T_Dataset.Dataset_Num + '/' AS Archive_Path, 
                       dbo.T_DatasetArchiveStateName.DASN_StateName AS Archive_State, dbo.T_DatasetStateName.DSS_name AS Dataset_State, 
                       dbo.T_Requested_Run_History.ID AS Request_ID, dbo.T_Dataset.DS_LC_column_ID AS LC_Column_ID, 
-                      dbo.T_Dataset.Acq_Time_Start AS Acquisition_Time
+                      dbo.T_Dataset.Acq_Time_Start AS Acquisition_Time, dbo.T_Instrument_Name.IN_name AS Instrument_Name
 FROM         dbo.t_storage_path INNER JOIN
                       dbo.T_Dataset INNER JOIN
                       dbo.T_DatasetTypeName ON dbo.T_Dataset.DS_type_ID = dbo.T_DatasetTypeName.DST_Type_ID INNER JOIN
