@@ -18,12 +18,14 @@ CREATE Procedure dbo.RequestCaptureTask
 **
 **	Auth:	grk
 **	Date:	03/10/2003
-**			06/02/2005 grk -- modified for prep servers
-**			07/11/2006 mem -- added check for too many datasets (per instrument) being simultaneously captured/prepped
-**			07/17/2006 mem -- limiting each prep server to queue up just one dataset, utilizing a rolling exclusion window of 11 minutes
-**			07/19/2006 mem -- updated to obtain capture throttling parameters from T_Instrument_Name
+**			06/02/2005 grk - Modified for prep servers
+**			07/11/2006 mem - Added check for too many datasets (per instrument) being simultaneously captured/prepped
+**			07/17/2006 mem - Limiting each prep server to queue up just one dataset, utilizing a rolling exclusion window of 11 minutes
+**			07/19/2006 mem - Updated to obtain capture throttling parameters from T_Instrument_Name
+**			10/10/2006 mem - Updated to use a timeout value of 2 hours when looking for datasets with state 2="Capture in Progress"
 **    
 *****************************************************/
+(
 	@StorageServerName varchar(64),
 	@PrepServerName varchar(64),
 	@dataset varchar(128) output,
@@ -37,6 +39,7 @@ CREATE Procedure dbo.RequestCaptureTask
 	@StorageVolExternal varchar(256) output, -- use instead of @StorageVol when manager is not on same machine as dataset folder
 	@rating smallint output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 	
@@ -60,6 +63,13 @@ As
 	declare @storageID int
 	declare @SkippedInstrumentRowCount int
 	set @SkippedInstrumentRowCount = 0
+	
+	---------------------------------------------------
+	-- The following defines the timeout length for excluding datasets 
+	-- with state 2="Capture in Progress" when populating #TmpInstrumentsToSkip
+	---------------------------------------------------
+	declare @CaptureTimeoutLengthHours int
+	set @CaptureTimeoutLengthHours = 2
 	
 	---------------------------------------------------
 	-- Perform a preliminary scan of V_GetDatasetsForCaptureTask
@@ -106,7 +116,8 @@ As
 	-- Construct list of instruments that have datasets 
 	--  in state 1=New, but already have IN_Max_Simultaneous_Captures
 	--  or more captures in progress
-	-- Exclude any datasets that started capture over 8 hours ago
+	-- Exclude any datasets that started capture over 
+	--  @CaptureTimeoutLengthHours before the current time
 	--  (since the capture most likely failed)
 	---------------------------------------------------
 	--
@@ -132,7 +143,7 @@ As
 						   EL.Target_Type = 4 AND
 						   EL.Target_State = DS.DS_State_ID
 	WHERE DS.DS_state_ID = 2 AND 
-		  EL.Entered >= DATEADD(hour, -8, GETDATE())
+		  EL.Entered >= DATEADD(hour, -@CaptureTimeoutLengthHours, GETDATE())
 	GROUP BY InstName.Instrument_ID, InstName.IN_name, InstName.IN_Max_Simultaneous_Captures, InstName.IN_Capture_Log_Level
 	HAVING (COUNT(DISTINCT DS.Dataset_ID) >= InstName.IN_Max_Simultaneous_Captures )
 	--
