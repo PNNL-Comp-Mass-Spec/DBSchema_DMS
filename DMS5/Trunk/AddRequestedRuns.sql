@@ -20,6 +20,7 @@ CREATE PROCEDURE AddRequestedRuns
 **      2/23/2006  -- grk Added stuff for EUS proposal and user tracking.
 **      3/24/2006  -- grk Added stuff for auto incrementing well numbers.
 **      6/23/2006  -- grk Removed instrument name from generated request name
+**      10/12/2006  -- grk Fixed trailing suffix in name (Ticket #248)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -152,7 +153,7 @@ As
 	declare @request int
 	
 	declare @suffix varchar(64)
-	set @suffix = @requestNamePrefix
+	set @suffix = ISNULL(@requestNamePrefix, '')
 	if @suffix <> ''
 	begin
 		set @suffix = '_' + @suffix
@@ -186,7 +187,7 @@ As
 		if @tFld <> ''
 		begin
 			set @message = ''
-			set @reqName = @tFld + '_' + @suffix
+			set @reqName = @tFld + @suffix
 			exec @myError = AddUpdateRequestedRun
 								@reqName,
 								@tFld,
@@ -222,8 +223,6 @@ As
 	set @message = 'Number of requests created:' + cast(@count as varchar(12))
 /**/
 	return 0
-
-
 
 
 GO
