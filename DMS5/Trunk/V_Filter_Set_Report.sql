@@ -3,207 +3,67 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW V_Filter_Set_Report
 AS
-SELECT TOP 100 PERCENT dbo.T_Filter_Set_Types.Filter_Type_Name,
-     dbo.T_Filter_Sets.Filter_Set_ID, 
-    dbo.T_Filter_Sets.Filter_Set_Name, 
-    dbo.T_Filter_Sets.Filter_Set_Description, 
-    FSG.Filter_Criteria_Group_ID, 
-    QSpectrumCount.Criterion_Comparison AS Spectrum_Count_Comparison,
-     QSpectrumCount.Criterion_Value AS Spectrum_Count_Value, 
-    QCharge.Criterion_Comparison AS Charge_Comparison, 
-    QCharge.Criterion_Value AS Charge_Value, 
-    QScore.Criterion_Comparison AS Score_Comparison, 
-    QScore.Criterion_Value AS Score_Value, 
-    QCleavageState.Criterion_Comparison AS Cleavage_State_Comparison,
-     QCleavageState.Criterion_Value AS Cleavage_State_Value, 
-    QTerminusState.Criterion_Comparison AS Terminus_State_Comparison,
-     QTerminusState.Criterion_Value AS Terminus_State_Value, 
-    QPeptideLength.Criterion_Comparison AS Peptide_Length_Comparison,
-     QPeptideLength.Criterion_Value AS Peptide_Length_Value, 
-    QMass.Criterion_Comparison AS Mass_Comparison, 
-    QMass.Criterion_Value AS Mass_Value, 
-    QDelCn.Criterion_Comparison AS DelCn_Comparison, 
-    QDelCn.Criterion_Value AS DelCn_Value, 
-    QDelCn2.Criterion_Comparison AS DelCn2_Comparison, 
-    QDelCn2.Criterion_Value AS DelCn2_Value, 
-    QDiscriminantScore.Criterion_Comparison AS Discriminant_Score_Comparison,
-     QDiscriminantScore.Criterion_Value AS Discriminant_Score_Value,
-     QNETDifference.Criterion_Comparison AS NET_Difference_Comparison,
-     QNETDifference.Criterion_Value AS NET_Difference_Value, 
-    QDiscriminantInitialFilter.Criterion_Comparison AS Discriminant_Initial_Filter_Comparison,
-     QDiscriminantInitialFilter.Criterion_Value AS Discriminant_Initial_Filter_Value,
-     QProteinCount.Criterion_Comparison AS Protein_Count_Comparison,
-     QProteinCount.Criterion_Value AS Protein_Count_Value, 
-    QXTandemHyperscore.Criterion_Comparison AS XTandem_Hyperscore_Comparison,
-     QXTandemHyperscore.Criterion_Value AS XTandem_Hyperscore_Value,
-     QXTandemLogEValue.Criterion_Comparison AS XTandem_LogEValue_Comparison,
-     QXTandemLogEValue.Criterion_Value AS XTandem_LogEValue_Value,
-     QPepProphetProb.Criterion_Comparison AS Peptide_Prophet_Probability_Comparison,
-     QPepProphetProb.Criterion_Value AS Peptide_Prophet_Probability_Value,
-     QRankScore.Criterion_Comparison AS RankScore_Comparison, 
-    QRankScore.Criterion_Value AS RankScore_Value
-FROM dbo.T_Filter_Set_Types INNER JOIN
-    dbo.T_Filter_Sets ON 
-    dbo.T_Filter_Set_Types.Filter_Type_ID = dbo.T_Filter_Sets.Filter_Type_ID
-     LEFT OUTER JOIN
-    dbo.T_Filter_Set_Criteria_Groups FSG ON 
-    dbo.T_Filter_Sets.Filter_Set_ID = FSG.Filter_Set_ID LEFT OUTER
+SELECT TOP 100 PERCENT FST.Filter_Type_Name, 
+    FS.Filter_Set_ID, FS.Filter_Set_Name, 
+    FS.Filter_Set_Description, FSCG.Filter_Criteria_Group_ID, 
+    MAX(CASE WHEN criterion_id = 1 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Spectrum_Count, 
+    MAX(CASE WHEN criterion_id = 2 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Charge, 
+    MAX(CASE WHEN criterion_id = 3 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) 
+    AS High_Normalized_Score, 
+    MAX(CASE WHEN criterion_id = 4 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Cleavage_State, 
+    MAX(CASE WHEN criterion_id = 13 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS Terminus_State, 
+    MAX(CASE WHEN criterion_id = 5 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Peptide_Length, 
+    MAX(CASE WHEN criterion_id = 6 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Mass, 
+    MAX(CASE WHEN criterion_id = 7 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS DelCn, 
+    MAX(CASE WHEN criterion_id = 8 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS DelCn2, 
+    MAX(CASE WHEN criterion_id = 9 THEN Criterion_Comparison + CONVERT(varchar(18),
+     Criterion_Value) ELSE NULL END) AS Discriminant_Score, 
+    MAX(CASE WHEN criterion_id = 10 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS NET_Difference_Absolute, 
+    MAX(CASE WHEN criterion_id = 11 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS Discriminant_Initial_Filter, 
+    MAX(CASE WHEN criterion_id = 12 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS Protein_Count, 
+    MAX(CASE WHEN criterion_id = 14 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS XTandem_Hyperscore, 
+    MAX(CASE WHEN criterion_id = 15 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS XTandem_LogEValue, 
+    MAX(CASE WHEN criterion_id = 16 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS Peptide_Prophet_Probability, 
+    MAX(CASE WHEN criterion_id = 17 THEN Criterion_Comparison +
+     CONVERT(varchar(18), Criterion_Value) ELSE NULL END) 
+    AS RankScore
+FROM dbo.T_Filter_Set_Criteria FSC INNER JOIN
+    dbo.T_Filter_Set_Criteria_Groups FSCG ON 
+    FSC.Filter_Criteria_Group_ID = FSCG.Filter_Criteria_Group_ID INNER
      JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 1)) QSpectrumCount ON 
-    FSG.Filter_Criteria_Group_ID = QSpectrumCount.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 2)) QCharge ON 
-    FSG.Filter_Criteria_Group_ID = QCharge.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 3)) QScore ON 
-    FSG.Filter_Criteria_Group_ID = QScore.Filter_Criteria_Group_ID LEFT
-     OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 4)) QCleavageState ON 
-    FSG.Filter_Criteria_Group_ID = QCleavageState.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 13)) QTerminusState ON 
-    FSG.Filter_Criteria_Group_ID = QTerminusState.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 5)) QPeptideLength ON 
-    FSG.Filter_Criteria_Group_ID = QPeptideLength.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 6)) QMass ON 
-    FSG.Filter_Criteria_Group_ID = QMass.Filter_Criteria_Group_ID LEFT
-     OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 7)) QDelCn ON 
-    FSG.Filter_Criteria_Group_ID = QDelCn.Filter_Criteria_Group_ID LEFT
-     OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 8)) QDelCn2 ON 
-    FSG.Filter_Criteria_Group_ID = QDelCn2.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 9)) QDiscriminantScore ON 
-    FSG.Filter_Criteria_Group_ID = QDiscriminantScore.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 10)) QNETDifference ON 
-    FSG.Filter_Criteria_Group_ID = QNETDifference.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 11)) QDiscriminantInitialFilter ON 
-    FSG.Filter_Criteria_Group_ID = QDiscriminantInitialFilter.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 12)) QProteinCount ON 
-    FSG.Filter_Criteria_Group_ID = QProteinCount.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 14)) QXTandemHyperscore ON 
-    FSG.Filter_Criteria_Group_ID = QXTandemHyperscore.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 15)) QXTandemLogEValue ON 
-    FSG.Filter_Criteria_Group_ID = QXTandemLogEValue.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 16)) QPepProphetProb ON 
-    FSG.Filter_Criteria_Group_ID = QPepProphetProb.Filter_Criteria_Group_ID
-     LEFT OUTER JOIN
-        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
-           N .Criterion_Name, C.Criterion_Comparison, 
-           C.Criterion_Value
-      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
-           dbo.T_Filter_Set_Criteria_Names AS N ON 
-           C.Criterion_ID = N .Criterion_ID
-      WHERE (C.Criterion_ID = 17)) QRankScore ON 
-    FSG.Filter_Criteria_Group_ID = QRankScore.Filter_Criteria_Group_ID
-ORDER BY dbo.T_Filter_Set_Types.Filter_Type_Name, 
-    dbo.T_Filter_Sets.Filter_Set_ID, FSG.Filter_Criteria_Group_ID
+    dbo.T_Filter_Sets FS ON 
+    FSCG.Filter_Set_ID = FS.Filter_Set_ID INNER JOIN
+    dbo.T_Filter_Set_Types FST ON 
+    FS.Filter_Type_ID = FST.Filter_Type_ID
+GROUP BY FS.Filter_Set_ID, FS.Filter_Set_Name, 
+    FS.Filter_Set_Description, FSCG.Filter_Criteria_Group_ID, 
+    FST.Filter_Type_Name
+ORDER BY FST.Filter_Type_Name, FS.Filter_Set_ID, 
+    FSCG.Filter_Criteria_Group_ID
 
 GO
