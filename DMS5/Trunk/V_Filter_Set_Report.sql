@@ -35,7 +35,15 @@ SELECT TOP 100 PERCENT dbo.T_Filter_Set_Types.Filter_Type_Name,
     QDiscriminantInitialFilter.Criterion_Comparison AS Discriminant_Initial_Filter_Comparison,
      QDiscriminantInitialFilter.Criterion_Value AS Discriminant_Initial_Filter_Value,
      QProteinCount.Criterion_Comparison AS Protein_Count_Comparison,
-     QProteinCount.Criterion_Value AS Protein_Count_Value
+     QProteinCount.Criterion_Value AS Protein_Count_Value, 
+    QXTandemHyperscore.Criterion_Comparison AS XTandem_Hyperscore_Comparison,
+     QXTandemHyperscore.Criterion_Value AS XTandem_Hyperscore_Value,
+     QXTandemLogEValue.Criterion_Comparison AS XTandem_LogEValue_Comparison,
+     QXTandemLogEValue.Criterion_Value AS XTandem_LogEValue_Value,
+     QPepProphetProb.Criterion_Comparison AS Peptide_Prophet_Probability_Comparison,
+     QPepProphetProb.Criterion_Value AS Peptide_Prophet_Probability_Value,
+     QRankScore.Criterion_Comparison AS RankScore_Comparison, 
+    QRankScore.Criterion_Value AS RankScore_Value
 FROM dbo.T_Filter_Set_Types INNER JOIN
     dbo.T_Filter_Sets ON 
     dbo.T_Filter_Set_Types.Filter_Type_ID = dbo.T_Filter_Sets.Filter_Type_ID
@@ -159,6 +167,42 @@ FROM dbo.T_Filter_Set_Types INNER JOIN
            C.Criterion_ID = N .Criterion_ID
       WHERE (C.Criterion_ID = 12)) QProteinCount ON 
     FSG.Filter_Criteria_Group_ID = QProteinCount.Filter_Criteria_Group_ID
+     LEFT OUTER JOIN
+        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
+           N .Criterion_Name, C.Criterion_Comparison, 
+           C.Criterion_Value
+      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
+           dbo.T_Filter_Set_Criteria_Names AS N ON 
+           C.Criterion_ID = N .Criterion_ID
+      WHERE (C.Criterion_ID = 14)) QXTandemHyperscore ON 
+    FSG.Filter_Criteria_Group_ID = QXTandemHyperscore.Filter_Criteria_Group_ID
+     LEFT OUTER JOIN
+        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
+           N .Criterion_Name, C.Criterion_Comparison, 
+           C.Criterion_Value
+      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
+           dbo.T_Filter_Set_Criteria_Names AS N ON 
+           C.Criterion_ID = N .Criterion_ID
+      WHERE (C.Criterion_ID = 15)) QXTandemLogEValue ON 
+    FSG.Filter_Criteria_Group_ID = QXTandemLogEValue.Filter_Criteria_Group_ID
+     LEFT OUTER JOIN
+        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
+           N .Criterion_Name, C.Criterion_Comparison, 
+           C.Criterion_Value
+      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
+           dbo.T_Filter_Set_Criteria_Names AS N ON 
+           C.Criterion_ID = N .Criterion_ID
+      WHERE (C.Criterion_ID = 16)) QPepProphetProb ON 
+    FSG.Filter_Criteria_Group_ID = QPepProphetProb.Filter_Criteria_Group_ID
+     LEFT OUTER JOIN
+        (SELECT C.Filter_Set_Criteria_ID, C.Filter_Criteria_Group_ID, 
+           N .Criterion_Name, C.Criterion_Comparison, 
+           C.Criterion_Value
+      FROM dbo.T_Filter_Set_Criteria AS C INNER JOIN
+           dbo.T_Filter_Set_Criteria_Names AS N ON 
+           C.Criterion_ID = N .Criterion_ID
+      WHERE (C.Criterion_ID = 17)) QRankScore ON 
+    FSG.Filter_Criteria_Group_ID = QRankScore.Filter_Criteria_Group_ID
 ORDER BY dbo.T_Filter_Set_Types.Filter_Type_Name, 
     dbo.T_Filter_Sets.Filter_Set_ID, FSG.Filter_Criteria_Group_ID
 
