@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW V_Purgable_Datasets_NoJob
 AS
 SELECT     
@@ -20,10 +21,12 @@ FROM
 WHERE
 	(T_Instrument_Class.is_purgable > 0) AND 
 	(T_Dataset_Archive.AS_state_ID = 3) AND 
-	(T_Dataset.DS_rating <> - 1) AND
+	(T_Dataset.DS_rating <> -2) AND
 	(ISNULL(T_Dataset_Archive.AS_purge_holdoff_date, GETDATE()) <= GETDATE()) AND 
 	(T_Dataset.Dataset_ID NOT IN
 	(SELECT     AJ_datasetID
 	FROM          T_Analysis_Job))
+
+
 
 GO
