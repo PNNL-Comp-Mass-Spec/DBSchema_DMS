@@ -16,6 +16,7 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 	[Requested_Completion_Date] [smalldatetime] NULL,
 	[Justification_for_High_Priority] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Requested_Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Instrument]  DEFAULT ('na'),
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -105,6 +106,14 @@ GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Comment]) TO [Limited_Table_Wr
 GO
 GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Comment]) TO [Limited_Table_Write]
 GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
+GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
+GO
+GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
 REFERENCES [T_Users] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] CHECK CONSTRAINT [FK_T_Requested_Run_Batches_T_Users]
 GO

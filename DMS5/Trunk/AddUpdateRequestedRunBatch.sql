@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE  PROCEDURE AddUpdateRequestedRunBatch
+CREATE PROCEDURE AddUpdateRequestedRunBatch
 /****************************************************
 **
 **  Desc: Adds new or edits existing requested run batch
@@ -20,6 +20,9 @@ CREATE  PROCEDURE AddUpdateRequestedRunBatch
 **        @RequestedBatchPriority, @ActualBathPriority,
 **        @RequestedCompletionDate, @JustificationHighPriority, @Comment
 **
+**    grk 11/4/2006 -- added @RequestedInstrument
+**
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -28,10 +31,11 @@ CREATE  PROCEDURE AddUpdateRequestedRunBatch
 	@Description varchar(256),
 	@RequestedRunList varchar(4000),
 	@OwnerPRN varchar(24),
-        @RequestedBatchPriority varchar(24),
-        @RequestedCompletionDate varchar(10),
-        @JustificationHighPriority varchar(512),
-        @Comment varchar(512),
+	@RequestedBatchPriority varchar(24),
+	@RequestedCompletionDate varchar(10),
+	@JustificationHighPriority varchar(512),
+	@RequestedInstrument varchar(24),
+	@Comment varchar(512),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 As
@@ -67,7 +71,31 @@ As
 	declare @tempRequestedCompletionDate smalldatetime
 	set @tempRequestedCompletionDate = cast(@RequestedCompletionDate AS smalldatetime)
 
+	---------------------------------------------------
+	-- Validate that instrument exists
+	---------------------------------------------------
 
+	declare @inst varchar(24)
+	set @inst = ''
+	--
+	SELECT @inst = ex
+	FROM V_Req_Run_Instrument_Picklist
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error trying to find instrument'
+		RAISERROR (@message, 10, 1)
+		return 51012
+	end
+	--
+	if @inst = ''
+	begin
+		set @message = 'Could not find entry in database for instrument "' + @RequestedInstrument + '"'
+		RAISERROR (@message, 10, 1)
+		return 51014
+	end
 
 	-- future: this could get more complicated
 	
@@ -244,21 +272,23 @@ As
 			Description, 
 			Owner, 
 			Locked,
-                        Requested_Batch_Priority,
-                        Actual_Batch_Priority,
-                        Requested_Completion_Date,
-                        Justification_for_High_Priority,
-                        Comment
+			Requested_Batch_Priority,
+			Actual_Batch_Priority,
+			Requested_Completion_Date,
+			Justification_for_High_Priority,
+			Requested_Instrument, 
+			Comment
 		) VALUES (
 			@Name, 
 			@Description, 
 			@userID, 
 			'No',
-                        @RequestedBatchPriority,
-                        'Normal',
-                        @RequestedCompletionDate,
-                        @JustificationHighPriority,
-                        @Comment
+			@RequestedBatchPriority,
+			'Normal',
+			@RequestedCompletionDate,
+			@JustificationHighPriority,
+			@RequestedInstrument, 
+			@Comment
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -292,7 +322,8 @@ As
                 Requested_Batch_Priority = @RequestedBatchPriority,
                 Requested_Completion_Date = @RequestedCompletionDate,
                 Justification_for_High_Priority = @JustificationHighPriority,
-                Comment = @Comment
+				Requested_Instrument = @RequestedInstrument, 
+				Comment = @Comment
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
