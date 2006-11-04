@@ -118,3 +118,5 @@ As
 
 	return @myError
 GO
+GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleExperiments] TO [DMS_User]
+GO

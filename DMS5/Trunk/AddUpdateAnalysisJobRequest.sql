@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateAnalysisJobRequest
+
+CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 /****************************************************
 **
 **	Desc: Adds new analysis job request to request queue
@@ -14,29 +15,32 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **
 **		Auth: grk
 **		Date: 10/9/2003
-**            2/11/2006 grk added validation for tool compatibility
-**			  03/28/2006 grk - added protein collection fields
-**			  04/04/2006 grk - increased sized of param file name
-**			  04/04/2006 grk - modified to use ValidateAnalysisJobParameters
-**			  04/10/2006 grk - widened size of list argument to 6000 characters
-**			  04/11/2006 grk - modified logic to allow changing name of exising request
-**			  08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
+**                2/11/2006 grk added validation for tool compatibility
+**                03/28/2006 grk - added protein collection fields
+**                04/04/2006 grk - increased sized of param file name
+**                04/04/2006 grk - modified to use ValidateAnalysisJobParameters
+**                04/10/2006 grk - widened size of list argument to 6000 characters
+**                04/11/2006 grk - modified logic to allow changing name of exising request
+**                08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
+**                10/16/2006 jds - added support for work package number
+**				  10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
 **    
 *****************************************************/
     @datasets varchar(6000),
     @requestName varchar(64),
-	@toolName varchar(64),
+    @toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(64),
     @protCollNameList varchar(512),
     @protCollOptionsList varchar(256),
     @organismName varchar(64),
     @requestorPRN varchar(32),
+    @workPackage varchar(24),
     @comment varchar(255) = null,
     @state varchar(32),
     @requestID int output,
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) output
 As
 	set nocount on
 
@@ -45,13 +49,13 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
-	
+
 	set @message = ''
 
 	declare @msg varchar(512)
 
-    declare @organismDBName varchar(64)
-    set @organismDBName = 'na'
+	declare @organismDBName varchar(64)
+	set @organismDBName = 'na'
 
 	---------------------------------------------------
 	-- Resolve mode against presence or absence 
@@ -181,6 +185,12 @@ As
 
 
 	---------------------------------------------------
+	-- If mode is add, then force @state to 'new'
+	---------------------------------------------------
+	if @mode = 'add'
+		set @state = 'new'
+
+	---------------------------------------------------
 	-- Resolve state name to ID
 	---------------------------------------------------
 	declare @stateID int
@@ -212,7 +222,7 @@ As
 			AJR_settingsFileName, AJR_organismDBName, AJR_organismName, 
 			AJR_proteinCollectionList, AJR_proteinOptionsList,
 			AJR_datasets, AJR_comment, 
-			AJR_state, AJR_requestor
+			AJR_state, AJR_requestor, AJR_workPackage
 		)
 		VALUES
 		(
@@ -220,7 +230,7 @@ As
 			@settingsFileName, @organismDBName, @organismName, 
 			@protCollNameList, @protCollOptionsList,
 			@datasets, @comment, 
-			@stateID, @userID
+			@stateID, @userID, @workPackage
 		)		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -248,7 +258,7 @@ As
 		set @myError = 0
 		--
 		UPDATE T_Analysis_Job_Request
-		SET 
+		SET
 		AJR_requestName = @requestName,
 		AJR_analysisToolName = @toolName, 
 		AJR_parmFileName = @parmFileName, 
@@ -260,7 +270,8 @@ As
 		AJR_datasets = @datasets, 
 		AJR_comment = @comment, 
 		AJR_state = @stateID,
-		AJR_requestor = @userID
+		AJR_requestor = @userID,
+		AJR_workPackage = @workPackage
 		WHERE     (AJR_requestID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -274,8 +285,6 @@ As
 	end -- update mode
 
 	return @myError
-
-
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]
 GO

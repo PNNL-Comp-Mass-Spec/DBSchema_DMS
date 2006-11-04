@@ -121,3 +121,5 @@ As
 Done:
 	return @myError
 GO
+GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleDatasets] TO [DMS_User]
+GO

@@ -3,20 +3,22 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Request_Detail_Report
+
+CREATE  VIEW dbo.V_Analysis_Job_Request_Detail_Report
 AS
-SELECT     dbo.T_Analysis_Job_Request.AJR_requestID AS Request, dbo.T_Analysis_Job_Request.AJR_requestName AS Name, 
-                      dbo.T_Analysis_Job_Request.AJR_created AS Created, dbo.T_Analysis_Job_Request.AJR_analysisToolName AS Tool, 
-                      dbo.T_Analysis_Job_Request.AJR_parmFileName AS [Parameter File], dbo.T_Analysis_Job_Request.AJR_settingsFileName AS [Settings File], 
-                      dbo.T_Analysis_Job_Request.AJR_organismName AS Organism, dbo.T_Analysis_Job_Request.AJR_organismDBName AS [Organism DB], 
-                      dbo.T_Analysis_Job_Request.AJR_proteinCollectionList AS [Protein Collection List], 
-                      dbo.T_Analysis_Job_Request.AJR_proteinOptionsList AS [Protein Options], dbo.T_Analysis_Job_Request.AJR_datasets AS Datasets, 
-                      dbo.T_Analysis_Job_Request.AJR_comment AS Comment, dbo.T_Users.U_Name AS [Requestor Name], dbo.T_Users.U_PRN AS Requestor, 
-                      dbo.T_Analysis_Job_Request_State.StateName AS State, dbo.GetRunRequestInstrList(dbo.T_Analysis_Job_Request.AJR_requestID) AS Instruments, 
-                      dbo.GetRunRequestExistingJobList(dbo.T_Analysis_Job_Request.AJR_requestID) AS [Pre-existing Jobs]
-FROM         dbo.T_Analysis_Job_Request INNER JOIN
-                      dbo.T_Users ON dbo.T_Analysis_Job_Request.AJR_requestor = dbo.T_Users.ID INNER JOIN
-                      dbo.T_Analysis_Job_Request_State ON dbo.T_Analysis_Job_Request.AJR_state = dbo.T_Analysis_Job_Request_State.ID
+SELECT  AR.AJR_requestID AS Request, AR.AJR_requestName AS Name, 
+        AR.AJR_created AS Created, AR.AJR_analysisToolName AS Tool, 
+        AR.AJR_parmFileName AS [Parameter File], AR.AJR_settingsFileName AS [Settings File], 
+        AR.AJR_organismName AS Organism, AR.AJR_organismDBName AS [Organism DB], 
+        AR.AJR_proteinCollectionList AS [Protein Collection List], 
+        AR.AJR_proteinOptionsList AS [Protein Options], AR.AJR_datasets AS Datasets, 
+        AR.AJR_comment AS Comment, U.U_Name AS [Requestor Name], U.U_PRN AS Requestor, 
+        AR.AJR_workPackage AS [Work Package], ARS.StateName AS State, dbo.GetRunRequestInstrList(AR.AJR_requestID) AS Instruments, 
+        dbo.GetRunRequestExistingJobList(AR.AJR_requestID) AS [Pre-existing Jobs]
+FROM    T_Analysis_Job_Request AR INNER JOIN
+        T_Users U ON AR.AJR_requestor = U.ID INNER JOIN
+        T_Analysis_Job_Request_State ARS ON AR.AJR_state = ARS.ID
+
 
 
 GO

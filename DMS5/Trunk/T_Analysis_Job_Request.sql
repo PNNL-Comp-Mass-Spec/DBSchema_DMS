@@ -18,6 +18,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_state] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT (0),
 	[AJR_proteinCollectionList] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJR_proteinCollectionList]  DEFAULT ('na'),
 	[AJR_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJR_proteinOptionsList]  DEFAULT ('na'),
+	[AJR_workPackage] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJR_requestID] ASC
@@ -84,6 +85,10 @@ GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
 REFERENCES [T_Analysis_Job_Request_State] ([ID])
