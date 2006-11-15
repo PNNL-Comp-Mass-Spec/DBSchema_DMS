@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_Internal_Standards](
 	[Description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Internal_Standards_Active]  DEFAULT ('A'),
+	[Protein_Collection_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Internal_Standards] PRIMARY KEY CLUSTERED 
 (
 	[Internal_Std_Mix_ID] ASC
@@ -23,7 +24,11 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Internal_Standards] ON [dbo].[T_Internal_
 	[Name] ASC
 ) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Internal_Standards]  WITH CHECK ADD  CONSTRAINT [CK_T_Internal_Standards] CHECK  (([Type] = 'All' or ([Type] = 'Postdigest' or [Type] = 'Predigest')))
+ALTER TABLE [dbo].[T_Internal_Standards]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Internal_Standards] CHECK  (([Type] = 'All' or ([Type] = 'Postdigest' or [Type] = 'Predigest')))
 GO
-ALTER TABLE [dbo].[T_Internal_Standards]  WITH CHECK ADD  CONSTRAINT [CK_T_Internal_Standards_1] CHECK  (([Active] = 'A' or [Active] = 'I'))
+ALTER TABLE [dbo].[T_Internal_Standards] CHECK CONSTRAINT [CK_T_Internal_Standards]
+GO
+ALTER TABLE [dbo].[T_Internal_Standards]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Internal_Standards_1] CHECK  (([Active] = 'A' or [Active] = 'I'))
+GO
+ALTER TABLE [dbo].[T_Internal_Standards] CHECK CONSTRAINT [CK_T_Internal_Standards_1]
 GO

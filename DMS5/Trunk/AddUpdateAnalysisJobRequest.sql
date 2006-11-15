@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 /****************************************************
 **
@@ -13,19 +12,21 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 10/9/2003
-**                2/11/2006 grk added validation for tool compatibility
-**                03/28/2006 grk - added protein collection fields
-**                04/04/2006 grk - increased sized of param file name
-**                04/04/2006 grk - modified to use ValidateAnalysisJobParameters
-**                04/10/2006 grk - widened size of list argument to 6000 characters
-**                04/11/2006 grk - modified logic to allow changing name of exising request
-**                08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
-**                10/16/2006 jds - added support for work package number
-**				  10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
+**	Auth:	grk
+**	Date:	10/9/2003
+**			02/11/2006 grk added validation for tool compatibility
+**			03/28/2006 grk - added protein collection fields
+**			04/04/2006 grk - increased sized of param file name
+**			04/04/2006 grk - modified to use ValidateAnalysisJobParameters
+**			04/10/2006 grk - widened size of list argument to 6000 characters
+**			04/11/2006 grk - modified logic to allow changing name of exising request
+**			08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
+**			10/16/2006 jds - added support for work package number
+**			10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
+**			11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
 **    
 *****************************************************/
+(
     @datasets varchar(6000),
     @requestName varchar(64),
     @toolName varchar(64),
@@ -41,6 +42,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
     @requestID int output,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
+)
 As
 	set nocount on
 
@@ -152,6 +154,31 @@ As
 	end
 
 	---------------------------------------------------
+	-- Validate @protColNameList
+	-- Note that ValidateProteinCollectionListForDatasets
+	--  will populate @message with an explanatory note
+	--  if @protCollNameList is updated
+	---------------------------------------------------
+	--
+	declare @CollectionCountAdded int
+	declare @result int
+	set @result = 0
+	
+	Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
+	If Len(@protCollNameList) > 0 And @protCollNameList <> 'na'
+	Begin
+		exec @result = ValidateProteinCollectionListForDatasets 
+							@datasets, 
+							@protCollNameList=@protCollNameList output, 
+							@CollectionCountAdded=@CollectionCountAdded output, 
+							@ShowMessages=1, 
+							@message=@message output
+
+		if @result <> 0
+			return @result
+	End
+	
+	---------------------------------------------------
 	-- validate job parameters
 	---------------------------------------------------
 	--
@@ -159,7 +186,6 @@ As
 	declare @analysisToolID int
 	declare @organismID int
 	--
-	declare @result int
 	set @result = 0
 	--
 	exec @result = ValidateAnalysisJobParameters
@@ -285,6 +311,7 @@ As
 	end -- update mode
 
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]
 GO
