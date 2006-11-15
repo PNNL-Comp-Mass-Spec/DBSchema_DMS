@@ -6,9 +6,8 @@ GO
 CREATE VIEW dbo.V_Analysis_Job_ReportEx
 AS
 SELECT     CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) AS JobNum, dbo.T_Dataset.Dataset_Num AS Dataset, 
-                      dbo.T_Dataset.DS_folder_name AS [Dataset Folder], 
-                      dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path + dbo.T_Dataset.DS_folder_name AS [Dataset Folder Path], 
-                      dbo.t_storage_path.SP_path AS [Storage Folder], dbo.t_storage_path.SP_instrument_name AS Instrument, 
+                      dbo.T_Dataset.DS_folder_name AS [Dataset Folder], dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path AS [Dataset Folder Path], 
+                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path AS [Archive Folder Path], dbo.T_Instrument_Name.IN_name AS Instrument, 
                       dbo.T_Analysis_Tool.AJT_toolName AS [Tool Name], dbo.T_Analysis_Job.AJ_parmFileName AS [Parm File], 
                       dbo.T_Analysis_Tool.AJT_parmFileStoragePath AS [Parm File Storage Path], dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File], 
                       dbo.T_Organisms.OG_name AS Organism, dbo.T_Analysis_Job.AJ_organismDBName AS [Organism DB], 
@@ -16,17 +15,18 @@ SELECT     CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) AS JobNum, dbo.T_Da
                       dbo.T_Analysis_Job.AJ_proteinOptionsList AS [Protein Options List], dbo.T_Analysis_State_Name.AJS_name AS State, 
                       dbo.T_Analysis_Job.AJ_owner AS Owner, dbo.T_Analysis_Job.AJ_priority AS Priority, dbo.T_Analysis_Job.AJ_comment AS Comment, 
                       dbo.T_Analysis_Job.AJ_assignedProcessorName AS [Assigned Processor], dbo.T_Analysis_Job.AJ_extractionProcessor AS [DEX Processor], 
-                      ISNULL(dbo.T_Analysis_Job.AJ_resultsFolderName, '(none)') AS [Results Folder], 
-                      dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path + dbo.T_Dataset.DS_folder_name + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName
-                       AS [Results Folder Path], dbo.T_Analysis_Job.AJ_created AS Created, dbo.T_Analysis_Job.AJ_start AS Started, 
-                      dbo.T_Analysis_Job.AJ_finish AS Finished, dbo.T_Analysis_Job.AJ_requestID AS Request, 
-                      dbo.T_Analysis_Job.AJ_Analysis_Manager_Error AS [AM Code], dbo.GetDEMCodeString(dbo.T_Analysis_Job.AJ_Data_Extraction_Error) 
-                      AS [DEM Code]
+                      dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName AS [Results Folder Path], 
+                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName AS [Archive Results Folder Path], 
+                      dbo.T_Analysis_Job.AJ_created AS Created, dbo.T_Analysis_Job.AJ_start AS Started, dbo.T_Analysis_Job.AJ_finish AS Finished, 
+                      dbo.T_Analysis_Job.AJ_requestID AS Request, dbo.T_Analysis_Job.AJ_Analysis_Manager_Error AS [AM Code], 
+                      dbo.GetDEMCodeString(dbo.T_Analysis_Job.AJ_Data_Extraction_Error) AS [DEM Code]
 FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Dataset ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID INNER JOIN
                       dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID INNER JOIN
+                      dbo.V_Dataset_Folder_Paths ON dbo.V_Dataset_Folder_Paths.Dataset_ID = dbo.T_Dataset.Dataset_ID INNER JOIN
                       dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
                       dbo.T_Analysis_Tool ON dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID INNER JOIN
-                      dbo.T_Analysis_State_Name ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID
+                      dbo.T_Analysis_State_Name ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID INNER JOIN
+                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
 
 GO
