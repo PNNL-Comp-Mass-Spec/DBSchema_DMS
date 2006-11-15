@@ -24,6 +24,7 @@ CREATE Procedure AddUpdateRequestedRun
 **      1/12/2004 grk -- fixed null return on check existing when table is empty
 **      10/12/2005 -- grk Added stuff for new work package and proposal fields.
 **      2/21/2006  -- grk Added stuff for EUS proposal and user tracking.
+**      11/09/2006  -- grk Fixed error message handling (Ticket #318)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -54,8 +55,6 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
-	
-	declare @msg varchar(256)
 	
 	---------------------------------------------------
 	-- Validate input fields
@@ -125,8 +124,8 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Error trying to find existing request: "' + @reqName + '"'
-		RAISERROR (@msg, 10, 1)
+		set @message = 'Error trying to find existing request: "' + @reqName + '"'
+		RAISERROR (@message, 10, 1)
 		return 51007
 	end
 
@@ -134,8 +133,8 @@ As
 	--
 	if @requestID <> 0 and @mode = 'add'
 	begin
-		set @msg = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
-		RAISERROR (@msg, 10, 1)
+		set @message = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
+		RAISERROR (@message, 10, 1)
 		return 51004
 	end
 
@@ -143,8 +142,8 @@ As
 	--
 	if @requestID = 0 and @mode = 'update'
 	begin
-		set @msg = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
-		RAISERROR (@msg, 10, 1)
+		set @message = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
+		RAISERROR (@message, 10, 1)
 		return 51004
 	end
 	
@@ -191,15 +190,15 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Error trying to resolve EUS usage type: "' + @eusUsageType + '"'
-		RAISERROR (@msg, 10, 1)
+		set @message = 'Error trying to resolve EUS usage type: "' + @eusUsageType + '"'
+		RAISERROR (@message, 10, 1)
 		return 51072
 	end
 	--
 	if @eusUsageTypeID = 0
 	begin
-		set @msg = 'Could not resolve EUS usage type: "' + @eusUsageType + '"'
-		RAISERROR (@msg, 10, 1)
+		set @message = 'Could not resolve EUS usage type: "' + @eusUsageType + '"'
+		RAISERROR (@message, 10, 1)
 		return 51073
 	end
 
@@ -212,8 +211,8 @@ As
 		begin
 			if @eusProposalID <> '' OR @eusUsersList <> ''
 			begin
-				set @msg = 'No Proposal ID nor users are to be associated with "' + @eusUsageType + '" usage type'
-				RAISERROR (@msg, 10, 1)
+				set @message = 'No Proposal ID nor users are to be associated with "' + @eusUsageType + '" usage type'
+				RAISERROR (@message, 10, 1)
 				return 51075
 			end
 			set @eusProposalID = NULL
@@ -226,8 +225,8 @@ As
 			---------------------------------------------------
 			if @eusProposalID = '' OR @eusUsersList = ''
 			begin
-				set @msg = 'A Proposal ID and associated users must be selected for "' + @eusUsageType + '" usage type'
-				RAISERROR (@msg, 10, 1)
+				set @message = 'A Proposal ID and associated users must be selected for "' + @eusUsageType + '" usage type'
+				RAISERROR (@message, 10, 1)
 				return 51072
 			end
 
@@ -245,15 +244,15 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Error trying to verify EUS proposal ID: "' + @eusProposalID + '"'
-				RAISERROR (@msg, 10, 1)
+				set @message = 'Error trying to verify EUS proposal ID: "' + @eusProposalID + '"'
+				RAISERROR (@message, 10, 1)
 				return 51074
 			end
 			--
 			if @n <> 1
 			begin
-				set @msg = 'Could not verify EUS proposal ID: "' + @eusProposalID + '"'
-				RAISERROR (@msg, 10, 1)
+				set @message = 'Could not verify EUS proposal ID: "' + @eusProposalID + '"'
+				RAISERROR (@message, 10, 1)
 				return 51075
 			end
 
@@ -324,9 +323,9 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Insert operation failed: "' + @reqName + '"'
+			set @message = 'Insert operation failed: "' + @reqName + '"'
 			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@message, 10, 1)
 			return 51007
 		end
 		
@@ -336,12 +335,12 @@ As
 								@request,
 								@eusProposalID,
 								@eusUsersList,
-								@msg output
+								@message output
 		--
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@message, 10, 1)
 			return 51019
 		end
 
@@ -380,9 +379,9 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Update operation failed: "' + @reqName + '"'
+			set @message = 'Update operation failed: "' + @reqName + '"'
 			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@message, 10, 1)
 			return 51004
 		end
 
@@ -392,12 +391,12 @@ As
 								@request,
 								@eusProposalID,
 								@eusUsersList,
-								@msg output
+								@message output
 		--
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@message, 10, 1)
 			return 51019
 		end		
 

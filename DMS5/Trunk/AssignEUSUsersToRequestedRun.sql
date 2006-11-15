@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure AssignEUSUsersToRequestedRun
+CREATE Procedure AssignEUSUsersToRequestedRun
 /****************************************************
 **
 **	Desc:
@@ -14,6 +14,7 @@ create Procedure AssignEUSUsersToRequestedRun
 **
 **		Auth: grk
 **		Date: 2/21/2006
+**      11/09/2006  -- grk Added numeric test for eus user ID (Ticket #318)
 **
 *****************************************************/
 	@request int,
@@ -50,14 +51,34 @@ As
 		end
 		return 0
 	end
-
+	
 	---------------------------------------------------
 	-- verify that all users in list have access to
 	-- given proposal
 	---------------------------------------------------
 	declare @n int
 	set @n = 0
+
+	SELECT 
+		@n = @n + (1 - isnumeric(item))
+	FROM 
+		MakeTableFromList(@eusUsersList)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error trying to verify that all user ID are numeric'
+		return 51071
+	end
+
+	if @n <> 0
+	begin
+		set @message = 'EMSL User IDs must be numeric'
+		return 51072
+	end
 	
+	set @n = 0
 	SELECT 
 		@n = count(*)
 	FROM 
