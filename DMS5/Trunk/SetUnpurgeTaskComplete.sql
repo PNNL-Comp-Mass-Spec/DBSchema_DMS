@@ -16,6 +16,7 @@ CREATE Procedure SetUnpurgeTaskComplete
 **		Auth: grk
 **		Date: 3/6/2003
 **			  08/12/2004 grk - added setting for purge holdoff date
+**			  11/16/2006 grk - changed @purgeHoldoffInterval to 5 days
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ As
 	declare @instrumentClass varchar(32)
 
  	declare @purgeHoldoffInterval int
- 	set  @purgeHoldoffInterval = 20
+ 	set  @purgeHoldoffInterval = 5
 
   ---------------------------------------------------
 	-- resolve jobNum into dataset ID and job state 

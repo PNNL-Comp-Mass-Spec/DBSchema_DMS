@@ -3,9 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
 CREATE Procedure dbo.AddUpdateEUSProposals
 /****************************************************
 **
@@ -23,7 +20,7 @@ CREATE Procedure dbo.AddUpdateEUSProposals
 **
 **		Auth: jds
 **		Date: 08/15/2006
-**		      
+**			  11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)   
 **		      
 **    
 *****************************************************/
@@ -110,7 +107,7 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @message = 'Error trying to clear all user associations for this proposal'
+			set @msg = 'Error trying to clear all user associations for this proposal'
 			RAISERROR (@msg, 10, 1)
 			return 51081
 		end
@@ -122,7 +119,18 @@ As
 	declare @TempEUSPropID varchar(10)
 	set @TempEUSPropID = '0'
 	--
-	execute @TempEUSPropID = GetEUSPropID @EUSPropID
+	SELECT @tempEUSPropID = PROPOSAL_ID 
+	FROM T_EUS_Proposals 
+	WHERE (PROPOSAL_ID = @EUSPropID)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error trying to look for entry in table'
+		RAISERROR (@msg, 10, 1)
+		return 51082
+	end
 
 	-- cannot create an entry that already exists
 	--
@@ -263,7 +271,6 @@ As
 			set @message = 'Error trying to add associations for new users'
 			return 51083
 		end
-
 
 	return 0
 
