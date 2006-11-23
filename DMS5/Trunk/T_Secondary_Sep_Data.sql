@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 9 ******/
+/****** RowCount: 10 ******/
 /****** Columns: SS_name, SS_ID ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('none',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Standard',2)
@@ -10,3 +10,4 @@ INSERT INTO [T_Secondary_Sep] VALUES ('CE',6)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ORNL-Standard',7)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Agilent-Special',8)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-FHCRC-Standard',9)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Broad-Standard',10)

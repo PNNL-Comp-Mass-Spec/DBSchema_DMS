@@ -96,3 +96,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMS_Guest]
+GO

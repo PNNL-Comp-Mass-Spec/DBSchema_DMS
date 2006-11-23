@@ -150,5 +150,7 @@ As
   return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_User]
 GO

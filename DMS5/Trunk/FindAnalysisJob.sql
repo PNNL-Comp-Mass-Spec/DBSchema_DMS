@@ -180,5 +180,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_User]
 GO

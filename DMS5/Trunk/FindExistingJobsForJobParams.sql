@@ -183,5 +183,7 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindExistingJobsForJobParams] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForJobParams] TO [DMS_User]
 GO

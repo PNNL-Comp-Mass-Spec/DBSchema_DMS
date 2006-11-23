@@ -149,5 +149,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindSamplePrepRequest] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindSamplePrepRequest] TO [DMS_User]
 GO

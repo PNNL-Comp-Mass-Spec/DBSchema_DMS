@@ -99,5 +99,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindCampaign] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindCampaign] TO [DMS_User]
 GO

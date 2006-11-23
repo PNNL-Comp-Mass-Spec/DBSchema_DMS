@@ -96,5 +96,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[FindUserProposalDataset] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[FindUserProposalDataset] TO [DMS_User]
 GO

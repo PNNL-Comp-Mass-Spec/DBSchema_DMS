@@ -1,0 +1,25 @@
+/****** Object:  Table [T_LC_Cart] ******/
+/****** RowCount: 21 ******/
+SET IDENTITY_INSERT [T_LC_Cart] ON
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (11,'Andromeda',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (12,'Doc',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (13,'Draco',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (14,'Earth',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (15,'Firefly',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (16,'Griffin',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (17,'Pegasus',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (18,'Phoenix',2,'Fast LC')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (19,'Raptor',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (20,'Roc',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (27,'Falcon',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (28,'Hawk',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (29,'Sphinx',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (30,'Agilent',2,'Commercial Agilent 1100 capillary HPLC system outfitted with binary pumps, autosampler, degasser and solvent tray')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (31,'Protein_RP',2,'This is a manual LC system used for intact protein separations. Comprised of 2 10k-psi ISCO pumps and controller, 10k-psi (1/16" fittings) valves with back-side pressure sealing. Valve configurations; 6 port injection valve, 4 port mobile phase select valve, and 4 port column select valve. Home-made mixer for gradient formation. On/off valve for selecting between mixer purge and splitter column.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (32,'Yufeng_20k-psi',2,'This is an R&D LC system used primarily by Yufeng Shen and is modified routinely for different applications. Revision history will NOT be maintained for this LC system.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (33,'Pluto',2,'Manual LC cart')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (34,'Owl',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (35,'Eagle',2,'')
+SET IDENTITY_INSERT [T_LC_Cart] OFF

@@ -144,5 +144,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[Find_Scheduled_Run_History] TO [DMS_Guest]
+GO
 GRANT EXECUTE ON [dbo].[Find_Scheduled_Run_History] TO [DMS_User]
 GO
