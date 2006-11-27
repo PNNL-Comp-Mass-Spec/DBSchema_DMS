@@ -23,6 +23,7 @@ CREATE Procedure SetAnalysisResultsTaskComplete
 **		Date: 11/20/2002
 **            08/03/2005 grk - made setting update archive depend on @completionCode
 **            07/28/2006 grk - save completion code to job table and set state according to AJ_Data_Extraction_Error
+**            11/15/2006 grk - add logic for propagation mode (ticket #328)
 **    
 *****************************************************/
 	@jobNum varchar(32),
@@ -44,6 +45,7 @@ As
 	declare @completionState int
 	declare @currentState int
 	declare @extractionError smallint
+	declare @propMode smallint
 
 	set @jobID = convert(int, @jobNum)
 	-- future: this could get more complicated
@@ -52,12 +54,13 @@ As
    	---------------------------------------------------
 	-- get info about job
 	---------------------------------------------------
-	
+	set @propMode = 0	
 	set @currentState = 0
 	--
 	SELECT 
 		@currentState = AJ_StateID,
-		@extractionError = AJ_Data_Extraction_Error
+		@extractionError = AJ_Data_Extraction_Error,
+		@propMode = AJ_propagationMode
 	FROM T_Analysis_Job
 	WHERE (AJ_jobID = @jobID)
 	--
@@ -82,14 +85,14 @@ As
    	---------------------------------------------------
 	-- choose completion state
 	---------------------------------------------------
-	
-	if @completionCode = 0
-		if @extractionError = 0
-			set @completionState = 4 -- normal completion
-		else
-			set @completionState = 14 -- no export
-	else
+
+	if @completionCode <> 0
 		set @completionState = 6 -- transfer failed
+	else
+		if @propMode > 0 or @extractionError <> 0
+			set @completionState = 14 -- no export
+		else
+			set @completionState = 4 -- normal completion
 	
    	---------------------------------------------------
 	-- Update job status

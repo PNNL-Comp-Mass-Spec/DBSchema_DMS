@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE UpadateAnalysisJobs
 /****************************************************
 **
@@ -21,6 +20,7 @@ CREATE PROCEDURE UpadateAnalysisJobs
 **		      06/20/2006 jds - added support to find/replace text in the comment field
 **		      08/02/2006 grk - clear the AJ_ResultsFolderName, AJ_extractionProcessor, 
 **                             AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
+**            11/15/2006 grk - add logic for propagation mode (ticket #328)
 **    
 *****************************************************/
     @JobList varchar(6000),
@@ -30,6 +30,7 @@ CREATE PROCEDURE UpadateAnalysisJobs
     @findText varchar(255) = '',
     @replaceText varchar(255) = '',
     @assignedProcessor varchar(64),
+    @propagationMode varchar(24),
     @mode varchar(12) = 'update',
     @message varchar(512) output
 As
@@ -275,6 +276,32 @@ As
 			end
 		end
 
+		-----------------------------------------------
+		if @propagationMode <> '[no change]'
+		begin
+			declare @propMode smallint
+			set @propMode = CASE @propagationMode 
+								WHEN 'Export' THEN 0 
+								WHEN 'No Export' THEN 1 
+								ELSE 0 
+							END 
+			--
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_propagationMode =  @propMode
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51009
+			end
+		end
+
 -- future: append/replace comments
 
 -- future: clear run times
@@ -283,8 +310,7 @@ As
 	end -- update mode
 
  	---------------------------------------------------
-	-- Update jobs from temporary table
-	-- in cases where parameter has changed
+	-- Reset job to New state
 	---------------------------------------------------
 	--
 	if @Mode = 'reset' 

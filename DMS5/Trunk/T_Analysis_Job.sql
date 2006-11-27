@@ -29,6 +29,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_extractionFinish] [smalldatetime] NULL,
 	[AJ_Analysis_Manager_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Analysis_Manager_Error]  DEFAULT (0),
 	[AJ_Data_Extraction_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Data_Extraction_Error]  DEFAULT (0),
+	[AJ_propagationMode] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_propogation_mode]  DEFAULT (0),
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -283,6 +284,10 @@ GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_Data_Extraction_Error]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_Data_Extraction_Error]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
 REFERENCES [T_Analysis_Job_Batches] ([Batch_ID])
