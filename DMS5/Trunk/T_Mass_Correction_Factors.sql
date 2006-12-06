@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Affected_Atom]  DEFAULT ('-'),
 	[Original_Source] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source]  DEFAULT (''),
 	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT (''),
+	[Alternative_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Mass_Correction_Factors] PRIMARY KEY CLUSTERED 
 (
 	[Mass_Correction_ID] ASC
@@ -32,7 +33,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Mass_Correction_Factors_Mass_Correction_T
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_i_Mass_Correction_Factors] ******/
+/****** Object:  Trigger [dbo].[trig_i_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -63,7 +64,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_u_Mass_Correction_Factors] ******/
+/****** Object:  Trigger [dbo].[trig_u_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -100,4 +101,6 @@ AS
 
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((((not([Mass_Correction_Tag] like '%:%'))) and ((not([Mass_Correction_Tag] like '%,%')))))
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
 GO

@@ -12,6 +12,8 @@ CREATE TABLE [dbo].[T_Enzymes](
 	[P2] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[P2_Exception] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Cleavage_Method] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Enzymes_Cleavage_Method]  DEFAULT ('Standard'),
+	[Cleavage_Offset] [tinyint] NOT NULL CONSTRAINT [DF_T_Enzymes_Cleavage_Offset]  DEFAULT (1),
+	[Sequest_Enzyme_Index] [int] NULL,
  CONSTRAINT [PK_T_Enzymes] PRIMARY KEY CLUSTERED 
 (
 	[Enzyme_ID] ASC

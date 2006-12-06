@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Modification_Types](
 	[Mod_Type_Symbol] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Mod_Type_Synonym] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Modification_Types] PRIMARY KEY CLUSTERED 
 (
 	[Mod_Type_Symbol] ASC
