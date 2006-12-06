@@ -35,3 +35,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public]
+GO

@@ -59,3 +59,5 @@ begin
 end
 
 GO
+GRANT EXECUTE ON [dbo].[CreateLikeClauseFromSeparatedString] TO [public]
+GO
