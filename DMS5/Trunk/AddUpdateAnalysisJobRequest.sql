@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			10/16/2006 jds - added support for work package number
 **			10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
 **			11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
+**			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **    
 *****************************************************/
 (
@@ -121,7 +122,8 @@ As
 		Dataset_ID int,
 		IN_class varchar(64), 
 		DS_state_ID int, 
-		AS_state_ID int
+		AS_state_ID int,
+		Dataset_Type varchar(64)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount

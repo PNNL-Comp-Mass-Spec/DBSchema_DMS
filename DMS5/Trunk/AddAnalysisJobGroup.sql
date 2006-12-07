@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddAnalysisJobGroup
+CREATE Procedure dbo.AddAnalysisJobGroup
 /****************************************************
 **
 **	Desc: Adds new analysis jobs for list of datasets
@@ -12,14 +12,16 @@ CREATE Procedure AddAnalysisJobGroup
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 1/29/2004
-**			  4/1/04 grk -- fixed error return
-**			  6/7/04 to 4/04/2006 -- multiple updates
-**			  04/05/2006 grk - major rewrite
-**			  04/10/2006 grk - widened size of list argument to 6000 characters
+**	Auth:	grk
+**	Date:	01/29/2004
+**			04/1/04 grk -- fixed error return
+**			06/7/04 to 4/04/2006 -- multiple updates
+**			4/05/2006 grk - major rewrite
+**			04/10/2006 grk - widened size of list argument to 6000 characters
+**			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **    
 *****************************************************/
+(
     @datasetList varchar(6000),
     @priority int = 2,
 	@toolName varchar(64),
@@ -35,6 +37,7 @@ CREATE Procedure AddAnalysisJobGroup
 	@assignedProcessor varchar(64),
 	@mode varchar(12), 
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -68,7 +71,8 @@ As
 		Dataset_ID int,
 		IN_class varchar(64), 
 		DS_state_ID int, 
-		AS_state_ID int
+		AS_state_ID int,
+		Dataset_Type varchar(64)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -304,7 +308,6 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis]

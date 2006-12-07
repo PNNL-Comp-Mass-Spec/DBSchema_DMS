@@ -5,10 +5,16 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Analysis_Tool_Report
 AS
-SELECT     AJT_toolName AS Name, AJT_resultType AS ResultType, AJT_parmFileStoragePath AS [Param file storage (client)], 
-                      AJT_parmFileStoragePathLocal AS [Param file storage (server)], AJT_allowedInstClass AS [Allowed Inst. Classes], 
-                      AJT_defaultSettingsFileName AS [Default Settings File], AJT_active AS Active
-FROM         dbo.T_Analysis_Tool
-WHERE     (AJT_toolID > 0)
+SELECT AJT_toolName AS Name, 
+    AJT_resultType AS ResultType, 
+    AJT_parmFileStoragePath AS [Param file storage (client)], 
+    AJT_parmFileStoragePathLocal AS [Param file storage (server)], 
+    AJT_allowedInstClass AS [Allowed Inst. Classes], 
+    AJT_defaultSettingsFileName AS [Default Settings File], 
+    AJT_active AS Active, AJT_orgDbReqd AS [OrgDB Req], 
+    AJT_extractionRequired AS [Extract Req], 
+    AJT_allowedDatasetTypes AS [Allowed DS Types]
+FROM dbo.T_Analysis_Tool
+WHERE (AJT_toolID > 0)
 
 GO

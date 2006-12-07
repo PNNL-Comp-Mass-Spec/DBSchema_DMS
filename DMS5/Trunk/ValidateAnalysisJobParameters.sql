@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure ValidateAnalysisJobParameters
+CREATE Procedure dbo.ValidateAnalysisJobParameters
 /****************************************************
 **
 **	Desc: Validates analysis job parameters and returns internal
@@ -18,14 +18,16 @@ CREATE Procedure ValidateAnalysisJobParameters
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 04/04/2006 grk - supersedes MakeAnalysisJobX
-**		Date: 05/01/2006 grk - modified to conditionally call 
-**                             Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
-**		Date: 06/01/2006 grk - removed dataset archive state restriction 
-**		Date: 08/30/2006 grk - removed restrition for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
-**    
+**	Auth:	grk
+**	Date:	04/04/2006 grk - supersedes MakeAnalysisJobX
+**			05/01/2006 grk - modified to conditionally call 
+**                            Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+**			06/01/2006 grk - removed dataset archive state restriction 
+**			08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
+**			11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
+**
 *****************************************************/
+(
 	@toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(64),
@@ -39,6 +41,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@analysisToolID int output, 
 	@organismID int output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -61,12 +64,14 @@ As
 		T.Dataset_ID = T_Dataset.Dataset_ID, 
 		T.IN_class = T_Instrument_Class.IN_class, 
 		T.DS_state_ID = T_Dataset.DS_state_ID, 
-		T.AS_state_ID = isnull(T_Dataset_Archive.AS_state_ID, 0)
+		T.AS_state_ID = isnull(T_Dataset_Archive.AS_state_ID, 0),
+		T.Dataset_Type = T_DatasetTypeName.DST_name
 	FROM
 		#TD T INNER JOIN
 		T_Dataset ON T.Dataset_Num = T_Dataset.Dataset_Num INNER JOIN
 		T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID INNER JOIN
-		T_Instrument_Class ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class LEFT OUTER JOIN
+		T_Instrument_Class ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class INNER JOIN
+		T_DatasetTypeName ON T_DatasetTypeName.DST_Type_ID = T_Dataset.DS_type_ID LEFT OUTER JOIN
 		T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -175,13 +180,15 @@ As
 	-- Check tool/instrument compatibility for datasets
 	---------------------------------------------------
 	
-	-- get list of allowed instrument classes for tool
+	-- get list of allowed instrument classes and dataset types for tool
 	--
 	declare @allowedInstClasses varchar(255)
+	declare @allowedDatasetTypes varchar(255)
 	--
-	SELECT  @allowedInstClasses = AJT_allowedInstClass
-	FROM         T_Analysis_Tool
-	WHERE     (AJT_toolName = @toolName)
+	SELECT  @allowedInstClasses = AJT_allowedInstClass,
+			@allowedDatasetTypes = AJT_allowedDatasetTypes
+	FROM    T_Analysis_Tool
+	WHERE   (AJT_toolName = @toolName)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -191,7 +198,7 @@ As
 		return 51007
 	end
 
-	-- find datasets are not compatible with tool 
+	-- find datasets that are not compatible with tool 
 	--
 	set @list = ''
 	--
@@ -215,10 +222,42 @@ As
 
 	if @list <> ''
 	begin
-		set @message = 'The following datasets are not compatible with the analysis tool:"' + @list + '"'
+		set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @list + '"'
 		return 51007
 	end
 
+	---------------------------------------------------
+	-- Check tool/dataset type compatibility for datasets
+	---------------------------------------------------
+	
+	-- find datasets that are not compatible with tool 
+	--
+	set @list = ''
+	--
+	SELECT 
+		@list = @list + CASE 
+		WHEN @list = '' THEN Dataset_Num
+		ELSE ', ' + Dataset_Num
+		END
+	FROM
+		#TD 
+	WHERE 
+		Dataset_Type NOT IN (SELECT * FROM MakeTableFromList(@allowedDatasetTypes))
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error checking dataset types against tool'
+		return 51008
+	end
+
+	if @list <> ''
+	begin
+		set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+		return 51008
+	end
+	
 	---------------------------------------------------
 	-- Validate param file for tool
 	---------------------------------------------------
@@ -319,7 +358,5 @@ As
 				return 53108
 			end
 		end
-	
-
 
 GO

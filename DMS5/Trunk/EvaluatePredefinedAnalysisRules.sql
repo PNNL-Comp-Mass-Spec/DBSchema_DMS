@@ -6,24 +6,27 @@ GO
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
-**		Desc: 
-**      Evaluate predefined analysis rules for given
-**      dataset and generate the specifed ouput type 
+**	Desc: 
+**     Evaluate predefined analysis rules for given
+**     dataset and generate the specifed ouput type 
 **
-**		Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
+**	Parameters:
 **
-**		Auth:	grk
-**		Date:	06/23/2005
-**				03/03/2006 mem - Increased size of the AD_datasetNameCriteria and AD_expCommentCriteria fields in temporary table #AD
-**			    03/28/2006 grk - added protein collection fields
-**			    04/04/2006 grk - increased sized of param file name
+**	Auth:	grk
+**	Date:	06/23/2005
+**			03/03/2006 mem - Increased size of the AD_datasetNameCriteria and AD_expCommentCriteria fields in temporary table #AD
+**		    03/28/2006 grk - added protein collection fields
+**		    04/04/2006 grk - increased sized of param file name
+**			11/30/2006 mem - Now evaluating dataset type for each analysis tool (Ticket #335)
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128),
 	@outputType varchar(12),  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
 	@message varchar(512) output
+)
 As
 	set nocount on
 	
@@ -50,6 +53,7 @@ As
 	declare @ExperimentComment varchar(128) 
 	declare @ExperimentLabelling varchar(128) 
 	declare @Dataset varchar(128) 
+	declare @DatasetType varchar(128)
 	declare @Organism varchar(128) 
 	declare @InstrumentName varchar(128) 
 	declare @InstrumentClass varchar(128) 
@@ -64,6 +68,7 @@ As
 		@ExperimentComment = Experiment_Comment,
 		@ExperimentLabelling = Experiment_Labelling,
 		@Dataset = Dataset,
+		@DatasetType = Dataset_Type,
 		@Organism = Organism,
 		@InstrumentName = Instrument,
 		@InstrumentClass = InstrumentClass,
@@ -174,18 +179,18 @@ As
 		AD_priority,
 		AD_nextLevel,
 		AD_ID
-FROM T_Predefined_Analysis
-WHERE 
-	(AD_enabled > 0) 
-	AND ((@InstrumentClass LIKE AD_instrumentClassCriteria) OR (AD_instrumentClassCriteria = '')) 
-	AND ((@InstrumentName LIKE AD_instrumentNameCriteria) OR (AD_instrumentNameCriteria = '')) 
-	AND ((@Campaign LIKE  AD_campaignNameCriteria) OR (AD_campaignNameCriteria = '')) 
-	AND ((@Experiment LIKE AD_experimentNameCriteria) OR (AD_experimentNameCriteria = '')) 
-	AND ((@Dataset LIKE AD_datasetNameCriteria) OR (AD_datasetNameCriteria = '')) 
-	AND ((@ExperimentComment LIKE AD_expCommentCriteria) OR (AD_expCommentCriteria = '')) 
-	AND ((@ExperimentLabelling LIKE  AD_labellingInclCriteria) OR (AD_labellingInclCriteria = '')) 
-	AND (NOT(@ExperimentLabelling LIKE AD_labellingExclCriteria) OR (AD_labellingExclCriteria = ''))
-	AND ((@Organism LIKE AD_organismNameCriteria) OR (AD_organismNameCriteria = '')) /**/
+	FROM T_Predefined_Analysis
+	WHERE 
+		(AD_enabled > 0) 
+		AND ((@InstrumentClass LIKE AD_instrumentClassCriteria) OR (AD_instrumentClassCriteria = '')) 
+		AND ((@InstrumentName LIKE AD_instrumentNameCriteria) OR (AD_instrumentNameCriteria = '')) 
+		AND ((@Campaign LIKE  AD_campaignNameCriteria) OR (AD_campaignNameCriteria = '')) 
+		AND ((@Experiment LIKE AD_experimentNameCriteria) OR (AD_experimentNameCriteria = '')) 
+		AND ((@Dataset LIKE AD_datasetNameCriteria) OR (AD_datasetNameCriteria = '')) 
+		AND ((@ExperimentComment LIKE AD_expCommentCriteria) OR (AD_expCommentCriteria = '')) 
+		AND ((@ExperimentLabelling LIKE  AD_labellingInclCriteria) OR (AD_labellingInclCriteria = '')) 
+		AND (NOT(@ExperimentLabelling LIKE AD_labellingExclCriteria) OR (AD_labellingExclCriteria = ''))
+		AND ((@Organism LIKE AD_organismNameCriteria) OR (AD_organismNameCriteria = '')) /**/
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -301,6 +306,8 @@ WHERE
 
 	declare @tmpPriority int
 	declare @tmpProcessorName varchar(64)
+
+	declare @allowedDatasetTypes varchar(255)
 	
 	declare @result int
 	declare @go int
@@ -361,6 +368,28 @@ WHERE
 			goto NextRule
 
 		---------------------------------------------------
+		-- Validate that @DatasetType is appropriate for this analysis tool
+		---------------------------------------------------
+		--
+		SELECT  @allowedDatasetTypes = AJT_allowedDatasetTypes
+		FROM    T_Analysis_Tool
+		WHERE   (AJT_toolName = @analysisToolName)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error looking for allowed dataset types for tool'
+			return 51007
+		end
+		
+		If Not Exists (SELECT * FROM MakeTableFromList(@allowedDatasetTypes) WHERE Item = @DatasetType)
+		begin
+			-- Dataset type is not allowed for this tool
+			goto NextRule
+		end
+		
+		---------------------------------------------------
 		-- evaluate rule precedence 
 		---------------------------------------------------
 
@@ -375,18 +404,17 @@ WHERE
 		-- according to first scheduling rule in the evaluation
 		-- sequence that applies to job being created
 		---------------------------------------------------
-
 		
 		SELECT TOP 1
 			@tmpPriority = SR_priority, 
 			@tmpProcessorName = SR_processorName
 		FROM T_Predefined_Analysis_Scheduling_Rules
 		WHERE
-		(SR_enabled > 0) 
-		AND ( (@InstrumentClass LIKE SR_instrumentClass) OR (SR_instrumentClass = '') )
-		AND ( (@InstrumentName LIKE SR_instrument_Name)  OR (SR_instrument_Name = '') )
-		AND ( (@datasetNum LIKE SR_dataset_Name)  OR (SR_dataset_Name = '') )
-		AND ( (@analysisToolName LIKE SR_analysisToolName) OR (SR_analysisToolName = '') )
+			(SR_enabled > 0) 
+			AND ( (@InstrumentClass LIKE SR_instrumentClass) OR (SR_instrumentClass = '') )
+			AND ( (@InstrumentName LIKE SR_instrument_Name)  OR (SR_instrument_Name = '') )
+			AND ( (@datasetNum LIKE SR_dataset_Name)  OR (SR_dataset_Name = '') )
+			AND ( (@analysisToolName LIKE SR_analysisToolName) OR (SR_analysisToolName = '') )
 		ORDER BY SR_evaluationOrder 
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -532,8 +560,6 @@ NextRule:
 	---------------------------------------------------
 Done:
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]

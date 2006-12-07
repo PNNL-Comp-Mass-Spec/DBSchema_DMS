@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateAnalysisJob
+CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
 **	Desc: Adds new analysis job to job table
@@ -12,21 +12,23 @@ CREATE Procedure AddUpdateAnalysisJob
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 01/10/2002
-**			  01/30/2004 fixed @@identity problem with insert
-**			  05/06/2004 grk - allowed analysis processor preset
-**			  11/05/2004 grk - added parameter for assigned processor
-**                             removed batchID parameter
-**			  02/10/2005 grk - fixed update to include assigned processor
-**			  03/28/2006 grk - added protein collection fields
-**			  04/04/2006 grk - increased size of param file name
-**			  04/07/2006 grk - revised valiation logic to use ValidateAnalysisJobParameters
-**			  04/11/2006 grk - added state field and reset mode
-**			  04/21/2006 grk - reset now allowed even if job not in "new" state
-**			  06/01/2006 grk - added code to handle '(default)' organism
+**	Auth:	grk
+**	Date:	01/10/2002
+**			01/30/2004 fixed @@identity problem with insert
+**			05/06/2004 grk - allowed analysis processor preset
+**			11/05/2004 grk - added parameter for assigned processor
+**							 removed batchID parameter
+**			02/10/2005 grk - fixed update to include assigned processor
+**			03/28/2006 grk - added protein collection fields
+**			04/04/2006 grk - increased size of param file name
+**			04/07/2006 grk - revised valiation logic to use ValidateAnalysisJobParameters
+**			04/11/2006 grk - added state field and reset mode
+**			04/21/2006 grk - reset now allowed even if job not in "new" state
+**			06/01/2006 grk - added code to handle '(default)' organism
+**			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **    
 *****************************************************/
+(
     @datasetNum varchar(128),
     @priority int = 2,
 	@toolName varchar(64),
@@ -43,6 +45,7 @@ CREATE Procedure AddUpdateAnalysisJob
     @jobNum varchar(32) = "0" output,
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -108,7 +111,8 @@ As
 		Dataset_ID int,
 		IN_class varchar(64), 
 		DS_state_ID int, 
-		AS_state_ID int
+		AS_state_ID int,
+		Dataset_Type varchar(64)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount

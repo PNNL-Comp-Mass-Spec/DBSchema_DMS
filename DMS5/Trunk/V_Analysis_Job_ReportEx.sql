@@ -19,7 +19,8 @@ SELECT     CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) AS JobNum, dbo.T_Da
                       dbo.V_Dataset_Folder_Paths.Archive_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName AS [Archive Results Folder Path], 
                       dbo.T_Analysis_Job.AJ_created AS Created, dbo.T_Analysis_Job.AJ_start AS Started, dbo.T_Analysis_Job.AJ_finish AS Finished, 
                       dbo.T_Analysis_Job.AJ_requestID AS Request, dbo.T_Analysis_Job.AJ_Analysis_Manager_Error AS [AM Code], 
-                      dbo.GetDEMCodeString(dbo.T_Analysis_Job.AJ_Data_Extraction_Error) AS [DEM Code]
+                      dbo.GetDEMCodeString(dbo.T_Analysis_Job.AJ_Data_Extraction_Error) AS [DEM Code], 
+                      CASE dbo.T_Analysis_Job.AJ_propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS [Export Mode]
 FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Dataset ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID INNER JOIN
                       dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID INNER JOIN
