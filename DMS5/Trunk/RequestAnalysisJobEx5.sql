@@ -73,6 +73,7 @@ CREATE Procedure RequestAnalysisJobEx5
 **		for QC preference
 **
 **		04/04/2006 grk - increased sized of param file name
+**		12/07/2006 grk - eliminate estimated job duration from assignment logic (ticket 340)
 **
 *****************************************************/
 	@toolName varchar(64),
@@ -131,18 +132,17 @@ As
 	INSERT INTO #PD
 	(ID, AssignedProcessor)
 	SELECT TOP 20  Job, ISNULL(AssignedProcessor, '')
-	FROM V_Analysis_Job_Duration_Est_New
+	FROM V_GetAnalysisJobsForAssignment
 	WHERE
-		(State = 'New') AND
-		(ArchiveState = 'complete') AND
+		(JobStateID = 1) AND
+		(AS_state_ID IN (3,10)) AND
 		(Tool = @toolName) AND 
 		(Priority = @requestedPriority) AND
 		( 
-			(ISNULL(AssignedProcessor, '') = @processorName) OR (
-				(ISNULL(AssignedProcessor, '') = '') AND
-				( ISNULL([Avg Duration (min.)], 99000) BETWEEN @requestedMinDuration AND @requestedMaxDuration)
-			)
+			(ISNULL(AssignedProcessor, '') = @processorName) OR 
+			(ISNULL(AssignedProcessor, '') = '')
 		)
+	ORDER BY dbo.DatasetPreference(Dataset) DESC, AssignedProcessor DESC, Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -150,27 +150,6 @@ As
 	begin
 		set @message = 'could not load temporary table'
 		goto done
-	end
-
-	---------------------------------------------------
-	--  Eliminate jobs that have datasets 
-	--  in an unsuitable archive state
-	---------------------------------------------------
-	
-	DELETE From #PD
-	WHERE ID IN
-	(
-		SELECT T_Analysis_Job.AJ_jobID
-		FROM T_Dataset_Archive INNER JOIN
-		T_Analysis_Job ON T_Dataset_Archive.AS_Dataset_ID = T_Analysis_Job.AJ_datasetID
-		WHERE (T_Dataset_Archive.AS_state_ID IN (2, 7))	
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'error cleaning up pool with dataset archive state'
 	end
 
 	---------------------------------------------------
