@@ -34,6 +34,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT (0),
 	[Postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT (0),
 	[Estimated_Completion] [datetime] NULL,
+	[Estimated_MS_runs] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -235,6 +236,10 @@ GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Estimated_Completion]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Estimated_Completion]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Estimated_MS_runs]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Estimated_MS_runs]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])

@@ -27,6 +27,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **          3/14/2006   grk - added stuff for multiple assigned users
 **          8/10/2006   grk - modified state handling
 **          8/10/2006   grk - allowed multiple requested personnel users
+**          12/15/2006  grk - added EstimatedMSRuns argument (Ticket #336)
 **    
 *****************************************************/
   @RequestName varchar(128),
@@ -46,6 +47,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
   @AssignedPersonnel varchar(256),
   @RequestedPersonnel varchar(256),
   @EstimatedCompletion varchar(32),
+  @EstimatedMSRuns varchar(16),
   @WorkPackageNumber varchar(64),
   @UserProposalNumber varchar(64),
   @ReplicatesofSamples varchar(512),
@@ -239,6 +241,7 @@ As
     Requested_Personnel,
     Assigned_Personnel, 
     Estimated_Completion,
+    Estimated_MS_runs,
     Work_Package_Number, 
     User_Proposal_Number, 
     Replicates_of_Samples, 
@@ -267,6 +270,7 @@ As
     @RequestedPersonnel,
     @AssignedPersonnel, 
     @EstimatedCompletionDate,
+    @EstimatedMSRuns,
     @WorkPackageNumber, 
     @UserProposalNumber, 
     @ReplicatesofSamples, 
@@ -323,6 +327,7 @@ As
       Requested_Personnel = @RequestedPersonnel,
       Assigned_Personnel = @AssignedPersonnel, 
       Estimated_Completion = @EstimatedCompletionDate,
+      Estimated_MS_runs = @EstimatedMSRuns,
       Work_Package_Number = @WorkPackageNumber, 
       User_Proposal_Number = @UserProposalNumber, 
       Replicates_of_Samples = @ReplicatesofSamples, 
