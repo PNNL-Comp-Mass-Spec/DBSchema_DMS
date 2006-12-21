@@ -1,72 +1,76 @@
 /****** Object:  StoredProcedure [dbo].[FindAnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE FindAnalysisJob
+CREATE PROCEDURE dbo.FindAnalysisJob
 /****************************************************
 **
-**  Desc: 
-**    Returns result set of analysis jobs 
-**    satisfying the search parameters
+**	Desc: 
+**		Returns result set of Analysis Jobs 
+**		satisfying the search parameters
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**	Parameters:
 **
-**    Auth: grk
-**    Date: 07/05/2005
-**		    03/28/2006 grk - added protein collection fields
-**
+**	Auth:	grk
+**	Date:	07/05/2005
+**			03/28/2006 grk - added protein collection fields
+**			12/20/2006 mem - Now querying V_Find_Analysis_Job using dynamic SQL (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @Job varchar(20) = '',
-  @Pri varchar(20) = '',
-  @State varchar(32) = '',
-  @Tool varchar(64) = '',
-  @Dataset varchar(128) = '',
-  @Campaign varchar(50) = '',
-  @Experiment varchar(50) = '',
-  @Instrument varchar(24) = '',
-  @ParmFile varchar(255) = '',
-  @SettingsFile varchar(255) = '',
-  @Organism varchar(50) = '',
-  @OrganismDB varchar(64) = '',
-  @proteinCollectionList varchar(512) = '',
-  @proteinOptionsList varchar(256) = '',
-  @Comment varchar(255) = '',
-  @Created_After varchar(20) = '',
-  @Created_Before varchar(20) = '',
-  @Started_After varchar(20) = '',
-  @Started_Before varchar(20) = '',
-  @Finished_After varchar(20) = '',
-  @Finished_Before varchar(20) = '',
-  @Processor varchar(64) = '',
-  @RunRequest varchar(20) = '',
-  @message varchar(512) output
+(
+	@Job varchar(20) = '',
+	@Pri varchar(20) = '',
+	@State varchar(32) = '',
+	@Tool varchar(64) = '',
+	@Dataset varchar(128) = '',
+	@Campaign varchar(50) = '',
+	@Experiment varchar(50) = '',
+	@Instrument varchar(24) = '',
+	@ParmFile varchar(255) = '',
+	@SettingsFile varchar(255) = '',
+	@Organism varchar(50) = '',
+	@OrganismDB varchar(64) = '',
+	@proteinCollectionList varchar(512) = '',
+	@proteinOptionsList varchar(256) = '',
+	@Comment varchar(255) = '',
+	@Created_After varchar(20) = '',
+	@Created_Before varchar(20) = '',
+	@Started_After varchar(20) = '',
+	@Started_Before varchar(20) = '',
+	@Finished_After varchar(20) = '',
+	@Finished_Before varchar(20) = '',
+	@Processor varchar(64) = '',
+	@RunRequest varchar(20) = '',
+	@message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
+	set @message = ''
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	declare @S varchar(4000)
+	declare @W varchar(3800)
 
-  -- future: this could get more complicated
-  
-  ---------------------------------------------------
-  -- Convert input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
+
+	-- future: this could get more complicated
+
+	---------------------------------------------------
+	-- Convert input fields
+	---------------------------------------------------
 
 	DECLARE @i_Job int
 	SET @i_Job = CONVERT(int, @Job)
@@ -135,36 +139,73 @@ As
 	SET @iAJ_proteinOptionsList = '%' + @proteinOptionsList + '%'
 	--
 
-  ---------------------------------------------------
-  -- run query
-  ---------------------------------------------------
- 
-  SELECT *
-  FROM V_Find_Analysis_Job
-  WHERE 
-      ( ([Job] = @i_Job ) OR (@Job = '') ) 
-  AND ( ([Pri] = @i_Pri ) OR (@Pri = '') ) 
-  AND ( ([State] LIKE @i_State ) OR (@State = '') ) 
-  AND ( ([Tool] LIKE @i_Tool ) OR (@Tool = '') ) 
-  AND ( ([Dataset] LIKE @i_Dataset ) OR (@Dataset = '') ) 
-  AND ( ([Campaign] LIKE @i_Campaign ) OR (@Campaign = '') ) 
-  AND ( ([Experiment] LIKE @i_Experiment ) OR (@Experiment = '') ) 
-  AND ( ([Instrument] LIKE @i_Instrument ) OR (@Instrument = '') ) 
-  AND ( ([Parm_File] LIKE @i_Parm_File ) OR (@ParmFile = '') ) 
-  AND ( ([Settings_File] LIKE @i_Settings_File ) OR (@SettingsFile = '') ) 
-  AND ( ([Organism] LIKE @i_Organism ) OR (@Organism = '') ) 
-  AND ( ([Organism_DB] LIKE @i_Organism_DB ) OR (@OrganismDB = '') ) 
-  AND ( ([Comment] LIKE @i_Comment ) OR (@Comment = '') ) 
-  AND ( ([Created] > @i_Created_after) OR (@Created_After = '') ) 
-  AND ( ([Created] < @i_Created_before) OR (@Created_Before = '') ) 
-  AND ( ([Started] > @i_Started_after) OR (@Started_After = '') ) 
-  AND ( ([Started] < @i_Started_before) OR (@Started_Before = '') ) 
-  AND ( ([Finished] > @i_Finished_after) OR (@Finished_After = '') ) 
-  AND ( ([Finished] < @i_Finished_before) OR (@Finished_Before = '') ) 
-  AND ( ([Processor] LIKE @i_Processor ) OR (@Processor = '') ) 
-  AND ( ([Run_Request] = @i_Run_Request ) OR (@RunRequest = '') ) 
-  AND ( ([ProteinCollection_List] LIKE @iAJ_proteinCollectionList ) OR (@proteinCollectionList = '') ) 
-  AND ( ([Protein_Options] LIKE @iAJ_proteinOptionsList ) OR (@proteinOptionsList = '') ) 
+	---------------------------------------------------
+	-- Construct the query
+	---------------------------------------------------
+	Set @S = ' SELECT * FROM V_Find_Analysis_Job'
+	
+	Set @W = ''
+	If Len(@Job) > 0
+		Set @W = @W + ' AND ([Job] = ' + Convert(varchar(19), @i_Job) + ' )'
+	If Len(@Pri) > 0
+		Set @W = @W + ' AND ([Pri] = ' + Convert(varchar(19), @i_Pri) + ' )'
+	If Len(@State) > 0
+		Set @W = @W + ' AND ([State] LIKE ''' + @i_State + ''' )'
+	If Len(@Tool) > 0
+		Set @W = @W + ' AND ([Tool] LIKE ''' + @i_Tool + ''' )'
+	If Len(@Dataset) > 0
+		Set @W = @W + ' AND ([Dataset] LIKE ''' + @i_Dataset + ''' )'
+	If Len(@Campaign) > 0
+		Set @W = @W + ' AND ([Campaign] LIKE ''' + @i_Campaign + ''' )'
+	If Len(@Experiment) > 0
+		Set @W = @W + ' AND ([Experiment] LIKE ''' + @i_Experiment + ''' )'
+	If Len(@Instrument) > 0
+		Set @W = @W + ' AND ([Instrument] LIKE ''' + @i_Instrument + ''' )'
+	If Len(@ParmFile) > 0
+		Set @W = @W + ' AND ([Parm_File] LIKE ''' + @i_Parm_File + ''' )'
+	If Len(@SettingsFile) > 0
+		Set @W = @W + ' AND ([Settings_File] LIKE ''' + @i_Settings_File + ''' )'
+	If Len(@Organism) > 0
+		Set @W = @W + ' AND ([Organism] LIKE ''' + @i_Organism + ''' )'
+	If Len(@OrganismDB) > 0
+		Set @W = @W + ' AND ([Organism_DB] LIKE ''' + @i_Organism_DB + ''' )'
+	If Len(@Comment) > 0
+		Set @W = @W + ' AND ([Comment] LIKE ''' + @i_Comment + ''' )'
+		
+	If Len(@Created_After) > 0
+		Set @W = @W + ' AND ([Created] >= ''' + Convert(varchar(32), @i_Created_after, 121) + ''' )'
+	If Len(@Created_Before) > 0
+		Set @W = @W + ' AND ([Created] < ''' + Convert(varchar(32), @i_Created_before, 121) + ''' )'
+	If Len(@Started_After) > 0
+		Set @W = @W + ' AND ([Started] >= ''' + Convert(varchar(32), @i_Started_after, 121) + ''' )'
+	If Len(@Started_Before) > 0
+		Set @W = @W + ' AND ([Started] < ''' + Convert(varchar(32), @i_Started_before, 121) + ''' )'
+	If Len(@Finished_After) > 0
+		Set @W = @W + ' AND ([Finished] >= ''' + Convert(varchar(32), @i_Finished_after, 121) + ''' )'
+	If Len(@Finished_Before) > 0
+		Set @W = @W + ' AND ([Finished] < ''' + Convert(varchar(32), @i_Finished_before, 121) + ''' )'
+
+	If Len(@Processor) > 0
+		Set @W = @W + ' AND ([Processor] LIKE ''' + @i_Processor + ''' )'
+	If Len(@RunRequest) > 0
+		Set @W = @W + ' AND ([Run_Request] = ' + Convert(varchar(19), @i_Run_Request) + ' )'
+	If Len(@proteinCollectionList) > 0
+		Set @W = @W + ' AND ([ProteinCollection_List] LIKE ''' + @iAJ_proteinCollectionList + ''' )'
+	If Len(@proteinOptionsList) > 0
+		Set @W = @W + ' AND ([Protein_Options] LIKE ''' + @iAJ_proteinOptionsList + ''' )'
+	
+	If Len(@W) > 0
+	Begin
+		-- One or more filters are defined
+		-- Remove the first AND from the start of @W and add the word WHERE
+		Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
+		Set @S = @S + ' ' + @W
+	End
+
+	---------------------------------------------------
+	-- Run the query
+	---------------------------------------------------
+	EXEC (@S)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -175,8 +216,7 @@ As
 		return 51007
 	end
     
-
-  return @myError
+	return @myError
 
 
 GO

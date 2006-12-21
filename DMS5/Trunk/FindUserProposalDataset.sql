@@ -1,54 +1,59 @@
 /****** Object:  StoredProcedure [dbo].[FindUserProposalDataset] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-Create PROCEDURE FindUserProposalDataset
+CREATE PROCEDURE dbo.FindUserProposalDataset
 /****************************************************
 **
-**  Desc: 
-**    Returns result set of Datasets
-**    satisfying the EUS search parameters
+**	Desc: 
+**		Returns result set of Datasets
+**		satisfying the EUS search parameters
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**	Parameters:
 **
-**    Auth: grk
-**    Date: 08/09/2006
+**	Auth:	grk
+**	Date:	08/09/2006
+**			12/20/2006 mem - Now querying V_Find_User_Proposal_Dataset using dynamic SQL (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @UserProposalIDList varchar(512) = '',
-  @DatasetName varchar(128) = '',
-  @InstrumentName varchar(24) = '',
-  @AcquisitionStart_After varchar(20) = '',
-  @AcquisitionStart_Before varchar(20) = '',
-  @AcquisitionEnd_After varchar(20) = '',
-  @AcquisitionEnd_Before varchar(20) = '',
-  @message varchar(512) output
+(
+	@UserProposalIDList varchar(512) = '',
+	@DatasetName varchar(128) = '',
+	@InstrumentName varchar(24) = '',
+	@AcquisitionStart_After varchar(20) = '',
+	@AcquisitionStart_Before varchar(20) = '',
+	@AcquisitionEnd_After varchar(20) = '',
+	@AcquisitionEnd_Before varchar(20) = '',
+	@message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
+	set @message = ''
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	declare @S varchar(4000)
+	declare @W varchar(3800)
 
-  -- future: this could get more complicated
-  
-  ---------------------------------------------------
-  -- Convert input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
+
+	-- future: this could get more complicated
+
+	---------------------------------------------------
+	-- Convert input fields
+	---------------------------------------------------
 
 	--
 	DECLARE @iDataset_Name varchar(128)
@@ -68,20 +73,40 @@ As
 	SET @iAcquisition_End_before = CONVERT(datetime, @AcquisitionEnd_Before)
 	--
 
-  ---------------------------------------------------
-  -- run query
-  ---------------------------------------------------
- 
-  SELECT *
-  FROM V_Find_User_Proposal_Dataset
-  WHERE 
-      ( ([User_Proposal_ID] IN (select Item from MakeTableFromList(@UserProposalIDList)) ) OR (@UserProposalIDList = '') ) 
-  AND ( ([Dataset_Name] LIKE @iDataset_Name ) OR (@DatasetName = '') ) 
-  AND ( ([Instrument_Name] LIKE @iInstrument_Name ) OR (@InstrumentName = '') ) 
-  AND ( ([Acquisition_Start] > @iAcquisition_Start_after) OR (@AcquisitionStart_After = '') ) 
-  AND ( ([Acquisition_Start] < @iAcquisition_Start_before) OR (@AcquisitionStart_Before = '') ) 
-  AND ( ([Acquisition_End] > @iAcquisition_End_after) OR (@AcquisitionEnd_After = '') ) 
-  AND ( ([Acquisition_End] < @iAcquisition_End_before) OR (@AcquisitionEnd_Before = '') ) 
+	---------------------------------------------------
+	-- Construct the query
+	---------------------------------------------------
+	Set @S = ' SELECT * FROM V_Find_User_Proposal_Dataset'
+	
+	Set @W = ''
+	If Len(@UserProposalIDList) > 0
+		Set @W = @W + ' AND ( [User_Proposal_ID] IN (select Item from MakeTableFromList(''' + @UserProposalIDList + ''')) )'
+	If Len(@DatasetName) > 0
+		Set @W = @W + ' AND ([Dataset_Name] LIKE ''' + @iDataset_Name + ''' )'
+	If Len(@InstrumentName) > 0
+		Set @W = @W + ' AND ([Instrument_Name] LIKE ''' + @iInstrument_Name + ''' )'
+
+	If Len(@AcquisitionStart_After) > 0
+		Set @W = @W + ' AND ([Acquisition_Start] >= ''' + Convert(varchar(32), @iAcquisition_Start_after, 121) + ''' )'
+	If Len(@AcquisitionStart_Before) > 0
+		Set @W = @W + ' AND ([Acquisition_Start] < ''' + Convert(varchar(32), @iAcquisition_Start_before, 121) + ''' )'
+	If Len(@AcquisitionEnd_After) > 0
+		Set @W = @W + ' AND ([Acquisition_End] >= ''' + Convert(varchar(32), @iAcquisition_End_after, 121) + ''' )'
+	If Len(@AcquisitionEnd_Before) > 0
+		Set @W = @W + ' AND ([Acquisition_End] < ''' + Convert(varchar(32), @iAcquisition_End_before, 121) + ''' )'
+
+	If Len(@W) > 0
+	Begin
+		-- One or more filters are defined
+		-- Remove the first AND from the start of @W and add the word WHERE
+		Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
+		Set @S = @S + ' ' + @W
+	End
+
+	---------------------------------------------------
+	-- Run the query
+	---------------------------------------------------
+	EXEC (@S)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -91,8 +116,8 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51007
 	end
-    
-  return @myError
+
+	return @myError
 
 
 GO

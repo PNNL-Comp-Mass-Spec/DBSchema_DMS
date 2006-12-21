@@ -1,65 +1,70 @@
 /****** Object:  StoredProcedure [dbo].[FindDataset] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE FindDataset
+CREATE PROCEDURE dbo.FindDataset
 /****************************************************
 **
-**  Desc: 
-**    Returns result set of Dataset
-**    satisfying the search parameters
+**	Desc: 
+**		Returns result set of Datasets
+**		satisfying the search parameters
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**	Parameters:
 **
-**    Auth: grk
-**    Date: 07/06/2005
+**	Auth:	grk
+**	Date:	07/06/2005
+**			12/20/2006 mem - Now querying V_Find_Dataset using dynamic SQL (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @ID varchar(20) = '',
-  @Dataset varchar(128) = '',
-  @Experiment varchar(50) = '',
-  @Campaign varchar(50) = '',
-  @State varchar(50) = '',
-  @Instrument varchar(24) = '',
-  @Created_After varchar(20) = '',
-  @Created_Before varchar(20) = '',
-  @Comment varchar(500) = '',
-  @Operator varchar(50) = '',
-  @Rating varchar(32) = '',
-  @DatasetFolderPath varchar(511) = '',
-  @AcqStart_After varchar(20) = '',
-  @AcqStart_Before varchar(20) = '',
-  @AcqLength_min varchar(20) = '',
-  @AcqLength_max varchar(20) = '',
-  @ScanCount_min varchar(20) = '',
-  @ScanCount_max varchar(20) = '',
-  @message varchar(512) output
+(
+	@ID varchar(20) = '',
+	@Dataset varchar(128) = '',
+	@Experiment varchar(50) = '',
+	@Campaign varchar(50) = '',
+	@State varchar(50) = '',
+	@Instrument varchar(24) = '',
+	@Created_After varchar(20) = '',
+	@Created_Before varchar(20) = '',
+	@Comment varchar(500) = '',
+	@Operator varchar(50) = '',
+	@Rating varchar(32) = '',
+	@DatasetFolderPath varchar(511) = '',
+	@AcqStart_After varchar(20) = '',
+	@AcqStart_Before varchar(20) = '',
+	@AcqLength_min varchar(20) = '',
+	@AcqLength_max varchar(20) = '',
+	@ScanCount_min varchar(20) = '',
+	@ScanCount_max varchar(20) = '',
+	@message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
+	set @message = ''
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	declare @S varchar(4000)
+	declare @W varchar(3800)
 
-  -- future: this could get more complicated
-  
-  ---------------------------------------------------
-  -- Convert input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
+
+	-- future: this could get more complicated
+
+	---------------------------------------------------
+	-- Convert input fields
+	---------------------------------------------------
 
 	DECLARE @iID int
 	SET @iID = CONVERT(int, @ID)
@@ -112,31 +117,62 @@ As
 	SET @iScanCount_max = CONVERT(int, @ScanCount_max)
 	--
 
-  ---------------------------------------------------
-  -- run query
-  ---------------------------------------------------
- 
-  SELECT *
-  FROM V_Find_Dataset
-  WHERE 
-      ( ([ID] = @iID ) OR (@ID = '') ) 
-  AND ( ([Dataset] LIKE @iDataset ) OR (@Dataset = '') ) 
-  AND ( ([Experiment] LIKE @iExperiment ) OR (@Experiment = '') ) 
-  AND ( ([Campaign] LIKE @iCampaign ) OR (@Campaign = '') ) 
-  AND ( ([State] LIKE @iState ) OR (@State = '') ) 
-  AND ( ([Instrument] LIKE @iInstrument ) OR (@Instrument = '') ) 
-  AND ( ([Created] > @iCreated_after) OR (@Created_After = '') ) 
-  AND ( ([Created] < @iCreated_before) OR (@Created_Before = '') ) 
-  AND ( ([Comment] LIKE @iComment ) OR (@Comment = '') ) 
-  AND ( ([Operator] LIKE @iOperator ) OR (@Operator = '') ) 
-  AND ( ([Rating] LIKE @iRating ) OR (@Rating = '') ) 
-  AND ( ([Dataset Folder Path] LIKE @iDatasetFolderPath ) OR (@DatasetFolderPath = '') ) 
-  AND ( ([Acq Start] > @iAcqStart_after) OR (@AcqStart_After = '') ) 
-  AND ( ([Acq Start] < @iAcqStart_before) OR (@AcqStart_Before = '') ) 
-  AND ( ([Acq Length] >= @iAcqLength_min ) OR (@AcqLength_min = '') ) 
-  AND ( ([Acq Length] <= @iAcqLength_max ) OR (@AcqLength_max = '') ) 
-  AND ( ([Scan Count] >= @iScanCount_min ) OR (@ScanCount_min = '') ) 
-  AND ( ([Scan Count] <= @iScanCount_max ) OR (@ScanCount_max = '') ) 
+	---------------------------------------------------
+	-- Construct the query
+	---------------------------------------------------
+	Set @S = ' SELECT * FROM V_Find_Dataset'
+	
+	Set @W = ''
+	If Len(@ID) > 0
+		Set @W = @W + ' AND ([ID] = ' + Convert(varchar(19), @iID) + ' )'
+	If Len(@Dataset) > 0
+		Set @W = @W + ' AND ([Dataset] LIKE ''' + @iDataset + ''' )'
+	If Len(@Experiment) > 0
+		Set @W = @W + ' AND ([Experiment] LIKE ''' + @iExperiment + ''' )'
+	If Len(@Campaign) > 0
+		Set @W = @W + ' AND ([Campaign] LIKE ''' + @iCampaign + ''' )'
+	If Len(@State) > 0
+		Set @W = @W + ' AND ([State] LIKE ''' + @iState + ''' )'
+	If Len(@Instrument) > 0
+		Set @W = @W + ' AND ([Instrument] LIKE ''' + @iInstrument + ''' )'
+	If Len(@Created_After) > 0
+		Set @W = @W + ' AND ([Created] >= ''' + Convert(varchar(32), @iCreated_after, 121) + ''' )'
+	If Len(@Created_Before) > 0
+		Set @W = @W + ' AND ([Created] < ''' + Convert(varchar(32), @iCreated_before, 121) + ''' )'
+	If Len(@Comment) > 0
+		Set @W = @W + ' AND ([Comment] LIKE ''' + @iComment + ''' )'
+	If Len(@Operator) > 0
+		Set @W = @W + ' AND ([Operator] LIKE ''' + @iOperator + ''' )'
+	If Len(@Rating) > 0
+		Set @W = @W + ' AND ([Rating] LIKE ''' + @iRating + ''' )'
+	If Len(@DatasetFolderPath) > 0
+		Set @W = @W + ' AND ([Dataset Folder Path] LIKE ''' + @iDatasetFolderPath + ''' )'
+
+	If Len(@AcqStart_After) > 0
+		Set @W = @W + ' AND ([Acq Start] >= ''' + Convert(varchar(32), @iAcqStart_after, 121) + ''' )'
+	If Len(@AcqStart_Before) > 0
+		Set @W = @W + ' AND ([Acq Start] < ''' + Convert(varchar(32), @iAcqStart_before, 121) + ''' )'
+	If Len(@AcqLength_min) > 0
+		Set @W = @W + ' AND ([Acq Length] >= ' + Convert(varchar(19), @iAcqLength_min) + ' )'
+	If Len(@AcqLength_max) > 0
+		Set @W = @W + ' AND ([Acq Length] < ' + Convert(varchar(19), @iAcqLength_max) + ' )'
+	If Len(@ScanCount_min) > 0
+		Set @W = @W + ' AND ([Scan Count] >= ' + Convert(varchar(19), @iScanCount_min) + ' )'
+	If Len(@ScanCount_max) > 0
+		Set @W = @W + ' AND ([Scan Count] < ' + Convert(varchar(19), @iScanCount_max) + ' )'
+
+	If Len(@W) > 0
+	Begin
+		-- One or more filters are defined
+		-- Remove the first AND from the start of @W and add the word WHERE
+		Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
+		Set @S = @S + ' ' + @W
+	End
+
+	---------------------------------------------------
+	-- Run the query
+	---------------------------------------------------
+	EXEC (@S)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -146,8 +182,9 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51007
 	end
-    
-  return @myError
+
+	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_Guest]

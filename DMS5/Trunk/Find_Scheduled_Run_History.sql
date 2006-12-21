@@ -1,63 +1,68 @@
 /****** Object:  StoredProcedure [dbo].[Find_Scheduled_Run_History] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE Find_Scheduled_Run_History
+CREATE PROCEDURE dbo.Find_Scheduled_Run_History
 /****************************************************
 **
-**  Desc: 
-**    Returns result set of Scheduled Run History
-**    satisfying the search parameters
+**	Desc: 
+**		Returns result set of Scheduled Run History
+**		satisfying the search parameters
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**	Parameters:
 **
-**    Auth: grk
-**    Date: 05/15/2006
+**	Auth:	grk
+**	Date:	05/15/2006
+**			12/20/2006 mem - Now querying V_Find_Scheduled_Run_History using dynamic SQL (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @RequestID varchar(20) = '',
-  @RequestName varchar(128) = '',
-  @ReqCreated_After varchar(20) = '',
-  @ReqCreated_Before varchar(20) = '',
-  @Experiment varchar(50) = '',
-  @Dataset varchar(128) = '',
-  @DScreated_After varchar(20) = '',
-  @DScreated_Before varchar(20) = '',
-  @WorkPackage varchar(50) = '',
-  @Campaign varchar(50) = '',
-  @Requestor varchar(50) = '',
-  @Instrument varchar(128) = '',
-  @RunType varchar(50) = '',
-  @Comment varchar(244) = '',
-  @Batch varchar(20) = '',
-  @BlockingFactor varchar(50) = '',
-  @message varchar(512) output
+(
+	@RequestID varchar(20) = '',
+	@RequestName varchar(128) = '',
+	@ReqCreated_After varchar(20) = '',
+	@ReqCreated_Before varchar(20) = '',
+	@Experiment varchar(50) = '',
+	@Dataset varchar(128) = '',
+	@DScreated_After varchar(20) = '',
+	@DScreated_Before varchar(20) = '',
+	@WorkPackage varchar(50) = '',
+	@Campaign varchar(50) = '',
+	@Requestor varchar(50) = '',
+	@Instrument varchar(128) = '',
+	@RunType varchar(50) = '',
+	@Comment varchar(244) = '',
+	@Batch varchar(20) = '',
+	@BlockingFactor varchar(50) = '',
+	@message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
+	set @message = ''
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	declare @S varchar(4000)
+	declare @W varchar(3800)
 
-  -- future: this could get more complicated
-  
-  ---------------------------------------------------
-  -- Convert input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
+
+	-- future: this could get more complicated
+
+	---------------------------------------------------
+	-- Convert input fields
+	---------------------------------------------------
 
 	DECLARE @iRequest_ID int
 	SET @iRequest_ID = CONVERT(int, @RequestID)
@@ -106,29 +111,59 @@ As
 	SET @iBlocking_Factor = '%' + @BlockingFactor + '%'
 	--
 
-  ---------------------------------------------------
-  -- run query
-  ---------------------------------------------------
- 
-  SELECT *
-  FROM V_Find_Scheduled_Run_History
-  WHERE 
-      ( ([Request_ID] = @iRequest_ID ) OR (@RequestID = '') ) 
-  AND ( ([Request_Name] LIKE @iRequest_Name ) OR (@RequestName = '') ) 
-  AND ( ([Req_Created] > @iReq_Created_after) OR (@ReqCreated_After = '') ) 
-  AND ( ([Req_Created] < @iReq_Created_before) OR (@ReqCreated_Before = '') ) 
-  AND ( ([Experiment] LIKE @iExperiment ) OR (@Experiment = '') ) 
-  AND ( ([Dataset] LIKE @iDataset ) OR (@Dataset = '') ) 
-  AND ( ([DS_created] > @iDS_created_after) OR (@DScreated_After = '') ) 
-  AND ( ([DS_created] < @iDS_created_before) OR (@DScreated_Before = '') ) 
-  AND ( ([Work_Package] LIKE @iWork_Package ) OR (@WorkPackage = '') ) 
-  AND ( ([Campaign] LIKE @iCampaign ) OR (@Campaign = '') ) 
-  AND ( ([Requestor] LIKE @iRequestor ) OR (@Requestor = '') ) 
-  AND ( ([Instrument] LIKE @iInstrument ) OR (@Instrument = '') ) 
-  AND ( ([Run_Type] LIKE @iRun_Type ) OR (@RunType = '') ) 
-  AND ( ([Comment] LIKE @iComment ) OR (@Comment = '') ) 
-  AND ( ([Batch] = @iBatch ) OR (@Batch = '') ) 
-  AND ( ([Blocking_Factor] LIKE @iBlocking_Factor ) OR (@BlockingFactor = '') ) 
+	---------------------------------------------------
+	-- Construct the query
+	---------------------------------------------------
+	Set @S = ' SELECT * FROM V_Find_Scheduled_Run_History'
+	
+	Set @W = ''
+	If Len(@RequestID) > 0
+		Set @W = @W + ' AND ([Request_ID] = ' + Convert(varchar(19), @iRequest_ID) + ' )'
+	If Len(@RequestName) > 0
+		Set @W = @W + ' AND ([Request_Name] LIKE ''' + @iRequest_Name + ''' )'
+
+	If Len(@ReqCreated_After) > 0
+		Set @W = @W + ' AND ([Req_Created] >= ''' + Convert(varchar(32), @iReq_Created_after, 121) + ''' )'
+	If Len(@ReqCreated_Before) > 0
+		Set @W = @W + ' AND ([Req_Created] < ''' + Convert(varchar(32), @iReq_Created_before, 121) + ''' )'
+	If Len(@Experiment) > 0
+		Set @W = @W + ' AND ([Experiment] LIKE ''' + @iExperiment + ''' )'
+	If Len(@Dataset) > 0
+		Set @W = @W + ' AND ([Dataset] LIKE ''' + @iDataset + ''' )'
+	If Len(@DScreated_After) > 0
+		Set @W = @W + ' AND ([DS_created] >= ''' + Convert(varchar(32), @iDS_created_after, 121) + ''' )'
+	If Len(@DScreated_Before) > 0
+		Set @W = @W + ' AND ([DS_created] < ''' + Convert(varchar(32), @iDS_created_before, 121) + ''' )'
+		
+	If Len(@WorkPackage) > 0
+		Set @W = @W + ' AND ([Work_Package] LIKE ''' + @iWork_Package + ''' )'
+	If Len(@Campaign) > 0
+		Set @W = @W + ' AND ([Campaign] LIKE ''' + @iCampaign + ''' )'
+	If Len(@Requestor) > 0
+		Set @W = @W + ' AND ([Requestor] LIKE ''' + @iRequestor + ''' )'
+	If Len(@Instrument) > 0
+		Set @W = @W + ' AND ([Instrument] LIKE ''' + @iInstrument + ''' )'
+	If Len(@RunType) > 0
+		Set @W = @W + ' AND ([Run_Type] LIKE ''' + @iRun_Type + ''' )'
+	If Len(@Comment) > 0
+		Set @W = @W + ' AND ([Comment] LIKE ''' + @iComment + ''' )'
+	If Len(@Batch) > 0
+		Set @W = @W + ' AND ([Batch] = ' + Convert(varchar(19), @iBatch) + ' )'
+	If Len(@BlockingFactor) > 0
+		Set @W = @W + ' AND ([Blocking_Factor] LIKE ''' + @iBlocking_Factor + ''' )'
+
+	If Len(@W) > 0
+	Begin
+		-- One or more filters are defined
+		-- Remove the first AND from the start of @W and add the word WHERE
+		Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
+		Set @S = @S + ' ' + @W
+	End
+
+	---------------------------------------------------
+	-- Run the query
+	---------------------------------------------------
+	EXEC (@S)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -138,9 +173,8 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51007
 	end
-    
-  return @myError
 
+	return @myError
 
 
 GO

@@ -1,54 +1,58 @@
 /****** Object:  StoredProcedure [dbo].[FindLogEntry] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-
 CREATE PROCEDURE dbo.FindLogEntry
 /****************************************************
 **
-**  Desc: 
-**    Returns result set of main log
-**    satisfying the search parameters
+**	Desc: 
+**		Returns result set of main log
+**		satisfying the search parameters
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**	Parameters:
 **
-**    Auth: grk
-**    Date: 08/23/2006
+**	Auth:	grk
+**	Date:	08/23/2006
+**			12/20/2006 mem - Now querying V_Log_Report using dynamic SQL (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @Entry varchar(20) = '',
-  @PostedBy varchar(64) = '',
-  @PostingTime_After varchar(20) = '',
-  @PostingTime_Before varchar(20) = '',
-  @EntryType varchar(32) = '',
-  @MessageText varchar(500) = '',
-  @message varchar(512) output
+(
+	@Entry varchar(20) = '',
+	@PostedBy varchar(64) = '',
+	@PostingTime_After varchar(20) = '',
+	@PostingTime_Before varchar(20) = '',
+	@EntryType varchar(32) = '',
+	@MessageText varchar(500) = '',
+	@message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
+	set @message = ''
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	declare @S varchar(4000)
+	declare @W varchar(3800)
 
-  -- future: this could get more complicated
-  
-  ---------------------------------------------------
-  -- Convert input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
+
+	-- future: this could get more complicated
+
+	---------------------------------------------------
+	-- Convert input fields
+	---------------------------------------------------
 
 	DECLARE @iEntry int
 	SET @iEntry = CONVERT(int, @Entry)
@@ -68,19 +72,37 @@ As
 	SET @iMessage = '%' + @MessageText + '%'
 	--
 
-  ---------------------------------------------------
-  -- run query
-  ---------------------------------------------------
- 
-  SELECT *
-  FROM V_Log_Report
-  WHERE 
-      ( ([Entry] = @iEntry ) OR (@Entry = '') ) 
-  AND ( ([Posted By] LIKE @iPostedBy ) OR (@PostedBy = '') ) 
-  AND ( ([Posting Time] > @iPostingTime_after) OR (@PostingTime_After = '') ) 
-  AND ( ([Posting Time] < @iPostingTime_before) OR (@PostingTime_Before = '') ) 
-  AND ( ([Type] LIKE @iType ) OR (@EntryType = '') ) 
-  AND ( ([Message] LIKE @iMessage ) OR (@MessageText = '') ) 
+	---------------------------------------------------
+	-- Construct the query
+	---------------------------------------------------
+	Set @S = ' SELECT * FROM V_Log_Report'
+	
+	Set @W = ''
+	If Len(@Entry) > 0
+		Set @W = @W + ' AND ([Entry] = ' + Convert(varchar(19), @iEntry) + ' )'
+	If Len(@PostedBy) > 0
+		Set @W = @W + ' AND ([Posted By] LIKE ''' + @iPostedBy + ''' )'
+	If Len(@PostingTime_After) > 0
+		Set @W = @W + ' AND ([Posting Time] >= ''' + Convert(varchar(32), @iPostingTime_after, 121) + ''' )'
+	If Len(@PostingTime_Before) > 0
+		Set @W = @W + ' AND ([Posting Time] < ''' + Convert(varchar(32), @iPostingTime_before, 121) + ''' )'
+	If Len(@EntryType) > 0
+		Set @W = @W + ' AND ([Type] LIKE ''' + @iType + ''' )'
+	If Len(@MessageText) > 0
+		Set @W = @W + ' AND ([Message] LIKE ''' + @iMessage + ''' )'
+
+	If Len(@W) > 0
+	Begin
+		-- One or more filters are defined
+		-- Remove the first AND from the start of @W and add the word WHERE
+		Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
+		Set @S = @S + ' ' + @W
+	End
+
+	---------------------------------------------------
+	-- Run the query
+	---------------------------------------------------
+	EXEC (@S)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -90,9 +112,8 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51007
 	end
-    
-  return @myError
 
+	return @myError
 
 
 GO
