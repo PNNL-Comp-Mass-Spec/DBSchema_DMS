@@ -170,3 +170,5 @@ Done:
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User]
+GO
