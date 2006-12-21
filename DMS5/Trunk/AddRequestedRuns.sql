@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddRequestedRuns
+
+CREATE PROCEDURE dbo.AddRequestedRuns
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +22,7 @@ CREATE PROCEDURE AddRequestedRuns
 **      3/24/2006  -- grk Added stuff for auto incrementing well numbers.
 **      6/23/2006  -- grk Removed instrument name from generated request name
 **      10/12/2006  -- grk Fixed trailing suffix in name (Ticket #248)
+**      11/09/2006  -- grk Fixed error message handling (Ticket #318)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -207,7 +209,7 @@ As
 								'add',
 								@request output,
 								@message output
-			set @message = @tFld
+			set @message = '[' + @tFld + '] ' + @message 
 			if @myError <> 0
 				return @myError
 		end
@@ -223,7 +225,6 @@ As
 	set @message = 'Number of requests created:' + cast(@count as varchar(12))
 /**/
 	return 0
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry]
