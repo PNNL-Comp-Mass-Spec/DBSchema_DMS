@@ -14,11 +14,13 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **
 **	Auth:	grk
 **	Date:	01/29/2004
-**			04/1/04 grk -- fixed error return
-**			06/7/04 to 4/04/2006 -- multiple updates
-**			4/05/2006 grk - major rewrite
+**			04/01/2004 grk - fixed error return
+**			06/07/2004 to 4/04/2006 -- multiple updates
+**			04/05/2006 grk - major rewrite
 **			04/10/2006 grk - widened size of list argument to 6000 characters
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
+**			12/19/2006 grk - Added propagation mode (Ticket #348)
+**			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
 **    
 *****************************************************/
 (
@@ -35,6 +37,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
     @comment varchar(255) = null,
     @requestID int,
 	@assignedProcessor varchar(64),
+    @propagationMode varchar(24),
 	@mode varchar(12), 
 	@message varchar(512) output
 )
@@ -72,7 +75,8 @@ As
 		IN_class varchar(64), 
 		DS_state_ID int, 
 		AS_state_ID int,
-		Dataset_Type varchar(64)
+		Dataset_Type varchar(64),
+		DS_rating smallint
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -104,6 +108,16 @@ As
 		return 51007
 	end
 
+	---------------------------------------------------
+	-- Resolve propagation mode 
+	---------------------------------------------------
+	declare @propMode smallint
+	set @propMode = CASE @propagationMode 
+						WHEN 'Export' THEN 0 
+						WHEN 'No Export' THEN 1 
+						ELSE 0 
+					END 
+	
 	---------------------------------------------------
 	-- validate job parameters
 	---------------------------------------------------
@@ -260,7 +274,8 @@ As
 			AJ_batchID,
 			AJ_StateID,
 			AJ_assignedProcessorName,
-			AJ_requestID
+			AJ_requestID,
+			AJ_propagationMode
 		) SELECT 
 			@priority, 
 			getdate(), 
@@ -277,7 +292,8 @@ As
 			@batchID,
 			CASE WHEN #TD.AS_State_ID = 4 THEN 10 ELSE 1 END,
 			@assignedProcessor,
-			@requestID
+			@requestID,
+			@propMode
 		FROM #TD		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

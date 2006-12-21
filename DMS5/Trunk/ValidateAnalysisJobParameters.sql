@@ -25,6 +25,7 @@ CREATE Procedure dbo.ValidateAnalysisJobParameters
 **			06/01/2006 grk - removed dataset archive state restriction 
 **			08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
 **			11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
+**			12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
 **
 *****************************************************/
 (
@@ -65,7 +66,8 @@ As
 		T.IN_class = T_Instrument_Class.IN_class, 
 		T.DS_state_ID = T_Dataset.DS_state_ID, 
 		T.AS_state_ID = isnull(T_Dataset_Archive.AS_state_ID, 0),
-		T.Dataset_Type = T_DatasetTypeName.DST_name
+		T.Dataset_Type = T_DatasetTypeName.DST_name,
+		T.DS_rating = T_Dataset.DS_Rating
 	FROM
 		#TD T INNER JOIN
 		T_Dataset ON T.Dataset_Num = T_Dataset.Dataset_Num INNER JOIN
@@ -133,7 +135,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error checking dataset Existence'
+		set @message = 'Error checking dataset state'
 		return 51007
 	end
 	--
@@ -142,7 +144,37 @@ As
 		set @message = 'The following datasets were not in correct state:"' + @list + '"'
 		return 51007
 	end	
-		
+
+	---------------------------------------------------
+	-- Verify rating of datasets
+	---------------------------------------------------
+	--
+	set @list = ''
+	--
+	SELECT 
+		@list = @list + CASE 
+		WHEN @list = '' THEN Dataset_Num
+		ELSE ', ' + Dataset_Num
+		END
+	FROM
+		#TD
+	WHERE 
+		(DS_rating = -2)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error checking dataset rating'
+		return 51007
+	end
+	--
+	if @list <> ''
+	begin
+		set @message = 'The following datasets have a rating of -2 (Data Files Missing):"' + @list + '"'
+		return 51007
+	end	
+	
 	---------------------------------------------------
 	-- Resolve user ID for operator PRN
 	---------------------------------------------------

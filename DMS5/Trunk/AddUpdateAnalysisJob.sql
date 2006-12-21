@@ -26,6 +26,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			04/21/2006 grk - reset now allowed even if job not in "new" state
 **			06/01/2006 grk - added code to handle '(default)' organism
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
+**			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
 **    
 *****************************************************/
 (
@@ -112,7 +113,8 @@ As
 		IN_class varchar(64), 
 		DS_state_ID int, 
 		AS_state_ID int,
-		Dataset_Type varchar(64)
+		Dataset_Type varchar(64),
+		DS_rating smallint
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
