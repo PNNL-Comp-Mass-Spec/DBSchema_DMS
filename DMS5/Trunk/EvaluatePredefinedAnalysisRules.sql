@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **		    03/28/2006 grk - added protein collection fields
 **		    04/04/2006 grk - increased sized of param file name
 **			11/30/2006 mem - Now evaluating dataset type for each analysis tool (Ticket #335)
+**			12/21/2006 mem - Updated 'Show Rules' to include explanations for why a rule was used, altered, or skipped (Ticket #339)
 **    
 *****************************************************/
 (
@@ -38,6 +39,18 @@ As
 	
 	set @message = ''
 
+	---------------------------------------------------
+	-- Validate @outputType
+	---------------------------------------------------
+	Set @outputType = IsNull(@outputType, '')
+	
+	If NOT @outputType IN ('Show Rules', 'Show Jobs', 'Export Jobs')
+	Begin
+		set @message = 'Unknown value for @outputType (' + @outputType + '); should be "Show Rules", "Show Jobs", or "Export Jobs"'
+		RAISERROR (@message, 10, 1)
+		return 51001
+	End
+	
 	---------------------------------------------------
 	---------------------------------------------------
 	-- Rule selection section
@@ -129,6 +142,40 @@ As
 		goto done
 	end
 
+
+	if @outputType = 'Show Rules'
+	Begin
+		CREATE TABLE #RuleEval (
+			[Step] int IDENTITY(1,1),
+			[Level] int, 
+			[Seq.] int, 
+			Rule_ID int, 
+			[Next Lvl.] int, 
+			[Action] varchar(64), 
+			[Reason] varchar(256),
+			[Notes] varchar(256),
+			[Analysis Tool] varchar(64), 
+			[Instrument Class Crit.] varchar(32), 
+			[Instrument Crit.] varchar(128), 
+			[Campaign Crit.] varchar(128), 
+			[Experiment Crit.] varchar(128), 
+			[Organism Crit.] varchar(64), 
+			[Dataset Crit.] varchar(128), 
+			[Exp. Comment Crit.] varchar(128),
+			[Labelling Incl.] varchar(64), 
+			[Labelling Excl.] varchar(64),
+			[Parm File] varchar(255), 
+			[Settings File] varchar(255),
+			Organism varchar(64), 
+			[Organism DB] varchar(64), 
+			[Prot. Coll.] varchar(512), 
+			[Prot. Opts.] varchar(256),
+			Priority int, 
+			[Assigned Proc] varchar(64)
+		)
+	End
+	
+					
 	---------------------------------------------------
 	-- Populate the rule holding table with rules
 	-- that target dataset satisfies
@@ -206,33 +253,38 @@ As
 		goto done
 	end
 
-	---------------------------------------------------
-	-- if mode is show rules, return list of rules and exit
-	---------------------------------------------------
 	if @outputType = 'Show Rules'
-	begin
-		select
-			AD_ID AS ID, AD_level AS [Level], AD_Sequence AS [Seq.], AD_nextLevel as [Next Lvl.], AD_instrumentClassCriteria AS [Instrument Class], 
-			AD_campaignNameCriteria AS [Campaign Crit.], AD_experimentNameCriteria AS [Experiment Crit.], AD_instrumentNameCriteria AS [Instrument Crit.], 
-			AD_organismNameCriteria AS [Organism Crit.], 
-			AD_datasetNameCriteria AS [Dataset], AD_expCommentCriteria AS [Exp. Comment],
-			AD_labellingInclCriteria AS [Labelling Incl.], AD_labellingExclCriteria AS [Labelling Excl.], 
-			AD_analysisToolName AS [Analysis Tool], AD_parmFileName AS [Parm File], 
-			AD_settingsFileName AS [Settings File], 
-			AD_organismName AS Organism, 
-			AD_organismDBName AS [Organism DB], 
-			AD_proteinCollectionList AS [Prot. Coll.],
-			AD_proteinOptionsList AS [Prot. Opts.], 
-			AD_priority AS priority
-		from #AD
-		ORDER BY AD_level ASC
-		--
-		goto Done
-	end
+	Begin
+		INSERT INTO #RuleEval (
+			[Level], [Seq.], Rule_ID, [Next Lvl.], 
+			[Action], [Reason], 
+			[Notes], [Analysis Tool],
+			[Instrument Class Crit.], [Instrument Crit.], 
+			[Campaign Crit.], [Experiment Crit.], 
+			[Organism Crit.], [Dataset Crit.], [Exp. Comment Crit.],
+			[Labelling Incl.], [Labelling Excl.],
+			[Parm File], [Settings File],
+			Organism, [Organism DB], [Prot. Coll.], [Prot. Opts.],
+			Priority, [Assigned Proc])
+		SELECT	AD_level, AD_sequence, AD_ID, AD_nextLevel,
+				'Skip' AS [Action], 'Level skip' AS [Reason], 
+				'' AS [Notes], AD_analysisToolName,
+				AD_instrumentClassCriteria, AD_instrumentNameCriteria,
+				AD_campaignNameCriteria, AD_experimentNameCriteria,
+				AD_organismNameCriteria, AD_datasetNameCriteria, AD_expCommentCriteria,
+				AD_labellingInclCriteria, AD_labellingExclCriteria,
+				AD_parmFileName, AD_settingsFileName,
+				AD_organismName, AD_organismDBName, 
+				AD_proteinCollectionList, AD_proteinOptionsList, 
+				AD_priority, '' AS [Assigned Proc]
+		FROM #AD
+		ORDER BY AD_level, AD_Sequence, AD_ID
+	
+	End
 	
 	---------------------------------------------------
 	---------------------------------------------------
-	-- Job Creation Section
+	-- Job Creation / Rule Evaluation Section
 	---------------------------------------------------
 	---------------------------------------------------
 
@@ -240,6 +292,7 @@ As
 	-- Get current number of jobs for dataset
 	---------------------------------------------------
 	declare @numJobs int
+	set @numJobs = 0
 	--
 	SELECT @numJobs = COUNT(*)
 	FROM T_Analysis_Job
@@ -284,9 +337,7 @@ As
 	---------------------------------------------------
 	declare @level int	
 	declare @sequence int
-	declare @datasetNameCriteria varchar (128)
-	declare @expCommentCriteria varchar (128)
-	declare @nextLevel int
+	declare @RuleNextLevel int
 	
 	declare @priority int
 	declare @parmFileName varchar(255)
@@ -306,11 +357,12 @@ As
 
 	declare @tmpPriority int
 	declare @tmpProcessorName varchar(64)
+	declare @SchedulingRulesID int
 
 	declare @allowedDatasetTypes varchar(255)
 	
 	declare @result int
-	declare @go int
+	declare @Continue int
 
 	declare @jobsCreated int
 	set @jobsCreated = 0	
@@ -318,12 +370,17 @@ As
 	declare @minLevel int 
 	set @minLevel = 0
 
+	declare @UseRule tinyint
+	declare @RuleAction varchar(64)
+	declare @RuleActionReason varchar(256)
+	declare @RuleEvalNotes varchar(256)
+
 	---------------------------------------------------
 	-- cycle through all the rules in the holding table
 	---------------------------------------------------
-	set @go = 1
-	WHILE @go > 0 and @myError = 0
-	BEGIN
+	Set @Continue = 1
+	While @Continue > 0 and @myError = 0
+	Begin -- <a>
 		---------------------------------------------------
 		-- get next evaluation rule	from holding table
 		---------------------------------------------------
@@ -336,9 +393,7 @@ As
 			@proteinCollectionList = AD_proteinCollectionList,
 			@proteinOptionsList = AD_proteinOptionsList, 
 			@priority = AD_priority,
-			@datasetNameCriteria = AD_datasetNameCriteria,
-			@expCommentCriteria = AD_expCommentCriteria,
-			@nextLevel = AD_nextLevel,
+			@RuleNextLevel = AD_nextLevel,
 			@assignedProcessor = '',
 			@paRuleID = AD_ID
 		FROM #AD
@@ -352,143 +407,188 @@ As
 			set @message = 'Could not create temporary job table'
 			goto done
 		end
+
+		set @Continue = @myRowCount
 		
 		---------------------------------------------------
 		-- remove the rule from the holding table
 		---------------------------------------------------
 		DELETE FROM #AD WHERE AD_ID = @paRuleID
 
+		If @Continue <> 0
+		Begin -- <b>
+			
+			Set @UseRule = 1
+			Set @RuleAction = 'Use'
+			Set @RuleActionReason = 'Pass filters'
+			Set @RuleEvalNotes = ''
 
-		---------------------------------------------------
-		-- update loop terminator flag 
-		-- and skip job creation if no rule was found
-		---------------------------------------------------
-		set @go = @myRowCount
-		if @go = 0
-			goto NextRule
+			---------------------------------------------------
+			-- Validate that @DatasetType is appropriate for this analysis tool
+			---------------------------------------------------
+			--
+			SELECT  @allowedDatasetTypes = AJT_allowedDatasetTypes
+			FROM    T_Analysis_Tool
+			WHERE   (AJT_toolName = @analysisToolName)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error looking for allowed dataset types for tool'
+				return 51007
+			end
+			
+			If Not Exists (SELECT * FROM MakeTableFromList(@allowedDatasetTypes) WHERE Item = @DatasetType)
+			Begin
+				-- Dataset type is not allowed for this tool
+				Set @UseRule = 0
+				Set @RuleAction = 'Skip'
+				Set @RuleActionReason = 'Dataset type "' + @DatasetType + '" is not allowed for analysis tool'
+			End
+			
+			If @UseRule = 1
+			Begin -- <c>
+				---------------------------------------------------
+				-- evaluate rule precedence 
+				---------------------------------------------------
 
-		---------------------------------------------------
-		-- Validate that @DatasetType is appropriate for this analysis tool
-		---------------------------------------------------
-		--
-		SELECT  @allowedDatasetTypes = AJT_allowedDatasetTypes
-		FROM    T_Analysis_Tool
-		WHERE   (AJT_toolName = @analysisToolName)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error looking for allowed dataset types for tool'
-			return 51007
-		end
-		
-		If Not Exists (SELECT * FROM MakeTableFromList(@allowedDatasetTypes) WHERE Item = @DatasetType)
-		begin
-			-- Dataset type is not allowed for this tool
-			goto NextRule
-		end
-		
-		---------------------------------------------------
-		-- evaluate rule precedence 
-		---------------------------------------------------
+				-- if there is a next level value for rule,
+				-- set minimum level to it
+				--
+				If @RuleNextLevel IS NOT NULL
+				Begin
+					Set @minLevel = @RuleNextLevel
+					If Len(@RuleEvalNotes) > 0
+						Set @RuleEvalNotes = @RuleNextLevel + '; '
+					Set @RuleEvalNotes = @RuleEvalNotes + 'Next rule must have level >= ' + Convert(varchar(12), @RuleNextLevel)
+				End
+						    		
+				---------------------------------------------------
+				-- override priority and/or assigned processor
+				-- according to first scheduling rule in the evaluation
+				-- sequence that applies to job being created
+				---------------------------------------------------
+				
+				Set @SchedulingRulesID = 0
+				SELECT TOP 1
+					@tmpPriority = SR_priority, 
+					@tmpProcessorName = SR_processorName,
+					@SchedulingRulesID = ID
+				FROM T_Predefined_Analysis_Scheduling_Rules
+				WHERE
+					(SR_enabled > 0) 
+					AND ( (@InstrumentClass LIKE SR_instrumentClass) OR (SR_instrumentClass = '') )
+					AND ( (@InstrumentName LIKE SR_instrument_Name)  OR (SR_instrument_Name = '') )
+					AND ( (@datasetNum LIKE SR_dataset_Name)  OR (SR_dataset_Name = '') )
+					AND ( (@analysisToolName LIKE SR_analysisToolName) OR (SR_analysisToolName = '') )
+				ORDER BY SR_evaluationOrder 
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				if @myError <> 0
+				begin
+					set @message = 'Unable to look up scheduling rule'
+					goto done
+				end
+				--
+				if @myRowCount = 1
+				begin -- <d>
+					set @priority = @tmpPriority
+					set @assignedProcessor = @tmpProcessorName
+				
+					If Len(@RuleEvalNotes) > 0
+						Set @RuleEvalNotes = @RuleNextLevel + '; '
+					Set @RuleEvalNotes = @RuleEvalNotes + 'Priority set to ' + Convert(varchar(12), @priority) 
+					
+					If Len(@assignedProcessor) > 0
+						Set @RuleEvalNotes = @RuleEvalNotes + ' and processor set to "' + @assignedProcessor + '"'
+					
+					Set @RuleEvalNotes = @RuleEvalNotes + ' due to ID ' + Convert(varchar(12), @SchedulingRulesID) + ' in T_Predefined_Analysis_Scheduling_Rules'
+				end -- </d>
 
-		-- if there is a next level value for rule,
-		-- set minimum level to it
-		--
-		if @nextLevel IS NOT NULL
-			set @minLevel = @nextLevel
-				      		
-		---------------------------------------------------
-		-- override priority and/or assigned processor
-		-- according to first scheduling rule in the evaluation
-		-- sequence that applies to job being created
-		---------------------------------------------------
-		
-		SELECT TOP 1
-			@tmpPriority = SR_priority, 
-			@tmpProcessorName = SR_processorName
-		FROM T_Predefined_Analysis_Scheduling_Rules
-		WHERE
-			(SR_enabled > 0) 
-			AND ( (@InstrumentClass LIKE SR_instrumentClass) OR (SR_instrumentClass = '') )
-			AND ( (@InstrumentName LIKE SR_instrument_Name)  OR (SR_instrument_Name = '') )
-			AND ( (@datasetNum LIKE SR_dataset_Name)  OR (SR_dataset_Name = '') )
-			AND ( (@analysisToolName LIKE SR_analysisToolName) OR (SR_analysisToolName = '') )
-		ORDER BY SR_evaluationOrder 
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Unable to look up scheduling rule'
-			goto done
-		end
-		--
-		if @myRowCount = 1
-		begin
-			set @priority = @tmpPriority
-			set @assignedProcessor = @tmpProcessorName
-		end
+				---------------------------------------------------
+				-- insert job in job holding table
+				---------------------------------------------------
+				set @comment = 'Auto predefined ' + convert(varchar(10), @paRuleID)
+				set @ownerPRN = 'H09090911' -- autouser
+				--
+				-- FUTURE: evaluate job validity by calling MakeAnalysisJobX
+				--
+				set @jobsCreated = @jobsCreated + 1 
+				--
+				INSERT INTO #JB (
+					datasetNum,
+					priority,
+					analysisToolName,
+					parmFileName,
+					settingsFileName,
+					organismDBName,
+					organismName,
+					proteinCollectionList,
+					proteinOptionsList, 
+					ownerPRN,
+					comment,
+					assignedProcessor,
+					numJobs
+				) VALUES (
+					@datasetNum,
+					@priority,
+					@analysisToolName,
+					@parmFileName,
+					@settingsFileName,
+					@organismDBName,
+					@organismName,
+					@proteinCollectionList,
+					@proteinOptionsList, 
+					@ownerPRN,
+					@comment,
+					@assignedProcessor,
+					@numJobs
+				)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				if @myError <> 0
+				begin
+					set @message = 'Could not insert job'
+					goto done
+				end
+			End -- </c>
 
-		---------------------------------------------------
-		-- insert job in job holding table
-		---------------------------------------------------
-		set @comment = 'Auto predefined ' + convert(varchar(10), @paRuleID)
-		set @ownerPRN = 'H09090911' -- autouser
-		--
-		-- FUTURE: evaluate job validity by calling MakeAnalysisJobX
-		--
-		set @jobsCreated = @jobsCreated + 1 
-		--
-		INSERT INTO #JB (
-			datasetNum,
-			priority,
-			analysisToolName,
-			parmFileName,
-			settingsFileName,
-			organismDBName,
-			organismName,
-			proteinCollectionList,
-			proteinOptionsList, 
-			ownerPRN,
-			comment,
-			assignedProcessor,
-			numJobs
-		) VALUES (
-			@datasetNum,
-			@priority,
-			@analysisToolName,
-			@parmFileName,
-			@settingsFileName,
-			@organismDBName,
-			@organismName,
-			@proteinCollectionList,
-			@proteinOptionsList, 
-			@ownerPRN,
-			@comment,
-			@assignedProcessor,
-			@numJobs
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Could not insert job'
-			goto done
-		end
+			if @outputType = 'Show Rules'
+			Begin
+				UPDATE #RuleEval
+				SET [Action] = @RuleAction, 
+					[Reason] = @RuleActionReason, 
+					[Notes] = @RuleEvalNotes,
+					Priority = @priority, 
+					[Assigned Proc] = @assignedProcessor
+				WHERE Rule_ID  = @paRuleID
+			End
+		End -- </b>
 
-NextRule:
-	END
+	End -- </a>
 
 	---------------------------------------------------
 	-- if we didn't schedule any jobs, 
 	-- but didn't have any errors, return code of 1
 	---------------------------------------------------
 	
-	if @myError = 0 and @jobsCreated = 0 set @myError = 1
+	if @myError = 0 and @jobsCreated = 0 
+		set @myError = 1
 
+	---------------------------------------------------
+	-- if mode is show rules, return list of rules and exit
+	---------------------------------------------------
+	if @outputType = 'Show Rules'
+	begin
+		SELECT *
+		FROM #RuleEval
+		ORDER BY [Step]
+		--
+		goto Done
+	end
 
 	---------------------------------------------------
 	-- if mode is 'Show Jobs', return list of jobs
@@ -496,7 +596,7 @@ NextRule:
 	---------------------------------------------------
 	if @outputType = 'Show Jobs'
 	begin
-		select
+		SELECT
 			'Entry' as Job,
 			datasetNum as Dataset,
 			numJobs as Jobs,
@@ -511,7 +611,7 @@ NextRule:
 			proteinCollectionList AS Protein_Collections,
 			proteinOptionsList AS Protein_Options, 
 			ownerPRN as Owner
-		from #JB
+		FROM #JB
 		--
 		goto Done
 	end
@@ -560,6 +660,7 @@ NextRule:
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]
