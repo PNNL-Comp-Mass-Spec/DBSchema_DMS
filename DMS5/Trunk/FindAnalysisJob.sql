@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[FindAnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.FindAnalysisJob
 /****************************************************
@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 **	Date:	07/05/2005
 **			03/28/2006 grk - added protein collection fields
 **			12/20/2006 mem - Now querying V_Find_Analysis_Job using dynamic SQL (Ticket #349)
+**			12/21/2006 mem - Now joining in table T_Analysis_State_Name when querying on State (Ticket #349)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -142,15 +143,27 @@ As
 	---------------------------------------------------
 	-- Construct the query
 	---------------------------------------------------
-	Set @S = ' SELECT * FROM V_Find_Analysis_Job'
+	Set @S = ' SELECT FAJ.* FROM V_Find_Analysis_Job AS FAJ'
 	
 	Set @W = ''
 	If Len(@Job) > 0
 		Set @W = @W + ' AND ([Job] = ' + Convert(varchar(19), @i_Job) + ' )'
 	If Len(@Pri) > 0
 		Set @W = @W + ' AND ([Pri] = ' + Convert(varchar(19), @i_Pri) + ' )'
+
 	If Len(@State) > 0
-		Set @W = @W + ' AND ([State] LIKE ''' + @i_State + ''' )'
+	Begin
+		-- Join in T_Analysis_Job and T_Analysis_State_Name, which allows us to
+		-- directly query the state name associated with each job
+		-- This is faster than querying the State returned by V_Find_Analysis_Job since
+		--  that state actually comes from V_Analysis_Job_and_Dataset_Archive_State,
+		--  which sometimes appends information to the state if the dataset is in certain states
+		Set @S = @S + ' INNER JOIN T_Analysis_Job AJ ON FAJ.Job = AJ.AJ_jobID '
+		Set @S = @S + ' INNER JOIN T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID'
+
+		Set @W = @W + ' AND (ASN.AJS_name LIKE ''' + @i_State + ''' )'
+	End
+	
 	If Len(@Tool) > 0
 		Set @W = @W + ' AND ([Tool] LIKE ''' + @i_Tool + ''' )'
 	If Len(@Dataset) > 0
@@ -217,7 +230,6 @@ As
 	end
     
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_Guest]
