@@ -24,6 +24,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_Strain] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Mito_DNA_Translation_Table_ID] [int] NULL,
+	[OG_Active] [tinyint] NULL CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT (1),
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY NONCLUSTERED 
 (
 	[Organism_ID] ASC
@@ -120,4 +121,8 @@ GO
 GRANT SELECT ON [dbo].[T_Organisms] ([OG_Mito_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Mito_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Organisms] ([OG_Active]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Active]) TO [Limited_Table_Write]
 GO
