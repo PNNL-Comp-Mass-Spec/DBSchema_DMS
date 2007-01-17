@@ -25,6 +25,7 @@ CREATE Procedure AddUpdateRequestedRun
 **      10/12/2005 -- grk Added stuff for new work package and proposal fields.
 **      2/21/2006  -- grk Added stuff for EUS proposal and user tracking.
 **      11/09/2006  -- grk Fixed error message handling (Ticket #318)
+**      1/12/2007  -- grk  added verification mode
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -53,6 +54,7 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
+	
 	
 	set @message = ''
 	
@@ -128,19 +130,27 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51007
 	end
+	
+	-- need non-null request even if we are just checking
+	--
+	set @request = @requestID
 
 	-- cannot create an entry that already exists
 	--
-	if @requestID <> 0 and @mode = 'add'
+	if @requestID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
 		set @message = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
 		RAISERROR (@message, 10, 1)
 		return 51004
 	end
+	
+	-- need non-null request even if we are just checking
+	--
+	set @request = @requestID
 
 	-- cannot update a non-existent entry
 	--
-	if @requestID = 0 and @mode = 'update'
+	if @requestID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
 		set @message = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
 		RAISERROR (@message, 10, 1)

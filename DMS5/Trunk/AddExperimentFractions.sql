@@ -26,6 +26,7 @@ CREATE PROCEDURE AddExperimentFractions
 **            11/11/2005  grk - added handling for postdigest internal standard
 **            12/20/2005  grk - added handling for separate user
 **             2/06/2006  grk - increased maximum count
+**             1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
 **    
 *****************************************************/
 	@parentExperiment varchar(128),       -- Parent experiment for group (must already exist)
@@ -60,7 +61,7 @@ AS
 	-- T_Experiments column variables
 	--
 	declare @researcherPRN varchar(50)
-	declare @organismName varchar(50)
+	declare @organismID int
 	declare @reason varchar(500)
 	declare @comment varchar(500)
 	declare @created datetime
@@ -107,7 +108,7 @@ AS
 	SELECT
 		@expID = Exp_ID,
 		@researcherPRN = EX_researcher_PRN,
-		@organismName = EX_organism_name,
+		@organismID = EX_organism_ID,
 		@reason = EX_reason,
 		@comment = EX_comment,
 		@created = EX_created,
@@ -303,7 +304,7 @@ AS
 		INSERT INTO [T_Experiments] (
 			Experiment_Num, 
 			EX_researcher_PRN, 
-			EX_organism_name, 
+			EX_organism_ID, 
 			EX_reason, 
 			EX_comment,
 			EX_created, 
@@ -319,7 +320,7 @@ AS
 		) VALUES (
 			@newExpName, 
 			@researcherPRN, 
-			@organismName, 
+			@organismID, 
 			@reason, 
 			@newComment,
 			GETDATE(), 

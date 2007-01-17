@@ -17,6 +17,7 @@ CREATE Procedure AddUpdateCellCulture
 **
 **		Auth: grk
 **		Date: 3/12/2002
+**      1/12/2007  -- grk  added verification mode
 **    
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @cellCultureID <> 0 and @mode = 'add'
+	if @cellCultureID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
 		set @msg = 'Cannot add: Cell Culture "' + @cellCultureName + '" already in database '
 		RAISERROR (@msg, 10, 1)
@@ -121,7 +122,7 @@ As
 
 	-- cannot update a non-existent entry
 	--
-	if @cellCultureID = 0 and @mode = 'update'
+	if @cellCultureID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
 		set @msg = 'Cannot update: Cell Culture "' + @cellCultureName + '" is not in database '
 		RAISERROR (@msg, 10, 1)

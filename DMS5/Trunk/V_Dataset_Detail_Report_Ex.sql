@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Dataset_Detail_Report_Ex
 AS
-SELECT     TD.Dataset_Num AS Dataset, TE.Experiment_Num AS Experiment, TE.EX_organism_name AS Organism, TIN.IN_name AS Instrument, 
+SELECT     TD.Dataset_Num AS Dataset, TE.Experiment_Num AS Experiment, dbo.T_Organisms.OG_name AS Organism, TIN.IN_name AS Instrument, 
                       TD.DS_sec_sep AS [Separation Type], dbo.T_LC_Column.SC_Column_Number AS [LC Column], TD.DS_wellplate_num AS [Wellplate Number], 
                       TD.DS_well_num AS [Well Number], TIS_1.Name AS [Predigest Int Std], TIS_2.Name AS [Postdigest Int Std], 
                       dbo.T_DatasetTypeName.DST_name AS Type, dbo.T_Users.U_Name + ' (' + TD.DS_Oper_PRN + ')' AS Operator, TD.DS_comment AS Comment, 
@@ -25,7 +25,8 @@ FROM         dbo.T_Dataset TD INNER JOIN
                       dbo.T_DatasetRatingName TDRN ON TD.DS_rating = TDRN.DRN_state_ID INNER JOIN
                       dbo.T_LC_Column ON TD.DS_LC_column_ID = dbo.T_LC_Column.ID INNER JOIN
                       dbo.T_Internal_Standards TIS_1 ON TE.EX_internal_standard_ID = TIS_1.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards TIS_2 ON TE.EX_postdigest_internal_std_ID = TIS_2.Internal_Std_Mix_ID LEFT OUTER JOIN
+                      dbo.T_Internal_Standards TIS_2 ON TE.EX_postdigest_internal_std_ID = TIS_2.Internal_Std_Mix_ID INNER JOIN
+                      dbo.T_Organisms ON TE.Ex_organism_ID = dbo.T_Organisms.Organism_ID LEFT OUTER JOIN
                       dbo.T_Requested_Run_History ON TD.Dataset_ID = dbo.T_Requested_Run_History.DatasetID LEFT OUTER JOIN
                           (SELECT     AJ_datasetID AS ID, COUNT(*) AS Jobs
                             FROM          T_Analysis_Job

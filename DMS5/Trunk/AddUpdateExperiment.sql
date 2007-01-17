@@ -21,6 +21,8 @@ CREATE Procedure AddUpdateExperiment
 **            10/28/2005  grk - added handling for internal standard
 **            11/11/2005  grk - added handling for postdigest internal standard
 **            11/21/2005  grk - fixed update error for postdigest internal standard
+**            1/12/2007  grk - added verification mode
+**            1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
 **
 *****************************************************/
 	@experimentNum varchar(50),
@@ -124,7 +126,7 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @experimentID <> 0 and @mode = 'add'
+	if @experimentID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
 		set @msg = 'Cannot add: Experiment "' + @experimentNum + '" already in database '
 		RAISERROR (@msg, 10, 1)
@@ -133,7 +135,7 @@ As
 
 	-- cannot update a non-existent entry
 	--
-	if @experimentID = 0 and @mode = 'update'
+	if @experimentID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
 		set @msg = 'Cannot update: Experiment "' + @experimentNum + '" is not in database '
 		RAISERROR (@msg, 10, 1)
@@ -246,6 +248,66 @@ As
 		return 51009
 	end
 
+	---------------------------------------------------
+	-- Resolve cell cultures
+	---------------------------------------------------
+	
+	-- create tempoary table to hold names of cell cultures as input
+	--
+	create table #CC (
+		name varchar(128) not null
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Could not create temporary table for cell culture list'
+		RAISERROR (@msg, 10, 1)
+		return 51078
+	end
+
+	-- get names of cell cultures from list argument into table
+	--
+	insert into #CC (name) 
+	select item from MakeTableFromListDelim(@cellCultureList, ';')
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Could not populate temporary table for cell culture list'
+		RAISERROR (@msg, 10, 1)
+		return 51079
+	end
+	
+	-- verify that cell cultures exist
+	--
+	declare @cnt int
+	set @cnt = -1
+	SELECT @cnt = count(*) 
+	FROM #CC 
+	WHERE [name] not in (
+		SELECT CC_Name
+		FROM	T_Cell_Culture
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Was not able to check for cell cultures in database'
+		RAISERROR (@msg, 10, 1)
+		return 51080
+	end
+	--
+	if @cnt <> 0 
+	begin
+		set @msg = 'One or more cell cultures was not in database'
+		RAISERROR (@msg, 10, 1)
+		return 51081	
+	end
+
 	declare @transName varchar(32)
 
 	---------------------------------------------------
@@ -263,7 +325,7 @@ As
 		INSERT INTO T_Experiments(
 				Experiment_Num, 
 				EX_researcher_PRN, 
-				EX_organism_name, 
+				EX_organism_ID, 
 				EX_reason, 
 				EX_comment, 
 				EX_created, 
@@ -279,7 +341,7 @@ As
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
-				@organismName, 
+				@organismID, 
 				@reason, 
 				@comment, 
 				GETDATE(), 
@@ -342,7 +404,7 @@ As
 
 		UPDATE T_Experiments SET 
 			EX_researcher_PRN = @researcherPRN, 
-			EX_organism_name = @organismName, 
+			EX_organism_ID = @organismID, 
 			EX_reason = @reason, 
 			EX_comment = @comment, 
 			EX_sample_concentration = @sampleConcentration, 

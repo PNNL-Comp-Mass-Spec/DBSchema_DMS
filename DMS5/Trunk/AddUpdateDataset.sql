@@ -19,6 +19,7 @@ CREATE Procedure AddUpdateDataset
 **            12/10/2003 grk added wellplate, internal standards, and LC column stuff
 **            1/11/2005 grk added bad dataset stuff
 **            2/23/2006 grk added LC cart tracking stuff and EUS stuff
+**            1/12/2007 grk  added verification mode
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -164,7 +165,7 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @datasetID <> 0 and @mode = 'add'
+	if @datasetID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
 		set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
 		RAISERROR (@msg, 10, 1)
@@ -173,7 +174,7 @@ As
 
 	-- cannot update a non-existent entry
 	--
-	if @datasetID = 0 and @mode = 'update'
+	if @datasetID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
 		set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
 		RAISERROR (@msg, 10, 1)
@@ -301,7 +302,7 @@ As
 
 	-- not valid to change instrument unless dataset in new state
 	--
-	if @mode = 'update' and @instrumentID <> @curDSInstID and @curDSStateID <> 1
+	if (@mode = 'update' or @mode = 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
 	begin
 		set @msg = 'Cannot change instrument if dataset not in "new" state'
 		RAISERROR (@msg, 10, 1)
@@ -328,7 +329,7 @@ As
 	-- Verify acceptable combination of EUS fields
 	---------------------------------------------------
 	
-	if @Mode = 'add' AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
+	if (@mode = 'add' or @mode = 'check_add') AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
 	begin
 		set @msg = 'Either a Request must be specified, or EMSL user parameters must be specified, but not both'
 		RAISERROR (@msg, 10, 1)

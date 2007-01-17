@@ -27,6 +27,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			06/01/2006 grk - added code to handle '(default)' organism
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
+**          1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
 **    
 *****************************************************/
 (
@@ -151,10 +152,11 @@ As
 	if @organismName = '(default)'
 	begin
 		SELECT 
-			@organismName = EX_organism_name
+			@organismName = T_Organisms.OG_name
 		FROM
 			T_Experiments INNER JOIN
-			T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID
+			T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID INNER JOIN
+			T_Organisms ON T_Experiments.Ex_organism_ID = T_Organisms.Organism_ID
 		WHERE     
 			(T_Dataset.Dataset_Num = @datasetNum)
 		--
