@@ -9,7 +9,7 @@ CREATE Procedure DeleteExperiment
 **	Desc: 
 **  Deletes given Experiment from the Experiment table
 **  and all referencing tables.  Experiment may not
-**  have any associated datasets.
+**  have any associated datasets or requested runs
 **
 **
 **	Return values: 0: success, otherwise, error code
@@ -22,19 +22,19 @@ CREATE Procedure DeleteExperiment
 **		Date: 5/11/2004
 **		      6/16/2005 grk - added delete for experiment group members table
 **		      2/27/2006 grk - added delete for experiment group table
+**		      8/31/2006 jds - added check for requested runs (Ticket #199)
 **    
 *****************************************************/
 (
 	@ExperimentNum varchar(128),
-    @message varchar(512) output
+	@message varchar(512) = '' output
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -89,7 +89,57 @@ As
 		return 51141
 	end
 
-	
+	---------------------------------------------------
+	-- Can't delete experiment that has a requested run
+	---------------------------------------------------
+	declare @rrCount int
+	set @rrCount = 0
+	--
+	SELECT @rrCount = COUNT(*)
+	FROM T_Requested_Run
+	WHERE (Exp_ID = @ExperimentID)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Could not get requested run count for Experiment "' + @ExperimentNum + '"'
+		RAISERROR (@message, 10, 1)
+		return 51142
+	end
+	--
+	if @rrCount > 0
+	begin
+		set @message = 'Cannot delete experiment that has associated requested runs'
+		RAISERROR (@message, 10, 1)
+		return 51142
+	end
+
+	---------------------------------------------------
+	-- Can't delete experiment that has requested run history
+	---------------------------------------------------
+	declare @rrhCount int
+	set @rrhCount = 0
+	--
+	SELECT @rrhCount = COUNT(*)
+	FROM T_Requested_Run_History
+	WHERE (Exp_ID = @ExperimentID)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Could not get requested run history count for Experiment "' + @ExperimentNum + '"'
+		RAISERROR (@message, 10, 1)
+		return 51143
+	end
+	--
+	if @rrhCount > 0
+	begin
+		set @message = 'Cannot delete experiment that has associated requested run history'
+		RAISERROR (@message, 10, 1)
+		return 51143
+	end
 
 	---------------------------------------------------
 	-- Start transaction
@@ -132,7 +182,7 @@ As
 		rollback transaction @transName
 		RAISERROR ('Delete from experiment group association table was unsuccessful',
 			10, 1)
-		return 51131
+		return 51132
 	end
 
 	---------------------------------------------------
