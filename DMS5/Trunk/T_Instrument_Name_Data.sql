@@ -47,5 +47,5 @@ INSERT INTO [T_Instrument_Name] VALUES ('FHCRC_LTQ1',42,'Finnigan_Ion_Trap',167,
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_RITE',43,'Finnigan_Ion_Trap',169,168,'fso','active  ','weekly','None','Virtual instrument for relocated RITE data','','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_Orb_1',44,'LTQ_FT',171,172,'fso','active  ','weekly','EMSL RM 1444','LTQ-Orbitrap 1','','Production',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('IMS_BIOSPECT_TOF',46,'IMS_Biospect_TOF',202,201,'secfso','active  ','weekly','EMSL RM 1521','IMS BOTOF','','Unknown',1,1,11,1)
-INSERT INTO [T_Instrument_Name] VALUES ('LTQ_Orb_2',48,'LTQ_FT',206,205,'secfso','active  ','','EMSL RM 1444','LTQ-Orbitrap 2','','Production',1,1,11,1)
+INSERT INTO [T_Instrument_Name] VALUES ('LTQ_Orb_2',48,'LTQ_FT',206,205,'secfso','active  ','','EMSL RM 1444','LTQ-Orbitrap 2','','Production',2,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('IMS_AGILENT_TOF1',47,'IMS_Agilent_TOF',204,203,'fso','active  ','weekly','EMSL RM 1521','IMS AGILENT TOF','','Unknown',1,1,11,1)
