@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Filter_Set_Report
+CREATE VIEW dbo.V_Filter_Set_Report
 AS
 SELECT TOP 100 PERCENT FST.Filter_Type_Name, 
     FS.Filter_Set_ID, FS.Filter_Set_Name, 
@@ -65,5 +65,6 @@ GROUP BY FS.Filter_Set_ID, FS.Filter_Set_Name,
     FST.Filter_Type_Name
 ORDER BY FST.Filter_Type_Name, FS.Filter_Set_ID, 
     FSCG.Filter_Criteria_Group_ID
+
 
 GO

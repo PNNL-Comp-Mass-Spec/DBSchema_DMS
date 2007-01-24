@@ -21,8 +21,7 @@ FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Analysis_Tool ON dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
                       dbo.T_Analysis_Job_Request ON dbo.T_Analysis_Job.AJ_requestID = dbo.T_Analysis_Job_Request.AJR_requestID INNER JOIN
-                      dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID AND 
-                      dbo.T_Experiments.Ex_organism_ID = dbo.T_Organisms.Organism_ID
+                      dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID
 WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Analysis_Tool.AJT_toolName LIKE '%sequest%')
 
 GO
