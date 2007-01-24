@@ -8,8 +8,8 @@ CREATE TABLE [dbo].[T_Param_Files](
 	[Param_File_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Param_File_Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Param_File_Type_ID] [int] NULL,
-	[Date_Created] [datetime] NULL,
-	[Date_Modified] [datetime] NULL,
+	[Date_Created] [datetime] NULL CONSTRAINT [DF_T_Param_Files_Date_Created]  DEFAULT (getdate()),
+	[Date_Modified] [datetime] NULL CONSTRAINT [DF_T_Param_Files_Date_Modified]  DEFAULT (getdate()),
 	[Valid] [smallint] NOT NULL CONSTRAINT [DF_T_Param_Files_Valid]  DEFAULT (1),
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (

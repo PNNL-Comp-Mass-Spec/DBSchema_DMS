@@ -1,4 +1,6 @@
 /****** Object:  UserDefinedFunction [dbo].[GetRunRequestDatasetList] ******/
+SET QUOTED_IDENTIFIER ON
+GO
 create FUNCTION GetRunRequestDatasetList
 /****************************************************
 **

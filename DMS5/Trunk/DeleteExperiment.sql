@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DeleteExperiment
+CREATE Procedure dbo.DeleteExperiment
 /****************************************************
 **
 **	Desc: 
@@ -238,6 +238,7 @@ As
 	commit transaction @transName
 	
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin]

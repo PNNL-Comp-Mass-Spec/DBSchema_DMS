@@ -1,4 +1,6 @@
 /****** Object:  UserDefinedFunction [dbo].[MakeTableFromListDelim] ******/
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE FUNCTION dbo.MakeTableFromListDelim
 /****************************************************
 **

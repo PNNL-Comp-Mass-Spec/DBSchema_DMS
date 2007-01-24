@@ -1,4 +1,6 @@
 /****** Object:  UserDefinedFunction [dbo].[DaysInDateRange] ******/
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE FUNCTION dbo.DaysInDateRange 
 ( 
 	@startDate datetime = '1/1/2005', 

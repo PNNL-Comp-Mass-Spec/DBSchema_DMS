@@ -1,4 +1,6 @@
 /****** Object:  UserDefinedFunction [dbo].[GetRunRequestExistingJobListTab] ******/
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 /****************************************************
 **
