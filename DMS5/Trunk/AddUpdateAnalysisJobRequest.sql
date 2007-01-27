@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 /****************************************************
 **
@@ -26,6 +27,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
+**			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket #368)
 **    
 *****************************************************/
 (
@@ -249,7 +251,7 @@ As
 			AJR_created, 
 			AJR_analysisToolName, 
 			AJR_parmFileName, 
-			AJR_settingsFileName, AJR_organismDBName, AJR_organismName, 
+			AJR_settingsFileName, AJR_organismDBName, AJR_organism_ID, 
 			AJR_proteinCollectionList, AJR_proteinOptionsList,
 			AJR_datasets, AJR_comment, 
 			AJR_state, AJR_requestor, AJR_workPackage
@@ -257,7 +259,7 @@ As
 		VALUES
 		(
 			@requestName, getdate(), @toolName, @parmFileName, 
-			@settingsFileName, @organismDBName, @organismName, 
+			@settingsFileName, @organismDBName, @organismID, 
 			@protCollNameList, @protCollOptionsList,
 			@datasets, @comment, 
 			@stateID, @userID, @workPackage
@@ -294,7 +296,7 @@ As
 		AJR_parmFileName = @parmFileName, 
 		AJR_settingsFileName = @settingsFileName, 
 		AJR_organismDBName = @organismDBName, 
-		AJR_organismName = @organismName, 
+		AJR_organism_ID = @organismID, 
 		AJR_proteinCollectionList = @protCollNameList, 
 		AJR_proteinOptionsList = @protCollOptionsList,
 		AJR_datasets = @datasets, 
@@ -315,6 +317,7 @@ As
 	end -- update mode
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]

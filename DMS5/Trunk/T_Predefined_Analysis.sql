@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_analysisToolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AD_organismName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Predefined_Analysis_AD_organismName]  DEFAULT ('default'),
+	[AD_organism_ID] [int] NOT NULL,
 	[AD_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Predefined_Analysis_AD_organismDBName]  DEFAULT ('default'),
 	[AD_priority] [int] NOT NULL CONSTRAINT [DF_T_Predefined_Analysis_AD_priority]  DEFAULT (2),
 	[AD_enabled] [tinyint] NOT NULL CONSTRAINT [DF_T_Predefined_Analysis_AD_enabled]  DEFAULT (0),
@@ -35,4 +35,9 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 ) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms] FOREIGN KEY([AD_organism_ID])
+REFERENCES [T_Organisms] ([Organism_ID])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
 GO

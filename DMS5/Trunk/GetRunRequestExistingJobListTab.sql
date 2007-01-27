@@ -1,6 +1,7 @@
 /****** Object:  UserDefinedFunction [dbo].[GetRunRequestExistingJobListTab] ******/
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 /****************************************************
 **
@@ -15,12 +16,11 @@ CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 **
 **	Return value: delimited list
 **
-**	Parameters: 
-**
-**		Auth: grk, mem
-**		Date: 12/06/2005
-**			  03/28/2006 grk - added protein collection fields
-**			  08/30/2006 grk - fixed selection logic to handle auto-generated fasta file names https://prismtrac.pnl.gov/trac/ticket/218
+**	Auth:	grk, mem
+**	Date:	12/06/2005
+**			03/28/2006 grk - added protein collection fields
+**			08/30/2006 grk - fixed selection logic to handle auto-generated fasta file names https://prismtrac.pnl.gov/trac/ticket/218
+**			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
 **    
 *****************************************************/
 (
@@ -51,15 +51,16 @@ AS
 		
 		-- Lookup the entries for @RequestID in T_Analysis_Job_Request
 		--
-		SELECT	@analysisToolName = AJR_analysisToolName, 
-				@parmFileName = AJR_parmFileName, 
-				@settingsFileName = AJR_settingsFileName, 
-				@organismDBName = AJR_organismDBName, 
-				@organismName = AJR_organismName,
-				@proteinCollectionList =AJR_proteinCollectionList,
-				@proteinOptionsList = AJR_proteinOptionsList
-		FROM  T_Analysis_Job_Request
-		WHERE AJR_requestID = @RequestID
+		SELECT	@analysisToolName = AJR.AJR_analysisToolName, 
+				@parmFileName = AJR.AJR_parmFileName, 
+				@settingsFileName = AJR.AJR_settingsFileName, 
+				@organismDBName = AJR.AJR_organismDBName, 
+				@organismName = Org.OG_Name,
+				@proteinCollectionList = AJR.AJR_proteinCollectionList,
+				@proteinOptionsList = AJR.AJR_proteinOptionsList
+		FROM T_Analysis_Job_Request AJR INNER JOIN
+			 T_Organisms Org ON AJR.AJR_organism_ID = Org.Organism_ID
+		WHERE AJR.AJR_requestID = @RequestID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 

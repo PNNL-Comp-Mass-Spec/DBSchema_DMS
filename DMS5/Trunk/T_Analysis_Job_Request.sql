@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJR_organismName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJR_organism_ID] [int] NOT NULL,
 	[AJR_datasets] [varchar](6000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_requestor] [int] NOT NULL,
 	[AJR_comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJR_requestID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -58,9 +58,9 @@ GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_organismDBName]) TO [Limite
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_organismDBName]) TO [Limited_Table_Write]
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_organismName]) TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_organism_ID]) TO [Limited_Table_Write]
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_organismName]) TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_organism_ID]) TO [Limited_Table_Write]
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_datasets]) TO [Limited_Table_Write]
 GO
@@ -90,12 +90,17 @@ GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_T
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_Table_Write]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
+ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
 REFERENCES [T_Analysis_Job_Request_State] ([ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Users] FOREIGN KEY([AJR_requestor])
+ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Organisms] FOREIGN KEY([AJR_organism_ID])
+REFERENCES [T_Organisms] ([Organism_ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Organisms]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Users] FOREIGN KEY([AJR_requestor])
 REFERENCES [T_Users] ([ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Users]

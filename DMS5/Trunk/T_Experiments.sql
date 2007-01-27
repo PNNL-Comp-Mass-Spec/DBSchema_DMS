@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Experiments](
 	[Experiment_Num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[EX_researcher_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EX_organism_ID] [int] NOT NULL,
 	[EX_reason] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_comment] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_created] [datetime] NOT NULL,
@@ -19,11 +20,10 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_sample_prep_request_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT (0),
 	[EX_internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT (0),
 	[EX_postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT (0),
-	[Ex_organism_ID] [int] NOT NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY NONCLUSTERED 
 (
 	[Exp_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -45,6 +45,10 @@ GO
 GRANT SELECT ON [dbo].[T_Experiments] ([EX_researcher_PRN]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Experiments] ([EX_researcher_PRN]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Experiments] ([EX_organism_ID]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Experiments] ([EX_organism_ID]) TO [Limited_Table_Write]
 GO
 GRANT SELECT ON [dbo].[T_Experiments] ([EX_reason]) TO [Limited_Table_Write]
 GO
@@ -97,10 +101,6 @@ GO
 GRANT SELECT ON [dbo].[T_Experiments] ([EX_postdigest_internal_std_ID]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Experiments] ([EX_postdigest_internal_std_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([Ex_organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([Ex_organism_ID]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
 REFERENCES [T_Campaign] ([Campaign_ID])

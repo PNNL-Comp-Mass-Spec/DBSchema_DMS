@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
@@ -21,6 +22,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **		    04/04/2006 grk - increased sized of param file name
 **			11/30/2006 mem - Now evaluating dataset type for each analysis tool (Ticket #335)
 **			12/21/2006 mem - Updated 'Show Rules' to include explanations for why a rule was used, altered, or skipped (Ticket #339)
+**			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
 **    
 *****************************************************/
 (
@@ -205,39 +207,39 @@ As
 		AD_ID
 	)
 	SELECT
-		AD_level,
-		AD_sequence,
-		AD_instrumentClassCriteria,
-		AD_campaignNameCriteria,
-		AD_experimentNameCriteria,
-		AD_instrumentNameCriteria,
-		AD_organismNameCriteria,
-		AD_datasetNameCriteria,
-		AD_expCommentCriteria,
-		AD_labellingInclCriteria,
-		AD_labellingExclCriteria,
-		AD_analysisToolName,
-		AD_parmFileName,
-		AD_settingsFileName,
-		AD_organismName,
-		AD_organismDBName,
-		AD_proteinCollectionList,
-		AD_proteinOptionsList, 
-		AD_priority,
-		AD_nextLevel,
-		AD_ID
-	FROM T_Predefined_Analysis
-	WHERE 
-		(AD_enabled > 0) 
-		AND ((@InstrumentClass LIKE AD_instrumentClassCriteria) OR (AD_instrumentClassCriteria = '')) 
-		AND ((@InstrumentName LIKE AD_instrumentNameCriteria) OR (AD_instrumentNameCriteria = '')) 
-		AND ((@Campaign LIKE  AD_campaignNameCriteria) OR (AD_campaignNameCriteria = '')) 
-		AND ((@Experiment LIKE AD_experimentNameCriteria) OR (AD_experimentNameCriteria = '')) 
-		AND ((@Dataset LIKE AD_datasetNameCriteria) OR (AD_datasetNameCriteria = '')) 
-		AND ((@ExperimentComment LIKE AD_expCommentCriteria) OR (AD_expCommentCriteria = '')) 
-		AND ((@ExperimentLabelling LIKE  AD_labellingInclCriteria) OR (AD_labellingInclCriteria = '')) 
-		AND (NOT(@ExperimentLabelling LIKE AD_labellingExclCriteria) OR (AD_labellingExclCriteria = ''))
-		AND ((@Organism LIKE AD_organismNameCriteria) OR (AD_organismNameCriteria = '')) /**/
+		PA.AD_level,
+		PA.AD_sequence,
+		PA.AD_instrumentClassCriteria,
+		PA.AD_campaignNameCriteria,
+		PA.AD_experimentNameCriteria,
+		PA.AD_instrumentNameCriteria,
+		PA.AD_organismNameCriteria,
+		PA.AD_datasetNameCriteria,
+		PA.AD_expCommentCriteria,
+		PA.AD_labellingInclCriteria,
+		PA.AD_labellingExclCriteria,
+		PA.AD_analysisToolName,
+		PA.AD_parmFileName,
+		PA.AD_settingsFileName,
+		Org.OG_Name,
+		PA.AD_organismDBName,
+		PA.AD_proteinCollectionList,
+		PA.AD_proteinOptionsList, 
+		PA.AD_priority,
+		PA.AD_nextLevel,
+		PA.AD_ID
+	FROM T_Predefined_Analysis PA INNER JOIN
+		 T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID
+	WHERE (PA.AD_enabled > 0) 
+		AND ((@InstrumentClass LIKE PA.AD_instrumentClassCriteria) OR (PA.AD_instrumentClassCriteria = '')) 
+		AND ((@InstrumentName LIKE PA.AD_instrumentNameCriteria) OR (PA.AD_instrumentNameCriteria = '')) 
+		AND ((@Campaign LIKE PA.AD_campaignNameCriteria) OR (PA.AD_campaignNameCriteria = '')) 
+		AND ((@Experiment LIKE PA.AD_experimentNameCriteria) OR (PA.AD_experimentNameCriteria = '')) 
+		AND ((@Dataset LIKE PA.AD_datasetNameCriteria) OR (PA.AD_datasetNameCriteria = '')) 
+		AND ((@ExperimentComment LIKE PA.AD_expCommentCriteria) OR (PA.AD_expCommentCriteria = '')) 
+		AND ((@ExperimentLabelling LIKE PA.AD_labellingInclCriteria) OR (PA.AD_labellingInclCriteria = '')) 
+		AND (NOT(@ExperimentLabelling LIKE PA.AD_labellingExclCriteria) OR (PA.AD_labellingExclCriteria = ''))
+		AND ((@Organism LIKE PA.AD_organismNameCriteria) OR (PA.AD_organismNameCriteria = ''))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
