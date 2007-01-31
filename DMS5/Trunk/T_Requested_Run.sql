@@ -166,3 +166,6 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches] FOREIGN KEY([RDS_BatchID])
 REFERENCES [T_Requested_Run_Batches] ([ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Oper_PRN])
+REFERENCES [T_Users] ([U_PRN])
+GO

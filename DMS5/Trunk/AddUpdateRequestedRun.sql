@@ -26,6 +26,7 @@ CREATE Procedure AddUpdateRequestedRun
 **      2/21/2006  -- grk Added stuff for EUS proposal and user tracking.
 **      11/09/2006  -- grk Fixed error message handling (Ticket #318)
 **      1/12/2007  -- grk  added verification mode
+**      1/31/2007  -- grk  added verification for @operPRN (Ticket #371)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -169,6 +170,19 @@ As
 		RAISERROR ('Could not find entry in database for experimentNum "%s"',
 			10, 1, @experimentNum)
 		return 51117
+	end
+
+	---------------------------------------------------
+	-- verify user ID for operator PRN
+	---------------------------------------------------
+
+	declare @userID int
+	execute @userID = GetUserID @operPRN
+	if @userID = 0
+	begin
+		set @message = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
+		RAISERROR (@message, 10, 1)
+		return 51019
 	end
 
 	---------------------------------------------------
