@@ -6,9 +6,8 @@ GO
 
 CREATE VIEW dbo.V_Internal_Standards_Picklist
 AS
-SELECT     Name AS val, '' AS ex
-FROM         T_Internal_Standards
-WHERE     (Internal_Std_Mix_ID > 0)
-
+SELECT Name AS val, '' AS ex
+FROM dbo.T_Internal_Standards
+WHERE (Internal_Std_Mix_ID > 0)
 
 GO

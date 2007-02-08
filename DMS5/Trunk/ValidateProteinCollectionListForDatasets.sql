@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.ValidateProteinCollectionListForDatasets
 /****************************************************
 **
@@ -14,6 +15,7 @@ CREATE PROCEDURE dbo.ValidateProteinCollectionListForDatasets
 **
 **	Auth:	mem
 **	Date:	11/13/2006 mem - Initial revision (Ticket #320)
+**			02/08/2007 mem - Updated to use T_Internal_Std_Parent_Mixes to determine the protein collections associated with internal standards (Ticket #380)
 **    
 *****************************************************/
 (
@@ -86,29 +88,36 @@ As
 	-- with the datasets in #TmpDatasets, including their parent experiments
 	--------------------------------------------------------------
 	--   
-	INSERT INTO #IntStds (Internal_Std_Mix_ID, Protein_Collection_Name, Dataset_Count, Experiment_Count)
-	SELECT DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name, COUNT(*), 0
+	INSERT INTO #IntStds (	Internal_Std_Mix_ID, Protein_Collection_Name, 
+							Dataset_Count, Experiment_Count)
+	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
+		COUNT(*) AS Dataset_Count, 0 AS Experiment_Count
 	FROM #TmpDatasets INNER JOIN 
-		 T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		 T_Internal_Standards DSIntStd ON DS.DS_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID
-	WHERE LEN(IsNull(DSIntStd.Protein_Collection_Name, '')) > 0
-	GROUP BY DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name
+		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
+		dbo.T_Internal_Standards DSIntStd ON DS.DS_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
+		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
+	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	UNION
-	SELECT DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name, 0, COUNT(DISTINCT E.Exp_ID)
+	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
+		0 AS Dataset_Count, COUNT(DISTINCT E.Exp_ID) AS Experiment_Count
 	FROM #TmpDatasets INNER JOIN 
-		 T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		 T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
-		 T_Internal_Standards DSIntStd ON E.EX_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID
-	WHERE LEN(IsNull(DSIntStd.Protein_Collection_Name, '')) > 0
-	GROUP BY DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name
+		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
+		dbo.T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
+		dbo.T_Internal_Standards DSIntStd ON E.EX_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
+		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
+	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	UNION
-	SELECT DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name, 0, COUNT(DISTINCT E.Exp_ID)
+	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
+		0 AS Dataset_Count, COUNT(DISTINCT E.Exp_ID) AS Experiment_Count
 	FROM #TmpDatasets INNER JOIN 
-		 T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		 T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
-		 T_Internal_Standards DSIntStd ON E.EX_postdigest_internal_std_ID = DSIntStd.Internal_Std_Mix_ID
-	WHERE LEN(IsNull(DSIntStd.Protein_Collection_Name, '')) > 0
-	GROUP BY DSIntStd.Internal_Std_Mix_ID, DSIntStd.Protein_Collection_Name
+		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
+		dbo.T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
+		dbo.T_Internal_Standards DSIntStd ON E.EX_postdigest_internal_std_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
+		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
+	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	

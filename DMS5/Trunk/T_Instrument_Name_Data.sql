@@ -36,7 +36,7 @@ INSERT INTO [T_Instrument_Name] VALUES ('LTQ_FT1',32,'LTQ_FT',139,211,'secfso','
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_2',33,'Finnigan_Ion_Trap',141,208,'secfso','active  ','weekly','EMSL RM 1621','Finnigan LTQ #2','(NIAID)','Production',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_3',34,'Finnigan_Ion_Trap',143,209,'secfso','active  ','weekly','EMSL RM 1526','Finnigan LTQ #3','(DHS)','Production',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('11T_Aux2',35,'BRUKERFTMS',145,144,'secfso','active  ','weekly','EMSL RM 1621','Virtual 11T FTICR','','Unknown',3,1,11,1)
-INSERT INTO [T_Instrument_Name] VALUES ('12T_FTICR',36,'BRUKERFTMS',147,198,'secfso','active  ','weekly','EMSL RM 1521','12T FTICR','','Unknown',2,1,11,1)
+INSERT INTO [T_Instrument_Name] VALUES ('12T_FTICR',36,'BRUKERFTMS',147,198,'secfso','active  ','weekly','EMSL RM 1521','12T FTICR','','Research',2,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('Agilent_TOF2',37,'Agilent_TOF',151,150,'secfso','active  ','weekly','EMSL RM 1326','Agilent LC/MSD TOF2','','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_FB1',38,'Finnigan_Ion_Trap',153,152,'secfso','active  ','weekly','PSL RM 522','Agilent LC/Thermo LTQ (Fungal)','(Fungal)','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('LTQ_4',39,'Finnigan_Ion_Trap',156,210,'secfso','active  ','weekly','EMSL RM 1441','Finnigan LTQ #4','','Production',1,1,11,1)

@@ -15,9 +15,13 @@ CREATE TABLE [dbo].[T_Internal_Std_Composition](
 ) ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH CHECK ADD  CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Standards] FOREIGN KEY([Mix_ID])
-REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
-GO
-ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH CHECK ADD  CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components] FOREIGN KEY([Component_ID])
+ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components] FOREIGN KEY([Component_ID])
 REFERENCES [T_Internal_Std_Components] ([Internal_Std_Component_ID])
+GO
+ALTER TABLE [dbo].[T_Internal_Std_Composition] CHECK CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components]
+GO
+ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH CHECK ADD  CONSTRAINT [FK_T_Internal_Std_Composition_T_Internal_Std_Parent_Mixes] FOREIGN KEY([Mix_ID])
+REFERENCES [T_Internal_Std_Parent_Mixes] ([Parent_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Internal_Std_Composition] CHECK CONSTRAINT [FK_T_Internal_Std_Composition_T_Internal_Std_Parent_Mixes]
 GO
