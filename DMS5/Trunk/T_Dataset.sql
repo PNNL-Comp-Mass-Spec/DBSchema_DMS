@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[T_Dataset](
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY NONCLUSTERED 
 (
 	[Dataset_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -65,7 +65,34 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset]
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_i_Dataset] ******/
+/****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
+For Insert
+AS
+	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered
+		)
+	SELECT	4 AS Target_Type, Dataset_ID, 
+			0 AS Target_State, DS_State_ID, GETDATE()
+	FROM deleted
+	ORDER BY Dataset_ID
+
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -125,7 +152,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_u_Dataset] ******/
+/****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -316,14 +343,20 @@ REFERENCES [T_Instrument_Name] ([Instrument_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Instrument_Name]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Internal_Standards] FOREIGN KEY([DS_internal_standard_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Internal_Standards] FOREIGN KEY([DS_internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Internal_Standards]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_LC_Column] FOREIGN KEY([DS_LC_column_ID])
 REFERENCES [T_LC_Column] ([ID])
 GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_LC_Column]
+GO
 ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Secondary_Sep] FOREIGN KEY([DS_sec_sep])
 REFERENCES [T_Secondary_Sep] ([SS_name])
+GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Secondary_Sep]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_t_storage_path] FOREIGN KEY([DS_storage_path_ID])
 REFERENCES [t_storage_path] ([SP_path_ID])

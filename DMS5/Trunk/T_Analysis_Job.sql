@@ -33,7 +33,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -59,7 +59,34 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_State] ON [dbo].[T_Analysis_Job]
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_i_AnalysisJob] ******/
+/****** Object:  Trigger [dbo].[trig_d_AnalysisJob] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
+For Delete
+AS
+	-- Add entries to T_Event_Log for each job deleted from T_Analysis_Job
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered
+		)
+	SELECT	5 AS Target_Type, AJ_JobID, 
+			0 AS Target_State, AJ_StateID, GETDATE()
+	FROM deleted
+	ORDER BY AJ_JobID
+
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -119,7 +146,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_u_AnalysisJob] ******/
+/****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -292,11 +319,17 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
 REFERENCES [T_Analysis_Job_Batches] ([Batch_ID])
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request] FOREIGN KEY([AJ_requestID])
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request] FOREIGN KEY([AJ_requestID])
 REFERENCES [T_Analysis_Job_Request] ([AJR_requestID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name] FOREIGN KEY([AJ_StateID])
 REFERENCES [T_Analysis_State_Name] ([AJS_stateID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Tool] FOREIGN KEY([AJ_analysisToolID])
 REFERENCES [T_Analysis_Tool] ([AJT_toolID])
