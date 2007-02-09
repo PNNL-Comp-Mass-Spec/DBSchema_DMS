@@ -17,6 +17,7 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **			  6/23/04 grk - Used AJ_start instead of AJ_finish in default population
 **			  11/4/04 grk - Widened "Who" column of XT to match data in some item queries
 **			  2/24/04 grk - fixed problem with null value for AJ_assignedProcessorName
+**			  2/09/07 grk - added column to note that activity is stale (Ticket #377)
 **    
 *****************************************************/
 AS
@@ -170,7 +171,14 @@ AS
 Done:
 	-- dump contents of temporary table
 	--
-	select * from #XT ORDER by Who
+	select
+		Source, 
+		[When], 
+		Who, 
+		What,
+		CASE WHEN DATEDIFF(hour, [When], getdate()) > 6 THEN 'ALERT' ELSE '' END as #Alert
+	from #XT 
+	ORDER by Who
 
 return @myError
 
