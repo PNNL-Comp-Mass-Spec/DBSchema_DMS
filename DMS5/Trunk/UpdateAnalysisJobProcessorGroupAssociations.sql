@@ -16,6 +16,7 @@ CREATE PROCEDURE UpdateAnalysisJobProcessorGroupAssociations
 **
 **		Auth: grk
 **		Date: 02/15/2007 Ticket #386
+**            02/20/2007 grk - fixed references to "Group" column in associations table
 **    
 *****************************************************/
     @JobList varchar(6000),
@@ -150,7 +151,7 @@ AS
 	if @mode = 'replace'
 	begin
 		DELETE FROM T_Analysis_Job_Processor_Group_Associations
-		WHERE ([Group] = @gid)
+		WHERE (Group_ID = @gid)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -168,7 +169,7 @@ AS
 	if @mode = 'replace' or @mode = 'add'
 	begin
 		INSERT INTO T_Analysis_Job_Processor_Group_Associations
-			(Job, [Group])
+			(Job_ID, Group_ID)
 		SELECT Job, @gid
 		FROM #TAJ
 		--
@@ -188,8 +189,8 @@ AS
 	begin
 		DELETE FROM T_Analysis_Job_Processor_Group_Associations
 		WHERE
-			Job IN (SELECT Job FROM #TAJ) AND
-			[Group] = @gid
+			Job_ID IN (SELECT Job FROM #TAJ) AND
+			Group_ID = @gid
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

@@ -15,7 +15,8 @@ CREATE FUNCTION dbo.GetAJProcessorGroupMembershipList
 **	Parameters: 
 **
 **		Auth: grk
-**		Date: 2/12/2007
+**		Date: 02/12/2007
+**            02/20/2007 grk - Fixed reference to group ID
 **    
 *****************************************************/
 (
@@ -36,7 +37,7 @@ AS
 			T_Analysis_Job_Processor_Group_Membership INNER JOIN
 			T_Analysis_Job_Processors ON T_Analysis_Job_Processor_Group_Membership.Processor_ID = T_Analysis_Job_Processors.ID
 		WHERE
-			(T_Analysis_Job_Processor_Group_Membership.Processor_Group_ID = @groupID)
+			(T_Analysis_Job_Processor_Group_Membership.Group_ID = @groupID)
 		RETURN @list
 	END
 

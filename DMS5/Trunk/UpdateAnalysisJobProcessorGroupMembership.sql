@@ -21,6 +21,7 @@ processors in the processor list to be associated with the given
 **
 **		Auth: grk
 **		Date: 02/13/2007 (Ticket #384)
+**            02/20/2007 grk - Fixed reference to group ID
 **    
 *****************************************************/
     @processorNameList varchar(6000),
@@ -171,7 +172,7 @@ AS
 		SET	
 			Membership_Enabled = @localMembership
 		WHERE
-			(Processor_Group_ID = @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))	
+			(Group_ID = @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))	
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -190,7 +191,7 @@ AS
 			SET	
 				Membership_Enabled = @nonLocalMembership
 			WHERE
-				(Processor_Group_ID <> @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))
+				(Group_ID <> @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
@@ -216,7 +217,7 @@ AS
 		SET	
 			Membership_Enabled = @newValue
 		WHERE
-			(Processor_Group_ID = @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))	
+			(Group_ID = @pgid) AND (Processor_ID IN (SELECT ID FROM #TP))	
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -237,7 +238,7 @@ AS
 	if @mode = 'add_processors'
 	begin
 		INSERT INTO T_Analysis_Job_Processor_Group_Membership
-			(Processor_ID, Processor_Group_ID)
+			(Processor_ID, Group_ID)
 		SELECT ID, @pgid
 		FROM #TP
 		WHERE 
@@ -245,7 +246,7 @@ AS
 			(
 				SELECT Processor_ID
 				FROM  T_Analysis_Job_Processor_Group_Membership
-				WHERE Processor_Group_ID = @pgid
+				WHERE Group_ID = @pgid
 			)
 		))
 		--
@@ -268,7 +269,7 @@ AS
 	begin
 		DELETE FROM T_Analysis_Job_Processor_Group_Membership
 		WHERE 
-			Processor_Group_ID = @pgid AND
+			Group_ID = @pgid AND
 			(Processor_ID IN (SELECT ID FROM  #TP))
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
