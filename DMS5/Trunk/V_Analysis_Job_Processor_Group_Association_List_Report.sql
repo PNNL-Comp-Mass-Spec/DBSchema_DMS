@@ -1,0 +1,18 @@
+/****** Object:  View [dbo].[V_Analysis_Job_Processor_Group_Association_List_Report] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW dbo.V_Analysis_Job_Processor_Group_Association_List_Report
+AS
+SELECT     dbo.T_Analysis_Job_Processor_Group_Associations.Job, dbo.T_Analysis_State_Name.AJS_name AS State, dbo.T_Dataset.Dataset_Num AS Dataset, 
+                      dbo.T_Analysis_Tool.AJT_toolName AS Tool, dbo.T_Analysis_Job.AJ_parmFileName AS [Parm File], 
+                      dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File], dbo.T_Analysis_Job_Processor_Group_Associations.[Group] AS [#GroupID]
+FROM         dbo.T_Analysis_Job_Processor_Group_Associations INNER JOIN
+                      dbo.T_Analysis_Job ON dbo.T_Analysis_Job_Processor_Group_Associations.Job = dbo.T_Analysis_Job.AJ_jobID INNER JOIN
+                      dbo.T_Dataset ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID INNER JOIN
+                      dbo.T_Analysis_Tool ON dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID INNER JOIN
+                      dbo.T_Analysis_State_Name ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID
+WHERE     (dbo.T_Analysis_Job.AJ_StateID <> 4)
+
+GO
