@@ -21,6 +21,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/19/2006 grk - Added propagation mode (Ticket #348)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
+**          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
 **    
 *****************************************************/
 (
@@ -290,7 +291,7 @@ As
 			@comment,
 			@ownerPRN,
 			@batchID,
-			CASE WHEN #TD.AS_State_ID = 4 THEN 10 ELSE 1 END,
+			1,
 			@assignedProcessor,
 			@requestID,
 			@propMode

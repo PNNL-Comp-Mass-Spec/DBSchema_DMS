@@ -28,6 +28,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
 **          1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
+**          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
 **    
 *****************************************************/
 (
@@ -250,7 +251,7 @@ As
 			@comment,
 			@ownerPRN,
 			@batchID,
-			CASE WHEN @archiveState = 4 THEN 10 ELSE 1 END,
+			1,
 			@assignedProcessor
 		)			
 		--
