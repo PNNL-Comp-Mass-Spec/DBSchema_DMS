@@ -5,7 +5,12 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Analysis_Job_Processors_Detail_Report
 AS
-SELECT     ID, State, Processor_Name AS [Processor Name], Machine, Notes, dbo.GetAJProcessorMembershipInGroupsList(ID) AS [Group Membership]
-FROM         dbo.T_Analysis_Job_Processors
+SELECT ID, State, Processor_Name AS [Processor Name], Machine, 
+    Notes, dbo.GetAJProcessorMembershipInGroupsList(ID, 1) 
+    AS [Enabled Groups], 
+    dbo.GetAJProcessorMembershipInGroupsList(ID, 0) 
+    AS [Disabled Groups], dbo.GetAJProcessorAnalysisToolList(ID) 
+    AS AnalysisTools
+FROM dbo.T_Analysis_Job_Processors
 
 GO

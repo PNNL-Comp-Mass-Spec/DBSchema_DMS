@@ -14,33 +14,67 @@ CREATE FUNCTION dbo.GetAJProcessorMembershipInGroupsList
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 02/12/2007
-**            02/20/2007 grk - Fixed reference to group ID
+**	Auth:	grk
+**	Date:	02/12/2007
+**			02/20/2007 grk - Fixed reference to group ID
+**			02/22/2007 mem - Now grouping processors by Membership_Enabled values
+**			02/23/2007 mem - Added parameter @EnableDisableFilter
 **    
 *****************************************************/
 (
-@processorID int
+	@processorID int,
+	@EnableDisableFilter tinyint	-- 0 means disabled only, 1 means enabled only, anything else means all
 )
 RETURNS varchar(4000)
 AS
 	BEGIN
-		declare @list varchar(4000)
-		set @list = ''
+		declare @CombinedList varchar(4000)
+		declare @EnabledGroups varchar(4000)
+		declare @DisabledGroups varchar(4000)
 		
-		SELECT 
-			@list = @list + CASE 
-								WHEN @list = '' THEN Group_Name + ' (' + CAST(ID as Varchar(12)) + ')' + ' [' + Membership_Enabled + ']'
-								ELSE ', ' + Group_Name + ' (' + CAST(ID as Varchar(12)) + ')' +  ' [' + Membership_Enabled + ']'
-							END
-		FROM
-			T_Analysis_Job_Processor_Group_Membership INNER JOIN
-			T_Analysis_Job_Processor_Group ON 
-			T_Analysis_Job_Processor_Group_Membership.Group_ID = T_Analysis_Job_Processor_Group.ID
-		WHERE
-			(T_Analysis_Job_Processor_Group_Membership.Processor_ID = @processorID)
+		set @CombinedList = ''
+
+		set @EnabledGroups = ''
+		If @EnableDisableFilter <> 0
+		Begin
+			SELECT @EnabledGroups = @EnabledGroups + CAST(ID as Varchar(12)) + ': ' + AJPG.Group_Name + ', '
+			FROM T_Analysis_Job_Processor_Group_Membership AJPGM INNER JOIN
+				 T_Analysis_Job_Processor_Group AJPG ON AJPGM.Group_ID = AJPG.ID
+			WHERE AJPGM.Processor_ID = @processorID AND 
+				  Membership_Enabled = 'Y'
+			ORDER BY AJPG.Group_Name
+		End
+			  		
+		set @DisabledGroups = ''
+		If @EnableDisableFilter <> 1
+		Begin
+			SELECT @DisabledGroups = @DisabledGroups + CAST(ID as Varchar(12)) + ': ' + AJPG.Group_Name + ', '
+			FROM T_Analysis_Job_Processor_Group_Membership AJPGM INNER JOIN
+				 T_Analysis_Job_Processor_Group AJPG ON AJPGM.Group_ID = AJPG.ID
+			WHERE AJPGM.Processor_ID = @processorID AND 
+				  Membership_Enabled <> 'Y'
+			ORDER BY AJPG.Group_Name
+		End
+		
+		If Len(@EnabledGroups) > 2
+		Begin
+			If @EnableDisableFilter <> 0 And @EnableDisableFilter <> 1
+				Set @CombinedList = 'Enabled: '
+			Set @CombinedList = @CombinedList + Left(@EnabledGroups, Len(@EnabledGroups)-1)
+		End
+
+		If Len(@DisabledGroups) > 2
+		Begin
+			If Len(@CombinedList) > 0
+				Set @CombinedList = @CombinedList + '; '
+
+			If @EnableDisableFilter <> 0 And @EnableDisableFilter <> 1
+				Set @CombinedList = 'Disabled: '
+
+			Set @CombinedList = @CombinedList + Left(@DisabledGroups, Len(@DisabledGroups)-1)
+		End
 	
-		RETURN @list
+		RETURN @CombinedList
 	END
 
 GO

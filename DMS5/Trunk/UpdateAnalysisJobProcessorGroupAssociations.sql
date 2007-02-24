@@ -17,6 +17,7 @@ CREATE PROCEDURE UpdateAnalysisJobProcessorGroupAssociations
 **		Auth: grk
 **		Date: 02/15/2007 Ticket #386
 **            02/20/2007 grk - fixed references to "Group" column in associations table
+**                       grk - 'add' mode removes association with any other groups
 **    
 *****************************************************/
     @JobList varchar(6000),
@@ -163,6 +164,25 @@ AS
 	end
 
 	---------------------------------------------------
+	-- remove selected jobs from associations
+	---------------------------------------------------
+	if @mode = 'remove' or @mode = 'add'
+	begin
+		DELETE FROM T_Analysis_Job_Processor_Group_Associations
+		WHERE
+			Job_ID IN (SELECT Job FROM #TAJ) 
+			-- AND Group_ID = @gid  -- will need this in future if multiple associations allowed per job
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error removing selected jobs from association'
+			return @myError
+		end
+	end
+
+	---------------------------------------------------
 	-- add associations for new jobs to list
 	---------------------------------------------------
 	--
@@ -178,25 +198,6 @@ AS
 		if @myError <> 0
 		begin
 			set @message = 'Error adding new associations'
-			return @myError
-		end
-	end
-
-	---------------------------------------------------
-	-- remove selected jobs from associations
-	---------------------------------------------------
-	if @mode = 'remove'
-	begin
-		DELETE FROM T_Analysis_Job_Processor_Group_Associations
-		WHERE
-			Job_ID IN (SELECT Job FROM #TAJ) AND
-			Group_ID = @gid
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error removing selected jobs from association'
 			return @myError
 		end
 	end
