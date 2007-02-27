@@ -18,6 +18,7 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **			  11/4/04 grk - Widened "Who" column of XT to match data in some item queries
 **			  2/24/04 grk - fixed problem with null value for AJ_assignedProcessorName
 **			  2/09/07 grk - added column to note that activity is stale (Ticket #377)
+**			  2/27/07 grk - fixed prep manager reporting (Ticket #398)
 **    
 *****************************************************/
 AS
@@ -132,18 +133,20 @@ AS
 	(
 		-- get list of preparation in progress
 		--
-		SELECT     T_Event_Log.Entered AS [When], 
-		'Preparation: ' + t_storage_path.SP_machine_name AS Who, 
-		'In Progress: ' + T_Dataset.Dataset_Num  AS What
-		FROM         T_Dataset INNER JOIN
-				t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER JOIN
-				T_Event_Log ON T_Dataset.Dataset_ID = T_Event_Log.Target_ID
-		WHERE     (T_Dataset.DS_state_ID = 7) AND (T_Event_Log.Target_Type = 4)
+		SELECT
+			T_Event_Log.Entered AS [When], 
+			'In Progress: ' + T_Dataset.Dataset_Num AS What, 
+			'Preparation: ' + T_Dataset.DS_PrepServerName AS Who
+		FROM
+			T_Dataset INNER JOIN
+			t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER JOIN
+			T_Event_Log ON T_Dataset.Dataset_ID = T_Event_Log.Target_ID
+		WHERE     
+			(T_Dataset.DS_state_ID = 7) AND 
+			(T_Event_Log.Target_Type = 4) AND 
+			(T_Event_Log.Target_State = 7)
 	) T on M.Who = T.Who
 	WHERE M.[When] < T.[When]
-
-
-
 
 	-- update any entries that have active archive with later date (from event log) than health log
 	--
