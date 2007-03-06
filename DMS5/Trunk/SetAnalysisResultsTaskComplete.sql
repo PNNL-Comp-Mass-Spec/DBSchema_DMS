@@ -24,6 +24,7 @@ CREATE Procedure SetAnalysisResultsTaskComplete
 **            08/03/2005 grk - made setting update archive depend on @completionCode
 **            07/28/2006 grk - save completion code to job table and set state according to AJ_Data_Extraction_Error
 **            11/15/2006 grk - add logic for propagation mode (ticket #328)
+**            03/06/2007 grk - add changes for deep purge (ticket #403)
 **    
 *****************************************************/
 	@jobNum varchar(32),
@@ -93,7 +94,16 @@ As
 			set @completionState = 14 -- no export
 		else
 			set @completionState = 4 -- normal completion
-	
+
+ 	---------------------------------------------------
+	--  Start transaction
+	---------------------------------------------------
+
+	declare @transName varchar(32)
+	set @transName = 'SetAnalysisResultsTaskComplete'
+	begin transaction @transName
+
+
    	---------------------------------------------------
 	-- Update job status
 	---------------------------------------------------
@@ -108,6 +118,7 @@ As
 	--
 	if @myError <> 0 or @myRowCount <> 1
 	begin
+		rollback transaction @transName
 		set @message = 'Update operation failed'
 		goto done
 	end
@@ -129,13 +140,22 @@ As
 		--
 		if @myError <> 0 or @datasetNum = ''
 		begin
+			rollback transaction @transName
 			set @message = 'Could not resolve job to dataset'
 			goto done
 		end
 		--
-		exec @result = SetArchiveUpdateRequired @datasetNum, @message output
+		exec @myError = SetArchiveUpdateRequired @datasetNum, @message output
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			goto done
+		end
 	end
-  ---------------------------------------------------
+	
+	commit transaction @transName
+
+    ---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
 	--

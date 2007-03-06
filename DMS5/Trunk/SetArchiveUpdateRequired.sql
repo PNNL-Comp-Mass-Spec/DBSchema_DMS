@@ -16,6 +16,7 @@ CREATE Procedure SetArchiveUpdateRequired
 **
 **		Auth: grk
 **		Date: 12/3/2002   
+**            03/06/2007 grk - add changes for deep purge (ticket #403)
 **    
 *****************************************************/
 	@datasetNum varchar(128),
@@ -33,6 +34,7 @@ As
 
 	declare @datasetID int
 	declare @updateState int
+	declare @archiveState int
 
    	---------------------------------------------------
 	-- resolve dataset name to ID and archive state
@@ -43,7 +45,8 @@ As
 	--
 	SELECT     
 		@datasetID = Dataset_ID, 
-		@updateState = Update_State
+		@updateState = Update_State,
+		@archiveState = Archive_State
 	FROM         V_DatasetArchive_Ex
 	WHERE     (Dataset_Number = @datasetNum)
 	--
@@ -57,7 +60,7 @@ As
 	end
 
    	---------------------------------------------------
-	-- check dataset archive state for "in progress"
+	-- check dataset archive update state for "in progress"
 	---------------------------------------------------
 	if not @updateState in (1, 4, 5)
 	begin
@@ -67,16 +70,25 @@ As
 	end
 
    	---------------------------------------------------
+	-- if archive state is "purged", set it to "complete"
+	-- to allow for re-purging
+	---------------------------------------------------
+	if @archiveState = 4
+	begin
+		set @archiveState = 3
+	end
+
+   	---------------------------------------------------
 	-- Update dataset archive state 
 	---------------------------------------------------
 	
-	UPDATE    T_Dataset_Archive
-	SET              AS_update_state_ID = 2
+	UPDATE T_Dataset_Archive
+	SET AS_update_state_ID = 2,  AS_state_ID = @archiveState
 	WHERE     (AS_Dataset_ID = @datasetID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0 or @myRowCount <> 2
+	if @myError <> 0 or @myRowCount <> 1
 	begin
 		set @message = 'Update operation failed'
 		set @myError = 99
