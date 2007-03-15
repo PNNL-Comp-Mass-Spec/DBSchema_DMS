@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Find_User_Proposal_Dataset
+CREATE VIEW dbo.V_Find_User_Proposal_Dataset
 AS
 SELECT dbo.T_Requested_Run_History.RDS_EUS_Proposal_ID AS User_Proposal_ID,
      dbo.T_Dataset.Dataset_Num AS Dataset_Name, 
@@ -18,4 +18,5 @@ FROM dbo.T_Dataset INNER JOIN
      INNER JOIN
     dbo.T_Instrument_Name ON 
     dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
+
 GO
