@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateDataset
+
+CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **		File: 
 **		Name: AddNewDataset
@@ -20,6 +21,7 @@ CREATE Procedure AddUpdateDataset
 **            1/11/2005 grk added bad dataset stuff
 **            2/23/2006 grk added LC cart tracking stuff and EUS stuff
 **            1/12/2007 grk  added verification mode
+**            2/16/2007 grk  added validation of dataset name (Ticket #390)
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -122,6 +124,24 @@ As
 	if @myError <> 0
 		return @myError
 		
+	---------------------------------------------------
+	-- validate dataset name
+	---------------------------------------------------
+
+	if CHARINDEX ('.', @datasetNum) > 0
+	begin
+		set @msg = 'Dataset name may not contain "." character'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
+
+	if (@datasetNum like '%raw') or (@datasetNum like '%wiff') 
+	begin
+		set @msg = 'Dataset name may not end in "raw" or "wiff"'
+		RAISERROR (@msg, 10, 1)
+		return 51002
+	end
+
 	---------------------------------------------------
 	-- Resolve id for rating
 	---------------------------------------------------
