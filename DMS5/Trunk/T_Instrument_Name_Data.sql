@@ -18,7 +18,7 @@ INSERT INTO [T_Instrument_Name] VALUES ('LCQ_C3',15,'Finnigan_Ion_Trap',56,128,'
 INSERT INTO [T_Instrument_Name] VALUES ('9T_FTICR',13,'BRUKERFTMS',46,174,'secfso','active  ','daily','EMSL RM 1526','9.4T Bruker FTICR','','Production',4,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('SW_Test_Bruker',16,'BRUKERFTMS',87,177,'fso','active  ','weekly','1553','Bruker SW Test Data','','QC',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('Agilent_SL1',17,'Agilent_Ion_Trap',94,123,'fso','inactive','weekly','EMSL RM 1326','Agilent 1100 SL 1','','Unused',1,1,11,1)
-INSERT INTO [T_Instrument_Name] VALUES ('QTOF_MM1',18,'Micromass_QTOF',96,135,'secfso','active  ','weekly','EMSL RM 1326','Micromass QTOF 1','','Research',1,1,11,1)
+INSERT INTO [T_Instrument_Name] VALUES ('QTOF_MM1',18,'Micromass_QTOF',96,135,'secfso','active  ','weekly','EMSL RM 1526','Micromass QTOF 1','','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('Agilent_XCT1',19,'Agilent_Ion_Trap',99,125,'fso','active  ','weekly','EMSL RM 1326','Agilent 1100 LC/MSD XCT 1','','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('Agilent_TOF1',20,'Agilent_TOF',101,124,'fso','active  ','weekly','EMSL RM 1326','Agilent LC/MSD TOF 1','','Research',1,1,11,1)
 INSERT INTO [T_Instrument_Name] VALUES ('9T_FTICR_Q',21,'BRUKERFTMS',103,173,'fso','active  ','weekly','EMSL RM 1326','9.4T Bruker w/special quad','','Research',4,1,11,1)

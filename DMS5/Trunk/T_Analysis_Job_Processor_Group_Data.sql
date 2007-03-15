@@ -1,0 +1,12 @@
+/****** Object:  Table [T_Analysis_Job_Processor_Group] ******/
+/****** RowCount: 8 ******/
+SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] ON
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (100,'General Processors','','Y','2/23/2007 7:07:08 PM','Y','2/23/2007 7:07:09 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (102,'Tom Metz Pubs','','Y','2/23/2007 7:16:22 PM','Y','2/23/2007 7:16:23 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (103,'Sequest Cluster 3','','Y','2/23/2007 7:20:29 PM','Y','2/24/2007 3:14:57 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (105,'DAC_Desktop','DAC development machine','Y','3/1/2007 2:00:45 PM','N','3/6/2007 9:42:02 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (106,'Sequest Clusters 1, 3, and 4','All full-sized clusters','Y','3/5/2007 1:05:42 PM','Y','3/5/2007 1:05:42 PM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (107,'Sequest Cluster 2','','Y','3/5/2007 1:21:25 PM','Y','3/5/2007 1:21:25 PM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (108,'Sequest Cluster 1','','Y','3/6/2007 9:45:56 AM','Y','3/6/2007 9:45:56 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (109,'Sequest Cluster 4','','Y','3/6/2007 9:46:16 AM','Y','3/15/2007 10:28:57 AM','PNL\D3L243')
+SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] OFF
