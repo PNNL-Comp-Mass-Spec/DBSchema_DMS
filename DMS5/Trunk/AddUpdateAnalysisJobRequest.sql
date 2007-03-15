@@ -320,5 +320,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]
 GO

@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
@@ -29,6 +30,9 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
 **          1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
 **          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
+**          2/15/2007  grk - added associated processor group (Ticket #383)
+**			2/15/2007  grk - Added propagation mode (Ticket #366)
+**          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
 **    
 *****************************************************/
 (
@@ -43,7 +47,8 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 	@organismDBName varchar(64),
     @ownerPRN varchar(32),
     @comment varchar(255) = null,
-	@assignedProcessor varchar(64),
+	@associatedProcessorGroup varchar(64),
+    @propagationMode varchar(24),
 	@stateName varchar(32),
     @jobNum varchar(32) = "0" output,
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
@@ -102,6 +107,36 @@ As
 				set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new" state '
 				RAISERROR (@msg, 10, 1)
 				return 51005
+		end
+	end
+
+	---------------------------------------------------
+	-- resolve processor group ID
+	---------------------------------------------------
+	--
+	declare @gid int
+	set @gid = 0
+	--
+	if @associatedProcessorGroup <> ''
+	begin
+		SELECT @gid = ID
+		FROM T_Analysis_Job_Processor_Group
+		WHERE (Group_Name = @associatedProcessorGroup)	
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to resolve processor group name'
+			RAISERROR (@msg, 10, 1)
+			return 51008
+		end
+		--
+		if @gid = 0
+		begin
+			set @msg = 'Processor group name not found'
+			RAISERROR (@msg, 10, 1)
+			return 51009
 		end
 	end
 
@@ -172,6 +207,16 @@ As
 	end
 
 	---------------------------------------------------
+	-- Resolve propagation mode 
+	---------------------------------------------------
+	declare @propMode smallint
+	set @propMode = CASE @propagationMode 
+						WHEN 'Export' THEN 0 
+						WHEN 'No Export' THEN 1 
+						ELSE 0 
+					END 
+
+	---------------------------------------------------
 	-- validate job parameters
 	---------------------------------------------------
 	--
@@ -213,13 +258,29 @@ As
 	SELECT TOP 1 @datasetID = Dataset_ID FROM #TD
 	SELECT TOP 1 @archiveState = AS_state_ID FROM #TD
 
+
+	---------------------------------------------------
+	-- set up transaction variables
+	---------------------------------------------------
+	--
+	declare @transName varchar(32)
+	set @transName = 'AddUpdateAnalysisJob'
+
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	--
 	if @mode = 'add'
 	begin
+	
 		declare @newJobNum int
+
+		---------------------------------------------------
+		-- start transaction
+		--
+		begin transaction @transName
+
+		---------------------------------------------------
 		--
 		INSERT INTO T_Analysis_Job (
 			AJ_priority, 
@@ -236,7 +297,7 @@ As
 			AJ_owner,
 			AJ_batchID,
 			AJ_StateID,
-			AJ_assignedProcessorName
+			AJ_propagationMode
 		) VALUES (
 			@priority, 
 			getdate(), 
@@ -252,13 +313,14 @@ As
 			@ownerPRN,
 			@batchID,
 			1,
-			@assignedProcessor
+			@propMode
 		)			
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
+			rollback transaction @transName
 			set @msg = 'Insert new job operation failed'
 			RAISERROR (@msg, 10, 1)
 			return 51007
@@ -266,8 +328,30 @@ As
 		
 		-- return job number of newly created job
 		--
-		set @jobNum = cast(IDENT_CURRENT('T_Analysis_Job') as varchar(32))
+		set @jobID = IDENT_CURRENT('T_Analysis_Job')
+		set @jobNum = cast(@jobID as varchar(32))
 
+		-- associate job with processor group
+		--
+		if @gid <> 0
+		begin
+			INSERT INTO T_Analysis_Job_Processor_Group_Associations
+				(Job_ID, Group_ID)
+			VALUES
+				(@jobID, @gid)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				rollback transaction @transName
+				set @msg = 'Insert new job association failed'
+				RAISERROR (@msg, 10, 1)
+				return 51007
+			end
+		end
+
+		commit transaction @transName
 	end -- add mode
 
 	---------------------------------------------------
@@ -303,6 +387,32 @@ As
 				return 51004
 			end
 		end		
+
+		---------------------------------------------------
+		-- is there an existing association between the job
+		-- that a processor group?
+		--
+		declare @pgaAssocID int
+		set @pgaAssocID = 0
+		--
+		SELECT @pgaAssocID = Group_ID
+		FROM T_Analysis_Job_Processor_Group_Associations
+		WHERE Job_ID = @jobID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error looking up existing job association'
+			RAISERROR (@msg, 10, 1)
+			return 51019
+		end
+		
+		---------------------------------------------------
+		-- start transaction
+		--
+		begin transaction @transName
+
 		---------------------------------------------------
 		-- make changes to database
 		--
@@ -319,20 +429,75 @@ As
 			AJ_datasetID = @datasetID, 
 			AJ_comment = @comment,
 			AJ_owner = @ownerPRN,
-			AJ_assignedProcessorName = @assignedProcessor,
 			AJ_StateID = @stateID,
 			AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL END, 
-			AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL END
+			AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL END,
+			AJ_propagationMode = @propMode
 		WHERE (AJ_jobID = @jobID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
+			rollback transaction @transName
 			set @msg = 'Update operation failed: "' + @jobNum + '"'
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
+
+		---------------------------------------------------
+		-- deal with job association with group, 
+
+		-- if no group is given, but existing association
+		-- exists for job, delete it
+		--
+		if @gid = 0
+		begin
+			DELETE FROM T_Analysis_Job_Processor_Group_Associations
+			WHERE (Job_ID = @jobID)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+		end
+
+		-- if group is given, and no association for job exists
+		-- create one
+		--
+		if @gid <> 0 and @pgaAssocID = 0
+		begin
+			INSERT INTO T_Analysis_Job_Processor_Group_Associations
+				(Job_ID, Group_ID)
+			VALUES
+				(@jobID, @gid)				
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+		end
+
+		-- if group is given, and an association for job does exist
+		-- update it
+		--
+		if @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
+		begin
+			UPDATE T_Analysis_Job_Processor_Group_Associations
+				SET Group_ID = @gid
+			WHERE
+				Job_ID = @jobID				
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+		end
+	
+		-- report error, if one occurred
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @msg = 'Error deleting existing association for job'
+			RAISERROR (@msg, 10, 1)
+			return 51021
+		end
+
+		commit transaction @transName
 	end -- update mode
 
 	return @myError

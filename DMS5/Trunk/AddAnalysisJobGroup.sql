@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddAnalysisJobGroup
 /****************************************************
 **
@@ -22,7 +23,8 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			12/19/2006 grk - Added propagation mode (Ticket #348)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
 **          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
-**    
+**          2/15/2007  grk - added associated processor group (Ticket #383)
+**          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
 *****************************************************/
 (
     @datasetList varchar(6000),
@@ -37,7 +39,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
     @ownerPRN varchar(32),
     @comment varchar(255) = null,
     @requestID int,
-	@assignedProcessor varchar(64),
+	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@mode varchar(12), 
 	@message varchar(512) output
@@ -55,6 +57,7 @@ As
 
 	declare @msg varchar(512)
 	declare @list varchar(1024)
+	declare @jobID int
 
 	---------------------------------------------------
 	-- list shouldn't be empty
@@ -64,6 +67,36 @@ As
 		set @msg = 'Dataset list is empty'
 		RAISERROR (@msg, 10, 1)
 		return 51001
+	end
+
+	---------------------------------------------------
+	-- resolve processor group ID
+	---------------------------------------------------
+	--
+	declare @gid int
+	set @gid = 0
+	--
+	if @associatedProcessorGroup <> ''
+	begin
+		SELECT @gid = ID
+		FROM T_Analysis_Job_Processor_Group
+		WHERE (Group_Name = @associatedProcessorGroup)	
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to resolve processor group name'
+			RAISERROR (@msg, 10, 1)
+			return 51008
+		end
+		--
+		if @gid = 0
+		begin
+			set @msg = 'Processor group name not found'
+			RAISERROR (@msg, 10, 1)
+			return 51009
+		end
 	end
 
 	---------------------------------------------------
@@ -167,11 +200,19 @@ As
 		declare @batchID int
 		set @batchID = 0
 		--
-		declare @n int
-		set @n = 0
-		SELECT @n = count(*) FROM #TD
+		declare @numDatasets int
+		set @numDatasets = 0
+		SELECT @numDatasets = count(*) FROM #TD
 		--
-		if @n > 1
+		if @numDatasets = 0
+		begin
+			set @msg = 'No datasets in list to create jobs for.'
+			RAISERROR (@msg, 10, 1)
+			rollback transaction @transName
+			return 51017
+		end
+		--
+		if @numDatasets > 1
 		begin
 			INSERT INTO T_Analysis_Job_Batches
 				(Batch_Description)
@@ -274,7 +315,6 @@ As
 			AJ_owner,
 			AJ_batchID,
 			AJ_StateID,
-			AJ_assignedProcessorName,
 			AJ_requestID,
 			AJ_propagationMode
 		) SELECT 
@@ -292,7 +332,6 @@ As
 			@ownerPRN,
 			@batchID,
 			1,
-			@assignedProcessor,
 			@requestID,
 			@propMode
 		FROM #TD		
@@ -315,6 +354,53 @@ As
 			return 51007
 		end
 	
+		---------------------------------------------------
+		-- create associations with processor group for new
+		-- jobs, if group ID is given
+		---------------------------------------------------
+
+		if @gid <> 0
+		begin
+			-- if single job was created, get its identity directly
+			--
+			if @myRowCount = 1 AND @batchID = 0
+			begin
+				set @jobID = IDENT_CURRENT('T_Analysis_Job')
+				--
+				INSERT INTO T_Analysis_Job_Processor_Group_Associations
+					(Job_ID, Group_ID)
+				VALUES
+					(@jobID, @gid)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			end
+			--
+			-- if multiple jobs were created, get job identities
+			-- from all jobs using new batch ID
+			--
+			if @myRowCount > 1 AND @batchID <> 0
+			begin
+				INSERT INTO T_Analysis_Job_Processor_Group_Associations
+					(Job_ID, Group_ID)
+				SELECT
+					AJ_jobID, @gid
+				FROM
+					T_Analysis_Job
+				WHERE
+					(AJ_batchID = @batchID)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			end
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Error Associating job with processor group'
+				RAISERROR (@msg, 10, 1)
+				rollback transaction @transName
+				return 51007
+			end
+		end
+
 		commit transaction @transName
 	END -- mode 'add'
 

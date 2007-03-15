@@ -136,3 +136,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS_Analysis]
+GO

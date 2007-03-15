@@ -168,13 +168,11 @@ As
 		begin transaction @transName
 
 		INSERT INTO T_Analysis_Job_Processors (
-		ID, 
 		State, 
 		Processor_Name, 
 		Machine, 
 		Notes
 		) VALUES (
-		@ID, 
 		@State, 
 		@ProcessorName, 
 		@Machine, 
@@ -281,4 +279,6 @@ As
 	return @myError
 
 
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]
 GO
