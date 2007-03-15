@@ -283,3 +283,5 @@ AS
 
 	return @myError
 GO
+GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS_Analysis]
+GO

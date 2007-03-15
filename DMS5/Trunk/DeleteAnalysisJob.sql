@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DeleteAnalysisJob
+
+CREATE Procedure dbo.DeleteAnalysisJob
 /****************************************************
 **
 **	Desc: Deletes given analysis job from the analysis job table
@@ -19,6 +20,7 @@ CREATE Procedure DeleteAnalysisJob
 **		Date: 3/6/2001
 **            6/9/2004 grk - added delete for analysis job request reference
 **			  04/07/2006 grk - eliminated job to request map table
+**            02/20/2007 grk - added code to remove any job-to-group associations
 **    
 *****************************************************/
     @jobNum varchar(32)
@@ -39,6 +41,21 @@ As
 	declare @transName varchar(32)
 	set @transName = 'DeleteAnalysisJob'
 	begin transaction @transName
+
+	-- delete any job-to-group associations 
+	-- that exist for this job
+	--
+	DELETE FROM T_Analysis_Job_Processor_Group_Associations
+	WHERE     (Job_ID = @jobID)	
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0 or @myRowCount = 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete job associations operation failed', 10, 1)
+		return 54452
+	end
 	
 	-- delete analysis job
 	--
@@ -58,8 +75,6 @@ As
 
 
 	return 0
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin]

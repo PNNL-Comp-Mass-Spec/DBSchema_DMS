@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpadateAnalysisJobs
+
+CREATE PROCEDURE dbo.UpadateAnalysisJobs
 /****************************************************
 **
 **	Desc:
@@ -21,6 +22,7 @@ CREATE PROCEDURE UpadateAnalysisJobs
 **		      08/02/2006 grk - clear the AJ_ResultsFolderName, AJ_extractionProcessor, 
 **                             AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
 **            11/15/2006 grk - add logic for propagation mode (ticket #328)
+**            03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
 **    
 *****************************************************/
     @JobList varchar(6000),
@@ -30,6 +32,7 @@ CREATE PROCEDURE UpadateAnalysisJobs
     @findText varchar(255) = '',
     @replaceText varchar(255) = '',
     @assignedProcessor varchar(64),
+    @associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
     @mode varchar(12) = 'update',
     @message varchar(512) output
@@ -277,6 +280,94 @@ As
 		end
 
 		-----------------------------------------------
+		if @associatedProcessorGroup <> '[no change]'
+		begin
+
+
+			---------------------------------------------------
+			-- resolve processor group ID
+			--
+			declare @gid int
+			set @gid = 0
+			--
+			if @associatedProcessorGroup <> ''
+			begin
+				SELECT @gid = ID
+				FROM T_Analysis_Job_Processor_Group
+				WHERE (Group_Name = @associatedProcessorGroup)	
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				if @myError <> 0
+				begin
+					set @msg = 'Error trying to resolve processor group name'
+					RAISERROR (@msg, 10, 1)
+					return 51008
+				end
+				--
+				if @gid = 0
+				begin
+					set @msg = 'Processor group name not found'
+					RAISERROR (@msg, 10, 1)
+					return 51009
+				end
+			end
+
+			if @gid = 0
+				begin
+					-- dissassociate given jobs from group
+					--
+					DELETE FROM T_Analysis_Job_Processor_Group_Associations
+					WHERE (Job_ID in (SELECT Job FROM #TAJ))					
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+					--
+					if @myError <> 0
+					begin
+						set @msg = 'Update operation failed'
+						rollback transaction @transName
+						RAISERROR (@msg, 10, 1)
+						return 51014
+					end
+				end
+			else
+				begin
+					-- for jobs with existing association, change it
+					--
+					UPDATE T_Analysis_Job_Processor_Group_Associations
+					SET	Group_ID = @gid
+					WHERE (Job_ID in (SELECT Job FROM #TAJ))					
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+					--
+					if @myError <> 0
+					begin
+						set @msg = 'Update operation failed'
+						rollback transaction @transName
+						RAISERROR (@msg, 10, 1)
+						return 51015
+					end
+
+					-- for jobs without existing association, create it
+					--
+					INSERT INTO T_Analysis_Job_Processor_Group_Associations
+										(Job_ID, Group_ID)
+					SELECT Job, @gid FROM #TAJ
+					WHERE NOT (Job IN (SELECT Job_ID FROM T_Analysis_Job_Processor_Group_Associations))
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+					--
+					if @myError <> 0
+					begin
+						set @msg = 'Update operation failed'
+						rollback transaction @transName
+						RAISERROR (@msg, 10, 1)
+						return 51016
+					end
+				end
+		end
+
+		-----------------------------------------------
 		if @propagationMode <> '[no change]'
 		begin
 			declare @propMode smallint
@@ -347,7 +438,6 @@ As
 	---------------------------------------------------
 	
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpadateAnalysisJobs] TO [RBAC-Web_Analysis]
