@@ -9,10 +9,10 @@ CREATE TABLE [dbo].[T_Analysis_Log](
 	[posting_time] [smalldatetime] NULL,
 	[type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[message] [varchar](244) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
- CONSTRAINT [PK_T_Analysis_Log] PRIMARY KEY NONCLUSTERED 
+ CONSTRAINT [PK_T_Analysis_Log] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
