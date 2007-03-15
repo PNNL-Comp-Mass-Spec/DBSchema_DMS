@@ -15,7 +15,8 @@ CREATE Procedure SetPurgeTaskComplete
 **	Parameters: 
 **
 **		Auth: grk
-**		Date: 3/4/2003
+**		Date: 03/04/2003
+**            02/16/2007 grk - add completion code options and also set archive state (Ticket #131)
 **    
 *****************************************************/
 (
@@ -64,7 +65,12 @@ As
 	declare @currentState as int
 	set @currentState = 0
 	--
-	SELECT @currentState = AS_state_ID
+	declare @currentUpdateState as int
+	set @currentUpdateState = 0
+	--
+	SELECT 
+		@currentState = AS_state_ID,
+		@currentUpdateState = AS_update_state_ID
 	FROM T_Dataset_Archive
 	WHERE (AS_Dataset_ID = @datasetID)
 	--
@@ -83,21 +89,54 @@ As
 		goto done
 	end
 
-  ---------------------------------------------------
-	-- choose completion state and update archive state
 	---------------------------------------------------
-	
-	if @completionCode <> 0
-		begin
-			set @completionState = 8 -- purge failed
-		end
-	else
-		begin
-				set @completionState = 4 -- purged
-		end	
-		
+	-- choose archive state and archive update  state
+	-- based upon completion code
+	---------------------------------------------------
+/*
+Code 0 (success) --> 
+	Set T_Dataset_Archive.AS_state_ID to 4 (Purged). 
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+Code 1 (failed) --> 
+	Set T_Dataset_Archive.AS_state_ID to 8 (Failed). 
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+Code 2 (update reqd) --> 
+	Set T_Dataset_Archive.AS_state_ID to 3 (Complete). 
+	Set T_Dataset_Archive.AS_update_state_ID to 2 (Update Required)
+
+*/
+	-- (success)
+	if @completionCode = 0 
+	begin
+		set @completionState = 4 -- purged
+		goto SetStates
+	end
+
+	-- (failed)
+	if @completionCode = 1
+	begin
+		set @completionState = 8 -- purge failed
+		goto SetStates
+	end
+
+    -- (update reqd)
+	if @completionCode = 2
+	begin
+		set @completionState = 3    -- complete
+		set @currentUpdateState = 2 -- Update Required
+		goto SetStates
+	end
+
+	-- if we got here, completion code was not recognized.  Bummer.
+	--
+	set @message = 'Completion code was not recognized'
+	goto Done
+
+SetStates:
 	UPDATE T_Dataset_Archive
-	SET    AS_state_ID = @completionState 
+	SET
+		AS_state_ID = @completionState,
+		AS_update_state_ID = @currentUpdateState  
 	WHERE  (AS_Dataset_ID = @datasetID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -109,7 +148,7 @@ As
 		goto done
 	end
 
-  ---------------------------------------------------
+	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
 	--

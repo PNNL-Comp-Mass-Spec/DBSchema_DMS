@@ -3,30 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW V_Purgable_Datasets_NoJob
+CREATE VIEW dbo.V_Purgable_Datasets_NoJob
 AS
-SELECT     
-	T_Dataset.Dataset_ID, 
-	t_storage_path.SP_machine_name AS StorageServerName, 
-	t_storage_path.SP_vol_name_server AS ServerVol, 
-	T_Dataset.DS_created AS Created,
-	T_Instrument_Class.raw_data_type
-FROM
-	T_Dataset INNER JOIN
-	T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID INNER JOIN
-	t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER JOIN
-	T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID INNER JOIN
-	T_Instrument_Class ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class
-WHERE
-	(T_Instrument_Class.is_purgable > 0) AND 
-	(T_Dataset_Archive.AS_state_ID = 3) AND 
-	(T_Dataset.DS_rating <> -2) AND
-	(ISNULL(T_Dataset_Archive.AS_purge_holdoff_date, GETDATE()) <= GETDATE()) AND 
-	(T_Dataset.Dataset_ID NOT IN
-	(SELECT     AJ_datasetID
-	FROM          T_Analysis_Job))
-
-
+SELECT     dbo.T_Dataset.Dataset_ID, dbo.t_storage_path.SP_machine_name AS StorageServerName, dbo.t_storage_path.SP_vol_name_server AS ServerVol, 
+                      dbo.T_Dataset.DS_created AS Created, dbo.T_Instrument_Class.raw_data_type
+FROM         dbo.T_Dataset INNER JOIN
+                      dbo.T_Dataset_Archive ON dbo.T_Dataset.Dataset_ID = dbo.T_Dataset_Archive.AS_Dataset_ID INNER JOIN
+                      dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
+                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID INNER JOIN
+                      dbo.T_Instrument_Class ON dbo.T_Instrument_Name.IN_class = dbo.T_Instrument_Class.IN_class
+WHERE     (dbo.T_Instrument_Class.is_purgable > 0) AND (dbo.T_Dataset_Archive.AS_state_ID = 3) AND (dbo.T_Dataset.DS_rating <> - 2) AND 
+                      (ISNULL(dbo.T_Dataset_Archive.AS_purge_holdoff_date, GETDATE()) <= GETDATE()) AND (dbo.T_Dataset.Dataset_ID NOT IN
+                          (SELECT     AJ_datasetID
+                            FROM          T_Analysis_Job)) AND (dbo.T_Dataset_Archive.AS_update_state_ID = 4)
 
 GO
