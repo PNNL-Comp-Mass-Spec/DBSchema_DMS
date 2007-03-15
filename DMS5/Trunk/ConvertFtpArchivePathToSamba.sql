@@ -33,3 +33,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[ConvertFtpArchivePathToSamba] TO [public]
+GO

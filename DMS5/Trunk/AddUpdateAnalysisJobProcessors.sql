@@ -15,10 +15,12 @@ CREATE PROCEDURE AddUpdateAnalysisJobProcessors
 **    Auth: grk
 **    Date: 02/15/2007 (ticket 389)
 **          02/23/2007 grk - added @AnalysisToolsList stuff
+**			03/15/2007 mem - Tweaked invalid tool name error message
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int output,
 	@State char(1),
 	@ProcessorName varchar(64),
@@ -27,6 +29,7 @@ CREATE PROCEDURE AddUpdateAnalysisJobProcessors
 	@AnalysisToolsList varchar(1024),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -122,7 +125,11 @@ As
 	--
 	if @tmp <> 0
 	begin
-		set @message = 'Invalid tool name'
+		SELECT TOP 1 @message = ToolName
+		FROM #TD
+		WHERE ToolID is null
+		
+		set @message = 'Invalid tool name: ' + IsNull(@message, '??')
 		RAISERROR (@message, 10, 1)
 		return 51008
 	end
@@ -138,14 +145,14 @@ As
 		set @tmp = 0
 		--
 		SELECT @tmp = ID
-			FROM  T_Analysis_Job_Processors
+		FROM  T_Analysis_Job_Processors
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = 0
 		begin
-			set @message = 'No entry could be found in database for update'
+			set @message = 'Cannot update processor ID ' + Convert(varchar(12), @ID) + '; existing entry not found in the database'
 			RAISERROR (@message, 10, 1)
 			return 51007
 		end
@@ -190,7 +197,7 @@ As
 			return 51007
 		end
 
-		-- return IDof newly created entry
+		-- return ID of newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Analysis_Job_Processors')
 
@@ -238,7 +245,7 @@ As
 		-- remove any references to tools that are not in the list
 		--
 		DELETE FROM T_Analysis_Job_Processor_Tools
-		WHERE Processor_ID = @ID AND Tool_ID not in (SELECT ToolID FROM #TD)		
+		WHERE Processor_ID = @ID AND Tool_ID NOT IN (SELECT ToolID FROM #TD)		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -277,7 +284,6 @@ As
 	end -- add or update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]
