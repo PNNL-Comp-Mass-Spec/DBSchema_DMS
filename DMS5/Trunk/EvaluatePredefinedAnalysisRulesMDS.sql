@@ -3,39 +3,40 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
+CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
 ** 
-**		Desc: 
+**	Desc: 
 **      Evaluate predefined analysis rules for given
 **      list of datasets and generate the specifed 
 **      ouput type 
 **
-**		Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
-**
-**		Auth:	grk
-**		Date:	6/23/2005
-**			   03/28/2006 grk - added protein collection fields
-**			   04/04/2006 grk - increased sized of param file name
+**	Auth:	grk
+**	Date:	6/23/2005
+**			03/28/2006 grk - added protein collection fields
+**			04/04/2006 grk - increased sized of param file name
+**			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **    
 *****************************************************/
+(
     @datasetList varchar(3500),
 	@message varchar(512) output
+)
 As
 	set nocount on
 	
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 
 	---------------------------------------------------
-	-- temporary job holding table to receive created jobs
+	-- Temporary job holding table to receive created jobs
+	-- This table is populated in EvaluatePredefinedAnalysisRules
 	---------------------------------------------------
 	
 	CREATE TABLE #JX (
@@ -50,7 +51,7 @@ As
 		proteinOptionsList varchar(256), 
 		ownerPRN varchar(128),
 		comment varchar(128),
-		assignedProcessor varchar(64),
+		associatedProcessorGroup varchar(64),
 		numJobs int,
 		ID int IDENTITY (1, 1) NOT NULL
 	)
@@ -108,7 +109,7 @@ As
 		begin
 			---------------------------------------------------
 			-- add jobs created for the dataset to the 
-			-- job holding table
+			-- job holding table (#JX)
 			---------------------------------------------------
 			set @message = ''
 			exec @result = EvaluatePredefinedAnalysisRules 
@@ -122,14 +123,14 @@ As
 	-- Dump contents of job holding table
 	---------------------------------------------------
 
-	select
+	SELECT
 		ID,
 		'Entry' as Job,
 		datasetNum as Dataset,
 		numJobs as Jobs,
 		analysisToolName as Tool,
 		priority as Pri,
-		assignedProcessor as Processor,
+		associatedProcessorGroup as [Processor Group],
 		comment as Comment,
 		parmFileName as [Param_File],
 		settingsFileName as [Settings_File],
@@ -138,14 +139,13 @@ As
 		proteinCollectionList,
 		proteinOptionsList, 
 		ownerPRN as Owner
-	from #JX
+	FROM #JX
 
 	---------------------------------------------------
 	--
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User]

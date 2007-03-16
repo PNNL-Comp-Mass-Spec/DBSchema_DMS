@@ -3,40 +3,40 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SchedulePredefinedAnalyses
+CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
 /****************************************************
 ** 
-**		Desc: Schedules analysis jobs for dataset 
+**	Desc: Schedules analysis jobs for dataset 
 **            according to defaults
 **
-**		Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
-**
-**		Auth:	grk
-**		Date:
-**		       06/29/2005 grk - supersedes "ScheduleDefaultAnalyses"
-**			   03/28/2006 grk - added protein collection fields
-**			   04/04/2006 grk - increased sized of param file name
-**			   06/01/2006 grk - fixed calling sequence to AddUpdateAnalysisJob
+**	Auth:	grk
+**	Date:	06/29/2005 grk - supersedes "ScheduleDefaultAnalyses"
+**			03/28/2006 grk - added protein collection fields
+**			04/04/2006 grk - increased sized of param file name
+**			06/01/2006 grk - fixed calling sequence to AddUpdateAnalysisJob
+**			03/15/2007 mem - Updated call to AddUpdateAnalysisJob (Ticket #394)
+**						   - Replaced processor name with associated processor group (Ticket #388)
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128)
+)
 As
 	set nocount on
 	
 	declare @myError int
-	set @myError = 0
-	
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	declare @message varchar(512)
 	set @message = ''
 
-
 	---------------------------------------------------
-	-- temporary job holding table to receive created jobs
+	-- Temporary job holding table to receive created jobs
+	-- This table is populated in EvaluatePredefinedAnalysisRules
 	---------------------------------------------------
 	
 	CREATE TABLE #JX (
@@ -51,7 +51,7 @@ As
 		proteinOptionsList varchar(256), 
 		ownerPRN varchar(128),
 		comment varchar(128),
-		assignedProcessor varchar(64),
+		associatedProcessorGroup varchar(64),
 		numJobs int,
 		ID int IDENTITY (1, 1) NOT NULL
 	)
@@ -66,7 +66,7 @@ As
 	end
 	
 	---------------------------------------------------
-	-- Populate the job holding table
+	-- Populate the job holding table (#JX)
 	---------------------------------------------------
 	declare @result int
 
@@ -97,8 +97,9 @@ As
 
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
-	declare @assignedProcessor varchar(64)
 	
+	declare @associatedProcessorGroup varchar(64)
+	set @associatedProcessorGroup = ''
 
 	-- keep track of how many jobs have been scheduled
 	--
@@ -127,7 +128,7 @@ As
 			@proteinOptionsList = proteinOptionsList,
 			@ownerPRN  = ownerPRN,
 			@comment = comment,
-			@assignedProcessor = assignedProcessor,
+			@associatedProcessorGroup = associatedProcessorGroup,
 			@ID = ID
 		FROM #JX
 		WHERE ID > @currID
@@ -161,10 +162,11 @@ As
 							@organismDBName,
 							@ownerPRN,
 							@comment,
-							@assignedProcessor,
-							'',
-							@jobNum output,
-							'add',
+							@associatedProcessorGroup,
+							'',					-- Propagation mode
+							'new',				-- State name
+							@jobNum output,		-- Job number
+							'add',				-- Mode
 							@message output
 
 				-- if there was an error creating the job, remember it
@@ -195,7 +197,6 @@ As
 
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[SchedulePredefinedAnalyses] TO [DMS_Analysis]

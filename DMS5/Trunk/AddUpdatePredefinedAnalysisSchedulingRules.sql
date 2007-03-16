@@ -3,30 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE AddUpdatePredefinedAnalysisSchedulingRules
+CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 /****************************************************
 **
-**  Desc: Adds new or edits existing T_Predefined_Analysis_Scheduling_Rules
+**	Desc: Adds new or edits existing T_Predefined_Analysis_Scheduling_Rules
 **
-**  Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**    Auth: grk
-**    Date: 06/23/2005
+**	Auth:	grk
+**	Date:	06/23/2005
+**			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **    
 *****************************************************/
-  @evaluationOrder smallint,
-  @instrumentClass varchar(32),
-  @instrumentName varchar(64),
-  @datasetName varchar(128),
-  @analysisToolName varchar(64),
-  @priority int,
-  @processorName varchar(64),
-  @enabled tinyint,
-  @ID int output,
-  @mode varchar(12) = 'add', -- or 'update'
-  @message varchar(512) output
+(
+	@evaluationOrder smallint,
+	@instrumentClass varchar(32),
+	@instrumentName varchar(64),
+	@datasetName varchar(128),
+	@analysisToolName varchar(64),
+	@priority int,
+	@processorGroup varchar(64),
+	@enabled tinyint,
+	@ID int output,
+	@mode varchar(12) = 'add', -- or 'update'
+	@message varchar(512) output
+)
 As
   set nocount on
 
@@ -76,27 +77,26 @@ As
   if @Mode = 'add'
   begin
  
-  INSERT INTO T_Predefined_Analysis_Scheduling_Rules (
-    SR_evaluationOrder, 
-    SR_instrumentClass, 
-    SR_instrument_Name, 
-    SR_dataset_Name, 
-    SR_analysisToolName, 
-    SR_priority, 
-    SR_processorName, 
-    SR_enabled
-  ) VALUES (
-    @evaluationOrder, 
-    @instrumentClass, 
-    @instrumentName, 
-    @datasetName, 
-    @analysisToolName, 
-    @priority, 
-    @processorName, 
-    @enabled
-  )
- /**/
-    --
+	INSERT INTO T_Predefined_Analysis_Scheduling_Rules (
+		SR_evaluationOrder, 
+		SR_instrumentClass, 
+		SR_instrument_Name, 
+		SR_dataset_Name, 
+		SR_analysisToolName, 
+		SR_priority, 
+		SR_processorGroup, 
+		SR_enabled
+	) VALUES (
+		@evaluationOrder, 
+		@instrumentClass, 
+		@instrumentName, 
+		@datasetName, 
+		@analysisToolName, 
+		@priority, 
+		@processorGroup, 
+		@enabled
+	)
+     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
@@ -129,7 +129,7 @@ As
       SR_dataset_Name = @datasetName, 
       SR_analysisToolName = @analysisToolName, 
       SR_priority = @priority, 
-      SR_processorName = @processorName, 
+      SR_processorGroup = @processorGroup, 
       SR_enabled = @enabled
     WHERE (ID = @ID)
     --

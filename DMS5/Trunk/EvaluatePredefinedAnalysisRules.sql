@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
@@ -22,7 +21,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **		    04/04/2006 grk - increased sized of param file name
 **			11/30/2006 mem - Now evaluating dataset type for each analysis tool (Ticket #335)
 **			12/21/2006 mem - Updated 'Show Rules' to include explanations for why a rule was used, altered, or skipped (Ticket #339)
-**			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
+**			01/26/2007 mem - Now getting organism name from T_Organisms (Ticket #368)
+**			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **    
 *****************************************************/
 (
@@ -173,7 +173,7 @@ As
 			[Prot. Coll.] varchar(512), 
 			[Prot. Opts.] varchar(256),
 			Priority int, 
-			[Assigned Proc] varchar(64)
+			[Processor Group] varchar(64)
 		)
 	End
 	
@@ -267,7 +267,7 @@ As
 			[Labelling Incl.], [Labelling Excl.],
 			[Parm File], [Settings File],
 			Organism, [Organism DB], [Prot. Coll.], [Prot. Opts.],
-			Priority, [Assigned Proc])
+			Priority, [Processor Group])
 		SELECT	AD_level, AD_sequence, AD_ID, AD_nextLevel,
 				'Skip' AS [Action], 'Level skip' AS [Reason], 
 				'' AS [Notes], AD_analysisToolName,
@@ -278,7 +278,7 @@ As
 				AD_parmFileName, AD_settingsFileName,
 				AD_organismName, AD_organismDBName, 
 				AD_proteinCollectionList, AD_proteinOptionsList, 
-				AD_priority, '' AS [Assigned Proc]
+				AD_priority, '' AS [Processor Group]
 		FROM #AD
 		ORDER BY AD_level, AD_Sequence, AD_ID
 	
@@ -320,7 +320,7 @@ As
 		proteinOptionsList varchar(256), 
 		ownerPRN varchar(128),
 		comment varchar(128),
-		assignedProcessor varchar(64),
+		associatedProcessorGroup varchar(64),
 		numJobs int
 	)
 	--
@@ -351,14 +351,14 @@ As
 	declare @analysisToolName varchar(64)
 	declare @organismName varchar(64)
 	declare @comment varchar(128)
-	declare @assignedProcessor varchar(64)
+	declare @associatedProcessorGroup varchar(64)
 	declare @paRuleID int
 
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
 
 	declare @tmpPriority int
-	declare @tmpProcessorName varchar(64)
+	declare @tmpProcessorGroup varchar(64)
 	declare @SchedulingRulesID int
 
 	declare @allowedDatasetTypes varchar(255)
@@ -396,7 +396,7 @@ As
 			@proteinOptionsList = AD_proteinOptionsList, 
 			@priority = AD_priority,
 			@RuleNextLevel = AD_nextLevel,
-			@assignedProcessor = '',
+			@associatedProcessorGroup = '',
 			@paRuleID = AD_ID
 		FROM #AD
 		WHERE AD_level >= @minLevel
@@ -475,7 +475,7 @@ As
 				Set @SchedulingRulesID = 0
 				SELECT TOP 1
 					@tmpPriority = SR_priority, 
-					@tmpProcessorName = SR_processorName,
+					@tmpProcessorGroup = SR_processorGroup,
 					@SchedulingRulesID = ID
 				FROM T_Predefined_Analysis_Scheduling_Rules
 				WHERE
@@ -497,14 +497,14 @@ As
 				if @myRowCount = 1
 				begin -- <d>
 					set @priority = @tmpPriority
-					set @assignedProcessor = @tmpProcessorName
+					set @associatedProcessorGroup = @tmpProcessorGroup
 				
 					If Len(@RuleEvalNotes) > 0
 						Set @RuleEvalNotes = @RuleNextLevel + '; '
 					Set @RuleEvalNotes = @RuleEvalNotes + 'Priority set to ' + Convert(varchar(12), @priority) 
 					
-					If Len(@assignedProcessor) > 0
-						Set @RuleEvalNotes = @RuleEvalNotes + ' and processor set to "' + @assignedProcessor + '"'
+					If Len(@associatedProcessorGroup) > 0
+						Set @RuleEvalNotes = @RuleEvalNotes + ' and processor group set to "' + @associatedProcessorGroup + '"'
 					
 					Set @RuleEvalNotes = @RuleEvalNotes + ' due to ID ' + Convert(varchar(12), @SchedulingRulesID) + ' in T_Predefined_Analysis_Scheduling_Rules'
 				end -- </d>
@@ -531,7 +531,7 @@ As
 					proteinOptionsList, 
 					ownerPRN,
 					comment,
-					assignedProcessor,
+					associatedProcessorGroup,
 					numJobs
 				) VALUES (
 					@datasetNum,
@@ -545,7 +545,7 @@ As
 					@proteinOptionsList, 
 					@ownerPRN,
 					@comment,
-					@assignedProcessor,
+					@associatedProcessorGroup,
 					@numJobs
 				)
 				--
@@ -565,7 +565,7 @@ As
 					[Reason] = @RuleActionReason, 
 					[Notes] = @RuleEvalNotes,
 					Priority = @priority, 
-					[Assigned Proc] = @assignedProcessor
+					[Processor Group] = @associatedProcessorGroup
 				WHERE Rule_ID  = @paRuleID
 			End
 		End -- </b>
@@ -604,7 +604,7 @@ As
 			numJobs as Jobs,
 			analysisToolName as Tool,
 			priority as Pri,
-			assignedProcessor as Processor,
+			associatedProcessorGroup as Processor_Group,
 			comment as Comment,
 			parmFileName as [Param_File],
 			settingsFileName as [Settings_File],
@@ -637,7 +637,7 @@ As
 			proteinOptionsList, 
 			ownerPRN,
 			comment,
-			assignedProcessor,
+			associatedProcessorGroup,
 			numJobs
 		)
 		SELECT 
@@ -652,7 +652,7 @@ As
 			proteinOptionsList, 
 			ownerPRN,
 			comment,
-			assignedProcessor,
+			associatedProcessorGroup,
 			numJobs
 		 FROM #JB
 	end
@@ -662,7 +662,6 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]
