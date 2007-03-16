@@ -40,13 +40,14 @@ CREATE PROCEDURE dbo.RequestAnalysisJob
 **			02/09/2007 mem - Added parameter @infoOnly
 **			02/22/2007 grk - Modify to use direct job-to-group association (Ticket #382)
 **			02/23/2007 grk - Modify to eliminate @toolList in favor of T_Analysis_Job_Processor_Tools
+**			03/15/2007 mem - Now calling RAISERROR at the end of this SP only if @myError <> 53000 (Ticket #394)
 **
 *****************************************************/
 (
 	@processorName varchar(128),
 	@jobNum varchar(32)=0 output,		-- Job number assigned; 0 if no job available
     @message varchar(512)='' output,
-	@infoOnly tinyint = 0			-- Set to 1 to preview the job that would be returned
+	@infoOnly tinyint = 0				-- Set to 1 to preview the job that would be returned
 )
 As
 	set nocount on
@@ -57,7 +58,12 @@ As
 	set @myRowCount = 0
 
 	declare @jobID int
-
+	
+	-- The analysis manager expects a non-zero return value if no jobs are available
+	-- Code 53000 is used for this
+	declare @jobNotAvailableErrorCode int
+	set @jobNotAvailableErrorCode = 53000
+	
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
@@ -71,7 +77,7 @@ As
 	begin
 		set @message = 'Processor name is blank'
 		set @myError = 50000
-		goto done
+		goto Done
 	end
 	
 	declare @processorID int
@@ -87,14 +93,14 @@ As
 	begin
 		set @message = 'Error resolving processor name to ID'
 		set @myError = 50002
-		goto done
+		goto Done
 	end
 	--
 	if @processorID = 0
 	begin
 		set @message = 'Invalid processor name'
 		set @myError = 50003
-		goto done
+		goto Done
 	end
 
 	---------------------------------------------------
@@ -120,7 +126,7 @@ As
 		T_Analysis_Job.AJ_priority,
 		'Specific Association' as Assignment_Method
 	FROM
-		T_Analysis_Job  INNER JOIN
+		T_Analysis_Job INNER JOIN
 		T_Analysis_Job_Processor_Group_Associations ON T_Analysis_Job.AJ_jobID = T_Analysis_Job_Processor_Group_Associations.Job_ID INNER JOIN
 		T_Analysis_Job_Processor_Group_Membership INNER JOIN
 		T_Analysis_Job_Processor_Group ON 
@@ -144,7 +150,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'could not load temporary candidate table'
-		goto done
+		goto Done
 	end
 	
 	-- if there are candidates in table, go assign one
@@ -184,14 +190,14 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'could not check processor membership in pool group'
-		goto done
+		goto Done
 	end
 	--
 	-- Processor is not allowed to do general processing, so no doughnut...
 	--
 	if @gp = 0
 	begin
-		set @myError = 50004
+		set @myError = @jobNotAvailableErrorCode
 		set @message = 'Job not available via job-to-group association for processor "' + @processorName + '" and it is not allowed to perform general processing'
 		goto Done
 	end
@@ -226,7 +232,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'could not load temporary candidate table'
-		goto done
+		goto Done
 	end
 	
 	-- Select some candidate jobs from jobs 
@@ -257,7 +263,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'could not load temporary candidate table'
-		goto done
+		goto Done
 	end
 
 AssignJob:
@@ -271,9 +277,9 @@ AssignJob:
 	--
 	if @tmp = 0
 	begin
-		set @myError = 50005
+		set @myError = @jobNotAvailableErrorCode
 		set @message = 'No candidate jobs were found'
-		goto done
+		goto Done
 	end
 
  	---------------------------------------------------
@@ -308,15 +314,15 @@ AssignJob:
 	begin
 		rollback transaction @transName
 		set @message = 'Error looking for available job'
-		goto done
+		goto Done
 	end
 	
 	if @myRowCount <> 1
 	begin
 		rollback transaction @transName
-		set @message = 'No candidate could be assigned'
-		set @myError = 53000
-		goto done
+		set @myError = @jobNotAvailableErrorCode
+		set @message = 'The candidate jobs in #PD are no longer in state 1; job not assigned'
+		goto Done
 	end
 
 	if @infoOnly = 0
@@ -359,7 +365,7 @@ AssignJob:
 	---------------------------------------------------
 	--
 Done:
-	if @message <> '' AND @infoOnly = 0
+	if @message <> '' AND @myError <> @jobNotAvailableErrorCode AND @infoOnly = 0
 	begin
 		RAISERROR (@message, 10, 1)
 	end
