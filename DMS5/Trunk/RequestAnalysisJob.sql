@@ -41,6 +41,7 @@ CREATE PROCEDURE dbo.RequestAnalysisJob
 **			02/22/2007 grk - Modify to use direct job-to-group association (Ticket #382)
 **			02/23/2007 grk - Modify to eliminate @toolList in favor of T_Analysis_Job_Processor_Tools
 **			03/15/2007 mem - Now calling RAISERROR at the end of this SP only if @myError <> 53000 (Ticket #394)
+**			03/16/2007 mem - Now using V_GetAnalysisJobsForRequestTask to exclude jobs that have datasets in an unsuitable archive state (Ticket #416)
 **
 *****************************************************/
 (
@@ -122,28 +123,25 @@ As
 	INSERT INTO #PD
 		(Job_ID, Priority, Assignment_Method)
 	SELECT DISTINCT TOP 10 
-		T_Analysis_Job.AJ_jobID AS Job_ID, 
-		T_Analysis_Job.AJ_priority,
+		AJ.Job, 
+		AJ.Priority,
 		'Specific Association' as Assignment_Method
-	FROM
-		T_Analysis_Job INNER JOIN
-		T_Analysis_Job_Processor_Group_Associations ON T_Analysis_Job.AJ_jobID = T_Analysis_Job_Processor_Group_Associations.Job_ID INNER JOIN
-		T_Analysis_Job_Processor_Group_Membership INNER JOIN
-		T_Analysis_Job_Processor_Group ON 
-		T_Analysis_Job_Processor_Group_Membership.Group_ID = T_Analysis_Job_Processor_Group.ID INNER JOIN
-		T_Analysis_Job_Processors ON T_Analysis_Job_Processor_Group_Membership.Processor_ID = T_Analysis_Job_Processors.ID ON 
-		T_Analysis_Job_Processor_Group_Associations.Group_ID = T_Analysis_Job_Processor_Group.ID
+	FROM V_GetAnalysisJobsForRequestTask AJ INNER JOIN
+		 T_Analysis_Job_Processor_Group_Associations AJPGA ON AJ.Job = AJPGA.Job_ID INNER JOIN
+		 T_Analysis_Job_Processor_Group AJPG ON AJPGA.Group_ID = AJPG.ID INNER JOIN
+		 T_Analysis_Job_Processor_Group_Membership AJPGM ON AJPG.ID = AJPGM.Group_ID INNER JOIN
+		 T_Analysis_Job_Processors AJP ON AJPGM.Processor_ID = AJP.ID
 	WHERE
-		(T_Analysis_Job_Processor_Group.Group_Enabled = 'Y') AND
-		(T_Analysis_Job_Processor_Group_Membership.Membership_Enabled = 'Y') AND 
-		(T_Analysis_Job_Processors.State = 'E') AND 
-		(T_Analysis_Job.AJ_analysisToolID IN
+		(AJPG.Group_Enabled = 'Y') AND
+		(AJPGM.Membership_Enabled = 'Y') AND 
+		(AJP.State = 'E') AND 
+		(AJ.AnalysisToolID IN
 		(SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
-		(T_Analysis_Job_Processors.Processor_Name = @processorName) AND 
-		(T_Analysis_Job.AJ_StateID = 1)
+		(AJP.Processor_Name = @processorName) AND 
+		(AJ.JobStateID = 1)
 	ORDER BY 
-		T_Analysis_Job.AJ_priority, 
-		T_Analysis_Job.AJ_jobID
+		AJ.Priority, 
+		AJ.Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -175,15 +173,14 @@ As
 	SELECT     
 		@gp = COUNT(*)
 	FROM         
-		T_Analysis_Job_Processor_Group INNER JOIN
-		T_Analysis_Job_Processor_Group_Membership ON 
-		T_Analysis_Job_Processor_Group.ID = T_Analysis_Job_Processor_Group_Membership.Group_ID INNER JOIN
-		T_Analysis_Job_Processors ON T_Analysis_Job_Processor_Group_Membership.Processor_ID = T_Analysis_Job_Processors.ID
+		T_Analysis_Job_Processor_Group AJPG INNER JOIN
+		T_Analysis_Job_Processor_Group_Membership AJPGM ON AJPG.ID = AJPGM.Group_ID INNER JOIN
+		T_Analysis_Job_Processors AJP ON AJPGM.Processor_ID = AJP.ID
 	WHERE     
-		(T_Analysis_Job_Processor_Group.Group_Enabled = 'Y') AND
-		(T_Analysis_Job_Processor_Group.Available_For_General_Processing = 'Y') AND 
-		(T_Analysis_Job_Processor_Group_Membership.Membership_Enabled = 'Y') AND
-		(T_Analysis_Job_Processors.Processor_Name = @processorName) 
+		(AJPG.Group_Enabled = 'Y') AND
+		(AJPG.Available_For_General_Processing = 'Y') AND 
+		(AJPGM.Membership_Enabled = 'Y') AND
+		(AJP.Processor_Name = @processorName) 
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -211,21 +208,21 @@ As
 	INSERT INTO #PD
 		(Job_ID, Priority, Assignment_Method)
 	SELECT DISTINCT TOP 10 
-		T_Analysis_Job.AJ_jobID AS Job_ID, 
-		T_Analysis_Job.AJ_priority, 
+		AJ.Job,
+		AJ.Priority, 
 		'General Association' AS Assignment_Method
 	FROM
-		T_Analysis_Job INNER JOIN
-		T_Analysis_Job_Processor_Group_Associations ON T_Analysis_Job.AJ_jobID = T_Analysis_Job_Processor_Group_Associations.Job_ID INNER JOIN
-		T_Analysis_Job_Processor_Group ON T_Analysis_Job_Processor_Group_Associations.Group_ID = T_Analysis_Job_Processor_Group.ID
+		V_GetAnalysisJobsForRequestTask AJ INNER JOIN
+		T_Analysis_Job_Processor_Group_Associations AJPGA ON AJ.Job = AJPGA.Job_ID INNER JOIN
+		T_Analysis_Job_Processor_Group AJPG ON AJPGA.Group_ID = AJPG.ID
 	WHERE
-		(T_Analysis_Job_Processor_Group.Group_Enabled = 'Y') AND 
-		(T_Analysis_Job.AJ_analysisToolID IN
+		(AJPG.Group_Enabled = 'Y') AND 
+		(AJ.AnalysisToolID IN
 		(SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
-		(T_Analysis_Job.AJ_StateID = 1) AND 
-		(T_Analysis_Job_Processor_Group.Available_For_General_Processing = 'Y')
+		(AJ.JobStateID = 1) AND 
+		(AJPG.Available_For_General_Processing = 'Y')
 	ORDER BY 
-		T_Analysis_Job.AJ_priority, T_Analysis_Job.AJ_jobID
+		AJ.Priority, AJ.Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -241,22 +238,21 @@ As
 	INSERT INTO #PD
 		(Job_ID, Priority, Assignment_Method)
 	SELECT TOP 10 
-		T_Analysis_Job.AJ_jobID AS Job_ID, 
-		T_Analysis_Job.AJ_priority, 
+		AJ.Job,
+		AJ.Priority,
 		'Non-Association' AS Assignment_Method
 	FROM
-		 T_Analysis_Job 
+		 V_GetAnalysisJobsForRequestTask AJ 
 	WHERE
-		(T_Analysis_Job.AJ_analysisToolID IN
-		(SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
-		(T_Analysis_Job.AJ_StateID = 1) AND
+		(AJ.AnalysisToolID IN (SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
+		(AJ.JobStateID = 1) AND
 		NOT EXISTS (
 			SELECT *
 			FROM T_Analysis_Job_Processor_Group_Associations
-			WHERE (T_Analysis_Job_Processor_Group_Associations.Job_ID = T_Analysis_Job.AJ_jobID)    
+			WHERE (T_Analysis_Job_Processor_Group_Associations.Job_ID = AJ.Job)
 		)
 	ORDER BY 
-		T_Analysis_Job.AJ_priority, T_Analysis_Job.AJ_jobID
+		AJ.Priority, AJ.Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
