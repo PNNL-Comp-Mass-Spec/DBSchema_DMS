@@ -23,7 +23,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			12/21/2006 mem - Updated 'Show Rules' to include explanations for why a rule was used, altered, or skipped (Ticket #339)
 **			01/26/2007 mem - Now getting organism name from T_Organisms (Ticket #368)
 **			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
-**    
+**			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
+**
 *****************************************************/
 (
 	@datasetNum varchar(128),
@@ -358,7 +359,7 @@ As
 	declare @ownerPRN varchar(32)
 
 	declare @tmpPriority int
-	declare @tmpProcessorGroup varchar(64)
+	declare @tmpProcessorGroupID int
 	declare @SchedulingRulesID int
 
 	declare @allowedDatasetTypes varchar(255)
@@ -475,7 +476,7 @@ As
 				Set @SchedulingRulesID = 0
 				SELECT TOP 1
 					@tmpPriority = SR_priority, 
-					@tmpProcessorGroup = SR_processorGroup,
+					@tmpProcessorGroupID = SR_processorGroupID,
 					@SchedulingRulesID = ID
 				FROM T_Predefined_Analysis_Scheduling_Rules
 				WHERE
@@ -497,8 +498,17 @@ As
 				if @myRowCount = 1
 				begin -- <d>
 					set @priority = @tmpPriority
-					set @associatedProcessorGroup = @tmpProcessorGroup
-				
+					If IsNull(@tmpProcessorGroupID, 0) > 0
+					Begin
+						SELECT @associatedProcessorGroup = Group_Name
+						FROM dbo.T_Analysis_Job_Processor_Group
+						WHERE (ID = @tmpProcessorGroupID)
+						
+						Set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
+					End
+					Else
+						Set @associatedProcessorGroup = ''
+			
 					If Len(@RuleEvalNotes) > 0
 						Set @RuleEvalNotes = @RuleNextLevel + '; '
 					Set @RuleEvalNotes = @RuleEvalNotes + 'Priority set to ' + Convert(varchar(12), @priority) 

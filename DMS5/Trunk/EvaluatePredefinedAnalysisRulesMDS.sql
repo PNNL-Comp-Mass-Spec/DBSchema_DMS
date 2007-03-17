@@ -17,7 +17,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **	Date:	6/23/2005
 **			03/28/2006 grk - added protein collection fields
 **			04/04/2006 grk - increased sized of param file name
-**			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
+**			03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **    
 *****************************************************/
 (
@@ -130,7 +130,7 @@ As
 		numJobs as Jobs,
 		analysisToolName as Tool,
 		priority as Pri,
-		associatedProcessorGroup as [Processor Group],
+		associatedProcessorGroup as Processor_Group,
 		comment as Comment,
 		parmFileName as [Param_File],
 		settingsFileName as [Settings_File],
