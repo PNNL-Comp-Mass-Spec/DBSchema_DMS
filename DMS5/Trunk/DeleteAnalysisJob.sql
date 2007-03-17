@@ -16,21 +16,23 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **
 **	
 **
-**		Auth: grk
-**		Date: 3/6/2001
-**            6/9/2004 grk - added delete for analysis job request reference
-**			  04/07/2006 grk - eliminated job to request map table
-**            02/20/2007 grk - added code to remove any job-to-group associations
-**    
+**	Auth:	grk
+**	Date:	03/06/2001
+**			06/09/2004 grk - added delete for analysis job request reference
+**			04/07/2006 grk - eliminated job to request map table
+**			02/20/2007 grk - added code to remove any job-to-group associations
+**			03/16/2007 mem - Fixed bug that required 1 or more rows be deleted from T_Analysis_Job_Processor_Group_Associations (Ticket #393)
+**
 *****************************************************/
+(
     @jobNum varchar(32)
+)
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	declare @jobID int
@@ -50,7 +52,7 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0 or @myRowCount = 0
+	if @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete job associations operation failed', 10, 1)
@@ -72,7 +74,6 @@ As
 	end
 	
 	commit transaction @transName
-
 
 	return 0
 
