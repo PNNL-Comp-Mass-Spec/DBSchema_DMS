@@ -22,7 +22,7 @@ CREATE PROCEDURE UpadateAnalysisJobs
 **                             AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
 **            11/15/2006 grk - add logic for propagation mode (ticket #328)
 **            03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
-**            04/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
+**            03/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
 **    
 *****************************************************/
     @JobList varchar(6000),

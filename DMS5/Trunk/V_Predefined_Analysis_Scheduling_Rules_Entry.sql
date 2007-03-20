@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Predefined_Analysis_Scheduling_Rules_Entry
+
+CREATE VIEW dbo.V_Predefined_Analysis_Scheduling_Rules_Entry
 AS
 SELECT PASR.SR_evaluationOrder AS evaluationOrder, 
     PASR.SR_instrumentClass AS instrumentClass, 
@@ -17,5 +18,6 @@ FROM dbo.T_Predefined_Analysis_Scheduling_Rules PASR LEFT OUTER
      JOIN
     dbo.T_Analysis_Job_Processor_Group AJPG ON 
     PASR.SR_processorGroupID = AJPG.ID
+
 
 GO
