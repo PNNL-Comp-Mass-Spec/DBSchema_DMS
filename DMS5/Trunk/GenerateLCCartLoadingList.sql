@@ -271,14 +271,14 @@ As
 	---------------------------------------------------
 	-- Output final report
 	---------------------------------------------------
-
+        
 	SELECT 
 	#XF.seq AS [Sequence],
 	CASE WHEN #XF.request = 0 THEN '(blank)' ELSE t_Requested_Run.rds_Name END as Name,
 	#XF.request AS Request,
 	#XF.col AS [Column#],
 	t_Experiments.Experiment_num AS Experiment
-	, T_Requested_Run.RDS_priority AS Priority, T_Requested_Run.RDS_BatchID AS Batch, T_Requested_Run.RDS_Run_Order AS [Batch Run Order]
+	, T_Requested_Run.RDS_priority AS Priority, T_Requested_Run.RDS_BatchID AS Batch, T_Requested_Run.RDS_Block as Block, T_Requested_Run.RDS_Run_Order AS [Batch Run Order]
 	FROM   
 	#XF
 	LEFT OUTER JOIN t_Requested_Run
