@@ -14,20 +14,21 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **
 **    Auth: grk
 **    Date: 06/09/2005
-**          6/10/2005  grk - added Reason argument
-**          6/16/2005  grk - added state restriction for update
-**          7/26/2005  grk - added stuff for requested personnel
-**          8/9/2005   grk - widened @SampleNameList
-**          10/12/2005 grk - added @UseSingleLCColumn
-**          10/26/2005 grk - disallowed change if not in 'New" state
+**          06/10/2005  grk - added Reason argument
+**          06/16/2005  grk - added state restriction for update
+**          07/26/2005  grk - added stuff for requested personnel
+**          08/09/2005  grk - widened @SampleNameList
+**          10/12/2005  grk - added @UseSingleLCColumn
+**          10/26/2005  grk - disallowed change if not in 'New" state
 **          10/28/2005  grk - added handling for internal standard
-**          11/1/2005   grk - rescinded disallowed change in 'New' state
+**          11/01/2005  grk - rescinded disallowed change in 'New' state
 **          11/11/2005  grk - added handling for postdigest internal standard
-**          1/3/2006    grk - added check for existing request name
-**          3/14/2006   grk - added stuff for multiple assigned users
-**          8/10/2006   grk - modified state handling
-**          8/10/2006   grk - allowed multiple requested personnel users
+**          01/03/2006  grk - added check for existing request name
+**          03/14/2006  grk - added stuff for multiple assigned users
+**          08/10/2006  grk - modified state handling
+**          08/10/2006  grk - allowed multiple requested personnel users
 **          12/15/2006  grk - added EstimatedMSRuns argument (Ticket #336)
+**          04/20/2007  grk - added validation for organism, campaign, cell culture (Ticket #440)
 **    
 *****************************************************/
   @RequestName varchar(128),
@@ -81,6 +82,92 @@ As
 
   -- future: this could get more complicated
   
+	---------------------------------------------------
+	-- Resolve campaign ID
+	---------------------------------------------------
+
+	declare @campaignID int
+	execute @campaignID = GetCampaignID @Campaign
+	if @campaignID = 0
+	begin
+		set @message = 'Could not find entry in database for campaignNum "' + @Campaign + '"'
+		RAISERROR (@message, 10, 1)
+		return 51036
+	end
+
+	---------------------------------------------------
+	-- Resolve cell cultures
+	---------------------------------------------------
+
+	-- create tempoary table to hold names of cell cultures as input
+	--
+	create table #CC (
+		name varchar(128) not null
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Could not create temporary table for cell culture list'
+		RAISERROR (@message, 10, 1)
+		return 51078
+	end
+
+	-- get names of cell cultures from list argument into table
+	--
+	insert into #CC (name) 
+	select item from MakeTableFromListDelim(@cellCultureList, ';')
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Could not populate temporary table for cell culture list'
+		RAISERROR (@message, 10, 1)
+		return 51079
+	end
+
+	-- verify that cell cultures exist
+	--
+	declare @cnt int
+	set @cnt = -1
+	SELECT @cnt = count(*) 
+	FROM #CC 
+	WHERE [name] not in (
+		SELECT CC_Name
+		FROM	T_Cell_Culture
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Was not able to check for cell cultures in database'
+		RAISERROR (@message, 10, 1)
+		return 51080
+	end
+	--
+	if @cnt <> 0 
+	begin
+		set @message = 'One or more cell cultures was not in database'
+		RAISERROR (@message, 10, 1)
+		return 51081	
+	end
+
+	---------------------------------------------------
+	-- Resolve organism ID
+	---------------------------------------------------
+
+	declare @organismID int
+	execute @organismID = GetOrganismID @Organism
+	if @organismID = 0
+	begin
+		set @message = 'Could not find entry in database for organismName "' + @Organism + '"'
+		RAISERROR (@message, 10, 1)
+		return 51038
+	end
+
   ---------------------------------------------------
   -- convert estimated completion date
   ---------------------------------------------------
@@ -147,7 +234,6 @@ As
 
 	---------------------------------------------------
 	-- Resolve postdigestion internal standard ID
-
 	---------------------------------------------------
 	-- 
 	declare @postdigestIntStdID int
@@ -337,7 +423,7 @@ As
       UseSingleLCColumn = @UseSingleLCColumn,
       Internal_standard_ID = @InternalstandardID, 
       Postdigest_internal_std_ID = @postdigestIntStdID,
-      State = @StateID
+   State = @StateID
     WHERE (ID = @ID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
