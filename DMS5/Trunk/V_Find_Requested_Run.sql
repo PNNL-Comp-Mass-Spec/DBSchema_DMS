@@ -12,12 +12,12 @@ SELECT     dbo.T_Requested_Run.ID AS Request_ID, dbo.T_Requested_Run.RDS_Name AS
                       dbo.T_Requested_Run.RDS_note AS Note, dbo.T_DatasetTypeName.DST_name AS Run_Type, 
                       dbo.T_Requested_Run.RDS_Well_Plate_Num AS Wellplate, dbo.T_Requested_Run.RDS_Well_Num AS Well, 
                       dbo.T_Requested_Run.RDS_BatchID AS Batch, dbo.T_Requested_Run.RDS_Blocking_Factor AS Blocking_Factor, 
-                      dbo.T_Requested_Run.RDS_priority AS Priority
+                      dbo.T_Requested_Run.RDS_priority AS Priority, dbo.T_LC_Cart.Cart_Name AS [LC Cart]
 FROM         dbo.T_DatasetTypeName INNER JOIN
                       dbo.T_Requested_Run ON dbo.T_DatasetTypeName.DST_Type_ID = dbo.T_Requested_Run.RDS_type_ID INNER JOIN
                       dbo.T_Users ON dbo.T_Requested_Run.RDS_Oper_PRN = dbo.T_Users.U_PRN INNER JOIN
                       dbo.T_Experiments ON dbo.T_Requested_Run.Exp_ID = dbo.T_Experiments.Exp_ID INNER JOIN
-                      dbo.T_EUS_UsageType ON dbo.T_Requested_Run.RDS_EUS_UsageType = dbo.T_EUS_UsageType.ID
-
+                      dbo.T_EUS_UsageType ON dbo.T_Requested_Run.RDS_EUS_UsageType = dbo.T_EUS_UsageType.ID INNER JOIN
+                      dbo.T_LC_Cart ON dbo.T_Requested_Run.RDS_Cart_ID = dbo.T_LC_Cart.ID
 
 GO
