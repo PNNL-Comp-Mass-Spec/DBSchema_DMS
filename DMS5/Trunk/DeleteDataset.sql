@@ -16,10 +16,12 @@ CREATE Procedure DeleteDataset
 **	
 **
 **		Auth: grk
-**		Date: 1/26/2001
-**            3/1/2004 grk added uncomsume scheduled run
-**            4/7/2006 grk got rid of dataset list stuff
-**		      4/7/2006 grk Got ride of CDBurn stuff
+**		Date: 
+**      01/26/2001
+**      03/01/2004 grk - added uncomsume scheduled run
+**      04/07/2006 grk - got rid of dataset list stuff
+**		04/07/2006 grk - Got ride of CDBurn stuff
+**      05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
 **    
 *****************************************************/
 (
@@ -50,6 +52,8 @@ As
 	declare @wellplateNum varchar(50)
 	declare @wellNum varchar(50)
 
+	set @datasetID = 0
+	--
 	SELECT  
 		@state = DS_state_ID,
 		@datasetID = Dataset_ID,
@@ -65,6 +69,12 @@ As
 		set @msg = 'Could not get Id or state for dataset "' + @datasetNum + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51140
+	end
+	--
+	if @datasetID = 0
+	begin
+		set @message = 'Datset does not exist"' + @datasetNum + '"'
+		return 51141
 	end
 
 	---------------------------------------------------
@@ -122,7 +132,7 @@ As
 	-- restore any consumed requested runs
 	---------------------------------------------------
 
-	exec @result = UnconsumeScheduledRun @datasetID, @wellplateNum, @wellNum, @message output
+	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, 0, @message output
 	if @result <> 0
 	begin
 		rollback transaction @transName
