@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.AddUpdateDataset
+CREATE Procedure AddUpdateDataset
 /****************************************************
 **		File: 
 **		Name: AddNewDataset
@@ -15,13 +14,14 @@ CREATE Procedure dbo.AddUpdateDataset
 **		Parameters:
 **
 **		Auth: grk
-**		Date: 2/13/2003
-**		      1/10/2002
-**            12/10/2003 grk added wellplate, internal standards, and LC column stuff
-**            1/11/2005 grk added bad dataset stuff
-**            2/23/2006 grk added LC cart tracking stuff and EUS stuff
-**            1/12/2007 grk  added verification mode
-**            2/16/2007 grk  added validation of dataset name (Ticket #390)
+**		Date: 02/13/2003
+**		      01/10/2002
+**            12/10/2003 grk - added wellplate, internal standards, and LC column stuff
+**            01/11/2005 grk - added bad dataset stuff
+**            02/23/2006 grk - added LC cart tracking stuff and EUS stuff
+**            01/12/2007 grk - added verification mode
+**            02/16/2007 grk - added validation of dataset name (Ticket #390)
+**            04/30/2007 grk - added better name validation (Ticket #450)
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -128,9 +128,11 @@ As
 	-- validate dataset name
 	---------------------------------------------------
 
-	if CHARINDEX ('.', @datasetNum) > 0
+	declare @badCh varchar(128)
+	set @badCh =  dbo.ValidateChars(@experimentNum, '')
+	if @badCh <> ''
 	begin
-		set @msg = 'Dataset name may not contain "." character'
+		set @msg = 'Dataset may not contain the character(s) "' + @badCh + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51001
 	end

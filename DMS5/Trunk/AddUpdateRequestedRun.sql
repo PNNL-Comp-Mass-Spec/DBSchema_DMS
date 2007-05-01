@@ -15,18 +15,21 @@ CREATE Procedure AddUpdateRequestedRun
 **		Auth: grk
 **		Date: 1/11/2002
 **		Date: 2/15/2003
-**      12/5/2003 grk - added wellplate stuff
-**      1/5/2004 grk - added internal standard stuff
-**      3/1/2004 grk - added manual identity calculation (removed identity column)
-**      3/10/2004 grk - repaired manual identity calculation to include history table
-**      7/15/2004 grk - added verification of experiment location aux info
+**      12/05/2003 grk - added wellplate stuff
+**      01/05/2004 grk - added internal standard stuff
+**      03/01/2004 grk - added manual identity calculation (removed identity column)
+**      03/10/2004 grk - repaired manual identity calculation to include history table
+**      07/15/2004 grk - added verification of experiment location aux info
 **      11/26/2004 grk - changed type of @comment from text to varchar
-**      1/12/2004 grk -- fixed null return on check existing when table is empty
-**      10/12/2005 -- grk Added stuff for new work package and proposal fields.
-**      2/21/2006  -- grk Added stuff for EUS proposal and user tracking.
-**      11/09/2006  -- grk Fixed error message handling (Ticket #318)
-**      1/12/2007  -- grk  added verification mode
-**      1/31/2007  -- grk  added verification for @operPRN (Ticket #371)
+**      01/12/2004 grk - fixed null return on check existing when table is empty
+**      10/12/2005 grk - Added stuff for new work package and proposal fields.
+**      02/21/2006 grk - Added stuff for EUS proposal and user tracking.
+**      11/09/2006 grk - Fixed error message handling (Ticket #318)
+**      01/12/2007 grk - added verification mode
+**      01/31/2007 grk - added verification for @operPRN (Ticket #371)
+**      03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
+**      04/25/2007 grk - get new ID from UDF (Ticket #446)
+**      04/30/2007 grk - added better name validation (Ticket #450)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -58,6 +61,10 @@ As
 	
 	
 	set @message = ''
+	
+	-- default priority at which new requests will be created
+	declare @defaultPriority int
+	set @defaultPriority = 0
 	
 	---------------------------------------------------
 	-- Validate input fields
@@ -107,6 +114,19 @@ As
 	--
 	if @myError <> 0
 		return @myError
+
+	---------------------------------------------------
+	-- validate name
+	---------------------------------------------------
+
+	declare @badCh varchar(128)
+	set @badCh =  dbo.ValidateChars(@reqName, '')
+	if @badCh <> ''
+	begin
+		set @message = 'Name may not contain the character(s) "' + @badCh + '"'
+		RAISERROR (@message, 10, 1)
+		return 51001
+	end
 		
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -295,12 +315,7 @@ As
 		--
 		begin transaction @transName
 		
-		SELECT @request = MAX(M.ID) + 1 FROM
-		(
-		SELECT ISNULL(MAX(ID), 0) AS ID FROM T_Requested_Run
-		UNION
-		SELECT ISNULL(MAX(ID), 0) AS ID FROM T_Requested_Run_History
-		) M
+		set @request = dbo.GetNewRequestedRunID()
 
 		INSERT INTO T_Requested_Run
 			(
@@ -333,7 +348,7 @@ As
 				@datasetTypeID, 
 				@instrumentSettings, 
 				@specialInstructions, 
-				0, 
+				@defaultPriority, -- priority
 				@experimentID,
 				@workPackage,
 				@wellplateNum,

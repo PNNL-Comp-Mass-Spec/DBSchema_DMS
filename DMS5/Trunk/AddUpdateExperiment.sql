@@ -16,13 +16,14 @@ CREATE Procedure AddUpdateExperiment
 **		Auth: grk
 **		Date: 1/8/2002
 **    
-**	          8/25/2004  jds - updated proc to add T_Enzyme table value
-**            6/10/2005  grk - added handling for sample prep request
+**	          08/25/2004  jds - updated proc to add T_Enzyme table value
+**            06/10/2005  grk - added handling for sample prep request
 **            10/28/2005  grk - added handling for internal standard
 **            11/11/2005  grk - added handling for postdigest internal standard
 **            11/21/2005  grk - fixed update error for postdigest internal standard
-**            1/12/2007  grk - added verification mode
-**            1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
+**            01/12/2007  grk - added verification mode
+**            01/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
+**            04/30/2007  grk - added better name validation (Ticket #450)
 **
 *****************************************************/
 	@experimentNum varchar(50),
@@ -66,17 +67,6 @@ As
 		RAISERROR ('experimentNum was blank',
 			10, 1)
 	end
---	else
---	begin
---		exec @myError = ValidateCharacterSet @experimentNum, @msg output, ' '
---		if @myError <> 0
---		begin
---			set @myError = 51010
---			set @msg = 'Experiment number not acceptable: ' + @msg
---			RAISERROR (@msg, 10, 1)
---		end
---	end
-
 	--
 	if LEN(@campaignNum) < 1
 	begin
@@ -114,6 +104,19 @@ As
 	end
 	if @myError <> 0
 		return @myError
+
+	---------------------------------------------------
+	-- validate name
+	---------------------------------------------------
+
+	declare @badCh varchar(128)
+	set @badCh =  dbo.ValidateChars(@experimentNum, '')
+	if @badCh <> ''
+	begin
+		set @msg = 'Name may not contain the character(s) "' + @badCh + '"'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
 
 	---------------------------------------------------
 	-- Is entry already in database?
