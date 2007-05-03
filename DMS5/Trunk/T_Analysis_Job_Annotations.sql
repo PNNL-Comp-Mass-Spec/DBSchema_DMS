@@ -15,6 +15,34 @@ CREATE TABLE [dbo].[T_Analysis_Job_Annotations](
 ) ON [PRIMARY]
 
 GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GO
+GRANT INSERT ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GO
+GRANT DELETE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])
 ON DELETE CASCADE
