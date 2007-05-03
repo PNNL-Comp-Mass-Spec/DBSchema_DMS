@@ -29,7 +29,7 @@ CREATE TABLE [dbo].[T_Experiments](
 GO
 
 /****** Object:  Index [IX_T_Experiments_Experiment_Num] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments] 
 (
 	[Experiment_Num] ASC
 ) ON [PRIMARY]

@@ -14,13 +14,13 @@ CREATE TABLE [dbo].[T_Campaign](
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY NONCLUSTERED 
 (
 	[Campaign_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
 /****** Object:  Index [IX_T_Campaign_Campaign_Num] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
 (
 	[Campaign_Num] ASC
 ) ON [PRIMARY]

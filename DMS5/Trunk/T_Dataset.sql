@@ -45,7 +45,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Dataset_Num] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset] 
 (
 	[Dataset_Num] ASC
 ) ON [PRIMARY]

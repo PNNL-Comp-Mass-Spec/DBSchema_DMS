@@ -17,13 +17,13 @@ CREATE TABLE [dbo].[T_Cell_Culture](
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_CC_Name] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Name] ASC
 ) ON [PRIMARY]
