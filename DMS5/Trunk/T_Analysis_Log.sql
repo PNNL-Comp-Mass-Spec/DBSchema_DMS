@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Analysis_Log](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
 	[posted_by] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[posting_time] [smalldatetime] NULL,
+	[posting_time] [datetime] NULL CONSTRAINT [DF_T_Analysis_Log_posting_time]  DEFAULT (getdate()),
 	[type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[message] [varchar](244) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Analysis_Log] PRIMARY KEY CLUSTERED 
@@ -15,4 +15,18 @@ CREATE TABLE [dbo].[T_Analysis_Log](
 )WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Analysis_Log_Posted_By] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Log_Posted_By] ON [dbo].[T_Analysis_Log] 
+(
+	[posted_by] ASC
+) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Log_Posting_Time] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Log_Posting_Time] ON [dbo].[T_Analysis_Log] 
+(
+	[posting_time] ASC
+) ON [PRIMARY]
 GO
