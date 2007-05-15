@@ -38,10 +38,11 @@ CREATE PROCEDURE dbo.RequestAnalysisJob
 **	Auth:	grk
 **	Date:	02/08/2007
 **			02/09/2007 mem - Added parameter @infoOnly
-**			02/22/2007 grk - Modify to use direct job-to-group association (Ticket #382)
+**			02/22/2007 grk - Modify to use direct job-to-group association (Ticket:382)
 **			02/23/2007 grk - Modify to eliminate @toolList in favor of T_Analysis_Job_Processor_Tools
-**			03/15/2007 mem - Now calling RAISERROR at the end of this SP only if @myError <> 53000 (Ticket #394)
-**			03/16/2007 mem - Now using V_GetAnalysisJobsForRequestTask to exclude jobs that have datasets in an unsuitable archive state (Ticket #416)
+**			03/15/2007 mem - Now calling RAISERROR at the end of this SP only if @myError <> 53000 (Ticket:394)
+**			03/16/2007 mem - Now using V_GetAnalysisJobsForRequestTask to exclude jobs that have datasets in an unsuitable archive state (Ticket:416)
+**			05/14/2007 mem - Now returning jobs in this preference order: jobs explicitly associated with @processorName, jobs associated with no processor groups, jobs associated with a group but not explicitly associated with this processor (Ticket:476)
 **
 *****************************************************/
 (
@@ -151,7 +152,7 @@ As
 		goto Done
 	end
 	
-	-- if there are candidates in table, go assign one
+	-- if there are candidates in the table, go assign one
 	--
 	if @myRowCount > 0
 	begin
@@ -161,8 +162,8 @@ As
 	---------------------------------------------------
 	-- If no candidate jobs are found via associations
 	-- with groups of which processor is an active member
-	-- try other jobs, if processor is allowed to do 
-	-- general processing
+	-- try other jobs, though only if the processor 
+	-- is allowed to do general processing
 	---------------------------------------------------
 
 	-- Does Processor belong to least one active group that is enabled for general processing?
@@ -199,42 +200,13 @@ As
 		goto Done
 	end
 
+	---------------------------------------------------
 	-- Processor is allowed to do general processing, go get some candidates
-	
-	-- Select some candidate jobs from jobs 
-	-- that are associated with any group that is 
-	-- enabled for general processing
 	--
-	INSERT INTO #PD
-		(Job_ID, Priority, Assignment_Method)
-	SELECT DISTINCT TOP 10 
-		AJ.Job,
-		AJ.Priority, 
-		'General Association' AS Assignment_Method
-	FROM
-		V_GetAnalysisJobsForRequestTask AJ INNER JOIN
-		T_Analysis_Job_Processor_Group_Associations AJPGA ON AJ.Job = AJPGA.Job_ID INNER JOIN
-		T_Analysis_Job_Processor_Group AJPG ON AJPGA.Group_ID = AJPG.ID
-	WHERE
-		(AJPG.Group_Enabled = 'Y') AND 
-		(AJ.AnalysisToolID IN
-		(SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
-		(AJ.JobStateID = 1) AND 
-		(AJPG.Available_For_General_Processing = 'Y')
-	ORDER BY 
-		AJ.Priority, AJ.Job
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'could not load temporary candidate table'
-		goto Done
-	end
-	
-	-- Select some candidate jobs from jobs 
+	-- First select some candidate jobs from jobs 
 	-- that are not associated with any group
-	--
+	-----------------------------------------------------
+	
 	INSERT INTO #PD
 		(Job_ID, Priority, Assignment_Method)
 	SELECT TOP 10 
@@ -261,6 +233,49 @@ As
 		set @message = 'could not load temporary candidate table'
 		goto Done
 	end
+
+	-- if there are candidates in the table, go assign one
+	--
+	if @myRowCount > 0
+	begin
+		goto AssignJob
+	end
+	
+	---------------------------------------------------
+	-- Still no jobs found
+	--
+	-- Now select some candidate jobs from jobs 
+	-- that are associated with any group that is 
+	-- enabled for general processing
+	---------------------------------------------------
+
+	INSERT INTO #PD
+		(Job_ID, Priority, Assignment_Method)
+	SELECT DISTINCT TOP 10 
+		AJ.Job,
+		AJ.Priority, 
+		'General Association' AS Assignment_Method
+	FROM
+		V_GetAnalysisJobsForRequestTask AJ INNER JOIN
+		T_Analysis_Job_Processor_Group_Associations AJPGA ON AJ.Job = AJPGA.Job_ID INNER JOIN
+		T_Analysis_Job_Processor_Group AJPG ON AJPGA.Group_ID = AJPG.ID
+	WHERE
+		(AJPG.Group_Enabled = 'Y') AND 
+		(AJ.AnalysisToolID IN
+		(SELECT Tool_ID FROM T_Analysis_Job_Processor_Tools WHERE Processor_ID = @processorID)) AND 
+		(AJ.JobStateID = 1) AND 
+		(AJPG.Available_For_General_Processing = 'Y')
+	ORDER BY 
+		AJ.Priority, AJ.Job
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'could not load temporary candidate table'
+		goto Done
+	end
+
 
 AssignJob:
 	---------------------------------------------------
@@ -291,7 +306,6 @@ AssignJob:
 	---------------------------------------------------
 	-- Select and lock a specific job by joining
 	-- from the local pool to the actual analysis job table.
-	-- Prefer jobs with preassigned processor
 	---------------------------------------------------
 
 	SELECT TOP 1 
@@ -350,9 +364,12 @@ AssignJob:
 	Begin
 		set @message = 'Job ' + Convert(varchar(12), @jobID) + ' would be assigned to processor "' + @processorName + '"'
 		
-		SELECT #PD.Priority, #PD.Job_ID, Group_ID, Assignment_Method, @processorName AS Processor
-		FROM #PD LEFT OUTER JOIN 
-			 T_Analysis_Job_Processor_Group_Associations AJPGA ON #PD.Job_ID = AJPGA.Job_ID
+		SELECT #PD.Priority, #PD.Job_ID, AJPGA.Group_ID, #PD.Assignment_Method, 
+			   @processorName AS Processor, DS.Dataset_Num
+		FROM #PD INNER JOIN
+			 T_Analysis_JOB AJ ON #PD.Job_ID = AJ.AJ_jobID INNER JOIN
+		     T_Dataset DS ON AJ.AJ_datasetID = DS.Dataset_ID LEFT OUTER JOIN 
+			 T_Analysis_Job_Processor_Group_Associations AJPGA ON #PD.Job_ID = AJPGA.Job_ID 
 		ORDER BY #PD.Priority, #PD.Job_ID 
 	End
 
