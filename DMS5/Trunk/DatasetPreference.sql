@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION DatasetPreference
+CREATE FUNCTION dbo.DatasetPreference
 /****************************************************
 **
 **	Desc: 
@@ -35,6 +35,7 @@ AS
 		end
 	RETURN @result
 	END
+
 
 GO
 GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public]

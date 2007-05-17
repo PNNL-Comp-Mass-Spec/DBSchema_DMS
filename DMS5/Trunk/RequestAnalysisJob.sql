@@ -364,13 +364,17 @@ AssignJob:
 	Begin
 		set @message = 'Job ' + Convert(varchar(12), @jobID) + ' would be assigned to processor "' + @processorName + '"'
 		
-		SELECT #PD.Priority, #PD.Job_ID, AJPGA.Group_ID, #PD.Assignment_Method, 
-			   @processorName AS Processor, DS.Dataset_Num
-		FROM #PD INNER JOIN
-			 T_Analysis_JOB AJ ON #PD.Job_ID = AJ.AJ_jobID INNER JOIN
-		     T_Dataset DS ON AJ.AJ_datasetID = DS.Dataset_ID LEFT OUTER JOIN 
-			 T_Analysis_Job_Processor_Group_Associations AJPGA ON #PD.Job_ID = AJPGA.Job_ID 
-		ORDER BY #PD.Priority, #PD.Job_ID 
+		SELECT  #PD.Priority, #PD.Job_ID, #PD.Assignment_Method,
+				AJPGA.Group_ID, AJPG.Group_Name,
+				@processorName AS Processor, DS.Dataset_Num
+		FROM    T_Analysis_Job_Processor_Group AJPG INNER JOIN 
+				T_Analysis_Job_Processor_Group_Associations AJPGA ON AJPGA.Group_ID = AJPG.ID
+				RIGHT OUTER JOIN
+					#PD INNER JOIN 
+					T_Analysis_JOB AJ ON #PD.Job_ID = AJ.AJ_jobID INNER JOIN 
+					T_Dataset DS ON AJ.AJ_datasetID = DS.Dataset_ID
+				ON #PD.Job_ID = AJPGA.Job_ID
+		ORDER BY #PD.Priority, #PD.Job_ID
 	End
 
 	---------------------------------------------------
@@ -384,5 +388,6 @@ Done:
 	end
 
 	return @myError
+
 
 GO

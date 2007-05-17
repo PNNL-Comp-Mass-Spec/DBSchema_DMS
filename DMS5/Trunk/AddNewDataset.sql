@@ -259,3 +259,5 @@ AS
 DONE:
 	return @myError
 GO
+GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry]
+GO
