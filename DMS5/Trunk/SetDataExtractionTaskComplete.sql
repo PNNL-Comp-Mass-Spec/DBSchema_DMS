@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE SetDataExtractionTaskComplete
 /****************************************************
 **
@@ -20,16 +21,15 @@ CREATE PROCEDURE SetDataExtractionTaskComplete
 **      @resultsFolderName		name of folder that contains analysis results
 **      @comment			text to be appended to comment field
 **
-**		Auth: jds
-**		Date: 01/6/2006
+**	Auth: jds
+**	Date: 01/6/2006
 **            07/10/2006 grk - added code for completion code 2
 **            07/28/2006 grk - save completion code to job table
-**    
+**            10/13/2006 jds - removed parameters @processorName and @resultsFolderName
+**                             since they are not needed
 *****************************************************/
     @jobNum varchar(32),
-    @processorName varchar(64),
     @completionCode int = 0,
-    @resultsFolderName varchar(64),
     @comment varchar(255)
 As
 	set nocount on
@@ -70,7 +70,6 @@ As
 			UPDATE T_Analysis_Job 
 			SET AJ_finish = GETDATE(),
 			AJ_extractionFinish = GETDATE(),
- 			AJ_resultsFolderName = @resultsFolderName, 
 			AJ_StateID = 3, -- "Results Received"
 			AJ_Data_Extraction_Error = @completionCode,
 			AJ_comment = @comment
@@ -87,6 +86,7 @@ As
 		end
 
 	return 0
+
 
 
 GO
