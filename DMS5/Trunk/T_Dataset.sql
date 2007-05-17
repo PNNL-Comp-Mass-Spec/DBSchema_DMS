@@ -14,7 +14,8 @@ CREATE TABLE [dbo].[T_Dataset](
 	[DS_wellplate_num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Dataset_DS_wellplate_num]  DEFAULT ('na'),
 	[DS_well_num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_sec_sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[DS_state_ID] [int] NULL,
+	[DS_state_ID] [int] NOT NULL CONSTRAINT [DF_T_Dataset_DS_state_ID]  DEFAULT (1),
+	[DS_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Dataset_DS_Last_Affected]  DEFAULT (getdate()),
 	[DS_folder_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_storage_path_ID] [int] NULL,
 	[Exp_ID] [int] NOT NULL,
@@ -72,7 +73,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
+CREATE Trigger [dbo].[trig_d_Dataset] on dbo.T_Dataset
 For Insert
 AS
 	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
@@ -89,7 +90,6 @@ AS
 	FROM deleted
 	ORDER BY Dataset_ID
 
-
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
@@ -99,7 +99,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_i_Dataset on T_Dataset
+CREATE Trigger trig_i_Dataset on dbo.T_Dataset
 For Insert
 AS
 	declare @oldState int
@@ -159,7 +159,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_u_Dataset on T_Dataset
+CREATE Trigger trig_u_Dataset on dbo.T_Dataset
 For Update
 AS
 	if update(DS_State_ID)
@@ -207,6 +207,10 @@ AS
 						@oldState, 
 						GETDATE()
 					)
+
+					UPDATE T_Dataset
+					Set DS_Last_Affected = GETDATE()
+					WHERE Dataset_ID = @datasetID
 				end 
 			end-- while
 		
@@ -261,6 +265,10 @@ GO
 GRANT SELECT ON [dbo].[T_Dataset] ([DS_state_ID]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Dataset] ([DS_state_ID]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Dataset] ([DS_Last_Affected]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Dataset] ([DS_Last_Affected]) TO [Limited_Table_Write]
 GO
 GRANT SELECT ON [dbo].[T_Dataset] ([DS_folder_name]) TO [Limited_Table_Write]
 GO

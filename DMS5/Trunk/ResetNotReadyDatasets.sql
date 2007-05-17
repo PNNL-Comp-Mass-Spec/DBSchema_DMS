@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE ResetNotReadyDatasets
+CREATE PROCEDURE dbo.ResetNotReadyDatasets
 /****************************************************
 **
 **	Desc: 
@@ -17,11 +17,14 @@ CREATE PROCEDURE ResetNotReadyDatasets
 **
 **	
 **
-**		Auth: grk
-**		Date: 8/6/2003
+**	Auth:	grk
+**	Date:	08/06/2003
+**			05/16/2007 mem - Updated to use DS_Last_Affected (Ticket:478)
 **    
 *****************************************************/
-@interval int = 10
+(
+	@interval int = 10		-- Minutes between retries
+)
 As
 	set nocount on
 
@@ -41,22 +44,16 @@ As
 	-- update to 'new' state all datasets that are in the target state
 	-- and have been in that state at least for the required interval
 	--
-	declare @targetState int
-	set @targetState = 9 -- 'not ready' state
+	declare @StateNotReady int
+	set @StateNotReady = 9	-- 'not ready' state
 
-
-	UPDATE M   
-	SET	M.DS_state_ID = 1 -- 'new' state
-	FROM T_Dataset M
-	Inner Join 
-	(
-		SELECT Target_ID AS DatasetID
-		FROM T_Event_Log
-		WHERE (Target_Type = 4) AND (Target_State = @targetState)
-		GROUP BY Target_ID
-		HAVING (DATEDIFF(mi, MAX(Entered), GETDATE()) > @interval)
-	) T on T.DatasetID = M.Dataset_ID
-	WHERE     (DS_state_ID = @targetState)
+	declare @StateNew int
+	set @StateNew = 1		-- 'new' state
+	
+	UPDATE T_Dataset
+	SET	DS_state_ID = @StateNew
+	WHERE DS_state_ID = @StateNotReady AND
+		  DATEDIFF(minute, DS_Last_Affected, GETDATE()) > @interval
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -69,5 +66,6 @@ As
 
 Done:
 	return
+
 
 GO

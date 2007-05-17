@@ -19,6 +19,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_owner] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_StateID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateID]  DEFAULT (1),
+	[AJ_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Last_Affected]  DEFAULT (getdate()),
 	[AJ_assignedProcessorName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_resultsFolderName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_proteinCollectionList] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinCollectionList]  DEFAULT ('na'),
@@ -66,7 +67,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
+CREATE Trigger [dbo].[trig_d_AnalysisJob] on dbo.T_Analysis_Job
 For Delete
 AS
 	-- Add entries to T_Event_Log for each job deleted from T_Analysis_Job
@@ -83,7 +84,6 @@ AS
 	FROM deleted
 	ORDER BY AJ_JobID
 
-
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
@@ -93,7 +93,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_i_AnalysisJob on T_Analysis_Job
+CREATE Trigger trig_i_AnalysisJob on dbo.T_Analysis_Job
 For Insert
 AS
 	declare @oldState int
@@ -153,7 +153,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_u_AnalysisJob on T_Analysis_Job
+CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
 AS
 	if update(AJ_StateID)
@@ -201,6 +201,10 @@ AS
 						@oldState, 
 						GETDATE()
 					)
+
+					UPDATE T_Analysis_Job
+					Set AJ_Last_Affected = GETDATE()
+					WHERE AJ_jobID = @jobID
 				end 
 			end-- while
 		
@@ -271,6 +275,10 @@ GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_StateID]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_StateID]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_Last_Affected]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_Last_Affected]) TO [Limited_Table_Write]
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_assignedProcessorName]) TO [Limited_Table_Write]
 GO

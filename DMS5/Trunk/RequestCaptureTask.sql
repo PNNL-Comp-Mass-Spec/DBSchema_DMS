@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.RequestCaptureTask
 /****************************************************
 **
@@ -23,6 +24,7 @@ CREATE Procedure dbo.RequestCaptureTask
 **			07/17/2006 mem - Limiting each prep server to queue up just one dataset, utilizing a rolling exclusion window of 11 minutes
 **			07/19/2006 mem - Updated to obtain capture throttling parameters from T_Instrument_Name
 **			10/10/2006 mem - Updated to use a timeout value of 2 hours when looking for datasets with state 2="Capture in Progress"
+**			05/16/2007 mem - Updated to use DS_Last_Affected to look for simultaneous captures or multiple queued prep tasks (Ticket:478)
 **    
 *****************************************************/
 (
@@ -138,12 +140,9 @@ As
 			WHERE DS.DS_state_ID = 1 AND
 				  VAS.SP_machine_name = @StorageServerName
 			GROUP BY Instrument_ID
-		 ) NewDatasetsQ ON VAS.Instrument_ID = NewDatasetsQ.Instrument_ID INNER JOIN 
-		 T_Event_Log EL ON EL.Target_ID = DS.Dataset_ID AND 
-						   EL.Target_Type = 4 AND
-						   EL.Target_State = DS.DS_State_ID
+		 ) NewDatasetsQ ON VAS.Instrument_ID = NewDatasetsQ.Instrument_ID
 	WHERE DS.DS_state_ID = 2 AND 
-		  EL.Entered >= DATEADD(hour, -@CaptureTimeoutLengthHours, GETDATE())
+		  DS.DS_Last_Affected >= DATEADD(hour, -@CaptureTimeoutLengthHours, GETDATE())
 	GROUP BY InstName.Instrument_ID, InstName.IN_name, InstName.IN_Max_Simultaneous_Captures, InstName.IN_Capture_Log_Level
 	HAVING (COUNT(DISTINCT DS.Dataset_ID) >= InstName.IN_Max_Simultaneous_Captures )
 	--
@@ -180,13 +179,10 @@ As
 			WHERE DS.DS_state_ID = 1 AND
 				  VAS.SP_machine_name = @StorageServerName
 			GROUP BY Instrument_ID
-		 ) NewDatasetsQ ON VAS.Instrument_ID = NewDatasetsQ.Instrument_ID INNER JOIN 
-		 T_Event_Log EL ON EL.Target_ID = DS.Dataset_ID AND 
-						   EL.Target_Type = 4 AND
-						   EL.Target_State = DS.DS_State_ID
+		 ) NewDatasetsQ ON VAS.Instrument_ID = NewDatasetsQ.Instrument_ID
 	WHERE DS.DS_state_ID IN (2, 6) AND
 		  DS.DS_PrepServerName = @PrepServerName AND 
-		  EL.Entered >= DATEADD(second, -InstName.IN_Capture_Exclusion_Window*60.0, GETDATE())
+		  DS.DS_Last_Affected >= DATEADD(second, -InstName.IN_Capture_Exclusion_Window*60.0, GETDATE())
 	GROUP BY InstName.Instrument_ID, InstName.IN_name, InstName.IN_Max_Queued_Datasets, InstName.IN_Capture_Log_Level
 	HAVING (COUNT(DISTINCT DS.Dataset_ID) >= InstName.IN_Max_Queued_Datasets)
 	--
