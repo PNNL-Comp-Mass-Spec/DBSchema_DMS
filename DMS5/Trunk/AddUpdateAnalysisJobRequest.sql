@@ -25,9 +25,10 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			10/16/2006 jds - added support for work package number
 **			10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
 **			11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
-**			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
-**			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
-**			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket #368)
+**			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket:335)
+**			12/20/2006 mem - Added column DS_rating to #TD (Ticket:339)
+**			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket:368)
+**			05/22/2007 mem - Updated to prevent addition of duplicate datasets to  (Ticket:481)
 **    
 *****************************************************/
 (
@@ -159,6 +160,7 @@ As
 		return 51007
 	end
 
+	
 	---------------------------------------------------
 	-- Validate @protColNameList
 	-- Note that ValidateProteinCollectionListForDatasets
@@ -182,6 +184,43 @@ As
 
 		if @result <> 0
 			return @result
+	End
+	
+	---------------------------------------------------
+	-- Check for duplicate datasets in #TD
+	---------------------------------------------------
+	--
+	declare @DuplicateDatasetList varchar(4000)
+	declare @DuplicateDatasetCount int
+	--
+	Set @DuplicateDatasetCount = 0
+	
+	SELECT @DuplicateDatasetCount = COUNT(*)
+	FROM (	SELECT Dataset_Num
+			FROM #TD
+			GROUP BY Dataset_Num
+			HAVING Count(*) > 1
+		 ) DuplicateQ
+	
+	If @DuplicateDatasetCount > 0
+	Begin
+		Set @DuplicateDatasetList = ''
+		SELECT @DuplicateDatasetList = @DuplicateDatasetList + Dataset_Num + ', '
+		FROM #TD
+		GROUP BY Dataset_Num
+		HAVING Count(*) > 1
+		ORDER BY Dataset_Num
+		
+		-- Remove the trailing comma if the length is less than 400 characters, otherwise truncate
+		If Len(@DuplicateDatasetList) < 400
+			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, Len(@DuplicateDatasetList)-1)
+		Else
+			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, 397) + '...'
+		
+		Set @msg = 'Duplicate dataset(s) found: ' + @DuplicateDatasetList
+		
+		RAISERROR (@msg, 10, 1)
+		return 53109
 	End
 	
 	---------------------------------------------------
@@ -317,7 +356,6 @@ As
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
