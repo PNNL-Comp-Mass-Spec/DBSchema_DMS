@@ -24,6 +24,7 @@ CREATE PROCEDURE LoadMetadataForMultipleDatasets
 **
 **		Auth: grk
 **		Date: 11/01/2006
+**            05/30/2007 grk - Added "ORDER BY" for migration to SS2005 (ticket #226)
 **    
 *****************************************************/
  (
@@ -174,6 +175,7 @@ As
 	V_AuxInfo_Value AI ON T.Dataset_ID = AI.Target_ID
 	WHERE (AI.Target = 'Dataset') AND 
 	(T.Dataset_Num IN (SELECT mDST FROM #dst))
+	ORDER BY SC, SS, SI
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
