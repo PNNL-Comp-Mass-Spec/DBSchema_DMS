@@ -16,6 +16,7 @@ CREATE PROCEDURE GenerateLCCartLoadingList
 **	Auth:	grk
 **	Date:	04/09/2007 (Ticket #424)
 **          04/16/2007 grk -- added priority as highest sort attribute
+**          06/07/2007 grk -- added EMSL user columns to output (Ticket #488)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -278,16 +279,26 @@ As
 	#XF.request AS Request,
 	#XF.col AS [Column#],
 	t_Experiments.Experiment_num AS Experiment
-	, T_Requested_Run.RDS_priority AS Priority, T_Requested_Run.RDS_BatchID AS Batch, T_Requested_Run.RDS_Block as Block, T_Requested_Run.RDS_Run_Order AS [Batch Run Order]
+	, T_Requested_Run.RDS_priority AS Priority, 
+	T_Requested_Run.RDS_BatchID AS Batch, 
+	T_Requested_Run.RDS_Block as Block, 
+	T_Requested_Run.RDS_Run_Order AS [Batch Run Order],
+	T_EUS_UsageType.Name AS [EMSL Usage Type], 
+	T_Requested_Run.RDS_EUS_Proposal_ID AS [EMSL Proposal ID], 
+	dbo.GetRequestedRunEUSUsersList(T_Requested_Run.ID, 'I') AS [EMSL Users List]
 	FROM   
 	#XF
 	LEFT OUTER JOIN t_Requested_Run
 		ON #XF.Request = t_Requested_Run.Id
 	LEFT OUTER JOIN t_Experiments
 		ON t_Requested_Run.exp_Id = t_Experiments.exp_Id
+	LEFT OUTER JOIN T_EUS_UsageType 
+		ON T_Requested_Run.RDS_EUS_UsageType = T_EUS_UsageType.ID
 	ORDER BY #XF.seq
+
     
  return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin]
