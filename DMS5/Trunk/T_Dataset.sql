@@ -74,7 +74,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE Trigger [dbo].[trig_d_Dataset] on dbo.T_Dataset
-For Insert
+For Delete
 AS
 	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
 	INSERT INTO T_Event_Log
