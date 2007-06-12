@@ -103,7 +103,7 @@ CREATE Trigger trig_i_Dataset on dbo.T_Dataset
 For Insert
 AS
 	declare @oldState int
-	set @oldState = 1
+	set @oldState = 0
 	declare @newState int
 	declare @datasetID int
 	
