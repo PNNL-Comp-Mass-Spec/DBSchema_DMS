@@ -6,10 +6,10 @@ GO
 CREATE VIEW dbo.V_dataset_report
 AS
 SELECT     dbo.T_Dataset.Dataset_Num AS Dataset, dbo.T_Dataset.Dataset_ID AS ID, dbo.T_DatasetStateName.DSS_name AS State, 
-                      dbo.T_Instrument_Name.IN_name AS Instrument, dbo.T_Dataset.DS_created AS Created, dbo.T_Dataset.DS_comment AS Comment, 
-                      dbo.T_Dataset.Acq_Time_Start AS [Acq Start], CONVERT(int, CONVERT(real, dbo.T_Dataset.Acq_Time_End - dbo.T_Dataset.Acq_Time_Start) * 24 * 60) 
-                      AS [Acq Length], dbo.T_Dataset.DS_Oper_PRN AS [Oper.], dbo.T_DatasetTypeName.DST_name AS Type, 
-                      dbo.T_DatasetRatingName.DRN_name AS Rating, dbo.T_Experiments.Experiment_Num AS Experiment, 
+                      dbo.T_DatasetRatingName.DRN_name AS Rating, dbo.T_Instrument_Name.IN_name AS Instrument, dbo.T_Dataset.DS_created AS Created, 
+                      dbo.T_Dataset.DS_comment AS Comment, dbo.T_Dataset.Acq_Time_Start AS [Acq Start], CONVERT(int, CONVERT(real, 
+                      dbo.T_Dataset.Acq_Time_End - dbo.T_Dataset.Acq_Time_Start) * 24 * 60) AS [Acq Length], dbo.T_Dataset.DS_Oper_PRN AS [Oper.], 
+                      dbo.T_DatasetTypeName.DST_name AS Type, dbo.T_Experiments.Experiment_Num AS Experiment, 
                       dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path AS [Dataset Folder Path], 
                       dbo.V_Dataset_Folder_Paths.Archive_Folder_Path AS [Archive Folder Path]
 FROM         dbo.T_DatasetStateName INNER JOIN
