@@ -15,6 +15,7 @@ CREATE PROCEDURE UpdateDatasetDispositions
 **
 **		Auth: grk
 **		Date: 04/25/2007
+**            06/26/2007 grk -- fix problem with multiple datasets (Ticket #495)
 **    
 *****************************************************/
     @datasetIDList varchar(6000),
@@ -211,7 +212,7 @@ As
 			-- get next dataset ID from temp table
 			--
 			set @curDatasetID = 0
-			SELECT 
+			SELECT TOP 1
 				@curDatasetID = DatasetID,
 				@curDatasetName = DatasetName,
 				@curRatingID = RatingID,
@@ -221,7 +222,6 @@ As
 			WHERE DatasetID > @prevDatasetID
 			ORDER BY DatasetID
 			--
-			
 			if @curDatasetID = 0
 				begin
 					set @done = 1
