@@ -46,6 +46,7 @@ CREATE Procedure UnconsumeScheduledRun
 **      03/10/2006 grk - Fixed logic to handle absence of associated request
 **      03/10/2006 grk - Fixed logic to handle null batchID on old requests
 **      05/01/2007 grk - Modified logic to optionally retain original history (Ticket #446)
+**      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **    
 *****************************************************/
 	@datasetNum varchar(128),
@@ -92,7 +93,7 @@ As
 	---------------------------------------------------
 	-- Look for associated request for dataset
 	---------------------------------------------------	
-	declare @com varchar(255)
+	declare @com varchar(1024)
 	set @com = ''
 	declare @requestID int
 	set @requestID = 0
@@ -143,7 +144,13 @@ As
 
 	if @autoCreatedHistoricalRequest = 0
 	begin
+	    -- create annotation to be appended to comment, and make sure it won't overflow
+	    -- comment max size
+	    --
 		set @notation = ' (recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
+		if len(@com) + len(@notation) > 1024
+			set @notation = ''
+
 		---------------------------------------------------
 		-- Copy run history to scheduled run
 		---------------------------------------------------	

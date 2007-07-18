@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Requested_Run_History](
 	[RDS_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_Oper_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[RDS_comment] [varchar](244) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RDS_comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_created] [datetime] NOT NULL,
 	[RDS_instrument_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_type_ID] [int] NULL,
@@ -141,8 +141,10 @@ GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Cart_ID]) TO [LOC-DMS_EUS_
 GO
 GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Cart_ID]) TO [LOC-DMS_EUS_Admin]
 GO
-ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Dataset] FOREIGN KEY([DatasetID])
+ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Dataset] FOREIGN KEY([DatasetID])
 REFERENCES [T_Dataset] ([Dataset_ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_Dataset]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
@@ -153,8 +155,10 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_EUS_UsageType] FOREIGN KEY([RDS_EUS_UsageType])
 REFERENCES [T_EUS_UsageType] ([ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Experiments] FOREIGN KEY([Exp_ID])
+ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_Experiments]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_LC_Cart] FOREIGN KEY([RDS_Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])

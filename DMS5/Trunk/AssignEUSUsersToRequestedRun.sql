@@ -10,11 +10,15 @@ CREATE Procedure AssignEUSUsersToRequestedRun
 **    Associates the given list of EUS users with given
 **    requested run
 **
+**    No validation is performed.  Caller should call
+**    ValidateEUSUsage before calling this procedure
+**
 **	Return values: 0: success, otherwise, error code
 **
 **		Auth: grk
 **		Date: 2/21/2006
-**      11/09/2006  -- grk Added numeric test for eus user ID (Ticket #318)
+**      11/09/2006 grk -- Added numeric test for eus user ID (Ticket #318)
+**      07/11/2007 grk -- factored out EUS proposal validation (Ticket #499)
 **
 *****************************************************/
 	@request int,
@@ -51,60 +55,7 @@ As
 		end
 		return 0
 	end
-	
-	---------------------------------------------------
-	-- verify that all users in list have access to
-	-- given proposal
-	---------------------------------------------------
-	declare @n int
-	set @n = 0
 
-	SELECT 
-		@n = @n + (1 - isnumeric(item))
-	FROM 
-		MakeTableFromList(@eusUsersList)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error trying to verify that all user ID are numeric'
-		return 51071
-	end
-
-	if @n <> 0
-	begin
-		set @message = 'EMSL User IDs must be numeric'
-		return 51072
-	end
-	
-	set @n = 0
-	SELECT 
-		@n = count(*)
-	FROM 
-		MakeTableFromList(@eusUsersList)
-	WHERE 
-		CAST(Item as int) NOT IN
-		(
-			SELECT Person_ID
-			FROM  T_EUS_Proposal_Users
-			WHERE Proposal_ID = @eusProposalID
-		)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error trying to verify that all users are associated with proposal'
-		return 51082
-	end
-
-	if @n <> 0
-	begin
-		set @message = 'Some assigned users are not associated with the specified proposal'
-		return 51301
-	end
-	
 	---------------------------------------------------
 	-- add associations between request and users 
 	-- who are in list, but not in association table

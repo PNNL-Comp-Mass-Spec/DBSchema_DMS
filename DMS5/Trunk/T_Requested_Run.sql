@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_Oper_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[RDS_comment] [varchar](244) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RDS_comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_created] [datetime] NOT NULL,
 	[RDS_instrument_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_type_ID] [int] NULL,

@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.AddRequestedRuns
+CREATE PROCEDURE AddRequestedRuns
 /****************************************************
 **
 **	Desc: 
@@ -23,6 +22,7 @@ CREATE PROCEDURE dbo.AddRequestedRuns
 **      6/23/2006  -- grk Removed instrument name from generated request name
 **      10/12/2006  -- grk Fixed trailing suffix in name (Ticket #248)
 **      11/09/2006  -- grk Fixed error message handling (Ticket #318)
+**      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -41,7 +41,7 @@ CREATE PROCEDURE dbo.AddRequestedRuns
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
 	@internalStandard varchar(50) = "na",
-	@comment varchar(244) = "na",
+	@comment varchar(1024) = "na",
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 As
@@ -225,6 +225,7 @@ As
 	set @message = 'Number of requests created:' + cast(@count as varchar(12))
 /**/
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry]

@@ -30,6 +30,9 @@ CREATE Procedure AddUpdateRequestedRun
 **      03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
 **      04/25/2007 grk - get new ID from UDF (Ticket #446)
 **      04/30/2007 grk - added better name validation (Ticket #450)
+**      07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
+**      07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
+**      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -43,7 +46,7 @@ CREATE Procedure AddUpdateRequestedRun
 	@wellplateNum varchar(64) = 'na',
 	@wellNum varchar(24) = 'na',
 	@internalStandard varchar(50) = 'na',
-	@comment varchar(244) = 'na',
+	@comment varchar(1024) = 'na',
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
@@ -221,86 +224,36 @@ As
 	set @storagePathID = 0
 
 	---------------------------------------------------
-	-- resolve EUS usage type name to ID
+	-- Lookup EUS field (only effective for experiments
+	-- that have associated sample prep requests
 	---------------------------------------------------
-	declare @eusUsageTypeID int
-	set @eusUsageTypeID = 0
-	--
-	SELECT @eusUsageTypeID = ID
-	FROM T_EUS_UsageType
-	WHERE  (Name = @eusUsageType)	
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
+	exec @myError = LookupEUSFromExperimentSamplePrep	
+						@experimentNum,
+						@eusUsageType output,
+						@eusProposalID output,
+						@eusUsersList output,
+						@message output
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to resolve EUS usage type: "' + @eusUsageType + '"'
 		RAISERROR (@message, 10, 1)
-		return 51072
+		return @myError
 	end
-	--
-	if @eusUsageTypeID = 0
+
+	---------------------------------------------------
+	-- validate EUS type, proposal, and user list
+	---------------------------------------------------
+	declare @eusUsageTypeID int
+	exec @myError = ValidateEUSUsage
+						@eusUsageType,
+						@eusProposalID output,
+						@eusUsersList output,
+						@eusUsageTypeID output,
+						@message output
+	if @myError <> 0
 	begin
-		set @message = 'Could not resolve EUS usage type: "' + @eusUsageType + '"'
 		RAISERROR (@message, 10, 1)
-		return 51073
+		return @myError
 	end
-
-	---------------------------------------------------
-	-- validate EUS proposal and user
-	-- if EUS usage type requires them
-	---------------------------------------------------
-	--
-	if @eusUsageType <> 'USER'
-		begin
-			if @eusProposalID <> '' OR @eusUsersList <> ''
-			begin
-				set @message = 'No Proposal ID nor users are to be associated with "' + @eusUsageType + '" usage type'
-				RAISERROR (@message, 10, 1)
-				return 51075
-			end
-			set @eusProposalID = NULL
-			set @eusUsersList = ''
-		end
-	else
-		begin			
-			---------------------------------------------------
-			-- proposal and user list cannot be blank
-			---------------------------------------------------
-			if @eusProposalID = '' OR @eusUsersList = ''
-			begin
-				set @message = 'A Proposal ID and associated users must be selected for "' + @eusUsageType + '" usage type'
-				RAISERROR (@message, 10, 1)
-				return 51072
-			end
-
-			---------------------------------------------------
-			-- verify EUS proposal ID
-			---------------------------------------------------
-			declare @n int
-			set @n = 0
-			--
-			SELECT @n = count(*)
-			FROM T_EUS_Proposals
-			WHERE (PROPOSAL_ID = @eusProposalID)	
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error trying to verify EUS proposal ID: "' + @eusProposalID + '"'
-				RAISERROR (@message, 10, 1)
-				return 51074
-			end
-			--
-			if @n <> 1
-			begin
-				set @message = 'Could not verify EUS proposal ID: "' + @eusProposalID + '"'
-				RAISERROR (@message, 10, 1)
-				return 51075
-			end
-
-		end
 
 	declare @transName varchar(32)
 	set @transName = 'AddUpdateRequestedRun'
