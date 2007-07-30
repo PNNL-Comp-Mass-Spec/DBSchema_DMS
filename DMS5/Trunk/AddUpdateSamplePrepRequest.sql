@@ -29,6 +29,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **          08/10/2006  grk - allowed multiple requested personnel users
 **          12/15/2006  grk - added EstimatedMSRuns argument (Ticket #336)
 **          04/20/2007  grk - added validation for organism, campaign, cell culture (Ticket #440)
+**          07/11/2007  grk - added "standard" EUS fields and removed old proposal field(Ticket #499)
 **    
 *****************************************************/
   @RequestName varchar(128),
@@ -50,7 +51,9 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
   @EstimatedCompletion varchar(32),
   @EstimatedMSRuns varchar(16),
   @WorkPackageNumber varchar(64),
-  @UserProposalNumber varchar(64),
+  @eusProposalID varchar(10),
+  @eusUsageType varchar(50),
+  @eusUsersList varchar(1024),
   @ReplicatesofSamples varchar(512),
   @InstrumentAnalysisSpecifications varchar(512),
   @Comment varchar(1024),
@@ -250,6 +253,22 @@ As
 		return 51009
 	end
 
+	---------------------------------------------------
+	-- validate EUS type, proposal, and user list
+	---------------------------------------------------
+	declare @eusUsageTypeID int
+	exec @myError = ValidateEUSUsage
+						@eusUsageType,
+						@eusProposalID output,
+						@eusUsersList output,
+						@eusUsageTypeID output,
+						@message output
+	if @myError <> 0
+	begin
+		RAISERROR (@message, 10, 1)
+		return @myError
+	end
+
   ---------------------------------------------------
   -- Is entry already in database?
   ---------------------------------------------------
@@ -329,7 +348,9 @@ As
     Estimated_Completion,
     Estimated_MS_runs,
     Work_Package_Number, 
-    User_Proposal_Number, 
+    EUS_UsageType, 
+    EUS_Proposal_ID, 
+    EUS_User_List,
     Replicates_of_Samples, 
     Instrument_Analysis_Specifications, 
     Comment, 
@@ -358,7 +379,9 @@ As
     @EstimatedCompletionDate,
     @EstimatedMSRuns,
     @WorkPackageNumber, 
-    @UserProposalNumber, 
+    @eusUsageType,
+    @eusProposalID,
+    @eusUsersList,
     @ReplicatesofSamples, 
     @InstrumentAnalysisSpecifications, 
 	@Comment, 
@@ -374,7 +397,7 @@ As
     --
     if @myError <> 0
     begin
-      set @message = 'Insert operation failed'
+      set @message = 'Insert operation failed:' + cast(@myError as varchar(12))
       RAISERROR (@message, 10, 1)
       return 51007
     end
@@ -415,7 +438,9 @@ As
       Estimated_Completion = @EstimatedCompletionDate,
       Estimated_MS_runs = @EstimatedMSRuns,
       Work_Package_Number = @WorkPackageNumber, 
-      User_Proposal_Number = @UserProposalNumber, 
+      @eusProposalID = EUS_Proposal_ID,
+      @eusUsageType = EUS_UsageType,
+      @eusUsersList = EUS_User_List,
       Replicates_of_Samples = @ReplicatesofSamples, 
       Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications, 
       Comment = @Comment, 

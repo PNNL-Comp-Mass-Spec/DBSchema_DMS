@@ -17,16 +17,16 @@ SELECT     dbo.T_Sample_Prep_Request.Request_Name AS RequestName, dbo.T_Sample_P
                       dbo.T_Sample_Prep_Request.Estimated_Completion AS EstimatedCompletion, 
                       dbo.T_Sample_Prep_Request.Estimated_MS_runs AS EstimatedMSRuns, 
                       dbo.T_Sample_Prep_Request.Work_Package_Number AS WorkPackageNumber, 
-                      dbo.T_Sample_Prep_Request.User_Proposal_Number AS UserProposalNumber, 
                       dbo.T_Sample_Prep_Request.Replicates_of_Samples AS ReplicatesofSamples, 
                       dbo.T_Sample_Prep_Request.Instrument_Analysis_Specifications AS InstrumentAnalysisSpecifications, dbo.T_Sample_Prep_Request.Comment, 
                       dbo.T_Sample_Prep_Request.Priority, dbo.T_Sample_Prep_Request_State_Name.State_Name AS State, dbo.T_Sample_Prep_Request.ID, 
                       dbo.T_Sample_Prep_Request.UseSingleLCColumn, dbo.T_Internal_Standards.Name AS internalStandard, 
-                      T_Internal_Standards_1.Name AS postdigestIntStd
+                      T_Internal_Standards_1.Name AS postdigestIntStd, dbo.T_Sample_Prep_Request.EUS_UsageType AS EUSUsageType, 
+                      dbo.T_Sample_Prep_Request.EUS_Proposal_ID AS EUSProposalID, dbo.T_Sample_Prep_Request.EUS_User_List AS EUSUsers
 FROM         dbo.T_Sample_Prep_Request INNER JOIN
                       dbo.T_Sample_Prep_Request_State_Name ON dbo.T_Sample_Prep_Request.State = dbo.T_Sample_Prep_Request_State_Name.State_ID INNER JOIN
                       dbo.T_Internal_Standards ON dbo.T_Sample_Prep_Request.Internal_standard_ID = dbo.T_Internal_Standards.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards T_Internal_Standards_1 ON 
+                      dbo.T_Internal_Standards AS T_Internal_Standards_1 ON 
                       dbo.T_Sample_Prep_Request.Postdigest_internal_std_ID = T_Internal_Standards_1.Internal_Std_Mix_ID
 
 GO

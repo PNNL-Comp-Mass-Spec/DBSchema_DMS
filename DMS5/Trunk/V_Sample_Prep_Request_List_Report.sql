@@ -12,12 +12,12 @@ SELECT     dbo.T_Sample_Prep_Request.ID, dbo.T_Sample_Prep_Request.Request_Name 
                       dbo.T_Sample_Prep_Request.Prep_Method AS PrepMethod, dbo.T_Sample_Prep_Request.Requested_Personnel AS RequestedPersonnel, 
                       dbo.T_Sample_Prep_Request.Assigned_Personnel AS AssignedPersonnel, 
                       QP.U_Name + ' (' + dbo.T_Sample_Prep_Request.Requester_PRN + ')' AS Requester, dbo.T_Sample_Prep_Request.Organism, 
-                      dbo.T_Sample_Prep_Request.Biohazard_Level AS BiohazardLevel, dbo.T_Sample_Prep_Request.Campaign, 
-                      dbo.T_Sample_Prep_Request.Comment
+                      dbo.T_Sample_Prep_Request.Biohazard_Level AS BiohazardLevel, dbo.T_Sample_Prep_Request.Campaign, dbo.T_Sample_Prep_Request.Comment, 
+                      dbo.T_Sample_Prep_Request.Instrument_Analysis_Specifications AS Instrument
 FROM         dbo.T_Sample_Prep_Request INNER JOIN
                       dbo.T_Sample_Prep_Request_State_Name ON 
                       dbo.T_Sample_Prep_Request.State = dbo.T_Sample_Prep_Request_State_Name.State_ID LEFT OUTER JOIN
-                      dbo.T_Users QP ON dbo.T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
+                      dbo.T_Users AS QP ON dbo.T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
 WHERE     (dbo.T_Sample_Prep_Request_State_Name.State_ID > 0)
 
 GO
