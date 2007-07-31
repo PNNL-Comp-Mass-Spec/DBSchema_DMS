@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateDataset
+
+CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **		File: 
 **		Name: AddNewDataset
@@ -22,6 +23,7 @@ CREATE Procedure AddUpdateDataset
 **            01/12/2007 grk - added verification mode
 **            02/16/2007 grk - added validation of dataset name (Ticket #390)
 **            04/30/2007 grk - added better name validation (Ticket #450)
+**            07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -322,7 +324,36 @@ As
 		return 51014
 	end
 
-	-- not valid to change instrument unless dataset in new state
+	---------------------------------------------------
+	-- Verify that dataset type is valid for given instrument
+	---------------------------------------------------
+
+	declare @allowedDatasetTypes varchar(255)
+	declare @MatchCount int
+	
+	SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
+	FROM T_Instrument_Name InstName INNER JOIN
+		 T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
+	WHERE (InstName.Instrument_ID = @instrumentID)
+
+	Set @MatchCount = 0
+	SELECT @MatchCount = COUNT(*)
+	FROM T_DatasetTypeName DSTypeName INNER JOIN
+		 (SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
+		DSTypeName.DST_Name = AllowedTypesQ.item
+	WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
+	
+	if @MatchCount = 0
+	begin
+		set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
+		RAISERROR (@msg, 10, 1)
+		return 51014
+	end
+
+	
+	---------------------------------------------------
+	-- Check for instrument changing when dataset not in new state
+	---------------------------------------------------
 	--
 	if (@mode = 'update' or @mode = 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
 	begin

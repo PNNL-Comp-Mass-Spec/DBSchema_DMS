@@ -1,8 +1,8 @@
 /****** Object:  Database [DMS5] ******/
 CREATE DATABASE [DMS5] ON  PRIMARY 
-( NAME = N'DMS4_dat', FILENAME = N'C:\DMS Database Files\DMS5_data.mdf' , SIZE = 344064KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'DMS4_dat', FILENAME = N'C:\DMS Database Files\DMS5_data.mdf' , SIZE = 503872KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'DMS4_log', FILENAME = N'C:\DMS Database Files\DMS5_log.ldf' , SIZE = 16960KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'DMS4_log', FILENAME = N'C:\DMS Database Files\DMS5_log.ldf' , SIZE = 94720KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 EXEC dbo.sp_dbcmptlevel @dbname=N'DMS5', @new_cmptlevel=80

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateRequestedRun
+
+CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
 **	Desc: Adds a new entry to the requested dataset table
@@ -33,6 +34,7 @@ CREATE Procedure AddUpdateRequestedRun
 **      07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
 **      07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
+**      07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -62,9 +64,11 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 	
-	
 	set @message = ''
-	
+
+	declare @msg varchar(512)
+	declare @InstrumentMatch varchar(64)
+		
 	-- default priority at which new requests will be created
 	declare @defaultPriority int
 	set @defaultPriority = 0
@@ -126,8 +130,8 @@ As
 	set @badCh =  dbo.ValidateChars(@reqName, '')
 	if @badCh <> ''
 	begin
-		set @message = 'Name may not contain the character(s) "' + @badCh + '"'
-		RAISERROR (@message, 10, 1)
+		set @msg = 'Name may not contain the character(s) "' + @badCh + '"'
+		RAISERROR (@msg, 10, 1)
 		return 51001
 	end
 		
@@ -150,8 +154,8 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to find existing request: "' + @reqName + '"'
-		RAISERROR (@message, 10, 1)
+		set @msg = 'Error trying to find existing request: "' + @reqName + '"'
+		RAISERROR (@msg, 10, 1)
 		return 51007
 	end
 	
@@ -163,8 +167,8 @@ As
 	--
 	if @requestID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
-		set @message = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
-		RAISERROR (@message, 10, 1)
+		set @msg = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
+		RAISERROR (@msg, 10, 1)
 		return 51004
 	end
 	
@@ -176,8 +180,8 @@ As
 	--
 	if @requestID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
-		set @message = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
-		RAISERROR (@message, 10, 1)
+		set @msg = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
+		RAISERROR (@msg, 10, 1)
 		return 51004
 	end
 	
@@ -203,8 +207,8 @@ As
 	execute @userID = GetUserID @operPRN
 	if @userID = 0
 	begin
-		set @message = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
-		RAISERROR (@message, 10, 1)
+		set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
+		RAISERROR (@msg, 10, 1)
 		return 51019
 	end
 
@@ -216,7 +220,7 @@ As
 	execute @datasetTypeID = GetDatasetTypeID @msType
 	if @datasetTypeID = 0
 	begin
-		print 'Could not find entry in database for dataset type'
+		print 'Could not find entry in database for dataset type "' + @msType + '"'
 		return 51118
 	end
 
@@ -224,18 +228,120 @@ As
 	set @storagePathID = 0
 
 	---------------------------------------------------
+	-- Resolve instrument ID
+	---------------------------------------------------
+
+	declare @instrumentID int
+	execute @instrumentID = GetinstrumentID @instrumentName
+	if @instrumentID = 0
+	begin
+		-- Could not resolve the instrument name
+		-- This is OK for Requested Runs, since the precise instrument need not be specified
+		-- We'll try to guess the correct instrument class given the name specified by the user,
+		--  but if we can't guess it, then we won't be able to validate the requested dataset type
+		
+		If @instrumentID = 0 AND @instrumentName LIKE 'LCQ%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'LCQ%')
+			ORDER BY IN_Name
+		End
+		
+		If @instrumentID = 0 AND (@instrumentName = 'LTQ' OR @instrumentName Like 'LTQ_[0-9]')
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'LTQ%')
+			ORDER BY IN_Name
+		End
+		
+		If @instrumentID = 0 AND @instrumentName LIKE 'LTQ_FT%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'LTQ_FT%')
+			ORDER BY IN_Name
+		End
+
+		If @instrumentID = 0 AND @instrumentName LIKE 'LTQ_Orb%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'LTQ_Orb%')
+			ORDER BY IN_Name
+		End
+
+		If @instrumentID = 0 AND @instrumentName LIKE 'Agilent_TOF%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'Agilent_TOF%')
+			ORDER BY IN_Name
+		End
+
+		If @instrumentID = 0 AND @instrumentName LIKE '%T_FTICR%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE @instrumentName + '%')
+			ORDER BY IN_Name
+		End
+
+		If @instrumentID = 0
+		Begin
+			Set @message = 'Instrument "' + @instrumentName + '" was not recognized and therefore the dataset type (' + @msType + ') could not be validated'
+		End
+		
+	end
+
+	---------------------------------------------------
+	-- Verify that dataset type is valid for given instrument
+	---------------------------------------------------
+
+	declare @allowedDatasetTypes varchar(255)
+	declare @MatchCount int
+	
+	If @instrumentID <> 0
+	Begin
+		SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
+		FROM T_Instrument_Name InstName INNER JOIN
+			T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
+		WHERE (InstName.Instrument_ID = @instrumentID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount > 0
+		Begin
+			Set @MatchCount = 0
+			SELECT @MatchCount = COUNT(*)
+			FROM T_DatasetTypeName DSTypeName INNER JOIN
+				(SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
+				DSTypeName.DST_Name = AllowedTypesQ.item
+			WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
+			
+			if @MatchCount = 0
+			begin
+				set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
+				RAISERROR (@msg, 10, 1)
+				return 51014
+			end
+		End
+	End
+
+	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments
-	-- that have associated sample prep requests
+	-- that have associated sample prep requests)
 	---------------------------------------------------
 	exec @myError = LookupEUSFromExperimentSamplePrep	
 						@experimentNum,
 						@eusUsageType output,
 						@eusProposalID output,
 						@eusUsersList output,
-						@message output
+						@msg output
 	if @myError <> 0
 	begin
-		RAISERROR (@message, 10, 1)
+		RAISERROR (@msg, 10, 1)
 		return @myError
 	end
 
@@ -248,10 +354,10 @@ As
 						@eusProposalID output,
 						@eusUsersList output,
 						@eusUsageTypeID output,
-						@message output
+						@msg output
 	if @myError <> 0
 	begin
-		RAISERROR (@message, 10, 1)
+		RAISERROR (@msg, 10, 1)
 		return @myError
 	end
 
@@ -315,9 +421,9 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @message = 'Insert operation failed: "' + @reqName + '"'
+			set @msg = 'Insert operation failed: "' + @reqName + '"'
 			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
+			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
 		
@@ -327,12 +433,12 @@ As
 								@request,
 								@eusProposalID,
 								@eusUsersList,
-								@message output
+								@msg output
 		--
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
+			RAISERROR (@msg, 10, 1)
 			return 51019
 		end
 
@@ -371,9 +477,9 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @message = 'Update operation failed: "' + @reqName + '"'
+			set @msg = 'Update operation failed: "' + @reqName + '"'
 			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
+			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
 
@@ -383,12 +489,12 @@ As
 								@request,
 								@eusProposalID,
 								@eusUsersList,
-								@message output
+								@msg output
 		--
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
+			RAISERROR (@msg, 10, 1)
 			return 51019
 		end		
 

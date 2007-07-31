@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
 CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 /****************************************************
@@ -165,6 +165,7 @@ As
 	end -- update mode
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] TO [DMS_Analysis]

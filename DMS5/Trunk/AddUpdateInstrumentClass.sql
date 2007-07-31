@@ -4,9 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE Procedure dbo.AddUpdateInstrumentClass
 /****************************************************
 **
@@ -20,10 +17,12 @@ CREATE Procedure dbo.AddUpdateInstrumentClass
 **		@isPurgable           Determines if the instrument class is purgable 
 **		@rawDataType	      Specifies the raw data type for the instrument class
 **		@requiresPreparation  Determines if the instrument class requires preparation
+**		@allowedDatasetTypes  Comma separated list of dataset types that are allowed for this instrument calss
 **	
 **
 **		Auth: jds
-**		Date: 7/6/2006
+**		Date: 07/06/2006
+***           07/25/2007 mem - Added parameter @allowedDatasetTypes
 **    
 *****************************************************/
 (
@@ -31,6 +30,7 @@ CREATE Procedure dbo.AddUpdateInstrumentClass
 	@isPurgable varchar(1), 
 	@rawDataType varchar(32), 
 	@requiresPreparation varchar(1), 
+	@allowedDatasetTypes varchar(255),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -120,12 +120,14 @@ As
 			IN_class,
 			is_purgable,
 			raw_data_type,
-			requires_preparation 
+			requires_preparation,
+			Allowed_Dataset_Types
 		) VALUES (
 			@InstrumentClass,
 			@isPurgable,
 			@rawDataType,
-			@requiresPreparation
+			@requiresPreparation,
+			@allowedDatasetTypes
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -136,8 +138,10 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
-	end -- add mode
-
+	end -- add mode
+
+
+
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
@@ -150,7 +154,8 @@ As
 		SET 
 			is_purgable = @isPurgable, 
 			raw_data_type = @rawDataType, 
-			requires_preparation = @requiresPreparation
+			requires_preparation = @requiresPreparation,
+			Allowed_Dataset_Types = @allowedDatasetTypes
 		WHERE (IN_class = @InstrumentClass)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -165,7 +170,5 @@ As
 
 
 	return 0
-
-
 
 GO

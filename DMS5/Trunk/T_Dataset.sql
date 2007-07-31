@@ -45,6 +45,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset]
 ) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
+(
+	[DS_created] ASC
+) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_Dataset_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset] 
 (
@@ -73,7 +80,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_Dataset] on dbo.T_Dataset
+CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
 For Delete
 AS
 	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
@@ -90,6 +97,7 @@ AS
 	FROM deleted
 	ORDER BY Dataset_ID
 
+
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
@@ -99,7 +107,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_i_Dataset on dbo.T_Dataset
+CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 AS
 	declare @oldState int
