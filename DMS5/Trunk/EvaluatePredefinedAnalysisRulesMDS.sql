@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[EvaluatePredefinedAnalysisRulesMDS] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
@@ -146,6 +146,7 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User]

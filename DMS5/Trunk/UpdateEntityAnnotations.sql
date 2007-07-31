@@ -15,9 +15,9 @@ CREATE PROCEDURE UpadateEntityAnnotations
 **
 **	Parameters: 
 **
-**	Auth:	grk
-**	Date:	05/03/2007 (Ticket:431)
-**      	(only does experiment annotations at present)
+**		Auth: grk
+**		Date: 05/03/2007
+**      (only does experiment annotations at present)
 **    
 *****************************************************/
 (

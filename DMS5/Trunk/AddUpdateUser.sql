@@ -167,3 +167,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write]
+GO

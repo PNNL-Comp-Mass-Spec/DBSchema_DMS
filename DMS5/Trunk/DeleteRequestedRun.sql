@@ -68,3 +68,7 @@ As
 	return 0
 
 GO
+GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [DMS_Ops_Admin]
+GO
+GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write]
+GO

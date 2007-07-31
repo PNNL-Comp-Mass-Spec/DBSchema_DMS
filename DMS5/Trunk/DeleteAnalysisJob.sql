@@ -1,9 +1,8 @@
 /****** Object:  StoredProcedure [dbo].[DeleteAnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER OFF
 GO
-
 CREATE Procedure dbo.DeleteAnalysisJob
 /****************************************************
 **
@@ -76,6 +75,7 @@ As
 	commit transaction @transName
 
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin]
