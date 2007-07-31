@@ -6,10 +6,12 @@ GO
 CREATE TABLE [dbo].[T_Secondary_Sep](
 	[SS_name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SS_ID] [int] NOT NULL,
+	[SS_comment] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Secondary_Sep_SS_comment]  DEFAULT (''),
+	[SS_active] [tinyint] NOT NULL CONSTRAINT [DF_T_Secondary_Sep_SS_active]  DEFAULT (1),
  CONSTRAINT [PK_T_Secondary_Sep] PRIMARY KEY NONCLUSTERED 
 (
 	[SS_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
