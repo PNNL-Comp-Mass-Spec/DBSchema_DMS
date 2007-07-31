@@ -15,8 +15,9 @@ CREATE PROCEDURE GenerateLCCartLoadingList
 **
 **	Auth:	grk
 **	Date:	04/09/2007 (Ticket #424)
-**          04/16/2007 grk -- added priority as highest sort attribute
-**          06/07/2007 grk -- added EMSL user columns to output (Ticket #488)
+**          04/16/2007 grk - added priority as highest sort attribute
+**          06/07/2007 grk - added EMSL user columns to output (Ticket #488)
+**			07/31/2007 mem - now returning Run Type (aka Dataset Type) for each request (Ticket #505)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -39,10 +40,6 @@ As
 	set @message = ''
 	declare @col int
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-	
 	---------------------------------------------------
 	-- create temporary table to hold requested runs
 	-- assigned to cart
@@ -119,7 +116,7 @@ As
 		FROM #XR
 		WHERE [request] in (SELECT Item FROM dbo.MakeTableFromList(@BlanksFollowingRequests))
 	end	
-/**/
+
 	---------------------------------------------------
 	-- Pad out ends of column queues with blanks
 	---------------------------------------------------
@@ -225,6 +222,14 @@ As
 	--
 	while @col <= @numCols
 	begin
+		-- Note that the following Update query uses a bit of Sql Server query witchcraft
+		--  The @seq variable starts off at 0, and the seq column in the first row will thus be assigned a value of @seq+10 --> 10
+		--  The result of this math is stored in @seq so that in the next row the seq column is assigned a value of 10+10 --> 20
+		--  This process continues, resulting in the seq column being updated to have values of 10, 20, 30, 40, 50, etc. (for a given column)
+		--  This operation assumes that Sql Server will order things by the identity field (os)
+		--  An alternative approach would be to add another while loop with explicit row-by-row updates, but since the 
+		--   "@seq = seq = (@seq + 10)" trick works, we're using it owing to its increased efficiency
+
 		UPDATE    #XS
 		SET @seq = seq = (@seq + 10)
 		WHERE (col = @col)
@@ -233,8 +238,8 @@ As
 		set @col = @col + 1
 	end
 
-	-- next bump the sequence field by 
-	-- adding the column number
+	-- Next bump the sequence field up by adding the column number
+	-- This assumes that there are 9 or fewer columns (since the seq values 10 units apart)
 	--
 	UPDATE    #XS
 	SET seq = seq + col
@@ -270,35 +275,65 @@ As
 	DROP TABLE #XS
 
 	---------------------------------------------------
+	-- Check whether all of the entries in #XF have the same
+	--  run type.  If they do, then that type will be
+	--  reported for the blanks.  If not, but if the type is
+	--  the same in 75% of the the entries, then the most common
+	--  run type will be returned.  Otherwise return Null
+	--  for the run type for blanks
+	---------------------------------------------------
+	
+	declare @MatchCount int
+	declare @RequestCountTotal int
+	declare @RunTypeForBlanks varchar(64)
+	
+	set @MatchCount = 0
+	set @RequestCountTotal = 0
+	set @RunTypeForBlanks = Null
+
+	SELECT TOP 1 
+		@RunTypeForBlanks = DSType.DST_Name,
+		@MatchCount = COUNT(*)
+	FROM T_Requested_Run RR INNER JOIN
+		 T_DatasetTypeName DSType ON RR.RDS_type_ID = DSType.DST_Type_ID INNER JOIN
+		 #XF ON RR.ID = #XF.request
+	GROUP BY DSType.DST_Name
+	ORDER BY COUNT(*) DESC
+
+	SELECT @RequestCountTotal = COUNT(*)
+	FROM T_Requested_Run RR INNER JOIN
+		 #XF ON RR.ID = #XF.request
+
+	If @MatchCount < @RequestCountTotal * 0.75
+		Set @RunTypeForBlanks = Null
+
+	---------------------------------------------------
 	-- Output final report
 	---------------------------------------------------
         
 	SELECT 
-	#XF.seq AS [Sequence],
-	CASE WHEN #XF.request = 0 THEN '(blank)' ELSE t_Requested_Run.rds_Name END as Name,
-	#XF.request AS Request,
-	#XF.col AS [Column#],
-	t_Experiments.Experiment_num AS Experiment
-	, T_Requested_Run.RDS_priority AS Priority, 
-	T_Requested_Run.RDS_BatchID AS Batch, 
-	T_Requested_Run.RDS_Block as Block, 
-	T_Requested_Run.RDS_Run_Order AS [Batch Run Order],
-	T_EUS_UsageType.Name AS [EMSL Usage Type], 
-	T_Requested_Run.RDS_EUS_Proposal_ID AS [EMSL Proposal ID], 
-	dbo.GetRequestedRunEUSUsersList(T_Requested_Run.ID, 'I') AS [EMSL Users List]
-	FROM   
-	#XF
-	LEFT OUTER JOIN t_Requested_Run
-		ON #XF.Request = t_Requested_Run.Id
-	LEFT OUTER JOIN t_Experiments
-		ON t_Requested_Run.exp_Id = t_Experiments.exp_Id
-	LEFT OUTER JOIN T_EUS_UsageType 
-		ON T_Requested_Run.RDS_EUS_UsageType = T_EUS_UsageType.ID
+		#XF.seq AS [Sequence],
+		CASE WHEN #XF.request = 0 THEN '(blank)' ELSE RR.rds_Name END AS [Name],
+		#XF.request AS Request,
+		#XF.col AS [Column#],
+		E.Experiment_num AS Experiment,
+		RR.RDS_priority AS Priority, 
+		CASE WHEN #XF.request = 0 THEN @RunTypeForBlanks ELSE DSType.DST_Name END AS [Run Type], 
+		RR.RDS_BatchID AS Batch, 
+		RR.RDS_Block as Block, 
+		RR.RDS_Run_Order AS [Batch Run Order],
+		EUT.Name AS [EMSL Usage Type], 
+		RR.RDS_EUS_Proposal_ID AS [EMSL Proposal ID], 
+		dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS [EMSL Users List]
+	FROM T_Experiments E INNER JOIN
+		 T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID INNER JOIN
+		 T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID INNER JOIN
+		 T_DatasetTypeName DSType ON RR.RDS_type_ID = DSType.DST_Type_ID RIGHT OUTER JOIN
+		 #XF ON RR.ID = #XF.request
 	ORDER BY #XF.seq
 
     
  return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin]
