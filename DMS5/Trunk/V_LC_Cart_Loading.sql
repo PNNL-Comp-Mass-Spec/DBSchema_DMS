@@ -7,7 +7,7 @@ CREATE VIEW dbo.V_LC_Cart_Loading
 AS
 SELECT RR.ID AS Request, '' AS [Sel.], RR.RDS_Name AS [Name], 
        LCCart.Cart_Name AS [LC Cart], RR.RDS_Cart_Col AS [Column], 
-       RR.RDS_instrument_name AS Instrument, DSType.DST_Name AS [Run Type],
+       RR.RDS_instrument_name AS Instrument, DSType.DST_Name AS [Type],
        RR.RDS_BatchID AS Batch, RR.RDS_Block AS Block, RR.RDS_Run_Order AS [Run Order],
        RR.RDS_comment AS Comment, E.Experiment_Num AS Experiment, RR.RDS_priority AS Priority,
        U.U_Name AS Requester, RR.RDS_created AS Created

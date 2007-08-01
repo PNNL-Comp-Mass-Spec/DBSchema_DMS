@@ -17,7 +17,7 @@ CREATE PROCEDURE GenerateLCCartLoadingList
 **	Date:	04/09/2007 (Ticket #424)
 **          04/16/2007 grk - added priority as highest sort attribute
 **          06/07/2007 grk - added EMSL user columns to output (Ticket #488)
-**			07/31/2007 mem - now returning Run Type (aka Dataset Type) for each request (Ticket #505)
+**			07/31/2007 mem - now returning Dataset Type for each request (Ticket #505)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -276,23 +276,23 @@ As
 
 	---------------------------------------------------
 	-- Check whether all of the entries in #XF have the same
-	--  run type.  If they do, then that type will be
+	--  dataset type.  If they do, then that type will be
 	--  reported for the blanks.  If not, but if the type is
 	--  the same in 75% of the the entries, then the most common
-	--  run type will be returned.  Otherwise return Null
-	--  for the run type for blanks
+	--  dataset type will be returned.  Otherwise return Null
+	--  for the dataset type for blanks
 	---------------------------------------------------
 	
 	declare @MatchCount int
 	declare @RequestCountTotal int
-	declare @RunTypeForBlanks varchar(64)
+	declare @DSTypeForBlanks varchar(64)
 	
 	set @MatchCount = 0
 	set @RequestCountTotal = 0
-	set @RunTypeForBlanks = Null
+	set @DSTypeForBlanks = Null
 
 	SELECT TOP 1 
-		@RunTypeForBlanks = DSType.DST_Name,
+		@DSTypeForBlanks = DSType.DST_Name,
 		@MatchCount = COUNT(*)
 	FROM T_Requested_Run RR INNER JOIN
 		 T_DatasetTypeName DSType ON RR.RDS_type_ID = DSType.DST_Type_ID INNER JOIN
@@ -305,7 +305,7 @@ As
 		 #XF ON RR.ID = #XF.request
 
 	If @MatchCount < @RequestCountTotal * 0.75
-		Set @RunTypeForBlanks = Null
+		Set @DSTypeForBlanks = Null
 
 	---------------------------------------------------
 	-- Output final report
@@ -318,7 +318,7 @@ As
 		#XF.col AS [Column#],
 		E.Experiment_num AS Experiment,
 		RR.RDS_priority AS Priority, 
-		CASE WHEN #XF.request = 0 THEN @RunTypeForBlanks ELSE DSType.DST_Name END AS [Run Type], 
+		CASE WHEN #XF.request = 0 THEN @DSTypeForBlanks ELSE DSType.DST_Name END AS [Type], 
 		RR.RDS_BatchID AS Batch, 
 		RR.RDS_Block as Block, 
 		RR.RDS_Run_Order AS [Batch Run Order],
