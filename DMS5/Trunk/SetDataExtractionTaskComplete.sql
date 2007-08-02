@@ -27,10 +27,14 @@ CREATE PROCEDURE SetDataExtractionTaskComplete
 **            07/28/2006 grk - save completion code to job table
 **            10/13/2006 jds - removed parameters @processorName and @resultsFolderName
 **                             since they are not needed
+**				  06/29/2007 dac - added @message output parameter
+**
 *****************************************************/
     @jobNum varchar(32),
     @completionCode int = 0,
-    @comment varchar(255)
+    @comment varchar(255),
+	 @message varchar(512) = '' output
+
 As
 	set nocount on
 
@@ -40,7 +44,7 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 
-	declare @message varchar(512)
+--	declare @message varchar(512)
 
 	declare @jobID int
 
@@ -86,7 +90,5 @@ As
 		end
 
 	return 0
-
-
 
 GO
