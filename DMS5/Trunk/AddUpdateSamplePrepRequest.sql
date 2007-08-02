@@ -30,6 +30,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **          12/15/2006  grk - added EstimatedMSRuns argument (Ticket #336)
 **          04/20/2007  grk - added validation for organism, campaign, cell culture (Ticket #440)
 **          07/11/2007  grk - added "standard" EUS fields and removed old proposal field(Ticket #499)
+**          07/30/2007  grk - corrected error in update of EUS fields (Ticket #499)
 **    
 *****************************************************/
   @RequestName varchar(128),
@@ -438,9 +439,9 @@ As
       Estimated_Completion = @EstimatedCompletionDate,
       Estimated_MS_runs = @EstimatedMSRuns,
       Work_Package_Number = @WorkPackageNumber, 
-      @eusProposalID = EUS_Proposal_ID,
-      @eusUsageType = EUS_UsageType,
-      @eusUsersList = EUS_User_List,
+      EUS_Proposal_ID = @eusProposalID,
+      EUS_UsageType = @eusUsageType,
+      EUS_User_List = @eusUsersList,
       Replicates_of_Samples = @ReplicatesofSamples, 
       Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications, 
       Comment = @Comment, 

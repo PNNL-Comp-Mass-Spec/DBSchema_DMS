@@ -17,8 +17,8 @@ SELECT     dbo.T_Sample_Prep_Request.ID, dbo.T_Sample_Prep_Request.Request_Name 
                       dbo.T_Sample_Prep_Request.Requested_Personnel AS [Requested Personnel], 
                       dbo.T_Sample_Prep_Request.Assigned_Personnel AS [Assigned Personnel], 
                       dbo.T_Sample_Prep_Request.Work_Package_Number AS [Work Package Number], 
-                      dbo.T_Sample_Prep_Request.User_Proposal_Number AS [User Proposal Number], 
-                      dbo.T_Sample_Prep_Request.Replicates_of_Samples AS [Replicates of Samples], 
+                      dbo.T_Sample_Prep_Request.EUS_UsageType AS [EUS Usage Type], dbo.T_Sample_Prep_Request.EUS_Proposal_ID AS [EUS Proposal], 
+                      dbo.T_Sample_Prep_Request.EUS_User_List AS [EUS Users], dbo.T_Sample_Prep_Request.Replicates_of_Samples AS [Replicates of Samples], 
                       dbo.T_Sample_Prep_Request.Instrument_Analysis_Specifications AS [Instrument Analysis Specifications], dbo.T_Sample_Prep_Request.Comment, 
                       dbo.T_Sample_Prep_Request.Priority, dbo.T_Sample_Prep_Request_State_Name.State_Name AS State, dbo.T_Sample_Prep_Request.Created, 
                       dbo.T_Sample_Prep_Request.Estimated_Completion AS [Estimated Completion], 
@@ -27,11 +27,11 @@ SELECT     dbo.T_Sample_Prep_Request.ID, dbo.T_Sample_Prep_Request.Request_Name 
 FROM         dbo.T_Sample_Prep_Request INNER JOIN
                       dbo.T_Sample_Prep_Request_State_Name ON dbo.T_Sample_Prep_Request.State = dbo.T_Sample_Prep_Request_State_Name.State_ID INNER JOIN
                       dbo.T_Internal_Standards ON dbo.T_Sample_Prep_Request.Internal_standard_ID = dbo.T_Internal_Standards.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards T_Internal_Standards_1 ON 
+                      dbo.T_Internal_Standards AS T_Internal_Standards_1 ON 
                       dbo.T_Sample_Prep_Request.Postdigest_internal_std_ID = T_Internal_Standards_1.Internal_Std_Mix_ID LEFT OUTER JOIN
-                      dbo.T_Users QP ON dbo.T_Sample_Prep_Request.Requester_PRN = QP.U_PRN LEFT OUTER JOIN
+                      dbo.T_Users AS QP ON dbo.T_Sample_Prep_Request.Requester_PRN = QP.U_PRN LEFT OUTER JOIN
                           (SELECT     Request_ID, COUNT(*) AS Updates
-                            FROM          T_Sample_Prep_Request_Updates
-                            GROUP BY Request_ID) NU ON dbo.T_Sample_Prep_Request.ID = NU.Request_ID
+                            FROM          dbo.T_Sample_Prep_Request_Updates
+                            GROUP BY Request_ID) AS NU ON dbo.T_Sample_Prep_Request.ID = NU.Request_ID
 
 GO
