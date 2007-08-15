@@ -69,6 +69,16 @@ GO
 
 CREATE Trigger [dbo].[trig_d_AnalysisJob] on dbo.T_Analysis_Job
 For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the deleted analysis job
+**
+**	Auth:	grk
+**	Date:	01/01/2003
+**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**    
+*****************************************************/
 AS
 	-- Add entries to T_Event_Log for each job deleted from T_Analysis_Job
 	INSERT INTO T_Event_Log
@@ -96,6 +106,16 @@ GO
 
 CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the new analysis job
+**
+**	Auth:	grk
+**	Date:	01/01/2003
+**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**    
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
@@ -117,6 +137,17 @@ GO
 
 CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the updated analysis job
+**
+**	Auth:	grk
+**	Date:	01/01/2003
+**			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
+**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**    
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return

@@ -61,9 +61,18 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE Trigger trig_u_Sample_Prep_Req
-on T_Sample_Prep_Request
+CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Sample_Prep_Request_Updates for the updated sample prep request
+**
+**	Auth:	grk
+**	Date:	01/01/2003
+**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**    
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
