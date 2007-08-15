@@ -53,63 +53,33 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_P
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger trig_u_Sample_Prep_Req
+
+CREATE Trigger trig_u_Sample_Prep_Req
 on T_Sample_Prep_Request
 For Update
 AS
-	declare @oldState tinyint
-	declare @newState tinyint
-	declare @ID int
-	declare @done int
-	set @done = 0
+	If @@RowCount = 0
+		Return
 
-	declare curUpdate Cursor
-	For
-	select 
-		deleted.ID,
-		deleted.State, 
-		inserted.State 
-	From 
-		deleted inner join 
-		inserted on deleted.ID = inserted.ID
-		
-	Open curUpdate
-	while(@done = 0)
-		begin -- while
-		
-		Fetch Next From curUpdate Into @ID, @oldState, @newState
-		if @@fetch_status = -1
-			begin
-				set @done = 1
-			end
-		else
-			begin
-			-- make update tracking entry
-			--
-			declare @user_account varchar(128)
-			set @user_account = REPLACE (SUSER_SNAME() , 'pnl\' , '' )
-			--
-			INSERT INTO T_Sample_Prep_Request_Updates (
-				Request_ID, 
-				System_Account, 
-				Beginning_State_ID, 
-				End_State_ID
-			) VALUES (
-				@ID, 
-				@user_account, 
-				@oldState, 
-				@newState)
-			end 
-		end-- while
-	
-	Deallocate curUpdate
+	INSERT INTO T_Sample_Prep_Request_Updates (
+			Request_ID, 
+			System_Account, 
+			Beginning_State_ID, 
+			End_State_ID)
+	SELECT 	inserted.ID, 
+		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ),
+			inserted.state, 
+			deleted.state
+	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
+	ORDER BY inserted.ID
+
 
 GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]

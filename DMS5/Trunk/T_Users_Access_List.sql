@@ -13,3 +13,25 @@ CREATE TABLE [dbo].[T_Users_Access_List](
 ) ON [PRIMARY]
 
 GO
+GRANT SELECT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GO
+GRANT INSERT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GO
+GRANT DELETE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GO
+GRANT REFERENCES ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Users_Access_List] ([ID]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Users_Access_List] ([ID]) TO [Limited_Table_Write]
+GO
+GRANT REFERENCES ON [dbo].[T_Users_Access_List] ([ID]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Users_Access_List] ([Name]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Users_Access_List] ([Name]) TO [Limited_Table_Write]
+GO
+GRANT REFERENCES ON [dbo].[T_Users_Access_List] ([Name]) TO [Limited_Table_Write]
+GO

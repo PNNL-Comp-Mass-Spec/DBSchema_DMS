@@ -107,56 +107,23 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 AS
-	declare @oldState int
-	set @oldState = 0
-	declare @newState int
-	declare @datasetID int
-	
-	declare @done int
-	set @done = 0
+	If @@RowCount = 0
+		Return
 
-	declare curStateChange Cursor
-	For
-	select 
-		inserted.Dataset_ID,
-		inserted.DS_State_ID 
-	From 
-		inserted
-		
-	Open curStateChange
-	while(@done = 0)
-		begin -- while
-		
-		Fetch Next From curStateChange Into @datasetID, @newState
-		if @@fetch_status = -1
-			begin
-				set @done = 1
-			end
-		else
-			begin
-				INSERT INTO T_Event_Log
-				(
-					Target_Type, 
-					Target_ID, 
-					Target_State, 
-					Prev_Target_State, 
-					Entered
-				)
-				VALUES
-				(
-					4, 
-					@datasetID, 
-					@newState, 
-					@oldState, 
-					GETDATE()
-				)
-			end 
-		end-- while
-	
-	Deallocate curStateChange
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.Dataset_ID
+
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.Dataset_ID
+
 
 GO
 
@@ -167,63 +134,32 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_u_Dataset on dbo.T_Dataset
+
+CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
 For Update
 AS
-	if update(DS_State_ID)
-	Begin -- if update
-		declare @oldState int
-		declare @newState int
-		declare @datasetID int
-		declare @done int
-		set @done = 0
+	If @@RowCount = 0
+		Return
 
-		declare curStateChange Cursor
-		For
-		select 
-			deleted.Dataset_ID,
-			deleted.DS_State_ID, 
-			inserted.DS_State_ID 
-		From 
-			deleted inner join 
-			inserted on deleted.Dataset_ID = inserted.Dataset_ID
-			
-		Open curStateChange
-		while(@done = 0)
-			begin -- while
-			
-			Fetch Next From curStateChange Into @datasetID, @oldState, @newState
-			if @@fetch_status = -1
-				begin
-					set @done = 1
-				end
-			else
-				begin
-					INSERT INTO T_Event_Log
-					(
-						Target_Type, 
-						Target_ID, 
-						Target_State, 
-						Prev_Target_State, 
-						Entered
-					)
-					VALUES
-					(
-						4, 
-						@datasetID, 
-						@newState, 
-						@oldState, 
-						GETDATE()
-					)
+	If Update(DS_State_ID)
+	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
+		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+		ORDER BY inserted.Dataset_ID
 
-					UPDATE T_Dataset
-					Set DS_Last_Affected = GETDATE()
-					WHERE Dataset_ID = @datasetID
-				end 
-			end-- while
-		
-		Deallocate curStateChange
-	End  -- if update
+		UPDATE T_Dataset
+		Set DS_Last_Affected = GetDate()
+		WHERE Dataset_ID IN (SELECT Dataset_ID FROM inserted)
+	End
+
+	If Update(DS_Rating)
+	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
+		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+		ORDER BY inserted.Dataset_ID
+	End
 
 GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]
@@ -364,12 +300,12 @@ REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Internal_Standards]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_LC_Column] FOREIGN KEY([DS_LC_column_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_LC_Column] FOREIGN KEY([DS_LC_column_ID])
 REFERENCES [T_LC_Column] ([ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_LC_Column]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Secondary_Sep] FOREIGN KEY([DS_sec_sep])
+ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Secondary_Sep] FOREIGN KEY([DS_sec_sep])
 REFERENCES [T_Secondary_Sep] ([SS_name])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Secondary_Sep]

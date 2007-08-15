@@ -34,56 +34,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_i_Dataset_Archive on T_Dataset_Archive
+
+CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 AS
-	declare @oldState int
-	set @oldState = 0
-	declare @newState int
-	declare @datasetID int
-	
-	declare @done int
-	set @done = 0
+	If @@RowCount = 0
+		Return
 
-	declare curStateChange Cursor
-	For
-	select 
-		inserted.AS_Dataset_ID,
-		inserted.AS_state_ID 
-	From 
-		inserted
-		
-	Open curStateChange
-	while(@done = 0)
-		begin -- while
-		
-		Fetch Next From curStateChange Into @datasetID, @newState
-		if @@fetch_status = -1
-			begin
-				set @done = 1
-			end
-		else
-			begin
-				INSERT INTO T_Event_Log
-				(
-					Target_Type, 
-					Target_ID, 
-					Target_State, 
-					Prev_Target_State, 
-					Entered
-				)
-				VALUES
-				(
-					6, 
-					@datasetID, 
-					@newState, 
-					@oldState, 
-					GETDATE()
-				)
-			end 
-		end-- while
-	
-	Deallocate curStateChange
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.AS_Dataset_ID
 
 GO
 
@@ -94,59 +55,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_u_Dataset_Archive on T_Dataset_Archive  
+
+CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 AS
-	if update(AS_state_ID)
-	Begin -- if update
-		declare @oldState int
-		declare @newState int
-		declare @datasetID int
-		declare @done int
-		set @done = 0
+	If @@RowCount = 0
+		Return
 
-		declare curStateChange Cursor
-		For
-		select 
-			deleted.AS_Dataset_ID,
-			deleted.AS_state_ID, 
-			inserted.AS_state_ID 
-		From 
-			deleted inner join 
-			inserted on deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
-			
-		Open curStateChange
-		while(@done = 0)
-			begin -- while
-			
-			Fetch Next From curStateChange Into @datasetID, @oldState, @newState
-			if @@fetch_status = -1
-				begin
-					set @done = 1
-				end
-			else
-				begin
-					INSERT INTO T_Event_Log
-					(
-						Target_Type, 
-						Target_ID, 
-						Target_State, 
-						Prev_Target_State, 
-						Entered
-					)
-					VALUES
-					(
-						6, 
-						@datasetID, 
-						@newState, 
-						@oldState, 
-						GETDATE()
-					)
-				end 
-			end-- while
-		
-		Deallocate curStateChange
-	End  -- if update
+	If Update(AS_state_ID)
+	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, deleted.AS_state_ID, GetDate()
+		FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
+		ORDER BY inserted.AS_Dataset_ID
+	End
 
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])

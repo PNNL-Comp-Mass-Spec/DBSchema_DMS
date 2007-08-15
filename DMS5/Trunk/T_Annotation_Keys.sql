@@ -13,3 +13,25 @@ CREATE TABLE [dbo].[T_Annotation_Keys](
 ) ON [PRIMARY]
 
 GO
+GRANT SELECT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GO
+GRANT INSERT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GO
+GRANT DELETE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GO
+GRANT SELECT ON [dbo].[T_Annotation_Keys] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Annotation_Keys] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Annotation_Keys] ([Key_Name]) TO [DMS_Annotation_User]
+GO
+GRANT SELECT ON [dbo].[T_Annotation_Keys] ([Description]) TO [DMS_Annotation_User]
+GO
+GRANT UPDATE ON [dbo].[T_Annotation_Keys] ([Description]) TO [DMS_Annotation_User]
+GO
+GRANT REFERENCES ON [dbo].[T_Annotation_Keys] ([Description]) TO [DMS_Annotation_User]
+GO

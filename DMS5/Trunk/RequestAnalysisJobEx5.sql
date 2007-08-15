@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.RequestAnalysisJobEx5
+CREATE Procedure [dbo].[RequestAnalysisJobEx5]
 /****************************************************
 **
 **	Desc: This is a wrapper that presents the analysis 

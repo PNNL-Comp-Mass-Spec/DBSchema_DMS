@@ -100,6 +100,70 @@ AS
 
 
 GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GO
+GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GO
+GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_Tag]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_Tag]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_Tag]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Description]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Description]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Description]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Monoisotopic_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Monoisotopic_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Monoisotopic_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Average_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Average_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Average_Mass_Correction]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Affected_Atom]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Affected_Atom]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Affected_Atom]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Original_Source]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Original_Source]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Original_Source]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Original_Source_Name]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Original_Source_Name]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Original_Source_Name]) TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] ([Alternative_Name]) TO [PNL\D3M578]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] ([Alternative_Name]) TO [PNL\D3M578]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] ([Alternative_Name]) TO [PNL\D3M578]
+GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((((not([Mass_Correction_Tag] like '%:%'))) and ((not([Mass_Correction_Tag] like '%,%')))))
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]

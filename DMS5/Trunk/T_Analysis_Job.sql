@@ -93,56 +93,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_i_AnalysisJob on dbo.T_Analysis_Job
+
+CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
 AS
-	declare @oldState int
-	set @oldState = 0
-	declare @newState int
-	declare @jobID int
-	
-	declare @done int
-	set @done = 0
+	If @@RowCount = 0
+		Return
 
-	declare curStateChange Cursor
-	For
-	select 
-		inserted.AJ_jobID,
-		inserted.AJ_StateID 
-	From 
-		inserted
-		
-	Open curStateChange
-	while(@done = 0)
-		begin -- while
-		
-		Fetch Next From curStateChange Into @jobID, @newState
-		if @@fetch_status = -1
-			begin
-				set @done = 1
-			end
-		else
-			begin
-				INSERT INTO T_Event_Log
-				(
-					Target_Type, 
-					Target_ID, 
-					Target_State, 
-					Prev_Target_State, 
-					Entered
-				)
-				VALUES
-				(
-					5, 
-					@jobID, 
-					@newState, 
-					@oldState, 
-					GETDATE()
-				)
-			end 
-		end-- while
-	
-	Deallocate curStateChange
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.AJ_jobID
 
 GO
 
@@ -153,63 +114,24 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
 AS
-	if update(AJ_StateID)
-	Begin -- if update
-		declare @oldState int
-		declare @newState int
-		declare @jobID int
-		declare @done int
-		set @done = 0
+	If @@RowCount = 0
+		Return
 
-		declare curStateChange Cursor
-		For
-		select 
-			deleted.AJ_jobID,
-			deleted.AJ_StateID, 
-			inserted.AJ_StateID 
-		From 
-			deleted inner join 
-			inserted on deleted.AJ_jobID = inserted.AJ_jobID
-			
-		Open curStateChange
-		while(@done = 0)
-			begin -- while
-			
-			Fetch Next From curStateChange Into @jobID, @oldState, @newState
-			if @@fetch_status = -1
-				begin
-					set @done = 1
-				end
-			else
-				begin
-					INSERT INTO T_Event_Log
-					(
-						Target_Type, 
-						Target_ID, 
-						Target_State, 
-						Prev_Target_State, 
-						Entered
-					)
-					VALUES
-					(
-						5, 
-						@jobID, 
-						@newState, 
-						@oldState, 
-						GETDATE()
-					)
+	If Update(AJ_StateID)
+	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
+		FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
+		ORDER BY inserted.AJ_jobID
 
-					UPDATE T_Analysis_Job
-					Set AJ_Last_Affected = GETDATE()
-					WHERE AJ_jobID = @jobID
-				end 
-			end-- while
-		
-		Deallocate curStateChange
-	End  -- if update
+		UPDATE T_Analysis_Job
+		Set AJ_Last_Affected = GetDate()
+		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
+	End
 
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
@@ -324,7 +246,7 @@ GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_Write]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
 REFERENCES [T_Analysis_Job_Batches] ([Batch_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches]
@@ -334,7 +256,7 @@ REFERENCES [T_Analysis_Job_Request] ([AJR_requestID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name] FOREIGN KEY([AJ_StateID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name] FOREIGN KEY([AJ_StateID])
 REFERENCES [T_Analysis_State_Name] ([AJS_stateID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name]
