@@ -5,32 +5,29 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Dataset_Disposition
 AS
-SELECT dbo.T_Dataset.Dataset_ID AS ID, '' AS [Sel.], 
-    dbo.T_Dataset.Dataset_Num AS Dataset, 
-    dbo.T_LC_Cart.Cart_Name AS [LC Cart], 
-    dbo.T_Requested_Run_History.RDS_BatchID AS Batch, 
-    dbo.T_Requested_Run_History.ID AS Request, 
-    dbo.T_DatasetRatingName.DRN_name AS Rating, 
-    dbo.T_Dataset.DS_comment AS Comment, 
-    dbo.T_DatasetStateName.DSS_name AS State, 
-    dbo.T_Instrument_Name.IN_name AS Instrument, 
-    dbo.T_Dataset.DS_created AS Created, 
-    dbo.T_Dataset.DS_Oper_PRN AS [Oper.]
-FROM dbo.T_DatasetStateName INNER JOIN
-    dbo.T_Dataset ON 
-    dbo.T_DatasetStateName.Dataset_state_ID = dbo.T_Dataset.DS_state_ID
-     INNER JOIN
-    dbo.T_Instrument_Name ON 
-    dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
-     INNER JOIN
-    dbo.T_DatasetRatingName ON 
-    dbo.T_Dataset.DS_rating = dbo.T_DatasetRatingName.DRN_state_ID
-     INNER JOIN
-    dbo.T_Requested_Run_History ON 
-    dbo.T_Dataset.Dataset_ID = dbo.T_Requested_Run_History.DatasetID
-     INNER JOIN
-    dbo.T_LC_Cart ON 
-    dbo.T_Requested_Run_History.RDS_Cart_ID = dbo.T_LC_Cart.ID
-WHERE (dbo.T_Dataset.DS_rating = - 10)
+SELECT DS.Dataset_ID AS ID,
+       '' AS [Sel.],
+       DS.Dataset_Num AS Dataset,
+       LCC.Cart_Name AS [LC Cart],
+       RRH.RDS_BatchID AS Batch,
+       RRH.ID AS Request,
+       DRN.DRN_name AS Rating,
+       DS.DS_comment AS Comment,
+       DSN.DSS_name AS State,
+       InstName.IN_name AS Instrument,
+       DS.DS_created AS Created,
+       DS.DS_Oper_PRN AS [Oper.]
+FROM dbo.T_LC_Cart LCC
+     INNER JOIN dbo.T_Requested_Run_History RRH
+       ON LCC.ID = RRH.RDS_Cart_ID
+     RIGHT OUTER JOIN dbo.T_DatasetStateName DSN
+                      INNER JOIN dbo.T_Dataset DS
+                        ON DSN.Dataset_state_ID = DS.DS_state_ID
+                      INNER JOIN dbo.T_Instrument_Name InstName
+                        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+                      INNER JOIN dbo.T_DatasetRatingName DRN
+                        ON DS.DS_rating = DRN.DRN_state_ID
+       ON RRH.DatasetID = DS.Dataset_ID
+WHERE (DS.DS_rating = - 10)
 
 GO

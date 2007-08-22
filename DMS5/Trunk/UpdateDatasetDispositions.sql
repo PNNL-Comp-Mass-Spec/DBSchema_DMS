@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDatasetDispositions
+CREATE PROCEDURE dbo.UpdateDatasetDispositions
 /****************************************************
 **
 **	Desc:
@@ -13,35 +13,37 @@ CREATE PROCEDURE UpdateDatasetDispositions
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 04/25/2007
-**            06/26/2007 grk -- fix problem with multiple datasets (Ticket #495)
-**    
+**	Auth:	grk
+**	Date:	04/25/2007
+**			06/26/2007 grk - Fix problem with multiple datasets (Ticket #495)
+**			08/22/2007 mem - Disallow setting datasets to rating 5 (Released) when their state is 5 (Capture Failed); Ticket #524
+**
 *****************************************************/
+(
     @datasetIDList varchar(6000),
     @rating varchar(64) = '',
     @comment varchar(512) = '',
     @recycleRequest varchar(32) = '', -- yes/no
     @mode varchar(12) = 'update',
     @message varchar(512) output
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	declare @myRowCount int
+	set @myError = 0
+	set @myRowCount = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	set @message = ''
 
-  declare @msg varchar(512)
-  declare @list varchar(1024)
+	declare @msg varchar(512)
+	declare @list varchar(1024)
 
 
-  ---------------------------------------------------
-  -- 
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
 
 	if @datasetIDList = ''
 	begin
@@ -142,7 +144,11 @@ As
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following datasets from list were not in database:"' + @list + '"'
+		if @myRowCount = 1
+			set @message = 'Dataset "' + @list + '" was not found in the database'
+		else
+			set @message = 'The following datasets from list were not in database: "' + @list + '"'
+
 		return 51007
 	end
 	
@@ -170,7 +176,6 @@ As
 		set @message = 'Error updating dataset rating'
 		return 51022
 	end
-
 	
  	---------------------------------------------------
 	-- Update datasets from temporary table
@@ -192,8 +197,11 @@ As
 		declare @curRatingID int
 		set @curRatingID = 0
 		--
-		declare @curState int
-		set @curState = 0
+		declare @curDatasetState int
+		set @curDatasetState = 0
+		--
+		declare @curDatasetStateName varchar(64)
+		set @curDatasetStateName = ''
 		--
 		declare @curComment varchar(512)
 		set @curComment = ''
@@ -213,14 +221,16 @@ As
 			--
 			set @curDatasetID = 0
 			SELECT TOP 1
-				@curDatasetID = DatasetID,
-				@curDatasetName = DatasetName,
-				@curRatingID = RatingID,
-				@curState = State,
-				@curComment = Comment
-			FROM #TDS
-			WHERE DatasetID > @prevDatasetID
-			ORDER BY DatasetID
+				@curDatasetID = D.DatasetID,
+				@curDatasetName = D.DatasetName,
+				@curRatingID = D.RatingID,
+				@curDatasetState = D.State,
+				@curComment = D.Comment,
+				@curDatasetStateName = DSN.DSS_name
+			FROM #TDS AS D INNER JOIN
+				 dbo.T_DatasetStateName DSN ON D.State = DSN.Dataset_state_ID
+			WHERE D.DatasetID > @prevDatasetID
+			ORDER BY D.DatasetID
 			--
 			if @curDatasetID = 0
 				begin
@@ -228,6 +238,17 @@ As
 				end
 			else
 				begin
+					If @curDatasetState = 5
+					Begin
+						-- Do not allow update to rating of 2 or higher when the dataset state is 5 (Capture Failed)
+						If @ratingID >= 2
+						Begin
+							set @msg = 'Cannot set dataset rating to ' + @rating + ' for dataset "' + @curDatasetName + '" since its state is ' + @curDatasetStateName
+							RAISERROR (@msg, 10, 1)
+							return 51005
+						End
+					End
+					
 					begin transaction @transName
 					
 					-----------------------------------------------
@@ -276,7 +297,7 @@ As
 					-- if rating changes from unreviewed to released
 					-- and dataset capture is complete
 					--
-					if @curRatingID = -10 and @ratingID = 5 AND @curState = 3
+					if @curRatingID = -10 and @ratingID = 5 AND @curDatasetState = 3
 					begin
 						-- schedule default analyses for this dataset
 						--
@@ -305,8 +326,6 @@ As
 	---------------------------------------------------
 	
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler]
