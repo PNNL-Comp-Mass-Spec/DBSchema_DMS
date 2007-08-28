@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GenerateLCCartLoadingList
+CREATE PROCEDURE dbo.GenerateLCCartLoadingList
 /****************************************************
 **
 **	Desc: 
@@ -18,6 +18,7 @@ CREATE PROCEDURE GenerateLCCartLoadingList
 **          04/16/2007 grk - added priority as highest sort attribute
 **          06/07/2007 grk - added EMSL user columns to output (Ticket #488)
 **			07/31/2007 mem - now returning Dataset Type for each request (Ticket #505)
+**			08/27/2007 grk - add ability to start columns with a blank (Ticket #517)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -25,6 +26,7 @@ CREATE PROCEDURE GenerateLCCartLoadingList
 (
 	@LCCartName varchar(128),
 	@BlanksFollowingRequests varchar(2048),
+	@ColumnsWithLeadingBlanks varchar(256),
 	@mode varchar(12) = '', -- 
 	@message varchar(512) output
 )
@@ -104,7 +106,7 @@ As
 	end
 
 	---------------------------------------------------
-	-- Add blanks to table
+	-- Add following blanks to table
 	---------------------------------------------------
 	SET IDENTITY_INSERT #XR ON
 
@@ -115,6 +117,17 @@ As
 		SELECT 0, col, os + 1
 		FROM #XR
 		WHERE [request] in (SELECT Item FROM dbo.MakeTableFromList(@BlanksFollowingRequests))
+	end	
+
+	---------------------------------------------------
+	-- Add column lead blanks to table
+	---------------------------------------------------
+	if @ColumnsWithLeadingBlanks <> ''
+	begin
+		--
+		INSERT INTO #XR ([request], col, os)
+		SELECT 0, CAST(Item as int), 0
+		FROM dbo.MakeTableFromList(@ColumnsWithLeadingBlanks)
 	end	
 
 	---------------------------------------------------
@@ -251,7 +264,8 @@ As
 	CREATE TABLE #XF (
 		[request] [int] NOT NULL,
 		col int,
-		seq [int] IDENTITY (1, 1) NOT NULL	
+		seq [int] IDENTITY (1, 1) NOT NULL,
+		blankSeq int null
 	) 
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -306,6 +320,16 @@ As
 
 	If @MatchCount < @RequestCountTotal * 0.75
 		Set @DSTypeForBlanks = Null
+		
+	---------------------------------------------------
+	-- Generate sequential numbers for all blanks
+	---------------------------------------------------
+/**/
+	set @seq = 0
+	--
+	UPDATE #XF
+	SET @seq = blankSeq = (@seq + 1)
+	WHERE request = 0
 
 	---------------------------------------------------
 	-- Output final report
@@ -313,7 +337,7 @@ As
         
 	SELECT 
 		#XF.seq AS [Sequence],
-		CASE WHEN #XF.request = 0 THEN '(blank)' ELSE RR.rds_Name END AS [Name],
+		CASE WHEN #XF.request = 0 THEN 'Blank-' + CAST(#XF.blankSeq as varchar(12)) ELSE RR.rds_Name END AS [Name],
 		#XF.request AS Request,
 		#XF.col AS [Column#],
 		E.Experiment_num AS Experiment,
@@ -334,6 +358,7 @@ As
 
     
  return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin]
