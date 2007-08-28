@@ -3,18 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure UpdateDatasetFileInfoFromFile
+create Procedure dbo.UpdateDatasetFileInfoFromFile
 /****************************************************
 ** 
-**		Desc: Loads the Dataset info from a file (using bulk load)
-**			  and updates T_Dataset with the information
+**	Desc: Loads the Dataset info from a file (using bulk load)
+**		  and updates T_Dataset with the information
 **
-**		Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
+**	Parameters:
 **
-**		Auth:	mem
-**		Date:	09/15/2005
+**	Auth:	mem
+**	Date:	09/15/2005
+**			08/27/2007 mem - Added support for a 9th column in the source file
 **    
 *****************************************************/
 (
@@ -43,7 +44,7 @@ As
 	-----------------------------------------------------------
 
 
-	if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[#Tmp_Dataset_Info]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+	If exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[#Tmp_Dataset_Info]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
 		drop table [dbo].[#Tmp_Dataset_Info]
 
 	CREATE TABLE [dbo].[#Tmp_Dataset_Info] (
@@ -71,7 +72,7 @@ As
 	-----------------------------------------------
 	Exec @result = ValidateDelimitedFile @DatasetInfoFilePath, 0, @fileExists OUTPUT, @columnCount OUTPUT, @FirstRowPreview OUTPUT, @message OUTPUT
 	
-	if @result <> 0
+	If @result <> 0
 	Begin
 		If Len(@message) = 0
 			Set @message = 'Error calling ValidateDelimitedFile for ' + @DatasetInfoFilePath + ' (Code ' + Convert(varchar(11), @result) + ')'
@@ -79,10 +80,10 @@ As
 		Set @myError = 60001
 		Goto Done
 	End
-	else
+	Else
 	Begin
-		if @columnCount < 8
-		begin
+		If @columnCount < 8
+		Begin
 			If @columnCount = 0
 			Begin
 				Set @message = 'Dataset info file was empty'
@@ -90,15 +91,32 @@ As
 			End
 			Else
 			Begin
-				Set @message = 'Dataset info file only contains ' + convert(varchar(11), @columnCount) + ' columns (Expecting 8 columns)'
+				Set @message = 'Dataset info file only contains ' + convert(varchar(11), @columnCount) + ' columns (Expecting 8 or 9 columns)'
 				set @myError = 60003
 			End
 			Goto Done
 		end
+		else
+		Begin
+			If @columnCount > 9
+			Begin
+				Set @message = 'Dataset info file contains ' + convert(varchar(11), @columnCount) + ' columns (Expecting 8 or 9 columns)'
+				set @myError = 60003
+				Goto Done
+			End
+
+			If @columnCount = 9
+			Begin
+				-- Add another column to [#Tmp_Dataset_Info]
+				ALTER TABLE [dbo].[#Tmp_Dataset_Info]
+				ADD [File_Modification_Date] [datetime] NULL
+			End
+		End
+
 	End
 	
 	-----------------------------------------------
-	-- See if @FirstRowPreview starts with a number
+	-- See If @FirstRowPreview starts with a number
 	-- If it does not, then skip the first row
 	-----------------------------------------------
 	
@@ -124,8 +142,8 @@ As
 	--
 	set @NumLoaded = @myRowCount
 	--
-	if @result <> 0
-	begin
+	If @result <> 0
+	Begin
 		set @message = 'Problem executing bulk insert'
 		goto Done
 	end
