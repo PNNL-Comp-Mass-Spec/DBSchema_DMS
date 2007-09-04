@@ -1,8 +1,9 @@
 /****** Object:  StoredProcedure [dbo].[EvaluatePredefinedAnalysisRules] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
@@ -24,6 +25,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			01/26/2007 mem - Now getting organism name from T_Organisms (Ticket #368)
 **			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
+**		    09/04/2007 grk - corrected bug in "@RuleEvalNotes" update.
 **
 *****************************************************/
 (
@@ -463,7 +465,7 @@ As
 				Begin
 					Set @minLevel = @RuleNextLevel
 					If Len(@RuleEvalNotes) > 0
-						Set @RuleEvalNotes = @RuleNextLevel + '; '
+						Set @RuleEvalNotes = @RuleEvalNotes + '; '
 					Set @RuleEvalNotes = @RuleEvalNotes + 'Next rule must have level >= ' + Convert(varchar(12), @RuleNextLevel)
 				End
 						    		
@@ -510,7 +512,7 @@ As
 						Set @associatedProcessorGroup = ''
 			
 					If Len(@RuleEvalNotes) > 0
-						Set @RuleEvalNotes = @RuleNextLevel + '; '
+						Set @RuleEvalNotes = @RuleEvalNotes + '; '
 					Set @RuleEvalNotes = @RuleEvalNotes + 'Priority set to ' + Convert(varchar(12), @priority) 
 					
 					If Len(@associatedProcessorGroup) > 0
@@ -672,7 +674,6 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]
