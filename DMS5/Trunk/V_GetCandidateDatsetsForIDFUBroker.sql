@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_GetCandidateDatsetsForIDFUBroker
+CREATE VIEW [dbo].[V_GetCandidateDatsetsForIDFUBroker]
 AS
 SELECT DS.Dataset_ID,
        DS.Dataset_Num AS DatasetName,
