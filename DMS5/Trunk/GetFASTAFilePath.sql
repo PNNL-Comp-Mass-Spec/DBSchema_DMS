@@ -16,8 +16,9 @@ CREATE FUNCTION dbo.GetFASTAFilePath
 **
 **	Return values: Path to the folder containing the Fasta file
 **
-**		Auth: kja
-**		Date: 1/23/2007
+**	Auth:	kja
+**	Date:	01/23/2007
+**			09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs (Ticket #531)
 **    
 *****************************************************/
 (
@@ -26,41 +27,40 @@ CREATE FUNCTION dbo.GetFASTAFilePath
 )
 RETURNS varchar(512)
 AS
+Begin
+	declare @filePath varchar(512)
+	declare @fileNamePosition int
 	
-	BEGIN
-		declare @filePath varchar(512)
-		declare @fileNamePosition int
+	set @filePath = ''
+	IF (LEN(@fastaFileName) = 0 or @fastaFileName = 'na')
+	Begin
+		SELECT TOP 1 @filePath = OG_organismDBPath
+		FROM T_Organisms
+		WHERE OG_name = @organismName
+	End
+	Else
+	Begin
+		If PATINDEX('%.fasta',@fastaFileName) = 0
+			set @fastaFileName = @fastaFileName + '.fasta'
+	
 		
-		set @filePath = ''
-		IF (LEN(@fastaFileName) = 0 or @fastaFileName = 'na')
-			BEGIN
-				SELECT TOP 1 @filePath = OG_organismDBPath
-				FROM T_Organisms
-				WHERE OG_name = @organismName
-			END
-		ELSE
-			BEGIN
-				IF PATINDEX('%.fasta',@fastaFileName) = 0
-					set @fastaFileName = @fastaFileName + '.fasta'
-			
-				
-				SELECT TOP 1 @filePath = Archived_File_Path
-				FROM gigasax.Protein_Sequences.dbo.T_Archived_Output_Files 
-				WHERE Archived_File_Path LIKE '%' + @fastaFileName + '%'
-				
-				IF LEN(@filePath) = 0
-				SELECT TOP 1 @filePath = FilePath
-				FROM V_Legacy_FASTA_File_Paths
-				WHERE FileName = @fastaFileName
-				
-				set @fileNamePosition = PATINDEX('%' + @fastaFileName, @filePath)
-				
-				IF @fileNamePosition > 0
-					SET @filePath = SUBSTRING(@filePath, 1, @fileNamePosition -1)
-				ELSE
-					SET @filePath = ''
-			END
+		SELECT TOP 1 @filePath = Archived_File_Path
+		FROM ProteinSeqs.Protein_Sequences.dbo.T_Archived_Output_Files 
+		WHERE Archived_File_Path LIKE '%' + @fastaFileName + '%'
+		
+		If LEN(@filePath) = 0
+			SELECT TOP 1 @filePath = FilePath
+			FROM V_Legacy_FASTA_File_Paths
+			WHERE FileName = @fastaFileName
+		
+		set @fileNamePosition = PATINDEX('%' + @fastaFileName, @filePath)
+		
+		IF @fileNamePosition > 0
+			SET @filePath = SUBSTRING(@filePath, 1, @fileNamePosition -1)
+		Else
+			SET @filePath = ''
+	End
 	
 	RETURN @filePath
-END
+End
 GO

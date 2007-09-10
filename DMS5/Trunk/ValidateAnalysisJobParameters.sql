@@ -26,6 +26,7 @@ CREATE Procedure dbo.ValidateAnalysisJobParameters
 **			08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
 **			11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
 **			12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
+**			09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs
 **
 *****************************************************/
 (
@@ -376,7 +377,7 @@ As
 		end
 	else
 		begin
-			exec @result = Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+			exec @result = ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
 								@organismName,
 								@ownerPRN,
 								@organismDBName,
@@ -390,5 +391,4 @@ As
 				return 53108
 			end
 		end
-
-GO
+go
