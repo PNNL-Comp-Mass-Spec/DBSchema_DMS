@@ -13,13 +13,16 @@ CREATE PROCEDURE FindExistingJobsForRequest
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 12/5/2005
-**			  04/07/2006 grk - eliminated job to request map table
+**	Auth:	grk
+**	Date:	12/05/2005
+**			04/07/2006 grk - eliminated job to request map table
+**			09/10/2007 mem - Now returning columns Processor and Dataset
 **    
 *****************************************************/
+(
 	@requestID int,
 	@message varchar(512) output
+)
 AS
 	set nocount on
 
@@ -32,22 +35,22 @@ AS
 	set @message = ''
 	
 		
-	SELECT
-		T_Analysis_Job.AJ_jobID AS Job, 
-		T_Analysis_State_Name.AJS_name AS State, 
-		T_Analysis_Job.AJ_requestID AS Request, 
-		T_Analysis_Job.AJ_created AS Created, 
-		T_Analysis_Job.AJ_start AS Start, 
-		T_Analysis_Job.AJ_finish AS Finish
-	FROM
-		T_Analysis_Job INNER JOIN
-		GetRunRequestExistingJobListTab(@requestID) M ON M.job = T_Analysis_Job.AJ_jobID INNER JOIN
-		T_Analysis_State_Name ON T_Analysis_Job.AJ_StateID = T_Analysis_State_Name.AJS_stateID
+	SELECT AJ.AJ_jobID AS Job,
+       ASN.AJS_name AS State,
+       AJ.AJ_requestID AS Request,
+       AJ.AJ_created AS Created,
+       AJ.AJ_start AS Start,
+       AJ.AJ_finish AS Finish,
+       AJ.Aj_assignedProcessorName as Processor,
+       DS.Dataset_Num AS Dataset
+	FROM T_Analysis_Job AJ
+		INNER JOIN GetRunRequestExistingJobListTab (@requestID) M ON M.job = AJ.AJ_jobID
+		INNER JOIN T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID
+		INNER JOIN T_Dataset DS ON AJ.AJ_DatasetID = DS.Dataset_ID
+	ORDER BY AJ.AJ_jobID Desc
 
 Done:
 	RETURN @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_Guest]
