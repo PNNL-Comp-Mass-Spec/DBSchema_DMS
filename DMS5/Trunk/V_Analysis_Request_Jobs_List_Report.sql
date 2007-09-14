@@ -3,34 +3,39 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Request_Jobs_List_Report
+CREATE VIEW [dbo].[V_Analysis_Request_Jobs_List_Report]
 AS
-SELECT
-	T_Analysis_Job.AJ_jobID AS Job,
-	T_Analysis_Job.AJ_priority AS [Pri.],
-	T_Analysis_State_Name.AJS_name AS State,
-	T_Analysis_Tool.AJT_toolName AS [Tool Name],
-	T_Dataset.Dataset_Num AS Dataset,
-	T_Analysis_Job.AJ_parmFileName AS [Parm File],
-	T_Analysis_Job.AJ_settingsFileName AS [Settings File],
-	T_Organisms.OG_name AS Organism,
-	T_Analysis_Job.AJ_organismDBName AS [Organism DB],
-	T_Analysis_Job.AJ_proteinCollectionList AS [ProteinCollectionList], 
-	T_Analysis_Job.AJ_proteinOptionsList AS [ProteinOptions], 
-	T_Analysis_Job.AJ_comment AS Comment,
-	T_Analysis_Job.AJ_created AS Created,
-	T_Analysis_Job.AJ_start AS Started,
-	T_Analysis_Job.AJ_finish AS Finished,
-	ISNULL(T_Analysis_Job.AJ_assignedProcessorName,
-	'(none)') AS CPU,
-	T_Analysis_Job.AJ_batchID AS Batch,
-	T_Analysis_Job.AJ_requestID AS [#ReqestID]
-FROM
-	T_Analysis_Job INNER JOIN
-	T_Dataset ON T_Analysis_Job.AJ_datasetID = T_Dataset.Dataset_ID INNER JOIN
-	T_Organisms ON T_Analysis_Job.AJ_organismID = T_Organisms.Organism_ID INNER JOIN
-	T_Analysis_Tool ON T_Analysis_Job.AJ_analysisToolID = T_Analysis_Tool.AJT_toolID INNER JOIN
-	T_Analysis_State_Name ON T_Analysis_Job.AJ_StateID = T_Analysis_State_Name.AJS_stateID
-
+SELECT AJ.AJ_jobID AS Job,
+       AJ.AJ_priority AS [Pri.],
+       ASN.AJS_name AS State,
+       Tool.AJT_toolName AS [Tool Name],
+       DS.Dataset_Num AS Dataset,
+       AJ.AJ_parmFileName AS [Parm File],
+       AJ.AJ_settingsFileName AS [Settings File],
+       Org.OG_name AS Organism,
+       AJ.AJ_organismDBName AS [Organism DB],
+       AJ.AJ_proteinCollectionList AS [ProteinCollectionList],
+       AJ.AJ_proteinOptionsList AS [ProteinOptions],
+       AJ.AJ_comment AS Comment,
+       AJ.AJ_created AS Created,
+       AJ.AJ_start AS Started,
+       AJ.AJ_finish AS Finished,
+       ISNULL(AJ.AJ_assignedProcessorName, '(none)') AS CPU,
+       AJ.AJ_batchID AS Batch,
+       AJ.AJ_requestID AS [#ReqestID],
+       PG.Group_Name AS [Associated Processor Group]
+FROM dbo.T_Analysis_Job_Processor_Group PG
+     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations PGA
+       ON PG.ID = PGA.Group_ID
+     RIGHT OUTER JOIN dbo.T_Analysis_Job AJ
+                      INNER JOIN dbo.T_Dataset DS
+                        ON AJ.AJ_datasetID = DS.Dataset_ID
+                      INNER JOIN dbo.T_Organisms Org
+                        ON AJ.AJ_organismID = Org.Organism_ID
+                      INNER JOIN dbo.T_Analysis_Tool Tool
+                        ON AJ.AJ_analysisToolID = Tool.AJT_toolID
+                      INNER JOIN dbo.T_Analysis_State_Name ASN
+                        ON AJ.AJ_StateID = ASN.AJS_stateID
+       ON PGA.Job_ID = AJ.AJ_jobID
 
 GO
