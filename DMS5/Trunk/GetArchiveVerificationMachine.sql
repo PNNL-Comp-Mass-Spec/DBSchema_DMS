@@ -41,3 +41,5 @@ AS
 
 
 GO
+GRANT EXECUTE ON [dbo].[GetArchiveVerificationMachine] TO [public]
+GO

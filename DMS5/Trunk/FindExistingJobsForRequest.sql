@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE FindExistingJobsForRequest
+CREATE PROCEDURE dbo.FindExistingJobsForRequest
 /****************************************************
 **
 **	Desc: 
@@ -51,6 +51,7 @@ AS
 
 Done:
 	RETURN @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_Guest]

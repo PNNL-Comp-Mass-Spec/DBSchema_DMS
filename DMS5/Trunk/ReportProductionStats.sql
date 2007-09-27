@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ReportProductionStats
+
+CREATE PROCEDURE dbo.ReportProductionStats
 /****************************************************
 **
 **	Desc: Generates dataset statistics for production instruments
