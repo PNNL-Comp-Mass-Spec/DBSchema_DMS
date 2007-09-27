@@ -13,7 +13,7 @@ CREATE Procedure dbo.CopyAuxInfoMultiID
 **
 **	Auth:	grk
 **	Date:	01/27/2003
-**			09/26/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
+**			09/27/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
 **    
 *****************************************************/
 (
@@ -232,7 +232,7 @@ AS
 		begin
 			set @msg = 'Delete failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51001
 		end
 
@@ -259,7 +259,7 @@ AS
 		begin
 			set @msg = 'Insert failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51000
 		end
 		commit transaction @transName
@@ -296,7 +296,7 @@ AS
 		begin
 			set @msg = 'Delete failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51001
 		end
 
@@ -323,7 +323,7 @@ AS
 		begin
 			set @msg = 'Insert failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51000
 		end
 		commit transaction @transName
@@ -358,7 +358,7 @@ AS
 		begin
 			set @msg = 'Delete failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51001
 		end
 
@@ -382,7 +382,7 @@ AS
 		begin
 			set @msg = 'Insert failed for copy into target IDs: "' + @IDList + '"'
 			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
+			rollback transaction
 			return 51000
 		end
 		commit transaction @transName
@@ -394,7 +394,6 @@ AS
 	---------------------------------------------------
 Done:
 	return 0 
-
 
 GO
 GRANT EXECUTE ON [dbo].[CopyAuxInfoMultiID] TO [DMS_User]

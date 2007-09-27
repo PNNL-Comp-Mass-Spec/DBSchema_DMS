@@ -27,7 +27,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **          12/20/2005 grk - added handling for separate user
 **          02/06/2006 grk - increased maximum count
 **          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
-**			09/26/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
+**			09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
 **    
 *****************************************************/
 (
@@ -422,7 +422,9 @@ AS
 
 	If @result <> 0
 	Begin
-		rollback transaction @transName
+		if @@TRANCOUNT > 0
+			rollback transaction @transName
+
 		set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
 		RAISERROR (@message, 10, 1)
 		set @myError = 51009
