@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddExperimentFractions
+CREATE PROCEDURE dbo.AddExperimentFractions
 /****************************************************
 **
 **	Desc: 
@@ -15,20 +15,22 @@ CREATE PROCEDURE AddExperimentFractions
 **
 **	Parameters:
 **
-**		Auth: kja
-**		Date: 5/28/2005
-**            5/29/2005 grk - added mods to better work with entry page
-**            5/31/2005 grk - added mods for separate group members table
-**            6/10/2005 grk - added handling for sample prep request
-**            10/4/2005 grk - added call to AddExperimentCellCulture
-**            10/4/2005 grk - added override for request ID
-**            10/28/2005  grk - added handling for internal standard
-**            11/11/2005  grk - added handling for postdigest internal standard
-**            12/20/2005  grk - added handling for separate user
-**             2/06/2006  grk - increased maximum count
-**             1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
+**	Auth:	kja
+**	Date:	05/28/2005
+**          05/29/2005 grk - added mods to better work with entry page
+**          05/31/2005 grk - added mods for separate group members table
+**          06/10/2005 grk - added handling for sample prep request
+**          10/04/2005 grk - added call to AddExperimentCellCulture
+**          10/04/2005 grk - added override for request ID
+**          10/28/2005 grk - added handling for internal standard
+**          11/11/2005 grk - added handling for postdigest internal standard
+**          12/20/2005 grk - added handling for separate user
+**          02/06/2006 grk - increased maximum count
+**          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
+**			09/26/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
 **    
 *****************************************************/
+(
 	@parentExperiment varchar(128),       -- Parent experiment for group (must already exist)
 	@groupType varchar(20) = 'Fraction',  -- 'None', 'Fraction'
 	@description varchar(512),            -- Purpose of group
@@ -42,6 +44,7 @@ CREATE PROCEDURE AddExperimentFractions
 	@researcher varchar(50) = 'parent',
 	@mode varchar(12),                    -- Not used at present - included for consistentcy
 	@message varchar(512) output
+)
 AS
 	SET NOCOUNT ON
 	declare @myError int
@@ -51,13 +54,16 @@ AS
 	declare @fractionCount int
 	set @fractionCount = 0
 	declare @maxCount smallint
-	set @maxCount = 100
+	set @maxCount = 200
 	
 	Declare @fractionNumberText varchar(2)
 	
 	declare @fullFractionCount int
 	declare @newExpID int
-		
+	declare @matchCount int
+
+	declare @msg varchar(256)
+	
 	-- T_Experiments column variables
 	--
 	declare @researcherPRN varchar(50)
@@ -74,6 +80,9 @@ AS
 	declare @samplePrepRequest int
 	declare @internalStandardID int
 	declare @postdigestIntStdID int
+
+	declare @ExperimentIDList varchar(8000)
+	Set @ExperimentIDList = ''
 
 	---------------------------------------------------
 	-- Validate arguments
@@ -103,10 +112,10 @@ AS
 	-- Get information for parent experiment
 	---------------------------------------------------
 	
-	declare @expID int
-	set @expID = 0
+	declare @ParentExperimentID int
+	set @ParentExperimentID = 0
 	SELECT
-		@expID = Exp_ID,
+		@ParentExperimentID = Exp_ID,
 		@researcherPRN = EX_researcher_PRN,
 		@organismID = EX_organism_ID,
 		@reason = EX_reason,
@@ -126,7 +135,7 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0 OR @expID = 0
+	if @myError <> 0 OR @ParentExperimentID = 0
 	begin
 		set @message = 'Could not find parent experiment in database'
 		RAISERROR (@message, 10, 1)
@@ -140,15 +149,16 @@ AS
 
 	if @requestOverride <> 'parent'
 	begin
-		SET @samplePrepRequest = CONVERT(int, @requestOverride)
+		Set @samplePrepRequest = CONVERT(int, @requestOverride)
+		Set @matchCount = 0
 		
-		SELECT *
+		SELECT @matchCount = COUNT(*)
 		FROM T_Sample_Prep_Request
 		WHERE ID = @samplePrepRequest
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 OR @myRowCount <> 1
+		if @myError <> 0 OR @matchCount <> 1
 		begin
 			set @message = 'Could not find sample prep request'
 			RAISERROR (@message, 10, 1)
@@ -163,13 +173,15 @@ AS
 	if @internalStandard <> 'parent'
 	begin
 		declare @tmpID int
-		set @tmpID = 0
+		set @tmpID = Null
 		--
 		SELECT @tmpID = Internal_Std_Mix_ID
 		FROM T_Internal_Standards
 		WHERE (Name = @internalStandard)
 		--
-		if @tmpID = 0
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myRowCount = 0
 		begin
 			set @message = 'Could not find entry in database for internal standard "' + @internalStandard + '"'
 			RAISERROR (@message, 10, 1)
@@ -184,13 +196,15 @@ AS
 	-- 
 	if @postdigestIntStd <> 'parent'
 	begin
-		set @tmpID = 0
+		set @tmpID = Null
 		--
 		SELECT @tmpID = Internal_Std_Mix_ID
 		FROM T_Internal_Standards
 		WHERE (Name = @postdigestIntStd)
 		--
-		if @tmpID = 0
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myRowCount = 0
 		begin
 			set @message = 'Could not find entry in database for postdigestion internal standard "' + @tmpID + '"'
 			RAISERROR (@message, 10, 1)
@@ -208,6 +222,7 @@ AS
 		set @researcherPRN = @researcher
 	end
 
+	
 	---------------------------------------------------
 	-- Set up transaction around multiple table modifications
 	---------------------------------------------------
@@ -227,14 +242,14 @@ AS
 		 EG_Created
 	) VALUES (
 		@groupType,
-		@expID,
+		@ParentExperimentID,
 		@description,
-		getdate()
+		GETDATE()
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0 OR @expID = 0
+	if @myError <> 0
 	begin
 		set @message = 'Failed to insert of new group entry into database'
 		RAISERROR (@message, 10, 1)
@@ -242,7 +257,7 @@ AS
 		goto Done
 	end
 	
-	set @groupID = IDENT_CURRENT('T_Experiment_Groups')
+	set @groupID = SCOPE_IDENTITY()
 
 	---------------------------------------------------
 	-- Add parent experiment to reference group
@@ -250,13 +265,13 @@ AS
 	
 	INSERT INTO T_Experiment_Group_Members
 		(Group_ID, Exp_ID)
-	VALUES (@groupID, @expID)
+	VALUES (@groupID, @ParentExperimentID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Failied to update group reference for experiment'
+		set @message = 'Failed to update group reference for experiment'
 		RAISERROR (@message, 10, 1)
 		set @myError = 51008
 		goto Done
@@ -267,9 +282,11 @@ AS
 	---------------------------------------------------
 	declare @newComment varchar(500)
 	declare @newExpName varchar(129)
+	declare @xID int
+	declare @result int
 	
 	WHILE @fractionCount < @totalCount and @myError = 0
-	BEGIN
+	BEGIN -- <a>
 		-- build name for new experiment fraction
 		--
 		set @fullFractionCount = @startingIndex + @fractionCount
@@ -280,13 +297,11 @@ AS
 		end
 
 		set @fractionCount = @fractionCount + @step
-		set @newComment = N''
-		set @newComment = @newComment + '(Fraction ' + CAST(@fullfractioncount as varchar(3)) + ' of ' + CAST(@totalcount as varchar(3)) + ')'
+		set @newComment = '(Fraction ' + CAST(@fullfractioncount as varchar(3)) + ' of ' + CAST(@totalcount as varchar(3)) + ')'
 		set @newExpName = @parentExperiment + '_' + @fractionNumberText
 
 		-- verify that experiment name is not duplicated in table
 		--
-		declare @xID int
 		set @xID = 0
 		execute @xID = GetexperimentID @newExpName
 		--
@@ -345,11 +360,10 @@ AS
 			goto Done
 		end
 		
-		set @newExpID = IDENT_CURRENT('T_Experiments')
+		set @newExpID = SCOPE_IDENTITY()
 
 		-- Add the cell cultures
 		--
-		declare @result int
 		execute @result = AddExperimentCellCulture
 								@newExpID,
 								@cellCultureList,
@@ -357,7 +371,6 @@ AS
 		--
 		if @result <> 0
 		begin
-			declare @msg varchar(256)
 			set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @newExpName + '" ' + @message
 			RAISERROR (@msg, 10, 1)
 			rollback transaction @transName
@@ -378,39 +391,51 @@ AS
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			set @message = 'Failied to update group reference for new experiment'
+			set @message = 'Failed to update group reference for new experiment'
 			RAISERROR (@message, 10, 1)
 			set @myError = 51008
 			goto Done
 		end
-		
+	
 		---------------------------------------------------
-		-- copy aux info from parent into fractionated experiment
+		-- Append Experiment ID to @ExperimentIDList
 		---------------------------------------------------
-		exec @result = CopyAuxInfo
-							@targetName = 'Experiment',
-							@targetEntityName = @newExpName,
-							@categoryName = '', 
-							@subCategoryName = '', 
-							@sourceEntityName = @parentExperiment,
-							@mode = 'copyAll',
-							@message = @message output
 		--
-		if @result <> 0
-		begin
-			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
-			set @myError = @result
-			goto Done
-		end
-	END
+		If Len(@ExperimentIDList) > 0
+			set @ExperimentIDList = @ExperimentIDList + ','
+		
+		Set @ExperimentIDList = @ExperimentIDList + Convert(varchar(12), @newExpID)
+	END -- </a>
+	
+	---------------------------------------------------
+	-- Now copy the aux info from the parent experiment into the fractionated experiments
+	---------------------------------------------------
+	
+	exec @result = CopyAuxInfoMultiID 
+					@targetName = 'Experiment',
+					@targetEntityIDList = @ExperimentIDList,
+					@categoryName = '', 
+					@subCategoryName = '', 
+					@sourceEntityID = @ParentExperimentID,
+					@mode = 'copyAll',
+					@message = @message output
+
+	If @result <> 0
+	Begin
+		rollback transaction @transName
+		set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
+		RAISERROR (@message, 10, 1)
+		set @myError = 51009
+		goto Done
+	End
 
 	---------------------------------------------------
 	-- Commit transaction if there were no errors
 	---------------------------------------------------
 		
 	commit transaction @transName
-	
+
+
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
