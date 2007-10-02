@@ -22,7 +22,7 @@ SELECT  DS.Dataset_ID AS ID,
     DS.Acq_Time_Start AS [Acq Start],
 	DateDiff(minute, IsNull(DS.Acq_Time_Start, RRH.RDS_Run_Start), IsNull(DS.Acq_Time_End,RRH. RDS_Run_Finish)) AS [Acq Length],
     DS.Scan_Count AS [Scan Count],
-    LC.SC_Column_Number,
+    LC.SC_Column_Number AS [LC Column],
     RRH.RDS_Blocking_Factor AS [Blocking Factor],
     RRH.RDS_Block AS Block,
     RRH.RDS_Run_Order AS [Run Order]
