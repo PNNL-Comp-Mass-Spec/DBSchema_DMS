@@ -18,8 +18,9 @@ CREATE PROCEDURE AddNewDataset
 ** 
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 05/04/2007 grk -- Ticket #434
+**	Auth: grk
+**	05/04/2007 grk -- Ticket #434
+**	10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
 **    
 *****************************************************/
 	@xmlDoc varchar(4000),
@@ -133,6 +134,15 @@ AS
 	SELECT	@EMSL_Users_List	 = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
 	SELECT	@Run_Start		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
 	SELECT	@Run_Finish		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
+
+ 	---------------------------------------------------
+	-- check for QC datasets
+ 	---------------------------------------------------
+
+	if dbo.DatasetPreference(@Dataset_Name) <> 0
+	begin
+		set @Interest_Rating = 'Released'
+	end
 
  	---------------------------------------------------
 	-- establish defaulted parameters
