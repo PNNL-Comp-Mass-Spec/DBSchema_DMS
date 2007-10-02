@@ -20,7 +20,7 @@ SELECT  DS.Dataset_ID AS ID,
     DFP.Dataset_Folder_Path AS [Dataset Folder Path],
     DFP.Archive_Folder_Path AS [Archive Folder Path],
     DS.Acq_Time_Start AS [Acq Start],
-    CONVERT(int, CONVERT(real, DS.Acq_Time_End - DS.Acq_Time_Start) * 24 * 60) AS [Acq Length],
+	DateDiff(minute, IsNull(DS.Acq_Time_Start, RRH.RDS_Run_Start), IsNull(DS.Acq_Time_End,RRH. RDS_Run_Finish)) AS [Acq Length],
     DS.Scan_Count AS [Scan Count],
     LC.SC_Column_Number,
     RRH.RDS_Blocking_Factor AS [Blocking Factor],
@@ -45,6 +45,6 @@ FROM T_DatasetStateName DSN
        ON DS.DS_LC_column_ID = LC.ID
      LEFT OUTER JOIN T_Requested_Run_History RRH
        ON DS.Dataset_ID = RRH.DatasetID
-
+GO
 
 GO
