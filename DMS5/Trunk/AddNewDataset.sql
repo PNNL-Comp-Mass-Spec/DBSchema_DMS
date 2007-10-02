@@ -6,26 +6,26 @@ GO
 CREATE PROCEDURE AddNewDataset
 /****************************************************
 **	Desc: 
-**  Adds new dataset entry to DMS database
-**  from contents of XML.
+**		Adds new dataset entry to DMS database from contents of XML.
 **
-**  This is for use by sample automation software
-**  associated with the mass spec instrument to
-**  create new datasets automatically following
-**  an instrument run.
+**		This is for use by sample automation software
+**		associated with the mass spec instrument to
+**		create new datasets automatically following
+**		an instrument run.
 **
 **	Return values: 0: success, otherwise, error code
 ** 
-**	Parameters:
-**
-**	Auth: grk
-**	05/04/2007 grk -- Ticket #434
-**	10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
+**	Auth:	grk
+**			05/04/2007 grk - Ticket #434
+**			10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
+**			10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
 **    
 *****************************************************/
+(
 	@xmlDoc varchar(4000),
 	@mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
     @message varchar(512) output
+)
 AS
 	set nocount on
 
@@ -38,24 +38,24 @@ AS
 	set @message = ''
 
 	DECLARE
-	@Dataset_Name		varchar(64),  -- @datasetNum
-	@Experiment_Name	varchar(64),  -- @experimentNum
-	@Instrument_Name	varchar(64),  -- @instrumentName
-	@Separation_Type	varchar(64),  -- @secSep
-	@LC_Cart_Name		varchar(128), -- @LCCartName
-	@LC_Column			varchar(64),  -- @LCColumnNum
-	@Wellplate_Number	varchar(64),  -- @wellplateNum
-	@Well_Number		varchar(64),  -- @wellNum
-	@Dataset_Type		varchar(20),  -- @msType
-	@Operator_PRN		varchar(64),  -- @operPRN
-	@Comment			varchar(512), -- @comment
-	@Interest_Rating	varchar(32),  -- @rating
-	@Request			int,          -- @requestID
-	@EMSL_Usage_Type	varchar(50),  -- @eusUsageType
-	@EMSL_Proposal_ID	varchar(10),  -- @eusProposalID
-	@EMSL_Users_List	varchar(1024), -- @eusUsersList
-	@Run_Start		    varchar(64),
-	@Run_Finish		    varchar(64)
+		@Dataset_Name		varchar(64),  -- @datasetNum
+		@Experiment_Name	varchar(64),  -- @experimentNum
+		@Instrument_Name	varchar(64),  -- @instrumentName
+		@Separation_Type	varchar(64),  -- @secSep
+		@LC_Cart_Name		varchar(128), -- @LCCartName
+		@LC_Column			varchar(64),  -- @LCColumnNum
+		@Wellplate_Number	varchar(64),  -- @wellplateNum
+		@Well_Number		varchar(64),  -- @wellNum
+		@Dataset_Type		varchar(20),  -- @msType
+		@Operator_PRN		varchar(64),  -- @operPRN
+		@Comment			varchar(512), -- @comment
+		@Interest_Rating	varchar(32),  -- @rating
+		@Request			int,          -- @requestID
+		@EMSL_Usage_Type	varchar(50),  -- @eusUsageType
+		@EMSL_Proposal_ID	varchar(10),  -- @eusProposalID
+		@EMSL_Users_List	varchar(1024), -- @eusUsersList
+		@Run_Start		    varchar(64),
+		@Run_Finish		    varchar(64)
 
 	---------------------------------------------------
 	--  Create temporary table to hold list of parameters
@@ -84,8 +84,7 @@ AS
 	-- Populate parameter table from XML parameter description  
 	---------------------------------------------------
 
-	INSERT INTO #TPAR
-	(paramName, paramValue)
+	INSERT INTO #TPAR (paramName, paramValue)
 	SELECT * FROM OPENXML(@hDoc, N'//Parameter')  with ([Name] varchar(128), [Value] varchar(512))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -141,11 +140,19 @@ AS
 
 	if dbo.DatasetPreference(@Dataset_Name) <> 0
 	begin
+		-- Auto set interest rating to 5
+		-- Initially set @Interest_Rating to the text 'released' but then query
+		--  T_DatasetRatingName for rating 5 in case the rating name has changed
+		
 		set @Interest_Rating = 'Released'
+
+		SELECT @Interest_Rating = DRN_name
+		FROM T_DatasetRatingName
+		WHERE (DRN_state_ID = 5)
 	end
 
  	---------------------------------------------------
-	-- establish defaulted parameters
+	-- establish default parameters
  	---------------------------------------------------
 
 	declare @internalStandards varchar(64)
@@ -245,7 +252,7 @@ AS
 	end
 
 	---------------------------------------------------
-	-- Update the associated request with times
+	-- Update the associated request with run start/finish values
 	---------------------------------------------------
 
 	UPDATE T_Requested_Run_History
@@ -266,7 +273,7 @@ AS
  	---------------------------------------------------
 	-- 
  	---------------------------------------------------
-DONE:
+Done:
 	return @myError
 GO
 GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry]
