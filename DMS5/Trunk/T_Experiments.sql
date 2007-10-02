@@ -34,7 +34,78 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_E
 	[Experiment_Num] ASC
 ) ON [PRIMARY]
 GO
+
+/****** Object:  Trigger [dbo].[trig_d_Experiments] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_d_Experiments] on [dbo].[T_Experiments]
+For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the deleted Experiments
+**
+**	Auth:	mem
+**	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**    
+*****************************************************/
+AS
+	-- Add entries to T_Event_Log for each Experiments deleted from T_Experiments
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered,
+			Entered_By
+		)
+	SELECT	3 AS Target_Type, 
+			Exp_ID AS Target_ID, 
+			0 AS Target_State, 
+			1 AS Prev_Target_State, 
+			GETDATE(), 
+			suser_sname() + '; ' + IsNull(deleted.Experiment_Num, '??')
+	FROM deleted
+	ORDER BY Exp_ID
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_i_Experiments] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_i_Experiments] on [dbo].[T_Experiments]
+For Insert
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the new Experiments
+**
+**	Auth:	mem
+**	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 3, inserted.Exp_ID, 1, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.Exp_ID
+
+GO
 GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write]
+GO
+GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Experiments] TO [Limited_Table_Write]
 GO

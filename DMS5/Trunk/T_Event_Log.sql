@@ -9,8 +9,8 @@ CREATE TABLE [dbo].[T_Event_Log](
 	[Target_ID] [int] NULL,
 	[Target_State] [smallint] NULL,
 	[Prev_Target_State] [smallint] NULL,
-	[Entered] [datetime] NULL,
-	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Event_Log_Entered_By]  DEFAULT (suser_sname()),
+	[Entered] [datetime] NULL CONSTRAINT [DF_T_Event_Log_Entered]  DEFAULT (getdate()),
+	[Entered_By] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Event_Log_Entered_By]  DEFAULT (suser_sname()),
  CONSTRAINT [PK_T_Event_Log] PRIMARY KEY CLUSTERED 
 (
 	[Index] ASC

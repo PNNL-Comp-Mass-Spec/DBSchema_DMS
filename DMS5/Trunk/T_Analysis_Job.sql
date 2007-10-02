@@ -77,6 +77,8 @@ For Delete
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			10/02/2007 mem - Updated to append the analysis tool name and 
+**							 dataset name for the deleted job to the Entered_By field (Ticket #543)
 **    
 *****************************************************/
 AS
@@ -87,12 +89,22 @@ AS
 			Target_ID, 
 			Target_State, 
 			Prev_Target_State, 
-			Entered
+			Entered,
+			Entered_By
 		)
-	SELECT	5 AS Target_Type, AJ_JobID, 
-			0 AS Target_State, AJ_StateID, GETDATE()
+	SELECT 5 AS Target_Type,
+	       deleted.AJ_JobID AS Target_ID,
+	       0 AS Target_State,
+	       deleted.AJ_StateID AS Prev_Target_State,
+	       GETDATE(),
+           suser_sname() + '; ' + ISNULL(AnalysisTool.AJT_toolName, 'Unknown Tool') + ' on '
+                                + ISNULL(DS.Dataset_Num, 'Unknown Dataset')
 	FROM deleted
-	ORDER BY AJ_JobID
+	     LEFT OUTER JOIN dbo.T_Dataset DS
+	       ON deleted.AJ_datasetID = DS.Dataset_ID
+	     LEFT OUTER JOIN dbo.T_Analysis_Tool AnalysisTool
+	       ON deleted.AJ_analysisToolID = AnalysisTool.AJT_toolID
+	ORDER BY deleted.AJ_JobID
 
 GO
 

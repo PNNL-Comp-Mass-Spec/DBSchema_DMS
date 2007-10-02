@@ -28,6 +28,75 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Cu
 	[CC_Name] ASC
 ) ON [PRIMARY]
 GO
+
+/****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_d_Cell_Culture] on [dbo].[T_Cell_Culture]
+For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the deleted Cell Culture
+**
+**	Auth:	mem
+**	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**    
+*****************************************************/
+AS
+	-- Add entries to T_Event_Log for each Cell_Culture deleted from T_Cell_Culture
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered,
+			Entered_By
+		)
+	SELECT	2 AS Target_Type, 
+			CC_ID AS Target_ID, 
+			0 AS Target_State, 
+			1 AS Prev_Target_State, 
+			GETDATE(), 
+			suser_sname() + '; ' + IsNull(deleted.CC_Name, '??')
+	FROM deleted
+	ORDER BY CC_ID
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_i_Cell_Culture] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_i_Cell_Culture] on [dbo].[T_Cell_Culture]
+For Insert
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the new Cell Culture
+**
+**	Auth:	mem
+**	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 2, inserted.CC_ID, 1, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.CC_ID
+
+GO
 GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]
 GO
 GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]

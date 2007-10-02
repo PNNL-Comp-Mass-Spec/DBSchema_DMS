@@ -38,17 +38,17 @@ CREATE TABLE [dbo].[T_Dataset](
 
 GO
 
+/****** Object:  Index [IX_T_Dataset_Created] ******/
+CREATE CLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
+(
+	[DS_created] ASC
+) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_Acq_Time_Start] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset] 
 (
 	[Acq_Time_Start] ASC
-) ON [PRIMARY]
-GO
-
-/****** Object:  Index [IX_T_Dataset_Created] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
-(
-	[DS_created] ASC
 ) ON [PRIMARY]
 GO
 
@@ -90,6 +90,7 @@ For Delete
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			10/02/2007 mem - Updated to append the dataset name to the Entered_By field (Ticket #543)
 **    
 *****************************************************/
 AS
@@ -100,13 +101,17 @@ AS
 			Target_ID, 
 			Target_State, 
 			Prev_Target_State, 
-			Entered
+			Entered,
+			Entered_By
 		)
-	SELECT	4 AS Target_Type, Dataset_ID, 
-			0 AS Target_State, DS_State_ID, GETDATE()
+	SELECT	4 AS Target_Type, 
+			Dataset_ID AS Target_ID, 
+			0 AS Target_State, 
+			DS_State_ID AS Prev_Target_State, 
+			GETDATE(), 
+			suser_sname() + '; ' + IsNull(deleted.Dataset_Num, '??')
 	FROM deleted
 	ORDER BY Dataset_ID
-
 
 GO
 
@@ -116,6 +121,7 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
@@ -145,6 +151,7 @@ AS
 	ORDER BY inserted.Dataset_ID
 
 
+
 GO
 
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
@@ -153,6 +160,7 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
@@ -191,6 +199,7 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
 		ORDER BY inserted.Dataset_ID
 	End
+
 
 GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]
