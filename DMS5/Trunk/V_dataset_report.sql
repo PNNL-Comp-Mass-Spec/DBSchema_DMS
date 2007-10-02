@@ -5,19 +5,33 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_dataset_report
 AS
-SELECT     dbo.T_Dataset.Dataset_Num AS Dataset, dbo.T_Dataset.Dataset_ID AS ID, dbo.T_DatasetStateName.DSS_name AS State, 
-                      dbo.T_DatasetRatingName.DRN_name AS Rating, dbo.T_Instrument_Name.IN_name AS Instrument, dbo.T_Dataset.DS_created AS Created, 
-                      dbo.T_Dataset.DS_comment AS Comment, dbo.T_Dataset.Acq_Time_Start AS [Acq Start], CONVERT(int, CONVERT(real, 
-                      dbo.T_Dataset.Acq_Time_End - dbo.T_Dataset.Acq_Time_Start) * 24 * 60) AS [Acq Length], dbo.T_Dataset.DS_Oper_PRN AS [Oper.], 
-                      dbo.T_DatasetTypeName.DST_name AS Type, dbo.T_Experiments.Experiment_Num AS Experiment, 
-                      dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path AS [Dataset Folder Path], 
-                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path AS [Archive Folder Path]
-FROM         dbo.T_DatasetStateName INNER JOIN
-                      dbo.T_Dataset ON dbo.T_DatasetStateName.Dataset_state_ID = dbo.T_Dataset.DS_state_ID INNER JOIN
-                      dbo.T_DatasetTypeName ON dbo.T_Dataset.DS_type_ID = dbo.T_DatasetTypeName.DST_Type_ID INNER JOIN
-                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID INNER JOIN
-                      dbo.T_DatasetRatingName ON dbo.T_Dataset.DS_rating = dbo.T_DatasetRatingName.DRN_state_ID INNER JOIN
-                      dbo.T_Experiments ON dbo.T_Dataset.Exp_ID = dbo.T_Experiments.Exp_ID INNER JOIN
-                      dbo.V_Dataset_Folder_Paths ON dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Folder_Paths.Dataset_ID
-
+SELECT DS.Dataset_Num AS Dataset,
+       DS.Dataset_ID AS ID,
+       DSN.DSS_name AS State,
+       DSR.DRN_name AS Rating,
+       InstName.IN_name AS Instrument,
+       DS.DS_created AS Created,
+       DS.DS_comment AS Comment,
+       DS.Acq_Time_Start AS [Acq Start],
+       CONVERT(int, CONVERT(real, DS.Acq_Time_End - DS.Acq_Time_Start) * 24 * 60) AS [Acq Length],
+       DS.DS_Oper_PRN AS [Oper.],
+       DTN.DST_Name AS Type,
+       E.Experiment_Num AS Experiment,
+       ISNULL(SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num, '') AS [Dataset Folder Path],
+       ISNULL(DAP.Archive_Path + '\' + DS.Dataset_Num, '') AS [Archive Folder Path]
+FROM dbo.T_DatasetStateName DSN
+     INNER JOIN dbo.T_Dataset DS
+       ON DSN.Dataset_state_ID = DS.DS_state_ID
+     INNER JOIN dbo.T_DatasetTypeName DTN
+       ON DS.DS_type_ID = DTN.DST_Type_ID
+     INNER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN dbo.T_DatasetRatingName DSR
+       ON DS.DS_rating = DSR.DRN_state_ID
+     INNER JOIN dbo.T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN dbo.t_storage_path SPath
+       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+     LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
+       ON DS.Dataset_ID = DAP.Dataset_ID
 GO
