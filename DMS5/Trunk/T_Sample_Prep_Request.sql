@@ -38,6 +38,10 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[EUS_UsageType] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_User_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Technical_Replicates] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Instrument_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -53,12 +57,13 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_P
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
@@ -88,6 +93,7 @@ AS
 			deleted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
+
 
 
 GO
@@ -234,6 +240,22 @@ GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Project_Number]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Project_Number]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])

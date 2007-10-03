@@ -31,6 +31,8 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **          04/20/2007  grk - added validation for organism, campaign, cell culture (Ticket #440)
 **          07/11/2007  grk - added "standard" EUS fields and removed old proposal field(Ticket #499)
 **          07/30/2007  grk - corrected error in update of EUS fields (Ticket #499)
+**          09/01/2007  grk - added instrument name and datasets type fields (Ticket #512)
+**          09/04/2007  grk - added @TechnicalReplicates fields (Ticket #512)
 **    
 *****************************************************/
   @RequestName varchar(128),
@@ -52,10 +54,14 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
   @EstimatedCompletion varchar(32),
   @EstimatedMSRuns varchar(16),
   @WorkPackageNumber varchar(64),
+  @ProjectNumber varchar(15),
   @eusProposalID varchar(10),
   @eusUsageType varchar(50),
   @eusUsersList varchar(1024),
-  @ReplicatesofSamples varchar(512),
+  @ReplicatesofSamples varchar(512),  
+  @TechnicalReplicates varchar(64),
+  @InstrumentName varchar(128),
+  @DatasetType varchar(50),
   @InstrumentAnalysisSpecifications varchar(512),
   @Comment varchar(1024),
   @Priority tinyint,
@@ -80,12 +86,46 @@ As
   declare @currentStateID int
 
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
 
-  -- future: this could get more complicated
-  
+	--
+	if LEN(@instrumentName) < 1
+	begin
+		set @myError = 51114
+		RAISERROR ('Instrument name was blank',
+			10, 1)
+	end
+	--
+	if LEN(@DatasetType) < 1
+	begin
+		set @myError = 51115
+		RAISERROR ('Dataset type was blank',
+			10, 1)
+	end
+ 
+	---------------------------------------------------
+	-- validte instrument name and dataset type
+	---------------------------------------------------
+	if NOT (@EstimatedMSRuns = '0' or @EstimatedMSRuns = 'None')
+	begin
+		declare @instrumentID int
+		declare @datasetTypeID int
+		--
+		exec @myError = ValidateInstrumentAndDatasetType
+								@DatasetType,
+								@instrumentName,
+								@instrumentID output,
+								@datasetTypeID output,
+								@message output 
+		if @myError <> 0
+		begin
+			RAISERROR (@message, 10, 1)
+			return @myError
+		end	
+	end					
+							
 	---------------------------------------------------
 	-- Resolve campaign ID
 	---------------------------------------------------
@@ -95,8 +135,6 @@ As
 	if @campaignID = 0
 	begin
 		set @message = 'Could not find entry in database for campaignNum "' + @Campaign + '"'
-		RAISERROR (@message, 10, 1)
-		return 51036
 	end
 
 	---------------------------------------------------
@@ -349,6 +387,7 @@ As
     Estimated_Completion,
     Estimated_MS_runs,
     Work_Package_Number, 
+    Project_Number,
     EUS_UsageType, 
     EUS_Proposal_ID, 
     EUS_User_List,
@@ -359,7 +398,10 @@ As
     UseSingleLCColumn,
     Internal_standard_ID, 
     Postdigest_internal_std_ID,
-    State
+    State, 
+	Instrument_Name, 
+	Dataset_Type,
+	Technical_Replicates
   ) VALUES (
     @RequestName, 
     @RequesterPRN, 
@@ -380,6 +422,7 @@ As
     @EstimatedCompletionDate,
     @EstimatedMSRuns,
     @WorkPackageNumber, 
+    @ProjectNumber,
     @eusUsageType,
     @eusProposalID,
     @eusUsersList,
@@ -390,7 +433,10 @@ As
     @UseSingleLCColumn,
     @InternalstandardID, 
     @postdigestIntStdID,
-    @StateID
+    @StateID,
+    @InstrumentName,
+	@DatasetType,
+	@TechnicalReplicates
   )
 /**/
     --
@@ -439,6 +485,7 @@ As
       Estimated_Completion = @EstimatedCompletionDate,
       Estimated_MS_runs = @EstimatedMSRuns,
       Work_Package_Number = @WorkPackageNumber, 
+      Project_Number = @ProjectNumber,
       EUS_Proposal_ID = @eusProposalID,
       EUS_UsageType = @eusUsageType,
       EUS_User_List = @eusUsersList,
@@ -449,7 +496,10 @@ As
       UseSingleLCColumn = @UseSingleLCColumn,
       Internal_standard_ID = @InternalstandardID, 
       Postdigest_internal_std_ID = @postdigestIntStdID,
-   State = @StateID
+      State = @StateID,
+      Instrument_Name = @InstrumentName, 
+      Dataset_Type = @DatasetType,
+      Technical_Replicates = @TechnicalReplicates
     WHERE (ID = @ID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
