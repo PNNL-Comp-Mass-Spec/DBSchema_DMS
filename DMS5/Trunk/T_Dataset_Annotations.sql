@@ -25,6 +25,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE TRIGGER [dbo].[trig_u_T_Dataset_Annotations] ON [dbo].[T_Dataset_Annotations] 
 FOR UPDATE
 AS

@@ -25,6 +25,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE TRIGGER [dbo].[trig_u_T_Experiment_Annotations] ON [dbo].[T_Experiment_Annotations] 
 FOR UPDATE
 AS
@@ -52,6 +53,7 @@ AS
 		FROM T_Experiment_Annotations EA INNER JOIN
 			 inserted ON EA.Experiment_ID = inserted.Experiment_ID AND EA.Key_Name = inserted.Key_Name
 	End
+
 
 
 GO

@@ -25,6 +25,24 @@ CREATE NONCLUSTERED INDEX [IX_T_AuxInfo_Value_AuxInfo_ID] ON [dbo].[T_AuxInfo_Va
 	[AuxInfo_ID] ASC
 ) ON [PRIMARY]
 GO
+GRANT SELECT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GO
+GRANT INSERT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_AuxInfo_Value] ([AuxInfo_ID]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_AuxInfo_Value] ([AuxInfo_ID]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_AuxInfo_Value] ([Value]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_AuxInfo_Value] ([Value]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_AuxInfo_Value] ([Target_ID]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_AuxInfo_Value] ([Target_ID]) TO [Limited_Table_Write]
+GO
 ALTER TABLE [dbo].[T_AuxInfo_Value]  WITH NOCHECK ADD  CONSTRAINT [FK_T_AuxInfo_Value_T_AuxInfo_Description] FOREIGN KEY([AuxInfo_ID])
 REFERENCES [T_AuxInfo_Description] ([ID])
 GO
