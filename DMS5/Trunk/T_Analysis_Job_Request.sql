@@ -26,6 +26,14 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 ) ON [PRIMARY]
 
 GO
+
+/****** Object:  Index [IX_T_Analysis_Job_Request_State_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Request_State_Created] ON [dbo].[T_Analysis_Job_Request] 
+(
+	[AJR_state] ASC,
+	[AJR_created] ASC
+) ON [PRIMARY]
+GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write]
