@@ -22,6 +22,9 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Work_Package_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[User_Proposal_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Replicates_of_Samples] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Technical_Replicates] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Instrument_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_Analysis_Specifications] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Priority] [tinyint] NULL,
@@ -38,9 +41,6 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[EUS_UsageType] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_User_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Technical_Replicates] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Instrument_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
@@ -57,16 +57,14 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_P
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
+CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on dbo.T_Sample_Prep_Request
 For Update
 /****************************************************
 **
@@ -93,8 +91,6 @@ AS
 			deleted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
-
-
 
 GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
@@ -177,6 +173,18 @@ GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Replicates_of_Samples]) TO [Limi
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Replicates_of_Samples]) TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
+GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Analysis_Specifications]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Analysis_Specifications]) TO [Limited_Table_Write]
@@ -240,18 +248,6 @@ GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
 GO
 GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Project_Number]) TO [Limited_Table_Write]
 GO
