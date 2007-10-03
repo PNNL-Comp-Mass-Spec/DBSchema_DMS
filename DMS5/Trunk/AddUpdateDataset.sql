@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **		File: 
@@ -16,14 +15,15 @@ CREATE Procedure dbo.AddUpdateDataset
 **
 **		Auth: grk
 **		Date: 02/13/2003
-**		      01/10/2002
-**            12/10/2003 grk - added wellplate, internal standards, and LC column stuff
-**            01/11/2005 grk - added bad dataset stuff
-**            02/23/2006 grk - added LC cart tracking stuff and EUS stuff
-**            01/12/2007 grk - added verification mode
-**            02/16/2007 grk - added validation of dataset name (Ticket #390)
-**            04/30/2007 grk - added better name validation (Ticket #450)
-**            07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
+**		01/10/2002
+**      12/10/2003 grk - added wellplate, internal standards, and LC column stuff
+**      01/11/2005 grk - added bad dataset stuff
+**      02/23/2006 grk - added LC cart tracking stuff and EUS stuff
+**      01/12/2007 grk - added verification mode
+**      02/16/2007 grk - added validation of dataset name (Ticket #390)
+**      04/30/2007 grk - added better name validation (Ticket #450)
+**      07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
+**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -467,7 +467,6 @@ As
 								@instrumentName,
 								'none',
 								@msType,
-								'na',
 								'na',
 								'na',
 								'na',

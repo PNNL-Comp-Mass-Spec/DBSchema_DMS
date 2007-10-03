@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
@@ -35,6 +34,9 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **      07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **      07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
+**      09/06/2007 grk - factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
+**      09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
+**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **
 *****************************************************/
 	@reqName varchar(64),
@@ -44,7 +46,6 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@workPackage varchar(50),
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
-	@specialInstructions varchar(512) = 'na',
 	@wellplateNum varchar(64) = 'na',
 	@wellNum varchar(24) = 'na',
 	@internalStandard varchar(50) = 'na',
@@ -184,7 +185,7 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51004
 	end
-	
+
 	---------------------------------------------------
 	-- get experiment ID from experiment number 
 	-- (and validate that it exists in database)
@@ -213,121 +214,42 @@ As
 	end
 
 	---------------------------------------------------
-	-- verify that dataset type is valid 
-	-- and get its id number
+	-- Lookup instrument run info fields 
+	-- (only effective for experiments
+	-- that have associated sample prep requests)
 	---------------------------------------------------
-	declare @datasetTypeID int
-	execute @datasetTypeID = GetDatasetTypeID @msType
-	if @datasetTypeID = 0
+
+	exec @myError = LookupInstrumentRunInfoFromExperimentSamplePrep
+						@experimentNum,
+						@instrumentName output,
+						@msType output,
+						@instrumentSettings output,
+						@message output
+	if @myError <> 0
 	begin
-		print 'Could not find entry in database for dataset type "' + @msType + '"'
-		return 51118
-	end
-
-	declare @storagePathID int
-	set @storagePathID = 0
-
-	---------------------------------------------------
-	-- Resolve instrument ID
-	---------------------------------------------------
-
-	declare @instrumentID int
-	execute @instrumentID = GetinstrumentID @instrumentName
-	if @instrumentID = 0
-	begin
-		-- Could not resolve the instrument name
-		-- This is OK for Requested Runs, since the precise instrument need not be specified
-		-- We'll try to guess the correct instrument class given the name specified by the user,
-		--  but if we can't guess it, then we won't be able to validate the requested dataset type
-		
-		If @instrumentID = 0 AND @instrumentName LIKE 'LCQ%'
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE 'LCQ%')
-			ORDER BY IN_Name
-		End
-		
-		If @instrumentID = 0 AND (@instrumentName = 'LTQ' OR @instrumentName Like 'LTQ_[0-9]')
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE 'LTQ%')
-			ORDER BY IN_Name
-		End
-		
-		If @instrumentID = 0 AND @instrumentName LIKE 'LTQ_FT%'
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE 'LTQ_FT%')
-			ORDER BY IN_Name
-		End
-
-		If @instrumentID = 0 AND @instrumentName LIKE 'LTQ_Orb%'
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE 'LTQ_Orb%')
-			ORDER BY IN_Name
-		End
-
-		If @instrumentID = 0 AND @instrumentName LIKE 'Agilent_TOF%'
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE 'Agilent_TOF%')
-			ORDER BY IN_Name
-		End
-
-		If @instrumentID = 0 AND @instrumentName LIKE '%T_FTICR%'
-		Begin
-			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
-			FROM dbo.T_Instrument_Name
-			WHERE (IN_name LIKE @instrumentName + '%')
-			ORDER BY IN_Name
-		End
-
-		If @instrumentID = 0
-		Begin
-			Set @message = 'Instrument "' + @instrumentName + '" was not recognized and therefore the dataset type (' + @msType + ') could not be validated'
-		End
-		
-	end
-
-	---------------------------------------------------
-	-- Verify that dataset type is valid for given instrument
-	---------------------------------------------------
-
-	declare @allowedDatasetTypes varchar(255)
-	declare @MatchCount int
+		set @message = 'LookupInstrumentRunInfoFromExperimentSamplePrep: ' + @message
+		RAISERROR (@message, 10, 1)
+		return @myError
+	end	
 	
-	If @instrumentID <> 0
-	Begin
-		SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
-		FROM T_Instrument_Name InstName INNER JOIN
-			T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
-		WHERE (InstName.Instrument_ID = @instrumentID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		If @myRowCount > 0
-		Begin
-			Set @MatchCount = 0
-			SELECT @MatchCount = COUNT(*)
-			FROM T_DatasetTypeName DSTypeName INNER JOIN
-				(SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
-				DSTypeName.DST_Name = AllowedTypesQ.item
-			WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
-			
-			if @MatchCount = 0
-			begin
-				set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
-				RAISERROR (@msg, 10, 1)
-				return 51014
-			end
-		End
-	End
+	---------------------------------------------------
+	-- validate instrument name and dataset type
+	---------------------------------------------------
+	declare @instrumentID int
+	declare @datasetTypeID int
+	--
+	exec @myError = ValidateInstrumentAndDatasetType
+							@msType,
+							@instrumentName,
+							@instrumentID output,
+							@datasetTypeID output,
+							@message output 
+	if @myError <> 0
+	begin
+		set @message = 'ValidateInstrumentAndDatasetType: ' + @message
+		RAISERROR (@message, 10, 1)
+		return @myError
+	end	
 
 	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments
@@ -386,7 +308,6 @@ As
 				RDS_instrument_name, 
 				RDS_type_ID, 
 				RDS_instrument_setting, 
-				RDS_special_instructions, 
 				RDS_priority, 
 				Exp_ID,
 				RDS_WorkPackage, 
@@ -406,7 +327,6 @@ As
 				@instrumentName, 
 				@datasetTypeID, 
 				@instrumentSettings, 
-				@specialInstructions, 
 				@defaultPriority, -- priority
 				@experimentID,
 				@workPackage,
@@ -463,7 +383,6 @@ As
 			RDS_instrument_name = @instrumentName, 
 			RDS_type_ID = @datasetTypeID, 
 			RDS_instrument_setting = @instrumentSettings, 
-			RDS_special_instructions = @specialInstructions, 
 			Exp_ID = @experimentID,
 			RDS_WorkPackage = @workPackage, 
 			RDS_Well_Plate_Num = @wellplateNum,

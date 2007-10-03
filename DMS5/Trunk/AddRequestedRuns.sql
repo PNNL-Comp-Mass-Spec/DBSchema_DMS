@@ -23,6 +23,7 @@ CREATE PROCEDURE AddRequestedRuns
 **      10/12/2006  -- grk Fixed trailing suffix in name (Ticket #248)
 **      11/09/2006  -- grk Fixed error message handling (Ticket #318)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
+**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -34,7 +35,6 @@ CREATE PROCEDURE AddRequestedRuns
 	@msType varchar(20),
 		-- optional arguments
 	@instrumentSettings varchar(512) = "na",
-	@specialInstructions varchar(512) = "na",
 	@wellplateNum varchar(64) = "na",
 	@wellNum varchar(24) = "na",
 	@eusProposalID varchar(10) = 'na',
@@ -198,7 +198,6 @@ As
 								@workPackage,
 								@msType,
 								@instrumentSettings,
-								@specialInstructions,
 								@wellplateNum,
 								@wellNum,
 								@internalStandard,

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddNewDataset
+CREATE PROCEDURE dbo.AddNewDataset
 /****************************************************
 **	Desc: 
 **		Adds new dataset entry to DMS database from contents of XML.
@@ -275,6 +275,7 @@ AS
  	---------------------------------------------------
 Done:
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry]
 GO
