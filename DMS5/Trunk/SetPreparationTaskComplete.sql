@@ -17,8 +17,9 @@ CREATE Procedure SetPreparationTaskComplete
 **
 **	
 **
-**		Auth: grk
-**		Date: 11/14/2002
+**	Auth: grk
+**	11/14/2002
+**  09/25/2007 grk -- return result from DoDatasetCompletionActions (http://prismtrac.pnl.gov/trac/ticket/537)
 **    
 *****************************************************/
 (
@@ -59,7 +60,7 @@ As
 	-- perform the actions necessary when dataset is complete
 	---------------------------------------------------
 	--
-	execute @result = DoDatasetCompletionActions @datasetNum, @completionState, @message output
+	execute @myError = DoDatasetCompletionActions @datasetNum, @completionState, @message output
 
 
    	---------------------------------------------------

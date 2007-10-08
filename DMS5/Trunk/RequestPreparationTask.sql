@@ -16,28 +16,23 @@ CREATE Procedure RequestPreparationTask
 **
 **  if DatasetID is returned 0, no available dataset was found
 **
-**		Auth: grk
-**		Date: 11/14/2002
-**    
-**		Rev: dac    
-**    Date: 07/16/2003
-**      Added @StorageVolExternal to list of output arguments being cleared prior to transaction start
-**		5/10/2005 grk changed select logic to do oldest datasets first
-**		6/2/2005 grk - added handling for prep server
-**		7/1/2005 grk - add sorting by dataset ID for candidate pool select
-**		2/20/2006 grk - removed sorting by dataset ID for candidate pool select (for QC preference in view)
+**	Auth: grk
+**	11/14/2002 -- initial release
+**  07/16/2003 dac - Added @StorageVolExternal to list of output arguments being cleared prior to transaction start
+**  05/10/2005 grk - changed select logic to do oldest datasets first
+**  06/02/2005 grk - added handling for prep server
+**  07/01/2005 grk - add sorting by dataset ID for candidate pool select
+**  02/20/2006 grk - removed sorting by dataset ID for candidate pool select (for QC preference in view)
+**  09/25/2007 grk - Rolled back to DMS from broker (http://prismtrac.pnl.gov/trac/ticket/537)
 **    
 *****************************************************/
-	@StorageServerName varchar(64),
-	@PrepServerName varchar(64),
-    @Dataset varchar(128) output,
-	@DatasetID int output,
-	@Folder varchar(256) output, 
-	@StorageVol varchar(256) output, 
-	@StoragePath varchar(256) output, 
-	@InstrumentClass varchar(32) output, -- supply a value to restrict search
-	@StorageVolExternal varchar(256) output, -- use instead of @StorageVol when manager is not on same machine as dataset folder
-	@message varchar(512) output
+	@StorageServerList varchar(256), -- list of storage server that manager supports
+	@machineName varchar(64),        -- restricts candidates to match prep machine (optional)
+	@InstrumentClass varchar(32),    -- restricts candidates according to intrument class (optional)
+	@mgrName varchar(50),
+	@DatasetID int = 0 output,       -- dataset ID assigned; 0 if no job available
+	@message varchar(512)='' output,
+	@infoOnly tinyint = 0            -- Set to 1 to preview the task that would be returned
 As
 	set nocount on
 
@@ -47,45 +42,49 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 
-   	---------------------------------------------------
-	-- remember the requested instrument class
-	---------------------------------------------------
-	--
-	declare @requestedInstClass varchar(32)
-	if @InstrumentClass <> ''
-		set @requestedInstClass = @InstrumentClass
-	else
-		set @requestedInstClass = '%'
-	
-   	---------------------------------------------------
-	-- clear the output arguments
-	---------------------------------------------------
-	--
-	set @message = ''
+ 	set @message = ''
 	set @DatasetID = 0
-	set @Dataset = ''
-	set @DatasetID = ''
-	set @Folder = ''
-	set @StorageVol  = ''
-	set @StoragePath = ''
-	set @StorageVolExternal = ''
+	set @infoOnly = IsNull(@infoOnly, 0)
+ 
+  	---------------------------------------------------
+	-- The prep manager expects a non-zero return value 
+	-- if no prep candidates are available
+	-- Code 53000 is used for this
+  	---------------------------------------------------
+	declare @taskNotAvailableErrorCode int
+	set @taskNotAvailableErrorCode = 53000
+
+	---------------------------------------------------
+	-- Convert delimited list of storage servers to table variable
+	---------------------------------------------------
+	
+	DECLARE @StorageServerTable TABLE(Item varchar(128))
+	--
+	INSERT INTO @StorageServerTable(Item)
+	SELECT Item FROM dbo.MakeTableFromList(@StorageServerList)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error converting list of storage server list'
+		goto Done
+	end
 		
 	---------------------------------------------------
 	-- temporary table to hold candidate capture requests
 	---------------------------------------------------
 
 	CREATE TABLE #XPD (
-		Dataset varchar(128), 
-		Folder varchar(128), 
-		StorageServerName varchar(64), 
-		StorageVolClient varchar(128), 
-		StorageVolServer varchar(128), 
-		storagePath varchar(255), 
-		Dataset_ID int, 
-		StorageID int, 
-		InstrumentClass varchar(32), 
-		InstrumentName varchar(24)
+		Dataset_ID int
 	) 
+
+	---------------------------------------------------
+	-- fix up instrument class argument
+	---------------------------------------------------
+	
+	if @InstrumentClass = 'none'
+		set @InstrumentClass = ''
 
 	---------------------------------------------------
 	-- populate temporary table with a small pool of 
@@ -98,22 +97,20 @@ As
 	-- whose currently assigned storage is on the requesting processor
 	
 	INSERT INTO #XPD
-	SELECT TOP 5
-		Dataset, 
-		Folder, 
-		StorageServerName, 
-		StorageVolClient, 
-		StorageVolServer, 
-		storagePath, 
-		Dataset_ID, 
-		StorageID, 
-		InstrumentClass, 
-		InstrumentName
-	FROM V_GetDatasetsForPreparationTask
-	WHERE 
-		(StorageServerName = @StorageServerName) AND 
-		(InstrumentClass LIKE @requestedInstClass) AND
-		((PrepServerName = @PrepServerName) OR (@PrepServerName = ''))
+	SELECT 
+	  T_Dataset.Dataset_ID
+	FROM     
+	  T_Dataset INNER JOIN 
+	  T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID INNER JOIN 
+	  t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID 
+	WHERE
+		T_Dataset.DS_state_ID = 6 AND
+		(SP_machine_name IN (SELECT Item FROM @StorageServerTable) ) AND 
+		((IN_class = @InstrumentClass) OR (@InstrumentClass = '')) AND
+		(DS_PrepServerName = @machineName)
+	ORDER BY 
+		dbo.Datasetpreference(T_Dataset.Dataset_Num) DESC,
+		T_Dataset.Dataset_ID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -126,6 +123,7 @@ As
 	if @myRowCount = 0
 	begin
 		set @message = 'No candidate datasets available'
+		set @myError = @taskNotAvailableErrorCode
 		goto done
 	end
 
@@ -145,13 +143,7 @@ As
 	-- and that is associated with a storage path that is on the requesting processor
 	--
 	SELECT top 1
-		@Dataset = #XPD.Dataset, 
-		@DatasetID = #XPD.Dataset_ID,
-		@Folder = #XPD.Folder, 
-		@StorageVol = #XPD.StorageVolServer, 
-		@storagePath = #XPD.storagePath,
-		@InstrumentClass = #XPD.InstrumentClass, 
-		@StorageVolExternal = #XPD.StorageVolClient
+		@DatasetID = #XPD.Dataset_ID
 	FROM
 		T_Dataset with (HoldLock) INNER JOIN 
 		#XPD on #XPD.Dataset_ID = T_Dataset.Dataset_ID 
@@ -182,19 +174,22 @@ As
 	-- set state and storage path
 	---------------------------------------------------
 	--
-
-	UPDATE    T_Dataset
-	SET 
-		DS_state_ID = 7
-	WHERE     (Dataset_ID = @DatasetID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
+	If @infoOnly = 0
 	begin
-		rollback transaction @transName
-		set @message = 'Update operation failed'
-		goto done
+		UPDATE T_Dataset
+		SET 
+			DS_state_ID = 7
+		WHERE
+			Dataset_ID = @DatasetID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Update operation failed'
+			goto done
+		end
 	end
 
 	commit transaction @transName
