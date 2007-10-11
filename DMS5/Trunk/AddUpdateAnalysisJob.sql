@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
@@ -33,6 +32,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **          2/15/2007  grk - added associated processor group (Ticket #383)
 **			2/15/2007  grk - Added propagation mode (Ticket #366)
 **          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **    
 *****************************************************/
 (
@@ -42,7 +42,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
     @parmFileName varchar(255),
     @settingsFileName varchar(64),
     @organismName varchar(64),
-    @protCollNameList varchar(512),
+    @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
 	@organismDBName varchar(64),
     @ownerPRN varchar(32),

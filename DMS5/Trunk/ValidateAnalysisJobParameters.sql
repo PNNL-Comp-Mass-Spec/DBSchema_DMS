@@ -27,6 +27,7 @@ CREATE Procedure dbo.ValidateAnalysisJobParameters
 **			11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
 **			12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
 **			09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **
 *****************************************************/
 (
@@ -35,7 +36,7 @@ CREATE Procedure dbo.ValidateAnalysisJobParameters
     @settingsFileName varchar(64),
     @organismDBName varchar(64) output,
     @organismName varchar(64),
-	@protCollNameList varchar(512) output,
+	@protCollNameList varchar(4000) output,
 	@protCollOptionsList varchar(256) output,
     @ownerPRN varchar(32),
 	@mode varchar(12), 
@@ -391,4 +392,6 @@ As
 				return 53108
 			end
 		end
-go
+
+
+GO

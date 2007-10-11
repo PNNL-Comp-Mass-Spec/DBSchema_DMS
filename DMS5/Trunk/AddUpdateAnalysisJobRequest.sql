@@ -29,6 +29,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket:339)
 **			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket:368)
 **			05/22/2007 mem - Updated to prevent addition of duplicate datasets to  (Ticket:481)
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **    
 *****************************************************/
 (
@@ -37,7 +38,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
     @toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(64),
-    @protCollNameList varchar(512),
+    @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
     @organismName varchar(64),
     @requestorPRN varchar(32),
@@ -356,6 +357,7 @@ As
 	end -- update mode
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
