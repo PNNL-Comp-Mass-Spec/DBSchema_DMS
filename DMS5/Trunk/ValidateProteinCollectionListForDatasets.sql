@@ -16,11 +16,12 @@ CREATE PROCEDURE dbo.ValidateProteinCollectionListForDatasets
 **	Auth:	mem
 **	Date:	11/13/2006 mem - Initial revision (Ticket #320)
 **			02/08/2007 mem - Updated to use T_Internal_Std_Parent_Mixes to determine the protein collections associated with internal standards (Ticket #380)
+**			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **    
 *****************************************************/
 (
     @datasets varchar(7800),
-    @protCollNameList varchar(512)='' output,
+    @protCollNameList varchar(4000)='' output,
     @CollectionCountAdded int = 0 output,
     @ShowMessages tinyint = 1,
     @message varchar(512)='' output

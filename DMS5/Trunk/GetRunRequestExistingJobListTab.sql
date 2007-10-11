@@ -21,6 +21,7 @@ CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 **			03/28/2006 grk - added protein collection fields
 **			08/30/2006 grk - fixed selection logic to handle auto-generated fasta file names https://prismtrac.pnl.gov/trac/ticket/218
 **			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
+**			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **    
 *****************************************************/
 (
@@ -46,7 +47,7 @@ AS
 				@organismDBName varchar(64),
 				@organismName varchar(255),
 				@resultType varchar(32),
-				@proteinCollectionList varchar(512),
+				@proteinCollectionList varchar(4000),
 				@proteinOptionsList varchar(256)
 		
 		-- Lookup the entries for @RequestID in T_Analysis_Job_Request
@@ -118,6 +119,5 @@ AS
 		
 		RETURN
 	END
-
 
 GO
