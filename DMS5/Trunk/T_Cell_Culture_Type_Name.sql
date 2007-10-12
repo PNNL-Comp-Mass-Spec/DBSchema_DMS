@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Cell_Culture_Type_Name](
  CONSTRAINT [PK_T_Cell_Culture_Type_Name] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

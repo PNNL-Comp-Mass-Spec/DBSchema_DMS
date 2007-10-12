@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_For_Delete
+CREATE VIEW [dbo].[V_Analysis_For_Delete]
 AS
 SELECT dbo.T_Analysis_Job.AJ_jobID AS Job,
 	dbo.T_Dataset.Dataset_Num AS Dataset,
@@ -27,7 +27,5 @@ FROM  dbo.T_Analysis_Job INNER JOIN
                dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
                dbo.T_Analysis_State_Name ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID INNER JOIN
                dbo.T_Experiments ON dbo.T_Dataset.Exp_ID = dbo.T_Experiments.Exp_ID
-
-
 
 GO

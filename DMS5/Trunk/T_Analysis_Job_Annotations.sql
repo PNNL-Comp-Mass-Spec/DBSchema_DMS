@@ -25,6 +25,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE TRIGGER [dbo].[trig_u_T_Analysis_Job_Annotations] ON [dbo].[T_Analysis_Job_Annotations] 
 FOR UPDATE
 AS
@@ -95,11 +96,15 @@ GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Entered_By]) TO [DMS_Annota
 GO
 GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Entered_By]) TO [DMS_Annotation_User]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Analysis_Job] FOREIGN KEY([Job_ID])
+ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Annotations] CHECK CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Analysis_Job]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Annotation_Keys] FOREIGN KEY([Key_Name])
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Annotations] CHECK CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Annotation_Keys]
 GO

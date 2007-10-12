@@ -76,7 +76,11 @@ ALTER TABLE [dbo].[T_Dataset_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Data
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
 GO
-ALTER TABLE [dbo].[T_Dataset_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Annotations_T_Dataset] FOREIGN KEY([Dataset_ID])
+ALTER TABLE [dbo].[T_Dataset_Annotations] CHECK CONSTRAINT [FK_T_Dataset_Annotations_T_Annotation_Keys]
+GO
+ALTER TABLE [dbo].[T_Dataset_Annotations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Annotations_T_Dataset] FOREIGN KEY([Dataset_ID])
 REFERENCES [T_Dataset] ([Dataset_ID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Dataset_Annotations] CHECK CONSTRAINT [FK_T_Dataset_Annotations_T_Dataset]
 GO

@@ -73,3 +73,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[GetRequestedRunHistoryEUSUsersList] TO [public]
+GO

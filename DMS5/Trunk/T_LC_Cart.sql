@@ -22,3 +22,5 @@ GO
 ALTER TABLE [dbo].[T_LC_Cart]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_T_LC_Cart_State] FOREIGN KEY([Cart_State_ID])
 REFERENCES [T_LC_Cart_State_Name] ([ID])
 GO
+ALTER TABLE [dbo].[T_LC_Cart] CHECK CONSTRAINT [FK_T_LC_Cart_T_LC_Cart_State]
+GO

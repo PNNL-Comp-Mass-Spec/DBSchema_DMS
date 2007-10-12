@@ -17,12 +17,18 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Updates](
 ) ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request] FOREIGN KEY([Request_ID])
+ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request] FOREIGN KEY([Request_ID])
 REFERENCES [T_Sample_Prep_Request] ([ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request_State_Name] FOREIGN KEY([Beginning_State_ID])
 REFERENCES [T_Sample_Prep_Request_State_Name] ([State_ID])
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request_State_Name]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request_State_Name1] FOREIGN KEY([End_State_ID])
 REFERENCES [T_Sample_Prep_Request_State_Name] ([State_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request_Updates] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_Updates_T_Sample_Prep_Request_State_Name1]
 GO

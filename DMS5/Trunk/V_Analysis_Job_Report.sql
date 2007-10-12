@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Report
+CREATE VIEW [dbo].[V_Analysis_Job_Report]
 AS
 SELECT CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) 
    AS Job, dbo.T_Analysis_Job.AJ_priority AS [Pri.], 
@@ -40,6 +40,5 @@ FROM dbo.T_Analysis_Job INNER JOIN
     INNER JOIN
    dbo.T_Analysis_State_Name ON 
    dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID
-
 
 GO

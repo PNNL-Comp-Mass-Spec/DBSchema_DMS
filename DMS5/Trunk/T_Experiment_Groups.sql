@@ -51,6 +51,8 @@ GRANT SELECT ON [dbo].[T_Experiment_Groups] ([Parent_Exp_ID]) TO [PNL\D3M578]
 GO
 GRANT UPDATE ON [dbo].[T_Experiment_Groups] ([Parent_Exp_ID]) TO [PNL\D3M578]
 GO
-ALTER TABLE [dbo].[T_Experiment_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
+ALTER TABLE [dbo].[T_Experiment_Groups]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
+GO
+ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups_T_Experiments]
 GO

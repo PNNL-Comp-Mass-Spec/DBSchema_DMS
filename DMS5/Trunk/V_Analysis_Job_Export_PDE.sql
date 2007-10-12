@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Export_PDE
+CREATE VIEW [dbo].[V_Analysis_Job_Export_PDE]
 AS
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS Job, dbo.T_Analysis_Job.AJ_priority AS Priority, dbo.T_Dataset.Dataset_Num AS Dataset, 
                       dbo.T_Experiments.Experiment_Num AS Experiment, dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Analysis_Job.AJ_datasetID AS DatasetID, 

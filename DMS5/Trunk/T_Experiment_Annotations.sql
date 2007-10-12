@@ -77,7 +77,11 @@ ALTER TABLE [dbo].[T_Experiment_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_E
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
 GO
+ALTER TABLE [dbo].[T_Experiment_Annotations] CHECK CONSTRAINT [FK_T_Experiment_Annotations_T_Annotation_Keys]
+GO
 ALTER TABLE [dbo].[T_Experiment_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Annotations_T_Experiments] FOREIGN KEY([Experiment_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Experiment_Annotations] CHECK CONSTRAINT [FK_T_Experiment_Annotations_T_Experiments]
 GO

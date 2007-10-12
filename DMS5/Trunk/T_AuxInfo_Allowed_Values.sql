@@ -12,3 +12,5 @@ GO
 ALTER TABLE [dbo].[T_AuxInfo_Allowed_Values]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description] FOREIGN KEY([AuxInfoID])
 REFERENCES [T_AuxInfo_Description] ([ID])
 GO
+ALTER TABLE [dbo].[T_AuxInfo_Allowed_Values] CHECK CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description]
+GO

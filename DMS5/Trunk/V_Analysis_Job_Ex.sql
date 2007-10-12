@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Ex
+CREATE VIEW [dbo].[V_Analysis_Job_Ex]
 AS
 SELECT CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) 
 	AS JobNum, dbo.T_Analysis_Tool.AJT_toolName AS ToolName, 
@@ -39,7 +39,5 @@ FROM dbo.T_Analysis_Job INNER JOIN
     INNER JOIN
    dbo.T_Instrument_Name ON 
    dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
-
-
 
 GO

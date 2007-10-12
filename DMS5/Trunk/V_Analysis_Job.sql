@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Analysis_Job
+CREATE VIEW [dbo].[V_Analysis_Job]
 AS
 SELECT
 	CONVERT(varchar(32), T_Analysis_Job.AJ_jobID) AS JobNum,
@@ -34,9 +34,6 @@ T_Analysis_Job INNER JOIN
                       t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER JOIN
                       T_Analysis_Tool ON T_Analysis_Job.AJ_analysisToolID = T_Analysis_Tool.AJT_toolID INNER JOIN
                       T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
-
-
-
 
 GO
 GRANT SELECT ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write]

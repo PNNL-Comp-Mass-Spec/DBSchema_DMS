@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Find_Dataset
+CREATE VIEW [dbo].[V_Find_Dataset]
 AS
 SELECT  DS.Dataset_ID AS ID,
     DS.Dataset_Num AS Dataset,
@@ -19,7 +19,7 @@ SELECT  DS.Dataset_ID AS ID,
     DS.DS_Oper_PRN AS Operator,
     DFP.Dataset_Folder_Path AS [Dataset Folder Path],
     DFP.Archive_Folder_Path AS [Archive Folder Path],
-    DS.Acq_Time_Start AS [Acq Start],
+    IsNull(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
 	DateDiff(minute, IsNull(DS.Acq_Time_Start, RRH.RDS_Run_Start), IsNull(DS.Acq_Time_End,RRH. RDS_Run_Finish)) AS [Acq Length],
     DS.Scan_Count AS [Scan Count],
     LC.SC_Column_Number AS [LC Column],
@@ -45,6 +45,5 @@ FROM T_DatasetStateName DSN
        ON DS.DS_LC_column_ID = LC.ID
      LEFT OUTER JOIN T_Requested_Run_History RRH
        ON DS.Dataset_ID = RRH.DatasetID
-GO
 
 GO

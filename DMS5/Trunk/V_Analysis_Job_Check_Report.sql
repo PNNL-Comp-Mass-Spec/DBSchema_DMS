@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Check_Report
+CREATE VIEW [dbo].[V_Analysis_Job_Check_Report]
 AS
 SELECT     
 	CONVERT(varchar(32), T_Analysis_Job.AJ_jobID) AS Job,
@@ -34,7 +34,5 @@ FROM         T_Analysis_Job INNER JOIN
                       T_Analysis_Tool ON T_Analysis_Job.AJ_analysisToolID = T_Analysis_Tool.AJT_toolID INNER JOIN
                       T_Analysis_State_Name ON T_Analysis_Job.AJ_StateID = T_Analysis_State_Name.AJS_stateID
 WHERE     (NOT (T_Analysis_Job.AJ_StateID IN (1, 4)))
-
-
 
 GO

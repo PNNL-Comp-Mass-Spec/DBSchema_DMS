@@ -76,7 +76,11 @@ ALTER TABLE [dbo].[T_Cell_Culture_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
 GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] CHECK CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Annotation_Keys]
+GO
 ALTER TABLE [dbo].[T_Cell_Culture_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Cell_Culture] FOREIGN KEY([CC_ID])
 REFERENCES [T_Cell_Culture] ([CC_ID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] CHECK CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Cell_Culture]
 GO

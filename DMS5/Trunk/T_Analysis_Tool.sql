@@ -141,3 +141,5 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
+GO

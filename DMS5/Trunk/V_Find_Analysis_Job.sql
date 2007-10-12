@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Find_Analysis_Job
+CREATE VIEW [dbo].[V_Find_Analysis_Job]
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS Pri,

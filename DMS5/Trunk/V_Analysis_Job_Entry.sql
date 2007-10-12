@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW dbo.V_Analysis_Job_Entry
+CREATE VIEW [dbo].[V_Analysis_Job_Entry]
 AS
 SELECT     CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) AS Job, dbo.T_Analysis_Job.AJ_priority, dbo.T_Analysis_Tool.AJT_toolName AS AJ_ToolName, 
                       dbo.T_Dataset.Dataset_Num AS AJ_Dataset, dbo.T_Analysis_Job.AJ_parmFileName AS AJ_ParmFile, 

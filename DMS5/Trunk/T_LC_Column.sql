@@ -34,6 +34,10 @@ GO
 ALTER TABLE [dbo].[T_LC_Column]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Column_T_LC_Column_State_Name] FOREIGN KEY([SC_State])
 REFERENCES [T_LC_Column_State_Name] ([LCS_ID])
 GO
+ALTER TABLE [dbo].[T_LC_Column] CHECK CONSTRAINT [FK_T_LC_Column_T_LC_Column_State_Name]
+GO
 ALTER TABLE [dbo].[T_LC_Column]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Column_T_Users] FOREIGN KEY([SC_Operator_PRN])
 REFERENCES [T_Users] ([U_PRN])
+GO
+ALTER TABLE [dbo].[T_LC_Column] CHECK CONSTRAINT [FK_T_LC_Column_T_Users]
 GO

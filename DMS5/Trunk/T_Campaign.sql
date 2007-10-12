@@ -129,3 +129,5 @@ GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Users] FOREIGN KEY([CM_PI_PRN])
 REFERENCES [T_Users] ([U_PRN])
 GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Users]
+GO

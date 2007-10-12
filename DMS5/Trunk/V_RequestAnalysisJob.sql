@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_RequestAnalysisJob
+CREATE VIEW [dbo].[V_RequestAnalysisJob]
 AS
 SELECT     CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum, DS.Dataset_Num AS DatasetNum, DS.DS_folder_name AS DatasetFolderName, 
                       dbo.ConvertFtpArchivePathToSamba(ArchPath.AP_archive_path) + '\' AS DatasetStoragePath, AJ.AJ_parmFileName AS ParmFileName, 

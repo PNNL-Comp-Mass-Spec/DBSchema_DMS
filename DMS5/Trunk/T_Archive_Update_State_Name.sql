@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Archive_Update_State_Name](
  CONSTRAINT [T_Archive_Update_State_Name_PK] PRIMARY KEY CLUSTERED 
 (
 	[AUS_stateID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

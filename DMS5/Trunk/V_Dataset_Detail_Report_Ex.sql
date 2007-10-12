@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Dataset_Detail_Report_Ex
+CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex]
 AS
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -77,4 +77,5 @@ FROM dbo.t_storage_path SPath
        ON TDA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.T_DatasetArchiveStateName TDASN
        ON TDASN.DASN_StateID = TDA.AS_state_ID
+
 GO

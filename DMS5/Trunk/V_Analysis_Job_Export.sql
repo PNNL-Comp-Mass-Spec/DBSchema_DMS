@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW dbo.V_Analysis_Job_Export
+CREATE VIEW [dbo].[V_Analysis_Job_Export]
 AS
 SELECT AJ.AJ_jobID AS Job, DS.Dataset_Num AS Dataset, 
     Exp.Experiment_Num AS Experiment, 
@@ -36,6 +35,5 @@ FROM dbo.T_Analysis_Job AJ INNER JOIN
     dbo.T_Organisms Org ON Exp.EX_organism_ID = Org.Organism_ID INNER JOIN
     dbo.V_Dataset_Archive_Path DSArch ON DS.Dataset_ID = DSArch.Dataset_ID
 WHERE (AJ.AJ_StateID = 4) AND (DS.DS_rating >= 1)
-
 
 GO

@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_DatasetStateName](
  CONSTRAINT [PK_T_DatasetStateName] PRIMARY KEY NONCLUSTERED 
 (
 	[Dataset_state_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

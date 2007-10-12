@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE  VIEW dbo.V_Analysis_Job_Report_Numeric
+CREATE VIEW [dbo].[V_Analysis_Job_Report_Numeric]
 AS
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS Job, dbo.T_Analysis_Job.AJ_priority AS [Pri.], dbo.V_Analysis_Job_and_Dataset_Archive_State.Job_State AS State, 
                       dbo.T_Analysis_Tool.AJT_toolName AS [Tool Name], dbo.T_Dataset.Dataset_Num AS Dataset, dbo.T_Instrument_Name.IN_name AS Instrument, 

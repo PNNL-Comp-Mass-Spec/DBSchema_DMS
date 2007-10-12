@@ -11,10 +11,12 @@ CREATE TABLE [dbo].[T_AuxInfo_Subcategory](
  CONSTRAINT [PK_T_AuxInfo_Subcategory] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Subcategory]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Subcategory_T_AuxInfo_Category] FOREIGN KEY([Parent_ID])
 REFERENCES [T_AuxInfo_Category] ([ID])
+GO
+ALTER TABLE [dbo].[T_AuxInfo_Subcategory] CHECK CONSTRAINT [FK_T_AuxInfo_Subcategory_T_AuxInfo_Category]
 GO

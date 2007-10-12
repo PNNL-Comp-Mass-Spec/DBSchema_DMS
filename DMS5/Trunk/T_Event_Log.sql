@@ -28,3 +28,5 @@ GO
 ALTER TABLE [dbo].[T_Event_Log]  WITH CHECK ADD  CONSTRAINT [FK_T_Event_Log_T_Event_Target1] FOREIGN KEY([Target_Type])
 REFERENCES [T_Event_Target] ([ID])
 GO
+ALTER TABLE [dbo].[T_Event_Log] CHECK CONSTRAINT [FK_T_Event_Log_T_Event_Target1]
+GO

@@ -37,3 +37,5 @@ GO
 ALTER TABLE [dbo].[T_EUS_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Users_T_EUS_Site_Status] FOREIGN KEY([Site_Status])
 REFERENCES [T_EUS_Site_Status] ([ID])
 GO
+ALTER TABLE [dbo].[T_EUS_Users] CHECK CONSTRAINT [FK_T_EUS_Users_T_EUS_Site_Status]
+GO

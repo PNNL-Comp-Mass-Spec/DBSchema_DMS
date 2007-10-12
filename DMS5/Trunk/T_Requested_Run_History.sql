@@ -149,11 +149,17 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_DatasetTypeName]
+GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
 REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_EUS_Proposals]
+GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_EUS_UsageType] FOREIGN KEY([RDS_EUS_UsageType])
 REFERENCES [T_EUS_UsageType] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_EUS_UsageType]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
@@ -162,4 +168,6 @@ ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_LC_Cart] FOREIGN KEY([RDS_Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_LC_Cart]
 GO

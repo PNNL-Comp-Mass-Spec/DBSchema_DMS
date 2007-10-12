@@ -33,6 +33,10 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job_Status_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Status_History_T_Analysis_State_Name] FOREIGN KEY([State_ID])
 REFERENCES [T_Analysis_State_Name] ([AJS_stateID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Status_History] CHECK CONSTRAINT [FK_T_Analysis_Job_Status_History_T_Analysis_State_Name]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Status_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Status_History_T_Analysis_Tool] FOREIGN KEY([Tool_ID])
 REFERENCES [T_Analysis_Tool] ([AJT_toolID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Status_History] CHECK CONSTRAINT [FK_T_Analysis_Job_Status_History_T_Analysis_Tool]
 GO

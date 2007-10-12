@@ -183,20 +183,30 @@ REFERENCES [T_Enzymes] ([Enzyme_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Enzymes]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([Ex_organism_ID])
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards1]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Organisms]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
 REFERENCES [T_Sample_Labelling] ([Label])
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Labelling]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
 REFERENCES [T_Sample_Prep_Request] ([ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request]
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
 REFERENCES [T_Users] ([U_PRN])

@@ -395,6 +395,7 @@ AS
 Done:
 	return 0 
 
+
 GO
 GRANT EXECUTE ON [dbo].[CopyAuxInfoMultiID] TO [DMS_User]
 GO

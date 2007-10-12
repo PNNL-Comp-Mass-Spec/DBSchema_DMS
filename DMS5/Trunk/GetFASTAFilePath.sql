@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetFASTAFilePath
+
+CREATE FUNCTION [dbo].[GetFASTAFilePath]
 /****************************************************
 **
 **	Desc: 
@@ -63,4 +64,5 @@ Begin
 	
 	RETURN @filePath
 End
+
 GO

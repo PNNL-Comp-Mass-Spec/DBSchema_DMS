@@ -157,8 +157,12 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
 REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_UsageType] FOREIGN KEY([RDS_EUS_UsageType])
 REFERENCES [T_EUS_UsageType] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_EUS_UsageType]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
@@ -168,9 +172,15 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_LC_Cart] FOREIGN KEY([RDS_Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_LC_Cart]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches] FOREIGN KEY([RDS_BatchID])
 REFERENCES [T_Requested_Run_Batches] ([ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Oper_PRN])
 REFERENCES [T_Users] ([U_PRN])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Users]
 GO

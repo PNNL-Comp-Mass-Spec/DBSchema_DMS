@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[T_Internal_Std_Components](
  CONSTRAINT [PK_T_Internal_Std_Components] PRIMARY KEY CLUSTERED 
 (
 	[Internal_Std_Component_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

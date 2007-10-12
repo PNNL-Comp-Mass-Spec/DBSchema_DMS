@@ -50,3 +50,5 @@ GO
 ALTER TABLE [dbo].[T_Filter_Sets]  WITH CHECK ADD  CONSTRAINT [FK_T_Filter_Sets_T_Filter_Set_Types] FOREIGN KEY([Filter_Type_ID])
 REFERENCES [T_Filter_Set_Types] ([Filter_Type_ID])
 GO
+ALTER TABLE [dbo].[T_Filter_Sets] CHECK CONSTRAINT [FK_T_Filter_Sets_T_Filter_Set_Types]
+GO

@@ -49,3 +49,5 @@ GO
 ALTER TABLE [dbo].[T_EUS_Proposals]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Proposals_T_EUS_Proposal_State_Name] FOREIGN KEY([State_ID])
 REFERENCES [T_EUS_Proposal_State_Name] ([ID])
 GO
+ALTER TABLE [dbo].[T_EUS_Proposals] CHECK CONSTRAINT [FK_T_EUS_Proposals_T_EUS_Proposal_State_Name]
+GO

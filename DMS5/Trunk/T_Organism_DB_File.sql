@@ -65,3 +65,5 @@ GO
 ALTER TABLE [dbo].[T_Organism_DB_File]  WITH CHECK ADD  CONSTRAINT [FK_T_Organism_DB_File_T_Organisms] FOREIGN KEY([Organism_ID])
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
+ALTER TABLE [dbo].[T_Organism_DB_File] CHECK CONSTRAINT [FK_T_Organism_DB_File_T_Organisms]
+GO

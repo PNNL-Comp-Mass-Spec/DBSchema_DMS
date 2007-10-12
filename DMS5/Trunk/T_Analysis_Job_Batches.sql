@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Batches](
  CONSTRAINT [PK_T_Analysis_Job_Batches] PRIMARY KEY NONCLUSTERED 
 (
 	[Batch_ID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

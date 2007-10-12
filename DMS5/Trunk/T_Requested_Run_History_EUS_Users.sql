@@ -50,3 +50,5 @@ REFERENCES [T_Requested_Run_History] ([ID])
 ON UPDATE CASCADE
 ON DELETE CASCADE
 GO
+ALTER TABLE [dbo].[T_Requested_Run_History_EUS_Users] CHECK CONSTRAINT [FK_T_Requested_Run_History_EUS_Users_T_Requested_Run_History]
+GO

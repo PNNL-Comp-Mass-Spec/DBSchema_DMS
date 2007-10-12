@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Analysis_State_Name](
  CONSTRAINT [T_Analysis_State_Name_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJS_stateID] ASC
-) ON [PRIMARY]
+)WITH FILLFACTOR = 90 ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
