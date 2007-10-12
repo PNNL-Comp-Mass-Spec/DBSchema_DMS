@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Last_Affected]  DEFAULT (getdate()),
 	[AJ_assignedProcessorName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_resultsFolderName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AJ_proteinCollectionList] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinCollectionList]  DEFAULT ('na'),
+	[AJ_proteinCollectionList] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinCollectionList]  DEFAULT ('na'),
 	[AJ_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinOptionsList]  DEFAULT ('na'),
 	[AJ_requestID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_requestID]  DEFAULT (1),
 	[AJ_extractionProcessor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -67,6 +67,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_d_AnalysisJob] on dbo.T_Analysis_Job
 For Delete
 /****************************************************
@@ -106,6 +107,7 @@ AS
 	       ON deleted.AJ_analysisToolID = AnalysisTool.AJT_toolID
 	ORDER BY deleted.AJ_JobID
 
+
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
@@ -114,6 +116,7 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
@@ -137,6 +140,7 @@ AS
 	FROM inserted
 	ORDER BY inserted.AJ_jobID
 
+
 GO
 
 /****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
@@ -145,6 +149,7 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
@@ -175,6 +180,7 @@ AS
 		Set AJ_Last_Affected = GetDate()
 		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
 	End
+
 
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
