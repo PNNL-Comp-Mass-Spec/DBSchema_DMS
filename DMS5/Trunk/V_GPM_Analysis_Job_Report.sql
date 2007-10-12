@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_GPM_Analysis_Job_Report
+CREATE VIEW [dbo].[V_GPM_Analysis_Job_Report]
 AS
 SELECT     
 	CONVERT(varchar(32), T_Analysis_Job.AJ_jobID) AS Job,
@@ -35,6 +35,5 @@ t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER
 T_Analysis_Tool ON T_Analysis_Job.AJ_analysisToolID = T_Analysis_Tool.AJT_toolID INNER JOIN
 T_Analysis_State_Name ON T_Analysis_Job.AJ_StateID = T_Analysis_State_Name.AJS_stateID 
 WHERE     (T_Analysis_Tool.AJT_toolName = 'XTandem')
-
 
 GO

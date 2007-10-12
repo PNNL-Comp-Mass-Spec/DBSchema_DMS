@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_History_Scheduled_Run_List_Report
+CREATE VIEW [dbo].[V_History_Scheduled_Run_List_Report]
 AS
 SELECT RRH.ID AS Request,
        RRH.RDS_Name AS Name,
