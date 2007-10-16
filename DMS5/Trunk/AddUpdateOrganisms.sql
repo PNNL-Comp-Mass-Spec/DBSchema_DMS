@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **  Date:	03/07/2006
 **			01/12/2007 jds - Added support for new field OG_Active
 **			01/12/2007 mem - Added validation that genus, species, and strain are not duplicated in T_Organisms
+**			10/16/2007 mem - Updated to allow genus, species, and strain to all be 'na' (Ticket #562)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -168,47 +169,65 @@ As
 
 
 	---------------------------------------------------
+	-- If Genus, Species, and Strain are unknown, na, or none,
+	--  then make sure all three are "na"
+	---------------------------------------------------
+	
+	if (@orgGenus = 'unknown'   or @orgGenus = 'na'   or @orgGenus = 'none') AND
+	   (@orgSpecies = 'unknown' or @orgSpecies = 'na' or @orgSpecies = 'none') AND
+	   (@orgStrain = 'unknown'  or @orgStrain = 'na'  or @orgStrain = 'none') 
+	Begin
+		Set @orgGenus = 'na'
+		Set @orgSpecies = 'na'
+		Set @orgStrain = 'na'
+	End
+
+	---------------------------------------------------
 	-- Check whether an organism already exists 
 	-- with the specified Genus, Species, and Strain
 	---------------------------------------------------
 
-	set @DuplicateTaxologyMsg = 'Another organism was found with Genus "' + @orgGenus + '", Species "' + @orgSpecies + '", and Strain "' + @orgStrain + '"'
-	
-	if @Mode = 'add'
-	begin
-		Set @MatchCount = 0
-		SELECT @MatchCount = COUNT(*) 
-		FROM T_Organisms
-		WHERE IsNull(OG_Genus, '') = @orgGenus AND
-			  IsNull(OG_Species, '') = @orgSpecies AND
-			  IsNull(OG_Strain, '') = @orgStrain
-		
-		If @MatchCount <> 0
+	set @DuplicateTaxologyMsg = 'Another organism was found with Genus "' + @orgGenus + '", Species "' + @orgSpecies + '", and Strain "' + @orgStrain + '"; if unknown, use "na" for these values'
+
+	if Not (@orgGenus = 'na' AND @orgSpecies = 'na' AND @orgStrain = 'na')
+	Begin
+		if @Mode = 'add'
 		begin
-			set @msg = 'Cannot add: ' + @DuplicateTaxologyMsg
-			RAISERROR (@msg, 10, 1)
-			return 51006
+			-- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain
+			Set @MatchCount = 0
+			SELECT @MatchCount = COUNT(*) 
+			FROM T_Organisms
+			WHERE IsNull(OG_Genus, '') = @orgGenus AND
+				  IsNull(OG_Species, '') = @orgSpecies AND
+				  IsNull(OG_Strain, '') = @orgStrain
+			
+			If @MatchCount <> 0
+			begin
+				set @msg = 'Cannot add: ' + @DuplicateTaxologyMsg
+				RAISERROR (@msg, 10, 1)
+				return 51006
+			end
 		end
-	end
-	
-	if @Mode = 'update'
-	begin
-		Set @MatchCount = 0
-		SELECT @MatchCount = COUNT(*)
-		FROM T_Organisms
-		WHERE IsNull(OG_Genus, '') = @orgGenus AND
-			  IsNull(OG_Species, '') = @orgSpecies AND
-			  IsNull(OG_Strain, '') = @orgStrain AND
-			  Organism_ID <> @ID
 		
-		If @MatchCount <> 0
+		if @Mode = 'update'
 		begin
-			set @msg = 'Cannot update: ' + @DuplicateTaxologyMsg
-			RAISERROR (@msg, 10, 1)
-			return 51006
+			-- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain (ignoring Organism_ID = @ID)
+			Set @MatchCount = 0
+			SELECT @MatchCount = COUNT(*)
+			FROM T_Organisms
+			WHERE IsNull(OG_Genus, '') = @orgGenus AND
+				  IsNull(OG_Species, '') = @orgSpecies AND
+				  IsNull(OG_Strain, '') = @orgStrain AND
+				  Organism_ID <> @ID
+			
+			If @MatchCount <> 0
+			begin
+				set @msg = 'Cannot update: ' + @DuplicateTaxologyMsg
+				RAISERROR (@msg, 10, 1)
+				return 51006
+			end
 		end
-	end
-	
+	End	
 
 	---------------------------------------------------
 	-- action for add mode
@@ -314,7 +333,6 @@ As
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin]
