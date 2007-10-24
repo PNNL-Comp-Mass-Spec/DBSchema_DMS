@@ -15,12 +15,12 @@ CREATE PROCEDURE RequestDataExtractionTaskParams
 **
 **	Return values: 0: success, anything else: error
 **
-**		Auth: dac
-**		Date: 06/26/2007
-**
-**		8/1/2007 dac - Added processor name parameter
+**	Auth: dac
+**	06/26/2007 -- initial release
+**	08/01/2007 dac - Added processor name parameter
+**	09/25/2007 grk - Rolled back to DMS from broker (http://prismtrac.pnl.gov/trac/ticket/537)
 *****************************************************/
-   @EntityId int,
+	@EntityId int,
   	@DemProcessorName varchar(64),
 	@message varchar(512)='' output
 As
@@ -33,36 +33,6 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
-
-	---------------------------------------------------
-	-- Verify job is still in "Data Extraction Required" state
-	---------------------------------------------------
-	declare @jobStateID int
-	set @jobStateID = 0
-
-	SELECT @jobStateID = AJ_StateID  
-	FROM T_Analysis_Job 
-	WHERE AJ_jobID = @EntityId
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error checking job state'
-		goto done
-	end
-	if @myRowCount <> 1 
-	begin
-		set @myError = 50001
-		set @message = 'Invalid number of rows returned while checking job state'
-		goto done
-	end
-	if @jobStateID <> 16
-	begin
-		set @message = 'Invalid job state: ' + Convert(varchar(4), @jobStateID)
-		set @myError = 50002
-		goto done
-	end
 	
 	---------------------------------------------------
 	-- Update job status
