@@ -7,20 +7,21 @@ CREATE PROCEDURE RequestResultsXferTaskParams
 /****************************************************
 **
 **	Desc: 
-**	Updates job table to show job is in progress, and finds parameters 
-**		needed for transferring analysis job results from receiving 
-**		folder to dataset folder.
+**	Finds parameters 
+**	needed for transferring analysis job results from receiving 
+**	folder to dataset folder.
 **
 **	All information needed for transfer task is returned
 **	in the output arguments
 **
 **	Return values: 0: success, anything else: error
 **
-**		Auth: dac
-**		Date: 5/11/2007
+**	Auth: dac
+**  5/11/2007 -- initial release
+**	09/25/2007 grk - Rolled back to DMS from broker (http://prismtrac.pnl.gov/trac/ticket/537)
 **    
 *****************************************************/
-   @EntityId int,
+	@EntityId int,
 	@message varchar(512) output
 As
 	set nocount on
@@ -32,56 +33,6 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
-
-	---------------------------------------------------
-	-- Verify job is still in "results received" state
-	---------------------------------------------------
-	declare @jobStateID int
-	set @jobStateID = 0
-
-	SELECT @jobStateID = AJ_StateID  
-	FROM T_Analysis_Job 
-	WHERE AJ_jobID = @EntityId
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error checking job state'
-		goto done
-	end
-	if @myRowCount <> 1 
-	begin
-		set @myError = 50001
-		set @message = 'Invalid number of rows returned while checking job state'
-		goto done
-	end
-	if @jobStateID <> 3
-	begin
-		set @message = 'Invalid job state: ' + Convert(varchar(4), @jobStateID)
-		set @myError = 50002
-		goto done
-	end
-	
-	---------------------------------------------------
-	-- Update job status
-	---------------------------------------------------
-	set @myError = 0
-	set @myRowCount = 0
-	
-	UPDATE T_Analysis_Job 
-	SET 
-		AJ_finish = GETDATE(), 
-		AJ_StateID = 9 -- transfer in progress
-	WHERE (AJ_jobID = @EntityId)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @message = 'Update operation failed'
-		goto done
-	end
 
 	---------------------------------------------------
 	-- Get parameters for this results task
