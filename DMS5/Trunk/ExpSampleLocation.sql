@@ -16,27 +16,30 @@ CREATE FUNCTION dbo.ExpSampleLocation
 **	Parameters:
 **	
 **
-**		Auth: grk
-**		Date: 2/26/2004
+**	Auth:	grk
+**	Date:	02/26/2004
+**			10/31/2007 mem - Added "ORDER BY" for migration to SS2005 (ticket #226)
 **    
 *****************************************************/
 (
-@exp_ID int
+	@exp_ID int
 )
 RETURNS varchar(256)
 AS
-	BEGIN
-		declare @loc varchar(1024)
-		set @loc = ''
-		SELECT     @loc = @loc + Item +':' + Value + ', ' 
-		FROM V_AuxInfo_Value
-		WHERE (Target = 'experiment') AND 
-		(Category = 'Storage') AND 
-		(Subcategory = 'location') AND 
-		(Target_ID = @exp_ID)
-	RETURN @loc
-	END
+BEGIN
+	declare @loc varchar(1024)
+	set @loc = ''
 
+	SELECT     @loc = @loc + Item +':' + Value + ', ' 
+	FROM V_AuxInfo_Value
+	WHERE (Target = 'experiment') AND 
+		  (Category = 'Storage') AND 
+		  (Subcategory = 'location') AND 
+		  (Target_ID = @exp_ID)
+	ORDER BY SC, SS, SI
+
+	RETURN @loc
+END
 
 GO
 GRANT EXECUTE ON [dbo].[ExpSampleLocation] TO [public]
