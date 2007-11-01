@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Enzymes] ******/
-/****** RowCount: 11 ******/
+/****** RowCount: 14 ******/
 SET IDENTITY_INSERT [T_Enzymes] ON
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (0,'na','Not a real value','na','na','na','na','na',0,)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (1,'none','no digestive enzyme was used','na','na','na','na','na',0,0)
@@ -12,4 +12,7 @@ INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, 
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (16,'Elastase/Tryp/Chymo','Elastase, Trypsin, & Chymotrypsin','ALIVKRWFY-','P','ALIVKRWFY-','P','Standard',1,16)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (17,'Trypsin_Modified','Modified Trypsin','KRLNH-','na','KRLNH-','na','Standard',1,2)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (18,'AspN','AspN','D-','na','D-','na','Standard',0,14)
+INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (19,'Trypsin_R','Trypsin, after R only aka Arg-C','R-','P','R-','P','Standard',1,11)
+INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (20,'Chymotrypsin','Chymotrypsin','FWYL-','na','FWYL-','na','Standard',1,3)
+INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index) VALUES (21,'Arg-C','Endoproteinase Arg-C','R-','na','R-','na','Standard',1,)
 SET IDENTITY_INSERT [T_Enzymes] OFF

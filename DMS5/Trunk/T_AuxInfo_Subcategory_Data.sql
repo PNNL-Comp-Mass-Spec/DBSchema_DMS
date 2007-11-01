@@ -1,5 +1,5 @@
 /****** Object:  Table [T_AuxInfo_Subcategory] ******/
-/****** RowCount: 42 ******/
+/****** RowCount: 43 ******/
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] ON
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (244,'General',1011,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (245,'Starter Culture Conditions',1011,2)
@@ -43,4 +43,5 @@ INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (283,
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (284,'BSL2',1019,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (285,'Homogenization',1000,6)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (286,'Well Plate',1009,1)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (287,'Barocycler',1000,7)
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] OFF

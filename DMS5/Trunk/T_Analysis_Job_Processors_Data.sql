@@ -1,10 +1,10 @@
 /****** Object:  Table [T_Analysis_Job_Processors] ******/
-/****** RowCount: 70 ******/
+/****** RowCount: 80 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processors] ON
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (210,'E','Chemstation1326','Chemstation1326','','3/15/2007 10:44:48 AM','PNL\D3L243')
-INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (283,'E','WE10129','WE10129','DAC Desktop','3/5/2007 11:32:42 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (283,'E','WE10129','WE10129','DAC Desktop','3/15/2007 2:01:29 PM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (212,'E','Pub-01-XT','Pub-01','','2/23/2007 7:00:00 PM','PNL\D3L243')
-INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (284,'E','Daffy-1','Daffy','','3/7/2007 3:03:16 PM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (284,'E','Daffy-1','Daffy','','7/19/2007 10:24:02 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (214,'E','Pub-02-XT','Pub-02','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (285,'E','Daffy-2','Daffy','','3/7/2007 3:03:28 PM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (216,'E','Pub-03-XT','Pub-03','','3/5/2007 9:39:02 AM','PNL\D3J408')
@@ -26,6 +26,7 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (232,'E','Pub-11-2','Pub-11','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (233,'E','Pub-12-1','Pub-12','','3/5/2007 9:59:26 AM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (234,'E','Pub-12-2','Pub-12','','3/5/2007 10:00:04 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (287,'E','Pub-07-XT','Pub-07','','7/24/2007 2:14:40 PM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (237,'E','Pub-16-XT','Pub-16','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (238,'E','Pub-20-XT','Pub-20','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (239,'E','Pub-21-XT','Pub-21','','2/23/2007 7:00:00 PM','PNL\D3L243')
@@ -63,6 +64,7 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (271,'E','SeqCluster4','Coyote','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (272,'E','WD37208','WD37208','','3/5/2007 11:31:50 AM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (273,'E','WD37369','WD37369','','3/5/2007 11:32:16 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (288,'E','Pub-43-XT','Pub-43','','7/24/2007 4:28:44 PM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (275,'E','Pub-40-3','Pub-40','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (276,'E','Pub-40-4','Pub-40','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (277,'E','Pub-41-3','Pub-41','','3/5/2007 11:26:39 AM','PNL\D3J408')
@@ -71,4 +73,12 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (280,'E','Pub-42-4','Pub-42','','3/5/2007 11:29:46 AM','PNL\D3J408')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (281,'E','Pub-43-3','Pub-43','','2/23/2007 7:00:00 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (282,'E','Pub-43-4','Pub-43','','2/23/2007 7:00:00 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (289,'E','Pub-08-XT','Pub-08','','7/25/2007 11:15:43 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (290,'E','Pub-09-XT','Pub-09','','7/25/2007 11:16:15 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (293,'E','Pub-15-XT','Pub-15','','7/31/2007 9:25:34 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (294,'E','Pub-40-XT','Pub-40','','7/31/2007 3:22:09 PM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (291,'E','Pub-10-XT','Pub-10','','7/25/2007 11:43:31 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (292,'E','Pub-11-XT','Pub-11','','7/25/2007 11:43:52 AM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (295,'E','Pub-41-XT','Pub-41','','7/31/2007 3:22:37 PM','PNL\D3J408')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (296,'E','Pub-42-XT','Pub-42','','7/31/2007 3:23:16 PM','PNL\D3J408')
 SET IDENTITY_INSERT [T_Analysis_Job_Processors] OFF
