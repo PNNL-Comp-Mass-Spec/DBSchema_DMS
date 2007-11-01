@@ -67,8 +67,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE Trigger [dbo].[trig_d_AnalysisJob] on dbo.T_Analysis_Job
+CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Delete
 /****************************************************
 **
@@ -80,9 +79,12 @@ For Delete
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/02/2007 mem - Updated to append the analysis tool name and 
 **							 dataset name for the deleted job to the Entered_By field (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
+	Set NoCount On
+
 	-- Add entries to T_Event_Log for each job deleted from T_Analysis_Job
 	INSERT INTO T_Event_Log
 		(
@@ -107,7 +109,6 @@ AS
 	       ON deleted.AJ_analysisToolID = AnalysisTool.AJT_toolID
 	ORDER BY deleted.AJ_JobID
 
-
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
@@ -116,8 +117,6 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 
 CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
@@ -129,17 +128,19 @@ For Insert
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
+	Set NoCount On
+
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, 0, GetDate()
 	FROM inserted
 	ORDER BY inserted.AJ_jobID
-
 
 GO
 
@@ -149,8 +150,6 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 
 CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
@@ -163,24 +162,27 @@ For Update
 **	Date:	01/01/2003
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			10/31/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
+	Set NoCount On
+
 	If Update(AJ_StateID)
 	Begin
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
+		WHERE inserted.AJ_StateID <> deleted.AJ_StateID
 		ORDER BY inserted.AJ_jobID
 
 		UPDATE T_Analysis_Job
 		Set AJ_Last_Affected = GetDate()
 		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
 	End
-
 
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]

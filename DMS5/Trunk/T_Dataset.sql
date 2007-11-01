@@ -91,9 +91,12 @@ For Delete
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/02/2007 mem - Updated to append the dataset name to the Entered_By field (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
+	Set NoCount On
+
 	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
 	INSERT INTO T_Event_Log
 		(
@@ -122,8 +125,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 /****************************************************
@@ -134,11 +135,14 @@ For Insert
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry for DS_Rating (Ticket #519)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
+
+	Set NoCount On
 
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, 0, GetDate()
@@ -150,8 +154,6 @@ AS
 	FROM inserted
 	ORDER BY inserted.Dataset_ID
 
-
-
 GO
 
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
@@ -160,8 +162,6 @@ GO
 
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 
 CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
 For Update
@@ -174,17 +174,21 @@ For Update
 **	Date:	01/01/2003
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
+**			10/31/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
+	Set NoCount On
+
 	If Update(DS_State_ID)
 	Begin
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+		WHERE inserted.DS_State_ID <> deleted.DS_State_ID
 		ORDER BY inserted.Dataset_ID
 
 		UPDATE T_Dataset
@@ -199,7 +203,6 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
 		ORDER BY inserted.Dataset_ID
 	End
-
 
 GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]

@@ -51,10 +51,13 @@ For Delete
 **
 **	Auth:	mem
 **	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
-	-- Add entries to T_Event_Log for each Experiments deleted from T_Experiments
+	Set NoCount On
+
+	-- Add entries to T_Event_Log for each Experiment deleted from T_Experiments
 	INSERT INTO T_Event_Log
 		(
 			Target_Type, 
@@ -91,11 +94,14 @@ For Insert
 **
 **	Auth:	mem
 **	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
+
+	Set NoCount On
 
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 3, inserted.Exp_ID, 1, 0, GetDate()

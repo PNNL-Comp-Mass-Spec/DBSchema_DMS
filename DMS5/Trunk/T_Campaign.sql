@@ -42,9 +42,12 @@ For Delete
 **
 **	Auth:	mem
 **	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
+	Set NoCount On
+
 	-- Add entries to T_Event_Log for each Campaign deleted from T_Campaign
 	INSERT INTO T_Event_Log
 		(
@@ -82,11 +85,14 @@ For Insert
 **
 **	Auth:	mem
 **	Date:	10/02/2007 mem - Initial version (Ticket #543)
+**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
+
+	Set NoCount On
 
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 1, inserted.Campaign_ID, 1, 0, GetDate()

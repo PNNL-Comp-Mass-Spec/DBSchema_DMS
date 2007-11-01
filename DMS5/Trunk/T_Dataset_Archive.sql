@@ -29,6 +29,48 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archi
 ) ON [PRIMARY]
 GO
 
+/****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_d_Dataset_Archive] on [dbo].[T_Dataset_Archive]
+For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the deleted dataset archive entry
+**
+**	Auth:	mem
+**	Date:	10/31/2007
+**    
+*****************************************************/
+AS
+	Set NoCount On
+
+	-- Add entries to T_Event_Log for each entry deleted from T_Dataset_Archive
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered,
+			Entered_By
+		)
+	SELECT	6 AS Target_Type, 
+			AS_Dataset_ID AS Target_ID, 
+			0 AS Target_State, 
+			AS_state_ID AS Prev_Target_State, 
+			GETDATE(), 
+			suser_sname()
+	FROM deleted
+	ORDER BY AS_Dataset_ID
+
+GO
+
 /****** Object:  Trigger [dbo].[trig_i_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
@@ -36,7 +78,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_i_Dataset_Archive] on dbo.T_Dataset_Archive
+CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
 **
@@ -46,17 +88,24 @@ For Insert
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
+	Set NoCount On
+
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, 0, GetDate()
 	FROM inserted
 	ORDER BY inserted.AS_Dataset_ID
 
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 7, inserted.AS_Dataset_ID, inserted.AS_update_state_ID, 0, GetDate()
+	FROM inserted
+	ORDER BY inserted.AS_Dataset_ID
 
 GO
 
@@ -67,7 +116,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_Dataset_Archive] on dbo.T_Dataset_Archive
+CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************
 **
@@ -78,11 +127,15 @@ For Update
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			09/04/2007 mem - Now updating AS_state_Last_Affected when the state changes (Ticket #527)
+**			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
+**						   - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
+
+	Set Nocount On
 
 	Declare @CurrentDate DateTime
 	Set @CurrentDate = GetDate()
@@ -92,6 +145,7 @@ AS
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, deleted.AS_state_ID, @CurrentDate
 		FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
+		WHERE inserted.AS_state_ID <> deleted.AS_state_ID
 		ORDER BY inserted.AS_Dataset_ID
 
 		UPDATE T_Dataset_Archive
@@ -102,12 +156,17 @@ AS
 
 	If Update(AS_update_state_ID)
 	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 7, inserted.AS_Dataset_ID, inserted.AS_update_state_ID, deleted.AS_update_state_ID, @CurrentDate
+		FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
+		WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
+		ORDER BY inserted.AS_Dataset_ID
+
 		UPDATE T_Dataset_Archive
 		SET AS_update_state_Last_Affected = @CurrentDate
 		FROM T_Dataset_Archive DA INNER JOIN
 			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
