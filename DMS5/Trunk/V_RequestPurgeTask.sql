@@ -6,7 +6,7 @@ GO
 CREATE VIEW dbo.V_RequestPurgeTask
 AS
 SELECT     dbo.T_Dataset.Dataset_Num AS dataset, dbo.T_Dataset.DS_folder_name AS Folder, 
-                      dbo.T_Archive_Path.AP_network_share_path AS SambaStoragePath, dbo.t_storage_path.SP_machine_name AS StorageServerName, 
+                      dbo.T_Archive_Path.AP_network_share_path + '\' AS SambaStoragePath, dbo.t_storage_path.SP_machine_name AS StorageServerName, 
                       dbo.T_Dataset.Dataset_ID AS DatasetID, dbo.t_storage_path.SP_vol_name_server AS StorageVol, dbo.t_storage_path.SP_path AS storagePath, 
                       dbo.t_storage_path.SP_vol_name_client AS StorageVolExternal
 FROM         dbo.T_Dataset INNER JOIN
