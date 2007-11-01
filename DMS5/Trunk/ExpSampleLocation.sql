@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.ExpSampleLocation
+CREATE FUNCTION [dbo].[ExpSampleLocation]
 /****************************************************
 **
 **	Desc: 
@@ -40,6 +40,7 @@ BEGIN
 
 	RETURN @loc
 END
+
 
 GO
 GRANT EXECUTE ON [dbo].[ExpSampleLocation] TO [public]
