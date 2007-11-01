@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateDataset
+CREATE Procedure [dbo].[AddUpdateDataset]
 /****************************************************
 **		File: 
 **		Name: AddNewDataset
@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **      04/30/2007 grk - added better name validation (Ticket #450)
 **      07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**      10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
 **    
 *****************************************************/
 	@datasetNum varchar(64),
@@ -46,7 +47,7 @@ CREATE Procedure dbo.AddUpdateDataset
 	@mode varchar(12) = 'add', -- or 'update', or 'bad'
 	@message varchar(512) output
 As
-	set nocount on
+set nocount on
 
 	declare @myError int
 	set @myError = 0
@@ -189,7 +190,7 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @datasetID <> 0 and (@mode = 'add' or @mode = 'check_add')
+	if @datasetID <> 0 and (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger')
 	begin
 		set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
 		RAISERROR (@msg, 10, 1)
@@ -297,7 +298,7 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51012
 	end
-	
+
 	---------------------------------------------------
 	-- Resolve dataset type ID
 	---------------------------------------------------
@@ -390,10 +391,187 @@ As
 	end
 
 	---------------------------------------------------
+	-- action for add trigger mode
+	---------------------------------------------------
+	if @Mode = 'add_trigger'
+	begin	
+
+		--**Check code taken from ConsumeScheduledRun stored procedure**
+		---------------------------------------------------
+		-- Validate that experiments match
+		---------------------------------------------------
+	
+		-- get experiment ID from dataset
+		-- this was already done above
+
+		-- get experiment ID from scheduled run
+		--
+		declare @reqExperimentID int
+		set @reqExperimentID = 0
+		--
+		SELECT   @reqExperimentID = Exp_ID
+		FROM T_Requested_Run
+		WHERE ID = @requestID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error trying to look up experiment for request'
+			RAISERROR (@message, 10, 1)
+			return 51086
+		end
+	
+		-- validate that experiments match
+		--
+		if @experimentID <> @reqExperimentID and @requestID <> 0
+		begin
+			set @message = 'Experiment in dataset does not match with one in scheduled run'
+			RAISERROR (@message, 10, 1)
+			return 51072
+		end
+
+
+		--**Check code taken from UpdateCartParameters stored procedure**
+		---------------------------------------------------
+		-- Resolve ID for LC Cart and update requested run table
+		---------------------------------------------------
+
+		declare @cartID int
+		set @cartID = 0
+		--
+		SELECT @cartID = ID
+		FROM T_LC_Cart
+		WHERE (Cart_Name = @LCCartName)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to look up cart ID'
+			RAISERROR (@msg, 10, 1)
+			return 52133
+		end
+		else 
+		if @cartID = 0
+		begin
+			set @msg = 'Could not resolve cart name to ID'
+			RAISERROR (@msg, 10, 1)
+			return 52135
+		end
+
+
+		if @requestID = 0
+			begin
+				--**Check code taken from AddUpdateRequestedRun stored procedure**
+				---------------------------------------------------
+				-- Lookup EUS field (only effective for experiments
+				-- that have associated sample prep requests)
+				---------------------------------------------------
+				exec @myError = LookupEUSFromExperimentSamplePrep	
+								@experimentNum,
+								@eusUsageType output,
+								@eusProposalID output,
+								@eusUsersList output,
+								@msg output
+				if @myError <> 0
+				begin
+					RAISERROR (@msg, 10, 1)
+					return @myError
+				end
+
+				---------------------------------------------------
+				-- validate EUS type, proposal, and user list
+				---------------------------------------------------
+				declare @eusUsageTypeID int
+				exec @myError = ValidateEUSUsage
+								@eusUsageType,
+								@eusProposalID output,
+								@eusUsersList output,
+								@eusUsageTypeID output,
+								@msg output
+				if @myError <> 0
+				begin
+					RAISERROR (@msg, 10, 1)
+					return @myError
+				end
+			end
+		else
+			begin
+				--**Check code taken from UpdateCartParameters stored procedure**
+				---------------------------------------------------
+				-- verify that request ID is correct
+				---------------------------------------------------
+				declare @tmp int
+				set @tmp = 0
+				--
+				SELECT @tmp = ID
+				FROM T_Requested_Run
+				WHERE (ID = @requestID)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				if @myError <> 0
+				begin
+					set @msg = 'Error trying verify request ID'
+					RAISERROR (@msg, 10, 1)
+					return @myError
+				end
+				if @tmp = 0
+				begin
+					set @msg = 'Request ID not found'
+					RAISERROR (@msg, 10, 1)
+					return 52131
+				end
+
+			end
+
+		declare @DSCreatorPRN varchar(256)
+		set @DSCreatorPRN = suser_sname()
+
+		
+
+		declare @rslt int
+		declare @Run_Start varchar(10)
+		declare @Run_Finish varchar(10)
+		set @Run_Start = ''
+		set @Run_Finish = ''
+
+		exec @rslt = CreateXmlDatasetTriggerFile
+			@datasetNum,
+			@experimentNum,
+			@instrumentName,
+			@secSep,
+			@LCCartName,
+			@LCColumnNum,
+			@wellplateNum,
+			@wellNum,
+			@msType,
+			@operPRN,
+			@DSCreatorPRN,
+			@comment,
+			@rating,
+			@requestID,
+			@eusUsageType,
+			@eusProposalID,
+			@eusUsersList,
+			@Run_Start,
+			@Run_Finish,
+			@message output
+
+		if @rslt > 0 
+		begin
+			set @msg = 'There was an error while creating the XML Trigger file: ' + @message
+			RAISERROR (@msg, 10, 1)
+			return 51055
+		end
+	end
+
+	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	
-	if @Mode = 'add'
+	if @Mode = 'add' 
 	begin	
 		-- Start transaction
 		--

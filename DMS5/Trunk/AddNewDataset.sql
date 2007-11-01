@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			05/04/2007 grk - Ticket #434
 **			10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
 **			10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
+**			10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
 **    
 *****************************************************/
 (
@@ -55,7 +56,9 @@ AS
 		@EMSL_Proposal_ID	varchar(10),  -- @eusProposalID
 		@EMSL_Users_List	varchar(1024), -- @eusUsersList
 		@Run_Start		    varchar(64),
-		@Run_Finish		    varchar(64)
+		@Run_Finish		    varchar(64),
+		@DatasetCreatorPRN	varchar(128)	-- PRN of the person that created the dataset; typically only present in 
+											-- trigger files created due to a dataset manually being created by a user
 
 	---------------------------------------------------
 	--  Create temporary table to hold list of parameters
@@ -133,7 +136,32 @@ AS
 	SELECT	@EMSL_Users_List	 = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
 	SELECT	@Run_Start		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
 	SELECT	@Run_Finish		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
+	SELECT  @DatasetCreatorPRN   = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
+	---------------------------------------------------
+	-- Assure that none of the values is Null
+	---------------------------------------------------
+	
+	Set @Dataset_Name		 = IsNull(@Dataset_Name, '')
+	Set @Experiment_Name	 = IsNull(@Experiment_Name, '')
+	Set @Instrument_Name	 = IsNull(@Instrument_Name, '')
+	Set @Separation_Type	 = IsNull(@Separation_Type, '')
+	Set @LC_Cart_Name		 = IsNull(@LC_Cart_Name, '')
+	Set @LC_Column			 = IsNull(@LC_Column, '')	
+	Set @Wellplate_Number	 = IsNull(@Wellplate_Number, '')
+	Set @Well_Number		 = IsNull(@Well_Number, '')
+	Set @Dataset_Type		 = IsNull(@Dataset_Type, '')	
+	Set @Operator_PRN		 = IsNull(@Operator_PRN, '')
+	Set @Comment			 = IsNull(@Comment, '')
+	Set @Interest_Rating	 = IsNull(@Interest_Rating, '')
+	Set @Request			 = IsNull(@Request, 0)		
+	Set @EMSL_Usage_Type	 = IsNull(@EMSL_Usage_Type, '')
+	Set @EMSL_Proposal_ID	 = IsNull(@EMSL_Proposal_ID, '')
+	Set @EMSL_Users_List	 = IsNull(@EMSL_Users_List, '')
+	Set @Run_Start		   	 = IsNull(@Run_Start, '')
+	Set @Run_Finish		   	 = IsNull(@Run_Finish, '')
+	Set @DatasetCreatorPRN   = IsNull(@DatasetCreatorPRN, '')
+	
  	---------------------------------------------------
 	-- check for QC datasets
  	---------------------------------------------------
@@ -158,6 +186,9 @@ AS
 	declare @internalStandards varchar(64)
 	set @internalStandards  = 'none'
 
+	declare @AddUpdateTimeStamp datetime
+	set @AddUpdateTimeStamp = GetDate()
+	
 	---------------------------------------------------
 	-- Create new dataset
 	---------------------------------------------------
@@ -193,15 +224,13 @@ AS
 	if @mode = 'check_add' OR @mode = 'check_update'
 		goto DONE
 
-	---------------------------------------------------
-	-- Find request associated with dataset (if not given)
-	---------------------------------------------------
-	
-	if @Request = 0
-	begin
+
+	if @Request = 0 Or Len(@DatasetCreatorPRN) > 0
+	Begin -- <a>
 		---------------------------------------------------
-		-- get dataset ID from dataset name
-		--
+		-- Use Dataset Name to lookup the Dataset ID
+		---------------------------------------------------
+		
 		declare @dsid int
 		set @dsid = 0
 		--
@@ -223,34 +252,60 @@ AS
 			RAISERROR (@message, 10, 1)
 			return 51035
 		end
-
+		
 		---------------------------------------------------
-		-- get request ID using dataset ID
-		--
-		declare @tmp int
-		set @tmp = 0
-		--
-		SELECT @tmp = ID
-		FROM T_Requested_Run_History
-		WHERE (DatasetID = @dsid)		
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to resolve request ID'
-			RAISERROR (@message, 10, 1)
-			return 51036
-		end
-		if @tmp = 0
-		begin
-			set @message = 'Could not find request'
-			RAISERROR (@message, 10, 1)
-			return 51037
-		end
-		set @Request = @tmp
-	end
+		-- Find request associated with dataset (if not given)
+		---------------------------------------------------
+		
+		if @Request = 0
+		begin -- <b1>
 
+			---------------------------------------------------
+			-- get request ID using dataset ID
+			---------------------------------------------------
+			
+			declare @tmp int
+			set @tmp = 0
+			--
+			SELECT @tmp = ID
+			FROM T_Requested_Run_History
+			WHERE (DatasetID = @dsid)		
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error trying to resolve request ID'
+				RAISERROR (@message, 10, 1)
+				return 51036
+			end
+			if @tmp = 0
+			begin
+				set @message = 'Could not find request'
+				RAISERROR (@message, 10, 1)
+				return 51037
+			end
+			set @Request = @tmp
+		end -- </b1>
+		
+		If Len(@DatasetCreatorPRN) > 0
+		Begin -- <b2>
+			---------------------------------------------------
+			-- Update T_Event_Log to reflect use @DatasetCreatorPRN for the creation of this dataset
+			---------------------------------------------------
+			
+			UPDATE T_Event_Log
+			SET Entered_By = @DatasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
+			FROM T_Event_Log
+			WHERE Target_ID = @dsid AND
+				  Target_State = 1 AND 
+				  Target_Type = 4 AND 
+				  Entered Between @AddUpdateTimeStamp AND DateAdd(minute, 1, @AddUpdateTimeStamp)
+			    
+		End -- </b2>
+		
+	End -- </a>
+	
 	---------------------------------------------------
 	-- Update the associated request with run start/finish values
 	---------------------------------------------------
@@ -269,6 +324,8 @@ AS
 		RAISERROR (@message, 10, 1)
 		return 51033
 	end
+
+
 
  	---------------------------------------------------
 	-- 
