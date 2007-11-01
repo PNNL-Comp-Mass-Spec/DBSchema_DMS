@@ -174,7 +174,7 @@ For Update
 **	Date:	01/01/2003
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
-**			10/31/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**			11/01/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **    
 *****************************************************/
 AS
@@ -188,7 +188,6 @@ AS
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
-		WHERE inserted.DS_State_ID <> deleted.DS_State_ID
 		ORDER BY inserted.Dataset_ID
 
 		UPDATE T_Dataset
@@ -201,9 +200,9 @@ AS
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+		WHERE inserted.DS_Rating <> deleted.DS_Rating
 		ORDER BY inserted.Dataset_ID
 	End
-
 GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]
 GO

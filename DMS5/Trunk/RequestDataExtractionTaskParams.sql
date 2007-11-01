@@ -19,10 +19,14 @@ CREATE PROCEDURE RequestDataExtractionTaskParams
 **	06/26/2007 -- initial release
 **	08/01/2007 dac - Added processor name parameter
 **	09/25/2007 grk - Rolled back to DMS from broker (http://prismtrac.pnl.gov/trac/ticket/537)
+**	11/01/2007 mem - No longer updating the State field in T_Analysis_Job (Ticket #569)
+**
 *****************************************************/
+(
 	@EntityId int,
   	@DemProcessorName varchar(64),
 	@message varchar(512)='' output
+)
 As
 	set nocount on
 
@@ -41,10 +45,8 @@ As
 	set @myRowCount = 0
 	
 	UPDATE T_Analysis_Job 
-	SET 
-		AJ_finish = GETDATE(),
-		AJ_extractionProcessor = @DemProcessorName, 
-		AJ_StateID = 17 -- data extraction in progress
+	SET AJ_finish = GETDATE(),
+		AJ_extractionProcessor = @DemProcessorName
 	WHERE (AJ_jobID = @EntityId)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -59,8 +61,6 @@ As
 	-- Get parameters for this extraction task
 	---------------------------------------------------
 
---	declare @JobNum varchar(32)
---	set @JobNum = cast(@EntityId as varchar(32))
 	SELECT * 
 	FROM V_RequestDataExtractionTaskParams
 	WHERE JobID = @EntityId

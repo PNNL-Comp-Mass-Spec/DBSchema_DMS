@@ -162,7 +162,7 @@ For Update
 **	Date:	01/01/2003
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			10/31/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**			11/01/2007 mem - Added Set NoCount statement (Ticket #569)
 **    
 *****************************************************/
 AS
@@ -176,14 +176,12 @@ AS
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 		SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
-		WHERE inserted.AJ_StateID <> deleted.AJ_StateID
 		ORDER BY inserted.AJ_jobID
 
 		UPDATE T_Analysis_Job
 		Set AJ_Last_Affected = GetDate()
 		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
 	End
-
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
 GO
