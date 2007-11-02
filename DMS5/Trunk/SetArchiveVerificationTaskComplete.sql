@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure SetArchiveVerificationTaskComplete
+CREATE Procedure SetArchiveVerificationTaskComplete
 
 /****************************************************
 **
@@ -20,9 +20,10 @@ create Procedure SetArchiveVerificationTaskComplete
 **	Auth: jds
 **	Date: 6/27/2005   
 **    
+**    Modified: DAC, 10/26/2007. Removed @processorName parameter, which is no longer used
 *****************************************************/
 	@datasetNum varchar(128),
-	@processorName varchar(64),
+--	@processorName varchar(64),
 	@completionCode int = 0,
 	@message varchar(512) output
 As

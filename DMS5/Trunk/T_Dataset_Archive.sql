@@ -14,6 +14,9 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_update_state_ID] [int] NULL,
 	[AS_update_state_Last_Affected] [datetime] NULL,
 	[AS_purge_holdoff_date] [datetime] NULL,
+	[AS_archive_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AS_update_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AS_verification_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
@@ -29,7 +32,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archi
 ) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
+/****** Object:  Trigger [trig_d_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -71,7 +74,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_i_Dataset_Archive] ******/
+/****** Object:  Trigger [trig_i_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -109,7 +112,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_Dataset_Archive] ******/
+/****** Object:  Trigger [trig_u_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
 
