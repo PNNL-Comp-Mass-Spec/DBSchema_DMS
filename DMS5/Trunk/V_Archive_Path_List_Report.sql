@@ -14,15 +14,3 @@ FROM   T_Instrument_Name TIN INNER JOIN
 GO
 GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] TO [DMS_SP_User]
 GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Path ID]) TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Instrument Name]) TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Archive Path]) TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Archive Server]) TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Archive Path Status]) TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] ([Description]) TO [DMS_SP_User]
-GO

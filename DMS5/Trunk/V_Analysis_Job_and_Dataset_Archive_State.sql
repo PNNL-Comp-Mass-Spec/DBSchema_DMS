@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Analysis_Job_and_Dataset_Archive_State
+CREATE VIEW V_Analysis_Job_and_Dataset_Archive_State
 AS
 SELECT AJ.AJ_jobID AS Job, 
 	CASE WHEN AJ.AJ_StateID = 1 AND DA.AS_update_state_ID = 3 THEN ASN.AJS_name + ' (Archive Update in Progress)'
@@ -22,5 +22,6 @@ FROM dbo.T_Analysis_Job AJ INNER JOIN
     D.Dataset_ID = DA.AS_Dataset_ID INNER JOIN
     dbo.T_DatasetArchiveStateName DASN ON 
     DA.AS_state_ID = DASN.DASN_StateID
+
 
 GO

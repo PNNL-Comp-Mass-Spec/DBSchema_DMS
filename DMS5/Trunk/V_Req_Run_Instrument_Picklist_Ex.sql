@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Req_Run_Instrument_Picklist_Ex
+
+create VIEW dbo.V_Req_Run_Instrument_Picklist_Ex
 AS
 SELECT IN_name AS val, '' AS ex
 FROM T_Instrument_Name

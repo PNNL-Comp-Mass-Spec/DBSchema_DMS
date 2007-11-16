@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW dbo.V_Experiment_List_Report
 AS
 SELECT dbo.T_Experiments.Experiment_Num AS Experiment, 

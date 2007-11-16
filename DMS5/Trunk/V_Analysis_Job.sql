@@ -36,93 +36,9 @@ T_Analysis_Job INNER JOIN
                       T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
 
 GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write]
-GO
 GRANT DELETE ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([JobNum]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([JobNum]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([ToolName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([ToolName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([DatasetNum]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([DatasetNum]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([DatasetFolderName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([DatasetFolderName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([DatasetStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([DatasetStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([ParmFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([ParmFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([SettingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([SettingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([ParmFileStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([ParmFileStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([OrganismDBName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([OrganismDBName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([ProteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([ProteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([ProteinOptions]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([ProteinOptions]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([OrganismDBStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([OrganismDBStoragePath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([StateID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([StateID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([jobID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([jobID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([CompState]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([CompState]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([InstClass]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([InstClass]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([StorageServerPath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([StorageServerPath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([DatasetID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([DatasetID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job] ([AssignedProcessor]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job] ([AssignedProcessor]) TO [Limited_Table_Write]
 GO

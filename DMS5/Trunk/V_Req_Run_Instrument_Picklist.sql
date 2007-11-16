@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Req_Run_Instrument_Picklist
+
+create VIEW dbo.V_Req_Run_Instrument_Picklist
 AS
 SELECT DISTINCT 
     CASE WHEN (IN_name LIKE 'LCQ%') THEN 'LCQ' ELSE IN_name + ' ' + IN_usage END AS val, 
