@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.FindAnalysisJob
+CREATE PROCEDURE [dbo].[FindAnalysisJob]
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 **			03/28/2006 grk - added protein collection fields
 **			12/20/2006 mem - Now querying V_Find_Analysis_Job using dynamic SQL (Ticket #349)
 **			12/21/2006 mem - Now joining in table T_Analysis_State_Name when querying on State (Ticket #349)
+**			10/30/2007 jds - Added support for list of RunRequest IDs (Ticket #560)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -46,7 +47,7 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 	@Finished_After varchar(20) = '',
 	@Finished_Before varchar(20) = '',
 	@Processor varchar(64) = '',
-	@RunRequest varchar(20) = '',
+	@RunRequest varchar(255) = '',
 	@message varchar(512) output
 )
 As
@@ -130,8 +131,8 @@ As
 	DECLARE @i_Processor varchar(64)
 	SET @i_Processor = '%' + @Processor + '%'
 	--
-	DECLARE @i_Run_Request int
-	SET @i_Run_Request = CONVERT(int, @RunRequest)
+	--DECLARE @i_Run_Request int
+	--SET @i_Run_Request = CONVERT(int, @RunRequest)
 	--
 	DECLARE @iAJ_proteinCollectionList varchar(512)
 	SET @iAJ_proteinCollectionList = '%' + @proteinCollectionList + '%'
@@ -201,7 +202,7 @@ As
 	If Len(@Processor) > 0
 		Set @W = @W + ' AND ([Processor] LIKE ''' + @i_Processor + ''' )'
 	If Len(@RunRequest) > 0
-		Set @W = @W + ' AND ([Run_Request] = ' + Convert(varchar(19), @i_Run_Request) + ' )'
+		Set @W = @W + ' AND ([Run_Request] IN (' + @RunRequest + ') )'
 	If Len(@proteinCollectionList) > 0
 		Set @W = @W + ' AND ([ProteinCollection_List] LIKE ''' + @iAJ_proteinCollectionList + ''' )'
 	If Len(@proteinOptionsList) > 0
