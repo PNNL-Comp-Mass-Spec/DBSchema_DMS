@@ -1,4 +1,6 @@
 /****** Object:  UserDefinedFunction [dbo].[DaysInDateRange] ******/
+SET ANSI_NULLS ON
+GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE FUNCTION dbo.DaysInDateRange 
@@ -39,6 +41,4 @@ END
 
 GO
 GRANT SELECT ON [dbo].[DaysInDateRange] TO [public]
-GO
-GRANT SELECT ON [dbo].[DaysInDateRange] ([dy]) TO [public]
 GO

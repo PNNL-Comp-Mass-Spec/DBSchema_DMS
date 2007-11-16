@@ -40,5 +40,5 @@ AS
 		RETURN @list
 	END
 
-GO
 
+GO
