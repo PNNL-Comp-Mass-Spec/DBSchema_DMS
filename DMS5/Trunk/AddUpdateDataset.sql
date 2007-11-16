@@ -383,7 +383,7 @@ set nocount on
 	-- Verify acceptable combination of EUS fields
 	---------------------------------------------------
 	
-	if (@mode = 'add' or @mode = 'check_add') AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
+	if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger') AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
 	begin
 		set @msg = 'Either a Request must be specified, or EMSL user parameters must be specified, but not both'
 		RAISERROR (@msg, 10, 1)
