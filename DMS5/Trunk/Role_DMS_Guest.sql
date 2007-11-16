@@ -1,3 +1,3 @@
 /****** Object:  DatabaseRole [DMS_Guest] ******/
-EXEC dbo.sp_addrole @rolename = N'DMS_Guest', @ownername = N'dbo'
+CREATE ROLE [DMS_Guest] AUTHORIZATION [dbo]
 GO

@@ -1,3 +1,3 @@
 /****** Object:  DatabaseRole [DMS_DS_Entry] ******/
-EXEC dbo.sp_addrole @rolename = N'DMS_DS_Entry', @ownername = N'dbo'
+CREATE ROLE [DMS_DS_Entry] AUTHORIZATION [dbo]
 GO
