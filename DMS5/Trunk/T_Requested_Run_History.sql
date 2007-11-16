@@ -30,7 +30,7 @@ CREATE TABLE [dbo].[T_Requested_Run_History](
  CONSTRAINT [PK_T_Requested_Run_History] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -39,107 +39,15 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_History] ON [dbo].[T_Requested_Run_History] 
 (
 	[DatasetID] ASC
-) ON [PRIMARY]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
-GO
-GRANT INSERT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
 GO
+GRANT INSERT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
+GO
+GRANT SELECT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
+GO
 GRANT UPDATE ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Name]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Name]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Oper_PRN]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Oper_PRN]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_comment]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_comment]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_created]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_created]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_instrument_name]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_instrument_name]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_type_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_type_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_instrument_setting]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_instrument_setting]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_special_instructions]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_special_instructions]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_note]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_note]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([Exp_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([Exp_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Run_Start]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Run_Start]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Run_Finish]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Run_Finish]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_internal_standard]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_internal_standard]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([DatasetID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([DatasetID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_WorkPackage]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_WorkPackage]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_BatchID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_BatchID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Blocking_Factor]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Blocking_Factor]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Block]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Block]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Run_Order]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Run_Order]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_EUS_Proposal_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_EUS_Proposal_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_EUS_UsageType]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_EUS_UsageType]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_History] ([RDS_Cart_ID]) TO [LOC-DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_History] ([RDS_Cart_ID]) TO [LOC-DMS_EUS_Admin]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Dataset] FOREIGN KEY([DatasetID])
 REFERENCES [T_Dataset] ([Dataset_ID])

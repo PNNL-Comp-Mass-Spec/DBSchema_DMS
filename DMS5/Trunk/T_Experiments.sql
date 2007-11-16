@@ -23,16 +23,38 @@ CREATE TABLE [dbo].[T_Experiments](
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY NONCLUSTERED 
 (
 	[Exp_ID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Experiments_EX_campaign_ID] ******/
+CREATE CLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments] 
+(
+	[EX_campaign_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Experiments_EX_created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_created] ON [dbo].[T_Experiments] 
+(
+	[EX_created] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Experiments_Exp_ID_EX_campaign_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Exp_ID_EX_campaign_ID] ON [dbo].[T_Experiments] 
+(
+	[Exp_ID] ASC,
+	[EX_campaign_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Experiments_Experiment_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments] 
 (
 	[Experiment_Num] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_d_Experiments] ******/
@@ -109,75 +131,11 @@ AS
 	ORDER BY inserted.Exp_ID
 
 GO
-GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write]
-GO
 GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Experiments] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([Experiment_Num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([Experiment_Num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_researcher_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_researcher_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_reason]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_reason]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_sample_concentration]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_sample_concentration]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_lab_notebook_ref]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_lab_notebook_ref]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_campaign_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_campaign_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_cell_culture_list]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_cell_culture_list]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_Labelling]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_Labelling]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([Exp_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([Exp_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_enzyme_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_enzyme_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_sample_prep_request_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_sample_prep_request_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] ([EX_postdigest_internal_std_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] ([EX_postdigest_internal_std_ID]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
 REFERENCES [T_Campaign] ([Campaign_ID])

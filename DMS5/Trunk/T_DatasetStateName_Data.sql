@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetStateName] ******/
-/****** RowCount: 12 ******/
+/****** RowCount: 13 ******/
 /****** Columns: DSS_name, Dataset_state_ID ******/
 INSERT INTO [T_DatasetStateName] VALUES ('New',1)
 INSERT INTO [T_DatasetStateName] VALUES ('Capture In Progress',2)

@@ -8,11 +8,9 @@ CREATE TABLE [dbo].[T_Archive_Path_Function](
  CONSTRAINT [PK_T_Archive_Path_Function] PRIMARY KEY CLUSTERED 
 (
 	[APF_Function] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 GRANT SELECT ON [dbo].[T_Archive_Path_Function] TO [DMS_SP_User]
-GO
-GRANT SELECT ON [dbo].[T_Archive_Path_Function] ([APF_Function]) TO [DMS_SP_User]
 GO

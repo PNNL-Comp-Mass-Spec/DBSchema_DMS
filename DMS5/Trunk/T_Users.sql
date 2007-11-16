@@ -17,85 +17,25 @@ CREATE TABLE [dbo].[T_Users](
  CONSTRAINT [PK_T_Users] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Users] UNIQUE NONCLUSTERED 
 (
 	[U_PRN] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Users_1] UNIQUE NONCLUSTERED 
 (
 	[U_PRN] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Users] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Users] TO [Limited_Table_Write]
 GO
 GRANT INSERT ON [dbo].[T_Users] TO [Limited_Table_Write]
 GO
-GRANT DELETE ON [dbo].[T_Users] TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] TO [Limited_Table_Write]
-GO
 GRANT REFERENCES ON [dbo].[T_Users] TO [Limited_Table_Write]
 GO
-GRANT SELECT ON [dbo].[T_Users] ([U_PRN]) TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Users] TO [Limited_Table_Write]
 GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_PRN]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_Name]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_HID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_HID]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_HID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_Access_Lists]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_Access_Lists]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_Access_Lists]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_email]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_email]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_email]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_domain]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_domain]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_domain]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_netid]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_netid]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_netid]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_active]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_active]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_active]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Users] ([U_update]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Users] ([U_update]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Users] ([U_update]) TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Users] TO [Limited_Table_Write]
 GO

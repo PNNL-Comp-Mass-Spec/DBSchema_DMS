@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Experiment_Annotations](
 (
 	[Experiment_ID] ASC,
 	[Key_Name] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -57,21 +57,11 @@ AS
 
 
 GO
-GRANT INSERT ON [dbo].[T_Experiment_Annotations] TO [DMS_Annotation_User]
-GO
 GRANT DELETE ON [dbo].[T_Experiment_Annotations] TO [DMS_Annotation_User]
 GO
+GRANT INSERT ON [dbo].[T_Experiment_Annotations] TO [DMS_Annotation_User]
+GO
 GRANT UPDATE ON [dbo].[T_Experiment_Annotations] TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Annotations] ([Experiment_ID]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Annotations] ([Value]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Annotations] ([Entered]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Annotations] ([Entered_By]) TO [DMS_Annotation_User]
 GO
 ALTER TABLE [dbo].[T_Experiment_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Annotations_T_Annotation_Keys] FOREIGN KEY([Key_Name])
 REFERENCES [T_Annotation_Keys] ([Key_Name])

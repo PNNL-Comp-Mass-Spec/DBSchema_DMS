@@ -33,7 +33,7 @@ CREATE TABLE [dbo].[T_Dataset](
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY NONCLUSTERED 
 (
 	[Dataset_ID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -42,35 +42,43 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
 (
 	[DS_created] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Acq_Time_Start] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset] 
 (
 	[Acq_Time_Start] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Dataset_ID_Exp_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_ID_Exp_ID] ON [dbo].[T_Dataset] 
+(
+	[Dataset_ID] ASC,
+	[Exp_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Dataset_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset] 
 (
 	[Dataset_Num] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Exp_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Exp_ID] ON [dbo].[T_Dataset] 
 (
 	[Exp_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_State_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset] 
 (
 	[DS_state_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
@@ -203,114 +211,11 @@ AS
 		WHERE inserted.DS_Rating <> deleted.DS_Rating
 		ORDER BY inserted.Dataset_ID
 	End
+
 GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Dataset] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Dataset_Num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Dataset_Num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_Oper_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_Oper_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_instrument_name_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_instrument_name_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_LC_column_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_LC_column_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_type_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_type_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_wellplate_num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_wellplate_num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_well_num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_well_num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_sec_sep]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_sec_sep]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_state_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_state_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_Last_Affected]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_Last_Affected]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_folder_name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_folder_name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_storage_path_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_storage_path_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Exp_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Exp_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Dataset_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Dataset_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_rating]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_rating]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_Comp_State]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_Comp_State]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_Compress_Date]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_Compress_Date]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([DS_PrepServerName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([DS_PrepServerName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Acq_Time_Start]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Acq_Time_Start]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Acq_Time_End]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Acq_Time_End]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([Scan_Count]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([Scan_Count]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([File_Size_Bytes]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([File_Size_Bytes]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Dataset] ([File_Info_Last_Modified]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Dataset] ([File_Info_Last_Modified]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetRatingName] FOREIGN KEY([DS_rating])
 REFERENCES [T_DatasetRatingName] ([DRN_state_ID])

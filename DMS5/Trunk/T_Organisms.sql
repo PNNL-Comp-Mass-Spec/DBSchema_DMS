@@ -28,13 +28,20 @@ CREATE TABLE [dbo].[T_Organisms](
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY NONCLUSTERED 
 (
 	[Organism_ID] ASC
-) ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY],
  CONSTRAINT [IX_T_Organisms] UNIQUE NONCLUSTERED 
 (
 	[OG_name] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Organisms_OG_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms] 
+(
+	[OG_created] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_i_T_Organisms] ******/
@@ -102,93 +109,9 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
 
 GO
-GRANT SELECT ON [dbo].[T_Organisms] TO [Limited_Table_Write]
-GO
 GRANT INSERT ON [dbo].[T_Organisms] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Organisms] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Organisms] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([Organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([Organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_organismDBPath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_organismDBPath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_organismDBLocalPath]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_organismDBLocalPath]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_description]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_description]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Short_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Short_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Storage_Location]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Storage_Location]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Domain]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Domain]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Kingdom]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Kingdom]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Phylum]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Phylum]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Class]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Class]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Order]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Order]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Family]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Family]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Genus]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Genus]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Species]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Species]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Strain]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Strain]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Mito_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Mito_DNA_Translation_Table_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organisms] ([OG_Active]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organisms] ([OG_Active]) TO [Limited_Table_Write]
 GO

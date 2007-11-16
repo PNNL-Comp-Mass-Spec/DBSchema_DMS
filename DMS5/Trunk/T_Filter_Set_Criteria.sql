@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Filter_Set_Criteria](
  CONSTRAINT [PK_T_Filter_Set_Criteria] PRIMARY KEY NONCLUSTERED 
 (
 	[Filter_Set_Criteria_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -21,42 +21,22 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Filter_Set_Criteria_Criterion_ID] ON [dbo].[T_Filter_Set_Criteria] 
 (
 	[Criterion_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Filter_Set_Criteria_Group_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Filter_Set_Criteria_Group_ID] ON [dbo].[T_Filter_Set_Criteria] 
 (
 	[Filter_Criteria_Group_ID] ASC
-) ON [PRIMARY]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
-GO
-GRANT INSERT ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
 GO
+GRANT INSERT ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] ([Filter_Set_Criteria_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] ([Filter_Set_Criteria_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] ([Filter_Criteria_Group_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] ([Filter_Criteria_Group_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] ([Criterion_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] ([Criterion_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] ([Criterion_Comparison]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] ([Criterion_Comparison]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria] ([Criterion_Value]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria] ([Criterion_Value]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Filter_Set_Criteria]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Filter_Set_Criteria_T_Filter_Set_Criteria_Groups] FOREIGN KEY([Filter_Criteria_Group_ID])
 REFERENCES [T_Filter_Set_Criteria_Groups] ([Filter_Criteria_Group_ID])

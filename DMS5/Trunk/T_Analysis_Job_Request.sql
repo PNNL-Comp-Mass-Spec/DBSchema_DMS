@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJR_requestID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -32,71 +32,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Request_State_Created] ON [dbo].[T_
 (
 	[AJR_state] ASC,
 	[AJR_created] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_requestID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_requestID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_requestName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_requestName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_analysisToolName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_analysisToolName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_parmFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_parmFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_settingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_settingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_datasets]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_datasets]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_requestor]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_requestor]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_state]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_state]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_proteinOptionsList]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] ([AJR_workPackage]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Request_T_Analysis_Job_Request_State] FOREIGN KEY([AJR_state])
 REFERENCES [T_Analysis_Job_Request_State] ([ID])

@@ -9,23 +9,15 @@ CREATE TABLE [dbo].[T_Param_File_Types](
  CONSTRAINT [PK_T_Param_File_Types] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_Type_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
+GRANT DELETE ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
 GO
 GRANT INSERT ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
 GO
-GRANT DELETE ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
+GRANT SELECT ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Param_File_Types] TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Types] ([Param_File_Type_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Types] ([Param_File_Type_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Types] ([Param_File_Type]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Types] ([Param_File_Type]) TO [DMS_ParamFile_Admin]
 GO

@@ -14,45 +14,17 @@ CREATE TABLE [dbo].[T_Param_Files](
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
+GRANT DELETE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
 GRANT INSERT ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
-GRANT DELETE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
+GRANT SELECT ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Param_File_Name]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Param_File_Name]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Param_File_Description]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Param_File_Description]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Param_File_Type_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Param_File_Type_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Date_Created]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Date_Created]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Date_Modified]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Date_Modified]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Files] ([Valid]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Files] ([Valid]) TO [DMS_ParamFile_Admin]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Files_T_Param_File_Types] FOREIGN KEY([Param_File_Type_ID])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])

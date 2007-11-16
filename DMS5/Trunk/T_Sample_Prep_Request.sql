@@ -45,7 +45,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -54,7 +54,7 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
 (
 	[Request_Name] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
@@ -93,165 +93,13 @@ AS
 	ORDER BY inserted.ID
 
 GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
 GO
 GRANT INSERT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
 GO
-GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Request_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Request_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Requester_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Requester_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Reason]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Reason]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Cell_Culture_List]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Cell_Culture_List]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Organism]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Organism]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Biohazard_Level]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Biohazard_Level]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Campaign]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Campaign]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Number_of_Samples]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Number_of_Samples]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Sample_Name_List]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Sample_Name_List]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Sample_Type]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Sample_Type]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Prep_Method]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Prep_Method]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Prep_By_Robot]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Prep_By_Robot]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Special_Instructions]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Special_Instructions]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Sample_Naming_Convention]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Sample_Naming_Convention]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Assigned_Personnel]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Assigned_Personnel]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Work_Package_Number]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Work_Package_Number]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([User_Proposal_Number]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([User_Proposal_Number]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Replicates_of_Samples]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Replicates_of_Samples]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Technical_Replicates]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Dataset_Type]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Instrument_Analysis_Specifications]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Instrument_Analysis_Specifications]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([State]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([State]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Requested_Personnel]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Requested_Personnel]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([StateChanged]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([StateChanged]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([UseSingleLCColumn]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([UseSingleLCColumn]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Internal_standard_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Postdigest_internal_std_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Postdigest_internal_std_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Estimated_Completion]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Estimated_Completion]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Estimated_MS_runs]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Estimated_MS_runs]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([EUS_UsageType]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([EUS_UsageType]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([EUS_Proposal_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([EUS_Proposal_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([EUS_User_List]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] ([Project_Number]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] ([Project_Number]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])

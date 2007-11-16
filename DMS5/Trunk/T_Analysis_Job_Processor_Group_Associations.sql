@@ -12,31 +12,15 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations](
 (
 	[Job_ID] ASC,
 	[Group_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
-GO
 GRANT INSERT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
 GO
+GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
+GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Job_ID]) TO [RBAC-Web_Analysis]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Job_ID]) TO [RBAC-Web_Analysis]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Group_ID]) TO [RBAC-Web_Analysis]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Group_ID]) TO [RBAC-Web_Analysis]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered]) TO [RBAC-Web_Analysis]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered]) TO [RBAC-Web_Analysis]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered_By]) TO [RBAC-Web_Analysis]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered_By]) TO [RBAC-Web_Analysis]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])

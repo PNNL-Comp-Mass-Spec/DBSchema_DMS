@@ -15,52 +15,20 @@ CREATE TABLE [dbo].[T_Organism_DB_File](
  CONSTRAINT [PK_T_Organism_DB_File] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY],
  CONSTRAINT [IX_T_Organism_DB_File] UNIQUE NONCLUSTERED 
 (
 	[FileName] ASC,
 	[Organism_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] TO [Limited_Table_Write]
-GO
 GRANT INSERT ON [dbo].[T_Organism_DB_File] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Organism_DB_File] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Organism_DB_File] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([FileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([FileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([Organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([Organism_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([Description]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([Description]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([Active]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([Active]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([NumProteins]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([NumProteins]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([NumResidues]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([NumResidues]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Organism_DB_File] ([Valid]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Organism_DB_File] ([Valid]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Organism_DB_File]  WITH CHECK ADD  CONSTRAINT [FK_T_Organism_DB_File_T_Organisms] FOREIGN KEY([Organism_ID])
 REFERENCES [T_Organisms] ([Organism_ID])

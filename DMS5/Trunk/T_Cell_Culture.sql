@@ -17,16 +17,30 @@ CREATE TABLE [dbo].[T_Cell_Culture](
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Cell_Culture_CC_Campaign_ID] ******/
+CREATE CLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture] 
+(
+	[CC_Campaign_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Cell_Culture_CC_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Created] ON [dbo].[T_Cell_Culture] 
+(
+	[CC_Created] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_CC_Name] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Name] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
@@ -103,51 +117,11 @@ AS
 	ORDER BY inserted.CC_ID
 
 GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]
-GO
 GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Source_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Source_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Owner_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Owner_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_PI_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_PI_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Type]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Type]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Reason]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Reason]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Campaign_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Campaign_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] ([CC_Created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] ([CC_Created]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Cell_Culture]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
 REFERENCES [T_Campaign] ([Campaign_ID])

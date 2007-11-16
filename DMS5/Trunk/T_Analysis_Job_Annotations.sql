@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Annotations](
 (
 	[Job_ID] ASC,
 	[Key_Name] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -56,45 +56,15 @@ AS
 
 
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
+GRANT DELETE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
 GO
 GRANT INSERT ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
 GO
-GRANT DELETE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
-GO
 GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
+GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
-GO
-GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Job_ID]) TO [DMS_Annotation_User]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
-GO
-GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Key_Name]) TO [DMS_Annotation_User]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
-GO
-GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Value]) TO [DMS_Annotation_User]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Entered]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Entered]) TO [DMS_Annotation_User]
-GO
-GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Entered]) TO [DMS_Annotation_User]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Annotations] ([Entered_By]) TO [DMS_Annotation_User]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] ([Entered_By]) TO [DMS_Annotation_User]
-GO
-GRANT REFERENCES ON [dbo].[T_Analysis_Job_Annotations] ([Entered_By]) TO [DMS_Annotation_User]
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Annotations] TO [DMS_Annotation_User]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])

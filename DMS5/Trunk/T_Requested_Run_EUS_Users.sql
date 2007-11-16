@@ -9,21 +9,13 @@ CREATE TABLE [dbo].[T_Requested_Run_EUS_Users](
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
 GO
-GRANT DELETE ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_EUS_Users] ([EUS_Person_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_EUS_Users] ([EUS_Person_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_EUS_Users] ([Request_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_EUS_Users] ([Request_ID]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_EUS_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_EUS_Users_T_EUS_Users] FOREIGN KEY([EUS_Person_ID])
 REFERENCES [T_EUS_Users] ([PERSON_ID])

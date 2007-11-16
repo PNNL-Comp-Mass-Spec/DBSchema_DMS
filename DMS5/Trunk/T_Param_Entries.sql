@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[T_Param_Entries](
  CONSTRAINT [PK_T_Param_Entries] PRIMARY KEY CLUSTERED 
 (
 	[Param_Entry_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -164,45 +164,13 @@ AS
 
 
 GO
-GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
 GO
 GRANT INSERT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
 GO
-GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Param_Entry_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Param_Entry_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entry_Sequence_Order]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entry_Sequence_Order]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entry_Type]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entry_Type]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entry_Specifier]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entry_Specifier]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entry_Value]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entry_Value]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entered]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS_ParamFile_Admin]
 GO
 ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
 REFERENCES [T_Param_Files] ([Param_File_ID])

@@ -9,23 +9,15 @@ CREATE TABLE [dbo].[T_EUS_Proposal_State_Name](
  CONSTRAINT [PK_T_EUS_Proposal_State_Name] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
+GRANT DELETE ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
 GO
 GRANT INSERT ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
 GO
-GRANT DELETE ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
+GRANT SELECT ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_State_Name] ([ID]) TO [DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_EUS_Proposal_State_Name] ([ID]) TO [DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_State_Name] ([Name]) TO [DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_EUS_Proposal_State_Name] ([Name]) TO [DMS_EUS_Admin]
 GO

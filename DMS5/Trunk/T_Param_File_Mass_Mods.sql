@@ -13,41 +13,17 @@ CREATE TABLE [dbo].[T_Param_File_Mass_Mods](
  CONSTRAINT [PK_T_Peptide_Mod_Param_File_List_Ex] PRIMARY KEY CLUSTERED 
 (
 	[Mod_Entry_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
+GRANT DELETE ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
 GO
 GRANT INSERT ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
 GO
-GRANT DELETE ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
+GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Mod_Entry_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Mod_Entry_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Residue_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Residue_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Local_Symbol_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Local_Symbol_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Mass_Correction_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Mass_Correction_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Param_File_ID]) TO [DMS_ParamFile_Admin]
-GO
-GRANT SELECT ON [dbo].[T_Param_File_Mass_Mods] ([Mod_Type_Symbol]) TO [DMS_ParamFile_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] ([Mod_Type_Symbol]) TO [DMS_ParamFile_Admin]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Mass_Correction_Factors] FOREIGN KEY([Mass_Correction_ID])
 REFERENCES [T_Mass_Correction_Factors] ([Mass_Correction_ID])

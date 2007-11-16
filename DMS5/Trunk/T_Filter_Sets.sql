@@ -13,39 +13,15 @@ CREATE TABLE [dbo].[T_Filter_Sets](
  CONSTRAINT [PK_T_Filter_Sets] PRIMARY KEY CLUSTERED 
 (
 	[Filter_Set_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] TO [Limited_Table_Write]
-GO
 GRANT INSERT ON [dbo].[T_Filter_Sets] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Filter_Sets] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Filter_Sets] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Filter_Set_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Filter_Set_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Filter_Type_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Filter_Type_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Filter_Set_Name]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Filter_Set_Name]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Filter_Set_Description]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Filter_Set_Description]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Date_Created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Date_Created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Sets] ([Date_Modified]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Sets] ([Date_Modified]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Filter_Sets]  WITH CHECK ADD  CONSTRAINT [FK_T_Filter_Sets_T_Filter_Set_Types] FOREIGN KEY([Filter_Type_ID])
 REFERENCES [T_Filter_Set_Types] ([Filter_Type_ID])

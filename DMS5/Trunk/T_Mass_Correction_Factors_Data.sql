@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mass_Correction_Factors] ******/
-/****** RowCount: 115 ******/
+/****** RowCount: 117 ******/
 SET IDENTITY_INSERT [T_Mass_Correction_Factors] ON
 INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1,'None    ','no modification',0,0,'-','PNNL','','None')
 INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1000,'ICAT_D0 ','ICAT d0',442.225,442.5728,'-','UniMod','AB_old_ICATd0','ICAT_D0')
@@ -116,4 +116,6 @@ INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag
 INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1191,'Lipid2  ','S-diaglycerol-L-cysteine lipid modification alternative',576.51,576.94,'-','PNNL','N-acyl-S-diaglyceryl-Cys alternative','S-diacylglycerol-L-cysteine')
 INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1192,'NO2+10Da','NO2 Addition (Nitration), plus 10 Da shift',54.9851,54.9976,'-','PNNL','','Nitration with 10 Da shift')
 INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1193,'Unknown1','Unknown modification 1 from Sisi',49,,'-','PNNL','','')
+INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1194,'NH2     ','NH2 addition',16.01872,16.0226,'-','PNNL','','NH2')
+INSERT INTO [T_Mass_Correction_Factors] (Mass_Correction_ID, Mass_Correction_Tag, Description, Monoisotopic_Mass_Correction, Average_Mass_Correction, Affected_Atom, Original_Source, Original_Source_Name, Alternative_Name) VALUES (1195,'NH2+10Da','NH2 addition, plus 10 Da shift',26.01872,26.0226,'-','PNNL','','NH2 with 10 Da shift')
 SET IDENTITY_INSERT [T_Mass_Correction_Factors] OFF

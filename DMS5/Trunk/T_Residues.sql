@@ -17,12 +17,12 @@ CREATE TABLE [dbo].[T_Residues](
  CONSTRAINT [PK_T_Residues] PRIMARY KEY CLUSTERED 
 (
 	[Residue_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_i_Residues] ******/
+/****** Object:  Trigger [dbo].[trig_i_Residues] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -50,7 +50,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_u_Residues] ******/
+/****** Object:  Trigger [dbo].[trig_u_Residues] ******/
 SET ANSI_NULLS ON
 GO
 

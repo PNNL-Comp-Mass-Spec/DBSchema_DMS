@@ -11,29 +11,17 @@ CREATE TABLE [dbo].[T_EUS_Proposal_Users](
 (
 	[Proposal_ID] ASC,
 	[Person_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
+GRANT DELETE ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
 GO
 GRANT INSERT ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
 GO
-GRANT DELETE ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
+GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] ([Proposal_ID]) TO [DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_EUS_Proposal_Users] ([Proposal_ID]) TO [DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] ([Person_ID]) TO [DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_EUS_Proposal_Users] ([Person_ID]) TO [DMS_EUS_Admin]
-GO
-GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] ([Of_DMS_Interest]) TO [DMS_EUS_Admin]
-GO
-GRANT UPDATE ON [dbo].[T_EUS_Proposal_Users] ([Of_DMS_Interest]) TO [DMS_EUS_Admin]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users]  WITH NOCHECK ADD  CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Proposals] FOREIGN KEY([Proposal_ID])
 REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])

@@ -9,23 +9,15 @@ CREATE TABLE [dbo].[T_Filter_Set_Criteria_Groups](
  CONSTRAINT [PK_T_Filter_Set_Criteria_Groups] PRIMARY KEY CLUSTERED 
 (
 	[Filter_Criteria_Group_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write]
-GO
 GRANT INSERT ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write]
 GO
+GRANT SELECT ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write]
+GO
 GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria_Groups] ([Filter_Criteria_Group_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria_Groups] ([Filter_Criteria_Group_ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Filter_Set_Criteria_Groups] ([Filter_Set_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria_Groups] ([Filter_Set_ID]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Filter_Set_Criteria_Groups]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Filter_Set_Criteria_Groups_T_Filter_Sets] FOREIGN KEY([Filter_Set_ID])
 REFERENCES [T_Filter_Sets] ([Filter_Set_ID])

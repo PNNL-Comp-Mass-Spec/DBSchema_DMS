@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Residues_Change_History] ******/
-/****** RowCount: 30 ******/
+/****** RowCount: 33 ******/
 SET IDENTITY_INSERT [T_Residues_Change_History] ON
 INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (1,1,'-','No Symbol',0,0,0,0,0,0,0,0,0,'1/1/2000 12:00:00 AM','Unknown')
 INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (2,1000,'A','Ala',71.0792940261929,71.0371100902557,3,5,1,1,0,0,0,'1/1/2000 12:00:00 AM','Unknown')
@@ -31,4 +31,7 @@ INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, D
 INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (28,1026,'[','N-Terminal Protein',0,0,0,0,0,0,0,0,0,'1/1/2000 12:00:00 AM','Unknown')
 INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (29,1027,']','C-Terminal Protein',0,0,0,0,0,0,0,0,0,'1/1/2000 12:00:00 AM','Unknown')
 INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (30,1028,'U','Sec (C3H5NOSe)',150.03794,150.95363,3,5,1,1,0,0,0,'1/1/2000 12:00:00 AM','Unknown')
+INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (31,1020,'S','Tyr',163.177208595079,163.063322782516,9,9,1,2,0,0,0,'7/2/2007 4:24:25 PM','PNL\D3L243')
+INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (32,1020,'T','Tyr',163.177208595079,163.063322782516,9,9,1,2,0,0,0,'7/2/2007 4:24:34 PM','PNL\D3L243')
+INSERT INTO [T_Residues_Change_History] (Event_ID, Residue_ID, Residue_Symbol, Description, Average_Mass, Monoisotopic_Mass, Num_C, Num_H, Num_N, Num_O, Num_S, Monoisotopic_Mass_Change, Average_Mass_Change, Entered, Entered_By) VALUES (33,1020,'Y','Tyr',163.177208595079,163.063322782516,9,9,1,2,0,0,0,'7/2/2007 4:24:46 PM','PNL\D3L243')
 SET IDENTITY_INSERT [T_Residues_Change_History] OFF

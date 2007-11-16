@@ -14,16 +14,30 @@ CREATE TABLE [dbo].[T_Campaign](
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY NONCLUSTERED 
 (
 	[Campaign_ID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Campaign_Campaign_ID] ******/
+CREATE CLUSTERED INDEX [IX_T_Campaign_Campaign_ID] ON [dbo].[T_Campaign] 
+(
+	[Campaign_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Campaign_Campaign_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
 (
 	[Campaign_Num] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Campaign_CM_created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign] 
+(
+	[CM_created] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_d_Campaign] ******/
@@ -103,34 +117,6 @@ GO
 GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([Campaign_Num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([Campaign_Num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([CM_Project_Num]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([CM_Project_Num]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([CM_Proj_Mgr_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([CM_Proj_Mgr_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([CM_PI_PRN]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([CM_PI_PRN]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([CM_comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([CM_comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([CM_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([CM_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Campaign] ([Campaign_ID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] ([Campaign_ID]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Users] FOREIGN KEY([CM_PI_PRN])
 REFERENCES [T_Users] ([U_PRN])

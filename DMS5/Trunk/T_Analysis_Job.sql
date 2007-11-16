@@ -34,30 +34,44 @@ CREATE TABLE [dbo].[T_Analysis_Job](
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
-)WITH FILLFACTOR = 90 ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_AJ_created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_created] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_created] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_AJ_datasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_datasetID] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_datasetID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_OrganismDBName] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_OrganismDBName] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_organismDBName] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_RequestID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_RequestID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_requestID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_State] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [dbo].[trig_d_AnalysisJob] ******/
@@ -182,118 +196,11 @@ AS
 		Set AJ_Last_Affected = GetDate()
 		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
 	End
+
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_jobID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_jobID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_batchID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_batchID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_start]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_start]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_finish]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_finish]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_analysisToolID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_analysisToolID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_parmFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_parmFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_settingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_settingsFileName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_organismDBName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_organismID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_organismID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_datasetID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_datasetID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_owner]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_owner]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_StateID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_StateID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_Last_Affected]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_Last_Affected]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_assignedProcessorName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_assignedProcessorName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_resultsFolderName]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_resultsFolderName]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_proteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_proteinCollectionList]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_proteinOptionsList]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_proteinOptionsList]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_requestID]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_requestID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_extractionProcessor]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_extractionProcessor]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_extractionStart]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_extractionStart]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_extractionFinish]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_extractionFinish]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_Analysis_Manager_Error]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_Analysis_Manager_Error]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_Data_Extraction_Error]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_Data_Extraction_Error]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job] ([AJ_propagationMode]) TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
 REFERENCES [T_Analysis_Job_Batches] ([Batch_ID])

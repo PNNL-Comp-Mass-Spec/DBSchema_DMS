@@ -14,7 +14,7 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Experiment_Group_Members_1] ON [dbo].[T_Experiment_Group_Members] 
 (
 	[Group_ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Experiment_Group_Members] ******/
@@ -22,23 +22,15 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiment_Group_Members] ON [dbo].[T_Exp
 (
 	[Group_ID] ASC,
 	[Exp_ID] ASC
-) ON [PRIMARY]
-GO
-GRANT SELECT ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
-GO
-GRANT INSERT ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
 GO
+GRANT INSERT ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
+GO
+GRANT SELECT ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
+GO
 GRANT UPDATE ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578]
-GO
-GRANT SELECT ON [dbo].[T_Experiment_Group_Members] ([Group_ID]) TO [PNL\D3M578]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Group_Members] ([Group_ID]) TO [PNL\D3M578]
-GO
-GRANT SELECT ON [dbo].[T_Experiment_Group_Members] ([Exp_ID]) TO [PNL\D3M578]
-GO
-GRANT UPDATE ON [dbo].[T_Experiment_Group_Members] ([Exp_ID]) TO [PNL\D3M578]
 GO
 ALTER TABLE [dbo].[T_Experiment_Group_Members]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Group_Members_T_Experiment_Groups] FOREIGN KEY([Group_ID])
 REFERENCES [T_Experiment_Groups] ([Group_ID])

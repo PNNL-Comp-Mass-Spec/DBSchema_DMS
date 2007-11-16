@@ -20,97 +20,19 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
 GO
-GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
-GO
 GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
 GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([ID]) TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
 GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([ID]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Batch]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Batch]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Batch]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Description]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Description]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Description]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Owner]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Owner]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Owner]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Created]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Created]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Created]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Locked]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Locked]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Locked]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Last_Ordered]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Last_Ordered]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Last_Ordered]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Requested_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Requested_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Requested_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Actual_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Actual_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Actual_Batch_Priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Requested_Completion_Date]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Requested_Completion_Date]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Requested_Completion_Date]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Justification_for_High_Priority]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Justification_for_High_Priority]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Justification_for_High_Priority]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Comment]) TO [Limited_Table_Write]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] ([Requested_Instrument]) TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
 REFERENCES [T_Users] ([ID])
