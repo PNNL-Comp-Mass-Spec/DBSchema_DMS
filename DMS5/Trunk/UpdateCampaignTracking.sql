@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateCampaignTracking
+
+CREATE PROCEDURE dbo.UpdateCampaignTracking
 /****************************************************
 **
 **	Desc: Updates cell culture tracking table with summary counts
@@ -13,8 +14,9 @@ CREATE PROCEDURE UpdateCampaignTracking
 **	Parameters:
 **	
 **
-**		Auth: grk
-**		Date: 10/20/2002
+**	Auth:	grk
+**	Date:	10/20/2002
+**			11/15/2007 mem - Switched to Truncate Table for improved performance (Ticket:576)
 **    
 *****************************************************/
 AS
@@ -32,7 +34,7 @@ AS
 
 	-- clear results table
 	--
-	DELETE FROM T_Campaign_Tracking
+	TRUNCATE TABLE T_Campaign_Tracking
 	 
 	-- make entry in results table for each cell culture
 	--
@@ -96,6 +98,4 @@ AS
 
 	RETURN @myError
 
-
- 
 GO
