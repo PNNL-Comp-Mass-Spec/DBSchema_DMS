@@ -22,6 +22,7 @@ CREATE PROCEDURE RequestResultsXferTask
 **	Auth:	dac
 **	05/10/2007 -- initial release
 **	09/25/2007 grk - Rolled back to DMS from broker (http://prismtrac.pnl.gov/trac/ticket/537)
+**	11/26/2007 grk - prevent assigning task while archive operation in progress (http://prismtrac.pnl.gov/trac/ticket/396)
 **
 *****************************************************/
 (
@@ -77,17 +78,21 @@ As
 	---------------------------------------------------
 	
 	INSERT INTO #PD
-	SELECT
-		T_Analysis_Job.AJ_jobID
-	FROM
-		T_Dataset INNER JOIN
-		T_Analysis_Job ON T_Dataset.Dataset_ID = T_Analysis_Job.AJ_datasetID INNER JOIN
-		t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID
-	WHERE
-		T_Analysis_Job.AJ_StateID = 3 AND 
-		t_storage_path.SP_machine_name = @machineName
-	ORDER BY 
-		T_Analysis_Job.AJ_jobID
+	SELECT   
+	  T_Analysis_Job.AJ_jobID
+	FROM     
+	  T_Dataset
+	  INNER JOIN T_Analysis_Job
+		ON T_Dataset.Dataset_ID = T_Analysis_Job.AJ_datasetID
+	  INNER JOIN t_storage_path
+		ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID
+	  INNER JOIN T_Dataset_Archive
+		ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
+	WHERE    (T_Analysis_Job.AJ_StateID = 3)
+	AND (t_storage_path.SP_machine_name = @machineName)
+	AND (NOT (T_Dataset_Archive.AS_state_ID IN (2,7,12)))
+	AND (NOT (T_Dataset_Archive.AS_update_state_ID IN (3)))
+	ORDER BY T_Analysis_Job.AJ_jobID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
