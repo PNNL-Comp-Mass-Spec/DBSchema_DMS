@@ -5,7 +5,7 @@ INSERT INTO [T_Instrument_Class] VALUES ('Agilent_Ion_Trap',0,'dot_d_folders',0,
 INSERT INTO [T_Instrument_Class] VALUES ('Agilent_TOF',0,'dot_wiff_files',0,'HMS')
 INSERT INTO [T_Instrument_Class] VALUES ('BRUKERFTMS',1,'zipped_s_folders',1,'HMS, HMS-HMSn')
 INSERT INTO [T_Instrument_Class] VALUES ('Finnigan_FTICR',1,'zipped_s_folders',1,'HMS, HMS-HMSn')
-INSERT INTO [T_Instrument_Class] VALUES ('Finnigan_Ion_Trap',1,'dot_raw_files',0,'MS, MS-MSn')
+INSERT INTO [T_Instrument_Class] VALUES ('Finnigan_Ion_Trap',1,'dot_raw_files',0,'MS, MS-MSn, MS-ETD-MSn')
 INSERT INTO [T_Instrument_Class] VALUES ('IMS_Agilent_TOF',0,'dot_wiff_files',0,'IMS-HMS, IMS-MSn-HMS')
 INSERT INTO [T_Instrument_Class] VALUES ('IMS_Biospect_TOF',0,'biospec_folder',0,'IMS-HMS, IMS-MSn-HMS')
 INSERT INTO [T_Instrument_Class] VALUES ('IMS_Sciex_TOF',0,'dot_wiff_files',0,'IMS-HMS, IMS-MSn-HMS')
