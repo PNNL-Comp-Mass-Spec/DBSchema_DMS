@@ -8,8 +8,9 @@ CREATE FUNCTION dbo.DaysAndHoursInDateRange
 **
 **	Desc: Returns a series of date/time values spaced @HourInterval hours apart
 **
-**		Auth: mem
-**		Date: 11/07/2007
+**	Auth:	mem
+**	Date:	11/07/2007
+**			11/29/2007 mem - Fixed bug that started at @startDate + @HourInterval instead of at @startDate
 **    
 *****************************************************/
 ( 
@@ -33,12 +34,12 @@ BEGIN
 	--
 	while (@d < @endDate)
 	begin
-		set @d = dateadd(hh, @HourInterval, @d)
-
 		INSERT INTO @dates
 			(dy)
 		VALUES     
 			(@d)
+
+		set @d = dateadd(hh, @HourInterval, @d)
 	end   
 	
 	RETURN

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateDataset]
+CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **		File: 
 **		Name: AddNewDataset
@@ -25,9 +25,11 @@ CREATE Procedure [dbo].[AddUpdateDataset]
 **      07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **      10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
+**		12/07/2007 mem - Now disallowing updates for datasets with a rating of -10 = Unreviewed (use UpdateDatasetDispositions instead)
 **    
 *****************************************************/
-	@datasetNum varchar(64),
+(
+	@datasetNum varchar(128),
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),
@@ -46,13 +48,13 @@ CREATE Procedure [dbo].[AddUpdateDataset]
 	@requestID int = 0,
 	@mode varchar(12) = 'add', -- or 'update', or 'bad'
 	@message varchar(512) output
+)
 As
-set nocount on
+	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -66,21 +68,21 @@ set nocount on
 	-- Validate input fields
 	---------------------------------------------------
 
-	if LEN(@secSep) < 1
+	if LEN(IsNull(@secSep, '')) < 1
 	begin
 		set @myError = 51017
 		RAISERROR ('Separation type was blank',
 			10, 1)
 	end
 	--
-	if LEN(@LCColumnNum) < 1
+	if LEN(IsNull(@LCColumnNum, '')) < 1
 	begin
 		set @myError = 51016
 		RAISERROR ('LC Column number was blank',
 			10, 1)
 	end
 	--
-	if LEN(@datasetNum) < 1
+	if LEN(IsNull(@datasetNum, '')) < 1
 	begin
 		set @myError = 51010
 		RAISERROR ('Dataset number was blank',
@@ -89,35 +91,35 @@ set nocount on
 	--
 	set @folderName = @datasetNum
 	--
-	if LEN(@experimentNum) < 1
+	if LEN(IsNull(@experimentNum, '')) < 1
 	begin
 		set @myError = 51011
 		RAISERROR ('Experiment number was blank',
 			10, 1)
 	end
 	--
-	if LEN(@folderName) < 1
+	if LEN(IsNull(@folderName, '')) < 1
 	begin
 		set @myError = 51012
 		RAISERROR ('Folder name was blank',
 			10, 1)
 	end
 	--
-	if LEN(@operPRN) < 1
+	if LEN(IsNull(@operPRN, '')) < 1
 	begin
 		set @myError = 51013
 		RAISERROR ('Operator payroll number/HID was blank',
 			10, 1)
 	end
 	--
-	if LEN(@instrumentName) < 1
+	if LEN(IsNull(@instrumentName, '')) < 1
 	begin
 		set @myError = 51014
 		RAISERROR ('Instrument name was blank',
 			10, 1)
 	end
 	--
-	if LEN(@msType) < 1
+	if LEN(IsNull(@msType, '')) < 1
 	begin
 		set @myError = 51015
 		RAISERROR ('Dataset type was blank',
@@ -178,34 +180,53 @@ set nocount on
 	declare @curDSTypeID int
 	declare @curDSInstID int
 	declare @curDSStateID int
+	declare @curDSRatingID int
+	
 	set @datasetID = 0
 	SELECT 
 		@datasetID = Dataset_ID,
 		@curDSInstID = DS_instrument_name_ID, 
-		@curDSStateID = DS_state_ID
+		@curDSStateID = DS_state_ID,
+		@curDSRatingID = DS_Rating
     FROM T_Dataset 
 	WHERE (Dataset_Num = @datasetNum)
 
---	execute @datasetID = GetDatasetID @datasetNum
-
-	-- cannot create an entry that already exists
-	--
-	if @datasetID <> 0 and (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger')
-	begin
-		set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
-
-	-- cannot update a non-existent entry
-	--
-	if @datasetID = 0 and (@mode = 'update' or @mode = 'check_update')
-	begin
-		set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
+	Set @datasetID = IsNull(@datasetID, 0)
 	
+	if @datasetID = 0 
+	begin
+		-- cannot update a non-existent entry
+		--
+		if (@mode = 'update' or @mode = 'check_update')
+		begin
+			set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
+			RAISERROR (@msg, 10, 1)
+			return 51004
+		end
+	end
+	else
+	begin
+		-- cannot create an entry that already exists
+		--
+		if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger')
+		begin
+			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
+			RAISERROR (@msg, 10, 1)
+			return 51004
+		end
+
+		-- do not allow a rating change from 'Unreviewed' to any other rating within this procedure
+		--
+		if @curDSRatingID = -10
+		begin
+			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms.pnl.gov/dms/dataset_disposition_list_report.asp" or SP UpdateDatasetDispositions)'
+			RAISERROR (@msg, 10, 1)
+			return 51004
+		end		
+	end
+
+	
+
 	---------------------------------------------------
 	-- Resolve ID for LC Column
 	---------------------------------------------------

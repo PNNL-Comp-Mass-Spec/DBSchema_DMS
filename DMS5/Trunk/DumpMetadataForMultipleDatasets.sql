@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE DumpMetadataForMultipleDatasets
+
+CREATE PROCEDURE [dbo].[DumpMetadataForMultipleDatasets]
 /****************************************************
 **
 **	Desc: Dump metadata for datasets in given list
@@ -120,6 +121,7 @@ As
 
 Done:
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleDatasets] TO [DMS_User]
 GO

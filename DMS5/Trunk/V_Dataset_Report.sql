@@ -36,4 +36,5 @@ FROM dbo.T_DatasetStateName DSN
        ON DS.Dataset_ID = RRH.DatasetID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
+
 GO
