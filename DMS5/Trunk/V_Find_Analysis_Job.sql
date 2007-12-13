@@ -3,11 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_Find_Analysis_Job]
+
+
+
+CREATE VIEW dbo.V_Find_Analysis_Job
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS Pri,
-       AJDAS.Job_State AS State,
+       AJ.AJ_StateNameCached AS State,
        AnalysisTool.AJT_toolName AS Tool,
        DS.Dataset_Num AS Dataset,
        C.Campaign_Num AS Campaign,
@@ -27,27 +30,25 @@ SELECT AJ.AJ_jobID AS Job,
        AJPG.Group_Name AS [Assoc. Proc. Group],
        AJ.AJ_requestID AS Run_Request,
        DAP.Archive_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Folder Path]
-FROM dbo.V_Dataset_Archive_Path DAP
-     RIGHT OUTER JOIN dbo.T_Analysis_Job AJ
-                      INNER JOIN dbo.T_Dataset DS
+FROM dbo.V_Dataset_Archive_Path AS DAP
+     RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
+                      INNER JOIN dbo.T_Dataset AS DS
                         ON AJ.AJ_datasetID = DS.Dataset_ID
-                      INNER JOIN dbo.T_Organisms Org
+                      INNER JOIN dbo.T_Organisms AS Org
                         ON AJ.AJ_organismID = Org.Organism_ID
-                      INNER JOIN dbo.t_storage_path SPath
+                      INNER JOIN dbo.t_storage_path AS SPath
                         ON DS.DS_storage_path_ID = SPath.SP_path_ID
-                      INNER JOIN dbo.T_Analysis_Tool AnalysisTool
+                      INNER JOIN dbo.T_Analysis_Tool AS AnalysisTool
                         ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
-                      INNER JOIN dbo.T_Instrument_Name InstName
+                      INNER JOIN dbo.T_Instrument_Name AS InstName
                         ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                      INNER JOIN dbo.T_Experiments E
+                      INNER JOIN dbo.T_Experiments AS E
                         ON DS.Exp_ID = E.Exp_ID
-                      INNER JOIN dbo.T_Campaign C
+                      INNER JOIN dbo.T_Campaign AS C
                         ON E.EX_campaign_ID = C.Campaign_ID
-                      INNER JOIN dbo.V_Analysis_Job_and_Dataset_Archive_State AJDAS
-                        ON AJ.AJ_jobID = AJDAS.Job
        ON DAP.Dataset_ID = DS.Dataset_ID
-     LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AJPG
-                     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AJPGA
+     LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AS AJPG
+                     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
 

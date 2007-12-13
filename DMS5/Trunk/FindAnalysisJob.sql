@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindAnalysisJob]
+
+CREATE PROCEDURE dbo.FindAnalysisJob
 /****************************************************
 **
 **	Desc: 
@@ -20,6 +21,7 @@ CREATE PROCEDURE [dbo].[FindAnalysisJob]
 **			12/20/2006 mem - Now querying V_Find_Analysis_Job using dynamic SQL (Ticket #349)
 **			12/21/2006 mem - Now joining in table T_Analysis_State_Name when querying on State (Ticket #349)
 **			10/30/2007 jds - Added support for list of RunRequest IDs (Ticket #560)
+**			12/12/2007 mem - No longer joining V_Analysis_Job_and_Dataset_Archive_State since that view is longer used in V_Find_Analysis_Job (Ticket #585)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -151,20 +153,8 @@ As
 		Set @W = @W + ' AND ([Job] = ' + Convert(varchar(19), @i_Job) + ' )'
 	If Len(@Pri) > 0
 		Set @W = @W + ' AND ([Pri] = ' + Convert(varchar(19), @i_Pri) + ' )'
-
 	If Len(@State) > 0
-	Begin
-		-- Join in T_Analysis_Job and T_Analysis_State_Name, which allows us to
-		-- directly query the state name associated with each job
-		-- This is faster than querying the State returned by V_Find_Analysis_Job since
-		--  that state actually comes from V_Analysis_Job_and_Dataset_Archive_State,
-		--  which sometimes appends information to the state if the dataset is in certain states
-		Set @S = @S + ' INNER JOIN T_Analysis_Job AJ ON FAJ.Job = AJ.AJ_jobID '
-		Set @S = @S + ' INNER JOIN T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID'
-
-		Set @W = @W + ' AND (ASN.AJS_name LIKE ''' + @i_State + ''' )'
-	End
-	
+		Set @W = @W + ' AND ([State] LIKE ''' + @i_State + ''' )'
 	If Len(@Tool) > 0
 		Set @W = @W + ' AND ([Tool] LIKE ''' + @i_Tool + ''' )'
 	If Len(@Dataset) > 0

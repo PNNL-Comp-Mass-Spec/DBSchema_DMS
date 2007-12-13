@@ -92,6 +92,7 @@ For Insert
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
+**			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
 **    
 *****************************************************/
 AS
@@ -109,6 +110,13 @@ AS
 	SELECT 7, inserted.AS_Dataset_ID, inserted.AS_update_state_ID, 0, GetDate()
 	FROM inserted
 	ORDER BY inserted.AS_Dataset_ID
+
+	UPDATE T_Analysis_Job
+	SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+	FROM T_Analysis_Job AJ INNER JOIN
+		 inserted ON AJ.AJ_datasetID = inserted.AS_Dataset_ID INNER JOIN
+		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+
 
 GO
 
@@ -132,6 +140,7 @@ For Update
 **			09/04/2007 mem - Now updating AS_state_Last_Affected when the state changes (Ticket #527)
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **						   - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
 **    
 *****************************************************/
 AS
@@ -170,6 +179,18 @@ AS
 		FROM T_Dataset_Archive DA INNER JOIN
 			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
 	End
+
+	If Update(AS_state_ID) OR
+       Update(AS_update_state_ID)
+    Begin
+		UPDATE T_Analysis_Job
+		SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+		FROM T_Analysis_Job AJ INNER JOIN
+			 inserted ON AJ.AJ_datasetID = inserted.AS_Dataset_ID INNER JOIN
+			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
+	End
+
 
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])

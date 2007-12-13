@@ -31,6 +31,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_Analysis_Manager_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Analysis_Manager_Error]  DEFAULT (0),
 	[AJ_Data_Extraction_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Data_Extraction_Error]  DEFAULT (0),
 	[AJ_propagationMode] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_propogation_mode]  DEFAULT (0),
+	[AJ_StateNameCached] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateNameCached]  DEFAULT (''),
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -50,6 +51,13 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_datasetID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_datasetID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_AJ_StateNameCached] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_StateNameCached] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_StateNameCached] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
@@ -143,6 +151,7 @@ For Insert
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
+**			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
 **    
 *****************************************************/
 AS
@@ -155,6 +164,13 @@ AS
 	SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, 0, GetDate()
 	FROM inserted
 	ORDER BY inserted.AJ_jobID
+
+	UPDATE T_Analysis_Job
+	SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+	FROM T_Analysis_Job AJ INNER JOIN
+		 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
+		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+	
 
 GO
 
@@ -177,6 +193,7 @@ For Update
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			11/01/2007 mem - Added Set NoCount statement (Ticket #569)
+**			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
 **    
 *****************************************************/
 AS
@@ -193,8 +210,12 @@ AS
 		ORDER BY inserted.AJ_jobID
 
 		UPDATE T_Analysis_Job
-		Set AJ_Last_Affected = GetDate()
-		WHERE AJ_jobID IN (SELECT AJ_jobID from inserted)
+		SET AJ_Last_Affected = GetDate(), 
+			AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+		FROM T_Analysis_Job AJ INNER JOIN
+			 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
+			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+
 	End
 
 GO
