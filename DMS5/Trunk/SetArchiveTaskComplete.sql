@@ -19,12 +19,13 @@ CREATE  Procedure SetArchiveTaskComplete
 **
 **		Auth: grk
 **		Date: 9/26/2002   
-**            06/21/2005 grk -- added handling for "requires_preparation" 
+**          06/21/2005 grk -- added handling for "requires_preparation" 
+**				11/27/2007 dac -- removed @processorname param, which is no longer required
 **    
 *****************************************************/
 	@datasetNum varchar(128),
-	@processorName varchar(64),
-    @completionCode int = 0,
+	--@processorName varchar(64),
+   @completionCode int = 0,
 	@message varchar(512) output
 As
 	set nocount on

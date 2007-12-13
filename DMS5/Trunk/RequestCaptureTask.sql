@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.RequestCaptureTask
+CREATE Procedure [dbo].[RequestCaptureTask]
 /****************************************************
 **
 **	Desc: 
@@ -354,6 +354,9 @@ As
 	--
 Done:
 	return @myError
+
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[RequestCaptureTask] TO [DMS_SP_User]

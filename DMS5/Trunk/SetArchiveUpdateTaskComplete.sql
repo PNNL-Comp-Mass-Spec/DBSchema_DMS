@@ -24,10 +24,13 @@ CREATE Procedure SetArchiveUpdateTaskComplete
 **		Date: 12/6/2002
 **		Corrected state values used in update state test, update complete output
 **
+**		Mod: dac
+**		Date: 11/30/2007
+**		Removed unused processor name parameter
+**
 *****************************************************/
 	@datasetNum varchar(128),
-	@processorName varchar(64),
-    @completionCode int = 0,
+   @completionCode int = 0,
 	@message varchar(512) output
 As
 	set nocount on
