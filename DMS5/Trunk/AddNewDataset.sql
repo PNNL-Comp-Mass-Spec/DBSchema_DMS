@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
 **			10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
 **			10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
+**			01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
 **    
 *****************************************************/
 (
@@ -166,10 +167,10 @@ AS
 	-- check for QC datasets
  	---------------------------------------------------
 
-	if dbo.DatasetPreference(@Dataset_Name) <> 0
+	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR @Dataset_Name LIKE 'Blank%'
 	begin
 		-- Auto set interest rating to 5
-		-- Initially set @Interest_Rating to the text 'released' but then query
+		-- Initially set @Interest_Rating to the text 'Released' but then query
 		--  T_DatasetRatingName for rating 5 in case the rating name has changed
 		
 		set @Interest_Rating = 'Released'
