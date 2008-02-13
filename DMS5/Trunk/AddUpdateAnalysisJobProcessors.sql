@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateAnalysisJobProcessors
 **    Date: 02/15/2007 (ticket 389)
 **          02/23/2007 grk - added @AnalysisToolsList stuff
 **			03/15/2007 mem - Tweaked invalid tool name error message
+**			02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -73,7 +74,7 @@ As
 	INSERT INTO #TD
 		(ToolName)
 	SELECT
-		Item
+		DISTINCT Item
 	FROM
 		MakeTableFromList(@AnalysisToolsList)
 	--
