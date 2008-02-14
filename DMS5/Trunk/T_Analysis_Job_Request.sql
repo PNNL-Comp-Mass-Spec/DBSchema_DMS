@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_requestID] [int] IDENTITY(1000,1) NOT NULL,
 	[AJR_requestName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJR_created] [smalldatetime] NOT NULL,
+	[AJR_created] [datetime] NOT NULL,
 	[AJR_analysisToolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

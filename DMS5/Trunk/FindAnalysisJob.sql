@@ -21,7 +21,8 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 **			12/20/2006 mem - Now querying V_Find_Analysis_Job using dynamic SQL (Ticket #349)
 **			12/21/2006 mem - Now joining in table T_Analysis_State_Name when querying on State (Ticket #349)
 **			10/30/2007 jds - Added support for list of RunRequest IDs (Ticket #560)
-**			12/12/2007 mem - No longer joining V_Analysis_Job_and_Dataset_Archive_State since that view is longer used in V_Find_Analysis_Job (Ticket #585)
+**			12/12/2007 mem - No longer joining V_Analysis_Job_and_Dataset_Archive_State since that view is longer used in V_Find_Analysis_Job
+**			01/24/2008 mem - Switched the @i_ variables to use the datetime data type (Ticket #225)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -115,20 +116,20 @@ As
 	DECLARE @i_Comment varchar(255)
 	SET @i_Comment = '%' + @Comment + '%'
 	--
-	DECLARE @i_Created_after smalldatetime
-	DECLARE @i_Created_before smalldatetime
-	SET @i_Created_after = CONVERT(smalldatetime, @Created_After)
-	SET @i_Created_before = CONVERT(smalldatetime, @Created_Before)
+	DECLARE @i_Created_after datetime
+	DECLARE @i_Created_before datetime
+	SET @i_Created_after = CONVERT(datetime, @Created_After)
+	SET @i_Created_before = CONVERT(datetime, @Created_Before)
 	--
-	DECLARE @i_Started_after smalldatetime
-	DECLARE @i_Started_before smalldatetime
-	SET @i_Started_after = CONVERT(smalldatetime, @Started_After)
-	SET @i_Started_before = CONVERT(smalldatetime, @Started_Before)
+	DECLARE @i_Started_after datetime
+	DECLARE @i_Started_before datetime
+	SET @i_Started_after = CONVERT(datetime, @Started_After)
+	SET @i_Started_before = CONVERT(datetime, @Started_Before)
 	--
-	DECLARE @i_Finished_after smalldatetime
-	DECLARE @i_Finished_before smalldatetime
-	SET @i_Finished_after = CONVERT(smalldatetime, @Finished_After)
-	SET @i_Finished_before = CONVERT(smalldatetime, @Finished_Before)
+	DECLARE @i_Finished_after datetime
+	DECLARE @i_Finished_before datetime
+	SET @i_Finished_after = CONVERT(datetime, @Finished_After)
+	SET @i_Finished_before = CONVERT(datetime, @Finished_Before)
 	--
 	DECLARE @i_Processor varchar(64)
 	SET @i_Processor = '%' + @Processor + '%'
@@ -153,8 +154,12 @@ As
 		Set @W = @W + ' AND ([Job] = ' + Convert(varchar(19), @i_Job) + ' )'
 	If Len(@Pri) > 0
 		Set @W = @W + ' AND ([Pri] = ' + Convert(varchar(19), @i_Pri) + ' )'
+
 	If Len(@State) > 0
+	Begin
 		Set @W = @W + ' AND ([State] LIKE ''' + @i_State + ''' )'
+	End
+	
 	If Len(@Tool) > 0
 		Set @W = @W + ' AND ([Tool] LIKE ''' + @i_Tool + ''' )'
 	If Len(@Dataset) > 0
@@ -221,6 +226,7 @@ As
 	end
     
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_Guest]

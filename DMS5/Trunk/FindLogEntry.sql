@@ -1,8 +1,9 @@
 /****** Object:  StoredProcedure [dbo].[FindLogEntry] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.FindLogEntry
 /****************************************************
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE dbo.FindLogEntry
 **	Auth:	grk
 **	Date:	08/23/2006
 **			12/20/2006 mem - Now querying V_Log_Report using dynamic SQL (Ticket #349)
+**			01/24/2008 mem - Switched the @i_ variables to use the datetime data type (Ticket #225)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -60,10 +62,10 @@ As
 	DECLARE @iPostedBy varchar(64)
 	SET @iPostedBy = '%' + @PostedBy + '%'
 	--
-	DECLARE @iPostingTime_after smalldatetime
-	DECLARE @iPostingTime_before smalldatetime
-	SET @iPostingTime_after = CONVERT(smalldatetime, @PostingTime_After)
-	SET @iPostingTime_before = CONVERT(smalldatetime, @PostingTime_Before)
+	DECLARE @iPostingTime_after datetime
+	DECLARE @iPostingTime_before datetime
+	SET @iPostingTime_after = CONVERT(datetime, @PostingTime_After)
+	SET @iPostingTime_before = CONVERT(datetime, @PostingTime_Before)
 	--
 	DECLARE @iType varchar(32)
 	SET @iType = '%' + @EntryType + '%'

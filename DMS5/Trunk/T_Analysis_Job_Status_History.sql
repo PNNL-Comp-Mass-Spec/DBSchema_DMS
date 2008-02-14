@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Analysis_Job_Status_History](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
-	[Posting_Time] [smalldatetime] NOT NULL,
+	[Posting_Time] [datetime] NOT NULL,
 	[Tool_ID] [int] NOT NULL,
 	[State_ID] [int] NOT NULL,
 	[Job_Count] [int] NOT NULL,
