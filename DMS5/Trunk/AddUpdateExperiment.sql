@@ -3,29 +3,27 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateExperiment
+CREATE Procedure dbo.AddUpdateExperiment
 /****************************************************
 **
-**	Desc: Adds a new experiment to DB
+**	Desc:	Adds a new experiment to DB
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters:
-**	
-**
-**		Auth: grk
-**		Date: 1/8/2002
-**    
-**	          08/25/2004  jds - updated proc to add T_Enzyme table value
-**            06/10/2005  grk - added handling for sample prep request
-**            10/28/2005  grk - added handling for internal standard
-**            11/11/2005  grk - added handling for postdigest internal standard
-**            11/21/2005  grk - fixed update error for postdigest internal standard
-**            01/12/2007  grk - added verification mode
-**            01/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
-**            04/30/2007  grk - added better name validation (Ticket #450)
+**	Auth:	grk
+**	Date:	01/8/2002
+**			08/25/2004 jds - updated proc to add T_Enzyme table value
+**			06/10/2005 grk - added handling for sample prep request
+**			10/28/2005 grk - added handling for internal standard
+**			11/11/2005 grk - added handling for postdigest internal standard
+**			11/21/2005 grk - fixed update error for postdigest internal standard
+**			01/12/2007 grk - added verification mode
+**			01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
+**			04/30/2007 grk - added better name validation (Ticket #450)
+**			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **
 *****************************************************/
+(
 	@experimentNum varchar(50),
 	@campaignNum varchar(50),
 	@researcherPRN varchar(50),
@@ -42,6 +40,7 @@ CREATE Procedure AddUpdateExperiment
 	@postdigestIntStd varchar(50),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -113,7 +112,11 @@ As
 	set @badCh =  dbo.ValidateChars(@experimentNum, '')
 	if @badCh <> ''
 	begin
-		set @msg = 'Name may not contain the character(s) "' + @badCh + '"'
+		If @badCh = '[space]'
+			set @msg = 'Experiment name may not contain spaces'
+		Else
+			set @msg = 'Experiment name may not contain the character(s) "' + @badCh + '"'
+
 		RAISERROR (@msg, 10, 1)
 		return 51001
 	end

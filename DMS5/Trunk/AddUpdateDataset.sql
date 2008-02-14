@@ -5,27 +5,26 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
-**		File: 
-**		Name: AddNewDataset
-**		Desc: Adds new dataset entry to DMS database
 **
-**		Return values: 0: success, otherwise, error code
+**	Desc:	Adds new dataset entry to DMS database
+**
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
-**
-**		Auth: grk
-**		Date: 02/13/2003
-**		01/10/2002
-**      12/10/2003 grk - added wellplate, internal standards, and LC column stuff
-**      01/11/2005 grk - added bad dataset stuff
-**      02/23/2006 grk - added LC cart tracking stuff and EUS stuff
-**      01/12/2007 grk - added verification mode
-**      02/16/2007 grk - added validation of dataset name (Ticket #390)
-**      04/30/2007 grk - added better name validation (Ticket #450)
-**      07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
-**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
-**      10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
-**		12/07/2007 mem - Now disallowing updates for datasets with a rating of -10 = Unreviewed (use UpdateDatasetDispositions instead)
+**	Auth:	grk
+**	Date:	02/13/2003
+**			01/10/2002
+**			12/10/2003 grk - added wellplate, internal standards, and LC column stuff
+**			01/11/2005 grk - added bad dataset stuff
+**			02/23/2006 grk - added LC cart tracking stuff and EUS stuff
+**			01/12/2007 grk - added verification mode
+**			02/16/2007 grk - added validation of dataset name (Ticket #390)
+**			04/30/2007 grk - added better name validation (Ticket #450)
+**			07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
+**			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**			10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
+**			12/07/2007 mem - Now disallowing updates for datasets with a rating of -10 = Unreviewed (use UpdateDatasetDispositions instead)
+**			01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @Mode = 'add' and @requestID is 0
+**			02/13/2008 mem - Now sending @datasetNum to function ValidateChars and checking for @badCh = '[space]' (Ticket #602)
 **    
 *****************************************************/
 (
@@ -46,7 +45,7 @@ CREATE Procedure dbo.AddUpdateDataset
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
 	@requestID int = 0,
-	@mode varchar(12) = 'add', -- or 'update', or 'bad'
+	@mode varchar(12) = 'add', -- or 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
 	@message varchar(512) output
 )
 As
@@ -134,10 +133,14 @@ As
 	---------------------------------------------------
 
 	declare @badCh varchar(128)
-	set @badCh =  dbo.ValidateChars(@experimentNum, '')
+	set @badCh =  dbo.ValidateChars(@datasetNum, '')
 	if @badCh <> ''
 	begin
-		set @msg = 'Dataset may not contain the character(s) "' + @badCh + '"'
+		If @badCh = '[space]'
+			set @msg = 'Dataset name may not contain spaces'
+		Else
+			set @msg = 'Dataset name may not contain the character(s) "' + @badCh + '"'
+
 		RAISERROR (@msg, 10, 1)
 		return 51001
 	end
@@ -167,7 +170,7 @@ As
 		begin
 			set @msg = 'Could not find entry in database for rating "' + @rating + '"'
 			RAISERROR (@msg, 10, 1)
-			return 51017
+			return 51018
 		end
 	end
 
@@ -217,7 +220,7 @@ As
 
 		-- do not allow a rating change from 'Unreviewed' to any other rating within this procedure
 		--
-		if @curDSRatingID = -10
+		if @curDSRatingID = -10 And @rating <> 'Unreviewed'
 		begin
 			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms.pnl.gov/dms/dataset_disposition_list_report.asp" or SP UpdateDatasetDispositions)'
 			RAISERROR (@msg, 10, 1)
@@ -415,7 +418,7 @@ As
 	-- action for add trigger mode
 	---------------------------------------------------
 	if @Mode = 'add_trigger'
-	begin	
+	begin -- <AddTrigger>
 
 		--**Check code taken from ConsumeScheduledRun stored procedure**
 		---------------------------------------------------
@@ -483,69 +486,69 @@ As
 
 
 		if @requestID = 0
+		begin -- <b1>
+			--**Check code taken from AddUpdateRequestedRun stored procedure**
+			---------------------------------------------------
+			-- Lookup EUS field (only effective for experiments
+			-- that have associated sample prep requests)
+			---------------------------------------------------
+			exec @myError = LookupEUSFromExperimentSamplePrep	
+							@experimentNum,
+							@eusUsageType output,
+							@eusProposalID output,
+							@eusUsersList output,
+							@msg output
+			if @myError <> 0
 			begin
-				--**Check code taken from AddUpdateRequestedRun stored procedure**
-				---------------------------------------------------
-				-- Lookup EUS field (only effective for experiments
-				-- that have associated sample prep requests)
-				---------------------------------------------------
-				exec @myError = LookupEUSFromExperimentSamplePrep	
-								@experimentNum,
-								@eusUsageType output,
-								@eusProposalID output,
-								@eusUsersList output,
-								@msg output
-				if @myError <> 0
-				begin
-					RAISERROR (@msg, 10, 1)
-					return @myError
-				end
-
-				---------------------------------------------------
-				-- validate EUS type, proposal, and user list
-				---------------------------------------------------
-				declare @eusUsageTypeID int
-				exec @myError = ValidateEUSUsage
-								@eusUsageType,
-								@eusProposalID output,
-								@eusUsersList output,
-								@eusUsageTypeID output,
-								@msg output
-				if @myError <> 0
-				begin
-					RAISERROR (@msg, 10, 1)
-					return @myError
-				end
+				RAISERROR (@msg, 10, 1)
+				return @myError
 			end
+
+			---------------------------------------------------
+			-- validate EUS type, proposal, and user list
+			---------------------------------------------------
+			declare @eusUsageTypeID int
+			exec @myError = ValidateEUSUsage
+							@eusUsageType,
+							@eusProposalID output,
+							@eusUsersList output,
+							@eusUsageTypeID output,
+							@msg output
+			if @myError <> 0
+			begin
+				RAISERROR (@msg, 10, 1)
+				return @myError
+			end
+		end -- </b1>
 		else
+		begin -- <b2>
+			--**Check code taken from UpdateCartParameters stored procedure**
+			---------------------------------------------------
+			-- verify that request ID is correct
+			---------------------------------------------------
+			declare @tmp int
+			set @tmp = 0
+			--
+			SELECT @tmp = ID
+			FROM T_Requested_Run
+			WHERE (ID = @requestID)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
 			begin
-				--**Check code taken from UpdateCartParameters stored procedure**
-				---------------------------------------------------
-				-- verify that request ID is correct
-				---------------------------------------------------
-				declare @tmp int
-				set @tmp = 0
-				--
-				SELECT @tmp = ID
-				FROM T_Requested_Run
-				WHERE (ID = @requestID)
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @msg = 'Error trying verify request ID'
-					RAISERROR (@msg, 10, 1)
-					return @myError
-				end
-				if @tmp = 0
-				begin
-					set @msg = 'Request ID not found'
-					RAISERROR (@msg, 10, 1)
-					return 52131
-				end
-
+				set @msg = 'Error trying verify request ID'
+				RAISERROR (@msg, 10, 1)
+				return @myError
 			end
+			if @tmp = 0
+			begin
+				set @msg = 'Request ID not found'
+				RAISERROR (@msg, 10, 1)
+				return 52131
+			end
+
+		end -- </b2>
 
 		declare @DSCreatorPRN varchar(256)
 		set @DSCreatorPRN = suser_sname()
@@ -586,14 +589,14 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51055
 		end
-	end
+	end -- </AddTrigger>
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	
 	if @Mode = 'add' 
-	begin	
+	begin -- <AddMode>
 		-- Start transaction
 		--
 		declare @transName varchar(32)
@@ -656,7 +659,73 @@ As
 		declare @result int
 
 		if @requestID = 0
-		begin
+		begin -- <b3>
+			/*
+			**
+			** The following validation code, added by MEM 1/9/2008, is likely correct, but is commented out for safety
+			**
+		
+			If @eusUsageType = '' or @eusUsageType = 'no update'
+			begin
+				set @msg = 'You must provide a Usage Type when the Request ID is 0'
+				RAISERROR (@msg, 10, 1)
+				rollback transaction @transName
+				return 51030
+			end
+
+
+			If @eusUsageType = 'USER'
+			Begin
+				-- Usage Type is USER
+				-- Both @eusProposalID and @eusUsersList must be non-blank
+				
+				If @eusProposalID = '' or @eusProposalID = 'no update'
+				begin
+					set @msg = 'You must provide a Proposal ID when the Request ID is 0 and the Usage Type is "USER"'
+					RAISERROR (@msg, 10, 1)
+					rollback transaction @transName
+					return 51031
+				end
+
+				If @eusUsersList = '' or @eusUsersList = 'no update'
+				begin
+					set @msg = 'You must define the EMSL Users when the Request ID is 0 and the Usage Type is "USER"'
+					RAISERROR (@msg, 10, 1)
+					rollback transaction @transName
+					return 51032
+				end
+			End
+			Else
+			Begin
+				-- Usage Type is not USER
+				-- Both @eusProposalID and @eusUsersList must be blank
+				
+				If @eusProposalID = 'no update' or @eusProposalID = '(lookup)'
+					Set @eusProposalID = ''
+				
+				If @eusUsersList = 'no update' or @eusUsersList = '(lookup)'
+					Set @eusUsersList = ''
+					
+					
+				If @eusProposalID <> ''
+				begin
+					set @msg = 'Proposal ID must be blank when the Request ID is 0 and the Usage Type is not USER'
+					RAISERROR (@msg, 10, 1)
+					rollback transaction @transName
+					return 51033
+				end
+
+				If @eusUsersList <> ''
+				begin
+					set @msg = 'User List must be blank when the Request ID is 0 and the Usage Type is not USER'
+					RAISERROR (@msg, 10, 1)
+					rollback transaction @transName
+					return 51034
+				end
+			End
+
+			*/
+
 			declare @reqName varchar(128)
 			set @reqName = 'AutoReq_' + @datasetNum
 			exec @result = AddUpdateRequestedRun
@@ -682,18 +751,18 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Create scheduled run failed: "' + @datasetNum + '"->' + @message
+				set @msg = 'Create scheduled run failed: "' + @datasetNum + '" with Proposal ID "' + @eusProposalID + '", Usage Type "' + @eusUsageType + '", and Users List "' + @eusUsersList + '" ->' + @message
 				RAISERROR (@msg, 10, 1)
 				rollback transaction @transName
-				return 51017
+				return 51024
 			end
-		end
+		end -- </b3>
 
 		---------------------------------------------------
 		-- if a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
-		if @LCCartName <> ''
+		if @LCCartName <> '' and @LCCartName <> 'no update'
 		begin
 			exec @result = UpdateCartParameters
 								'CartName',
@@ -708,9 +777,10 @@ As
 				set @msg = 'Update cart name update failed: "' + @datasetNum + '"->' + @message
 				RAISERROR (@msg, 10, 1)
 				rollback transaction @transName
-				return 51017
+				return 51021
 			end
 		end
+		
 		---------------------------------------------------
 		-- consume the scheduled run 
 		---------------------------------------------------
@@ -733,14 +803,14 @@ As
 		end
 
 		commit transaction @transName
-	end -- add mode
+	end -- </AddMode>
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
 	if @Mode = 'update' 
-	begin
+	begin -- <UpdateMode>
 		set @myError = 0
 		--
 		UPDATE T_Dataset 
@@ -767,7 +837,7 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
-	end -- update mode
+	end -- </UpdateMode>
 
 	return 0
 

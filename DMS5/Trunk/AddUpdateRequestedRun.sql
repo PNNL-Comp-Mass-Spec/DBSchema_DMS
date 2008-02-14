@@ -6,40 +6,40 @@ GO
 CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
-**	Desc: Adds a new entry to the requested dataset table
+**	Desc:	Adds a new entry to the requested dataset table
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**		Auth: grk
-**		Date: 1/11/2002
-**		Date: 2/15/2003
-**      12/05/2003 grk - added wellplate stuff
-**      01/05/2004 grk - added internal standard stuff
-**      03/01/2004 grk - added manual identity calculation (removed identity column)
-**      03/10/2004 grk - repaired manual identity calculation to include history table
-**      07/15/2004 grk - added verification of experiment location aux info
-**      11/26/2004 grk - changed type of @comment from text to varchar
-**      01/12/2004 grk - fixed null return on check existing when table is empty
-**      10/12/2005 grk - Added stuff for new work package and proposal fields.
-**      02/21/2006 grk - Added stuff for EUS proposal and user tracking.
-**      11/09/2006 grk - Fixed error message handling (Ticket #318)
-**      01/12/2007 grk - added verification mode
-**      01/31/2007 grk - added verification for @operPRN (Ticket #371)
-**      03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
-**      04/25/2007 grk - get new ID from UDF (Ticket #446)
-**      04/30/2007 grk - added better name validation (Ticket #450)
-**      07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
-**      07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
-**      07/17/2007 grk - Increased size of comment field (Ticket #500)
-**      07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
-**      09/06/2007 grk - factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
-**      09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
-**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**	Auth:	grk
+**	Date:	01/11/2002
+**			02/15/2003
+**			12/05/2003 grk - added wellplate stuff
+**			01/05/2004 grk - added internal standard stuff
+**			03/01/2004 grk - added manual identity calculation (removed identity column)
+**			03/10/2004 grk - repaired manual identity calculation to include history table
+**			07/15/2004 grk - added verification of experiment location aux info
+**			11/26/2004 grk - changed type of @comment from text to varchar
+**			01/12/2004 grk - fixed null return on check existing when table is empty
+**			10/12/2005 grk - Added stuff for new work package and proposal fields.
+**			02/21/2006 grk - Added stuff for EUS proposal and user tracking.
+**			11/09/2006 grk - Fixed error message handling (Ticket #318)
+**			01/12/2007 grk - added verification mode
+**			01/31/2007 grk - added verification for @operPRN (Ticket #371)
+**			03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
+**			04/25/2007 grk - get new ID from UDF (Ticket #446)
+**			04/30/2007 grk - added better name validation (Ticket #450)
+**			07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
+**			07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
+**			07/17/2007 grk - Increased size of comment field (Ticket #500)
+**			07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
+**			09/06/2007 grk - factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
+**			09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
+**			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **
 *****************************************************/
-	@reqName varchar(64),
+(
+	@reqName varchar(128),
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),
@@ -56,6 +56,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@mode varchar(12) = 'add', -- or 'update'
 	@request int output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -131,7 +132,11 @@ As
 	set @badCh =  dbo.ValidateChars(@reqName, '')
 	if @badCh <> ''
 	begin
-		set @msg = 'Name may not contain the character(s) "' + @badCh + '"'
+		If @badCh = '[space]'
+			set @msg = 'Requested run name may not contain spaces'
+		Else
+			set @msg = 'Requested run name may not contain the character(s) "' + @badCh + '"'
+
 		RAISERROR (@msg, 10, 1)
 		return 51001
 	end

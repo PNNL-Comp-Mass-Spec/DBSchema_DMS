@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.AddNewDataset
 /****************************************************
+**
 **	Desc: 
 **		Adds new dataset entry to DMS database from contents of XML.
 **
@@ -21,6 +22,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
 **			10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
 **			01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
+**			02/13/2008 mem - Increased size of @Dataset_Name to varchar(128) (Ticket #602)
 **    
 *****************************************************/
 (
@@ -40,7 +42,7 @@ AS
 	set @message = ''
 
 	DECLARE
-		@Dataset_Name		varchar(64),  -- @datasetNum
+		@Dataset_Name		varchar(128),  -- @datasetNum
 		@Experiment_Name	varchar(64),  -- @experimentNum
 		@Instrument_Name	varchar(64),  -- @instrumentName
 		@Separation_Type	varchar(64),  -- @secSep
@@ -48,7 +50,7 @@ AS
 		@LC_Column			varchar(64),  -- @LCColumnNum
 		@Wellplate_Number	varchar(64),  -- @wellplateNum
 		@Well_Number		varchar(64),  -- @wellNum
-		@Dataset_Type		varchar(20),  -- @msType
+		@Dataset_Type		varchar(64),  -- @msType
 		@Operator_PRN		varchar(64),  -- @operPRN
 		@Comment			varchar(512), -- @comment
 		@Interest_Rating	varchar(32),  -- @rating
