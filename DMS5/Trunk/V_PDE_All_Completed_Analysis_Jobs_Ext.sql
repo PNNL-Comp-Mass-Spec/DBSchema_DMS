@@ -24,6 +24,6 @@ FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Analysis_Job_Request ON dbo.T_Analysis_Job.AJ_requestID = dbo.T_Analysis_Job_Request.AJR_requestID INNER JOIN
                       dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID INNER JOIN
                       dbo.V_Dataset_Folder_Paths ON dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Folder_Paths.Dataset_ID
-WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4)
+WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Dataset.DS_rating > 1)
 
 GO

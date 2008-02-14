@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_PDE_Analysis_Jobs_Ext]
+CREATE VIEW dbo.V_PDE_Analysis_Jobs_Ext
 AS
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS AnalysisID, dbo.T_Dataset.Dataset_Num AS DatasetName, dbo.T_Experiments.Experiment_Num AS Experiment, 
                       dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Analysis_Job.AJ_finish AS Completed, 
@@ -24,6 +24,6 @@ FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Analysis_Job_Request ON dbo.T_Analysis_Job.AJ_requestID = dbo.T_Analysis_Job_Request.AJR_requestID INNER JOIN
                       dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID INNER JOIN
                       dbo.V_Dataset_Folder_Paths ON dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Folder_Paths.Dataset_ID
-WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Analysis_Tool.AJT_toolName LIKE '%sequest%')
+WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Analysis_Tool.AJT_toolName LIKE '%sequest%') AND (dbo.T_Dataset.DS_rating > 1)
 
 GO
