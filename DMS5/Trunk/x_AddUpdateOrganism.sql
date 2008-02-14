@@ -1,10 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateOrganism] ******/
+/****** Object:  StoredProcedure [dbo].[x_AddUpdateOrganism] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure AddUpdateOrganism
+CREATE Procedure dbo.x_AddUpdateOrganism
 /****************************************************
+**
+**  ###-------------------------------------------###
+**  ### Deemed unused in October 2007             ###
+**  ### http://prismtrac.pnl.gov/trac/ticket/562  ###
+**  ###-------------------------------------------###
 **
 **	Desc: Adds new or updates existing organisms in database
 **
@@ -147,5 +152,5 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganism] TO [DMS_Org_Database_Admin]
+GRANT EXECUTE ON [dbo].[x_AddUpdateOrganism] TO [DMS_Org_Database_Admin]
 GO

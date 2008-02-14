@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE SetDataExtractionTaskComplete
+CREATE PROCEDURE dbo.SetDataExtractionTaskComplete
 /****************************************************
 **
 **	Desc: Sets status of analysis job to successful
@@ -20,6 +19,7 @@ CREATE PROCEDURE SetDataExtractionTaskComplete
 **      @completionCode			0->success, 1->failure, anything else ->no intermediate files
 **      @resultsFolderName		name of folder that contains analysis results
 **      @comment			text to be appended to comment field
+**		  @message			output message for debugging
 **
 **	Auth: jds
 **	Date: 01/6/2006

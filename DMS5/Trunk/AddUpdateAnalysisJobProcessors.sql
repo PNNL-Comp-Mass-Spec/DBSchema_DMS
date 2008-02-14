@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateAnalysisJobProcessors
+CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Analysis_Job_Processors
@@ -285,6 +285,7 @@ As
 	end -- add or update mode
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]
