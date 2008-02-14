@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
@@ -26,6 +25,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
 **		    09/04/2007 grk - corrected bug in "@RuleEvalNotes" update.
+**			12/28/2007 mem - Updated to allow preview of jobs for datasets with rating -10 (unreviewed)
+**			01/04/2007 mem - Fixed bug that incorrectly allowed rules to be evaluated when rating = -10 and @outputType = 'Export Jobs'
 **
 *****************************************************/
 (
@@ -107,8 +108,11 @@ As
 	--
 	if (@Rating < 2)
 	begin
-		set @message = 'Dataset rating does not allow creation of jobs'
-		goto done
+		if @Rating <> -10 OR @outputType = 'Export Jobs'
+		begin
+			set @message = 'Dataset rating does not allow creation of jobs'
+			goto done
+		end
 	end
 
 	---------------------------------------------------

@@ -3,10 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE VIEW dbo.V_Find_Analysis_Job
+CREATE VIEW [dbo].[V_Find_Analysis_Job]
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS Pri,
@@ -29,7 +26,7 @@ SELECT AJ.AJ_jobID AS Job,
        ISNULL(AJ.AJ_assignedProcessorName, '(none)') AS Processor,
        AJPG.Group_Name AS [Assoc. Proc. Group],
        AJ.AJ_requestID AS Run_Request,
-       DAP.Archive_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Folder Path]
+       DAP.Archive_Path + '\' + DS.Dataset_Num  + '\' + AJ.AJ_resultsFolderName AS [Archive Folder Path]
 FROM dbo.V_Dataset_Archive_Path AS DAP
      RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
                       INNER JOIN dbo.T_Dataset AS DS
