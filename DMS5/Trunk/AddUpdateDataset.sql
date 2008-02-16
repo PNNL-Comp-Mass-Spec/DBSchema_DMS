@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			12/07/2007 mem - Now disallowing updates for datasets with a rating of -10 = Unreviewed (use UpdateDatasetDispositions instead)
 **			01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @Mode = 'add' and @requestID is 0
 **			02/13/2008 mem - Now sending @datasetNum to function ValidateChars and checking for @badCh = '[space]' (Ticket #602)
+**			02/15/2008 mem - Increased size of @folderName to varchar(128) (Ticket #645)
 **    
 *****************************************************/
 (
@@ -60,7 +61,7 @@ As
 
 	declare @msg varchar(256)
 
-	declare @folderName varchar(64)
+	declare @folderName varchar(128)
 	
 
 	---------------------------------------------------
