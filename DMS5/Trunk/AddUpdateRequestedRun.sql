@@ -430,3 +430,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User]
+GO

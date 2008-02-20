@@ -365,3 +365,5 @@ GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin]
 GO
 GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_RunScheduler]
 GO
+GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS2_SP_User]
+GO

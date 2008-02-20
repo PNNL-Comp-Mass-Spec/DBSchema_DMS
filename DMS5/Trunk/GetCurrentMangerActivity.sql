@@ -188,3 +188,5 @@ return @myError
 GO
 GRANT EXECUTE ON [dbo].[GetCurrentMangerActivity] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[GetCurrentMangerActivity] TO [DMS2_SP_User]
+GO

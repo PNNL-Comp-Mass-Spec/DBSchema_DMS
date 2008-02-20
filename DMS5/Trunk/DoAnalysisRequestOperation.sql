@@ -71,3 +71,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DoAnalysisRequestOperation] TO [DMS_Analysis]
 GO
+GRANT EXECUTE ON [dbo].[DoAnalysisRequestOperation] TO [DMS2_SP_User]
+GO

@@ -19,10 +19,12 @@ CREATE Procedure GetMetadataForDataset
 **
 **		Auth: grk
 **		Date: 4/9/2002
+**		Modified: DAC, 02/18/2008 -- changed @datasetNum from 64 chars to 128 to be consistent
+**                                 with max length allowed in dataset table
 **    
 *****************************************************/
  (
-  @datasetNum varchar(64)
+  @datasetNum varchar(128)
  )
 As
  set nocount on

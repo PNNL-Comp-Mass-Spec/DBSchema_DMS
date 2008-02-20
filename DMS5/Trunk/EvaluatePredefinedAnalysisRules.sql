@@ -27,6 +27,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **		    09/04/2007 grk - corrected bug in "@RuleEvalNotes" update.
 **			12/28/2007 mem - Updated to allow preview of jobs for datasets with rating -10 (unreviewed)
 **			01/04/2007 mem - Fixed bug that incorrectly allowed rules to be evaluated when rating = -10 and @outputType = 'Export Jobs'
+**			01/30/2008 grk - Set several in #RuleEval to be explicitly null (needed by DMS2)
 **
 *****************************************************/
 (
@@ -157,30 +158,30 @@ As
 		CREATE TABLE #RuleEval (
 			[Step] int IDENTITY(1,1),
 			[Level] int, 
-			[Seq.] int, 
+			[Seq.] int NULL, 
 			Rule_ID int, 
-			[Next Lvl.] int, 
-			[Action] varchar(64), 
-			[Reason] varchar(256),
-			[Notes] varchar(256),
-			[Analysis Tool] varchar(64), 
-			[Instrument Class Crit.] varchar(32), 
-			[Instrument Crit.] varchar(128), 
-			[Campaign Crit.] varchar(128), 
-			[Experiment Crit.] varchar(128), 
-			[Organism Crit.] varchar(64), 
-			[Dataset Crit.] varchar(128), 
+			[Next Lvl.] int NULL, 
+			[Action] varchar(64) NULL, 
+			[Reason] varchar(256) NULL,
+			[Notes] varchar(256) NULL,
+			[Analysis Tool] varchar(64) NULL, 
+			[Instrument Class Crit.] varchar(32) NULL, 
+			[Instrument Crit.] varchar(128) NULL, 
+			[Campaign Crit.] varchar(128) NULL, 
+			[Experiment Crit.] varchar(128) NULL, 
+			[Organism Crit.] varchar(64) NULL, 
+			[Dataset Crit.] varchar(128) NULL, 
 			[Exp. Comment Crit.] varchar(128),
-			[Labelling Incl.] varchar(64), 
-			[Labelling Excl.] varchar(64),
-			[Parm File] varchar(255), 
-			[Settings File] varchar(255),
-			Organism varchar(64), 
-			[Organism DB] varchar(64), 
-			[Prot. Coll.] varchar(512), 
-			[Prot. Opts.] varchar(256),
-			Priority int, 
-			[Processor Group] varchar(64)
+			[Labelling Incl.] varchar(64) NULL, 
+			[Labelling Excl.] varchar(64) NULL,
+			[Parm File] varchar(255) NULL, 
+			[Settings File] varchar(255) NULL,
+			Organism varchar(64) NULL, 
+			[Organism DB] varchar(64) NULL, 
+			[Prot. Coll.] varchar(512) NULL, 
+			[Prot. Opts.] varchar(256) NULL,
+			Priority int NULL, 
+			[Processor Group] varchar(64) NULL
 		)
 	End
 	
@@ -681,4 +682,6 @@ Done:
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]
+GO
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User]
 GO

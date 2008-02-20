@@ -331,3 +331,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler]
 GO
+GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS2_SP_User]
+GO

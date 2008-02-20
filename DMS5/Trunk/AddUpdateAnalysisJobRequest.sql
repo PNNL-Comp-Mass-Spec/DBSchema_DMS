@@ -30,6 +30,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket:368)
 **			05/22/2007 mem - Updated to prevent addition of duplicate datasets to  (Ticket:481)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **    
 *****************************************************/
 (
@@ -124,12 +125,12 @@ As
 
 	CREATE TABLE #TD (
 		Dataset_Num varchar(128),
-		Dataset_ID int,
-		IN_class varchar(64), 
-		DS_state_ID int, 
-		AS_state_ID int,
-		Dataset_Type varchar(64),
-		DS_rating smallint
+		Dataset_ID int NULL,
+		IN_class varchar(64) NULL, 
+		DS_state_ID int NULL, 
+		AS_state_ID int NULL,
+		Dataset_Type varchar(64) NULL,
+		DS_rating smallint NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -138,7 +139,7 @@ As
 	begin
 		set @msg = 'Failed to create temporary table'
 		RAISERROR (@msg, 10, 1)
-		return 51007
+		return 51010
 	end
 
 	---------------------------------------------------
@@ -158,10 +159,14 @@ As
 	begin
 		set @msg = 'Error populating temporary table'
 		RAISERROR (@msg, 10, 1)
-		return 51007
+		return 51008
 	end
-
-	
+/*
+set @message = '|' + @datasets + '|'
+SELECT @myError = count(*) FROM MakeTableFromList(@datasets)
+set @message = @message + cast(@myError  as varchar(12)) + '|'
+return 1
+*/	
 	---------------------------------------------------
 	-- Validate @protColNameList
 	-- Note that ValidateProteinCollectionListForDatasets
@@ -311,7 +316,7 @@ As
 		begin
 			set @msg = 'Insert new job operation failed'
 			RAISERROR (@msg, 10, 1)
-			return 51007
+			return 51009
 		end
 		set @newRequestNum = IDENT_CURRENT('T_Analysis_Job_Request')
 
@@ -363,4 +368,6 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User]
 GO

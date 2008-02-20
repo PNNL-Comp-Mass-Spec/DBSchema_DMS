@@ -211,3 +211,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS2_SP_User]
+GO

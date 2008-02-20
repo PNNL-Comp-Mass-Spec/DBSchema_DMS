@@ -28,11 +28,11 @@ CREATE TABLE [dbo].[T_Organisms](
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY NONCLUSTERED 
 (
 	[Organism_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY],
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY],
  CONSTRAINT [IX_T_Organisms] UNIQUE NONCLUSTERED 
 (
 	[OG_name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -41,10 +41,10 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms] 
 (
 	[OG_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_i_T_Organisms] ******/
+/****** Object:  Trigger [trig_i_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -71,7 +71,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
+/****** Object:  Trigger [trig_u_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
 

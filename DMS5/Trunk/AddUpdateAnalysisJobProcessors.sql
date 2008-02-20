@@ -290,3 +290,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS2_SP_User]
+GO

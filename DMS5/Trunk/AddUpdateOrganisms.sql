@@ -334,6 +334,9 @@ As
 
 	return @myError
 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS2_SP_User]
 GO

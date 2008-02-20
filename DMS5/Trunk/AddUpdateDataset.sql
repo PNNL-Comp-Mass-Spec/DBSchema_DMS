@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateDataset
+CREATE Procedure [dbo].[AddUpdateDataset]
 /****************************************************
 **
 **	Desc:	Adds new dataset entry to DMS database
@@ -842,6 +842,9 @@ As
 
 	return 0
 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS2_SP_User]
 GO

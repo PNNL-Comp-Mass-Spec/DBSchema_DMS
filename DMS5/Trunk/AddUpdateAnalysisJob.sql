@@ -33,6 +33,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			2/15/2007  grk - Added propagation mode (Ticket #366)
 **          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **    
 *****************************************************/
 (
@@ -146,12 +147,12 @@ As
 
 	CREATE TABLE #TD (
 		Dataset_Num varchar(128),
-		Dataset_ID int,
-		IN_class varchar(64), 
-		DS_state_ID int, 
-		AS_state_ID int,
-		Dataset_Type varchar(64),
-		DS_rating smallint
+		Dataset_ID int NULL,
+		IN_class varchar(64) NULL, 
+		DS_state_ID int NULL, 
+		AS_state_ID int NULL,
+		Dataset_Type varchar(64) NULL,
+		DS_rating smallint NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -178,7 +179,7 @@ As
 	begin
 		set @msg = 'Error populating temporary table'
 		RAISERROR (@msg, 10, 1)
-		return 51007
+		return 51011
 	end
 
 	---------------------------------------------------
@@ -323,7 +324,7 @@ As
 			rollback transaction @transName
 			set @msg = 'Insert new job operation failed'
 			RAISERROR (@msg, 10, 1)
-			return 51007
+			return 51013
 		end
 		
 		-- return job number of newly created job
@@ -347,7 +348,7 @@ As
 				rollback transaction @transName
 				set @msg = 'Insert new job association failed'
 				RAISERROR (@msg, 10, 1)
-				return 51007
+				return 51014
 			end
 		end
 
@@ -384,7 +385,7 @@ As
 			begin
 				set @msg = 'Error looking up state name'
 				RAISERROR (@msg, 10, 1)
-				return 51004
+				return 51015
 			end
 		end		
 
@@ -405,7 +406,7 @@ As
 		begin
 			set @msg = 'Error looking up existing job association'
 			RAISERROR (@msg, 10, 1)
-			return 51019
+			return 51016
 		end
 		
 		---------------------------------------------------
@@ -442,7 +443,7 @@ As
 			rollback transaction @transName
 			set @msg = 'Update operation failed: "' + @jobNum + '"'
 			RAISERROR (@msg, 10, 1)
-			return 51004
+			return 51017
 		end
 
 		---------------------------------------------------
@@ -504,4 +505,6 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS2_SP_User]
 GO

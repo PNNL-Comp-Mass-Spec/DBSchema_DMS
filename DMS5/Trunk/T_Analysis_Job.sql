@@ -35,7 +35,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -44,45 +44,45 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_created] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_AJ_datasetID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_datasetID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_datasetID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_AJ_StateNameCached] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_StateNameCached] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateNameCached] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_OrganismDBName] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_OrganismDBName] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_organismDBName] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_RequestID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_RequestID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_requestID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_State] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_d_AnalysisJob] ******/
+/****** Object:  Trigger [trig_d_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -133,7 +133,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
+/****** Object:  Trigger [trig_i_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -174,7 +174,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
+/****** Object:  Trigger [trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 

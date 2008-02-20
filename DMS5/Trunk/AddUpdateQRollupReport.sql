@@ -400,3 +400,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateQRollupReport] TO [DMS_Ops_Admin]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateQRollupReport] TO [DMS2_SP_User]
+GO

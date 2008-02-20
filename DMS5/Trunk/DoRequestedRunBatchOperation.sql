@@ -265,3 +265,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler]
 GO
+GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS2_SP_User]
+GO

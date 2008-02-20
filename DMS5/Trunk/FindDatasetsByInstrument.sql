@@ -193,3 +193,5 @@ As
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[FindDatasetsByInstrument] TO [DMS2_SP_User]
+GO

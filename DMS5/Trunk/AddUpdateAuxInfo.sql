@@ -13,7 +13,8 @@ CREATE Procedure AddUpdateAuxInfo
 **	Return values: 0: success, otherwise, error code
 **
 **		Auth: grk
-**		Date: 3/27/2002
+**		3/27/2002 -- initial release
+**      12/18/2007 grk - Improved ability to handle target ID if supplied as target name
 **    
 *****************************************************/
 (
@@ -46,46 +47,56 @@ As
 	-- future
 
 	---------------------------------------------------
-	-- Resolve target name to target table criteria
-	---------------------------------------------------
-
-	declare @tgtTableName varchar(128)
-	declare @tgtTableNameCol varchar(128)
-	declare @tgtTableIDCol varchar(128)
-
-	SELECT 
-		@tgtTableName = Target_Table, 
-		@tgtTableIDCol = Target_ID_Col, 
-		@tgtTableNameCol = Target_Name_Col
-	FROM T_AuxInfo_Target
-	WHERE (Name = @targetName)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51000
-	end
-
-	---------------------------------------------------
-	-- Resolve target name and entity name to entity ID
+	-- has ID been supplied as target name?
 	---------------------------------------------------
 
 	declare @targetID int
 	set @targetID = 0
-	
-	declare @sql nvarchar(1024)
-	
-	set @sql = N'' 
-	set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
-	set @sql = @sql + ' FROM ' + @tgtTableName
-	set @sql = @sql + ' WHERE ' + @tgtTableNameCol
-	set @sql = @sql + ' = ''' + @targetEntityName + ''''
-	
-	exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
+	if ISNUMERIC(@targetEntityName) > 0
+		begin
+			set @targetID = cast(@targetEntityName as int)
+		end
+	else
+		begin --<1>
+			---------------------------------------------------
+			-- Resolve target name to target table criteria
+			---------------------------------------------------
+
+			declare @tgtTableName varchar(128)
+			declare @tgtTableNameCol varchar(128)
+			declare @tgtTableIDCol varchar(128)
+
+			SELECT 
+				@tgtTableName = Target_Table, 
+				@tgtTableIDCol = Target_ID_Col, 
+				@tgtTableNameCol = Target_Name_Col
+			FROM T_AuxInfo_Target
+			WHERE (Name = @targetName)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0 or @myRowCount <> 1
+			begin
+				set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
+				RAISERROR (@msg, 10, 1)
+				return 51000
+			end
+
+			---------------------------------------------------
+			-- Resolve target name and entity name to entity ID
+			---------------------------------------------------
+			
+			declare @sql nvarchar(1024)
+			
+			set @sql = N'' 
+			set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
+			set @sql = @sql + ' FROM ' + @tgtTableName
+			set @sql = @sql + ' WHERE ' + @tgtTableNameCol
+			set @sql = @sql + ' = ''' + @targetEntityName + ''''
+			
+			exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
+		end --<1>
 	---------------------------------------------------
 	-- 
 	---------------------------------------------------

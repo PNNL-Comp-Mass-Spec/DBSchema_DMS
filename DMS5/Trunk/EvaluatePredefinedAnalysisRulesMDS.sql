@@ -151,3 +151,5 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS2_SP_User]
+GO

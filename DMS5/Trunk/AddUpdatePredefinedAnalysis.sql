@@ -471,3 +471,5 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS2_SP_User]
+GO

@@ -154,3 +154,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS_Archive_Admin]
 GO
+GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS2_SP_User]
+GO

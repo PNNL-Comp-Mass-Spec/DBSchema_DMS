@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Purgable_Datasets_NoInterest
+CREATE VIEW [dbo].[V_Purgable_Datasets_NoInterest]
 AS
 SELECT DS.Dataset_ID,
        SPath.SP_machine_name AS StorageServerName,

@@ -518,3 +518,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User]
+GO

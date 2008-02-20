@@ -231,3 +231,5 @@ GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry]
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User]
+GO

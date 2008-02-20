@@ -13,12 +13,12 @@ CREATE TABLE [dbo].[T_Analysis_Job_Annotations](
 (
 	[Job_ID] ASC,
 	[Key_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Annotations] ******/
+/****** Object:  Trigger [trig_u_T_Analysis_Job_Annotations] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -75,6 +75,4 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Annotation_Keys] FOREIGN KEY([Key_Name])
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Annotations] CHECK CONSTRAINT [FK_T_Analysis_Job_Annotations_T_Annotation_Keys]
 GO

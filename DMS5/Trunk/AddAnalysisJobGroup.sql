@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **          2/15/2007  grk - added associated processor group (Ticket #383)
 **          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			02/19/2008 grk - add explicit NULL column attribute to #TD
 *****************************************************/
 (
     @datasetList varchar(6000),
@@ -105,12 +106,12 @@ As
 
 	CREATE TABLE #TD (
 		Dataset_Num varchar(128),
-		Dataset_ID int,
-		IN_class varchar(64), 
-		DS_state_ID int, 
-		AS_state_ID int,
-		Dataset_Type varchar(64),
-		DS_rating smallint
+		Dataset_ID int NULL,
+		IN_class varchar(64) NULL, 
+		DS_state_ID int NULL, 
+		AS_state_ID int NULL,
+		Dataset_Type varchar(64) NULL,
+		DS_rating smallint NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -414,4 +415,6 @@ Done:
 
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis]
+GO
+GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS2_SP_User]
 GO

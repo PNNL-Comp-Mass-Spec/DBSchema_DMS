@@ -247,3 +247,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateArchiveDatasets] TO [DMS2_SP_User]
+GO

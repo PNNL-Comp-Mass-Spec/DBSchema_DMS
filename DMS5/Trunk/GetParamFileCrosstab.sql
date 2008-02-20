@@ -172,3 +172,5 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS2_SP_User]
+GO

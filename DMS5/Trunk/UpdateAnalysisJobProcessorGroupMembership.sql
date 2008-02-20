@@ -22,6 +22,7 @@ processors in the processor list to be associated with the given
 **		Auth: grk
 **		Date: 02/13/2007 (Ticket #384)
 **            02/20/2007 grk - Fixed reference to group ID
+**            02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
 **    
 *****************************************************/
     @processorNameList varchar(6000),
@@ -68,7 +69,7 @@ AS
 	---------------------------------------------------
  
  	CREATE TABLE #TP (
-		ID int,
+		ID int NULL,
 		Processor_Name varchar(64)
 	)
 	--
@@ -284,4 +285,6 @@ AS
 	return @myError
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS_Analysis]
+GO
+GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS2_SP_User]
 GO

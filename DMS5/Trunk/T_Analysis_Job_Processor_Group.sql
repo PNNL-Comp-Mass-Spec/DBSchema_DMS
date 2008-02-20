@@ -15,16 +15,16 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group](
  CONSTRAINT [T_Analysis_Job_Processor_Group_PK] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY],
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY],
  CONSTRAINT [IX_T_Analysis_Job_Processor_Group] UNIQUE NONCLUSTERED 
 (
 	[Group_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group] ******/
+/****** Object:  Trigger [trig_u_T_Analysis_Job_Processor_Group] ******/
 SET ANSI_NULLS ON
 GO
 

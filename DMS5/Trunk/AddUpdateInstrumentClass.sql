@@ -172,3 +172,5 @@ As
 	return 0
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateInstrumentClass] TO [DMS2_SP_User]
+GO

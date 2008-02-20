@@ -209,3 +209,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS_LC_Column_Admin]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS2_SP_User]
+GO

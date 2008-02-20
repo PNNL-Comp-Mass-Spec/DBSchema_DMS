@@ -481,3 +481,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS2_SP_User]
+GO

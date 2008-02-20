@@ -168,5 +168,7 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS_Sample_Prep_Admin]
 GO
+GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS2_SP_User]
+GO
 GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Table_Write]
 GO

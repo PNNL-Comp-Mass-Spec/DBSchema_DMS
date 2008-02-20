@@ -299,3 +299,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateExperimentGroup] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateExperimentGroup] TO [DMS2_SP_User]
+GO

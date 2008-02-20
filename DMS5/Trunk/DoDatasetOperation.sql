@@ -207,3 +207,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS_DS_Entry]
 GO
+GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS2_SP_User]
+GO

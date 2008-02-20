@@ -166,3 +166,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS_LC_Column_Admin]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS2_SP_User]
+GO

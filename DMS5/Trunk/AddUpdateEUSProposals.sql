@@ -280,3 +280,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS_EUS_Admin]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS2_SP_User]
+GO

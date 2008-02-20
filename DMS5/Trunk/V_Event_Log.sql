@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Event_Log_24_Hour_Summary] ******/
+/****** Object:  View [dbo].[V_Event_Log] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Event_Log
+CREATE VIEW [dbo].[V_Event_Log]
 AS
 SELECT EL."Index",
        EL.Target_Type,
@@ -62,5 +62,6 @@ FROM dbo.T_Event_Log EL
      LEFT OUTER JOIN dbo.T_Analysis_State_Name AJSN
        ON EL.Target_State = AJSN.AJS_stateID AND
           EL.Target_Type = 5
+
 
 GO

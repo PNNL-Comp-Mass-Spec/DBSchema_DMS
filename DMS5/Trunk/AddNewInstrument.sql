@@ -228,3 +228,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddNewInstrument] TO [DMS2_SP_User]
+GO

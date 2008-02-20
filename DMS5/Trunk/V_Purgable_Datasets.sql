@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Purgable_Datasets
+CREATE VIEW [dbo].[V_Purgable_Datasets]
 AS
 SELECT DS.Dataset_ID,
        SPath.SP_machine_name AS StorageServerName,
@@ -31,7 +31,6 @@ WHERE (InstClass.is_purgable > 0) AND
                     WHERE (AJ_StateID IN (1, 2, 3, 8, 9, 10, 11, 12, 16, 17)) AND
                           (AJ_datasetID = DS.Dataset_ID) ))
 GROUP BY DS.Dataset_ID, SPath.SP_machine_name, SPath.SP_vol_name_server, InstClass.raw_data_type
-
 
 
 GO

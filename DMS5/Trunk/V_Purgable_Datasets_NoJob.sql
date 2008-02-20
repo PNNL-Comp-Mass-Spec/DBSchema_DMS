@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Purgable_Datasets_NoJob
+CREATE VIEW [dbo].[V_Purgable_Datasets_NoJob]
 AS
 SELECT DS.Dataset_ID,
        SPath.SP_machine_name AS StorageServerName,
@@ -26,4 +26,5 @@ WHERE (InstClass.is_purgable > 0) AND
       (DA.AS_update_state_ID = 4) AND
       (DS.Dataset_ID NOT IN ( SELECT AJ_datasetID
                               FROM dbo.T_Analysis_Job ))
+
 GO

@@ -350,3 +350,5 @@ GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_LC_Column_Admin]
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_RunScheduler]
 GO
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS2_SP_User]
+GO

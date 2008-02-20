@@ -454,5 +454,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [DMS2_SP_User]
+GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [RBAC-Web_Analysis]
 GO

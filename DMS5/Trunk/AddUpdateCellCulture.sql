@@ -265,3 +265,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User]
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS2_SP_User]
+GO

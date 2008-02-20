@@ -294,5 +294,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [DMS2_SP_User]
+GO
 GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [PNL\D3M578]
 GO
