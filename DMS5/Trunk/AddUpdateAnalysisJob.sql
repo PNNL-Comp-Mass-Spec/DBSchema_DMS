@@ -34,6 +34,8 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
+**			02/22/2008 mem - Updated to allow updating jobs in state "holding"
+**						   - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket:648)
 **    
 *****************************************************/
 (
@@ -63,6 +65,14 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
+	
+	---------------------------------------------------
+	-- Assure that the comment and associated processor group 
+	-- variables are not null
+	---------------------------------------------------
+	
+	set @comment = IsNull(@comment, '')
+	set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
 	
 	set @message = ''
 
@@ -101,11 +111,11 @@ As
 
 	if @mode = 'update'
 	begin
-		-- changes only allowed to jobs in 'new' state
+		-- changes only allowed to jobs in 'new' or 'holding' state
 		--
-		if @stateID <> 1
+		if @stateID <> 1 and @stateID <> 8
 		begin
-				set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new" state '
+				set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new" or "holding" state '
 				RAISERROR (@msg, 10, 1)
 				return 51005
 		end

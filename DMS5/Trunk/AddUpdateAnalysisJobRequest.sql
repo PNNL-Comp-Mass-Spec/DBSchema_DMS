@@ -31,6 +31,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			05/22/2007 mem - Updated to prevent addition of duplicate datasets to  (Ticket:481)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
+**			02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648)
 **    
 *****************************************************/
 (
@@ -59,6 +60,12 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 
+	---------------------------------------------------
+	-- Assure that the comment variable is not null
+	---------------------------------------------------
+	
+	set @comment = IsNull(@comment, '')
+	
 	set @message = ''
 
 	declare @msg varchar(512)
@@ -362,7 +369,6 @@ return 1
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
