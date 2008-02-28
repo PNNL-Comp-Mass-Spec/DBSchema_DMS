@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.ValidateProteinCollectionListForDatasets
 /****************************************************
 **
@@ -17,6 +16,7 @@ CREATE PROCEDURE dbo.ValidateProteinCollectionListForDatasets
 **	Date:	11/13/2006 mem - Initial revision (Ticket #320)
 **			02/08/2007 mem - Updated to use T_Internal_Std_Parent_Mixes to determine the protein collections associated with internal standards (Ticket #380)
 **			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			02/28/2008 grk/mem - Detect duplicate names in protein collection list (https://prismtrac.pnl.gov/trac/ticket/650)
 **    
 *****************************************************/
 (
@@ -74,6 +74,64 @@ As
 		Experiment_Count int NOT NULL
 	)
 
+	
+	CREATE TABLE #ProteinCollections (
+		RowNumberID int IDENTITY(1,1) NOT NULL,
+		Protein_Collection_Name varchar(128) NOT NULL,
+		Collection_Appended tinyint NOT NULL
+	)
+	
+	CREATE TABLE #ProteinCollectionsToAdd (
+		UniqueID int IDENTITY(1,1) NOT NULL,
+		Protein_Collection_Name varchar(128) NOT NULL,
+		Dataset_Count int NOT NULL,
+		Experiment_Count int NOT NULL
+	)
+
+
+	--------------------------------------------------------------
+	-- Populate #ProteinCollections with the protein collections in @protCollNameList
+	--------------------------------------------------------------
+	--
+	INSERT INTO #ProteinCollections (Protein_Collection_Name, Collection_Appended)
+	SELECT Item, 0 AS Collection_Appended
+	FROM MakeTableFromList(@protCollNameList)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+	--------------------------------------------------------------
+	-- Look for duplicates in #ProteinCollections
+	--------------------------------------------------------------
+	--
+	declare @dups varchar(1024)
+	set @dups = ''
+
+	SELECT   
+		@dups = CASE 
+				WHEN @dups = '' THEN ''
+				ELSE @dups + ', '
+				END + Protein_Collection_Name
+	FROM #ProteinCollections
+	GROUP BY Protein_Collection_Name
+	HAVING   COUNT(*) > 1
+	--
+	SELECT @myError = @@error
+	--
+	If @myError <> 0
+	Begin
+		set @msg = 'Error trying to look for duplicate protein collection names'
+		RAISERROR (@msg, 10, 1)
+		return 51009
+	End	
+	
+	If @dups <> ''
+	Begin
+		set @msg = 'There were duplicate names (' + @dups + ') in the protein collections list'
+		RAISERROR (@msg, 10, 1)
+		return 51010
+	End
+
 	--------------------------------------------------------------
 	-- Populate #TmpDatasets with the datasets in @datasets
 	--------------------------------------------------------------
@@ -122,44 +180,11 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	If @myRowCount = 0
-	Begin
-		-- No internal standards with associated protein collections; nothing more to do
-		Return 0
-	End
-
-	--------------------------------------------------------------
-	-- Create two more temporary tables
-	--------------------------------------------------------------
 	
-	CREATE TABLE #ProteinCollections (
-		RowNumberID int IDENTITY(1,1) NOT NULL,
-		Protein_Collection_Name varchar(128) NOT NULL,
-		Collection_Appended tinyint NOT NULL
-	)
-	
-	CREATE TABLE #ProteinCollectionsToAdd (
-		UniqueID int IDENTITY(1,1) NOT NULL,
-		Protein_Collection_Name varchar(128) NOT NULL,
-		Dataset_Count int NOT NULL,
-		Experiment_Count int NOT NULL
-	)
-
 	--------------------------------------------------------------
 	-- Make sure @protCollNameList contains each of the 
 	-- Protein_Collection_Name values in #IntStds
 	--------------------------------------------------------------
-	--
-	-- First, populate #ProteinCollections with the protein collections in @protCollNameList
-	--
-	INSERT INTO #ProteinCollections (Protein_Collection_Name, Collection_Appended)
-	SELECT Item, 0 AS Collection_Appended
-	FROM MakeTableFromList(@protCollNameList)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-
-	-- Now make sure that each Protein_Collection_Name entry in #IntStds
-	-- is present in #ProteinCollections
 	--
 	INSERT INTO #ProteinCollectionsToAdd (Protein_Collection_Name, Dataset_Count, Experiment_Count)
 	SELECT I.Protein_Collection_Name, SUM(I.Dataset_Count), SUM(I.Experiment_Count)
@@ -194,11 +219,11 @@ As
 		Begin
 			set @msg = 'Error populating #ProteinCollections with the missing protein collections'
 			RAISERROR (@msg, 10, 1)
-			return 51006
+			return 51008
 		End
 		
 		Set @CollectionCountAdded = @myRowCount
-		
+
 		--------------------------------------------------------------
 		-- Collapse #ProteinCollections into @protCollNameList
 		-- The Order By statements in this query assure that the 
@@ -282,6 +307,5 @@ As
 	
 Done:
 	return @myError
-
 
 GO
