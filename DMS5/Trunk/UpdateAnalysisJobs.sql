@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
+CREATE PROCEDURE dbo.UpdateAnalysisJobs
 /****************************************************
 **
 **	Desc:
@@ -14,19 +13,22 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 04/06/2006
-**		      04/10/2006 grk - widened size of list argument to 6000 characters
-**		      04/12/2006 grk - eliminated forcing null for blank assigned processor
-**		      06/20/2006 jds - added support to find/replace text in the comment field
-**		      08/02/2006 grk - clear the AJ_ResultsFolderName, AJ_extractionProcessor, 
-**                             AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
-**            11/15/2006 grk - add logic for propagation mode (ticket #328)
-**            03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
-**            03/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
-**            05/07/2007 grk - corrected spelling of sproc name
+**	Auth:	grk
+**	Date:	04/06/2006
+**			04/10/2006 grk - widened size of list argument to 6000 characters
+**			04/12/2006 grk - eliminated forcing null for blank assigned processor
+**			06/20/2006 jds - added support to find/replace text in the comment field
+**			08/02/2006 grk - clear the AJ_ResultsFolderName, AJ_extractionProcessor, 
+**                           AJ_extractionStart, and AJ_extractionFinish fields when resetting a job
+**			11/15/2006 grk - add logic for propagation mode (ticket #328)
+**			03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
+**			03/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
+**			05/07/2007 grk - corrected spelling of sproc name
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**			03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
 **    
 *****************************************************/
+(
     @JobList varchar(6000),
     @state varchar(32) = '',
     @priority varchar(12) = '',
@@ -36,28 +38,46 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
     @assignedProcessor varchar(64),
     @associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
-    @mode varchar(12) = 'update',
-    @message varchar(512) output
+    @mode varchar(12) = 'update',			-- update or reset to change data; otherwise, will simply validate parameters
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	set @myError = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	declare @myRowCount int
+	set @myRowCount = 0
 
-  declare @msg varchar(512)
-  declare @list varchar(1024)
+	set @message = ''
 
-  declare @transName varchar(32)
-  set @transName = ''
+	declare @msg varchar(512)
+	declare @list varchar(1024)
 
-  ---------------------------------------------------
-  -- 
-  ---------------------------------------------------
+	declare @AlterEventLogRequired tinyint
+	set @AlterEventLogRequired = 0
+
+	declare @transName varchar(32)
+	set @transName = ''
+	
+	---------------------------------------------------
+	-- Clean up null arguments
+	---------------------------------------------------
+	
+	set @state = isnull(@state, '')
+	set @priority = isnull(@priority, '')
+	set @comment = isnull(@comment, '')
+	set @findText = isnull(@findText, '')
+	set @replaceText = isnull(@replaceText, '')
+	set @assignedProcessor = isnull(@assignedProcessor, '')
+	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
+	set @propagationMode = isnull(@propagationMode, '')
+
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
 
 	if @JobList = ''
 	begin
@@ -97,7 +117,7 @@ As
 
 	INSERT INTO #TAJ
 	(Job)
-	SELECT Item
+	SELECT DISTINCT Convert(int, Item)
 	FROM MakeTableFromList(@JobList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -204,6 +224,8 @@ As
 				RAISERROR (@msg, 10, 1)
 				return 51004
 			end
+
+			Set @AlterEventLogRequired = 1
 		end
 
 		-----------------------------------------------
@@ -326,9 +348,11 @@ As
 		begin transaction @transName
 		set @myError = 0
 		
+		Set @stateID = 1
+		
 		UPDATE T_Analysis_Job 
 		SET 
-			AJ_StateID = 1, 
+			AJ_StateID = @stateID, 
 			AJ_start = NULL, 
 			AJ_finish = NULL,
 			AJ_resultsFolderName = '',
@@ -349,8 +373,31 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
+		
+		Set @AlterEventLogRequired = 1
 	end -- reset mode
  
+ 	If Len(@callingUser) > 0 And @AlterEventLogRequired <> 0
+	Begin
+		-- @callingUser is defined; call AlterEventLogEntryUserMultiID
+		-- to alter the Entered_By field in T_Event_Log
+		--
+
+		-- Populate a temporary table with the list of Job IDs just updated
+		CREATE TABLE #TmpIDUpdateList (
+			TargetID int NOT NULL
+		)
+		
+		CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+		
+		INSERT INTO #TmpIDUpdateList (TargetID)
+		SELECT DISTINCT Job
+		FROM #TAJ
+			
+		Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
+	End
+	
+	
  	---------------------------------------------------
 	-- Handle associated processor Group
 	---------------------------------------------------
@@ -449,9 +496,6 @@ As
 	end
 	
 	return @myError
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [DMS2_SP_User]
