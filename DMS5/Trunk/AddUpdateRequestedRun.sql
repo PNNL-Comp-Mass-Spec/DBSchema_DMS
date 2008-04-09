@@ -36,6 +36,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
 **			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
+**			04/08/2008 grk - Added secondary separation field (Ticket #658)
 **
 *****************************************************/
 (
@@ -55,7 +56,8 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@eusUsersList varchar(1024) = '',
 	@mode varchar(12) = 'add', -- or 'update'
 	@request int output,
-	@message varchar(512) output
+	@message varchar(512) output,
+	@secSep varchar(64) = 'none'	
 )
 As
 	set nocount on
@@ -257,6 +259,32 @@ As
 	end	
 
 	---------------------------------------------------
+	-- Resolve ID for @secSep
+	---------------------------------------------------
+
+	declare @sepID int
+	set @sepID = 0
+	--
+	SELECT @sepID = SS_ID
+	FROM T_Secondary_Sep
+	WHERE SS_name = @secSep	
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error trying to look up separation type ID'
+		RAISERROR (@msg, 10, 1)
+		return 51098
+	end
+	if @sepID = 0
+	begin
+		set @msg = 'Could not resolve separation type to ID'
+		RAISERROR (@msg, 10, 1)
+		return 51099
+	end
+
+	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments
 	-- that have associated sample prep requests)
 	---------------------------------------------------
@@ -320,7 +348,8 @@ As
 				RDS_Well_Num,
 				RDS_internal_standard,
 				RDS_EUS_Proposal_ID,
-				RDS_EUS_UsageType
+				RDS_EUS_UsageType,
+				RDS_Sec_Sep
 			) 
 			VALUES 
 			(
@@ -339,7 +368,8 @@ As
 				@wellNum,
 				@internalStandard,
 				@eusProposalID,
-				@eusUsageTypeID
+				@eusUsageTypeID,
+				@secSep
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -394,7 +424,8 @@ As
 			RDS_Well_Num = @wellNum,
 			RDS_internal_standard = @internalStandard,
 			RDS_EUS_Proposal_ID = @eusProposalID,
-			RDS_EUS_UsageType = @eusUsageTypeID
+			RDS_EUS_UsageType = @eusUsageTypeID,
+			RDS_Sec_Sep = @secSep
 		WHERE (ID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

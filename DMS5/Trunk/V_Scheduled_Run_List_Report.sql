@@ -3,17 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_Scheduled_Run_List_Report]
+CREATE VIEW dbo.V_Scheduled_Run_List_Report
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_priority AS Priority,
        RR.RDS_instrument_name AS Instrument,
        DTN.DST_Name AS Type,
+       RR.RDS_Sec_Sep AS [Separation Type],
        E.Experiment_Num AS Experiment,
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
-       RR.RDS_comment AS Comment,
+       RR.RDS_comment AS Comment_____________,
        RR.RDS_note AS Note,
        RR.RDS_WorkPackage AS [Work Package],
        EUT.Name AS Usage,

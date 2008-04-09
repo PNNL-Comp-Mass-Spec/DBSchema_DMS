@@ -47,6 +47,7 @@ CREATE Procedure UnconsumeScheduledRun
 **      03/10/2006 grk - Fixed logic to handle null batchID on old requests
 **      05/01/2007 grk - Modified logic to optionally retain original history (Ticket #446)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
+**		04/08/2008  grk - Added handling for separation field (Ticket #658)
 **    
 *****************************************************/
 	@datasetNum varchar(128),
@@ -179,7 +180,8 @@ As
 			RDS_Block,
 			RDS_Run_Order,
 			RDS_EUS_Proposal_ID, 
-			RDS_EUS_UsageType
+			RDS_EUS_UsageType,
+			RDS_Sec_Sep
 		)
 		SELECT
 			RDS_Name,
@@ -205,7 +207,8 @@ As
 			RDS_Block,
 			RDS_Run_Order,
 			RDS_EUS_Proposal_ID, 
-			RDS_EUS_UsageType
+			RDS_EUS_UsageType,
+			RDS_Sec_Sep
 		FROM T_Requested_Run_History
 		WHERE     (DatasetID = @datasetID)
 		--

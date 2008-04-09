@@ -18,11 +18,12 @@ CREATE Procedure ConsumeScheduledRun
 **
 **		Auth: grk
 **		Date: 2/13/2003
-**		1/5/2002    -- grk Added stuff for Internal Standard and cart parameters
-**      3/1/2004    -- grk Added validation for experiments matching between request and dataset
-**      10/12/20054 -- grk Added stuff to copy new work package and proposal fields.
-**      1/13/2006   -- grk Handling for new blocking columns in request and history tables.
-**      1/17/2006   -- grk Handling for new EUS tracking columns in request and history tables.
+**		1/5/2002    grk - Added stuff for Internal Standard and cart parameters
+**      3/1/2004    grk - Added validation for experiments matching between request and dataset
+**      10/12/2005  grk - Added stuff to copy new work package and proposal fields.
+**      1/13/2006   grk - Handling for new blocking columns in request and history tables.
+**      1/17/2006   grk - Handling for new EUS tracking columns in request and history tables.
+**		04/08/2008  grk - Added handling for separation field (Ticket #658)
 **    
 *****************************************************/
 	@datasetID int,
@@ -125,7 +126,8 @@ As
 		RDS_Block,
 		RDS_Run_Order,
 		RDS_EUS_Proposal_ID, 
-        RDS_EUS_UsageType
+        RDS_EUS_UsageType,
+        RDS_Sec_Sep
 	)
 	SELECT
 		RDS_Name, 
@@ -150,7 +152,8 @@ As
 		RDS_Block,
 		RDS_Run_Order,
 		RDS_EUS_Proposal_ID, 
-        RDS_EUS_UsageType
+        RDS_EUS_UsageType,
+         RDS_Sec_Sep
 	FROM T_Requested_Run
 	WHERE     (ID = @requestID)
 	--
