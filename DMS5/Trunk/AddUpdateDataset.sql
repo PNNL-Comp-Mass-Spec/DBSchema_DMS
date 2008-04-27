@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateDataset]
+CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **
 **	Desc:	Adds new dataset entry to DMS database
@@ -26,6 +26,8 @@ CREATE Procedure [dbo].[AddUpdateDataset]
 **			01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @Mode = 'add' and @requestID is 0
 **			02/13/2008 mem - Now sending @datasetNum to function ValidateChars and checking for @badCh = '[space]' (Ticket #602)
 **			02/15/2008 mem - Increased size of @folderName to varchar(128) (Ticket #645)
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			04/09/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **    
 *****************************************************/
 (
@@ -47,7 +49,8 @@ CREATE Procedure [dbo].[AddUpdateDataset]
 	@eusUsersList varchar(1024) = '',
 	@requestID int = 0,
 	@mode varchar(12) = 'add', -- or 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
-	@message varchar(512) output
+	@message varchar(512) output,
+   	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -185,6 +188,7 @@ As
 	declare @curDSInstID int
 	declare @curDSStateID int
 	declare @curDSRatingID int
+	declare @newDSStateID int
 	
 	set @datasetID = 0
 	SELECT 
@@ -604,6 +608,8 @@ As
 		set @transName = 'AddNewDataset'
 		begin transaction @transName
 
+		Set @newDSStateID = 1
+		
 		-- insert values into a new row
 		--
 		INSERT INTO T_Dataset(
@@ -633,7 +639,7 @@ As
 				@datasetTypeID,
 				@wellNum,
 				@secSep,
-				1,
+				@newDSStateID,
 				@folderName,
 				@storagePathID,
 				@experimentID,
@@ -654,6 +660,14 @@ As
 		end
 		set @datasetID = IDENT_CURRENT('T_Dataset')
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+		Begin
+			Exec AlterEventLogEntryUser 4, @datasetID, @newDSStateID, @callingUser
+			
+			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+		End
+		
 		---------------------------------------------------
 		-- if scheduled run is not specified, create one
 		---------------------------------------------------
@@ -838,10 +852,14 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
+		
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If @ratingID <> IsNull(@curDSRatingID, -1000)
+			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+		
 	end -- </UpdateMode>
 
 	return 0
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry]

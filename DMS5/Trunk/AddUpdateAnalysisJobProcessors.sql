@@ -12,11 +12,12 @@ CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 02/15/2007 (ticket 389)
+** Auth:	grk
+** Date:	02/15/2007 (ticket 389)
 **          02/23/2007 grk - added @AnalysisToolsList stuff
 **			03/15/2007 mem - Tweaked invalid tool name error message
 **			02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -29,7 +30,8 @@ CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 	@Notes varchar(512),
 	@AnalysisToolsList varchar(1024),
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -176,15 +178,15 @@ As
 		begin transaction @transName
 
 		INSERT INTO T_Analysis_Job_Processors (
-		State, 
-		Processor_Name, 
-		Machine, 
-		Notes
+			State, 
+			Processor_Name, 
+			Machine, 
+			Notes
 		) VALUES (
-		@State, 
-		@ProcessorName, 
-		@Machine, 
-		@Notes
+			@State, 
+			@ProcessorName, 
+			@Machine, 
+			@Notes
 		)
 		/**/
 		--
@@ -201,6 +203,10 @@ As
 		-- return ID of newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Analysis_Job_Processors')
+
+		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
 
 	end -- add mode
 
@@ -234,6 +240,11 @@ As
 			RAISERROR (@message, 10, 1)
 			return 51004
 		end
+
+		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
+
 	end -- update mode
 
 	---------------------------------------------------
@@ -281,11 +292,15 @@ As
 			RAISERROR (@message, 10, 1)
 			return 51004
 		end
+		
+		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Tools
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Tools', 'Processor_ID', @ID, @CallingUser
+			
 		commit transaction @transName
 	end -- add or update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.AddUpdateOrganisms
 /****************************************************
 **
@@ -18,6 +17,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			01/12/2007 jds - Added support for new field OG_Active
 **			01/12/2007 mem - Added validation that genus, species, and strain are not duplicated in T_Organisms
 **			10/16/2007 mem - Updated to allow genus, species, and strain to all be 'na' (Ticket #562)
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -44,7 +44,8 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 	@orgActive varchar(3),
 	@ID int output,
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -290,6 +291,10 @@ As
 		-- return IDof newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Organisms')
+		
+		-- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @ID, @CallingUser
 
 	end -- add mode
 
@@ -330,10 +335,14 @@ As
 			RAISERROR (@message, 10, 1)
 			return 51004
 		end
+		
+		-- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @ID, @CallingUser
+
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin]

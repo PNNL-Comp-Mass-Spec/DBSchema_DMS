@@ -24,6 +24,7 @@ CREATE PROCEDURE AddRequestedRuns
 **      11/09/2006  -- grk Fixed error message handling (Ticket #318)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**		04/25/2008 grk - Added secondary separation field (Ticket #658)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -43,7 +44,8 @@ CREATE PROCEDURE AddRequestedRuns
 	@internalStandard varchar(50) = "na",
 	@comment varchar(1024) = "na",
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@secSep varchar(64) = 'LC-ISCO-Standard'
 As
 	set nocount on
 
@@ -121,8 +123,6 @@ As
 			T_Experiment_Group_Members.Group_ID = T_Experiment_Groups.Group_ID
 		WHERE     (T_Experiment_Groups.Group_ID = CONVERT(int, @experimentGroupID))	
 	end
-	
-	select @experimentList
 
 	---------------------------------------------------
 	-- make sure experiment list is not too big
@@ -207,7 +207,8 @@ As
 								@eusUsersList,
 								'add',
 								@request output,
-								@message output
+								@message output,
+								@secSep
 			set @message = '[' + @tFld + '] ' + @message 
 			if @myError <> 0
 				return @myError

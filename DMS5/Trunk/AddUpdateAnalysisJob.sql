@@ -27,15 +27,17 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			06/01/2006 grk - added code to handle '(default)' organism
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
-**          1/13/2007  grk - switched to organism ID instead of organism name (Ticket #360)
-**          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
-**          2/15/2007  grk - added associated processor group (Ticket #383)
-**			2/15/2007  grk - Added propagation mode (Ticket #366)
-**          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
+**          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
+**          02/07/2007 grk - eliminated "Spectra Required" states (Ticket #249)
+**          02/15/2007 grk - added associated processor group (Ticket #383)
+**			02/15/2007 grk - Added propagation mode (Ticket #366)
+**          02/21/2007 grk - removed @assignedProcessor (Ticket #383)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **			02/22/2008 mem - Updated to allow updating jobs in state "holding"
-**						   - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket:648)
+**						   - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket #648)
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
 **    
 *****************************************************/
 (
@@ -55,7 +57,8 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 	@stateName varchar(32),
     @jobNum varchar(32) = "0" output,
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -65,6 +68,9 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
+
+	declare @AlterEnteredByRequired tinyint
+	set @AlterEnteredByRequired = 0
 	
 	---------------------------------------------------
 	-- Assure that the comment and associated processor group 
@@ -73,6 +79,7 @@ As
 	
 	set @comment = IsNull(@comment, '')
 	set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
+	set @callingUser = IsNull(@callingUser, '')
 	
 	set @message = ''
 
@@ -285,7 +292,8 @@ As
 	begin
 	
 		declare @newJobNum int
-
+		Set @stateID = 1
+		
 		---------------------------------------------------
 		-- start transaction
 		--
@@ -323,7 +331,7 @@ As
 			@comment,
 			@ownerPRN,
 			@batchID,
-			1,
+			@stateID,
 			@propMode
 		)			
 		--
@@ -342,6 +350,10 @@ As
 		set @jobID = IDENT_CURRENT('T_Analysis_Job')
 		set @jobNum = cast(@jobID as varchar(32))
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+			
 		-- associate job with processor group
 		--
 		if @gid <> 0
@@ -456,6 +468,10 @@ As
 			return 51017
 		end
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+
 		---------------------------------------------------
 		-- deal with job association with group, 
 
@@ -482,6 +498,8 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
+			
+			Set @AlterEnteredByRequired = 1
 		end
 
 		-- if group is given, and an association for job does exist
@@ -490,12 +508,16 @@ As
 		if @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
 		begin
 			UPDATE T_Analysis_Job_Processor_Group_Associations
-				SET Group_ID = @gid
+				SET Group_ID = @gid,
+					Entered = GetDate(),
+					Entered_By = suser_sname()
 			WHERE
 				Job_ID = @jobID				
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
+			
+			Set @AlterEnteredByRequired = 1
 		end
 	
 		-- report error, if one occurred
@@ -509,6 +531,15 @@ As
 		end
 
 		commit transaction @transName
+		
+		If Len(@callingUser) > 0 AND @AlterEnteredByRequired <> 0
+		Begin
+			-- Call AlterEnteredByUser
+			-- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
+		
+			Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
+		End
+		
 	end -- update mode
 
 	return @myError

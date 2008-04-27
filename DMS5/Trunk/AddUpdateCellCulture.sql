@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure AddUpdateCellCulture
+CREATE Procedure dbo.AddUpdateCellCulture
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -15,9 +14,11 @@ CREATE Procedure AddUpdateCellCulture
 **
 **	
 **
-**		Auth: grk
-**		Date: 3/12/2002
-**      1/12/2007  -- grk  added verification mode
+**	Auth:	grk
+**	Date:	03/12/2002
+**			01/12/2007 grk - added verification mode
+**			03/11/2008 grk - Added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
+**			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **    
 *****************************************************/
 (
@@ -30,7 +31,9 @@ CREATE Procedure AddUpdateCellCulture
 	@comment varchar(500),
 	@campaignNum varchar(64), 
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@container varchar(128) = 'na', 
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -48,6 +51,8 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+
+	Set @callingUser = IsNull(@callingUser, '')
 
 	set @myError = 0
 	if LEN(@campaignNum) < 1
@@ -109,7 +114,23 @@ As
 	declare @cellCultureID int
 	set @cellCultureID = 0
 	--
-	execute @cellCultureID = GetCellCultureID @cellCultureName
+	declare @curContainerID int
+	set @curContainerID = 0
+	--
+	SELECT 
+		@cellCultureID = CC_ID, 
+		@curContainerID = CC_Container_ID
+	FROM T_Cell_Culture 
+	WHERE (CC_Name = @cellCultureName)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error trying to resolve cell culture ID'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
 
 	-- cannot create an entry that already exists
 	--
@@ -165,6 +186,44 @@ As
 		return 51007
 	end
 
+	---------------------------------------------------
+	-- Resolve container name to ID
+	---------------------------------------------------
+
+	declare @contID int
+	set @contID = 0
+	--
+	SELECT @contID = ID
+	FROM         T_Material_Containers
+	WHERE     (Tag = @container)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Could not resove container name "' + @container + '" to ID'
+		RAISERROR (@msg, 10, 1)
+		return 510019
+	end
+
+	---------------------------------------------------
+	-- Resolve current container id to name
+	---------------------------------------------------
+	declare @curContainerName varchar(125)
+	set @curContainerName = ''
+	--
+	SELECT @curContainerName = Tag 
+	FROM T_Material_Containers 
+	WHERE ID = @curContainerID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error resolving name of current container'
+		RAISERROR (@msg, 10, 1)
+		return 510027
+	end
 
 	---------------------------------------------------
 	-- Resolve DPRNs to user number
@@ -208,7 +267,8 @@ As
 			CC_Reason, 
 			CC_Comment, 
 			CC_Campaign_ID,
-			CC_Created 
+			CC_Created,
+			CC_Container_ID
 		) VALUES (
 			@cellCultureName,
 			@sourceName,
@@ -218,7 +278,8 @@ As
 			@reason,
 			@comment,
 			@campaignID,
-			GETDATE()
+			GETDATE(),
+			@contID
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -229,6 +290,29 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
+
+		set @cellCultureID = IDENT_CURRENT('T_Cell_Culture')
+		
+		declare @StateID int
+		set @StateID = 1
+		
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 2, @cellCultureID, @StateID, @callingUser
+
+		-- material movement logging
+		-- 		
+		if @curContainerID != @contID
+		begin
+			exec PostMaterialLogEntry
+				'Biomaterial Move',
+				@cellCultureName,
+				'na',
+				@container,
+				@callingUser,
+				'Biomaterial (Cell Culture) added'
+		end
+
 	end -- add mode
 
 	---------------------------------------------------
@@ -247,7 +331,8 @@ As
 			CC_Type = @typeID, 
 			CC_Reason = @reason, 
 			CC_Comment = @comment, 
-			CC_Campaign_ID = @campaignID
+			CC_Campaign_ID = @campaignID,
+			CC_Container_ID = @contID
 		WHERE (CC_Name = @cellCultureName)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -258,10 +343,25 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
+
+		-- material movement logging
+		-- 		
+		if @curContainerID != @contID
+		begin
+			exec PostMaterialLogEntry
+				'Biomaterial Move',
+				@cellCultureName,
+				@curContainerName,
+				@container,
+				@callingUser,
+				'Biomaterial (Cell Culture) updated'
+		end
+
 	end -- update mode
 
 
 	return 0
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User]
 GO

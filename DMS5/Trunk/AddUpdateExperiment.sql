@@ -11,7 +11,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	grk
-**	Date:	01/8/2002
+**	Date:	01/8/2002 - initial release
 **			08/25/2004 jds - updated proc to add T_Enzyme table value
 **			06/10/2005 grk - added handling for sample prep request
 **			10/28/2005 grk - added handling for internal standard
@@ -21,6 +21,8 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
 **			04/30/2007 grk - added better name validation (Ticket #450)
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
+**			03/13/2008 grk - added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
+**			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **
 *****************************************************/
 (
@@ -39,7 +41,9 @@ CREATE Procedure dbo.AddUpdateExperiment
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@container varchar(128) = 'na', 
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -128,7 +132,23 @@ As
 	declare @experimentID int
 	set @experimentID = 0
 	--
-	execute @experimentID = GetexperimentID @experimentNum
+	declare @curContainerID int
+	set @curContainerID = 0
+	--
+	SELECT 
+		@experimentID = Exp_ID,
+		@curContainerID = EX_Container_ID
+	FROM T_Experiments 
+	WHERE (Experiment_Num = @experimentNum)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error trying to resolve experiment ID'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
 
 	-- cannot create an entry that already exists
 	--
@@ -255,6 +275,45 @@ As
 	end
 
 	---------------------------------------------------
+	-- Resolve container name to ID
+	---------------------------------------------------
+
+	declare @contID int
+	set @contID = 0
+	--
+	SELECT @contID = ID
+	FROM         T_Material_Containers
+	WHERE     (Tag = @container)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Could not resove container name "' + @container + '" to ID'
+		RAISERROR (@msg, 10, 1)
+		return 510019
+	end
+
+	---------------------------------------------------
+	-- Resolve current container id to name
+	---------------------------------------------------
+	declare @curContainerName varchar(125)
+	set @curContainerName = ''
+	--
+	SELECT @curContainerName = Tag 
+	FROM T_Material_Containers 
+	WHERE ID = @curContainerID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error resolving name of current container'
+		RAISERROR (@msg, 10, 1)
+		return 510027
+	end
+
+	---------------------------------------------------
 	-- Resolve cell cultures
 	---------------------------------------------------
 	
@@ -343,7 +402,8 @@ As
 				EX_cell_culture_list,
 				EX_sample_prep_request_ID,
 				EX_internal_standard_ID,
-				EX_postdigest_internal_std_ID
+				EX_postdigest_internal_std_ID,
+				EX_Container_ID
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
@@ -359,7 +419,8 @@ As
 				@cellCultureList,
 				@samplePrepRequest,
 				@internalStandardID,
-				@postdigestIntStdID
+				@postdigestIntStdID,
+				@contID
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -374,6 +435,13 @@ As
 
 		set @experimentID = IDENT_CURRENT('T_Experiments')
 
+		declare @StateID int
+		set @StateID = 1
+		
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 3, @experimentID, @StateID, @callingUser
+
 		-- Add the cell cultures
 		--
 		execute @result = AddExperimentCellCulture
@@ -387,6 +455,19 @@ As
 			RAISERROR (@msg, 10, 1)
 			rollback transaction @transName
 			return @result
+		end
+
+		--  material movement logging
+		--	
+		if @curContainerID != @contID
+		begin
+			exec PostMaterialLogEntry
+				'Experiment Move',
+				@experimentNum,
+				'na',
+				@container,
+				@callingUser,
+				'Experiment added'
 		end
 
 		-- we made it this far, commit
@@ -421,7 +502,8 @@ As
 			EX_cell_culture_list = @cellCultureList,
 			EX_sample_prep_request_ID = @samplePrepRequest,
 			EX_internal_standard_ID = @internalStandardID,
-			EX_postdigest_internal_std_ID = @postdigestIntStdID
+			EX_postdigest_internal_std_ID = @postdigestIntStdID,
+			EX_Container_ID = @contID
 		WHERE 
 			(Experiment_Num = @experimentNum)
 		--
@@ -448,6 +530,19 @@ As
 			RAISERROR (@msg, 10, 1)
 			rollback transaction @transName
 			return @result
+		end
+
+		--  material movement logging
+		--	
+		if @curContainerID != @contID
+		begin
+			exec PostMaterialLogEntry
+				'Experiment Move',
+				@experimentNum,
+				@curContainerName,
+				@container,
+				@callingUser,
+				'Experiment updated'
 		end
 
 		-- we made it this far, commit

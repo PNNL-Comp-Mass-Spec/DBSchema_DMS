@@ -3,47 +3,49 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateAnalysisJobProcessorGroupMembership
+CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupMembership
 /****************************************************
 **
 **	Desc:
-**   Sets analaysis job group membership for the specified group
+**   Sets analysis job processor group membership for the specified group
 **   for the processors in the list according to the mode
-
-
-
-processors in the processor list to be associated with the given 
-**   analysis job processor group
 **
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 02/13/2007 (Ticket #384)
-**            02/20/2007 grk - Fixed reference to group ID
-**            02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
+**	Auth:	grk
+**	Date:	02/13/2007 (Ticket #384)
+**			02/20/2007 grk - Fixed reference to group ID
+**			02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
+**			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **    
 *****************************************************/
+(
     @processorNameList varchar(6000),
     @processorGroupID varchar(32),
     @newValue varchar(64),
-    @mode varchar(32) = '', -- 'set_membership_enabled', 'add_processors', 'remove_processors', 
-    @message varchar(512) output
+    @mode varchar(32) = '',				-- 'set_membership_enabled', 'add_processors', 'remove_processors', 
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
+)
 AS
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
+	
 	declare @list varchar(1024)
 
+	declare @AlterEnteredByRequired tinyint
+	set @AlterEnteredByRequired = 0
+
  	---------------------------------------------------
-	--  
+	-- Validate the inputs
 	---------------------------------------------------
 	--
 	if @processorNameList = '' and @mode <> 'add_processors'
@@ -53,10 +55,6 @@ AS
 		return 51001	
 	end
 
- 	---------------------------------------------------
-	--  
-	---------------------------------------------------
-	--
 	if @processorGroupID = ''
 	begin
 		set @message = 'Processor group name was empty'
@@ -65,7 +63,7 @@ AS
 	end
 
 	---------------------------------------------------
-	--  Create temporary table to hold list of processors
+	-- Create temporary table to hold list of processors
 	---------------------------------------------------
  
  	CREATE TABLE #TP (
@@ -88,7 +86,7 @@ AS
 
 	INSERT INTO #TP
 	(Processor_Name)
-	SELECT Item
+	SELECT DISTINCT Item
 	FROM MakeTableFromList(@processorNameList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -104,10 +102,10 @@ AS
 	-- resolve processor names to IDs 
 	---------------------------------------------------
 
-	update T
-	set T.ID = T_Analysis_Job_Processors.ID
-	FROM #TP as T INNER JOIN T_Analysis_Job_Processors ON
-	T.Processor_Name = T_Analysis_Job_Processors.Processor_Name
+	UPDATE #TP
+	SET ID = AJP.ID
+	FROM #TP INNER JOIN 
+		 T_Analysis_Job_Processors AJP ON #TP.Processor_Name = AJP.Processor_Name
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -151,7 +149,7 @@ AS
 	set @pgid = CAST(@processorGroupID as int)
 
 	---------------------------------------------------
-	-- 
+	-- Mode set_membership_enabled
 	---------------------------------------------------
 	--
 	if @mode like 'set_membership_enabled_%'
@@ -198,10 +196,12 @@ AS
 			--
 			if @myError <> 0
 			begin
-				set @message = 'Update non-local group membershipo failed'
+				set @message = 'Update non-local group membership failed'
 				return 51007
 			end
-		end	
+		end
+		
+		Set @AlterEnteredByRequired = 1
 	end
 
 /*
@@ -242,14 +242,14 @@ AS
 			(Processor_ID, Group_ID)
 		SELECT ID, @pgid
 		FROM #TP
-		WHERE 
-		(NOT (#TP.ID IN 
-			(
-				SELECT Processor_ID
-				FROM  T_Analysis_Job_Processor_Group_Membership
-				WHERE Group_ID = @pgid
-			)
-		))
+		WHERE NOT (#TP.ID IN 
+					(
+						SELECT Processor_ID
+						FROM  T_Analysis_Job_Processor_Group_Membership
+						WHERE Group_ID = @pgid
+					)
+				  )
+		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -258,14 +258,15 @@ AS
 			set @message = 'Update failed'
 			return 51007
 		end
+		
+		Set @AlterEnteredByRequired = 1
 	end
 	
 	---------------------------------------------------
 	-- 
 	---------------------------------------------------
 	-- if mode = 'remove_processors', remove processors in 
-	-- @processorNameList from existing membership of 
-	-- group
+	-- @processorNameList from existing membership of group
 	if @mode = 'remove_processors'
 	begin
 		DELETE FROM T_Analysis_Job_Processor_Group_Membership
@@ -281,8 +282,34 @@ AS
 			return 51007
 		end
 	end
+	
+			
+	-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
+	If Len(@callingUser) > 0 And @AlterEnteredByRequired <> 0
+	Begin
+		-- Call AlterEnteredByUser for each processor ID in #TP
+
+		-- If the mode was 'add_processors' then this will possibly match some rows that
+		--  were previously present in the table.  However, those rows should be excluded since
+		--  the Last_Affected time will have changed more than 5 seconds ago (defined using @EntryTimeWindowSeconds below)
+
+		CREATE TABLE #TmpIDUpdateList (
+			TargetID int NOT NULL
+		)
+		
+		CREATE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+
+		INSERT INTO #TmpIDUpdateList (TargetID)
+		SELECT ID
+		FROM #TP
+		
+		Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Membership', 'Processor_ID', @CallingUser, @EntryTimeWindowSeconds=5, @EntryDateColumnName='Last_Affected'
+		
+	End
+
 
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS_Analysis]
 GO

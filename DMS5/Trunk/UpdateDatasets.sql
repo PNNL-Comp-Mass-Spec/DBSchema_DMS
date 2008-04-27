@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE PROCEDURE dbo.UpdateDatasets
 /****************************************************
 **
@@ -15,10 +13,12 @@ CREATE PROCEDURE dbo.UpdateDatasets
 **
 **	Parameters:
 **
-**		Auth: jds
-**		Date: 09/21/2006
+**	Auth:	jds
+**	Date:	09/21/2006
+**			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **    
 *****************************************************/
+(
     @datasetList varchar(6000),
     @state varchar(32) = '',
     @rating varchar(32) = '',
@@ -26,25 +26,30 @@ CREATE PROCEDURE dbo.UpdateDatasets
     @findText varchar(255) = '',
     @replaceText varchar(255) = '',
     @mode varchar(12) = 'update',
-    @message varchar(512) output
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
+)
 As
-  set nocount on
+	set nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	declare @myRowCount int
+	set @myError = 0
+	set @myRowCount = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	set @message = ''
 
-  declare @msg varchar(512)
-  declare @list varchar(1024)
+	declare @msg varchar(512)
+	declare @list varchar(1024)
 
+	declare @DatasetStateUpdated tinyint
+	declare @DatasetRatingUpdated tinyint
+	set @DatasetStateUpdated = 0
+	set @DatasetRatingUpdated = 0
 
-  ---------------------------------------------------
-  -- 
-  ---------------------------------------------------
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
 
 	if @datasetList = ''
 	begin
@@ -84,7 +89,7 @@ As
 
 	INSERT INTO #TDS
 	(DatasetNum)
-	SELECT Item
+	SELECT DISTINCT Item
 	FROM MakeTableFromList(@datasetList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -127,7 +132,11 @@ As
 	end
 	
 	declare @datasetCount int
-	SELECT @datasetCount = count(*) FROM #TDS
+	set @datasetCount = 0
+	
+	SELECT @datasetCount = COUNT(*) 
+	FROM #TDS
+	
 	set @message = 'Number of affected datasets:' + cast(@datasetCount as varchar(12))
 
 	---------------------------------------------------
@@ -210,8 +219,7 @@ As
 		if @state <> '[no change]'
 		begin
 			UPDATE T_Dataset
-			SET 
-				DS_state_ID = @stateID
+			SET DS_state_ID = @stateID
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -223,14 +231,15 @@ As
 				RAISERROR (@msg, 10, 1)
 				return 51004
 			end
+			
+			Set @DatasetStateUpdated = 1
 		end
 
 		-----------------------------------------------
 		if @rating <> '[no change]'
 		begin
 			UPDATE T_Dataset
-			SET 
-				DS_rating = @ratingID
+			SET DS_rating = @ratingID
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -242,14 +251,15 @@ As
 				RAISERROR (@msg, 10, 1)
 				return 51004
 			end
+			
+			Set @DatasetRatingUpdated = 1
 		end
 
 		-----------------------------------------------
 		if @comment <> '[no change]'
 		begin
 			UPDATE T_Dataset
-			SET 
-				DS_comment = DS_comment + ' ' + @comment
+			SET DS_comment = DS_comment + ' ' + @comment
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -267,8 +277,7 @@ As
 		if @findText <> '[no change]' and @replaceText <> '[no change]'
 		begin
 			UPDATE T_Dataset 
-			SET 
-				DS_comment = replace(DS_comment, @findText, @replaceText)
+			SET DS_comment = replace(DS_comment, @findText, @replaceText)
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -283,15 +292,40 @@ As
 		end
 
 		commit transaction @transName
+		
+		
+ 		If Len(@callingUser) > 0 And (@DatasetStateUpdated <> 0 Or @DatasetRatingUpdated <> 0)
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			--
+
+			-- Populate a temporary table with the list of Dataset IDs just updated
+			CREATE TABLE #TmpIDUpdateList (
+				TargetID int NOT NULL
+			)
+			
+			CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+			
+			INSERT INTO #TmpIDUpdateList (TargetID)
+			SELECT DISTINCT Dataset_ID
+			FROM T_Dataset
+			WHERE (Dataset_Num IN (SELECT DatasetNum FROM #TDS))
+			
+			If @DatasetStateUpdated <> 0
+				Exec AlterEventLogEntryUserMultiID 4, @stateID, @callingUser
+				
+			If @DatasetRatingUpdated <> 0
+				Exec AlterEventLogEntryUserMultiID 8, @ratingID, @callingUser
+		End
+		
 	end -- update mode
 
  	---------------------------------------------------
 	-- 
 	---------------------------------------------------
-	
+
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [DMS2_SP_User]

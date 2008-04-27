@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure AddUpdateCampaign
+CREATE Procedure dbo.AddUpdateCampaign
 /****************************************************
 **
 **	Desc: Adds new or updates existing campaign in database
@@ -20,8 +19,10 @@ CREATE Procedure AddUpdateCampaign
 **		@comment
 **	
 **
-**		Auth: grk
-**		Date: 1/8/2002
+**	Auth:	grk
+**	Date:	01/08/2002
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+
 **    
 *****************************************************/
 (
@@ -31,7 +32,8 @@ CREATE Procedure AddUpdateCampaign
 	@piPRN varchar(32), 
 	@comment varchar(500),
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+   	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -178,8 +180,19 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
+		
+		set @CampaignID = IDENT_CURRENT('T_Campaign')
+		
+		declare @StateID int
+		set @StateID = 1
+		
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 1, @CampaignID, @StateID, @callingUser
+
 	end -- add mode
-
+
+
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
@@ -208,6 +221,7 @@ As
 
 
 	return 0
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User]
 GO

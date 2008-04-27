@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoDatasetOperation
+CREATE Procedure dbo.DoDatasetOperation
 /****************************************************
 **
 **	Desc: 
@@ -15,18 +15,20 @@ CREATE Procedure DoDatasetOperation
 **
 **	
 **
-**		Auth: grk
-**		Date: 4/8/2002
-**		8/7/2003  grk - allowed reset from "Not Ready" state
-**		5/5/2005  grk - removed default value from mode
-**		3/24/2006 grk - added "restore" mode
-**		9/15/2006 grk - repair "restore" mode
+**	Auth:	grk
+**	Date:	04/08/2002
+**			08/07/2003 grk - allowed reset from "Not Ready" state
+**			05/05/2005 grk - removed default value from mode
+**			03/24/2006 grk - added "restore" mode
+**			09/15/2006 grk - repair "restore" mode
+**			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@mode varchar(12), -- 'burn', 'reset', 'delete'
-    @message varchar(512) output
+	@mode varchar(12),					-- 'delete', 'reset', 'store'; legacy version supported 'burn'
+    @message varchar(512) output,
+	@callingUser varchar (128) = ''
 )
 As
 	set nocount on
@@ -42,7 +44,10 @@ As
 	declare @msg varchar(256)
 
 	declare @datasetID int
-	declare @state int
+	set @datasetID = 0
+	
+	declare @CurrentState int
+	declare @NewState int
 	
 	declare @result int
 
@@ -51,7 +56,7 @@ As
 	---------------------------------------------------
 
 	SELECT  
-		@state = DS_state_ID,
+		@CurrentState = DS_state_ID,
 		@datasetID = Dataset_ID 
 	FROM T_Dataset 
 	WHERE (Dataset_Num = @datasetNum)
@@ -76,7 +81,7 @@ As
 		-- verify that dataset is still in 'new' state
 		---------------------------------------------------
 
-		if @state <> 1
+		if @CurrentState <> 1
 		begin
 			set @msg = 'Dataset "' + @datasetNum + '" must be in "new" state to be deleted by user'
 			RAISERROR (@msg, 10, 1)
@@ -87,7 +92,7 @@ As
 		-- delete the dataset
 		---------------------------------------------------
 
-		execute @result = DeleteDataset @datasetNum, @message output
+		execute @result = DeleteDataset @datasetNum, @message output, @callingUser
 		--
 		if @result <> 0
 		begin
@@ -108,18 +113,20 @@ As
 
 		-- if dataset not in failed state, can't reset it
 		--
-		if @state not in (5, 9) -- "Not ready" or "Failed"
+		if @CurrentState not in (5, 9) -- "Not ready" or "Failed"
 		begin
-			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state' + cast(@state as varchar(12))
+			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@CurrentState as varchar(12))
 			RAISERROR (@msg, 10, 1)
 			return 51693
 		end
 
 		-- Update state of dataset to new
 		--
+		Set @NewState = 1		 -- "new' state
+
 		UPDATE T_Dataset 
-		SET DS_state_ID = 1 -- "new' state
-		WHERE (Dataset_Num = @datasetNum)
+		SET DS_state_ID = @NewState
+		WHERE (Dataset_ID = @datasetID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -129,6 +136,10 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51694
 		end
+
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
 
 		return 0
 	end -- mode 'reset'
@@ -142,7 +153,7 @@ As
 
 		-- if dataset not in complete state, can't request restore
 		--
-		if @state <> 3
+		if @CurrentState <> 3
 		begin
 			set @msg = 'Dataset "' + @datasetNum + '" cannot be restored unless it is in completed state'
 			RAISERROR (@msg, 10, 1)
@@ -179,9 +190,11 @@ As
 
 		-- Update state of dataset to "Restore Requested"
 		--
+		Set @NewState = 10		-- "restore required" state
+		
 		UPDATE T_Dataset 
-		SET DS_state_ID = 10 -- "restore required" state
-		WHERE (Dataset_Num = @datasetNum)
+		SET DS_state_ID = @NewState 
+		WHERE (Dataset_ID = @datasetID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -191,6 +204,10 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51694
 		end
+
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
 
 		return 0
 	end -- mode 'restore'	
@@ -202,7 +219,6 @@ As
 	set @msg = 'Mode "' + @mode +  '" was unrecognized'
 	RAISERROR (@msg, 10, 1)
 	return 51222
-
 
 GO
 GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS_DS_Entry]

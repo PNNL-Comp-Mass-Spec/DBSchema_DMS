@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoArchiveOperation
+CREATE Procedure dbo.DoArchiveOperation
 /****************************************************
 **
 **	Desc: 
@@ -15,23 +15,24 @@ CREATE Procedure DoArchiveOperation
 **
 **	
 **
-**		Auth: grk
-**		Date: 10/6/2004
-**            04/17/2006 grk - added stuf for set archive update 
+**	Auth:	grk
+**	Date:	10/06/2004
+**			04/17/2006 grk - added stuf for set archive update 
+**			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
 	@mode varchar(12),
-    @message varchar(512) output
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -45,13 +46,14 @@ As
 	-- get datasetID and archive state
 	---------------------------------------------------
 	declare @datasetID int
-	declare @state int
+	declare @ArchiveStateID int
+	declare @NewState int
 
 	set @datasetID = 0
 	
 	SELECT     
 		@datasetID = T_Dataset.Dataset_ID, 
-		@state = T_Dataset_Archive.AS_state_ID
+		@ArchiveStateID = T_Dataset_Archive.AS_state_ID
 	FROM 
 		T_Dataset INNER JOIN
 		T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
@@ -74,17 +76,20 @@ As
 	begin
 		-- if archive not in failed state, can't reset it
 		--
-		if @state not in (6, 2) -- "Operation Failed" or "Archive In Progress"
+		if @ArchiveStateID not in (6, 2) -- "Operation Failed" or "Archive In Progress"
 		begin
 			set @msg = 'Archive state for dataset "' + @datasetNum + '" not in proper state to be reset'
 			RAISERROR (@msg, 10, 1)
 			return 51693
 		end
 
+		-- Reset the Archive task to state "new"
+		Set @NewState = 1
+		
 		-- Update archive state of dataset to new
 		--
 		UPDATE T_Dataset_Archive 
-		SET AS_state_ID = 1 -- "new' state
+		SET AS_state_ID = @NewState
 		WHERE (AS_Dataset_ID  = @datasetID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -96,6 +101,10 @@ As
 			return 51694
 		end
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 6, @datasetID, @NewState, @callingUser
+
 		return 0
 	end -- mode 'reset_archive'
 
@@ -106,10 +115,13 @@ As
 
 	if @mode = 'update_req'
 	begin
+		-- Change the Archive Update state to "Update Required"		
+		Set @NewState = 2
+		
 		-- Update archive update state of dataset
 		--
 		UPDATE T_Dataset_Archive 
-		SET AS_update_state_ID = 2 -- "Update Required" state
+		SET AS_update_state_ID = @NewState
 		WHERE (AS_Dataset_ID  = @datasetID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -120,6 +132,10 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51695
 		end
+
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+			Exec AlterEventLogEntryUser 7, @datasetID, @NewState, @callingUser
 
 		return 0
 	end -- mode 'update_req'

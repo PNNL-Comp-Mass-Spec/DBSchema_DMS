@@ -21,11 +21,13 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			11/30/2006 mem - Added column Dataset_Type to #TD (Ticket #335)
 **			12/19/2006 grk - Added propagation mode (Ticket #348)
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket #339)
-**          2/07/2007  grk - eliminated "Spectra Required" states (Ticket #249)
-**          2/15/2007  grk - added associated processor group (Ticket #383)
-**          2/21/2007  grk - removed @assignedProcessor  (Ticket #383)
+**          02/07/2007 grk - eliminated "Spectra Required" states (Ticket #249)
+**          02/15/2007 grk - added associated processor group (Ticket #383)
+**          02/21/2007 grk - removed @assignedProcessor  (Ticket #383)
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			02/19/2008 grk - add explicit NULL column attribute to #TD
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
+**
 *****************************************************/
 (
     @datasetList varchar(6000),
@@ -43,7 +45,8 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@mode varchar(12), 
-	@message varchar(512) output
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -59,6 +62,9 @@ As
 	declare @msg varchar(512)
 	declare @list varchar(1024)
 	declare @jobID int
+	
+	declare @stateID int
+	Set @stateID = 1
 
 	---------------------------------------------------
 	-- list shouldn't be empty
@@ -332,7 +338,7 @@ As
 			@comment,
 			@ownerPRN,
 			@batchID,
-			1,
+			@stateID,
 			@requestID,
 			@propMode
 		FROM #TD		
@@ -354,7 +360,14 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
-	
+
+
+		if @batchID = 0 AND @myRowCount = 1
+		begin
+			-- Added a single job; cache the jobID value
+			set @jobID = IDENT_CURRENT('T_Analysis_Job')
+		end
+			
 		---------------------------------------------------
 		-- create associations with processor group for new
 		-- jobs, if group ID is given
@@ -364,10 +377,8 @@ As
 		begin
 			-- if single job was created, get its identity directly
 			--
-			if @myRowCount = 1 AND @batchID = 0
+			if @batchID = 0 AND @myRowCount = 1
 			begin
-				set @jobID = IDENT_CURRENT('T_Analysis_Job')
-				--
 				INSERT INTO T_Analysis_Job_Processor_Group_Associations
 					(Job_ID, Group_ID)
 				VALUES
@@ -375,11 +386,12 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 			end
+			
 			--
 			-- if multiple jobs were created, get job identities
 			-- from all jobs using new batch ID
 			--
-			if @myRowCount > 1 AND @batchID <> 0
+			if @batchID <> 0 AND @myRowCount >= 1
 			begin
 				INSERT INTO T_Analysis_Job_Processor_Group_Associations
 					(Job_ID, Group_ID)
@@ -403,6 +415,32 @@ As
 		end
 
 		commit transaction @transName
+		
+		If Len(@callingUser) > 0
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			--
+			If @batchID = 0
+				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+			Else
+			Begin
+				-- Populate a temporary table with the list of Job IDs just created
+				CREATE TABLE #TmpIDUpdateList (
+					TargetID int NOT NULL
+				)
+				
+				CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+				
+				INSERT INTO #TmpIDUpdateList (TargetID)
+				SELECT DISTINCT AJ_jobID
+				FROM T_Analysis_Job
+				WHERE AJ_batchID = @batchID
+					
+				Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
+			End
+		End
+
 	END -- mode 'add'
 
 	set @message = 'Number of jobs created:' + cast(@myRowCount as varchar(12))

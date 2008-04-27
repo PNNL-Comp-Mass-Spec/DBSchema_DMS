@@ -18,16 +18,18 @@ CREATE Procedure dbo.DeleteExperiment
 **
 **	
 **
-**		Auth: grk
-**		Date: 5/11/2004
-**		      6/16/2005 grk - added delete for experiment group members table
-**		      2/27/2006 grk - added delete for experiment group table
-**		      8/31/2006 jds - added check for requested runs (Ticket #199)
+**	Auth:	grk
+**	Date:	05/11/2004
+**			06/16/2005 grk - added delete for experiment group members table
+**			02/27/2006 grk - added delete for experiment group table
+**			08/31/2006 jds - added check for requested runs (Ticket #199)
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@ExperimentNum varchar(128),
-	@message varchar(512) = '' output
+	@message varchar(512) = '' output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -235,10 +237,18 @@ As
 		return 51130
 	end
 
+	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	If Len(@callingUser) > 0
+	Begin
+		Declare @stateID int
+		Set @stateID = 0
+
+		Exec AlterEventLogEntryUser 3, @ExperimentID, @stateID, @callingUser
+	End
+
 	commit transaction @transName
 	
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin]

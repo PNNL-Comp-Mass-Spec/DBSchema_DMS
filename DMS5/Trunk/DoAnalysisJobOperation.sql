@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoAnalysisJobOperation
+CREATE Procedure dbo.DoAnalysisJobOperation
 /****************************************************
 **
 **	Desc: 
@@ -15,15 +15,17 @@ CREATE Procedure DoAnalysisJobOperation
 **
 **	
 **
-**		Auth: grk
-**		Date: 5/2/2002
-**		Date: 5/5/2005 grk - removed default mode value
+**	Auth:	grk
+**	Date:	05/02/2002
+**			05/05/2005 grk - removed default mode value
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@jobNum varchar(32),
-	@mode varchar(12),  -- 'delete', ??
-    @message varchar(512) output
+	@mode varchar(12),  -- 'delete'
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -55,7 +57,7 @@ As
 		-- delete the job
 		---------------------------------------------------
 
-		execute @result = DeleteNewAnalysisJob @jobNum, @message output
+		execute @result = DeleteNewAnalysisJob @jobNum, @message output, @callingUser
 		--
 		if @result <> 0
 		begin

@@ -19,10 +19,13 @@ CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
 **			06/01/2006 grk - fixed calling sequence to AddUpdateAnalysisJob
 **			03/15/2007 mem - Updated call to AddUpdateAnalysisJob (Ticket #394)
 **						   - Replaced processor name with associated processor group (Ticket #388)
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
 **    
 *****************************************************/
 (
-	@datasetNum varchar(128)
+	@datasetNum varchar(128),
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -71,7 +74,7 @@ As
 	---------------------------------------------------
 	declare @result int
 
-	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output
+	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0
 	--
 	if @result <> 0
 	begin
@@ -168,7 +171,8 @@ As
 							'new',				-- State name
 							@jobNum output,		-- Job number
 							'add',				-- Mode
-							@message output
+							@message output,
+							@callingUser
 
 				-- if there was an error creating the job, remember it
 				-- otherwise bump the job count

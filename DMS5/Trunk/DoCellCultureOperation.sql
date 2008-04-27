@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoCellCultureOperation
+CREATE Procedure dbo.DoCellCultureOperation
 /****************************************************
 **
 **	Desc: 
@@ -15,14 +15,16 @@ CREATE Procedure DoCellCultureOperation
 **
 **	
 **
-**		Auth: grk
-**		Date: 6/17/2002
+**	Auth:	grk
+**	Date:	06/17/2002
+**			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@cellCulture varchar(128),
-	@mode varchar(12), -- 'delete'
-    @message varchar(512) output
+	@mode varchar(12),			 -- 'delete'
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -107,6 +109,15 @@ As
 			return 51142
 		end
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+		Begin
+			Declare @stateID int
+			Set @stateID = 0
+
+			Exec AlterEventLogEntryUser 2, @ccID, @stateID, @callingUser
+		End
+		
 		return 0
 	end -- mode 'delete'
 		

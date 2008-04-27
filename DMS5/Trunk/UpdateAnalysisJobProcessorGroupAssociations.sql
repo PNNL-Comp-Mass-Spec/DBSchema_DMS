@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateAnalysisJobProcessorGroupAssociations
+CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupAssociations
 /****************************************************
 **
 **	Desc:
@@ -14,32 +14,38 @@ CREATE PROCEDURE UpdateAnalysisJobProcessorGroupAssociations
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 02/15/2007 Ticket #386
-**            02/20/2007 grk - fixed references to "Group" column in associations table
-**                       grk - 'add' mode removes association with any other groups
+**	Auth:	grk
+**	Date:	02/15/2007 Ticket #386
+**			02/20/2007 grk - fixed references to "Group" column in associations table
+**						   - 'add' mode now removes association with any other groups
+**			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **    
 *****************************************************/
+(
     @JobList varchar(6000),
     @processorGroupID varchar(32),
-    @newValue varchar(64),  -- ignore for now, may need in future
-    @mode varchar(12) = '', -- 'add', 'replace', 'remove'
-    @message varchar(512) output
+    @newValue varchar(64),			-- ignore for now, may need in future
+    @mode varchar(12) = '',			-- 'add', 'replace', 'remove'
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
+)
 AS
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
 
 	declare @list varchar(1024)
 
+	declare @AlterEnteredByRequired tinyint
+	set @AlterEnteredByRequired = 0
+
 	---------------------------------------------------
-	-- 
+	-- Validate the inputs
 	---------------------------------------------------
 
 	if @JobList = ''
@@ -98,7 +104,7 @@ AS
 
 	INSERT INTO #TAJ
 	(Job)
-	SELECT Item
+	SELECT DISTINCT Item
 	FROM MakeTableFromList(@JobList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -141,7 +147,11 @@ AS
 	end
 	
 	declare @jobCount int
-	SELECT @jobCount = count(*) FROM #TAJ
+	set @jobCount = 0
+	
+	SELECT @jobCount = COUNT(*) 
+	FROM #TAJ
+	
 	set @message = 'Number of affected jobs:' + cast(@jobCount as varchar(12))
 
 	---------------------------------------------------
@@ -169,8 +179,7 @@ AS
 	if @mode = 'remove' or @mode = 'add'
 	begin
 		DELETE FROM T_Analysis_Job_Processor_Group_Associations
-		WHERE
-			Job_ID IN (SELECT Job FROM #TAJ) 
+		WHERE Job_ID IN (SELECT Job FROM #TAJ) 
 			-- AND Group_ID = @gid  -- will need this in future if multiple associations allowed per job
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -200,13 +209,35 @@ AS
 			set @message = 'Error adding new associations'
 			return @myError
 		end
+
+		Set @AlterEnteredByRequired = 1		
 	end
+
+	-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group_Associations
+	If Len(@callingUser) > 0 And @AlterEnteredByRequired <> 0
+	Begin
+		-- Call AlterEnteredByUser for each processor job in #TAJ
+
+		CREATE TABLE #TmpIDUpdateList (
+			TargetID int NOT NULL
+		)
+		
+		CREATE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+
+		INSERT INTO #TmpIDUpdateList (TargetID)
+		SELECT Job
+		FROM #TAJ
+		
+		Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @CallingUser
+		
+	End
 
 	---------------------------------------------------
 	-- 
 	---------------------------------------------------
 
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS_Analysis]
 GO

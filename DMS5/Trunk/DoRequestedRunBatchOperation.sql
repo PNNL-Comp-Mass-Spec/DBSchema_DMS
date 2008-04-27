@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE  Procedure DoRequestedRunBatchOperation
+CREATE Procedure dbo.DoRequestedRunBatchOperation
 /****************************************************
 **
 **	Desc: 
@@ -27,7 +27,7 @@ CREATE  Procedure DoRequestedRunBatchOperation
 *****************************************************/
 (
 	@batchID int,
-	@mode varchar(12), -- '', '', ''
+	@mode varchar(12), -- 'LockBatch', 'UnlockBatch', 'BatchOrder', 'FreeMembers', 'delete', 'GrantHiPri', 'DenyHiPri'
 	@message varchar(512) output
 )
 As

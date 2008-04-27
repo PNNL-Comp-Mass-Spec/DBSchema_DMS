@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[DeleteAnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
 CREATE Procedure dbo.DeleteAnalysisJob
 /****************************************************
@@ -21,10 +21,12 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			04/07/2006 grk - eliminated job to request map table
 **			02/20/2007 grk - added code to remove any job-to-group associations
 **			03/16/2007 mem - Fixed bug that required 1 or more rows be deleted from T_Analysis_Job_Processor_Group_Associations (Ticket #393)
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **
 *****************************************************/
 (
-    @jobNum varchar(32)
+    @jobNum varchar(32),
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -71,11 +73,19 @@ As
 		RAISERROR ('Delete job operation failed', 10, 1)
 		return 54451
 	end
+
+	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	If Len(@callingUser) > 0
+	Begin
+		Declare @stateID int
+		Set @stateID = 0
+
+		Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+	End
 	
 	commit transaction @transName
 
 	return 0
-
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin]

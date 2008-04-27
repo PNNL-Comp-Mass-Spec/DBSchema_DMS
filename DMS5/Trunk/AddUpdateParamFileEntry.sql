@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateParamFileEntry
+CREATE PROCEDURE dbo.AddUpdateParamFileEntry
 /****************************************************
 **
 **	Desc: Adds new or updates existing parameter file entry in database
@@ -17,10 +17,10 @@ CREATE PROCEDURE AddUpdateParamFileEntry
 **		@entrySpecifier
 **	    @entryValue
 **
-**		Auth: kja
-**		Date: 07/22/2004
-**		
-**		Date: 08/10/2004 - Added in code to update mapping table as well
+**	Auth:	kja
+**	Date:	07/22/2004
+**			08/10/2004 kja - Added in code to update mapping table as well
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **    
 *****************************************************/
 (
@@ -30,7 +30,8 @@ CREATE PROCEDURE AddUpdateParamFileEntry
 	@entrySpecifier varchar(32),
 	@entryValue varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -286,19 +287,19 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Insert operation failed: "' + @ParamEntryID + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			rollback transaction @transname
+			RAISERROR ('Addition to param entry table was unsuccessful for param file',
+				10, 1)
+			return 51131
 		end
-	end -- add mode
 
-	if @@error <> 0
-	begin
-		rollback transaction @transname
-		RAISERROR ('Addition to param entry table was unsuccessful for param file',
-			10, 1)
-		return 51131
-	end
+		Set @ParamEntryID = IDENT_CURRENT('T_Param_Entries')
+		
+		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
+
+	end -- add mode
 	
 	---------------------------------------------------
 	-- action for update mode
@@ -318,20 +319,18 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Update operation failed: "' + @ParamEntryID + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			rollback transaction @transname
+			RAISERROR ('Update to param entry table was unsuccessful for param file',
+				10, 1)
+			return 51131
 		end
+		
+		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
+		If Len(@callingUser) > 0
+			Exec AlterEnteredByUser 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
+
 	end -- update mode
 
-	if @@error <> 0
-	begin
-		rollback transaction @transname
-		RAISERROR ('Update to param entry table was unsuccessful for param file',
-			10, 1)
-		return 51131
-	end
-	
 	commit transaction @transname
 
 	return 0

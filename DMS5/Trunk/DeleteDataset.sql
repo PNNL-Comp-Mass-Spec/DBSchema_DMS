@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DeleteDataset
+CREATE Procedure dbo.DeleteDataset
 /****************************************************
 **
 **	Desc: Deletes given dataset from the dataset table
@@ -15,18 +15,19 @@ CREATE Procedure DeleteDataset
 **
 **	
 **
-**		Auth: grk
-**		Date: 
-**      01/26/2001
-**      03/01/2004 grk - added uncomsume scheduled run
-**      04/07/2006 grk - got rid of dataset list stuff
-**		04/07/2006 grk - Got ride of CDBurn stuff
-**      05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
+**	Auth:	grk
+**	Date:	01/26/2001
+**			03/01/2004 grk - added unconsume scheduled run
+**			04/07/2006 grk - got rid of dataset list stuff
+**			04/07/2006 grk - Got ride of CDBurn stuff
+**			05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-    @message varchar(512) output
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -155,13 +156,19 @@ As
 			10, 1)
 		return 51136
 	end
-	
+
+	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	If Len(@callingUser) > 0
+	Begin
+		Declare @stateID int
+		Set @stateID = 0
+
+		Exec AlterEventLogEntryUser 4, @datasetID, @stateID, @callingUser
+	End
 
 	commit transaction @transName
 	
 	return 0
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_DS_Entry]

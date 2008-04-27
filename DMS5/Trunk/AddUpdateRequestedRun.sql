@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateRequestedRun
+CREATE Procedure [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -36,7 +36,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
 **			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
-**			04/08/2008 grk - Added secondary separation field (Ticket #658)
+**			04/09/2008 grk - Added secondary separation field (Ticket #658)
 **
 *****************************************************/
 (
@@ -57,7 +57,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@mode varchar(12) = 'add', -- or 'update'
 	@request int output,
 	@message varchar(512) output,
-	@secSep varchar(64) = 'none'	
+	@secSep varchar(64) = 'LC-ISCO-Standard'	
 )
 As
 	set nocount on
@@ -457,6 +457,7 @@ As
 	end -- update mode
 
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User]

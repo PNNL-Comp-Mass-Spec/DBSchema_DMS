@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure DeleteNewAnalysisJob
+CREATE Procedure dbo.DeleteNewAnalysisJob
 /****************************************************
 **
 **	Desc: Delete analysis job if it is in "new" state only
@@ -15,15 +14,19 @@ CREATE Procedure DeleteNewAnalysisJob
 **
 **	
 **
-**		Auth: grk
-**		Date: 3/29/2001
+**	Auth:	grk
+**	Date:	03/29/2001
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **    
 *****************************************************/
 (
 	@jobNum varchar(32),
-    @message varchar(512) output
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As
+	set nocount on
+	
 	declare @jobID int
 	
 	set @message = ''
@@ -56,7 +59,7 @@ As
 	-- delete the analysis job
 	--
 	declare @result int
-	execute @result = DeleteAnalysisJob @jobID
+	execute @result = DeleteAnalysisJob @jobID, @callingUser
 	if @result <> 0
 	begin
 		set @message = 'Job "' + @jobNum + '" could not be deleted'
@@ -64,6 +67,7 @@ As
 	end
 	
 	return 0
+
 GO
 GRANT EXECUTE ON [dbo].[DeleteNewAnalysisJob] TO [DMS_SP_User]
 GO

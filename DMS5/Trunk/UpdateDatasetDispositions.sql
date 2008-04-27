@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.UpdateDatasetDispositions
 **	Date:	04/25/2007
 **			06/26/2007 grk - Fix problem with multiple datasets (Ticket #495)
 **			08/22/2007 mem - Disallow setting datasets to rating 5 (Released) when their state is 5 (Capture Failed); Ticket #524
+**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **
 *****************************************************/
 (
@@ -25,7 +26,8 @@ CREATE PROCEDURE dbo.UpdateDatasetDispositions
     @comment varchar(512) = '',
     @recycleRequest varchar(32) = '', -- yes/no
     @mode varchar(12) = 'update',
-    @message varchar(512) output
+    @message varchar(512) output,
+   	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -301,7 +303,7 @@ As
 					begin
 						-- schedule default analyses for this dataset
 						--
-						execute @myError = SchedulePredefinedAnalyses @curDatasetName
+						execute @myError = SchedulePredefinedAnalyses @curDatasetName, @callingUser
 						--
 						if @myError <> 0
 						begin
@@ -326,7 +328,6 @@ As
 	---------------------------------------------------
 	
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler]
