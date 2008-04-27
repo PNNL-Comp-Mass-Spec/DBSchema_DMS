@@ -4,8 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Requested_Run_EUS_Users](
-	[EUS_Person_ID] [int] NULL,
-	[Request_ID] [int] NULL
+	[EUS_Person_ID] [int] NOT NULL,
+	[Request_ID] [int] NOT NULL,
+ CONSTRAINT [PK_T_Requested_Run_EUS_Users] PRIMARY KEY CLUSTERED 
+(
+	[EUS_Person_ID] ASC,
+	[Request_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

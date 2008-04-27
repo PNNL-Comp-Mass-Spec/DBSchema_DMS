@@ -27,6 +27,7 @@ CREATE TABLE [dbo].[T_Requested_Run_History](
 	[RDS_EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_EUS_UsageType] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_EUS_UsageType]  DEFAULT (1),
 	[RDS_Cart_ID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_Cart_ID]  DEFAULT (1),
+	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_Sec_Sep_ID]  DEFAULT ('none'),
  CONSTRAINT [PK_T_Requested_Run_History] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

@@ -22,3 +22,15 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Secondary_Sep] ON [dbo].[T_Secondary_Sep]
 	[SS_name] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+GRANT ALTER ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO
+GRANT DELETE ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO
+GRANT INSERT ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO
+GRANT REFERENCES ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write]
+GO

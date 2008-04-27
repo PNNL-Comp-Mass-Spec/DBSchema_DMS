@@ -30,6 +30,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_EUS_UsageType] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_EUS_UsageType]  DEFAULT (1),
 	[RDS_Cart_ID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Cart_ID]  DEFAULT (1),
 	[RDS_Cart_Col] [smallint] NULL,
+	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none'),
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
