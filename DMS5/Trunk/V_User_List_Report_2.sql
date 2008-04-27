@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_User_List_Report_2
 AS
-SELECT     U_PRN AS [Payroll Num], U_Name AS Name, U_Status AS Status, dbo.GetUserOperationsList(ID) AS [Operations List], ID
+SELECT     U_PRN AS [Payroll Num], U_HID AS [Hanford ID], U_Name AS Name, U_Status AS Status, dbo.GetUserOperationsList(ID) AS [Operations List], ID
 FROM         dbo.T_Users AS U
 GROUP BY U_PRN, U_HID, U_Name, U_email, U_Status, ID
 

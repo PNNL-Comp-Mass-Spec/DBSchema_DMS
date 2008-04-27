@@ -19,16 +19,17 @@ SELECT DS.Dataset_ID AS ID,
        DFP.Dataset_Folder_Path AS [Dataset Folder Path],
        DFP.Archive_Folder_Path AS [Archive Folder Path],
        ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
+       ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq. End],
        DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start), 
          ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish)) AS [Acq Length],
        DS.Scan_Count AS [Scan Count],
        LC.SC_Column_Number AS [LC Column],
+       DS.DS_sec_sep AS [Separation Type],
        RRH.RDS_Blocking_Factor AS [Blocking Factor],
        RRH.RDS_Block AS Block,
        RRH.RDS_Run_Order AS [Run Order],
        RRH.ID AS Request,
-       DASN.DASN_StateName AS [Archive State],
-       DS.Acq_Time_End AS [Acq. End]
+       DASN.DASN_StateName AS [Archive State]
 FROM dbo.T_DatasetArchiveStateName AS DASN
      INNER JOIN dbo.T_Dataset_Archive AS DSA
        ON DASN.DASN_StateID = DSA.AS_state_ID

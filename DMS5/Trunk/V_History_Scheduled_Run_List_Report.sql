@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_History_Scheduled_Run_List_Report]
+CREATE VIEW dbo.V_History_Scheduled_Run_List_Report
 AS
 SELECT RRH.ID AS Request,
        RRH.RDS_Name AS Name,
@@ -16,6 +16,7 @@ SELECT RRH.ID AS Request,
        RRH.RDS_Oper_PRN AS Requestor,
        RRH.RDS_instrument_name AS Instrument,
        DTN.DST_Name AS [Run Type],
+       RRH.RDS_Sec_Sep AS [Separation Type],
        RRH.RDS_comment AS Comment,
        RRH.RDS_Run_Start AS [Run Start],
        DATEDIFF(minute, RRH.RDS_Run_Start, RRH.RDS_Run_Finish) AS [Run Length],

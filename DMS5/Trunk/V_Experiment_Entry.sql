@@ -10,13 +10,14 @@ SELECT     dbo.T_Experiments.Experiment_Num, dbo.T_Campaign.Campaign_Num AS EX_C
                       dbo.T_Enzymes.Enzyme_Name, dbo.T_Experiments.EX_lab_notebook_ref, dbo.T_Experiments.EX_comment, 
                       dbo.GetExpCellCultureList(dbo.T_Experiments.Experiment_Num) AS EX_cell_culture_list, dbo.T_Experiments.EX_Labelling, 
                       dbo.T_Experiments.EX_sample_prep_request_ID AS samplePrepRequest, dbo.T_Internal_Standards.Name AS internalStandard, 
-                      T_Internal_Standards_1.Name AS postdigestIntStd
+                      T_Internal_Standards_1.Name AS postdigestIntStd, dbo.T_Material_Containers.Tag AS container
 FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
                       dbo.T_Enzymes ON dbo.T_Experiments.EX_enzyme_ID = dbo.T_Enzymes.Enzyme_ID INNER JOIN
                       dbo.T_Internal_Standards ON dbo.T_Experiments.EX_internal_standard_ID = dbo.T_Internal_Standards.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards T_Internal_Standards_1 ON 
+                      dbo.T_Internal_Standards AS T_Internal_Standards_1 ON 
                       dbo.T_Experiments.EX_postdigest_internal_std_ID = T_Internal_Standards_1.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Organisms ON dbo.T_Experiments.Ex_organism_ID = dbo.T_Organisms.Organism_ID
+                      dbo.T_Organisms ON dbo.T_Experiments.EX_organism_ID = dbo.T_Organisms.Organism_ID INNER JOIN
+                      dbo.T_Material_Containers ON dbo.T_Experiments.EX_Container_ID = dbo.T_Material_Containers.ID
 
 GO

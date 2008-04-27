@@ -3,38 +3,58 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Detail_Report_2
+CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2]
 AS
-SELECT     CONVERT(varchar(32), dbo.T_Analysis_Job.AJ_jobID) AS JobNum, dbo.T_Dataset.Dataset_Num AS Dataset, 
-                      dbo.T_Dataset.DS_folder_name AS [Dataset Folder], dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path AS [Dataset Folder Path], 
-                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path AS [Archive Folder Path], dbo.T_Instrument_Name.IN_name AS Instrument, 
-                      dbo.T_Analysis_Tool.AJT_toolName AS [Tool Name], dbo.T_Analysis_Job.AJ_parmFileName AS [Parm File], 
-                      dbo.T_Analysis_Tool.AJT_parmFileStoragePath AS [Parm File Storage Path], dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File], 
-                      dbo.T_Organisms.OG_name AS Organism, dbo.T_Analysis_Job.AJ_organismDBName AS [Organism DB], 
-                      dbo.GetFASTAFilePath(dbo.T_Analysis_Job.AJ_organismDBName, dbo.T_Organisms.OG_name) AS [Organism DB Storage Path], 
-                      dbo.T_Analysis_Job.AJ_proteinCollectionList AS [Protein Collection List], dbo.T_Analysis_Job.AJ_proteinOptionsList AS [Protein Options List], 
-                      dbo.T_Analysis_State_Name.AJS_name AS State, dbo.T_Analysis_Job.AJ_owner AS Owner, dbo.T_Analysis_Job.AJ_priority AS Priority, 
-                      dbo.T_Analysis_Job.AJ_comment AS Comment, dbo.T_Analysis_Job.AJ_assignedProcessorName AS [Assigned Processor], 
-                      dbo.T_Analysis_Job.AJ_extractionProcessor AS [DEX Processor], dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID, 
-                      dbo.T_Analysis_Job_Processor_Group.Group_Name, 
-                      dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName AS [Results Folder Path], 
-                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName AS [Archive Results Folder Path], 
-                      dbo.T_Analysis_Job.AJ_created AS Created, dbo.T_Analysis_Job.AJ_start AS Started, dbo.T_Analysis_Job.AJ_finish AS Finished, 
-                      dbo.T_Analysis_Job.AJ_requestID AS Request, dbo.T_Analysis_Job.AJ_Analysis_Manager_Error AS [AM Code], 
-                      dbo.GetDEMCodeString(dbo.T_Analysis_Job.AJ_Data_Extraction_Error) AS [DEM Code], 
-                      CASE dbo.T_Analysis_Job.AJ_propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS [Export Mode]
-FROM         dbo.T_Organisms INNER JOIN
-                      dbo.T_Analysis_Job INNER JOIN
-                      dbo.T_Dataset ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID INNER JOIN
-                      dbo.V_Dataset_Folder_Paths ON dbo.V_Dataset_Folder_Paths.Dataset_ID = dbo.T_Dataset.Dataset_ID INNER JOIN
-                      dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
-                      dbo.T_Analysis_Tool ON dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID INNER JOIN
-                      dbo.T_Analysis_State_Name ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID INNER JOIN
-                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID ON 
-                      dbo.T_Organisms.Organism_ID = dbo.T_Analysis_Job.AJ_organismID LEFT OUTER JOIN
-                      dbo.T_Analysis_Job_Processor_Group INNER JOIN
-                      dbo.T_Analysis_Job_Processor_Group_Associations ON 
-                      dbo.T_Analysis_Job_Processor_Group.ID = dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID ON 
-                      dbo.T_Analysis_Job.AJ_jobID = dbo.T_Analysis_Job_Processor_Group_Associations.Job_ID
+SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum, 
+    DS.Dataset_Num AS Dataset, 
+    DS.DS_folder_name AS [Dataset Folder], 
+    DFP.Dataset_Folder_Path AS [Dataset Folder Path], 
+    DFP.Archive_Folder_Path AS [Archive Folder Path], 
+    InstName.IN_name AS Instrument, 
+    AnalysisTool.AJT_toolName AS [Tool Name], 
+    AJ.AJ_parmFileName AS [Parm File], 
+    AnalysisTool.AJT_parmFileStoragePath AS [Parm File Storage Path],
+     AJ.AJ_settingsFileName AS [Settings File], 
+    Org.OG_name AS Organism, 
+    AJ.AJ_organismDBName AS [Organism DB], 
+    dbo.GetFASTAFilePath(AJ.AJ_organismDBName, 
+    Org.OG_name) AS [Organism DB Storage Path], 
+    AJ.AJ_proteinCollectionList AS [Protein Collection List], 
+    AJ.AJ_proteinOptionsList AS [Protein Options List], 
+    ASN.AJS_name AS State, AJ.AJ_owner AS Owner, 
+    AJ.AJ_priority AS Priority, AJ.AJ_comment AS Comment, 
+    AJ.AJ_assignedProcessorName AS [Assigned Processor], 
+    AJ.AJ_extractionProcessor AS [DEX Processor], 
+    DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Results Folder Path],
+    DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Results Folder Path],
+    AJ.AJ_created AS Created, 
+    AJ.AJ_start AS Started, 
+    AJ.AJ_finish AS Finished, 
+    AJ.AJ_requestID AS Request, 
+    AJPGA.Group_ID AS [Processor Group ID], 
+    AJPG.Group_Name AS [Processor Group Name],
+	AJPGA.Entered_By AS [Processor Group Assignee],
+    AJ.AJ_Analysis_Manager_Error AS [AM Code], 
+    dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) 
+    AS [DEM Code], 
+    CASE AJ.AJ_propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS [Export Mode]
+FROM dbo.T_Organisms AS Org INNER JOIN
+    dbo.T_Analysis_Job AS AJ INNER JOIN
+    dbo.T_Dataset AS DS ON 
+    AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
+    dbo.V_Dataset_Folder_Paths AS DFP ON 
+    DFP.Dataset_ID = DS.Dataset_ID INNER JOIN
+    dbo.t_storage_path AS SPath ON 
+    DS.DS_storage_path_ID = SPath.SP_path_ID INNER JOIN
+    dbo.T_Analysis_Tool AS AnalysisTool ON 
+    AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID INNER JOIN
+    dbo.T_Analysis_State_Name AS ASN ON 
+    AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
+    dbo.T_Instrument_Name AS InstName ON 
+    DS.DS_instrument_name_ID = InstName.Instrument_ID ON 
+    Org.Organism_ID = AJ.AJ_organismID LEFT OUTER JOIN
+    dbo.T_Analysis_Job_Processor_Group AS AJPG INNER JOIN
+    dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA ON
+     AJPG.ID = AJPGA.Group_ID ON AJ.AJ_jobID = AJPGA.Job_ID
 
 GO

@@ -14,7 +14,7 @@ SELECT     CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum, DS.Dataset_Num AS Datase
                       SP.SP_vol_name_client +
                           (SELECT     Client
                             FROM          dbo.T_MiscPaths
-                            WHERE      ([Function] = 'AnalysisXfer')) AS transferFolderPath, Tool.AJT_toolName AS ToolName
+                            WHERE      ([Function] = 'AnalysisXfer')) AS transferFolderPath, Tool.AJT_toolName AS ToolName, DS.Dataset_ID AS DatasetID
 FROM         dbo.T_Analysis_Job AS AJ INNER JOIN
                       dbo.T_Dataset AS DS ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
                       dbo.T_Organisms AS Org ON AJ.AJ_organismID = Org.Organism_ID INNER JOIN
