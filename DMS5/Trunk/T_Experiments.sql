@@ -16,10 +16,11 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_cell_culture_list] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Labelling] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Exp_ID] [int] IDENTITY(5000,1) NOT NULL,
-	[EX_enzyme_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_enzyme_ID]  DEFAULT (10),
-	[EX_sample_prep_request_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT (0),
-	[EX_internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT (0),
-	[EX_postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT (0),
+	[EX_Container_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_Container_ID]  DEFAULT ((1)),
+	[EX_enzyme_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_enzyme_ID]  DEFAULT ((10)),
+	[EX_sample_prep_request_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT ((0)),
+	[EX_internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT ((0)),
+	[EX_postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)),
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY NONCLUSTERED 
 (
 	[Exp_ID] ASC
@@ -32,6 +33,13 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments] 
 (
 	[EX_campaign_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Experiments_Container_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID] ON [dbo].[T_Experiments] 
+(
+	[EX_Container_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
@@ -64,7 +72,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_Experiments] on [dbo].[T_Experiments]
+CREATE Trigger [dbo].[trig_d_Experiments] on dbo.T_Experiments
 For Delete
 /****************************************************
 **
@@ -107,7 +115,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_i_Experiments] on [dbo].[T_Experiments]
+CREATE Trigger [dbo].[trig_i_Experiments] on dbo.T_Experiments
 For Insert
 /****************************************************
 **
@@ -156,6 +164,9 @@ ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards1]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Material_Containers] FOREIGN KEY([EX_Container_ID])
+REFERENCES [T_Material_Containers] ([ID])
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
 REFERENCES [T_Organisms] ([Organism_ID])

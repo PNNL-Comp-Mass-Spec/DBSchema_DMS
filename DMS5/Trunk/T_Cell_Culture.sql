@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Cell_Culture](
 	[CC_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CC_Campaign_ID] [int] NULL,
 	[CC_ID] [int] IDENTITY(200,1) NOT NULL,
+	[CC_Container_ID] [int] NOT NULL CONSTRAINT [DF_T_Cell_Culture_CC_Container_ID]  DEFAULT ((1)),
 	[CC_Created] [datetime] NULL,
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
@@ -43,6 +44,13 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Cu
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Cell_Culture_Container_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Culture] 
+(
+	[CC_Container_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Trigger [trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
@@ -50,7 +58,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_Cell_Culture] on [dbo].[T_Cell_Culture]
+CREATE Trigger [dbo].[trig_d_Cell_Culture] on dbo.T_Cell_Culture
 For Delete
 /****************************************************
 **
@@ -93,7 +101,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_i_Cell_Culture] on [dbo].[T_Cell_Culture]
+CREATE Trigger [dbo].[trig_i_Cell_Culture] on dbo.T_Cell_Culture
 For Insert
 /****************************************************
 **
@@ -132,4 +140,7 @@ ALTER TABLE [dbo].[T_Cell_Culture]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Cell_Cult
 REFERENCES [T_Cell_Culture_Type_Name] ([ID])
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers] FOREIGN KEY([CC_Container_ID])
+REFERENCES [T_Material_Containers] ([ID])
 GO

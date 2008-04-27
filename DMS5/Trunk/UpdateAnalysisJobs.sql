@@ -26,6 +26,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
 **			05/07/2007 grk - corrected spelling of sproc name
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
+**			04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group 
 **    
 *****************************************************/
 (
@@ -57,7 +58,9 @@ As
 	declare @list varchar(1024)
 
 	declare @AlterEventLogRequired tinyint
+	declare @AlterEnteredByRequired tinyint
 	set @AlterEventLogRequired = 0
+	set @AlterEnteredByRequired = 0
 
 	declare @transName varchar(32)
 	set @transName = ''
@@ -376,27 +379,6 @@ As
 		
 		Set @AlterEventLogRequired = 1
 	end -- reset mode
- 
- 	If Len(@callingUser) > 0 And @AlterEventLogRequired <> 0
-	Begin
-		-- @callingUser is defined; call AlterEventLogEntryUserMultiID
-		-- to alter the Entered_By field in T_Event_Log
-		--
-
-		-- Populate a temporary table with the list of Job IDs just updated
-		CREATE TABLE #TmpIDUpdateList (
-			TargetID int NOT NULL
-		)
-		
-		CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
-		
-		INSERT INTO #TmpIDUpdateList (TargetID)
-		SELECT DISTINCT Job
-		FROM #TAJ
-			
-		Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
-	End
-	
 	
  	---------------------------------------------------
 	-- Handle associated processor Group
@@ -455,7 +437,9 @@ As
 				-- for jobs with existing association, change it
 				--
 				UPDATE T_Analysis_Job_Processor_Group_Associations
-				SET	Group_ID = @gid
+				SET	Group_ID = @gid,
+					Entered = GetDate(),
+					Entered_By = suser_sname()
 				WHERE (Job_ID in (SELECT Job FROM #TAJ))					
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -484,8 +468,44 @@ As
 					RAISERROR (@msg, 10, 1)
 					return 51016
 				end
+				
+				Set @AlterEnteredByRequired = 1
 			end
 	end  -- associated processor Group
+
+
+ 	If Len(@callingUser) > 0 AND (@AlterEventLogRequired <> 0 OR @AlterEnteredByRequired <> 0)
+	Begin
+		-- @callingUser is defined and items need to be updated in T_Event_Log and/or T_Analysis_Job_Processor_Group_Associations
+		--
+		-- Populate a temporary table with the list of Job IDs just updated
+		CREATE TABLE #TmpIDUpdateList (
+			TargetID int NOT NULL
+		)
+		
+		CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+		
+		INSERT INTO #TmpIDUpdateList (TargetID)
+		SELECT DISTINCT Job
+		FROM #TAJ
+		
+		If @AlterEventLogRequired <> 0
+		Begin
+			-- Call AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+		
+			Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
+		End
+
+		If @AlterEnteredByRequired <> 0
+		Begin
+			-- Call AlterEnteredByUserMultiID
+			-- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
+		
+			Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @CallingUser
+		End
+	End
+
 
  	---------------------------------------------------
 	-- 
