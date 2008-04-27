@@ -62,6 +62,8 @@ AS
 	End
 
 GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Membership] ([Entered_By]) TO [DMS2_SP_User]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [T_Analysis_Job_Processor_Group_T_Analysis_Job_Processor_Group_Membership_FK1] FOREIGN KEY([Group_ID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
 GO

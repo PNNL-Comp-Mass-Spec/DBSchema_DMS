@@ -172,6 +172,8 @@ GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
 GO
+GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User]
+GO
 ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
 REFERENCES [T_Param_Files] ([Param_File_ID])
 ON UPDATE CASCADE

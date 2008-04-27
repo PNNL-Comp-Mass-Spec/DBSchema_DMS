@@ -67,3 +67,5 @@ AS
 	End
 
 GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group] ([Entered_By]) TO [DMS2_SP_User]
+GO

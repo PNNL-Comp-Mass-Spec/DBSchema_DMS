@@ -22,6 +22,8 @@ GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
 GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered_By]) TO [DMS2_SP_User]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])
 GO

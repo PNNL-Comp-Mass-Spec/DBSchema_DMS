@@ -35,3 +35,5 @@ CREATE NONCLUSTERED INDEX [IX_T_Organisms_Change_History] ON [dbo].[T_Organisms_
 	[Organism_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+GRANT UPDATE ON [dbo].[T_Organisms_Change_History] ([Entered_By]) TO [DMS2_SP_User]
+GO

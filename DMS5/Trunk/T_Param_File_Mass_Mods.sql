@@ -38,3 +38,6 @@ GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Residues] FOREIGN KEY([Residue_ID])
 REFERENCES [T_Residues] ([Residue_ID])
 GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Seq_Local_Symbols_List] FOREIGN KEY([Local_Symbol_ID])
+REFERENCES [T_Seq_Local_Symbols_List] ([Local_Symbol_ID])
+GO
