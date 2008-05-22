@@ -3,16 +3,23 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Param_File_Picklist
+CREATE VIEW [dbo].[V_Param_File_Picklist]
 AS
-SELECT TOP 100 PERCENT dbo.T_Param_Files.Param_File_Name AS
-     Name, 
-    dbo.T_Param_Files.Param_File_Description AS [Desc], 
-    dbo.T_Analysis_Tool.AJT_toolName AS ToolName
-FROM dbo.T_Param_Files INNER JOIN
-    dbo.T_Analysis_Tool ON 
-    dbo.T_Param_Files.Param_File_Type_ID = dbo.T_Analysis_Tool.AJT_paramFileType
-WHERE (dbo.T_Param_Files.Valid = 1)
-ORDER BY dbo.T_Param_Files.Param_File_Name
+SELECT PF.Param_File_Name AS "Name",
+       PF.Param_File_Description AS "Desc",
+       ISNULL(ParamUsageQ.JobCount, 0) AS "Job Count",
+       AnTool.AJT_toolName AS ToolName
+FROM dbo.T_Param_Files PF
+     INNER JOIN dbo.T_Analysis_Tool AnTool
+       ON PF.Param_File_Type_ID = AnTool.AJT_paramFileType
+     LEFT OUTER JOIN ( SELECT AJ_analysisToolID,
+                              AJ_parmFileName,
+                              COUNT(*) AS JobCount
+                       FROM dbo.T_Analysis_Job
+                       WHERE AJ_Created >= DateAdd(year, -2, GetDate())
+                       GROUP BY AJ_parmFileName, AJ_analysisToolID ) ParamUsageQ
+       ON AnTool.AJT_toolID = ParamUsageQ.AJ_analysisToolID AND
+          PF.Param_File_Name = ParamUsageQ.AJ_parmFileName
+WHERE (PF.Valid = 1)
 
 GO
