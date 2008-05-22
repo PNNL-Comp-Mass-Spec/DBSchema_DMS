@@ -38,3 +38,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[GetDEMCodeString] TO [public]
+GO
