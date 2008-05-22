@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Tools](
 (
 	[Tool_ID] ASC,
 	[Processor_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -21,6 +21,10 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Job_Processors] FOREIGN KEY([Processor_ID])
 REFERENCES [T_Analysis_Job_Processors] ([ID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Job_Processors]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Tool] FOREIGN KEY([Tool_ID])
 REFERENCES [T_Analysis_Tool] ([AJT_toolID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Tool]
 GO

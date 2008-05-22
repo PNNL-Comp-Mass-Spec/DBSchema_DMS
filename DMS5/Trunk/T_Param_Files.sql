@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_Param_Files](
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -28,6 +28,8 @@ GRANT UPDATE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Files_T_Param_File_Types] FOREIGN KEY([Param_File_Type_ID])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [FK_T_Param_Files_T_Param_File_Types]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Param_Files] CHECK  ((charindex(' ',[Param_File_Name]) = 0))
 GO

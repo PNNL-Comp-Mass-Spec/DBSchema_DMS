@@ -14,16 +14,16 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processors](
  CONSTRAINT [T_Analysis_Job_Processors_PK] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY],
  CONSTRAINT [IX_T_Analysis_Job_Processors] UNIQUE NONCLUSTERED 
 (
 	[Processor_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_u_T_Analysis_Job_Processors] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processors] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -69,4 +69,6 @@ GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processors] ([Entered_By]) TO [DMS2_SP_User]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processors]  WITH CHECK ADD  CONSTRAINT [CK_T_Analysis_Job_Processors_State] CHECK  (([State] = 'D' or [State] = 'E'))
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] CHECK CONSTRAINT [CK_T_Analysis_Job_Processors_State]
 GO

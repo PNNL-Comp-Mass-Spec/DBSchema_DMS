@@ -15,12 +15,12 @@ CREATE TABLE [dbo].[T_Param_Entries](
  CONSTRAINT [PK_T_Param_Entries] PRIMARY KEY CLUSTERED 
 (
 	[Param_Entry_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_d_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_d_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -53,7 +53,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_i_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_i_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -86,7 +86,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_u_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -177,4 +177,6 @@ GO
 ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
 REFERENCES [T_Param_Files] ([Param_File_ID])
 ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Param_Entries] CHECK CONSTRAINT [FK_T_Param_Entries_T_Param_Files]
 GO

@@ -12,12 +12,12 @@ CREATE TABLE [dbo].[T_Instrument_Class](
  CONSTRAINT [PK_T_Instrument_Class] PRIMARY KEY CLUSTERED 
 (
 	[IN_class] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_iu_T_Instrument_Class] ******/
+/****** Object:  Trigger [dbo].[trig_iu_T_Instrument_Class] ******/
 SET ANSI_NULLS ON
 GO
 

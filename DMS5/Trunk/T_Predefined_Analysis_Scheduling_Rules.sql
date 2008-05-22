@@ -17,10 +17,12 @@ CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules](
  CONSTRAINT [PK_T_Predefined_Analysis_Scheduling_Rules] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group] FOREIGN KEY([SR_processorGroupID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] CHECK CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group]
 GO

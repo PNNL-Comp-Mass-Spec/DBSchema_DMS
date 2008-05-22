@@ -13,12 +13,12 @@ CREATE TABLE [dbo].[T_Experiment_Annotations](
 (
 	[Experiment_ID] ASC,
 	[Key_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_u_T_Experiment_Annotations] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Experiment_Annotations] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -67,7 +67,11 @@ ALTER TABLE [dbo].[T_Experiment_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_E
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
 GO
+ALTER TABLE [dbo].[T_Experiment_Annotations] CHECK CONSTRAINT [FK_T_Experiment_Annotations_T_Annotation_Keys]
+GO
 ALTER TABLE [dbo].[T_Experiment_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Annotations_T_Experiments] FOREIGN KEY([Experiment_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Experiment_Annotations] CHECK CONSTRAINT [FK_T_Experiment_Annotations_T_Experiments]
 GO

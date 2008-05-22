@@ -23,7 +23,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY NONCLUSTERED 
 (
 	[Instrument_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -31,5 +31,9 @@ ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrume
 REFERENCES [T_Instrument_Class] ([IN_class])
 ON UPDATE CASCADE
 GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Class]
+GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name] CHECK  (([IN_operations_role] = 'Unused' or ([IN_operations_role] = 'QC' or ([IN_operations_role] = 'Research' or ([IN_operations_role] = 'Production' or [IN_operations_role] = 'Unknown')))))
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name]
 GO

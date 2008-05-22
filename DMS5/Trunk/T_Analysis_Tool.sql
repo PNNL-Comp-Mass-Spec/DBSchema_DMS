@@ -21,12 +21,19 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_iu_T_Analysis_Tool] ******/
+/****** Object:  Index [IX_T_Analysis_Tool_Name] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Analysis_Tool_Name] ON [dbo].[T_Analysis_Tool] 
+(
+	[AJT_toolName] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Trigger [dbo].[trig_iu_T_Analysis_Tool] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -140,4 +147,6 @@ AS
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
 GO

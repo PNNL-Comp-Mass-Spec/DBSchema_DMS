@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 21 ******/
+/****** RowCount: 22 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
@@ -22,4 +22,5 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (33,'Pluto',2,'Manual LC cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (34,'Owl',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (35,'Eagle',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (36,'Kestrel',2,'20,000 psi mixers')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

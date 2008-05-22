@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_Campaign](
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY NONCLUSTERED 
 (
 	[Campaign_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -23,24 +23,24 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Campaign_Campaign_ID] ON [dbo].[T_Campaign] 
 (
 	[Campaign_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Campaign_Campaign_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
 (
 	[Campaign_Num] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Campaign_CM_created] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign] 
 (
 	[CM_created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_d_Campaign] ******/
+/****** Object:  Trigger [dbo].[trig_d_Campaign] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -83,7 +83,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_i_Campaign] ******/
+/****** Object:  Trigger [dbo].[trig_i_Campaign] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -120,4 +120,6 @@ GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write]
 GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Users] FOREIGN KEY([CM_PI_PRN])
 REFERENCES [T_Users] ([U_PRN])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Users]
 GO

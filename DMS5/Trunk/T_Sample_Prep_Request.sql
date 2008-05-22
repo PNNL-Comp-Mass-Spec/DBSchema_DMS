@@ -45,7 +45,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -54,17 +54,94 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
 (
 	[Request_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on dbo.T_Sample_Prep_Request
+
+create Trigger dbo.trig_d_Sample_Prep_Req on dbo.T_Sample_Prep_Request
+For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Sample_Prep_Request_Updates for the deleted sample prep request
+**
+**	Auth:	mem
+**	Date:	05/16/2008
+**    
+*****************************************************/
+AS
+	Set NoCount On
+
+	-- Add entries to T_Sample_Prep_Request_Updates for each entry deleted from T_Sample_Prep_Request
+	INSERT INTO T_Sample_Prep_Request_Updates (
+			Request_ID, 
+			System_Account, 
+			Beginning_State_ID, 
+			End_State_ID)
+	SELECT 	deleted.ID, 
+		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ) + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
+			deleted.state,
+			0 AS End_State_ID
+	FROM deleted
+	ORDER BY deleted.ID
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+create Trigger dbo.trig_i_Sample_Prep_Req on dbo.T_Sample_Prep_Request
+For Insert
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Sample_Prep_Request_Updates for the new sample prep request
+**
+**	Auth:	mem
+**	Date:	05/16/2008
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	INSERT INTO T_Sample_Prep_Request_Updates (
+			Request_ID, 
+			System_Account, 
+			Beginning_State_ID, 
+			End_State_ID)
+	SELECT 	inserted.ID, 
+		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ),
+			0,
+			inserted.state
+	FROM inserted
+	ORDER BY inserted.ID
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
 /****************************************************
 **
@@ -74,6 +151,7 @@ For Update
 **	Auth:	grk
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**			05/16/2008 mem - Fixed bug that was inserting the Beginning_State_ID and End_State_ID values backward
 **    
 *****************************************************/
 AS
@@ -87,10 +165,11 @@ AS
 			End_State_ID)
 	SELECT 	inserted.ID, 
 		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ),
-			inserted.state, 
-			deleted.state
+			deleted.state,
+			inserted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
+
 
 GO
 GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
