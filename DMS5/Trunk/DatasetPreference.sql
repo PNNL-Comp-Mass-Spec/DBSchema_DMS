@@ -18,6 +18,7 @@ CREATE FUNCTION dbo.DatasetPreference
 **	Auth:	grk
 **	Date:	02/10/2006
 **			04/09/2007 mem - Added matching of QC_Shew datasets in addition to QC datasets (Ticket #430)
+**			04/11/2008 mem - Added matching of SE_QC_Shew datasets in addition to QC datasets
 **    
 *****************************************************/
 (
@@ -27,12 +28,14 @@ RETURNS tinyint
 AS
 	BEGIN
 		declare @result tinyint
-		set @result = 0
-		if @datasetNum LIKE 'QC[_][0-9][0-9]%' or 
-		   @datasetNum LIKE 'QC[_]Shew[_][0-9][0-9]%'
-		begin
+	
+		if @datasetNum LIKE 'QC[_][0-9][0-9]%' OR 
+		   @datasetNum LIKE 'QC[_]Shew[_][0-9][0-9]%' OR 
+		   @datasetNum LIKE 'SE_QC[_]Shew[_][0-9][0-9]%'
 			set @result = 1
-		end
+		else
+			set @result = 0
+		
 	RETURN @result
 	END
 

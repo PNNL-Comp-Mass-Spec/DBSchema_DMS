@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.GetParamFileCrosstab
 /****************************************************
 ** 
@@ -15,6 +16,7 @@ CREATE Procedure dbo.GetParamFileCrosstab
 **			12/11/2006 mem - Renamed from GetSequestParamFileCrosstab to GetParamFileCrosstab (Ticket #342)
 **						   - Added parameters @ParameterFileTypeName and @ShowValidOnly
 **						   - Updated to call PopulateParamFileInfoTableSequest and PopulateParamFileModInfoTable 
+**			04/07/2008 mem - Added parameters @previewSql, @MassModFilterTextColumn, and @MassModFilterText
 **    
 *****************************************************/
 (
@@ -25,7 +27,10 @@ CREATE Procedure dbo.GetParamFileCrosstab
 	@ShowModName tinyint = 1,							-- Set to 1 to display the modification name
 	@ShowModMass tinyint = 1,							-- Set to 1 to display the modification mass
 	@UseModMassAlternativeName tinyint = 1,
-	@message varchar(512) = '' output
+	@message varchar(512) = '' output,
+	@previewSql tinyint = 0,
+	@MassModFilterTextColumn varchar(64) = '',			-- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
+	@MassModFilterText varchar(64) = ''					-- If text is defined here, then results are filtered to only show rows that contain this text in one of the mass mod columns
 )
 As
 	set nocount on
@@ -38,7 +43,11 @@ As
 	Declare @ParamFileInfoColumnList varchar(512)
 	Set @ParamFileInfoColumnList = ''
 
-	Declare @S varchar(2048)
+	Declare @S varchar(max)
+	Declare @MassModFilterSql varchar(4000)
+	
+	Set @S = ''
+	Set @MassModFilterSql = ''
 
 	Declare @AddWildcardChars tinyint
 	Set @AddWildcardChars = 1
@@ -54,11 +63,14 @@ As
 	Set @ShowModMass = IsNull(@ShowModMass, 1)
 	Set @UseModMassAlternativeName = IsNull(@UseModMassAlternativeName, 1)
 	Set @message = ''
+	Set @previewSql = IsNull(@previewSql, 0)
+	Set @MassModFilterTextColumn = IsNull(@MassModFilterTextColumn, '')
+	Set @MassModFilterText = IsNull(@MassModFilterText, '')
 	
 	-- Make sure @ParameterFileTypeName is of a known type
 	If @ParameterFileTypeName <> 'Sequest' and @ParameterFileTypeName <> 'XTandem'
 	Begin
-		Set @message = 'Uknown parameter file type: ' + @ParameterFileTypeName + '; should be Sequest or XTandem'
+		Set @message = 'Unknown parameter file type: ' + @ParameterFileTypeName + '; should be Sequest or XTandem'
 		Set @myError = 50000
 		Goto Done
 	End
@@ -127,12 +139,15 @@ As
 		If @myError <> 0
 			Goto Done
 	End
-	
+
 	-----------------------------------------------------------
 	-- Populate #TmpParamFileModResults
 	-----------------------------------------------------------
 	Exec @myError = PopulateParamFileModInfoTable	@ShowModSymbol, @ShowModName, @ShowModMass, 
 													@UseModMassAlternativeName, 
+													@MassModFilterTextColumn,
+													@MassModFilterText,
+													@MassModFilterSql = @MassModFilterSql output,
 													@message = @message output
 	If @myError <> 0
 		Goto Done
@@ -151,9 +166,16 @@ As
 	Set @S = @S + ' FROM #TmpParamFileInfo PFI INNER JOIN'
 	Set @S = @S +    ' T_Param_Files PF ON PFI.Param_File_ID = PF.Param_File_ID LEFT OUTER JOIN'
 	Set @S = @S +    ' #TmpParamFileModResults PFMR ON PFI.Param_File_ID = PFMR.Param_File_ID'
-	Set @S = @S +    ' ORDER BY PF.Param_File_Name'
 	
-	Exec (@S)
+	If Len(@MassModFilterSql) > 0
+		Set @S = @S + ' WHERE ' + @MassModFilterSql
+
+	Set @S = @S + ' ORDER BY PF.Param_File_Name'
+	
+	If @previewSql <> 0
+		Print @S
+	Else
+		Exec (@S)
 	--	  
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -168,6 +190,7 @@ As
 	-----------------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User]

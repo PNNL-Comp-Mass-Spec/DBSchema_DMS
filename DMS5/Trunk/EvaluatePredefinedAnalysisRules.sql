@@ -28,12 +28,14 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			12/28/2007 mem - Updated to allow preview of jobs for datasets with rating -10 (unreviewed)
 **			01/04/2007 mem - Fixed bug that incorrectly allowed rules to be evaluated when rating = -10 and @outputType = 'Export Jobs'
 **			01/30/2008 grk - Set several in #RuleEval to be explicitly null (needed by DMS2)
+**			04/11/2008 mem - Added parameter @RaiseErrorMessages; now using RaiseError to inform the user of errors if @RaiseErrorMessages is non-zero
 **
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@outputType varchar(12),  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
-	@message varchar(512) output
+	@outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
+	@message varchar(512) = '' output,
+	@RaiseErrorMessages tinyint = 1
 )
 As
 	set nocount on
@@ -45,6 +47,7 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
+	Set @RaiseErrorMessages = IsNull(@RaiseErrorMessages, 1)
 
 	---------------------------------------------------
 	-- Validate @outputType
@@ -54,7 +57,8 @@ As
 	If NOT @outputType IN ('Show Rules', 'Show Jobs', 'Export Jobs')
 	Begin
 		set @message = 'Unknown value for @outputType (' + @outputType + '); should be "Show Rules", "Show Jobs", or "Export Jobs"'
-		RAISERROR (@message, 10, 1)
+		If @RaiseErrorMessages <> 0
+			RAISERROR (@message, 10, 1)
 		return 51001
 	End
 	
@@ -103,7 +107,14 @@ As
 	--
 	if @myError <> 0 or @ID = 0
 	begin
-		set @message = 'Could not get instrument name using dataset'
+		set @message = 'Dataset name not found in DMS'
+		
+		If @RaiseErrorMessages <> 0
+			RAISERROR (@message, 10, 1)
+
+		If @myError = 0
+			Set @myError = 53500
+		
 		goto done
 	end
 	--
@@ -112,6 +123,13 @@ As
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
 			set @message = 'Dataset rating does not allow creation of jobs'
+
+			If @RaiseErrorMessages <> 0
+			Begin
+				Set @myError = 53501
+				RAISERROR (@message, 10, 1)
+			End
+
 			goto done
 		end
 	end
@@ -260,6 +278,14 @@ As
 	if @myRowCount = 0
 	begin
 		set @message = 'No rules found'
+		
+		if @outputType = 'Show Rules' Or @OutputType = 'Show Jobs'
+		Begin
+			SELECT @datasetNum AS Dataset, 'No matching rules were found' as Message
+			--
+			goto Done
+		End
+		
 		goto done
 	end
 

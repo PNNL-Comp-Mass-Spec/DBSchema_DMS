@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.PopulateParamFileModInfoTable
 /****************************************************
 ** 
@@ -14,6 +15,7 @@ CREATE Procedure dbo.PopulateParamFileModInfoTable
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Date:	12/08/2006 mem - Initial version (Ticket #342)
+**			04/07/2008 mem - Added parameters @MassModFilterTextColumn, @MassModFilterText, and @MassModFilterSql
 **    
 *****************************************************/
 (
@@ -21,6 +23,9 @@ CREATE Procedure dbo.PopulateParamFileModInfoTable
 	@ShowModName tinyint = 1,						-- Set to 1 to display the modification name
 	@ShowModMass tinyint = 0,						-- Set to 1 to display the modification mass
 	@UseModMassAlternativeName tinyint = 0,
+	@MassModFilterTextColumn varchar(64) = '',		-- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
+	@MassModFilterText varchar(64) = '',			-- If text is defined here, then @MassModFilterSql will be populated with SQL to filter the results to only show rows that contain this text in one of the mass mod columns
+	@MassModFilterSql varchar(4000) = ''output,
 	@message varchar(512) = '' output
 )
 As
@@ -40,6 +45,13 @@ As
 	Declare @S varchar(4000)
 	Declare @MMD varchar(512)
 
+	Declare @MassModFilterComparison varchar(66)
+	Declare @AddFilter tinyint
+	
+	-----------------------------------------------------------
+	-- Validate the inputs
+	-----------------------------------------------------------
+	--
 	-- Assure that one of the following is non-zero
 	If IsNull(@ShowModSymbol, 0) = 0 AND IsNull(@ShowModName, 0) = 0 AND IsNull(@ShowModMass, 0) = 0 
 	Begin
@@ -48,7 +60,16 @@ As
 		Set @ShowModMass = 0
 	End
 	
+	Set @MassModFilterTextColumn = IsNull(@MassModFilterTextColumn, '')
+	Set @MassModFilterText = IsNull(@MassModFilterText, '')
+	
 	Set @message = ''
+	Set @MassModFilterSql = ''
+	
+	If Len(@MassModFilterTextColumn) > 0
+		Set @MassModFilterComparison = '%' + @MassModFilterTextColumn + '%'
+	Else
+		Set @MassModFilterComparison = ''
 
 
 	-----------------------------------------------------------
@@ -183,7 +204,6 @@ As
 			goto done
 		end
 
-
 		-----------------------------------------------------------
 		-- Populate #TmpParamFileModResults by looping through 
 		--  the Columns in #ColumnHeaders
@@ -263,6 +283,28 @@ As
 
 					End -- </e>
 				End -- </d>
+				
+				-----------------------------------------------------------
+				-- Possibly populate @MassModFilterSql
+				-----------------------------------------------------------
+				If Len(@MassModFilterText) > 0
+				Begin
+					Set @AddFilter = 1
+					If Len(@MassModFilterComparison) > 0
+					Begin
+						If Not @CurrentColumn LIKE @MassModFilterComparison
+							Set @AddFilter = 0
+					End
+						
+					If @AddFilter = 1
+					Begin
+						If Len(@MassModFilterSql) > 0 
+							Set @MassModFilterSql = @MassModFilterSql + ' OR '
+						
+						Set @MassModFilterSql = @MassModFilterSql + ' [' + @CurrentColumn + '] LIKE ''%' + @MassModFilterText + '%'''
+					End
+				End
+
 			End -- </c>
 		End -- </b>
 	End -- </a>
@@ -272,5 +314,6 @@ As
 	-----------------------------------------------------------
 Done:
 	return @myError
+
 
 GO

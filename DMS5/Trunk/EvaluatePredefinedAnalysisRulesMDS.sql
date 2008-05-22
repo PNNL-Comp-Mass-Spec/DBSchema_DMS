@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[EvaluatePredefinedAnalysisRulesMDS] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **			03/28/2006 grk - added protein collection fields
 **			04/04/2006 grk - increased sized of param file name
 **			03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
+**			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
 **    
 *****************************************************/
 (
@@ -115,7 +116,9 @@ As
 			exec @result = EvaluatePredefinedAnalysisRules 
 									@tFld, 
 									'Export Jobs', 
-									@message output
+									@message output,
+									@RaiseErrorMessages=0
+
 		end
 	end
 	
