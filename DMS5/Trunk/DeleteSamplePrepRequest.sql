@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DeleteSamplePrepRequest
+CREATE Procedure dbo.DeleteSamplePrepRequest
 /****************************************************
 **
 **	Desc: 
@@ -13,14 +13,16 @@ CREATE Procedure DeleteSamplePrepRequest
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 11/10/2005
-**             1/04/2006 grk added delete for aux info
+**	Auth:	grk
+**	Date:	11/10/2005
+**			01/04/2006 grk - added delete for aux info
+**			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
 **    
 *****************************************************/
 (
 	@requestID int,
-    @message varchar(512) output
+    @message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 As	
 	set nocount on
@@ -41,23 +43,6 @@ As
 	declare @transName varchar(32)
 	set @transName = 'DeleteSamplePrepRequest'
 	begin transaction @transName
-
-	
-	---------------------------------------------------
-	-- remove any referring entries from update table
-	---------------------------------------------------
-	--
-	DELETE FROM T_Sample_Prep_Request_Updates
-	WHERE     (Request_ID = @requestID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		rollback transaction @transName
-		set @message = 'Error removing update history of request'
-		goto Done
-	end
 
 
 	---------------------------------------------------
@@ -127,8 +112,14 @@ As
 	---------------------------------------------------
 	commit transaction @transName
 
+
+	-- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
+	If Len(@callingUser) > 0
+		Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @requestID, @CallingUser, 
+								@EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
+
 	---------------------------------------------------
-	-- 
+	-- Done
 	---------------------------------------------------
 Done:
 	return @myError
