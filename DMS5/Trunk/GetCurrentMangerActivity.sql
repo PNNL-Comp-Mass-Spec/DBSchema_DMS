@@ -19,6 +19,7 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **			  2/24/04 grk - fixed problem with null value for AJ_assignedProcessorName
 **			  2/09/07 grk - added column to note that activity is stale (Ticket #377)
 **			  2/27/07 grk - fixed prep manager reporting (Ticket #398)
+**			  4/4/08  dac - changed output sort order to DESC
 **    
 *****************************************************/
 AS
@@ -181,7 +182,7 @@ Done:
 		What,
 		CASE WHEN DATEDIFF(hour, [When], getdate()) > 6 THEN 'ALERT' ELSE '' END as #Alert
 	from #XT 
-	ORDER by Who
+	ORDER by Who DESC
 
 return @myError
 

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.ReportProductionStats
 /****************************************************
 **
@@ -18,6 +17,7 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **			08/17/2007 mem - Updated to examine Dataset State and Dataset Rating when counting Bad and Blank datasets (ticket #520)
 **						   - Now excluding TS datasets from the Study Specific Datasets total (in addition to excluding Blank, QC, and Bad datasets)
 **						   - Now extending the end date to 11:59:59 pm on the given day if @endDate does not contain a time component
+**			04/25/2008 grk - added "% Blank Datasets" column
 **    
 *****************************************************/
 (
@@ -65,6 +65,7 @@ AS
 		[MD] as [Method Dev.],
 		[TS] as [Troubleshooting],
 		[Bad] as [Bad Datasets],
+		convert(decimal(5,1), ([Blank] * 100.0/[Total])) as [% Blank Datasets],
 		convert(decimal(5,1), ([QC] * 100.0/[Total])) as [% QC Datasets],
 		convert(decimal(5,1), ([Bad] * 100.0/[Total])) as [% Bad Datasets],
 		[Total] - ([Blank] + [QC] + [TS] + [Bad]) as [Study Specific Datasets],

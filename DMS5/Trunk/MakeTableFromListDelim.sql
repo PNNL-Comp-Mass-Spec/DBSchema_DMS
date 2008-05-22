@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.MakeTableFromListDelim
+
+CREATE FUNCTION [dbo].[MakeTableFromListDelim]
 /****************************************************
 **
 **	Desc: 
@@ -17,6 +18,8 @@ CREATE FUNCTION dbo.MakeTableFromListDelim
 **		Auth: grk
 **		Date: 1/8/2007
 **    
+**		03/05/2008 jds -- added the line to convert null 
+**			list to empty string if value is null 
 *****************************************************/
 (
 @list varchar(8000),
@@ -27,7 +30,7 @@ RETURNS @theTable TABLE
     Item varchar(128)
    )
 AS
-	BEGIN
+BEGIN
 		declare @EOL int
 		declare @count int
 
@@ -42,6 +45,9 @@ AS
 		declare @curPos int
 		set @curPos = 1
 		declare @field varchar(128)
+
+		--if @list is null set to empty string
+		Set @list = isnull(@list, '')
 
 		-- process lists into rows
 		-- and insert into DB table
@@ -94,4 +100,5 @@ AS
 
 		RETURN
 	END
+
 GO
