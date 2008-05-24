@@ -36,8 +36,13 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class] FOREIGN KEY([AD_instrumentClassCriteria])
+REFERENCES [dbo].[T_Instrument_Class] ([IN_class])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms] FOREIGN KEY([AD_organism_ID])
-REFERENCES [T_Organisms] ([Organism_ID])
+REFERENCES [dbo].[T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
 GO

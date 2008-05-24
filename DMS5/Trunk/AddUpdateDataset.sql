@@ -28,6 +28,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			02/15/2008 mem - Increased size of @folderName to varchar(128) (Ticket #645)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			04/09/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
+**			05/23/2008 mem - Now calling SchedulePredefinedAnalyses if the dataset rating is changed from -5 to 5 and no jobs exist yet for this dataset (Ticket #675)
 **    
 *****************************************************/
 (
@@ -854,8 +855,41 @@ As
 		end
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-		If @ratingID <> IsNull(@curDSRatingID, -1000)
+		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+			
+		-- If rating changed from -5 to 5, then check if any jobs exist for this dataset
+		-- If no jobs are found, then call SchedulePredefinedAnalyses for this dataset
+		If @ratingID >= 2 and IsNull(@curDSRatingID, -1000) = -5
+		Begin
+			If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID))
+			Begin
+				Exec SchedulePredefinedAnalyses @datasetNum
+				
+				-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in 
+				--  T_Event_Log for any newly created jobs for this dataset
+				If Len(@callingUser) > 0
+				Begin
+					Declare @JobStateID int
+					Set @JobStateID = 1
+					
+					CREATE TABLE #TmpIDUpdateList (
+						TargetID int NOT NULL
+					)
+					
+					INSERT INTO #TmpIDUpdateList (TargetID)
+					SELECT AJ_JobID
+					FROM T_Analysis_Job
+					WHERE (AJ_datasetID = @datasetID)
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+
+					Exec AlterEventLogEntryUserMultiID 5, @JobStateID, @callingUser
+				End
+
+			End
+		End
+		
 		
 	end -- </UpdateMode>
 
