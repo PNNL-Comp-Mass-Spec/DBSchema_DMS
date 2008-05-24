@@ -37,7 +37,7 @@ As
 	Set @HoldMessage = '; holding since dataset purged'
 	
 	CREATE TABLE #Tmp_JobsToUpdate (
-		Job int NOT NULL,
+		Job int NOT NULL
 	)
 	
 	INSERT INTO #Tmp_JobsToUpdate (Job)
