@@ -5,10 +5,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Material_Containers_Detail_Report
 AS
-SELECT     dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Containers.Type, dbo.T_Material_Locations.Tag AS Location, COUNT(*) AS Items, 
+SELECT     dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Containers.Type, dbo.T_Material_Locations.Tag AS Location, COUNT(T.M_ID) AS Items, 
                       dbo.T_Material_Containers.Comment, dbo.T_Material_Containers.Barcode, dbo.T_Material_Containers.Created, 
                       dbo.T_Material_Containers.Status
-FROM         dbo.T_Material_Containers INNER JOIN
+FROM         dbo.T_Material_Containers LEFT OUTER JOIN
                           (SELECT     CC_Container_ID AS C_ID, CC_ID AS M_ID
                             FROM          dbo.T_Cell_Culture
                             UNION

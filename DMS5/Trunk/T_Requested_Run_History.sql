@@ -31,7 +31,7 @@ CREATE TABLE [dbo].[T_Requested_Run_History](
  CONSTRAINT [PK_T_Requested_Run_History] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -40,7 +40,7 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_History] ON [dbo].[T_Requested_Run_History] 
 (
 	[DatasetID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
 GO
@@ -58,17 +58,11 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_DatasetTypeName]
-GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
 REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_EUS_Proposals]
-GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_EUS_UsageType] FOREIGN KEY([RDS_EUS_UsageType])
 REFERENCES [T_EUS_UsageType] ([ID])
-GO
-ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_EUS_UsageType]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
@@ -77,6 +71,4 @@ ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_LC_Cart] FOREIGN KEY([RDS_Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])
-GO
-ALTER TABLE [dbo].[T_Requested_Run_History] CHECK CONSTRAINT [FK_T_Requested_Run_History_T_LC_Cart]
 GO

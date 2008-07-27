@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE dbo.AlterEventLogEntryUser
+CREATE PROCEDURE dbo.AlterEventLogEntryUser
 /****************************************************
 **
 **	Desc:	Updates the user associated with a given event log entry to be @NewUser
@@ -17,6 +17,7 @@ create PROCEDURE dbo.AlterEventLogEntryUser
 **
 **	Auth:	mem
 **	Date:	02/29/2008 mem - Initial version (Ticket: #644)
+**			05/23/2008 mem - Expanded @EntryDescription to varchar(512)
 **    
 *****************************************************/
 (
@@ -40,7 +41,7 @@ As
 	Declare @EntryDateStart datetime
 	Declare @EntryDateEnd datetime
 
-	Declare @EntryDescription varchar(128)
+	Declare @EntryDescription varchar(512)
 	Declare @EntryIndex int
 	Declare @MatchIndex int
 	

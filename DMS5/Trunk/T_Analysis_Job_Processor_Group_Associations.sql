@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations](
 (
 	[Job_ID] ASC,
 	[Group_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -22,10 +22,10 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processor_Group_Job_Associations_ID
 (
 	[Job_ID] ASC,
 	[Group_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group_Associations] ******/
+/****** Object:  Trigger [trig_u_T_Analysis_Job_Processor_Group_Associations] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -78,6 +78,4 @@ ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] CHECK CONSTRAINT
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job_Processor_Group] FOREIGN KEY([Group_ID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job_Processor_Group]
 GO

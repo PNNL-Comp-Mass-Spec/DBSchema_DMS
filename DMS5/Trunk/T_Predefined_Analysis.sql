@@ -32,17 +32,15 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
  CONSTRAINT [PK_T_Predefined_Analysis] PRIMARY KEY CLUSTERED 
 (
 	[AD_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class] FOREIGN KEY([AD_instrumentClassCriteria])
-REFERENCES [dbo].[T_Instrument_Class] ([IN_class])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class]
+REFERENCES [T_Instrument_Class] ([IN_class])
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms] FOREIGN KEY([AD_organism_ID])
-REFERENCES [dbo].[T_Organisms] ([Organism_ID])
+REFERENCES [T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
 GO

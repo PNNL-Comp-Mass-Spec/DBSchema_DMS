@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure CopyAuxInfo
+CREATE Procedure dbo.CopyAuxInfo
 /****************************************************
 **
 **	Desc: 
@@ -12,7 +12,8 @@ CREATE Procedure CopyAuxInfo
 **	Parameters:
 **
 **		Auth: grk
-**		Date: 01/27/2003
+**		01/27/2003 grk - Initial release
+**      07/12/2008 grk - Added error check for source
 **    
 *****************************************************/
 	@targetName varchar(128),
@@ -88,12 +89,21 @@ AS
 	
 	exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
+	if @targetID = 0
+	begin
+		set @msg = 'Could not find "' + @targetEntityName + '"'
+		RAISERROR (@msg, 10, 1)
+		return 51000
+	end
+
 	declare @destEntityID int
 	set @destEntityID = @targetID
+
 	---------------------------------------------------
 	-- Resolve target name and source entity name to entity ID
 	---------------------------------------------------
 
+	set @targetID = 0
 
 	set @sql = N'' 
 	set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
@@ -103,8 +113,16 @@ AS
 	
 	exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
+	if @targetID = 0
+	begin
+		set @msg = 'Could not find "' + @sourceEntityName + '"'
+		RAISERROR (@msg, 10, 1)
+		return 51000
+	end
+
 	declare @sourceEntityID int
 	set @sourceEntityID = @targetID
+
 	
 	---------------------------------------------------
 	-- copy existing values in aux info table
@@ -307,7 +325,8 @@ end
 	-- 
 	---------------------------------------------------
 
-	return 0 
+	return 0
+
 GO
 GRANT EXECUTE ON [dbo].[CopyAuxInfo] TO [DMS_User]
 GO

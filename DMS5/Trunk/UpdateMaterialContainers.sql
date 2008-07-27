@@ -17,7 +17,7 @@ CREATE Procedure UpdateMaterialContainers
 **		Date: 03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **    
 *****************************************************/
-	@mode varchar(32), -- 
+	@mode varchar(32), -- 'move_container', 'retire_container', 'retire_container_and_contents'
 	@containerList varchar(4096),
 	@newValue varchar(128),
 	@comment varchar(512),
@@ -29,26 +29,16 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
-	
-	declare @transName varchar(32)
-	set @transName = 'UpdateMaterialContainers'
-
-	---------------------------------------------------
-	---------------------------------------------------
-	-- common actions
-	---------------------------------------------------
-	---------------------------------------------------
 
 	---------------------------------------------------
 	-- temporary table to hold containers
 	---------------------------------------------------
 
-	CREATE TABLE #TD (
+	declare @material_container_list TABLE (
 		ID int,
 		iName varchar(128),
-		iLocation varchar(64) NULL,
-		iStatus varchar(64) NULL,
-		iItemCount int NULL
+		iLocation varchar(64),
+		iItemCount int
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -63,10 +53,10 @@ As
 	-- populate temporary table from container list
 	---------------------------------------------------
 	
-	INSERT INTO [#TD]
-		(ID, iName, iLocation, iStatus, iItemCount)
+	INSERT INTO @material_container_list
+		(ID, iName, iLocation, iItemCount)
 	SELECT 
-	  #ID, Container, Location, Status, Items
+	  #ID, Container, Location, Items
 	FROM   
 	  V_Material_Containers_List_Report
 	WHERE #ID IN (
@@ -88,117 +78,27 @@ As
 	set @numContainers = @myRowCount
 
 	---------------------------------------------------
+	-- resolve location to ID (according to mode)
 	---------------------------------------------------
-	-- status change
-	---------------------------------------------------
-	---------------------------------------------------
-
-	if @mode = 'status'
-	begin --<status>
-		set @message = '|' + @mode + '|' + @containerList + '|' + @newValue + '|' + @comment + '|'  
-
-		declare @status varchar(64)
-		set @status = @newValue
-
-		---------------------------------------------------
-		-- make sure containers are empty if setting inactive
-		---------------------------------------------------
-		if @status <> 'Active'
-		begin
-			declare @c int
-			set @c = 1
-			--
-			SELECT @c = count(*)
-			FROM #TD
-			WHERE iItemCount > 0
-			--
-			if @c > 0
-			begin
-				set @message = 'All containers must be empty in order to be set to inactive'
-				return 510021
-			end
-		end
-
-		---------------------------------------------------
-		-- start transaction
-		---------------------------------------------------
-		--
-		begin transaction @transName
-
-
-		---------------------------------------------------
-		-- update status of containers
-		---------------------------------------------------
-		
-		UPDATE T_Material_Containers
-		SET Status = @status
-		WHERE ID IN (SELECT ID FROM #TD)
-       	--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Error updating location reference'
-			return 51010
-		end
-
-		---------------------------------------------------
-		-- make log entries
-		---------------------------------------------------
-		--
-		INSERT INTO T_Material_Log (
-			Type, 
-			Item, 
-			Initial_State, 
-			Final_State, 
-			User_PRN,
-			Comment
-		) 
-		SELECT 
-			'Container Status',
-			iName,
-			iStatus,
-			@status,
-			@callingUser,
-			@comment
-		FROM #TD
-		WHERE iStatus <> @status
-       	--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Error making log entries'
-			return 51010
-		end
-
-		commit transaction @transName
-
-	end --<status>
-
-	---------------------------------------------------
-	---------------------------------------------------
-	-- container movement
-	---------------------------------------------------
-	---------------------------------------------------
-
+	--
+	declare @location varchar(128)
+	set @location = 'None' -- the null location
+	--
+	declare @locID int
+	set @locID = 1  -- the null location
+	--
 	if @mode = 'move_container'
-	begin --<move_container>
-
-		---------------------------------------------------
-		-- resolve location to ID
-		---------------------------------------------------
-		declare @location varchar(128)
+	begin --<c>
 		set @location = @newValue
-		--
-		declare @locID int
 		set @locID = 0
 		--
 		declare @contCount int
 		declare @locLimit int
 		declare @locStatus varchar(64)
+		--
+		set @contCount = 0
+		set @locLimit = 0
+		set @locStatus = ''
 		--
 		SELECT 
 			@locID = #ID, 
@@ -238,65 +138,127 @@ As
 			return 510023
 		end
 
-		---------------------------------------------------
-		-- start transaction
-		---------------------------------------------------
-		--
-		begin transaction @transName
+	end --<c>
 
-		---------------------------------------------------
-		-- update containers to be at new location
-		---------------------------------------------------
-		
-		UPDATE T_Material_Containers
-		SET Location_ID = @locID
-		WHERE ID IN (SELECT ID FROM #TD)
-       	--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
+	---------------------------------------------------
+	-- determine whether or not any containers have contents
+	---------------------------------------------------
+	declare @c int
+	set @c = 1
+	--
+	SELECT @c = count(*)
+	FROM @material_container_list
+	WHERE iItemCount > 0
+
+	---------------------------------------------------
+	-- error if contents and 'plain' container retirement
+	---------------------------------------------------
+	--
+	if @mode = 'retire_container' AND @c > 0
+	begin
+		set @message = 'All containers must be empty in order to retire them'
+		return 510021
+	end
+
+	---------------------------------------------------
+	-- retire contents if 'contents' container retirement
+	---------------------------------------------------
+	if @mode = 'retire_container_and_contents' AND @c > 0
+	begin
+		exec @myError = UpdateMaterialItems
+				'retire_items',
+				@containerList,
+				'containers',
+				'',
+				@comment,
+				@message output,
+				@callingUser
+
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Error updating location reference'
-			return 51010
-		end
+			return @myError
+	end
+--debug
+/*
+select 'UpdateMaterialContainers' as Sproc, @mode as Mode, convert(char(22), @newValue) as Parameter, convert(char(12), @locID) as LocationID, @containerList as Containers
+select * from @material_container_list
+return 0
+*/
+	---------------------------------------------------
+	-- start transaction
+	---------------------------------------------------
+	--
+	declare @transName varchar(32)
+	set @transName = 'UpdateMaterialContainers'
+	begin transaction @transName
 
-		---------------------------------------------------
-		-- make log entries
-		---------------------------------------------------
-		--
-		INSERT INTO T_Material_Log (
-			Type, 
-			Item, 
-			Initial_State, 
-			Final_State, 
-			User_PRN,
-			Comment
-		) 
-		SELECT 
-			'Container Move',
-			iName,
-			iLocation,
-			@location,
-			@callingUser,
-			@comment
-		FROM #TD
-		WHERE iLocation <> @location
-       	--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Error making log entries'
-			return 51010
-		end
+	---------------------------------------------------
+	-- update containers to be at new location
+	---------------------------------------------------
+	
+	UPDATE T_Material_Containers
+	SET 
+		Location_ID = @locID,
+		Status = CASE WHEN @mode = 'retire_container' OR @mode = 'retire_container_and_contents'THEN 'Inactive' ELSE Status END
+	WHERE ID IN (SELECT ID FROM @material_container_list)
+   	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		rollback transaction @transName
+		set @message = 'Error updating location reference'
+		return 51010
+	end
 
-		commit transaction @transName
+	---------------------------------------------------
+	-- set up appropriate label for log
+	---------------------------------------------------
 
-	end --<move_container>
+	declare @moveType varchar(128)
+	set @moveType = '??'
 
+	if @mode = 'retire_container' or @mode = 'retire_container_and_contents'
+		set @moveType = 'Container Retirement'
+	else
+	if @mode = 'move_container'
+		set @moveType = 'Container Move'
+
+
+	---------------------------------------------------
+	-- make log entries
+	---------------------------------------------------
+	--
+	INSERT INTO T_Material_Log (
+		Type, 
+		Item, 
+		Initial_State, 
+		Final_State, 
+		User_PRN,
+		Comment
+	) 
+	SELECT 
+		@moveType,
+		iName,
+		iLocation,
+		@location,
+		@callingUser,
+		@comment
+	FROM @material_container_list
+	WHERE iLocation <> @location
+   	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		rollback transaction @transName
+		set @message = 'Error making log entries'
+		return 51010
+	end
+
+	commit transaction @transName
 
 	return @myError
 
+GO
+GRANT EXECUTE ON [dbo].[UpdateMaterialContainers] TO [DMS2_SP_User]
 GO

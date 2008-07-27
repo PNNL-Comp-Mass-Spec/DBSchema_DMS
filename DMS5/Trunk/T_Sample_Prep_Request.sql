@@ -45,7 +45,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -54,10 +54,10 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
 (
 	[Request_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
+/****** Object:  Trigger [trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -94,7 +94,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
+/****** Object:  Trigger [trig_i_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -133,7 +133,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 

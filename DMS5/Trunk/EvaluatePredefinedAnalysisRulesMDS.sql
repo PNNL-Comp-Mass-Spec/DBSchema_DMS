@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **			04/04/2006 grk - increased sized of param file name
 **			03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
+**			07/22/2008 grk - Changed protein collection column names for final list report output
 **    
 *****************************************************/
 (
@@ -139,8 +140,8 @@ As
 		settingsFileName as [Settings_File],
 		organismDBName as [OrganismDB_File],
 		organismName as Organism,
-		proteinCollectionList,
-		proteinOptionsList, 
+		proteinCollectionList as [Protein_Collections],
+		proteinOptionsList as [Protein_Options], 
 		ownerPRN as Owner
 	FROM #JX
 
@@ -149,7 +150,6 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User]

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE dbo.AlterEnteredByUser
+CREATE PROCEDURE dbo.AlterEnteredByUser
 /****************************************************
 **
 **	Desc:	Updates the Entered_By column for the specified row in the given table to be @NewUser
@@ -17,6 +17,7 @@ create PROCEDURE dbo.AlterEnteredByUser
 **
 **	Auth:	mem
 **	Date:	03/25/2008 mem - Initial version (Ticket: #644)
+**			05/23/2008 mem - Expanded @EntryDescription to varchar(512)
 **    
 *****************************************************/
 (
@@ -43,7 +44,7 @@ As
 	Declare @EntryDateStart datetime
 	Declare @EntryDateEnd datetime
 
-	Declare @EntryDescription varchar(128)
+	Declare @EntryDescription varchar(512)
 	Declare @EntryIndex int
 	Declare @MatchIndex int
 	

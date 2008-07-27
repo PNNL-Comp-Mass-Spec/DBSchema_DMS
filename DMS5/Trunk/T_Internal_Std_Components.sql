@@ -15,7 +15,19 @@ CREATE TABLE [dbo].[T_Internal_Std_Components](
  CONSTRAINT [PK_T_Internal_Std_Components] PRIMARY KEY CLUSTERED 
 (
 	[Internal_Std_Component_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+GRANT ALTER ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
+GO
+GRANT DELETE ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
+GO
+GRANT INSERT ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
+GO
+GRANT VIEW DEFINITION ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write]
 GO

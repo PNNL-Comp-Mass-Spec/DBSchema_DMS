@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Event_Log_24_Hour_Summary
+CREATE VIEW [dbo].[V_Event_Log_24_Hour_Summary]
 AS
 SELECT     '    DMS ACTIVITY REPORT (Previous 24 Hours)' AS Label, cast(getdate() AS varchar(24)) AS Number
 UNION
@@ -91,7 +91,7 @@ SELECT     '(X6) Analysis Jobs Fail (just failed)' AS Label, CAST(COUNT(*) AS va
 FROM         T_Event_Log
 WHERE     (DATEDIFF(Hour, Entered, GETDATE()) < 24) AND (Target_Type = 5) AND (Target_State = 5)
 UNION
-SELECT     '(X) FAILURES' AS Label, CASE WHEN COUNT(*) > 0 THEN 'Errors Detected' ELSE '' END AS Number
+SELECT     '(X) FAILURES' AS Label, CASE WHEN COUNT(*) > 0 THEN 'Errors Detected: ' + Convert(varchar(12), COUNT(*)) ELSE '' END AS Number
 FROM         T_Event_Log
 WHERE     (DATEDIFF(Hour, Entered, GETDATE()) < 24) AND (((Target_Type = 4) AND (Target_State = 5)) OR
                       ((Target_Type = 4) AND (Target_State = 8)) OR

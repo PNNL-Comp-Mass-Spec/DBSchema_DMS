@@ -13,7 +13,8 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 **  Parameters:
 **
 **    Auth: grk
-**    Date: 03/20/2008
+**    03/20/2008 grk -- initial release
+**    07/18/2008 grk -- added checking for location's container limit
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -21,7 +22,6 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 	@Container varchar(128) output,
 	@Type varchar(32),
 	@Location varchar(24),
-	@Status varchar(32),
 	@Comment varchar(1024),
 	@Barcode varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
@@ -38,6 +38,8 @@ As
 
 	set @message = ''
 
+	declare @Status varchar(32)
+	set @Status = 'Active'
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -45,6 +47,28 @@ As
 
 	-- future: this could get more complicated
 
+	---------------------------------------------------
+	-- optionally generate name
+	---------------------------------------------------
+
+	if @Container = '(generate name)'
+	begin
+		declare @tmp int
+		--
+		SELECT @tmp = MAX(ID) + 1
+		FROM  T_Material_Containers
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error trying to create name'
+			RAISERROR (@message, 10, 1)
+			return 51000
+		end
+		
+		set @Container = 'MC-' + cast(@tmp as varchar(12))
+	end
 
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -94,12 +118,17 @@ As
 	end
 
 	---------------------------------------------------
-	-- resolve input location name to ID
+	-- resolve input location name to ID and get limit
 	---------------------------------------------------
 	declare @LocationID int
 	set @LocationID = 0
 	--
-	SELECT @LocationID = ID
+	declare @limit int
+	set @limit = 0
+	--
+	SELECT 
+		@LocationID = ID, 
+		@limit = Container_Limit
 	FROM T_Material_Locations
 	WHERE Tag = @Location	
 	--
@@ -112,6 +141,31 @@ As
 		return 51004
 	end
 
+	---------------------------------------------------
+	-- verify that there is room in destination location
+	---------------------------------------------------
+	declare @cnt int
+	set @cnt = 0
+	--
+	SELECT @cnt = COUNT(*)
+	FROM T_Material_Containers
+	WHERE Location_ID = @LocationID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error getting container count'
+		RAISERROR (@message, 10, 1)
+		return 51017
+	end
+	if @limit <= @cnt
+	begin
+		set @message = 'Destination location does not have room for another container'
+		RAISERROR (@message, 10, 1)
+		return 51018
+	end
+	
 	---------------------------------------------------
 	-- Resolve current Location id to name
 	---------------------------------------------------
@@ -167,20 +221,12 @@ As
 		--  material movement logging
 		--	
 		exec PostMaterialLogEntry
-			'Container Status',
-			@Container,
-			'na',
-			'Active',
-			@callingUser,
-			'Container created'
-
-		exec PostMaterialLogEntry
-			'Container Move',
+			'Container Creation',
 			@Container,
 			'na',
 			@Location,
 			@callingUser,
-			'Container created'
+			''
 
 	end -- add mode
 
@@ -212,17 +258,6 @@ As
 
 		--  material movement logging
 		--	
-		if @curStatus <> @Status
-		begin
-			exec PostMaterialLogEntry
-				'Container Status',
-				@Container,
-				@curStatus,
-				@Status,
-				@callingUser,
-				'Container updated'
-		end
-
 		if @curLocationName <> @Location
 		begin
 			exec PostMaterialLogEntry
@@ -231,7 +266,7 @@ As
 				@curLocationName,
 				@Location,
 				@callingUser,
-				'Container updated'
+				''
 		end
 
 	end -- update mode

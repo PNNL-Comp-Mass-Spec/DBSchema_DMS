@@ -27,6 +27,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			02/19/2008 grk - add explicit NULL column attribute to #TD
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
+**			05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
 **
 *****************************************************/
 (
@@ -437,7 +438,7 @@ As
 				FROM T_Analysis_Job
 				WHERE AJ_batchID = @batchID
 					
-				Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
+				Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser, @EntryTimeWindowSeconds=45
 			End
 		End
 

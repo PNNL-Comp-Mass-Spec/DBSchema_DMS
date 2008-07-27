@@ -5,7 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Material_Locations_Picklist
 AS
-SELECT     Location, Comment, Freezer, Shelf, Rack, Row, Col, Containers, Status
+SELECT     Location, Comment, Freezer, Shelf, Rack, Row, Col, Limit, Containers, Available
 FROM         dbo.V_Material_Locations_List_Report
+WHERE     (Status = 'Active') AND (Available > 0)
 
 GO
