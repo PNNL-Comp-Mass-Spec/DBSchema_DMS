@@ -7,7 +7,7 @@ CREATE PROCEDURE dbo.UpdateArchiveDatasets
 /****************************************************
 **
 **	Desc:
-**      Updates arvhive parameters to new values for datasets in list
+**      Updates archive parameters to new values for datasets in list
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateArchiveDatasets
 **	Auth:	grk
 **	Date:	08/21/2007
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**			08/04/2008 mem - Now updating column AS_instrument_data_purged (Ticket #683)
 **    
 *****************************************************/
 (
@@ -223,6 +224,22 @@ As
 				return 51004
 			end
 
+			If @archiveStateID = 4
+			Begin
+				-- Dataset(s) marked as purged; update AS_instrument_data_purged to be 1
+				-- This field is useful if an analysis job is run on a purged dataset, since, 
+				--  when that happens, AS_state_ID will go back to 3=Complete, and we therefore
+				--  wouldn't be able to tell if the raw instrument file is available
+				UPDATE T_Dataset_Archive
+				SET AS_instrument_data_purged = 1
+				FROM T_Dataset_Archive DA INNER JOIN
+					 T_Dataset DS ON DA.AS_Dataset_ID = DS.Dataset_ID
+				WHERE (DS.Dataset_Num IN (SELECT DatasetNum FROM #TDS))
+				      AND IsNull(DA.AS_instrument_data_purged, 0) = 0
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			End
+			
 			Set @ArchiveStateUpdated = 1
 		end
 

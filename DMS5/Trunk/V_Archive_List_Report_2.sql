@@ -5,19 +5,33 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Archive_List_Report_2
 AS
-SELECT     dbo.T_Dataset_Archive.AS_Dataset_ID AS ID, dbo.T_Dataset.Dataset_Num AS Dataset, dbo.T_Instrument_Name.IN_name AS Instrument, 
-                      dbo.T_Dataset.DS_created AS Created, dbo.T_DatasetArchiveStateName.DASN_StateName AS State, 
-                      dbo.T_Archive_Update_State_Name.AUS_name AS [Update], dbo.T_Dataset_Archive.AS_datetime AS Entered, 
-                      dbo.T_Dataset_Archive.AS_state_Last_Affected AS [State Last Affected], 
-                      dbo.T_Dataset_Archive.AS_update_state_Last_Affected AS [Update State Last Affected], dbo.T_Dataset_Archive.AS_last_update AS [Last Update], 
-                      dbo.T_Dataset_Archive.AS_last_verify AS [Last Verify], dbo.T_Archive_Path.AP_archive_path AS [Archive Path], 
-                      dbo.T_Archive_Path.AP_Server_Name AS [Archive Server], dbo.t_storage_path.SP_machine_name AS [Storage Server]
-FROM         dbo.T_Dataset_Archive INNER JOIN
-                      dbo.T_Dataset ON dbo.T_Dataset_Archive.AS_Dataset_ID = dbo.T_Dataset.Dataset_ID INNER JOIN
-                      dbo.T_DatasetArchiveStateName ON dbo.T_Dataset_Archive.AS_state_ID = dbo.T_DatasetArchiveStateName.DASN_StateID INNER JOIN
-                      dbo.T_Archive_Path ON dbo.T_Dataset_Archive.AS_storage_path_ID = dbo.T_Archive_Path.AP_path_ID INNER JOIN
-                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID INNER JOIN
-                      dbo.T_Archive_Update_State_Name ON dbo.T_Dataset_Archive.AS_update_state_ID = dbo.T_Archive_Update_State_Name.AUS_stateID INNER JOIN
-                      dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID
+SELECT DA.AS_Dataset_ID AS ID,
+       DS.Dataset_Num AS Dataset,
+       InstName.IN_name AS Instrument,
+       DS.DS_created AS Created,
+       DASN.DASN_StateName AS State,
+       AUS.AUS_name AS [Update],
+       DA.AS_datetime AS Entered,
+       DA.AS_state_Last_Affected AS [State Last Affected],
+       DA.AS_update_state_Last_Affected AS [Update State Last Affected],
+       DA.AS_last_update AS [Last Update],
+       DA.AS_last_verify AS [Last Verify],
+       APath.AP_archive_path AS [Archive Path],
+       APath.AP_Server_Name AS [Archive Server],
+       SPath.SP_machine_name AS [Storage Server],
+	   DA.AS_instrument_data_purged AS [Instrument Data Purged]
+FROM dbo.T_Dataset_Archive DA
+     INNER JOIN dbo.T_Dataset DS
+       ON DA.AS_Dataset_ID = DS.Dataset_ID
+     INNER JOIN dbo.T_DatasetArchiveStateName DASN
+       ON DA.AS_state_ID = DASN.DASN_StateID
+     INNER JOIN dbo.T_Archive_Path APath
+       ON DA.AS_storage_path_ID = APath.AP_path_ID
+     INNER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN dbo.T_Archive_Update_State_Name AUS
+       ON DA.AS_update_state_ID = AUS.AUS_stateID
+     INNER JOIN dbo.t_storage_path SPath
+       ON DS.DS_storage_path_ID = SPath.SP_path_ID
 
 GO

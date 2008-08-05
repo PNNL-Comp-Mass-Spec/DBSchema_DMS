@@ -141,6 +141,7 @@ For Update
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **						   - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
+**			08/04/2008 mem - Now updating AS_instrument_data_purged if AS_state_ID changes for 4 (Ticket #683)
 **    
 *****************************************************/
 AS
@@ -164,6 +165,12 @@ AS
 		SET AS_state_Last_Affected = @CurrentDate
 		FROM T_Dataset_Archive DA INNER JOIN
 			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+
+		UPDATE T_Dataset_Archive
+		SET AS_instrument_data_purged = 1
+		FROM T_Dataset_Archive DA INNER JOIN
+			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		WHERE inserted.AS_state_ID = 4 AND IsNull(inserted.AS_instrument_data_purged, 0) = 0
 	End
 
 	If Update(AS_update_state_ID)
@@ -190,7 +197,6 @@ AS
 			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 		WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])

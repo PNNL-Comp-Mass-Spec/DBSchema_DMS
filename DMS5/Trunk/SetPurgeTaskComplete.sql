@@ -14,9 +14,10 @@ CREATE Procedure SetPurgeTaskComplete
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 03/04/2003
-**            02/16/2007 grk - add completion code options and also set archive state (Ticket #131)
+**	Auth:	grk
+**	Date:	03/04/2003
+**			02/16/2007 grk - add completion code options and also set archive state (Ticket #131)
+**			08/04/2008 mem - Now updating column AS_instrument_data_purged (Ticket #683)
 **    
 *****************************************************/
 (
@@ -147,6 +148,20 @@ SetStates:
 		set @myError = 99
 		goto done
 	end
+	
+	if @completionState = 4
+	Begin
+		-- Dataset was purged; update AS_instrument_data_purged to be 1
+		-- This field is useful if an analysis job is run on a purged dataset, since, 
+		--  when that happens, AS_state_ID will go back to 3=Complete, and we therefore
+		--  wouldn't be able to tell if the raw instrument file is available
+		UPDATE T_Dataset_Archive
+		SET AS_instrument_data_purged = 1
+		WHERE AS_Dataset_ID = @datasetID AND
+		      IsNull(AS_instrument_data_purged, 0) = 0
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
 
 	---------------------------------------------------
 	-- Exit
@@ -158,7 +173,6 @@ Done:
 		RAISERROR (@message, 10, 1)
 	end
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_Ops_Admin]
