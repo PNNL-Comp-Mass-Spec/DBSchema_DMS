@@ -17,6 +17,7 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **  Auth:	grk
 **  Date:	06/22/2005
 **			03/03/2006 mem - Fixed bug involving evaluation of @datasetNameCriteria
+**			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
 **    
 *****************************************************/
 	@ruleID int,
@@ -47,6 +48,11 @@ As
 	declare @datasetNameCriteria varchar(1024)
 	declare @expCommentCriteria varchar(1024)
 
+	declare @separationTypeCriteria varchar(64)
+	declare @campaignExclCriteria varchar(128)
+	declare @experimentExclCriteria varchar(128)
+	declare @datasetExclCriteria varchar(128)	
+
 
 	SELECT     
 		@instrumentClassCriteria = AD_instrumentClassCriteria,
@@ -57,7 +63,11 @@ As
 		@labellingInclCriteria = AD_labellingInclCriteria,
 		@labellingExclCriteria = AD_labellingExclCriteria,
 		@datasetNameCriteria = AD_datasetNameCriteria,
-		@expCommentCriteria = AD_expCommentCriteria
+		@expCommentCriteria = AD_expCommentCriteria,
+		@separationTypeCriteria = AD_separationTypeCriteria,
+		@campaignExclCriteria = AD_campaignExclCriteria,
+		@experimentExclCriteria = AD_experimentExclCriteria,
+		@datasetExclCriteria = AD_datasetExclCriteria
 	FROM T_Predefined_Analysis
 	WHERE (AD_ID = @ruleID )
 
@@ -71,11 +81,23 @@ As
 	print 'LabellingExcl: ' + @labellingExclCriteria 
 	print 'DatasetName: ' + @datasetNameCriteria
 	print 'ExperimentComment: ' + @expCommentCriteria
+	print 'SeparationType: ' + @separationTypeCriteria
+	print 'CampaignExcl: ' + @campaignExclCriteria
+	print 'ExperimentExcl: ' + @experimentExclCriteria
+	print 'DatasetExcl: ' + @datasetExclCriteria
 */
 
-	SELECT Dataset, ID, InstrumentClass, Instrument, 
-	Campaign, Experiment, Organism, Experiment_Labelling, 
-	Experiment_Comment, Dataset_Comment
+	SELECT Dataset,
+	       ID,
+	       InstrumentClass,
+	       Instrument,
+	       Campaign,
+	       Experiment,
+	       Organism,
+	       Experiment_Labelling,
+	       Experiment_Comment,
+	       Dataset_Comment,
+	       Separation_Type
 	FROM V_Predefined_Analysis_Dataset_Info
 	WHERE	((InstrumentClass LIKE @instrumentClassCriteria) OR (@instrumentClassCriteria = '')) 
 		AND ((Instrument LIKE @instrumentNameCriteria) OR (@instrumentNameCriteria = '')) 
@@ -83,6 +105,10 @@ As
 		AND ((Experiment LIKE @experimentNameCriteria) OR (@experimentNameCriteria = '')) 
 		AND ((Experiment_Labelling LIKE  @labellingInclCriteria) OR (@labellingInclCriteria = '')) 
 		AND (NOT(Experiment_Labelling LIKE @labellingExclCriteria) OR (@labellingExclCriteria = ''))
+		AND ((Separation_Type LIKE @separationTypeCriteria) OR (@separationTypeCriteria = '')) 
+		AND (NOT (Campaign LIKE @campaignExclCriteria) OR (@campaignExclCriteria = ''))
+		AND (NOT (Experiment LIKE @experimentExclCriteria) OR (@experimentExclCriteria = ''))
+		AND (NOT (Dataset LIKE @datasetExclCriteria) OR (@datasetExclCriteria = ''))
 		AND ((Organism LIKE @organismNameCriteria) OR (@organismNameCriteria = '')) 
 		AND ((Dataset LIKE @datasetNameCriteria) OR (@datasetNameCriteria = '')) 
 		AND ((Experiment_Comment LIKE @expCommentCriteria) OR (@expCommentCriteria = '')) 

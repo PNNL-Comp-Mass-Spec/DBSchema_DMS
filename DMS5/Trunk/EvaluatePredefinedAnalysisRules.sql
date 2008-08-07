@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			01/04/2007 mem - Fixed bug that incorrectly allowed rules to be evaluated when rating = -10 and @outputType = 'Export Jobs'
 **			01/30/2008 grk - Set several in #RuleEval to be explicitly null (needed by DMS2)
 **			04/11/2008 mem - Added parameter @RaiseErrorMessages; now using RaiseError to inform the user of errors if @RaiseErrorMessages is non-zero
+**			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
 **
 *****************************************************/
 (
@@ -78,6 +79,7 @@ As
 	declare @ExperimentLabelling varchar(128) 
 	declare @Dataset varchar(128) 
 	declare @DatasetType varchar(128)
+	declare @SeparationType varchar(64)
 	declare @Organism varchar(128) 
 	declare @InstrumentName varchar(128) 
 	declare @InstrumentClass varchar(128) 
@@ -93,6 +95,7 @@ As
 		@ExperimentLabelling = Experiment_Labelling,
 		@Dataset = Dataset,
 		@DatasetType = Dataset_Type,
+		@SeparationType = Separation_Type,
 		@Organism = Organism,
 		@InstrumentName = Instrument,
 		@InstrumentClass = InstrumentClass,
@@ -150,6 +153,10 @@ As
 		AD_expCommentCriteria varchar (128)  NOT NULL ,
 		AD_labellingInclCriteria varchar (64)  NOT NULL ,
 		AD_labellingExclCriteria varchar (64)  NOT NULL ,
+		AD_separationTypeCriteria varchar (64)  NOT NULL ,
+		AD_campaignExclCriteria varchar (128)  NOT NULL ,
+		AD_experimentExclCriteria varchar (128)  NOT NULL ,
+		AD_datasetExclCriteria varchar (128)  NOT NULL ,
 		AD_analysisToolName varchar (64)  NOT NULL ,
 		AD_parmFileName varchar (255)  NOT NULL ,
 		AD_settingsFileName varchar (255)  NULL ,
@@ -192,6 +199,10 @@ As
 			[Exp. Comment Crit.] varchar(128),
 			[Labelling Incl.] varchar(64) NULL, 
 			[Labelling Excl.] varchar(64) NULL,
+			[Separation Type Crit.] varchar(64) NULL,
+			[Campaign Exclusion] varchar(128),
+			[Experiment Exclusion] varchar(128),
+			[Dataset Exclusion] varchar(128),
 			[Parm File] varchar(255) NULL, 
 			[Settings File] varchar(255) NULL,
 			Organism varchar(64) NULL, 
@@ -221,6 +232,10 @@ As
 		AD_expCommentCriteria,
 		AD_labellingInclCriteria,
 		AD_labellingExclCriteria,
+		AD_separationTypeCriteria, 
+		AD_campaignExclCriteria, 
+		AD_experimentExclCriteria, 
+		AD_datasetExclCriteria,
 		AD_analysisToolName,
 		AD_parmFileName,
 		AD_settingsFileName,
@@ -244,6 +259,10 @@ As
 		PA.AD_expCommentCriteria,
 		PA.AD_labellingInclCriteria,
 		PA.AD_labellingExclCriteria,
+		PA.AD_separationTypeCriteria, 
+		PA.AD_campaignExclCriteria, 
+		PA.AD_experimentExclCriteria, 
+		PA.AD_datasetExclCriteria,
 		PA.AD_analysisToolName,
 		PA.AD_parmFileName,
 		PA.AD_settingsFileName,
@@ -264,7 +283,11 @@ As
 		AND ((@Dataset LIKE PA.AD_datasetNameCriteria) OR (PA.AD_datasetNameCriteria = '')) 
 		AND ((@ExperimentComment LIKE PA.AD_expCommentCriteria) OR (PA.AD_expCommentCriteria = '')) 
 		AND ((@ExperimentLabelling LIKE PA.AD_labellingInclCriteria) OR (PA.AD_labellingInclCriteria = '')) 
-		AND (NOT(@ExperimentLabelling LIKE PA.AD_labellingExclCriteria) OR (PA.AD_labellingExclCriteria = ''))
+		AND (NOT (@ExperimentLabelling LIKE PA.AD_labellingExclCriteria) OR (PA.AD_labellingExclCriteria = ''))
+		AND ((@SeparationType LIKE PA.AD_separationTypeCriteria) OR (PA.AD_separationTypeCriteria = '')) 
+		AND (NOT (@Campaign LIKE PA.AD_campaignExclCriteria) OR (PA.AD_campaignExclCriteria = ''))
+		AND (NOT (@Experiment LIKE PA.AD_experimentExclCriteria) OR (PA.AD_experimentExclCriteria = ''))
+		AND (NOT (@Dataset LIKE PA.AD_datasetExclCriteria) OR (PA.AD_datasetExclCriteria = ''))
 		AND ((@Organism LIKE PA.AD_organismNameCriteria) OR (PA.AD_organismNameCriteria = ''))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -299,6 +322,8 @@ As
 			[Campaign Crit.], [Experiment Crit.], 
 			[Organism Crit.], [Dataset Crit.], [Exp. Comment Crit.],
 			[Labelling Incl.], [Labelling Excl.],
+			[Separation Type Crit.], [Campaign Exclusion], 
+			[Experiment Exclusion], [Dataset Exclusion],
 			[Parm File], [Settings File],
 			Organism, [Organism DB], [Prot. Coll.], [Prot. Opts.],
 			Priority, [Processor Group])
@@ -309,6 +334,8 @@ As
 				AD_campaignNameCriteria, AD_experimentNameCriteria,
 				AD_organismNameCriteria, AD_datasetNameCriteria, AD_expCommentCriteria,
 				AD_labellingInclCriteria, AD_labellingExclCriteria,
+				AD_separationTypeCriteria, AD_campaignExclCriteria, 
+				AD_experimentExclCriteria, AD_datasetExclCriteria,
 				AD_parmFileName, AD_settingsFileName,
 				AD_organismName, AD_organismDBName, 
 				AD_proteinCollectionList, AD_proteinOptionsList, 

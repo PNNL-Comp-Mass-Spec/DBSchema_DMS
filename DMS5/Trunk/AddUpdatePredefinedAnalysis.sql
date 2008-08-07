@@ -18,6 +18,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			03/28/2006 grk - added protein collection fields
 **			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket #368)
 **			07/30/2007 mem - Now validating dataset type and instrument class for the matching instruments against the specified analysis tool (Ticket #502)
+**			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
 **    
 *****************************************************/
 (
@@ -46,7 +47,11 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 	@nextLevel varchar(12),
 	@ID int output,
 	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+	@message varchar(512) output,
+	@separationTypeCriteria varchar(64)='',
+	@campaignExclCriteria varchar(128)='',
+	@experimentExclCriteria varchar(128)='',
+	@datasetExclCriteria varchar(128)=''	
 )
 As
 	set nocount on
@@ -126,6 +131,11 @@ As
 	Set @expCommentCriteria      = LTrim(RTrim(IsNull(@expCommentCriteria     , '')))
 	Set @labellingInclCriteria   = LTrim(RTrim(IsNull(@labellingInclCriteria  , '')))
 	Set @labellingExclCriteria   = LTrim(RTrim(IsNull(@labellingExclCriteria  , '')))
+	Set @separationTypeCriteria  = LTrim(RTrim(IsNull(@separationTypeCriteria  , '')))
+	Set @campaignExclCriteria    = LTrim(RTrim(IsNull(@campaignExclCriteria  , '')))
+	Set @experimentExclCriteria  = LTrim(RTrim(IsNull(@experimentExclCriteria  , '')))
+	Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria  , '')))
+
 
 	---------------------------------------------------
 	-- Validate @sequence and @nextLevel
@@ -367,6 +377,10 @@ As
 			AD_expCommentCriteria, 
 			AD_labellingInclCriteria, 
 			AD_labellingExclCriteria, 
+			AD_separationTypeCriteria, 
+			AD_campaignExclCriteria, 
+			AD_experimentExclCriteria, 
+			AD_datasetExclCriteria,
 			AD_analysisToolName, 
 			AD_parmFileName, 
 			AD_settingsFileName, 
@@ -391,6 +405,10 @@ As
 			@expCommentCriteria, 
 			@labellingInclCriteria, 
 			@labellingExclCriteria, 
+			@separationTypeCriteria,
+			@campaignExclCriteria,
+			@experimentExclCriteria,
+			@datasetExclCriteria,
 			@analysisToolName, 
 			@parmFileName, 
 			@settingsFileName, 
@@ -441,6 +459,10 @@ As
 			AD_expCommentCriteria = @expCommentCriteria, 
 			AD_labellingInclCriteria = @labellingInclCriteria, 
 			AD_labellingExclCriteria = @labellingExclCriteria, 
+			AD_separationTypeCriteria = @separationTypeCriteria,
+			AD_campaignExclCriteria = @campaignExclCriteria,
+			AD_experimentExclCriteria = @experimentExclCriteria,
+			AD_datasetExclCriteria = @datasetExclCriteria,
 			AD_analysisToolName = @analysisToolName, 
 			AD_parmFileName = @parmFileName, 
 			AD_settingsFileName = @settingsFileName, 
