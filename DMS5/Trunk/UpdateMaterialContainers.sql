@@ -151,7 +151,8 @@ As
 	WHERE iItemCount > 0
 
 	---------------------------------------------------
-	-- error if contents and 'plain' container retirement
+	-- for 'plain' container retirement
+	-- container must be empty
 	---------------------------------------------------
 	--
 	if @mode = 'retire_container' AND @c > 0
@@ -161,8 +162,15 @@ As
 	end
 
 	---------------------------------------------------
-	-- retire contents if 'contents' container retirement
+	-- for 'contents' container retirement
+	-- retire contents as well
 	---------------------------------------------------
+	--
+	-- arrange for containers and their contents to have common comment
+	if @mode = 'retire_container_and_contents' AND @comment = ''
+		set @comment ='CR-' + convert(varchar, getdate(), 102) + '.' + convert(varchar, getdate(), 108)
+
+	-- retire the contents
 	if @mode = 'retire_container_and_contents' AND @c > 0
 	begin
 		exec @myError = UpdateMaterialItems
@@ -217,7 +225,10 @@ return 0
 	declare @moveType varchar(128)
 	set @moveType = '??'
 
-	if @mode = 'retire_container' or @mode = 'retire_container_and_contents'
+	if @mode = 'retire_container'
+		set @moveType = 'Container Retirement'
+	else
+	if @mode = 'retire_container_and_contents'
 		set @moveType = 'Container Retirement'
 	else
 	if @mode = 'move_container'

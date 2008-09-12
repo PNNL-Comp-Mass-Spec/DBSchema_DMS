@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateDatasetDispositions
 **			06/26/2007 grk - Fix problem with multiple datasets (Ticket #495)
 **			08/22/2007 mem - Disallow setting datasets to rating 5 (Released) when their state is 5 (Capture Failed); Ticket #524
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			08/15/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **
 *****************************************************/
 (
@@ -316,6 +317,10 @@ As
 					-----------------------------------------------
 					-- 
 					commit transaction @transName
+
+					-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+					If Len(@callingUser) > 0
+						Exec AlterEventLogEntryUser 8, @curDatasetID, @ratingID, @callingUser
 
 					set @prevDatasetID = @curDatasetID 
 				end

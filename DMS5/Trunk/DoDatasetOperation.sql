@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DoDatasetOperation
+CREATE Procedure [dbo].[DoDatasetOperation]
 /****************************************************
 **
 **	Desc: 
@@ -22,6 +22,7 @@ CREATE Procedure dbo.DoDatasetOperation
 **			03/24/2006 grk - added "restore" mode
 **			09/15/2006 grk - repair "restore" mode
 **			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			07/15/2008 jds - Added "delete_all" mode (Ticket #644) - deletes a dataset with any restrictions
 **    
 *****************************************************/
 (
@@ -68,6 +69,29 @@ As
 		set @msg = 'Could not get Id or state for dataset "' + @datasetNum + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51140
+	end
+
+	---------------------------------------------------
+	-- Delete dataset if it is in "new" state only
+	---------------------------------------------------
+
+	if @mode = 'delete_all'
+	begin
+
+		---------------------------------------------------
+		-- delete the dataset
+		---------------------------------------------------
+
+		execute @result = DeleteDataset @datasetNum, @message output, @callingUser
+		--
+		if @result <> 0
+		begin
+			RAISERROR ('Could not delete dataset "%s"',
+				10, 1, @datasetNum)
+			return 51142
+		end
+
+		return 0
 	end
 
 	---------------------------------------------------
@@ -219,6 +243,7 @@ As
 	set @msg = 'Mode "' + @mode +  '" was unrecognized'
 	RAISERROR (@msg, 10, 1)
 	return 51222
+
 
 GO
 GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS_DS_Entry]

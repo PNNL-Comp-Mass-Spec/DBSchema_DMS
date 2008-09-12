@@ -17,11 +17,11 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_Labelling] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Exp_ID] [int] IDENTITY(5000,1) NOT NULL,
 	[EX_Container_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_Container_ID]  DEFAULT ((1)),
+	[Ex_Material_Active] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Experiments_Ex_Material_Active]  DEFAULT ('Active'),
 	[EX_enzyme_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_enzyme_ID]  DEFAULT ((10)),
 	[EX_sample_prep_request_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT ((0)),
 	[EX_internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT ((0)),
 	[EX_postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)),
-	[Ex_Material_Active] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Experiments_Ex_Material_Active]  DEFAULT ('Active'),
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY NONCLUSTERED 
 (
 	[Exp_ID] ASC

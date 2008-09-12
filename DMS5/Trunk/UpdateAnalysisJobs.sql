@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateAnalysisJobs
+CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 /****************************************************
 **
 **	Desc:
@@ -27,7 +27,8 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
 **			04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group 
-**    
+**			07/11/2008 jds - Added 5 new fields (@parmFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
+**							and code to validate param file settings file against tool type
 *****************************************************/
 (
     @JobList varchar(6000),
@@ -39,6 +40,13 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
     @assignedProcessor varchar(64),
     @associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
+--
+    @parmFileName varchar(255) = '',
+    @settingsFileName varchar(64) = '',
+    @organismName varchar(64) = '',
+    @protCollNameList varchar(4000) = '',
+    @protCollOptionsList varchar(256) = '',
+--
     @mode varchar(12) = 'update',			-- update or reset to change data; otherwise, will simply validate parameters
     @message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -77,6 +85,11 @@ As
 	set @assignedProcessor = isnull(@assignedProcessor, '')
 	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
 	set @propagationMode = isnull(@propagationMode, '')
+    set @parmFileName = isnull(@parmFileName, '')
+    set @settingsFileName = isnull(@settingsFileName, '')
+    set @organismName = isnull(@organismName, '')
+    set @protCollNameList = isnull(@protCollNameList, '')
+    set @protCollOptionsList = isnull(@protCollOptionsList, '')
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -196,7 +209,194 @@ As
 		end
 	end -- if @state
 
+
+	---------------------------------------------------
+	-- resolve organism ID
+	---------------------------------------------------
+	--
+	declare @orgid int
+	set @orgid = 0
+	--
+	if @organismName <> '[no change]'
+	begin
+		SELECT @orgid = ID
+		FROM V_Organism_List_Report
+		WHERE (Name = @organismName)	
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to resolve organism name'
+			RAISERROR (@msg, 10, 1)
+			return 51014
+		end
+		--
+		if @orgid = 0
+		begin
+			set @msg = 'Organism name not found'
+			RAISERROR (@msg, 10, 1)
+			return 51015
+		end
+	end
 	
+	---------------------------------------------------
+	-- Validate param file for tool
+	---------------------------------------------------
+	declare @result int
+	--
+	set @result = 0
+	--
+	if @parmFileName <> '[no change]'
+	begin
+		SELECT @result = Param_File_ID
+		FROM T_Param_Files
+		WHERE Param_File_Name = @parmFileName
+		--
+		if @result = 0
+		begin
+			set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+			return 51016
+		end
+	end
+
+	---------------------------------------------------
+	-- validate parameter file for tool
+	---------------------------------------------------
+	--
+	if @parmFileName <> '[no change]'
+	begin
+		declare @comma_list as varchar(4000)
+		declare @id as varchar(32)
+		set @comma_list = ''
+
+		DECLARE cma_list_cursor CURSOR
+		FOR SELECT TD.Job
+			FROM #TAJ TD
+			WHERE not exists (
+			    SELECT AJ.AJ_jobID 
+				FROM dbo.T_Param_Files PF
+					INNER JOIN T_Analysis_Tool AnTool
+						ON PF.Param_File_Type_ID = AnTool.AJT_paramFileType
+		            JOIN T_Analysis_Job AJ
+			            ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
+				WHERE (PF.Valid = 1) 
+				AND PF.Param_File_Name = @parmFileName
+			    AND AJ.AJ_jobID = TD.Job
+				)
+		OPEN cma_list_cursor
+
+		FETCH NEXT FROM cma_list_cursor INTO @id
+
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+
+			set @comma_list = @comma_list + @id + ','
+
+		FETCH NEXT FROM cma_list_cursor INTO @id
+
+		END
+
+		CLOSE cma_list_cursor
+		DEALLOCATE cma_list_cursor
+
+		if @comma_list <> ''
+		begin
+			set @message = 'Based on the parameter file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @comma_list + '"'
+			return 51017
+		end
+	end
+
+	---------------------------------------------------
+	-- Validate settings file for tool
+	---------------------------------------------------
+	--
+	if @settingsFileName <> '[no change]'
+	begin
+/*		declare @fullPath varchar(255)
+		declare @dirPath varchar(255)
+		declare @orgDbReqd int
+		--
+		-- get tool parameters
+		--
+		set @dirPath = ''
+		set @orgDbReqd = 0
+		--
+		SELECT 
+--			@dirPath = AJT_parmFileStoragePathLocal,
+--			@orgDbReqd = AJT_orgDbReqd
+		FROM T_Analysis_Tool AT
+			join T_Settings_Files SF on SF.Analysis_Tool = AT.AJT_toolName
+		WHERE (SF.File_Name = 'IonTrapDefSettings.xml')--@settingsFileName)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error looking up tool parameters'
+			return 51038
+		end
+		--
+		-- settings file path
+		--
+		if @dirPath = ''
+		begin
+			set @message = 'Could not get settings file folder'
+			return 53107
+		end
+			--
+		set @fullPath = @dirPath + 'SettingsFiles\' + @settingsFileName
+		exec @result = VerifyFileExists @fullPath, @message output
+		--
+		if @result <> 0
+		begin
+			set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+			return 53108
+		end
+*/		--
+		-- validate settings file for tool only
+		--
+		declare @sf_comma_list as varchar(4000)
+		declare @sf_id as varchar(32)
+		set @sf_comma_list = ''
+
+		DECLARE cma_list_cursor CURSOR
+		FOR SELECT TD.Job
+			FROM #TAJ TD
+			WHERE not exists (
+			    SELECT AJ.AJ_jobID 
+				FROM dbo.T_Settings_Files SF
+					INNER JOIN T_Analysis_Tool AnTool
+						ON SF.Analysis_Tool = AnTool.AJT_toolName
+		            JOIN T_Analysis_Job AJ
+			            ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
+				WHERE SF.File_Name = @settingsFileName
+			    AND AJ.AJ_jobID = TD.Job
+				)
+		OPEN cma_list_cursor
+
+		FETCH NEXT FROM cma_list_cursor INTO @sf_id
+
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+
+			set @sf_comma_list = @sf_comma_list + @sf_id + ','
+
+		FETCH NEXT FROM cma_list_cursor INTO @sf_id
+
+		END
+
+		CLOSE cma_list_cursor
+		DEALLOCATE cma_list_cursor
+
+		if @sf_comma_list <> ''
+		begin
+			set @message = 'Based on the settings file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @sf_comma_list + '"'
+			return 51019
+		end
+
+	end
+
  	---------------------------------------------------
 	-- Update jobs from temporary table
 	-- in cases where parameter has changed
@@ -333,6 +533,101 @@ As
 			end
 		end
 
+		-----------------------------------------------
+		if @parmFileName <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_parmFileName =  @parmFileName
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51010
+			end
+		end
+
+		-----------------------------------------------
+		if @settingsFileName <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_settingsFileName =  @settingsFileName
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51011
+			end
+		end
+
+		-----------------------------------------------
+		if @organismName <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_organismID =  @orgid
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51012
+			end
+		end
+
+		-----------------------------------------------
+		if @protCollNameList <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_proteinCollectionList =  @protCollNameList
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51013
+			end
+		end
+
+		-----------------------------------------------
+		if @protCollOptionsList <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_proteinOptionsList =  @protCollOptionsList
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51014
+			end
+		end
+
 -- future: append/replace comments
 
 -- future: clear run times
@@ -362,6 +657,13 @@ As
 			AJ_extractionProcessor = '', 
 			AJ_extractionStart = NULL, 
 			AJ_extractionFinish = NULL,
+-- Are these a part of the reset command?
+--			AJ_parmFileName = @parmFileName, 
+--			AJ_settingsFileName = @settingsFileName,
+--			AJ_proteinCollectionList = @protCollNameList, 
+--			AJ_proteinOptionsList = @protCollOptionsList,
+--			AJ_organismID = @orgid,
+--
 			AJ_priority =  CASE WHEN @priority = '[no change]' THEN AJ_priority ELSE CAST(@priority AS int) END, 
 			AJ_comment = AJ_comment + CASE WHEN @comment = '[no change]' THEN '' ELSE ' ' + @comment END,
 			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = '[no change]' THEN AJ_assignedProcessorName ELSE @assignedProcessor END

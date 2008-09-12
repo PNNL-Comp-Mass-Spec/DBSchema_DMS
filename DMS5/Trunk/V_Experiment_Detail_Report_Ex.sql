@@ -12,7 +12,7 @@ SELECT     dbo.T_Experiments.Experiment_Num AS Experiment, dbo.T_Users.U_Name + 
                       dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Experiments.EX_cell_culture_list AS [Cell Cultures], 
                       dbo.T_Experiments.EX_Labelling AS Labelling, dbo.T_Internal_Standards.Name AS [Predigest Int Std], 
                       T_Internal_Standards_1.Name AS [Postdigest Int Std], dbo.T_Experiments.EX_sample_prep_request_ID AS Request, 
-                      m.Group_ID AS [Experiment Group], a.DataSets, dbo.T_Experiments.Exp_ID AS ID, dbo.T_Material_Containers.Tag AS Container, 
+                      m.Group_ID AS [Experiment Group], a.DataSets AS Datasets, dbo.T_Experiments.Exp_ID AS ID, dbo.T_Material_Containers.Tag AS Container, 
                       dbo.T_Material_Locations.Tag AS Location, dbo.T_Experiments.Ex_Material_Active AS [Material Status]
 FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN

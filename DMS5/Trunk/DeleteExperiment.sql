@@ -255,3 +255,5 @@ GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin]
 GO
 GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [Limited_Table_Write]
 GO
+GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [PNL\D3P214]
+GO
