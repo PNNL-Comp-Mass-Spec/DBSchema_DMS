@@ -28,6 +28,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			02/19/2008 grk - add explicit NULL column attribute to #TD
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
 **			05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
+**			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **
 *****************************************************/
 (
@@ -173,8 +174,8 @@ As
 	--
 	exec @result = ValidateAnalysisJobParameters
 							@toolName,
-							@parmFileName,
-							@settingsFileName,
+							@parmFileName output,
+							@settingsFileName output,
 							@organismDBName output,
 							@organismName,
 							@protCollNameList output,

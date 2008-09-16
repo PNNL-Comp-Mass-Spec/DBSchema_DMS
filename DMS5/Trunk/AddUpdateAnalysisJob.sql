@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
@@ -32,12 +33,13 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **          02/15/2007 grk - added associated processor group (Ticket #383)
 **			02/15/2007 grk - Added propagation mode (Ticket #366)
 **          02/21/2007 grk - removed @assignedProcessor (Ticket #383)
-**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **			02/22/2008 mem - Updated to allow updating jobs in state "holding"
 **						   - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket #648)
-**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644, http://prismtrac.pnl.gov/trac/ticket/644)
 **			04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
+**			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **    
 *****************************************************/
 (
@@ -88,7 +90,7 @@ As
     declare @batchID int
 	set @batchID = 0
 
-
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates and resets)
 	---------------------------------------------------
@@ -247,8 +249,8 @@ As
 	--
 	exec @result = ValidateAnalysisJobParameters
 							@toolName,
-							@parmFileName,
-							@settingsFileName,
+							@parmFileName output,
+							@settingsFileName output,
 							@organismDBName output,
 							@organismName,
 							@protCollNameList output,
@@ -546,6 +548,8 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_SP_User]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS2_SP_User]
 GO

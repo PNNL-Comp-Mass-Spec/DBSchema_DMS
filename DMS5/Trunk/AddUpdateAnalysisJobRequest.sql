@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 /****************************************************
 **
@@ -21,7 +20,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			04/04/2006 grk - modified to use ValidateAnalysisJobParameters
 **			04/10/2006 grk - widened size of list argument to 6000 characters
 **			04/11/2006 grk - modified logic to allow changing name of exising request
-**			08/31/2006 grk - restored apparently missing prior modification https://prismtrac.pnl.gov/trac/ticket/217
+**			08/31/2006 grk - restored apparently missing prior modification http://prismtrac.pnl.gov/trac/ticket/217
 **			10/16/2006 jds - added support for work package number
 **			10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
 **			11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
@@ -29,9 +28,10 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			12/20/2006 mem - Added column DS_rating to #TD (Ticket:339)
 **			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket:368)
 **			05/22/2007 mem - Updated to prevent addition of duplicate datasets to  (Ticket:481)
-**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
-**			02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648)
+**			02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648, http://prismtrac.pnl.gov/trac/ticket/648)
+**			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **    
 *****************************************************/
 (
@@ -186,7 +186,7 @@ return 1
 	set @result = 0
 	
 	Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
-	If Len(@protCollNameList) > 0 And @protCollNameList <> 'na'
+	If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
 	Begin
 		exec @result = ValidateProteinCollectionListForDatasets 
 							@datasets, 
@@ -248,8 +248,8 @@ return 1
 	--
 	exec @result = ValidateAnalysisJobParameters
 							@toolName,
-							@parmFileName,
-							@settingsFileName,
+							@parmFileName output,
+							@settingsFileName output,
 							@organismDBName output,
 							@organismName,
 							@protCollNameList output,

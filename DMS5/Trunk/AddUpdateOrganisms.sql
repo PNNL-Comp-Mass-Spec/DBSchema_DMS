@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			01/12/2007 mem - Added validation that genus, species, and strain are not duplicated in T_Organisms
 **			10/16/2007 mem - Updated to allow genus, species, and strain to all be 'na' (Ticket #562)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**			09/12/2008 mem - Updated to call ValidateNAParameter to validate genus, species, and strain (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -174,6 +175,10 @@ As
 	--  then make sure all three are "na"
 	---------------------------------------------------
 	
+	set @orgGenus =   dbo.ValidateNAParameter(@orgGenus, 1)
+	set @orgSpecies = dbo.ValidateNAParameter(@orgSpecies, 1)
+	set @orgStrain =  dbo.ValidateNAParameter(@orgStrain, 1)
+		
 	if (@orgGenus = 'unknown'   or @orgGenus = 'na'   or @orgGenus = 'none') AND
 	   (@orgSpecies = 'unknown' or @orgSpecies = 'na' or @orgSpecies = 'none') AND
 	   (@orgStrain = 'unknown'  or @orgStrain = 'na'  or @orgStrain = 'none') 

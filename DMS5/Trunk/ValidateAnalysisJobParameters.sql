@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.ValidateAnalysisJobParameters
+CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 /****************************************************
 **
 **	Desc: Validates analysis job parameters and returns internal
@@ -23,17 +23,19 @@ CREATE Procedure dbo.ValidateAnalysisJobParameters
 **			05/01/2006 grk - modified to conditionally call 
 **                            Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
 **			06/01/2006 grk - removed dataset archive state restriction 
-**			08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (https://prismtrac.pnl.gov/trac/ticket/219)
+**			08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (http://prismtrac.pnl.gov/trac/ticket/219)
 **			11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
 **			12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
 **			09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs
-**			10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
+**			09/12/2008 mem - Now calling ValidateNAParameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**						   - Changed @parmFileName and @settingsFileName to be input/output parameters instead of input only
 **
 *****************************************************/
 (
 	@toolName varchar(64),
-    @parmFileName varchar(255),
-    @settingsFileName varchar(64),
+    @parmFileName varchar(255) output,
+    @settingsFileName varchar(64) output,
     @organismDBName varchar(64) output,
     @organismName varchar(64),
 	@protCollNameList varchar(4000) output,
@@ -292,6 +294,19 @@ As
 		return 51008
 	end
 	
+	
+	---------------------------------------------------
+	-- Make sure settings for which 'na' is acceptable truly have lowercase 'na' and not 'NA' or 'n/a'
+	-- Note that Sql server string comparisons are not case-sensitive, but VB.NET string comparisons are
+	--  Therefore, @settingsFileName needs to be lowercase 'na' for compatibility with the analysis manager
+	---------------------------------------------------
+	--	
+	Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
+	Set @parmFileName =        dbo.ValidateNAParameter(@parmFileName, 1)
+	Set @organismDBName =      dbo.ValidateNAParameter(@organismDBName, 1)
+	Set @protCollNameList =    dbo.ValidateNAParameter(@protCollNameList, 1)
+	Set @protCollOptionsList = dbo.ValidateNAParameter(@protCollOptionsList, 1)
+	
 	---------------------------------------------------
 	-- Validate param file for tool
 	---------------------------------------------------
@@ -372,7 +387,7 @@ As
 		begin
 			if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
 			begin
-				set @message = 'Protein parameters must all be "na"'
+				set @message = 'Protein parameters must all be "na"; you have: OrgDBName = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
 				return 53093
 			end
 		end
