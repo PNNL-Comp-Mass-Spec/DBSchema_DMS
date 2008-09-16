@@ -8,7 +8,7 @@ AS
 SELECT Instrument,
        MIN([Min Request]) AS [Min Request],
        SUM([Run Count]) AS [Run Count],
-       [Batch/Experiment],
+       [Batch/Experiment] AS [Batch or Experiment],
        Requester,
        MIN([Date Created]) AS [Date Created],
        [Separation Type],
@@ -22,16 +22,16 @@ FROM ( SELECT RA.Instrument,
               MIN(RA.Request) AS [Min Request],
               COUNT(RA.Name) AS [Run Count],
               CASE WHEN RA.Batch = 0 OR LEFT(RRB.Batch, 4) <> LEFT(RA.Experiment, 4) 
-			  THEN LEFT(RA.Experiment, 10) +
-					CASE WHEN LEN(RA.Experiment) > 10 
-					THEN '...'
-					ELSE ''
-					END
+              THEN LEFT(RA.Experiment, 10) +
+                    CASE WHEN LEN(RA.Experiment) > 10 
+                    THEN '...'
+                    ELSE ''
+                    END
               ELSE RRB.Batch
               END AS [Batch/Experiment],
               RA.Requester,
               MIN(CONVERT(datetime, FLOOR(CONVERT(float, RA.Created)))) AS [Date Created],
-              MIN(CASE WHEN LEN(RA.Comment) > 30 THEN SubString(RA.Comment, 1, 27) + '...' ELSE RA.Comment End) AS Comment,
+              MIN(CASE WHEN LEN(RA.Comment) > 30 THEN SubString(RA.Comment, 1, 27) + '...' ELSE RA.Comment END) AS Comment,
               RA.[Work Package],
               RA.Proposal,
               RRB.Locked,
@@ -40,16 +40,16 @@ FROM ( SELECT RA.Instrument,
             INNER JOIN dbo.T_Requested_Run_Batches AS RRB
               ON RA.Batch = RRB.ID
        GROUP BY RA.Instrument, RA.[Separation Type], RRB.Batch, RA.Requester, 
-                RA.[Work Package], RA.Proposal, RRB.Locked,
+                RA.[Work Package], RA.Proposal, RRB.Locked, 
               CASE WHEN RA.Batch = 0 OR LEFT(RRB.Batch, 4) <> LEFT(RA.Experiment, 4) 
-			  THEN LEFT(RA.Experiment, 10) +
-					CASE WHEN LEN(RA.Experiment) > 10 
-					THEN '...'
-					ELSE ''
-					END
+              THEN LEFT(RA.Experiment, 10) +
+                    CASE WHEN LEN(RA.Experiment) > 10 
+                    THEN '...'
+                    ELSE ''
+                    END
               ELSE RRB.Batch
               END, 
-			  CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) 
+              CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) 
      ) AS SrcDataQ
 GROUP BY Instrument, [Batch/Experiment], Requester, [Separation Type], [Work Package], Proposal, Locked, [Last Ordered]
 
