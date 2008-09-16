@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.FindExistingJobsForRequest
 /****************************************************
 **
@@ -18,6 +19,7 @@ CREATE PROCEDURE dbo.FindExistingJobsForRequest
 **			04/07/2006 grk - eliminated job to request map table
 **			09/10/2007 mem - Now returning columns Processor and Dataset
 **			04/09/2008 mem - Now returning associated processor group, if applicable
+**			09/03/2008 mem - Fixed bug that returned Entered_By from T_Analysis_Job_Processor_Group instead of from T_Analysis_Job_Processor_Group_Associations
 **    
 *****************************************************/
 (
@@ -46,7 +48,7 @@ AS
 		AJ.AJ_assignedProcessorName AS Processor,
 		DS.Dataset_Num AS Dataset,
 		AJPG.Group_Name AS "Processor Group",
-		AJPG.Entered_By AS "Processor Group Assignee"
+		AJPGA.Entered_By AS "Processor Group Assignee"
 	FROM dbo.T_Analysis_Job_Processor_Group AJPG
 		INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AJPGA
 		    ON AJPG.ID = AJPGA.Group_ID
@@ -62,7 +64,6 @@ AS
 
 Done:
 	RETURN @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_Guest]

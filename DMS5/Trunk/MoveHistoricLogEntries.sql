@@ -77,5 +77,11 @@ As
 	
 	return 0
 GO
+GRANT ALTER ON [dbo].[MoveHistoricLogEntries] TO [D3L243]
+GO
+GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [D3L243]
+GO
+GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [D3L243]
+GO
 GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [DMS_SP_User]
 GO

@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure SetPurgeTaskComplete
+CREATE Procedure dbo.SetPurgeTaskComplete
 /****************************************************
 **
 **	Desc: Sets archive state of dataset record given by @datasetNum

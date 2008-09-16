@@ -77,3 +77,9 @@ As
 	
 	return 0
 GO
+GRANT ALTER ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GO
+GRANT EXECUTE ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GO
+GRANT VIEW DEFINITION ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GO

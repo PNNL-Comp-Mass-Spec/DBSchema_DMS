@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.ReindexDatabase
+
+CREATE PROCEDURE dbo.ReindexDatabase
 /****************************************************
 **
 **	Desc: 
@@ -165,5 +166,6 @@ As
 
 Done:
 	Return @myError
+
 
 GO
