@@ -14,8 +14,8 @@ CREATE TABLE [dbo].[T_Cell_Culture](
 	[CC_Campaign_ID] [int] NULL,
 	[CC_ID] [int] IDENTITY(200,1) NOT NULL,
 	[CC_Container_ID] [int] NOT NULL CONSTRAINT [DF_T_Cell_Culture_CC_Container_ID]  DEFAULT ((1)),
-	[CC_Created] [datetime] NULL,
 	[CC_Material_Active] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Cell_Culture_CC_Material_Active]  DEFAULT ('Active'),
+	[CC_Created] [datetime] NULL,
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
