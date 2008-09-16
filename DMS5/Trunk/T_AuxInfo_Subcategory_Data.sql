@@ -1,5 +1,5 @@
 /****** Object:  Table [T_AuxInfo_Subcategory] ******/
-/****** RowCount: 43 ******/
+/****** RowCount: 44 ******/
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] ON
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (244,'General',1011,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (245,'Starter Culture Conditions',1011,2)
@@ -35,7 +35,7 @@ INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (275,
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (276,'Avidin',1006,4)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (277,'Thermal',1001,4)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (278,'Funding',1016,1)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (279,'Ultracenterfuge',1008,1)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (279,'Ultracentrifuge',1008,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (280,'Location',1017,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (281,'MCDL Sample Descriptions',1011,5)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (282,'Fractionation',1007,1)
@@ -44,4 +44,5 @@ INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (284,
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (285,'Homogenization',1000,6)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (286,'Well Plate',1009,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (287,'Barocycler',1000,7)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (288,'Depletion',1004,4)
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] OFF

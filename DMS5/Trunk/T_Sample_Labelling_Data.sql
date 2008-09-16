@@ -1,8 +1,9 @@
 /****** Object:  Table [T_Sample_Labelling] ******/
-/****** RowCount: 13 ******/
+/****** RowCount: 14 ******/
 /****** Columns: Label, ID ******/
 INSERT INTO [T_Sample_Labelling] VALUES ('Cleavable ICAT',8)
 INSERT INTO [T_Sample_Labelling] VALUES ('ICAT',3)
+INSERT INTO [T_Sample_Labelling] VALUES ('iTRAQ',14)
 INSERT INTO [T_Sample_Labelling] VALUES ('Leu_C13N15',11)
 INSERT INTO [T_Sample_Labelling] VALUES ('N14/N15',2)
 INSERT INTO [T_Sample_Labelling] VALUES ('none',1)

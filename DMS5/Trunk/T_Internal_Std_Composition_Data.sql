@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Internal_Std_Composition] ******/
-/****** RowCount: 56 ******/
+/****** RowCount: 71 ******/
 /****** Columns: Component_ID, Mix_ID, Concentration ******/
 INSERT INTO [T_Internal_Std_Composition] VALUES (10,1,'')
 INSERT INTO [T_Internal_Std_Composition] VALUES (11,1,'')
@@ -57,3 +57,18 @@ INSERT INTO [T_Internal_Std_Composition] VALUES (52,5,'')
 INSERT INTO [T_Internal_Std_Composition] VALUES (53,5,'')
 INSERT INTO [T_Internal_Std_Composition] VALUES (54,5,'')
 INSERT INTO [T_Internal_Std_Composition] VALUES (55,5,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (58,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (59,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (60,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (61,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (62,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (63,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (64,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (65,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (66,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (67,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (68,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (69,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (70,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (71,6,'')
+INSERT INTO [T_Internal_Std_Composition] VALUES (72,6,'')

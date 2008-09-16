@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 22 ******/
+/****** RowCount: 23 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
@@ -9,10 +9,10 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (14,'Earth',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (15,'Firefly',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (16,'Griffin',2,'')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (17,'Pegasus',2,'')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (18,'Phoenix',2,'Fast LC')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (17,'Pegasus',2,'Fast Separation')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (18,'Phoenix',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (19,'Raptor',2,'')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (20,'Roc',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (20,'Roc',2,'Metabalomics Cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (27,'Falcon',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (28,'Hawk',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (29,'Sphinx',2,'')
@@ -23,4 +23,5 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (34,'Owl',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (35,'Eagle',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (36,'Kestrel',2,'20,000 psi mixers')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (37,'Osprey',2,'15 Minute Separation')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

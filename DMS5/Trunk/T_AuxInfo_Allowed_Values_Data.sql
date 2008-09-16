@@ -1,5 +1,5 @@
 /****** Object:  Table [T_AuxInfo_Allowed_Values] ******/
-/****** RowCount: 84 ******/
+/****** RowCount: 95 ******/
 /****** Columns: AuxInfoID, Value ******/
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (102,'carbonate')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (102,'Guanidine HCL')
@@ -75,6 +75,7 @@ INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (69,'Steady State')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (120,'10X dilution w/Buffer')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (108,'Rapigest')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (105,'TFE')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'IgY-12')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (200,'Phenomenex, JUPITER RP C18, 250x2.0 mm (5um 300Å)')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (200,'Phenomenex, JUPITER RP C18, 250x4.6 mm (5um 300Å)')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (200,'PolyLC, PolySULFOETHYL A, 200x2.1 mm (5um 300Å)')
@@ -84,4 +85,14 @@ INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (201,'0.05% TFA, 0.2% HOAc in H2O'
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (201,'10 mM Ammonium Formate, pH 3.0; 25% ACN')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (202,'0.1% TFA, 90% ACN')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (202,'500 mM Ammonium Formate, pH 6.8; 25% ACN')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'IgY-14')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'SuperMix')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'MARS-Human')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'MARS-Mouse')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'IgY-R7')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'HIC')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'HILIC')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'SAX')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'SCX')
+INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (226,'SEC')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (121,'Imm. Trypsin')

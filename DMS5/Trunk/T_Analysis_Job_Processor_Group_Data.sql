@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processor_Group] ******/
-/****** RowCount: 27 ******/
+/****** RowCount: 28 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] ON
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (100,'General Processors','','Y','2/23/2007 7:07:08 PM','Y','2/23/2007 7:07:09 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (102,'Tom Metz Pubs','All four Decon2LS PCs purchased by Tom Metz','Y','2/23/2007 7:16:22 PM','Y','11/14/2007 7:40:13 PM','PNL\D3L243')
@@ -28,4 +28,5 @@ INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description,
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (129,'XTandem on Pub-4x PCs','XTandem on quad-processor PCs','Y','10/10/2007 4:30:15 PM','N','10/10/2007 4:49:16 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (130,'Sequest Clusters 1 and 3','P0 and Chameleon','Y','10/26/2007 9:45:57 AM','N','10/26/2007 9:45:57 AM','PNL\D3M580')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (131,'XTandem on Daffy','XTandem on Daffy','Y','11/7/2007 4:44:51 PM','N','11/7/2007 4:44:51 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (132,'Monroe','MEM development machine','N','2/22/2008 12:32:56 PM','N','5/23/2008 10:06:29 PM','D3L243 (via DMSWebUser)')
 SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] OFF

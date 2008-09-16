@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Internal_Standards] ******/
-/****** RowCount: 15 ******/
+/****** RowCount: 18 ******/
 SET IDENTITY_INSERT [T_Internal_Standards] ON
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (0,,'unknown','status uncertain','All','I')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (1,,'none','Nothing added','All','A')
@@ -14,6 +14,9 @@ INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (10,5,'QC_05_03','QC Standards mixture, 2005 batch','Predigest','I')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (11,4,'MP_07_01','Official mini proteome, January 2007 batch','Predigest','I')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (12,4,'MP_07_02','Official mini proteome, April 2007 batch','Predigest','I')
-INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (13,4,'MP_07_03','Official mini proteome, July 2007 batch','Predigest','A')
-INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (14,4,'MP_07_04','Official','Predigest','A')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (13,4,'MP_07_03','Official mini proteome, July 2007 batch','Predigest','I')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (14,4,'MP_07_04','Official mini proteome, February 2008 batch','Predigest','A')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (15,6,'ADHYeast','Alcohol Dehydrogenase (Yeast)','Postdigest','A')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (16,4,'MP_08_01','Official mini proteome, July 2008 batch','Predigest','A')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (17,6,'ADHYeast_082308','Alcohol Dehydrogenase, August 2008 batch','Postdigest','A')
 SET IDENTITY_INSERT [T_Internal_Standards] OFF
