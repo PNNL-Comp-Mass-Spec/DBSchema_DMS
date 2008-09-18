@@ -34,8 +34,6 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
                         ON AJ.AJ_datasetID = DS.Dataset_ID
                       INNER JOIN dbo.T_Organisms AS Org
                         ON AJ.AJ_organismID = Org.Organism_ID
-                      INNER JOIN dbo.t_storage_path AS SPath
-                        ON DS.DS_storage_path_ID = SPath.SP_path_ID
                       INNER JOIN dbo.T_Analysis_Tool AS AnalysisTool
                         ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
                       INNER JOIN dbo.T_Instrument_Name AS InstName
@@ -49,6 +47,5 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
                      INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
-
 
 GO
