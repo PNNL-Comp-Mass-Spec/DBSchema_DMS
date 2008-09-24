@@ -32,6 +32,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **			02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648, http://prismtrac.pnl.gov/trac/ticket/648)
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**			09/24/2008 grk - Increased size of comment argument (and column in database)(Ticket:692, http://prismtrac.pnl.gov/trac/ticket/692)
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
     @organismName varchar(64),
     @requestorPRN varchar(32),
     @workPackage varchar(24),
-    @comment varchar(255) = null,
+    @comment varchar(512) = null,
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add', -- or 'update'
