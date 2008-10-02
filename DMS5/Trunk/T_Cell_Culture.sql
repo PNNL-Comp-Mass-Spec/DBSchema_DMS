@@ -52,6 +52,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Cult
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Cell_Culture_ID_ContainerID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Culture] 
+(
+	[CC_ID] ASC,
+	[CC_Container_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Trigger [trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO

@@ -23,6 +23,17 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiment_Groups] ON [dbo].[T_Experiment_Groups
 	[Group_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+
+/****** Object:  Index [IX_T_Experiment_Groups_ParentExpID_GroupID_IncludeTypeCreatedDescription] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiment_Groups_ParentExpID_GroupID_IncludeTypeCreatedDescription] ON [dbo].[T_Experiment_Groups] 
+(
+	[Parent_Exp_ID] ASC,
+	[Group_ID] ASC
+)
+INCLUDE ( [EG_Group_Type],
+[EG_Created],
+[EG_Description]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
 GRANT DELETE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
 GO
 GRANT INSERT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]

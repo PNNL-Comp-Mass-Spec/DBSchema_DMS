@@ -90,6 +90,44 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_State] ON [dbo].[T_Analysis_Job]
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Analysis_Job_ToolID_include_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_include_DatasetID] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_analysisToolID] ASC
+)
+INCLUDE ( [AJ_datasetID]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJStart] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJStart] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_analysisToolID] ASC,
+	[AJ_jobID] ASC,
+	[AJ_datasetID] ASC
+)
+INCLUDE ( [AJ_start]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_OrganismID_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_OrganismID_DatasetID] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_analysisToolID] ASC,
+	[AJ_jobID] ASC,
+	[AJ_organismID] ASC,
+	[AJ_datasetID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_StateName_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_StateName_DatasetID] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_analysisToolID] ASC,
+	[AJ_jobID] ASC,
+	[AJ_StateNameCached] ASC,
+	[AJ_datasetID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Trigger [trig_d_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO

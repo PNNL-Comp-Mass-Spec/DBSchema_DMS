@@ -26,11 +26,29 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 
 GO
 
+/****** Object:  Index [IX_Dataset_Archive_DatasetID_StateID] ******/
+CREATE NONCLUSTERED INDEX [IX_Dataset_Archive_DatasetID_StateID] ON [dbo].[T_Dataset_Archive] 
+(
+	[AS_Dataset_ID] ASC,
+	[AS_state_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_Archive_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archive] 
 (
 	[AS_state_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ON [dbo].[T_Dataset_Archive] 
+(
+	[AS_update_state_ID] ASC,
+	[AS_Dataset_ID] ASC,
+	[AS_state_ID] ASC
+)
+INCLUDE ( [AS_purge_holdoff_date]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [trig_d_Dataset_Archive] ******/
@@ -128,7 +146,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
+CREATE Trigger dbo.trig_u_Dataset_Archive on dbo.T_Dataset_Archive
 For Update
 /****************************************************
 **

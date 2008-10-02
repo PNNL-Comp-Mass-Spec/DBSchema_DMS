@@ -76,6 +76,25 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset]
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_DatasetID_Created_StoragePathID_Include_DatasetNum] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_Created_StoragePathID_Include_DatasetNum] ON [dbo].[T_Dataset] 
+(
+	[Dataset_ID] ASC,
+	[DS_created] ASC,
+	[DS_storage_path_ID] ASC
+)
+INCLUDE ( [Dataset_Num]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_DatasetID_include_DatasetNum_InstrumentNameID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_include_DatasetNum_InstrumentNameID] ON [dbo].[T_Dataset] 
+(
+	[Dataset_ID] ASC
+)
+INCLUDE ( [Dataset_Num],
+[DS_instrument_name_ID]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_Exp_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Exp_ID] ON [dbo].[T_Dataset] 
 (
@@ -83,10 +102,59 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Exp_ID] ON [dbo].[T_Dataset]
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_ID_Created_ExpID_SPathID_InstrumentNameID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_ID_Created_ExpID_SPathID_InstrumentNameID] ON [dbo].[T_Dataset] 
+(
+	[Dataset_ID] ASC,
+	[DS_created] ASC,
+	[Exp_ID] ASC,
+	[DS_storage_path_ID] ASC,
+	[DS_instrument_name_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_InstNameID_Dataset_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstNameID_Dataset_DatasetID] ON [dbo].[T_Dataset] 
+(
+	[DS_instrument_name_ID] ASC,
+	[Dataset_Num] ASC,
+	[Dataset_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_LC_column_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_LC_column_ID] ON [dbo].[T_Dataset] 
+(
+	[DS_LC_column_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_State_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset] 
 (
 	[DS_state_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNameID_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNameID_DatasetID] ON [dbo].[T_Dataset] 
+(
+	[DS_storage_path_ID] ASC,
+	[DS_created] ASC,
+	[Exp_ID] ASC,
+	[DS_instrument_name_ID] ASC,
+	[Dataset_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_Rating_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_Rating_DatasetID] ON [dbo].[T_Dataset] 
+(
+	[DS_storage_path_ID] ASC,
+	[DS_created] ASC,
+	[DS_instrument_name_ID] ASC,
+	[DS_rating] ASC,
+	[Dataset_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 

@@ -42,6 +42,22 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_History] ON [dbo].[T_Requested_Run
 	[DatasetID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+
+/****** Object:  Index [IX_T_Requested_Run_History_BatchID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_History_BatchID] ON [dbo].[T_Requested_Run_History] 
+(
+	[RDS_BatchID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Requested_Run_History_RDSTypeID_ExpID_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_History_RDSTypeID_ExpID_DatasetID] ON [dbo].[T_Requested_Run_History] 
+(
+	[RDS_type_ID] ASC,
+	[Exp_ID] ASC,
+	[DatasetID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
 GRANT DELETE ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]

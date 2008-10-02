@@ -24,7 +24,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Param_Files_Name_and_TypeID] ON [dbo].[T_Param_F
 (
 	[Param_File_Name] ASC,
 	[Param_File_Type_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO

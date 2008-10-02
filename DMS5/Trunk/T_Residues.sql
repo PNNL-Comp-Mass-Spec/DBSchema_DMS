@@ -14,12 +14,19 @@ CREATE TABLE [dbo].[T_Residues](
 	[Num_N] [smallint] NOT NULL,
 	[Num_O] [smallint] NOT NULL,
 	[Num_S] [smallint] NOT NULL,
- CONSTRAINT [PK_T_Residues] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_T_Residues] PRIMARY KEY NONCLUSTERED 
 (
 	[Residue_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Residues_Symbol] ******/
+CREATE CLUSTERED INDEX [IX_T_Residues_Symbol] ON [dbo].[T_Residues] 
+(
+	[Residue_Symbol] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
 /****** Object:  Trigger [trig_i_Residues] ******/

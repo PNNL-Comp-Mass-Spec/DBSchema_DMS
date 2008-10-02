@@ -1,4 +1,9 @@
-ALTER VIEW dbo.V_TableStats_UnusedIndices
+/****** Object:  View [dbo].[V_TableStats_UnusedIndices] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW dbo.V_TableStats_UnusedIndices
 AS
 	-- Note: Stats from sys.dm_db_index_usage_stats are as-of the last time the Database started up
 	-- Thus, make sure the database has been running for a while before you consider deleting an apparently unused index
@@ -17,4 +22,5 @@ WHERE NOT EXISTS ( SELECT *
                          u.[index_id] = i.[index_id] AND
                          [database_id] = DB_ID() ) AND
       OBJECTPROPERTY(i.[object_id], 'IsUserTable') = 1
+
 GO

@@ -26,6 +26,21 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Material_Containers] ON [dbo].[T_Material
 	[Tag] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+
+/****** Object:  Index [IX_T_Material_Containers_LocationID_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Material_Containers_LocationID_ID] ON [dbo].[T_Material_Containers] 
+(
+	[Location_ID] ASC,
+	[ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Material_Containers_Status] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Material_Containers_Status] ON [dbo].[T_Material_Containers] 
+(
+	[Status] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Material_Containers]  WITH CHECK ADD  CONSTRAINT [FK_T_Material_Containers_T_Material_Locations] FOREIGN KEY([Location_ID])
 REFERENCES [T_Material_Locations] ([ID])
 GO

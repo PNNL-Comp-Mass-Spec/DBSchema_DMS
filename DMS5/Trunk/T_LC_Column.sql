@@ -31,6 +31,22 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_LC_Column] ON [dbo].[T_LC_Column]
 	[SC_Column_Number] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
+
+/****** Object:  Index [IX_T_LC_Column_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_LC_Column_ID] ON [dbo].[T_LC_Column] 
+(
+	[ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_LC_Column_ID_include_SCColumnNumber] ******/
+CREATE NONCLUSTERED INDEX [IX_T_LC_Column_ID_include_SCColumnNumber] ON [dbo].[T_LC_Column] 
+(
+	[ID] ASC
+)
+INCLUDE ( [SC_Column_Number],
+[SC_State]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_LC_Column]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Column_T_LC_Column_State_Name] FOREIGN KEY([SC_State])
 REFERENCES [T_LC_Column_State_Name] ([LCS_ID])
 GO

@@ -38,6 +38,13 @@ CREATE TABLE [dbo].[T_Requested_Run](
 ) ON [PRIMARY]
 
 GO
+
+/****** Object:  Index [IX_T_Requested_Run_BatchID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID] ON [dbo].[T_Requested_Run] 
+(
+	[RDS_BatchID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
 GRANT DELETE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]

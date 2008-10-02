@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Predefined_Analysis_Dataset_Info
+CREATE VIEW [dbo].[V_Predefined_Analysis_Dataset_Info]
 AS
 SELECT Cmpgn.Campaign_Num AS Campaign,
        Exp.Experiment_Num AS Experiment,

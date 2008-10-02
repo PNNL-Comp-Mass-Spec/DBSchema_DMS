@@ -37,6 +37,14 @@ CREATE CLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Experiments_CampaignID_ExpID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_CampaignID_ExpID] ON [dbo].[T_Experiments] 
+(
+	[EX_campaign_ID] ASC,
+	[Exp_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Experiments_Container_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID] ON [dbo].[T_Experiments] 
 (
@@ -63,6 +71,23 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments] 
 (
 	[Experiment_Num] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Experiments_ExpID_CampaignID_ExpNum] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_CampaignID_ExpNum] ON [dbo].[T_Experiments] 
+(
+	[Exp_ID] ASC,
+	[EX_campaign_ID] ASC,
+	[Experiment_Num] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Experiments_ExpID_ContainerID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Experiments] 
+(
+	[Exp_ID] ASC,
+	[EX_Container_ID] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
