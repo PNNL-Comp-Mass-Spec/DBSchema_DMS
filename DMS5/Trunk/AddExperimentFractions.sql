@@ -28,6 +28,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **          02/06/2006 grk - increased maximum count
 **          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
 **			09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
+**			10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
 **    
 *****************************************************/
 (
@@ -43,7 +44,9 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 	@postdigestIntStd varchar(50) = 'parent',
 	@researcher varchar(50) = 'parent',
 	@mode varchar(12),                    -- Not used at present - included for consistentcy
-	@message varchar(512) output
+	@message varchar(512) output,
+   	@callingUser varchar(128) = '',
+	@container varchar(128) = 'na'        -- na, "parent", "-20", or actual container ID
 )
 AS
 	SET NOCOUNT ON
@@ -84,6 +87,9 @@ AS
 	declare @ExperimentIDList varchar(8000)
 	Set @ExperimentIDList = ''
 
+	declare @MaterialIDList varchar(8000)
+	Set @MaterialIDList = ''
+
 	---------------------------------------------------
 	-- Validate arguments
 	---------------------------------------------------
@@ -114,6 +120,9 @@ AS
 	
 	declare @ParentExperimentID int
 	set @ParentExperimentID = 0
+	declare @parentContainerID int
+	set @parentContainerID = 0
+	--
 	SELECT
 		@ParentExperimentID = Exp_ID,
 		@researcherPRN = EX_researcher_PRN,
@@ -129,7 +138,8 @@ AS
 		@enzymeID = EX_enzyme_ID,
 		@samplePrepRequest = EX_sample_prep_request_ID,
 		@internalStandardID = EX_internal_standard_ID,
-		@postdigestIntStdID = EX_postdigest_internal_std_ID
+		@postdigestIntStdID = EX_postdigest_internal_std_ID,
+		@parentContainerID = EX_Container_ID
 	FROM	T_Experiments
 	WHERE (Experiment_Num = @parentExperiment)
 	--
@@ -398,17 +408,67 @@ AS
 		end
 	
 		---------------------------------------------------
-		-- Append Experiment ID to @ExperimentIDList
+		-- Append Experiment ID to @ExperimentIDList and @MaterialIDList
 		---------------------------------------------------
 		--
 		If Len(@ExperimentIDList) > 0
 			set @ExperimentIDList = @ExperimentIDList + ','
-		
+
 		Set @ExperimentIDList = @ExperimentIDList + Convert(varchar(12), @newExpID)
+
+		If Len(@MaterialIDList) > 0
+			set @MaterialIDList = @MaterialIDList + ','
+			
+		set @MaterialIDList = @MaterialIDList + 'E:' + Convert(varchar(12), @newExpID) 
+		
 	END -- </a>
+
+	---------------------------------------------------
+	-- resolve parent container name
+	---------------------------------------------------
+	--
+	if @container = 'parent'
+	begin
+		SELECT @container = Tag
+		FROM T_Material_Containers
+		WHERE ID = @parentContainerID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Failed to find parent container'
+			RAISERROR (@message, 10, 1)
+			set @myError = 51019
+			goto Done
+		end
+	end
+
+	---------------------------------------------------
+	-- move new fraction experiments to container
+	---------------------------------------------------
+	--
+	exec @result = UpdateMaterialItems
+					'move_material',
+					@MaterialIDList,
+					'mixed_material',
+					@container,
+					'',
+					@message output,
+   					@callingUser
+	If @result <> 0
+	Begin
+		if @@TRANCOUNT > 0
+			rollback transaction @transName
+		RAISERROR (@message, 10, 1)
+		set @myError = @result
+		goto Done
+	End
 	
 	---------------------------------------------------
-	-- Now copy the aux info from the parent experiment into the fractionated experiments
+	-- Now copy the aux info from the parent experiment 
+	-- into the fractionated experiments
 	---------------------------------------------------
 	
 	exec @result = CopyAuxInfoMultiID 
@@ -424,7 +484,6 @@ AS
 	Begin
 		if @@TRANCOUNT > 0
 			rollback transaction @transName
-
 		set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
 		RAISERROR (@message, 10, 1)
 		set @myError = 51009
@@ -437,13 +496,11 @@ AS
 		
 	commit transaction @transName
 
-
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
 Done:
 	RETURN @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS_User]
