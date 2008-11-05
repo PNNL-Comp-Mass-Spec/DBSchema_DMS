@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
+CREATE PROCEDURE dbo.UpdateAnalysisJobs
 /****************************************************
 **
 **	Desc:
@@ -28,7 +28,9 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 **			03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
 **			04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group 
 **			07/11/2008 jds - Added 5 new fields (@parmFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
-**							and code to validate param file settings file against tool type
+**							 and code to validate param file settings file against tool type
+**			10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
+**
 *****************************************************/
 (
     @JobList varchar(6000),
@@ -657,13 +659,11 @@ As
 			AJ_extractionProcessor = '', 
 			AJ_extractionStart = NULL, 
 			AJ_extractionFinish = NULL,
--- Are these a part of the reset command?
---			AJ_parmFileName = @parmFileName, 
---			AJ_settingsFileName = @settingsFileName,
---			AJ_proteinCollectionList = @protCollNameList, 
---			AJ_proteinOptionsList = @protCollOptionsList,
---			AJ_organismID = @orgid,
---
+			AJ_parmFileName = CASE WHEN @parmFileName = '[no change]' THEN AJ_parmFileName ELSE @parmFileName END, 
+			AJ_settingsFileName = CASE WHEN @settingsFileName = '[no change]' THEN AJ_settingsFileName ELSE @settingsFileName END,
+			AJ_proteinCollectionList = CASE WHEN @protCollNameList = '[no change]' THEN AJ_proteinCollectionList ELSE @protCollNameList END, 
+			AJ_proteinOptionsList = CASE WHEN @protCollOptionsList = '[no change]' THEN AJ_proteinOptionsList ELSE @protCollOptionsList END,
+			AJ_organismID = CASE WHEN @organismName = '[no change]' THEN AJ_organismID ELSE @orgid END, 
 			AJ_priority =  CASE WHEN @priority = '[no change]' THEN AJ_priority ELSE CAST(@priority AS int) END, 
 			AJ_comment = AJ_comment + CASE WHEN @comment = '[no change]' THEN '' ELSE ' ' + @comment END,
 			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = '[no change]' THEN AJ_assignedProcessorName ELSE @assignedProcessor END

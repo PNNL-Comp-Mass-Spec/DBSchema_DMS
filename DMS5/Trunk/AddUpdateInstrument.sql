@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE AddUpdateInstrument
+CREATE PROCEDURE AddUpdateInstrument
 /****************************************************
 **
 **  Desc: Edits existing Instrument
@@ -13,7 +13,8 @@ create PROCEDURE AddUpdateInstrument
 **  Parameters:
 **
 **    Auth: grk
-**    Date: 06/7/2005
+**    06/07/2005 grk - Initial release
+**	  10/15/2008 grk - Allowed for null Usage
 **    
 *****************************************************/
   @InstrumentID int Output,
@@ -42,6 +43,9 @@ As
   ---------------------------------------------------
   -- Validate input fields
   ---------------------------------------------------
+  
+  if @Usage is null
+	set @Usage = ''
 
   -- future: this could get more complicated
   

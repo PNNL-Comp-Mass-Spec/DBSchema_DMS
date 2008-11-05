@@ -15,13 +15,14 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **
 **	Auth:	mem
 **	Date:	05/23/2008 mem - Ticket #675
+**			10/30/2008 mem - Updated to only create jobs for datasets in state 3=Complete
 **
 *****************************************************/
 (
 	@InfoOnly tinyint = 0,
 	@MaxDatasetsToProcess int = 0,
 	@DayCountForRecentDatasets int = 30,			-- Will examine datasets created within this many days of the present
-	@PreviewOutputType varchar(12) = 'Show Jobs',	-- 'Show Rules' or 'Show Jobs'
+	@PreviewOutputType varchar(12) = 'Show Jobs',	-- Used if @InfoOnly = 1; options are 'Show Rules' or 'Show Jobs'
 	@message varchar(512) = '' output
 )
 As
@@ -92,7 +93,7 @@ As
 	     LEFT OUTER JOIN dbo.T_Analysis_Job AJ
 	       ON DS.Dataset_ID = AJ.AJ_datasetID
 	WHERE (DS.DS_rating NOT IN (-1, -2, -5, -10)) AND
-	      (NOT (DS.DS_state_ID IN (1, 2, 4, 5))) AND
+	      (DS.DS_state_ID = 3) AND
 	      (DS.DS_created BETWEEN GETDATE() -@DayCountForRecentDatasets AND DATEADD(hour, -12, GETDATE())) AND
 	      InstName.IN_Class IN ( SELECT DISTINCT InstClass.IN_class
 	                             FROM dbo.T_Predefined_Analysis PA
@@ -272,6 +273,7 @@ As
 	
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddMissingPredefinedJobs] TO [D3L243]
