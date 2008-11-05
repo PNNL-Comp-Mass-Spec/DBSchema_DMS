@@ -19,7 +19,7 @@ CREATE TABLE [dbo].[T_Cell_Culture](
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -28,28 +28,37 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Campaign_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_CC_Created] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Created] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_CC_Name] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Cell_Culture_CCName_ContainerID_CCID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CCName_ContainerID_CCID] ON [dbo].[T_Cell_Culture] 
+(
+	[CC_Name] ASC,
+	[CC_Container_ID] ASC,
+	[CC_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_Container_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Culture] 
 (
 	[CC_Container_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Cell_Culture_ID_ContainerID] ******/
@@ -57,10 +66,10 @@ CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Cu
 (
 	[CC_ID] ASC,
 	[CC_Container_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_d_Cell_Culture] ******/
+/****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -103,7 +112,7 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_i_Cell_Culture] ******/
+/****** Object:  Trigger [dbo].[trig_i_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -152,4 +161,6 @@ ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Cell_Cu
 GO
 ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers] FOREIGN KEY([CC_Container_ID])
 REFERENCES [T_Material_Containers] ([ID])
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers]
 GO

@@ -275,3 +275,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateMaterialContainer] TO [DMS2_SP_User]
+GO
