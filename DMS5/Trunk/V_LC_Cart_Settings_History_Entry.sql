@@ -5,8 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_LC_Cart_Settings_History_Entry
 AS
-SELECT     dbo.T_LC_Cart_Settings_History.Date_Of_Change AS DateOfChange, dbo.T_LC_Cart_Settings_History.ID, 
-                      dbo.T_LC_Cart_Settings_History.Valve_To_Column_Extension AS ValveToColumnExtension, 
+SELECT     CONVERT(varchar, MONTH(dbo.T_LC_Cart_Settings_History.Date_Of_Change)) + '/' + CONVERT(varchar, 
+                      DAY(dbo.T_LC_Cart_Settings_History.Date_Of_Change)) + '/' + CONVERT(varchar, YEAR(dbo.T_LC_Cart_Settings_History.Date_Of_Change)) 
+                      AS DateOfChange, dbo.T_LC_Cart_Settings_History.ID, dbo.T_LC_Cart_Settings_History.Valve_To_Column_Extension AS ValveToColumnExtension, 
                       dbo.T_LC_Cart_Settings_History.Valve_To_Column_Extension_Dimensions AS ValveToColumnExtensionDimensions, 
                       dbo.T_LC_Cart_Settings_History.Operating_Pressure AS OperatingPressure, 
                       dbo.T_LC_Cart_Settings_History.Interface_Configuration AS InterfaceConfiguration, dbo.T_LC_Cart_Settings_History.Mixer_Volume AS MixerVolume, 
@@ -17,7 +18,8 @@ SELECT     dbo.T_LC_Cart_Settings_History.Date_Of_Change AS DateOfChange, dbo.T_
                       dbo.T_LC_Cart_Settings_History.Purge_Column_Dimensions AS PurgeColumnDimensions, 
                       dbo.T_LC_Cart_Settings_History.Purge_Volume AS PurgeVolume, dbo.T_LC_Cart_Settings_History.Acquisition_Time AS AcquisitionTime, 
                       dbo.T_LC_Cart_Settings_History.Comment, dbo.T_LC_Cart.Cart_Name AS CartName, dbo.T_LC_Cart_Settings_History.Entered, 
-                      dbo.T_LC_Cart_Settings_History.EnteredBy
+                      dbo.T_LC_Cart_Settings_History.EnteredBy, dbo.T_LC_Cart_Settings_History.Solvent_A AS SolventA, 
+                      dbo.T_LC_Cart_Settings_History.Solvent_B AS SolventB
 FROM         dbo.T_LC_Cart_Settings_History INNER JOIN
                       dbo.T_LC_Cart ON dbo.T_LC_Cart_Settings_History.Cart_ID = dbo.T_LC_Cart.ID
 

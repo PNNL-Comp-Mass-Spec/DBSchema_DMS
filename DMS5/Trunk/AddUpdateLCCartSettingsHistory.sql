@@ -12,12 +12,14 @@ CREATE PROCEDURE AddUpdateLCCartSettingsHistory
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 09/29/2008
+**  Auth: 	grk
+**  Date: 	09/29/2008
+**			10/21/2008 grk - Added parameters @SolventA and @SolventB
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
+(
   @ID int,
   @CartName varchar(128),
   @ValveToColumnExtension varchar(128),
@@ -33,11 +35,14 @@ CREATE PROCEDURE AddUpdateLCCartSettingsHistory
   @PurgeColumnDimensions varchar(128),
   @PurgeVolume varchar(128),
   @AcquisitionTime varchar(128),
+  @SolventA varchar(128),
+  @SolventB varchar(128),
   @Comment varchar(512),
   @DateOfChange varchar(24),
   @mode varchar(12) = 'add', -- or 'update'
   @message varchar(512) output,
   @callingUser varchar(128) = ''
+)
 As
   set nocount on
 
@@ -130,6 +135,8 @@ As
     Purge_Column_Dimensions, 
     Purge_Volume, 
     Acquisition_Time, 
+    Solvent_A,
+    Solvent_B,
     Cart_ID,
     Comment, 
     Date_Of_Change, 
@@ -148,6 +155,8 @@ As
     @PurgeColumnDimensions, 
     @PurgeVolume, 
     @AcquisitionTime, 
+    @SolventA,
+    @SolventB,
     @cartID,
     @Comment, 
     @DateOfChange,
@@ -194,6 +203,8 @@ As
       Purge_Column_Dimensions = @PurgeColumnDimensions, 
       Purge_Volume = @PurgeVolume, 
       Acquisition_Time = @AcquisitionTime, 
+      Solvent_A = @SolventA,
+      Solvent_B = @SolventB,
       Comment = @Comment, 
       Date_Of_Change = @DateOfChange, 
       EnteredBy = @callingUser

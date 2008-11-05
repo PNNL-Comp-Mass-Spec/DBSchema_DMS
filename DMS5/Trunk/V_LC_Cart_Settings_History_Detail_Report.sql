@@ -17,7 +17,8 @@ SELECT     dbo.T_LC_Cart_Settings_History.ID, dbo.T_LC_Cart.Cart_Name AS Cart, d
                       dbo.T_LC_Cart_Settings_History.Split_Column_Dimensions AS [Split Column Dimensions], 
                       dbo.T_LC_Cart_Settings_History.Purge_Flow_Rate AS [Purge Flow Rate], dbo.T_LC_Cart_Settings_History.Purge_Volume AS [Purge Volume], 
                       dbo.T_LC_Cart_Settings_History.Purge_Column_Dimensions AS [Purge Column Dimensions], 
-                      dbo.T_LC_Cart_Settings_History.Acquisition_Time AS [Acquisition Time], dbo.T_LC_Cart_Settings_History.Comment
+                      dbo.T_LC_Cart_Settings_History.Acquisition_Time AS [Acquisition Time], dbo.T_LC_Cart_Settings_History.Solvent_A AS [Solvent A], 
+                      dbo.T_LC_Cart_Settings_History.Solvent_B AS [Solvent B], dbo.T_LC_Cart_Settings_History.Comment
 FROM         dbo.T_LC_Cart_Settings_History INNER JOIN
                       dbo.T_LC_Cart ON dbo.T_LC_Cart_Settings_History.Cart_ID = dbo.T_LC_Cart.ID
 
