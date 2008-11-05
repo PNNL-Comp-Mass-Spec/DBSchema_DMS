@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure AddMissingFilterCriteria
+CREATE Procedure dbo.AddMissingFilterCriteria
 /****************************************************
 **
 **	Desc: 
@@ -12,6 +12,7 @@ create Procedure AddMissingFilterCriteria
 **
 **	Auth:	mem
 **	Date:	02/01/2006
+**			10/30/2008 mem - Added MQScore, TotalPRMScore, and FScore
 **    
 *****************************************************/
 (
@@ -105,7 +106,7 @@ AS
 						Set @CriterionComparison = '>='
 						Set @CriterionValue = 0
 						
-						-- Examine @CriterionID to see if we need to update the defaults
+						-- Update the values for some of the criteria						
 						If @CriterionID = 1
 						Begin
 							-- Spectrum Count
@@ -133,7 +134,29 @@ AS
 							Set @CriterionComparison = '<='	
 							Set @CriterionValue = 0
 						End
-						
+
+						If @CriterionID = 18
+						Begin
+							-- Inspect MQScore
+							Set @CriterionComparison = '>='	
+							Set @CriterionValue = -10000
+						End
+
+						If @CriterionID = 19
+						Begin
+							-- Inspect TotalPRMScore
+							Set @CriterionComparison = '>='	
+							Set @CriterionValue = -10000
+						End
+
+						If @CriterionID = 20
+						Begin
+							-- Inspect FScore
+							Set @CriterionComparison = '>='	
+							Set @CriterionValue = -10000
+						End
+
+												
 						INSERT INTO T_Filter_Set_Criteria
 							(Filter_Criteria_Group_ID, Criterion_ID, Criterion_Comparison, Criterion_Value)
 						VALUES (@GroupID, @CriterionID, @CriterionComparison, @CriterionValue)

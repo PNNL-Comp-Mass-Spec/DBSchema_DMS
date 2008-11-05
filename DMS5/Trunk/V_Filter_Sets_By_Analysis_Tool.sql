@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Filter_Sets_By_Analysis_Tool
+CREATE VIEW [dbo].[V_Filter_Sets_By_Analysis_Tool]
 AS
 SELECT     TOP 100 PERCENT dbo.T_Filter_Sets.Filter_Set_ID, MIN(dbo.T_Filter_Sets.Filter_Set_Name) AS Filter_Set_Name, 
                       MIN(dbo.T_Filter_Sets.Filter_Set_Description) AS Filter_Set_Description, dbo.T_Filter_Set_Criteria_Name_Tool_Map.Analysis_Tool_ID, 
