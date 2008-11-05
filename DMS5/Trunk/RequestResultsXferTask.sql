@@ -47,7 +47,6 @@ As
 	declare @taskNotAvailableErrorCode int
 	set @taskNotAvailableErrorCode = 53000
 	
-
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------

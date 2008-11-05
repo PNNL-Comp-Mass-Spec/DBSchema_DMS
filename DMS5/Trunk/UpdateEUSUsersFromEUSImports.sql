@@ -144,5 +144,13 @@ As
 	return @myError
 
 GO
+GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GO
 GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GO
+GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578]
 GO

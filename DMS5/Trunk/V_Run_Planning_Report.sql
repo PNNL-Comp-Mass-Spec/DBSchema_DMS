@@ -53,4 +53,5 @@ FROM ( SELECT RA.Instrument,
      ) AS SrcDataQ
 GROUP BY Instrument, [Batch/Experiment], Requester, [Separation Type], [Work Package], Proposal, Locked, [Last Ordered]
 
+
 GO

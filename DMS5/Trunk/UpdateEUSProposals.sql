@@ -145,3 +145,11 @@ GRANT EXECUTE ON [dbo].[UpdateEUSProposals] TO [DMS_EUS_Admin]
 GO
 GRANT EXECUTE ON [dbo].[UpdateEUSProposals] TO [DMS2_SP_User]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSProposals] TO [DMS2_SP_User]
+GO
+GRANT ALTER ON [dbo].[UpdateEUSProposals] TO [PNL\D3M578]
+GO
+GRANT EXECUTE ON [dbo].[UpdateEUSProposals] TO [PNL\D3M578]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSProposals] TO [PNL\D3M578]
+GO

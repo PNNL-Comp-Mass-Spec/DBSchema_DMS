@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW dbo.V_Predefined_Analysis_Entry
 AS
 SELECT PA.AD_level AS [level],
@@ -38,6 +37,5 @@ SELECT PA.AD_level AS [level],
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
-
 
 GO

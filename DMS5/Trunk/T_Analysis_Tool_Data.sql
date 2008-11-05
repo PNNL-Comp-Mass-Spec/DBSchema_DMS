@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 20 ******/
+/****** RowCount: 21 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_allowedInstClass, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, AJT_allowedDatasetTypes ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)',1,'(na)','(na)','(na)','(na)','','no ',0,'(na)',0,'N','')
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','Finnigan_Ion_Trap, LTQ_FT','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','MS-MSn, MS-ETD-MSn, HMS-MSn, HMS-HMSn')
@@ -21,3 +21,4 @@ INSERT INTO [T_Analysis_Tool] VALUES (16,'Decon2LS',1010,'\\gigasax\DMS_Paramete
 INSERT INTO [T_Analysis_Tool] VALUES (17,'TIC_D2L',1011,'\\gigasax\DMS_Parameter_Files\TIC_D2L\','C:\DMS_Parameter_Files\TIC_D2L','Finnigan_Ion_Trap, Finnigan_FTICR, BRUKERFTMS, LTQ_FT, Micromass_QTOF','??','TIC','yes',1,'(na)',0,'N','MS, HMS, MS-MSn, MS-ETD-MSn, HMS-MSn, HMS-HMSn')
 INSERT INTO [T_Analysis_Tool] VALUES (18,'Decon2LS_Agilent',1010,'\\gigasax\DMS_Parameter_Files\Decon2LS\','C:\DMS_Parameter_Files\Decon2LS\','Agilent_TOF','??','HMMA_Peak','yes',1,'(na)',0,'N','MS, HMS, MS-MSn, MS-ETD-MSn, HMS-MSn, HMS-HMSn')
 INSERT INTO [T_Analysis_Tool] VALUES (19,'TIC_D2L_Agilent',1011,'\\gigasax\DMS_Parameter_Files\TIC_D2L\','C:\DMS_Parameter_Files\TIC_D2L','Agilent_TOF','??','TIC','yes',1,'(na)',0,'N','MS, HMS, MS-MSn, MS-ETD-MSn, HMS-MSn, HMS-HMSn')
+INSERT INTO [T_Analysis_Tool] VALUES (20,'Inspect',1012,'\\gigasax\dms_parameter_Files\Inspect\','C:\DMS_Parameter_Files\Inspect\','Finnigan_Ion_Trap, LTQ_FT','IonTrapDefSettings.xml','IN_Peptide_Hit','no ',1,'MzXML',1,'Y','MS-MSn, MS-ETD-MSn, HMS-MSn, HMS-HMSn')
