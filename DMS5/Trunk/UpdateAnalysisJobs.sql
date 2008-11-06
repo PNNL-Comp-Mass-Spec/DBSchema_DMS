@@ -30,15 +30,16 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
 **			07/11/2008 jds - Added 5 new fields (@parmFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
 **							 and code to validate param file settings file against tool type
 **			10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
+**			11/05/2008 mem - Now allowing for find/replace in comments when @mode = 'reset'
 **
 *****************************************************/
 (
     @JobList varchar(6000),
     @state varchar(32) = '',
     @priority varchar(12) = '',
-    @comment varchar(255) = '',
-    @findText varchar(255) = '',
-    @replaceText varchar(255) = '',
+    @comment varchar(255) = '',			-- Text to append to the comment
+    @findText varchar(255) = '',		-- Text to find in the comment; ignored if '[no change]'
+    @replaceText varchar(255) = '',		-- The replacement text when @findText is not '[no change]'
     @assignedProcessor varchar(64),
     @associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
@@ -49,7 +50,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
     @protCollNameList varchar(4000) = '',
     @protCollOptionsList varchar(256) = '',
 --
-    @mode varchar(12) = 'update',			-- update or reset to change data; otherwise, will simply validate parameters
+    @mode varchar(12) = 'update',			-- 'update' or 'reset' to change data; otherwise, will simply validate parameters
     @message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -405,7 +406,7 @@ As
 	---------------------------------------------------
 	--
 	if @Mode = 'update' 
-	begin
+	begin -- <update mode>
 		set @myError = 0
 
 		---------------------------------------------------
@@ -630,18 +631,14 @@ As
 			end
 		end
 
--- future: append/replace comments
-
--- future: clear run times
-
-	end -- update mode
+	end -- </update mode>
 
  	---------------------------------------------------
 	-- Reset job to New state
 	---------------------------------------------------
 	--
 	if @Mode = 'reset' 
-	begin
+	begin -- <reset mode>
 
 		---------------------------------------------------
 		set @transName = 'UpadateAnalysisJobs'
@@ -679,15 +676,36 @@ As
 			return 51004
 		end
 		
+		
+		-----------------------------------------------
+		if @findText <> '[no change]' and @replaceText <> '[no change]'
+		begin
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_comment = replace(AJ_comment, @findText, @replaceText)
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51004
+			end
+		end
+		
 		Set @AlterEventLogRequired = 1
-	end -- reset mode
+	end -- </reset mode>
 	
  	---------------------------------------------------
 	-- Handle associated processor Group
 	---------------------------------------------------
  	-----------------------------------------------
 	if @associatedProcessorGroup <> '[no change]' and @transName <> ''
-	begin 
+	begin -- <associated processor group>
+	
 		---------------------------------------------------
 		-- resolve processor group ID
 		--
@@ -718,62 +736,62 @@ As
 		end
 
 		if @gid = 0
+		begin
+			-- dissassociate given jobs from group
+			--
+			DELETE FROM T_Analysis_Job_Processor_Group_Associations
+			WHERE (Job_ID in (SELECT Job FROM #TAJ))					
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
 			begin
-				-- dissassociate given jobs from group
-				--
-				DELETE FROM T_Analysis_Job_Processor_Group_Associations
-				WHERE (Job_ID in (SELECT Job FROM #TAJ))					
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @msg = 'Update operation failed'
-					rollback transaction @transName
-					RAISERROR (@msg, 10, 1)
-					return 51014
-				end
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51014
 			end
+		end
 		else
+		begin
+			-- for jobs with existing association, change it
+			--
+			UPDATE T_Analysis_Job_Processor_Group_Associations
+			SET	Group_ID = @gid,
+				Entered = GetDate(),
+				Entered_By = suser_sname()
+			WHERE (Job_ID in (SELECT Job FROM #TAJ))					
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
 			begin
-				-- for jobs with existing association, change it
-				--
-				UPDATE T_Analysis_Job_Processor_Group_Associations
-				SET	Group_ID = @gid,
-					Entered = GetDate(),
-					Entered_By = suser_sname()
-				WHERE (Job_ID in (SELECT Job FROM #TAJ))					
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @msg = 'Update operation failed'
-					rollback transaction @transName
-					RAISERROR (@msg, 10, 1)
-					return 51015
-				end
-
-				-- for jobs without existing association, create it
-				--
-				INSERT INTO T_Analysis_Job_Processor_Group_Associations
-									(Job_ID, Group_ID)
-				SELECT Job, @gid FROM #TAJ
-				WHERE NOT (Job IN (SELECT Job_ID FROM T_Analysis_Job_Processor_Group_Associations))
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @msg = 'Update operation failed'
-					rollback transaction @transName
-					RAISERROR (@msg, 10, 1)
-					return 51016
-				end
-				
-				Set @AlterEnteredByRequired = 1
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51015
 			end
-	end  -- associated processor Group
+
+			-- for jobs without existing association, create it
+			--
+			INSERT INTO T_Analysis_Job_Processor_Group_Associations
+								(Job_ID, Group_ID)
+			SELECT Job, @gid FROM #TAJ
+			WHERE NOT (Job IN (SELECT Job_ID FROM T_Analysis_Job_Processor_Group_Associations))
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed'
+				rollback transaction @transName
+				RAISERROR (@msg, 10, 1)
+				return 51016
+			end
+			
+			Set @AlterEnteredByRequired = 1
+		end
+	end  -- </associated processor Group>
 
 
  	If Len(@callingUser) > 0 AND (@AlterEventLogRequired <> 0 OR @AlterEnteredByRequired <> 0)
@@ -810,7 +828,7 @@ As
 
 
  	---------------------------------------------------
-	-- 
+	-- Finalize the changes
 	---------------------------------------------------
 	if @transName <> ''
 	begin
