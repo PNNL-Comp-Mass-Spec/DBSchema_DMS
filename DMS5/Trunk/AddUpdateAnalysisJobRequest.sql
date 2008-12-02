@@ -33,6 +33,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648, http://prismtrac.pnl.gov/trac/ticket/648)
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			09/24/2008 grk - Increased size of comment argument (and column in database)(Ticket:692, http://prismtrac.pnl.gov/trac/ticket/692)
+**			12/02/2008 grk - Disallow editing unless in "New" state
 **    
 *****************************************************/
 (
@@ -76,10 +77,11 @@ As
 
 	---------------------------------------------------
 	-- Resolve mode against presence or absence 
-	-- of request in database
+	-- of request in database, and its current state
 	---------------------------------------------------
 
 	declare @hit int
+	declare @curState int
 
 	-- cannot create an entry with a duplicate name
 	--
@@ -105,7 +107,8 @@ As
 	begin
 		set @hit = 0
 		SELECT 
-			@hit = AJR_requestID
+			@hit = AJR_requestID,
+			@curState =  AJR_state
 		FROM         T_Analysis_Job_Request
 		WHERE (AJR_requestID = @requestID)
 		--
@@ -114,6 +117,13 @@ As
 			set @msg = 'Cannot update: entry is not in database '
 			RAISERROR (@msg, 10, 1)
 			return 51004
+		end
+		--
+		if @curState <> 1
+		begin
+			set @msg = 'Cannot update: entry is not in "New" state'
+			RAISERROR (@msg, 10, 1)
+			return 51024
 		end
 	end
 
