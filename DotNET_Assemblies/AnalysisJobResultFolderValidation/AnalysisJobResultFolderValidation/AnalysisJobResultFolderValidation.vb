@@ -2,7 +2,7 @@
 
 ' Written by Matthew Monroe for PNNL
 '
-' Last modified April 28, 2008
+' Last modified December 13, 2008
 
 Imports System
 Imports System.Data
@@ -30,7 +30,7 @@ Partial Public Class StoredProcedures
                                                       <Runtime.InteropServices.Out()> ByRef InfoOnly As SqlByte)
 
         ' This procedure looks for the given job in T_Analysis_Job
-        ' If found, it uses the dataset for the job to construct the path to the transfer folder (based on the processor for the job)
+        ' If found, it uses the dataset for the job to construct the path to the transfer folder (based on the processor for the job, or the dataset if a Job_Broker job)
         ' Next, the a matching result folder is looked for.  If found, the newest folder is chosen and then it is examined
         '  to look for file AnalysisSummary.txt
         ' If this file exists, then it's modification time is examined.  If modified more than JobCompleteHoldoffMinutes minutes ago, 
@@ -56,12 +56,16 @@ Partial Public Class StoredProcedures
         Dim strVolNameClient As String
         Dim strAssignedProcessor As String
         Dim strResultsFolderNameFromDB As String
+        Dim strDataset As String
 
         Dim strSql As String
 
         Dim objTransferFolderInfo As System.IO.DirectoryInfo
         Dim objResultsFolders() As System.IO.DirectoryInfo
         Dim objSubFolder As System.IO.DirectoryInfo
+
+        Dim objResultsFolderInfo As System.IO.DirectoryInfo
+        Dim objAnalysisSummaryFiles() As System.IO.FileInfo
 
         Dim objFileInfo As System.IO.FileInfo
 
@@ -77,6 +81,7 @@ Partial Public Class StoredProcedures
         Dim strAnalysisSummaryPath As String = String.Empty
         Dim strDEXSummaryPath As String = String.Empty
 
+        Dim blnJobBrokerInUse As Boolean = False
         Dim blnTransferFolderExists As Boolean = False
         Dim blnResultsFolderExists As Boolean = False
 
@@ -115,7 +120,8 @@ Partial Public Class StoredProcedures
 
             strSql = " SELECT IsNull(SPath.SP_vol_name_client, ''), " & _
                             " IsNull(AJ.AJ_assignedProcessorName, ''), " & _
-                            " IsNull(AJ.AJ_resultsFolderName, '')" & _
+                            " IsNull(AJ.AJ_resultsFolderName, ''), " & _
+                            " DS.Dataset_Num" & _
                      " FROM dbo.T_Analysis_Job AJ INNER JOIN " & _
                      " dbo.T_Dataset DS ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN " & _
                      " dbo.t_storage_path SPath ON DS.DS_storage_path_ID = SPath.SP_path_ID " & _
@@ -132,10 +138,12 @@ Partial Public Class StoredProcedures
                 strVolNameClient = objReader.GetString(0)
                 strAssignedProcessor = objReader.GetString(1)
                 strResultsFolderNameFromDB = objReader.GetString(2)
+                strDataset = objReader.GetString(3)
 
                 If strVolNameClient Is Nothing Then strVolNameClient = "?"
                 If strAssignedProcessor Is Nothing Then strAssignedProcessor = "?"
                 If strResultsFolderNameFromDB Is Nothing Then strResultsFolderNameFromDB = "?"
+                If strDataset Is Nothing Then strDataset = "?"
 
             Else
                 Message = "Error: Could not find job " & Job.ToString & " in T_Analysis_Job"
@@ -150,8 +158,17 @@ Partial Public Class StoredProcedures
                     Message = "Error: Job " & Job.ToString & " does not have a defined processor in T_Analysis_Job"
                     Exit Sub
                 Else
-                    strTransferFolderPath = System.IO.Path.Combine(strVolNameClient, "DMS3_Xfer")
-                    strTransferFolderPath = System.IO.Path.Combine(strTransferFolderPath, strAssignedProcessor)
+                    If strAssignedProcessor.ToLower = "job_broker" Then
+                        ' Job Broker job
+                        ' Transfer folder is of the form \\proto-3\DMS3_XFER\DatasetName\
+                        strTransferFolderPath = System.IO.Path.Combine(strVolNameClient, "DMS3_Xfer")
+                        strTransferFolderPath = System.IO.Path.Combine(strTransferFolderPath, strDataset)
+                        blnJobBrokerInUse = True
+                    Else
+                        strTransferFolderPath = System.IO.Path.Combine(strVolNameClient, "DMS3_Xfer")
+                        strTransferFolderPath = System.IO.Path.Combine(strTransferFolderPath, strAssignedProcessor)
+                        blnJobBrokerInUse = False
+                    End If
                     Message = "Transfer folder: " & strTransferFolderPath
                 End If
 
@@ -168,8 +185,9 @@ Partial Public Class StoredProcedures
             Exit Sub
         End Try
 
-        ' Check for the existence of the result folder on the storage server
+        ' Check for the existence of the results folder on the storage server
         Try
+            ' First look for the transfer folder
             blnTransferFolderExists = System.IO.Directory.Exists(strTransferFolderPath)
         Catch ex As Exception
             Message = "Error: Exception looking for transfer folder: " & ex.Message
@@ -177,7 +195,11 @@ Partial Public Class StoredProcedures
         End Try
 
         If Not blnTransferFolderExists Then
-            Message = "Error: Transfer folder not found: " & strTransferFolderPath
+            If blnJobBrokerInUse Then
+                Message = "Warning: Dataset transfer folder does not yet exist: " & strTransferFolderPath
+            Else
+                Message = "Error: Transfer folder not found: " & strTransferFolderPath
+            End If
 
             If InfoOnly <> 0 Then
                 SqlContext.Pipe.Send(CStr(Message))
@@ -226,7 +248,17 @@ Partial Public Class StoredProcedures
             If blnResultsFolderExists Then
                 Try
                     ' Look for file AnalysisSummary.txt in folder ResultsFolderName
-                    strAnalysisSummaryPath = System.IO.Path.Combine(strResultsFolderPath, ANALYSIS_SUMMARY_FILE)
+                    If blnJobBrokerInUse Then
+                        ' Obtain a list of all files ending in ANALYSIS_SUMMARY_FILE at strResultsFolderPath
+                        objResultsFolderInfo = New System.IO.DirectoryInfo(strResultsFolderPath)
+                        objAnalysisSummaryFiles = objTransferFolderInfo.GetFiles("*" & ANALYSIS_SUMMARY_FILE)
+
+                        If objAnalysisSummaryFiles.Length > 0 Then
+                            strAnalysisSummaryPath = objAnalysisSummaryFiles(0).FullName
+                        End If
+                    Else
+                        strAnalysisSummaryPath = System.IO.Path.Combine(strResultsFolderPath, ANALYSIS_SUMMARY_FILE)
+                    End If
 
                     If Not System.IO.File.Exists(strAnalysisSummaryPath) Then
                         Message = "Results folder path: " & strResultsFolderPath & "; " & ANALYSIS_SUMMARY_FILE & " not found"
@@ -280,7 +312,7 @@ Partial Public Class StoredProcedures
                     Message = "Error: Exception examining the " & ANALYSIS_SUMMARY_FILE & " file for Job " & Job.ToString & " in " & CStr(strResultsFolderPath)
                 End Try
 
-                If AnalysisManagerIsDone <> 0 Then
+                If AnalysisManagerIsDone <> 0 And Not blnJobBrokerInUse Then
                     Try
                         ' Look for file DataExtractionSummary.txt in folder ResultsFolderName
 
