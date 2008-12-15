@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddNewInstrument
 /****************************************************
 **
@@ -27,6 +26,8 @@ CREATE Procedure AddNewInstrument
 **		12/14/2005 -- Added check for existing instrument
 **		04/07/2006 -- Got ride of CDBurn stuff
 **		06/28/2006 -- Added support for Usage and Operations Role fields
+**		12/11/2008 grk -- Fixed problem with NULL @Usage
+**		12/14/2008 grk -- Fixed problem with select result being inadvertently returned
 **    
 *****************************************************/
 	@iName varchar(24),				-- name of new instrument
@@ -63,11 +64,15 @@ As
 	set @spSourcePathID = 2 -- valid reference to 'na' storage path for initial entry
 	set @spStoragePathID = 2 -- valid reference to 'na' storage path for initial entry
 
+
 	---------------------------------------------------
 	-- Make sure instrument is not already in instrument table
 	---------------------------------------------------
-
-	SELECT Instrument_ID 
+	--
+	declare @hit int
+	set @hit = -1
+	--
+	SELECT @hit = Instrument_ID 
 	FROM T_Instrument_Name 
 	WHERE IN_name = @iName
 	--
@@ -126,7 +131,7 @@ As
 		@iMethod, 
 		@iRoomNum, 
 		@iDescription,
-		@Usage, 
+		isnull(@Usage, ''),
 		@OperationsRole
 	)
 	--
@@ -144,7 +149,8 @@ As
 	--
 	exec @result = AddUpdateStorage
 			@spPath, 
-			@spVolClient,
+			@spVolClient,
+
 			@spVolServer,
 			'raw-storage',
 			@iName,
@@ -223,9 +229,6 @@ As
 
 
 	return 0
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddNewInstrument] TO [DMS2_SP_User]
