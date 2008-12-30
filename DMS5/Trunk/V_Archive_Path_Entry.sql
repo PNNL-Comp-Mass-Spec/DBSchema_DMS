@@ -3,10 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Archive_Path_Entry
+CREATE VIEW dbo.V_Archive_Path_Entry
 AS
-SELECT TAP.AP_Path_ID, TAP.AP_archive_path, 
-       TAP.AP_Server_Name, TIN.IN_Name AS AP_Instrument_Name, TAP.Note, TAP.AP_Function 
-FROM   T_Archive_Path TAP INNER JOIN T_Instrument_Name TIN ON TAP.AP_Instrument_Name_ID = TIN.Instrument_ID
+SELECT     TAP.AP_path_ID, TAP.AP_archive_path, TAP.AP_Server_Name, TIN.IN_name AS AP_instrument_name, TAP.Note, TAP.AP_Function, 
+                      TAP.AP_network_share_path
+FROM         dbo.T_Archive_Path AS TAP INNER JOIN
+                      dbo.T_Instrument_Name AS TIN ON TAP.AP_instrument_name_ID = TIN.Instrument_ID
 
 GO

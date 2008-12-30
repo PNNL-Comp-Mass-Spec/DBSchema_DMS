@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure AddUpdateArchivePath
+CREATE Procedure AddUpdateArchivePath
 /****************************************************
 **
 **	Desc: Adds new or updates existing archive paths in database
@@ -16,7 +16,9 @@ create Procedure AddUpdateArchivePath
 **	
 **
 **		Auth: jds
-**		Date: 6/24/2004
+**		Date:
+**		06/24/2004 jds - initial release
+**		12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
 **    
 *****************************************************/
 (
@@ -24,6 +26,7 @@ create Procedure AddUpdateArchivePath
 	@ArchivePath varchar(50),
 	@ArchiveServer varchar(32),
 	@instrumentName varchar(24),
+	@NetworkSharePath varchar(64),
 	@ArchiveNote varchar(50),
 	@ArchiveFunction varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
@@ -161,13 +164,15 @@ As
 		INSERT INTO T_Archive_Path (
 			AP_Archive_Path, 
 			AP_Server_Name, 
-			AP_Instrument_Name_ID, 
+			AP_Instrument_Name_ID,
+			AP_network_share_path,
 			Note, 
 			AP_Function 
 		) VALUES (
 			@ArchivePath,
 			@ArchiveServer,
 			@instrumentID,
+			@NetworkSharePath,
 			@ArchiveNote,
 			@ArchiveFunction
 		)
@@ -203,6 +208,7 @@ As
 			AP_Archive_Path = @ArchivePath,
 			AP_Server_Name = @ArchiveServer,
 			AP_Instrument_Name_ID = @instrumentID,
+			AP_network_share_path = @NetworkSharePath,
 			Note = @ArchiveNote,
 			AP_Function = @ArchiveFunction
 		WHERE (AP_Path_ID = @ArchiveID)
