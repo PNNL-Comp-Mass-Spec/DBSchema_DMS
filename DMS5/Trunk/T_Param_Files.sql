@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[T_Param_Files](
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -25,7 +25,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Param_Files_Name_and_TypeID] ON [dbo].[T_Param_F
 (
 	[Param_File_Name] ASC,
 	[Param_File_Type_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
@@ -37,8 +37,6 @@ GRANT UPDATE ON [dbo].[T_Param_Files] TO [DMS_ParamFile_Admin]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Files_T_Param_File_Types] FOREIGN KEY([Param_File_Type_ID])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
-GO
-ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [FK_T_Param_Files_T_Param_File_Types]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Param_Files] CHECK  ((charindex(' ',[Param_File_Name])=(0)))
 GO

@@ -19,6 +19,7 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 **			  04/04/2006 grk - increased sized of param file name
 **			  03/28/2006 grk - added protein collection fields
 **			  04/07/2006 grk - eliminated job to request map table
+**			  01/02/2009 grk - added dataset to output rowset
 **    
 *****************************************************/
     @datasetList varchar(3500),
@@ -157,7 +158,8 @@ AS
 	End
 
 	SELECT  AJ.AJ_jobID as Job, 
-	ASN.AJS_name as State, 
+	ASN.AJS_name as State,
+	DS.Dataset_Num AS Dataset,
 	AJ.AJ_created as Created, 
 	AJ.AJ_start as Start, 
 	AJ.AJ_finish as Finish

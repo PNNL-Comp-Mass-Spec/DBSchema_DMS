@@ -14,5 +14,3 @@ WITH EXECUTE AS CALLER
 AS
 EXTERNAL NAME [AnalysisJobResultFolderValidation].[AnalysisJobResultFolderValidation.StoredProcedures].[ValidateAnalysisJobResultsFolder]
 GO
-GRANT EXECUTE ON [D3L243].[ValidateAnalysisJobResultsFolder] TO [PNL\D3M578]
-GO

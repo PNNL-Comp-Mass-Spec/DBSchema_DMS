@@ -22,6 +22,7 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			02/20/2007 grk - added code to remove any job-to-group associations
 **			03/16/2007 mem - Fixed bug that required 1 or more rows be deleted from T_Analysis_Job_Processor_Group_Associations (Ticket #393)
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			12/31/2008 mem - Now calling DMS_Pipeline.dbo.DeleteJob
 **
 *****************************************************/
 (
@@ -85,6 +86,9 @@ As
 	
 	commit transaction @transName
 
+	-- Delete the job from the Broker DB
+	exec DMS_Pipeline.dbo.DeleteJob @jobNum, @callingUser
+	
 	return 0
 
 GO

@@ -18,7 +18,8 @@ WHERE (EL.Target_Type = 6) AND
       (EL.Target_State = 3) AND
       (EL.Prev_Target_State IN (2, 12)) AND
       (DA.AS_state_ID IN (3, 4, 10)) AND
-      (DATEDIFF(MONTH, EL.Entered, GETDATE()) < 4)
+      (DATEDIFF(day, EL.Entered, GETDATE()) < 30)
 GROUP BY DS.Dataset_ID, DS.Dataset_Num, DS.DS_instrument_name_ID
+
 
 GO

@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 **    Auth: grk
 **    03/20/2008 grk -- initial release
 **    07/18/2008 grk -- added checking for location's container limit
+**    11/25/2008 grk -- corrected udpdate not to check for room if location doesn't change
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -142,29 +143,36 @@ As
 	end
 
 	---------------------------------------------------
-	-- verify that there is room in destination location
+	--  
 	---------------------------------------------------
-	declare @cnt int
-	set @cnt = 0
-	--
-	SELECT @cnt = COUNT(*)
-	FROM T_Material_Containers
-	WHERE Location_ID = @LocationID
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error getting container count'
-		RAISERROR (@message, 10, 1)
-		return 51017
-	end
-	if @limit <= @cnt
-	begin
-		set @message = 'Destination location does not have room for another container'
-		RAISERROR (@message, 10, 1)
-		return 51018
-	end
+
+	if @curLocationID <> @LocationID
+	begin --<n>
+		---------------------------------------------------
+		-- verify that there is room in destination location
+		---------------------------------------------------
+		declare @cnt int
+		set @cnt = 0
+		--
+		SELECT @cnt = COUNT(*)
+		FROM T_Material_Containers
+		WHERE Location_ID = @LocationID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error getting container count'
+			RAISERROR (@message, 10, 1)
+			return 51017
+		end
+		if @limit <= @cnt
+		begin
+			set @message = 'Destination location does not have room for another container'
+			RAISERROR (@message, 10, 1)
+			return 51018
+		end
+	end --<n>
 	
 	---------------------------------------------------
 	-- Resolve current Location id to name

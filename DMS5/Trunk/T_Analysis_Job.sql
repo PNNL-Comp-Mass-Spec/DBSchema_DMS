@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJ_organismID] [int] NOT NULL,
 	[AJ_datasetID] [int] NOT NULL,
-	[AJ_comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AJ_comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_AJ_comment]  DEFAULT (''),
 	[AJ_owner] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_StateID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateID]  DEFAULT (1),
 	[AJ_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Last_Affected]  DEFAULT (getdate()),

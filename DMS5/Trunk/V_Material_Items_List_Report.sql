@@ -3,12 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Material_Items_List_Report
+CREATE VIEW [dbo].[V_Material_Items_List_Report]
 AS
 SELECT T.Item,
        T.Item_Type,
        MC.Tag AS Container,
-       MC.TYPE,
+       MC.Type,
        SUBSTRING(T.Item_Type, 1, 1) + ':' + CONVERT(varchar, T.Item_ID) AS [#I_ID],
        ML.Tag AS Location
 FROM dbo.T_Material_Containers MC

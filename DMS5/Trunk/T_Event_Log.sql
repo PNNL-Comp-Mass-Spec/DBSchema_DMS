@@ -26,10 +26,28 @@ CREATE NONCLUSTERED INDEX [IX_T_Event_Log_Entered] ON [dbo].[T_Event_Log]
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Event_Log_PrevTargetState_TargetState_TargetType] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Event_Log_PrevTargetState_TargetState_TargetType] ON [dbo].[T_Event_Log] 
+(
+	[Prev_Target_State] ASC,
+	[Target_State] ASC,
+	[Target_Type] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Event_Log_Target_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Event_Log_Target_ID] ON [dbo].[T_Event_Log] 
 (
 	[Target_ID] ASC
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Event_Log_TargetID_PrevTargetState_TargetState] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Event_Log_TargetID_PrevTargetState_TargetState] ON [dbo].[T_Event_Log] 
+(
+	[Target_ID] ASC,
+	[Prev_Target_State] ASC,
+	[Target_State] ASC
 )WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Event_Log]  WITH CHECK ADD  CONSTRAINT [FK_T_Event_Log_T_Event_Target1] FOREIGN KEY([Target_Type])

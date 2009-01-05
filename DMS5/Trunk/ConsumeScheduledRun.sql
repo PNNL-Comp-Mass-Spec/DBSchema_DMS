@@ -217,3 +217,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [DMS_SP_User]
 GO
+GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [Limited_Table_Write]
+GO

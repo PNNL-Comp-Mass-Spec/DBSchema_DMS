@@ -15,3 +15,6 @@ CREATE TABLE [dbo].[T_Analysis_Status_Monitor_Params](
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Status_Monitor_Params_T_Analysis_Job_Processors] FOREIGN KEY([ProcessorID])
+REFERENCES [T_Analysis_Job_Processors] ([ID])
+GO

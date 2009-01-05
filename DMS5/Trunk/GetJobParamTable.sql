@@ -70,7 +70,8 @@ AS
 		  CONVERT(VARCHAR(256),AJT_searchEngineInputFileFormats)   AS SearchEngineInputFileFormats,
 		  CONVERT(VARCHAR(256),OG_name)                            AS OrganismName,
 		  CONVERT(VARCHAR(256),AJT_orgDbReqd)                      AS OrgDbReqd,
-		  CONVERT(VARCHAR(256),AJT_toolName)                       AS ToolName
+		  CONVERT(VARCHAR(256),AJT_toolName)                       AS ToolName,
+		  CONVERT(VARCHAR(256),AJT_resultType)                     AS ResultType
 		FROM
 		(
 		SELECT 
@@ -89,6 +90,7 @@ AS
 		  Org.OG_name,
 		  Tool.AJT_orgDbReqd,
 		  Tool.AJT_toolName,
+		  Tool.AJT_resultType,
 		  DS.Dataset_ID,
 		  SP.SP_vol_name_client + SP.SP_path AS DatasetStoragePathLocal,
 		  SP.SP_vol_name_client + (SELECT 
@@ -135,7 +137,8 @@ AS
 		SearchEngineInputFileFormats,
 		OrganismName,
 		OrgDbReqd,
-		ToolName
+		ToolName,
+		ResultType
 	)) as TP
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
