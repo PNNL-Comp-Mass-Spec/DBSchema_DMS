@@ -28,6 +28,7 @@ CREATE Procedure AddNewInstrument
 **		06/28/2006 -- Added support for Usage and Operations Role fields
 **		12/11/2008 grk -- Fixed problem with NULL @Usage
 **		12/14/2008 grk -- Fixed problem with select result being inadvertently returned
+**		01/05/2009 grk -- added @archiveNetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/709)
 **    
 *****************************************************/
 	@iName varchar(24),				-- name of new instrument
@@ -198,6 +199,13 @@ As
 	--
 	--
 	---------------------------------------------------
+	-- Derive shared path name
+	---------------------------------------------------
+	--
+	declare @archiveNetworkSharePath varchar(64)
+	set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'nwfs', 'n2.emsl.pnl.gov'), '/', '\')
+	--
+	---------------------------------------------------
 	-- Resolve instrument ID
 	---------------------------------------------------
 	-- get new archive ID
@@ -208,11 +216,23 @@ As
 	--
 	-- insert new archive path
 	--
-	INSERT INTO T_Archive_Path
-		(AP_instrument_name_ID, AP_archive_path, Note, AP_Server_Name, AP_Function)
-	VALUES  (@iID, @archivePath, @archiveNote, @archiveServer, 'Active')
+	INSERT INTO T_Archive_Path (
+		AP_instrument_name_ID,
+		AP_archive_path,
+		AP_network_share_path,
+		Note,
+		AP_Server_Name,
+		AP_Function
+	) VALUES (
+		@iID,
+		@archivePath,
+		@archiveNetworkSharePath,
+		@archiveNote,
+		@archiveServer,
+		'Active'
+	)
 	--
-
+  
 	-- return Archive ID of newly created archive
 	--
 	set @aID = IDENT_CURRENT('T_Archive_Path')
