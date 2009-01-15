@@ -1,4 +1,4 @@
-/****** Object:  View [dbo].[V_TableStats_UnusedIndices] ******/
+/****** Object:  View [dbo].[V_Tuning_UnusedIndices] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

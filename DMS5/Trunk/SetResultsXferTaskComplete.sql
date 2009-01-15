@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SetResultsXferTaskComplete
+
+CREATE PROCEDURE dbo.SetResultsXferTaskComplete
 /****************************************************
 **
 **	Desc: 
@@ -19,18 +20,21 @@ CREATE PROCEDURE SetResultsXferTaskComplete
 **	@jobNum					unique identifier for analysis job
 **  @completionCode			0->success, 1->failure
 **
-**		Auth: grk
-**		Date: 11/20/2002
-**            08/03/2005 grk - made setting update archive depend on @completionCode
-**            07/28/2006 grk - save completion code to job table and set state according to AJ_Data_Extraction_Error
-**            11/15/2006 grk - add logic for propagation mode (ticket #328)
-**            03/06/2007 grk - add changes for deep purge (ticket #403)
-**				  05/14/2007 dac - renamed from SetAnalysisResultsTaskComplete for consistency with task broker
+**	Auth:	grk
+**	Date:	11/20/2002
+**			08/03/2005 grk - made setting update archive depend on @completionCode
+**			07/28/2006 grk - save completion code to job table and set state according to AJ_Data_Extraction_Error
+**			11/15/2006 grk - add logic for propagation mode (ticket #328)
+**			03/06/2007 grk - add changes for deep purge (ticket #403)
+**			05/14/2007 dac - renamed from SetAnalysisResultsTaskComplete for consistency with task broker
+**			01/07/2009 mem - Now using direct table access to determine the dataset name for a given job (was previously using V_Analysis_Job, which converts Job number to varchar(32))
 **    
 *****************************************************/
+(
 	@jobNum varchar(32),
 	@completionCode int = 0,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -133,9 +137,11 @@ As
 		set @datasetNum = ''
 		set @message = ''
 		--
-		SELECT    @datasetNum = DatasetNum
-		FROM         V_Analysis_Job
-		WHERE     (JobNum = @jobID)
+		SELECT @datasetNum = DS.Dataset_Num
+		FROM dbo.T_Analysis_Job AJ
+		     INNER JOIN dbo.T_Dataset DS
+		       ON AJ.AJ_datasetID = DS.Dataset_ID
+		WHERE (AJ.AJ_jobID = @jobID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -162,7 +168,5 @@ As
 	--
 Done:
 	return @myError
-
-
 
 GO

@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_RequestAnalysisJobEx5]
 AS
 SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum,
@@ -15,7 +16,7 @@ SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum,
        AJ.AJ_organismDBName AS legacyFastaFileName,
        AJ.AJ_proteinCollectionList AS ProteinCollectionList,
        AJ.AJ_proteinOptionsList AS ProteinOptions,
-       AJ.AJ_comment AS COMMENT,
+       AJ.AJ_comment AS Comment,
        Inst.IN_class AS InstClass,
        Tool.AJT_parmFileStoragePath + 'SettingsFiles\' AS SettingsFileStoragePath,
        InstClass.raw_data_type AS RawDataType,
@@ -27,7 +28,8 @@ SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum,
                                  WHERE ([Function] = 'AnalysisXfer') ) AS transferFolderPath,
        Tool.AJT_toolName AS ToolName,
        DS.Dataset_ID AS DatasetID,
-       SP.SP_vol_name_client + SP.SP_path AS DatasetStoragePathLocal
+       SP.SP_vol_name_client + SP.SP_path AS DatasetStoragePathLocal,
+       AJ.AJ_jobID AS JobID
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID

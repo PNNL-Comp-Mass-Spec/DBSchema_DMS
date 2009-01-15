@@ -30,6 +30,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **			10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **			09/12/2008 mem - Now calling ValidateNAParameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **						   - Changed @parmFileName and @settingsFileName to be input/output parameters instead of input only
+**			01/14/2009 mem - Now raising an error if @protCollNameList is over 2000 characters long (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **
 *****************************************************/
 (
@@ -38,7 +39,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
     @settingsFileName varchar(64) output,
     @organismDBName varchar(64) output,
     @organismName varchar(64),
-	@protCollNameList varchar(4000) output,
+	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
     @ownerPRN varchar(32),
 	@mode varchar(12), 
@@ -382,6 +383,12 @@ As
 	if @organismDBName = '' set @organismDBName = 'na'
 	if @protCollNameList = '' set @protCollNameList = 'na'
 	if @protCollOptionsList = '' set @protCollOptionsList = 'na'
+
+	if Len(@protCollNameList) > 2000
+	begin
+		set @message = 'Protein collection list is too long; maximum length is 2000 characters'
+		return 53110
+	end
 	--
 	if @orgDbReqd = 0
 		begin
@@ -407,6 +414,5 @@ As
 				return 53108
 			end
 		end
-
 
 GO

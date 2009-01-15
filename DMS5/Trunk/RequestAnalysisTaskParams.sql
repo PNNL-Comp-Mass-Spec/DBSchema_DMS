@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RequestAnalysisTaskParams 
+
+CREATE PROCEDURE [dbo].[RequestAnalysisTaskParams] 
 /****************************************************
 **
 **	Desc: 
@@ -15,14 +16,16 @@ CREATE PROCEDURE RequestAnalysisTaskParams
 **
 **	Return values: 0: success, anything else: error
 **
-**		Auth: grk
-**		Date: 12/17/2007  Initial release (http://prismtrac.pnl.gov/trac/ticket/588)
-**    
-**    Modifed:
+**	Auth:	grk
+**	Date:	12/17/2007 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/588)
+**			01/07/2009 mem - Updated to use JobID (an integer) instead of JobNum (a varchar) when querying V_RequestAnalysisJobEx5
+**		
 **    
 *****************************************************/
+(
 	@EntityId int,
 	@message varchar(512) output
+)
 AS
 	set nocount on
 
@@ -40,7 +43,7 @@ AS
 	--
 	SELECT * 
 	FROM V_RequestAnalysisJobEx5 
-	WHERE JobNum = @EntityId
+	WHERE JobID = @EntityId
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -62,5 +65,6 @@ AS
 	--
 Done:
 	return @myError
+
 
 GO

@@ -15,9 +15,9 @@ CREATE PROCEDURE GetJobParamTable
 **	Parameters:
 **	
 **
-**		Auth: grk
-**		Date: 8/21/2008
-**      
+**	Auth:	grk
+**	Date:	08/21/2008
+**			01/14/2009 mem - Increased maximum parameter length to 2000 characters (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **    
 *****************************************************/
 (
@@ -41,7 +41,7 @@ AS
 		[Step_Number] Varchar(24),
 		[Section] Varchar(128),
 		[Name] Varchar(128),
-		[Value] Varchar(256)
+		[Value] Varchar(2000)
 	)
 
 	---------------------------------------------------
@@ -53,25 +53,25 @@ AS
 	FROM
 	(
 		SELECT 
-		  CONVERT(VARCHAR(256),Dataset_Num)                        AS DatasetNum,
-		  CONVERT(VARCHAR(256),Dataset_ID )                        AS DatasetID,
-		  CONVERT(VARCHAR(256),DS_folder_name)                     AS DatasetFolderName,
-		  CONVERT(VARCHAR(256),AP_network_share_path)              AS DatasetArchivePath,
-		  CONVERT(VARCHAR(256),DatasetStoragePathLocal)            AS DatasetStoragePath,
-		  CONVERT(VARCHAR(256),transferFolderPath)                 AS transferFolderPath,
-		  CONVERT(VARCHAR(256),AJ_parmFileName)                    AS ParmFileName,
-		  CONVERT(VARCHAR(256),AJ_settingsFileName)                AS SettingsFileName,
-		  CONVERT(VARCHAR(256),AJT_parmFileStoragePath)            AS ParmFileStoragePath,
-		  CONVERT(VARCHAR(256),AJ_organismDBName)                  AS legacyFastaFileName,
-		  CONVERT(VARCHAR(256),AJ_proteinCollectionList)           AS ProteinCollectionList,
-		  CONVERT(VARCHAR(256),AJ_proteinOptionsList)              AS ProteinOptions,
-		  CONVERT(VARCHAR(256),IN_class)                           AS InstClass,
-		  CONVERT(VARCHAR(256),raw_data_type)                      AS RawDataType,
-		  CONVERT(VARCHAR(256),AJT_searchEngineInputFileFormats)   AS SearchEngineInputFileFormats,
-		  CONVERT(VARCHAR(256),OG_name)                            AS OrganismName,
-		  CONVERT(VARCHAR(256),AJT_orgDbReqd)                      AS OrgDbReqd,
-		  CONVERT(VARCHAR(256),AJT_toolName)                       AS ToolName,
-		  CONVERT(VARCHAR(256),AJT_resultType)                     AS ResultType
+		  CONVERT(VarChar(2000),Dataset_Num)                        AS DatasetNum,
+		  CONVERT(VarChar(2000),Dataset_ID )                        AS DatasetID,
+		  CONVERT(VarChar(2000),DS_folder_name)                     AS DatasetFolderName,
+		  CONVERT(VarChar(2000),AP_network_share_path)              AS DatasetArchivePath,
+		  CONVERT(VarChar(2000),DatasetStoragePathLocal)            AS DatasetStoragePath,
+		  CONVERT(VarChar(2000),transferFolderPath)                 AS transferFolderPath,
+		  CONVERT(VarChar(2000),AJ_parmFileName)                    AS ParmFileName,
+		  CONVERT(VarChar(2000),AJ_settingsFileName)                AS SettingsFileName,
+		  CONVERT(VarChar(2000),AJT_parmFileStoragePath)            AS ParmFileStoragePath,
+		  CONVERT(VarChar(2000),AJ_organismDBName)                  AS legacyFastaFileName,
+		  CONVERT(VarChar(2000),AJ_proteinCollectionList)           AS ProteinCollectionList,
+		  CONVERT(VarChar(2000),AJ_proteinOptionsList)              AS ProteinOptions,
+		  CONVERT(VarChar(2000),IN_class)                           AS InstClass,
+		  CONVERT(VarChar(2000),raw_data_type)                      AS RawDataType,
+		  CONVERT(VarChar(2000),AJT_searchEngineInputFileFormats)   AS SearchEngineInputFileFormats,
+		  CONVERT(VarChar(2000),OG_name)                            AS OrganismName,
+		  CONVERT(VarChar(2000),AJT_orgDbReqd)                      AS OrgDbReqd,
+		  CONVERT(VarChar(2000),AJT_toolName)                       AS ToolName,
+		  CONVERT(VarChar(2000),AJT_resultType)                     AS ResultType
 		FROM
 		(
 		SELECT 
@@ -174,9 +174,9 @@ AS
 	SELECT * FROM OPENXML(@hDoc, N'//item', 2) 
 	with (
 		[Step_Number] varchar(22) '../@id', 
-		[Section] varchar(22) '../@name', 
-		[Name] varchar(64) '@key' , 
-		[Value] varchar(512) '@value' 
+		[Section] varchar(128) '../@name', 
+		[Name] varchar(128) '@key' , 
+		[Value] varchar(4000) '@value' 
 	)
 	--
 	EXEC sp_xml_removedocument @hDoc
@@ -184,9 +184,9 @@ AS
 	INSERT INTO @paramTab
 	SELECT 
 		xmlNode.value('../@id', 'nvarchar(50)') [Step_Number],
-		xmlNode.value('../@name', 'nvarchar(50)') [Section],
-		xmlNode.value('@key', 'nvarchar(50)') [Name], 
-		xmlNode.value('@value', 'nvarchar(50)') [Value]
+		xmlNode.value('../@name', 'nvarchar(256)') [Section],
+		xmlNode.value('@key', 'nvarchar(256)') [Name], 
+		xmlNode.value('@value', 'nvarchar(4000)') [Value]
 	FROM   @paramXML.nodes('//item') AS R(xmlNode)
 
 	
@@ -206,8 +206,8 @@ AS
 	SELECT NULL as Step_Number, * FROM OPENXML(@hDoc, N'//item', 2) 
 	with (
 		[Section] varchar(22) '../@name', 
-		[Name] varchar(64) '@key' , 
-		[Value] varchar(512) '@value' 
+		[Name] varchar(128) '@key' , 
+		[Value] varchar(4000) '@value' 
 	) XT WHERE NOT EXISTS (
 		SELECT * FROM @paramTab PT 
 		WHERE 
@@ -222,9 +222,9 @@ AS
 	(
 	SELECT 
 		xmlNode.value('../@id', 'nvarchar(50)') [Step_Number],
-		xmlNode.value('../@name', 'nvarchar(50)') [Section],
-		xmlNode.value('@key', 'nvarchar(50)') [Name], 
-		xmlNode.value('@value', 'nvarchar(50)') [Value]
+		xmlNode.value('../@name', 'nvarchar(256)') [Section],
+		xmlNode.value('@key', 'nvarchar(256)') [Name], 
+		xmlNode.value('@value', 'nvarchar(2000)') [Value]
 	FROM   @paramXML.nodes('//item') AS R(xmlNode)
 	) VG
 	WHERE NOT EXISTS

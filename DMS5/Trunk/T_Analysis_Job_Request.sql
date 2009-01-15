@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_requestor] [int] NOT NULL,
 	[AJR_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_state] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT (0),
-	[AJR_proteinCollectionList] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJR_proteinCollectionList]  DEFAULT ('na'),
+	[AJR_proteinCollectionList] [varchar](2000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJR_proteinCollectionList]  DEFAULT ('na'),
 	[AJR_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJR_proteinOptionsList]  DEFAULT ('na'),
 	[AJR_workPackage] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
