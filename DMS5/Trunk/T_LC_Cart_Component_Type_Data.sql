@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart_Component_Type] ******/
-/****** RowCount: 18 ******/
+/****** RowCount: 19 ******/
 SET IDENTITY_INSERT [T_LC_Cart_Component_Type] ON
 INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (10,'Pump','Pump','Y')
 INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (20,'Injection Valve','Injection Valve','Y')
@@ -19,4 +19,5 @@ INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Seri
 INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (35,'Syringe','??','N')
 INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (36,'Mixer Purge Valve','??','Y')
 INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (37,'General','Represents miscelleneous components or general information','N')
+INSERT INTO [T_LC_Cart_Component_Type] (ID, Type, Description, Traceable_By_Serial_Number) VALUES (38,'Single Emitter Valve','Emitter value for cart','Y')
 SET IDENTITY_INSERT [T_LC_Cart_Component_Type] OFF

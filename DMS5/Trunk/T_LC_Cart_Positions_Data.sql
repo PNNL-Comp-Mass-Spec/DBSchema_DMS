@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart_Positions] ******/
-/****** RowCount: 33 ******/
+/****** RowCount: 34 ******/
 /****** Columns: ID, Name, Component_Type, Comment ******/
 INSERT INTO [T_LC_Cart_Positions] VALUES (1,'Vinj1',20,'')
 INSERT INTO [T_LC_Cart_Positions] VALUES (2,'Vss1',32,'')
@@ -34,3 +34,4 @@ INSERT INTO [T_LC_Cart_Positions] VALUES (30,'Col4',22,'')
 INSERT INTO [T_LC_Cart_Positions] VALUES (31,'Mixer_Sys1',26,'')
 INSERT INTO [T_LC_Cart_Positions] VALUES (32,'Mixer_Sys2',26,'')
 INSERT INTO [T_LC_Cart_Positions] VALUES (33,'Cart',37,'')
+INSERT INTO [T_LC_Cart_Positions] VALUES (34,'Vse',38,'Single emitter valve')
