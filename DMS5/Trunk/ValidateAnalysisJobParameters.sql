@@ -31,6 +31,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **			09/12/2008 mem - Now calling ValidateNAParameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **						   - Changed @parmFileName and @settingsFileName to be input/output parameters instead of input only
 **			01/14/2009 mem - Now raising an error if @protCollNameList is over 2000 characters long (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
+**			01/28/2009 mem - Now checking for settings files in T_Settings_Files instead of on disk (Ticket #718, http://prismtrac.pnl.gov/trac/ticket/718)
 **
 *****************************************************/
 (
@@ -330,20 +331,13 @@ As
 	end
 
 	---------------------------------------------------
-	-- Validate settings file for tool
+	-- Lookup orgDbReqd for this tool
 	---------------------------------------------------
-	--
-	declare @fullPath varchar(255)
-	declare @dirPath varchar(255)
+
 	declare @orgDbReqd int
-	--
-	-- get tool parameters
-	--
-	set @dirPath = ''
 	set @orgDbReqd = 0
-	--
+
 	SELECT 
-		@dirPath = AJT_parmFileStoragePathLocal,
 		@orgDbReqd = AJT_orgDbReqd
 	FROM T_Analysis_Tool
 	WHERE (AJT_toolName = @toolName)
@@ -355,23 +349,25 @@ As
 		set @message = 'Error looking up tool parameters'
 		return 51038
 	end
-	--
-	-- settings file path
-	--
+
+	---------------------------------------------------
+	-- Validate settings file for tool
+	-- We used to check for the existence of settings files on disk (in the DMS_Parameter_Files share)
+	-- However, settings files for tools that use the Job Broker now only live in the T_Settings_Files table,
+	--  so we will simply check for an entry in that table
+	---------------------------------------------------
+
 	if @settingsFileName <> 'na'
 	begin
-		if @dirPath = ''
+		if Not Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active <> 0))
 		begin
-			set @message = 'Could not get settings file folder'
-			return 53107
-		end
-		--
-		set @fullPath = @dirPath + 'SettingsFiles\' + @settingsFileName
-		exec @result = VerifyFileExists @fullPath, @message output
-		--
-		if @result <> 0
-		begin
-			set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+			-- Settings file either does not exist or is inactive
+			--
+			If Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active = 0))
+				set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
+			Else
+				set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+				
 			return 53108
 		end
 	end

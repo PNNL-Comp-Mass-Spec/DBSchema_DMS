@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION dbo.ValidateNAParameter
 /****************************************************
 **
@@ -15,13 +14,14 @@ CREATE FUNCTION dbo.ValidateNAParameter
 **
 **	Auth:	mem
 **	Date:	09/12/2008 mem - Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688
+**			01/14/2009 mem - Expanded @parameter length to 4000 characters (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **
 *****************************************************/
 (
-	@parameter varchar(1024),
+	@parameter varchar(4000),
 	@TrimWhitespace tinyint = 1
 )
-	RETURNS varchar(1024)
+	RETURNS varchar(4000)
 As
 Begin
 	Set @parameter = IsNull(@parameter, 'na')
