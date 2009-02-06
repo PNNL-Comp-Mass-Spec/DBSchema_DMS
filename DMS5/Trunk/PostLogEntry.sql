@@ -73,5 +73,7 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [D3L243]
+GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User]
 GO

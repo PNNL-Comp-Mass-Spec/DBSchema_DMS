@@ -13,12 +13,20 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership](
 (
 	[Processor_ID] ASC,
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 
-/****** Object:  Trigger [trig_u_T_Analysis_Job_Processor_Group_Membership] ******/
+/****** Object:  Index [IX_T_Analysis_Job_Processor_Group_Membership_GroupID_Enabled] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processor_Group_Membership_GroupID_Enabled] ON [dbo].[T_Analysis_Job_Processor_Group_Membership] 
+(
+	[Group_ID] ASC,
+	[Membership_Enabled] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group_Membership] ******/
 SET ANSI_NULLS ON
 GO
 
@@ -67,8 +75,14 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [T_Analysis_Job_Processor_Group_T_Analysis_Job_Processor_Group_Membership_FK1] FOREIGN KEY([Group_ID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [T_Analysis_Job_Processor_Group_T_Analysis_Job_Processor_Group_Membership_FK1]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [T_Analysis_Job_Processors_T_Analysis_Job_Processor_Group_Membership_FK1] FOREIGN KEY([Processor_ID])
 REFERENCES [T_Analysis_Job_Processors] ([ID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [T_Analysis_Job_Processors_T_Analysis_Job_Processor_Group_Membership_FK1]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [CK_T_Analysis_Job_Processor_Group_Membership_Enabled] CHECK  (([Membership_Enabled] = 'N' or [Membership_Enabled] = 'Y'))
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [CK_T_Analysis_Job_Processor_Group_Membership_Enabled]
 GO

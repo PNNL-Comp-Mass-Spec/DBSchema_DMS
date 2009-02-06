@@ -143,3 +143,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateSettingsFile] TO [DMS2_SP_User]
+GO

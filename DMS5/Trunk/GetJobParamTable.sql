@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetJobParamTable
+CREATE PROCEDURE dbo.GetJobParamTable
 /****************************************************
 **
 **	Desc: 
@@ -242,4 +242,6 @@ AS
 
 	RETURN
 
+GO
+GRANT EXECUTE ON [dbo].[GetJobParamTable] TO [D3L243]
 GO
