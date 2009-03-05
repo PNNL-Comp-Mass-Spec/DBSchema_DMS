@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE FindExistingJobsForJobParams
+CREATE PROCEDURE dbo.FindExistingJobsForJobParams
 /****************************************************
 **
 **	Desc: 
@@ -14,14 +14,16 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 12/7/2005
-**			  04/04/2006 grk - increased sized of param file name
-**			  03/28/2006 grk - added protein collection fields
-**			  04/07/2006 grk - eliminated job to request map table
-**			  01/02/2009 grk - added dataset to output rowset
+**	Auth:	grk
+**	Date:	12/7/2005
+**			04/04/2006 grk - increased sized of param file name
+**			03/28/2006 grk - added protein collection fields
+**			04/07/2006 grk - eliminated job to request map table
+**			01/02/2009 grk - added dataset to output rowset
+**			02/27/2009 mem - Expanded @comment to varchar(512)
 **    
 *****************************************************/
+(
     @datasetList varchar(3500),
     @priority int = 2,
 	@toolName varchar(64),
@@ -32,11 +34,12 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 	@proteinCollectionList varchar(512),
 	@proteinOptionsList varchar(256),
     @ownerPRN varchar(32),
-    @comment varchar(255) = null,
+    @comment varchar(512) = null,
     @requestID int,
 	@assignedProcessor varchar(64),
 	@mode varchar(12), 
 	@message varchar(512) output
+)
 AS
 	set nocount on
 

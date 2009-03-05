@@ -4,10 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-CREATE Procedure SetAnalysisJobCompleteEx5
-
+CREATE Procedure dbo.SetAnalysisJobCompleteEx5
 /****************************************************
 **
 **	Desc: Sets status of analysis job to successful
@@ -24,34 +21,25 @@ CREATE Procedure SetAnalysisJobCompleteEx5
 **	@resultsFolderName		name of folder that contains analysis results
 **	@comment			text to be appended to comment field
 **
-**		Auth: grk
-**		Date: 02/28/2001
-**    
-**		Mod: DAC  
-**		Date: 10/1/2001
-**		Changed to accept failure in creation of intermediate files and comment modification
-**    
-**		NOTE: completion codes 2, 3, and 4 have special uses for Sequest manager
-**    
-**		Mod: GRK 
-**		Date: 11/18/2002
-**		Changed to work with new DMS storage architecture
-**    
-**		Mod: JDS
-**		Date: 3/22/2006
-**		added support for data extraction based on AJT_extractionRequired in T_Analysis_Tool
-**    
-**		Mod: GRK 
-**		Date: 6/13/2006
-**		Added argument for generated organism DB file name
+**	Auth:	grk
+**	Date:	02/28/2001
+**			10/01/2001 dac - Changed to accept failure in creation of intermediate files and comment modification
+**						   - NOTE: completion codes 2, 3, and 4 have special uses for Sequest manager
+**			11/18/2002 grk - Changed to work with new DMS storage architecture
+**			03/22/2006 jds - Added support for data extraction based on AJT_extractionRequired in T_Analysis_Tool
+**			06/13/2006 grk - Added argument for generated organism DB file name
+**			02/19/2009 mem - Now updating AJ_ProcessingTimeMinutes in T_Analysis_Job
+**			02/27/2009 mem - Expanded @comment to varchar(512)
 **    
 *****************************************************/
+(
     @jobNum varchar(32),
     @processorName varchar(64),
     @completionCode int = 0,
     @resultsFolderName varchar(64),
-    @comment varchar(255),
+    @comment varchar(512),
     @organismDBName varchar(64) = ''
+)
 As
 	-- set nocount on
 
@@ -92,7 +80,7 @@ As
 
 	-- update analysis job according to completion parameters
 	--
-	if @completionCode = 0  -- Job completed sat
+	if @completionCode = 0  -- Job completed successfully
 		begin
 			if @extractionFlag = 'Y' 
 				begin
@@ -101,7 +89,8 @@ As
 					AJ_resultsFolderName = @resultsFolderName, 
 					AJ_StateID = 16, -- "Data Extraction Required"
 					AJ_comment = @comment,
-				    AJ_organismDBName = @orgDBName
+				    AJ_organismDBName = @orgDBName,
+				    AJ_ProcessingTimeMinutes = DateDiff(second, AJ_Start, GETDATE()) / 60.0
 					WHERE (AJ_jobID = @jobID)
 				end
 			else
@@ -111,7 +100,8 @@ As
 					AJ_resultsFolderName = @resultsFolderName, 
 					AJ_StateID = 3, -- "Results Received"
 					AJ_comment = @comment,
-				    AJ_organismDBName = @orgDBName
+				    AJ_organismDBName = @orgDBName,
+				    AJ_ProcessingTimeMinutes = DateDiff(second, AJ_Start, GETDATE()) / 60.0
 					WHERE (AJ_jobID = @jobID)
 				end
 		end
@@ -122,7 +112,8 @@ As
 				SET AJ_finish = GETDATE(), 
 				AJ_StateID = 5, -- "Failed" 
 				AJ_comment = @comment,
-				 AJ_organismDBName = @orgDBName
+				AJ_organismDBName = @orgDBName,
+				AJ_ProcessingTimeMinutes = DateDiff(second, AJ_Start, GETDATE()) / 60.0
 				WHERE (AJ_jobID = @jobID)
 			end
 		else	-- Job failed due to lack of intermediate files
@@ -131,7 +122,8 @@ As
 				SET AJ_finish = GETDATE(), 
 				AJ_StateID = 7, -- "No intermediate files created" 
 				AJ_comment = @comment,
-				AJ_organismDBName = @orgDBName
+				AJ_organismDBName = @orgDBName,
+				    AJ_ProcessingTimeMinutes = DateDiff(second, AJ_Start, GETDATE()) / 60.0
 				WHERE (AJ_jobID = @jobID)
 			end
 	-- end of completion code test

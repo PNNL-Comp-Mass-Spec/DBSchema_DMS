@@ -29,6 +29,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
 **			05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**			02/27/2009 mem - Expanded @comment to varchar(512)
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 	@protCollNameList varchar(4000),
 	@protCollOptionsList varchar(256),
     @ownerPRN varchar(32),
-    @comment varchar(255) = null,
+    @comment varchar(512) = null,
     @requestID int,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),

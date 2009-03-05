@@ -12,11 +12,11 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **
 **	Parameters: 
 **
-**	
-**
 **	Auth:	grk
 **	Date:	03/29/2001
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			02/18/2008 grk - Modified to accept jobs in failed state (Ticket #723)
+**			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **    
 *****************************************************/
 (
@@ -50,12 +50,12 @@ As
 	end
 
 	-- verify that analysis job is still in 'new' state
-	if @state <> 1
+	if NOT @state IN (1,5)
 	begin
-		set @message = 'Job "' + @jobNum + '" must be in "new" state to be deleted by user'
+		set @message = 'Job "' + @jobNum + '" must be in "new" or "failed" state to be deleted by user'
 		return 55323
 	end
-	
+
 	-- delete the analysis job
 	--
 	declare @result int
@@ -65,7 +65,7 @@ As
 		set @message = 'Job "' + @jobNum + '" could not be deleted'
 		return 55320
 	end
-	
+
 	return 0
 
 GO

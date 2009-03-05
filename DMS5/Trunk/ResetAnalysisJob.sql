@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure ResetAnalysisJob
+CREATE Procedure dbo.ResetAnalysisJob
 /****************************************************
 **
 **	Desc: Resets analysis job to "new" state
@@ -17,15 +17,15 @@ CREATE Procedure ResetAnalysisJob
 **
 **		Auth: dac
 **		Date: 5/18/2001
-**		Mod: 7/10/2001 - added comment field update
-**		Mod: 4/12/2005 - changed to set blank into assigned processor name
-
+**		Mod: 07/10/2001 dac - added comment field update
+**		Mod: 04/12/2005 dac - changed to set blank into assigned processor name
+**		Mod: 02/27/2009 mem - Expanded @comment to varchar(512)
 **    
 **	NOTE: USE CAREFULLY. NO PROTECTION IN THIS PROCEDURE!!!!
 *****************************************************/
 (
     @jobNum varchar(32),
-    @comment varchar(255)
+    @comment varchar(512)
 )
 As
 	-- set nocount on

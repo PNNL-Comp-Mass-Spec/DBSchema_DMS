@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.FindMatchingDatasetsForJobRequest
 /****************************************************
 **
@@ -17,7 +18,9 @@ CREATE PROCEDURE dbo.FindMatchingDatasetsForJobRequest
 **	Parameters:
 **
 **	Auth:	grk
-**	01/08/2000 grk - Initial release
+**			01/08/2008 grk - Initial release
+**			02/11/2009 mem - Updated to allow for OrgDBName to not be 'na' when using protein collection lists
+**	
 **    
 *****************************************************/
 (
@@ -111,9 +114,9 @@ AS
 			AJ.AJ_parmFileName = @parmFileName AND 
 			AJ.AJ_settingsFileName = @settingsFileName AND 
 			Org.OG_name = IsNull(@organismName, Org.OG_name) AND
-			AJ.AJ_organismDBName = @organismDBName AND
-			AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
-			AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList) 
+			( (@proteinCollectionList = 'na' AND AJ.AJ_organismDBName = @organismDBName) OR
+			  (@proteinCollectionList <> 'na' and AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND  AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)) 
+			)
 		GROUP BY DS.Dataset_Num
 
 		---------------------------------------------------
@@ -126,8 +129,6 @@ AS
 		select '' as Sel, dataset as Dataset, 0 as Jobs, 0 as New, 0 as Busy, 0 as Complete, 0 as Failed, 0 as Holding
 		from @requestDatasets
 		where not dataset in (select dataset from @matchingJobDatasets)
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[FindMatchingDatasetsForJobRequest] TO [DMS2_SP_User]

@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[T_Organism_DB_File](
 	[Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Organism_DB_File_Description]  DEFAULT (''),
 	[Active] [tinyint] NOT NULL CONSTRAINT [DF_T_Organism_DB_File_Active]  DEFAULT (1),
 	[NumProteins] [int] NULL,
-	[NumResidues] [int] NULL,
+	[NumResidues] [bigint] NULL,
 	[Valid] [smallint] NULL CONSTRAINT [DF_T_Organism_DB_File_Valid]  DEFAULT (1),
  CONSTRAINT [PK_T_Organism_DB_File] PRIMARY KEY CLUSTERED 
 (

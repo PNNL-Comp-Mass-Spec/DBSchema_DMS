@@ -40,6 +40,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644, http://prismtrac.pnl.gov/trac/ticket/644)
 **			04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**			02/27/2009 mem - Expanded @comment to varchar(512)
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
     @protCollOptionsList varchar(256),
 	@organismDBName varchar(64),
     @ownerPRN varchar(32),
-    @comment varchar(255) = null,
+    @comment varchar(512) = null,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@stateName varchar(32),

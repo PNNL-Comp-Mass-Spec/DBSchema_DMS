@@ -31,24 +31,27 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
 **							 and code to validate param file settings file against tool type
 **			10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
 **			11/05/2008 mem - Now allowing for find/replace in comments when @mode = 'reset'
+**			02/27/2009 mem - Changed default values to [no change]
+**							 Expanded update failure messages to include more detail
+**							 Expanded @comment to varchar(512)
 **
 *****************************************************/
 (
     @JobList varchar(6000),
-    @state varchar(32) = '',
-    @priority varchar(12) = '',
-    @comment varchar(255) = '',			-- Text to append to the comment
-    @findText varchar(255) = '',		-- Text to find in the comment; ignored if '[no change]'
-    @replaceText varchar(255) = '',		-- The replacement text when @findText is not '[no change]'
-    @assignedProcessor varchar(64),
-    @associatedProcessorGroup varchar(64),
-    @propagationMode varchar(24),
+    @state varchar(32) = '[no change]',
+    @priority varchar(12) = '[no change]',
+    @comment varchar(512) = '[no change]',						-- Text to append to the comment
+    @findText varchar(255) = '[no change]',			-- Text to find in the comment; ignored if '[no change]'
+    @replaceText varchar(255) = '[no change]',		-- The replacement text when @findText is not '[no change]'
+    @assignedProcessor varchar(64) = '[no change]',
+    @associatedProcessorGroup varchar(64) = '[no change]',
+    @propagationMode varchar(24) = '[no change]',
 --
-    @parmFileName varchar(255) = '',
-    @settingsFileName varchar(64) = '',
-    @organismName varchar(64) = '',
-    @protCollNameList varchar(4000) = '',
-    @protCollOptionsList varchar(256) = '',
+    @parmFileName varchar(255) = '[no change]',
+    @settingsFileName varchar(64) = '[no change]',
+    @organismName varchar(64) = '[no change]',
+    @protCollNameList varchar(4000) = '[no change]',
+    @protCollOptionsList varchar(256) = '[no change]',
 --
     @mode varchar(12) = 'update',			-- 'update' or 'reset' to change data; otherwise, will simply validate parameters
     @message varchar(512) output,
@@ -58,11 +61,12 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
+	declare @NoChangeText varchar(32)
+	set @NoChangeText = '[no change]'
 	set @message = ''
 
 	declare @msg varchar(512)
@@ -80,20 +84,20 @@ As
 	-- Clean up null arguments
 	---------------------------------------------------
 	
-	set @state = isnull(@state, '')
-	set @priority = isnull(@priority, '')
-	set @comment = isnull(@comment, '')
-	set @findText = isnull(@findText, '')
-	set @replaceText = isnull(@replaceText, '')
-	set @assignedProcessor = isnull(@assignedProcessor, '')
-	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
-	set @propagationMode = isnull(@propagationMode, '')
-    set @parmFileName = isnull(@parmFileName, '')
-    set @settingsFileName = isnull(@settingsFileName, '')
-    set @organismName = isnull(@organismName, '')
-    set @protCollNameList = isnull(@protCollNameList, '')
-    set @protCollOptionsList = isnull(@protCollOptionsList, '')
-
+	set @state = isnull(@state, @NoChangeText)
+	set @priority = isnull(@priority, @NoChangeText)
+	set @comment = isnull(@comment, @NoChangeText)
+	set @findText = isnull(@findText, @NoChangeText)
+	set @replaceText = isnull(@replaceText, @NoChangeText)
+	set @assignedProcessor = isnull(@assignedProcessor, @NoChangeText)
+	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, @NoChangeText)
+	set @propagationMode = isnull(@propagationMode, @NoChangeText)
+    set @parmFileName = isnull(@parmFileName, @NoChangeText)
+    set @settingsFileName = isnull(@settingsFileName, @NoChangeText)
+    set @organismName = isnull(@organismName, @NoChangeText)
+    set @protCollNameList = isnull(@protCollNameList, @NoChangeText)
+    set @protCollOptionsList = isnull(@protCollOptionsList, @NoChangeText)
+    
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
@@ -106,7 +110,7 @@ As
 	end
 
 
-	if (@findText = '[no change]' and @replaceText <> '[no change]') OR (@findText <> '[no change]' and @replaceText = '[no change]')
+	if (@findText = @NoChangeText and @replaceText <> @NoChangeText) OR (@findText <> @NoChangeText and @replaceText = @NoChangeText)
 	begin
 		set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
 		RAISERROR (@msg, 10, 1)
@@ -188,7 +192,7 @@ As
 	declare @stateID int
 	set @stateID = 0
 	--
-	if @state <> '[no change]'
+	if @state <> @NoChangeText
 	begin
 		--
 		SELECT @stateID = AJS_stateID
@@ -220,7 +224,7 @@ As
 	declare @orgid int
 	set @orgid = 0
 	--
-	if @organismName <> '[no change]'
+	if @organismName <> @NoChangeText
 	begin
 		SELECT @orgid = ID
 		FROM V_Organism_List_Report
@@ -250,7 +254,7 @@ As
 	--
 	set @result = 0
 	--
-	if @parmFileName <> '[no change]'
+	if @parmFileName <> @NoChangeText
 	begin
 		SELECT @result = Param_File_ID
 		FROM T_Param_Files
@@ -267,7 +271,7 @@ As
 	-- validate parameter file for tool
 	---------------------------------------------------
 	--
-	if @parmFileName <> '[no change]'
+	if @parmFileName <> @NoChangeText
 	begin
 		declare @comma_list as varchar(4000)
 		declare @id as varchar(32)
@@ -314,7 +318,7 @@ As
 	-- Validate settings file for tool
 	---------------------------------------------------
 	--
-	if @settingsFileName <> '[no change]'
+	if @settingsFileName <> @NoChangeText
 	begin
 /*		declare @fullPath varchar(255)
 		declare @dirPath varchar(255)
@@ -414,7 +418,7 @@ As
 		begin transaction @transName
 
 		-----------------------------------------------
-		if @state <> '[no change]'
+		if @state <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -425,7 +429,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed when updating job state'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -435,7 +439,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @priority <> '[no change]'
+		if @priority <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -446,7 +450,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed when updating job priority'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -454,7 +458,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @comment <> '[no change]'
+		if @comment <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -465,7 +469,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed when appending new comment text'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -473,7 +477,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @findText <> '[no change]' and @replaceText <> '[no change]'
+		if @findText <> @NoChangeText and @replaceText <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -484,7 +488,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed when finding and replacing text in comment'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -492,7 +496,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @assignedProcessor <> '[no change]'
+		if @assignedProcessor <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -503,7 +507,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at assigned processor name udpate'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -511,7 +515,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @propagationMode <> '[no change]'
+		if @propagationMode <> @NoChangeText
 		begin
 			declare @propMode smallint
 			set @propMode = CASE @propagationMode 
@@ -529,7 +533,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at propagation mode update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51009
@@ -537,7 +541,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @parmFileName <> '[no change]'
+		if @parmFileName <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -548,7 +552,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at parameter file name update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51010
@@ -556,7 +560,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @settingsFileName <> '[no change]'
+		if @settingsFileName <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -567,7 +571,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at settings file name update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51011
@@ -575,7 +579,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @organismName <> '[no change]'
+		if @organismName <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -586,7 +590,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at organism name update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51012
@@ -594,7 +598,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @protCollNameList <> '[no change]'
+		if @protCollNameList <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -605,7 +609,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at protein collection update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51013
@@ -613,7 +617,7 @@ As
 		end
 
 		-----------------------------------------------
-		if @protCollOptionsList <> '[no change]'
+		if @protCollOptionsList <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -624,7 +628,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed and protein collection options update'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51014
@@ -656,21 +660,21 @@ As
 			AJ_extractionProcessor = '', 
 			AJ_extractionStart = NULL, 
 			AJ_extractionFinish = NULL,
-			AJ_parmFileName = CASE WHEN @parmFileName = '[no change]' THEN AJ_parmFileName ELSE @parmFileName END, 
-			AJ_settingsFileName = CASE WHEN @settingsFileName = '[no change]' THEN AJ_settingsFileName ELSE @settingsFileName END,
-			AJ_proteinCollectionList = CASE WHEN @protCollNameList = '[no change]' THEN AJ_proteinCollectionList ELSE @protCollNameList END, 
-			AJ_proteinOptionsList = CASE WHEN @protCollOptionsList = '[no change]' THEN AJ_proteinOptionsList ELSE @protCollOptionsList END,
-			AJ_organismID = CASE WHEN @organismName = '[no change]' THEN AJ_organismID ELSE @orgid END, 
-			AJ_priority =  CASE WHEN @priority = '[no change]' THEN AJ_priority ELSE CAST(@priority AS int) END, 
-			AJ_comment = AJ_comment + CASE WHEN @comment = '[no change]' THEN '' ELSE ' ' + @comment END,
-			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = '[no change]' THEN AJ_assignedProcessorName ELSE @assignedProcessor END
+			AJ_parmFileName = CASE WHEN @parmFileName = @NoChangeText               THEN AJ_parmFileName ELSE @parmFileName END, 
+			AJ_settingsFileName = CASE WHEN @settingsFileName = @NoChangeText       THEN AJ_settingsFileName ELSE @settingsFileName END,
+			AJ_proteinCollectionList = CASE WHEN @protCollNameList = @NoChangeText  THEN AJ_proteinCollectionList ELSE @protCollNameList END, 
+			AJ_proteinOptionsList = CASE WHEN @protCollOptionsList = @NoChangeText  THEN AJ_proteinOptionsList ELSE @protCollOptionsList END,
+			AJ_organismID = CASE WHEN @organismName = @NoChangeText                 THEN AJ_organismID ELSE @orgid END, 
+			AJ_priority =  CASE WHEN @priority = @NoChangeText                      THEN AJ_priority ELSE CAST(@priority AS int) END, 
+			AJ_comment = AJ_comment + CASE WHEN @comment = @NoChangeText            THEN '' ELSE ' ' + @comment END,
+			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = @NoChangeText THEN AJ_assignedProcessorName ELSE @assignedProcessor END
 		WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Update operation failed'
+			set @msg = 'Update operation failed at bulk job info update for reset jobs'
 			rollback transaction @transName
 			RAISERROR (@msg, 10, 1)
 			return 51004
@@ -678,7 +682,7 @@ As
 		
 		
 		-----------------------------------------------
-		if @findText <> '[no change]' and @replaceText <> '[no change]'
+		if @findText <> @NoChangeText and @replaceText <> @NoChangeText
 		begin
 			UPDATE T_Analysis_Job 
 			SET 
@@ -689,7 +693,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed at comment find/replace for reset jobs'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51004
@@ -703,7 +707,7 @@ As
 	-- Handle associated processor Group
 	---------------------------------------------------
  	-----------------------------------------------
-	if @associatedProcessorGroup <> '[no change]' and @transName <> ''
+	if @associatedProcessorGroup <> @NoChangeText and @transName <> ''
 	begin -- <associated processor group>
 	
 		---------------------------------------------------
@@ -746,7 +750,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed removing job from processor group association'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51014
@@ -766,7 +770,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed changing job to processor group association'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51015
@@ -783,7 +787,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed'
+				set @msg = 'Update operation failed assigning job to new processor group association'
 				rollback transaction @transName
 				RAISERROR (@msg, 10, 1)
 				return 51016

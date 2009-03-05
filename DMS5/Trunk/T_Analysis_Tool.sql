@@ -145,6 +145,12 @@ AS
 	End -- </a>
 
 GO
+GRANT INSERT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GO
+GRANT SELECT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GO
+GRANT UPDATE ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GO
 ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
 GO
