@@ -34,6 +34,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
 **			02/27/2009 mem - Changed default values to [no change]
 **							 Expanded update failure messages to include more detail
 **							 Expanded @comment to varchar(512)
+**			03/12/2009 grk - Removed [no change] from @associatedProcessorGroup to allow dissasociation of jobs with groups
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobs
     @findText varchar(255) = '[no change]',			-- Text to find in the comment; ignored if '[no change]'
     @replaceText varchar(255) = '[no change]',		-- The replacement text when @findText is not '[no change]'
     @assignedProcessor varchar(64) = '[no change]',
-    @associatedProcessorGroup varchar(64) = '[no change]',
+    @associatedProcessorGroup varchar(64) = '',
     @propagationMode varchar(24) = '[no change]',
 --
     @parmFileName varchar(255) = '[no change]',
@@ -90,7 +91,7 @@ As
 	set @findText = isnull(@findText, @NoChangeText)
 	set @replaceText = isnull(@replaceText, @NoChangeText)
 	set @assignedProcessor = isnull(@assignedProcessor, @NoChangeText)
-	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, @NoChangeText)
+	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
 	set @propagationMode = isnull(@propagationMode, @NoChangeText)
     set @parmFileName = isnull(@parmFileName, @NoChangeText)
     set @settingsFileName = isnull(@settingsFileName, @NoChangeText)
