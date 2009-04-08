@@ -37,6 +37,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **			04/09/2008 grk - Added secondary separation field (Ticket #658)
+**			03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **
 *****************************************************/
 (
@@ -57,7 +58,8 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 	@mode varchar(12) = 'add', -- or 'update'
 	@request int output,
 	@message varchar(512) output,
-	@secSep varchar(64) = 'LC-ISCO-Standard'	
+	@secSep varchar(64) = 'LC-ISCO-Standard',
+	@MRMAttachment varchar(128)
 )
 As
 	set nocount on
@@ -285,6 +287,28 @@ As
 	end
 
 	---------------------------------------------------
+	-- Resolve ID for MRM attachment
+	---------------------------------------------------
+	--
+	declare @mrmAttachmentID int
+	--
+	set @MRMAttachment = ISNULL(@MRMAttachment, '')
+	if @MRMAttachment <> ''
+	begin
+		SELECT @mrmAttachmentID = ID
+		FROM T_Attachments
+		WHERE Attachment_Name = @MRMAttachment
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to look up attachement ID'
+			RAISERROR (@msg, 10, 1)
+			return 51073
+		end
+	end
+	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments
 	-- that have associated sample prep requests)
 	---------------------------------------------------
@@ -349,7 +373,8 @@ As
 				RDS_internal_standard,
 				RDS_EUS_Proposal_ID,
 				RDS_EUS_UsageType,
-				RDS_Sec_Sep
+				RDS_Sec_Sep,
+				RDS_MRM_Attachment
 			) 
 			VALUES 
 			(
@@ -369,7 +394,8 @@ As
 				@internalStandard,
 				@eusProposalID,
 				@eusUsageTypeID,
-				@secSep
+				@secSep,
+				@mrmAttachmentID
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -425,7 +451,8 @@ As
 			RDS_internal_standard = @internalStandard,
 			RDS_EUS_Proposal_ID = @eusProposalID,
 			RDS_EUS_UsageType = @eusUsageTypeID,
-			RDS_Sec_Sep = @secSep
+			RDS_Sec_Sep = @secSep,
+			RDS_MRM_Attachment = @mrmAttachmentID
 		WHERE (ID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -457,6 +484,7 @@ As
 	end -- update mode
 
 	return 0
+
 
 
 GO

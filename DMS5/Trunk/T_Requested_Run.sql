@@ -31,6 +31,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Cart_ID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Cart_ID]  DEFAULT (1),
 	[RDS_Cart_Col] [smallint] NULL,
 	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none'),
+	[RDS_MRM_Attachment] [int] NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -52,6 +53,9 @@ GO
 GRANT SELECT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Attachments] FOREIGN KEY([RDS_MRM_Attachment])
+REFERENCES [T_Attachments] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])

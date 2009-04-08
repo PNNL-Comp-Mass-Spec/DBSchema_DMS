@@ -28,6 +28,7 @@ CREATE TABLE [dbo].[T_Requested_Run_History](
 	[RDS_EUS_UsageType] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_EUS_UsageType]  DEFAULT (1),
 	[RDS_Cart_ID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_Cart_ID]  DEFAULT (1),
 	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_History_RDS_Sec_Sep_ID]  DEFAULT ('none'),
+	[RDS_MRM_Attachment] [int] NULL,
  CONSTRAINT [PK_T_Requested_Run_History] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -65,6 +66,9 @@ GO
 GRANT SELECT ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
 GO
 GRANT UPDATE ON [dbo].[T_Requested_Run_History] TO [LOC-DMS_EUS_Admin]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Attachments] FOREIGN KEY([RDS_MRM_Attachment])
+REFERENCES [T_Attachments] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run_History]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_History_T_Dataset] FOREIGN KEY([DatasetID])
 REFERENCES [T_Dataset] ([Dataset_ID])

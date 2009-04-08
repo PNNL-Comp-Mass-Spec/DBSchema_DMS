@@ -48,6 +48,7 @@ CREATE Procedure UnconsumeScheduledRun
 **      05/01/2007 grk - Modified logic to optionally retain original history (Ticket #446)
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **		04/08/2008  grk - Added handling for separation field (Ticket #658)
+**		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **    
 *****************************************************/
 	@datasetNum varchar(128),
@@ -181,7 +182,8 @@ As
 			RDS_Run_Order,
 			RDS_EUS_Proposal_ID, 
 			RDS_EUS_UsageType,
-			RDS_Sec_Sep
+			RDS_Sec_Sep,
+			RDS_MRM_Attachment
 		)
 		SELECT
 			RDS_Name,
@@ -208,7 +210,8 @@ As
 			RDS_Run_Order,
 			RDS_EUS_Proposal_ID, 
 			RDS_EUS_UsageType,
-			RDS_Sec_Sep
+			RDS_Sec_Sep,
+			RDS_MRM_Attachment
 		FROM T_Requested_Run_History
 		WHERE     (DatasetID = @datasetID)
 		--
@@ -315,6 +318,7 @@ As
 
 	commit transaction @transName
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [DMS_SP_User]

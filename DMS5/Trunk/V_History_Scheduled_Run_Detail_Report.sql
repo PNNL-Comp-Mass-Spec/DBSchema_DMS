@@ -13,13 +13,16 @@ SELECT     RRH.ID AS Request, RRH.RDS_Name AS Name, RRH.RDS_created AS [Request 
                       RRH.RDS_Run_Finish AS [Run Finish], DATEDIFF(MINUTE, RRH.RDS_Run_Start, RRH.RDS_Run_Finish) AS [Run Length], 
                       RRH.RDS_WorkPackage AS [Work Package], RRH.RDS_BatchID AS Batch, RRH.RDS_Blocking_Factor AS [Blocking Factor], 
                       RRH.RDS_Block AS BLOCK, RRH.RDS_Run_Order AS [Run Order], EUT.Name AS [EUS Usage Type], RRH.RDS_EUS_Proposal_ID AS [EMSL Proposal], 
-                      dbo.GetRequestedRunHistoryEUSUsersList(RRH.ID, 'V') AS [EUS Users]
+                      dbo.GetRequestedRunHistoryEUSUsersList(RRH.ID, 'V') AS [EUS Users], 
+                      dbo.T_Attachments.Attachment_Name AS [MRM Transition List Attachment]
 FROM         dbo.T_Requested_Run_History AS RRH INNER JOIN
                       dbo.T_Dataset AS DS ON RRH.DatasetID = DS.Dataset_ID INNER JOIN
                       dbo.T_DatasetTypeName AS DTN ON RRH.RDS_type_ID = DTN.DST_Type_ID INNER JOIN
                       dbo.T_Experiments AS E ON RRH.Exp_ID = E.Exp_ID INNER JOIN
                       dbo.T_EUS_UsageType AS EUT ON RRH.RDS_EUS_UsageType = EUT.ID INNER JOIN
                       dbo.T_LC_Cart AS LCCart ON RRH.RDS_Cart_ID = LCCart.ID INNER JOIN
-                      dbo.T_Users ON RRH.RDS_Oper_PRN = dbo.T_Users.U_PRN
+                      dbo.T_Users ON RRH.RDS_Oper_PRN = dbo.T_Users.U_PRN LEFT OUTER JOIN
+                      dbo.T_Attachments ON RRH.RDS_MRM_Attachment = dbo.T_Attachments.ID
+
 
 GO

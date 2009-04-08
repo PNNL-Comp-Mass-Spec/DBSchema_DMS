@@ -24,6 +24,7 @@ CREATE Procedure ConsumeScheduledRun
 **      1/13/2006   grk - Handling for new blocking columns in request and history tables.
 **      1/17/2006   grk - Handling for new EUS tracking columns in request and history tables.
 **		04/08/2008  grk - Added handling for separation field (Ticket #658)
+**		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **    
 *****************************************************/
 	@datasetID int,
@@ -127,7 +128,8 @@ As
 		RDS_Run_Order,
 		RDS_EUS_Proposal_ID, 
         RDS_EUS_UsageType,
-        RDS_Sec_Sep
+        RDS_Sec_Sep,
+        RDS_MRM_Attachment
 	)
 	SELECT
 		RDS_Name, 
@@ -153,7 +155,8 @@ As
 		RDS_Run_Order,
 		RDS_EUS_Proposal_ID, 
         RDS_EUS_UsageType,
-         RDS_Sec_Sep
+        RDS_Sec_Sep,
+        RDS_MRM_Attachment
 	FROM T_Requested_Run
 	WHERE     (ID = @requestID)
 	--
@@ -213,6 +216,7 @@ As
 	---------------------------------------------------
 	commit transaction @transName
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [DMS_SP_User]

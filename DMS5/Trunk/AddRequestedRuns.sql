@@ -25,6 +25,7 @@ CREATE PROCEDURE AddRequestedRuns
 **      07/17/2007 grk - Increased size of comment field (Ticket #500)
 **      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **		04/25/2008 grk - Added secondary separation field (Ticket #658)
+**		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -45,7 +46,8 @@ CREATE PROCEDURE AddRequestedRuns
 	@comment varchar(1024) = "na",
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
-	@secSep varchar(64) = 'LC-ISCO-Standard'
+	@secSep varchar(64) = 'LC-ISCO-Standard',
+	@MRMAttachment varchar(128)
 As
 	set nocount on
 
@@ -208,7 +210,8 @@ As
 								'add',
 								@request output,
 								@message output,
-								@secSep
+								@secSep,
+								@MRMAttachment
 			set @message = '[' + @tFld + '] ' + @message 
 			if @myError <> 0
 				return @myError
@@ -225,6 +228,7 @@ As
 	set @message = 'Number of requests created:' + cast(@count as varchar(12))
 /**/
 	return 0
+
 
 
 GO
