@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
@@ -41,6 +40,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			02/27/2009 mem - Expanded @comment to varchar(512)
+**			04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **    
 *****************************************************/
 (
@@ -331,7 +331,7 @@ As
 			@protCollOptionsList,
 			@organismID, 
 			@datasetID, 
-			@comment,
+			REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
 			@ownerPRN,
 			@batchID,
 			@stateID,
@@ -546,6 +546,7 @@ As
 	end -- update mode
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis]

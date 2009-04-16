@@ -30,6 +30,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			02/27/2009 mem - Expanded @comment to varchar(512)
+**			04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **
 *****************************************************/
 (
@@ -338,7 +339,7 @@ As
 			@protCollOptionsList,
 			@organismID, 
 			#TD.Dataset_ID, 
-			@comment,
+			REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), #TD.Dataset_ID)),
 			@ownerPRN,
 			@batchID,
 			@stateID,
@@ -453,6 +454,7 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis]
