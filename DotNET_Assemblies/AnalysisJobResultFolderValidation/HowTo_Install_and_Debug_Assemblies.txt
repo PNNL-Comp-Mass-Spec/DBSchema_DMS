@@ -1,0 +1,113 @@
+Steps to create, install, and test a Sql Server .NET Assembly
+
+1) Create a new Sql Server Project (under File->New Project, then Visual Basic->Database)
+2) Add a Stored Procedure or User Defined Function to the class
+3) Code the procedure or UDF.  Example procedure header:
+
+    <Microsoft.SqlServer.Server.SqlProcedure()> _
+    Public Shared Sub ValidateAnalysisJobResultsFolder(ByVal Job As SqlInt32, _
+                                                       ByVal JobCompleteHoldoffMinutes As SqlInt32, _
+                                                      <Runtime.InteropServices.Out()> ByRef AnalysisManagerIsDone As SqlByte, _
+                                                      <Runtime.InteropServices.Out()> ByRef DataExtractionIsDone As SqlByte, _
+                                                      <Runtime.InteropServices.Out()> ByRef ResultsFolderName As SqlString, _
+                                                      <Runtime.InteropServices.Out()> ByRef ResultsFolderPath As SqlString, _
+                                                      <Runtime.InteropServices.Out()> ByRef ResultsFolderTimestamp As SqlDateTime, _
+                                                      <Runtime.InteropServices.Out()> ByRef OrganismDBName As SqlString, _
+                                                      <Runtime.InteropServices.Out()> ByRef Message As SqlString, _
+                                                      <Runtime.InteropServices.Out()> ByRef InfoOnly As SqlByte)
+	End Sub
+
+4) Compile the project using Build->Build Solution
+5) Copy the assembly to the server using Build->Deploy Solution.  
+	- Note that this will also auto-generate a stored procedure that references this assembly.  However, the owner of the SP
+	  will be your username (e.g. D3L243) and not dbo
+6) To manually create a stored procedure that references the function in the assembly use CREATE PROCEDURE
+	- An easy way to do this is to script the auto-generated procedure and then change the name
+	- Note that the string types must be nvarchar(4000)
+	CREATE PROCEDURE dbo.[ValidateAnalysisJobResultsFolder]
+		@Job [int],
+		@JobCompleteHoldoffMinutes [int],
+		@AnalysisManagerIsDone [tinyint] OUTPUT,
+		@DataExtractionIsDone [tinyint] OUTPUT,
+		@ResultsFolderName [nvarchar](4000) OUTPUT,
+		@ResultsFolderPath [nvarchar](4000) OUTPUT,
+		@ResultsFolderTimestamp [datetime] OUTPUT,
+		@OrganismDBName [nvarchar](4000) OUTPUT,
+		@Message [nvarchar](4000) OUTPUT,
+		@InfoOnly [tinyint] OUTPUT
+	WITH EXECUTE AS CALLER
+	AS
+	EXTERNAL NAME [AnalysisJobResultFolderValidation].[AnalysisJobResultFolderValidation.StoredProcedures].[ValidateAnalysisJobResultsFolder]
+	
+
+To remove an assembly, use Drop Assembly.  If any stored procedures refer to the Assembly, then they must be dropped first.
+Example:
+  DROP PROCEDURE d3l243.ValidateAnalysisJobResultsFolder
+  DROP ASSEMBLY ValidateAnalysisJobResultsFolder
+
+
+If the assembly needs to have External Access, then you can either take the easy route or the hard route. 
+See http://msdn2.microsoft.com/en-us/library/ms345106.aspx for more info (or Google sql server EXTERNAL_ACCESS assembly)
+
+The easy (not secure) route:
+1) Set the DB as "Trustworthy" using:
+	ALTER DATABASE MyDatabase
+	SET TRUSTWORTHY ON
+2) In Sql Server Management Studio, go to Programmability->Assemblies, right click the Assembly, and choose Properties
+3) Change "Permission Set" to "External Access" and click OK.  Script for this is:
+	ALTER ASSEMBLY [AnalysisJobResultFolderValidation]
+	WITH PERMISSION_SET = EXTERNAL_ACCESS
+
+
+The hard (secure) route:
+1) Sign your assembly using a .PFX file
+	- This requires a certificate from an Authority organization
+	- See http://technet.microsoft.com/en-us/library/cc135718.aspx
+2) In Visual studio, sign the assembly by going to My Project->Signing, choosing Sign the Assembly, and choosing the .PFX file
+3) Install the certificate on the Server
+	3a) On the machine which hosts the SQL Server 2005 for which you wish to deploy to, right click on the *.pfx file and select install.  
+        This will start the Certificate Import Wizard.
+	3b) From the Certificate Wizard welcome screen, click Next.
+	3c) From the File to Import step type or browse to the *.pfx file you wish to import.  Click Next.
+	3d) From the password step, type in a password.  I used the same password as when I signed the assembly in step 1 above.
+	3e) I also clicked on the box indicating to Mark this key as exportable.  Click Next.
+	3f) In the Certificate Store step, I selected the default option of automatically select the certificate store based on 
+        the type of certificate.  Click Next and then Finish.
+4) Deploy the assembly
+	4a) Open SQL Server 2005 Management Studio (SSMS) and connect to the database you wish to deploy the assembly.
+5) Create the Asymmetric Key, Create login and grant External Access to the new login
+	5a) Inside SSMS create a new query and execute the following script:
+ 
+		USE master 
+		GO  
+		CREATE ASYMMETRIC KEY SQLCLRKey FROM EXECUTABLE FILE = '<path to the assemble name here>\ExceptionLogTrigger.dll'   
+		CREATE LOGIN SQLCLRLogin FROM ASYMMETRIC KEY SQLCLRKey
+		GRANT EXTERNAL ACCESS ASSEMBLY TO SQLCLRLogin 
+		GO
+
+6) Build and Deploy
+	6a) Build the assembly and deploy it to this instance of SQL Server 2005 from within visual studio by right clicking on the project 
+       in the explorer view and choose deploy.  It will build it for you first, then deploy it to the server
+7) Verify
+	7a) If successful deployed, you will see the following from within SQL Server:
+       i.     Under the master database->Security->Asymmetric Keys you should see and entry for SQLCLRKey.
+       ii.    Under Security->Logins you should see the newly created login, SQLCLRLogin
+       iii.   From within the database in which the assembly was deployed,under CommonPassDB->Tables->dbo.ExceptionLog->Triggers 
+              you should see and entry for dbo.ExceptionLogTrigger (i.e. your assembly)
+
+
+One interesting note, you can access tables in the DB from within the CLR assembly using a 
+special connection string of "context connection=true" like this:
+    cnConnection = New System.Data.SqlClient.SqlConnection("context connection=true")
+    cnConnection.Open()
+
+    strSql = " SELECT COUNT(*) AS JobCount FROM dbo.T_Analysis_Job AJ"
+
+    cmdJobInfo = New System.Data.SqlClient.SqlCommand(strSql, cnConnection)
+
+    objReader = cmdJobInfo.ExecuteReader()
+
+And, to echo text (or even entire table) back to the calling function, you use the SqlContext object:
+   SqlContext.Pipe.Send(objReader)
+         or
+   SqlContext.Pipe.Send(CStr(Message))
