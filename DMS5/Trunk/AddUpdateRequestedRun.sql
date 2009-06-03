@@ -38,6 +38,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **			04/09/2008 grk - Added secondary separation field (Ticket #658)
 **			03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
+**          06/03/2009 grk - look up work package (Ticket #739) 
 **
 *****************************************************/
 (
@@ -344,6 +345,20 @@ As
 	set @transName = 'AddUpdateRequestedRun'
 
 	---------------------------------------------------
+	-- Lookup misc fields (only effective for experiments
+	-- that have associated sample prep requests)
+	---------------------------------------------------
+	exec @myError = LookupOtherFromExperimentSamplePrep 
+						@experimentNum, 
+						@workPackage output, 
+						@message  output
+	if @myError <> 0
+	begin
+		RAISERROR (@msg, 10, 1)
+		return @myError
+	end
+
+	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
@@ -484,7 +499,6 @@ As
 	end -- update mode
 
 	return 0
-
 
 
 GO
