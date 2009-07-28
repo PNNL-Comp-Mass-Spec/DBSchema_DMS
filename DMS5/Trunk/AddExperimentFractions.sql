@@ -15,7 +15,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **
 **	Parameters:
 **
-**	Auth:	kja
+**	Auth:	grk
 **	Date:	05/28/2005
 **          05/29/2005 grk - added mods to better work with entry page
 **          05/31/2005 grk - added mods for separate group members table
@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
 **			09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
 **			10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
+**			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **    
 *****************************************************/
 (
@@ -36,13 +37,13 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 	@groupType varchar(20) = 'Fraction',  -- 'None', 'Fraction'
 	@description varchar(512),            -- Purpose of group
 	@totalCount int,                      -- Number of new experiments to automatically create
-	@startingIndex int = 1,               -- Initial index for automatic naming of new experiments
-	@step int = 1,                        -- Step interval in index
 	@groupID int,                         -- ID of newly created experiment group
 	@requestOverride varchar(12) = 'parent',   -- ID of request for fractions (if different than parent)
 	@internalStandard varchar(50) = 'parent',
 	@postdigestIntStd varchar(50) = 'parent',
 	@researcher varchar(50) = 'parent',
+	@wellplateNum varchar(64) output,
+	@wellNum varchar(8) output,
 	@mode varchar(12),                    -- Not used at present - included for consistentcy
 	@message varchar(512) output,
    	@callingUser varchar(128) = '',
@@ -64,8 +65,13 @@ AS
 	declare @fullFractionCount int
 	declare @newExpID int
 	declare @matchCount int
+	
+	declare @msg varchar(512)
 
-	declare @msg varchar(256)
+	declare @startingIndex int
+	declare @step int
+	set @startingIndex = 1               -- Initial index for automatic naming of new experiments
+	set @step = 1                        -- Step interval in index
 	
 	-- T_Experiments column variables
 	--
@@ -154,6 +160,53 @@ AS
 	end
 
 	---------------------------------------------------
+	-- set up and validate wellplate values
+	---------------------------------------------------
+	--
+	declare @wellIndex int
+	exec @myError = ValidateWellplateLoading
+						@wellplateNum  output,
+						@wellNum  output,
+						@totalCount,
+						@wellIndex output,
+						@message output
+	if @myError <> 0
+	begin
+		RAISERROR (@message, 10, 1)
+		return @myError
+	end
+
+	---------------------------------------------------
+	-- assure that wellplate is in wellplate table (if set)
+	---------------------------------------------------
+	--
+	if not @wellplateNum is null
+	begin
+		if @wellplateNum = 'new'
+		begin
+			set @wellplateNum = '(generate name)'
+			set @mode = 'add'
+		end
+		else
+		begin
+			set @mode = 'assure'
+		end
+		--
+		declare @note varchar(128)
+		set @note = 'Created by experiment fraction entry (' + @parentExperiment + ')'
+		exec @myError = AddUpdateWellplate
+							@wellplateNum output,
+							@note,
+							@mode,
+							@message output,
+							@callingUser
+		if @myError <> 0
+		begin
+			return @myError
+		end
+	end
+
+	---------------------------------------------------
 	-- override request ID
 	---------------------------------------------------
 
@@ -231,8 +284,7 @@ AS
 	begin
 		set @researcherPRN = @researcher
 	end
-
-	
+/*** ***/
 	---------------------------------------------------
 	-- Set up transaction around multiple table modifications
 	---------------------------------------------------
@@ -294,6 +346,8 @@ AS
 	declare @newExpName varchar(129)
 	declare @xID int
 	declare @result int
+	declare @wn varchar(8)
+	set @wn = @wellNum
 	
 	WHILE @fractionCount < @totalCount and @myError = 0
 	BEGIN -- <a>
@@ -341,7 +395,9 @@ AS
 			EX_enzyme_ID,
 			EX_sample_prep_request_ID,
 			EX_internal_standard_ID,
-			EX_postdigest_internal_std_ID
+			EX_postdigest_internal_std_ID,
+			EX_wellplate_num, 
+			EX_well_num 
 		) VALUES (
 			@newExpName, 
 			@researcherPRN, 
@@ -357,7 +413,9 @@ AS
 			@enzymeID,
 			@samplePrepRequest,
 			@internalStandardID,
-			@postdigestIntStdID
+			@postdigestIntStdID,
+			@wellplateNum,
+			@wn
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -420,7 +478,17 @@ AS
 			set @MaterialIDList = @MaterialIDList + ','
 			
 		set @MaterialIDList = @MaterialIDList + 'E:' + Convert(varchar(12), @newExpID) 
-		
+
+		---------------------------------------------------
+		-- increment well number
+		---------------------------------------------------
+		--
+		if not @wn is null
+		begin
+			set @wellIndex = @wellIndex + 1
+			set @wn = dbo.GetWellNum(@wellIndex)
+		end
+
 	END -- </a>
 
 	---------------------------------------------------
@@ -495,7 +563,7 @@ AS
 	---------------------------------------------------
 		
 	commit transaction @transName
-
+/******/
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

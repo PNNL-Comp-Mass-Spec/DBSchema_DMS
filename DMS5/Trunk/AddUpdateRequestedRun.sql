@@ -39,6 +39,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			04/09/2008 grk - Added secondary separation field (Ticket #658)
 **			03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **          06/03/2009 grk - look up work package (Ticket #739) 
+**			07/27/2009 grk - added lookup for wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **
 *****************************************************/
 (
@@ -195,7 +196,7 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51004
 	end
-
+/*
 	---------------------------------------------------
 	-- get experiment ID from experiment number 
 	-- (and validate that it exists in database)
@@ -203,6 +204,37 @@ As
 
 	declare @experimentID int
 	execute @experimentID = GetExperimentID @experimentNum
+	if @experimentID = 0
+	begin
+		RAISERROR ('Could not find entry in database for experimentNum "%s"',
+			10, 1, @experimentNum)
+		return 51117
+	end
+*/
+	---------------------------------------------------
+	-- get experiment ID from experiment number 
+	-- (and validate that it exists in database)
+	-- Also set wellplate and well from experiment
+	-- if called for
+	---------------------------------------------------
+
+	declare @experimentID int
+
+	SELECT 
+		@experimentID = Exp_ID, 
+		@wellplateNum = case when @wellplateNum = '(lookup)' then EX_wellplate_num else @wellplateNum end,
+		@wellNum = case when @wellNum = '(lookup)' then EX_well_num else @wellNum end
+	FROM T_Experiments
+	WHERE Experiment_Num = @experimentNum
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		RAISERROR ('Error looking up experiment', 10, 1)
+		return 51117
+	end
+	--
 	if @experimentID = 0
 	begin
 		RAISERROR ('Could not find entry in database for experimentNum "%s"',

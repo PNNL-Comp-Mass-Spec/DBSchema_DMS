@@ -13,7 +13,7 @@ SELECT     dbo.T_Experiments.Exp_ID AS ID, dbo.T_Experiments.Experiment_Num AS E
                       dbo.T_Enzymes.Enzyme_Name AS Enzyme, dbo.T_Experiments.EX_lab_notebook_ref AS Notebook, dbo.T_Experiments.EX_Labelling AS Labelling, 
                       dbo.T_Internal_Standards.Name AS Predigest, T_Internal_Standards_1.Name AS Postdigest, 
                       dbo.T_Experiments.EX_sample_prep_request_ID AS Request, dbo.T_Material_Containers.Tag AS Container, 
-                      dbo.T_Material_Locations.Tag AS Location
+                      dbo.T_Material_Locations.Tag AS Location, dbo.T_Experiments.EX_wellplate_num AS Wellplate, dbo.T_Experiments.EX_well_num AS Well
 FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
                       dbo.T_Users ON dbo.T_Experiments.EX_researcher_PRN = dbo.T_Users.U_PRN INNER JOIN

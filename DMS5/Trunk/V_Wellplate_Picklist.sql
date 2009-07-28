@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Wellplate_Picklist
 AS
-SELECT     [Well Plate] + ' ' + CAST(ISNULL(Description, '') AS Char(24)) AS val, [Well Plate] AS ex
-FROM         dbo.V_Run_Assignment_Wellplate_List_Report
+SELECT     WP_Well_Plate_Num + ',  ' + CAST(ISNULL(WP_Description, '') AS Char(48)) AS val, WP_Well_Plate_Num AS ex
+FROM         dbo.T_Wellplates
 
 GO

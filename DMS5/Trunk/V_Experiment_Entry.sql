@@ -10,7 +10,8 @@ SELECT     dbo.T_Experiments.Experiment_Num, dbo.T_Campaign.Campaign_Num AS EX_C
                       dbo.T_Enzymes.Enzyme_Name, dbo.T_Experiments.EX_lab_notebook_ref, dbo.T_Experiments.EX_comment, 
                       dbo.GetExpCellCultureList(dbo.T_Experiments.Experiment_Num) AS EX_cell_culture_list, dbo.T_Experiments.EX_Labelling, 
                       dbo.T_Experiments.EX_sample_prep_request_ID AS samplePrepRequest, dbo.T_Internal_Standards.Name AS internalStandard, 
-                      T_Internal_Standards_1.Name AS postdigestIntStd, dbo.T_Material_Containers.Tag AS container
+                      T_Internal_Standards_1.Name AS postdigestIntStd, dbo.T_Material_Containers.Tag AS container, 
+                      dbo.T_Experiments.EX_wellplate_num AS wellplateNum, dbo.T_Experiments.EX_well_num AS wellNum
 FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
                       dbo.T_Enzymes ON dbo.T_Experiments.EX_enzyme_ID = dbo.T_Enzymes.Enzyme_ID INNER JOIN

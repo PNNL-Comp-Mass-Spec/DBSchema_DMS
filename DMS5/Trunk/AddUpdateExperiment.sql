@@ -23,6 +23,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **			03/13/2008 grk - added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
+**			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **
 *****************************************************/
 (
@@ -40,6 +41,8 @@ CREATE Procedure dbo.AddUpdateExperiment
 	@samplePrepRequest int = 0,
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
+	@wellplateNum varchar(64),
+	@wellNum varchar(8),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
@@ -205,6 +208,39 @@ As
 		set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51038
+	end
+
+
+	---------------------------------------------------
+	-- set up and validate wellplate values
+	---------------------------------------------------
+
+	declare @wellIndex int
+	exec @myError = ValidateWellplateLoading
+						@wellplateNum  output,
+						@wellNum  output,
+						1,
+						@wellIndex output,
+						@msg  output
+	if @myError <> 0
+	begin
+		RAISERROR (@msg, 10, 1)
+		return @myError
+	end
+
+	-- make sure we do not put two experiments in the same place
+	--
+	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode = 'add'
+	begin
+		set @msg = 'There is another experiment assigned to the same wellplate and well'
+		RAISERROR (@msg, 10, 1)
+		return 51043
+	end
+	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode = 'update'
+	begin
+		set @msg = 'There is another experiment assigned to the same wellplate and well'
+		RAISERROR (@msg, 10, 1)
+		return 51044
 	end
 
 	---------------------------------------------------
@@ -403,7 +439,9 @@ As
 				EX_sample_prep_request_ID,
 				EX_internal_standard_ID,
 				EX_postdigest_internal_std_ID,
-				EX_Container_ID
+				EX_Container_ID,
+				EX_wellplate_num, 
+				EX_well_num 
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
@@ -420,7 +458,10 @@ As
 				@samplePrepRequest,
 				@internalStandardID,
 				@postdigestIntStdID,
-				@contID
+				@contID,
+				@wellplateNum,
+				@wellNum
+
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -503,7 +544,9 @@ As
 			EX_sample_prep_request_ID = @samplePrepRequest,
 			EX_internal_standard_ID = @internalStandardID,
 			EX_postdigest_internal_std_ID = @postdigestIntStdID,
-			EX_Container_ID = @contID
+			EX_Container_ID = @contID,
+			EX_wellplate_num = @wellplateNum, 
+			EX_well_num = @wellNum
 		WHERE 
 			(Experiment_Num = @experimentNum)
 		--
