@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
 **			10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
 **			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**			07/31/2009 grk - added prep LC run field (http://prismtrac.pnl.gov/trac/ticket/743)
 **    
 *****************************************************/
 (
@@ -44,10 +45,11 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 	@researcher varchar(50) = 'parent',
 	@wellplateNum varchar(64) output,
 	@wellNum varchar(8) output,
+	@container varchar(128) = 'na',        -- na, "parent", "-20", or actual container ID
+	@prepLCRunID int,
 	@mode varchar(12),                    -- Not used at present - included for consistentcy
 	@message varchar(512) output,
-   	@callingUser varchar(128) = '',
-	@container varchar(128) = 'na'        -- na, "parent", "-20", or actual container ID
+   	@callingUser varchar(128) = ''
 )
 AS
 	SET NOCOUNT ON
@@ -285,6 +287,7 @@ AS
 		set @researcherPRN = @researcher
 	end
 /*** ***/
+
 	---------------------------------------------------
 	-- Set up transaction around multiple table modifications
 	---------------------------------------------------
@@ -301,11 +304,13 @@ AS
 		EG_Group_Type,
 		Parent_Exp_ID,
 		 EG_Description,
+		 Prep_LC_Run_ID,
 		 EG_Created
 	) VALUES (
 		@groupType,
 		@ParentExperimentID,
 		@description,
+		@prepLCRunID,
 		GETDATE()
 	)
 	--
@@ -569,6 +574,7 @@ AS
 	---------------------------------------------------
 Done:
 	RETURN @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS_User]

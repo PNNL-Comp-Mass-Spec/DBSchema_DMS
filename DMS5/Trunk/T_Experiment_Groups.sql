@@ -9,10 +9,11 @@ CREATE TABLE [dbo].[T_Experiment_Groups](
 	[EG_Created] [datetime] NOT NULL,
 	[EG_Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Parent_Exp_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT (0),
+	[Prep_LC_Run_ID] [int] NULL,
  CONSTRAINT [PK_T_Experiment_Groups] PRIMARY KEY CLUSTERED 
 (
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -21,7 +22,7 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Experiment_Groups] ON [dbo].[T_Experiment_Groups] 
 (
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Experiment_Groups_ParentExpID_GroupID_IncludeTypeCreatedDescription] ******/
@@ -32,7 +33,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiment_Groups_ParentExpID_GroupID_IncludeTyp
 )
 INCLUDE ( [EG_Group_Type],
 [EG_Created],
-[EG_Description]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+[EG_Description]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 GRANT DELETE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
 GO
