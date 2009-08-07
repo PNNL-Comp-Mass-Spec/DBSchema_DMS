@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
@@ -41,6 +42,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			02/27/2009 mem - Expanded @comment to varchar(512)
 **			04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
+**			08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **    
 *****************************************************/
 (
@@ -293,6 +295,18 @@ As
 	--
 	if @mode = 'add'
 	begin
+		---------------------------------------------------
+		-- get ID for new job (#744)
+		---------------------------------------------------
+		--
+		exec @jobID = GetNewJobID 'Job created in DMS'
+		if @jobID = 0
+		begin
+			set @msg = 'Failed to get valid new job ID'
+			RAISERROR (@msg, 10, 1)
+			return 51018
+		end
+		set @jobNum = cast(@jobID as varchar(32))
 	
 		declare @newJobNum int
 		Set @stateID = 1
@@ -305,6 +319,7 @@ As
 		---------------------------------------------------
 		--
 		INSERT INTO T_Analysis_Job (
+			AJ_jobID,
 			AJ_priority, 
 			AJ_created, 
 			AJ_analysisToolID, 
@@ -321,6 +336,7 @@ As
 			AJ_StateID,
 			AJ_propagationMode
 		) VALUES (
+			@jobID,
 			@priority, 
 			getdate(), 
 			@analysisToolID, 
@@ -347,11 +363,6 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51013
 		end
-		
-		-- return job number of newly created job
-		--
-		set @jobID = IDENT_CURRENT('T_Analysis_Job')
-		set @jobNum = cast(@jobID as varchar(32))
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
@@ -546,7 +557,6 @@ As
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis]

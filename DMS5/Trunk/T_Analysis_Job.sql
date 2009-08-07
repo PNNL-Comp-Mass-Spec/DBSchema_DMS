@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Analysis_Job](
-	[AJ_jobID] [int] IDENTITY(20000,1) NOT NULL,
+	[AJ_jobID] [int] NOT NULL,
 	[AJ_batchID] [int] NULL,
-	[AJ_priority] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_priority]  DEFAULT (2),
+	[AJ_priority] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_priority]  DEFAULT ((2)),
 	[AJ_created] [datetime] NOT NULL,
 	[AJ_start] [datetime] NULL,
 	[AJ_finish] [datetime] NULL,
-	[AJ_analysisToolID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_analysisToolID]  DEFAULT (0),
+	[AJ_analysisToolID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_analysisToolID]  DEFAULT ((0)),
 	[AJ_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJ_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -18,25 +18,25 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_datasetID] [int] NOT NULL,
 	[AJ_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_AJ_comment]  DEFAULT (''),
 	[AJ_owner] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AJ_StateID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateID]  DEFAULT (1),
+	[AJ_StateID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateID]  DEFAULT ((1)),
 	[AJ_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Last_Affected]  DEFAULT (getdate()),
 	[AJ_assignedProcessorName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_resultsFolderName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_proteinCollectionList] [varchar](2000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinCollectionList]  DEFAULT ('na'),
 	[AJ_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_proteinOptionsList]  DEFAULT ('na'),
-	[AJ_requestID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_requestID]  DEFAULT (1),
+	[AJ_requestID] [int] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_requestID]  DEFAULT ((1)),
 	[AJ_extractionProcessor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_extractionStart] [datetime] NULL,
 	[AJ_extractionFinish] [datetime] NULL,
-	[AJ_Analysis_Manager_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Analysis_Manager_Error]  DEFAULT (0),
-	[AJ_Data_Extraction_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Data_Extraction_Error]  DEFAULT (0),
-	[AJ_propagationMode] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_propogation_mode]  DEFAULT (0),
+	[AJ_Analysis_Manager_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Analysis_Manager_Error]  DEFAULT ((0)),
+	[AJ_Data_Extraction_Error] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_Data_Extraction_Error]  DEFAULT ((0)),
+	[AJ_propagationMode] [smallint] NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_propogation_mode]  DEFAULT ((0)),
 	[AJ_StateNameCached] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_AJ_StateNameCached]  DEFAULT (''),
 	[AJ_ProcessingTimeMinutes] [real] NULL,
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -45,14 +45,21 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_created] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_AJ_datasetID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_datasetID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_datasetID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_AJ_finish] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_finish] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_finish] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_AJ_StateID_AJ_JobID] ******/
@@ -60,35 +67,48 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_StateID_AJ_JobID] ON [dbo].[T_An
 (
 	[AJ_StateID] ASC,
 	[AJ_jobID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_AJ_StateNameCached] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_StateNameCached] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateNameCached] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_DatasetID_JobID_StateID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_DatasetID_JobID_StateID] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_datasetID] ASC,
+	[AJ_jobID] ASC,
+	[AJ_StateID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_OrganismDBName] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_OrganismDBName] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_organismDBName] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_RequestID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_RequestID] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_requestID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
-/****** Object:  Index [IX_T_Analysis_Job_State] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_State] ON [dbo].[T_Analysis_Job] 
+/****** Object:  Index [IX_T_Analysis_Job_StateID_include_JobPriorityToolDataset] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_StateID_include_JobPriorityToolDataset] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)
+INCLUDE ( [AJ_priority],
+[AJ_jobID],
+[AJ_datasetID],
+[AJ_analysisToolID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_ToolID_include_DatasetID] ******/
@@ -96,7 +116,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_include_DatasetID] ON [dbo].
 (
 	[AJ_analysisToolID] ASC
 )
-INCLUDE ( [AJ_datasetID]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [AJ_datasetID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJStart] ******/
@@ -106,7 +126,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJSt
 	[AJ_jobID] ASC,
 	[AJ_datasetID] ASC
 )
-INCLUDE ( [AJ_start]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [AJ_start]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_OrganismID_DatasetID] ******/
@@ -116,7 +136,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_OrganismID_DatasetID] 
 	[AJ_jobID] ASC,
 	[AJ_organismID] ASC,
 	[AJ_datasetID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_StateName_DatasetID] ******/
@@ -126,17 +146,18 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_StateName_DatasetID] O
 	[AJ_jobID] ASC,
 	[AJ_StateNameCached] ASC,
 	[AJ_datasetID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
-/****** Object:  Trigger [trig_d_AnalysisJob] ******/
+/****** Object:  Trigger [dbo].[trig_d_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
+
+create Trigger dbo.trig_d_AnalysisJob on dbo.T_Analysis_Job
 For Delete
 /****************************************************
 **
@@ -180,14 +201,15 @@ AS
 
 GO
 
-/****** Object:  Trigger [trig_i_AnalysisJob] ******/
+/****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
+
+create Trigger dbo.trig_i_AnalysisJob on dbo.T_Analysis_Job
 For Insert
 /****************************************************
 **
@@ -217,18 +239,18 @@ AS
 	FROM T_Analysis_Job AJ INNER JOIN
 		 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
 		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
-	
 
 GO
 
-/****** Object:  Trigger [trig_u_AnalysisJob] ******/
+/****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
+
+create Trigger dbo.trig_u_AnalysisJob on dbo.T_Analysis_Job
 For Update
 /****************************************************
 **
@@ -270,32 +292,32 @@ GRANT SELECT ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job] TO [Limited_Table_Write]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches] FOREIGN KEY([AJ_batchID])
 REFERENCES [T_Analysis_Job_Batches] ([Batch_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Batches]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request] FOREIGN KEY([AJ_requestID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request] FOREIGN KEY([AJ_requestID])
 REFERENCES [T_Analysis_Job_Request] ([AJR_requestID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Job_Request]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name] FOREIGN KEY([AJ_StateID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name] FOREIGN KEY([AJ_StateID])
 REFERENCES [T_Analysis_State_Name] ([AJS_stateID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_State_Name]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Tool] FOREIGN KEY([AJ_analysisToolID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Tool] FOREIGN KEY([AJ_analysisToolID])
 REFERENCES [T_Analysis_Tool] ([AJT_toolID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Analysis_Tool]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Dataset] FOREIGN KEY([AJ_datasetID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Dataset] FOREIGN KEY([AJ_datasetID])
 REFERENCES [T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Dataset]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Organisms] FOREIGN KEY([AJ_organismID])
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Organisms] FOREIGN KEY([AJ_organismID])
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Organisms]

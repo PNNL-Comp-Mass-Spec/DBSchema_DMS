@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddAnalysisJobGroup
 /****************************************************
 **
@@ -31,6 +32,9 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			02/27/2009 mem - Expanded @comment to varchar(512)
 **			04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
+**			08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
+**			08/05/2009 mem - Now removing duplicates when populating #TD
+**						   - Updated to use GetNewJobIDBlock to obtain job numbers
 **
 *****************************************************/
 (
@@ -66,7 +70,9 @@ As
 	declare @msg varchar(512)
 	declare @list varchar(1024)
 	declare @jobID int
-	
+	declare @JobIDStart int
+	declare @JobIDEnd int
+		
 	declare @stateID int
 	Set @stateID = 1
 
@@ -121,7 +127,8 @@ As
 		DS_state_ID int NULL, 
 		AS_state_ID int NULL,
 		Dataset_Type varchar(64) NULL,
-		DS_rating smallint NULL
+		DS_rating smallint NULL,
+		Job int NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -135,12 +142,13 @@ As
 
 	---------------------------------------------------
 	-- Populate table from dataset list  
+	-- Using Select Distinct to make sure any duplicates are removed
 	---------------------------------------------------
 	--
 	INSERT INTO #TD
 		(Dataset_Num)
 	SELECT
-		Item
+		DISTINCT LTrim(RTrim(Item))
 	FROM
 		MakeTableFromList(@datasetList)
 	--
@@ -153,6 +161,17 @@ As
 		return 51007
 	end
 
+	-- Make sure the Dataset names do not have carriage returns or line feeds
+		
+	UPDATE #td
+	SET Dataset_Num = Replace(Dataset_Num, char(13), '')
+	WHERE Dataset_Num LIKE '%' + char(13) + '%'
+	
+	UPDATE #td
+	SET Dataset_Num = Replace(Dataset_Num, char(10), '')
+	WHERE Dataset_Num LIKE '%' + char(10) + '%'
+	
+	
 	---------------------------------------------------
 	-- Resolve propagation mode 
 	---------------------------------------------------
@@ -241,7 +260,7 @@ As
 			
 			-- return ID of newly created batch
 			--
-			set @batchID = IDENT_CURRENT('T_Analysis_Job_Batches')
+			set @batchID = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Batches')
 		end
 
 		---------------------------------------------------
@@ -307,11 +326,61 @@ As
 		end
 
 		---------------------------------------------------
+		-- get new job number for every dataset 
+		-- in temporary table
+		---------------------------------------------------
+
+		-- Stored procedure GetNewJobIDBlock will populate #TmpNewJobIDs
+		CREATE TABLE #TmpNewJobIDs (ID int)
+
+		exec @myError = GetNewJobIDBlock @numDatasets, 'Job created in DMS'
+		if @myError <> 0
+		Begin
+			set @msg = 'Error obtaining block of Job IDs'
+			RAISERROR (@msg, 10, 1)
+			rollback transaction @transName
+			return 51010
+		End
+
+		-- Use the job number information in #TmpNewJobIDs to update #TD
+		-- If we know the first job number in #TmpNewJobIDs, then we can use
+		--  the Row_Number() function to update #TD
+		
+		Set @JobIDStart = 0
+		Set @JobIDEnd = 0
+		
+		SELECT @JobIDStart = MIN(ID), 
+		       @JobIDEnd = MAX(ID)
+		FROM #TmpNewJobIDs
+
+		-- Make sure @JobIDStart and @JobIDEnd define a contiguous block of jobs
+		If @JobIDEnd - @JobIDStart + 1 <> @numDatasets
+		Begin
+			set @msg = 'GetNewJobIDBlock did not return a contiguous block of jobs; requested ' + Convert(varchar(12), @numDatasets) + ' jobs but job range is ' + Convert(varchar(12), @JobIDStart) + ' to ' + Convert(varchar(12), @JobIDEnd)
+			RAISERROR (@msg, 10, 1)
+			rollback transaction @transName
+			return 51011
+		End
+		
+		-- The JobQ subquery uses Row_Number() and @JobIDStart to define the new job numbers for each entry in #TD
+		UPDATE #TD
+		SET Job = JobQ.ID
+		FROM #TD
+		     INNER JOIN ( SELECT Dataset_ID,
+		                         Row_Number() OVER ( ORDER BY Dataset_ID ) + @JobIDStart - 1 AS ID
+		                  FROM #TD ) JobQ
+		       ON #TD.Dataset_ID = JobQ.Dataset_ID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+		---------------------------------------------------
 		-- insert a new job in analysis job table for
 		-- every dataset in temporary table
 		---------------------------------------------------
 		--
 		INSERT INTO T_Analysis_Job (
+			AJ_jobID,
 			AJ_priority, 
 			AJ_created, 
 			AJ_analysisToolID, 
@@ -328,7 +397,8 @@ As
 			AJ_StateID,
 			AJ_requestID,
 			AJ_propagationMode
-		) SELECT 
+		) SELECT
+			Job,
 			@priority, 
 			getdate(), 
 			@analysisToolID, 
@@ -369,7 +439,7 @@ As
 		if @batchID = 0 AND @myRowCount = 1
 		begin
 			-- Added a single job; cache the jobID value
-			set @jobID = IDENT_CURRENT('T_Analysis_Job')
+			set @jobID = SCOPE_IDENTITY()				-- IDENT_CURRENT('T_Analysis_Job')
 		end
 			
 		---------------------------------------------------
@@ -447,14 +517,13 @@ As
 
 	END -- mode 'add'
 
-	set @message = 'Number of jobs created:' + cast(@myRowCount as varchar(12))
+	set @message = 'Number of jobs created: ' + cast(@myRowCount as varchar(12))
 
 	---------------------------------------------------
-	-- 
+	-- Done
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis]
