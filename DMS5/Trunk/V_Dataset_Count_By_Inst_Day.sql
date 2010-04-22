@@ -14,3 +14,7 @@ GROUP BY DATEPART(dd, created), DATEPART(mm, created),
 ORDER BY instrument, year, month, day
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Inst_Day] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Inst_Day] TO [PNL\D3M580] AS [dbo]
+GO

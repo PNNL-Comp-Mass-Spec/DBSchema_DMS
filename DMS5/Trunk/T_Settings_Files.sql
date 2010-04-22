@@ -7,15 +7,15 @@ CREATE TABLE [dbo].[T_Settings_Files](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[Analysis_Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[File_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Settings_Files_Description]  DEFAULT (''),
-	[Active] [tinyint] NULL CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)),
-	[Last_Updated] [datetime] NULL CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()),
+	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Active] [tinyint] NULL,
+	[Last_Updated] [datetime] NULL,
 	[Contents] [xml] NULL,
-	[Job_Usage_Count] [int] NULL CONSTRAINT [DF_T_Settings_Files_Job_Usage_Count]  DEFAULT ((0)),
+	[Job_Usage_Count] [int] NULL,
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -25,16 +25,13 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Settings_Files_Analysis_Tool_File_Name] O
 (
 	[Analysis_Tool] ASC,
 	[File_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_d_T_Settings_Files] ******/
+/****** Object:  Trigger [dbo].[trig_d_T_Settings_Files] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_d_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Delete
@@ -54,14 +51,11 @@ AS
 	FROM deleted
 
 GO
-
-/****** Object:  Trigger [trig_i_T_Settings_Files] ******/
+/****** Object:  Trigger [dbo].[trig_i_T_Settings_Files] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_i_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Insert
@@ -82,14 +76,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_u_T_Settings_Files] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Settings_Files] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Update
@@ -112,14 +103,24 @@ AS
 		FROM inserted
 
 GO
-GRANT DELETE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Settings_Files] FOREIGN KEY([Analysis_Tool])
 REFERENCES [T_Analysis_Tool] ([AJT_toolName])
+GO
+ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Settings_Files]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Description]  DEFAULT ('') FOR [Description]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)) FOR [Active]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
 GO

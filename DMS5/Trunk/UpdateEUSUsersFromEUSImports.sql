@@ -144,13 +144,15 @@ As
 	return @myError
 
 GO
-GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin]
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578]
+GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578]
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M580] AS [dbo]
 GO

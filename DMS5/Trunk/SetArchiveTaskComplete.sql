@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE  Procedure SetArchiveTaskComplete
-
+CREATE PROCEDURE dbo.SetArchiveTaskComplete
 /****************************************************
 **
 **	Desc: Sets status of task to successful
@@ -17,16 +16,19 @@ CREATE  Procedure SetArchiveTaskComplete
 **	@datasetNum				dataset for which archive task is being completed
 **  @completionCode			0->success, 1->failure, anything else ->no intermediate files
 **
-**		Auth: grk
-**		Date: 9/26/2002   
-**          06/21/2005 grk -- added handling for "requires_preparation" 
-**				11/27/2007 dac -- removed @processorname param, which is no longer required
+**	Auth:	grk
+**	Date:	09/26/2002   
+**          06/21/2005 grk - added handling for "requires_preparation" 
+**			11/27/2007 dac - removed @processorname param, which is no longer required
+**			03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
+**          12/17/2009 grk - added special success code '100' for use by capture broker 
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128),
-	--@processorName varchar(64),
-   @completionCode int = 0,
+	@completionCode int = 0,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -81,28 +83,36 @@ As
 	
 	-- decide what 
 	
-	if @completionCode = 0  -- task completed successfully
+	if @completionCode = 0 OR @completionCode = 100 -- task completed successfully
 		begin
 			-- decide what state is next 
 			--
-			declare @tmpState int
-			if @doPrep = 0 
-				set @tmpState = 3
-			else
-				set @tmpState = 11
+		   DECLARE @tmpState INT
+		   IF @completionCode = 100 
+			SET @tmpState = 3
+		   ELSE 
+			IF @doPrep = 0 
+			  SET @tmpState = 3
+			ELSE 
+			  SET @tmpState = 11
 			--
 			-- update the state
 			--
-			UPDATE    T_Dataset_Archive
+			UPDATE T_Dataset_Archive
 			SET
 				AS_state_ID = @tmpState, 
 				AS_update_state_ID = 4, 
 				AS_last_update = GETDATE(),
-				AS_last_verify = GETDATE()
-			WHERE     (AS_Dataset_ID = @datasetID)
+				AS_last_verify = GETDATE(),
+				AS_Last_Successful_Archive = 
+						CASE WHEN @tmpState = 3 
+						THEN GETDATE() 
+						ELSE AS_Last_Successful_Archive 
+						END
+			WHERE (AS_Dataset_ID = @datasetID)
 			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-		end
+			SELECT @myError = @@error, @myRowCount = @@rowcount			
+					end
 	else   -- task completed unsuccessfully
 		begin
 			UPDATE T_Dataset_Archive
@@ -127,5 +137,9 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SetArchiveTaskComplete] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[SetArchiveTaskComplete] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveTaskComplete] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveTaskComplete] TO [PNL\D3M580] AS [dbo]
 GO

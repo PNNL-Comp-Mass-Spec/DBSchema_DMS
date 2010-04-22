@@ -37,3 +37,7 @@ T_Analysis_State_Name ON T_Analysis_Job.AJ_StateID = T_Analysis_State_Name.AJS_s
 WHERE     (T_Analysis_Tool.AJT_toolName = 'XTandem')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GPM_Analysis_Job_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GPM_Analysis_Job_Report] TO [PNL\D3M580] AS [dbo]
+GO

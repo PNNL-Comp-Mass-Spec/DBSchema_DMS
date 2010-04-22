@@ -26,3 +26,7 @@ FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_List_Report_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GO

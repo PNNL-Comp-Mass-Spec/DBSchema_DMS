@@ -24,3 +24,7 @@ GROUP BY TD.Dataset_Num, TD.Dataset_ID, TD.DS_folder_name, dbo.t_storage_path.SP
                       dbo.T_Analysis_Job.AJ_StateID, dbo.T_Dataset_Archive.AS_state_ID, dbo.DatasetPreference(TD.Dataset_Num)
 HAVING      (NOT (ISNULL(dbo.T_Analysis_Job.AJ_StateID, 0) IN (2, 3, 9, 10, 11, 12))) AND (dbo.T_Dataset_Archive.AS_state_ID = 1) 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveTask_Temp] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveTask_Temp] TO [PNL\D3M580] AS [dbo]
+GO

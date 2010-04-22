@@ -25,3 +25,7 @@ FROM         dbo.T_Cell_Culture INNER JOIN
 ORDER BY dbo.T_Campaign.Campaign_Num, dbo.T_Experiments.Experiment_Num, dbo.T_Cell_Culture.CC_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_CCE_Experiment_Summary_EX] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_CCE_Experiment_Summary_EX] TO [PNL\D3M580] AS [dbo]
+GO

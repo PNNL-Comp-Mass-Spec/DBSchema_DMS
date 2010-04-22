@@ -293,7 +293,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [PNL\D3M580] AS [dbo]
 GO

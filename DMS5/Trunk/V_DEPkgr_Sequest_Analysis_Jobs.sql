@@ -18,3 +18,7 @@ FROM         dbo.T_Analysis_Job INNER JOIN
 WHERE     (dbo.T_Analysis_Tool.AJT_toolName = 'sequest')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Sequest_Analysis_Jobs] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Sequest_Analysis_Jobs] TO [PNL\D3M580] AS [dbo]
+GO

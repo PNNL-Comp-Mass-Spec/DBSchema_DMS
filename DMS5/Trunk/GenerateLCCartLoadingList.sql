@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.GenerateLCCartLoadingList
 **          06/07/2007 grk - added EMSL user columns to output (Ticket #488)
 **			07/31/2007 mem - now returning Dataset Type for each request (Ticket #505)
 **			08/27/2007 grk - add ability to start columns with a blank (Ticket #517)
+**			09/17/2009 grk - added check for requests that don't have column assignments
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -85,6 +86,17 @@ As
 		set @message = 'Error trying to populate temporary table for requests'
 		RAISERROR (@message, 10, 1)
 		return 51008
+	end
+
+	---------------------------------------------------
+	-- verify that all requests have column assignments
+	---------------------------------------------------
+	
+	IF EXISTS (SELECT * FROM #XR WHERE col IS NULL)
+	begin
+		set @message = 'Some requests do not have column assignments'
+		RAISERROR (@message, 10, 1)
+		return 51097
 	end
 
 	---------------------------------------------------
@@ -361,9 +373,13 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin]
+GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_RunScheduler]
+GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M580] AS [dbo]
 GO

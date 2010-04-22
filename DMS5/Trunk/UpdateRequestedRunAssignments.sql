@@ -18,8 +18,9 @@ CREATE Procedure dbo.UpdateRequestedRunAssignments
 **	Auth	grk
 **	Date	01/26/2003
 **			12/11/2003 grk - removed LCMS cart modes
-**			07/27/2007 mem - When @mode = 'instrument, then checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #503)
+**			07/27/2007 mem - When @mode = 'instrument, then checking dataset type (@datasetTypeName) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #503)
 **						   - Added output parameter @message to report the number of items updated
+**			09/16/2009 mem - Now checking dataset type (@datasetTypeName) against T_Instrument_Allowed_Dataset_Type (Ticket #748)
 **    
 *****************************************************/
 	@mode varchar(32), -- 'priority', 'instrument', 'delete'
@@ -42,14 +43,12 @@ As
 	declare @instrumentID int
 	declare @instrumentName varchar(128)
 
-	declare @allowedDatasetTypes varchar(255)
-	
 	declare @datasetTypeID int
 	declare @datasetTypeName varchar(64)
 	declare @RequestIDCount int
 	declare @RequestIDFirst int
-	
-	declare @MatchCount int
+
+	declare @allowedDatasetTypes varchar(255)
 	
 	set @message = ''
 	
@@ -103,18 +102,6 @@ As
 		end
 
 		---------------------------------------------------
-		-- Lookup the Allowed dataset types for instrument @instrumentID
-		---------------------------------------------------
-		
-		SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
-		FROM T_Instrument_Name InstName INNER JOIN
-				T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
-		WHERE (InstName.Instrument_ID = @instrumentID)
-		--	
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-
-		---------------------------------------------------
 		-- Populate a temporary table with the dataset type names
 		-- associated with the requests in #TmpRequestIDs
 		---------------------------------------------------
@@ -144,7 +131,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		-- Step through the entries in #TmpDatasetTypeList and verify each
-		--  Dataset Type against @allowedDatasetTypes
+		--  Dataset Type against T_Instrument_Allowed_Dataset_Type
 		
 		SELECT @DatasetTypeID = Min(DatasetTypeID)-1
 		FROM #TmpDatasetTypeList
@@ -170,15 +157,19 @@ As
 				-- Verify that dataset type is valid for given instrument
 				---------------------------------------------------				
 
-				Set @MatchCount = 0
-				SELECT @MatchCount = COUNT(*)
-				FROM T_DatasetTypeName DSTypeName INNER JOIN
-						(SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
-					DSTypeName.DST_Name = AllowedTypesQ.item
-				WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
+				If Not Exists (SELECT * FROM T_Instrument_Allowed_Dataset_Type WHERE Instrument = @instrumentName AND Dataset_Type = @DatasetTypeName)
+				begin
+					Set @allowedDatasetTypes = ''
+					
+					SELECT @allowedDatasetTypes = @allowedDatasetTypes + ', ' + Dataset_Type
+					FROM T_Instrument_Allowed_Dataset_Type 
+					WHERE Instrument = @instrumentName
+					ORDER BY Dataset_Type
 
-				If @MatchCount = 0
-				Begin -- <d>
+					-- Remove the leading two characters
+					If Len(@allowedDatasetTypes) > 0
+						Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
+
 					set @msg = 'Dataset Type "' + @DatasetTypeName + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
 					If @RequestIDCount > 1
 						set @msg = @msg + '; ' + Convert(varchar(12), @RequestIDCount) + ' conflicting Request IDs, starting with ID ' + Convert(varchar(12), @RequestIDFirst)
@@ -187,7 +178,8 @@ As
 					
 					RAISERROR (@msg, 10, 1)
 					return 51315
-				End	 -- </d>			
+				end
+	
 			End -- </c>
 		End -- </b>
 	End -- </a>
@@ -278,11 +270,15 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_Ops_Admin]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_RunScheduler]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [PNL\D3M580] AS [dbo]
 GO

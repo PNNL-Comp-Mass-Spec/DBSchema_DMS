@@ -92,3 +92,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[PostMaterialLogEntry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[PostMaterialLogEntry] TO [PNL\D3M580] AS [dbo]
+GO

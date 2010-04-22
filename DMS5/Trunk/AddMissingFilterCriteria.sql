@@ -12,7 +12,8 @@ CREATE Procedure dbo.AddMissingFilterCriteria
 **
 **	Auth:	mem
 **	Date:	02/01/2006
-**			10/30/2008 mem - Added MQScore, TotalPRMScore, and FScore
+**			10/30/2008 mem - Added Inspect MQScore, Inspect TotalPRMScore, and Inspect FScore
+**			07/21/2009 mem - Added Inspect PValue
 **    
 *****************************************************/
 (
@@ -156,6 +157,12 @@ AS
 							Set @CriterionValue = -10000
 						End
 
+						If @CriterionID = 21
+						Begin
+							-- Inspect PValue
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
 												
 						INSERT INTO T_Filter_Set_Criteria
 							(Filter_Criteria_Group_ID, Criterion_ID, Criterion_Comparison, Criterion_Value)
@@ -193,5 +200,9 @@ Done:
 	Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddMissingFilterCriteria] TO [DMS_ParamFile_Admin]
+GRANT EXECUTE ON [dbo].[AddMissingFilterCriteria] TO [DMS_ParamFile_Admin] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [PNL\D3M580] AS [dbo]
 GO

@@ -33,5 +33,9 @@ As
 	SELECT @experimentID = Exp_ID FROM T_Experiments WHERE (Experiment_Num = @experimentNum)
 	return(@experimentID)
 GO
-GRANT EXECUTE ON [dbo].[GetExperimentID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetExperimentID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [PNL\D3M580] AS [dbo]
 GO

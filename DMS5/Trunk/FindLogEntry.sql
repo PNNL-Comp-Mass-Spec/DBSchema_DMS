@@ -119,5 +119,9 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMS_Guest]
+GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMS_Guest] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [PNL\D3M580] AS [dbo]
 GO

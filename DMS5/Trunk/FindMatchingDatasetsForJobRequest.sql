@@ -20,7 +20,7 @@ CREATE PROCEDURE dbo.FindMatchingDatasetsForJobRequest
 **	Auth:	grk
 **			01/08/2008 grk - Initial release
 **			02/11/2009 mem - Updated to allow for OrgDBName to not be 'na' when using protein collection lists
-**	
+**			06/17/2009 mem - Updated to ignore OrganismName when using protein collection lists
 **    
 *****************************************************/
 (
@@ -95,13 +95,13 @@ AS
 		--
 		INSERT INTO @matchingJobDatasets(Dataset, Jobs, New, Busy, Complete, Failed, Holding)
 		SELECT 
-		DS.Dataset_Num AS Dataset,
-		COUNT(*) as Jobs,
-		SUM(CASE WHEN AJ.AJ_StateID IN (1) THEN 1 ELSE 0 END) AS New,
-		SUM(CASE WHEN AJ.AJ_StateID IN (2, 3, 9, 10, 11, 16, 17) THEN 1 ELSE 0 END) AS Busy,
-		SUM(CASE WHEN AJ.AJ_StateID IN (4, 14) THEN 1 ELSE 0 END) AS Complete,
-		SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 15, 18, 99) THEN 1 ELSE 0 END) AS Failed,
-		SUM(CASE WHEN AJ.AJ_StateID IN (8) THEN 1 ELSE 0 END) AS Holding
+			DS.Dataset_Num AS Dataset,
+			COUNT(*) as Jobs,
+			SUM(CASE WHEN AJ.AJ_StateID IN (1) THEN 1 ELSE 0 END) AS New,
+			SUM(CASE WHEN AJ.AJ_StateID IN (2, 3, 9, 10, 11, 16, 17) THEN 1 ELSE 0 END) AS Busy,
+			SUM(CASE WHEN AJ.AJ_StateID IN (4, 14) THEN 1 ELSE 0 END) AS Complete,
+			SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 15, 18, 99) THEN 1 ELSE 0 END) AS Failed,
+			SUM(CASE WHEN AJ.AJ_StateID IN (8) THEN 1 ELSE 0 END) AS Holding
 		FROM
 			T_Dataset DS INNER JOIN
 			T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
@@ -113,9 +113,13 @@ AS
 			AJT.AJT_toolName = @toolName AND 
 			AJ.AJ_parmFileName = @parmFileName AND 
 			AJ.AJ_settingsFileName = @settingsFileName AND 
-			Org.OG_name = IsNull(@organismName, Org.OG_name) AND
-			( (@proteinCollectionList = 'na' AND AJ.AJ_organismDBName = @organismDBName) OR
-			  (@proteinCollectionList <> 'na' and AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND  AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)) 
+			( (	@proteinCollectionList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
+				Org.OG_name = IsNull(@organismName, Org.OG_name)
+			  ) OR
+			  (	@proteinCollectionList <> 'na' AND 
+				AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
+				AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)
+			  ) 
 			)
 		GROUP BY DS.Dataset_Num
 
@@ -131,5 +135,9 @@ AS
 		where not dataset in (select dataset from @matchingJobDatasets)
 
 GO
-GRANT EXECUTE ON [dbo].[FindMatchingDatasetsForJobRequest] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[FindMatchingDatasetsForJobRequest] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindMatchingDatasetsForJobRequest] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindMatchingDatasetsForJobRequest] TO [PNL\D3M580] AS [dbo]
 GO

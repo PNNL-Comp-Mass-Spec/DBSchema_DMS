@@ -118,5 +118,9 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[LocalErrorHandler] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[LocalErrorHandler] TO [PNL\D3M580] AS [dbo]
 GO

@@ -168,7 +168,11 @@ As
 	return 51222
 
 GO
-GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS_Archive_Admin]
+GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS_Archive_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [PNL\D3M580] AS [dbo]
 GO

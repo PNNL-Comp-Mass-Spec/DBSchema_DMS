@@ -9,22 +9,22 @@ CREATE TABLE [dbo].[T_Dataset](
 	[DS_comment] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_created] [datetime] NOT NULL,
 	[DS_instrument_name_ID] [int] NULL,
-	[DS_LC_column_ID] [int] NULL CONSTRAINT [DF_T_Dataset_DS_LC_column_ID]  DEFAULT (0),
+	[DS_LC_column_ID] [int] NULL,
 	[DS_type_ID] [int] NULL,
-	[DS_wellplate_num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Dataset_DS_wellplate_num]  DEFAULT ('na'),
+	[DS_wellplate_num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_well_num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_sec_sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[DS_state_ID] [int] NOT NULL CONSTRAINT [DF_T_Dataset_DS_state_ID]  DEFAULT (1),
-	[DS_Last_Affected] [datetime] NOT NULL CONSTRAINT [DF_T_Dataset_DS_Last_Affected]  DEFAULT (getdate()),
+	[DS_state_ID] [int] NOT NULL,
+	[DS_Last_Affected] [datetime] NOT NULL,
 	[DS_folder_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_storage_path_ID] [int] NULL,
 	[Exp_ID] [int] NOT NULL,
 	[Dataset_ID] [int] IDENTITY(9000,1) NOT NULL,
-	[DS_internal_standard_ID] [int] NULL CONSTRAINT [DF_T_Dataset_DS_internal_standard_ID]  DEFAULT (0),
-	[DS_rating] [smallint] NOT NULL CONSTRAINT [DF_T_Dataset_DS_rating]  DEFAULT (2),
+	[DS_internal_standard_ID] [int] NULL,
+	[DS_rating] [smallint] NOT NULL,
 	[DS_Comp_State] [smallint] NULL,
 	[DS_Compress_Date] [datetime] NULL,
-	[DS_PrepServerName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Dataset_DS_PrepServerName]  DEFAULT ('na'),
+	[DS_PrepServerName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Acq_Time_Start] [datetime] NULL,
 	[Acq_Time_End] [datetime] NULL,
 	[Scan_Count] [int] NULL,
@@ -33,7 +33,7 @@ CREATE TABLE [dbo].[T_Dataset](
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY NONCLUSTERED 
 (
 	[Dataset_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -42,14 +42,14 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
 (
 	[DS_created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Acq_Time_Start] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset] 
 (
 	[Acq_Time_Start] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Dataset_ID_DS_Created] ******/
@@ -58,7 +58,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_ID_DS_Created] ON [dbo].[T_Datas
 	[Dataset_ID] ASC,
 	[DS_created] ASC
 )
-INCLUDE ( [Dataset_Num]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [Dataset_Num]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Dataset_ID_Exp_ID] ******/
@@ -66,14 +66,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_ID_Exp_ID] ON [dbo].[T_Dataset]
 (
 	[Dataset_ID] ASC,
 	[Exp_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Dataset_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Dataset_Num] ON [dbo].[T_Dataset] 
 (
 	[Dataset_Num] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_DatasetID_Created_StoragePathID_Include_DatasetNum] ******/
@@ -83,7 +83,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_Created_StoragePathID_Include_
 	[DS_created] ASC,
 	[DS_storage_path_ID] ASC
 )
-INCLUDE ( [Dataset_Num]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [Dataset_Num]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_DatasetID_include_DatasetNum_InstrumentNameID] ******/
@@ -92,14 +92,23 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_include_DatasetNum_InstrumentN
 	[Dataset_ID] ASC
 )
 INCLUDE ( [Dataset_Num],
-[DS_instrument_name_ID]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+[DS_instrument_name_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_DatasetID_InstrumentNameID_StoragePathID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_InstrumentNameID_StoragePathID] ON [dbo].[T_Dataset] 
+(
+	[Dataset_ID] ASC,
+	[DS_instrument_name_ID] ASC,
+	[DS_storage_path_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Exp_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Exp_ID] ON [dbo].[T_Dataset] 
 (
 	[Exp_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_ID_Created_ExpID_SPathID_InstrumentNameID] ******/
@@ -110,7 +119,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_ID_Created_ExpID_SPathID_InstrumentNameI
 	[Exp_ID] ASC,
 	[DS_storage_path_ID] ASC,
 	[DS_instrument_name_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_InstNameID_Dataset_DatasetID] ******/
@@ -119,21 +128,30 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstNameID_Dataset_DatasetID] ON [dbo].[
 	[DS_instrument_name_ID] ASC,
 	[Dataset_Num] ASC,
 	[Dataset_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ON [dbo].[T_Dataset] 
+(
+	[DS_instrument_name_ID] ASC,
+	[DS_type_ID] ASC
+)
+INCLUDE ( [Dataset_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_LC_column_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_LC_column_ID] ON [dbo].[T_Dataset] 
 (
 	[DS_LC_column_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_State_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset] 
 (
 	[DS_state_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNameID_DatasetID] ******/
@@ -144,7 +162,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNa
 	[Exp_ID] ASC,
 	[DS_instrument_name_ID] ASC,
 	[Dataset_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_Rating_DatasetID] ******/
@@ -155,16 +173,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_R
 	[DS_instrument_name_ID] ASC,
 	[DS_rating] ASC,
 	[Dataset_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_d_Dataset] ******/
+/****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
 For Delete
 /****************************************************
@@ -202,14 +217,11 @@ AS
 	ORDER BY Dataset_ID
 
 GO
-
-/****** Object:  Trigger [trig_i_Dataset] ******/
+/****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 /****************************************************
@@ -240,14 +252,11 @@ AS
 	ORDER BY inserted.Dataset_ID
 
 GO
-
-/****** Object:  Trigger [trig_u_Dataset] ******/
+/****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
 For Update
 /****************************************************
@@ -290,9 +299,9 @@ AS
 	End
 
 GO
-GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Dataset] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetRatingName] FOREIGN KEY([DS_rating])
 REFERENCES [T_DatasetRatingName] ([DRN_state_ID])
@@ -306,6 +315,7 @@ ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetStateName]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetTypeName] FOREIGN KEY([DS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetTypeName]
 GO
@@ -341,6 +351,21 @@ ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_t_storage_path]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Users] FOREIGN KEY([DS_Oper_PRN])
 REFERENCES [T_Users] ([U_PRN])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Users]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_LC_column_ID]  DEFAULT (0) FOR [DS_LC_column_ID]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_wellplate_num]  DEFAULT ('na') FOR [DS_wellplate_num]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_state_ID]  DEFAULT (1) FOR [DS_state_ID]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_Last_Affected]  DEFAULT (getdate()) FOR [DS_Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_internal_standard_ID]  DEFAULT (0) FOR [DS_internal_standard_ID]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_rating]  DEFAULT (2) FOR [DS_rating]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_PrepServerName]  DEFAULT ('na') FOR [DS_PrepServerName]
 GO

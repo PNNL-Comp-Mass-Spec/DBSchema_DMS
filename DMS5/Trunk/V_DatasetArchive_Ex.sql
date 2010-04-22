@@ -21,3 +21,7 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Instrument_Class ON dbo.T_Instrument_Name.IN_class = dbo.T_Instrument_Class.IN_class
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchive_Ex] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchive_Ex] TO [PNL\D3M580] AS [dbo]
+GO

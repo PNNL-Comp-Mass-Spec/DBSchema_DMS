@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpadateEntityAnnotations
+CREATE PROCEDURE [dbo].[UpdateEntityAnnotations]
 /****************************************************
 **
 **	Desc: 
@@ -176,5 +176,9 @@ As
 DONE:
 	return @myError
 GO
-GRANT EXECUTE ON [dbo].[UpdateEntityAnnotations] TO [DMS_Annotation_User]
+GRANT EXECUTE ON [dbo].[UpdateEntityAnnotations] TO [DMS_Annotation_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEntityAnnotations] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEntityAnnotations] TO [PNL\D3M580] AS [dbo]
 GO

@@ -24,6 +24,7 @@ CREATE Procedure dbo.DeleteExperiment
 **			02/27/2006 grk - added delete for experiment group table
 **			08/31/2006 jds - added check for requested runs (Ticket #199)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			02/26/2010  merged T_Requested_Run_History with T_Requested_Run
 **    
 *****************************************************/
 (
@@ -124,8 +125,8 @@ As
 	set @rrhCount = 0
 	--
 	SELECT @rrhCount = COUNT(*)
-	FROM T_Requested_Run_History
-	WHERE (Exp_ID = @ExperimentID)
+	FROM T_Requested_Run
+	WHERE (Exp_ID = @ExperimentID) AND NOT (DatasetID IS NULL)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -250,10 +251,15 @@ As
 	
 	return @myError
 
+
 GO
-GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin]
+GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [PNL\D3P214]
+GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [PNL\D3M580] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [PNL\D3P214] AS [dbo]
 GO

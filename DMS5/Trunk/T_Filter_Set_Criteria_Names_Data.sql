@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Filter_Set_Criteria_Names] ******/
-/****** RowCount: 20 ******/
+/****** RowCount: 21 ******/
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] ON
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (1,'Spectrum_Count','Number of distinct spectra the peptide is observed in, taking into account datasets analyzed multiple times')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (2,'Charge','Peptide charge')
@@ -18,7 +18,8 @@ INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criteri
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (15,'XTandem_LogEValue','XTandem E-Value (base-10 log)')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (16,'Peptide_Prophet_Probability','Sequest-based probability developed by Andrew Keller; for Inspect, use 1-PValue')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (17,'RankScore','The rank of the given peptides score within the given scan; for Sequest, this is RankXc; for Inspect this is RankFScore')
-INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (18,'MQScore','Inspect MQScore')
-INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (19,'TotalPRMScore','Inspect TotalPRMScore')
-INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (20,'FScore','Inspect FScore')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (18,'Inspect_MQScore','Inspect MQScore')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (19,'Inspect_TotalPRMScore','Inspect TotalPRMScore')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (20,'Inspect_FScore','Inspect FScore')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (21,'Inspect_PValue','Inspect PValue')
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] OFF

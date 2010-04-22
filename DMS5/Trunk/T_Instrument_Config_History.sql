@@ -9,12 +9,14 @@ CREATE TABLE [dbo].[T_Instrument_Config_History](
 	[Date_Of_Change] [datetime] NULL,
 	[Description] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Note] [text] COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Entered] [datetime] NOT NULL CONSTRAINT [DF_T_Instrument_Config_History_Entered]  DEFAULT (getdate()),
+	[Entered] [datetime] NOT NULL,
 	[EnteredBy] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Instrument_Config_History] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Instrument_Config_History] ADD  CONSTRAINT [DF_T_Instrument_Config_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

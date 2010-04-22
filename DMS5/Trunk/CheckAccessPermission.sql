@@ -29,5 +29,9 @@ AS
 	RETURN @result
 
 GO
-GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [public]
+GRANT VIEW DEFINITION ON [dbo].[CheckAccessPermission] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CheckAccessPermission] TO [PNL\D3M580] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [public] AS [dbo]
 GO

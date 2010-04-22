@@ -10,3 +10,7 @@ FROM         dbo.T_Users AS U
 GROUP BY U_PRN, U_HID, U_Name, U_email, U_Status, ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_User_List_Report_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_User_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GO

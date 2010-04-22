@@ -33,5 +33,9 @@ As
 	SELECT @datasetTypeID = DST_Type_ID FROM T_DatasetTypeName WHERE (DST_name = @datasetType)
 	return(@datasetTypeID)
 GO
-GRANT EXECUTE ON [dbo].[GetDatasetTypeID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetDatasetTypeID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetTypeID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetTypeID] TO [PNL\D3M580] AS [dbo]
 GO

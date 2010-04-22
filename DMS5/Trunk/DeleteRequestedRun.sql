@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create Procedure DeleteRequestedRun
+CREATE Procedure DeleteRequestedRun
 /****************************************************
 **
 **	Desc: 
@@ -14,12 +13,14 @@ create Procedure DeleteRequestedRun
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 2/23/2006
+**	Auth:	grk
+**	Date:	02/23/2006
+**			10/29/2009 mem - Made @message an optional output parameter
+**          02/26/2010 grk - delete factors
 **    
 *****************************************************/
 	@requestID int = 0,
-	@message varchar(512) output
+	@message varchar(512)='' output
 As
 	declare @delim char(1)
 	set @delim = ','
@@ -37,7 +38,15 @@ As
 
 	declare @msg varchar(256)
 
-	
+	---------------------------------------------------
+	-- We are done if there is no associated request
+	---------------------------------------------------
+	--
+	if @requestID = 0
+	begin
+		goto Done
+	end
+
 	---------------------------------------------------
 	-- 
 	---------------------------------------------------
@@ -45,30 +54,68 @@ As
 	declare @transName varchar(32)
 	set @transName = 'DeleteRequestedRun'
 	begin transaction @transName
-
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-
-	DELETE FROM T_Requested_Run_EUS_Users
-	WHERE     (Request_ID = @requestID)
-
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-
-	DELETE FROM T_Requested_Run
-	WHERE (ID = @requestID)
-	--	
-	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	--rollback transaction @transName
+	---------------------------------------------------
+	-- delete associated factors
+	---------------------------------------------------
+	--
+	DELETE FROM
+		T_Factor
+	WHERE
+		TargetID = @requestID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Failed to delete factors for request'
+		goto Done
+	end		
+
+	---------------------------------------------------
+	-- delete EUS users associated with request
+	---------------------------------------------------
+	--
+	DELETE FROM dbo.T_Requested_Run_EUS_Users
+	WHERE Request_ID = @requestID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Failed to delete EUS users for request'
+		goto Done
+	end		
+
+	---------------------------------------------------
+	-- delete associated auto-created request
+	---------------------------------------------------
+	--
+	DELETE FROM dbo.T_Requested_Run
+	WHERE ID = @requestID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Failed to delete request'
+		goto Done
+	end		
 
 	commit transaction @transName
-	return 0
+	---------------------------------------------------
+	-- 
+	---------------------------------------------------
+	--
+Done:
+	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [DMS_Ops_Admin]
+GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [PNL\D3M580] AS [dbo]
 GO

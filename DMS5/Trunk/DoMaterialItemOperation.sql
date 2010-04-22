@@ -12,9 +12,9 @@ CREATE Procedure DoMaterialItemOperation
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 07/23/2008
-**		Auth: grk   - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**	Auth:	grk
+**	Date:	07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**			10/01/2009 mem - Expanded error message
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -72,7 +72,7 @@ As
 	--
 	if @tmpID = 0
 	begin
-		set @msg = 'Could not find the material item'
+		set @msg = 'Could not find the material item for @mode="' + @mode + '" and @name="' + @name + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51010
 	end
@@ -81,7 +81,7 @@ As
 		declare 
 			@iMode varchar(32), -- 'move_material', 'retire_items'
 			@itemList varchar(4096),
-			@itemType varchar(128), -- 'mixed', 'containers'
+			@itemType varchar(128), -- 'mixed_material', 'containers'
 			@newValue varchar(128),
 			@comment varchar(512)
 
@@ -108,7 +108,11 @@ As
 		end
 	end
 
- 
+
 GO
-GRANT EXECUTE ON [dbo].[DoMaterialItemOperation] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[DoMaterialItemOperation] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialItemOperation] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialItemOperation] TO [PNL\D3M580] AS [dbo]
 GO

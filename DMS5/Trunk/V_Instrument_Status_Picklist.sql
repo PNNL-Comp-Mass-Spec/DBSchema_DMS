@@ -9,3 +9,7 @@ SELECT DISTINCT IN_status AS val
 FROM         dbo.T_Instrument_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Status_Picklist] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Status_Picklist] TO [PNL\D3M580] AS [dbo]
+GO

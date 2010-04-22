@@ -23,15 +23,19 @@ CREATE TABLE [dbo].[T_LC_Cart_Settings_History](
 	[Solvent_B] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Date_Of_Change] [datetime] NULL,
-	[Entered] [datetime] NOT NULL CONSTRAINT [DF_T_LC_Cart_Settings_Created]  DEFAULT (getdate()),
+	[Entered] [datetime] NOT NULL,
 	[EnteredBy] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_LC_Cart_Settings] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Settings_History]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Settings_History_T_LC_Cart] FOREIGN KEY([Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Settings_History] CHECK CONSTRAINT [FK_T_LC_Cart_Settings_History_T_LC_Cart]
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Settings_History] ADD  CONSTRAINT [DF_T_LC_Cart_Settings_Created]  DEFAULT (getdate()) FOR [Entered]
 GO

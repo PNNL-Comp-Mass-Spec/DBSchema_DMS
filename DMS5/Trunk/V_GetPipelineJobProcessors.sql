@@ -27,3 +27,7 @@ WHERE (PG.Group_Enabled = 'Y') AND
 GROUP BY TAJ.AJ_jobID, P.Processor_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobProcessors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobProcessors] TO [PNL\D3M580] AS [dbo]
+GO

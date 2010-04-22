@@ -27,3 +27,7 @@ FROM dbo.T_Filter_Set_Types FST
        ON FSCG.Filter_Criteria_Group_ID = FSC.Filter_Criteria_Group_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets] TO [PNL\D3M580] AS [dbo]
+GO

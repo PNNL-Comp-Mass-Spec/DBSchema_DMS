@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateArchiveDatasets 
+
+CREATE PROCEDURE [dbo].[UpdateArchiveDatasets] 
 /****************************************************
 **
 **	Desc:
@@ -17,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateArchiveDatasets
 **	Date:	08/21/2007
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			08/04/2008 mem - Now updating column AS_instrument_data_purged (Ticket #683)
+**			03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
 **    
 *****************************************************/
 (
@@ -209,7 +211,12 @@ As
 		if @archiveState <> '[no change]'
 		begin
 			UPDATE T_Dataset_Archive
-			SET AS_state_ID = @archiveStateID
+			SET AS_state_ID = @archiveStateID,
+				AS_Last_Successful_Archive = 
+						CASE WHEN @archiveStateID = 3 
+						THEN GETDATE() 
+						ELSE AS_Last_Successful_Archive 
+						END
 			FROM T_Dataset_Archive DA INNER JOIN
 				 T_Dataset DS ON DA.AS_Dataset_ID = DS.Dataset_ID
 			WHERE (DS.Dataset_Num IN (SELECT DatasetNum FROM #TDS))
@@ -302,6 +309,11 @@ As
 	
 	return @myError
 
+
 GO
-GRANT EXECUTE ON [dbo].[UpdateArchiveDatasets] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateArchiveDatasets] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateArchiveDatasets] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateArchiveDatasets] TO [PNL\D3M580] AS [dbo]
 GO

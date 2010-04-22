@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Predefined_Analysis_Dataset_Info]
 AS
 SELECT Cmpgn.Campaign_Num AS Campaign,
@@ -17,7 +18,8 @@ SELECT Cmpgn.Campaign_Num AS Campaign,
        DS.Dataset_Num AS Dataset,
        DS.DS_rating AS Rating,
        DSTypeName.DST_Name AS Dataset_Type,
-       SepType.SS_name AS Separation_Type
+       SepType.SS_name AS Separation_Type,
+       ISNULL(DS.Acq_Time_Start, DS.DS_created) AS DS_Date
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -32,4 +34,9 @@ FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Secondary_Sep SepType
        ON DS.DS_sec_sep = SepType.SS_name
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Dataset_Info] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Dataset_Info] TO [PNL\D3M580] AS [dbo]
 GO

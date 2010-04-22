@@ -47,5 +47,5 @@ END
 
 
 GO
-GRANT SELECT ON [dbo].[DaysAndHoursInDateRange] TO [public]
+GRANT SELECT ON [dbo].[DaysAndHoursInDateRange] TO [public] AS [dbo]
 GO

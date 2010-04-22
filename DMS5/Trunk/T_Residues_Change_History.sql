@@ -17,12 +17,16 @@ CREATE TABLE [dbo].[T_Residues_Change_History](
 	[Num_S] [smallint] NOT NULL,
 	[Monoisotopic_Mass_Change] [float] NULL,
 	[Average_Mass_Change] [float] NULL,
-	[Entered] [datetime] NOT NULL CONSTRAINT [DF_T_Residues_Change_History_Entered]  DEFAULT (getdate()),
-	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Residues_Change_History_Entered_By]  DEFAULT (suser_sname()),
+	[Entered] [datetime] NOT NULL,
+	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Residues_Change_History] PRIMARY KEY CLUSTERED 
 (
 	[Event_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Residues_Change_History] ADD  CONSTRAINT [DF_T_Residues_Change_History_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Residues_Change_History] ADD  CONSTRAINT [DF_T_Residues_Change_History_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

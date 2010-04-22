@@ -80,3 +80,7 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteExperimentGroup] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteExperimentGroup] TO [PNL\D3M580] AS [dbo]
+GO

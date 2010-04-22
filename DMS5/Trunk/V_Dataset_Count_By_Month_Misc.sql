@@ -15,3 +15,7 @@ GROUP BY year, month
 ORDER BY year, month
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_Misc] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_Misc] TO [PNL\D3M580] AS [dbo]
+GO

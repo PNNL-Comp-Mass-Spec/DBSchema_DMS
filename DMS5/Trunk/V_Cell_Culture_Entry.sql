@@ -14,3 +14,7 @@ FROM         dbo.T_Cell_Culture INNER JOIN
                       dbo.T_Material_Containers ON dbo.T_Cell_Culture.CC_Container_ID = dbo.T_Material_Containers.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Entry] TO [PNL\D3M580] AS [dbo]
+GO

@@ -22,6 +22,7 @@ CREATE Procedure dbo.DeleteDataset
 **			04/07/2006 grk - Got ride of CDBurn stuff
 **			05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			05/08/2009 mem - Now checking T_Dataset_Info
 **    
 *****************************************************/
 (
@@ -96,8 +97,7 @@ As
 	if @@error <> 0
 	begin
 		rollback transaction @transName
-		RAISERROR ('Delete from archive table was unsuccessful for dataset',
-			10, 1)
+		RAISERROR ('Delete from archive table was unsuccessful for dataset', 10, 1)
 		return 51131
 	end
 
@@ -110,8 +110,7 @@ As
 	if @@error <> 0
 	begin
 		rollback transaction @transName
-		RAISERROR ('Delete from analysis job table was unsuccessful for dataset',
-			10, 1)
+		RAISERROR ('Delete from analysis job table was unsuccessful for dataset', 10, 1)
 		return 51132
 	end
 	
@@ -143,11 +142,23 @@ As
 	end
 	
 	---------------------------------------------------
+	-- Delete any entries in T_Dataset_Info
+	---------------------------------------------------
+	DELETE FROM T_Dataset_Info
+	WHERE Dataset_ID = @datasetID
+	if @@error <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete from dataset info table was unsuccessful for dataset', 10, 1)
+		return 51132
+	end
+		
+	---------------------------------------------------
 	-- delete entry from dataset table
 	---------------------------------------------------
 
     DELETE FROM T_Dataset
-    WHERE Dataset_ID =  @datasetID
+    WHERE Dataset_ID = @datasetID
 
 	if @@rowcount <> 1
 	begin
@@ -171,9 +182,13 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_DS_Entry]
+GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_Ops_Admin]
+GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteDataset] TO [PNL\D3M580] AS [dbo]
 GO

@@ -156,7 +156,11 @@ As
   return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS_Instrument_Admin]
+GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS_Instrument_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [PNL\D3M580] AS [dbo]
 GO

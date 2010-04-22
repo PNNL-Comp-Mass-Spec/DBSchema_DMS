@@ -16,3 +16,7 @@ FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Experiment_Groups ON dbo.T_Experiment_Group_Members.Group_ID = dbo.T_Experiment_Groups.Group_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Group_Members_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Group_Members_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

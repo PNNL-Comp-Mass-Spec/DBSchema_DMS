@@ -72,5 +72,5 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[ExtractNumberFromText] TO [public]
+GRANT EXECUTE ON [dbo].[ExtractNumberFromText] TO [public] AS [dbo]
 GO

@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[T_Experiment_Groups](
 	[EG_Group_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[EG_Created] [datetime] NOT NULL,
 	[EG_Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Parent_Exp_ID] [int] NOT NULL CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT (0),
+	[Parent_Exp_ID] [int] NOT NULL,
 	[Prep_LC_Run_ID] [int] NULL,
  CONSTRAINT [PK_T_Experiment_Groups] PRIMARY KEY CLUSTERED 
 (
@@ -35,16 +35,18 @@ INCLUDE ( [EG_Group_Type],
 [EG_Created],
 [EG_Description]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-GRANT DELETE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
+GRANT DELETE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
+GRANT INSERT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
+GRANT SELECT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578]
+GRANT UPDATE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups_T_Experiments]
+GO
+ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT (0) FOR [Parent_Exp_ID]
 GO

@@ -26,6 +26,8 @@ CREATE PROCEDURE AddRequestedRuns
 **      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **		04/25/2008 grk - Added secondary separation field (Ticket #658)
 **		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
+**		07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**		03/02/2010 grk - added status field to requested run
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
@@ -37,8 +39,6 @@ CREATE PROCEDURE AddRequestedRuns
 	@msType varchar(20),
 		-- optional arguments
 	@instrumentSettings varchar(512) = "na",
-	@wellplateNum varchar(64) = "na",
-	@wellNum varchar(24) = "na",
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
@@ -60,7 +60,7 @@ As
 	set @message = ''
 	
 	declare @msg varchar(256)
-	
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -138,15 +138,14 @@ As
 	end
 
 	---------------------------------------------------
-	-- set up to auto increment well number
+	-- set up wellplate stuff to force lookup 
+	-- from experiments
 	---------------------------------------------------
-	declare @wellInt int
-	set @wellInt = 0
 	--
-	if @wellNum <> 'na'
-	begin
-		set @wellInt = cast(@wellNum as int)	
-	end
+	declare @wellplateNum varchar(64)
+	declare @wellNum varchar(24)
+	set @wellplateNum  = '(lookup)'
+	set @wellNum  = '(lookup)'
 
 	---------------------------------------------------
 	-- Step through experiment list and make 
@@ -192,36 +191,31 @@ As
 		begin
 			set @message = ''
 			set @reqName = @tFld + @suffix
-			exec @myError = AddUpdateRequestedRun
-								@reqName,
-								@tFld,
-								@operPRN,
-								@instrumentName,
-								@workPackage,
-								@msType,
-								@instrumentSettings,
-								@wellplateNum,
-								@wellNum,
-								@internalStandard,
-								@comment,
-								@eusProposalID,
-								@eusUsageType,
-								@eusUsersList,
-								'add',
-								@request output,
-								@message output,
-								@secSep,
-								@MRMAttachment
+			EXEC @myError = dbo.AddUpdateRequestedRun 
+									@reqName = @reqName,
+									@experimentNum = @tFld,
+									@operPRN = @operPRN,
+									@instrumentName = @instrumentName,
+									@workPackage = @workPackage,
+									@msType = @msType,
+									@instrumentSettings = @instrumentSettings,
+									@wellplateNum = @wellplateNum,
+									@wellNum = @wellNum,
+									@internalStandard = @internalStandard,
+									@comment = @comment,
+									@eusProposalID = @eusProposalID,
+									@eusUsageType = @eusUsageType,
+									@eusUsersList = @eusUsersList,
+									@mode = 'add',
+									@request = @request output,
+									@message = @message output,
+									@secSep = @secSep,
+									@MRMAttachment = @MRMAttachment,
+									@status = 'Active'
+			--
 			set @message = '[' + @tFld + '] ' + @message 
 			if @myError <> 0
 				return @myError
-		end
-
-		-- bump well count
-		if @wellNum <> 'na'
-		begin
-			set @wellInt = @wellInt + 1	
-			set @wellNum = cast(@wellInt as varchar(12))
 		end
 	end
 	
@@ -230,11 +224,14 @@ As
 	return 0
 
 
-
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry]
+GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [PNL\D3M580] AS [dbo]
 GO

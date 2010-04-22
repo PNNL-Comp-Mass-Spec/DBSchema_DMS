@@ -39,5 +39,5 @@ Begin
 End
 
 GO
-GRANT EXECUTE ON [dbo].[ValidateNAParameter] TO [public]
+GRANT EXECUTE ON [dbo].[ValidateNAParameter] TO [public] AS [dbo]
 GO

@@ -3,16 +3,38 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Cell_Culture_List_Report_2
-AS
-SELECT     dbo.T_Cell_Culture.CC_ID AS ID, dbo.T_Cell_Culture.CC_Name AS Name, dbo.T_Cell_Culture.CC_Source_Name AS Source, 
-                      dbo.T_Cell_Culture.CC_Owner_PRN AS Contact, dbo.T_Cell_Culture_Type_Name.Name AS Type, dbo.T_Cell_Culture.CC_Reason AS Reason, 
-                      dbo.T_Cell_Culture.CC_Created AS Created, dbo.T_Cell_Culture.CC_PI_PRN AS PI, dbo.T_Cell_Culture.CC_Comment AS Comment, 
-                      dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Locations.Tag AS Location
-FROM         dbo.T_Cell_Culture INNER JOIN
-                      dbo.T_Cell_Culture_Type_Name ON dbo.T_Cell_Culture.CC_Type = dbo.T_Cell_Culture_Type_Name.ID INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Cell_Culture.CC_Campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
-                      dbo.T_Material_Containers ON dbo.T_Cell_Culture.CC_Container_ID = dbo.T_Material_Containers.ID INNER JOIN
-                      dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
 
+
+CREATE VIEW [dbo].[V_Cell_Culture_List_Report_2]
+AS
+SELECT U.CC_ID AS ID,
+       U.CC_Name AS Name,
+       U.CC_Source_Name AS Source,
+       U.CC_Owner_PRN AS Contact,
+       CTN.Name AS Type,
+       U.CC_Reason AS Reason,
+       U.CC_Created AS Created,
+       U.CC_PI_PRN AS PI,
+       U.CC_Comment AS Comment,
+       C.Campaign_Num AS Campaign,
+       MC.Tag AS Container,
+       ML.Tag AS Location,
+       U.CC_Material_Active AS [Material Status]
+FROM dbo.T_Cell_Culture U
+     INNER JOIN dbo.T_Cell_Culture_Type_Name CTN
+       ON U.CC_Type = CTN.ID
+     INNER JOIN dbo.T_Campaign C
+       ON U.CC_Campaign_ID = C.Campaign_ID
+     INNER JOIN dbo.T_Material_Containers MC
+       ON U.CC_Container_ID = MC.ID
+     INNER JOIN dbo.T_Material_Locations ML
+       ON MC.Location_ID = ML.ID
+
+
+
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_List_Report_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_List_Report_2] TO [PNL\D3M580] AS [dbo]
 GO

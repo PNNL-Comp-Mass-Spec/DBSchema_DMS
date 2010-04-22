@@ -18,3 +18,7 @@ GROUP BY dbo.T_Dataset.Dataset_Num, dbo.T_Campaign.Campaign_Num, dbo.T_Experimen
                       dbo.T_Dataset.DS_created
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Dataset_Tracking] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Dataset_Tracking] TO [PNL\D3M580] AS [dbo]
+GO

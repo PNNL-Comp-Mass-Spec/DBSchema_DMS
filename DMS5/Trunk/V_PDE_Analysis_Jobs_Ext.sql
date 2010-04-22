@@ -3,27 +3,48 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_PDE_Analysis_Jobs_Ext
-AS
-SELECT     dbo.T_Analysis_Job.AJ_jobID AS AnalysisID, dbo.T_Dataset.Dataset_Num AS DatasetName, dbo.T_Experiments.Experiment_Num AS Experiment, 
-                      dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Analysis_Job.AJ_finish AS Completed, 
-                      dbo.T_Analysis_Job.AJ_parmFileName AS ParamFileUsed, dbo.T_Organisms.OG_name AS Organism, 
-                      dbo.T_Analysis_Job.AJ_organismDBName AS OrganismDatabaseUsed, dbo.T_Analysis_Job.AJ_proteinCollectionList AS ProteinCollectionsUsed, 
-                      dbo.T_Analysis_Job.AJ_proteinOptionsList AS ProteinCollectionOptions, 
-                      dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName + '\' AS AnalysisJobPath, 
-                      dbo.T_Instrument_Name.IN_name AS InstrumentName, dbo.T_Analysis_Job.AJ_requestID AS AnalysisJobRequestID, 
-                      dbo.T_Analysis_Job_Request.AJR_requestName AS AnalysisJobRequestName, 
-                      dbo.V_Dataset_Folder_Paths.Archive_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName + '\' AS AnalysisJobArchivePath
-FROM         dbo.T_Analysis_Job INNER JOIN
-                      dbo.T_Dataset ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID INNER JOIN
-                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID INNER JOIN
-                      dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
-                      dbo.T_Experiments ON dbo.T_Dataset.Exp_ID = dbo.T_Experiments.Exp_ID INNER JOIN
-                      dbo.T_Analysis_Tool ON dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
-                      dbo.T_Analysis_Job_Request ON dbo.T_Analysis_Job.AJ_requestID = dbo.T_Analysis_Job_Request.AJR_requestID INNER JOIN
-                      dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID INNER JOIN
-                      dbo.V_Dataset_Folder_Paths ON dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Folder_Paths.Dataset_ID
-WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Analysis_Tool.AJT_toolName LIKE '%sequest%') AND (dbo.T_Dataset.DS_rating > 1)
 
+CREATE VIEW [dbo].[V_PDE_Analysis_Jobs_Ext]
+AS
+SELECT AJ.AJ_jobID AS AnalysisID,
+       DS.Dataset_Num AS DatasetName,
+       E.Experiment_Num AS Experiment,
+       C.Campaign_Num AS Campaign,
+       AJ.AJ_finish AS Completed,
+       AJ.AJ_parmFileName AS ParamFileUsed,
+       Org.OG_name AS Organism,
+       AJ.AJ_organismDBName AS OrganismDatabaseUsed,
+       AJ.AJ_proteinCollectionList AS ProteinCollectionsUsed,
+       AJ.AJ_proteinOptionsList AS ProteinCollectionOptions,
+       DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName + '\' AS AnalysisJobPath,
+       InstName.IN_name AS InstrumentName,
+       AJ.AJ_requestID AS AnalysisJobRequestID,
+       AJR.AJR_requestName AS AnalysisJobRequestName,
+       DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName + '\' AS AnalysisJobArchivePath
+FROM T_Analysis_Job AJ
+     INNER JOIN T_Dataset DS
+       ON AJ.AJ_datasetID = DS.Dataset_ID
+     INNER JOIN T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN t_storage_path SPath
+       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+     INNER JOIN T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN T_Analysis_Tool AnTool
+       ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
+     INNER JOIN T_Campaign C
+       ON E.EX_campaign_ID = C.Campaign_ID
+     INNER JOIN T_Analysis_Job_Request AJR
+       ON AJ.AJ_requestID = AJR.AJR_requestID
+     INNER JOIN T_Organisms Org
+       ON AJ.AJ_organismID = Org.Organism_ID
+     INNER JOIN V_Dataset_Folder_Paths DFP
+       ON DS.Dataset_ID = DFP.Dataset_ID
+WHERE (AJ.AJ_StateID = 4) AND
+      (AnTool.AJT_toolName LIKE '%sequest%')
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_Analysis_Jobs_Ext] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_Analysis_Jobs_Ext] TO [PNL\D3M580] AS [dbo]
 GO

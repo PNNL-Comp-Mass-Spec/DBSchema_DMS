@@ -187,7 +187,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_Guest]
+GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindDataset] TO [PNL\D3M580] AS [dbo]
 GO

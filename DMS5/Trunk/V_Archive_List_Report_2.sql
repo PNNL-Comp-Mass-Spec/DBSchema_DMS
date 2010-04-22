@@ -19,3 +19,7 @@ FROM         dbo.T_Dataset_Archive AS DA INNER JOIN
                       dbo.t_storage_path AS SPath ON DS.DS_storage_path_ID = SPath.SP_path_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_List_Report_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GO

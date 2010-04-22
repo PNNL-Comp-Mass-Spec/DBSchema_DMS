@@ -66,5 +66,5 @@ Begin
 End
 
 GO
-GRANT EXECUTE ON [dbo].[GetFASTAFilePath] TO [public]
+GRANT EXECUTE ON [dbo].[GetFASTAFilePath] TO [public] AS [dbo]
 GO

@@ -11,3 +11,7 @@ SELECT Experiment_Num, { fn YEAR(EX_created) } AS year,
 FROM dbo.T_Experiments
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Date] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Date] TO [PNL\D3M580] AS [dbo]
+GO

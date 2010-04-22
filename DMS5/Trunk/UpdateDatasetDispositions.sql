@@ -335,7 +335,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler]
+GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [PNL\D3M580] AS [dbo]
 GO

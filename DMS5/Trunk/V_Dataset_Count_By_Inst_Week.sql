@@ -14,3 +14,7 @@ GROUP BY DATEPART(wk, created), DATEPART(yy, created),
 ORDER BY instrument, year, week
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Inst_Week] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Inst_Week] TO [PNL\D3M580] AS [dbo]
+GO

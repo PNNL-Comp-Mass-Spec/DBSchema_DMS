@@ -13,3 +13,7 @@ SELECT     T_Cell_Culture.CC_Name AS CellCulture, T_Experiments.Experiment_Num A
                        T_Experiments ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Experiments] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Experiments] TO [PNL\D3M580] AS [dbo]
+GO

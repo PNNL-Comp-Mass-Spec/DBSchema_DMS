@@ -18,3 +18,7 @@ FROM         dbo.T_Dataset_Archive AS DA INNER JOIN
 WHERE     (DA.AS_state_ID NOT IN (3, 4, 9, 10))
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Check_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Check_Report] TO [PNL\D3M580] AS [dbo]
+GO

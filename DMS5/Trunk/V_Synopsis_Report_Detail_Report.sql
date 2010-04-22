@@ -23,3 +23,7 @@ FROM T_Peptide_Synopsis_Reports INNER JOIN
  T_Peptide_Synopsis_Reports_State ON State = State_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Synopsis_Report_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Synopsis_Report_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

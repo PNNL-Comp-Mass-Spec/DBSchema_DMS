@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
+CREATE PROCEDURE EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
 **	Desc: 
@@ -30,13 +30,18 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			01/30/2008 grk - Set several in #RuleEval to be explicitly null (needed by DMS2)
 **			04/11/2008 mem - Added parameter @RaiseErrorMessages; now using RaiseError to inform the user of errors if @RaiseErrorMessages is non-zero
 **			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
+**			05/14/2009 mem - Added parameter @ExcludeDatasetsNotReleased
+**			07/22/2009 mem - Now returning 0 if @jobsCreated = 0 and @myError = 0 (previously, we were returning 1, which a calling procedure could erroneously interpret as meaning an error had occurred)
+**			09/04/2009 mem - Added DatasetType filter
+**			12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
 **
 *****************************************************/
 (
 	@datasetNum varchar(128),
 	@outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
 	@message varchar(512) = '' output,
-	@RaiseErrorMessages tinyint = 1
+	@RaiseErrorMessages tinyint = 1,
+	@ExcludeDatasetsNotReleased tinyint = 1		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
 )
 As
 	set nocount on
@@ -48,7 +53,9 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
+	Set @datasetNum = IsNull(@datasetNum, '')
 	Set @RaiseErrorMessages = IsNull(@RaiseErrorMessages, 1)
+	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
 
 	---------------------------------------------------
 	-- Validate @outputType
@@ -110,7 +117,7 @@ As
 	--
 	if @myError <> 0 or @ID = 0
 	begin
-		set @message = 'Dataset name not found in DMS'
+		set @message = 'Dataset name not found in DMS: ' + @datasetNum
 		
 		If @RaiseErrorMessages <> 0
 			RAISERROR (@message, 10, 1)
@@ -125,15 +132,19 @@ As
 	begin
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
-			set @message = 'Dataset rating does not allow creation of jobs'
-
-			If @RaiseErrorMessages <> 0
+			-- If @ExcludeDatasetsNotReleased = 0 and @Rating is -5, then we do allow jobs to be created
+			If Not (@ExcludeDatasetsNotReleased = 0 And @Rating = -5)
 			Begin
-				Set @myError = 53501
-				RAISERROR (@message, 10, 1)
-			End
+				set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetNum
 
-			goto done
+				If @RaiseErrorMessages <> 0
+				Begin
+					Set @myError = 53501
+					RAISERROR (@message, 10, 1)
+				End
+
+				goto done
+			End
 		end
 	end
 
@@ -146,17 +157,18 @@ As
 		AD_sequence int NULL ,
 		AD_instrumentClassCriteria varchar (32)  NOT NULL ,
 		AD_campaignNameCriteria varchar (128)  NOT NULL ,
+		AD_campaignExclCriteria varchar (128)  NOT NULL ,
 		AD_experimentNameCriteria varchar (128)  NOT NULL ,
+		AD_experimentExclCriteria varchar (128)  NOT NULL ,
 		AD_instrumentNameCriteria varchar (64)  NOT NULL ,
 		AD_organismNameCriteria varchar (64)  NOT NULL ,
 		AD_datasetNameCriteria varchar (128)  NOT NULL ,
+		AD_datasetExclCriteria varchar (128)  NOT NULL ,
+		AD_datasetTypeCriteria varchar (64)  NOT NULL ,
 		AD_expCommentCriteria varchar (128)  NOT NULL ,
 		AD_labellingInclCriteria varchar (64)  NOT NULL ,
 		AD_labellingExclCriteria varchar (64)  NOT NULL ,
 		AD_separationTypeCriteria varchar (64)  NOT NULL ,
-		AD_campaignExclCriteria varchar (128)  NOT NULL ,
-		AD_experimentExclCriteria varchar (128)  NOT NULL ,
-		AD_datasetExclCriteria varchar (128)  NOT NULL ,
 		AD_analysisToolName varchar (64)  NOT NULL ,
 		AD_parmFileName varchar (255)  NOT NULL ,
 		AD_settingsFileName varchar (255)  NULL ,
@@ -193,16 +205,17 @@ As
 			[Instrument Class Crit.] varchar(32) NULL, 
 			[Instrument Crit.] varchar(128) NULL, 
 			[Campaign Crit.] varchar(128) NULL, 
+			[Campaign Exclusion] varchar(128),
 			[Experiment Crit.] varchar(128) NULL, 
+			[Experiment Exclusion] varchar(128),
 			[Organism Crit.] varchar(64) NULL, 
 			[Dataset Crit.] varchar(128) NULL, 
+			[Dataset Exclusion] varchar(128),
+			[Dataset Type] varchar(128),
 			[Exp. Comment Crit.] varchar(128),
 			[Labelling Incl.] varchar(64) NULL, 
 			[Labelling Excl.] varchar(64) NULL,
 			[Separation Type Crit.] varchar(64) NULL,
-			[Campaign Exclusion] varchar(128),
-			[Experiment Exclusion] varchar(128),
-			[Dataset Exclusion] varchar(128),
 			[Parm File] varchar(255) NULL, 
 			[Settings File] varchar(255) NULL,
 			Organism varchar(64) NULL, 
@@ -225,17 +238,18 @@ As
 		AD_sequence,
 		AD_instrumentClassCriteria,
 		AD_campaignNameCriteria,
+		AD_campaignExclCriteria, 
 		AD_experimentNameCriteria,
+		AD_experimentExclCriteria, 
 		AD_instrumentNameCriteria,
 		AD_organismNameCriteria,
 		AD_datasetNameCriteria,
+		AD_datasetExclCriteria,
+		AD_datasetTypeCriteria,
 		AD_expCommentCriteria,
 		AD_labellingInclCriteria,
 		AD_labellingExclCriteria,
 		AD_separationTypeCriteria, 
-		AD_campaignExclCriteria, 
-		AD_experimentExclCriteria, 
-		AD_datasetExclCriteria,
 		AD_analysisToolName,
 		AD_parmFileName,
 		AD_settingsFileName,
@@ -252,17 +266,18 @@ As
 		PA.AD_sequence,
 		PA.AD_instrumentClassCriteria,
 		PA.AD_campaignNameCriteria,
+		PA.AD_campaignExclCriteria, 
 		PA.AD_experimentNameCriteria,
+		PA.AD_experimentExclCriteria, 
 		PA.AD_instrumentNameCriteria,
 		PA.AD_organismNameCriteria,
 		PA.AD_datasetNameCriteria,
+		PA.AD_datasetExclCriteria,
+		PA.AD_datasetTypeCriteria,
 		PA.AD_expCommentCriteria,
 		PA.AD_labellingInclCriteria,
 		PA.AD_labellingExclCriteria,
 		PA.AD_separationTypeCriteria, 
-		PA.AD_campaignExclCriteria, 
-		PA.AD_experimentExclCriteria, 
-		PA.AD_datasetExclCriteria,
 		PA.AD_analysisToolName,
 		PA.AD_parmFileName,
 		PA.AD_settingsFileName,
@@ -281,6 +296,7 @@ As
 		AND ((@Campaign LIKE PA.AD_campaignNameCriteria) OR (PA.AD_campaignNameCriteria = '')) 
 		AND ((@Experiment LIKE PA.AD_experimentNameCriteria) OR (PA.AD_experimentNameCriteria = '')) 
 		AND ((@Dataset LIKE PA.AD_datasetNameCriteria) OR (PA.AD_datasetNameCriteria = '')) 
+		AND ((@DatasetType LIKE PA.AD_datasetTypeCriteria) OR (PA.AD_datasetTypeCriteria = ''))
 		AND ((@ExperimentComment LIKE PA.AD_expCommentCriteria) OR (PA.AD_expCommentCriteria = '')) 
 		AND ((@ExperimentLabelling LIKE PA.AD_labellingInclCriteria) OR (PA.AD_labellingInclCriteria = '')) 
 		AND (NOT (@ExperimentLabelling LIKE PA.AD_labellingExclCriteria) OR (PA.AD_labellingExclCriteria = ''))
@@ -319,23 +335,28 @@ As
 			[Action], [Reason], 
 			[Notes], [Analysis Tool],
 			[Instrument Class Crit.], [Instrument Crit.], 
-			[Campaign Crit.], [Experiment Crit.], 
-			[Organism Crit.], [Dataset Crit.], [Exp. Comment Crit.],
+			[Campaign Crit.], [Campaign Exclusion],
+			[Experiment Crit.], [Experiment Exclusion], 
+			[Organism Crit.], 
+			[Dataset Crit.], [Dataset Exclusion], [Dataset Type],
+			[Exp. Comment Crit.],
 			[Labelling Incl.], [Labelling Excl.],
-			[Separation Type Crit.], [Campaign Exclusion], 
-			[Experiment Exclusion], [Dataset Exclusion],
+			[Separation Type Crit.],  
 			[Parm File], [Settings File],
-			Organism, [Organism DB], [Prot. Coll.], [Prot. Opts.],
+			Organism, [Organism DB], 
+			[Prot. Coll.], [Prot. Opts.],
 			Priority, [Processor Group])
 		SELECT	AD_level, AD_sequence, AD_ID, AD_nextLevel,
 				'Skip' AS [Action], 'Level skip' AS [Reason], 
 				'' AS [Notes], AD_analysisToolName,
 				AD_instrumentClassCriteria, AD_instrumentNameCriteria,
-				AD_campaignNameCriteria, AD_experimentNameCriteria,
-				AD_organismNameCriteria, AD_datasetNameCriteria, AD_expCommentCriteria,
+				AD_campaignNameCriteria, AD_campaignExclCriteria, 
+				AD_experimentNameCriteria, AD_experimentExclCriteria, 
+				AD_organismNameCriteria, 
+				AD_datasetNameCriteria, AD_datasetExclCriteria, AD_datasetTypeCriteria,
+				AD_expCommentCriteria,
 				AD_labellingInclCriteria, AD_labellingExclCriteria,
-				AD_separationTypeCriteria, AD_campaignExclCriteria, 
-				AD_experimentExclCriteria, AD_datasetExclCriteria,
+				AD_separationTypeCriteria, 
 				AD_parmFileName, AD_settingsFileName,
 				AD_organismName, AD_organismDBName, 
 				AD_proteinCollectionList, AD_proteinOptionsList, 
@@ -422,8 +443,6 @@ As
 	declare @tmpProcessorGroupID int
 	declare @SchedulingRulesID int
 
-	declare @allowedDatasetTypes varchar(255)
-	
 	declare @result int
 	declare @Continue int
 
@@ -490,19 +509,14 @@ As
 			-- Validate that @DatasetType is appropriate for this analysis tool
 			---------------------------------------------------
 			--
-			SELECT  @allowedDatasetTypes = AJT_allowedDatasetTypes
-			FROM    T_Analysis_Tool
-			WHERE   (AJT_toolName = @analysisToolName)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error looking for allowed dataset types for tool'
-				return 51007
-			end
-			
-			If Not Exists (SELECT * FROM MakeTableFromList(@allowedDatasetTypes) WHERE Item = @DatasetType)
+			If Not Exists (
+				SELECT *
+				FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
+				     INNER JOIN T_Analysis_Tool Tool
+				       ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
+				WHERE Tool.AJT_toolName = @analysisToolName AND
+				      ADT.Dataset_Type = @DatasetType
+				)
 			Begin
 				-- Dataset type is not allowed for this tool
 				Set @UseRule = 0
@@ -641,14 +655,16 @@ As
 		End -- </b>
 
 	End -- </a>
-
-	---------------------------------------------------
-	-- if we didn't schedule any jobs, 
-	-- but didn't have any errors, return code of 1
-	---------------------------------------------------
 	
 	if @myError = 0 and @jobsCreated = 0 
-		set @myError = 1
+	Begin
+		---------------------------------------------------
+		-- We didn't schedule any jobs, but didn't have any errors; 
+		-- this is OK
+		---------------------------------------------------
+
+		set @myError = 0
+	End
 
 	---------------------------------------------------
 	-- if mode is show rules, return list of rules and exit
@@ -734,7 +750,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [PNL\D3M580] AS [dbo]
 GO

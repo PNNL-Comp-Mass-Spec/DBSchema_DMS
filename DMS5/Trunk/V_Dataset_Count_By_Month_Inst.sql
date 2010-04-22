@@ -12,3 +12,7 @@ GROUP BY year, month, Instrument
 ORDER BY Instrument, year, month
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_Inst] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_Inst] TO [PNL\D3M580] AS [dbo]
+GO

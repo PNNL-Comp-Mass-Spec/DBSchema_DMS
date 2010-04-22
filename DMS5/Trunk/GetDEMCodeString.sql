@@ -38,5 +38,5 @@ AS
 	END
 
 GO
-GRANT EXECUTE ON [dbo].[GetDEMCodeString] TO [public]
+GRANT EXECUTE ON [dbo].[GetDEMCodeString] TO [public] AS [dbo]
 GO

@@ -26,3 +26,7 @@ WHERE     (dbo.T_Dataset_Archive.AS_update_state_ID = 2) AND (dbo.T_Dataset_Arch
                             FROM          dbo.T_Analysis_Job
                             WHERE      (AJ_StateID IN (2, 3, 9, 10, 11, 12)) AND (AJ_datasetID = TD.Dataset_ID)))
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveUpdateTask_Temp] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveUpdateTask_Temp] TO [PNL\D3M580] AS [dbo]
+GO

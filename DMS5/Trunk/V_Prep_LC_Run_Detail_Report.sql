@@ -11,3 +11,7 @@ SELECT     ID, Tab, Instrument, Type, LC_Column AS [LC Column], Comment, Guard_C
 FROM         dbo.T_Prep_LC_Run
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

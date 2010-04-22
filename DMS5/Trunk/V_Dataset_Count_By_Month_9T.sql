@@ -11,3 +11,7 @@ WHERE (Instrument LIKE '%9T%')
 GROUP BY year, month
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_9T] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_By_Month_9T] TO [PNL\D3M580] AS [dbo]
+GO

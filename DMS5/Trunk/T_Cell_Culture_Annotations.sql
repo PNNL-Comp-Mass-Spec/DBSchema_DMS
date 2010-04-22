@@ -7,24 +7,21 @@ CREATE TABLE [dbo].[T_Cell_Culture_Annotations](
 	[CC_ID] [int] NOT NULL,
 	[Key_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Value] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Entered] [datetime] NULL CONSTRAINT [DF_T_Cell_Culture_Annotations_Entered]  DEFAULT (getdate()),
-	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Cell_Culture_Annotations_Entered_By]  DEFAULT (suser_sname()),
+	[Entered] [datetime] NULL,
+	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Cell_Culture_Annotations] PRIMARY KEY CLUSTERED 
 (
 	[CC_ID] ASC,
 	[Key_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
-/****** Object:  Trigger [trig_u_T_Cell_Culture_Annotations] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Cell_Culture_Annotations] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE TRIGGER [dbo].[trig_u_T_Cell_Culture_Annotations] ON [dbo].[T_Cell_Culture_Annotations] 
 FOR UPDATE
@@ -56,17 +53,25 @@ AS
 
 
 GO
-GRANT DELETE ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User]
+GRANT DELETE ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User]
+GRANT INSERT ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User]
+GRANT UPDATE ON [dbo].[T_Cell_Culture_Annotations] TO [DMS_Annotation_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Cell_Culture_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Annotation_Keys] FOREIGN KEY([Key_Name])
 REFERENCES [T_Annotation_Keys] ([Key_Name])
 ON UPDATE CASCADE
 GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] CHECK CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Annotation_Keys]
+GO
 ALTER TABLE [dbo].[T_Cell_Culture_Annotations]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Cell_Culture] FOREIGN KEY([CC_ID])
 REFERENCES [T_Cell_Culture] ([CC_ID])
 ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] CHECK CONSTRAINT [FK_T_Cell_Culture_Annotations_T_Cell_Culture]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] ADD  CONSTRAINT [DF_T_Cell_Culture_Annotations_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture_Annotations] ADD  CONSTRAINT [DF_T_Cell_Culture_Annotations_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

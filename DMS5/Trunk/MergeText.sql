@@ -41,5 +41,5 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[MergeText] TO [public]
+GRANT EXECUTE ON [dbo].[MergeText] TO [public] AS [dbo]
 GO

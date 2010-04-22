@@ -15,3 +15,7 @@ FROM T_Peptide_Synopsis_Reports INNER JOIN
 WHERE Task_Type = 'Synopsis'
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Synopsis_Report_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Synopsis_Report_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

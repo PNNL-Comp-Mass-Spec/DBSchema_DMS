@@ -34,3 +34,7 @@ FROM T_Dataset INNER JOIN
    T_Dataset.DS_instrument_name_ID = v_assigned_storage.Instrument_ID
 WHERE (T_Dataset.DS_state_ID = 1)
 GO
+GRANT VIEW DEFINITION ON [dbo].[v_GetDatasetsForCaptureFromClient] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[v_GetDatasetsForCaptureFromClient] TO [PNL\D3M580] AS [dbo]
+GO

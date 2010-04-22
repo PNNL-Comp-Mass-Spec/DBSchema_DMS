@@ -12,3 +12,7 @@ SELECT     Request_ID, Request_Name, Created_Date, Requested_Instrument, Experim
 FROM         dbo.V_DEPkgr_Completed_Run_Requests
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_All_Run_Requests] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_All_Run_Requests] TO [PNL\D3M580] AS [dbo]
+GO

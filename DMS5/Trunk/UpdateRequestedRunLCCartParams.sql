@@ -24,12 +24,13 @@ CREATE Procedure UpdateRequestedRunLCCartParams
 **		      04/18/2007 grk - 'fill_into_gaps' function adds requests in canonical sort order
 **		      04/18/2007 grk - New requests supersede existing assignments in 'fill_into_gaps' function
 **		      04/18/2007 grk - 'fill_into_gaps' function can handle empty columns and min col count
+**		      01/27/2010 grk - increased size of @reqRunIDList
 **    
 *****************************************************/
 	@mode varchar(32), -- 
 	@newValue1 varchar(512),
 	@newValue2 varchar(512),
-	@reqRunIDList varchar(2048)
+	@reqRunIDList varchar(7000)
 As
 	declare @myError int
 	set @myError = 0
@@ -42,6 +43,15 @@ As
 	declare @priority int
 	declare @seq smallint
 	set @seq = 0
+
+	-------------------------------------------------
+	-- check for list overflow
+	-------------------------------------------------
+	
+	IF LEN(@reqRunIDList) > 6999
+	BEGIN
+		RETURN 60
+	END
 
 	-------------------------------------------------
 	-- Assign the selected requests to the given cart
@@ -346,9 +356,13 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_LC_Column_Admin]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_RunScheduler]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunLCCartParams] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunLCCartParams] TO [PNL\D3M580] AS [dbo]
 GO

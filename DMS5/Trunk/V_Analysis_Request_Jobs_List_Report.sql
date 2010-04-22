@@ -3,6 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
+
+
 CREATE VIEW [dbo].[V_Analysis_Request_Jobs_List_Report]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -20,10 +23,12 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_created AS Created,
        AJ.AJ_start AS Started,
        AJ.AJ_finish AS Finished,
-       ISNULL(AJ.AJ_assignedProcessorName, '(none)') AS CPU,
        AJ.AJ_batchID AS Batch,
        AJ.AJ_requestID AS [#ReqestID],
-       PG.Group_Name AS [Associated Processor Group]
+       PG.Group_Name AS [Associated Processor Group],
+       DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder,
+       DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder_Archive,
+       Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime
 FROM dbo.T_Analysis_Job_Processor_Group PG
      INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations PGA
        ON PG.ID = PGA.Group_ID
@@ -36,6 +41,15 @@ FROM dbo.T_Analysis_Job_Processor_Group PG
                         ON AJ.AJ_analysisToolID = Tool.AJT_toolID
                       INNER JOIN dbo.T_Analysis_State_Name ASN
                         ON AJ.AJ_StateID = ASN.AJS_stateID
+                      INNER JOIN V_Dataset_Folder_Paths DFP
+                        ON AJ.AJ_datasetID = DFP.Dataset_ID
        ON PGA.Job_ID = AJ.AJ_jobID
 
+
+
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Request_Jobs_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Request_Jobs_List_Report] TO [PNL\D3M580] AS [dbo]
 GO

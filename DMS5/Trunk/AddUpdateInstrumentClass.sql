@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.AddUpdateInstrumentClass
+CREATE Procedure AddUpdateInstrumentClass
 /****************************************************
 **
 **	Desc: Adds new or updates existing Instrument Class in database
@@ -17,12 +16,12 @@ CREATE Procedure dbo.AddUpdateInstrumentClass
 **		@isPurgable           Determines if the instrument class is purgable 
 **		@rawDataType	      Specifies the raw data type for the instrument class
 **		@requiresPreparation  Determines if the instrument class requires preparation
-**		@allowedDatasetTypes  Comma separated list of dataset types that are allowed for this instrument calss
 **	
 **
-**		Auth: jds
-**		Date: 07/06/2006
-***           07/25/2007 mem - Added parameter @allowedDatasetTypes
+**	Auth:	jds
+**	Date:	07/06/2006
+**			07/25/2007 mem - Added parameter @allowedDatasetTypes
+**			09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
 **    
 *****************************************************/
 (
@@ -30,7 +29,6 @@ CREATE Procedure dbo.AddUpdateInstrumentClass
 	@isPurgable varchar(1), 
 	@rawDataType varchar(32), 
 	@requiresPreparation varchar(1), 
-	@allowedDatasetTypes varchar(255),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -127,7 +125,7 @@ As
 			@isPurgable,
 			@rawDataType,
 			@requiresPreparation,
-			@allowedDatasetTypes
+			''
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -154,8 +152,7 @@ As
 		SET 
 			is_purgable = @isPurgable, 
 			raw_data_type = @rawDataType, 
-			requires_preparation = @requiresPreparation,
-			Allowed_Dataset_Types = @allowedDatasetTypes
+			requires_preparation = @requiresPreparation
 		WHERE (IN_class = @InstrumentClass)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -172,5 +169,9 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrumentClass] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateInstrumentClass] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [PNL\D3M580] AS [dbo]
 GO

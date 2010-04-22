@@ -63,3 +63,7 @@ WHERE (AJ.AJ_StateID = 4) AND
       (DS.DS_rating >= 1)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Export_Ex] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Export_Ex] TO [PNL\D3M580] AS [dbo]
+GO

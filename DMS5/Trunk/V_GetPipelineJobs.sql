@@ -13,7 +13,8 @@ SELECT AJ.AJ_jobID AS Job,
        DS.Dataset_ID,
        AJ.AJ_settingsFileName AS Settings_File_Name,
        AJ.AJ_StateID AS State,
-       SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path
+       SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path,
+       AJ.AJ_Comment AS Comment
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID
@@ -28,4 +29,9 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
       (DA.AS_state_ID IN (3, 4, 10)) AND
       (DA.AS_update_state_ID <> 3)
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobs] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobs] TO [PNL\D3M580] AS [dbo]
 GO

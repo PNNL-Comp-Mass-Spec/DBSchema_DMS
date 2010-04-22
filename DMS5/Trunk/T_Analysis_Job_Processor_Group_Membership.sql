@@ -6,14 +6,14 @@ GO
 CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership](
 	[Processor_ID] [int] NOT NULL,
 	[Group_ID] [int] NOT NULL,
-	[Membership_Enabled] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Membership_Enabled]  DEFAULT ('Y'),
-	[Last_Affected] [datetime] NULL CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Last_Affected]  DEFAULT (getdate()),
-	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Entered_By]  DEFAULT (suser_sname()),
+	[Membership_Enabled] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Last_Affected] [datetime] NULL,
+	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_Processor_Group_Membership_PK] PRIMARY KEY CLUSTERED 
 (
 	[Processor_ID] ASC,
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -23,18 +23,15 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processor_Group_Membership_GroupID_
 (
 	[Group_ID] ASC,
 	[Membership_Enabled] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_u_T_Analysis_Job_Processor_Group_Membership] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group_Membership] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create TRIGGER dbo.trig_u_T_Analysis_Job_Processor_Group_Membership ON dbo.T_Analysis_Job_Processor_Group_Membership 
+create TRIGGER [dbo].[trig_u_T_Analysis_Job_Processor_Group_Membership] ON [dbo].[T_Analysis_Job_Processor_Group_Membership] 
 FOR UPDATE
 AS
 /****************************************************
@@ -70,13 +67,26 @@ AS
 	End
 
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Membership] ([Entered_By]) TO [DMS2_SP_User]
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Membership] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [T_Analysis_Job_Processor_Group_T_Analysis_Job_Processor_Group_Membership_FK1] FOREIGN KEY([Group_ID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [T_Analysis_Job_Processor_Group_T_Analysis_Job_Processor_Group_Membership_FK1]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [T_Analysis_Job_Processors_T_Analysis_Job_Processor_Group_Membership_FK1] FOREIGN KEY([Processor_ID])
 REFERENCES [T_Analysis_Job_Processors] ([ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [T_Analysis_Job_Processors_T_Analysis_Job_Processor_Group_Membership_FK1]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership]  WITH CHECK ADD  CONSTRAINT [CK_T_Analysis_Job_Processor_Group_Membership_Enabled] CHECK  (([Membership_Enabled] = 'N' or [Membership_Enabled] = 'Y'))
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] CHECK CONSTRAINT [CK_T_Analysis_Job_Processor_Group_Membership_Enabled]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Membership_Enabled]  DEFAULT ('Y') FOR [Membership_Enabled]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Membership_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

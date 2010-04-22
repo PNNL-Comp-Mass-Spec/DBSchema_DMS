@@ -10,23 +10,20 @@ CREATE TABLE [dbo].[T_Param_Entries](
 	[Entry_Specifier] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Entry_Value] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Param_File_ID] [int] NOT NULL,
-	[Entered] [datetime] NULL CONSTRAINT [DF_T_Param_Entries_Entered]  DEFAULT (getdate()),
-	[Entered_By] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Param_Entries_Entered_By]  DEFAULT (suser_sname()),
+	[Entered] [datetime] NULL,
+	[Entered_By] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Param_Entries] PRIMARY KEY CLUSTERED 
 (
 	[Param_Entry_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
-/****** Object:  Trigger [trig_d_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_d_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE TRIGGER [dbo].[trig_d_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR DELETE
@@ -52,14 +49,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_i_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_i_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE TRIGGER [dbo].[trig_i_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR INSERT
@@ -85,14 +79,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_u_T_Param_Entries] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE TRIGGER [dbo].[trig_u_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR UPDATE
@@ -164,17 +155,23 @@ AS
 
 
 GO
-GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT INSERT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin]
+GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User]
+GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
 REFERENCES [T_Param_Files] ([Param_File_ID])
 ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Param_Entries] CHECK CONSTRAINT [FK_T_Param_Entries_T_Param_Files]
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

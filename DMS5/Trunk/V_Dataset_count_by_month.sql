@@ -13,3 +13,7 @@ SELECT year, month, COUNT(*) AS [Number of Datasets Created],
 FROM V_dataset_date
 GROUP BY year, month
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_count_by_month] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_count_by_month] TO [PNL\D3M580] AS [dbo]
+GO

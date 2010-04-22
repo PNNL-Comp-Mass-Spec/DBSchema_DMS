@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure AddUpdateStorage
+
+CREATE Procedure [dbo].[AddUpdateStorage]
 /****************************************************
 **
 **	Desc: 
@@ -37,10 +38,12 @@ CREATE Procedure AddUpdateStorage
 **	
 **	Return values: 0: success, otherwise, error code
 **
-**		Auth: grk
-**		Date: 4/15/2002
+**	Auth:	grk
+**	Date:	04/15/2002
+**			05/01/2009 mem - Updated description field in t_storage_path to be named SP_description
 **    
 *****************************************************/
+(
 	@path varchar(255), 
 	@volNameClient varchar(128),
 	@volNameServer varchar(128),
@@ -50,6 +53,7 @@ CREATE Procedure AddUpdateStorage
     @ID varchar(32) output,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -268,7 +272,7 @@ As
 			SP_vol_name_server, 
 			SP_function, 
 			SP_instrument_name, 
-			SP_descripton,
+			SP_description,
 			SP_machine_name
 		) VALUES (
 			@path,
@@ -458,7 +462,7 @@ As
 			SP_vol_name_server =@volNameServer, 
 			SP_function =@storFunction, 
 			SP_instrument_name =@instrumentName, 
-			SP_descripton =@description,
+			SP_description =@description,
 			SP_machine_name = @machineName
 		WHERE (SP_path_ID = @spID)
 		--
@@ -478,8 +482,13 @@ As
 
 	return @myError
 
+
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin]
+GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [PNL\D3M580] AS [dbo]
 GO

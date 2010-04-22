@@ -1,0 +1,53 @@
+/****** Object:  View [dbo].[V_Datasets_With_Flanking_QCs] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create VIEW V_Datasets_With_Flanking_QCs
+AS
+SELECT Dataset_Num AS Dataset,
+       Acq_Time Acq_Time_Start,
+       DS_LC_column_ID AS LC_Column_ID,
+       InstName.IN_name AS Instrument,
+       QC_Dataset,
+       SubsequentRun,
+       Proximity_Rank,
+       Diff_Days
+FROM ( SELECT Dataset_Num,
+              Acq_Time,
+              DS_LC_column_ID,
+              DS_instrument_name_ID,
+              QC_Dataset,
+              Diff_Hours / 24.0 AS Diff_Days,
+              SubsequentRun,
+              row_number() OVER ( PARTITION BY Dataset_Num, SubsequentRun ORDER BY Diff_Hours ) AS 
+                Proximity_Rank
+       FROM ( SELECT DS.Dataset_Num,
+                     ISNULL(DS.Acq_Time_Start, DS.DS_created) AS Acq_Time,
+                     DS.DS_LC_column_ID,
+                     DS.DS_instrument_name_ID,
+                     QCDatasets.Dataset_Num AS QC_Dataset,
+                     DateDiff(HOUR, ISNULL(DS.Acq_Time_Start, DS.DS_created), QCDatasets.Acq_Time) AS Diff_Hours,
+					CASE WHEN (datediff(HOUR, ISNULL(DS.Acq_Time_Start, DS.DS_created), QCDatasets.Acq_Time)) < 0 
+					THEN 0
+					ELSE 1
+					END AS SubsequentRun
+              FROM T_Dataset DS
+                   INNER JOIN ( SELECT Dataset_Num,
+                                       ISNULL(Acq_Time_Start, DS_created) AS Acq_Time,
+                                       DS_instrument_name_ID,
+                                       DS_LC_column_ID
+                                FROM T_Dataset DS
+                                WHERE Dataset_Num LIKE 'qc_shew%' ) QCDatasets
+                     ON DS.DS_instrument_name_ID = QCDatasets.DS_instrument_name_ID AND
+                        DS.DS_LC_column_ID = QCDatasets.DS_LC_column_ID AND
+                        DS.Dataset_Num <> QCDatasets.Dataset_Num
+              WHERE Abs(DateDiff(HOUR, ISNULL(DS.Acq_Time_Start, DS.DS_created), QCDatasets.Acq_Time)) < 32 * 24 
+             ) LookupQ 
+   ) RankQ
+     INNER JOIN T_Instrument_Name InstName
+       ON InstName.Instrument_ID = RankQ.DS_instrument_name_ID
+WHERE Proximity_Rank <= 4
+
+
+GO

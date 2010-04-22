@@ -27,3 +27,7 @@ FROM dbo.T_Internal_Std_Parent_Mixes INNER JOIN
     dbo.T_Internal_Std_Parent_Mixes.Parent_Mix_ID = dbo.T_Internal_Std_Composition.Mix_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Composition_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Composition_Report] TO [PNL\D3M580] AS [dbo]
+GO

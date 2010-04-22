@@ -3,20 +3,34 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Param_File_Mass_Mod_Info
-AS
-SELECT     TOP 100 PERCENT dbo.T_Param_Files.Param_File_Name, dbo.T_Param_File_Mass_Mods.Param_File_ID, 
-                      dbo.T_Seq_Local_Symbols_List.Local_Symbol, dbo.T_Param_File_Mass_Mods.Mod_Type_Symbol, dbo.T_Residues.Residue_Symbol, 
-                      dbo.T_Mass_Correction_Factors.Affected_Atom, dbo.T_Param_File_Mass_Mods.Mass_Correction_ID, 
-                      dbo.T_Mass_Correction_Factors.Mass_Correction_Tag, dbo.T_Mass_Correction_Factors.Description, 
-                      dbo.T_Mass_Correction_Factors.Monoisotopic_Mass_Correction
-FROM         dbo.T_Mass_Correction_Factors INNER JOIN
-                      dbo.T_Param_File_Mass_Mods ON 
-                      dbo.T_Mass_Correction_Factors.Mass_Correction_ID = dbo.T_Param_File_Mass_Mods.Mass_Correction_ID INNER JOIN
-                      dbo.T_Residues ON dbo.T_Param_File_Mass_Mods.Residue_ID = dbo.T_Residues.Residue_ID INNER JOIN
-                      dbo.T_Seq_Local_Symbols_List ON dbo.T_Param_File_Mass_Mods.Local_Symbol_ID = dbo.T_Seq_Local_Symbols_List.Local_Symbol_ID INNER JOIN
-                      dbo.T_Param_Files ON dbo.T_Param_File_Mass_Mods.Param_File_ID = dbo.T_Param_Files.Param_File_ID
-ORDER BY dbo.T_Param_File_Mass_Mods.Param_File_ID, dbo.T_Param_File_Mass_Mods.Mod_Type_Symbol, 
-                      dbo.T_Seq_Local_Symbols_List.Local_Symbol_ID, dbo.T_Residues.Residue_Symbol
 
+CREATE VIEW [dbo].[V_Param_File_Mass_Mod_Info]
+AS
+SELECT PF.Param_File_Name,
+       PFMM.Param_File_ID,
+       S.Local_Symbol,
+       PFMM.Mod_Type_Symbol,
+       R.Residue_Symbol,
+       MCF.Affected_Atom,
+       PFMM.Mass_Correction_ID,
+       MCF.Mass_Correction_Tag,
+       MCF.Description,
+       MCF.Monoisotopic_Mass_Correction,
+       ISNULL(MCF.Empirical_Formula, '') AS Empirical_Formula
+FROM dbo.T_Mass_Correction_Factors MCF
+     INNER JOIN dbo.T_Param_File_Mass_Mods PFMM
+       ON MCF.Mass_Correction_ID = PFMM.Mass_Correction_ID
+     INNER JOIN dbo.T_Residues R
+       ON PFMM.Residue_ID = R.Residue_ID
+     INNER JOIN dbo.T_Seq_Local_Symbols_List S
+       ON PFMM.Local_Symbol_ID = S.Local_Symbol_ID
+     INNER JOIN dbo.T_Param_Files PF
+       ON PFMM.Param_File_ID = PF.Param_File_ID
+
+
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Mass_Mod_Info] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Mass_Mod_Info] TO [PNL\D3M580] AS [dbo]
 GO

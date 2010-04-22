@@ -15,3 +15,7 @@ WHERE (Dataset NOT IN
      WHERE (ToolName LIKE '%Sequest%') OR
         (ToolName LIKE '%ICR2LS%')))
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Unanalyzed_Datasets_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Unanalyzed_Datasets_Report] TO [PNL\D3M580] AS [dbo]
+GO

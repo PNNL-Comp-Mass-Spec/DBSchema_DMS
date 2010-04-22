@@ -43,5 +43,5 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[ExpSampleLocation] TO [public]
+GRANT EXECUTE ON [dbo].[ExpSampleLocation] TO [public] AS [dbo]
 GO

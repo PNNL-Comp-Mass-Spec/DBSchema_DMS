@@ -303,7 +303,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessors] TO [PNL\D3M580] AS [dbo]
 GO

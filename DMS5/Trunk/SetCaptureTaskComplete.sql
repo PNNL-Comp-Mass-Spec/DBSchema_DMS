@@ -22,11 +22,12 @@ CREATE Procedure SetCaptureTaskComplete
 **  06/21/2005 grk -- added handling "requires_preparation" 
 **  09/25/2007 grk -- return result from DoDatasetCompletionActions (http://prismtrac.pnl.gov/trac/ticket/537)
 **  10/09/2007 grk -- limit number of retries (ticket 537)
+**  12/16/2007 grk -- add completion code '100' for use by capture broker
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0, -- @completionCode = 0 -> success, @completionCode = 1 -> failure, @completionCode = 2 -> not ready	
+	@completionCode int = 0, -- @completionCode = 0 -> success, @completionCode = 1 -> failure, @completionCode = 2 -> not ready 100 -> success (capture broker)
 	@message varchar(512) output
 )
 As
@@ -90,6 +91,10 @@ As
 		begin
 			set @completionState = 9 -- dataset not ready
 		end
+	else if @completionCode = 100
+		begin
+			set @completionState = 3 -- normal completion
+		end
 	
    	---------------------------------------------------
 	-- limit number of retries
@@ -144,4 +149,8 @@ Done:
 	end
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskComplete] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskComplete] TO [PNL\D3M580] AS [dbo]
 GO

@@ -4,11 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Organism_Entry
+
+CREATE VIEW [dbo].[V_Organism_Entry]
 AS
 SELECT Organism_ID AS ID, OG_name AS orgName, 
     OG_organismDBPath AS orgDBPath, 
-    OG_organismDBLocalPath AS orgDBLocalPath, 
+    '' AS orgDBLocalPath, 
     OG_organismDBName AS orgDBName, 
     OG_description AS orgDescription, 
     OG_Short_Name AS orgShortName, 
@@ -23,4 +24,9 @@ SELECT Organism_ID AS ID, OG_name AS orgName,
      OG_Active AS orgActive
 FROM dbo.T_Organisms
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Organism_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Organism_Entry] TO [PNL\D3M580] AS [dbo]
 GO

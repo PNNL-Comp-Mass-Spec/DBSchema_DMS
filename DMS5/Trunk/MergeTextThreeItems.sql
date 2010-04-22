@@ -45,5 +45,5 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[MergeTextThreeItems] TO [public]
+GRANT EXECUTE ON [dbo].[MergeTextThreeItems] TO [public] AS [dbo]
 GO

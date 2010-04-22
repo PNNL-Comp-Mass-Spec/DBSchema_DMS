@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.GetJobParamTable
 **	Auth:	grk
 **	Date:	08/21/2008
 **			01/14/2009 mem - Increased maximum parameter length to 2000 characters (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
+**			04/10/2009 grk - Added DTA folder name override (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **    
 *****************************************************/
 (
@@ -236,6 +237,33 @@ AS
 			VS.Section = VG.Section AND VS.Name = VG.Name
 	)
 
+  	---------------------------------------------------
+	-- Look in the comment field for an for a tagged
+	-- value representing an external DTA folder name.
+	-- If one is found, override the external DTA folder 
+	-- that is defined in the settings file, if one is
+	-- present
+	---------------------------------------------------
+	--
+	if exists (SELECT * FROM @paramTab WHERE [Name] = 'ExternalDTAFolderName')
+	begin
+		declare @extDTA varchar(128)
+		set @extDTA = ''
+		SELECT @extDTA = dbo.ExtractTaggedName('DTA:', AJ_comment) 
+		FROM T_Analysis_Job 
+		WHERE AJ_jobID = @job
+		--
+		if @extDTA <> ''
+		begin
+			UPDATE @paramTab
+			SET [Value] = @extDTA
+			WHERE [Name] = 'ExternalDTAFolderName'
+		end
+	end
+
+  	---------------------------------------------------
+	-- output the table of parameters
+	---------------------------------------------------
 
 	select @job, * from @paramTab
 	order by [Section]
@@ -243,5 +271,7 @@ AS
 	RETURN
 
 GO
-GRANT EXECUTE ON [dbo].[GetJobParamTable] TO [D3L243]
+GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [PNL\D3M580] AS [dbo]
 GO

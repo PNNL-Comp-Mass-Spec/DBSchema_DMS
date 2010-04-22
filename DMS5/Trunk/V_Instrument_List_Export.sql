@@ -32,3 +32,7 @@ FROM dbo.T_Instrument_Name Inst
        ON Inst.IN_class = InstClass.IN_class
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Export] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Export] TO [PNL\D3M580] AS [dbo]
+GO

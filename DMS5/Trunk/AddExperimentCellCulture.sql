@@ -13,7 +13,8 @@ CREATE Procedure AddExperimentCellCulture
 **	Return values: 0: success, otherwise, error code
 **
 **		Auth: grk
-**		Date: 3/27/2002
+**		Date: 03/27/2002
+**            12/21/2009 grk - commented out requirement that cell cultures belong to same campaign
 **    
 *****************************************************/
 
@@ -105,7 +106,7 @@ As
 			set @message = 'Cell culture name could not be found'
 			return 51061
 		end
-		
+/*	grk 12/21/2009
 		-- verify that campaigns match
 		--
 		if ((@cellCultureCampaignID <> @campaignID) and @mFld <> '(none)')
@@ -114,7 +115,7 @@ As
 			+ '  E:' + cast(@campaignID as varchar(12)) + ', CC:' + cast(@cellCultureCampaignID as varchar(12))
 			return 51069
 		end
-
+*/
 		-- process row into table
 		--
 		INSERT INTO T_Experiment_Cell_Cultures
@@ -133,7 +134,11 @@ As
 	
 	return 0
 GO
-GRANT EXECUTE ON [dbo].[AddExperimentCellCulture] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[AddExperimentCellCulture] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddExperimentCellCulture] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddExperimentCellCulture] TO [DMS_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddExperimentCellCulture] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddExperimentCellCulture] TO [PNL\D3M580] AS [dbo]
 GO

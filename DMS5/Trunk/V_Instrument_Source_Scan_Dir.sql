@@ -10,3 +10,7 @@ FROM         dbo.T_MiscPaths
 WHERE     ([Function] = 'InstrumentSourceScanDir')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Source_Scan_Dir] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Source_Scan_Dir] TO [PNL\D3M580] AS [dbo]
+GO

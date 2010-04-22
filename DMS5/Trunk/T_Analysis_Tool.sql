@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Analysis_Tool](
 	[AJT_toolID] [int] NOT NULL,
 	[AJT_toolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJT_toolBasename] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJT_paramFileType] [int] NULL,
 	[AJT_parmFileStoragePath] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_parmFileStoragePathLocal] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -13,7 +14,7 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
 	[AJT_defaultSettingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_resultType] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_autoScanFolderFlag] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AJT_active] [tinyint] NOT NULL CONSTRAINT [DF_T_Analysis_Tool_AJT_inactive]  DEFAULT (1),
+	[AJT_active] [tinyint] NOT NULL,
 	[AJT_searchEngineInputFileFormats] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_orgDbReqd] [int] NULL,
 	[AJT_extractionRequired] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -21,7 +22,7 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -30,18 +31,14 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Analysis_Tool_Name] ON [dbo].[T_Analysis_Tool] 
 (
 	[AJT_toolName] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_iu_T_Analysis_Tool] ******/
+/****** Object:  Trigger [dbo].[trig_iu_T_Analysis_Tool] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-create Trigger dbo.trig_iu_T_Analysis_Tool on dbo.T_Analysis_Tool
+CREATE Trigger [dbo].[trig_iu_T_Analysis_Tool] on [dbo].[T_Analysis_Tool]
 For Insert, Update
 /********************************************************
 **
@@ -52,6 +49,7 @@ For Insert, Update
 **
 **	Auth:	mem
 **	Date:	07/25/2007 - Ticket #502
+**			12/18/2008 - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
 **
 *********************************************************/
 AS
@@ -66,12 +64,10 @@ AS
 	set @myRowCount = 0
 	set @myError = 0
 
-	if update(AJT_allowedDatasetTypes) OR
-	   update(AJT_allowedInstClass)
+	if update(AJT_allowedInstClass)
 	Begin -- <a>
 		-- Validate that the dataset types and instrument classes are valid for each updated row in the "inserted" table
 
-		Declare @AllowedDatasetTypes varchar(255)
 		Declare @AllowedInstClassees varchar(255)
 		Declare @BadItemList varchar(255)
 		Declare @ErrorMessage varchar(512)
@@ -89,7 +85,6 @@ AS
 		Begin -- <b>
 			SELECT TOP 1 @AnalysisToolID = AJT_toolID,
 						 @AnalysisToolName = AJT_toolName,
-						 @AllowedDatasetTypes = AJT_allowedDatasetTypes,
 						 @AllowedInstClassees = AJT_allowedInstClass
 
 			FROM inserted
@@ -105,52 +100,35 @@ AS
 				Set @BadItemList = ''
 				SELECT @BadItemList = @BadItemList + Item + ','
 				FROM (	SELECT DISTINCT Item
-						FROM MakeTableFromList(@AllowedDatasetTypes)
+						FROM MakeTableFromList(@AllowedInstClassees)
 					 ) LookupQ LEFT OUTER JOIN
-					 T_DatasetTypeName ON LookupQ.Item = T_DatasetTypeName.DST_Name
-				WHERE T_DatasetTypeName.DST_Name Is Null
+					 T_Instrument_Class ON LookupQ.Item = T_Instrument_Class.IN_Class
+				WHERE T_Instrument_Class.IN_Class Is Null
 
 				If Len(@BadItemList) > 0
 				Begin
 					-- Remove the trailing comma
 					Set @BadItemList = Left(@BadItemList, Len(@BadItemList)-1)
-					Set @ErrorMessage = 'Error: Invalid dataset types defined: ''' + @BadItemList + ''' for analysis tool ''' + @AnalysisToolName + ''''
+					Set @ErrorMessage = 'Error: Invalid instrument classes defined: ''' + @BadItemList + ''' for analysis tool ''' + @AnalysisToolName + ''''
 					RAISERROR (@ErrorMessage, 16, 1)
 					ROLLBACK TRANSACTION
 					set @continue = 0
 				End
-
-				If @continue <> 0
-				Begin -- <e>
-					Set @BadItemList = ''
-					SELECT @BadItemList = @BadItemList + Item + ','
-					FROM (	SELECT DISTINCT Item
-							FROM MakeTableFromList(@AllowedInstClassees)
-						 ) LookupQ LEFT OUTER JOIN
-						 T_Instrument_Class ON LookupQ.Item = T_Instrument_Class.IN_Class
-					WHERE T_Instrument_Class.IN_Class Is Null
-
-					If Len(@BadItemList) > 0
-					Begin
-						-- Remove the trailing comma
-						Set @BadItemList = Left(@BadItemList, Len(@BadItemList)-1)
-						Set @ErrorMessage = 'Error: Invalid instrument classes defined: ''' + @BadItemList + ''' for analysis tool ''' + @AnalysisToolName + ''''
-						RAISERROR (@ErrorMessage, 16, 1)
-						ROLLBACK TRANSACTION
-						set @continue = 0
-					End
-				End -- </e>	
 			End	-- </c>
 		End	-- </b>
 	End -- </a>
 
 GO
-GRANT INSERT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
 REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_inactive]  DEFAULT ((1)) FOR [AJT_active]
 GO

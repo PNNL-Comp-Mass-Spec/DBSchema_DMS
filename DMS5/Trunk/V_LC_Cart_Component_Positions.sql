@@ -16,3 +16,7 @@ FROM         dbo.T_LC_Cart_Component_Postition INNER JOIN
                       dbo.T_LC_Cart_Components ON dbo.T_LC_Cart_Component_Postition.ID = dbo.T_LC_Cart_Components.Component_Position
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Component_Positions] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Component_Positions] TO [PNL\D3M580] AS [dbo]
+GO

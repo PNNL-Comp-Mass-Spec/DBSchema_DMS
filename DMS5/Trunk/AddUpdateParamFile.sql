@@ -159,7 +159,11 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_ParamFile_Admin]
+GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [PNL\D3M580] AS [dbo]
 GO

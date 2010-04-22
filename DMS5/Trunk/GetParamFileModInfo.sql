@@ -6,31 +6,34 @@ GO
 CREATE Procedure GetParamFileModInfo
 /****************************************************
 ** 
-**		Desc:
+**	Desc:
 **		For given analysis parameter file, look up
 **		potential dynamic and actual static modifications 
 **		and return description of them as set of strings 
 **
 **		Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
+**	Parameters:
 **		  @parameterFileName	name of analysis parameter file
 **
-**		Updates: 
-**        7/24/2004  grk - Initial version
-**		  7/26/2004  mem - Added Order By Mod_ID
-**		  8/07/2004  mem - Added @paramFileFound parameter and updated references to use T_Seq_Local_Symbols_List
-**		  8/20/2004  grk - Major change to support consolidated mod description
-**		  8/22/2004  grk - added @paramFileID
+**	Updates: 
+**		07/24/2004 grk - Initial version
+**		07/26/2004 mem - Added Order By Mod_ID
+**		08/07/2004 mem - Added @paramFileFound parameter and updated references to use T_Seq_Local_Symbols_List
+**		08/20/2004 grk - Major change to support consolidated mod description
+**		08/22/2004 grk - added @paramFileID
+**		02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
 **    
 *****************************************************/
-	@parameterFileName varchar(128),
+(
+	@parameterFileName varchar(255),
 	@paramFileID int output,
 	@paramFileFound tinyint=0 output,
 	@PM_TargetSymbolList varchar(128) output,
 	@PM_MassCorrectionTagList varchar(512) output,
 	@NP_MassCorrectionTagList varchar(512) output,
 	@message varchar(256) output
+)
 As
 	set nocount on
 	
@@ -148,9 +151,13 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMS_ParamFile_Admin]
+GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMSWebUser]
+GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMSWebUser] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [MTS_SP_User]
+GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [MTS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [PNL\D3M580] AS [dbo]
 GO

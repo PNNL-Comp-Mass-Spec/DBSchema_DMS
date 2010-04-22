@@ -18,3 +18,7 @@ FROM         (SELECT     DATEPART(month, EX_created) AS Month, DATEPART(year, EX
 ORDER BY Year DESC, Month DESC, Experiments DESC
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Stats_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Stats_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

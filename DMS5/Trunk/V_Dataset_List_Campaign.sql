@@ -29,3 +29,7 @@ FROM T_Dataset INNER JOIN
    T_Instrument_Name ON 
    T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_List_Campaign] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_List_Campaign] TO [PNL\D3M580] AS [dbo]
+GO

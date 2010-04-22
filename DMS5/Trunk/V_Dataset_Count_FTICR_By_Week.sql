@@ -12,3 +12,7 @@ GROUP BY DATEPART(wk, Created), DATEPART(yy, Created)
 ORDER BY year, week
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_FTICR_By_Week] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Count_FTICR_By_Week] TO [PNL\D3M580] AS [dbo]
+GO

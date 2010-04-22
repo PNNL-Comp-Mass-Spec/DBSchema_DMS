@@ -12,3 +12,7 @@ FROM         dbo.T_Analysis_Job_Request INNER JOIN
                       dbo.T_Analysis_Job_Request_State ON dbo.T_Analysis_Job_Request.AJR_state = dbo.T_Analysis_Job_Request_State.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Analysis_Request] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Analysis_Request] TO [PNL\D3M580] AS [dbo]
+GO

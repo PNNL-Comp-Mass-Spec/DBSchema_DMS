@@ -13,13 +13,14 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **
 **		Auth: grk
 **		Date: 10/6/2003
-**			  6/1/04  grk - fixed initial population of XT with jobs
-**			  6/23/04 grk - Used AJ_start instead of AJ_finish in default population
-**			  11/4/04 grk - Widened "Who" column of XT to match data in some item queries
-**			  2/24/04 grk - fixed problem with null value for AJ_assignedProcessorName
-**			  2/09/07 grk - added column to note that activity is stale (Ticket #377)
-**			  2/27/07 grk - fixed prep manager reporting (Ticket #398)
-**			  4/4/08  dac - changed output sort order to DESC
+**			  06/01/04 grk - fixed initial population of XT with jobs
+**			  06/23/04 grk - Used AJ_start instead of AJ_finish in default population
+**			  11/04/04 grk - Widened "Who" column of XT to match data in some item queries
+**			  02/24/04 grk - fixed problem with null value for AJ_assignedProcessorName
+**			  02/09/07 grk - added column to note that activity is stale (Ticket #377)
+**			  02/27/07 grk - fixed prep manager reporting (Ticket #398)
+**			  04/04/08 dac - changed output sort order to DESC
+**			  09/30/09 grk - eliminated references to health log
 **    
 *****************************************************/
 AS
@@ -44,7 +45,7 @@ AS
 		Who varchar(64), 
 		What  varchar(256)
 	)
-/**/
+
 	-- populate temporary table with known analysis managers
 	--
 	insert into #XT([When], Who, What, Source)
@@ -60,7 +61,7 @@ AS
 		HAVING (DATEDIFF(month, MAX(AJ_finish), GETDATE()) < 3)
 	) M
 
-
+/*
 	-- get most recent entry from health log 
 	-- broken down by which manager posted it
 	--
@@ -91,7 +92,7 @@ AS
 								GROUP BY posted_by))
 	) T on M.Who = T.Who
 	WHERE M.[When] < T.[When]
-
+*/
 	-- update any entries that have active job with later date than existing entry in XT
 	--
 	Update M
@@ -187,7 +188,9 @@ Done:
 return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[GetCurrentMangerActivity] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[GetCurrentMangerActivity] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetCurrentMangerActivity] TO [DMS2_SP_User]
+GRANT VIEW DEFINITION ON [dbo].[GetCurrentMangerActivity] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetCurrentMangerActivity] TO [PNL\D3M580] AS [dbo]
 GO

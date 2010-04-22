@@ -10,3 +10,7 @@ SELECT     ID, Group_Name AS GroupName, Group_Description AS GroupDescription, G
 FROM         dbo.T_Analysis_Job_Processor_Group
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Entry] TO [PNL\D3M580] AS [dbo]
+GO

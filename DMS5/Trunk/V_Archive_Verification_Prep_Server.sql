@@ -10,3 +10,7 @@ FROM         dbo.T_Log_Entries
 WHERE     (message LIKE 'Verifying Archived dataset%')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Verification_Prep_Server] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Verification_Prep_Server] TO [PNL\D3M580] AS [dbo]
+GO

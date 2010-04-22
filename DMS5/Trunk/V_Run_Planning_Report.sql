@@ -39,6 +39,7 @@ FROM ( SELECT RA.Instrument,
        FROM dbo.V_Run_Assignment AS RA
             INNER JOIN dbo.T_Requested_Run_Batches AS RRB
               ON RA.Batch = RRB.ID
+       WHERE (RA.Status = 'Active')
        GROUP BY RA.Instrument, RA.[Separation Type], RRB.Batch, RA.Requester, 
                 RA.[Work Package], RA.Proposal, RRB.Locked, 
               CASE WHEN RA.Batch = 0 OR LEFT(RRB.Batch, 4) <> LEFT(RA.Experiment, 4) 
@@ -53,5 +54,8 @@ FROM ( SELECT RA.Instrument,
      ) AS SrcDataQ
 GROUP BY Instrument, [Batch/Experiment], Requester, [Separation Type], [Work Package], Proposal, Locked, [Last Ordered]
 
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Run_Planning_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Run_Planning_Report] TO [PNL\D3M580] AS [dbo]
 GO

@@ -6,13 +6,13 @@ GO
 CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations](
 	[Job_ID] [int] NOT NULL,
 	[Group_ID] [int] NOT NULL,
-	[Entered] [datetime] NULL CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Associations_Entered]  DEFAULT (getdate()),
-	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Associations_Entered_By]  DEFAULT (suser_sname()),
+	[Entered] [datetime] NULL,
+	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Analysis_Job_Processor_Group_Associations] PRIMARY KEY CLUSTERED 
 (
 	[Job_ID] ASC,
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -22,7 +22,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processor_Group_Associations_GroupI
 (
 	[Group_ID] ASC
 )
-INCLUDE ( [Job_ID]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [Job_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Analysis_Job_Processor_Group_Job_Associations_ID_Gropu_ID] ******/
@@ -30,16 +30,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processor_Group_Job_Associations_ID
 (
 	[Job_ID] ASC,
 	[Group_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_u_T_Analysis_Job_Processor_Group_Associations] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group_Associations] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_T_Analysis_Job_Processor_Group_Associations] on [dbo].[T_Analysis_Job_Processor_Group_Associations]
 For Update
@@ -71,19 +68,25 @@ AS
 
 
 GO
-GRANT INSERT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
+GRANT INSERT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
+GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis]
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered_By]) TO [DMS2_SP_User]
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Associations] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job] FOREIGN KEY([Job_ID])
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job] FOREIGN KEY([Job_ID])
 REFERENCES [T_Analysis_Job] ([AJ_jobID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job_Processor_Group] FOREIGN KEY([Group_ID])
 REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Group_Associations_T_Analysis_Job_Processor_Group]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Associations_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Associations_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

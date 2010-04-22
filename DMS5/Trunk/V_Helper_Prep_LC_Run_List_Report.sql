@@ -16,3 +16,7 @@ CREATE VIEW V_Helper_Prep_LC_Run_List_Report AS
 FROM T_Prep_LC_Run
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

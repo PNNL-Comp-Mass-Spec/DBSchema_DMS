@@ -19,3 +19,7 @@ GROUP BY dbo.T_Material_Containers.Tag, dbo.T_Material_Containers.Type, dbo.T_Ma
                       dbo.T_Material_Containers.Barcode, dbo.T_Material_Containers.Created, dbo.T_Material_Containers.Status
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -66,5 +66,5 @@ END
 
 
 GO
-GRANT SELECT ON [dbo].[udfParseDelimitedIntegerList] TO [public]
+GRANT SELECT ON [dbo].[udfParseDelimitedIntegerList] TO [public] AS [dbo]
 GO

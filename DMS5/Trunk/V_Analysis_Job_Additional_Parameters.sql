@@ -17,3 +17,7 @@ FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.T_Organisms ON dbo.T_Analysis_Job.AJ_organismID = dbo.T_Organisms.Organism_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Additional_Parameters] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Additional_Parameters] TO [PNL\D3M580] AS [dbo]
+GO

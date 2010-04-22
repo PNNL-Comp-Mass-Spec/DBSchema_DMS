@@ -14,3 +14,7 @@ FROM T_MiscPaths
 WHERE ([Function] = 'AnalysisXfer')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Results_XFer_Folder] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Results_XFer_Folder] TO [PNL\D3M580] AS [dbo]
+GO

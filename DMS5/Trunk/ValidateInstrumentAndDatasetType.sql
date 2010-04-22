@@ -14,24 +14,26 @@ CREATE Procedure dbo.ValidateInstrumentAndDatasetType
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 09/04/2007 (Ticket 512 http://prismtrac.pnl.gov/trac/ticket/512)
+**	Auth:	grk
+**	Date:	09/04/2007 (Ticket 512 http://prismtrac.pnl.gov/trac/ticket/512)
+**			09/16/2009 mem - Now checking dataset type (@DatasetType) against T_Instrument_Allowed_Dataset_Type (Ticket #748)
 **
 *****************************************************/
+(
 	@DatasetType varchar(20),
 	@instrumentName varchar(64),
 	@instrumentID int output,
 	@datasetTypeID int output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
-	
+
 	set @message = ''
 
 	---------------------------------------------------
@@ -42,7 +44,8 @@ As
 	execute @datasetTypeID = GetDatasetTypeID @DatasetType
 	if @datasetTypeID = 0
 	begin
-		print 'Could not find entry in database for dataset type "' + @DatasetType + '"'
+		set @message = 'Could not find entry in database for dataset type "' + @DatasetType + '"'
+		print @message
 		return 51118
 	end
 
@@ -56,6 +59,7 @@ As
 
 	set @instrumentID = 0
 	execute @instrumentID = GetinstrumentID @instrumentName
+	
 	if @instrumentID = 0
 	begin
 		-- Could not resolve the instrument name
@@ -95,6 +99,22 @@ As
 			ORDER BY IN_Name
 		End
 
+		If @instrumentID = 0 AND @instrumentName LIKE 'Exact%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'Exact%')
+			ORDER BY IN_Name
+		End
+
+		If @instrumentID = 0 AND @instrumentName LIKE 'VOrbi%'
+		Begin
+			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
+			FROM dbo.T_Instrument_Name
+			WHERE (IN_name LIKE 'VOrbi%')
+			ORDER BY IN_Name
+		End
+
 		If @instrumentID = 0 AND @instrumentName LIKE 'Agilent_TOF%'
 		Begin
 			SELECT TOP 1 @instrumentID = Instrument_ID, @InstrumentMatch = IN_Name
@@ -128,29 +148,24 @@ As
 	
 	If @instrumentID <> 0
 	Begin
-		SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
-		FROM T_Instrument_Name InstName INNER JOIN
-			T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
-		WHERE (InstName.Instrument_ID = @instrumentID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @myRowCount > 0
-		Begin
-			Set @MatchCount = 0
-			SELECT @MatchCount = COUNT(*)
-			FROM T_DatasetTypeName DSTypeName INNER JOIN
-				(SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
-				DSTypeName.DST_Name = AllowedTypesQ.item
-			WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
+		If Not Exists (SELECT * FROM T_Instrument_Allowed_Dataset_Type WHERE Instrument = @instrumentName AND Dataset_Type = @DatasetType)
+		begin
+			Set @allowedDatasetTypes = ''
 			
-			if @MatchCount = 0
-			begin
-				set @myError = 51014
-				set @message = 'Dataset Type "' + @DatasetType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
-				goto Done
-			end
-		End
+			SELECT @allowedDatasetTypes = @allowedDatasetTypes + ', ' + Dataset_Type
+			FROM T_Instrument_Allowed_Dataset_Type 
+			WHERE Instrument = @instrumentName
+			ORDER BY Dataset_Type
+
+			-- Remove the leading two characters
+			If Len(@allowedDatasetTypes) > 0
+				Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
+			
+			set @message = 'Dataset Type "' + @DatasetType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
+			return 51014
+		end
+
 	End
 
 Done:
@@ -158,4 +173,8 @@ Done:
 	-- Verify that dataset type is valid for given instrument
 	---------------------------------------------------
 	return @myError
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentAndDatasetType] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentAndDatasetType] TO [PNL\D3M580] AS [dbo]
 GO

@@ -20,3 +20,7 @@ FROM         dbo.T_LC_Cart_Components INNER JOIN
                       dbo.T_Users ON dbo.T_LC_Cart_Component_History.Operator = dbo.T_Users.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Component_History] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Component_History] TO [PNL\D3M580] AS [dbo]
+GO

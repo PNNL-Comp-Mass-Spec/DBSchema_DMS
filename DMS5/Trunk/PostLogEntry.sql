@@ -3,10 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE Procedure [dbo].[PostLogEntry]
+CREATE Procedure dbo.PostLogEntry
 /****************************************************
 **
 **	Desc: Put new entry into the main log table or the
@@ -18,31 +15,34 @@ CREATE Procedure [dbo].[PostLogEntry]
 **
 **	
 **
-**		Auth: grk
-**		Date: 1/26/2001
-**            6/8/2006 grk - added logic to put data extraction manager stuff in analysis log
+**	Auth:	grk
+**	Date:	01/26/2001
+**			06/08/2006 grk - added logic to put data extraction manager stuff in analysis log
+**			03/30/2009 mem - Added parameter @duplicateEntryHoldoffHours
+**						   - Expanded the size of @type, @message, and @postedBy
+**			07/20/2009 grk - eliminate health log (http://prismtrac.pnl.gov/trac/ticket/742)
 **    
 *****************************************************/
-	@type varchar(50),
-	@message varchar(500),
-	@postedBy varchar(50)= 'na'
+	@type varchar(128),
+	@message varchar(4096),
+	@postedBy varchar(128)= 'na',
+	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 As
-	if (@type = 'Health')
-		begin
-			INSERT INTO T_Health_Entries
-			(posted_by, posting_time, type, message) 
-			VALUES ( @postedBy, GETDATE(), @type, @message)
-			--
-			if @@rowcount <> 1
-			begin
-				RAISERROR ('Update was unsuccessful for T_Health_Entries table',
-					10, 1)
-				return 51190
-			end
-		end
-	else
-	if ( charindex('analysis', lower(@postedBy)) > 0) or (( charindex('results', lower(@postedBy)) > 0)) or (( charindex('extraction', lower(@postedBy)) > 0)) 
-		begin
+	Declare @duplicateRowCount int
+	Set @duplicateRowCount = 0
+	
+		
+	If ( charindex('analysis', lower(@postedBy)) > 0) or (( charindex('results', lower(@postedBy)) > 0)) or (( charindex('extraction', lower(@postedBy)) > 0)) 
+	Begin
+		If IsNull(@duplicateEntryHoldoffHours, 0) > 0
+		Begin
+			SELECT @duplicateRowCount = COUNT(*)
+			FROM T_Analysis_Log
+			WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		End
+
+		If @duplicateRowCount = 0
+		Begin
 			INSERT INTO T_Analysis_Log
 			(posted_by, posting_time, type, message) 
 			VALUES ( @postedBy, GETDATE(), @type, @message)
@@ -53,9 +53,19 @@ As
 					10, 1)
 				return 51192
 			end
-		end
-	else
-		begin
+		End
+	End
+	Else
+	Begin
+		If IsNull(@duplicateEntryHoldoffHours, 0) > 0
+		Begin
+			SELECT @duplicateRowCount = COUNT(*)
+			FROM T_Log_Entries
+			WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		End
+
+		If @duplicateRowCount = 0
+		Begin
 			INSERT INTO T_Log_Entries
 			(posted_by, posting_time, type, message) 
 			VALUES ( @postedBy, GETDATE(), @type, @message)
@@ -66,14 +76,15 @@ As
 					10, 1)
 				return 51191
 			end
-		end
-
-		
+		End
+	End
+			
 	return 0
 
-
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [D3L243]
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User]
+GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M580] AS [dbo]
 GO

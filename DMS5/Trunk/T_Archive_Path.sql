@@ -14,12 +14,14 @@ CREATE TABLE [dbo].[T_Archive_Path](
  CONSTRAINT [PK_T_Archive_Path] PRIMARY KEY NONCLUSTERED 
 (
 	[AP_path_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT ALTER ON [dbo].[T_Archive_Path] TO [D3L243]
+GRANT ALTER ON [dbo].[T_Archive_Path] TO [D3L243] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Archive_Path]  WITH CHECK ADD  CONSTRAINT [FK_T_Archive_Path_T_Archive_Path_Function] FOREIGN KEY([AP_Function])
 REFERENCES [T_Archive_Path_Function] ([APF_Function])
+GO
+ALTER TABLE [dbo].[T_Archive_Path] CHECK CONSTRAINT [FK_T_Archive_Path_T_Archive_Path_Function]
 GO

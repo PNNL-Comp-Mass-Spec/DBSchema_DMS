@@ -18,3 +18,7 @@ FROM         dbo.T_Sample_Prep_Request INNER JOIN
 WHERE     (dbo.T_Sample_Prep_Request.State = 2) AND (dbo.T_Sample_Prep_Request.StateChanged > DATEADD(hh, - 24, GETDATE()))
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Assignments_24Hrs] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Assignments_24Hrs] TO [PNL\D3M580] AS [dbo]
+GO

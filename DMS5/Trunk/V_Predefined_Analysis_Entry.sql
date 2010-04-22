@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Predefined_Analysis_Entry
+
+CREATE VIEW [dbo].[V_Predefined_Analysis_Entry]
 AS
 SELECT PA.AD_level AS [level],
        PA.AD_sequence AS sequence,
@@ -20,6 +21,7 @@ SELECT PA.AD_level AS [level],
        PA.AD_campaignExclCriteria AS campaignExclCriteria,
        PA.AD_experimentExclCriteria AS experimentExclCriteria,
        PA.AD_datasetExclCriteria AS datasetExclCriteria,
+       PA.AD_datasetTypeCriteria AS datasetTypeCriteria,
        PA.AD_analysisToolName AS analysisToolName,
        PA.AD_parmFileName AS parmFileName,
        PA.AD_settingsFileName AS settingsFileName,
@@ -38,4 +40,9 @@ FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Entry] TO [PNL\D3M580] AS [dbo]
 GO

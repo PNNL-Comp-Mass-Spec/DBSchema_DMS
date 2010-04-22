@@ -36,5 +36,9 @@ As
 	SELECT @storagePathID = SP_path_ID FROM t_storage_path WHERE (SP_function = N'raw-storage') AND (SP_instrument_name = @instrumentName)
 	return(@storagePathID)
 GO
-GRANT EXECUTE ON [dbo].[GetStoragePathID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetStoragePathID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetStoragePathID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetStoragePathID] TO [PNL\D3M580] AS [dbo]
 GO

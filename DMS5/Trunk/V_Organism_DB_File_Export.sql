@@ -17,3 +17,7 @@ FROM dbo.T_Organism_DB_File ODF INNER JOIN
     ODF.Organism_ID = O.Organism_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Organism_DB_File_Export] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Organism_DB_File_Export] TO [PNL\D3M580] AS [dbo]
+GO

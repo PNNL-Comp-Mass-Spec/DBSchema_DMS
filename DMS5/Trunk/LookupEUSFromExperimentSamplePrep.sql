@@ -101,3 +101,7 @@ As
 	set @eusUsersList = CASE WHEN @eusUsersList = @ovr THEN @eUL ELSE @eusUsersList END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [PNL\D3M580] AS [dbo]
+GO

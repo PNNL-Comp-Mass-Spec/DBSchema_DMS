@@ -164,7 +164,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [PNL\D3M580] AS [dbo]
 GO

@@ -40,6 +40,10 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **          06/03/2009 grk - look up work package (Ticket #739) 
 **			07/27/2009 grk - added lookup for wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**			02/28/2010 grk - added add-auto mode
+**			03/02/2010 grk - added status field to requested run
+**			03/10/2010 grk - fixed issue with status validation
+**			03/27/2010 grk - fixed problem creating new requests with "Completed" status.
 **
 *****************************************************/
 (
@@ -61,7 +65,8 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 	@request int output,
 	@message varchar(512) output,
 	@secSep varchar(64) = 'LC-ISCO-Standard',
-	@MRMAttachment varchar(128)
+	@MRMAttachment varchar(128),
+	@status VARCHAR(24) = 'Active'
 )
 As
 	set nocount on
@@ -80,6 +85,19 @@ As
 	-- default priority at which new requests will be created
 	declare @defaultPriority int
 	set @defaultPriority = 0
+	
+	---------------------------------------------------
+	--
+	---------------------------------------------------
+	--
+	DECLARE @requestOrigin CHAR(4)
+	SET @requestOrigin = 'user'
+	--
+	IF @mode = 'add-auto'
+	BEGIN
+		SET @mode = 'add'
+		SET @requestOrigin = 'auto'
+	END  
 	
 	---------------------------------------------------
 	-- Validate input fields
@@ -155,10 +173,13 @@ As
 	set @requestID = 0
 	declare @oldEusProposalID varchar(10)
 	set @oldEusProposalID = ''
+	DECLARE @oldStatus VARCHAR(24)
+	SET @oldStatus = ''
 	--
 	SELECT 
 		@requestID = ISNULL(ID, 0), 
-		@oldEusProposalID = RDS_EUS_Proposal_ID
+		@oldEusProposalID = RDS_EUS_Proposal_ID,
+		@oldStatus = RDS_Status
 	FROM T_Requested_Run
 	WHERE (RDS_Name = @reqName)
 	--
@@ -196,6 +217,41 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51004
 	end
+	
+	---------------------------------------------------
+	--
+	---------------------------------------------------
+	--
+	IF @Mode = 'add' AND @status ='Completed'
+		SET @status = 'Active'
+	--
+	IF @Mode = 'add' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	BEGIN
+		set @msg = 'Status "' + @status + '" is not valid'
+		RAISERROR (@msg, 10, 1)
+		return 51037
+	END 
+	--
+	IF @Mode = 'update' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	BEGIN
+		set @msg = 'Status "' + @status + '" is not valid'
+		RAISERROR (@msg, 10, 1)
+		return 51037
+	END 
+	--
+	IF @Mode = 'update' AND (@status ='Completed' AND @oldStatus <> 'Completed' )
+	BEGIN
+		set @msg = 'Cannot set status of request to "Completed"'
+		RAISERROR (@msg, 10, 1)
+		return 51039
+	END
+	--
+	IF @Mode = 'update' AND (@oldStatus = 'Completed' AND @status <> 'Completed')
+	BEGIN
+		set @msg = 'Cannot change status of a request that has been consumed by a dataset'
+		RAISERROR (@msg, 10, 1)
+		return 51039
+	END 
 /*
 	---------------------------------------------------
 	-- get experiment ID from experiment number 
@@ -400,11 +456,8 @@ As
 		--
 		begin transaction @transName
 		
-		set @request = dbo.GetNewRequestedRunID()
-
 		INSERT INTO T_Requested_Run
 			(
-				ID,
 				RDS_name, 
 				RDS_Oper_PRN, 
 				RDS_comment, 
@@ -421,11 +474,12 @@ As
 				RDS_EUS_Proposal_ID,
 				RDS_EUS_UsageType,
 				RDS_Sec_Sep,
-				RDS_MRM_Attachment
+				RDS_MRM_Attachment,
+				RDS_Origin,
+				RDS_Status
 			) 
 			VALUES 
 			(
-				@request,
 				@reqName, 
 				@operPRN, 
 				@comment, 
@@ -442,7 +496,9 @@ As
 				@eusProposalID,
 				@eusUsageTypeID,
 				@secSep,
-				@mrmAttachmentID
+				@mrmAttachmentID,
+				@requestOrigin,
+				@status
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -454,6 +510,8 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
+		
+		set @request = IDENT_CURRENT('T_Requested_Run')
 		
 		-- assign users to the request
 		--
@@ -479,7 +537,7 @@ As
 	---------------------------------------------------
 	--
 	if @Mode = 'update' 
-	begin
+	begin	
 		begin transaction @transName
 
 		set @myError = 0
@@ -499,7 +557,9 @@ As
 			RDS_EUS_Proposal_ID = @eusProposalID,
 			RDS_EUS_UsageType = @eusUsageTypeID,
 			RDS_Sec_Sep = @secSep,
-			RDS_MRM_Attachment = @mrmAttachmentID
+			RDS_MRM_Attachment = @mrmAttachmentID,
+			RDS_Status = @status,
+			RDS_created = CASE WHEN @oldStatus = 'Inactive' AND @status = 'Active' THEN GETDATE() ELSE RDS_created END
 		WHERE (ID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -534,7 +594,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [PNL\D3M580] AS [dbo]
 GO

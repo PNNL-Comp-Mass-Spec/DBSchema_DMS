@@ -18,3 +18,7 @@ FROM T_Dataset INNER JOIN
    T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
 WHERE (T_Dataset.DS_state_ID = 2)
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Datasets_InProgress] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Datasets_InProgress] TO [PNL\D3M580] AS [dbo]
+GO

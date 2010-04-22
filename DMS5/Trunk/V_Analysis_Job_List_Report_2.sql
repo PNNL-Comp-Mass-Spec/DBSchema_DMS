@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_List_Report_2]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -25,11 +26,11 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_start AS Started,
        AJ.AJ_finish AS Finished,
        Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime,
-       ISNULL(AJ.AJ_assignedProcessorName, '(none)') AS Processor,
        AJPG.Group_Name AS [Associated Processor Group],
        AJ.AJ_requestID AS [Job Request],
        ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder],
-       DAP.Archive_Path + '\' + DS.Dataset_Num + '\' + AJ.AJ_resultsFolderName AS [Archive Folder Path]
+       DAP.Archive_Path + '\' + DS.Dataset_Num + '\' + AJ.AJ_resultsFolderName AS [Archive Folder Path],
+       AJ.AJ_Last_Affected AS Last_Affected
 FROM dbo.V_Dataset_Archive_Path AS DAP
      RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
                       INNER JOIN dbo.T_Dataset AS DS
@@ -51,4 +52,9 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
        ON AJ.AJ_jobID = AJPGA.Job_ID
 
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_List_Report_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_List_Report_2] TO [PNL\D3M580] AS [dbo]
 GO

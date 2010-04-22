@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure BackUpStorageState
+
+CREATE Procedure [dbo].[BackUpStorageState]
 /****************************************************
 **
 **	Desc: 
@@ -14,9 +15,10 @@ CREATE Procedure BackUpStorageState
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 4/18/2002
-**		04/07/2006 -- Got ride of CDBurn stuff
+**	Auth:	grk
+**	Date:	04/18/2002
+**			04/07/2006 grk - Got ride of CDBurn stuff
+**			05/01/2009 mem - Updated description field in t_storage_path and t_storage_path_bkup to be named SP_description
 **    
 *****************************************************/
 (
@@ -52,10 +54,10 @@ As
 	INSERT INTO t_storage_path_bkup
 	   (SP_path_ID, SP_path, SP_vol_name_client, 
 	   SP_vol_name_server, SP_function, SP_instrument_name, 
-	   SP_code, SP_descripton)
+	   SP_code, SP_description)
 	SELECT SP_path_ID, SP_path, SP_vol_name_client, 
 	   SP_vol_name_server, SP_function, SP_instrument_name, 
-	   SP_code, SP_descripton
+	   SP_code, SP_description
 	FROM t_storage_path
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -114,4 +116,9 @@ As
 	return @myError
 
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [PNL\D3M580] AS [dbo]
 GO

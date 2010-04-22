@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[MakeTableFromList]
+CREATE FUNCTION MakeTableFromList
 /****************************************************
 **
 **	Desc: 
@@ -18,12 +17,12 @@ CREATE FUNCTION [dbo].[MakeTableFromList]
 **		Auth: grk
 **		Date: 1/12/2006
 **      
-**		03/05/2008 jds -- added the line to convert null 
-**			list to empty string if value is null 
+**		03/05/2008 jds - added the line to convert null list to empty string if value is null 
+**		09/16/2009 mem - Expanded @list to varchar(max) 
 **    
 *****************************************************/
 (
-@list varchar(8000)
+@list varchar(max)
 )
 RETURNS @theTable TABLE
    (

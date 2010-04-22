@@ -26,3 +26,7 @@ GROUP BY ML.ID, ML.Freezer, ML.Shelf, ML.Rack, ML.Row, ML.Barcode, ML.Comment, M
          ML.Col, ML.Status, ML.Container_Limit
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

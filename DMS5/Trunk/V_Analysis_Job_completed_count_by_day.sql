@@ -15,3 +15,7 @@ FROM V_Analysis_date_completed
 WHERE (state = 4)
 GROUP BY y, m, d
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_completed_count_by_day] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_completed_count_by_day] TO [PNL\D3M580] AS [dbo]
+GO

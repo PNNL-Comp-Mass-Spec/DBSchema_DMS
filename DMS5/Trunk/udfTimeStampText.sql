@@ -52,5 +52,5 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[udfTimeStampText] TO [public]
+GRANT EXECUTE ON [dbo].[udfTimeStampText] TO [public] AS [dbo]
 GO

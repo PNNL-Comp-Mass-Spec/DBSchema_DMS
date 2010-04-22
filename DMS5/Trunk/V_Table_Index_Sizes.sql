@@ -33,3 +33,7 @@ AS (
  ORDER BY t.Schema_Name, t.Table_Name, t.Index_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Index_Sizes] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Index_Sizes] TO [PNL\D3M580] AS [dbo]
+GO

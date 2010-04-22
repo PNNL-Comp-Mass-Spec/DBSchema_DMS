@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddAnalysisJobGroup
 /****************************************************
 **
@@ -35,6 +34,10 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **			08/05/2009 mem - Now removing duplicates when populating #TD
 **						   - Updated to use GetNewJobIDBlock to obtain job numbers
+**			09/17/2009 grk - Don't make new jobs for datasets with existing jobs (optional mode) (Ticket #747, http://prismtrac.pnl.gov/trac/ticket/747)
+**			09/19/2009 grk - Improved return message
+**			09/23/2009 mem - Updated to handle requests with state "New (Review Required)"
+**			12/21/2009 mem - Now updating field AJR_jobCount in T_Analysis_Job_Request when @requestID is > 1
 **
 *****************************************************/
 (
@@ -52,6 +55,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
     @requestID int,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
+    @removeDatasetsWithJobs VARCHAR(12) = 'Y',
 	@mode varchar(12), 
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -75,6 +79,9 @@ As
 		
 	declare @stateID int
 	Set @stateID = 1
+	
+	DECLARE @jobsCreated INT
+	SET @jobsCreated = 0
 
 	---------------------------------------------------
 	-- list shouldn't be empty
@@ -160,6 +167,8 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51007
 	end
+	--
+	SET @jobsCreated = @myRowCount
 
 	-- Make sure the Dataset names do not have carriage returns or line feeds
 		
@@ -170,7 +179,87 @@ As
 	UPDATE #td
 	SET Dataset_Num = Replace(Dataset_Num, char(10), '')
 	WHERE Dataset_Num LIKE '%' + char(10) + '%'
-	
+
+	---------------------------------------------------
+	-- if mode is set to remove them,
+	-- find datasets from temp table that have existing
+	-- jobs that match criteria from request
+	---------------------------------------------------
+	--
+	DECLARE @numMatchingDatasets INT
+	SET @numMatchingDatasets = 0
+	DECLARE @removedDatasets VARCHAR(4096)
+	SET @removedDatasets = ''
+	--
+	IF @removeDatasetsWithJobs <> 'N'
+	BEGIN --<remove>
+		declare @matchingJobDatasets Table (
+			Dataset varchar(128)
+		)
+		--
+		INSERT INTO @matchingJobDatasets(Dataset)
+		SELECT 
+			DS.Dataset_Num AS Dataset
+		FROM
+			T_Dataset DS INNER JOIN
+			T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
+			T_Analysis_Tool AJT ON AJ.AJ_analysisToolID = AJT.AJT_toolID INNER JOIN
+			T_Organisms Org ON AJ.AJ_organismID = Org.Organism_ID  INNER JOIN
+			T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
+			#TD ON #TD.Dataset_Num = DS.Dataset_Num
+		WHERE
+			(NOT (AJ.AJ_StateID IN (5, 14))) AND
+			AJT.AJT_toolName = @toolName AND 
+			AJ.AJ_parmFileName = @parmFileName AND 
+			AJ.AJ_settingsFileName = @settingsFileName AND 
+			( (	@protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
+				Org.OG_name = IsNull(@organismName, Org.OG_name)
+			  ) OR
+			  (	@protCollNameList <> 'na' AND 
+				AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
+				AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
+			  ) 
+			)
+		GROUP BY DS.Dataset_Num
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Error trying to find datasets with existing jobs'
+			RAISERROR (@msg, 10, 1)
+			return 51097
+		end
+		
+		SET @numMatchingDatasets = @myRowCount
+		
+		IF @numMatchingDatasets > 0
+		BEGIN --<remove-a>
+			-- remove datasets from list that have existing jobs
+			--
+			DELETE FROM
+			#TD
+			WHERE
+			Dataset_Num IN (SELECT Dataset FROM @matchingJobDatasets)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			SET @jobsCreated = @jobsCreated - @myRowCount
+			
+			-- make list of removed datasets
+			--
+			DECLARE @threshold SMALLINT
+			SET @threshold = 5
+			SET @removedDatasets = CONVERT(varchar(12), @numMatchingDatasets) + ' skipped datasets that had existing jobs:'
+			SELECT TOP(@threshold) @removedDatasets =  @removedDatasets + Dataset + ', ' FROM @matchingJobDatasets
+			IF @numMatchingDatasets > @threshold
+			begin
+				SET @removedDatasets = @removedDatasets + ' (more datasets not shown)'
+			end
+
+		END --<remove-a>
+	END --<remove>
+
 	
 	---------------------------------------------------
 	-- Resolve propagation mode 
@@ -216,6 +305,13 @@ As
 	
 	if @mode = 'add'
 	begin
+		IF @jobsCreated = 0 AND @numMatchingDatasets > 0
+		begin
+			set @msg = 'No jobs were made because there were existing jobs for all datasets in the list'
+			RAISERROR (@msg, 10, 1)
+			return 51094
+		end
+
 		---------------------------------------------------
 		-- start transaction
 		---------------------------------------------------
@@ -274,7 +370,7 @@ As
 		else
 		begin
 
-			-- make sure @requestID is in state 1=new
+			-- make sure @requestID is in state 1=new or state 5=new (Review Required)
 			declare @requestState int
 			set @requestState = 0
 			
@@ -294,7 +390,7 @@ As
 			
 			set @requestState = IsNull(@requestState,0)
 			
-			if @requestState = 1
+			if @requestState = 1 OR @requestState = 5
 			begin
 				if @mode in ('add', 'update')
 				begin
@@ -317,7 +413,7 @@ As
 			end
 			else
 			begin
-				-- request is not in state 1 and request ID is not 0
+				-- Request ID is non-zero and request is not in state 1 or state 5
 				set @msg = 'Request is not in state New; cannot create jobs'
 				RAISERROR (@msg, 10, 1)
 				rollback transaction @transName
@@ -422,7 +518,7 @@ As
 		if @myError <> 0
 		begin
 			-- set request status to 'incomplete'
-			if @requestID > 0
+			if @requestID > 1
 			begin
 				UPDATE	T_Analysis_Job_Request
 				SET		AJR_state = 4
@@ -434,7 +530,8 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
-
+		--
+		SET @jobsCreated = @myRowCount
 
 		if @batchID = 0 AND @myRowCount = 1
 		begin
@@ -490,6 +587,39 @@ As
 
 		commit transaction @transName
 		
+		
+		If @requestID > 1
+		Begin
+			-------------------------------------------------
+			--Update the AJR_jobCount field for this job request
+			-------------------------------------------------
+
+			UPDATE T_Analysis_Job_Request
+			SET AJR_jobCount = StatQ.JobCount
+			FROM T_Analysis_Job_Request AJR
+				INNER JOIN ( SELECT AJR.AJR_requestID,
+									SUM(CASE WHEN AJ.AJ_jobID IS NULL 
+											 THEN 0
+											 ELSE 1
+										END) AS JobCount
+							FROM T_Analysis_Job_Request AJR
+								INNER JOIN T_Users U
+									ON AJR.AJR_requestor = U.ID
+								INNER JOIN T_Analysis_Job_Request_State AJRS
+									ON AJR.AJR_state = AJRS.ID
+								INNER JOIN T_Organisms Org
+									ON AJR.AJR_organism_ID = Org.Organism_ID
+								LEFT OUTER JOIN T_Analysis_Job AJ
+									ON AJR.AJR_requestID = AJ.AJ_requestID
+							WHERE AJR.AJR_requestID = @requestID
+							GROUP BY AJR.AJR_requestID 
+							) StatQ
+				ON AJR.AJR_requestID = StatQ.AJR_requestID
+			--	
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+		End
+		
 		If Len(@callingUser) > 0
 		Begin
 			-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -517,7 +647,24 @@ As
 
 	END -- mode 'add'
 
-	set @message = 'Number of jobs created: ' + cast(@myRowCount as varchar(12))
+	---------------------------------------------------
+	-- build message
+	---------------------------------------------------
+Explain:
+	IF @mode = 'add'
+		SET @message = ' There were '
+	ELSE
+		SET @message = ' There would be '
+	SET @message = @message + CONVERT(varchar(12), @jobsCreated) + ' jobs created. '
+	--
+	IF @numMatchingDatasets > 0
+	begin
+		IF @mode = 'add'
+			SET @removedDatasets = ' Jobs were not made for ' + @removedDatasets
+		ELSE
+			SET @removedDatasets = ' Jobs would not be made for ' + @removedDatasets
+		set @message = @message + @removedDatasets
+	end
 
 	---------------------------------------------------
 	-- Done
@@ -526,7 +673,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [PNL\D3M580] AS [dbo]
 GO

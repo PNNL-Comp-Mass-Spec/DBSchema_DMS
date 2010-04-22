@@ -22,3 +22,7 @@ FROM         dbo.T_Sample_Prep_Request INNER JOIN
 WHERE     (dbo.T_Sample_Prep_Request_State_Name.State_ID > 0)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

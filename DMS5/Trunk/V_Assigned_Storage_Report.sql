@@ -24,3 +24,7 @@ FROM T_Instrument_Name INNER JOIN
    v_raw_storage ON 
    T_Instrument_Name.IN_storage_path_ID = v_raw_storage.SP_path_ID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Storage_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Storage_Report] TO [PNL\D3M580] AS [dbo]
+GO

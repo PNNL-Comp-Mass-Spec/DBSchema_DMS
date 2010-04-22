@@ -21,3 +21,7 @@ FROM         dbo.T_DatasetTypeName INNER JOIN
                       dbo.T_LC_Cart ON dbo.T_Requested_Run.RDS_Cart_ID = dbo.T_LC_Cart.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Find_Requested_Run] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Find_Requested_Run] TO [PNL\D3M580] AS [dbo]
+GO

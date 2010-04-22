@@ -16,3 +16,7 @@ FROM         dbo.T_Instrument_Name INNER JOIN
                       dbo.t_storage_path AS SourcePath ON dbo.T_Instrument_Name.IN_source_path_ID = SourcePath.SP_path_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetInstrumentCaptureParameters] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetInstrumentCaptureParameters] TO [PNL\D3M580] AS [dbo]
+GO

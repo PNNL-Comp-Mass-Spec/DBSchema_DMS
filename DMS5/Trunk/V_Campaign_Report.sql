@@ -3,19 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-
-
-
-
 CREATE VIEW dbo.V_Campaign_Report
 AS
-SELECT Campaign_Num AS Campaign, 
-   CM_Project_Num AS Project, 
-   CM_Proj_Mgr_PRN AS ProjectMgr, CM_PI_PRN AS PI, 
-   CM_comment AS Comment, CM_created AS Created
-FROM T_Campaign
+SELECT     Campaign_Num AS Campaign, CM_Project_Num AS Project, dbo.GetCampaignRolePerson(Campaign_ID, 'Project Mgr') AS ProjectMgr, 
+                      dbo.GetCampaignRolePerson(Campaign_ID, 'PI') AS PI, CM_comment AS Comment, CM_created AS Created
+FROM         T_Campaign  
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Report] TO [PNL\D3M580] AS [dbo]
 GO

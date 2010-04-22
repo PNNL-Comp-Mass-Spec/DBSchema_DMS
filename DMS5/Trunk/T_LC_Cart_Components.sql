@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_LC_Cart_Components](
  CONSTRAINT [PK_T_LC_Cart_Components] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -27,11 +27,15 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_LC_Cart_Components] ON [dbo].[T_LC_Cart_Components] 
 (
 	[Serial_Number] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Components]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Components_T_LC_Cart_Component_Postition] FOREIGN KEY([Component_Position])
 REFERENCES [T_LC_Cart_Component_Postition] ([ID])
 GO
+ALTER TABLE [dbo].[T_LC_Cart_Components] CHECK CONSTRAINT [FK_T_LC_Cart_Components_T_LC_Cart_Component_Postition]
+GO
 ALTER TABLE [dbo].[T_LC_Cart_Components]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Components_T_LC_Component_Type] FOREIGN KEY([Type])
 REFERENCES [T_LC_Cart_Component_Type] ([ID])
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Components] CHECK CONSTRAINT [FK_T_LC_Cart_Components_T_LC_Component_Type]
 GO

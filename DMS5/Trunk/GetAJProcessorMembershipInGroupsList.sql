@@ -78,3 +78,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[GetAJProcessorMembershipInGroupsList] TO [D3L243] AS [dbo]
+GO

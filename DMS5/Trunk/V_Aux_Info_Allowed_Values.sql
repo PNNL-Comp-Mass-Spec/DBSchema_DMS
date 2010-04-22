@@ -24,3 +24,7 @@ FROM dbo.T_AuxInfo_Category INNER JOIN
    dbo.T_AuxInfo_Allowed_Values ON 
    dbo.T_AuxInfo_Description.ID = dbo.T_AuxInfo_Allowed_Values.AuxInfoID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Allowed_Values] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Allowed_Values] TO [PNL\D3M580] AS [dbo]
+GO

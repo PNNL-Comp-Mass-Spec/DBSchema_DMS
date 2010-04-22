@@ -10,3 +10,7 @@ FROM         dbo.V_Material_Locations_List_Report
 WHERE     (Status = 'Active') AND (Available > 0)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_Picklist] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_Picklist] TO [PNL\D3M580] AS [dbo]
+GO

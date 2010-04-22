@@ -4,17 +4,28 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Campaign](
-	[Campaign_Num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[CM_Project_Num] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[CM_Proj_Mgr_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[CM_PI_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Campaign_Num] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[CM_Project_Num] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[CM_Proj_Mgr_PRN] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_PI_PRN] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CM_comment] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CM_created] [datetime] NOT NULL,
 	[Campaign_ID] [int] IDENTITY(2100,1) NOT NULL,
+	[CM_Technical_Lead] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_State] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[CM_Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_External_Links] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_Team_Members] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_EPR_List] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_EUS_Proposal_List] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_Organisms] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_Experiment_Prefixes] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CM_Research_Team] [int] NULL,
+	[CM_Data_Release_Restrictions] [int] NOT NULL,
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY NONCLUSTERED 
 (
 	[Campaign_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -23,30 +34,27 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Campaign_Campaign_ID] ON [dbo].[T_Campaign] 
 (
 	[Campaign_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Campaign_Campaign_Num] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
 (
 	[Campaign_Num] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Campaign_CM_created] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign] 
 (
 	[CM_created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_d_Campaign] ******/
+/****** Object:  Trigger [dbo].[trig_d_Campaign] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Campaign] on [dbo].[T_Campaign]
 For Delete
 /****************************************************
@@ -82,14 +90,11 @@ AS
 	ORDER BY Campaign_ID
 
 GO
-
-/****** Object:  Trigger [trig_i_Campaign] ******/
+/****** Object:  Trigger [dbo].[trig_i_Campaign] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Campaign] on [dbo].[T_Campaign]
 For Insert
 /****************************************************
@@ -114,10 +119,21 @@ AS
 	ORDER BY inserted.Campaign_ID
 
 GO
-GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Users] FOREIGN KEY([CM_PI_PRN])
-REFERENCES [T_Users] ([U_PRN])
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions] FOREIGN KEY([CM_Data_Release_Restrictions])
+REFERENCES [T_Data_Release_Restrictions] ([ID])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions]
+GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Research_Team] FOREIGN KEY([CM_Research_Team])
+REFERENCES [T_Research_Team] ([ID])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Research_Team]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]
 GO

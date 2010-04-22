@@ -15,3 +15,7 @@ FROM         dbo.T_Cell_Culture LEFT OUTER JOIN
                       dbo.T_Users Owner_Names ON dbo.T_Cell_Culture.CC_Owner_PRN = Owner_Names.U_PRN
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Cell_Cultures] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Cell_Cultures] TO [PNL\D3M580] AS [dbo]
+GO

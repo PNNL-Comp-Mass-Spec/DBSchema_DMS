@@ -3,8 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SetArchiveVerificationTaskComplete
 
+CREATE PROCEDURE [dbo].[SetArchiveVerificationTaskComplete]
 /****************************************************
 **
 **	Desc: Sets status of archive verification task to successful
@@ -17,15 +17,17 @@ CREATE Procedure SetArchiveVerificationTaskComplete
 **	 @datasetNum		dataset for which archive task is being completed
 **	 @completionCode	0->success, 1->failure, anything else ->no intermediate files
 **
-**	Auth: jds
-**	Date: 6/27/2005   
-**    
-**    Modified: DAC, 10/26/2007. Removed @processorName parameter, which is no longer used
+**	Auth:	jds
+**	Date:	06/27/2005   
+**			10/26/2007 dac - Removed @processorName parameter, which is no longer used
+**			03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
+**
 *****************************************************/
+(
 	@datasetNum varchar(128),
---	@processorName varchar(64),
 	@completionCode int = 0,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -82,7 +84,8 @@ As
 			SET
 				AS_state_ID = 3, 
 				AS_last_update = GETDATE(),
-				AS_last_verify = GETDATE()
+				AS_last_verify = GETDATE(),
+				AS_Last_Successful_Archive = GETDATE()
 			WHERE     (AS_Dataset_ID = @datasetID)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -110,4 +113,9 @@ As
 Done:
 	return @myError
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveVerificationTaskComplete] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveVerificationTaskComplete] TO [PNL\D3M580] AS [dbo]
 GO

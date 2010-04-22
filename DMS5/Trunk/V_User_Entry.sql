@@ -10,3 +10,7 @@ SELECT     U_PRN AS UserPRN, U_Name AS UserName, U_HID AS HanfordIDNum, U_Status
 FROM         dbo.T_Users
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_User_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_User_Entry] TO [PNL\D3M580] AS [dbo]
+GO

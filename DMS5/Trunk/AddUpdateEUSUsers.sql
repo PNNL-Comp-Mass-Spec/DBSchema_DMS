@@ -161,7 +161,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEUSUsers] TO [DMS_EUS_Admin]
+GRANT EXECUTE ON [dbo].[AddUpdateEUSUsers] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEUSUsers] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateEUSUsers] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSUsers] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSUsers] TO [PNL\D3M580] AS [dbo]
 GO

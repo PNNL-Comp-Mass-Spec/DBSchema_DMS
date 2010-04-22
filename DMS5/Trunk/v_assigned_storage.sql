@@ -35,3 +35,7 @@ FROM T_Instrument_Name INNER JOIN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[v_assigned_storage] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[v_assigned_storage] TO [PNL\D3M580] AS [dbo]
+GO

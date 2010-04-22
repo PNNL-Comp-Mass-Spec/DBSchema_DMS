@@ -13,3 +13,7 @@ WHERE (Keyword = 'seq_direction')
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Protein_Options_Seq_Direction] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Protein_Options_Seq_Direction] TO [PNL\D3M580] AS [dbo]
+GO

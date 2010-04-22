@@ -22,3 +22,7 @@ WHERE     (T_Dataset.DS_state_ID = 3) AND (T_Dataset.DS_Comp_State IS NULL) AND 
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForPreparationTask_Rmed] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForPreparationTask_Rmed] TO [PNL\D3M580] AS [dbo]
+GO

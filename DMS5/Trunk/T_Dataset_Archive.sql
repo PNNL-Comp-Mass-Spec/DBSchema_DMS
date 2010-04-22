@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_Dataset_ID] [int] NOT NULL,
 	[AS_state_ID] [int] NOT NULL,
-	[AS_state_Last_Affected] [datetime] NULL CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()),
+	[AS_state_Last_Affected] [datetime] NULL,
 	[AS_storage_path_ID] [int] NOT NULL,
 	[AS_datetime] [datetime] NULL,
 	[AS_last_update] [datetime] NULL,
@@ -17,11 +17,12 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_archive_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AS_update_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AS_verification_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AS_instrument_data_purged] [tinyint] NULL CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)),
+	[AS_instrument_data_purged] [tinyint] NULL,
+	[AS_Last_Successful_Archive] [datetime] NULL,
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -31,14 +32,28 @@ CREATE NONCLUSTERED INDEX [IX_Dataset_Archive_DatasetID_StateID] ON [dbo].[T_Dat
 (
 	[AS_Dataset_ID] ASC,
 	[AS_state_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Archive_Last_Successful_Archive] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_Last_Successful_Archive] ON [dbo].[T_Dataset_Archive] 
+(
+	[AS_Last_Successful_Archive] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Archive_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archive] 
 (
 	[AS_state_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Archive_StoragePathID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StoragePathID] ON [dbo].[T_Dataset_Archive] 
+(
+	[AS_storage_path_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ******/
@@ -48,16 +63,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_
 	[AS_Dataset_ID] ASC,
 	[AS_state_ID] ASC
 )
-INCLUDE ( [AS_purge_holdoff_date]) WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+INCLUDE ( [AS_purge_holdoff_date]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_d_Dataset_Archive] ******/
+/****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Delete
 /****************************************************
@@ -92,14 +104,11 @@ AS
 	ORDER BY AS_Dataset_ID
 
 GO
-
-/****** Object:  Trigger [trig_i_Dataset_Archive] ******/
+/****** Object:  Trigger [dbo].[trig_i_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
@@ -138,15 +147,12 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_u_Dataset_Archive] ******/
+/****** Object:  Trigger [dbo].[trig_u_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger dbo.trig_u_Dataset_Archive on dbo.T_Dataset_Archive
+CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************
 **
@@ -237,4 +243,8 @@ ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Datase
 REFERENCES [T_DatasetArchiveStateName] ([DASN_StateID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()) FOR [AS_state_Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]
 GO

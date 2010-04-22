@@ -17,3 +17,7 @@ FROM         dbo.T_Dataset INNER JOIN
 WHERE     (dbo.T_Event_Log.Target_Type = 4) AND (dbo.T_Dataset.DS_state_ID <> 3) AND (dbo.T_Dataset.DS_state_ID <> 4)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Check_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Check_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -203,5 +203,15 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[RequestPreparationTask] TO [DMS_SP_User]
+GRANT ALTER ON [dbo].[RequestPreparationTask] TO [D3L243] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[RequestPreparationTask] TO [D3L243] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPreparationTask] TO [D3L243] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[RequestPreparationTask] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPreparationTask] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPreparationTask] TO [PNL\D3M580] AS [dbo]
 GO

@@ -33,5 +33,9 @@ As
 	SELECT @campaignID = Campaign_ID FROM T_Campaign WHERE (Campaign_Num = @campaignNum)
 	return(@campaignID)
 GO
-GRANT EXECUTE ON [dbo].[GetCampaignID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetCampaignID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetCampaignID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetCampaignID] TO [PNL\D3M580] AS [dbo]
 GO

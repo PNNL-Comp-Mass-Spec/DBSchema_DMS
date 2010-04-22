@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure AddNewInstrument
 /****************************************************
 **
@@ -12,8 +13,6 @@ CREATE Procedure AddNewInstrument
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters: 
-**
-**	
 **
 **		Auth: grk
 **		Date: 1/26/2001
@@ -29,8 +28,11 @@ CREATE Procedure AddNewInstrument
 **		12/11/2008 grk -- Fixed problem with NULL @Usage
 **		12/14/2008 grk -- Fixed problem with select result being inadvertently returned
 **		01/05/2009 grk -- added @archiveNetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/709)
+**		01/05/2010 grk -- added @allowedDatasetTypes (http://prismtrac.pnl.gov/trac/ticket/752)
+**		02/12/2010 mem -- Now calling UpdateInstrumentAllowedDatasetType for each dataset type in @allowedDatasetTypes
 **    
 *****************************************************/
+(
 	@iName varchar(24),				-- name of new instrument
 	@iClass varchar(32),				-- class of " "
 	@iMethod varchar(10),				-- capture method of " "
@@ -48,7 +50,9 @@ CREATE Procedure AddNewInstrument
 	@Usage varchar(50),
 	@OperationsRole varchar(50),
 							--	(typically common name of instrument as convience)
+	@allowedDatasetTypes VARCHAR(2048),
 	@message varchar(512) output
+)
 As
 	declare @myError int
 	set @myError = 0
@@ -166,7 +170,7 @@ As
 		rollback transaction @transName
 		RAISERROR ('Creating storage path was unsuccessful for add instrument',
 			10, 1)
-		return 51131
+		return 51132
 	end
 
 	---------------------------------------------------
@@ -190,7 +194,7 @@ As
 		rollback transaction @transName
 		RAISERROR ('Creating source path was unsuccessful for add instrument',
 			10, 1)
-		return 51131
+		return 51133
 	end
 
 	---------------------------------------------------
@@ -242,14 +246,72 @@ As
 		rollback transaction @transName
 		RAISERROR ('Insert into archive path table was unsuccessful for add instrument',
 			10, 1)
-		return 51131
+		return 51134
 	end
 
+
+	---------------------------------------------------
+	-- Call UpdateInstrumentAllowedDatasetType for each entry in @allowedDatasetTypes
+	---------------------------------------------------
+	
+	CREATE TABLE #Tmp_AllowedDatasetTypes (
+		DatasetTypeName varchar(128)
+	)	
+
+	INSERT INTO #Tmp_AllowedDatasetTypes( DatasetTypeName )
+	SELECT DISTINCT Value
+	FROM dbo.udfParseDelimitedList ( @allowedDatasetTypes, ',' )
+	WHERE IsNull(Value, '') <> ''
+	ORDER BY Value
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	Declare @DatasetType varchar(128)
+	Declare @continue tinyint
+
+	Set @continue = 1
+	While @continue = 1	
+	Begin
+		SELECT TOP 1 @DatasetType = DatasetTypeName
+		FROM #Tmp_AllowedDatasetTypes
+		ORDER BY DatasetTypeName
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount = 0
+			Set @continue = 0
+		Else
+		Begin
+			EXEC @myError = UpdateInstrumentAllowedDatasetType @iName, @DatasetType, '', 'add', @message output, ''
+			
+			if @myError <> 0
+			begin			
+				rollback transaction @transName
+				
+				Set @message = 'Error associating dataset type "' + @DatasetType + '" with instrument: ' + IsNull(@message, '??')
+				
+				RAISERROR (@message, 10, 1)
+				return 51135
+			end
+
+			DELETE FROM #Tmp_AllowedDatasetTypes
+			WHERE DatasetTypeName = @DatasetType
+			
+		End		
+	End
+	
+	---------------------------------------------------
+	-- Finalize the transaction
+	---------------------------------------------------
+	--
 	commit transaction @transName
-
-
+	
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddNewInstrument] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddNewInstrument] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [PNL\D3M580] AS [dbo]
 GO

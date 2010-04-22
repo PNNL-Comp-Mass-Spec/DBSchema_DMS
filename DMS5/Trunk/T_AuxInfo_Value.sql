@@ -16,20 +16,20 @@ CREATE CLUSTERED INDEX [IX_T_AuxInfo_Value_Target_ID] ON [dbo].[T_AuxInfo_Value]
 (
 	[Target_ID] ASC,
 	[AuxInfo_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_AuxInfo_Value_AuxInfo_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_AuxInfo_Value_AuxInfo_ID] ON [dbo].[T_AuxInfo_Value] 
 (
 	[AuxInfo_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-GRANT INSERT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Value]  WITH NOCHECK ADD  CONSTRAINT [FK_T_AuxInfo_Value_T_AuxInfo_Description] FOREIGN KEY([AuxInfo_ID])
 REFERENCES [T_AuxInfo_Description] ([ID])

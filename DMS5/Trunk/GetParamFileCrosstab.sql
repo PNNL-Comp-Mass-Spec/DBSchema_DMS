@@ -17,11 +17,13 @@ CREATE Procedure dbo.GetParamFileCrosstab
 **						   - Added parameters @ParameterFileTypeName and @ShowValidOnly
 **						   - Updated to call PopulateParamFileInfoTableSequest and PopulateParamFileModInfoTable 
 **			04/07/2008 mem - Added parameters @previewSql, @MassModFilterTextColumn, and @MassModFilterText
+**			05/19/2009 mem - Now returning column Job_Usage_Count
+**			02/12/2010 mem - Expanded @ParameterFileFilter to varchar(255)
 **    
 *****************************************************/
 (
 	@ParameterFileTypeName varchar(64) = 'Sequest',		-- Should be 'Sequest' or 'XTandem'
-	@ParameterFileFilter varchar(128) = '',				-- Optional parameter file name filter
+	@ParameterFileFilter varchar(255) = '',				-- Optional parameter file name filter
 	@ShowValidOnly tinyint = 0,							-- Set to 1 to only show "Valid" parameter files
 	@ShowModSymbol tinyint = 0,							-- Set to 1 to display the modification symbol
 	@ShowModName tinyint = 1,							-- Set to 1 to display the modification name
@@ -96,7 +98,8 @@ As
 	CREATE TABLE #TmpParamFileInfo (
 		Param_File_ID Int NOT NULL,
 		Date_Created datetime NULL,
-		Date_Modified datetime NULL
+		Date_Modified datetime NULL,
+		Job_Usage_Count int NULL
 	)
 	CREATE UNIQUE CLUSTERED INDEX #IX_TempTable_ParamFileInfo_Param_File_ID ON #TmpParamFileInfo(Param_File_ID)
 
@@ -110,8 +113,8 @@ As
 	-- matching @ParameterFileFilter
 	-----------------------------------------------------------
 
-	INSERT INTO #TmpParamFileInfo (Param_File_ID, Date_Created, Date_Modified)
-	SELECT PF.Param_File_ID, PF.Date_Created, PF.Date_Modified
+	INSERT INTO #TmpParamFileInfo (Param_File_ID, Date_Created, Date_Modified, Job_Usage_Count)
+	SELECT PF.Param_File_ID, PF.Date_Created, PF.Date_Modified, PF.Job_Usage_Count
 	FROM T_Param_File_Types PFT INNER JOIN
 		 T_Param_Files PF ON PFT.Param_File_Type_ID = PF.Param_File_Type_ID
 	WHERE PFT.Param_File_Type = @ParameterFileTypeName AND 
@@ -156,7 +159,7 @@ As
 	-- Return the results
 	-----------------------------------------------------------
 	Set @S = ''
-	Set @S = @S + ' SELECT PF.Param_File_Name, PF.Param_File_Description, '
+	Set @S = @S + ' SELECT PF.Param_File_Name, PF.Param_File_Description, PF.Job_Usage_Count, '
 	
 	If Len(IsNull(@ParamFileInfoColumnList, '')) > 0
 		Set @S = @S +      @ParamFileInfoColumnList + ', '
@@ -193,7 +196,11 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamFileCrosstab] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamFileCrosstab] TO [PNL\D3M580] AS [dbo]
 GO

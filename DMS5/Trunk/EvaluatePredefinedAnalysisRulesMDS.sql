@@ -152,7 +152,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [PNL\D3M580] AS [dbo]
 GO

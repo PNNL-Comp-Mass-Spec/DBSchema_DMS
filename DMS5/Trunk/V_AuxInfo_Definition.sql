@@ -13,5 +13,10 @@ FROM         dbo.T_AuxInfo_Category INNER JOIN
                       dbo.T_AuxInfo_Subcategory ON dbo.T_AuxInfo_Category.ID = dbo.T_AuxInfo_Subcategory.Parent_ID INNER JOIN
                       dbo.T_AuxInfo_Description ON dbo.T_AuxInfo_Subcategory.ID = dbo.T_AuxInfo_Description.Parent_ID INNER JOIN
                       dbo.T_AuxInfo_Target ON dbo.T_AuxInfo_Category.Target_Type_ID = dbo.T_AuxInfo_Target.ID
+WHERE     (dbo.T_AuxInfo_Description.Active = 'Y')
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Definition] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Definition] TO [PNL\D3M580] AS [dbo]
 GO

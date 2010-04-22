@@ -12,3 +12,7 @@ SELECT Translation_Table_Name_ID,
 FROM ProteinSeqs.Protein_Sequences.dbo.T_DNA_Translation_Tables DTT
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DNA_Translation_Tables] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_DNA_Translation_Tables] TO [PNL\D3M580] AS [dbo]
+GO

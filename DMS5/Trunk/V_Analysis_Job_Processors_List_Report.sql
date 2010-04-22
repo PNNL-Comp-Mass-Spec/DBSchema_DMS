@@ -11,3 +11,7 @@ SELECT     ID, State, Processor_Name AS Name, Machine, dbo.GetAJProcessorAnalysi
 FROM         dbo.T_Analysis_Job_Processors
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processors_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processors_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

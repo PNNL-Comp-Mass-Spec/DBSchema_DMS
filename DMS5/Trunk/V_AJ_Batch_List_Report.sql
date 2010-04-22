@@ -10,3 +10,7 @@ FROM         dbo.T_Analysis_Job_Batches
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_AJ_Batch_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_AJ_Batch_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -62,7 +62,7 @@ AS
 
 
 GO
-GRANT EXECUTE ON [dbo].[GetProposalEUSUsersList] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]
 GO
-GRANT REFERENCES ON [dbo].[GetProposalEUSUsersList] TO [DMS_User]
+GRANT REFERENCES ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]
 GO

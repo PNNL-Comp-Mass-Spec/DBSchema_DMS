@@ -12,9 +12,9 @@ CREATE Procedure DoMaterialContainerOperation
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 07/23/2008
-**		Auth: grk   - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**	Auth:	grk
+**	Date:	07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**			10/01/2009 mem - Expanded error message
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -53,7 +53,7 @@ As
 	--
 	if @tmpID = 0
 	begin
-		set @msg = 'Could not find container'
+		set @msg = 'Could not find the container for @mode="' + @mode + '" and @name="' + @name + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51222
 	end
@@ -88,7 +88,11 @@ As
 	end
 
 	
- 
+
 GO
-GRANT EXECUTE ON [dbo].[DoMaterialContainerOperation] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[DoMaterialContainerOperation] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [PNL\D3M580] AS [dbo]
 GO

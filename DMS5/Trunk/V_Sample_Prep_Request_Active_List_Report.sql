@@ -3,22 +3,23 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Sample_Prep_Request_Active_List_Report
-AS
-SELECT     dbo.T_Sample_Prep_Request.ID, dbo.T_Sample_Prep_Request.Request_Name AS RequestName, dbo.T_Sample_Prep_Request.Created, 
-                      dbo.T_Sample_Prep_Request.Estimated_Completion AS [Est. Complete], dbo.T_Sample_Prep_Request.Priority, 
-                      dbo.T_Sample_Prep_Request_State_Name.State_Name AS State, dbo.T_Sample_Prep_Request.Reason, 
-                      dbo.T_Sample_Prep_Request.Number_of_Samples AS NumSamples, dbo.T_Sample_Prep_Request.Estimated_MS_runs AS [MS Runs TBG], 
-                      dbo.T_Sample_Prep_Request.Prep_Method AS PrepMethod, dbo.T_Sample_Prep_Request.Requested_Personnel AS RequestedPersonnel, 
-                      dbo.T_Sample_Prep_Request.Assigned_Personnel AS AssignedPersonnel, 
-                      QP.U_Name + ' (' + dbo.T_Sample_Prep_Request.Requester_PRN + ')' AS Requester, dbo.T_Sample_Prep_Request.Organism, 
-                      dbo.T_Sample_Prep_Request.Biohazard_Level AS BiohazardLevel, dbo.T_Sample_Prep_Request.Campaign, dbo.T_Sample_Prep_Request.Comment, 
-                      dbo.T_Sample_Prep_Request.Instrument_Name AS [Inst. Name], 
-                      dbo.T_Sample_Prep_Request.Instrument_Analysis_Specifications AS [Inst. Analysis]
-FROM         dbo.T_Sample_Prep_Request INNER JOIN
-                      dbo.T_Sample_Prep_Request_State_Name ON 
-                      dbo.T_Sample_Prep_Request.State = dbo.T_Sample_Prep_Request_State_Name.State_ID LEFT OUTER JOIN
-                      dbo.T_Users AS QP ON dbo.T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
-WHERE     (NOT (dbo.T_Sample_Prep_Request_State_Name.State_ID IN (0, 4, 5)))
-
+CREATE VIEW V_Sample_Prep_Request_Active_List_Report
+as
+SELECT     T_Sample_Prep_Request.ID, T_Sample_Prep_Request.Request_Name AS RequestName, T_Sample_Prep_Request.Created, 
+                      T_Sample_Prep_Request.Estimated_Completion AS [Est. Complete], T_Sample_Prep_Request.Priority, 
+                      T_Sample_Prep_Request_State_Name.State_Name AS State, T_Sample_Prep_Request.Reason, 
+                      T_Sample_Prep_Request.Number_of_Samples AS NumSamples, T_Sample_Prep_Request.Estimated_MS_runs AS [MS Runs TBG], 
+                      T_Sample_Prep_Request.Prep_Method AS PrepMethod, T_Sample_Prep_Request.Requested_Personnel AS RequestedPersonnel, 
+                      T_Sample_Prep_Request.Assigned_Personnel AS AssignedPersonnel, QP.U_Name + ' (' + T_Sample_Prep_Request.Requester_PRN + ')' AS Requester,
+                       T_Sample_Prep_Request.Organism, T_Sample_Prep_Request.Biohazard_Level AS BiohazardLevel, T_Sample_Prep_Request.Campaign, 
+                      T_Sample_Prep_Request.Comment, T_Sample_Prep_Request.Work_Package_Number AS [Work Package], 
+                      T_Sample_Prep_Request.Instrument_Name AS [Inst. Name], T_Sample_Prep_Request.Instrument_Analysis_Specifications AS [Inst. Analysis]
+FROM         T_Sample_Prep_Request INNER JOIN
+                      T_Sample_Prep_Request_State_Name ON T_Sample_Prep_Request.State = T_Sample_Prep_Request_State_Name.State_ID LEFT OUTER JOIN
+                      T_Users AS QP ON T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
+WHERE     (NOT (T_Sample_Prep_Request_State_Name.State_ID IN (0, 4, 5)))
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [PNL\D3M580] AS [dbo]
 GO

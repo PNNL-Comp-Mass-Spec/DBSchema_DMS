@@ -15,3 +15,7 @@ FROM dbo.T_Experiment_Cell_Cultures INNER JOIN
    dbo.T_Cell_Culture ON 
    dbo.T_Experiment_Cell_Cultures.CC_ID = dbo.T_Cell_Culture.CC_ID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Cell_Culture] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Cell_Culture] TO [PNL\D3M580] AS [dbo]
+GO

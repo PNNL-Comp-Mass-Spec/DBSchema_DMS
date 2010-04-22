@@ -23,3 +23,7 @@ FROM	T_Dataset TD INNER JOIN T_Dataset_Archive da ON TD.Dataset_ID = da.AS_Datas
 	INNER JOIN T_Instrument_Class c on c.IN_Class = i.IN_Class
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveValidationTask] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForArchiveValidationTask] TO [PNL\D3M580] AS [dbo]
+GO

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
+CREATE Procedure ValidateAnalysisJobParameters
 /****************************************************
 **
 **	Desc: Validates analysis job parameters and returns internal
@@ -32,6 +32,9 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **						   - Changed @parmFileName and @settingsFileName to be input/output parameters instead of input only
 **			01/14/2009 mem - Now raising an error if @protCollNameList is over 2000 characters long (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **			01/28/2009 mem - Now checking for settings files in T_Settings_Files instead of on disk (Ticket #718, http://prismtrac.pnl.gov/trac/ticket/718)
+**			12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
+**			12/21/2009 mem - Now validating that the parameter file tool and the settings file tool match the tool defined by @toolName
+**			02/11/2010 mem - Now assuring dataset rating is not -1 (or -2)
 **
 *****************************************************/
 (
@@ -61,6 +64,8 @@ As
 	set @message = ''
 
 	declare @list varchar(1024)
+	declare @ParamFileTool varchar(128)
+	declare @SettingsFileTool varchar(128)
 
 	---------------------------------------------------
 	-- Update temp table from existing datasets
@@ -164,8 +169,7 @@ As
 		END
 	FROM
 		#TD
-	WHERE 
-		(DS_rating = -2)
+	WHERE (DS_rating IN (-1, -2))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -177,7 +181,7 @@ As
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following datasets have a rating of -2 (Data Files Missing):"' + @list + '"'
+		set @message = 'The following datasets have a rating of -1 (No Data) or -2 (Data Files Missing): "' + @list + '"'
 		return 51007
 	end	
 	
@@ -221,10 +225,8 @@ As
 	-- get list of allowed instrument classes and dataset types for tool
 	--
 	declare @allowedInstClasses varchar(255)
-	declare @allowedDatasetTypes varchar(255)
 	--
-	SELECT  @allowedInstClasses = AJT_allowedInstClass,
-			@allowedDatasetTypes = AJT_allowedDatasetTypes
+	SELECT  @allowedInstClasses = AJT_allowedInstClass
 	FROM    T_Analysis_Tool
 	WHERE   (AJT_toolName = @toolName)
 	--
@@ -277,10 +279,12 @@ As
 		WHEN @list = '' THEN Dataset_Num
 		ELSE ', ' + Dataset_Num
 		END
-	FROM
-		#TD 
-	WHERE 
-		Dataset_Type NOT IN (SELECT * FROM MakeTableFromList(@allowedDatasetTypes))
+	FROM #TD
+	WHERE Dataset_Type NOT IN ( SELECT ADT.Dataset_Type
+	                            FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
+	                                 INNER JOIN T_Analysis_Tool Tool
+	                                   ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
+	                            WHERE Tool.AJT_toolName = @toolName )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -319,13 +323,40 @@ As
 	--
 	if @parmFileName <> 'na'
 	begin
-		SELECT @result = Param_File_ID
-		FROM T_Param_Files
-		WHERE Param_File_Name = @parmFileName
-		--
-		if @result = 0
+		if Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid <> 0))
+		Begin
+			-- The specified parameter file is valid
+			-- Make sure the parameter file tool corresponds to @toolName
+			
+			If Not Exists (
+				SELECT *
+				FROM T_Param_Files PF
+				     INNER JOIN T_Analysis_Tool ToolList
+				       ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
+				WHERE (PF.Param_File_Name = @parmFileName) AND
+				      (ToolList.AJT_toolName = @toolName)
+				)
+			Begin
+				SELECT TOP 1 @ParamFileTool = ToolList.AJT_toolName
+				FROM T_Param_Files PF
+				     INNER JOIN T_Analysis_Tool ToolList
+				       ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
+				WHERE (PF.Param_File_Name = @parmFileName)
+				ORDER BY ToolList.AJT_toolID
+
+				set @message = 'Parameter file "' + @parmFileName + '" is for tool ' + @ParamFileTool + '; not ' + @toolName
+				return 53111
+			End
+		End
+		else
 		begin
-			set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+			-- Parameter file either does not exist or is inactive
+			--
+			If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid = 0))
+				set @message = 'Parameter file is inactive and cannot be used' + ':"' + @parmFileName + '"'
+			Else
+				set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+				
 			return 53109
 		end
 	end
@@ -359,7 +390,31 @@ As
 
 	if @settingsFileName <> 'na'
 	begin
-		if Not Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active <> 0))
+		if Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active <> 0))
+		Begin
+			-- The specified settings file is valid
+			-- Make sure the settings file tool corresponds to @toolName
+
+			If Not Exists (
+				SELECT *
+				FROM V_Settings_File_Picklist SFP
+				WHERE (SFP.File_Name = @settingsFileName) AND
+				      (SFP.Analysis_Tool = @toolName)
+				)
+			Begin
+
+				SELECT TOP 1 @SettingsFileTool = SFP.Analysis_Tool
+				FROM V_Settings_File_Picklist SFP
+				     INNER JOIN T_Analysis_Tool ToolList
+				       ON SFP.Analysis_Tool = ToolList.AJT_toolName
+				WHERE (SFP.File_Name = @settingsFileName)
+				ORDER BY ToolList.AJT_toolID
+
+				set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
+				return 53112
+			End
+		End
+		else
 		begin
 			-- Settings file either does not exist or is inactive
 			--
@@ -387,28 +442,32 @@ As
 	end
 	--
 	if @orgDbReqd = 0
+	begin
+		if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
 		begin
-			if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
-			begin
-				set @message = 'Protein parameters must all be "na"; you have: OrgDBName = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
-				return 53093
-			end
+			set @message = 'Protein parameters must all be "na"; you have: OrgDBName = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
+			return 53093
 		end
+	end
 	else
+	begin
+		exec @result = ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+							@organismName,
+							@ownerPRN,
+							@organismDBName,
+							@protCollNameList output,
+							@protCollOptionsList output,
+							@message output
+
+		--
+		if @result <> 0
 		begin
-			exec @result = ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
-								@organismName,
-								@ownerPRN,
-								@organismDBName,
-								@protCollNameList output,
-								@protCollOptionsList output,
-								@message output
-
-			--
-			if @result <> 0
-			begin
-				return 53108
-			end
+			return 53108
 		end
+	end
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [PNL\D3M580] AS [dbo]
 GO

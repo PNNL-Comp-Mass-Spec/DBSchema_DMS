@@ -67,7 +67,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[RequestAnalysisJobEx5] TO [DMS_Analysis_Job_Runner]
+GRANT EXECUTE ON [dbo].[RequestAnalysisJobEx5] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestAnalysisJobEx5] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[RequestAnalysisJobEx5] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestAnalysisJobEx5] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestAnalysisJobEx5] TO [PNL\D3M580] AS [dbo]
 GO

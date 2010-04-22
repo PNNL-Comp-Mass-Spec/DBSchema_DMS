@@ -33,3 +33,7 @@ FROM         dbo.T_Peptide_Synopsis_Reports INNER JOIN
                       dbo.T_Peptide_Synopsis_Reports.Report_ID = dbo.V_Peptide_Synopsis_Report_Runs_Grouped.Report_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Synopsis_Reports] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Synopsis_Reports] TO [PNL\D3M580] AS [dbo]
+GO

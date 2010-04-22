@@ -19,10 +19,9 @@ CREATE Procedure dbo.DoRequestedRunBatchOperation
 **
 **		Auth: grk
 **		Date: 1/12/2006
-**    
-**		jds 9/20/2006 - Added support for Granting High Priority 
-**		and Denying High Priority for fields Actual_Bath_Priority
-**		and Requested_Batch_Priority
+**		09/20/2006 jds - Added support for Granting High Priority and Denying High Priority for fields Actual_Bath_Priority and Requested_Batch_Priority
+**		08/27/2009 grk - Delete batch fixes requested run references in history table
+**		02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **    
 *****************************************************/
 (
@@ -160,10 +159,11 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @message = 'Failed to remove member requests of batch'
+				set @message = 'Failed to remove member requests of batch from main table'
 				RAISERROR (@message, 10, 1)
 				return 51001
 			end
+
 			if @mode = 'FreeMembers' return 0
 		end
 	end
@@ -263,7 +263,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler]
+GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [PNL\D3M580] AS [dbo]
 GO

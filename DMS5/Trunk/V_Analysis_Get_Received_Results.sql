@@ -23,3 +23,7 @@ FROM T_Dataset INNER JOIN
    T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID
 WHERE (T_Analysis_Job.AJ_StateID = 3)
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Get_Received_Results] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Get_Received_Results] TO [PNL\D3M580] AS [dbo]
+GO

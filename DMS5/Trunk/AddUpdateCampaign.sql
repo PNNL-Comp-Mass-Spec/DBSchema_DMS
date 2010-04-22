@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateCampaign
+CREATE Procedure AddUpdateCampaign
 /****************************************************
 **
 **	Desc: Adds new or updates existing campaign in database
@@ -22,15 +22,32 @@ CREATE Procedure dbo.AddUpdateCampaign
 **	Auth:	grk
 **	Date:	01/08/2002
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
-
+**			01/15/2010 grk - Added new fields (http://prismtrac.pnl.gov/trac/ticket/753)
+**			02/05/2010 grk - Split team member field
+**			02/07/2010 grk - Added validation for campaign name
+**			02/07/2010 mem - No longer validating @progmgrPRN or @piPRN in this procedure since this is now handled by UpdateResearchTeamForCampaign
+**			03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
 **    
 *****************************************************/
 (
 	@campaignNum varchar(64), 
 	@projectNum varchar(64), 
 	@progmgrPRN varchar(64), 
-	@piPRN varchar(32), 
+	@piPRN varchar(64), 
+	@TechnicalLead VARCHAR(256),
+	@SamplePreparationStaff varchar(256),
+	@DatasetAcquisitionStaff varchar(256),
+	@InformaticsStaff varchar(256),
+	@Collaborators varchar(256),
 	@comment varchar(500),
+	@State varchar(24),
+	@Description varchar(512),
+	@ExternalLinks varchar(512),
+	@EPRList varchar(256),
+	@EUSProposalList varchar(256),
+	@Organisms varchar(256),
+	@ExperimentPrefixes varchar(256),
+	@DataReleaseRestrictions varchar(128),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
    	@callingUser varchar(128) = ''
@@ -48,6 +65,7 @@ As
 	
 	declare @msg varchar(256)
 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -59,18 +77,6 @@ As
 		RAISERROR ('campaign Number was blank',
 			10, 1)
 	end
---	else
---	begin
---		exec @myError = ValidateCharacterSet @campaignNum, @msg output, ' '
---		if @myError <> 0
---		begin
---			set @myError = 51010
---			set @msg = 'Campaign number not acceptable: ' + @msg
---			RAISERROR (@msg, 10, 1)
---		end
---	end
-
-
 
 	if LEN(@projectNum) < 1
 	begin
@@ -103,7 +109,16 @@ As
 	declare @campaignID int
 	set @campaignID = 0
 	--
-	execute @campaignID = GetCampaignID @campaignNum
+	DECLARE @researchTeamID INT
+	SET @researchTeamID = 0
+	--
+	SELECT
+		@campaignID = Campaign_ID, 
+		@researchTeamID = ISNULL(CM_Research_Team, 0)
+	FROM
+		T_Campaign
+	WHERE
+		Campaign_Num = @campaignNum
 
 	-- cannot create an entry that already exists
 	--
@@ -123,7 +138,10 @@ As
 		return 51004
 	end
 
+
+/*
 	---------------------------------------------------
+	-- Skip this step since now handled by UpdateResearchTeamForCampaign
 	-- Resolve DPRNs to user number
 	---------------------------------------------------
 
@@ -149,39 +167,143 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 51006
 	end
+*/
+
+	---------------------------------------------------
+	-- resolve data release restriction name to ID
+	---------------------------------------------------
+	--
+	DECLARE @DataReleaseRestrictionsID INT
+	SET @DataReleaseRestrictionsID = -1
+	-- 
+	SELECT
+		@DataReleaseRestrictionsID = ID
+	FROM
+		T_Data_Release_Restrictions
+	WHERE
+		Name = @DataReleaseRestrictions
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @msg = 'Error resolving data release restriction'
+		RAISERROR (@msg, 10, 1)
+		return 51001
+	end
+	if @DataReleaseRestrictionsID < 0
+	begin
+		set @msg = 'Could not resolve data release restriction'
+		RAISERROR (@msg, 10, 1)
+		return 51002
+	end
+
+	---------------------------------------------------
+	-- transaction name
+	---------------------------------------------------
+	--
+	declare @transName varchar(32)
+	set @transName = 'AddUpdateCampaign'
+
+--SET @message = @campaignNum
+--RETURN 0
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
+		---------------------------------------------------
+		-- validate campaign name
+		---------------------------------------------------
+		--
+		declare @badCh varchar(128)
+		set @badCh =  dbo.ValidateChars(@campaignNum, '')
+		SET @badCh = REPLACE(@badCh, '[space]', '') -- allow spaces?
+		if @badCh <> ''
+		begin
+			If @badCh = '[space]'
+				set @msg = 'Campaign name may not contain spaces'
+			Else
+				set @msg = 'Campaign name may not contain the character(s) "' + @badCh + '"'
 
+			RAISERROR (@msg, 10, 1)
+			return 51001
+		end
+
+
+		begin transaction @transName
+
+		---------------------------------------------------
+		-- create research team
+		---------------------------------------------------
+		--
+		EXEC @myError = UpdateResearchTeamForCampaign
+							@campaignNum, 
+							@progmgrPRN , 
+							@piPRN, 
+							@TechnicalLead,
+							@SamplePreparationStaff,
+							@DatasetAcquisitionStaff,
+							@InformaticsStaff,
+							@Collaborators,
+							@researchTeamID output,
+							@message output
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			RAISERROR (@message, 10, 1)
+			return @myError
+		end
+
+		---------------------------------------------------
+		-- create campaign
+		---------------------------------------------------
+		--
 		INSERT INTO T_Campaign (
 			Campaign_Num, 
 			CM_Project_Num, 
-			CM_Proj_Mgr_PRN, 
-			CM_PI_PRN, 
 			CM_comment, 
-			CM_created
+			CM_State,
+			CM_Description,
+			CM_External_Links,
+			CM_EPR_List,
+			CM_EUS_Proposal_List,
+			CM_Organisms,
+			CM_Experiment_Prefixes,
+			CM_created,
+			CM_Research_Team,
+			CM_Data_Release_Restrictions
 		) VALUES (
 			@campaignNum, 
 			@projectNum, 
-			@progmgrPRN, 
-			@piPRN, 
 			@comment, 
-			GETDATE()
+			@State,
+			@Description,
+			@ExternalLinks,
+			@EPRList,
+			@EUSProposalList,
+			@Organisms,
+			@ExperimentPrefixes,
+			GETDATE(),
+			@researchTeamID,
+			@DataReleaseRestrictionsID
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
+			rollback transaction @transName
 			set @msg = 'Insert operation failed: "' + @campaignNum + '"'
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
 		
 		set @CampaignID = IDENT_CURRENT('T_Campaign')
+
+		commit transaction @transName
 		
 		declare @StateID int
 		set @StateID = 1
@@ -189,9 +311,8 @@ As
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 1, @CampaignID, @StateID, @callingUser
-
+			
 	end -- add mode
-
 
 	---------------------------------------------------
 	-- action for update mode
@@ -199,31 +320,73 @@ As
 	--
 	if @Mode = 'update' 
 	begin
+		begin transaction @transName
+		--
 		set @myError = 0
+		--
+		---------------------------------------------------
+		-- update campaign
+		---------------------------------------------------
 		--
 		UPDATE T_Campaign 
 		SET 
 			CM_Project_Num = @projectNum, 
-			CM_Proj_Mgr_PRN = @progmgrPRN, 
-			CM_PI_PRN = @piPRN, 
-			CM_comment = @comment 
+			CM_comment = @comment,
+			CM_State = @State,
+			CM_Description = @Description,
+			CM_External_Links = @ExternalLinks,
+			CM_EPR_List = @EPRList,
+			CM_EUS_Proposal_List = @EUSProposalList,
+			CM_Organisms = @Organisms,
+			CM_Experiment_Prefixes = @ExperimentPrefixes,
+			CM_Data_Release_Restrictions = @DataReleaseRestrictionsID
 		WHERE (Campaign_Num = @campaignNum)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
+			rollback transaction @transName
 			set @msg = 'Update operation failed: "' + @campaignNum + '"'
 			RAISERROR (@msg, 10, 1)
 			return 51004
 		end
+
+		---------------------------------------------------
+		-- update research team membershipe
+		---------------------------------------------------
+		--
+		EXEC @myError = UpdateResearchTeamForCampaign
+							@campaignNum, 
+							@progmgrPRN , 
+							@piPRN, 
+							@TechnicalLead,
+							@SamplePreparationStaff,
+							@DatasetAcquisitionStaff,
+							@InformaticsStaff,
+							@Collaborators,
+							@researchTeamID output,
+							@message output
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			RAISERROR (@message, 10, 1)
+			return @myError
+		end
+
+		commit transaction @transName
 	end -- update mode
 
 
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [PNL\D3M580] AS [dbo]
 GO

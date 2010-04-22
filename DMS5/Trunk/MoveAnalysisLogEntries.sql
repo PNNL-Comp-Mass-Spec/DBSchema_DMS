@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE Procedure MoveAnalysisLogEntries
+CREATE Procedure [dbo].[MoveAnalysisLogEntries]
 /****************************************************
 **
 **	Desc: Move log entries from analysis log into the 
@@ -18,8 +17,9 @@ CREATE Procedure MoveAnalysisLogEntries
 **
 **	
 **
-**		Auth: grk
-**		Date: 6/14/2001
+**	Auth:	grk
+**	Date:	06/14/2001
+**			03/10/2009 mem - Now removing non-noteworthy entries from T_Analysis_Log before moving old entries to DMSHistoricLog1
 **    
 *****************************************************/
 (
@@ -42,6 +42,18 @@ As
 	set @transName = 'TRAN_MoveAnalysisLogEntries'
 	begin transaction @transName
 
+	-- Delete log entries that we do not want to move to the DMS Historic Log DB
+	DELETE FROM dbo.T_Analysis_Log
+	WHERE posting_time < @cutoffDateTime AND 
+	      message = 'Analysis complete for all available jobs'
+	--
+	if @@error <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Error removing unwanted log entries from T_Analysis_Log', 10, 1)
+		return 51179
+	end
+	
 	-- put entries into historic log
 	--
 	INSERT INTO DMSHistoricLog1..T_Historic_Log_Entries
@@ -55,7 +67,7 @@ As
 	if @@error <> 0
 	begin
 		rollback transaction @transName
-		RAISERROR ('Insert was unsuccessful for historic log entry table',
+		RAISERROR ('Insert was unsuccessful for historic log entry table from T_Analysis_Log',
 			10, 1)
 		return 51185
 	end
@@ -68,7 +80,7 @@ As
 	if @@error <> 0
 	begin
 		rollback transaction @transName
-		RAISERROR ('Delete was unsuccessful for log entry table',
+		RAISERROR ('Delete was unsuccessful for T_Analysis_Log',
 			10, 1)
 		return 51186
 	end
@@ -76,10 +88,15 @@ As
 	commit transaction @transName
 	
 	return 0
+
 GO
-GRANT ALTER ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GRANT ALTER ON [dbo].[MoveAnalysisLogEntries] TO [D3L243] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GRANT EXECUTE ON [dbo].[MoveAnalysisLogEntries] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveAnalysisLogEntries] TO [D3L243]
+GRANT VIEW DEFINITION ON [dbo].[MoveAnalysisLogEntries] TO [D3L243] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[MoveAnalysisLogEntries] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[MoveAnalysisLogEntries] TO [PNL\D3M580] AS [dbo]
 GO

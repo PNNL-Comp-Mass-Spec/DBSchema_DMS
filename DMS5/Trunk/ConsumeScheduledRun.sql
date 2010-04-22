@@ -7,8 +7,7 @@ CREATE Procedure ConsumeScheduledRun
 /****************************************************
 **
 **	Desc:
-**		delete the given requested run from the requested run table
-**		and move it to the scheduled run history table
+**	Associates given requested run with the given dataset
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -24,7 +23,8 @@ CREATE Procedure ConsumeScheduledRun
 **      1/13/2006   grk - Handling for new blocking columns in request and history tables.
 **      1/17/2006   grk - Handling for new EUS tracking columns in request and history tables.
 **		04/08/2008  grk - Added handling for separation field (Ticket #658)
-**		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
+**		03/26/2009  grk - Added MRM transition list attachment (Ticket #727)
+**		02/26/2010  grk - merged T_Requested_Run_History with T_Requested_Run
 **    
 *****************************************************/
 	@datasetID int,
@@ -99,116 +99,21 @@ As
 	set @transName = 'ConsumeScheduledRun'
 	begin transaction @transName
 
-	---------------------------------------------------
-	-- Copy request to history table
-	---------------------------------------------------
-	
-	INSERT INTO T_Requested_Run_History
-	(
-		RDS_Name, 
-		RDS_Oper_PRN, 
-		RDS_comment, 
-		RDS_created, 
-		RDS_instrument_name, 
-		RDS_type_ID, 
-		RDS_instrument_setting, 
-		RDS_special_instructions, 
-		RDS_note, 
-		Exp_ID, 
-		ID,
-		RDS_WorkPackage,
-		RDS_Cart_ID,
-		RDS_Run_Start,
-		RDS_Run_Finish,
-		RDS_internal_standard,
-		DatasetID,
-		RDS_BatchID,
-		RDS_Blocking_Factor,
-		RDS_Block,
-		RDS_Run_Order,
-		RDS_EUS_Proposal_ID, 
-        RDS_EUS_UsageType,
-        RDS_Sec_Sep,
-        RDS_MRM_Attachment
-	)
-	SELECT
-		RDS_Name, 
-		RDS_Oper_PRN, 
-		RDS_comment, 
-		RDS_created, 
-		RDS_instrument_name, 
-		RDS_type_ID, 
-		RDS_instrument_setting, 
-		RDS_special_instructions, 
-		RDS_note, 
-		Exp_ID, 
-		ID,
-		RDS_WorkPackage,
-		RDS_Cart_ID,
-		RDS_Run_Start,
-		RDS_Run_Finish,
-		RDS_Internal_Standard,
-		@datasetID as DatasetID,
-		RDS_BatchID,
-		RDS_Blocking_Factor,
-		RDS_Block,
-		RDS_Run_Order,
-		RDS_EUS_Proposal_ID, 
-        RDS_EUS_UsageType,
-        RDS_Sec_Sep,
-        RDS_MRM_Attachment
-	FROM T_Requested_Run
-	WHERE     (ID = @requestID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @message = 'Failed to copy original request'
-		rollback transaction @transName
-		return 51007
-	end
-	
-	---------------------------------------------------
-	-- Copy EUS users to history table and get site
-	-- status from EUS users table
-	---------------------------------------------------
-	
-	INSERT INTO T_Requested_Run_History_EUS_Users
-		(EUS_Person_ID, Request_ID, Site_Status)
-	SELECT
-		T_Requested_Run_EUS_Users.EUS_Person_ID, 
-		T_Requested_Run_EUS_Users.Request_ID, 
-		T_EUS_Users.Site_Status
-	FROM
-		T_Requested_Run_EUS_Users INNER JOIN
-		T_EUS_Users ON T_Requested_Run_EUS_Users.EUS_Person_ID = T_EUS_Users.PERSON_ID
+	UPDATE
+		T_Requested_Run
+	SET
+		DatasetID = @datasetID, 
+		RDS_Status = 'Completed'
 	WHERE
-		(T_Requested_Run_EUS_Users.Request_ID = @requestID)	
+		ID = @requestID	
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Failed to copy EUS users'
+		set @message = 'Failed to update dataset field in request'
 		rollback transaction @transName
 		return 51009
-	end
-
-
-	---------------------------------------------------
-	-- Delete original request
-	---------------------------------------------------
-	
-	exec @myError = DeleteRequestedRun
-						@requestID,
-						@message output
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to delete original request "' +  cast(@requestID as varchar(12)) + '"'
-		rollback transaction @transName
-		return 51007
 	end
 
 	---------------------------------------------------
@@ -217,9 +122,12 @@ As
 	commit transaction @transName
 	return 0
 
-
 GO
-GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[ConsumeScheduledRun] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ConsumeScheduledRun] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ConsumeScheduledRun] TO [PNL\D3M580] AS [dbo]
 GO

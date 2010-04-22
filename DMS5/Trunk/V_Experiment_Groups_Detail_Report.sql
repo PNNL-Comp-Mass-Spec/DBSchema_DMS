@@ -17,3 +17,7 @@ GROUP BY dbo.T_Experiment_Groups.Group_ID, dbo.T_Experiment_Groups.EG_Group_Type
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Groups_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Groups_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

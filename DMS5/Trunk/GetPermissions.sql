@@ -43,5 +43,5 @@ AS
 	END
 
 GO
-GRANT EXECUTE ON [dbo].[GetPermissions] TO [public]
+GRANT EXECUTE ON [dbo].[GetPermissions] TO [public] AS [dbo]
 GO

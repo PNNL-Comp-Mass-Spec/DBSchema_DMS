@@ -12,3 +12,7 @@ FROM         dbo.T_Experiment_Groups INNER JOIN
                       dbo.T_Experiments ON dbo.T_Experiment_Groups.Parent_Exp_ID = dbo.T_Experiments.Exp_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Groups_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Groups_Entry] TO [PNL\D3M580] AS [dbo]
+GO

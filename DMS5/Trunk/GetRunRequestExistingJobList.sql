@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetRunRequestExistingJobList
+
+CREATE FUNCTION [dbo].[GetRunRequestExistingJobList]
 /****************************************************
 **
 **	Desc: 
@@ -16,14 +17,15 @@ create FUNCTION GetRunRequestExistingJobList
 **
 **	Parameters: 
 **
-**		Auth: mem
-**		Date: 12/06/2005
+**	Auth:	mem
+**	Date:	12/06/2005
+**			03/27/2009 mem - Increased maximum size of the list to varchar(3500)
 **    
 *****************************************************/
 (
 	@requestID int
 )
-RETURNS varchar(1024)
+RETURNS varchar(3500)
 AS
 	BEGIN
 		declare @myRowCount int
@@ -31,7 +33,7 @@ AS
 		set @myRowCount = 0
 		set @myError = 0
 
-		declare @list varchar(1024)
+		declare @list varchar(3000)
 		set @list = ''
 	
 		SELECT 
@@ -50,5 +52,6 @@ AS
 
 		RETURN @list
 	END
+
 
 GO

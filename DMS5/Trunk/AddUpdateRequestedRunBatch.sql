@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE AddUpdateRequestedRunBatch
 /****************************************************
 **
@@ -20,8 +19,8 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **        @RequestedBatchPriority, @ActualBathPriority,
 **        @RequestedCompletionDate, @JustificationHighPriority, @Comment
 **
-**    grk 11/4/2006 -- added @RequestedInstrument
-**
+**    grk 11/04/2006 -- added @RequestedInstrument
+**    grk 12/03/2009 -- checking for presence of @JustificationHighPriority if priority is high
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -96,6 +95,17 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51014
 	end
+
+	---------------------------------------------------
+	-- High priority requires justification
+	---------------------------------------------------
+	--
+	IF @RequestedBatchPriority = 'High' AND ISNULL(@JustificationHighPriority, '') = ''
+	BEGIN
+		set @message = 'Justification must be entered if high priority is being requested'
+		RAISERROR (@message, 10, 1)
+		return 51086
+	END
 
 	-- future: this could get more complicated
 	
@@ -383,7 +393,11 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [PNL\D3M580] AS [dbo]
 GO

@@ -102,7 +102,7 @@ As
 			return 51007
 		end
 
-		-- return IDof newly created entry
+		-- return ID of newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Analysis_Job_Processor_Group')
 
@@ -147,7 +147,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [PNL\D3M580] AS [dbo]
 GO

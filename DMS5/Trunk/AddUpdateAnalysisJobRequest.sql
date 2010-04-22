@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateAnalysisJobRequest
+CREATE Procedure AddUpdateAnalysisJobRequest
 /****************************************************
 **
 **	Desc: Adds new analysis job request to request queue
@@ -34,6 +34,12 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **			09/24/2008 grk - Increased size of comment argument (and column in database)(Ticket:692, http://prismtrac.pnl.gov/trac/ticket/692)
 **			12/02/2008 grk - Disallow editing unless in "New" state
+**			09/19/2009 grk - Added field to request admin review (Ticket #747, http://prismtrac.pnl.gov/trac/ticket/747)
+**			09/19/2009 grk - Allowed updates from any state
+**          09/22/2009 grk - changed state "review_required" to "New (Review Required)"
+**			09/22/2009 mem - Now setting state to "New (Review Required)" if @State = 'new' and @adminReviewReqd='Yes'
+**			10/02/2009 mem - Revert to only allowing updates if the state is "New" or "New (Review Required)"
+**			02/12/2010 mem - Now assuring that rating is not -5 (note: when converting a job request to jobs, you can manually add datasets with a rating of -5; procedure AddAnalysisJobGroup will allow them to be included)
 **    
 *****************************************************/
 (
@@ -48,6 +54,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
     @requestorPRN varchar(32),
     @workPackage varchar(24),
     @comment varchar(512) = null,
+    @adminReviewReqd VARCHAR(32),
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add', -- or 'update'
@@ -75,6 +82,14 @@ As
 	declare @organismDBName varchar(64)
 	set @organismDBName = 'na'
 
+	---------------------------------------------------
+	-- Validate @adminReviewReqd
+	---------------------------------------------------
+	
+	Set @adminReviewReqd = LTrim(RTrim(IsNull(@adminReviewReqd, 'No')))
+	If @adminReviewReqd = 'Y' OR @adminReviewReqd = '1'
+		Set @adminReviewReqd = 'Yes'
+	
 	---------------------------------------------------
 	-- Resolve mode against presence or absence 
 	-- of request in database, and its current state
@@ -119,9 +134,9 @@ As
 			return 51004
 		end
 		--
-		if @curState <> 1
+		if Not (@curState IN (1,5))
 		begin
-			set @msg = 'Cannot update: entry is not in "New" state'
+			set @msg = 'Cannot update: entry is not in "New" or New (Review Required) state'
 			RAISERROR (@msg, 10, 1)
 			return 51024
 		end
@@ -278,12 +293,64 @@ return 1
 		return 53108
 	end
 
+	---------------------------------------------------
+	-- Make sure none of the datasets has a rating of -5 (Not Released)
+	---------------------------------------------------
+	--
+	declare @NotReleasedList varchar(4000)
+	declare @NotReleasedCount int
+	--
+	Set @NotReleasedCount = 0
+	
+	SELECT @NotReleasedCount = COUNT(*)
+	FROM #TD
+	WHERE DS_Rating = -5
+	
+	If @NotReleasedCount > 0
+	Begin
+		Set @NotReleasedList = ''
+		
+		SELECT @NotReleasedList = @NotReleasedList + Dataset_Num + ', '
+		FROM #TD
+		WHERE DS_Rating = -5
+		ORDER BY Dataset_Num
+		
+		-- Remove the trailing comma if the length is less than 400 characters, otherwise truncate
+		If Len(@NotReleasedList) < 400
+			Set @NotReleasedList = Left(@NotReleasedList, Len(@NotReleasedList)-1)
+		Else
+			Set @NotReleasedList = Left(@NotReleasedList, 397) + '...'
+			
+		Set @msg = 'Dataset(s) found with rating "Not Released": ' + @NotReleasedList
+		
+		RAISERROR (@msg, 10, 1)
+		return 53110		
+	End
 
 	---------------------------------------------------
 	-- If mode is add, then force @state to 'new'
 	---------------------------------------------------
-	if @mode = 'add'
-		set @state = 'new'
+	IF @mode = 'add' 
+	BEGIN
+		IF @adminReviewReqd = 'Yes' 
+			-- Lookup the name for state "New (Review Required)"
+			SELECT @state = StateName
+			FROM T_Analysis_Job_Request_State
+			WHERE (ID = 5)
+		ELSE 
+			-- Lookup the name for state "New"
+			SELECT @state = StateName
+			FROM T_Analysis_Job_Request_State
+			WHERE (ID = 1)
+	END
+
+	IF @mode = 'Update' And @adminReviewReqd='Yes' AND @State = 'New'
+	BEGIN
+		-- Change the state to  "New (Review Required)"
+		SELECT @state = StateName
+		FROM T_Analysis_Job_Request_State
+		WHERE (ID = 5)
+	END
 
 	---------------------------------------------------
 	-- Resolve state name to ID
@@ -350,6 +417,7 @@ return 1
 	--
 	if @Mode = 'update' 
 	begin
+		-- Lookup the current state of the request
 		set @myError = 0
 		--
 		UPDATE T_Analysis_Job_Request
@@ -382,9 +450,13 @@ return 1
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M580] AS [dbo]
 GO

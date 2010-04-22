@@ -27,3 +27,7 @@ GROUP BY dbo.V_Cell_Culture_Report.Name,
    dbo.V_Cell_Culture_Report.Campaign, 
    dbo.V_Cell_Culture_Report.Contact
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Report_Ex] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Report_Ex] TO [PNL\D3M580] AS [dbo]
+GO

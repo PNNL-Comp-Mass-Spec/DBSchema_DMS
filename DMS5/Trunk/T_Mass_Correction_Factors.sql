@@ -9,19 +9,20 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 	[Description] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Monoisotopic_Mass_Correction] [float] NOT NULL,
 	[Average_Mass_Correction] [float] NULL,
-	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Affected_Atom]  DEFAULT ('-'),
-	[Original_Source] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source]  DEFAULT (''),
-	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT (''),
+	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Original_Source] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Alternative_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Empirical_Formula] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Mass_Correction_Factors] PRIMARY KEY NONCLUSTERED 
 (
 	[Mass_Correction_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY],
  CONSTRAINT [IX_T_Mass_Correction_Factors_MonoisotopicMass_and_AffectedAtom] UNIQUE CLUSTERED 
 (
 	[Monoisotopic_Mass_Correction] ASC,
 	[Affected_Atom] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -30,16 +31,13 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Mass_Correction_Factors_Mass_Correction_Tag] ON [dbo].[T_Mass_Correction_Factors] 
 (
 	[Mass_Correction_Tag] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_i_Mass_Correction_Factors] ******/
+/****** Object:  Trigger [dbo].[trig_i_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_i_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Insert
@@ -63,14 +61,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_u_Mass_Correction_Factors] ******/
+/****** Object:  Trigger [dbo].[trig_u_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_u_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Update
@@ -100,15 +95,23 @@ AS
 
 
 GO
-GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578]
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((((not([Mass_Correction_Tag] like '%:%'))) and ((not([Mass_Correction_Tag] like '%,%')))))
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Affected_Atom]  DEFAULT ('-') FOR [Affected_Atom]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source]  DEFAULT ('') FOR [Original_Source]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT ('') FOR [Original_Source_Name]
 GO

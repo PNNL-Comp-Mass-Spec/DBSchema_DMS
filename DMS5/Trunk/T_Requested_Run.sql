@@ -20,22 +20,25 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Run_Start] [datetime] NULL,
 	[RDS_Run_Finish] [datetime] NULL,
 	[RDS_internal_standard] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[ID] [int] NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[RDS_WorkPackage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[RDS_BatchID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_BatchID]  DEFAULT (0),
+	[RDS_BatchID] [int] NOT NULL,
 	[RDS_Blocking_Factor] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_Block] [int] NULL,
 	[RDS_Run_Order] [int] NULL,
 	[RDS_EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[RDS_EUS_UsageType] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_EUS_UsageType]  DEFAULT (1),
-	[RDS_Cart_ID] [int] NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Cart_ID]  DEFAULT (1),
+	[RDS_EUS_UsageType] [int] NOT NULL,
+	[RDS_Cart_ID] [int] NOT NULL,
 	[RDS_Cart_Col] [smallint] NULL,
-	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none'),
+	[RDS_Sec_Sep] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_MRM_Attachment] [int] NULL,
+	[DatasetID] [int] NULL,
+	[RDS_Origin] [char](4) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RDS_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -44,20 +47,43 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID] ON [dbo].[T_Requested_Run] 
 (
 	[RDS_BatchID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
-GRANT DELETE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
+
+/****** Object:  Index [IX_T_Requested_Run_RDS_Block_include_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Block_include_ID] ON [dbo].[T_Requested_Run] 
+(
+	[RDS_Block] ASC
+)
+INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
-GRANT INSERT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
+
+/****** Object:  Index [IX_T_Requested_Run_RDS_Run_Order_include_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Run_Order_include_ID] ON [dbo].[T_Requested_Run] 
+(
+	[RDS_Run_Order] ASC
+)
+INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
-GRANT SELECT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Attachments] FOREIGN KEY([RDS_MRM_Attachment])
 REFERENCES [T_Attachments] ([ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Attachments]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Dataset] FOREIGN KEY([DatasetID])
+REFERENCES [T_Dataset] ([Dataset_ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Dataset]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName]
@@ -65,10 +91,14 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
 REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_UsageType] FOREIGN KEY([RDS_EUS_UsageType])
 REFERENCES [T_EUS_UsageType] ([ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Experiments] FOREIGN KEY([Exp_ID])
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_EUS_UsageType]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Experiments]
@@ -76,9 +106,26 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_LC_Cart] FOREIGN KEY([RDS_Cart_ID])
 REFERENCES [T_LC_Cart] ([ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_LC_Cart]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches] FOREIGN KEY([RDS_BatchID])
 REFERENCES [T_Requested_Run_Batches] ([ID])
 GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Oper_PRN])
 REFERENCES [T_Users] ([U_PRN])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Users]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_BatchID]  DEFAULT ((0)) FOR [RDS_BatchID]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_EUS_UsageType]  DEFAULT ((1)) FOR [RDS_EUS_UsageType]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Cart_ID]  DEFAULT ((1)) FOR [RDS_Cart_ID]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none') FOR [RDS_Sec_Sep]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Status]  DEFAULT ('Active') FOR [RDS_Status]
 GO

@@ -40,5 +40,5 @@ BEGIN
 END
 
 GO
-GRANT SELECT ON [dbo].[DaysInDateRange] TO [public]
+GRANT SELECT ON [dbo].[DaysInDateRange] TO [public] AS [dbo]
 GO

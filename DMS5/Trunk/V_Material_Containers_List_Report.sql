@@ -31,3 +31,7 @@ GROUP BY MC.Tag, MC.TYPE, ML.Tag, MC.Comment, MC.Barcode, MC.Created, MC.Status,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

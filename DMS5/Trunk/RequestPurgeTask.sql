@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure RequestPurgeTask
+CREATE Procedure dbo.RequestPurgeTask
 /****************************************************
 **
 **	Desc: 
@@ -14,15 +14,15 @@ CREATE Procedure RequestPurgeTask
 **
 **	Return values: 0: success, otherwise, error code
 **	
-
 **  if DatasetID is returned 0, no available dataset was found
 **
-**		Auth: grk
-**		Date: 3/04/2003
-**            2/11/2005 added @RawDataType to output
+**	Auth:	grk
+**	Date:	03/04/2003
+**			02/11/2005 ??? - added @RawDataType to output
+**			06/02/2009 mem - Decreased population of #PD to be limited to 2 rows
 **    
 *****************************************************/
-
+(
 	@StorageServerName varchar(64),
 	@dataset varchar(128) output,
 	@DatasetID int output,
@@ -33,6 +33,7 @@ CREATE Procedure RequestPurgeTask
 	@RawDataType varchar(32) output,
 	@ParamList varchar(1024) output, -- for future use
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -44,7 +45,7 @@ As
 	
 	set @message = 'Test'
 	set @DatasetID = 0
-  set @dataset = ''
+	set @dataset = ''
 	set @DatasetID = ''
 	set @Folder = ''
 	set @storagePath = ''
@@ -74,15 +75,15 @@ As
 	--
 	if @myRowCount = 0
 	begin
-		INSERT INTO #PD
-		(DatasetID, MostRecent)
-		SELECT top 20    Dataset_ID, Created
-		FROM         V_Purgable_Datasets_NoInterest
-		WHERE     
-			(StorageServerName = @StorageServerName) AND
-			(ServerVol = @StorageVol)
-		and DATEDIFF(Day, Created, GetDate()) > 5
-		ORDER by Created
+		INSERT INTO #PD( DatasetID,
+		                 MostRecent )
+		SELECT TOP 2 Dataset_ID,
+		             Created
+		FROM V_Purgable_Datasets_NoInterest
+		WHERE (StorageServerName = @StorageServerName) AND
+		      (ServerVol = @StorageVol) AND
+		      DATEDIFF(DAY, Created, GetDate()) > 5
+		ORDER BY Created
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -98,15 +99,15 @@ As
 	--
 	if @myRowCount = 0
 	begin
-		INSERT INTO #PD
-		(DatasetID, MostRecent)
-		SELECT top 20    Dataset_ID, Created
-		FROM         V_Purgable_Datasets_NoJob
-		WHERE     
-			(StorageServerName = @StorageServerName) AND
-			(ServerVol = @StorageVol)
-		and DATEDIFF(Day, Created, GetDate()) > 20
-		ORDER by Created
+		INSERT INTO #PD( DatasetID,
+		                 MostRecent )
+		SELECT TOP 2 Dataset_ID,
+		             Created
+		FROM V_Purgable_Datasets_NoJob
+		WHERE (StorageServerName = @StorageServerName) AND
+		      (ServerVol = @StorageVol) AND
+		      DATEDIFF(DAY, Created, GetDate()) > 20
+		ORDER BY Created
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -123,14 +124,14 @@ As
 	if @myRowCount = 0
 	begin
 	
-		INSERT INTO #PD
-		(DatasetID, MostRecent)
-		SELECT top 20    Dataset_ID, MostRecentJob
-		FROM         V_Purgable_Datasets
-		WHERE
-			(StorageServerName = @StorageServerName) AND
-			(ServerVol = @StorageVol)
-		ORDER by MostRecentJob
+		INSERT INTO #PD( DatasetID,
+		                 MostRecent )
+		SELECT TOP 2 Dataset_ID,
+		             MostRecentJob
+		FROM V_Purgable_Datasets
+		WHERE (StorageServerName = @StorageServerName) AND
+		      (ServerVol = @StorageVol)
+		ORDER BY MostRecentJob
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -149,16 +150,17 @@ As
 	set @transName = 'RequestPurgeTask'
 	begin transaction @transName
 
-  ---------------------------------------------------
+	---------------------------------------------------
 	-- Select and lock a specific purgable dataset by joining
 	-- from the local pool to the actual archive table
 	---------------------------------------------------
 
-	SELECT  top 1 @datasetID = AS_Dataset_ID
-	FROM T_Dataset_Archive with (HoldLock) 
-	inner join #PD on DatasetID = AS_Dataset_ID 
+	SELECT TOP 1 @datasetID = AS_Dataset_ID
+	FROM T_Dataset_Archive WITH ( HoldLock )
+	     INNER JOIN #PD
+	       ON DatasetID = AS_Dataset_ID
 	WHERE (AS_state_ID = 3)
-	ORDER by MostRecent
+	ORDER BY MostRecent
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -194,26 +196,27 @@ As
 
 	commit transaction @transName
 
-  ---------------------------------------------------
+	---------------------------------------------------
 	-- get information for assigned dataset
 	---------------------------------------------------
 
-	SELECT 
-		@dataset = T_Dataset.Dataset_Num, 
-		@DatasetID = T_Dataset.Dataset_ID, 
-		@Folder = T_Dataset.DS_folder_name, 
-		@StorageVol  = t_storage_path.SP_vol_name_server, 
-		@storagePath = t_storage_path.SP_path, 
-		@StorageVolExternal = t_storage_path.SP_vol_name_client,
-		@RawDataType = T_Instrument_Class.raw_data_type
-	FROM
-		T_Dataset INNER JOIN
-		T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID INNER JOIN
-		t_storage_path ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID INNER JOIN
-		T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID INNER JOIN
-		T_Instrument_Class ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class
-	WHERE
-	T_Dataset.Dataset_ID = @datasetID
+	SELECT @dataset = T_Dataset.Dataset_Num,
+	       @DatasetID = T_Dataset.Dataset_ID,
+	       @Folder = T_Dataset.DS_folder_name,
+	       @StorageVol = t_storage_path.SP_vol_name_server,
+	       @storagePath = t_storage_path.SP_path,
+	       @StorageVolExternal = t_storage_path.SP_vol_name_client,
+	       @RawDataType = T_Instrument_Class.raw_data_type
+	FROM T_Dataset
+	     INNER JOIN T_Dataset_Archive
+	       ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
+	     INNER JOIN t_storage_path
+	       ON T_Dataset.DS_storage_path_ID = t_storage_path.SP_path_ID
+	     INNER JOIN T_Instrument_Name
+	       ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
+	     INNER JOIN T_Instrument_Class
+	       ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class
+	WHERE T_Dataset.Dataset_ID = @datasetID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -232,5 +235,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [D3L243] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [PNL\D3M580] AS [dbo]
 GO

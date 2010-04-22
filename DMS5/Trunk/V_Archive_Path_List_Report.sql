@@ -11,5 +11,9 @@ FROM         dbo.T_Instrument_Name AS TIN INNER JOIN
                       dbo.T_Archive_Path AS TAP ON TIN.Instrument_ID = TAP.AP_instrument_name_ID
 
 GO
-GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] TO [DMS_SP_User]
+GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_List_Report] TO [PNL\D3M580] AS [dbo]
 GO

@@ -14,3 +14,7 @@ FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Organisms ON dbo.T_Experiments.Ex_organism_ID = dbo.T_Organisms.Organism_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Experiments_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Experiments_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

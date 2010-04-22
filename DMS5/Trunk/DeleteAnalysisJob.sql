@@ -90,7 +90,11 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin]
+GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisJob] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisJob] TO [PNL\D3M580] AS [dbo]
 GO

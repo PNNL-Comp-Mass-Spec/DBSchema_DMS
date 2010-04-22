@@ -19,25 +19,39 @@ CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
 **			06/01/2006 grk - fixed calling sequence to AddUpdateAnalysisJob
 **			03/15/2007 mem - Updated call to AddUpdateAnalysisJob (Ticket #394)
 **						   - Replaced processor name with associated processor group (Ticket #388)
-**			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			02/29/2008 mem - Added optional parameter @callingUser; If provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
+**			05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @InfoOnly
+**			07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
+	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
+	@InfoOnly tinyint = 0
 )
 As
-	set nocount on
+	Set nocount on
 	
 	declare @myError int
 	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Set @myError = 0
+	Set @myRowCount = 0
 
 	declare @message varchar(512)
-	set @message = ''
+	Set @message = ''
 
+	declare @ErrorMessage varchar(512)
+	
+	declare @CreateJob tinyint
+	set @CreateJob = 1
+	
+	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
+	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
+	Set @InfoOnly = IsNull(@InfoOnly, 0)
+	
 	---------------------------------------------------
 	-- Temporary job holding table to receive created jobs
 	-- This table is populated in EvaluatePredefinedAnalysisRules
@@ -62,25 +76,32 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Could not create temporary table'
+	If @myError <> 0
+	Begin
+		Set @message = 'Could not create temporary table'
 		RAISERROR (@message, 10, 1)
 		return @myError
-	end
+	End
 	
 	---------------------------------------------------
 	-- Populate the job holding table (#JX)
 	---------------------------------------------------
 	declare @result int
 
-	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0
+	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
 	--
-	if @result <> 0
-	begin
+	If @result <> 0
+	Begin
+		Set @ErrorMessage = 'EvaluatePredefinedAnalysisRules returned error code ' + Convert(varchar(12), @result)
+	
+		If Not IsNull(@message, '') = ''
+			Set @ErrorMessage = @ErrorMessage + '; ' + @message
+		
+		Set @message = @ErrorMessage
+		
 		RAISERROR (@message, 10, 1)
 		return 53500
-	end
+	End
 
 	---------------------------------------------------
 	-- Cycle through the job holding table and
@@ -103,21 +124,21 @@ As
 	declare @ownerPRN varchar(32)
 	
 	declare @associatedProcessorGroup varchar(64)
-	set @associatedProcessorGroup = ''
+	Set @associatedProcessorGroup = ''
 
 	-- keep track of how many jobs have been scheduled
 	--
 	declare @jobsCreated int
-	set @jobsCreated = 0
+	Set @jobsCreated = 0
 	
 	declare @done tinyint
-	set @done = 0
+	Set @done = 0
 	
 	declare @currID int
-	set @currID = 0
+	Set @currID = 0
 
-	WHILE @done = 0 and @myError = 0
-	BEGIN
+	While @done = 0 and @myError = 0
+	Begin -- <a>
 		---------------------------------------------------
 		-- get parameters for next job in table
 		---------------------------------------------------
@@ -143,66 +164,92 @@ As
 		---------------------------------------------------
 		-- remember index and evaluate terminating conditions
 		---------------------------------------------------
-		set @currID = @ID
+		Set @currID = @ID
 		--
-		if @myError <> 0 OR @myRowCount <> 1
-			begin
-				set @done = 1
-			end
-		else
-			begin
-				---------------------------------------------------
-				-- create the job
-				---------------------------------------------------
-				execute @result = AddUpdateAnalysisJob
-							@datasetNum,
-							@priority,
-							@analysisToolName,
-							@parmFileName,
-							@settingsFileName,
-							@organismName,
-							@proteinCollectionList,
-							@proteinOptionsList,
-							@organismDBName,
-							@ownerPRN,
-							@comment,
-							@associatedProcessorGroup,
-							'',					-- Propagation mode
-							'new',				-- State name
-							@jobNum output,		-- Job number
-							'add',				-- Mode
-							@message output,
-							@callingUser
+		If @myError <> 0 OR @myRowCount <> 1
+			Set @done = 1
+		Else
+		Begin -- <b>
+		
+			If @AnalysisToolNameFilter = ''
+				Set @CreateJob = 1
+			Else
+			Begin
+				If @AnalysisToolName Like @AnalysisToolNameFilter
+					Set @CreateJob = 1
+				Else
+					Set @CreateJob = 0
+			End
 
-				-- if there was an error creating the job, remember it
-				-- otherwise bump the job count
-				--
-				if @result = 0 
-					set @jobsCreated = @jobsCreated + 1 
-				else 
-					set @myError = @result
-			end
-			---------------------------------------------------
-			-- if there was an error, log it
-			---------------------------------------------------
-			--
-			if @myError <> 0 
-			begin
-				set @message = 'Attempted and failed to create default analysis for "' + @datasetNum + '" [' + convert(varchar(12), @myError) + ']'
-				execute PostLogEntry 'Error', @message, 'ScheduleDefaultAnalyses'
-			end
-	END
+			If @CreateJob <> 0
+			Begin -- <c>
+			
+				If @InfoOnly <> 0
+				Begin
+					Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@parmFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
+				End
+				Else
+				Begin -- <d>
+					---------------------------------------------------
+					-- create the job
+					---------------------------------------------------
+					execute @result = AddUpdateAnalysisJob
+								@datasetNum,
+								@priority,
+								@analysisToolName,
+								@parmFileName,
+								@settingsFileName,
+								@organismName,
+								@proteinCollectionList,
+								@proteinOptionsList,
+								@organismDBName,
+								@ownerPRN,
+								@comment,
+								@associatedProcessorGroup,
+								'',					-- Propagation mode
+								'new',				-- State name
+								@jobNum output,		-- Job number
+								'add',				-- Mode
+								@message output,
+								@callingUser
+
+					-- If there was an error creating the job, remember it
+					-- otherwise bump the job count
+					--
+					If @result = 0 
+						Set @jobsCreated = @jobsCreated + 1 
+					Else 
+						Set @myError = @result
+				End -- </d>
+			End -- </c>
+		End -- </b>
+		
+		---------------------------------------------------
+		-- If there was an error, log it
+		---------------------------------------------------
+		--
+		If @myError <> 0 
+		Begin
+			Set @message = 'Attempted and failed to create default analysis for "' + @datasetNum + '" [' + convert(varchar(12), @myError) + ']'
+			execute PostLogEntry 'Error', @message, 'ScheduleDefaultAnalyses'
+		End
+	End -- </b>
 	
 	---------------------------------------------------
-	-- if we didn't schedule any jobs, 
+	-- If we didn't schedule any jobs, 
 	-- but didn't have any errors, return code of 1
 	---------------------------------------------------
 	--
-	if @myError = 0 and @jobsCreated = 0 set @myError = 1
+	If @InfoOnly = 0 And @myError = 0 And @jobsCreated = 0 
+		Set @myError = 1
 
 Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SchedulePredefinedAnalyses] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[SchedulePredefinedAnalyses] TO [DMS_Analysis] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SchedulePredefinedAnalyses] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SchedulePredefinedAnalyses] TO [PNL\D3M580] AS [dbo]
 GO

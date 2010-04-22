@@ -35,13 +35,16 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			09/04/2007 grk - added @TechnicalReplicates fields (Ticket #512)
 **			05/02/2008 grk - repaired leaking query and arranged for default add state to be "Pending Approval"
 **			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
+**			12/02/2009 grk - don't allow change to "Prep in Progress" unless someone has been assigned
+**			03/11/2010- grk - added Facility field
+**			04/14/2010- grk - widened @CellCultureList field
 **    
 *****************************************************/
 (
 	@RequestName varchar(128),
 	@RequesterPRN varchar(32),
 	@Reason varchar(512),
-	@CellCultureList varchar(256),
+	@CellCultureList varchar(512),
 	@Organism varchar(128),
 	@BiohazardLevel varchar(12),
 	@Campaign varchar(128),
@@ -72,6 +75,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 	@UseSingleLCColumn varchar(50),
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
+	@Facility VARCHAR(32),
 	@ID int output,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -324,8 +328,12 @@ As
 		declare @tmp int
 		set @tmp = 0
 		set @currentStateID = 0
+		DECLARE @currentAssignedPersonnel VARCHAR(256)
 		--
-		SELECT @tmp = ID, @currentStateID = State
+		SELECT 
+			@tmp = ID, 
+			@currentStateID = State, 
+			@currentAssignedPersonnel = Assigned_Personnel
 		FROM  T_Sample_Prep_Request
 		WHERE (ID = @ID)
 		--
@@ -345,6 +353,15 @@ As
 			set @message = 'Changes to entry are not allowed if it is in the "Closed" state'
 			RAISERROR (@message, 10, 1)
 			return 51008
+		end
+
+		-- don't allow change to "Prep in Progress" 
+		-- unless someone has been assigned @AssignedPersonnel @currentAssignedPersonnel
+		IF @State = 'Prep in Progress' AND ((@AssignedPersonnel = '') OR (@AssignedPersonnel = 'na'))
+		begin
+			set @message = 'State cannot be changed to "Prep in Progress" unless someone has been assigned'
+			RAISERROR (@message, 10, 1)
+			return 51084
 		end
 	end
 
@@ -406,7 +423,8 @@ As
 			State, 
 			Instrument_Name, 
 			Dataset_Type,
-			Technical_Replicates
+			Technical_Replicates,
+			Facility
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
@@ -441,7 +459,8 @@ As
 			@StateID,
 			@InstrumentName,
 			@DatasetType,
-			@TechnicalReplicates
+			@TechnicalReplicates,
+			@Facility
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -508,7 +527,8 @@ As
 			State = @StateID,
 			Instrument_Name = @InstrumentName, 
 			Dataset_Type = @DatasetType,
-			Technical_Replicates = @TechnicalReplicates
+			Technical_Replicates = @TechnicalReplicates,
+			Facility = @Facility
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -534,7 +554,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [PNL\D3M580] AS [dbo]
 GO

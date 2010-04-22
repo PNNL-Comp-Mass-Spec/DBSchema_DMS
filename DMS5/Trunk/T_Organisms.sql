@@ -7,9 +7,8 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Organism_ID] [int] IDENTITY(40,1) NOT NULL,
 	[OG_organismDBPath] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[OG_organismDBLocalPath] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[OG_created] [datetime] NULL CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()),
+	[OG_created] [datetime] NULL,
 	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Short_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Storage_Location] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -24,15 +23,15 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_Strain] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Mito_DNA_Translation_Table_ID] [int] NULL,
-	[OG_Active] [tinyint] NULL CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT (1),
+	[OG_Active] [tinyint] NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY NONCLUSTERED 
 (
 	[Organism_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [IX_T_Organisms] UNIQUE NONCLUSTERED 
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY],
+ CONSTRAINT [IX_T_Organisms_Name] UNIQUE NONCLUSTERED 
 (
 	[OG_name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -41,18 +40,15 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms] 
 (
 	[OG_created] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_i_T_Organisms] ******/
+/****** Object:  Trigger [dbo].[trig_i_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create Trigger dbo.trig_i_T_Organisms on dbo.T_Organisms
+create Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
 For Insert
 AS
 	If @@RowCount = 0
@@ -70,16 +66,13 @@ AS
 	FROM inserted
 
 GO
-
-/****** Object:  Trigger [trig_u_T_Organisms] ******/
+/****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create Trigger dbo.trig_u_T_Organisms on dbo.T_Organisms
+create Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
 For Update
 AS
 	If @@RowCount = 0
@@ -109,9 +102,27 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
 
 GO
-GRANT INSERT ON [dbo].[T_Organisms] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Organisms] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Organisms] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
+GO
+GRANT DELETE ON [dbo].[T_Organisms] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Organisms] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Organisms] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Organisms] TO [Limited_Table_Write] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name_NoSpace] CHECK  ((NOT [OG_Name] like '% %'))
+GO
+ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Name_NoSpace]
+GO
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()) FOR [OG_created]
+GO
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT (1) FOR [OG_Active]
 GO

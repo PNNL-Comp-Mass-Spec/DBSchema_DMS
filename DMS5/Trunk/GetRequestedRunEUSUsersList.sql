@@ -72,5 +72,5 @@ AS
 	END
 
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunEUSUsersList] TO [public]
+GRANT EXECUTE ON [dbo].[GetRequestedRunEUSUsersList] TO [public] AS [dbo]
 GO

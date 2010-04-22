@@ -13,3 +13,7 @@ FROM dbo.T_Experiment_Annotations EA INNER JOIN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Annotations] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Annotations] TO [PNL\D3M580] AS [dbo]
+GO

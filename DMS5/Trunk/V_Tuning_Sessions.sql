@@ -69,3 +69,7 @@ FROM sys.dm_exec_sessions S
 WHERE is_user_process <> 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_Sessions] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_Sessions] TO [PNL\D3M580] AS [dbo]
+GO

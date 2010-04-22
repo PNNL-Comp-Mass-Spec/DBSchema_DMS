@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 20 ******/
+/****** RowCount: 27 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('none',1,'',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Standard',2,'Standard solvents (TFA), 100 to 180 minute separation',1)
@@ -21,3 +21,10 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Standard_50minute',17,'Standard s
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Formic_100minute',18,'Formic acid solvent, 100 minute separation',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Phospho',19,'General setting for Phospho cart work',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Formic_80minute',20,'Formic acid solvent, 80 minute separation',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-KoreaU-Standard',21,'',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('GC-Agilent-Fiehn',22,'Agilent GC Fiehn',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('GC-Agilent-Special',23,'Agilent GC special',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('RPLC_HILIC',24,'Online 2D separation using RPLC then HILIC',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Agilent-Formic_100minute',25,'Agilent constant flow, 100 minute separation',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Agilent-Formic_30minute',26,'Agilent constant flow, 30 minute separation',1)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Agilent-Formic_15minute',27,'Agilent constant flow, 15 minute separation',1)

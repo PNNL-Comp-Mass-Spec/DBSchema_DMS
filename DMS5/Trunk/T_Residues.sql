@@ -14,10 +14,11 @@ CREATE TABLE [dbo].[T_Residues](
 	[Num_N] [smallint] NOT NULL,
 	[Num_O] [smallint] NOT NULL,
 	[Num_S] [smallint] NOT NULL,
+	[Empirical_Formula] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Residues] PRIMARY KEY NONCLUSTERED 
 (
 	[Residue_ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -26,16 +27,13 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Residues_Symbol] ON [dbo].[T_Residues] 
 (
 	[Residue_Symbol] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_i_Residues] ******/
+/****** Object:  Trigger [dbo].[trig_i_Residues] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_i_Residues on dbo.T_Residues
 For Insert
@@ -56,14 +54,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [trig_u_Residues] ******/
+/****** Object:  Trigger [dbo].[trig_u_Residues] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_u_Residues on dbo.T_Residues
 For Update

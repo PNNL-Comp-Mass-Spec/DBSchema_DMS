@@ -14,3 +14,7 @@ FROM         dbo.T_Dataset INNER JOIN
 WHERE     (dbo.t_storage_path.SP_function = N'raw-storage') AND (dbo.T_Dataset.DS_state_ID IN (1, 2, 6, 7))
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForCaptureRequestBroker] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetDatasetsForCaptureRequestBroker] TO [PNL\D3M580] AS [dbo]
+GO

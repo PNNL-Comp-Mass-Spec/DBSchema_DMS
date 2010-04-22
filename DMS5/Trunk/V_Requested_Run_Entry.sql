@@ -14,7 +14,7 @@ SELECT     dbo.T_Experiments.Experiment_Num AS RR_Experiment, dbo.T_Requested_Ru
                       dbo.T_Requested_Run.RDS_Well_Num AS RR_Well_Num, dbo.T_Requested_Run.RDS_internal_standard AS RR_Internal_Standard, 
                       dbo.T_Requested_Run.RDS_EUS_Proposal_ID AS RR_EUSProposalID, dbo.T_EUS_UsageType.Name AS RR_EUSUsageType, 
                       dbo.GetRequestedRunEUSUsersList(dbo.T_Requested_Run.ID, 'I') AS RR_EUSUsers, dbo.T_Requested_Run.RDS_Sec_Sep AS RR_SecSep, 
-                      ISNULL(dbo.T_Attachments.Attachment_Name, '') AS MRMAttachment
+                      ISNULL(dbo.T_Attachments.Attachment_Name, '') AS MRMAttachment, dbo.T_Requested_Run.RDS_Status AS RR_Status
 FROM         dbo.T_DatasetTypeName INNER JOIN
                       dbo.T_Requested_Run INNER JOIN
                       dbo.T_Experiments ON dbo.T_Requested_Run.Exp_ID = dbo.T_Experiments.Exp_ID ON 
@@ -22,5 +22,8 @@ FROM         dbo.T_DatasetTypeName INNER JOIN
                       dbo.T_EUS_UsageType ON dbo.T_Requested_Run.RDS_EUS_UsageType = dbo.T_EUS_UsageType.ID LEFT OUTER JOIN
                       dbo.T_Attachments ON dbo.T_Requested_Run.RDS_MRM_Attachment = dbo.T_Attachments.ID
 
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Entry] TO [PNL\D3M580] AS [dbo]
 GO

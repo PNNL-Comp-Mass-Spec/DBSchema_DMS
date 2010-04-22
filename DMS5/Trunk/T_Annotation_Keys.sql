@@ -9,17 +9,17 @@ CREATE TABLE [dbo].[T_Annotation_Keys](
  CONSTRAINT [PK_T_Annotation_Keys] PRIMARY KEY CLUSTERED 
 (
 	[Key_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT DELETE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GRANT DELETE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GRANT INSERT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT REFERENCES ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GRANT REFERENCES ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GRANT SELECT ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User]
+GRANT UPDATE ON [dbo].[T_Annotation_Keys] TO [DMS_Annotation_User] AS [dbo]
 GO

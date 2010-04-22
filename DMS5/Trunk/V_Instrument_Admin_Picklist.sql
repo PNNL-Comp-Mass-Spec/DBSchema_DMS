@@ -13,3 +13,7 @@ WHERE  (IN_status = 'active')
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Admin_Picklist] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Admin_Picklist] TO [PNL\D3M580] AS [dbo]
+GO

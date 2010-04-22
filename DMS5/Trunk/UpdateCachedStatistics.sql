@@ -9,18 +9,21 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **	Desc:	Updates various cached statistics
 **			- Job_Usage_Count in T_Param_Files
 **			- Job_Usage_Count in T_Settings_Files
+**			- Job_Count in T_Analysis_Job_Request
 **
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	mem
 **	Date:	11/04/2008 mem - Initial version (Ticket: #698)
+**			12/21/2009 mem - Added parameter @UpdateJobRequestStatistics
 **    
 *****************************************************/
 (
 	@message varchar(512) = '' output,
 	@PreviewSql tinyint = 0,
 	@UpdateParamSettingsFileCounts tinyint = 1,
-	@UpdateGeneralStatistics tinyint = 1
+	@UpdateGeneralStatistics tinyint = 1,
+	@UpdateJobRequestStatistics tinyint = 1
 )
 As
 	Set nocount on
@@ -52,6 +55,7 @@ As
 	Set @PreviewSql = IsNull(@PreviewSql, 0)
 	Set @UpdateParamSettingsFileCounts = IsNull(@UpdateParamSettingsFileCounts, 1)
 	Set @UpdateGeneralStatistics = IsNull(@UpdateGeneralStatistics, 0)
+	Set @UpdateJobRequestStatistics = IsNull(@UpdateJobRequestStatistics, 1)
 
 	If @UpdateParamSettingsFileCounts <> 0
 	Begin -- <a1>
@@ -194,10 +198,43 @@ As
 		 
 	End -- </a2>
 
+	If @UpdateJobRequestStatistics <> 0
+	Begin -- <a3>
+		UPDATE T_Analysis_Job_Request
+		SET AJR_jobCount = StatQ.JobCount
+		FROM T_Analysis_Job_Request AJR
+		     INNER JOIN ( SELECT AJR.AJR_requestID,
+		                         SUM(CASE WHEN AJ.AJ_jobID IS NULL 
+		                                  THEN 0
+		                                  ELSE 1
+		                             END) AS JobCount
+		                  FROM T_Analysis_Job_Request AJR
+		                       INNER JOIN T_Users U
+		                         ON AJR.AJR_requestor = U.ID
+		                       INNER JOIN T_Analysis_Job_Request_State AJRS
+		                         ON AJR.AJR_state = AJRS.ID
+		                       INNER JOIN T_Organisms Org
+		                         ON AJR.AJR_organism_ID = Org.Organism_ID
+		                       LEFT OUTER JOIN T_Analysis_Job AJ
+		                         ON AJR.AJR_requestID = AJ.AJ_requestID
+		                  GROUP BY AJR.AJR_requestID ) StatQ
+		       ON AJR.AJR_requestID = StatQ.AJR_requestID AND
+		          ISNULL(AJR.AJR_jobCount, - 1) <> StatQ.JobCount
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		          
+	End -- </a3>
+
+
+
 Done:
 	return @myError
 
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedStatistics] TO [D3L243]
+GRANT EXECUTE ON [dbo].[UpdateCachedStatistics] TO [D3L243] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [PNL\D3M580] AS [dbo]
 GO

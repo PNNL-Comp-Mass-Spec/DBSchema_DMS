@@ -13,3 +13,7 @@ FROM         T_Dataset INNER JOIN
 GROUP BY T_LC_Column.SC_Column_Number, T_LC_Column_State_Name.LCS_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Column_Dataset_Count] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Column_Dataset_Count] TO [PNL\D3M580] AS [dbo]
+GO

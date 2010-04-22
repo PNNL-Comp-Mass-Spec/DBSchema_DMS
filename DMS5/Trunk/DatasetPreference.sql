@@ -41,5 +41,5 @@ AS
 
 
 GO
-GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public]
+GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public] AS [dbo]
 GO

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateDataset
+CREATE Procedure AddUpdateDataset
 /****************************************************
 **
 **	Desc:	Adds new dataset entry to DMS database
@@ -29,6 +29,11 @@ CREATE Procedure dbo.AddUpdateDataset
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			04/09/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **			05/23/2008 mem - Now calling SchedulePredefinedAnalyses if the dataset rating is changed from -5 to 5 and no jobs exist yet for this dataset (Ticket #675)
+**			04/08/2009 jds - Added support for the additional parameters @secSep and @MRMAttachment to the AddUpdateRequestedRun stored procedure (Ticket #727)
+**			09/16/2009 mem - Now checking dataset type (@msType) against T_Instrument_Allowed_Dataset_Type (Ticket #748)
+**			01/14/2010 grk - assign storage path on creation of dataset
+**			02/28/2010 grk - added add-auto mode for requested run
+**			03/02/2010 grk - added status field to requested run
 **    
 *****************************************************/
 (
@@ -61,12 +66,10 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 	
-	set @message = ''
-
 	declare @msg varchar(256)
-
 	declare @folderName varchar(128)
-	
+
+	set @message = ''
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -75,22 +78,22 @@ As
 	if LEN(IsNull(@secSep, '')) < 1
 	begin
 		set @myError = 51017
-		RAISERROR ('Separation type was blank',
-			10, 1)
+		set @msg = 'Separation type was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@LCColumnNum, '')) < 1
 	begin
 		set @myError = 51016
-		RAISERROR ('LC Column number was blank',
-			10, 1)
+		set @msg = 'LC Column number was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@datasetNum, '')) < 1
 	begin
 		set @myError = 51010
-		RAISERROR ('Dataset number was blank',
-			10, 1)
+		set @msg = 'Dataset number was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	set @folderName = @datasetNum
@@ -98,36 +101,36 @@ As
 	if LEN(IsNull(@experimentNum, '')) < 1
 	begin
 		set @myError = 51011
-		RAISERROR ('Experiment number was blank',
-			10, 1)
+		set @msg = 'Experiment number was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@folderName, '')) < 1
 	begin
 		set @myError = 51012
-		RAISERROR ('Folder name was blank',
-			10, 1)
+		set @msg = 'Folder name was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@operPRN, '')) < 1
 	begin
 		set @myError = 51013
-		RAISERROR ('Operator payroll number/HID was blank',
-			10, 1)
+		set @msg = 'Operator payroll number/HID was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@instrumentName, '')) < 1
 	begin
 		set @myError = 51014
-		RAISERROR ('Instrument name was blank',
-			10, 1)
+		set @msg = 'Instrument name was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if LEN(IsNull(@msType, '')) < 1
 	begin
 		set @myError = 51015
-		RAISERROR ('Dataset type was blank',
-			10, 1)
+		set @msg = 'Dataset type was blank'
+		RAISERROR (@msg, 10, 1)
 	end
 	--
 	if @myError <> 0
@@ -360,28 +363,25 @@ As
 	---------------------------------------------------
 
 	declare @allowedDatasetTypes varchar(255)
-	declare @MatchCount int
-	
-	SELECT @allowedDatasetTypes = InstClass.Allowed_Dataset_Types
-	FROM T_Instrument_Name InstName INNER JOIN
-		 T_Instrument_Class InstClass ON InstName.IN_class = InstClass.IN_class
-	WHERE (InstName.Instrument_ID = @instrumentID)
 
-	Set @MatchCount = 0
-	SELECT @MatchCount = COUNT(*)
-	FROM T_DatasetTypeName DSTypeName INNER JOIN
-		 (SELECT item FROM MakeTableFromList(@allowedDatasetTypes)) AllowedTypesQ ON 
-		DSTypeName.DST_Name = AllowedTypesQ.item
-	WHERE (DSTypeName.DST_Type_ID = @datasetTypeID)
-	
-	if @MatchCount = 0
+	If Not Exists (SELECT * FROM T_Instrument_Allowed_Dataset_Type WHERE Instrument = @instrumentName AND Dataset_Type = @msType)
 	begin
+		Set @allowedDatasetTypes = ''
+		
+		SELECT @allowedDatasetTypes = @allowedDatasetTypes + ', ' + Dataset_Type
+		FROM T_Instrument_Allowed_Dataset_Type 
+		WHERE Instrument = @instrumentName
+		ORDER BY Dataset_Type
+
+		-- Remove the leading two characters
+		If Len(@allowedDatasetTypes) > 0
+			Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
+		
 		set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51014
 	end
 
-	
 	---------------------------------------------------
 	-- Check for instrument changing when dataset not in new state
 	---------------------------------------------------
@@ -406,8 +406,27 @@ As
 		return 51019
 	end
 
+	---------------------------------------------------
+	-- assign storage path ID
+	---------------------------------------------------
+	--
 	declare @storagePathID int
 	set @storagePathID = 2 -- index of "none" in table
+	--
+	SELECT
+	  @storagePathID = t_storage_path.SP_path_ID
+	FROM
+	  T_Instrument_Name
+	  INNER JOIN t_storage_path ON T_Instrument_Name.IN_storage_path_ID = t_storage_path.SP_path_ID
+	WHERE
+		T_Instrument_Name.Instrument_ID = @instrumentID
+	--
+	IF @storagePathID = 2
+	begin
+		set @msg = 'Valid storage path could not be found'
+		RAISERROR (@msg, 10, 1)
+		return 51043
+	end
 
 	---------------------------------------------------
 	-- Verify acceptable combination of EUS fields
@@ -744,24 +763,27 @@ As
 
 			declare @reqName varchar(128)
 			set @reqName = 'AutoReq_' + @datasetNum
-			exec @result = AddUpdateRequestedRun
-								@reqName,
-								@experimentNum,
-								@operPRN,
-								@instrumentName,
-								'none',
-								@msType,
-								'na',
-								'na',
-								'na',
-								'na',
-								'Automatically created by Dataset entry',
-								@eusProposalID,
-								@eusUsageType,
-								@eusUsersList,
-								'add',
-								@requestID output,
-								@message output
+			EXEC @result = dbo.AddUpdateRequestedRun 
+									@reqName = @reqName,
+									@experimentNum = @experimentNum,
+									@operPRN = @operPRN,
+									@instrumentName = @instrumentName,
+									@workPackage = 'none',
+									@msType = @msType,
+									@instrumentSettings = 'na',
+									@wellplateNum = 'na',
+									@wellNum = 'na',
+									@internalStandard = 'na',
+									@comment = 'Automatically created by Dataset entry',
+									@eusProposalID = @eusProposalID,
+									@eusUsageType = @eusUsageType,
+									@eusUsersList = @eusUsersList,
+									@mode = 'add-auto',
+									@request = @requestID output,
+									@message = @message output,
+									@secSep = @secSep,
+									@MRMAttachment = '',
+									@status = 'Completed'
 			--
 			set @myError = @result
 			--
@@ -896,7 +918,15 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry]
+GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [PNL\D3M580] AS [dbo]
 GO

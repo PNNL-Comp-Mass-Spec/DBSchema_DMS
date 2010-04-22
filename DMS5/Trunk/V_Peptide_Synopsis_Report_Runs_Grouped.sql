@@ -26,3 +26,7 @@ FROM         dbo.T_Peptide_Synopsis_Reports LEFT OUTER JOIN
                       dbo.T_Peptide_Synopsis_Reports.Report_ID = Grouped_Runs_All.Synopsis_Report
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Synopsis_Report_Runs_Grouped] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Synopsis_Report_Runs_Grouped] TO [PNL\D3M580] AS [dbo]
+GO

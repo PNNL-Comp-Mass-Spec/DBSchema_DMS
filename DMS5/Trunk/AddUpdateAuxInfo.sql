@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddUpdateAuxInfo
 /****************************************************
 **
@@ -15,6 +14,8 @@ CREATE Procedure AddUpdateAuxInfo
 **		Auth: grk
 **		3/27/2002 -- initial release
 **      12/18/2007 grk - Improved ability to handle target ID if supplied as target name
+**      06/30/2008 jds - Added error message to "Resolve target name and entity name to entity ID" section
+**      05/15/2009 jds - Added a return if just performing a check_add or check_update
 **    
 *****************************************************/
 (
@@ -62,7 +63,6 @@ As
 			---------------------------------------------------
 			-- Resolve target name to target table criteria
 			---------------------------------------------------
-
 			declare @tgtTableName varchar(128)
 			declare @tgtTableNameCol varchar(128)
 			declare @tgtTableIDCol varchar(128)
@@ -96,10 +96,24 @@ As
 			set @sql = @sql + ' = ''' + @targetEntityName + ''''
 			
 			exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
+			--
+			if @targetID = 0
+			begin
+				set @msg = 'Could not resolve target name and entity name to entity ID: "' + @categoryName + '" - "' + @subCategoryName + '" '
+				RAISERROR (@msg, 10, 1)
+				return 51002
+			end
 		end --<1>
+
 	---------------------------------------------------
-	-- 
+	-- Adding code to return if just a verification check
+	-- if we got this far, everything must be ok
 	---------------------------------------------------
+	if (@mode = 'check_update' or @mode = 'check_add')
+	begin
+		return 0
+	end
+
 
 	-- if list is empty, we are done
 	--
@@ -220,8 +234,13 @@ nextItem:
 
 
 	return 0
+
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [PNL\D3M580] AS [dbo]
 GO

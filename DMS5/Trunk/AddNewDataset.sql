@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
 **			01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
 **			02/13/2008 mem - Increased size of @Dataset_Name to varchar(128) (Ticket #602)
+**			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **    
 *****************************************************/
 (
@@ -271,7 +272,7 @@ AS
 			set @tmp = 0
 			--
 			SELECT @tmp = ID
-			FROM T_Requested_Run_History
+			FROM T_Requested_Run
 			WHERE (DatasetID = @dsid)		
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -313,7 +314,7 @@ AS
 	-- Update the associated request with run start/finish values
 	---------------------------------------------------
 
-	UPDATE T_Requested_Run_History
+	UPDATE T_Requested_Run
 	SET
 		RDS_Run_Start = @Run_Start, 
 		RDS_Run_Finish = @Run_Finish
@@ -337,5 +338,9 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry]
+GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [PNL\D3M580] AS [dbo]
 GO

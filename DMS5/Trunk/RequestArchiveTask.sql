@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure RequestArchiveTask
+
+CREATE Procedure dbo.RequestArchiveTask
 /****************************************************
 **
 **	Desc: Looks for dataset that needs to be archived
@@ -12,20 +13,25 @@ CREATE Procedure RequestArchiveTask
 **        in the output arguments
 **
 **
-**	Auth: grk
-**	12/2/2002 -- initiial release
-**	05/10/2005 grk - changed select logic to do oldest datasets first
-**	02/20/2006 grk - for QC preference
-**	09/27/2007 grk - Modified to have "standard" interface (http://prismtrac.pnl.gov/trac/ticket/537)
-**	10/09/2007 grk - Factored out archive path assignment code into GetAssignedArchivePath (ticket 537)
-**	11/01/2007 grk - Added 53000 return code when no tasks are available
+**	Auth:	grk
+**	Date:	12/2/2002
+**			05/10/2005 grk - changed select logic to do oldest datasets first
+**			02/20/2006 grk - for QC preference
+**			09/27/2007 grk - Modified to have "standard" interface (http://prismtrac.pnl.gov/trac/ticket/537)
+**			10/09/2007 grk - Factored out archive path assignment code into GetAssignedArchivePath (ticket 537)
+**			11/01/2007 grk - Added 53000 return code when no tasks are available
+**			05/31/2009 mem - Decreased population of #XPD to be limited to 5 rows
+**						   - Now recording storage server name in field AS_update_processor
+**			06/02/2009 mem - Decreased population of #XPD to be limited to 2 rows
 **    
 *****************************************************/
+(
 	@StorageServerName varchar(64),
 	@DatasetID int output,
 	@InstrumentClass varchar(32) output, -- supply input value to request a particular instrument class
 	@message varchar(512) output,
 	@infoOnly tinyint = 0            -- Set to 1 to preview the task that would be returned
+)
 As
 	set nocount on
 
@@ -69,7 +75,7 @@ As
 	-- whose currently assigned storage is on the requesting processor
 	--
 	INSERT INTO #XPD
-	SELECT TOP 15
+	SELECT TOP 2
 		T_Dataset.Dataset_ID,
 		T_Instrument_Name.IN_class           AS Instrument_Class,
 		T_Instrument_Name.IN_name            AS Instrument_Name,
@@ -111,9 +117,14 @@ As
 	---------------------------------------------------
 
 	UPDATE M
-	SET M.Priority = CASE WHEN M.Priority > ISNULL(T_Analysis_Job.AJ_priority, 99) THEN ISNULL(T_Analysis_Job.AJ_priority, 99) ELSE M.Priority END
-	FROM #XPD M INNER JOIN
-	T_Analysis_Job ON T_Analysis_Job.AJ_DatasetID = M.Dataset_ID
+	SET M.Priority = CASE
+	                     WHEN M.Priority > ISNULL(T_Analysis_Job.AJ_priority, 99) 
+	                     THEN ISNULL(T_Analysis_Job.AJ_priority, 99)
+	                     ELSE M.Priority
+	                 END
+	FROM #XPD M
+	     INNER JOIN T_Analysis_Job
+	       ON T_Analysis_Job.AJ_DatasetID = M.Dataset_ID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -201,12 +212,13 @@ As
 	--
 	If @infoOnly = 0
 	begin
-		UPDATE    T_Dataset_Archive
-		SET     
-			AS_state_ID = 2, 
-			AS_storage_path_ID = @archivePathID
-		WHERE     (AS_Dataset_ID = @datasetID)
-		-- future: AS_assignedProcessorName = @processorName
+		-- Future: store the processor name (@processorName) in AS_archive_processor
+		--
+		UPDATE T_Dataset_Archive
+		SET AS_state_ID = 2,
+		    AS_storage_path_ID = @archivePathID,
+		    AS_archive_processor = @StorageServerName
+		WHERE (AS_Dataset_ID = @datasetID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -227,4 +239,10 @@ As
 Done:
 	return @myError
 
+GO
+GRANT EXECUTE ON [dbo].[RequestArchiveTask] TO [D3L243] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestArchiveTask] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestArchiveTask] TO [PNL\D3M580] AS [dbo]
 GO

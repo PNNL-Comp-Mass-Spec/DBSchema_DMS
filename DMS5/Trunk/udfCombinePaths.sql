@@ -49,5 +49,5 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[udfCombinePaths] TO [public]
+GRANT EXECUTE ON [dbo].[udfCombinePaths] TO [public] AS [dbo]
 GO

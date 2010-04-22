@@ -239,7 +239,11 @@ AS
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [PNL\D3M580] AS [dbo]
 GO

@@ -20,3 +20,7 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Internal_Standards ON dbo.T_Dataset.DS_internal_standard_ID = dbo.T_Internal_Standards.Internal_Std_Mix_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Entry] TO [PNL\D3M580] AS [dbo]
+GO

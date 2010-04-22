@@ -17,6 +17,8 @@ CREATE PROCEDURE ValidateWellplateLoading
 **	Auth:	grk
 **	Date:	07/24/2009
 **			07/24/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/741)
+**			11/30/2009 grk - fixed problem with filling last well causing error message
+**			12/01/2009 grk - modified to skip checking of existing well occupancy if @totalCount = 0
 **    
 *****************************************************/
 (
@@ -74,7 +76,7 @@ AS
 			return 51043
 		end
 		--
-		if @wellIndex + @totalCount > 96
+		if @wellIndex + @totalCount > 97 -- index is first new well, which understates available space by one
 		begin
 			set @message = 'Wellplate capacity would be exceeded'
 			return 51044
@@ -84,6 +86,8 @@ AS
 	---------------------------------------------------
 	-- make sure wells are not in current use
 	---------------------------------------------------
+	-- don't bother if we are not adding new item
+	IF @totalCount = 0 GOTO Done
 	--
 	declare @wells TABLE (
 		wellIndex int
@@ -100,8 +104,13 @@ AS
 	end 
 	--
 	declare @hits int
+	DECLARE @wellList VARCHAR(8000)
+	--
+	SET @wellList = ''
 	set @hits = 0
-	SELECT @hits = count(*)
+	SELECT
+		@hits = @hits + 1, 
+		@wellList = CASE WHEN @wellList = '' THEN EX_well_num ELSE ', ' + EX_well_num END
 	FROM T_Experiments
 	WHERE
 		EX_wellplate_num = @wellplateNum AND 
@@ -111,12 +120,21 @@ AS
 		)
 	if @hits > 0
 	begin
-		set @message = 'Some (' + convert(varchar(6), @hits) + ') of the target wells on the wellplate are currently filled'
+		SET @wellList = SUBSTRING(@wellList, 0, 256)
+		IF @hits = 1
+			set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplateNum + '" is currently filled'
+		else
+			set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplateNum + '" are currently filled'
 		return 51045
 	end
 
 	---------------------------------------------------
 	-- OK
 	---------------------------------------------------
+Done:
 	return @myError
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateWellplateLoading] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateWellplateLoading] TO [PNL\D3M580] AS [dbo]
 GO

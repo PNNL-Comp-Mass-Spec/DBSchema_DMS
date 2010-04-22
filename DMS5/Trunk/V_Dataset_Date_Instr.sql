@@ -9,3 +9,7 @@ SELECT Dataset, { fn YEAR(Created) } AS year, { fn MONTH(Created) } AS month, DA
 FROM  dbo.V_Dataset_Detail_Report
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Date_Instr] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Date_Instr] TO [PNL\D3M580] AS [dbo]
+GO

@@ -33,5 +33,9 @@ As
 	SELECT @instrumentID = Instrument_ID FROM T_Instrument_Name WHERE (IN_name = @instrumentName)
 	return(@instrumentID)
 GO
-GRANT EXECUTE ON [dbo].[GetInstrumentID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetInstrumentID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentID] TO [PNL\D3M580] AS [dbo]
 GO

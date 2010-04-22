@@ -271,5 +271,9 @@ return 0
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialContainers] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[UpdateMaterialContainers] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialContainers] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialContainers] TO [PNL\D3M580] AS [dbo]
 GO

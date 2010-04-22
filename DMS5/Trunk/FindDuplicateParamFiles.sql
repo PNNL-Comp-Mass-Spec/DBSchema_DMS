@@ -708,7 +708,11 @@ Done:
 	Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [D3L243]
+GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [D3L243] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [Limited_Table_Write]
+GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindDuplicateParamFiles] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[FindDuplicateParamFiles] TO [PNL\D3M580] AS [dbo]
 GO

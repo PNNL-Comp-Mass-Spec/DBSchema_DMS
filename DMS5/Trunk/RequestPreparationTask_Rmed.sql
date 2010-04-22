@@ -200,5 +200,9 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[RequestPreparationTask_Rmed] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[RequestPreparationTask_Rmed] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPreparationTask_Rmed] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPreparationTask_Rmed] TO [PNL\D3M580] AS [dbo]
 GO

@@ -33,5 +33,9 @@ As
 	
 	return(@archivePathID)
 GO
-GRANT EXECUTE ON [dbo].[GetArchivePathID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetArchivePathID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetArchivePathID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetArchivePathID] TO [PNL\D3M580] AS [dbo]
 GO

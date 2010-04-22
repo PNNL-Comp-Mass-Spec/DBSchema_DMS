@@ -8,9 +8,9 @@ AS
 SELECT     dbo.T_Dataset.Dataset_Num AS Dataset, dbo.T_Experiments.Experiment_Num AS Experiment, dbo.T_Organisms.OG_name AS Organism, 
                       dbo.T_Instrument_Name.IN_name AS Instrument, dbo.T_Dataset.DS_sec_sep AS [Separation Type], 
                       dbo.T_LC_Column.SC_Column_Number AS [LC Column], dbo.T_Dataset.DS_wellplate_num AS [Wellplate Number], 
-                      dbo.T_Dataset.DS_well_num AS [Well Number], Dataset_Int_Std.Name AS [Dataset Int Std], dbo.T_DatasetTypeName.DST_name AS Type, 
+                      dbo.T_Dataset.DS_well_num AS [Well Number], Dataset_Int_Std.Name AS [Dataset Int Std], dbo.T_DatasetTypeName.DST_Name AS Type, 
                       dbo.T_Users.U_Name + ' (' + dbo.T_Dataset.DS_Oper_PRN + ')' AS Operator, dbo.T_Dataset.DS_comment AS Comment, 
-                      dbo.T_DatasetRatingName.DRN_name AS Rating, dbo.T_Requested_Run_History.ID AS Request, dbo.T_DatasetStateName.DSS_name AS State, 
+                      dbo.T_DatasetRatingName.DRN_name AS Rating, dbo.T_Requested_Run.ID AS Request, dbo.T_DatasetStateName.DSS_name AS State, 
                       dbo.T_Dataset.DS_created AS Created, dbo.T_Dataset.DS_folder_name AS [Folder Name], 
                       dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path + dbo.T_Dataset.DS_folder_name AS [Dataset Folder Path], 
                       dbo.t_storage_path.SP_path AS [Storage Folder], dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path AS Storage, 
@@ -26,11 +26,15 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Users ON dbo.T_Dataset.DS_Oper_PRN = dbo.T_Users.U_PRN INNER JOIN
                       dbo.T_DatasetRatingName ON dbo.T_Dataset.DS_rating = dbo.T_DatasetRatingName.DRN_state_ID INNER JOIN
                       dbo.T_LC_Column ON dbo.T_Dataset.DS_LC_column_ID = dbo.T_LC_Column.ID INNER JOIN
-                      dbo.T_Internal_Standards Dataset_Int_Std ON dbo.T_Dataset.DS_internal_standard_ID = Dataset_Int_Std.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards PreDigest_Int_Std ON dbo.T_Experiments.EX_internal_standard_ID = PreDigest_Int_Std.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards PostDigest_Int_Std ON 
+                      dbo.T_Internal_Standards AS Dataset_Int_Std ON dbo.T_Dataset.DS_internal_standard_ID = Dataset_Int_Std.Internal_Std_Mix_ID INNER JOIN
+                      dbo.T_Internal_Standards AS PreDigest_Int_Std ON dbo.T_Experiments.EX_internal_standard_ID = PreDigest_Int_Std.Internal_Std_Mix_ID INNER JOIN
+                      dbo.T_Internal_Standards AS PostDigest_Int_Std ON 
                       dbo.T_Experiments.EX_postdigest_internal_std_ID = PostDigest_Int_Std.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Organisms ON dbo.T_Experiments.Ex_organism_ID = dbo.T_Organisms.Organism_ID LEFT OUTER JOIN
-                      dbo.T_Requested_Run_History ON dbo.T_Dataset.Dataset_ID = dbo.T_Requested_Run_History.DatasetID
+                      dbo.T_Organisms ON dbo.T_Experiments.EX_organism_ID = dbo.T_Organisms.Organism_ID LEFT OUTER JOIN
+                      dbo.T_Requested_Run ON dbo.T_Dataset.Dataset_ID = dbo.T_Requested_Run.DatasetID
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Export] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Export] TO [PNL\D3M580] AS [dbo]
 GO

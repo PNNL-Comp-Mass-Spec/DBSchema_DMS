@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Param_File_Types] ******/
-/****** RowCount: 14 ******/
+/****** RowCount: 18 ******/
 /****** Columns: Param_File_Type_ID, Param_File_Type ******/
 INSERT INTO [T_Param_File_Types] VALUES (1,'(none)')
 INSERT INTO [T_Param_File_Types] VALUES (1000,'Sequest')
@@ -15,3 +15,7 @@ INSERT INTO [T_Param_File_Types] VALUES (1009,'OMSSA')
 INSERT INTO [T_Param_File_Types] VALUES (1010,'Decon2LS')
 INSERT INTO [T_Param_File_Types] VALUES (1011,'TIC_D2L')
 INSERT INTO [T_Param_File_Types] VALUES (1012,'Inspect')
+INSERT INTO [T_Param_File_Types] VALUES (1013,'MSXML_Gen')
+INSERT INTO [T_Param_File_Types] VALUES (1014,'DTA_Gen')
+INSERT INTO [T_Param_File_Types] VALUES (1015,'MSClusterDAT_Gen')
+INSERT INTO [T_Param_File_Types] VALUES (1016,'OMSSA')

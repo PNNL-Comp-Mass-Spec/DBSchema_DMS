@@ -24,6 +24,7 @@ CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 **			08/30/2006 grk - fixed selection logic to handle auto-generated fasta file names https://prismtrac.pnl.gov/trac/ticket/218
 **			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
 **			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
+**			03/27/2009 mem - Updated Where clause logic for Peptide_Hit jobs to ignore organism name when using a Protein Collection List
 **    
 *****************************************************/
 (
@@ -79,41 +80,40 @@ AS
 			
 			Set @resultType = IsNull(@resultType, 'Unknown')
 			
-			-- When looking for existing jobs, filter on organismDBName and organism
-			-- only if the analysis tool is a Peptide_Hit tool.  Otherwise, update
-			-- organismDBName and organism to NULL so that the following
-			-- Select query will effectively ignore them when filtering
+			-- When looking for existing jobs, if the analysis tool is not a Peptide_Hit tool,
+			--  then we ignore OrganismDBName, Organism Name, Protein Collection List, and Protein Options List
 			--
-			If @resultType NOT LIKE '%Peptide_Hit%'
-			Begin
-				Set @organismDBName = NULL
-				Set @organismName = NULL
-				Set @proteinCollectionList  = NULL
-				Set @proteinOptionsList  = NULL
-			End
+			-- If the tool is a Peptide_Hit tool, then we only consider Organism Name when searching
+			--  against a legacy Fasta file (i.e. when the Protein Collection List is 'na')
 
-			INSERT INTO @job_list
-					(job)
-			SELECT  AJ.AJ_jobID
-			FROM	GetRunRequestDatasetList(@RequestID) DSList INNER JOIN
-					T_Dataset DS ON DSList.dataset = DS.Dataset_Num INNER JOIN
-					T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
-					T_Analysis_Tool AJT ON AJ.AJ_analysisToolID = AJT.AJT_toolID INNER JOIN
-					T_Organisms Org ON AJ.AJ_organismID = Org.Organism_ID
-			WHERE	AJT.AJT_toolName = @analysisToolName AND 
-					AJ.AJ_parmFileName = @parmFileName AND 
-					AJ.AJ_settingsFileName = @settingsFileName AND 
-					(	(AJ.AJ_organismDBName = IsNull(@organismDBName, AJ.AJ_organismDBName) AND
-						 AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
-						 AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)
-						) OR
-						(AJ.AJ_organismDBName <> 'na' AND AJ.AJ_organismDBName = IsNull(@organismDBName, AJ.AJ_organismDBName)) OR
-						(AJ.AJ_proteinCollectionList <> 'na' AND
-						 AJ.AJ_proteinCollectionList = IsNull(@proteinCollectionList, AJ.AJ_proteinCollectionList) AND 
-						 AJ.AJ_proteinOptionsList = IsNull(@proteinOptionsList, AJ.AJ_proteinOptionsList)
-						)
-					) AND 
-					Org.OG_name = IsNull(@organismName, Org.OG_name)
+			INSERT INTO @job_list( job )
+			SELECT AJ.AJ_jobID
+			FROM GetRunRequestDatasetList ( @RequestID ) DSList
+			     INNER JOIN T_Dataset DS
+			       ON DSList.dataset = DS.Dataset_Num
+			     INNER JOIN T_Analysis_Job AJ
+			       ON AJ.AJ_datasetID = DS.Dataset_ID
+			     INNER JOIN T_Analysis_Tool AJT
+			       ON AJ.AJ_analysisToolID = AJT.AJT_toolID
+			     INNER JOIN T_Organisms Org
+			       ON AJ.AJ_organismID = Org.Organism_ID
+			WHERE AJT.AJT_toolName = @analysisToolName AND
+			      AJ.AJ_parmFileName = @parmFileName AND
+			      AJ.AJ_settingsFileName = @settingsFileName AND
+			      (@resultType NOT LIKE '%Peptide_Hit%' OR
+			       @resultType LIKE '%Peptide_Hit%' AND
+			       (
+					(	@proteinCollectionList <> 'na' AND
+						AJ.AJ_proteinCollectionList = @proteinCollectionList AND
+						AJ.AJ_proteinOptionsList = @proteinOptionsList
+					) OR
+					(	@proteinCollectionList = 'na' AND
+						AJ.AJ_proteinCollectionList = @proteinCollectionList AND
+						AJ.AJ_organismDBName = @organismDBName AND
+						Org.OG_name = @organismName
+					)
+			       )
+			      )
 			GROUP BY AJ.AJ_jobID
 			ORDER BY AJ.AJ_jobID
 

@@ -22,3 +22,7 @@ SELECT SP_path_ID, SP_path, SP_vol_name_client,
 FROM t_storage_path
 WHERE (SP_function = N'raw-storage')
 GO
+GRANT VIEW DEFINITION ON [dbo].[v_raw_storage] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[v_raw_storage] TO [PNL\D3M580] AS [dbo]
+GO

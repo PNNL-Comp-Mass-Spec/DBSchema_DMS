@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			03/13/2008 grk - added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**			12/01/2009 grk - modified to skip checking of existing well occupancy if updating existing experiment
 **
 *****************************************************/
 (
@@ -214,12 +215,15 @@ As
 	---------------------------------------------------
 	-- set up and validate wellplate values
 	---------------------------------------------------
-
+	DECLARE @totalCount INT
 	declare @wellIndex int
+	--
+	SELECT @totalCount = CASE WHEN @mode = 'add' THEN 1 ELSE 0 END
+	--
 	exec @myError = ValidateWellplateLoading
 						@wellplateNum  output,
 						@wellNum  output,
-						1,
+						@totalCount,
 						@wellIndex output,
 						@msg  output
 	if @myError <> 0
@@ -597,7 +601,11 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS_User]
+GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [PNL\D3M580] AS [dbo]
 GO

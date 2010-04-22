@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_PDE_All_Completed_Analysis_Jobs_Ext
+
+CREATE VIEW [dbo].[V_PDE_All_Completed_Analysis_Jobs_Ext]
 AS
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS AnalysisID, dbo.T_Dataset.Dataset_Num AS DatasetName, dbo.T_Experiments.Experiment_Num AS Experiment, 
                       dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Analysis_Job.AJ_finish AS Completed, 
@@ -26,4 +27,9 @@ FROM         dbo.T_Analysis_Job INNER JOIN
                       dbo.V_Dataset_Folder_Paths ON dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Folder_Paths.Dataset_ID
 WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Dataset.DS_rating > 1)
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_All_Completed_Analysis_Jobs_Ext] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_All_Completed_Analysis_Jobs_Ext] TO [PNL\D3M580] AS [dbo]
 GO

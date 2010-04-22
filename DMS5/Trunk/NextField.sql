@@ -3,16 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-
-
-
-
-
-CREATE Procedure NextField
+CREATE Procedure dbo.NextField
 /****************************************************
 **
 **	Desc: Parses off and returns next field from string.
@@ -28,16 +19,18 @@ CREATE Procedure NextField
 **	    @curPos		postion to start looking for field
 **	    @field		contents of field
 **
-**		Auth: grk
-**		Date: 12/13/2000
-**            3/23/2004 grk -- increased size of @line
+**	Auth:	grk
+**	Date:	12/13/2000
+**          03/23/2004 grk - increased size of @line
+**			03/27/2009 mem - Expanded @line to varchar(6000)
 **    
 *****************************************************/
-
-	@line varchar(3500),
+(
+	@line varchar(6000),
 	@delimiter char(1),
-    @curPos int output,
-    @field varchar(255) output
+	@curPos int output,
+	@field varchar(255) output
+)
 As
 	declare @EndOfField int
 	declare @EOL int
@@ -60,7 +53,6 @@ As
 	-- extract field based on positions
 	--
 	set @field = ltrim(rtrim(substring(@line, @curPos, @EndOfField - @curPos)))
---	print '-->' + @field -- debug
 
 	-- advance current starting position beyond current field
 	-- and set end-of-line condidtion if it is past the end of the line
@@ -71,4 +63,9 @@ As
 
 	return @EOL
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[NextField] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[NextField] TO [PNL\D3M580] AS [dbo]
 GO

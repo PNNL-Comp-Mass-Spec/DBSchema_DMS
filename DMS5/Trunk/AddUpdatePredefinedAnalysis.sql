@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdatePredefinedAnalysis
+CREATE Procedure AddUpdatePredefinedAnalysis
 /****************************************************
 ** 
 **	Desc: Adds a new default analysis to DB 
@@ -18,6 +18,10 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			01/26/2007 mem - Switched to organism ID instead of organism name (Ticket #368)
 **			07/30/2007 mem - Now validating dataset type and instrument class for the matching instruments against the specified analysis tool (Ticket #502)
 **			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
+**			09/04/2009 mem - Added DatasetType parameter
+**			09/16/2009 mem - Now checking dataset type against T_Instrument_Allowed_Dataset_Type (Ticket #748)
+**			10/05/2009 mem - Now validating the parameter file name
+**			12/18/2009 mem - Switched to use GetInstrumentDatasetTypeList() to get the allowed dataset types for the dataset and GetAnalysisToolAllowedDSTypeList() to get the allowed dataset types for the analysis tool
 **    
 *****************************************************/
 (
@@ -50,7 +54,8 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 	@separationTypeCriteria varchar(64)='',
 	@campaignExclCriteria varchar(128)='',
 	@experimentExclCriteria varchar(128)='',
-	@datasetExclCriteria varchar(128)=''	
+	@datasetExclCriteria varchar(128)='',
+	@datasetTypeCriteria varchar(64)=''
 )
 As
 	set nocount on
@@ -60,6 +65,7 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 
+	declare @allowedDatasetTypes varchar(255)
 	declare @AllowedDSTypesForTool varchar(1024)
 	declare @AllowedInstClassesForTool varchar(1024)
 	
@@ -67,10 +73,10 @@ As
 	declare @continue int
 	declare @MatchCount int
 	declare @instrumentName varchar(128)
+	declare @InstrumentID int
 	declare @instrumentClass varchar(128)
+	declare @analysisToolID int
 	
-	declare @AllowedDSTypesForInstrument varchar(1024)
-
 	declare @msg varchar(512)
 	set @msg = ''
 
@@ -126,14 +132,15 @@ As
 	Set @experimentNameCriteria  = LTrim(RTrim(IsNull(@experimentNameCriteria , '')))
 	Set @instrumentNameCriteria  = LTrim(RTrim(IsNull(@instrumentNameCriteria , '')))
 	Set @organismNameCriteria    = LTrim(RTrim(IsNull(@organismNameCriteria   , '')))
-	Set @datasetNameCriteria     = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
+	Set @datasetNameCriteria = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
 	Set @expCommentCriteria      = LTrim(RTrim(IsNull(@expCommentCriteria     , '')))
 	Set @labellingInclCriteria   = LTrim(RTrim(IsNull(@labellingInclCriteria  , '')))
 	Set @labellingExclCriteria   = LTrim(RTrim(IsNull(@labellingExclCriteria  , '')))
-	Set @separationTypeCriteria  = LTrim(RTrim(IsNull(@separationTypeCriteria  , '')))
-	Set @campaignExclCriteria    = LTrim(RTrim(IsNull(@campaignExclCriteria  , '')))
-	Set @experimentExclCriteria  = LTrim(RTrim(IsNull(@experimentExclCriteria  , '')))
-	Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria  , '')))
+	Set @separationTypeCriteria  = LTrim(RTrim(IsNull(@separationTypeCriteria , '')))
+	Set @campaignExclCriteria    = LTrim(RTrim(IsNull(@campaignExclCriteria   , '')))
+	Set @experimentExclCriteria  = LTrim(RTrim(IsNull(@experimentExclCriteria , '')))
+	Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria    , '')))
+	Set @datasetTypeCriteria     = LTrim(RTrim(IsNull(@datasetTypeCriteria    , '')))
 
 
 	---------------------------------------------------
@@ -162,11 +169,10 @@ As
 	-- dataset types and instrument classes
 	--------------------------------------------------
 	
-	Set @AllowedDSTypesForTool = ''
 	Set @AllowedInstClassesForTool = ''
 	
-	SELECT @AllowedDSTypesForTool = IsNull(AJT_allowedDatasetTypes, ''),
-		   @AllowedInstClassesForTool = IsNull(AJT_allowedInstClass, '')
+	SELECT @AllowedInstClassesForTool = IsNull(AJT_allowedInstClass, ''),
+	       @analysisToolID = AJT_toolID
 	FROM dbo.T_Analysis_Tool
 	WHERE (AJT_toolName = @analysisToolName)
 	--
@@ -192,21 +198,17 @@ As
 		-- Parse out the dataset types and instrument classes for the specified analysis tool
 		---------------------------------------------------
 		
-		CREATE TABLE #TmpAllowedDSTypesForTool (
-			DatasetType varchar(64)
-		)
-
 		CREATE TABLE #TmpAllowedInstClassesForTool (
 			InstrumentClass varchar(64)
 		)
 		
-		INSERT INTO #TmpAllowedDSTypesForTool (DatasetType)
-		SELECT item 
-		FROM MakeTableFromList(@AllowedDSTypesForTool)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		If @myRowCount = 0
+		If Not Exists (
+			SELECT ADT.Dataset_Type
+			FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
+			     INNER JOIN T_Analysis_Tool Tool
+			       ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
+			WHERE (Tool.AJT_toolName = @analysisToolName)
+			)
 		Begin
 			Set @msg = 'Analysis tool "' + @analysisToolName + '" does not have any allowed dataset types; unable to continue'
 			RAISERROR (@msg, 10, 1)
@@ -231,25 +233,24 @@ As
 		-- associated with the matching instruments
 		---------------------------------------------------
 		
-		CREATE TABLE #TmpAllowedDSTypesForInstrument (
+		CREATE TABLE #TmpMatchingInstruments (
 			UniqueID int Identity(1,1),
 			InstrumentName varchar(128),
 			InstrumentClass varchar(128),
-			AllowedDatasetTypes varchar(1024)
+			InstrumentID int
 		)
 		
-		INSERT INTO #TmpAllowedDSTypesForInstrument (
-			InstrumentName,
-			InstrumentClass,
-			AllowedDatasetTypes
-		)
-		SELECT	InstName.IN_Name,
-				InstClass.IN_class,
-				InstClass.Allowed_Dataset_Types
-		FROM T_Instrument_Class InstClass INNER JOIN
-			 T_Instrument_Name InstName ON InstClass.IN_class = InstName.IN_class
-		WHERE (InstClass.IN_Class Like @instrumentClassCriteria OR @instrumentClassCriteria = '') AND
-			  (InstName.IN_name Like @instrumentNameCriteria OR @instrumentNameCriteria = '')
+		INSERT INTO #TmpMatchingInstruments( InstrumentName,
+		                                     InstrumentClass,
+		                                     InstrumentID )
+		SELECT DISTINCT InstName.IN_Name,
+		                InstClass.IN_class,
+		                InstName.Instrument_ID
+		FROM T_Instrument_Name InstName
+		     INNER JOIN T_Instrument_Class InstClass
+		       ON InstName.IN_class = InstClass.IN_class
+		WHERE (InstClass.IN_Class LIKE @instrumentClassCriteria OR @instrumentClassCriteria = '') AND
+		      (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '')
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -262,8 +263,9 @@ As
 
 
 		---------------------------------------------------
-		-- Step through #TmpAllowedDSTypesForInstrument and make sure
-		--  each entry has at least one Dataset Type that is present in #TmpAllowedDSTypesForTool
+		-- Step through #TmpMatchingInstruments and make sure
+		--  each entry has at least one Dataset Type that is present in T_Analysis_Tool_Allowed_Dataset_Type
+		--  for this analysis tool
 		-- Also validate each instrument class with #TmpAllowedInstClassesForTool
 		---------------------------------------------------
 
@@ -273,9 +275,9 @@ As
 		Begin -- <b2>
 			SELECT TOP 1 @UniqueID = UniqueID,
 					@instrumentName = InstrumentName,
-					@instrumentClass = InstrumentClass,
-					@AllowedDSTypesForInstrument = AllowedDatasetTypes
-			FROM #TmpAllowedDSTypesForInstrument
+					@InstrumentID = InstrumentID,
+					@instrumentClass = InstrumentClass
+			FROM #TmpMatchingInstruments
 			WHERE UniqueID > @UniqueID
 			ORDER BY UniqueID
 			--
@@ -286,15 +288,26 @@ As
 			Else
 			Begin -- <c>
 
-				Set @MatchCount = 0
-				SELECT @MatchCount = COUNT(*)
-				FROM (SELECT item FROM MakeTableFromList(@AllowedDSTypesForInstrument)) ClassQ INNER JOIN
-					 #TmpAllowedDSTypesForTool ToolQ ON ClassQ.item = ToolQ.DatasetType
-
-				If @MatchCount = 0
+				If Not Exists (
+					SELECT *
+					FROM T_Instrument_Allowed_Dataset_Type IADT
+					     INNER JOIN ( SELECT ADT.Dataset_Type
+					                  FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
+					                       INNER JOIN T_Analysis_Tool Tool
+					                         ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
+					                  WHERE (Tool.AJT_toolName = @analysisToolName) ) ToolQ
+					       ON ToolQ.Dataset_Type = IADT.Dataset_Type
+					WHERE IADT.Instrument = @instrumentName
+					)
 				Begin -- <d1>
-					-- Example criteria that will result in this message: Instrument Class=Agilent_TOF, Tool=AgilentSequest
-					set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @AllowedDSTypesForInstrument + '"'
+					-- Example criteria that will result in this message: Instrument Criteria=Agilent_TOF%, Tool=AgilentSequest
+					
+					Set @allowedDatasetTypes = dbo.GetInstrumentDatasetTypeList(@InstrumentID)
+					
+					SELECT @AllowedDSTypesForTool = AllowedDatasetTypes
+					FROM dbo.GetAnalysisToolAllowedDSTypeList(@analysisToolID)
+
+					set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
 					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' only allows "' + @AllowedDSTypesForTool + '"'
 					RAISERROR (@msg, 10, 1)
 					return 51012
@@ -308,6 +321,7 @@ As
 				If @MatchCount = 0
 				Begin -- <d2>
 					-- Example criteria that will result in this message: Instrument Class=BRUKERFTMS, Tool=XTandem
+					-- 2nd example: Instrument Criteria=Agilent_TOF%, Tool=Decon2LS
 					set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
 					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' is not valid for that instrument class'
 					RAISERROR (@msg, 10, 1)
@@ -333,6 +347,19 @@ As
 		return 51014
 	end
 
+	---------------------------------------------------
+	-- Validate the parameter file name
+	---------------------------------------------------
+	If @parmFileName <> 'na'
+	Begin
+		If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_Name = @parmFileName)
+		Begin
+			set @msg = 'Could not find entry in database for parameter file "' + @parmFileName + '"'
+			RAISERROR (@msg, 10, 1)
+			return 51018
+		End
+	End
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
@@ -365,21 +392,22 @@ As
 	begin
 
 		INSERT INTO T_Predefined_Analysis (
-			AD_level, 
+			AD_level,
 			AD_sequence, 
 			AD_instrumentClassCriteria, 
 			AD_campaignNameCriteria, 
+			AD_campaignExclCriteria, 
 			AD_experimentNameCriteria, 
+			AD_experimentExclCriteria, 
 			AD_instrumentNameCriteria, 
 			AD_organismNameCriteria, 
 			AD_datasetNameCriteria, 
+			AD_datasetExclCriteria,
+			AD_datasetTypeCriteria,
 			AD_expCommentCriteria, 
 			AD_labellingInclCriteria, 
 			AD_labellingExclCriteria, 
 			AD_separationTypeCriteria, 
-			AD_campaignExclCriteria, 
-			AD_experimentExclCriteria, 
-			AD_datasetExclCriteria,
 			AD_analysisToolName, 
 			AD_parmFileName, 
 			AD_settingsFileName, 
@@ -391,23 +419,24 @@ As
 			AD_enabled, 
 			AD_description, 
 			AD_creator,
-			AD_nextLevel 
+			AD_nextLevel
 		) VALUES (
 			@level, 
 			@seqVal, 
 			@instrumentClassCriteria, 
 			@campaignNameCriteria, 
+			@campaignExclCriteria,
 			@experimentNameCriteria, 
+			@experimentExclCriteria,
 			@instrumentNameCriteria, 
 			@organismNameCriteria, 
 			@datasetNameCriteria, 
+			@datasetExclCriteria,
+			@datasetTypeCriteria,
 			@expCommentCriteria, 
 			@labellingInclCriteria, 
 			@labellingExclCriteria, 
 			@separationTypeCriteria,
-			@campaignExclCriteria,
-			@experimentExclCriteria,
-			@datasetExclCriteria,
 			@analysisToolName, 
 			@parmFileName, 
 			@settingsFileName, 
@@ -451,17 +480,18 @@ As
 			AD_sequence = @seqVal, 
 			AD_instrumentClassCriteria = @instrumentClassCriteria, 
 			AD_campaignNameCriteria = @campaignNameCriteria, 
+			AD_campaignExclCriteria = @campaignExclCriteria,
 			AD_experimentNameCriteria = @experimentNameCriteria, 
+			AD_experimentExclCriteria = @experimentExclCriteria,
 			AD_instrumentNameCriteria = @instrumentNameCriteria, 
 			AD_organismNameCriteria = @organismNameCriteria, 
 			AD_datasetNameCriteria = @datasetNameCriteria, 
+			AD_datasetExclCriteria = @datasetExclCriteria,
+			AD_datasetTypeCriteria = @datasetTypeCriteria,
 			AD_expCommentCriteria = @expCommentCriteria, 
 			AD_labellingInclCriteria = @labellingInclCriteria, 
 			AD_labellingExclCriteria = @labellingExclCriteria, 
 			AD_separationTypeCriteria = @separationTypeCriteria,
-			AD_campaignExclCriteria = @campaignExclCriteria,
-			AD_experimentExclCriteria = @experimentExclCriteria,
-			AD_datasetExclCriteria = @datasetExclCriteria,
 			AD_analysisToolName = @analysisToolName, 
 			AD_parmFileName = @parmFileName, 
 			AD_settingsFileName = @settingsFileName, 
@@ -490,7 +520,11 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis]
+GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [PNL\D3M580] AS [dbo]
 GO

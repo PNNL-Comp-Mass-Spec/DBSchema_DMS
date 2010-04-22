@@ -33,5 +33,9 @@ As
 	SELECT @userID = ID FROM T_Users WHERE (U_PRN = @userPRN)
 	return(@userID)
 GO
-GRANT EXECUTE ON [dbo].[GetUserID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetUserID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetUserID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetUserID] TO [PNL\D3M580] AS [dbo]
 GO

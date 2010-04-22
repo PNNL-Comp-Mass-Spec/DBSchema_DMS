@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Request_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requester_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Reason] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Cell_Culture_List] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Cell_Culture_List] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Biohazard_Level] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Campaign] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -28,24 +28,25 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Instrument_Analysis_Specifications] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Priority] [tinyint] NULL,
-	[Created] [datetime] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()),
-	[State] [tinyint] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT (1),
+	[Created] [datetime] NOT NULL,
+	[State] [tinyint] NOT NULL,
 	[ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[StateChanged] [datetime] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_StateChanged]  DEFAULT (getdate()),
-	[UseSingleLCColumn] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_UseSingleLCColumn]  DEFAULT ('No'),
-	[Internal_standard_ID] [int] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT (0),
-	[Postdigest_internal_std_ID] [int] NOT NULL CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT (0),
+	[StateChanged] [datetime] NOT NULL,
+	[UseSingleLCColumn] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Internal_standard_ID] [int] NOT NULL,
+	[Postdigest_internal_std_ID] [int] NOT NULL,
 	[Estimated_Completion] [datetime] NULL,
 	[Estimated_MS_runs] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_UsageType] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_User_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Facility] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -54,18 +55,15 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
 (
 	[Request_Name] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [trig_d_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create Trigger dbo.trig_d_Sample_Prep_Req on dbo.T_Sample_Prep_Request
+create Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Delete
 /****************************************************
 **
@@ -93,16 +91,13 @@ AS
 	ORDER BY deleted.ID
 
 GO
-
-/****** Object:  Trigger [trig_i_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create Trigger dbo.trig_i_Sample_Prep_Req on dbo.T_Sample_Prep_Request
+create Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Insert
 /****************************************************
 **
@@ -132,14 +127,11 @@ AS
 	ORDER BY inserted.ID
 
 GO
-
-/****** Object:  Trigger [trig_u_Sample_Prep_Req] ******/
+/****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
@@ -172,13 +164,13 @@ AS
 
 
 GO
-GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
@@ -194,4 +186,18 @@ ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Sa
 REFERENCES [T_Sample_Prep_Request_State_Name] ([State_ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()) FOR [Created]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT (1) FOR [State]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_StateChanged]  DEFAULT (getdate()) FOR [StateChanged]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_UseSingleLCColumn]  DEFAULT ('No') FOR [UseSingleLCColumn]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT (0) FOR [Internal_standard_ID]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT (0) FOR [Postdigest_internal_std_ID]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Factility]  DEFAULT ('EMSL') FOR [Facility]
 GO

@@ -33,5 +33,9 @@ As
 	SELECT @datasetID = Dataset_ID FROM T_Dataset WHERE (Dataset_Num = @datasetNum)
 	return(@datasetID)
 GO
-GRANT EXECUTE ON [dbo].[GetDatasetID] TO [DMS_SP_User]
+GRANT EXECUTE ON [dbo].[GetDatasetID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [PNL\D3M580] AS [dbo]
 GO

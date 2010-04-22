@@ -9,17 +9,17 @@ CREATE TABLE [dbo].[T_Users_Access_List](
  CONSTRAINT [PK_T_Users_Access_List] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-GRANT DELETE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GRANT DELETE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GRANT INSERT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT REFERENCES ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GRANT REFERENCES ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GRANT SELECT ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write]
+GRANT UPDATE ON [dbo].[T_Users_Access_List] TO [Limited_Table_Write] AS [dbo]
 GO

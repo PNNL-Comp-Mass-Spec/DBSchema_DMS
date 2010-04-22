@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateOrganisms
+CREATE PROCEDURE AddUpdateOrganisms
 /****************************************************
 **
 **  Desc: Adds new or edits existing Organisms
@@ -19,6 +19,9 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			10/16/2007 mem - Updated to allow genus, species, and strain to all be 'na' (Ticket #562)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			09/12/2008 mem - Updated to call ValidateNAParameter to validate genus, species, and strain (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**			09/09/2009 mem - No longer populating field OG_organismDBLocalPath
+**			11/20/2009 mem - Removed parameter @orgDBLocalPath
+**			12/03/2009 mem - Now making sure that @orgDBPath starts with two slashes and ends with one slash
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -27,7 +30,6 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 	@orgName varchar(50),
 	@orgShortName varchar(128),
 	@orgDBPath varchar(255),
-	@orgDBLocalPath varchar(255),
 	@orgStorageLocation varchar(256),
 	@orgDBName varchar(64),
 	@orgDescription varchar(256),
@@ -66,6 +68,16 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
+	set @orgDBPath = IsNull(@orgDBPath, '')
+	If @orgDBPath <> ''
+	Begin
+		If Not @orgDBPath LIKE '\\%\'
+		begin
+			set @myError = 51008
+			RAISERROR ('Org. DB File Storage Path must start with \\ and end with \', 10, 1)
+		end
+	End
+		
 	set @orgName = IsNull(@orgName, '')
 	if Len(@orgName) < 1
 	begin
@@ -243,7 +255,7 @@ As
 		INSERT INTO T_Organisms (
 			OG_name, 
 			OG_organismDBPath, 
-			OG_organismDBLocalPath, 
+			-- OG_organismDBLocalPath, -- Field no longer in table
 			OG_organismDBName, 
 			OG_created, 
 			OG_description, 
@@ -264,7 +276,6 @@ As
 		) VALUES (
 			@orgName, 
 			@orgDBPath, 
-			@orgDBLocalPath, 
 			@orgDBName, 
 			getdate(), 
 			@orgDescription, 
@@ -293,7 +304,7 @@ As
 			return 51007
 		end
 
-		-- return IDof newly created entry
+		-- return ID of newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Organisms')
 		
@@ -313,7 +324,6 @@ As
 		SET 
 			OG_name = @orgName, 
 			OG_organismDBPath = @orgDBPath, 
-			OG_organismDBLocalPath = @orgDBLocalPath, 
 			OG_organismDBName = @orgDBName, 
 			OG_description = @orgDescription, 
 			OG_Short_Name = @orgShortName, 
@@ -350,7 +360,11 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin]
+GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS2_SP_User]
+GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganisms] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganisms] TO [PNL\D3M580] AS [dbo]
 GO
