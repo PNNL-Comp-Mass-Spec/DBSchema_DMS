@@ -18,6 +18,16 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Updates](
 
 GO
 
+/****** Object:  Index [IX_T_Sample_Prep_Request_Updates_EndStateID_BeginStateID_Include_RequestID_DateOfChange] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_Updates_EndStateID_BeginStateID_Include_RequestID_DateOfChange] ON [dbo].[T_Sample_Prep_Request_Updates] 
+(
+	[End_State_ID] ASC,
+	[Beginning_State_ID] ASC
+)
+INCLUDE ( [Request_ID],
+[Date_of_Change]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Sample_Prep_Request_Updates_Request_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_Updates_Request_ID] ON [dbo].[T_Sample_Prep_Request_Updates] 
 (

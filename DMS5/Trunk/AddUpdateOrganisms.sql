@@ -22,6 +22,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			09/09/2009 mem - No longer populating field OG_organismDBLocalPath
 **			11/20/2009 mem - Removed parameter @orgDBLocalPath
 **			12/03/2009 mem - Now making sure that @orgDBPath starts with two slashes and ends with one slash
+**			08/04/2010 grk - try-catch for error handling
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -63,7 +64,9 @@ As
 	declare @msg varchar(256)
 	declare @DuplicateTaxologyMsg varchar(512)
 	declare @MatchCount int
-	
+
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -73,37 +76,32 @@ As
 	Begin
 		If Not @orgDBPath LIKE '\\%\'
 		begin
-			set @myError = 51008
-			RAISERROR ('Org. DB File Storage Path must start with \\ and end with \', 10, 1)
+			RAISERROR ('Org. DB File Storage Path must start with \\ and end with \', 11, 8)
 		end
 	End
 		
 	set @orgName = IsNull(@orgName, '')
 	if Len(@orgName) < 1
 	begin
-		set @myError = 51000
-		RAISERROR ('Organism Name cannot be blank', 10, 1)
+		RAISERROR ('Organism Name cannot be blank', 11, 0)
 	end
 	
 	set @orgActive = IsNull(@orgActive, '')
 	if Len(@orgActive) = 0 Or Not IsNumeric(@orgActive) = 1
 	begin
-		set @myError = 51001
-		RAISERROR ('Organism active state must be 0 or 1', 10, 1)
+		RAISERROR ('Organism active state must be 0 or 1', 11, 1)
 	end
 
 	Set @orgDNATransTabID = IsNull(@orgDNATransTabID, '0')
 	if Len(@orgDNATransTabID) = 0 Or Not IsNumeric(@orgDNATransTabID) = 1
 	begin
-		set @myError = 51002
-		RAISERROR ('DNA Translation Table ID must be an integer', 10, 1)
+		RAISERROR ('DNA Translation Table ID must be an integer', 11, 2)
 	end
 
 	Set @orgMitoDNATransTabID = IsNull(@orgMitoDNATransTabID, '0')
 	if Len(@orgMitoDNATransTabID) = 0 Or Not IsNumeric(@orgMitoDNATransTabID) = 1
 	begin
-		set @myError = 51003
-		RAISERROR ('Mito DNA Translation Table ID must be an integer', 10, 1)
+		RAISERROR ('Mito DNA Translation Table ID must be an integer', 11, 3)
 	end
 
 	Set @orgGenus = IsNull(@orgGenus, '')
@@ -111,9 +109,6 @@ As
 	Set @orgStrain = IsNull(@orgStrain, '')
 	
 	Set @ID = IsNull(@ID, 0)
-	--
-	if @myError <> 0
-		return @myError
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -130,8 +125,7 @@ As
 		if @returnVal <> 0 
 		begin
 			set @msg = 'Cannot add: Organism "' + @orgName + '" already in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 5)
 		end
 	end
 
@@ -152,15 +146,13 @@ As
 		if @ExistingOrgID = 0 
 		begin
 			set @msg = 'Cannot update: Organism "' + @orgName + '" is not in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 6)
 		end
 		--
 		if @ExistingOrgName <> @orgName 
 		begin
 			set @msg = 'Cannot update: Organism name may not be changed from "' + @ExistingOrgName + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51005
+			RAISERROR (@msg, 11, 7)
 		end
 	end
 	
@@ -222,8 +214,7 @@ As
 			If @MatchCount <> 0
 			begin
 				set @msg = 'Cannot add: ' + @DuplicateTaxologyMsg
-				RAISERROR (@msg, 10, 1)
-				return 51006
+				RAISERROR (@msg, 11, 8)
 			end
 		end
 		
@@ -241,8 +232,7 @@ As
 			If @MatchCount <> 0
 			begin
 				set @msg = 'Cannot update: ' + @DuplicateTaxologyMsg
-				RAISERROR (@msg, 10, 1)
-				return 51006
+				RAISERROR (@msg, 11, 9)
 			end
 		end
 	End	
@@ -300,8 +290,7 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
+			RAISERROR (@message, 11, 10)
 		end
 
 		-- return ID of newly created entry
@@ -347,8 +336,7 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 11)
 		end
 		
 		-- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
@@ -357,6 +345,14 @@ As
 
 	end -- update mode
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO

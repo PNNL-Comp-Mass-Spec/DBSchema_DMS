@@ -119,6 +119,37 @@ AS
 	ORDER BY inserted.Campaign_ID
 
 GO
+/****** Object:  Trigger [dbo].[trig_u_Campaign] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Trigger trig_u_Campaign on T_Campaign
+For Update
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Entity_Rename_Log if the campaign is renamed
+**
+**	Auth:	mem
+**	Date:	07/19/2010 mem - Initial version
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(Campaign_Num)
+	Begin
+		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
+		SELECT 1, inserted.Campaign_ID, deleted.Campaign_Num, inserted.Campaign_Num, GETDATE()
+		FROM deleted INNER JOIN inserted ON deleted.Campaign_ID = inserted.Campaign_ID
+		ORDER BY inserted.Campaign_ID
+	End
+
+GO
 GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]

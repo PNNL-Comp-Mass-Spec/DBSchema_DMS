@@ -27,6 +27,7 @@ CREATE Procedure AddUpdateCampaign
 **			02/07/2010 grk - Added validation for campaign name
 **			02/07/2010 mem - No longer validating @progmgrPRN or @piPRN in this procedure since this is now handled by UpdateResearchTeamForCampaign
 **			03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
+**			04/21/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 (
@@ -65,6 +66,7 @@ As
 	
 	declare @msg varchar(256)
 
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -72,35 +74,16 @@ As
 
 	set @myError = 0
 	if LEN(@campaignNum) < 1
-	begin
-		set @myError = 51000
-		RAISERROR ('campaign Number was blank',
-			10, 1)
-	end
-
+		RAISERROR ('campaign Number was blank', 11, 1)
+	--
 	if LEN(@projectNum) < 1
-	begin
-		set @myError = 51001
-		RAISERROR ('Project Number was blank',
-			10, 1)
-	end
+		RAISERROR ('Project Number was blank', 11, 1)
 	--
 	if LEN(@progmgrPRN) < 1
-	begin
-		set @myError = 51002
-		RAISERROR ('Program Manager PRN was blank',
-			10, 1)
-	end
+		RAISERROR ('Program Manager PRN was blank', 11, 2)
 	--
 	if LEN(@piPRN) < 1
-	begin
-		set @myError = 51003
-		RAISERROR ('Principle Investigator PRN was blank',
-			10, 1)
-	end
-	--
-	if @myError <> 0
-		return @myError
+		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
 
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -123,51 +106,12 @@ As
 	-- cannot create an entry that already exists
 	--
 	if @campaignID <> 0 and @mode = 'add'
-	begin
-		set @msg = 'Cannot add: Campaign "' + @campaignNum + '" already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
+		RAISERROR ('Cannot add: Campaign "%s" already in database', 11, 4, @campaignNum)
 
 	-- cannot update a non-existent entry
 	--
 	if @campaignID = 0 and @mode = 'update'
-	begin
-		set @msg = 'Cannot update: Campaign "' + @campaignNum + '" is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
-
-
-/*
-	---------------------------------------------------
-	-- Skip this step since now handled by UpdateResearchTeamForCampaign
-	-- Resolve DPRNs to user number
-	---------------------------------------------------
-
-	-- verify that program manager PRN  is valid 
-	-- and get its id number
-	--
-	declare @userID int
-	execute @userID = GetUserID @progmgrPRN
-	if @userID = 0
-	begin
-		set @msg = 'Could not find entry in database for program mgr. PRN "' + @progmgrPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51005
-	end
-
-	-- verify that principle investigator PRN  is valid 
-	-- and get its id number
-	--
-	execute @userID = GetUserID @piPRN
-	if @userID = 0
-	begin
-		set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51006
-	end
-*/
+		RAISERROR ('Cannot update: Campaign "%s" is not in database', 11, 5, @campaignNum)
 
 	---------------------------------------------------
 	-- resolve data release restriction name to ID
@@ -186,17 +130,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error resolving data release restriction'
-		RAISERROR (@msg, 10, 1)
-		return 51001
-	end
+		RAISERROR ('Error resolving data release restriction', 11, 6)
+	--
 	if @DataReleaseRestrictionsID < 0
-	begin
-		set @msg = 'Could not resolve data release restriction'
-		RAISERROR (@msg, 10, 1)
-		return 51002
-	end
+		RAISERROR ('Could not resolve data release restriction', 11, 7)
 
 	---------------------------------------------------
 	-- transaction name
@@ -204,9 +141,6 @@ As
 	--
 	declare @transName varchar(32)
 	set @transName = 'AddUpdateCampaign'
-
---SET @message = @campaignNum
---RETURN 0
 
 	---------------------------------------------------
 	-- action for add mode
@@ -223,12 +157,9 @@ As
 		if @badCh <> ''
 		begin
 			If @badCh = '[space]'
-				set @msg = 'Campaign name may not contain spaces'
+				RAISERROR ('Campaign name may not contain spaces', 11, 8)
 			Else
-				set @msg = 'Campaign name may not contain the character(s) "' + @badCh + '"'
-
-			RAISERROR (@msg, 10, 1)
-			return 51001
+				RAISERROR ('Campaign name may not contain the character(s) "%s"', 11, 9, @badCh)
 		end
 
 
@@ -251,11 +182,7 @@ As
 							@message output
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
-			return @myError
-		end
+			RAISERROR (@message, 11, 11)
 
 		---------------------------------------------------
 		-- create campaign
@@ -294,12 +221,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @msg = 'Insert operation failed: "' + @campaignNum + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51007
-		end
+			RAISERROR ('Insert operation failed: "%s"', 11, 12,@campaignNum )
 		
 		set @CampaignID = IDENT_CURRENT('T_Campaign')
 
@@ -345,12 +267,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @msg = 'Update operation failed: "' + @campaignNum + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignNum)
 
 		---------------------------------------------------
 		-- update research team membershipe
@@ -369,17 +286,20 @@ As
 							@message output
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			RAISERROR (@message, 10, 1)
-			return @myError
-		end
+			RAISERROR (@message, 11, 1)
 
 		commit transaction @transName
 	end -- update mode
 
-
-	return 0
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User] AS [dbo]

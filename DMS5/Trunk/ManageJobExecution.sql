@@ -18,6 +18,7 @@ CREATE PROCEDURE ManageJobExecution
 **			07/09/2009 grk - Initial release
 **			09/16/2009 mem - Updated to pass table #TAJ to UpdateAnalysisJobsWork
 **						   - Updated to resolve job state defined in the XML with T_Analysis_State_Name
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **
 *****************************************************/
 (
@@ -108,7 +109,7 @@ As
 		@associatedProcessorGroup varchar(64),
 		@propagationMode varchar(24),
 		@parmFileName varchar(255),
-		@settingsFileName varchar(64),
+		@settingsFileName varchar(255),
 		@organismName varchar(64),
 		@protCollNameList varchar(4000),
 		@protCollOptionsList varchar(256),

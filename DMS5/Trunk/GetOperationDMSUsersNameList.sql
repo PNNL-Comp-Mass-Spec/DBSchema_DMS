@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE FUNCTION dbo.GetOperationDMSUsersNameList
 /****************************************************
 **
@@ -15,8 +14,9 @@ CREATE FUNCTION dbo.GetOperationDMSUsersNameList
 **
 **	Parameters: 
 **
-**		Auth: jds
-**		Date: 12/11/2006
+**	Auth:	jds
+**	Date:	12/11/2006 jds - Initial version
+**			06/28/2010 ??? - Now limiting to active users
 **    
 *****************************************************/
 (
@@ -33,14 +33,16 @@ AS
 		@list = @list + CASE 
 		WHEN @list = '' THEN U.U_Name + ' (' + CAST(U.U_PRN AS Varchar(12)) + ')' 
 		ELSE '; ' + U.U_Name + ' (' + CAST(U.U_PRN AS Varchar(12)) + ')' END
-	FROM
-		T_User_Operations_Permissions O 
-		JOIN T_Users U on O.U_ID = U.ID
-	WHERE   O.Op_ID = @operationID
+	FROM T_User_Operations_Permissions O
+	     INNER JOIN T_Users U
+	       ON O.U_ID = U.ID
+	WHERE O.Op_ID = @operationID AND
+	      (U.U_Status = 'Active')
 	ORDER BY U.U_Name
 
 	return @list
 	END
+
 
 
 GO

@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
 **			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
 **			05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @InfoOnly
 **			07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
+**			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
 **    
 *****************************************************/
 (
@@ -65,7 +66,7 @@ As
 		settingsFileName varchar(128),
 		organismDBName varchar(128),
 		organismName varchar(128),
-		proteinCollectionList varchar(512),
+		proteinCollectionList varchar(4000),
 		proteinOptionsList varchar(256), 
 		ownerPRN varchar(128),
 		comment varchar(128),
@@ -115,7 +116,7 @@ As
 	declare @settingsFileName varchar(255)
 	declare @organismName varchar(64)
 	declare @organismDBName varchar(64)
-	declare @proteinCollectionList varchar(512)
+	declare @proteinCollectionList varchar(4000)
 	declare @proteinOptionsList varchar(256)
 	declare @comment varchar(128)
 	declare @ID int
@@ -245,6 +246,7 @@ As
 
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[SchedulePredefinedAnalyses] TO [DMS_Analysis] AS [dbo]

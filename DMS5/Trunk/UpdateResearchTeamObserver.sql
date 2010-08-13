@@ -150,3 +150,5 @@ Done:
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateResearchTeamObserver] TO [DMS2_SP_User] AS [dbo]
+GO

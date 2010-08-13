@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateExperiment
+
+CREATE Procedure AddUpdateExperiment
 /****************************************************
 **
 **	Desc:	Adds a new experiment to DB
@@ -25,6 +26,9 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **			12/01/2009 grk - modified to skip checking of existing well occupancy if updating existing experiment
+**			04/22/2010 grk - try-catch for error handling
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @researcherPRN contains a person's real name rather than their username
+**			05/18/2010 mem - Now validating that @internalStandard and @postdigestIntStd are active internal standards when creating a new experiment (@mode is 'add' or 'check_add')
 **
 *****************************************************/
 (
@@ -64,53 +68,30 @@ As
 	
 	declare @msg varchar(256)
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
 
 	if LEN(@experimentNum) < 1
-	begin
-		set @myError = 51030
-		RAISERROR ('experimentNum was blank',
-			10, 1)
-	end
+		RAISERROR ('experimentNum was blank', 11, 30)
 	--
 	if LEN(@campaignNum) < 1
-	begin
-		set @myError = 51031
-		RAISERROR ('campaignNum was blank',
-			10, 1)
-	end
+		RAISERROR ('campaignNum was blank', 11, 31)
+
 	--
 	if LEN(@researcherPRN) < 1
-	begin
-		set @myError = 51032
-		RAISERROR ('researcherPRN was blank',
-			10, 1)
-	end
+		RAISERROR ('researcherPRN was blank', 11, 32)
 	--
 	if LEN(@organismName) < 1
-	begin
-		set @myError = 51033
-		RAISERROR ('organismName was blank',
-			10, 1)
-	end
+		RAISERROR ('organismName was blank', 11, 33)
 	--
 	if LEN(@reason) < 1
-	begin
-		set @myError = 51034
-		RAISERROR ('reason was blank',
-			10, 1)
-	end
+		RAISERROR ('reason was blank', 11, 34)
 	--
 	if LEN(@labelling) < 1
-	begin
-		set @myError = 51031
-		RAISERROR ('Labelling was blank',
-			10, 1)
-	end
-	if @myError <> 0
-		return @myError
+		RAISERROR ('Labelling was blank', 11, 35)
 
 	---------------------------------------------------
 	-- validate name
@@ -121,12 +102,9 @@ As
 	if @badCh <> ''
 	begin
 		If @badCh = '[space]'
-			set @msg = 'Experiment name may not contain spaces'
+			RAISERROR ('Experiment name may not contain spaces', 11, 36)
 		Else
-			set @msg = 'Experiment name may not contain the character(s) "' + @badCh + '"'
-
-		RAISERROR (@msg, 10, 1)
-		return 51001
+			RAISERROR ('Experiment name may not contain the character(s) "%s"', 11, 37, @badCh)
 	end
 
 	---------------------------------------------------
@@ -148,29 +126,17 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error trying to resolve experiment ID'
-		RAISERROR (@msg, 10, 1)
-		return 51001
-	end
+		RAISERROR ('Error trying to resolve experiment ID', 11, 38)
 
 	-- cannot create an entry that already exists
 	--
 	if @experimentID <> 0 and (@mode = 'add' or @mode = 'check_add')
-	begin
-		set @msg = 'Cannot add: Experiment "' + @experimentNum + '" already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51035
-	end
+		RAISERROR ('Cannot add: Experiment "%s" already in database', 11, 39, @experimentNum)
 
 	-- cannot update a non-existent entry
 	--
 	if @experimentID = 0 and (@mode = 'update' or @mode = 'check_update')
-	begin
-		set @msg = 'Cannot update: Experiment "' + @experimentNum + '" is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51035
-	end
+		RAISERROR ('Cannot update: Experiment "%s" is not in database', 11, 40, @experimentNum)
 
 	---------------------------------------------------
 	-- Resolve campaign ID
@@ -179,11 +145,7 @@ As
 	declare @campaignID int
 	execute @campaignID = GetCampaignID @campaignNum
 	if @campaignID = 0
-	begin
-		set @msg = 'Could not find entry in database for campaignNum "' + @campaignNum + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51036
-	end
+		RAISERROR ('Could not find entry in database for campaignNum "%s"', 11, 41, @campaignNum)
 
 	---------------------------------------------------
 	-- Resolve researcher PRN
@@ -193,9 +155,25 @@ As
 	execute @userID = GetUserID @researcherPRN
 	if @userID = 0
 	begin
-		set @msg = 'Could not find entry in database for researcher PRN "' + @researcherPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51037
+		-- Could not find entry in database for PRN @researcherPRN
+		-- Try to auto-resolve the name
+
+		Declare @MatchCount int
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @researcherPRN, @MatchCount output, @NewPRN output, @userID output
+
+		If @MatchCount = 1
+		Begin
+			-- Single match found; update @researcherPRN
+			Set @researcherPRN = @NewPRN
+		End
+		Else
+		Begin
+			RAISERROR ('Could not find entry in database for researcher PRN "%s"', 11, 42, @researcherPRN)
+			return 51037
+		End
+
 	end
 
 	---------------------------------------------------
@@ -205,11 +183,7 @@ As
 	declare @organismID int
 	execute @organismID = GetOrganismID @organismName
 	if @organismID = 0
-	begin
-		set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51038
-	end
+		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 43, @organismName)
 
 
 	---------------------------------------------------
@@ -227,25 +201,15 @@ As
 						@wellIndex output,
 						@msg  output
 	if @myError <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return @myError
-	end
+		RAISERROR ('ValidateWellplateLoading:%s', 11, 44, @msg)
 
 	-- make sure we do not put two experiments in the same place
 	--
 	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode = 'add'
-	begin
-		set @msg = 'There is another experiment assigned to the same wellplate and well'
-		RAISERROR (@msg, 10, 1)
-		return 51043
-	end
+		RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 45)
+	--
 	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode = 'update'
-	begin
-		set @msg = 'There is another experiment assigned to the same wellplate and well'
-		RAISERROR (@msg, 10, 1)
-		return 51044
-	end
+		RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 46)
 
 	---------------------------------------------------
 	-- Resolve enzyme ID
@@ -254,11 +218,7 @@ As
 	declare @enzymeID int
 	execute @enzymeID = GetEnzymeID @enzymeName
 	if @enzymeID = 0
-	begin
-		set @msg = 'Could not find entry in database for enzymeName "' + @enzymeName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51038
-	end
+		RAISERROR ('Could not find entry in database for enzymeName "%s"', 11, 47, @enzymeName)
 
 	---------------------------------------------------
 	-- Resolve labelling ID
@@ -272,29 +232,29 @@ As
 	WHERE (Label = @labelling)
 	--
 	if @labelID < 0
-	begin
-		set @msg = 'Could not find entry in database for labelling "' + @labelling + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51038
-	end
+		RAISERROR ('Could not find entry in database for labelling "%s"', 11, 48, @labelling)
 	
 	---------------------------------------------------
 	-- Resolve predigestion internal standard ID
+	-- If creating a new experiment, make sure the internal standard is active
 	---------------------------------------------------
 
 	declare @internalStandardID int
+	declare @internalStandardState char
+	
 	set @internalStandardID = 0
+	set @internalStandardState = 'I'
 	--
-	SELECT @internalStandardID = Internal_Std_Mix_ID
+	SELECT @internalStandardID = Internal_Std_Mix_ID,
+	       @internalStandardState = Active
 	FROM T_Internal_Standards
 	WHERE (Name = @internalStandard)
 	--
 	if @internalStandardID = 0
-	begin
-		set @msg = 'Could not find entry in database for predigestion internal standard "' + @internalStandard + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51009
-	end
+		RAISERROR ('Could not find entry in database for predigestion internal standard "%s"', 11, 49, @internalStandard)
+
+	if (@mode = 'add' or @mode = 'check_add') And @internalStandardState <> 'A'
+		RAISERROR ('Predigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @internalStandard)
 
 	---------------------------------------------------
 	-- Resolve postdigestion internal standard ID
@@ -302,17 +262,18 @@ As
 	-- 
 	declare @postdigestIntStdID int
 	set @postdigestIntStdID = 0
+	set @internalStandardState = 'I'
 	--
-	SELECT @postdigestIntStdID = Internal_Std_Mix_ID
+	SELECT @postdigestIntStdID = Internal_Std_Mix_ID,
+	       @internalStandardState = Active
 	FROM T_Internal_Standards
 	WHERE (Name = @postdigestIntStd)
 	--
 	if @postdigestIntStdID = 0
-	begin
-		set @msg = 'Could not find entry in database for postdigestion internal standard "' + @postdigestIntStdID + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51009
-	end
+		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 50, @postdigestIntStdID)
+
+	if (@mode = 'add' or @mode = 'check_add') And @internalStandardState <> 'A'
+		RAISERROR ('Postdigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @postdigestIntStd)
 
 	---------------------------------------------------
 	-- Resolve container name to ID
@@ -328,11 +289,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Could not resove container name "' + @container + '" to ID'
-		RAISERROR (@msg, 10, 1)
-		return 510019
-	end
+		RAISERROR ('Could not resove container name "%s" to ID', 11, 51, @container)
 
 	---------------------------------------------------
 	-- Resolve current container id to name
@@ -347,11 +304,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error resolving name of current container'
-		RAISERROR (@msg, 10, 1)
-		return 510027
-	end
+		RAISERROR ('Error resolving name of current container', 11, 53)
 
 	---------------------------------------------------
 	-- Resolve cell cultures
@@ -366,11 +319,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Could not create temporary table for cell culture list'
-		RAISERROR (@msg, 10, 1)
-		return 51078
-	end
+		RAISERROR ('Could not create temporary table for cell culture list', 11, 70)
 
 	-- get names of cell cultures from list argument into table
 	--
@@ -380,11 +329,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Could not populate temporary table for cell culture list'
-		RAISERROR (@msg, 10, 1)
-		return 51079
-	end
+		RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
 	
 	-- verify that cell cultures exist
 	--
@@ -400,18 +345,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Was not able to check for cell cultures in database'
-		RAISERROR (@msg, 10, 1)
-		return 51080
-	end
+		RAISERROR ('Was not able to check for cell cultures in database', 11, 80)
 	--
 	if @cnt <> 0 
-	begin
-		set @msg = 'One or more cell cultures was not in database'
-		RAISERROR (@msg, 10, 1)
-		return 51081	
-	end
+		RAISERROR ('One or more cell cultures was not in database', 11, 81)
 
 	declare @transName varchar(32)
 
@@ -471,12 +408,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Insert operation failed: "' + @experimentNum + '"'
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51007
-		end
+			RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
 
 		set @experimentID = IDENT_CURRENT('T_Experiments')
 
@@ -492,15 +424,10 @@ As
 		execute @result = AddExperimentCellCulture
 								@experimentID,
 								@cellCultureList,
-								@message output
+								@msg output
 		--
 		if @result <> 0
-		begin
-			set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @experimentNum + '" ' + @message
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return @result
-		end
+			RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
 		--  material movement logging
 		--	
@@ -557,27 +484,17 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: "' + @experimentNum + '"'
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%s"', 11, 4, @experimentNum)
 
 		-- Add the cell cultures
 		--
 		execute @result = AddExperimentCellCulture
 								@experimentID,
 								@cellCultureList,
-								@message output
+								@msg output
 		--
 		if @result <> 0
-		begin
-			set @msg = 'Could not update experiment cell cultures to database for experiment: "' + @experimentNum + '" ' + @message
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return @result
-		end
+			RAISERROR ('Could not update experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
 		--  material movement logging
 		--	
@@ -598,7 +515,15 @@ As
 
 	end -- update mode
 
-	return 0
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS_User] AS [dbo]

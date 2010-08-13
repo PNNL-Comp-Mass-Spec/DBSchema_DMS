@@ -137,6 +137,39 @@ AS
 	ORDER BY inserted.CC_ID
 
 GO
+/****** Object:  Trigger [dbo].[trig_u_Cell_Culture] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_u_Cell_Culture] on [dbo].[T_Cell_Culture]
+For Update
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Entity_Rename_Log if the cell culture is renamed
+**
+**	Auth:	mem
+**	Date:	07/19/2010 mem - Initial version
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(CC_Name)
+	Begin
+		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
+		SELECT 2, inserted.CC_ID, deleted.CC_Name, inserted.CC_Name, GETDATE()
+		FROM deleted INNER JOIN inserted ON deleted.CC_ID = inserted.CC_ID
+		ORDER BY inserted.CC_ID
+	End
+
+
+GO
 GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]

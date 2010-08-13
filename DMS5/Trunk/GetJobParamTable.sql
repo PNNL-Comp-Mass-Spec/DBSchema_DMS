@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.GetJobParamTable
 **	Date:	08/21/2008
 **			01/14/2009 mem - Increased maximum parameter length to 2000 characters (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **			04/10/2009 grk - Added DTA folder name override (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **    
 *****************************************************/
 (
@@ -158,7 +159,7 @@ AS
 	---------------------------------------------------
 	--
 	declare @paramXML xml
-	declare @settingsFileName varchar(128)
+	declare @settingsFileName varchar(255)
 	
 	set @settingsFileName = ''
 	SELECT @settingsFileName =  [Value] FROM @paramTab WHERE [Name] = 'SettingsFileName'

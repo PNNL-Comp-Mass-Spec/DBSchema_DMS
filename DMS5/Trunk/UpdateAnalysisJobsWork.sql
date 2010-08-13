@@ -42,6 +42,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **			07/16/2009 mem - Added missing rollback transaction statements when verifying @associatedProcessorGroup
 **			09/16/2009 mem - Extracted code from UpdateAnalysisJobs
 **						   - Added parameter @DisableRaiseError
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
     @propagationMode varchar(24) = '[no change]',
 --
     @parmFileName varchar(255) = '[no change]',
-    @settingsFileName varchar(64) = '[no change]',
+    @settingsFileName varchar(255) = '[no change]',
     @organismName varchar(64) = '[no change]',
     @protCollNameList varchar(4000) = '[no change]',
     @protCollOptionsList varchar(256) = '[no change]',

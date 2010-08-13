@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeNotificationAnalysisJobRequestEvents]
+CREATE PROCEDURE dbo.MakeNotificationAnalysisJobRequestEvents
 /****************************************************
 **
 **  Desc: 

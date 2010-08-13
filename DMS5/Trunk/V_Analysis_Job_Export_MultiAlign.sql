@@ -13,7 +13,7 @@ SELECT DS.Dataset_ID AS DatasetID,
     AJ.AJ_resultsFolderName AS resultsFolder, 
     DS.Dataset_Num AS datasetName, AJ.AJ_jobID AS JobId, 
     DS.DS_LC_column_ID AS ColumnID, 
-    DS.Acq_Time_Start AS AcquisitionTime, 
+    ISNULL(DS.Acq_Time_Start, DS.DS_created) AS AcquisitionTime, 
     E.EX_Labelling AS Labelling, 
     InstName.IN_name AS InstrumentName, 
     AJ.AJ_analysisToolID AS ToolID, 
@@ -25,7 +25,9 @@ SELECT DS.Dataset_ID AS DatasetID,
     DFP.Archive_Folder_Path AS ArchPath, 
     DFP.Dataset_Folder_Path AS DatasetFullPath, 
     Org.OG_name AS Organism, 
-    C.Campaign_Num AS Campaign
+    C.Campaign_Num AS Campaign,
+    AJ.AJ_parmFileName AS ParameterFileName,
+    AJ.AJ_settingsFileName AS SettingsFileName
 FROM T_Dataset DS
      INNER JOIN T_Analysis_Job AJ
        ON DS.Dataset_ID = AJ.AJ_datasetID
@@ -43,7 +45,8 @@ FROM T_Dataset DS
        ON DS.Dataset_ID = DFP.Dataset_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
-WHERE (AJ.AJ_analysisToolID IN (2, 7, 10, 11, 12, 16, 18, 27))
+WHERE (AJ.AJ_analysisToolID IN (2, 7, 10, 11, 12, 16, 18, 27)) AND 
+      (AJ_StateID = 4)
 
 
 GO

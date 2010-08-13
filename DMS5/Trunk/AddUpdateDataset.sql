@@ -34,6 +34,8 @@ CREATE Procedure AddUpdateDataset
 **			01/14/2010 grk - assign storage path on creation of dataset
 **			02/28/2010 grk - added add-auto mode for requested run
 **			03/02/2010 grk - added status field to requested run
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
+**			07/27/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 (
@@ -71,71 +73,73 @@ As
 
 	set @message = ''
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+	if ISNULL(@internalStandards, '') = ''
+		set @internalStandards = 'none'
 
-	if LEN(IsNull(@secSep, '')) < 1
+
+	if IsNull(@secSep, '') = ''
 	begin
-		set @myError = 51017
 		set @msg = 'Separation type was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 17)
 	end
 	--
-	if LEN(IsNull(@LCColumnNum, '')) < 1
+	if IsNull(@LCColumnNum, '') = ''
 	begin
-		set @myError = 51016
 		set @msg = 'LC Column number was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 16)
 	end
 	--
-	if LEN(IsNull(@datasetNum, '')) < 1
+	if IsNull(@datasetNum, '') = ''
 	begin
-		set @myError = 51010
 		set @msg = 'Dataset number was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 10)
 	end
 	--
 	set @folderName = @datasetNum
 	--
-	if LEN(IsNull(@experimentNum, '')) < 1
+	if IsNull(@experimentNum, '') = ''
 	begin
-		set @myError = 51011
 		set @msg = 'Experiment number was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 11)
 	end
 	--
-	if LEN(IsNull(@folderName, '')) < 1
+	if IsNull(@folderName, '') = ''
 	begin
-		set @myError = 51012
 		set @msg = 'Folder name was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 12)
 	end
 	--
-	if LEN(IsNull(@operPRN, '')) < 1
+	if IsNull(@operPRN, '') = ''
 	begin
-		set @myError = 51013
 		set @msg = 'Operator payroll number/HID was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 13)
 	end
 	--
-	if LEN(IsNull(@instrumentName, '')) < 1
+	if IsNull(@instrumentName, '') = ''
 	begin
-		set @myError = 51014
 		set @msg = 'Instrument name was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 14)
 	end
 	--
-	if LEN(IsNull(@msType, '')) < 1
+	if IsNull(@msType, '') = ''
 	begin
-		set @myError = 51015
 		set @msg = 'Dataset type was blank'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 15)
 	end
 	--
-	if @myError <> 0
-		return @myError
-		
+	if IsNull(@LCCartName, '') = ''
+	begin
+		set @msg = 'LC Cart name was blank'
+		RAISERROR (@msg, 11, 15)
+	end
+
+
+
 	---------------------------------------------------
 	-- validate dataset name
 	---------------------------------------------------
@@ -149,15 +153,13 @@ As
 		Else
 			set @msg = 'Dataset name may not contain the character(s) "' + @badCh + '"'
 
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 1)
 	end
 
 	if (@datasetNum like '%raw') or (@datasetNum like '%wiff') 
 	begin
 		set @msg = 'Dataset name may not end in "raw" or "wiff"'
-		RAISERROR (@msg, 10, 1)
-		return 51002
+		RAISERROR (@msg, 11, 2)
 	end
 
 	---------------------------------------------------
@@ -177,8 +179,7 @@ As
 		if @ratingID = 0
 		begin
 			set @msg = 'Could not find entry in database for rating "' + @rating + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51018
+			RAISERROR (@msg, 11, 18)
 		end
 	end
 
@@ -212,8 +213,7 @@ As
 		if (@mode = 'update' or @mode = 'check_update')
 		begin
 			set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 4)
 		end
 	end
 	else
@@ -223,8 +223,7 @@ As
 		if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger')
 		begin
 			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 5)
 		end
 
 		-- do not allow a rating change from 'Unreviewed' to any other rating within this procedure
@@ -232,12 +231,9 @@ As
 		if @curDSRatingID = -10 And @rating <> 'Unreviewed'
 		begin
 			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms.pnl.gov/dms/dataset_disposition_list_report.asp" or SP UpdateDatasetDispositions)'
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 6)
 		end		
 	end
-
-	
 
 	---------------------------------------------------
 	-- Resolve ID for LC Column
@@ -255,14 +251,12 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying to look up column ID'
-		RAISERROR (@msg, 10, 1)
-		return 51093
+		RAISERROR (@msg, 11, 93)
 	end
 	if @columnID = -1
 	begin
 		set @msg = 'Could not resolve column number to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51094
+		RAISERROR (@msg, 11, 94)
 	end
 
 	---------------------------------------------------
@@ -281,21 +275,17 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying to look up separation type ID'
-		RAISERROR (@msg, 10, 1)
-		return 51098
+		RAISERROR (@msg, 11, 98)
 	end
 	if @sepID = 0
 	begin
 		set @msg = 'Could not resolve separation type to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51099
+		RAISERROR (@msg, 11, 99)
 	end
 
 	---------------------------------------------------
 	-- Resolve ID for @internalStandards
 	---------------------------------------------------
-	if @internalStandards = ''
-		set @internalStandards = 'none'
 
 	declare @intStdID int
 	set @intStdID = -1
@@ -309,14 +299,12 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying to look up internal standards ID'
-		RAISERROR (@msg, 10, 1)
-		return 51095
+		RAISERROR (@msg, 11, 95)
 	end
 	if @intStdID = -1
 	begin
 		set @msg = 'Could not resolve internal standards to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51096
+		RAISERROR (@msg, 11, 96)
 	end
 
 	---------------------------------------------------
@@ -328,8 +316,7 @@ As
 	if @experimentID = 0
 	begin
 		set @msg = 'Could not find entry in database for experiment "' + @experimentNum + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51012
+		RAISERROR (@msg, 11, 12)
 	end
 
 	---------------------------------------------------
@@ -341,8 +328,7 @@ As
 	if @datasetTypeID = 0
 	begin
 		set @msg = 'Could not find entry in database for dataset type'
-		RAISERROR (@msg, 10, 1)
-		return 51013
+		RAISERROR (@msg, 11, 13)
 	end
 
 	---------------------------------------------------
@@ -354,8 +340,7 @@ As
 	if @instrumentID = 0
 	begin
 		set @msg = 'Could not find entry in database for instrument "' + @instrumentName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51014
+		RAISERROR (@msg, 11, 14)
 	end
 
 	---------------------------------------------------
@@ -378,8 +363,7 @@ As
 			Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
 		
 		set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51014
+		RAISERROR (@msg, 11, 15)
 	end
 
 	---------------------------------------------------
@@ -389,8 +373,7 @@ As
 	if (@mode = 'update' or @mode = 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
 	begin
 		set @msg = 'Cannot change instrument if dataset not in "new" state'
-		RAISERROR (@msg, 10, 1)
-		return 51023
+		RAISERROR (@msg, 11, 23)
 	end
 	
 	---------------------------------------------------
@@ -401,9 +384,24 @@ As
 	execute @userID = GetUserID @operPRN
 	if @userID = 0
 	begin
-		set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51019
+		-- Could not find entry in database for PRN @operPRN
+		-- Try to auto-resolve the name
+
+		Declare @MatchCount int
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @operPRN, @MatchCount output, @NewPRN output, @userID output
+
+		If @MatchCount = 1
+		Begin
+			-- Single match found; update @operPRN
+			Set @operPRN = @NewPRN
+		End
+		Else
+		Begin
+			set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
+			RAISERROR (@msg, 11, 19)
+		End
 	end
 
 	---------------------------------------------------
@@ -424,8 +422,7 @@ As
 	IF @storagePathID = 2
 	begin
 		set @msg = 'Valid storage path could not be found'
-		RAISERROR (@msg, 10, 1)
-		return 51043
+		RAISERROR (@msg, 11, 43)
 	end
 
 	---------------------------------------------------
@@ -435,8 +432,7 @@ As
 	if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger') AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
 	begin
 		set @msg = 'Either a Request must be specified, or EMSL user parameters must be specified, but not both'
-		RAISERROR (@msg, 10, 1)
-		return 51043
+		RAISERROR (@msg, 11, 44)
 	end
 
 	---------------------------------------------------
@@ -467,8 +463,7 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Error trying to look up experiment for request'
-			RAISERROR (@message, 10, 1)
-			return 51086
+			RAISERROR (@message, 10, 86)
 		end
 	
 		-- validate that experiments match
@@ -476,8 +471,7 @@ As
 		if @experimentID <> @reqExperimentID and @requestID <> 0
 		begin
 			set @message = 'Experiment in dataset does not match with one in scheduled run'
-			RAISERROR (@message, 10, 1)
-			return 51072
+			RAISERROR (@message, 10, 72)
 		end
 
 
@@ -498,15 +492,13 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error trying to look up cart ID'
-			RAISERROR (@msg, 10, 1)
-			return 52133
+			RAISERROR (@msg, 11, 33)
 		end
 		else 
 		if @cartID = 0
 		begin
 			set @msg = 'Could not resolve cart name to ID'
-			RAISERROR (@msg, 10, 1)
-			return 52135
+			RAISERROR (@msg, 11, 35)
 		end
 
 
@@ -525,8 +517,7 @@ As
 							@msg output
 			if @myError <> 0
 			begin
-				RAISERROR (@msg, 10, 1)
-				return @myError
+				RAISERROR (@msg, 11, 80)
 			end
 
 			---------------------------------------------------
@@ -541,8 +532,7 @@ As
 							@msg output
 			if @myError <> 0
 			begin
-				RAISERROR (@msg, 10, 1)
-				return @myError
+				RAISERROR (@msg, 11, 81)
 			end
 		end -- </b1>
 		else
@@ -563,22 +553,18 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Error trying verify request ID'
-				RAISERROR (@msg, 10, 1)
-				return @myError
+				RAISERROR (@msg, 11, 51)
 			end
 			if @tmp = 0
 			begin
 				set @msg = 'Request ID not found'
-				RAISERROR (@msg, 10, 1)
-				return 52131
+				RAISERROR (@msg, 11, 52)
 			end
 
 		end -- </b2>
 
 		declare @DSCreatorPRN varchar(256)
 		set @DSCreatorPRN = suser_sname()
-
-		
 
 		declare @rslt int
 		declare @Run_Start varchar(10)
@@ -611,8 +597,7 @@ As
 		if @rslt > 0 
 		begin
 			set @msg = 'There was an error while creating the XML Trigger file: ' + @message
-			RAISERROR (@msg, 10, 1)
-			return 51055
+			RAISERROR (@msg, 11, 55)
 		end
 	end -- </AddTrigger>
 
@@ -675,8 +660,7 @@ As
 		if @myError <> 0 or @myRowCount <> 1
 		begin
 			set @msg = 'Insert operation failed: "' + @datasetNum + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 7)
 		end
 		set @datasetID = IDENT_CURRENT('T_Dataset')
 
@@ -703,9 +687,7 @@ As
 			If @eusUsageType = '' or @eusUsageType = 'no update'
 			begin
 				set @msg = 'You must provide a Usage Type when the Request ID is 0'
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51030
+				RAISERROR (@msg, 11, 1)
 			end
 
 
@@ -717,17 +699,13 @@ As
 				If @eusProposalID = '' or @eusProposalID = 'no update'
 				begin
 					set @msg = 'You must provide a Proposal ID when the Request ID is 0 and the Usage Type is "USER"'
-					RAISERROR (@msg, 10, 1)
-					rollback transaction @transName
-					return 51031
+					RAISERROR (@msg, 11, 31)
 				end
 
 				If @eusUsersList = '' or @eusUsersList = 'no update'
 				begin
 					set @msg = 'You must define the EMSL Users when the Request ID is 0 and the Usage Type is "USER"'
-					RAISERROR (@msg, 10, 1)
-					rollback transaction @transName
-					return 51032
+					RAISERROR (@msg, 11, 32)
 				end
 			End
 			Else
@@ -745,17 +723,13 @@ As
 				If @eusProposalID <> ''
 				begin
 					set @msg = 'Proposal ID must be blank when the Request ID is 0 and the Usage Type is not USER'
-					RAISERROR (@msg, 10, 1)
-					rollback transaction @transName
-					return 51033
+					RAISERROR (@msg, 11, 33)
 				end
 
 				If @eusUsersList <> ''
 				begin
 					set @msg = 'User List must be blank when the Request ID is 0 and the Usage Type is not USER'
-					RAISERROR (@msg, 10, 1)
-					rollback transaction @transName
-					return 51034
+					RAISERROR (@msg, 11, 34)
 				end
 			End
 
@@ -790,9 +764,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Create scheduled run failed: "' + @datasetNum + '" with Proposal ID "' + @eusProposalID + '", Usage Type "' + @eusUsageType + '", and Users List "' + @eusUsersList + '" ->' + @message
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51024
+				RAISERROR (@msg, 11, 24)
 			end
 		end -- </b3>
 
@@ -813,9 +785,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update cart name update failed: "' + @datasetNum + '"->' + @message
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51021
+				RAISERROR (@msg, 11, 21)
 			end
 		end
 		
@@ -835,9 +805,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Consume operation failed: "' + @datasetNum + '"->' + @message
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51016
+			RAISERROR (@msg, 11, 16)
 		end
 
 		commit transaction @transName
@@ -872,8 +840,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Update operation failed: "' + @datasetNum + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 4)
 		end
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -911,11 +878,18 @@ As
 
 			End
 		End
-		
-		
-	end -- </UpdateMode>
 
-	return 0
+	end -- </UpdateMode>
+	
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry] AS [dbo]

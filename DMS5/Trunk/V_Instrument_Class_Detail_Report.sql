@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Instrument_Class_Detail_Report]
 AS
-SELECT IN_class AS [Instrument Class], 
-    is_purgable AS [Is Purgable], 
-    raw_data_type AS [Raw Data Type], 
-    requires_preparation AS [Requires Preparation]
+SELECT IN_class AS [Instrument Class],
+       is_purgable AS [Is Purgable],
+       requires_preparation AS [Requires Preparation],
+       raw_data_type,
+       dbo.[XmlToHTML](Params) AS Params
 FROM dbo.T_Instrument_Class
 
 

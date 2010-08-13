@@ -18,7 +18,7 @@ CREATE Procedure UpdateEUSUsers
 **		Date: 2/26/2006
 **    
 *****************************************************/
-	@mode varchar(32), -- ''
+	@mode varchar(32), -- ''			-- Only allowed value is "site_status"
 	@newValue varchar(512),
 	@eusUserIDList varchar(2048)
 As

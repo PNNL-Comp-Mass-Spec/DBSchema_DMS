@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Set_Report]
 AS
 SELECT FST.Filter_Type_Name,
@@ -31,14 +32,15 @@ SELECT FST.Filter_Type_Name,
        PR.[18] AS Inspect_MQScore,
        PR.[19] AS Inspect_TotalPRMScore,
        PR.[20] AS Inspect_FScore,
-       PR.[21] AS Inspect_PValue
+       PR.[21] AS Inspect_PValue,
+       PR.[22] AS MSGF_SpecProb
 FROM ( SELECT FSC.Filter_Criteria_Group_ID,
               Criterion_id,
               Criterion_Comparison + CONVERT(varchar(18), Criterion_Value) AS Criterion
        FROM dbo.T_Filter_Set_Criteria FSC ) AS DataQ
      PIVOT ( MAX(Criterion)
              FOR Criterion_id
-             IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18], [19], [20], [21] ) 
+             IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18], [19], [20], [21], [22] ) 
      ) AS PR
      INNER JOIN dbo.T_Filter_Set_Criteria_Groups FSCG
        ON PR.Filter_Criteria_Group_ID = FSCG.Filter_Criteria_Group_ID
@@ -46,6 +48,7 @@ FROM ( SELECT FSC.Filter_Criteria_Group_ID,
        ON FSCG.Filter_Set_ID = FS.Filter_Set_ID
      INNER JOIN dbo.T_Filter_Set_Types FST
        ON FS.Filter_Type_ID = FST.Filter_Type_ID
+
 
 
 GO

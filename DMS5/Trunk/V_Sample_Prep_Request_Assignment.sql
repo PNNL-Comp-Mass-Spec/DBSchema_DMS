@@ -3,20 +3,47 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Sample_Prep_Request_Assignment
+
+
+CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
-SELECT     '' AS [Sel.], T_Sample_Prep_Request.ID, T_Sample_Prep_Request.Created, T_Sample_Prep_Request.Estimated_Completion AS [Est. Complete], 
-                      T_Sample_Prep_Request_State_Name.State_Name AS State, T_Sample_Prep_Request.Request_Name AS Name, 
-                      QP.U_Name + ' (' + T_Sample_Prep_Request.Requester_PRN + ')' AS Requester, T_Sample_Prep_Request.Priority, 
-                      T_Sample_Prep_Request.Requested_Personnel AS Requested, T_Sample_Prep_Request.Assigned_Personnel AS Assigned, 
-                      T_Sample_Prep_Request.Organism, T_Sample_Prep_Request.Biohazard_Level AS Biohazard, T_Sample_Prep_Request.Campaign, 
-                      T_Sample_Prep_Request.Number_of_Samples AS Samples, T_Sample_Prep_Request.Sample_Type AS [Sample Type], 
-                      T_Sample_Prep_Request.Prep_Method AS [Prep Method], T_Sample_Prep_Request.Replicates_of_Samples AS Replicates, 
-                      T_Sample_Prep_Request.Comment
-FROM         T_Sample_Prep_Request INNER JOIN
-                      T_Sample_Prep_Request_State_Name ON T_Sample_Prep_Request.State = T_Sample_Prep_Request_State_Name.State_ID LEFT OUTER JOIN
-                      T_Users QP ON T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
-WHERE     (T_Sample_Prep_Request.State > 0)
+SELECT '' AS [Sel.],
+       SPR.ID,
+       SPR.Created,
+       SPR.Estimated_Completion AS [Est. Complete],
+       SN.State_Name AS State,
+       SPR.Request_Name AS Name,
+       QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester,
+       SPR.Priority,
+       QT.[Days In Queue],
+       SPR.Requested_Personnel AS Requested,
+       SPR.Assigned_Personnel AS Assigned,
+       SPR.Organism,
+       SPR.Biohazard_Level AS Biohazard,
+       SPR.Campaign,
+       SPR.Number_of_Samples AS Samples,
+       SPR.Sample_Type AS [Sample Type],
+       SPR.Prep_Method AS [Prep Method],
+       SPR.Replicates_of_Samples AS Replicates,
+       SPR.[Comment],
+       Case 
+			When SPR.State In (4,5) Then 0			-- Request is complete or closed
+			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
+			When QT.[Days In Queue] <= 60 Then	60	-- Request is 30 to 60 days old
+			When QT.[Days In Queue] <= 90 Then	90	-- Request is 60 to 90 days old
+			Else 120								-- Request is over 90 days old
+		End
+		AS #DaysInQueue
+FROM T_Sample_Prep_Request SPR
+     INNER JOIN T_Sample_Prep_Request_State_Name SN
+       ON SPR.State = SN.State_ID
+     LEFT OUTER JOIN T_Users QP
+       ON SPR.Requester_PRN = QP.U_PRN
+     LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
+       ON SPR.ID = QT.Request_ID
+WHERE (SPR.State > 0)
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Assignment] TO [PNL\D3M578] AS [dbo]

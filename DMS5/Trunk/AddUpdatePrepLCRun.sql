@@ -16,6 +16,9 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 **
 **    Auth: grk
 **    Date: 08/04/2009
+**			04/24/2010 grk - replaced @project with @SamplePrepRequest
+**			04/26/2010 grk - @SamplePrepRequest can be multiple
+**			05/06/2010 grk - added storage path
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -24,13 +27,14 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 	@Tab varchar(128),
 	@Instrument varchar(128),
 	@Type varchar(64),
-	@LCColumn varchar(128),
+	@LCColumn varchar(128),	
+	@LCColumn2 varchar(128),
 	@Comment varchar(1024),
 	@GuardColumn varchar(12),
 	@OperatorPRN varchar(50),
 	@DigestionMethod varchar(128),
 	@SampleType varchar(64),
-	@Project varchar(64),
+	@SamplePrepRequest varchar(1024),
 	@NumberOfRuns varchar(12),
 	@InstrumentPressure varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
@@ -46,6 +50,8 @@ As
 	set @myRowCount = 0
 
 	set @message = ''
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -71,11 +77,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = 0
-		begin
-			set @message = 'No entry could be found in database for update'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
+			RAISERROR ('No entry could be found in database for update', 11, 7)
 	end
 
 	---------------------------------------------------
@@ -84,46 +86,46 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_Prep_LC_Run (
-		Tab,
-		Instrument,
-		Type,
-		LC_Column,
-		Comment,
-		Guard_Column,
-		OperatorPRN,
-		Digestion_Method,
-		Sample_Type,
-		Project,
-		Number_Of_Runs,
-		Instrument_Pressure
-	) VALUES (
-		@Tab,
-		@Instrument,
-		@Type,
-		@LCColumn,
-		@Comment,
-		@GuardColumn,
-		@OperatorPRN,
-		@DigestionMethod,
-		@SampleType,
-		@Project,
-		@NumberOfRuns,
-		@InstrumentPressure
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Insert operation failed'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+		---------------------------------------------------
+		--
+		INSERT INTO T_Prep_LC_Run (
+			Tab,
+			Instrument,
+			Type,
+			LC_Column,
+			LC_Column_2,
+			Comment,
+			Guard_Column,
+			OperatorPRN,
+			Digestion_Method,
+			Sample_Type,
+			SamplePrepRequest,
+			Number_Of_Runs,
+			Instrument_Pressure
+		) VALUES (
+			@Tab,
+			@Instrument,
+			@Type,
+			@LCColumn,
+			@LCColumn2,
+			@Comment,
+			@GuardColumn,
+			@OperatorPRN,
+			@DigestionMethod,
+			@SampleType,
+			@SamplePrepRequest,
+			@NumberOfRuns,
+			@InstrumentPressure
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Insert operation failed', 11, 8)
 
-	-- return ID of newly created entry
-	--
-	set @ID = IDENT_CURRENT('T_Prep_LC_Run')
+		-- return ID of newly created entry
+		--
+		set @ID = IDENT_CURRENT('T_Prep_LC_Run')
 
 	end -- add mode
 
@@ -141,12 +143,13 @@ As
 		Instrument = @Instrument,
 		Type = @Type,
 		LC_Column = @LCColumn,
+		LC_Column_2 = @LCColumn2,	
 		Comment = @Comment,
 		Guard_Column = @GuardColumn,
 		OperatorPRN = @OperatorPRN,
 		Digestion_Method = @DigestionMethod,
 		Sample_Type = @SampleType,
-		Project = @Project,
+		SamplePrepRequest = @SamplePrepRequest,
 		Number_Of_Runs = @NumberOfRuns,
 		Instrument_Pressure = @InstrumentPressure
 		WHERE (ID = @ID)
@@ -154,15 +157,19 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
+
 	end -- update mode
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
-
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS_SP_User] AS [dbo]
 GO

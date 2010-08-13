@@ -19,17 +19,18 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **        @RequestedBatchPriority, @ActualBathPriority,
 **        @RequestedCompletionDate, @JustificationHighPriority, @Comment
 **
-**    grk 11/04/2006 -- added @RequestedInstrument
-**    grk 12/03/2009 -- checking for presence of @JustificationHighPriority if priority is high
+**			11/04/2006 grk - added @RequestedInstrument
+**			12/03/2009 grk - checking for presence of @JustificationHighPriority if priority is high
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
+**			08/04/2010 grk - try-catch for error handling
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int output,
 	@Name varchar(50),
 	@Description varchar(256),
 	@RequestedRunList varchar(4000),
-	@OwnerPRN varchar(24),
+	@OwnerPRN varchar(64),
 	@RequestedBatchPriority varchar(24),
 	@RequestedCompletionDate varchar(10),
 	@JustificationHighPriority varchar(512),
@@ -37,6 +38,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 	@Comment varchar(512),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -48,6 +50,7 @@ As
 
 	set @message = ''
 
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -59,13 +62,9 @@ As
 	end
 	else if (SELECT ISDATE(@RequestedCompletionDate)) = 0
 	begin
-		set @myError = 51000
-		RAISERROR ('Requested completion date is not a valid date.', 10, 1)
+		RAISERROR ('Requested completion date is not a valid date.', 11, 1)
 	end
 
-	--
-	if @myError <> 0
-		return @myError
 
 	declare @tempRequestedCompletionDate smalldatetime
 	set @tempRequestedCompletionDate = cast(@RequestedCompletionDate AS smalldatetime)
@@ -84,16 +83,13 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to find instrument'
-		RAISERROR (@message, 10, 1)
-		return 51012
+		RAISERROR ('Error trying to find instrument', 11, 12)
 	end
 	--
 	if @inst = ''
 	begin
 		set @message = 'Could not find entry in database for instrument "' + @RequestedInstrument + '"'
-		RAISERROR (@message, 10, 1)
-		return 51014
+		RAISERROR (@message, 11, 14)
 	end
 
 	---------------------------------------------------
@@ -103,8 +99,7 @@ As
 	IF @RequestedBatchPriority = 'High' AND ISNULL(@JustificationHighPriority, '') = ''
 	BEGIN
 		set @message = 'Justification must be entered if high priority is being requested'
-		RAISERROR (@message, 10, 1)
-		return 51086
+		RAISERROR (@message, 11, 15)
 	END
 
 	-- future: this could get more complicated
@@ -127,15 +122,13 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Error trying to find existing entry'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 16)
 		end
 
 		if @tmp <> 0
 		begin
 			set @message = 'Cannot add: entry already exists in database'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 17)
 		end
 	end
 
@@ -154,22 +147,19 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Error trying to find existing entry'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 18)
 		end
 
 		if @tmp = 0
 		begin
 			set @message = 'Cannot update: entry does not exits in database'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 19)
 		end
 		
 		if @lock = 'yes'
 		begin
 			set @message = 'Cannot update: batch is locked'
-			RAISERROR (@message, 10, 1)
-			return 51009
+			RAISERROR (@message, 11, 20)
 		end
 	end
 
@@ -181,9 +171,24 @@ As
 	execute @userID = GetUserID @OwnerPRN
 	if @userID = 0
 	begin
-		set @message = 'Could not find entry in database for operator PRN "' + @OwnerPRN + '"'
-		RAISERROR (@message, 10, 1)
-		return 51019
+		-- Could not find entry in database for PRN @OwnerPRN
+		-- Try to auto-resolve the name
+
+		Declare @MatchCount int
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @OwnerPRN, @MatchCount output, @NewPRN output, @userID output
+
+		If @MatchCount = 1
+		Begin
+			-- Single match found; update @OwnerPRN
+			Set @OwnerPRN = @NewPRN
+		End
+		Else
+		Begin
+			set @message = 'Could not find entry in database for operator PRN "' + @OwnerPRN + '"'
+			RAISERROR (@message, 11, 21)
+		End
 	end
 	
 	---------------------------------------------------
@@ -199,8 +204,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Failed to create temporary table for requests'
-		RAISERROR (@message, 10, 1)
-		return 51219
+		RAISERROR (@message, 11, 22)
 	end
 
 	---------------------------------------------------
@@ -216,8 +220,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Failed to populate temporary table for requests'
-		RAISERROR (@message, 10, 1)
-		return 51219
+		RAISERROR (@message, 11, 23)
 	end
 
 	---------------------------------------------------
@@ -242,15 +245,13 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Failed trying to check existence of requests in list'
-		RAISERROR (@message, 10, 1)
-		return 51219
+		RAISERROR (@message, 11, 24)
 	end
 
 	if @count <> 0
 	begin
 		set @message = 'Requested run list contains requests that do not exist'
-		RAISERROR (@message, 10, 1)
-		return 51221
+		RAISERROR (@message, 11, 25)
 	end
 
 	
@@ -305,10 +306,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
+			RAISERROR (@message, 11, 26)
 		end
 	    
 		-- return ID of newly created entry
@@ -340,10 +339,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 27)
 		end
 	end -- update mode
   
@@ -364,10 +361,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @message = 'Failed trying to remove batch reference from existing requests'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 28)
 		end
 		  
 		-- add reference to this batch to the requests in the list
@@ -380,17 +375,22 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @message = 'Failed trying to add batch reference to requests'
-			RAISERROR (@message, 10, 1)
-			return 51004
+			RAISERROR (@message, 11, 29)
 		end
 	end
   
 	commit transaction @transName
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User] AS [dbo]

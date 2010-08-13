@@ -4,11 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_MTS_PM_Results_List_Report]
 AS
-SELECT DS.Dataset_Num AS Dataset,
-       AJ.AJ_jobID AS Job,
+SELECT PM.DMS_Job AS Job,
+       DS.Dataset_Num AS Dataset,
        PM.Tool_Name,
        PM.Job_Start AS Task_Start,
        PM.Results_URL,
@@ -24,10 +23,10 @@ SELECT DS.Dataset_Num AS Dataset,
 FROM T_Dataset DS
      INNER JOIN T_Analysis_Job AJ
        ON DS.Dataset_ID = AJ.AJ_datasetID
-     INNER JOIN T_MTS_Peak_Matching_Tasks_Cached PM
-       ON AJ.AJ_jobID = PM.DMS_Job
-     INNER JOIN dbo.T_Instrument_Name Inst
+     INNER JOIN T_Instrument_Name Inst
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
+     RIGHT OUTER JOIN T_MTS_Peak_Matching_Tasks_Cached PM
+       ON AJ.AJ_jobID = PM.DMS_Job
 
 
 GO

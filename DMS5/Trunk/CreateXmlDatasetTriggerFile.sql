@@ -17,9 +17,10 @@ CREATE Procedure [dbo].[CreateXmlDatasetTriggerFile]
 **
 **		Auth: jds
 **		Date: 10/03/2007
+**		04/26/2010 grk - widened @Dataset_Name to 128 characters
 **    
 *****************************************************/
-	@Dataset_Name		varchar(64),  -- @datasetNum
+	@Dataset_Name		varchar(128),  -- @datasetNum
 	@Experiment_Name	varchar(64),  -- @experimentNum
 	@Instrument_Name	varchar(64),  -- @instrumentName
 	@Separation_Type	varchar(64),  -- @secSep

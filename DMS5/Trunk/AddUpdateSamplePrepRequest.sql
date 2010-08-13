@@ -38,6 +38,8 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			12/02/2009 grk - don't allow change to "Prep in Progress" unless someone has been assigned
 **			03/11/2010- grk - added Facility field
 **			04/14/2010- grk - widened @CellCultureList field
+**			04/22/2010 grk - try-catch for error handling
+**			08/09/2010 grk - added handling for 'Closed (containers and material)'
 **    
 *****************************************************/
 (
@@ -91,9 +93,21 @@ As
 	set @myRowCount = 0
 
 	set @message = ''
+	
+	DECLARE @msg varchar(512) 
 
 	declare @currentStateID int
+	
+	DECLARE @retireMaterial INT
+	IF @State = 'Closed (containers and material)'
+	BEGIN
+		SET @retireMaterial = 1
+		SET @State = 'Closed'
+	END
+	ELSE 
+		SET @retireMaterial = 0
 
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -101,18 +115,10 @@ As
 
 	--
 	if LEN(@instrumentName) < 1
-	begin
-		set @myError = 51114
-		RAISERROR ('Instrument name was blank',
-			10, 1)
-	end
+		RAISERROR ('Instrument name was blank', 11, 114)
 	--
 	if LEN(@DatasetType) < 1
-	begin
-		set @myError = 51115
-		RAISERROR ('Dataset type was blank',
-			10, 1)
-	end
+		RAISERROR ('Dataset type was blank', 11, 115)
  
 	---------------------------------------------------
 	-- validate instrument name and dataset type
@@ -127,12 +133,9 @@ As
 								@instrumentName,
 								@instrumentID output,
 								@datasetTypeID output,
-								@message output 
+								@msg output 
 		if @myError <> 0
-		begin
-			RAISERROR (@message, 10, 1)
-			return @myError
-		end	
+			RAISERROR ('ValidateInstrumentAndDatasetType:%s', 11, 1, @msg)
 	end					
 							
 	---------------------------------------------------
@@ -140,11 +143,12 @@ As
 	---------------------------------------------------
 
 	declare @campaignID int
+	SET @campaignID = 0
+	--
 	execute @campaignID = GetCampaignID @Campaign
+	--
 	if @campaignID = 0
-	begin
-		set @message = 'Could not find entry in database for campaignNum "' + @Campaign + '"'
-	end
+		RAISERROR('Could not find entry in database for campaignNum "%s"', 11, 14, @Campaign)
 
 	---------------------------------------------------
 	-- Resolve cell cultures
@@ -159,11 +163,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @message = 'Could not create temporary table for cell culture list'
-		RAISERROR (@message, 10, 1)
-		return 51078
-	end
+		RAISERROR ('Could not create temporary table for cell culture list', 11, 78)
 
 	-- get names of cell cultures from list argument into table
 	--
@@ -173,11 +173,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @message = 'Could not populate temporary table for cell culture list'
-		RAISERROR (@message, 10, 1)
-		return 51079
-	end
+		RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
 
 	-- verify that cell cultures exist
 	--
@@ -193,18 +189,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @message = 'Was not able to check for cell cultures in database'
-		RAISERROR (@message, 10, 1)
-		return 51080
-	end
+		RAISERROR ('Was not able to check for cell cultures in database', 11, 80)
 	--
 	if @cnt <> 0 
-	begin
-		set @message = 'One or more cell cultures was not in database'
-		RAISERROR (@message, 10, 1)
-		return 51081	
-	end
+		RAISERROR ('One or more cell cultures was not in database', 11, 81)
 
 	---------------------------------------------------
 	-- Resolve organism ID
@@ -213,11 +201,7 @@ As
 	declare @organismID int
 	execute @organismID = GetOrganismID @Organism
 	if @organismID = 0
-	begin
-		set @message = 'Could not find entry in database for organismName "' + @Organism + '"'
-		RAISERROR (@message, 10, 1)
-		return 51038
-	end
+		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
 
 	---------------------------------------------------
 	-- convert estimated completion date
@@ -252,18 +236,10 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
-    begin
-      set @message = 'Error trying to resolving state name'
-      RAISERROR (@message, 10, 1)
-      return  @myError
-    end
+      RAISERROR ('Error trying to resolving state name', 11, 83)
     --
     if @StateID = 0
-    begin
-		set @message = 'No entry could be found in database for state'
-		RAISERROR (@message, 10, 1)
-		return  50223
-    end
+		RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
     
  	---------------------------------------------------
 	-- Resolve internal standard ID
@@ -277,11 +253,7 @@ As
 	WHERE (Name = @internalStandard)
 	--
 	if @internalStandardID = 0
-	begin
-		set @message = 'Could not find entry in database for predigestion internal standard "' + @internalStandard + '"'
-		RAISERROR (@message, 10, 1)
-		return 51009
-	end
+		RAISERROR ('Could not find entry in database for predigestion internal standard "%s"', 11, 9, @internalStandard)
 
 	---------------------------------------------------
 	-- Resolve postdigestion internal standard ID
@@ -295,11 +267,7 @@ As
 	WHERE (Name = @postdigestIntStd)
 	--
 	if @postdigestIntStdID = 0
-	begin
-		set @message = 'Could not find entry in database for postdigestion internal standard "' + @postdigestIntStdID + '"'
-		RAISERROR (@message, 10, 1)
-		return 51009
-	end
+		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 10, @postdigestIntStdID)
 
 	---------------------------------------------------
 	-- validate EUS type, proposal, and user list
@@ -310,12 +278,9 @@ As
 						@eusProposalID output,
 						@eusUsersList output,
 						@eusUsageTypeID output,
-						@message output
+						@msg output
 	if @myError <> 0
-	begin
-		RAISERROR (@message, 10, 1)
-		return @myError
-	end
+		RAISERROR ('ValidateEUSUsage:%s', 11, 1, @msg)
 
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -340,29 +305,17 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = 0
-		begin
-			set @message = 'No entry could be found in database for update'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
+			RAISERROR ('No entry could be found in database for update', 11, 7)
 
 		-- changes not allowed if in "closed" state
 		--
 		if @currentStateID = 5
-		begin
-			set @message = 'Changes to entry are not allowed if it is in the "Closed" state'
-			RAISERROR (@message, 10, 1)
-			return 51008
-		end
+			RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
 		-- don't allow change to "Prep in Progress" 
 		-- unless someone has been assigned @AssignedPersonnel @currentAssignedPersonnel
 		IF @State = 'Prep in Progress' AND ((@AssignedPersonnel = '') OR (@AssignedPersonnel = 'na'))
-		begin
-			set @message = 'State cannot be changed to "Prep in Progress" unless someone has been assigned'
-			RAISERROR (@message, 10, 1)
-			return 51084
-		end
+			RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
 	end
 
 	if @mode = 'add'
@@ -376,11 +329,7 @@ As
 		SELECT @myError = @@error
 		--
 		if @myError <> 0 OR @myRowCount> 0
-		begin
-			set @message = 'Cannot add: Request "' + @RequestName + '" already in database '
-			RAISERROR (@message, 10, 1)
-			return 51008
-		end
+			RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
 	end
 
 	---------------------------------------------------
@@ -466,12 +415,8 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @message = 'Insert operation failed:' + cast(@myError as varchar(12))
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
-	    
+			RAISERROR ('Insert operation failed:%d', 11, 7, @myError)
+
 		-- return ID of newly created entry
 		--
 		set @ID = IDENT_CURRENT('T_Sample_Prep_Request')
@@ -486,12 +431,21 @@ As
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
+	if @Mode = 'update' AND @retireMaterial = 1
+	BEGIN
+		EXEC @myError = DoSamplePrepMaterialOperation
+							@ID,
+							'retire_all',
+							@message output,
+							@callingUser
+		if @myError <> 0
+			RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
+	END 
 	--
 	if @Mode = 'update' 
 	begin
 		set @myError = 0
 		--
-
 		UPDATE T_Sample_Prep_Request 
 		SET 
 			Request_Name = @RequestName, 
@@ -534,11 +488,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%d"', 11, 4, @ID)
 
 		-- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
 		If Len(@callingUser) > 0
@@ -547,10 +497,14 @@ As
 
 	end -- update mode
 
-	---------------------------------------------------
-	-- Done
-	---------------------------------------------------
-Done:
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO

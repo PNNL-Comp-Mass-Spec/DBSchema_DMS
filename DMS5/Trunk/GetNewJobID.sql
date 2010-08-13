@@ -56,6 +56,8 @@ As
 	return @id
 
 GO
+GRANT EXECUTE ON [dbo].[GetNewJobID] TO [DMS2_SP_User] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetNewJobID] TO [DMSReader] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNewJobID] TO [PNL\D3M578] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddNewInstrument
 /****************************************************
 **
@@ -30,6 +29,7 @@ CREATE Procedure AddNewInstrument
 **		01/05/2009 grk -- added @archiveNetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/709)
 **		01/05/2010 grk -- added @allowedDatasetTypes (http://prismtrac.pnl.gov/trac/ticket/752)
 **		02/12/2010 mem -- Now calling UpdateInstrumentAllowedDatasetType for each dataset type in @allowedDatasetTypes
+**		05/25/2010 dac -- Updated archive paths for switch from nwfs to aurora
 **    
 *****************************************************/
 (
@@ -207,7 +207,7 @@ As
 	---------------------------------------------------
 	--
 	declare @archiveNetworkSharePath varchar(64)
-	set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'nwfs', 'n2.emsl.pnl.gov'), '/', '\')
+	set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'a2.emsl.pnl.gov'), '/', '\')
 	--
 	---------------------------------------------------
 	-- Resolve instrument ID

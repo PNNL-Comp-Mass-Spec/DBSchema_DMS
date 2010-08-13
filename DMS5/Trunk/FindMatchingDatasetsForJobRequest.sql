@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.FindMatchingDatasetsForJobRequest
+CREATE PROCEDURE FindMatchingDatasetsForJobRequest
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +20,7 @@ CREATE PROCEDURE dbo.FindMatchingDatasetsForJobRequest
 **			01/08/2008 grk - Initial release
 **			02/11/2009 mem - Updated to allow for OrgDBName to not be 'na' when using protein collection lists
 **			06/17/2009 mem - Updated to ignore OrganismName when using protein collection lists
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **    
 *****************************************************/
 (
@@ -42,7 +42,7 @@ AS
 		@datasetList varchar(8000),
 		@toolName varchar(64),
 		@parmFileName varchar(255),
-		@settingsFileName varchar(64),
+		@settingsFileName varchar(255),
 		@organismDBName varchar(64),
 		@organismName varchar(64),
 		@proteinCollectionList varchar(512),

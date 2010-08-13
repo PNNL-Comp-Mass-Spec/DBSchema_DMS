@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE EvaluatePredefinedAnalysisRules
+
+CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 /****************************************************
 ** 
 **	Desc: 
@@ -34,6 +35,8 @@ CREATE PROCEDURE EvaluatePredefinedAnalysisRules
 **			07/22/2009 mem - Now returning 0 if @jobsCreated = 0 and @myError = 0 (previously, we were returning 1, which a calling procedure could erroneously interpret as meaning an error had occurred)
 **			09/04/2009 mem - Added DatasetType filter
 **			12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
+**			07/12/2010 mem - Now calling ValidateProteinCollectionListForDatasets to validate the protein collection list (and possibly add mini proteome or enzyme-related protein collections)
+**						   - Expanded protein Collection fields and variables to varchar(4000)
 **
 *****************************************************/
 (
@@ -174,7 +177,7 @@ As
 		AD_settingsFileName varchar (255)  NULL ,
 		AD_organismName varchar (64)  NOT NULL ,
 		AD_organismDBName varchar (64)  NOT NULL ,
-		AD_proteinCollectionList varchar(512),
+		AD_proteinCollectionList varchar(4000),
 		AD_proteinOptionsList varchar(256), 
 		AD_priority int NOT NULL ,
 		AD_nextLevel int NULL ,
@@ -220,7 +223,7 @@ As
 			[Settings File] varchar(255) NULL,
 			Organism varchar(64) NULL, 
 			[Organism DB] varchar(64) NULL, 
-			[Prot. Coll.] varchar(512) NULL, 
+			[Prot. Coll.] varchar(4000) NULL, 
 			[Prot. Opts.] varchar(256) NULL,
 			Priority int NULL, 
 			[Processor Group] varchar(64) NULL
@@ -398,7 +401,7 @@ As
 		settingsFileName varchar(128),
 		organismDBName varchar(128),
 		organismName varchar(128),
-		proteinCollectionList varchar(512),
+		proteinCollectionList varchar(4000),
 		proteinOptionsList varchar(256), 
 		ownerPRN varchar(128),
 		comment varchar(128),
@@ -427,8 +430,10 @@ As
 	declare @parmFileName varchar(255)
 	declare @settingsFileName varchar(255)
 	declare @organismDBName varchar(64)
-	declare @proteinCollectionList varchar(512)
+	declare @proteinCollectionList varchar(4000)
 	declare @proteinOptionsList varchar(256)
+	
+	declare @proteinCollectionListValidated varchar(4000)
 
 	declare @analysisToolName varchar(64)
 	declare @organismName varchar(64)
@@ -593,13 +598,53 @@ As
 					Set @RuleEvalNotes = @RuleEvalNotes + ' due to ID ' + Convert(varchar(12), @SchedulingRulesID) + ' in T_Predefined_Analysis_Scheduling_Rules'
 				end -- </d>
 
+
+				---------------------------------------------------
+				-- Define the comment and job owner
+				---------------------------------------------------
+				--
+				set @comment = 'Auto predefined ' + convert(varchar(10), @paRuleID)
+				set @ownerPRN = 'H09090911' -- autouser
+
+				---------------------------------------------------
+				-- Possibly auto-add the Mini Proteome or Enzyme-related protein collections to @proteinCollectionList
+				---------------------------------------------------
+				--
+				Set @proteinCollectionListValidated = LTrim(RTrim(IsNull(@proteinCollectionList, '')))
+				If Len(@proteinCollectionListValidated) > 0 And dbo.ValidateNAParameter(@proteinCollectionListValidated, 1) <> 'na'
+				Begin
+					exec @result = ValidateProteinCollectionListForDatasets 
+										@datasetNum, 
+										@protCollNameList=@proteinCollectionListValidated output, 
+										@ShowMessages=@RaiseErrorMessages, 
+										@message=@message output
+
+					if @result <> 0
+					begin
+						set @message = 'Protein Collection list validation error: ' + @message
+						
+						If @RaiseErrorMessages <> 0
+						Begin
+							RAISERROR (@message, 10, 1)
+							return
+						End
+						Else
+						Begin
+							-- Error occurred; just use @proteinCollectionList as-is, but update the comment
+							Set @proteinCollectionListValidated = LTrim(RTrim(IsNull(@proteinCollectionList, '')))
+							set @comment = @comment + '; ' + @message
+						End
+					end
+					
+					set @message = ''
+				End
+
+				
 				---------------------------------------------------
 				-- insert job in job holding table
 				---------------------------------------------------
-				set @comment = 'Auto predefined ' + convert(varchar(10), @paRuleID)
-				set @ownerPRN = 'H09090911' -- autouser
 				--
-				-- FUTURE: evaluate job validity by calling MakeAnalysisJobX
+				-- Note that AddUpdateAnalysisJob will call ValidateAnalysisJobParameters to validate this data
 				--
 				set @jobsCreated = @jobsCreated + 1 
 				--
@@ -625,7 +670,7 @@ As
 					@settingsFileName,
 					@organismDBName,
 					@organismName,
-					@proteinCollectionList,
+					@proteinCollectionListValidated,
 					@proteinOptionsList, 
 					@ownerPRN,
 					@comment,
@@ -748,6 +793,7 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User] AS [dbo]

@@ -21,7 +21,7 @@ CREATE Procedure UpdateEUSProposals
 **		Date: 2/26/2006
 **    
 *****************************************************/
-	@mode varchar(32), -- ''
+	@mode varchar(32), -- ''		-- Can be "state" or "import"
 	@newValue varchar(512),
 	@eusProposalIDList varchar(2048)
 As

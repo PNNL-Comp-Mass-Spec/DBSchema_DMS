@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Dataset_Info](
 	[BPI_Median_MS] [real] NULL,
 	[BPI_Median_MSn] [real] NULL,
 	[Elution_Time_Max] [real] NULL,
-	[DSInfo_Job] [int] NULL,
+	[Scan_Types] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Affected] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Dataset_ScanInfo] PRIMARY KEY CLUSTERED 
 (

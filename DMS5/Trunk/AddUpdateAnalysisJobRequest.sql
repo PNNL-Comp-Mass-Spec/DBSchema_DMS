@@ -40,6 +40,9 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			09/22/2009 mem - Now setting state to "New (Review Required)" if @State = 'new' and @adminReviewReqd='Yes'
 **			10/02/2009 mem - Revert to only allowing updates if the state is "New" or "New (Review Required)"
 **			02/12/2010 mem - Now assuring that rating is not -5 (note: when converting a job request to jobs, you can manually add datasets with a rating of -5; procedure AddAnalysisJobGroup will allow them to be included)
+**			04/21/2010 grk - try-catch for error handling
+**			05/05/2010 mem - Now passing @requestorPRN to ValidateAnalysisJobParameters as input/output
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **    
 *****************************************************/
 (
@@ -47,7 +50,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @requestName varchar(64),
     @toolName varchar(64),
     @parmFileName varchar(255),
-    @settingsFileName varchar(64),
+    @settingsFileName varchar(255),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
     @organismName varchar(64),
@@ -68,6 +71,8 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Assure that the comment variable is not null
@@ -109,11 +114,7 @@ As
 		WHERE (AJR_requestName = @requestName)
 		--
 		if @hit <> 0
-		begin
-			set @msg = 'Cannot add: request with same name already in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Cannot add: request with same name already in database', 11, 4)
 	end
 
 	-- cannot update a non-existent entry
@@ -128,29 +129,17 @@ As
 		WHERE (AJR_requestID = @requestID)
 		--
 		if @hit = 0
-		begin
-			set @msg = 'Cannot update: entry is not in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Cannot update: entry is not in database', 11, 5)
 		--
 		if Not (@curState IN (1,5))
-		begin
-			set @msg = 'Cannot update: entry is not in "New" or New (Review Required) state'
-			RAISERROR (@msg, 10, 1)
-			return 51024
-		end
+			RAISERROR ('Cannot update: entry is not in "New" or New (Review Required) state', 11, 24)
 	end
 
 	---------------------------------------------------
 	-- dataset list shouldn't be empty
 	---------------------------------------------------
 	if @datasets = ''
-	begin
-		set @msg = 'Dataset list is empty'
-		RAISERROR (@msg, 10, 1)
-		return 51001
-	end
+		RAISERROR ('Dataset list is empty', 11, 1)
 
 	---------------------------------------------------
 	-- Create temporary table to hold list of datasets
@@ -169,11 +158,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Failed to create temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51010
-	end
+		RAISERROR ('Failed to create temporary table', 11, 10)
 
 	---------------------------------------------------
 	-- Populate table from dataset list  
@@ -189,17 +174,8 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error populating temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51008
-	end
-/*
-set @message = '|' + @datasets + '|'
-SELECT @myError = count(*) FROM MakeTableFromList(@datasets)
-set @message = @message + cast(@myError  as varchar(12)) + '|'
-return 1
-*/	
+		RAISERROR ('Error populating temporary table', 11, 8)
+
 	---------------------------------------------------
 	-- Validate @protColNameList
 	-- Note that ValidateProteinCollectionListForDatasets
@@ -255,11 +231,8 @@ return 1
 			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, Len(@DuplicateDatasetList)-1)
 		Else
 			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, 397) + '...'
-		
-		Set @msg = 'Duplicate dataset(s) found: ' + @DuplicateDatasetList
-		
-		RAISERROR (@msg, 10, 1)
-		return 53109
+				
+		RAISERROR ('Duplicate dataset(s) found: %s', 11, 9, @DuplicateDatasetList)
 	End
 	
 	---------------------------------------------------
@@ -280,7 +253,7 @@ return 1
 							@organismName,
 							@protCollNameList output,
 							@protCollOptionsList output,
-							@requestorPRN,
+							@requestorPRN output,
 							'', -- blank validation mode to suppress dataset state checking
 							@userID output,
 							@analysisToolID output, 
@@ -288,10 +261,7 @@ return 1
 							@msg output
 	--
 	if @result <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return 53108
-	end
+		RAISERROR (@msg, 11, 8)
 
 	---------------------------------------------------
 	-- Make sure none of the datasets has a rating of -5 (Not Released)
@@ -321,10 +291,7 @@ return 1
 		Else
 			Set @NotReleasedList = Left(@NotReleasedList, 397) + '...'
 			
-		Set @msg = 'Dataset(s) found with rating "Not Released": ' + @NotReleasedList
-		
-		RAISERROR (@msg, 10, 1)
-		return 53110		
+		RAISERROR ('Dataset(s) found with rating "Not Released": %s', 11, 110, @NotReleasedList)
 	End
 
 	---------------------------------------------------
@@ -362,11 +329,7 @@ return 1
 	WHERE     (StateName = @state)
 	
 	if @stateID = -1
-	begin
-		set @msg = 'Could not resolve state name to ID'
-		RAISERROR (@msg, 10, 1)
-		return 510321
-	end
+		RAISERROR ('Could not resolve state name to ID', 11, 221)
 
 	---------------------------------------------------
 	-- action for add mode
@@ -398,11 +361,8 @@ return 1
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Insert new job operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51009
-		end
+			RAISERROR ('Insert new job operation failed', 11, 9)
+		--
 		set @newRequestNum = IDENT_CURRENT('T_Analysis_Job_Request')
 
 		-- return job number of newly created job
@@ -440,13 +400,17 @@ return 1
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: "' + @requestID+ '"'
-			RAISERROR (@msg, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%d"', 11, 4, @requestID)
 	end -- update mode
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO

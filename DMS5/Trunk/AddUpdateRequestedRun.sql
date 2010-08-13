@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateRequestedRun]
+CREATE Procedure AddUpdateRequestedRun
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -44,6 +44,9 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			03/02/2010 grk - added status field to requested run
 **			03/10/2010 grk - fixed issue with status validation
 **			03/27/2010 grk - fixed problem creating new requests with "Completed" status.
+**			04/20/2010 grk - fixed problem with experiment lookup validation
+**			04/21/2010 grk - try-catch for error handling
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
 **
 *****************************************************/
 (
@@ -86,6 +89,8 @@ As
 	declare @defaultPriority int
 	set @defaultPriority = 0
 	
+	BEGIN TRY
+
 	---------------------------------------------------
 	--
 	---------------------------------------------------
@@ -104,46 +109,22 @@ As
 	---------------------------------------------------
 
 	if LEN(@reqName) < 1
-	begin
-		set @myError = 51110
-		RAISERROR ('Dataset number was blank',
-			10, 1)
-	end
+		RAISERROR ('Dataset number was blank', 11, 110)
 	--
 	if LEN(@experimentNum) < 1
-	begin
-		set @myError = 51111
-		RAISERROR ('Experiment number was blank',
-			10, 1)
-	end
+		RAISERROR ('Experiment number was blank', 11, 111)
 	--
 	if LEN(@operPRN) < 1
-	begin
-		set @myError = 51113
-		RAISERROR ('Operator payroll number/HID was blank',
-			10, 1)
-	end
+		RAISERROR ('Operator payroll number/HID was blank', 11, 113)
 	--
 	if LEN(@instrumentName) < 1
-	begin
-		set @myError = 51114
-		RAISERROR ('Instrument name was blank',
-			10, 1)
-	end
+		RAISERROR ('Instrument name was blank', 11, 114)
 	--
 	if LEN(@msType) < 1
-	begin
-		set @myError = 51115
-		RAISERROR ('Dataset type was blank',
-			10, 1)
-	end
+		RAISERROR ('Dataset type was blank', 11, 115)
 	--
 	if LEN(@workPackage) < 1
-	begin
-		set @myError = 51115
-		RAISERROR ('Work package was blank',
-			10, 1)
-	end
+		RAISERROR ('Work package was blank', 11, 116)
 	--
 	if @myError <> 0
 		return @myError
@@ -157,12 +138,9 @@ As
 	if @badCh <> ''
 	begin
 		If @badCh = '[space]'
-			set @msg = 'Requested run name may not contain spaces'
+			RAISERROR ('Requested run name may not contain spaces', 11, 1)
 		Else
-			set @msg = 'Requested run name may not contain the character(s) "' + @badCh + '"'
-
-		RAISERROR (@msg, 10, 1)
-		return 51001
+			RAISERROR ('Requested run name may not contain the character(s) "%s"', 11, 1, @badCh)
 	end
 		
 	---------------------------------------------------
@@ -186,11 +164,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error trying to find existing request: "' + @reqName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51007
-	end
+		RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
 	
 	-- need non-null request even if we are just checking
 	--
@@ -199,11 +173,7 @@ As
 	-- cannot create an entry that already exists
 	--
 	if @requestID <> 0 and (@mode = 'add' or @mode = 'check_add')
-	begin
-		set @msg = 'Cannot add: Requested Dataset "' + @reqName + '" already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
+		RAISERROR ('Cannot add: Requested Dataset "%s" already in database', 11, 4, @reqName)
 	
 	-- need non-null request even if we are just checking
 	--
@@ -212,11 +182,7 @@ As
 	-- cannot update a non-existent entry
 	--
 	if @requestID = 0 and (@mode = 'update' or @mode = 'check_update')
-	begin
-		set @msg = 'Cannot update: Requested Dataset "' + @reqName + '" is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
-	end
+		RAISERROR ('Cannot update: Requested Dataset "%s" is not in database', 11, 4, @reqName)
 	
 	---------------------------------------------------
 	--
@@ -226,47 +192,17 @@ As
 		SET @status = 'Active'
 	--
 	IF @Mode = 'add' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
-	BEGIN
-		set @msg = 'Status "' + @status + '" is not valid'
-		RAISERROR (@msg, 10, 1)
-		return 51037
-	END 
+		RAISERROR ('Status "%s" is not valid', 11, 37, @status)
 	--
 	IF @Mode = 'update' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
-	BEGIN
-		set @msg = 'Status "' + @status + '" is not valid'
-		RAISERROR (@msg, 10, 1)
-		return 51037
-	END 
+		RAISERROR ('Status "%s" is not valid', 11, 38, @status)
 	--
 	IF @Mode = 'update' AND (@status ='Completed' AND @oldStatus <> 'Completed' )
-	BEGIN
-		set @msg = 'Cannot set status of request to "Completed"'
-		RAISERROR (@msg, 10, 1)
-		return 51039
-	END
+		RAISERROR ('Cannot set status of request to "Completed"', 11, 39)
 	--
 	IF @Mode = 'update' AND (@oldStatus = 'Completed' AND @status <> 'Completed')
-	BEGIN
-		set @msg = 'Cannot change status of a request that has been consumed by a dataset'
-		RAISERROR (@msg, 10, 1)
-		return 51039
-	END 
-/*
-	---------------------------------------------------
-	-- get experiment ID from experiment number 
-	-- (and validate that it exists in database)
-	---------------------------------------------------
+		RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
 
-	declare @experimentID int
-	execute @experimentID = GetExperimentID @experimentNum
-	if @experimentID = 0
-	begin
-		RAISERROR ('Could not find entry in database for experimentNum "%s"',
-			10, 1, @experimentNum)
-		return 51117
-	end
-*/
 	---------------------------------------------------
 	-- get experiment ID from experiment number 
 	-- (and validate that it exists in database)
@@ -275,6 +211,7 @@ As
 	---------------------------------------------------
 
 	declare @experimentID int
+	SET @experimentID = 0
 
 	SELECT 
 		@experimentID = Exp_ID, 
@@ -286,17 +223,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		RAISERROR ('Error looking up experiment', 10, 1)
-		return 51117
-	end
+		RAISERROR ('Error looking up experiment', 11, 17)
 	--
 	if @experimentID = 0
-	begin
-		RAISERROR ('Could not find entry in database for experimentNum "%s"',
-			10, 1, @experimentNum)
-		return 51117
-	end
+		RAISERROR ('Could not find entry in database for experimentNum "%s"', 11, 18, @experimentNum)
 
 	---------------------------------------------------
 	-- verify user ID for operator PRN
@@ -306,10 +236,26 @@ As
 	execute @userID = GetUserID @operPRN
 	if @userID = 0
 	begin
-		set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51019
+		-- Could not find entry in database for PRN @operPRN
+		-- Try to auto-resolve the name
+
+		Declare @MatchCount int
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @operPRN, @MatchCount output, @NewPRN output, @userID output
+
+		If @MatchCount = 1
+		Begin
+			-- Single match found; update @operPRN
+			Set @operPRN = @NewPRN
+		End
+		Else
+		Begin
+			RAISERROR ('Could not find entry in database for operator PRN "%s"', 11, 19, @operPRN)
+			return 51019
+		End
 	end
+		
 
 	---------------------------------------------------
 	-- Lookup instrument run info fields 
@@ -322,13 +268,9 @@ As
 						@instrumentName output,
 						@msType output,
 						@instrumentSettings output,
-						@message output
+						@msg output
 	if @myError <> 0
-	begin
-		set @message = 'LookupInstrumentRunInfoFromExperimentSamplePrep: ' + @message
-		RAISERROR (@message, 10, 1)
-		return @myError
-	end	
+		RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
 	
 	---------------------------------------------------
 	-- validate instrument name and dataset type
@@ -341,13 +283,9 @@ As
 							@instrumentName,
 							@instrumentID output,
 							@datasetTypeID output,
-							@message output 
+							@msg output 
 	if @myError <> 0
-	begin
-		set @message = 'ValidateInstrumentAndDatasetType: ' + @message
-		RAISERROR (@message, 10, 1)
-		return @myError
-	end	
+		RAISERROR ('ValidateInstrumentAndDatasetType: %s', 11, 1, @msg)
 
 	---------------------------------------------------
 	-- Resolve ID for @secSep
@@ -363,17 +301,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error trying to look up separation type ID'
-		RAISERROR (@msg, 10, 1)
-		return 51098
-	end
+		RAISERROR ('Error trying to look up separation type ID', 11, 98)
+	--
 	if @sepID = 0
-	begin
-		set @msg = 'Could not resolve separation type to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51099
-	end
+		RAISERROR ('Could not resolve separation type to ID', 11, 99)
 
 	---------------------------------------------------
 	-- Resolve ID for MRM attachment
@@ -391,16 +322,13 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Error trying to look up attachement ID'
-			RAISERROR (@msg, 10, 1)
-			return 51073
-		end
+			RAISERROR ('Error trying to look up attachement ID', 11, 73)
 	end
 	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments
 	-- that have associated sample prep requests)
 	---------------------------------------------------
+	--
 	exec @myError = LookupEUSFromExperimentSamplePrep	
 						@experimentNum,
 						@eusUsageType output,
@@ -408,10 +336,7 @@ As
 						@eusUsersList output,
 						@msg output
 	if @myError <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return @myError
-	end
+		RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 	---------------------------------------------------
 	-- validate EUS type, proposal, and user list
@@ -424,11 +349,11 @@ As
 						@eusUsageTypeID output,
 						@msg output
 	if @myError <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return @myError
-	end
+		RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
+	---------------------------------------------------
+	--
+	---------------------------------------------------
 	declare @transName varchar(32)
 	set @transName = 'AddUpdateRequestedRun'
 
@@ -439,19 +364,15 @@ As
 	exec @myError = LookupOtherFromExperimentSamplePrep 
 						@experimentNum, 
 						@workPackage output, 
-						@message  output
+						@msg  output
 	if @myError <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return @myError
-	end
+		RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)	
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
-	
 		-- Start transaction
 		--
 		begin transaction @transName
@@ -504,15 +425,10 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Insert operation failed: "' + @reqName + '"'
-			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
-			return 51007
-		end
+			RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
 		
 		set @request = IDENT_CURRENT('T_Requested_Run')
-		
+
 		-- assign users to the request
 		--
 		exec @myError = AssignEUSUsersToRequestedRun
@@ -522,14 +438,9 @@ As
 								@msg output
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
-			return 51019
-		end
+			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
 
 		commit transaction @transName
-
 	end -- add mode
 
 	---------------------------------------------------
@@ -565,12 +476,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: "' + @reqName + '"'
-			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
-			return 51004
-		end
+			RAISERROR ('Update operation failed: "%s"', 11, 4, @reqName)
 
 		-- assign users to the request
 		--
@@ -581,17 +487,20 @@ As
 								@msg output
 		--
 		if @myError <> 0
-		begin
-			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
-			return 51019
-		end		
+			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
 
 		commit transaction @transName
 	end -- update mode
 
-	return 0
-
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]

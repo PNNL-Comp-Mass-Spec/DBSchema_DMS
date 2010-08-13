@@ -30,7 +30,7 @@ As
 	set @myRowCount = 0
   
 	---------------------------------------------------
-	-- window for analysis job activity
+	-- window for sample prep request activity
 	---------------------------------------------------
 	--
 	DECLARE @window DATETIME 

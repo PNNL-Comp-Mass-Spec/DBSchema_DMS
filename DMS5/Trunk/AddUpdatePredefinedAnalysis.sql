@@ -22,6 +22,7 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 **			09/16/2009 mem - Now checking dataset type against T_Instrument_Allowed_Dataset_Type (Ticket #748)
 **			10/05/2009 mem - Now validating the parameter file name
 **			12/18/2009 mem - Switched to use GetInstrumentDatasetTypeList() to get the allowed dataset types for the dataset and GetAnalysisToolAllowedDSTypeList() to get the allowed dataset types for the analysis tool
+**			05/06/2010 mem - Now calling AutoResolveNameToPRN to validate @creator
 **    
 *****************************************************/
 (
@@ -358,6 +359,38 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51018
 		End
+	End
+	
+	---------------------------------------------------
+	-- @creator should be a userPRN
+	-- Auto-capitalize it or auto-resolve it from a name to a PRN
+	---------------------------------------------------
+
+	Declare @userID int
+	
+	execute @userID = GetUserID @creator
+	if @userID = 0
+	begin
+		---------------------------------------------------
+		-- @creator did not resolve to a User_ID
+		-- In case a name was entered (instead of a PRN),
+		--  try to auto-resolve using the U_Name column in T_Users
+		---------------------------------------------------
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @creator, @MatchCount output, @NewPRN output, @userID output
+					
+		If @MatchCount = 1
+		Begin
+			-- Single match was found; update @creator
+			Set @creator = @NewPRN
+		End
+	end
+	Else
+	Begin
+		-- Make sure U_Prn is capitalized
+		SELECT @creator = U_PRN 
+		FROM T_Users WHERE ID = @userID 
 	End
 	
 	---------------------------------------------------

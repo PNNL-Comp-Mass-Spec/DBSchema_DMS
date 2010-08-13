@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Prep_Instruments](
 	[Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
+	[Capture_Method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Prep_Instruments] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

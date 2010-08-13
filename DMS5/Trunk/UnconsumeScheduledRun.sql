@@ -23,7 +23,7 @@ CREATE Procedure UnconsumeScheduledRun
 **
 **  If the given dataset is to be deleted, the @retainHistory flag 
 **  must be clear, otherwise a foreign key constraint will fail
-**  when the attemp to delete the dataset is made and the associated
+**  when the attempt to delete the dataset is made and the associated
 **  request is still hanging around.
 **
 **	Return values: 0: success, otherwise, error code
@@ -43,13 +43,16 @@ CREATE Procedure UnconsumeScheduledRun
 **		02/24/2010 grk - Added handling for requested run factors
 **		02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **	    03/02/2010 grk - added status field to requested run
+**		08/04/2010 mem - No longer updating the "date created" date for the recycled request
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128),
 	@wellplateNum varchar(50),
 	@wellNum varchar(50),
 	@retainHistory tinyint = 0,
 	@message varchar(255) output
+)
 As
 	set nocount on
 
@@ -90,10 +93,11 @@ As
 	-- Look for associated request for dataset
 	---------------------------------------------------	
 	declare @com varchar(1024)
-	set @com = ''
 	declare @requestID int
+	declare @requestOrigin char(4)
+
+	set @com = ''
 	set @requestID = 0
-	DECLARE @requestOrigin CHAR(4)
 	--
 	SELECT 
 		@requestID = ID,
@@ -106,7 +110,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Problem trying to find associated requested run history for dataset'
+		set @message = 'Problem trying to find associated requested run for dataset'
 		return 51006
 	end
 
@@ -124,7 +128,7 @@ As
 	--
 	declare @autoCreatedRequest int
 	set @autoCreatedRequest = 0
---	if @com LIKE '%Automatically created%'
+	
 	IF @requestOrigin = 'auto'
 		set @autoCreatedRequest = 1
 
@@ -152,7 +156,7 @@ As
 		--
 		if  @retainHistory > 0
 		BEGIN --<c>
-			set @notation = 'Automatically created by recycling request ' + cast(@requestID as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) 
+			set @notation = 'Automatically created by recycling request ' + cast(@requestID as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101)
 			--
 			EXEC @myError = CopyRequestedRun
 									@requestID,
@@ -169,14 +173,20 @@ As
 		END --<c>
 		--
 		---------------------------------------------------
-		-- always recycle original
+		-- always recycle the original request
 		---------------------------------------------------	
 		--
 	    -- create annotation to be appended to comment
 	    --
 		set @notation = ' (recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
 		if len(@com) + len(@notation) > 1024
+		begin
+			-- Dataset comment could become too long; do not append the additional note
 			set @notation = ''
+		end
+		
+		-- Reset the requested run to 'Active'
+		-- Do not update RDS_Created; we want to keep it as the original date for planning purposes
 		--
 		UPDATE
 			T_Requested_Run
@@ -185,8 +195,7 @@ As
 			RDS_Run_Start = NULL,
 			RDS_Run_Finish = NULL,
 			DatasetID = NULL,
-			RDS_comment = RDS_comment + @notation,
-			RDS_created = GETDATE()
+			RDS_comment = RDS_comment + @notation
 		WHERE 
 			ID = @requestID
 		--

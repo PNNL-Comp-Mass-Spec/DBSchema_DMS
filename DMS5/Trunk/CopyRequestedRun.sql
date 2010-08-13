@@ -10,9 +10,10 @@ CREATE PROCEDURE CopyRequestedRun
 **  Make copy of given requested run and associate
 **  it with given dataset
 **
-**	Auth: grk
-**	Date: 02/26/2010
-**        03/03/2010 grk - added status field
+**	Auth:	grk
+**	Date:	02/26/2010
+**			03/03/2010 grk - added status field
+**			08/04/2010 mem - Now using the Created date from the original request as the Created date for the new request
 **
 *****************************************************/
 	@requestID int,
@@ -46,7 +47,7 @@ As
 	--
 	-- make new request
 	--
-	INSERT  INTO T_Requested_Run
+	INSERT INTO T_Requested_Run
 	(
 		RDS_comment,
 		RDS_Name,
@@ -83,7 +84,7 @@ As
 		@notation,
 		RDS_Name,
 		RDS_Oper_PRN,
-		GETDATE(),
+		RDS_created,				-- Pass along the original request's "created" date into the new entry
 		RDS_instrument_name,
 		RDS_type_ID,
 		RDS_instrument_setting,

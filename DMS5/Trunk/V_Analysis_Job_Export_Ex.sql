@@ -3,6 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
+
 CREATE VIEW [dbo].[V_Analysis_Job_Export_Ex]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -31,6 +33,7 @@ SELECT AJ.AJ_jobID AS Job,
        AnalysisTool.AJT_resultType AS ResultType,
        Dataset_Int_Std.Name AS [Dataset Int Std],
        DS.DS_created,
+       DATEDIFF(second, DS.Acq_Time_Start, DS.Acq_Time_End) / 60.0 AS DS_Acq_Length,
        E.EX_enzyme_ID AS EnzymeID,
        E.EX_Labelling AS Labelling,
        PreDigest_Int_Std.Name AS [PreDigest Int Std],
@@ -61,6 +64,8 @@ FROM dbo.T_Analysis_Job AJ
        ON DS.Dataset_ID = DSArch.Dataset_ID
 WHERE (AJ.AJ_StateID = 4) AND
       (DS.DS_rating >= 1)
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Export_Ex] TO [PNL\D3M578] AS [dbo]

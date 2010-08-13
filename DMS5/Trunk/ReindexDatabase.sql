@@ -4,16 +4,26 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.ReindexDatabase
+
+CREATE PROCEDURE [dbo].[ReindexDatabase]
 /****************************************************
 **
 **	Desc: 
 **		Reindexes the key tables in the database
 **
+**		To view the tables with the largest indices, use:
+**
+**			SELECT Table_Name,
+**				   SUM(Space_Used_MB) AS Total_Space_Used
+**			FROM dbo.V_Table_Index_Sizes
+**			GROUP BY Table_Name
+**			ORDER BY Total_Space_Used DESC
+**
 **	Return values: 0:  success, otherwise, error code
 **
 **	Auth:	mem
 **	Date:	05/21/2008
+**			08/05/2010 mem - Added 6 new tables to reindex
 **    
 *****************************************************/
 (
@@ -49,16 +59,16 @@ As
 	DBCC DBREINDEX (T_Analysis_Job, '', 90)
 	Set @TableCount = @TableCount + 1
 	
-	DBCC DBREINDEX (T_Dataset, '', 90)
+	DBCC DBREINDEX (T_Analysis_Job_ID, '', 90)
 	Set @TableCount = @TableCount + 1
 	
+	DBCC DBREINDEX (T_Dataset, '', 90)
+	Set @TableCount = @TableCount + 1
+		
 	DBCC DBREINDEX (T_Dataset_Archive, '', 90)
 	Set @TableCount = @TableCount + 1
 	
-	DBCC DBREINDEX (T_Requested_Run_History, '', 90)
-	Set @TableCount = @TableCount + 1
-	
-	DBCC DBREINDEX (T_Requested_Run_History_EUS_Users, '', 90)
+	DBCC DBREINDEX (T_Dataset_ScanTypes, '', 90)
 	Set @TableCount = @TableCount + 1
 	
 	DBCC DBREINDEX (T_Experiments, '', 90)
@@ -156,7 +166,22 @@ As
 	
 	DBCC DBREINDEX (T_Organisms, '', 90)
 	Set @TableCount = @TableCount + 1
-			
+	
+	DBCC DBREINDEX (T_Acceptable_Param_Entries, '', 90)
+	Set @TableCount = @TableCount + 1
+	
+	DBCC DBREINDEX (T_Material_Log, '', 90)
+	Set @TableCount = @TableCount + 1
+	
+	DBCC DBREINDEX (T_MTS_PT_DB_Jobs_Cached, '', 90)
+	Set @TableCount = @TableCount + 1
+	
+	DBCC DBREINDEX (T_MTS_MT_DB_Jobs_Cached, '', 90)
+	Set @TableCount = @TableCount + 1
+	
+	DBCC DBREINDEX (T_MTS_Peak_Matching_Tasks_Cached, '', 90)
+	Set @TableCount = @TableCount + 1
+
 	-----------------------------------------------------------
 	-- Log the reindex
 	-----------------------------------------------------------
@@ -166,6 +191,7 @@ As
 
 Done:
 	Return @myError
+
 
 
 GO

@@ -5,19 +5,44 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW V_Sample_Prep_Request_Active_List_Report
 as
-SELECT     T_Sample_Prep_Request.ID, T_Sample_Prep_Request.Request_Name AS RequestName, T_Sample_Prep_Request.Created, 
-                      T_Sample_Prep_Request.Estimated_Completion AS [Est. Complete], T_Sample_Prep_Request.Priority, 
-                      T_Sample_Prep_Request_State_Name.State_Name AS State, T_Sample_Prep_Request.Reason, 
-                      T_Sample_Prep_Request.Number_of_Samples AS NumSamples, T_Sample_Prep_Request.Estimated_MS_runs AS [MS Runs TBG], 
-                      T_Sample_Prep_Request.Prep_Method AS PrepMethod, T_Sample_Prep_Request.Requested_Personnel AS RequestedPersonnel, 
-                      T_Sample_Prep_Request.Assigned_Personnel AS AssignedPersonnel, QP.U_Name + ' (' + T_Sample_Prep_Request.Requester_PRN + ')' AS Requester,
-                       T_Sample_Prep_Request.Organism, T_Sample_Prep_Request.Biohazard_Level AS BiohazardLevel, T_Sample_Prep_Request.Campaign, 
-                      T_Sample_Prep_Request.Comment, T_Sample_Prep_Request.Work_Package_Number AS [Work Package], 
-                      T_Sample_Prep_Request.Instrument_Name AS [Inst. Name], T_Sample_Prep_Request.Instrument_Analysis_Specifications AS [Inst. Analysis]
-FROM         T_Sample_Prep_Request INNER JOIN
-                      T_Sample_Prep_Request_State_Name ON T_Sample_Prep_Request.State = T_Sample_Prep_Request_State_Name.State_ID LEFT OUTER JOIN
-                      T_Users AS QP ON T_Sample_Prep_Request.Requester_PRN = QP.U_PRN
-WHERE     (NOT (T_Sample_Prep_Request_State_Name.State_ID IN (0, 4, 5)))
+SELECT SPR.ID,
+       SPR.Request_Name AS RequestName,
+       SPR.Created,
+       SPR.Estimated_Completion AS [Est. Complete],
+       SPR.Priority,
+       SN.State_Name AS [State],
+       SPR.Reason,
+       SPR.Number_of_Samples AS NumSamples,
+       SPR.Estimated_MS_runs AS [MS Runs TBG],
+       QT.[Days In Queue],
+       SPR.Prep_Method AS PrepMethod,
+       SPR.Requested_Personnel AS RequestedPersonnel,
+       SPR.Assigned_Personnel AS AssignedPersonnel,
+       QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester,
+       SPR.Organism,
+       SPR.Biohazard_Level AS BiohazardLevel,
+       SPR.Campaign,
+       SPR.[Comment],
+       SPR.Work_Package_Number AS [Work Package],
+       SPR.Instrument_Name AS [Inst. Name],
+       SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
+       Case 
+			When SPR.State In (4,5) Then 0			-- Request is complete or closed
+			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
+			When QT.[Days In Queue] <= 60 Then	60	-- Request is 30 to 60 days old
+			When QT.[Days In Queue] <= 90 Then	90	-- Request is 60 to 90 days old
+			Else 120								-- Request is over 90 days old
+		End
+		AS #DaysInQueue
+FROM T_Sample_Prep_Request SPR
+     INNER JOIN T_Sample_Prep_Request_State_Name SN
+       ON SPR.State = SN.State_ID
+     LEFT OUTER JOIN T_Users AS QP
+       ON SPR.Requester_PRN = QP.U_PRN
+     LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
+       ON SPR.ID = QT.Request_ID
+WHERE (NOT (SN.State_ID IN (0, 4, 5)))
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [PNL\D3M578] AS [dbo]
 GO

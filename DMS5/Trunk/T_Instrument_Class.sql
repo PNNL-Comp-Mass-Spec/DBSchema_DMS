@@ -8,7 +8,8 @@ CREATE TABLE [dbo].[T_Instrument_Class](
 	[is_purgable] [tinyint] NOT NULL,
 	[raw_data_type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[requires_preparation] [tinyint] NOT NULL,
-	[Allowed_Dataset_Types] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[x_Allowed_Dataset_Types] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Params] [xml] NULL,
  CONSTRAINT [PK_T_Instrument_Class] PRIMARY KEY CLUSTERED 
 (
 	[IN_class] ASC

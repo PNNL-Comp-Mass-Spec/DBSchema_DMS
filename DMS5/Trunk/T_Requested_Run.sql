@@ -35,10 +35,12 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[DatasetID] [int] NULL,
 	[RDS_Origin] [char](4) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[RDS_NameCode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Entered] [datetime] NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -47,7 +49,25 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID] ON [dbo].[T_Requested_Run] 
 (
 	[RDS_BatchID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Requested_Run_Dataset_ID_Include_Created_ID_Batch] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Dataset_ID_Include_Created_ID_Batch] ON [dbo].[T_Requested_Run] 
+(
+	[DatasetID] ASC
+)
+INCLUDE ( [RDS_created],
+[ID],
+[RDS_BatchID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Requested_Run_DatasetID_Status] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_DatasetID_Status] ON [dbo].[T_Requested_Run] 
+(
+	[DatasetID] ASC,
+	[RDS_Status] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Requested_Run_RDS_Block_include_ID] ******/
@@ -55,7 +75,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Block_include_ID] ON [dbo].[T_
 (
 	[RDS_Block] ASC
 )
-INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Requested_Run_RDS_NameCode] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_NameCode] ON [dbo].[T_Requested_Run] 
+(
+	[RDS_NameCode] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Requested_Run_RDS_Run_Order_include_ID] ******/
@@ -63,7 +90,54 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Run_Order_include_ID] ON [dbo]
 (
 	[RDS_Run_Order] ASC
 )
-INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+/****** Object:  Trigger [dbo].[trig_u_Requested_Run] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
+After Insert, Update
+/****************************************************
+**
+**	Desc: 
+**		Updates column RDS_NameCode for new or updated requested run(s)
+**
+**	Auth:	mem
+**	Date:	08/05/2010 mem - Initial version
+**			08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(RDS_Name) OR
+	   Update(RDS_Created) OR
+	   Update(RDS_Oper_PRN) OR
+	   Update(RDS_BatchID) OR
+	   Update(RDS_NameCode) OR
+	   Update(RDS_Type_ID) OR
+	   Update(RDS_Sec_Sep)
+	Begin
+		UPDATE T_Requested_Run
+		SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
+														 RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
+														 RR.RDS_type_ID, RR.RDS_Sec_Sep)
+		FROM T_Requested_Run RR
+			 INNER JOIN inserted
+			   ON RR.ID = inserted.ID
+			 LEFT OUTER JOIN T_Requested_Run_Batches RRB
+			   ON RRB.ID = RR.RDS_BatchID
+			 INNER JOIN T_Users U
+			   ON RRB.Owner = U.ID
+	End
+
+
 GO
 GRANT DELETE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
 GO
@@ -128,4 +202,6 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none') FOR [RDS_Sec_Sep]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Status]  DEFAULT ('Active') FOR [RDS_Status]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

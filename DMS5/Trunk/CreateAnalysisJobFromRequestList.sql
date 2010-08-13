@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.CreateAnalysisJobFromRequestList
 **	Date:	09/17/2007 grk - Initial version (Ticket #534)
 **			09/20/2007 mem - Now checks for existing jobs if @mode <> 'add'
 **			02/27/2009 mem - Expanded @comment to varchar(512)
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **
 *****************************************************/
 (
@@ -38,7 +39,7 @@ As
 		@requestID int,
 		@toolName varchar(64),
 		@parmFileName varchar(255),
-		@settingsFileName varchar(64),
+		@settingsFileName varchar(255),
 		@organismDBName varchar(64),
 		@organismName varchar(64),
 		@datasetList varchar(6000),

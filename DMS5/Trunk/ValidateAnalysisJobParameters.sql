@@ -35,17 +35,19 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
 **			12/21/2009 mem - Now validating that the parameter file tool and the settings file tool match the tool defined by @toolName
 **			02/11/2010 mem - Now assuring dataset rating is not -1 (or -2)
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN contains a person's real name rather than their username
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **
 *****************************************************/
 (
 	@toolName varchar(64),
-    @parmFileName varchar(255) output,
-    @settingsFileName varchar(64) output,
-    @organismDBName varchar(64) output,
-    @organismName varchar(64),
+	@parmFileName varchar(255) output,
+	@settingsFileName varchar(255) output,
+	@organismDBName varchar(64) output,
+	@organismName varchar(64),
 	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
-    @ownerPRN varchar(32),
+	@ownerPRN varchar(64) output,
 	@mode varchar(12), 
 	@userID int output,
 	@analysisToolID int output, 
@@ -192,8 +194,26 @@ As
 	execute @userID = GetUserID @ownerPRN
 	if @userID = 0
 	begin
-		set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
-		return 51019
+		---------------------------------------------------
+		-- @ownerPRN did not resolve to a User_ID
+		-- In case a name was entered (instead of a PRN),
+		--  try to auto-resolve using the U_Name column in T_Users
+		---------------------------------------------------
+		Declare @MatchCount int
+		Declare @NewPRN varchar(64)
+
+		exec AutoResolveNameToPRN @ownerPRN, @MatchCount output, @NewPRN output, @userID output
+					
+		If @MatchCount = 1
+		Begin
+			-- Single match was found; update @ownerPRN
+			Set @ownerPRN = @NewPRN
+		End
+		Else
+		Begin
+			set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
+			return 51019
+		End
 	end
 
 	---------------------------------------------------

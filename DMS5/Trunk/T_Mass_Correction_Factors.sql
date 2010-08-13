@@ -95,6 +95,14 @@ AS
 
 
 GO
+GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]

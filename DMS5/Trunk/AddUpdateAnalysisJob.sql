@@ -43,6 +43,8 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			02/27/2009 mem - Expanded @comment to varchar(512)
 **			04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **			08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
+**			05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **    
 *****************************************************/
 (
@@ -50,12 +52,12 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
     @priority int = 2,
 	@toolName varchar(64),
     @parmFileName varchar(255),
-    @settingsFileName varchar(64),
+    @settingsFileName varchar(255),
     @organismName varchar(64),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
 	@organismDBName varchar(64),
-    @ownerPRN varchar(32),
+    @ownerPRN varchar(64),
     @comment varchar(512) = null,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
@@ -258,7 +260,7 @@ As
 							@organismName,
 							@protCollNameList output,
 							@protCollOptionsList output,
-							@ownerPRN,
+							@ownerPRN output,
 							@mode, 
 							@userID output,
 							@analysisToolID output, 

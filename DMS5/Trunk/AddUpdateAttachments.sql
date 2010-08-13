@@ -14,6 +14,7 @@ CREATE PROCEDURE AddUpdateAttachments
 **
 **    Auth: grk
 **    Date: 03/24/2009
+**    Date: 07/22/2010 grk -- allowed update mode
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -43,7 +44,7 @@ As
 --set @myError = 7
 --set @message = convert(varchar(128), @Contents);
 --set @message = @FileName;
-set @mode = 'add'
+--set @mode = 'add'
   ---------------------------------------------------
   -- Validate input fields
   ---------------------------------------------------
@@ -149,7 +150,6 @@ set @mode = 'add'
   end -- update mode
 
   return @myError
-
 
 
 GO

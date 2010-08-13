@@ -7,6 +7,13 @@ GO
 CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 /****************************************************
 ** 
+**	############################################################################
+**
+**  ### NOTE: This procedure has been superseded by UpdateDatasetFileInfoXML ###
+**
+**  ############################################################################
+**
+**
 **	Desc: Loads the Dataset info from a file (using bulk load)
 **		  and updates T_Dataset with the information
 **

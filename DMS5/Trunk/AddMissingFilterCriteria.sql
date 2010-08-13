@@ -14,6 +14,7 @@ CREATE Procedure dbo.AddMissingFilterCriteria
 **	Date:	02/01/2006
 **			10/30/2008 mem - Added Inspect MQScore, Inspect TotalPRMScore, and Inspect FScore
 **			07/21/2009 mem - Added Inspect PValue
+**			07/27/2010 mem - Added MSGF_SpecProb
 **    
 *****************************************************/
 (
@@ -160,6 +161,13 @@ AS
 						If @CriterionID = 21
 						Begin
 							-- Inspect PValue
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
+
+						If @CriterionID = 22
+						Begin
+							-- MSGF_SpecProb
 							Set @CriterionComparison = '<='	
 							Set @CriterionValue = 1
 						End

@@ -20,8 +20,52 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
+
+GO
+/****** Object:  Trigger [dbo].[trig_u_Requested_Run_Batches] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
+After Update
+/****************************************************
+**
+**	Desc: 
+**		Updates column RDS_NameCode for requested runs
+**		associated with the updated batches
+**
+**	Auth:	mem
+**	Date:	08/05/2010 mem - Initial version
+**			08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update (Batch) OR
+	   Update (Created) OR
+	   Update (Owner)
+	Begin
+		UPDATE T_Requested_Run
+		SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
+														 RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
+														 RR.RDS_type_ID, RR.RDS_Sec_Sep)
+		FROM T_Requested_Run RR
+			 INNER JOIN inserted
+			   ON RR.RDS_BatchID = inserted.ID
+			 INNER JOIN T_Requested_Run_Batches RRB
+			   ON RRB.ID = RR.RDS_BatchID
+			 INNER JOIN T_Users U
+			   ON RRB.Owner = U.ID
+	End
+
 
 GO
 GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]

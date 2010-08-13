@@ -16,7 +16,18 @@ CREATE TABLE [dbo].[T_Acceptable_Param_Entries](
 	[Last_Applicable_Version] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Param_Entry_Type_ID] [int] NULL,
 	[Picker_Items_List] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Output_Order] [int] NULL
+	[Output_Order] [int] NULL,
+ CONSTRAINT [PK_T_Acceptable_Param_Entries] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+
+/****** Object:  Index [IX_T_Acceptable_Param_Entries_EntryTypeID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Acceptable_Param_Entries_EntryTypeID] ON [dbo].[T_Acceptable_Param_Entries] 
+(
+	[Param_Entry_Type_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO

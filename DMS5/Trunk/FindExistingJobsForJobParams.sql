@@ -26,13 +26,14 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 **			09/18/2009 mem - Switched to using dbo.MakeTableFromList to populate #XT
 **						   - Now checking for invalid dataset names
 **			09/18/2009 grk - Cleaned up unused parameters
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **    
 *****************************************************/
 (
 	@datasetList varchar(6000),
 	@toolName varchar(64),
 	@parmFileName varchar(255),
-	@settingsFileName varchar(64),
+	@settingsFileName varchar(255),
 	@organismDBName varchar(64),
 	@organismName varchar(64),
 	@protCollNameList varchar(512),

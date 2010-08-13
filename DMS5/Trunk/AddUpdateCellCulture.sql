@@ -19,6 +19,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			01/12/2007 grk - added verification mode
 **			03/11/2008 grk - Added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN and @piPRN contain a person's real name rather than their username
 **    
 *****************************************************/
 (
@@ -233,24 +234,51 @@ As
 	-- and get its id number
 	--
 	declare @userID int
-/*
+
+	Declare @MatchCount int
+	Declare @NewPRN varchar(64)
+
 	execute @userID = GetUserID @ownerPRN
 	if @userID = 0
 	begin
-		set @msg = 'Could not find entry in database for program mgr. PRN "' + @ownerPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51005
+		-- Could not find entry in database for PRN @ownerPRN
+		-- Try to auto-resolve the name
+		
+		exec AutoResolveNameToPRN @ownerPRN, @MatchCount output, @NewPRN output, @userID output
+
+		If @MatchCount = 1
+		Begin
+			-- Single match found; update @ownerPRN
+			Set @ownerPRN = @NewPRN
+		End
+		
 	end
-*/
-	-- verify that principle investigator PRN  is valid 
+
+	-- verify that principle investigator PRN is valid 
 	-- and get its id number
 	--
 	execute @userID = GetUserID @piPRN
 	if @userID = 0
 	begin
-		set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51006
+		---------------------------------------------------
+		-- @piPRN did not resolve to a User_ID
+		-- In case a name was entered (instead of a PRN),
+		--  try to auto-resolve using the U_Name column in T_Users
+		---------------------------------------------------
+
+		exec AutoResolveNameToPRN @piPRN, @MatchCount output, @NewPRN output, @userID output
+					
+		If @MatchCount = 1
+		Begin
+			-- Single match was found; update @piPRN
+			Set @piPRN = @NewPRN
+		End
+		Else
+		Begin
+			set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
+			RAISERROR (@msg, 10, 1)
+			return 51006
+		End
 	end
 
 	---------------------------------------------------

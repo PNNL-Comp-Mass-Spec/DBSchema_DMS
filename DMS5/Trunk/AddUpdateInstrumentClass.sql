@@ -22,6 +22,7 @@ CREATE Procedure AddUpdateInstrumentClass
 **	Date:	07/06/2006
 **			07/25/2007 mem - Added parameter @allowedDatasetTypes
 **			09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
+**			06/21/2010 mem - Added parameter @Params
 **    
 *****************************************************/
 (
@@ -29,6 +30,7 @@ CREATE Procedure AddUpdateInstrumentClass
 	@isPurgable varchar(1), 
 	@rawDataType varchar(32), 
 	@requiresPreparation varchar(1), 
+	@Params text,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -41,9 +43,13 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 	
+	declare @msg varchar(256)
+
+	declare @xmlParams xml
+
+	set @xmlParams = @Params
 	set @message = ''
 	
-	declare @msg varchar(256)
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -119,13 +125,13 @@ As
 			is_purgable,
 			raw_data_type,
 			requires_preparation,
-			Allowed_Dataset_Types
+			Params
 		) VALUES (
 			@InstrumentClass,
 			@isPurgable,
 			@rawDataType,
 			@requiresPreparation,
-			''
+			@xmlParams
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -152,7 +158,8 @@ As
 		SET 
 			is_purgable = @isPurgable, 
 			raw_data_type = @rawDataType, 
-			requires_preparation = @requiresPreparation
+			requires_preparation = @requiresPreparation,
+			Params = @xmlParams
 		WHERE (IN_class = @InstrumentClass)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

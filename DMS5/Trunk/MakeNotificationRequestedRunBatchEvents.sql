@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeNotificationRequestedRunBatchEvents]
+CREATE PROCEDURE dbo.MakeNotificationRequestedRunBatchEvents
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Bogus
@@ -14,8 +14,8 @@ CREATE PROCEDURE [dbo].[MakeNotificationRequestedRunBatchEvents]
 **
 **    Auth: grk
 **    Date: 03/26/2010
-**    03/30/2010 grk - added intermediate table
-**    04/01/2010 grk - added Latest_Suspect_Dataset
+**			 03/30/2010 grk - added intermediate table
+**			04/01/2010 grk - added Latest_Suspect_Dataset
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -30,7 +30,7 @@ As
 	set @myRowCount = 0
   
 	---------------------------------------------------
-	-- window for dataset activity
+	-- window for requested run activity
 	---------------------------------------------------
 	--
 	DECLARE @window DATETIME 

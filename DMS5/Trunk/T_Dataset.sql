@@ -257,7 +257,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
+
+CREATE Trigger trig_u_Dataset on T_Dataset
 For Update
 /****************************************************
 **
@@ -269,6 +270,7 @@ For Update
 **			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
 **			11/01/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**			07/19/2010 mem - Now updating T_Entity_Rename_Log if the dataset is renamed
 **    
 *****************************************************/
 AS
@@ -295,6 +297,14 @@ AS
 		SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
 		WHERE inserted.DS_Rating <> deleted.DS_Rating
+		ORDER BY inserted.Dataset_ID
+	End
+
+	If Update(Dataset_Num)
+	Begin
+		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
+		SELECT 4, inserted.Dataset_ID, deleted.Dataset_Num, inserted.Dataset_Num, GETDATE()
+		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
 		ORDER BY inserted.Dataset_ID
 	End
 

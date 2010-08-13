@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddAnalysisJobGroup
+CREATE Procedure AddAnalysisJobGroup
 /****************************************************
 **
 **	Desc: Adds new analysis jobs for list of datasets
@@ -38,6 +38,9 @@ CREATE Procedure dbo.AddAnalysisJobGroup
 **			09/19/2009 grk - Improved return message
 **			09/23/2009 mem - Updated to handle requests with state "New (Review Required)"
 **			12/21/2009 mem - Now updating field AJR_jobCount in T_Analysis_Job_Request when @requestID is > 1
+**			04/22/2010 grk - try-catch for error handling
+**			05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
+**			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **
 *****************************************************/
 (
@@ -45,7 +48,7 @@ CREATE Procedure dbo.AddAnalysisJobGroup
     @priority int = 2,
 	@toolName varchar(64),
     @parmFileName varchar(255),
-    @settingsFileName varchar(64),
+    @settingsFileName varchar(255),
     @organismDBName varchar(64),
     @organismName varchar(64),
 	@protCollNameList varchar(4000),
@@ -83,15 +86,13 @@ As
 	DECLARE @jobsCreated INT
 	SET @jobsCreated = 0
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- list shouldn't be empty
 	---------------------------------------------------
 	if @datasetList = ''
-	begin
-		set @msg = 'Dataset list is empty'
-		RAISERROR (@msg, 10, 1)
-		return 51001
-	end
+		RAISERROR ('Dataset list is empty', 11, 1)
 
 	---------------------------------------------------
 	-- resolve processor group ID
@@ -109,18 +110,10 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Error trying to resolve processor group name'
-			RAISERROR (@msg, 10, 1)
-			return 51008
-		end
+			RAISERROR ('Error trying to resolve processor group name', 11, 8)
 		--
 		if @gid = 0
-		begin
-			set @msg = 'Processor group name not found'
-			RAISERROR (@msg, 10, 1)
-			return 51009
-		end
+			RAISERROR ('Processor group name not found', 11, 9)
 	end
 
 	---------------------------------------------------
@@ -141,11 +134,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Failed to create temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
-	end
+		RAISERROR ('Failed to create temporary table', 11, 7)
 
 	---------------------------------------------------
 	-- Populate table from dataset list  
@@ -162,11 +151,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-	begin
-		set @msg = 'Error populating temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
-	end
+		RAISERROR ('Error populating temporary table', 11, 7)
 	--
 	SET @jobsCreated = @myRowCount
 
@@ -225,11 +210,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
-			set @msg = 'Error trying to find datasets with existing jobs'
-			RAISERROR (@msg, 10, 1)
-			return 51097
-		end
+			RAISERROR ('Error trying to find datasets with existing jobs', 11, 97)
 		
 		SET @numMatchingDatasets = @myRowCount
 		
@@ -290,7 +271,7 @@ As
 							@organismName,
 							@protCollNameList output,
 							@protCollOptionsList output,
-							@ownerPRN,
+							@ownerPRN output,
 							@mode, 
 							@userID output,
 							@analysisToolID output, 
@@ -298,19 +279,12 @@ As
 							@msg output
 	--
 	if @result <> 0
-	begin
-		RAISERROR (@msg, 10, 1)
-		return 53108
-	end
+		RAISERROR ('ValidateAnalysisJobParameters:%s', 11, 8, @msg)
 	
 	if @mode = 'add'
 	begin
 		IF @jobsCreated = 0 AND @numMatchingDatasets > 0
-		begin
-			set @msg = 'No jobs were made because there were existing jobs for all datasets in the list'
-			RAISERROR (@msg, 10, 1)
-			return 51094
-		end
+			RAISERROR ('No jobs were made because there were existing jobs for all datasets in the list', 11, 94)
 
 		---------------------------------------------------
 		-- start transaction
@@ -331,12 +305,7 @@ As
 		SELECT @numDatasets = count(*) FROM #TD
 		--
 		if @numDatasets = 0
-		begin
-			set @msg = 'No datasets in list to create jobs for.'
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51017
-		end
+			RAISERROR ('No datasets in list to create jobs for.', 11, 17)
 		--
 		if @numDatasets > 1
 		begin
@@ -347,12 +316,7 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
 			if @myError <> 0
-			begin
-				set @msg = 'Error trying to create new batch'
-				rollback transaction @transName
-				RAISERROR (@msg, 10, 1)
-				return 51007
-			end
+				RAISERROR ('Error trying to create new batch', 11, 7)
 			
 			-- return ID of newly created batch
 			--
@@ -381,12 +345,7 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
 			if @myError <> 0
-			begin
-				set @msg = 'Error looking up request state in T_Analysis_Job_Request'
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51007
-			end
+				RAISERROR ('Error looking up request state in T_Analysis_Job_Request', 11, 7)
 			
 			set @requestState = IsNull(@requestState,0)
 			
@@ -403,22 +362,11 @@ As
 					SELECT @myError = @@error, @myRowCount = @@rowcount
 					--
 					if @myError <> 0
-					begin
-						set @msg = 'Update operation failed'
-						rollback transaction @transName
-						RAISERROR (@msg, 10, 1)
-						return 51008
-					end
+						RAISERROR ('Update operation failed', 11, 8)
 				end
 			end
 			else
-			begin
-				-- Request ID is non-zero and request is not in state 1 or state 5
-				set @msg = 'Request is not in state New; cannot create jobs'
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51009
-			end
+				RAISERROR ('Request is not in state New; cannot create jobs', 11, 9) -- Request ID is non-zero and request is not in state 1 or state 5
 		end
 
 		---------------------------------------------------
@@ -431,12 +379,7 @@ As
 
 		exec @myError = GetNewJobIDBlock @numDatasets, 'Job created in DMS'
 		if @myError <> 0
-		Begin
-			set @msg = 'Error obtaining block of Job IDs'
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51010
-		End
+			RAISERROR ('Error obtaining block of Job IDs', 11, 10)
 
 		-- Use the job number information in #TmpNewJobIDs to update #TD
 		-- If we know the first job number in #TmpNewJobIDs, then we can use
@@ -451,12 +394,7 @@ As
 
 		-- Make sure @JobIDStart and @JobIDEnd define a contiguous block of jobs
 		If @JobIDEnd - @JobIDStart + 1 <> @numDatasets
-		Begin
-			set @msg = 'GetNewJobIDBlock did not return a contiguous block of jobs; requested ' + Convert(varchar(12), @numDatasets) + ' jobs but job range is ' + Convert(varchar(12), @JobIDStart) + ' to ' + Convert(varchar(12), @JobIDEnd)
-			RAISERROR (@msg, 10, 1)
-			rollback transaction @transName
-			return 51011
-		End
+			RAISERROR ('GetNewJobIDBlock did not return a contiguous block of jobs; requested %d jobs but job range is %d to %d', 11, 11, @numDatasets, @JobIDStart, @JobIDEnd)
 		
 		-- The JobQ subquery uses Row_Number() and @JobIDStart to define the new job numbers for each entry in #TD
 		UPDATE #TD
@@ -525,10 +463,7 @@ As
 				WHERE	AJR_requestID = @requestID
 			end
 			--
-			set @msg = 'Insert new job operation failed'
-			rollback transaction @transName
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR ('Insert new job operation failed', 11, 7)
 		end
 		--
 		SET @jobsCreated = @myRowCount
@@ -577,17 +512,11 @@ As
 			end
 			--
 			if @myError <> 0
-			begin
-				set @msg = 'Error Associating job with processor group'
-				RAISERROR (@msg, 10, 1)
-				rollback transaction @transName
-				return 51007
-			end
+				RAISERROR ('Error Associating job with processor group', 11, 7)
 		end
 
 		commit transaction @transName
-		
-		
+
 		If @requestID > 1
 		Begin
 			-------------------------------------------------
@@ -666,10 +595,14 @@ Explain:
 		set @message = @message + @removedDatasets
 	end
 
-	---------------------------------------------------
-	-- Done
-	---------------------------------------------------
-Done:
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO
