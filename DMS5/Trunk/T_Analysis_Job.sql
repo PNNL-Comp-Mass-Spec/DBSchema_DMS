@@ -155,11 +155,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_StateName_DatasetID] O
 	[AJ_datasetID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 create Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Delete
@@ -204,11 +207,14 @@ AS
 	ORDER BY deleted.AJ_JobID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 create Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
@@ -242,11 +248,14 @@ AS
 		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 create Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update

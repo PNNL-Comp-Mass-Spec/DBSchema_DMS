@@ -156,3 +156,5 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[AssureMaterialContainersExist] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [Limited_Table_Write] AS [dbo]
+GO

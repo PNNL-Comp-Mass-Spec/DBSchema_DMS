@@ -11,11 +11,55 @@ CREATE TABLE [dbo].[T_Archive_Path](
 	[AP_Function] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AP_Server_Name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AP_network_share_path] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AP_archive_URL] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Archive_Path] PRIMARY KEY NONCLUSTERED 
 (
 	[AP_path_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
+
+GO
+
+/****** Object:  Trigger [dbo].[trig_iu_Archive_Path] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Trigger [dbo].[trig_iu_Archive_Path] on [dbo].[T_Archive_Path]
+After Insert, Update
+/****************************************************
+**
+**	Desc: 
+**		Updates column AP_archive_URL for new or updated archive path entries
+**
+**	Auth:	mem
+**	Date:	08/19/2010
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(ap_archive_path) OR
+	   Update(AP_archive_URL)
+	Begin
+		UPDATE T_Archive_Path
+		SET AP_archive_URL = CASE
+		                         WHEN AP.ap_archive_path LIKE '/archive/dmsarch/%' THEN 
+		                           'http://dms2.pnl.gov/dmsarch/' + substring(AP.ap_archive_path, 18, 256) + '/'
+		                         ELSE NULL
+		                     END
+		FROM T_Archive_Path AP
+		     INNER JOIN inserted
+		       ON AP.AP_path_ID = inserted.AP_path_ID
+
+	End
+
 
 GO
 GRANT ALTER ON [dbo].[T_Archive_Path] TO [D3L243] AS [dbo]

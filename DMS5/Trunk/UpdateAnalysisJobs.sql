@@ -38,6 +38,7 @@ CREATE PROCEDURE UpdateAnalysisJobs
 **			07/16/2009 mem - Added missing rollback transaction statements when verifying @associatedProcessorGroup
 **			09/16/2009 mem - Expanded @JobList to varchar(max)
 **						   - Now calls UpdateAnalysisJobsWork to do the work
+**			08/19/2010 grk - try-catch for error handling
 **
 *****************************************************/
 (
@@ -73,7 +74,7 @@ As
 
 	declare @msg varchar(512)
 
-
+	BEGIN TRY 
     
 	---------------------------------------------------
 	-- Validate the inputs
@@ -82,8 +83,7 @@ As
 	if IsNull(@JobList, '') = ''
 	begin
 		set @msg = 'Job list is empty'
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 1)
 	end
 
 	---------------------------------------------------
@@ -99,8 +99,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary job table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 2)
 	end
 
  	---------------------------------------------------
@@ -117,8 +116,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary job table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 3)
 	end
 
 	---------------------------------------------------
@@ -141,13 +139,27 @@ As
 						@protCollNameList,
 						@protCollOptionsList,
 						@mode,
-						@message output,
+						@msg output,
 						@callingUser
-	
+	if @myError <> 0
+	begin
+		RAISERROR (@msg, 11, 5)
+	end
+
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobs] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobs] TO [PNL\D3M578] AS [dbo]
 GO

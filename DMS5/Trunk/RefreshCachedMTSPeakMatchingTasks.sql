@@ -14,6 +14,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 **	Auth:	mem
 **	Date:	02/05/2010 mem - Initial Version
 **			04/21/2010 mem - Updated to use the most recent entry for a given peak matching task (to avoid duplicates if a task is rerun)
+**			10/13/2010 mem - Now updating AMT_Count_1pct_FDR through AMT_Count_50pct_FDR
 **
 *****************************************************/
 (
@@ -97,11 +98,17 @@ AS
 			( SELECT	Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
 						State_ID, Task_Server, Task_Database, Task_ID, 
 						Assigned_Processor_Name, Tool_Version, DMS_Job_Count, 
-						DMS_Job, Output_Folder_Path, Results_URL
+						DMS_Job, Output_Folder_Path, Results_URL,
+						AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
+						AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+						AMT_Count_50pct_FDR
 			  FROM ( SELECT	Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
 							State_ID, Task_Server, Task_Database, Task_ID, 
 							Assigned_Processor_Name, Tool_Version, DMS_Job_Count, 
 							DMS_Job, Output_Folder_Path, Results_URL,
+							AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
+						    AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+						    AMT_Count_50pct_FDR,
 							RANK() OVER ( PARTITION BY tool_name, task_server, task_database, task_id 
 										  ORDER BY MTS_Job_ID DESC ) AS TaskStartRank
 					FROM S_MTS_Peak_Matching_Tasks AS PMT
@@ -111,7 +118,10 @@ AS
 			) AS Source (Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment,
 						 State_ID, Task_Server, Task_Database, Task_ID,
 						 Assigned_Processor_Name, Tool_Version, DMS_Job_Count,
-						 DMS_Job, Output_Folder_Path, Results_URL)
+						 DMS_Job, Output_Folder_Path, Results_URL, 
+						 AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
+						 AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+						 AMT_Count_50pct_FDR)
 		ON (target.MTS_Job_ID = source.MTS_Job_ID AND target.DMS_Job = source.DMS_Job)
 		WHEN Matched AND 
 					(	IsNull(target.Job_Start,'') <> IsNull(source.Job_Start,'') OR
@@ -122,7 +132,12 @@ AS
 						target.Task_ID <> source.Task_ID OR
 						IsNull(target.DMS_Job_Count,0) <> IsNull(source.DMS_Job_Count,0) OR
 						IsNull(target.Output_Folder_Path,'') <> IsNull(source.Output_Folder_Path,'') OR
-						IsNull(target.Results_URL,'') <> IsNull(source.Results_URL,'')
+						IsNull(target.Results_URL,'') <> IsNull(source.Results_URL,'') OR
+						IsNull(target.AMT_Count_1pct_FDR, 0) <> source.AMT_Count_1pct_FDR OR
+						IsNull(target.AMT_Count_5pct_FDR, 0) <> source.AMT_Count_5pct_FDR OR
+						IsNull(target.AMT_Count_10pct_FDR, 0) <> source.AMT_Count_10pct_FDR OR
+						IsNull(target.AMT_Count_25pct_FDR, 0) <> source.AMT_Count_25pct_FDR OR
+						IsNull(target.AMT_Count_50pct_FDR, 0) <> source.AMT_Count_50pct_FDR
 					)
 			THEN UPDATE 
 				Set Tool_Name = source.Tool_Name,
@@ -137,7 +152,12 @@ AS
 					Tool_Version = source.Tool_Version,
 					DMS_Job_Count = source.DMS_Job_Count,
 					Output_Folder_Path = source.Output_Folder_Path,
-					Results_URL = source.Results_URL
+					Results_URL = source.Results_URL,
+					AMT_Count_1pct_FDR = source.AMT_Count_1pct_FDR, 
+					AMT_Count_5pct_FDR = source.AMT_Count_5pct_FDR,
+					AMT_Count_10pct_FDR = source.AMT_Count_10pct_FDR,  
+					AMT_Count_25pct_FDR = source.AMT_Count_25pct_FDR,  
+					AMT_Count_50pct_FDR = source.AMT_Count_50pct_FDR
 		WHEN Not Matched THEN
 			INSERT (	Tool_Name, 
 						MTS_Job_ID, 
@@ -153,12 +173,20 @@ AS
 						DMS_Job_Count, 
 						DMS_Job, 
 						Output_Folder_Path, 
-						Results_URL
+						Results_URL,
+						AMT_Count_1pct_FDR, 
+						AMT_Count_5pct_FDR,
+						AMT_Count_10pct_FDR, 
+						AMT_Count_25pct_FDR, 
+						AMT_Count_50pct_FDR
 					)
 			VALUES (source.Tool_Name, source.MTS_Job_ID, source.Job_Start, source.Job_Finish, source.Comment, 
 					source.State_ID, source.Task_Server, source.Task_Database, source.Task_ID, 
 					source.Assigned_Processor_Name, source.Tool_Version, source.DMS_Job_Count, 
-					source.DMS_Job, source.Output_Folder_Path, source.Results_URL)
+					source.DMS_Job, source.Output_Folder_Path, source.Results_URL,
+					source.AMT_Count_1pct_FDR, source.AMT_Count_5pct_FDR,
+					source.AMT_Count_10pct_FDR, source.AMT_Count_25pct_FDR, 
+					source.AMT_Count_50pct_FDR)
 		WHEN NOT MATCHED BY SOURCE And @FullRefreshPerformed <> 0 THEN
 			DELETE 
 		OUTPUT $action INTO #Tmp_UpdateSummary
@@ -212,4 +240,6 @@ AS
 Done:
 	Return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSPeakMatchingTasks] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -27,6 +27,7 @@ SELECT AJ.AJ_jobID AS JobNum,
        AJ.AJ_comment AS [Comment],
        DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Results Folder Path],
        DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Results Folder Path],
+       SPath.SP_URL + DS.Dataset_Num + '/' + AJ.AJ_resultsFolderName + '/' AS [Data Folder Link],
        ISNULL(MTSPT.PT_DB_Count, 0) AS [MTS PT DB Count],
        ISNULL(MTSMT.MT_DB_Count, 0) AS [MTS MT DB Count],
        ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
@@ -79,6 +80,7 @@ FROM T_Analysis_Job AJ
                      INNER JOIN T_Analysis_Job_Processor_Group_Associations AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
+
 
 
 GO

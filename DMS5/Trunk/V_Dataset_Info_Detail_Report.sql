@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -52,10 +51,8 @@ SELECT DS.Dataset_Num AS Dataset,
            WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10) THEN DAP.Archive_Path + '\' + DS.Dataset_Num
            ELSE '(not available)'
        END AS [Archive Folder Path],
-       CASE
-           WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10) THEN DAP.Archive_Path + '\' + DS.Dataset_Num + '\QC\index.html'
-           ELSE ''
-       END AS QC_Link,
+	   SPath.SP_URL + DS.Dataset_Num + '/' AS [Data Folder Link],
+       SPath.SP_URL + DS.Dataset_Num + '/QC/index.html' AS [QC Link],
        DSInfo.Last_Affected AS [DSInfo Updated]
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
@@ -86,7 +83,6 @@ FROM T_DatasetStateName DSN
        ON DSA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
-
 
 
 

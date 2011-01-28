@@ -3,14 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-
-
-
-
 CREATE Procedure GetDatasetTypeID
 /****************************************************
 **
@@ -20,20 +12,29 @@ CREATE Procedure GetDatasetTypeID
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 1/26/2001
+**	Auth:	grk
+**	Date:	01/26/2001
+**			09/02/2010 mem - expanded @datasetType to varchar(50)
 **    
 *****************************************************/
 (
-	@datasetType varchar(20) = " "
+	@datasetType varchar(50) = ''
 )
 As
 	declare @datasetTypeID int
 	set @datasetTypeID = 0
-	SELECT @datasetTypeID = DST_Type_ID FROM T_DatasetTypeName WHERE (DST_name = @datasetType)
+	
+	SELECT @datasetTypeID = DST_Type_ID 
+	FROM T_DatasetTypeName 
+	WHERE (DST_name = @datasetType)
+	
 	return(@datasetTypeID)
+	
+
 GO
 GRANT EXECUTE ON [dbo].[GetDatasetTypeID] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetTypeID] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetTypeID] TO [PNL\D3M578] AS [dbo]
 GO

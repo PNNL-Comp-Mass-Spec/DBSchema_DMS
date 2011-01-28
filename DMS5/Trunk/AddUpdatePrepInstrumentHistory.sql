@@ -144,3 +144,5 @@ GRANT EXECUTE ON [dbo].[AddUpdatePrepInstrumentHistory] TO [DMS2_SP_User] AS [db
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePrepInstrumentHistory] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepInstrumentHistory] TO [Limited_Table_Write] AS [dbo]
+GO

@@ -107,6 +107,8 @@ As
 	set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @irInstSettings ELSE @instrumentSettings END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [PNL\D3M580] AS [dbo]

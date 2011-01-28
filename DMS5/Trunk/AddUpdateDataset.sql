@@ -30,12 +30,20 @@ CREATE Procedure AddUpdateDataset
 **			04/09/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **			05/23/2008 mem - Now calling SchedulePredefinedAnalyses if the dataset rating is changed from -5 to 5 and no jobs exist yet for this dataset (Ticket #675)
 **			04/08/2009 jds - Added support for the additional parameters @secSep and @MRMAttachment to the AddUpdateRequestedRun stored procedure (Ticket #727)
-**			09/16/2009 mem - Now checking dataset type (@msType) against T_Instrument_Allowed_Dataset_Type (Ticket #748)
+**			09/16/2009 mem - Now checking dataset type (@msType) against the Instrument_Allowed_Dataset_Type table (Ticket #748)
 **			01/14/2010 grk - assign storage path on creation of dataset
 **			02/28/2010 grk - added add-auto mode for requested run
 **			03/02/2010 grk - added status field to requested run
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
 **			07/27/2010 grk - try-catch for error handling
+**			08/26/2010 mem - Now passing @callingUser to SchedulePredefinedAnalyses
+**			08/27/2010 mem - Now calling ValidateInstrumentGroupAndDatasetType to validate the instrument type for the selected instrument's instrument group
+**			09/01/2010 mem - Now passing @SkipTransactionRollback to AddUpdateRequestedRun
+**			09/02/2010 mem - Now allowing @msType to be blank or invalid when @mode = 'add'; The assumption is that the dataset type will be auto-updated if needed based on the results from the DatasetQuality tool, which runs during dataset capture
+**						   - Expanded @msType to varchar(50)
+**			09/09/2010 mem - Now passing @AutoPopulateUserListIfBlank to AddUpdateRequestedRun
+**						   - Relaxed EUS validation to ignore @eusProposalID, @eusUsageType, and @eusUsersList if @requestID is non-zero
+**						   - Auto-updating RequestID, experiment, and EUS information for "Blank" datasets
 **    
 *****************************************************/
 (
@@ -43,7 +51,7 @@ CREATE Procedure AddUpdateDataset
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),
-	@msType varchar(20),
+	@msType varchar(50),
 	@LCColumnNum varchar(64),
 	@wellplateNum varchar(64) = 'na',
 	@wellNum varchar(64) = 'na',
@@ -71,16 +79,21 @@ As
 	declare @msg varchar(256)
 	declare @folderName varchar(128)
 
+	declare @result int
+	declare @Warning varchar(256)
+	declare @ExperimentCheck varchar(128)
+	
 	set @message = ''
+	set @Warning = ''
 
 	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
-	if ISNULL(@internalStandards, '') = ''
+	Set @internalStandards = IsNull(@internalStandards, '')
+	if @internalStandards = '' Or @internalStandards = 'na'
 		set @internalStandards = 'none'
-
 
 	if IsNull(@secSep, '') = ''
 	begin
@@ -90,13 +103,13 @@ As
 	--
 	if IsNull(@LCColumnNum, '') = ''
 	begin
-		set @msg = 'LC Column number was blank'
+		set @msg = 'LC Column name was blank'
 		RAISERROR (@msg, 11, 16)
 	end
 	--
 	if IsNull(@datasetNum, '') = ''
 	begin
-		set @msg = 'Dataset number was blank'
+		set @msg = 'Dataset name was blank'
 		RAISERROR (@msg, 11, 10)
 	end
 	--
@@ -104,7 +117,7 @@ As
 	--
 	if IsNull(@experimentNum, '') = ''
 	begin
-		set @msg = 'Experiment number was blank'
+		set @msg = 'Experiment name was blank'
 		RAISERROR (@msg, 11, 11)
 	end
 	--
@@ -126,7 +139,8 @@ As
 		RAISERROR (@msg, 11, 14)
 	end
 	--
-	if IsNull(@msType, '') = ''
+	set @msType = IsNull(@msType, '')
+	if @msType = '' And NOT @mode In ('Add', 'Bad')
 	begin
 		set @msg = 'Dataset type was blank'
 		RAISERROR (@msg, 11, 15)
@@ -138,7 +152,13 @@ As
 		RAISERROR (@msg, 11, 15)
 	end
 
+	set @comment = IsNull(@comment, '')
 
+	If IsNull(@wellplateNum, '') = ''
+		set @wellplateNum = 'na'
+	
+	if IsNull(@wellNum, '') = ''
+		set @wellNum = 'na'
 
 	---------------------------------------------------
 	-- validate dataset name
@@ -210,7 +230,7 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		if (@mode = 'update' or @mode = 'check_update')
+		if @mode IN ('update', 'check_update')
 		begin
 			set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
 			RAISERROR (@msg, 11, 4)
@@ -220,9 +240,9 @@ As
 	begin
 		-- cannot create an entry that already exists
 		--
-		if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger')
+		if @mode IN ('add', 'check_add', 'add_trigger')
 		begin
-			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" already in database '
+			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" since already in database '
 			RAISERROR (@msg, 11, 5)
 		end
 
@@ -230,7 +250,7 @@ As
 		--
 		if @curDSRatingID = -10 And @rating <> 'Unreviewed'
 		begin
-			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms.pnl.gov/dms/dataset_disposition_list_report.asp" or SP UpdateDatasetDispositions)'
+			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/report" or SP UpdateDatasetDispositions)'
 			RAISERROR (@msg, 11, 6)
 		end		
 	end
@@ -307,6 +327,16 @@ As
 		RAISERROR (@msg, 11, 96)
 	end
 
+
+	---------------------------------------------------
+	-- If Dataset starts with "Blank", then make sure @experimentNum contains "Blank"
+	---------------------------------------------------
+	If @datasetNum Like 'Blank%' And @mode IN ('add', 'check_add', 'add_trigger')	
+	Begin
+		If NOT @ExperimentNum LIKE '%blank%'
+			Set @ExperimentNum = 'blank'		
+	End
+	
 	---------------------------------------------------
 	-- Resolve experiment ID
 	---------------------------------------------------
@@ -319,23 +349,16 @@ As
 		RAISERROR (@msg, 11, 12)
 	end
 
-	---------------------------------------------------
-	-- Resolve dataset type ID
-	---------------------------------------------------
-
-	declare @datasetTypeID int
-	execute @datasetTypeID = GetDatasetTypeID @msType
-	if @datasetTypeID = 0
-	begin
-		set @msg = 'Could not find entry in database for dataset type'
-		RAISERROR (@msg, 11, 13)
-	end
 
 	---------------------------------------------------
 	-- Resolve instrument ID
 	---------------------------------------------------
 
 	declare @instrumentID int
+	declare @InstrumentGroup varchar(64) = ''
+	declare @DefaultDatasetTypeID int
+	declare @msTypeOld varchar(50)
+	
 	execute @instrumentID = GetinstrumentID @instrumentName
 	if @instrumentID = 0
 	begin
@@ -344,27 +367,111 @@ As
 	end
 
 	---------------------------------------------------
-	-- Verify that dataset type is valid for given instrument
+	-- Lookup the Instrument Group
+	---------------------------------------------------
+		
+	SELECT @InstrumentGroup = IN_Group
+	FROM T_Instrument_Name
+	WHERE Instrument_ID = @instrumentID
+
+	if @InstrumentGroup = ''
+	begin
+		set @msg = 'Instrument group not defined for instrument "' + @instrumentName + '"'
+		RAISERROR (@msg, 11, 14)
+	end
+
+	---------------------------------------------------
+	-- Lookup the default dataset type ID (could be null)
+	---------------------------------------------------
+		
+	SELECT @DefaultDatasetTypeID = Default_Dataset_Type
+	FROM T_Instrument_Group
+	WHERE IN_Group = @InstrumentGroup
+
+	
+	---------------------------------------------------
+	-- Resolve dataset type ID
+	---------------------------------------------------
+
+	declare @datasetTypeID int
+	execute @datasetTypeID = GetDatasetTypeID @msType
+	
+	if @datasetTypeID = 0
+	begin
+		-- Could not resolve @msType to a dataset type
+		-- If @mode is Add, we will auto-update @msType to the default
+		--
+		If @mode = 'Add' And IsNull(@DefaultDatasetTypeID, 0) > 0
+		Begin
+			-- Use the default dataset type
+			Set @datasetTypeID = @DefaultDatasetTypeID
+			
+			Set @msTypeOld = @msType
+			
+			-- Update @msType			
+			SELECT @msType = DST_name
+			FROM T_DatasetTypeName
+			WHERE (DST_Type_ID = @datasetTypeID)
+
+			If @comment = 'na'
+				Set @comment = ''
+			
+			If @comment <> ''
+				Set @comment = @comment + '; '
+			
+			Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+						
+		End
+		Else
+		Begin
+			set @msg = 'Could not find entry in database for dataset type'
+			RAISERROR (@msg, 11, 13)
+		End
+	end
+
+
+	---------------------------------------------------
+	-- Verify that dataset type is valid for given instrument group
 	---------------------------------------------------
 
 	declare @allowedDatasetTypes varchar(255)
-
-	If Not Exists (SELECT * FROM T_Instrument_Allowed_Dataset_Type WHERE Instrument = @instrumentName AND Dataset_Type = @msType)
-	begin
-		Set @allowedDatasetTypes = ''
 		
-		SELECT @allowedDatasetTypes = @allowedDatasetTypes + ', ' + Dataset_Type
-		FROM T_Instrument_Allowed_Dataset_Type 
-		WHERE Instrument = @instrumentName
-		ORDER BY Dataset_Type
+	exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 
-		-- Remove the leading two characters
-		If Len(@allowedDatasetTypes) > 0
-			Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
+	If @result <> 0 And @mode IN ('add', 'check_add', 'add_trigger') And IsNull(@DefaultDatasetTypeID, 0) > 0
+	Begin
+		-- Dataset type is not valid for this instrument group
+		-- However, @mode is Add, so we will auto-update @msType to the default
+		--
+		Set @datasetTypeID = @DefaultDatasetTypeID	
+
+		Set @msTypeOld = @msType
 		
-		set @msg = 'Dataset Type "' + @msType + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
+		-- Update @msType			
+		SELECT @msType = DST_name
+		FROM T_DatasetTypeName
+		WHERE (DST_Type_ID = @datasetTypeID)
+
+		If @comment = 'na'
+			Set @comment = ''
+		
+		If @comment <> ''
+			Set @comment = @comment + '; '
+		
+		Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+		
+		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group)
+		exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
+	End
+	
+	if @result <> 0
+	Begin
+		-- @msg should already contain the details of the error
+		If IsNull(@msg, '') = ''
+			Set @msg = 'ValidateInstrumentGroupAndDatasetType returned non-zero result code: ' + Convert(varchar(12), @result)
+		
 		RAISERROR (@msg, 11, 15)
-	end
+	End
 
 	---------------------------------------------------
 	-- Check for instrument changing when dataset not in new state
@@ -429,51 +536,94 @@ As
 	-- Verify acceptable combination of EUS fields
 	---------------------------------------------------
 	
-	if (@mode = 'add' or @mode = 'check_add' or @mode = 'add_trigger') AND @requestID <> 0 AND (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
-	begin
-		set @msg = 'Either a Request must be specified, or EMSL user parameters must be specified, but not both'
-		RAISERROR (@msg, 11, 44)
+	if @requestID <> 0 AND @mode IN ('add', 'check_add', 'add_trigger')
+	begin	   
+		If (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
+		Begin
+			If @eusUsageType = '(lookup)' and @eusProposalID = '(lookup)' and @eusUsersList = '(lookup)'
+				Set @Warning = ''
+			else
+				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request "' + Convert(varchar(12), @requestID) + ' was specified'
+				
+			-- When a request is specified, force @eusProposalID, @eusUsageType, and @eusUsersList to be blank
+			-- Previously, we would raise an error here
+			Set @eusProposalID = '' 
+			Set @eusUsageType = '' 
+			Set @eusUsersList = ''		
+		End
+				
+		---------------------------------------------------
+		-- If the dataset starts with "blank" but @requestID is non-zero, then this is likely incorrect
+		-- Auto-update things if this is the case
+		---------------------------------------------------
+		If @datasetNum Like 'Blank%'
+		Begin
+			-- See if the experiment matches for this request; if it doesn't, change @requestID to 0
+			Set @ExperimentCheck = ''
+			
+			SELECT @ExperimentCheck = E.Experiment_Num
+			FROM T_Experiments E INNER JOIN
+				T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
+			WHERE (RR.ID = @requestID)
+			
+			If @ExperimentCheck <> @ExperimentNum
+				Set @RequestID = 0
+		End
 	end
 
+
+	---------------------------------------------------
+	-- If the dataset starts with "blank" and @requestID is zero, perform some additional checks
+	---------------------------------------------------
+	If @requestID = 0 AND @mode IN ('add', 'check_add', 'add_trigger')
+	Begin
+		-- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
+		If @datasetNum Like 'Blank%' And @eusProposalID = '' And @eusUsageType = ''
+			set @eusUsageType = 'MAINTENANCE'
+	End
+
+		
 	---------------------------------------------------
 	-- action for add trigger mode
 	---------------------------------------------------
 	if @Mode = 'add_trigger'
 	begin -- <AddTrigger>
 
-		--**Check code taken from ConsumeScheduledRun stored procedure**
-		---------------------------------------------------
-		-- Validate that experiments match
-		---------------------------------------------------
-	
-		-- get experiment ID from dataset
-		-- this was already done above
+		If @requestID <> 0
+		Begin
+			--**Check code taken from ConsumeScheduledRun stored procedure**
+			---------------------------------------------------
+			-- Validate that experiments match
+			---------------------------------------------------
+		
+			-- get experiment ID from dataset
+			-- this was already done above
 
-		-- get experiment ID from scheduled run
-		--
-		declare @reqExperimentID int
-		set @reqExperimentID = 0
-		--
-		SELECT   @reqExperimentID = Exp_ID
-		FROM T_Requested_Run
-		WHERE ID = @requestID
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to look up experiment for request'
-			RAISERROR (@message, 10, 86)
-		end
-	
-		-- validate that experiments match
-		--
-		if @experimentID <> @reqExperimentID and @requestID <> 0
-		begin
-			set @message = 'Experiment in dataset does not match with one in scheduled run'
-			RAISERROR (@message, 10, 72)
-		end
-
+			-- get experiment ID from scheduled run
+			--
+			declare @reqExperimentID int
+			set @reqExperimentID = 0
+			--
+			SELECT @reqExperimentID = Exp_ID
+			FROM T_Requested_Run
+			WHERE ID = @requestID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error trying to look up experiment for request'
+				RAISERROR (@message, 11, 86)
+			end
+		
+			-- validate that experiments match
+			--
+			if @experimentID <> @reqExperimentID
+			begin
+				set @message = 'Experiment in dataset (' + @experimentNum + ') does not match with one in scheduled run (Request ' + Convert(varchar(12), @requestID) + ')'
+				RAISERROR (@message, 11, 72)
+			end
+		End
 
 		--**Check code taken from UpdateCartParameters stored procedure**
 		---------------------------------------------------
@@ -504,10 +654,15 @@ As
 
 		if @requestID = 0
 		begin -- <b1>
+		
+			-- RequestID not specified
+			-- Try to determine EUS information using Experiment name
+			
 			--**Check code taken from AddUpdateRequestedRun stored procedure**
+			
 			---------------------------------------------------
-			-- Lookup EUS field (only effective for experiments
-			-- that have associated sample prep requests)
+			-- Lookup EUS field (only effective for experiments that have associated sample prep requests)
+			-- This will update the data in @eusUsageType, @eusProposalID, or @eusUsersList if it is "(lookup)"
 			---------------------------------------------------
 			exec @myError = LookupEUSFromExperimentSamplePrep	
 							@experimentNum,
@@ -515,10 +670,9 @@ As
 							@eusProposalID output,
 							@eusUsersList output,
 							@msg output
+							
 			if @myError <> 0
-			begin
-				RAISERROR (@msg, 11, 80)
-			end
+				RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 			---------------------------------------------------
 			-- validate EUS type, proposal, and user list
@@ -529,33 +683,24 @@ As
 							@eusProposalID output,
 							@eusUsersList output,
 							@eusUsageTypeID output,
-							@msg output
+							@msg output,
+							@AutoPopulateUserListIfBlank = 0
+							
 			if @myError <> 0
-			begin
-				RAISERROR (@msg, 11, 81)
-			end
+				RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+			
+			If IsNull(@msg, '') <> ''
+				Set @message = @msg
+				
 		end -- </b1>
 		else
 		begin -- <b2>
-			--**Check code taken from UpdateCartParameters stored procedure**
+			
 			---------------------------------------------------
 			-- verify that request ID is correct
 			---------------------------------------------------
-			declare @tmp int
-			set @tmp = 0
-			--
-			SELECT @tmp = ID
-			FROM T_Requested_Run
-			WHERE (ID = @requestID)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @msg = 'Error trying verify request ID'
-				RAISERROR (@msg, 11, 51)
-			end
-			if @tmp = 0
+			
+			IF NOT EXISTS (SELECT * FROM T_Requested_Run WHERE ID = @requestID)
 			begin
 				set @msg = 'Request ID not found'
 				RAISERROR (@msg, 11, 52)
@@ -572,6 +717,9 @@ As
 		set @Run_Start = ''
 		set @Run_Finish = ''
 
+		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+			Set @warning = @message
+			
 		exec @rslt = CreateXmlDatasetTriggerFile
 			@datasetNum,
 			@experimentNum,
@@ -671,69 +819,17 @@ As
 			
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
 		End
-		
+
+	
 		---------------------------------------------------
 		-- if scheduled run is not specified, create one
 		---------------------------------------------------
-		declare @result int
 
 		if @requestID = 0
 		begin -- <b3>
-			/*
-			**
-			** The following validation code, added by MEM 1/9/2008, is likely correct, but is commented out for safety
-			**
 		
-			If @eusUsageType = '' or @eusUsageType = 'no update'
-			begin
-				set @msg = 'You must provide a Usage Type when the Request ID is 0'
-				RAISERROR (@msg, 11, 1)
-			end
-
-
-			If @eusUsageType = 'USER'
-			Begin
-				-- Usage Type is USER
-				-- Both @eusProposalID and @eusUsersList must be non-blank
-				
-				If @eusProposalID = '' or @eusProposalID = 'no update'
-				begin
-					set @msg = 'You must provide a Proposal ID when the Request ID is 0 and the Usage Type is "USER"'
-					RAISERROR (@msg, 11, 31)
-				end
-
-				If @eusUsersList = '' or @eusUsersList = 'no update'
-				begin
-					set @msg = 'You must define the EMSL Users when the Request ID is 0 and the Usage Type is "USER"'
-					RAISERROR (@msg, 11, 32)
-				end
-			End
-			Else
-			Begin
-				-- Usage Type is not USER
-				-- Both @eusProposalID and @eusUsersList must be blank
-				
-				If @eusProposalID = 'no update' or @eusProposalID = '(lookup)'
-					Set @eusProposalID = ''
-				
-				If @eusUsersList = 'no update' or @eusUsersList = '(lookup)'
-					Set @eusUsersList = ''
-					
-					
-				If @eusProposalID <> ''
-				begin
-					set @msg = 'Proposal ID must be blank when the Request ID is 0 and the Usage Type is not USER'
-					RAISERROR (@msg, 11, 33)
-				end
-
-				If @eusUsersList <> ''
-				begin
-					set @msg = 'User List must be blank when the Request ID is 0 and the Usage Type is not USER'
-					RAISERROR (@msg, 11, 34)
-				end
-			End
-
-			*/
+			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+				Set @warning = @message
 
 			declare @reqName varchar(128)
 			set @reqName = 'AutoReq_' + @datasetNum
@@ -757,13 +853,15 @@ As
 									@message = @message output,
 									@secSep = @secSep,
 									@MRMAttachment = '',
-									@status = 'Completed'
+									@status = 'Completed',
+									@SkipTransactionRollback = 1,
+									@AutoPopulateUserListIfBlank = 1		-- Auto populate @eusUsersList if blank since this is an Auto-Request
 			--
 			set @myError = @result
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Create scheduled run failed: "' + @datasetNum + '" with Proposal ID "' + @eusProposalID + '", Usage Type "' + @eusUsageType + '", and Users List "' + @eusUsersList + '" ->' + @message
+				set @msg = 'Create AutoReq run request failed: "' + @datasetNum + '" with Proposal ID "' + @eusProposalID + '", Usage Type "' + @eusUsageType + '", and Users List "' + @eusUsersList + '" ->' + @message
 				RAISERROR (@msg, 11, 24)
 			end
 		end -- </b3>
@@ -774,6 +872,10 @@ As
 		---------------------------------------------------
 		if @LCCartName <> '' and @LCCartName <> 'no update'
 		begin
+		
+			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+				Set @warning = @message
+
 			exec @result = UpdateCartParameters
 								'CartName',
 								@requestID,
@@ -784,7 +886,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update cart name update failed: "' + @datasetNum + '"->' + @message
+				set @msg = 'Update LC cart name failed: "' + @datasetNum + '"->' + @message
 				RAISERROR (@msg, 11, 21)
 			end
 		end
@@ -798,6 +900,9 @@ As
 		FROM T_Dataset 
 		WHERE (Dataset_Num = @datasetNum)
 
+		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+				Set @warning = @message
+				
 		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output
 		--
 		set @myError = @result
@@ -853,7 +958,7 @@ As
 		Begin
 			If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID))
 			Begin
-				Exec SchedulePredefinedAnalyses @datasetNum
+				Exec SchedulePredefinedAnalyses @datasetNum, @callingUser=@callingUser
 				
 				-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in 
 				--  T_Event_Log for any newly created jobs for this dataset
@@ -880,7 +985,19 @@ As
 		End
 
 	end -- </UpdateMode>
-	
+
+
+	-- Update @message if @warning is not empty	
+	If IsNull(@Warning, '') <> ''
+	Begin
+		If IsNull(@message, '') = ''
+			Set @message = @Warning
+		Else
+			If @message <> @warning
+				Set @message = @warning + '; ' + @message
+	End
+
+
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
@@ -897,6 +1014,8 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [PNL\D3M578] AS [dbo]
 GO

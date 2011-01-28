@@ -32,6 +32,8 @@ WHERE     (Monoisotopic_Mass_Correction < @modMass + @MCVariance AND Monoisotopi
 	return(@MassCorrectionID)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionID] TO [PNL\D3M580] AS [dbo]

@@ -178,6 +178,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[SetRestoreTaskComplete] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetRestoreTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SetRestoreTaskComplete] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetRestoreTaskComplete] TO [PNL\D3M580] AS [dbo]

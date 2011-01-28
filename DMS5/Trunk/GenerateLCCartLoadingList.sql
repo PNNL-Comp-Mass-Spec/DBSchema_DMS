@@ -379,6 +379,8 @@ GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_RunScheduler] AS [dbo
 GO
 GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M580] AS [dbo]

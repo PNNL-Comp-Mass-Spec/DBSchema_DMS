@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 25 ******/
+/****** RowCount: 26 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (1,'HMS','High resolution MS spectra only',1)
 INSERT INTO [T_DatasetTypeName] VALUES (2,'MS-MSn','Low res MS with low res CID MSn',1)
@@ -26,3 +26,4 @@ INSERT INTO [T_DatasetTypeName] VALUES (22,'HMS-HCD-ETD-HMSn','High res MS with 
 INSERT INTO [T_DatasetTypeName] VALUES (23,'HMS-HCD-CID-MSn','High res MS with high res HCD MSn and low res CID MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (24,'HMS-HCD-CID-HMSn','High res MS with high res HCD MSn and high res CID MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (25,'HMS-ETD-HMSn','High res MS with high res ETD-based MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (26,'MALDI-HMS','MALDI MS',1)

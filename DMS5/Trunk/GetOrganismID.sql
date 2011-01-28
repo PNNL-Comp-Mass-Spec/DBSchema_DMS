@@ -39,6 +39,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[GetOrganismID] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetOrganismID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetOrganismID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetOrganismID] TO [PNL\D3M580] AS [dbo]

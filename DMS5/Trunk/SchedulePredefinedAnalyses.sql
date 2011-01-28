@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
+CREATE PROCEDURE SchedulePredefinedAnalyses
 /****************************************************
 ** 
 **	Desc: Schedules analysis jobs for dataset 
@@ -24,13 +24,15 @@ CREATE PROCEDURE dbo.SchedulePredefinedAnalyses
 **			05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @InfoOnly
 **			07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
 **			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
+**			08/26/2010 grk - Gutted original and moved guts to CreatePredefinedAnalysesJobs - now just entering dataset into work queue
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
 	@callingUser varchar(128) = '',
 	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
-	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
+	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 or -6 (we always exclude datasets with a rating < 2 but <> -10)	
+	@PreventDuplicateJobs tinyint = 1,				-- When non-zero, then will not create new jobs that duplicate old jobs
 	@InfoOnly tinyint = 0
 )
 As
@@ -43,213 +45,69 @@ As
 
 	declare @message varchar(512)
 	Set @message = ''
-
-	declare @ErrorMessage varchar(512)
-	
-	declare @CreateJob tinyint
-	set @CreateJob = 1
 	
 	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
-	
+
+	BEGIN TRY
+
 	---------------------------------------------------
-	-- Temporary job holding table to receive created jobs
-	-- This table is populated in EvaluatePredefinedAnalysisRules
+	-- Auto-populate @callingUser if necessary
 	---------------------------------------------------
 	
-	CREATE TABLE #JX (
-		datasetNum varchar(128),
-		priority varchar(8),
-		analysisToolName varchar(64),
-		parmFileName varchar(255),
-		settingsFileName varchar(128),
-		organismDBName varchar(128),
-		organismName varchar(128),
-		proteinCollectionList varchar(4000),
-		proteinOptionsList varchar(256), 
-		ownerPRN varchar(128),
-		comment varchar(128),
-		associatedProcessorGroup varchar(64),
-		numJobs int,
-		ID int IDENTITY (1, 1) NOT NULL
-	)
+	If IsNull(@callingUser, '') = ''
+		Set @callingUser = suser_sname()
+	
+ 	---------------------------------------------------
+ 	-- Lookup dataset ID
+ 	---------------------------------------------------
+ 	DECLARE @state VARCHAR(32) = 'New'
+	DECLARE @datasetID INT = 0
 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	If @myError <> 0
-	Begin
-		Set @message = 'Could not create temporary table'
-		RAISERROR (@message, 10, 1)
-		return @myError
-	End
+	SELECT @datasetID = Dataset_ID
+	FROM T_Dataset
+	WHERE Dataset_Num = @datasetNum
 	
-	---------------------------------------------------
-	-- Populate the job holding table (#JX)
-	---------------------------------------------------
-	declare @result int
+	IF @datasetID = 0
+	BEGIN
+		SET @message = 'Could not find ID for dataset'
+		SET @state = 'Error'
+	end
 
-	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
-	--
-	If @result <> 0
-	Begin
-		Set @ErrorMessage = 'EvaluatePredefinedAnalysisRules returned error code ' + Convert(varchar(12), @result)
-	
-		If Not IsNull(@message, '') = ''
-			Set @ErrorMessage = @ErrorMessage + '; ' + @message
-		
-		Set @message = @ErrorMessage
-		
-		RAISERROR (@message, 10, 1)
-		return 53500
-	End
+ 	---------------------------------------------------
+ 	-- Add a new row to T_Predefined_Analysis_Scheduling_Queue
+ 	-- However, if the dataset already exists and has state 'New', don't add another row
+ 	---------------------------------------------------
 
-	---------------------------------------------------
-	-- Cycle through the job holding table and
-	-- make jobs for each entry
-	---------------------------------------------------
+	IF NOT EXISTS (SELECT * FROM T_Predefined_Analysis_Scheduling_Queue WHERE Dataset_ID = @datasetID AND State = 'New')
+		INSERT INTO dbo.T_Predefined_Analysis_Scheduling_Queue( Dataset_Num,
+		                                                        Dataset_ID,
+		                                                        CallingUser,
+		                                                        AnalysisToolNameFilter,
+		                                                        ExcludeDatasetsNotReleased,
+		                                                        PreventDuplicateJobs,
+		                                                        State,
+		                                                        Message )
+		VALUES (@datasetNum, @datasetID, 
+		        @callingUser, 
+		        @AnalysisToolNameFilter, 
+		        @ExcludeDatasetsNotReleased,
+		        @PreventDuplicateJobs,
+		        @state, 
+		        @message)
 
-	declare @instrumentClass varchar(32)
-	declare @priority int
-	declare @analysisToolName varchar(64)
-	declare @parmFileName varchar(255)
-	declare @settingsFileName varchar(255)
-	declare @organismName varchar(64)
-	declare @organismDBName varchar(64)
-	declare @proteinCollectionList varchar(4000)
-	declare @proteinOptionsList varchar(256)
-	declare @comment varchar(128)
-	declare @ID int
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+	END CATCH
 
-	declare @jobNum varchar(32)
-	declare @ownerPRN varchar(32)
-	
-	declare @associatedProcessorGroup varchar(64)
-	Set @associatedProcessorGroup = ''
-
-	-- keep track of how many jobs have been scheduled
-	--
-	declare @jobsCreated int
-	Set @jobsCreated = 0
-	
-	declare @done tinyint
-	Set @done = 0
-	
-	declare @currID int
-	Set @currID = 0
-
-	While @done = 0 and @myError = 0
-	Begin -- <a>
-		---------------------------------------------------
-		-- get parameters for next job in table
-		---------------------------------------------------
-		SELECT TOP 1
-			@priority = priority,
-			@analysisToolName = analysisToolName,
-			@parmFileName = parmFileName,
-			@settingsFileName = settingsFileName,
-			@organismDBName = organismDBName,
-			@organismName = organismName,
-			@proteinCollectionList = proteinCollectionList,
-			@proteinOptionsList = proteinOptionsList,
-			@ownerPRN  = ownerPRN,
-			@comment = comment,
-			@associatedProcessorGroup = associatedProcessorGroup,
-			@ID = ID
-		FROM #JX
-		WHERE ID > @currID
-		ORDER BY ID
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		---------------------------------------------------
-		-- remember index and evaluate terminating conditions
-		---------------------------------------------------
-		Set @currID = @ID
-		--
-		If @myError <> 0 OR @myRowCount <> 1
-			Set @done = 1
-		Else
-		Begin -- <b>
-		
-			If @AnalysisToolNameFilter = ''
-				Set @CreateJob = 1
-			Else
-			Begin
-				If @AnalysisToolName Like @AnalysisToolNameFilter
-					Set @CreateJob = 1
-				Else
-					Set @CreateJob = 0
-			End
-
-			If @CreateJob <> 0
-			Begin -- <c>
-			
-				If @InfoOnly <> 0
-				Begin
-					Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@parmFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
-				End
-				Else
-				Begin -- <d>
-					---------------------------------------------------
-					-- create the job
-					---------------------------------------------------
-					execute @result = AddUpdateAnalysisJob
-								@datasetNum,
-								@priority,
-								@analysisToolName,
-								@parmFileName,
-								@settingsFileName,
-								@organismName,
-								@proteinCollectionList,
-								@proteinOptionsList,
-								@organismDBName,
-								@ownerPRN,
-								@comment,
-								@associatedProcessorGroup,
-								'',					-- Propagation mode
-								'new',				-- State name
-								@jobNum output,		-- Job number
-								'add',				-- Mode
-								@message output,
-								@callingUser
-
-					-- If there was an error creating the job, remember it
-					-- otherwise bump the job count
-					--
-					If @result = 0 
-						Set @jobsCreated = @jobsCreated + 1 
-					Else 
-						Set @myError = @result
-				End -- </d>
-			End -- </c>
-		End -- </b>
-		
-		---------------------------------------------------
-		-- If there was an error, log it
-		---------------------------------------------------
-		--
-		If @myError <> 0 
-		Begin
-			Set @message = 'Attempted and failed to create default analysis for "' + @datasetNum + '" [' + convert(varchar(12), @myError) + ']'
-			execute PostLogEntry 'Error', @message, 'ScheduleDefaultAnalyses'
-		End
-	End -- </b>
-	
-	---------------------------------------------------
-	-- If we didn't schedule any jobs, 
-	-- but didn't have any errors, return code of 1
-	---------------------------------------------------
-	--
-	If @InfoOnly = 0 And @myError = 0 And @jobsCreated = 0 
-		Set @myError = 1
-
-Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[SchedulePredefinedAnalyses] TO [DMS_Analysis] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[SchedulePredefinedAnalyses] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SchedulePredefinedAnalyses] TO [PNL\D3M578] AS [dbo]
 GO

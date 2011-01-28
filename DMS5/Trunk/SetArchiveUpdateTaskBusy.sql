@@ -51,3 +51,5 @@ As
 
 	RETURN @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskBusy] TO [Limited_Table_Write] AS [dbo]
+GO

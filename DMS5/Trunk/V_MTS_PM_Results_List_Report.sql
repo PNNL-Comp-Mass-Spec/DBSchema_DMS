@@ -19,7 +19,12 @@ SELECT PM.DMS_Job AS Job,
        PM.Tool_Version,
        PM.Output_Folder_Path,
        PM.MTS_Job_ID,
-       Inst.IN_name AS Instrument
+       Inst.IN_name AS Instrument,
+       PM.AMT_Count_1pct_FDR AS [AMTs 1pct FDR],
+       PM.AMT_Count_5pct_FDR AS [AMTs 5pct FDR],
+       PM.AMT_Count_10pct_FDR AS [AMTs 10pct FDR],
+       PM.AMT_Count_25pct_FDR AS [AMTs 25pct FDR],
+       PM.AMT_Count_50pct_FDR AS [AMTs 50pct FDR]
 FROM T_Dataset DS
      INNER JOIN T_Analysis_Job AJ
        ON DS.Dataset_ID = AJ.AJ_datasetID
@@ -27,6 +32,7 @@ FROM T_Dataset DS
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
      RIGHT OUTER JOIN T_MTS_Peak_Matching_Tasks_Cached PM
        ON AJ.AJ_jobID = PM.DMS_Job
+
 
 
 GO

@@ -47,13 +47,16 @@ CREATE Procedure AddUpdateRequestedRun
 **			04/20/2010 grk - fixed problem with experiment lookup validation
 **			04/21/2010 grk - try-catch for error handling
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
+**			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
+**			09/01/2010 mem - Added parameter @SkipTransactionRollback
+**			09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
 **
 *****************************************************/
 (
 	@reqName varchar(128),
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
-	@instrumentName varchar(64),
+	@instrumentName varchar(64),				-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
 	@workPackage varchar(50),
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
@@ -64,12 +67,14 @@ CREATE Procedure AddUpdateRequestedRun
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
-	@mode varchar(12) = 'add', -- or 'update'
+	@mode varchar(12) = 'add',					-- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
 	@request int output,
 	@message varchar(512) output,
 	@secSep varchar(64) = 'LC-ISCO-Standard',
 	@MRMAttachment varchar(128),
-	@status VARCHAR(24) = 'Active'
+	@status VARCHAR(24) = 'Active',				-- 'Active', 'Inactive', 'Completed'
+	@SkipTransactionRollback tinyint = 0,		-- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
+	@AutoPopulateUserListIfBlank tinyint = 0	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
 )
 As
 	set nocount on
@@ -118,7 +123,7 @@ As
 		RAISERROR ('Operator payroll number/HID was blank', 11, 113)
 	--
 	if LEN(@instrumentName) < 1
-		RAISERROR ('Instrument name was blank', 11, 114)
+		RAISERROR ('Instrument group was blank', 11, 114)
 	--
 	if LEN(@msType) < 1
 		RAISERROR ('Dataset type was blank', 11, 115)
@@ -172,7 +177,7 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @requestID <> 0 and (@mode = 'add' or @mode = 'check_add')
+	if @requestID <> 0 and (@mode IN ('add', 'check_add'))
 		RAISERROR ('Cannot add: Requested Dataset "%s" already in database', 11, 4, @reqName)
 	
 	-- need non-null request even if we are just checking
@@ -181,7 +186,7 @@ As
 
 	-- cannot update a non-existent entry
 	--
-	if @requestID = 0 and (@mode = 'update' or @mode = 'check_update')
+	if @requestID = 0 and (@mode IN ('update', 'check_update'))
 		RAISERROR ('Cannot update: Requested Dataset "%s" is not in database', 11, 4, @reqName)
 	
 	---------------------------------------------------
@@ -197,8 +202,11 @@ As
 	IF @Mode = 'update' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
 		RAISERROR ('Status "%s" is not valid', 11, 38, @status)
 	--
-	IF @Mode = 'update' AND (@status ='Completed' AND @oldStatus <> 'Completed' )
-		RAISERROR ('Cannot set status of request to "Completed"', 11, 39)
+	IF @Mode = 'update' AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
+	Begin
+		set @msg = 'Cannot set status of request to "Completed" when existing status is "' + @oldStatus + '"'
+		RAISERROR (@msg, 11, 39)
+	End
 	--
 	IF @Mode = 'update' AND (@oldStatus = 'Completed' AND @status <> 'Completed')
 		RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
@@ -255,8 +263,7 @@ As
 			return 51019
 		End
 	end
-		
-
+	
 	---------------------------------------------------
 	-- Lookup instrument run info fields 
 	-- (only effective for experiments
@@ -271,21 +278,37 @@ As
 						@msg output
 	if @myError <> 0
 		RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
+
+
+	---------------------------------------------------
+	-- Determine the Instrument Group
+	---------------------------------------------------
+	
+	Declare @InstrumentGroup varchar(64) = ''
+	
+	-- Set the instrument group to @instrumentName for now
+	set @InstrumentGroup = @instrumentName
+	
+	IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+	Begin
+		-- Try to update instrument group using T_Instrument_Name
+		SELECT @InstrumentGroup = IN_Group
+		FROM T_Instrument_Name
+		WHERE IN_Name = @instrumentName
+	End
 	
 	---------------------------------------------------
-	-- validate instrument name and dataset type
+	-- validate instrument group and dataset type
 	---------------------------------------------------
-	declare @instrumentID int
 	declare @datasetTypeID int
 	--
-	exec @myError = ValidateInstrumentAndDatasetType
+	exec @myError = ValidateInstrumentGroupAndDatasetType
 							@msType,
-							@instrumentName,
-							@instrumentID output,
+							@instrumentGroup,
 							@datasetTypeID output,
 							@msg output 
 	if @myError <> 0
-		RAISERROR ('ValidateInstrumentAndDatasetType: %s', 11, 1, @msg)
+		RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
 
 	---------------------------------------------------
 	-- Resolve ID for @secSep
@@ -324,9 +347,10 @@ As
 		if @myError <> 0
 			RAISERROR ('Error trying to look up attachement ID', 11, 73)
 	end
+	
 	---------------------------------------------------
-	-- Lookup EUS field (only effective for experiments
-	-- that have associated sample prep requests)
+	-- Lookup EUS field (only effective for experiments that have associated sample prep requests)
+	-- This will update the data in @eusUsageType, @eusProposalID, or @eusUsersList if it is "(lookup)"
 	---------------------------------------------------
 	--
 	exec @myError = LookupEUSFromExperimentSamplePrep	
@@ -335,6 +359,7 @@ As
 						@eusProposalID output,
 						@eusUsersList output,
 						@msg output
+						
 	if @myError <> 0
 		RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
@@ -347,9 +372,14 @@ As
 						@eusProposalID output,
 						@eusUsersList output,
 						@eusUsageTypeID output,
-						@msg output
+						@msg output,
+						@AutoPopulateUserListIfBlank
+						
 	if @myError <> 0
 		RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+
+	If IsNull(@msg, '') <> ''
+		Set @message = @msg
 
 	---------------------------------------------------
 	--
@@ -365,6 +395,7 @@ As
 						@experimentNum, 
 						@workPackage output, 
 						@msg  output
+						
 	if @myError <> 0
 		RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)	
 
@@ -405,7 +436,7 @@ As
 				@operPRN, 
 				@comment, 
 				GETDATE(), 
-				@instrumentName, 
+				@instrumentGroup, 
 				@datasetTypeID, 
 				@instrumentSettings, 
 				@defaultPriority, -- priority
@@ -457,7 +488,7 @@ As
 		SET 
 			RDS_Oper_PRN = @operPRN, 
 			RDS_comment = @comment, 
-			RDS_instrument_name = @instrumentName, 
+			RDS_instrument_name = @instrumentGroup, 
 			RDS_type_ID = @datasetTypeID, 
 			RDS_instrument_setting = @instrumentSettings, 
 			Exp_ID = @experimentID,
@@ -497,7 +528,7 @@ As
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		IF (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
@@ -506,6 +537,8 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [PNL\D3M578] AS [dbo]
 GO

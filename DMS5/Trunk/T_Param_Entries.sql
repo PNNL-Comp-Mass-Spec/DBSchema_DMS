@@ -19,11 +19,14 @@ CREATE TABLE [dbo].[T_Param_Entries](
 ) ON [PRIMARY]
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE TRIGGER [dbo].[trig_d_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR DELETE
@@ -49,11 +52,14 @@ AS
 
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE TRIGGER [dbo].[trig_i_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR INSERT
@@ -79,11 +85,14 @@ AS
 
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE TRIGGER [dbo].[trig_u_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR UPDATE

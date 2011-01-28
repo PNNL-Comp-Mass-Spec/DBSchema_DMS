@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDatasetDispositions
+CREATE PROCEDURE UpdateDatasetDispositions
 /****************************************************
 **
 **	Desc:
@@ -19,6 +19,8 @@ CREATE PROCEDURE dbo.UpdateDatasetDispositions
 **			08/22/2007 mem - Disallow setting datasets to rating 5 (Released) when their state is 5 (Capture Failed); Ticket #524
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			08/15/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
+**			08/19/2010 grk - try-catch for error handling
+**			11/18/2010 mem - Updated logic for calling SchedulePredefinedAnalyses to include dataset state 4 (Inactive)
 **
 *****************************************************/
 (
@@ -43,6 +45,7 @@ As
 	declare @msg varchar(512)
 	declare @list varchar(1024)
 
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -51,8 +54,7 @@ As
 	if @datasetIDList = ''
 	begin
 		set @msg = 'Dataset list is empty'
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 1)
 	end
 
 	---------------------------------------------------
@@ -70,15 +72,13 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error looking up rating name'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 2)
 	end
 	--
 	if @ratingID = 0
 	begin
 		set @msg = 'Could not find rating'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 3)
 	end
 
 	---------------------------------------------------
@@ -98,8 +98,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary dataset table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 4)
 	end
 
  	---------------------------------------------------
@@ -116,8 +115,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary dataset table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 5)
 	end
 
 
@@ -247,8 +245,7 @@ As
 						If @ratingID >= 2
 						Begin
 							set @msg = 'Cannot set dataset rating to ' + @rating + ' for dataset "' + @curDatasetName + '" since its state is ' + @curDatasetStateName
-							RAISERROR (@msg, 10, 1)
-							return 51005
+							RAISERROR (@msg, 11, 6)
 						End
 					End
 					
@@ -274,9 +271,7 @@ As
 					if @myError <> 0
 					begin
 						set @msg = 'Update operation failed'
-						rollback transaction @transName
-						RAISERROR (@msg, 10, 1)
-						return 51004
+						RAISERROR (@msg, 11, 7)
 					end
 					
 					-----------------------------------------------
@@ -288,9 +283,7 @@ As
 						--
 						if @myError <> 0
 						begin
-							rollback transaction @transName
-							RAISERROR (@message, 10, 1)
-							return 51004
+							RAISERROR (@message, 11, 8)
 						end
 					end
 
@@ -300,7 +293,7 @@ As
 					-- if rating changes from unreviewed to released
 					-- and dataset capture is complete
 					--
-					if @curRatingID = -10 and @ratingID = 5 AND @curDatasetState = 3
+					if @curRatingID = -10 and @ratingID = 5 AND @curDatasetState IN (3, 4)
 					begin
 						-- schedule default analyses for this dataset
 						--
@@ -328,16 +321,22 @@ As
 		end -- while
 	end -- update mode
 
- 	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-	
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [PNL\D3M578] AS [dbo]
 GO

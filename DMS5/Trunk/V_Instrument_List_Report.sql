@@ -4,6 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+
 CREATE VIEW [dbo].[V_Instrument_List_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
@@ -12,12 +14,14 @@ SELECT InstName.Instrument_ID AS ID,
        S.Source AS [Assigned Source],
        InstName.IN_Description AS Description,
        InstName.IN_class AS Class,
+       InstName.IN_group AS [Group],
        InstName.IN_Room_Number AS Room,
        InstName.IN_capture_method AS Capture,
        InstName.IN_status AS Status,
        InstName.IN_usage AS Usage,
        InstName.IN_operations_role AS [Ops Role],
-       dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID ) AS [Allowed Dataset Types]
+       dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID ) AS [Allowed Dataset Types],
+       InstName.IN_Created as Created
 FROM dbo.T_Instrument_Name InstName
      INNER JOIN dbo.t_storage_path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
@@ -25,6 +29,7 @@ FROM dbo.T_Instrument_Name InstName
                          SP_vol_name_server + SP_path AS Source
                   FROM t_storage_path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
+
 
 
 GO

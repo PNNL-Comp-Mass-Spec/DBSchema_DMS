@@ -175,11 +175,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_R
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
 For Delete
 /****************************************************
@@ -217,11 +220,14 @@ AS
 	ORDER BY Dataset_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 /****************************************************
@@ -252,11 +258,14 @@ AS
 	ORDER BY inserted.Dataset_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE Trigger trig_u_Dataset on T_Dataset
 For Update
@@ -356,6 +365,7 @@ ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Secondary_Sep]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_t_storage_path] FOREIGN KEY([DS_storage_path_ID])
 REFERENCES [t_storage_path] ([SP_path_ID])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_t_storage_path]
 GO

@@ -6,7 +6,7 @@ GO
 CREATE Procedure dbo.DeleteNewAnalysisJob
 /****************************************************
 **
-**	Desc: Delete analysis job if it is in "new" state only
+**	Desc: Delete analysis job if it is in "new" or "failed" state
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -70,6 +70,8 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteNewAnalysisJob] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [PNL\D3M578] AS [dbo]
 GO

@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_ID] [int] NOT NULL,
 	[IN_class] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_source_path_ID] [int] NULL,
 	[IN_storage_path_ID] [int] NULL,
 	[IN_capture_method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -20,6 +21,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_Max_Queued_Datasets] [smallint] NOT NULL,
 	[IN_Capture_Exclusion_Window] [real] NOT NULL,
 	[IN_Capture_Log_Level] [tinyint] NOT NULL,
+	[IN_Created] [datetime] NULL,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY NONCLUSTERED 
 (
 	[Instrument_ID] ASC
@@ -49,9 +51,17 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Class]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name] CHECK  (([IN_operations_role] = 'Unused' or ([IN_operations_role] = 'QC' or ([IN_operations_role] = 'Research' or ([IN_operations_role] = 'Production' or [IN_operations_role] = 'Unknown')))))
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Name_Instrument_Group] FOREIGN KEY([IN_Group])
+REFERENCES [T_Instrument_Group] ([IN_Group])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Name_Instrument_Group]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name] CHECK  (([IN_operations_role]='Unused' OR ([IN_operations_role]='QC' OR ([IN_operations_role]='Research' OR ([IN_operations_role]='Production' OR [IN_operations_role]='Unknown')))))
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Group]  DEFAULT ('Other') FOR [IN_Group]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_status]  DEFAULT ('active') FOR [IN_status]
 GO
@@ -59,11 +69,13 @@ ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_u
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_operations_role]  DEFAULT ('Unknown') FOR [IN_operations_role]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_count_max]  DEFAULT (1) FOR [IN_max_simultaneous_captures]
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_count_max]  DEFAULT ((1)) FOR [IN_max_simultaneous_captures]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_max_queued_datasets]  DEFAULT (1) FOR [IN_Max_Queued_Datasets]
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_max_queued_datasets]  DEFAULT ((1)) FOR [IN_Max_Queued_Datasets]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_exclusion_window]  DEFAULT (11) FOR [IN_Capture_Exclusion_Window]
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_exclusion_window]  DEFAULT ((11)) FOR [IN_Capture_Exclusion_Window]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_log_level]  DEFAULT (1) FOR [IN_Capture_Log_Level]
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_log_level]  DEFAULT ((1)) FOR [IN_Capture_Log_Level]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO

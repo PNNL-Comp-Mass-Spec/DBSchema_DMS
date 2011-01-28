@@ -151,6 +151,8 @@ GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS_Analysis] AS
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessorGroup] TO [PNL\D3M580] AS [dbo]

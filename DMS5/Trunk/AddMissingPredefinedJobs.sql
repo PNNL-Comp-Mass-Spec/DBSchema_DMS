@@ -17,6 +17,8 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **	Date:	05/23/2008 mem - Ticket #675
 **			10/30/2008 mem - Updated to only create jobs for datasets in state 3=Complete
 **			05/14/2009 mem - Added parameters @AnalysisToolNameFilter and @ExcludeDatasetsNotReleased
+**			10/25/2010 mem - Added parameter @DatasetNameIgnoreExistingJobs
+**			11/18/2010 mem - Now skipping datasets with a rating of -6 (Rerun, good data) when @ExcludeDatasetsNotReleased is non-zero
 **
 *****************************************************/
 (
@@ -26,7 +28,8 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 	@PreviewOutputType varchar(12) = 'Show Jobs',	-- Used if @InfoOnly = 1; options are 'Show Rules' or 'Show Jobs'
 	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines and jobs that match the given tool name (can contain wildcards)
 	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating of -1, -2, and -10)
-	@message varchar(512) = '' output
+	@message varchar(512) = '' output,
+	@DatasetNameIgnoreExistingJobs varchar(128) = ''	-- If defined, then we'll create predefined jobs for this dataset even if it has existing jobs
 )
 As
 	set nocount on
@@ -61,6 +64,7 @@ As
 	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
 	set @message = ''
+	Set @DatasetNameIgnoreExistingJobs = IsNull(@DatasetNameIgnoreExistingJobs, '')
 
 	If @DayCountForRecentDatasets < 1
 		Set @DayCountForRecentDatasets = 1
@@ -90,12 +94,15 @@ As
 	)
 	
 	-- Populate #TmpDSRatingExclusionList
-	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-1)
-	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-2)
-	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-10)
+	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-1)		-- No Data (Blank/Bad)
+	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-2)		-- Data Files Missing
+	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-10)		-- Unreviewed
 	
 	If @ExcludeDatasetsNotReleased <> 0
-		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-5)
+	Begin
+		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-5)	-- Not Released
+		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-6)	-- Rerun (Good Data)
+	End
 
 	---------------------------------------------------
 	-- Find datasets that were created within the last @DayCountForRecentDatasets days
@@ -155,6 +162,16 @@ As
 		Goto Done
 	End
 
+	If @DatasetNameIgnoreExistingJobs <> ''
+	Begin
+		UPDATE #Tmp_DatasetsToProcess
+		SET Process_Dataset = 1
+		FROM #Tmp_DatasetsToProcess Target
+		     INNER JOIN T_Dataset DS
+		       ON Target.Dataset_ID = Ds.Dataset_ID
+		WHERE DS.Dataset_Num = @DatasetNameIgnoreExistingJobs
+	End
+		
 	If @InfoOnly <> 0
 	Begin
 		SELECT InstName.IN_name,
@@ -334,6 +351,8 @@ Done:
 
 GO
 GRANT EXECUTE ON [dbo].[AddMissingPredefinedJobs] TO [D3L243] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddMissingPredefinedJobs] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddMissingPredefinedJobs] TO [PNL\D3M578] AS [dbo]
 GO

@@ -134,6 +134,8 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[Ext_PGDump_DumpMetadataForMultipleDatasets] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[Ext_PGDump_DumpMetadataForMultipleDatasets] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Ext_PGDump_DumpMetadataForMultipleDatasets] TO [PNL\D3M580] AS [dbo]

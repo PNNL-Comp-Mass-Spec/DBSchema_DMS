@@ -61,3 +61,5 @@ GRANT EXECUTE ON [dbo].[AutoResolveNameToPRN] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AutoResolveNameToPRN] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AutoResolveNameToPRN] TO [Limited_Table_Write] AS [dbo]
+GO

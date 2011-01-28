@@ -165,3 +165,5 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[GetRequestedRunsFromItemList] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [Limited_Table_Write] AS [dbo]
+GO

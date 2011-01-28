@@ -172,6 +172,8 @@ GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS2_SP_User] AS [db
 GO
 GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [PNL\D3M580] AS [dbo]

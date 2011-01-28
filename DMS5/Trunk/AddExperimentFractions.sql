@@ -581,6 +581,8 @@ GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [PNL\D3M580] AS [dbo]

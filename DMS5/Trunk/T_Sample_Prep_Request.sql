@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Request_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requester_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Reason] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Cell_Culture_List] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Cell_Culture_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Biohazard_Level] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Campaign] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -57,11 +57,14 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_P
 	[Request_Name] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 create Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Delete
@@ -91,11 +94,14 @@ AS
 	ORDER BY deleted.ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 create Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Insert
@@ -127,11 +133,14 @@ AS
 	ORDER BY inserted.ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update

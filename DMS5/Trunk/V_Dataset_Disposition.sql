@@ -3,12 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Dataset_Disposition as
+
+CREATE VIEW [dbo].[V_Dataset_Disposition] as
 SELECT
   DS.Dataset_ID AS ID,
   '' AS [Sel.],
   DS.Dataset_Num AS Dataset,
-  ISNULL(SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num + '\QC\index.html', '') AS QC_Link,
+  SPath.SP_URL + DS.Dataset_Num + '/QC/index.html' AS QC_Link,
   LCC.Cart_Name AS [LC Cart],
   RRH.RDS_BatchID AS Batch,
   RRH.ID AS Request,
@@ -28,6 +29,7 @@ FROM
   INNER JOIN t_storage_path AS SPath ON SPath.SP_path_ID = DS.DS_storage_path_ID
 WHERE
   ( DS.DS_rating = -10 )
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Disposition] TO [PNL\D3M578] AS [dbo]

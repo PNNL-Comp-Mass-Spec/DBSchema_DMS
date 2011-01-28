@@ -147,6 +147,8 @@ GRANT EXECUTE ON [dbo].[FindExperiment] TO [DMS_Guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[FindExperiment] TO [DMS_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindExperiment] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[FindExperiment] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[FindExperiment] TO [PNL\D3M580] AS [dbo]

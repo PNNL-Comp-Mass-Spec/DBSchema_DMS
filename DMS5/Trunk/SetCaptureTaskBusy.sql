@@ -48,3 +48,5 @@ As
 
 	RETURN @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskBusy] TO [Limited_Table_Write] AS [dbo]
+GO

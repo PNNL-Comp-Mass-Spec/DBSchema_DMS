@@ -4,20 +4,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Dataset_Folder_Paths
+
+CREATE VIEW [dbo].[V_Dataset_Folder_Paths]
 AS
-SELECT dbo.T_Dataset.Dataset_Num AS Dataset, 
-    dbo.T_Dataset.Dataset_ID, 
-    ISNULL(dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path
-     + dbo.T_Dataset.Dataset_Num, '') AS Dataset_Folder_Path, 
-    ISNULL(dbo.V_Dataset_Archive_Path.Archive_Path + '\' + dbo.T_Dataset.Dataset_Num,
-     '') AS Archive_Folder_Path
-FROM dbo.T_Dataset INNER JOIN
-    dbo.t_storage_path ON 
-    dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID
-     LEFT OUTER JOIN
-    dbo.V_Dataset_Archive_Path ON 
-    dbo.T_Dataset.Dataset_ID = dbo.V_Dataset_Archive_Path.Dataset_ID
+SELECT DS.Dataset_Num AS Dataset,
+       DS.Dataset_ID,
+       ISNULL(SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num, '') AS Dataset_Folder_Path,
+       ISNULL(DAP.Archive_Path + '\' + DS.Dataset_Num, '') AS Archive_Folder_Path,
+       SPath.SP_URL + DS.Dataset_Num + '/' AS Dataset_URL,
+       DAP.Instrument_Data_Purged
+FROM dbo.T_Dataset DS
+     INNER JOIN dbo.t_storage_path SPath
+       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+     LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
+       ON DS.Dataset_ID = DAP.Dataset_ID
 
 
 GO

@@ -119,6 +119,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[SetArchiveUpdateTaskComplete] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [PNL\D3M580] AS [dbo]

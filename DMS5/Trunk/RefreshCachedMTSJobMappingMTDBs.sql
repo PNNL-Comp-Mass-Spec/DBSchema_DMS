@@ -169,3 +169,5 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingMTDBs] TO [Limited_Table_Write] AS [dbo]
+GO

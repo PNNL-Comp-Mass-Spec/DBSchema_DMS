@@ -33,6 +33,8 @@ As
 	SELECT @datasetRequestID = Exp_ID FROM T_Requested_Run WHERE (RDS_Name = @requestNum)
 	return(@datasetRequestID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetRequestID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetRequestID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetRequestID] TO [PNL\D3M580] AS [dbo]

@@ -37,6 +37,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			02/11/2010 mem - Now assuring dataset rating is not -1 (or -2)
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN contains a person's real name rather than their username
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
+**			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to determine valid instrument classes for a given analysis tool
 **
 *****************************************************/
 (
@@ -241,22 +243,6 @@ As
 	---------------------------------------------------
 	-- Check tool/instrument compatibility for datasets
 	---------------------------------------------------
-	
-	-- get list of allowed instrument classes and dataset types for tool
-	--
-	declare @allowedInstClasses varchar(255)
-	--
-	SELECT  @allowedInstClasses = AJT_allowedInstClass
-	FROM    T_Analysis_Tool
-	WHERE   (AJT_toolName = @toolName)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error looking for allowed instrument classes for tool'
-		return 51007
-	end
 
 	-- find datasets that are not compatible with tool 
 	--
@@ -270,7 +256,11 @@ As
 	FROM
 		#TD 
 	WHERE 
-		IN_class NOT IN (SELECT * FROM MakeTableFromList(@allowedInstClasses))
+		IN_class NOT IN ( SELECT AIC.Instrument_Class
+						  FROM T_Analysis_Tool AnTool INNER JOIN
+							   T_Analysis_Tool_Allowed_Instrument_Class AIC ON 
+							     AnTool.AJT_toolID = AIC.Analysis_Tool_ID
+						  WHERE AnTool.AJT_toolName = @toolName)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -329,9 +319,6 @@ As
 	--	
 	Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
 	Set @parmFileName =        dbo.ValidateNAParameter(@parmFileName, 1)
-	Set @organismDBName =      dbo.ValidateNAParameter(@organismDBName, 1)
-	Set @protCollNameList =    dbo.ValidateNAParameter(@protCollNameList, 1)
-	Set @protCollOptionsList = dbo.ValidateNAParameter(@protCollOptionsList, 1)
 	
 	---------------------------------------------------
 	-- Validate param file for tool
@@ -360,7 +347,7 @@ As
 				SELECT TOP 1 @ParamFileTool = ToolList.AJT_toolName
 				FROM T_Param_Files PF
 				     INNER JOIN T_Analysis_Tool ToolList
-				       ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
+				 ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
 				WHERE (PF.Param_File_Name = @parmFileName)
 				ORDER BY ToolList.AJT_toolID
 
@@ -379,26 +366,6 @@ As
 				
 			return 53109
 		end
-	end
-
-	---------------------------------------------------
-	-- Lookup orgDbReqd for this tool
-	---------------------------------------------------
-
-	declare @orgDbReqd int
-	set @orgDbReqd = 0
-
-	SELECT 
-		@orgDbReqd = AJT_orgDbReqd
-	FROM T_Analysis_Tool
-	WHERE (AJT_toolName = @toolName)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error looking up tool parameters'
-		return 51038
 	end
 
 	---------------------------------------------------
@@ -451,41 +418,21 @@ As
 	-- Check protein parameters
 	---------------------------------------------------
 	
-	if @organismDBName = '' set @organismDBName = 'na'
-	if @protCollNameList = '' set @protCollNameList = 'na'
-	if @protCollOptionsList = '' set @protCollOptionsList = 'na'
+	exec @result = ValidateProteinCollectionParams
+					@toolName,
+					@organismDBName output,
+					@organismName,
+					@protCollNameList output,
+					@protCollOptionsList output,
+					@ownerPRN,
+					@message output,
+					@debugMode=0
+		
+	return @result
 
-	if Len(@protCollNameList) > 2000
-	begin
-		set @message = 'Protein collection list is too long; maximum length is 2000 characters'
-		return 53110
-	end
-	--
-	if @orgDbReqd = 0
-	begin
-		if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
-		begin
-			set @message = 'Protein parameters must all be "na"; you have: OrgDBName = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
-			return 53093
-		end
-	end
-	else
-	begin
-		exec @result = ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
-							@organismName,
-							@ownerPRN,
-							@organismDBName,
-							@protCollNameList output,
-							@protCollOptionsList output,
-							@message output
 
-		--
-		if @result <> 0
-		begin
-			return 53108
-		end
-	end
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [PNL\D3M578] AS [dbo]
 GO

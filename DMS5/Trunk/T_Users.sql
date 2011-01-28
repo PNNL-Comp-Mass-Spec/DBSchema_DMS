@@ -16,6 +16,7 @@ CREATE TABLE [dbo].[T_Users](
 	[U_active] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_update] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_created] [datetime] NULL,
+	[U_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Users] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
@@ -52,4 +53,6 @@ GO
 ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_update]  DEFAULT ('Y') FOR [U_update]
 GO
 ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_created]  DEFAULT (getdate()) FOR [U_created]
+GO
+ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_comment]  DEFAULT ('') FOR [U_comment]
 GO

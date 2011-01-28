@@ -177,7 +177,7 @@ As
 		RAISERROR ('Error populating temporary table', 11, 8)
 
 	---------------------------------------------------
-	-- Validate @protColNameList
+	-- Validate @protCollNameList
 	-- Note that ValidateProteinCollectionListForDatasets
 	--  will populate @message with an explanatory note
 	--  if @protCollNameList is updated
@@ -419,6 +419,8 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M578] AS [dbo]
 GO

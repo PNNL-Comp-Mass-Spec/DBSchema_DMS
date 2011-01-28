@@ -53,6 +53,8 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			05/13/2010 mem - Added parameter @ValidateDatasetType
 **			05/14/2010 mem - Now updating T_Dataset_Info.Scan_Types
 **			08/03/2010 mem - Removed unneeded fields from the T_Dataset_Info MERGE Source
+**			09/01/2010 mem - Now checking for invalid dates and storing Null in Acq_Time_Start and Acq_Time_End if invalid
+**			09/09/2010 mem - Fixed bug extracting StartTime and EndTime values
 **    
 *****************************************************/
 (
@@ -72,6 +74,12 @@ As
 
 	Declare @DatasetName varchar(128)
 	Declare @DatasetIDCheck int
+
+	Declare @StartTime varchar(32)
+	Declare @EndTime varchar(32)
+	
+	Declare @AcqTimeStart datetime
+	Declare @AcqTimeEnd datetime
 	
 	-----------------------------------------------------------
 	-- Create the table to hold the data
@@ -142,6 +150,7 @@ As
 	
 	---------------------------------------------------
 	-- Parse the contents of @DatasetInfoXML to populate @DSInfoTable
+	-- Skip the StartTime and EndTime values for now since they might have invalid dates
 	---------------------------------------------------
 	--
 	INSERT INTO @DSInfoTable (
@@ -152,8 +161,6 @@ As
 		ScanCountMSn,
 		Elution_Time_Max,
 		AcqTimeMinutes,
-		Acq_Time_Start,
-		Acq_Time_End,
 		FileSizeBytes,
 		TIC_Max_MS,
 		TIC_Max_MSn,
@@ -171,8 +178,6 @@ As
 			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
 			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
 			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
-			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/StartTime)[1]', 'datetime') AS StartTime,
-			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'datetime') AS EndTime,
 			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,       
 			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
 			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
@@ -192,6 +197,37 @@ As
 	end
 
 
+	---------------------------------------------------
+	-- Now parse out the start and end times
+	-- Initially extract as strings in case they're out of range for Sql Server's datetime date type
+	---------------------------------------------------
+	--
+	SELECT @StartTime = @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/StartTime)[1]', 'varchar(32)'),
+		   @EndTime = @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'varchar(32)')
+
+			
+	If IsDate(@StartTime) <> 0
+		Set @AcqTimeStart = Convert(datetime, @StartTime)
+
+	If IsDate(@EndTime) <> 0
+		Set @AcqTimeEnd = Convert(datetime, @EndTime)
+	Else
+	Begin
+		-- End Time is invalid
+		-- If the start time is valid, add the acquisition time length to the end time 
+		-- (though, typically, if one is invalid the other will be invalid too)
+		-- IMS .UIMF files acquired in summer 2010 had StartTime values of 0410-08-29 (year 410) due to a bug
+				
+		If Not @AcqTimeStart Is Null
+			SELECT @AcqTimeEnd = DateAdd(minute, AcqTimeMinutes, @AcqTimeStart)
+			FROM @DSInfoTable
+	End
+		
+	UPDATE @DSInfoTable
+	Set Acq_Time_Start = @AcqTimeStart,
+		Acq_Time_End = @AcqTimeEnd
+		
+	
 	---------------------------------------------------
 	-- Now extract out the ScanType information
 	---------------------------------------------------
@@ -456,4 +492,6 @@ Done:
 			
 	Return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [Limited_Table_Write] AS [dbo]
 GO

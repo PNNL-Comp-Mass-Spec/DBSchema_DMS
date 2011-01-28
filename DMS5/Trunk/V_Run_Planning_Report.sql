@@ -7,12 +7,14 @@ GO
 
 CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
-SELECT Instrument,
+SELECT [Inst. Group],
+       [DS Type],
        [Run Count],
        [Batch or Experiment],
        Requester,
        [Date Created],
        DATEDIFF(DAY, [Date Created], GETDATE()) AS [Days in Queue],
+       [Days in Prep Queue],
        [Separation Type],
        CASE
            WHEN LEN(RequestLookupQ.RDS_comment) > 30 THEN 
@@ -32,20 +34,23 @@ SELECT Instrument,
 			Else 120								-- Request is over 90 days old
 		End
 		AS #DaysInQueue
-FROM ( SELECT Instrument,
+FROM ( SELECT [Inst. Group],
               MIN(RequestID) AS [Min Request],
               COUNT(RequestName) AS [Run Count],
               MIN([Batch/Experiment]) AS [Batch or Experiment],
               Requester,
               MIN(Request_Created) AS [Date Created],
               [Separation Type],
+              [DS Type],
               [Work Package],
               Proposal,
               Locked,
               [Last Ordered],
-              [Request Name Code]
-       FROM ( SELECT RA.Instrument,
+              [Request Name Code],
+              MAX([Days in Prep Queue]) AS [Days in Prep Queue]
+       FROM ( SELECT RA.Instrument AS [Inst. Group],
                      RA.[Separation Type],
+                     RA.[Type] AS [DS Type],
                      RA.Request AS RequestID,
                      RA.Name AS RequestName,
                      CASE WHEN RA.Batch = 0 THEN
@@ -67,18 +72,26 @@ FROM ( SELECT Instrument,
                      RA.[Work Package],
                      RA.Proposal,
                      RRB.Locked,
-                     CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) AS [Last Ordered]
+                     CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) AS [Last Ordered],
+                     CASE WHEN SPR.ID = 0 THEN NULL
+                          ELSE QT.[Days In Queue] 
+                     END AS [Days in Prep Queue]
               FROM dbo.V_Run_Assignment AS RA
                    INNER JOIN dbo.T_Requested_Run_Batches AS RRB
                      ON RA.Batch = RRB.ID
+                   INNER JOIN dbo.T_Experiments E 
+                     ON RA.[Experiment ID] = E.Exp_ID 
+                   INNER JOIN dbo.T_Sample_Prep_Request SPR 
+                     ON E.EX_sample_prep_request_ID = SPR.ID
+                   LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
+                     ON SPR.ID = QT.Request_ID
               WHERE (RA.Status = 'Active') 
            ) RequestQ
-       GROUP BY Instrument, [Separation Type], [Request Name Code], Requester, 
+       GROUP BY [Inst. Group], [Separation Type], [DS Type], [Request Name Code], Requester, 
                 [Work Package], Proposal, Locked, [Last Ordered] 
     ) GroupQ
 	INNER JOIN dbo.T_Requested_Run RequestLookupQ
        ON GroupQ.[Min Request] = RequestLookupQ.ID
-
 
 
 

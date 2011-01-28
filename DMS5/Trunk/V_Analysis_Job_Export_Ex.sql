@@ -33,12 +33,15 @@ SELECT AJ.AJ_jobID AS Job,
        AnalysisTool.AJT_resultType AS ResultType,
        Dataset_Int_Std.Name AS [Dataset Int Std],
        DS.DS_created,
-       DATEDIFF(second, DS.Acq_Time_Start, DS.Acq_Time_End) / 60.0 AS DS_Acq_Length,
+       CASE WHEN DS.Acq_Time_End - DS.Acq_Time_Start < 90
+       THEN DATEDIFF(second, DS.Acq_Time_Start, DS.Acq_Time_End) / 60.0 
+       ELSE NULL End AS DS_Acq_Length,
        E.EX_enzyme_ID AS EnzymeID,
        E.EX_Labelling AS Labelling,
        PreDigest_Int_Std.Name AS [PreDigest Int Std],
        PostDigest_Int_Std.Name AS [PostDigest Int Std],
-       AJ_assignedProcessorName AS Processor
+       AJ_assignedProcessorName AS Processor,
+       AJ.AJ_requestID AS RequestID
 FROM dbo.T_Analysis_Job AJ
      INNER JOIN dbo.T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID

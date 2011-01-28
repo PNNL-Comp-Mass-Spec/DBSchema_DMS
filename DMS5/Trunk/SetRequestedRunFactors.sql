@@ -44,3 +44,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[SetRequestedRunFactors] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetRequestedRunFactors] TO [Limited_Table_Write] AS [dbo]
+GO

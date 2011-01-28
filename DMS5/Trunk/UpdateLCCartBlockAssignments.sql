@@ -111,3 +111,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateLCCartBlockAssignments] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartBlockAssignments] TO [Limited_Table_Write] AS [dbo]
+GO

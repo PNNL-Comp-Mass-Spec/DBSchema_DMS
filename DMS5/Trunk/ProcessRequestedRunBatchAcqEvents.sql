@@ -95,3 +95,5 @@ As
 	--
 	RETURN @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[ProcessRequestedRunBatchAcqEvents] TO [Limited_Table_Write] AS [dbo]
+GO

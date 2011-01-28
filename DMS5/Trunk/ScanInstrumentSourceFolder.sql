@@ -91,6 +91,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[ScanInstrumentSourceFolder] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[ScanInstrumentSourceFolder] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ScanInstrumentSourceFolder] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[ScanInstrumentSourceFolder] TO [PNL\D3M580] AS [dbo]

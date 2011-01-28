@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateCellCulture
+CREATE Procedure AddUpdateCellCulture
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -20,6 +20,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			03/11/2008 grk - Added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN and @piPRN contain a person's real name rather than their username
+**			08/19/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 (
@@ -49,6 +50,8 @@ As
 
 	declare @msg varchar(256)
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -58,55 +61,44 @@ As
 	set @myError = 0
 	if LEN(@campaignNum) < 1
 	begin
-		set @myError = 51000
-		RAISERROR ('campaign Number was blank',
-			10, 1)
+		RAISERROR ('campaign Number was blank', 11, 1)
 	end
 	--
 	if LEN(@ownerPRN) < 1
 	begin
-		set @myError = 51002
-		RAISERROR ('Owner PRN was blank', 10, 1)
+		RAISERROR ('Owner PRN was blank', 11, 2)
 	end
 	--
 	if LEN(@piPRN) < 1
 	begin
-		set @myError = 51003
-		RAISERROR ('Principle Investigator PRN was blank', 10, 1)
+		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
 	end
 	--
 	if LEN(@cellCultureName) < 1
 	begin
-		set @myError = 51001
-		RAISERROR ('Cell Culture Name was blank', 10, 1)
+		RAISERROR ('Cell Culture Name was blank', 11, 4)
 	end
 	--
 	if LEN(@sourceName) < 1
 	begin
-		set @myError = 51001
-		RAISERROR ('Source Name was blank', 10, 1)
+		RAISERROR ('Source Name was blank', 11, 5)
 	end
 	--
 	if LEN(@cultureType) < 1
 	begin
 		set @myError = 51001
-		RAISERROR ('Culture Type was blank', 10, 1)
+		RAISERROR ('Culture Type was blank', 11, 1)
 	end
 	--
 	if LEN(@reason) < 1
 	begin
-		set @myError = 51001
-		RAISERROR ('Reason was blank', 10, 1)
+		RAISERROR ('Reason was blank', 11, 6)
 	end
 	--
 	if LEN(@campaignNum) < 1
 	begin
-		set @myError = 51001
-		RAISERROR ('Campaign Num was blank', 10, 1)
+		RAISERROR ('Campaign Num was blank', 11, 7)
 	end
-	--
-	if @myError <> 0
-		return @myError
 
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -129,8 +121,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying to resolve cell culture ID'
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 10)
 	end
 
 	-- cannot create an entry that already exists
@@ -138,8 +129,7 @@ As
 	if @cellCultureID <> 0 and (@mode = 'add' or @mode = 'check_add')
 	begin
 		set @msg = 'Cannot add: Cell Culture "' + @cellCultureName + '" already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
+		RAISERROR (@msg, 11, 11)
 	end
 
 	-- cannot update a non-existent entry
@@ -147,8 +137,7 @@ As
 	if @cellCultureID = 0 and (@mode = 'update' or @mode = 'check_update')
 	begin
 		set @msg = 'Cannot update: Cell Culture "' + @cellCultureName + '" is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
+		RAISERROR (@msg, 11, 12)
 	end
 
 	---------------------------------------------------
@@ -163,8 +152,7 @@ As
 	if @campaignID = 0
 	begin
 		set @msg = 'Could not resolve campaign num "' + @campaignNum + '" to ID"'
-		RAISERROR (@msg, 10, 1)
-		return 51004
+		RAISERROR (@msg, 11, 13)
 	end
 	
 	---------------------------------------------------
@@ -183,8 +171,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Could not resove type name "' + @cultureType + '" to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 14)
 	end
 
 	---------------------------------------------------
@@ -203,8 +190,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Could not resove container name "' + @container + '" to ID'
-		RAISERROR (@msg, 10, 1)
-		return 510019
+		RAISERROR (@msg, 11, 15)
 	end
 
 	---------------------------------------------------
@@ -222,8 +208,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error resolving name of current container'
-		RAISERROR (@msg, 10, 1)
-		return 510027
+		RAISERROR (@msg, 11, 16)
 	end
 
 	---------------------------------------------------
@@ -276,8 +261,7 @@ As
 		Else
 		Begin
 			set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51006
+			RAISERROR (@msg, 11, 17)
 		End
 	end
 
@@ -315,8 +299,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Insert operation failed: "' + @cellCultureName + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 18)
 		end
 
 		set @cellCultureID = IDENT_CURRENT('T_Cell_Culture')
@@ -368,8 +351,7 @@ As
 		if @myError <> 0 or @myRowCount <> 1
 		begin
 			set @msg = 'Update operation failed: "' + @cellCultureName + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 19)
 		end
 
 		-- material movement logging
@@ -387,13 +369,22 @@ As
 
 	end -- update mode
 
-
-	return 0
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [PNL\D3M578] AS [dbo]
 GO

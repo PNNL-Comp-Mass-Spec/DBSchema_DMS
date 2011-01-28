@@ -99,6 +99,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[GetNewJobIDBlock] TO [DMSReader] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [PNL\D3M580] AS [dbo]

@@ -182,6 +182,8 @@ GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [D3L243] AS
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessingStats] TO [DMSReader] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [PNL\D3M580] AS [dbo]

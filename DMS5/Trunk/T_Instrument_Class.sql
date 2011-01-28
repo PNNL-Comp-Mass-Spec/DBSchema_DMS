@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Instrument_Class](
 	[requires_preparation] [tinyint] NOT NULL,
 	[x_Allowed_Dataset_Types] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Params] [xml] NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Instrument_Class] PRIMARY KEY CLUSTERED 
 (
 	[IN_class] ASC
@@ -19,6 +20,7 @@ CREATE TABLE [dbo].[T_Instrument_Class](
 GO
 ALTER TABLE [dbo].[T_Instrument_Class]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Class_T_Instrument_Data_Type_Name] FOREIGN KEY([raw_data_type])
 REFERENCES [T_Instrument_Data_Type_Name] ([Raw_Data_Type_Name])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Class] CHECK CONSTRAINT [FK_T_Instrument_Class_T_Instrument_Data_Type_Name]
 GO

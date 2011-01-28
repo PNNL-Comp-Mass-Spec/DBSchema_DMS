@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateUser
+
+CREATE Procedure [dbo].[AddUpdateUser]
 /****************************************************
 **
 **	Desc: Adds new or updates existing User in database
@@ -18,12 +19,11 @@ CREATE Procedure AddUpdateUser
 **		@AccessList     List of access permissions for user 
 **	
 **
-**		Auth: grk
-**		Date: 1/27/2004
-**    
-**		11/03/2006 - JDS - Added support for U_Status field
-**         	removed @AccessList varchar(256), 
-**      01/23/2008 grk -- added @UserUpdate
+**	Auth:	grk
+**	Date:	01/27/2004
+**			11/03/2006 JDS - Added support for U_Status field, removed @AccessList varchar(256)
+**			01/23/2008 grk - Added @UserUpdate
+**			10/14/2010 mem - Added @Comment
 **
 *****************************************************/
 (
@@ -33,6 +33,7 @@ CREATE Procedure AddUpdateUser
 	@UserStatus varchar(24), 
 	@UserUpdate varchar(1),
 	@OperationsList varchar(1024),
+	@Comment varchar(512) = '',
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -123,13 +124,15 @@ As
 			U_Name, 
 			U_HID, 
 			U_Status, 
-			U_update
+			U_update,
+			U_comment
 		) VALUES (
 			@UserPRN,
 			@UserName,
 			@HanfordIDNum,
 			@UserStatus, 
-			@UserUpdate
+			@UserUpdate,
+			ISNULL(@Comment, '')
 		)	
 		-- return Operation ID of newly created User Operation
 		--
@@ -164,7 +167,8 @@ As
 				U_HID = @HanfordIDNum, 
 				U_Status = @UserStatus,
 				U_Active = 'N',
-				U_update = 'N'
+				U_update = 'N',
+				U_comment = @Comment
 			WHERE (U_PRN = @UserPRN)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -185,7 +189,8 @@ As
 				U_Name = @UserName, 
 				U_HID = @HanfordIDNum, 
 				U_Status = @UserStatus,
-				U_update = @UserUpdate
+				U_update = @UserUpdate,
+				U_comment = @Comment
 			WHERE (U_PRN = @UserPRN)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -201,7 +206,7 @@ As
 
 
 		---------------------------------------------------
-		-- delete operations that do not exsit in the  
+		-- delete operations that do not exist in the  
 		-- T_User_Operations table to prevent join failure
 		---------------------------------------------------
 
@@ -292,10 +297,13 @@ As
 
 
 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [PNL\D3M578] AS [dbo]
 GO

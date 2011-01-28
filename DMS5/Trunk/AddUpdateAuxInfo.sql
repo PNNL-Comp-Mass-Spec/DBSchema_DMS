@@ -16,6 +16,7 @@ CREATE Procedure AddUpdateAuxInfo
 **      12/18/2007 grk - Improved ability to handle target ID if supplied as target name
 **      06/30/2008 jds - Added error message to "Resolve target name and entity name to entity ID" section
 **      05/15/2009 jds - Added a return if just performing a check_add or check_update
+**		08/21/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 (
@@ -40,7 +41,18 @@ As
 	set @message = ''
 	
 	declare @msg varchar(256)
+
+	BEGIN TRY 
+
+	---------------------------------------------------
+	-- what mode are we in
+	---------------------------------------------------
 	
+	if (@mode = 'check_update' or @mode = 'check_add')
+	begin
+		SET @mode = 'check_only'
+	end
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -55,34 +67,35 @@ As
 	set @targetID = 0
 
 	if ISNUMERIC(@targetEntityName) > 0
-		begin
-			set @targetID = cast(@targetEntityName as int)
-		end
+	begin
+		set @targetID = cast(@targetEntityName as int)
+	end
 	else
-		begin --<1>
-			---------------------------------------------------
-			-- Resolve target name to target table criteria
-			---------------------------------------------------
-			declare @tgtTableName varchar(128)
-			declare @tgtTableNameCol varchar(128)
-			declare @tgtTableIDCol varchar(128)
+	begin --<1>
+		---------------------------------------------------
+		-- Resolve target name to target table criteria
+		---------------------------------------------------
+		declare @tgtTableName varchar(128)
+		declare @tgtTableNameCol varchar(128)
+		declare @tgtTableIDCol varchar(128)
 
-			SELECT 
-				@tgtTableName = Target_Table, 
-				@tgtTableIDCol = Target_ID_Col, 
-				@tgtTableNameCol = Target_Name_Col
-			FROM T_AuxInfo_Target
-			WHERE (Name = @targetName)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0 or @myRowCount <> 1
-			begin
-				set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
-				RAISERROR (@msg, 10, 1)
-				return 51000
-			end
+		SELECT 
+			@tgtTableName = Target_Table, 
+			@tgtTableIDCol = Target_ID_Col, 
+			@tgtTableNameCol = Target_Name_Col
+		FROM T_AuxInfo_Target
+		WHERE (Name = @targetName)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0 or @myRowCount <> 1
+		begin
+			set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
+			RAISERROR (@msg, 11, 1)
+		end
 
+		IF @mode <> 'check_only'
+		BEGIN --<a>
 			---------------------------------------------------
 			-- Resolve target name and entity name to entity ID
 			---------------------------------------------------
@@ -99,11 +112,11 @@ As
 			--
 			if @targetID = 0
 			begin
-				set @msg = 'Could not resolve target name and entity name to entity ID: "' + @categoryName + '" - "' + @subCategoryName + '" '
-				RAISERROR (@msg, 10, 1)
-				return 51002
+				set @msg = 'Could not resolve target name and entity name to entity ID: "' + @targetEntityName + '" '
+				RAISERROR (@msg, 11, 2)
 			end
-		end --<1>
+		END --<a>
+	end --<1>
 
 	---------------------------------------------------
 	-- Adding code to return if just a verification check
@@ -151,7 +164,6 @@ As
 	while @done = 0
 	begin
 		set @count = @count + 1
-		--print '========== row:' +  + convert(varchar, @count)
 
 		-- get the next field from the item name list
 		--
@@ -177,68 +189,73 @@ As
 		if @myError <> 0 or @itemID = 0
 		begin
 			set @msg = 'Could not resolve item to ID: "' + @inFld + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51001
+			RAISERROR (@msg, 11, 1)
 		end
 
-		-- if value is blank, delete any existing entry from value table
-		--
-		if @vFld = ''
-		begin
-			DELETE FROM T_AuxInfo_Value 
-			WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)
-			goto nextItem
-		end
-
-		-- does entry exist in value table?
-		--
-		SELECT @tVal = Value
-		FROM T_AuxInfo_Value
-		WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)		
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51001
-		end
-
-		-- if entry exists in value table, update it
-		-- otherwise insert it
-		--
-		if @myRowCount > 0 
+		IF @mode <> 'check_only'
+		BEGIN --<b>
+			-- if value is blank, delete any existing entry from value table
+			--
+			if @vFld = ''
 			begin
-				if @tVal <> @vFld
+				DELETE FROM T_AuxInfo_Value 
+				WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)
+				goto nextItem
+			end
+
+			-- does entry exist in value table?
+			--
+			SELECT @tVal = Value
+			FROM T_AuxInfo_Value
+			WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)		
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
+				RAISERROR (@msg, 11, 1)
+			end
+
+			-- if entry exists in value table, update it
+			-- otherwise insert it
+			--
+			if @myRowCount > 0 
 				begin
-					UPDATE T_AuxInfo_Value
-					SET Value = @vFld
-					WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)
+					if @tVal <> @vFld
+					begin
+						UPDATE T_AuxInfo_Value
+						SET Value = @vFld
+						WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)
+					end
 				end
-			end
-		else
-			begin
-				INSERT INTO T_AuxInfo_Value
-				(Target_ID, AuxInfo_ID, Value)
-				VALUES (@targetID, @itemID, @vFld)
-			end
+			else
+				begin
+					INSERT INTO T_AuxInfo_Value
+					(Target_ID, AuxInfo_ID, Value)
+					VALUES (@targetID, @itemID, @vFld)
+				end
+		END --<b>
 		
 nextItem:
 	end
 
-
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-
-
-	return 0
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [PNL\D3M578] AS [dbo]
 GO

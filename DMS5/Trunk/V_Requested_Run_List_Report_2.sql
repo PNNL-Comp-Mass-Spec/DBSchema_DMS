@@ -15,7 +15,8 @@ SELECT RR.ID AS Request,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,
-       RR.RDS_instrument_name AS Instrument,
+       ISNULL(InstName.IN_name, '') AS Instrument,       
+       RR.RDS_instrument_name AS [Inst. Group],
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
@@ -55,6 +56,8 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_Cart_ID = LC.ID
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
+     LEFT OUTER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
 

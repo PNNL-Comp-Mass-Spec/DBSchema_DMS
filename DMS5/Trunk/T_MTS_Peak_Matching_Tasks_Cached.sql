@@ -20,6 +20,11 @@ CREATE TABLE [dbo].[T_MTS_Peak_Matching_Tasks_Cached](
 	[DMS_Job] [int] NOT NULL,
 	[Output_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Results_URL] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AMT_Count_1pct_FDR] [int] NULL,
+	[AMT_Count_5pct_FDR] [int] NULL,
+	[AMT_Count_10pct_FDR] [int] NULL,
+	[AMT_Count_25pct_FDR] [int] NULL,
+	[AMT_Count_50pct_FDR] [int] NULL,
  CONSTRAINT [PK_T_MTS_Peak_Matching_Tasks_Cached] PRIMARY KEY NONCLUSTERED 
 (
 	[CachedInfo_ID] ASC

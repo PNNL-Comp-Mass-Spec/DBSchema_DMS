@@ -115,6 +115,8 @@ GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [PNL\D3M580] AS [dbo]

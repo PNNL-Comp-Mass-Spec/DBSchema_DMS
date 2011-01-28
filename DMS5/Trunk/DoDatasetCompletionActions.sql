@@ -14,10 +14,12 @@ CREATE Procedure DoDatasetCompletionActions
 **
 **	Parameters: 
 **
-**  Auth: grk
-**  Date: 11/4/2002
-**        8/6/2003 grk -- added handling for "Not Ready" state
-**        7/1/2005 grk -- changed to use "SchedulePredefinedAnalyses"
+**  Auth:	grk
+**  Date:	11/04/2002
+**			08/06/2003 grk - added handling for "Not Ready" state
+**			07/01/2005 grk - changed to use "SchedulePredefinedAnalyses"
+**			11/18/2010 mem - Now checking dataset rating and not calling ?? if the rating is -10 (unreviewed)
+**						   - Removed CD burn schedule code
 **    
 *****************************************************/
 (
@@ -29,24 +31,25 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
 	declare @datasetID int
 	declare @datasetState int
- 
+	declare @datasetRating smallint 
 
    	---------------------------------------------------
 	-- resolve dataset into ID and state
 	---------------------------------------------------
 	--
-	SELECT     @datasetID = Dataset_ID, @datasetState = DS_state_ID
-	FROM         T_Dataset
-	WHERE     (Dataset_Num = @datasetNum)	
+	SELECT @datasetID = Dataset_ID,
+	       @datasetState = DS_state_ID,
+	       @datasetRating = DS_rating
+	FROM T_Dataset
+	WHERE (Dataset_Num = @datasetNum)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -84,26 +87,11 @@ As
 		goto done
 	end
 	
-   	---------------------------------------------------
-	-- Get the default CD burn schedule for the dataset
-	---------------------------------------------------
-	--
-	declare @CDBurnSched varchar(32)
-	SELECT @CDBurnSched = T_Instrument_Name.IN_default_CDburn_sched 
-	FROM T_Dataset 
-	INNER JOIN T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID 
-	WHERE (T_Dataset.Dataset_ID = @datasetID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Could not get CD burn schedule for dataset ' + @datasetNum
-		goto done
-	end
-
+ 
    	---------------------------------------------------
 	-- Set up proper compression state
+	-- Note: as of February 2010, datasets no longer go through "prep"
+	-- Thus, @compressonState and @compressionDate will be null
 	---------------------------------------------------
 	--
 	declare @compressonState int
@@ -126,6 +114,7 @@ As
 				set @compressionDate = getdate()
 			end
 	end
+	
 	--
    	---------------------------------------------------
 	-- Start transaction
@@ -169,37 +158,6 @@ As
 	end
 
 
-/*****************************************************
-	-- Remove above comment line to enable CD burn schedule
-	-- Make new entry into CD burn table to schedule the job
-	--
-	INSERT INTO T_CDBurn_Requests(
-		CDB_Dataset_ID, 
-		CDB_qty, 
-		CDB_schedule, 
-		CDB_created, 
-		CDB_Status
-	) VALUES (
-		@datasetID, 
-		1, 
-		@CDBurnSched, 
-		GETDATE(), 
-		1
-	)	--
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or  @myRowCount <> 1
-	begin
-		rollback transaction @transName
-		set @myError = 51253
-		set @message = 'Update was unsuccessful for CD burn ' + @datasetNum
-		goto done
-	end
-
-	-- Remove following comment line to enable CD burn schedule
- *****************************************************/
-
    	---------------------------------------------------
 	-- Make new entry into the archive table
 	---------------------------------------------------
@@ -218,11 +176,11 @@ As
 	commit transaction @transName
 	
    	---------------------------------------------------
-	-- schedule default analyses for this dataset
+	-- Schedule default analyses for this dataset (if the rating is not -10 = Unreviewed)
 	---------------------------------------------------
 	--
---	execute @result = ScheduleDefaultAnalyses @datasetNum
-	execute @result = SchedulePredefinedAnalyses @datasetNum
+	If @datasetRating <> -10
+		execute @result = SchedulePredefinedAnalyses @datasetNum
 
    	---------------------------------------------------
 	-- Exit
@@ -235,7 +193,9 @@ Done:
 	end
 	return @myError
 
- 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoDatasetCompletionActions] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoDatasetCompletionActions] TO [PNL\D3M578] AS [dbo]
 GO

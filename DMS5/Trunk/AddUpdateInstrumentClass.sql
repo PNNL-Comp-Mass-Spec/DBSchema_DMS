@@ -23,6 +23,7 @@ CREATE Procedure AddUpdateInstrumentClass
 **			07/25/2007 mem - Added parameter @allowedDatasetTypes
 **			09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
 **			06/21/2010 mem - Added parameter @Params
+**			11/16/2010 mem - Added parameter @Comment
 **    
 *****************************************************/
 (
@@ -31,6 +32,7 @@ CREATE Procedure AddUpdateInstrumentClass
 	@rawDataType varchar(32), 
 	@requiresPreparation varchar(1), 
 	@Params text,
+	@Comment varchar(255),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -125,13 +127,15 @@ As
 			is_purgable,
 			raw_data_type,
 			requires_preparation,
-			Params
+			Params,
+			Comment
 		) VALUES (
 			@InstrumentClass,
 			@isPurgable,
 			@rawDataType,
 			@requiresPreparation,
-			@xmlParams
+			@xmlParams,
+			@Comment
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -159,7 +163,8 @@ As
 			is_purgable = @isPurgable, 
 			raw_data_type = @rawDataType, 
 			requires_preparation = @requiresPreparation,
-			Params = @xmlParams
+			Params = @xmlParams,
+			Comment = @Comment
 		WHERE (IN_class = @InstrumentClass)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -177,6 +182,8 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrumentClass] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [PNL\D3M578] AS [dbo]
 GO

@@ -10,6 +10,7 @@ SELECT IN_class AS [Instrument Class],
        is_purgable AS [Is Purgable],
        requires_preparation AS [Requires Preparation],
        raw_data_type,
+       Comment,
        dbo.[XmlToHTML](Params) AS Params
 FROM dbo.T_Instrument_Class
 

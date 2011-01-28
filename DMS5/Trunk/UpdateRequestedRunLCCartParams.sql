@@ -362,6 +362,8 @@ GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_RunScheduler] AS
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunLCCartParams] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunLCCartParams] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunLCCartParams] TO [PNL\D3M580] AS [dbo]

@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Instrument_Data_Type_Name](
 	[Raw_Data_Type_Name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Is_Folder] [tinyint] NOT NULL,
 	[Required_File_Extension] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Instrument_Data_Type_Name] PRIMARY KEY CLUSTERED 
 (
 	[Raw_Data_Type_ID] ASC

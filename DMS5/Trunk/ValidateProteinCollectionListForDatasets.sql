@@ -18,6 +18,7 @@ CREATE PROCEDURE ValidateProteinCollectionListForDatasets
 **			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			02/28/2008 grk/mem - Detect duplicate names in protein collection list (https://prismtrac.pnl.gov/trac/ticket/650)
 **			07/09/2010 mem - Now auto-adding protein collections associated with the digestion enzyme for the experiments associated with the datasets; this is typically used to add trypsin contaminants to the search
+**			09/02/2010 mem - Changed RAISERROR severity level from 10 to 11
 **    
 *****************************************************/
 (
@@ -66,7 +67,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary table #TmpDatasets'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51007
 	end
 	
@@ -126,14 +127,14 @@ As
 	If @myError <> 0
 	Begin
 		set @msg = 'Error trying to look for duplicate protein collection names'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51009
 	End	
 	
 	If @dups <> ''
 	Begin
 		set @msg = 'There were duplicate names (' + @dups + ') in the protein collections list'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51010
 	End
 
@@ -245,7 +246,7 @@ As
 	If @myError <> 0
 	Begin
 		set @msg = 'Error populating #ProteinCollectionsToAdd with the missing protein collections'
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51006
 	End
 	
@@ -266,7 +267,7 @@ As
 		If @myError <> 0
 		Begin
 			set @msg = 'Error populating #ProteinCollections with the missing protein collections'
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@msg, 11, 1)
 			return 51008
 		End
 		
@@ -364,6 +365,8 @@ As
 Done:
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [PNL\D3M578] AS [dbo]
 GO

@@ -197,3 +197,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DoSamplePrepMaterialOperation] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [Limited_Table_Write] AS [dbo]
+GO

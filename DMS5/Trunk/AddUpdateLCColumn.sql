@@ -3,9 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
 CREATE Procedure AddUpdateLCColumn
 /****************************************************
 **
@@ -17,6 +14,7 @@ CREATE Procedure AddUpdateLCColumn
 **
 **		Auth: grk
 **		Date: 12/9/2003
+**		08/19/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 	@columnNumber varchar (128),
@@ -45,7 +43,9 @@ As
 	set @message = ''
 	
 	declare @msg varchar(256)
-	
+
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -53,12 +53,8 @@ As
 	if LEN(@columnNumber) < 1
 	begin
 		set @myError = 51110
-		RAISERROR ('Dataset number was blank',
-			10, 1)
+		RAISERROR ('Dataset number was blank', 11, 1)
 	end
-	--
-	if @myError <> 0
-		return @myError
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -76,8 +72,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error while trying to find existing entry in database'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 2)
 	end
 
 	-- cannot create an entry that already exists
@@ -85,8 +80,7 @@ As
 	if @columnID <> -1 and @mode = 'add'
 	begin
 		set @msg = 'Cannot add: Specified column number already in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
+		RAISERROR (@msg, 11, 3)
 	end
 
 	-- cannot update a non-existent entry
@@ -94,8 +88,7 @@ As
 	if @columnID = -1 and @mode = 'update'
 	begin
 		set @msg = 'Cannot update: Specified column number is not in database '
-		RAISERROR (@msg, 10, 1)
-		return 51004
+		RAISERROR (@msg, 11, 5)
 	end
 
 	---------------------------------------------------
@@ -114,14 +107,12 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying to look up state ID'
-		RAISERROR (@msg, 10, 1)
-		return 51095
+		RAISERROR (@msg, 11, 6)
 	end
 	if @stateID = -1
 	begin
 		set @msg = 'Could not resolve state to ID'
-		RAISERROR (@msg, 10, 1)
-		return 51096
+		RAISERROR (@msg, 11, 7)
 	end
 
 
@@ -166,8 +157,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Insert operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 8)
 		end
 	end -- add mode
 
@@ -199,17 +189,26 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Update operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 9)
 		end
 	end -- update mode
 
-	return 0
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [PNL\D3M578] AS [dbo]
 GO

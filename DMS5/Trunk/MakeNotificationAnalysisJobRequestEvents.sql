@@ -200,3 +200,5 @@ SELECT * FROM #ENV
 	
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationAnalysisJobRequestEvents] TO [Limited_Table_Write] AS [dbo]
+GO

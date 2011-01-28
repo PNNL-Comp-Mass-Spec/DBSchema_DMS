@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE FUNCTION dbo.GetInstrumentDatasetTypeList
 /****************************************************
 **
@@ -18,6 +17,7 @@ CREATE FUNCTION dbo.GetInstrumentDatasetTypeList
 **
 **	Auth:	mem
 **	Date:	09/17/2009 mem - Initial version (Ticket #748)
+**			08/28/2010 mem - Updated to use GetInstrumentGroupDatasetTypeList
 **    
 *****************************************************/
 (
@@ -26,24 +26,20 @@ CREATE FUNCTION dbo.GetInstrumentDatasetTypeList
 RETURNS varchar(4000)
 AS
 	BEGIN
-		declare @list varchar(4000)
+		declare @list varchar(4000) = ''
+		Declare @InstrumentGroup varchar(64) = ''
 		
-		Set @list = ''
+		-- Lookup the instrument group for this instrument
 		
-		SELECT @list = @list + ', ' + IADT.Dataset_Type
-		FROM T_Instrument_Allowed_Dataset_Type AS IADT INNER JOIN
-		     dbo.T_Instrument_Name AS InstName ON IADT.Instrument = InstName.IN_name
-		WHERE InstName.Instrument_ID = @InstrumentID
-		ORDER BY IADT.Dataset_Type
+		SELECT @InstrumentGroup = IN_Group
+		FROM T_Instrument_Name
+		WHERE Instrument_ID = @InstrumentID
+		
+		IF @InstrumentGroup <> ''
+			SELECT @list = dbo.GetInstrumentGroupDatasetTypeList(@InstrumentGroup)
 
-		-- Remove the leading two characters
-		If Len(@list) > 0
-			Set @list = Substring(@list, 3, Len(@list))
-		
 		RETURN @list
 	END
 
 
-GO
-GRANT EXECUTE ON [dbo].[GetInstrumentDatasetTypeList] TO [D3L243] AS [dbo]
 GO

@@ -173,6 +173,8 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUserMultiID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUserMultiID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUserMultiID] TO [PNL\D3M580] AS [dbo]

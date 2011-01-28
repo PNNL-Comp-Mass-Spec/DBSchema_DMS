@@ -93,6 +93,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetRestoreRequest] TO [DMS_Archive_Restore] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetRestoreRequest] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetRestoreRequest] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetRestoreRequest] TO [PNL\D3M580] AS [dbo]

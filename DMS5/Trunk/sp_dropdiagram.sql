@@ -47,6 +47,8 @@ GO
 GO
 DENY EXECUTE ON [dbo].[sp_dropdiagram] TO [guest] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_dropdiagram] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[sp_dropdiagram] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[sp_dropdiagram] TO [PNL\D3M580] AS [dbo]

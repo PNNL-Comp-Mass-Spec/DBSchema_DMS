@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure DeleteInstrument
+CREATE Procedure dbo.DeleteInstrument
 /****************************************************
 **
 **	Desc:	Delete the specified instrument and associated storage path entries
@@ -16,6 +15,7 @@ CREATE Procedure DeleteInstrument
 **
 **	Auth:	mem
 **	Date:	02/12/2010
+**			08/28/2010 mem - No longer deleting entries in the Instrument_Allowed_Dataset_Type table
 **    
 *****************************************************/
 (
@@ -78,16 +78,10 @@ As
 	set @transName = 'DeleteInstrument'
 	begin transaction @transName
 
-	-- Delete associated dataset types
-	DELETE T_Instrument_Allowed_Dataset_Type
-	WHERE Instrument = @InstrumentName
-
-
 	-- Delete archive path entry
 	DELETE T_Archive_Path
 	WHERE AP_instrument_name_ID = @InstrumentID
 	
-
 	-- Delete archive path entries
 	DELETE FROM t_storage_path
 	WHERE SP_instrument_name = @InstrumentName
@@ -108,4 +102,7 @@ As
 	
 	return 0
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteInstrument] TO [Limited_Table_Write] AS [dbo]
 GO

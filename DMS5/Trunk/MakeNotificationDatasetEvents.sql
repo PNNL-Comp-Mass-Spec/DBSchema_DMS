@@ -132,3 +132,5 @@ As
 	
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [Limited_Table_Write] AS [dbo]
+GO

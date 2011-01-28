@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
@@ -14,7 +15,8 @@ SELECT RR.ID AS Request,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,
        dbo.ExpSampleLocation(RR.Exp_ID) AS [Sample Storage],
-       RR.RDS_instrument_name AS Instrument,
+       InstName.IN_Name AS [Instrument Used],
+       RR.RDS_instrument_name AS [Instrument Group],
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Type],
        U.U_Name AS Requester,
@@ -28,6 +30,7 @@ SELECT RR.ID AS Request,
        RR.RDS_comment AS [Comment],
        RR.RDS_Well_Plate_Num AS [Well Plate],
        RR.RDS_Well_Num AS Well,
+       ISNULL(FC.Factor_Count, 0) AS Factors,
        RRB.Batch AS [Batch Name],
        RR.RDS_BatchID AS Batch,
        RR.RDS_Blocking_Factor AS [Blocking Factor],
@@ -55,8 +58,13 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.RDS_MRM_Attachment = dbo.T_Attachments.ID
      LEFT OUTER JOIN dbo.T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
+     LEFT OUTER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times QT
        ON RR.ID = QT.RequestedRun_ID
+     LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run AS FC
+       ON FC.RR_ID = RR.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Detail_Report] TO [PNL\D3M578] AS [dbo]

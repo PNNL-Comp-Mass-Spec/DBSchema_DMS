@@ -116,6 +116,8 @@ As
 		'Data Extraction Failed'
 	*/
 GO
+GRANT VIEW DEFINITION ON [dbo].[NDI_GetEntityStatus] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[NDI_GetEntityStatus] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[NDI_GetEntityStatus] TO [PNL\D3M580] AS [dbo]

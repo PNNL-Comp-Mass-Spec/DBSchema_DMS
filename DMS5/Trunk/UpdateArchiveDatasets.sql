@@ -313,6 +313,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateArchiveDatasets] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateArchiveDatasets] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateArchiveDatasets] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateArchiveDatasets] TO [PNL\D3M580] AS [dbo]

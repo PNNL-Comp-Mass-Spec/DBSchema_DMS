@@ -99,6 +99,8 @@ As
 	set @workPackage = CASE WHEN @workPackage = @ovr THEN @eWP ELSE @workPackage END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [PNL\D3M580] AS [dbo]

@@ -64,6 +64,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_upgraddiagrams] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[sp_upgraddiagrams] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[sp_upgraddiagrams] TO [PNL\D3M580] AS [dbo]

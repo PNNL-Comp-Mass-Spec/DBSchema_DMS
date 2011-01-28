@@ -28,13 +28,14 @@ CREATE PROCEDURE AddRequestedRuns
 **		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **		07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **		03/02/2010 grk - added status field to requested run
+**		08/27/2010 mem - Now referring to @instrumentName as an instrument group
 **
 *****************************************************/
 	@experimentGroupID varchar(12) = '',
 	@experimentList varchar(3500) = '',
 	@requestNamePrefix varchar(32) = '',
 	@operPRN varchar(64),
-	@instrumentName varchar(64),
+	@instrumentName varchar(64),			-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
 	@workPackage varchar(50),
 	@msType varchar(20),
 		-- optional arguments
@@ -89,7 +90,7 @@ As
 	if LEN(@instrumentName) < 1
 	begin
 		set @myError = 51114
-		RAISERROR ('Instrument name was blank',
+		RAISERROR ('Instrument group was blank',
 			10, 1)
 	end
 	--
@@ -223,13 +224,14 @@ As
 /**/
 	return 0
 
-
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [PNL\D3M578] AS [dbo]
 GO

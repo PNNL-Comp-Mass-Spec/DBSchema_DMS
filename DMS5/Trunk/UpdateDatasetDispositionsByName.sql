@@ -16,6 +16,7 @@ CREATE PROCEDURE UpdateDatasetDispositionsByName
 **
 **	Auth:	grk
 **	Date:	10/15/08 grk -- initial release (Ticket #582)
+**			08/19/2010 grk - try-catch for error handling
 **
 *****************************************************/
 (
@@ -34,6 +35,8 @@ As
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
+
+	BEGIN TRY 
 
  	---------------------------------------------------
 	-- convert dataset name list into dataset ID list
@@ -62,7 +65,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error populating temporary dataset table'
-		return 51007
+		RAISERROR (@message, 11, 7)
 	end
 
  	---------------------------------------------------
@@ -79,7 +82,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error finding dataset IDs'
-		return 51008
+		RAISERROR (@message, 11, 8)
 	end
 
  	---------------------------------------------------
@@ -97,13 +100,13 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error looking for missing datasets'
-		return 51010
+		RAISERROR (@message, 11, 10)
 	end
 	--
 	if @myRowCount > 0
 	begin
 		set @message = 'Datasets not found: ' + @datasetIDList
-		return 51011
+		RAISERROR (@message, 11, 11)
 	end
 
  	---------------------------------------------------
@@ -120,7 +123,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error making dataset ID list'
-		return 51009
+		RAISERROR (@message, 11, 12)
 	end
 
  	---------------------------------------------------
@@ -135,16 +138,21 @@ As
 						@mode,
 						@message output,
 						@callingUser
-/**/	
- 	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositionsByName] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositionsByName] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositionsByName] TO [PNL\D3M578] AS [dbo]
 GO

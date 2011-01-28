@@ -13,10 +13,13 @@ CREATE TABLE [dbo].[T_Instrument_Name_Bkup](
 	[IN_default_CDburn_sched] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Room_Number] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Description] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_Created] [datetime] NULL,
  CONSTRAINT [PK_T_Instrument_Name_Bkup] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Instrument_Name_Bkup] ADD  CONSTRAINT [DF_T_Instrument_Name_Bkup_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO

@@ -37,6 +37,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
 **			07/12/2010 mem - Now calling ValidateProteinCollectionListForDatasets to validate the protein collection list (and possibly add mini proteome or enzyme-related protein collections)
 **						   - Expanded protein Collection fields and variables to varchar(4000)
+**			09/24/2010 mem - Now testing for a rating of -6 (Not Accepted)
+**			11/18/2010 mem - Rearranged rating check code for clarity
 **
 *****************************************************/
 (
@@ -135,9 +137,15 @@ As
 	begin
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
-			-- If @ExcludeDatasetsNotReleased = 0 and @Rating is -5, then we do allow jobs to be created
-			If Not (@ExcludeDatasetsNotReleased = 0 And @Rating = -5)
+			If @ExcludeDatasetsNotReleased = 0 And @Rating IN (-5, -6)
 			Begin
+				-- @ExcludeDatasetsNotReleased is 0 and @Rating is -5 or -6
+				-- Allow the jobs to be created
+				Set @message = ''
+			End
+			Else
+			Begin
+				-- Do not allow the jobs to be created
 				set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetNum
 
 				If @RaiseErrorMessages <> 0
@@ -799,6 +807,8 @@ GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [PNL\D3M578] AS [dbo]
 GO

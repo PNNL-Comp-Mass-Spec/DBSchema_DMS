@@ -214,3 +214,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSInfoIfRequired] TO [Limited_Table_Write] AS [dbo]
+GO

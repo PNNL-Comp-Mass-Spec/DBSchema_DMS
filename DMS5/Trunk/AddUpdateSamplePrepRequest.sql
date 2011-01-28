@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
+CREATE PROCEDURE AddUpdateSamplePrepRequest
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -40,13 +40,15 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			04/14/2010- grk - widened @CellCultureList field
 **			04/22/2010 grk - try-catch for error handling
 **			08/09/2010 grk - added handling for 'Closed (containers and material)'
+**			08/15/2010 grk - widened @CellCultureList field
+**			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **    
 *****************************************************/
 (
 	@RequestName varchar(128),
 	@RequesterPRN varchar(32),
 	@Reason varchar(512),
-	@CellCultureList varchar(512),
+	@CellCultureList varchar(1024),
 	@Organism varchar(128),
 	@BiohazardLevel varchar(12),
 	@Campaign varchar(128),
@@ -68,7 +70,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 	@eusUsersList varchar(1024),
 	@ReplicatesofSamples varchar(512),  
 	@TechnicalReplicates varchar(64),
-	@InstrumentName varchar(128),
+	@instrumentName varchar(128),				-- Will typically contain an instrument group, not an instrument name; could also contain "None" or any other text
 	@DatasetType varchar(50),
 	@InstrumentAnalysisSpecifications varchar(512),
 	@Comment varchar(1024),
@@ -112,31 +114,54 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
-
 	--
 	if LEN(@instrumentName) < 1
-		RAISERROR ('Instrument name was blank', 11, 114)
+		RAISERROR ('Instrument group was blank', 11, 114)
 	--
 	if LEN(@DatasetType) < 1
 		RAISERROR ('Dataset type was blank', 11, 115)
  
 	---------------------------------------------------
-	-- validate instrument name and dataset type
+	-- Validate instrument group and dataset type
 	---------------------------------------------------
+	--
+	Declare @InstrumentGroup varchar(128) = ''
+
+	-- Set the instrument group to @instrumentName for now
+	set @InstrumentGroup = @instrumentName
+
 	if NOT (@EstimatedMSRuns = '0' or @EstimatedMSRuns = 'None')
 	begin
-		declare @instrumentID int
+		if @instrumentName = 'none' or @instrumentName = 'na'
+			RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @instrumentName)
+			
+		---------------------------------------------------
+		-- Determine the Instrument Group
+		---------------------------------------------------
+				
+		IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+		Begin
+			-- Try to update instrument group using T_Instrument_Name
+			SELECT @InstrumentGroup = IN_Group
+			FROM T_Instrument_Name
+			WHERE IN_Name = @instrumentName
+		End
+
+		---------------------------------------------------
+		-- validate instrument group and dataset type
+		---------------------------------------------------
+		
 		declare @datasetTypeID int
 		--
-		exec @myError = ValidateInstrumentAndDatasetType
+		exec @myError = ValidateInstrumentGroupAndDatasetType
 								@DatasetType,
-								@instrumentName,
-								@instrumentID output,
+								@instrumentGroup,
 								@datasetTypeID output,
 								@msg output 
 		if @myError <> 0
-			RAISERROR ('ValidateInstrumentAndDatasetType:%s', 11, 1, @msg)
-	end					
+			RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
+	end				
+		
 							
 	---------------------------------------------------
 	-- Resolve campaign ID
@@ -406,7 +431,7 @@ As
 			@InternalstandardID, 
 			@postdigestIntStdID,
 			@StateID,
-			@InstrumentName,
+			@instrumentGroup,
 			@DatasetType,
 			@TechnicalReplicates,
 			@Facility
@@ -479,7 +504,7 @@ As
 			Internal_standard_ID = @InternalstandardID, 
 			Postdigest_internal_std_ID = @postdigestIntStdID,
 			State = @StateID,
-			Instrument_Name = @InstrumentName, 
+			Instrument_Name = @instrumentGroup, 
 			Dataset_Type = @DatasetType,
 			Technical_Replicates = @TechnicalReplicates,
 			Facility = @Facility
@@ -511,6 +536,8 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [PNL\D3M578] AS [dbo]
 GO

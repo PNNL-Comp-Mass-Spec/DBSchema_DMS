@@ -251,3 +251,5 @@ SELECT * FROM #ENV
 	
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationRequestedRunBatchEvents] TO [Limited_Table_Write] AS [dbo]
+GO

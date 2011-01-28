@@ -21,9 +21,9 @@ CREATE PROCEDURE LookupEUSFromExperimentSamplePrep
 **
 *****************************************************/
 	@experimentNum varchar(64),
-	@eusUsageType varchar(50) output,
-	@eusProposalID varchar(10) output,
-	@eusUsersList varchar(1024) output,
+	@eusUsageType varchar(50) output,		-- If this is "(lookup)" then will override with the EUS info from the sample prep request (if found)
+	@eusProposalID varchar(10) output,		-- If this is "(lookup)" then will override with the EUS info from the sample prep request (if found)
+	@eusUsersList varchar(1024) output,		-- If this is "(lookup)" then will override with the EUS info from the sample prep request (if found)
 	@message varchar(512) output
 As
 	set nocount on
@@ -100,6 +100,8 @@ As
 	set @eusProposalID = CASE WHEN @eusProposalID = @ovr THEN @ePID ELSE @eusProposalID END
 	set @eusUsersList = CASE WHEN @eusUsersList = @ovr THEN @eUL ELSE @eusUsersList END
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [PNL\D3M578] AS [dbo]
 GO

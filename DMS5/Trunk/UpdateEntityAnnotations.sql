@@ -178,6 +178,8 @@ DONE:
 GO
 GRANT EXECUTE ON [dbo].[UpdateEntityAnnotations] TO [DMS_Annotation_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEntityAnnotations] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEntityAnnotations] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEntityAnnotations] TO [PNL\D3M580] AS [dbo]

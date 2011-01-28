@@ -122,3 +122,5 @@ As
 	
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [Limited_Table_Write] AS [dbo]
+GO

@@ -112,3 +112,5 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[MakeFactorCrosstabSQL] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [Limited_Table_Write] AS [dbo]
+GO

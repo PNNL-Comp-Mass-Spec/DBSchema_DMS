@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Sample_Prep_Request_List_Report
+
+CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
 AS
 SELECT SPR.ID,
        SPR.Request_Name AS RequestName,
@@ -23,7 +24,7 @@ SELECT SPR.ID,
        SPR.Biohazard_Level AS BiohazardLevel,
        SPR.Campaign,
        SPR.[Comment],
-       SPR.Instrument_Name AS [Inst. Name],
+       SPR.Instrument_Name AS [Instrument],
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
@@ -41,6 +42,7 @@ FROM dbo.T_Sample_Prep_Request SPR
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
 WHERE (SPR.State > 0)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [PNL\D3M578] AS [dbo]

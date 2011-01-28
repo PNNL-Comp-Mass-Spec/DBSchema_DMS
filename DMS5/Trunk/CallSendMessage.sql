@@ -88,3 +88,5 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[CallSendMessage] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[CallSendMessage] TO [Limited_Table_Write] AS [dbo]
+GO

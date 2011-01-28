@@ -144,6 +144,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrumentConfigHistory] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [PNL\D3M580] AS [dbo]

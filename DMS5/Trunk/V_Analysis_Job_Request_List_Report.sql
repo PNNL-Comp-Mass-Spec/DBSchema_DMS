@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_Request_List_Report]
 AS
 SELECT AJR.AJR_requestID AS Request,
@@ -12,6 +13,7 @@ SELECT AJR.AJR_requestID AS Request,
        U.U_Name AS Requestor,
        AJR.AJR_created AS Created,
        AJR.AJR_analysisToolName AS Tool,
+       AJR.AJR_jobCount AS Jobs,
        AJR.AJR_parmFileName AS [Param File],
        AJR.AJR_settingsFileName AS [Settings File],
        Org.OG_name AS Organism,
@@ -19,8 +21,7 @@ SELECT AJR.AJR_requestID AS Request,
        AJR.AJR_proteinCollectionList AS ProteinCollectionList,
        AJR.AJR_proteinOptionsList AS ProteinOptions,
        CAST(AJR.AJR_datasets AS char(40)) AS Datasets,
-       AJR.AJR_comment AS Comment,
-       AJR.AJR_jobCount AS Jobs
+       AJR.AJR_comment AS Comment
 FROM dbo.T_Analysis_Job_Request AS AJR
      INNER JOIN dbo.T_Users AS U
        ON AJR.AJR_requestor = U.ID
@@ -28,7 +29,6 @@ FROM dbo.T_Analysis_Job_Request AS AJR
        ON AJR.AJR_state = AJRS.ID
      INNER JOIN dbo.T_Organisms AS Org
        ON AJR.AJR_organism_ID = Org.Organism_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Request_List_Report] TO [PNL\D3M578] AS [dbo]

@@ -5,7 +5,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-
 CREATE view [dbo].[V_Sample_Prep_Request_Detail_Report] as
 SELECT SPR.ID,
        SPR.Request_Name AS [Request Name],
@@ -19,7 +18,7 @@ SELECT SPR.ID,
        SPR.Sample_Name_List AS [Sample Name List],
        SPR.Sample_Type AS [Sample Type],
        SPR.Technical_Replicates AS [Technical Replicates],
-       SPR.Instrument_Name AS [Instrument Name],
+       SPR.Instrument_Name AS [Instrument Group],
        SPR.Dataset_Type AS [Dataset Type],
        SPR.Instrument_Analysis_Specifications AS [Instrument Analysis Specifications],
        SPR.Prep_Method AS [Prep Method],

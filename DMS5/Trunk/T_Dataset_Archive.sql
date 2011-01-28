@@ -65,11 +65,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_
 )
 INCLUDE ( [AS_purge_holdoff_date]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_d_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Delete
 /****************************************************
@@ -104,11 +107,14 @@ AS
 	ORDER BY AS_Dataset_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
@@ -147,11 +153,14 @@ AS
 
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************

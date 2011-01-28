@@ -323,6 +323,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UpdateLCCartComponentPosition] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartComponentPosition] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartComponentPosition] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartComponentPosition] TO [PNL\D3M580] AS [dbo]

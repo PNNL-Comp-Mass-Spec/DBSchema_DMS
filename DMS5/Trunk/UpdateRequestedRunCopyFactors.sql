@@ -145,3 +145,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunCopyFactors] TO [Limited_Table_Write] AS [dbo]
+GO

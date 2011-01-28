@@ -24,6 +24,7 @@ SELECT E.Experiment_Num AS Experiment,
        ISNULL(m.Group_ID, -1) AS [Experiment Group],
        'show list' AS [Experiment Group Members],
        ISNULL(DSCountQ.DataSets, 0) AS Datasets,
+       ISNULL(FC.Factor_Count, 0) AS Factors,
        E.Exp_ID AS ID,
        MC.Tag AS Container,
        ML.Tag AS Location,
@@ -60,6 +61,9 @@ FROM dbo.T_Experiments E
                        FROM dbo.T_Dataset
                        GROUP BY Exp_ID ) AS DSCountQ
        ON DSCountQ.Exp_ID = E.Exp_ID
+     LEFT OUTER JOIN V_Factor_Count_By_Experiment FC
+       ON FC.Exp_ID = E.Exp_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]

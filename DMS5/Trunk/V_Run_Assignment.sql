@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Run_Assignment] AS 
 SELECT RR.ID AS Request,
        '' AS [Sel.],
@@ -29,7 +30,8 @@ SELECT RR.ID AS Request,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        RR.RDS_Status AS Status,
-       RR.RDS_NameCode AS [Request Name Code]
+       RR.RDS_NameCode AS [Request Name Code],
+       E.Exp_ID AS [Experiment ID]
 FROM T_DatasetTypeName AS DTN
      INNER JOIN T_Requested_Run AS RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
@@ -40,6 +42,7 @@ FROM T_DatasetTypeName AS DTN
      INNER JOIN T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
 WHERE (RR.DatasetID IS NULL)
+
 
 
 GO

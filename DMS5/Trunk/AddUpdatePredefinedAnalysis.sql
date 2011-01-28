@@ -19,10 +19,14 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 **			07/30/2007 mem - Now validating dataset type and instrument class for the matching instruments against the specified analysis tool (Ticket #502)
 **			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
 **			09/04/2009 mem - Added DatasetType parameter
-**			09/16/2009 mem - Now checking dataset type against T_Instrument_Allowed_Dataset_Type (Ticket #748)
+**			09/16/2009 mem - Now checking dataset type against the Instrument_Allowed_Dataset_Type table (Ticket #748)
 **			10/05/2009 mem - Now validating the parameter file name
 **			12/18/2009 mem - Switched to use GetInstrumentDatasetTypeList() to get the allowed dataset types for the dataset and GetAnalysisToolAllowedDSTypeList() to get the allowed dataset types for the analysis tool
 **			05/06/2010 mem - Now calling AutoResolveNameToPRN to validate @creator
+**			08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
+**			08/28/2010 mem - Now using T_Instrument_Group_Allowed_DS_Type to determine allowed dataset types for matching instruments
+**						   - Added try-catch for error handling
+**			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to lookup the allowed instrument class names for a given analysis tool
 **    
 *****************************************************/
 (
@@ -83,6 +87,8 @@ As
 
 	set @message = ''
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -90,40 +96,35 @@ As
 	if LEN(IsNull(@analysisToolName,'')) < 1
 	begin
 		set @myError = 51033
-		RAISERROR ('Analysis tool name was blank',
-			10, 1)
+		RAISERROR ('Analysis tool name was blank', 11, 1)
 	end
 	
 	if LEN(IsNull(@parmFileName,'')) < 1
 	begin
 		set @myError = 51033
-		RAISERROR ('Parameter file name was blank',
-			10, 1)
+		RAISERROR ('Parameter file name was blank', 11, 1)
 	end
 
 	if LEN(IsNull(@settingsFileName,'')) < 1
 	begin
 		set @myError = 51033
-		RAISERROR ('Settings file name was blank',
-			10, 1)
+		RAISERROR ('Settings file name was blank', 11, 1)
 	end
 
 	if LEN(IsNull(@organismName,'')) < 1
 	begin
 		set @myError = 51033
-		RAISERROR ('Organism name was blank; use "(default)" to auto-assign at job creation',
-			10, 1)
+		RAISERROR ('Organism name was blank; use "(default)" to auto-assign at job creation', 11, 1)
 	end
 
 	if LEN(IsNull(@organismDBName,'')) < 1
 	begin
 		set @myError = 51033
-		RAISERROR ('Organism DB name was blank',
-			10, 1)
+		RAISERROR ('Organism DB name was blank', 11, 1)
 	end
 
 	If @myError <> 0
-		Goto Done
+		return @myError
 		
 	---------------------------------------------------
 	-- Update any null filter criteria
@@ -160,20 +161,15 @@ As
 	if @nextLevelVal <= @level 
 		begin
 			set @msg = 'Next level must be greater than current level'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 2)
 		end
 	end
 
 	--------------------------------------------------
-	-- Validate the analysis tool name and lookup the allowed
-	-- dataset types and instrument classes
+	-- Validate the analysis tool name
 	--------------------------------------------------
 	
-	Set @AllowedInstClassesForTool = ''
-	
-	SELECT @AllowedInstClassesForTool = IsNull(AJT_allowedInstClass, ''),
-	       @analysisToolID = AJT_toolID
+	SELECT @analysisToolID = AJT_toolID
 	FROM dbo.T_Analysis_Tool
 	WHERE (AJT_toolName = @analysisToolName)
 	--
@@ -182,8 +178,7 @@ As
 	If @myRowCount = 0
 	Begin
 		Set @msg = 'Analysis tool "' + @analysisToolName + '" not found in T_Analysis_Tool'
-		RAISERROR (@msg, 10, 1)
-		return 51008
+		RAISERROR (@msg, 11, 3)
 	End
 
 	---------------------------------------------------
@@ -194,15 +189,7 @@ As
 	
 	If Len(@instrumentClassCriteria) > 0 Or Len(@instrumentNameCriteria) > 0
 	Begin -- <a>
-		
-		---------------------------------------------------
-		-- Parse out the dataset types and instrument classes for the specified analysis tool
-		---------------------------------------------------
-		
-		CREATE TABLE #TmpAllowedInstClassesForTool (
-			InstrumentClass varchar(64)
-		)
-		
+			
 		If Not Exists (
 			SELECT ADT.Dataset_Type
 			FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
@@ -212,23 +199,21 @@ As
 			)
 		Begin
 			Set @msg = 'Analysis tool "' + @analysisToolName + '" does not have any allowed dataset types; unable to continue'
-			RAISERROR (@msg, 10, 1)
-			return 51009
+			RAISERROR (@msg, 11, 4)
 		End
 		
-		INSERT INTO #TmpAllowedInstClassesForTool (InstrumentClass)
-		SELECT item 
-		FROM MakeTableFromList(@AllowedInstClassesForTool)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		If @myRowCount = 0
+		If Not Exists (
+			SELECT AIC.Instrument_Class
+			FROM T_Analysis_Tool_Allowed_Instrument_Class AIC
+			     INNER JOIN T_Analysis_Tool Tool
+			       ON AIC.Analysis_Tool_ID = Tool.AJT_toolID
+			WHERE (Tool.AJT_toolName = @analysisToolName)
+			)
 		Begin
 			Set @msg = 'Analysis tool "' + @analysisToolName + '" does not have any allowed instrument classes; unable to continue'
-			RAISERROR (@msg, 10, 1)
-			return 51010
+			RAISERROR (@msg, 11, 5)
 		End
-		
+				
 		---------------------------------------------------
 		-- Populate a temporary table with allowed dataset types
 		-- associated with the matching instruments
@@ -258,8 +243,7 @@ As
 		If @myRowCount = 0
 		Begin -- <b1>
 			set @msg = 'Did not match any instruments using the instrument name and class criteria; update not allowed'
-			RAISERROR (@msg, 10, 1)
-			return 51011
+			RAISERROR (@msg, 11, 6)
 		End -- </b1>
 
 
@@ -267,7 +251,7 @@ As
 		-- Step through #TmpMatchingInstruments and make sure
 		--  each entry has at least one Dataset Type that is present in T_Analysis_Tool_Allowed_Dataset_Type
 		--  for this analysis tool
-		-- Also validate each instrument class with #TmpAllowedInstClassesForTool
+		-- Also validate each instrument class with T_Analysis_Tool_Allowed_Instrument_Class
 		---------------------------------------------------
 
 		Set @UniqueID = 0
@@ -291,42 +275,51 @@ As
 
 				If Not Exists (
 					SELECT *
-					FROM T_Instrument_Allowed_Dataset_Type IADT
+					FROM T_Instrument_Name InstName
+					     INNER JOIN T_Instrument_Group_Allowed_DS_Type IGADT
+					       ON InstName.IN_Group = IGADT.IN_Group
 					     INNER JOIN ( SELECT ADT.Dataset_Type
 					                  FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
 					                       INNER JOIN T_Analysis_Tool Tool
 					                         ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
-					                  WHERE (Tool.AJT_toolName = @analysisToolName) ) ToolQ
-					       ON ToolQ.Dataset_Type = IADT.Dataset_Type
-					WHERE IADT.Instrument = @instrumentName
+					                  WHERE (Tool.AJT_toolName = @analysisToolName) 
+					                ) ToolQ
+					       ON IGADT.Dataset_Type = ToolQ.Dataset_Type
+					WHERE (InstName.IN_name = @instrumentName)
 					)
 				Begin -- <d1>
 					-- Example criteria that will result in this message: Instrument Criteria=Agilent_TOF%, Tool=AgilentSequest
 					
 					Set @allowedDatasetTypes = dbo.GetInstrumentDatasetTypeList(@InstrumentID)
 					
+					Set @AllowedDSTypesForTool = ''
 					SELECT @AllowedDSTypesForTool = AllowedDatasetTypes
 					FROM dbo.GetAnalysisToolAllowedDSTypeList(@analysisToolID)
 
 					set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
-					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' only allows "' + @AllowedDSTypesForTool + '"'
-					RAISERROR (@msg, 10, 1)
-					return 51012
+					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these dataset types "' + @AllowedDSTypesForTool + '"'
+					RAISERROR (@msg, 11, 7)
 				End	 -- </d1>			
 
-				Set @MatchCount = 0
-				SELECT @MatchCount = COUNT(*)
-				FROM #TmpAllowedInstClassesForTool
-				WHERE InstrumentClass = @instrumentClass
-				
-				If @MatchCount = 0
+				If Not Exists (
+					SELECT AIC.Instrument_Class
+					FROM T_Analysis_Tool_Allowed_Instrument_Class AIC
+						INNER JOIN T_Analysis_Tool Tool
+						ON AIC.Analysis_Tool_ID = Tool.AJT_toolID
+					WHERE Tool.AJT_toolName = @analysisToolName AND 
+					     AIC.Instrument_Class = @instrumentClass				
+					)
 				Begin -- <d2>
 					-- Example criteria that will result in this message: Instrument Class=BRUKERFTMS, Tool=XTandem
 					-- 2nd example: Instrument Criteria=Agilent_TOF%, Tool=Decon2LS
+					
+					Set @AllowedInstClassesForTool = ''
+					SELECT @AllowedInstClassesForTool = AllowedInstrumentClasses
+					FROM dbo.GetAnalysisToolAllowedInstClassList (@analysisToolID)
+
 					set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
-					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' is not valid for that instrument class'
-					RAISERROR (@msg, 10, 1)
-					return 51013
+					set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these instrument classes "' + @AllowedInstClassesForTool + '"'
+					RAISERROR (@msg, 11, 8)
 				End	 -- </d2>		
 				
 			End -- </c>
@@ -344,8 +337,7 @@ As
 	if @organismID = 0
 	begin
 		set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51014
+		RAISERROR (@msg, 11, 9)
 	end
 
 	---------------------------------------------------
@@ -356,9 +348,34 @@ As
 		If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_Name = @parmFileName)
 		Begin
 			set @msg = 'Could not find entry in database for parameter file "' + @parmFileName + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51018
+			RAISERROR (@msg, 11, 10)
 		End
+	End
+
+	---------------------------------------------------
+	-- Check protein parameters
+	---------------------------------------------------
+	
+	Declare @result int
+	Declare @ownerPRN varchar(64)
+	
+	set @result = 0
+	Set @ownerPRN = ''
+	
+	exec @result = ValidateProteinCollectionParams
+					@analysisToolName,
+					@organismDBName output,
+					@organismName,
+					@protCollNameList output,
+					@protCollOptionsList output,
+					@ownerPRN,
+					@message output,
+					@debugMode=0
+
+	if @result <> 0
+	Begin
+		set @msg = @message
+		RAISERROR (@msg, 11, 11)
 	End
 	
 	---------------------------------------------------
@@ -413,8 +430,7 @@ As
 	if @myError <> 0 OR @tmp = 0
 	begin
 		set @msg = 'No entry could be found in database for update'
-		RAISERROR (@msg, 10, 1)
-		return 51015
+		RAISERROR (@msg, 11, 12)
 	end
 
 	end
@@ -489,8 +505,7 @@ As
 		if @myError <> 0
 		begin
 		set @msg = 'Insert operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51016
+			RAISERROR (@msg, 11, 13)
 		end
 
 		-- return IDof newly created entry
@@ -544,18 +559,28 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51017
+			RAISERROR (@msg, 11, 14)
 		end
 	end -- update mode
 
-Done:
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [PNL\D3M578] AS [dbo]
 GO

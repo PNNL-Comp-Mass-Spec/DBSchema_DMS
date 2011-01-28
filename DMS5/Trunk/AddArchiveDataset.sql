@@ -106,6 +106,8 @@ GRANT EXECUTE ON [dbo].[AddArchiveDataset] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddArchiveDataset] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddArchiveDataset] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AddArchiveDataset] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddArchiveDataset] TO [PNL\D3M580] AS [dbo]

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_List_Report_2]
 AS
 SELECT DS.Dataset_ID AS ID,
@@ -19,7 +20,7 @@ SELECT DS.Dataset_ID AS ID,
        DS.DS_Oper_PRN AS Operator,
        DFP.Dataset_Folder_Path AS [Dataset Folder Path],
        DFP.Archive_Folder_Path AS [Archive Folder Path],
-       DFP.Archive_Folder_Path + '\QC\index.html' AS QC_Link,
+       DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
        ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
        ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq. End],
        DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start), 
@@ -55,6 +56,7 @@ FROM dbo.T_DatasetArchiveStateName AS DASN
        ON DSA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.T_Requested_Run AS RRH
        ON DS.Dataset_ID = RRH.DatasetID
+
 
 
 GO

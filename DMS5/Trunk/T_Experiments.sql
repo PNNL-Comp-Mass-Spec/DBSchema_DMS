@@ -101,11 +101,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Exper
 	[EX_Container_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_Experiments] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_d_Experiments] on [dbo].[T_Experiments]
 For Delete
 /****************************************************
@@ -141,11 +144,14 @@ AS
 	ORDER BY Exp_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_Experiments] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Experiments] on [dbo].[T_Experiments]
 For Insert
 /****************************************************
@@ -170,11 +176,14 @@ AS
 	ORDER BY inserted.Exp_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Experiments] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE Trigger [dbo].[trig_u_Experiments] on [dbo].[T_Experiments]
 For Update

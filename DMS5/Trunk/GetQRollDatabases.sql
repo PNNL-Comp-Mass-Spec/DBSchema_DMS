@@ -32,6 +32,8 @@ GRANT EXECUTE ON [dbo].[GetQRollDatabases] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetQRollDatabases] TO [DMS_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetQRollDatabases] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetQRollDatabases] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetQRollDatabases] TO [PNL\D3M580] AS [dbo]

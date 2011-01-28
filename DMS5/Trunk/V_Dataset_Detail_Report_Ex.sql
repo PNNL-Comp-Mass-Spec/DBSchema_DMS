@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Dataset_Detail_Report_Ex] as
   SELECT
     DS.Dataset_Num AS Dataset,
@@ -25,11 +26,21 @@ CREATE view [dbo].[V_Dataset_Detail_Report_Ex] as
     DS.DS_created AS Created,
     DS.DS_folder_name AS [Folder Name],
     TDSN.DSS_name AS State,
-    ISNULL(SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num, '') AS [Dataset Folder Path],
+    ISNULL(SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num, '') +
+    CASE WHEN TDA.AS_state_ID = 4
+         THEN ' (purged)'
+         ELSE ''
+         END AS [Dataset Folder Path],
     ISNULL(DAP.Archive_Path + '\' + DS.Dataset_Num, '') AS [Archive Folder Path],
-    ISNULL(DAP.Archive_Path + '\' + DS.Dataset_Num + '\QC\index.html', '') AS [QC_Link],
+    SPath.SP_URL + DS.Dataset_Num + '/' AS [Data Folder Link],
+    CASE WHEN DAP.Instrument_Data_Purged <> 0 
+	     THEN 'http://prismweb.pnl.gov/dh/data_helper/qc_overview/' + DS.Dataset_Num
+         ELSE  SPath.SP_URL + DS.Dataset_Num + '/QC/index.html' 
+    END AS [QC Link],
     ISNULL(JobCountQ.Jobs, 0) AS Jobs,
     ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
+    ISNULL(FC.Factor_Count, 0) AS Factors,
+    ISNULL(PredefinedJobQ.JobCount, 0) AS [Predefines Triggered],
     DS.Dataset_ID AS ID,
     DS.Acq_Time_Start AS [Acquisition Start],
     DS.Acq_Time_End AS [Acquisition End],
@@ -84,8 +95,12 @@ CREATE view [dbo].[V_Dataset_Detail_Report_Ex] as
                       GROUP BY
                         AJ.AJ_datasetID
                     ) AS PMTaskCountQ ON PMTaskCountQ.DatasetID = DS.Dataset_ID
+    LEFT OUTER JOIN dbo.V_Factor_Count_By_Dataset AS FC ON FC.Dataset_ID = DS.Dataset_ID
+    LEFT OUTER JOIN ( SELECT Dataset_ID, SUM(jobs_created) AS JobCount
+					  FROM T_Predefined_Analysis_Scheduling_Queue
+					  GROUP BY Dataset_ID
+                    ) PredefinedJobQ ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
     CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-                    
 
 
 GO

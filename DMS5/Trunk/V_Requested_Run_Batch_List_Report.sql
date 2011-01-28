@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Requested_Run_Batch_List_Report as
+
+
+CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report] as
 SELECT RRB.ID,
        RRB.Batch AS Name,
        T.Requests,
@@ -11,7 +13,14 @@ SELECT RRB.ID,
        F.[First Request],
        F.[Last Request],
        RRB.Requested_Batch_Priority AS [Req. Priority],
-       RRB.Requested_Instrument AS Instrument,
+       CASE WHEN H.Runs > 0 Then
+			CASE WHEN H.InstrumentFirst = H.InstrumentLast 
+			     THEN H.InstrumentFirst
+			     Else H.InstrumentFirst + ' - ' + H.InstrumentLast
+			End
+		ELSE ''
+		End AS Instrument,       
+       RRB.Requested_Instrument AS [Inst. Group],
        RRB.[Description],
        T_Users.U_Name AS [Owner],
        RRB.Created,
@@ -23,6 +32,7 @@ SELECT RRB.ID,
 				DATEDIFF(DAY, ISNULL(F.Oldest_Request_Created, H.Oldest_Request_Created), GETDATE()) 
 	   End AS [Days In Queue],
        H.MinDaysInQueue AS [Min Days In Queue],
+       SPQ.[Days in Prep Queue],
        RRB.Locked,
        RRB.Justification_for_High_Priority,
        RRB.[Comment],
@@ -45,23 +55,27 @@ SELECT RRB.ID,
 FROM T_Requested_Run_Batches RRB
      INNER JOIN T_Users
        ON RRB.Owner = T_Users.ID
-     LEFT OUTER JOIN ( SELECT RDS_BatchID AS batchID,
+     LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
                               COUNT(*) AS Requests
                        FROM T_Requested_Run RR1
                        WHERE (RDS_Status = 'Active')
                        GROUP BY RDS_BatchID ) AS T
-       ON T.batchID = RRB.ID
-     LEFT OUTER JOIN ( SELECT RR2.RDS_BatchID AS batchID,
+       ON T.BatchID = RRB.ID
+     LEFT OUTER JOIN ( SELECT RR2.RDS_BatchID AS BatchID,
                               COUNT(*) AS Runs,
                               MIN(RR2.RDS_created) AS Oldest_Request_Created,
                               MIN(QT.[Days In Queue]) AS MinDaysInQueue,
-                              MAX(QT.[Days In Queue]) AS MaxDaysInQueue
+                              MAX(QT.[Days In Queue]) AS MaxDaysInQueue,
+                              MIN(InstName.IN_name) AS InstrumentFirst,
+                              MAX(InstName.IN_name) AS InstrumentLast
                        FROM T_Requested_Run RR2 INNER JOIN V_Requested_Run_Queue_Times QT
                               ON QT.RequestedRun_ID = RR2.ID
+                            INNER JOIN T_Dataset DS ON RR2.DatasetID = DS.Dataset_ID
+                            INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
                        WHERE (NOT (RR2.DatasetID IS NULL))
                        GROUP BY RR2.RDS_BatchID ) AS H
-       ON H.batchID = RRB.ID
-     LEFT OUTER JOIN ( SELECT RDS_BatchID AS batchID,
+       ON H.BatchID = RRB.ID
+     LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
                               MIN(ID) AS [First Request],
                               MAX(ID) AS [Last Request],
                               MIN(RDS_created) as Oldest_Request_Created
@@ -69,8 +83,23 @@ FROM T_Requested_Run_Batches RRB
                        WHERE (DatasetID IS NULL) AND
                              (RDS_Status = 'Active')
                        GROUP BY RDS_BatchID ) AS F
-       ON F.batchID = RRB.ID
+       ON F.BatchID = RRB.ID
+     LEFT OUTER JOIN ( SELECT RR4.RDS_BatchID AS BatchID,
+                              MAX(QT.[Days In Queue]) AS [Days in Prep Queue]
+                       FROM T_Requested_Run RR4
+                            INNER JOIN T_Experiments E
+                              ON RR4.Exp_ID = E.Exp_ID
+                            INNER JOIN T_Sample_Prep_Request SPR
+                              ON E.EX_sample_prep_request_ID = SPR.ID AND
+                                 SPR.ID <> 0
+                            LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT
+                              ON SPR.ID = QT.Request_ID
+                       GROUP BY RR4.RDS_BatchID
+                      ) AS SPQ
+        ON SPQ.BatchID = RRB.ID
 WHERE (RRB.ID > 0)
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_List_Report] TO [PNL\D3M578] AS [dbo]

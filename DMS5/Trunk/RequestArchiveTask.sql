@@ -242,6 +242,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[RequestArchiveTask] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestArchiveTask] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[RequestArchiveTask] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestArchiveTask] TO [PNL\D3M580] AS [dbo]

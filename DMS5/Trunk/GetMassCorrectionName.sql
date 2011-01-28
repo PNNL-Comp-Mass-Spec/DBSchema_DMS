@@ -29,6 +29,8 @@ As
 	return(@MassCorrectionName)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionName] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionName] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionName] TO [PNL\D3M580] AS [dbo]

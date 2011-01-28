@@ -23,6 +23,8 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			12/03/2009 grk - checking for presence of @JustificationHighPriority if priority is high
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
 **			08/04/2010 grk - try-catch for error handling
+**			08/27/2010 mem - Now auto-switching @RequestedInstrument to be instrument group instead of instrument name
+**						   - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
 **
 *****************************************************/
 (
@@ -32,9 +34,9 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 	@RequestedRunList varchar(4000),
 	@OwnerPRN varchar(64),
 	@RequestedBatchPriority varchar(24),
-	@RequestedCompletionDate varchar(10),
+	@RequestedCompletionDate varchar(24),
 	@JustificationHighPriority varchar(512),
-	@RequestedInstrument varchar(24),
+	@RequestedInstrument varchar(64),				-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
 	@Comment varchar(512),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
@@ -60,37 +62,30 @@ As
 	begin
 		set @RequestedCompletionDate = null
 	end
-	else if (SELECT ISDATE(@RequestedCompletionDate)) = 0
-	begin
-		RAISERROR ('Requested completion date is not a valid date.', 11, 1)
-	end
+	else 
+		if (SELECT ISDATE(@RequestedCompletionDate)) = 0
+		begin
+			RAISERROR ('Requested completion date is not a valid date: %s', 11, 1, @RequestedCompletionDate)
+		end
 
-
-	declare @tempRequestedCompletionDate smalldatetime
-	set @tempRequestedCompletionDate = cast(@RequestedCompletionDate AS smalldatetime)
 
 	---------------------------------------------------
-	-- Validate that instrument exists
+	-- Determine the Instrument Group
 	---------------------------------------------------
 
-	declare @inst varchar(24)
-	set @inst = ''
-	--
-	SELECT @inst = ex
-	FROM V_Req_Run_Instrument_Picklist
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		RAISERROR ('Error trying to find instrument', 11, 12)
-	end
-	--
-	if @inst = ''
-	begin
-		set @message = 'Could not find entry in database for instrument "' + @RequestedInstrument + '"'
-		RAISERROR (@message, 11, 14)
-	end
+	Declare @InstrumentGroup varchar(64) = ''
+	
+	-- Set the instrument group to @RequestedInstrument for now
+	set @InstrumentGroup = @RequestedInstrument
+	
+	IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+	Begin
+		-- Try to update instrument group using T_Instrument_Name
+		SELECT @InstrumentGroup = IN_Group
+		FROM T_Instrument_Name
+		WHERE IN_Name = @RequestedInstrument
+	End
+
 
 	---------------------------------------------------
 	-- High priority requires justification
@@ -298,7 +293,7 @@ As
 			'Normal',
 			@RequestedCompletionDate,
 			@JustificationHighPriority,
-			@RequestedInstrument, 
+			@InstrumentGroup, 
 			@Comment
 		)
 		--
@@ -323,16 +318,15 @@ As
 	begin
 		set @myError = 0
 		--
-		UPDATE T_Requested_Run_Batches 
-		SET 
-		Batch = @Name, 
-		Description = @Description, 
-		Owner = @userID,
-                Requested_Batch_Priority = @RequestedBatchPriority,
-                Requested_Completion_Date = @RequestedCompletionDate,
-                Justification_for_High_Priority = @JustificationHighPriority,
-				Requested_Instrument = @RequestedInstrument, 
-				Comment = @Comment
+		UPDATE T_Requested_Run_Batches
+		SET Batch = @Name,
+		    Description = @Description,
+		    Owner = @userID,
+		    Requested_Batch_Priority = @RequestedBatchPriority,
+		    Requested_Completion_Date = @RequestedCompletionDate,
+		    Justification_for_High_Priority = @JustificationHighPriority,
+		    Requested_Instrument = @InstrumentGroup,
+		    Comment = @Comment
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -392,10 +386,13 @@ As
 	END CATCH
 	return @myError
 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [PNL\D3M578] AS [dbo]
 GO

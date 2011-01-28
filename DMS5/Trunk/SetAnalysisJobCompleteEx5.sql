@@ -147,6 +147,8 @@ GRANT EXECUTE ON [dbo].[SetAnalysisJobCompleteEx5] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[SetAnalysisJobCompleteEx5] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetAnalysisJobCompleteEx5] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SetAnalysisJobCompleteEx5] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetAnalysisJobCompleteEx5] TO [PNL\D3M580] AS [dbo]

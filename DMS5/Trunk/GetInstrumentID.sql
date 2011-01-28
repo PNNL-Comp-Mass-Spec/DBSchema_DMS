@@ -35,6 +35,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[GetInstrumentID] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetInstrumentID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetInstrumentID] TO [PNL\D3M580] AS [dbo]

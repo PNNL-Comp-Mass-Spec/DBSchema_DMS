@@ -155,6 +155,8 @@ GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMSWebUser] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [MTS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [PNL\D3M578] AS [dbo]

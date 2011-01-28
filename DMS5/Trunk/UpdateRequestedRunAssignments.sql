@@ -20,7 +20,10 @@ CREATE Procedure dbo.UpdateRequestedRunAssignments
 **			12/11/2003 grk - removed LCMS cart modes
 **			07/27/2007 mem - When @mode = 'instrument, then checking dataset type (@datasetTypeName) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #503)
 **						   - Added output parameter @message to report the number of items updated
-**			09/16/2009 mem - Now checking dataset type (@datasetTypeName) against T_Instrument_Allowed_Dataset_Type (Ticket #748)
+**			09/16/2009 mem - Now checking dataset type (@datasetTypeName) using Instrument_Allowed_Dataset_Type table (Ticket #748)
+**			08/28/2010 mem - Now auto-switching @newValue to be instrument group instead of instrument name (when @mode = 'instrument')
+**						   - Now validating dataset type for instrument using T_Instrument_Group_Allowed_DS_Type
+**						   - Added try-catch for error handling
 **    
 *****************************************************/
 	@mode varchar(32), -- 'priority', 'instrument', 'delete'
@@ -40,17 +43,18 @@ As
 	declare @continue int
 	declare @RequestID int
 
-	declare @instrumentID int
-	declare @instrumentName varchar(128)
+	Declare @InstrumentGroup varchar(64) = ''
 
 	declare @datasetTypeID int
 	declare @datasetTypeName varchar(64)
 	declare @RequestIDCount int
 	declare @RequestIDFirst int
 
-	declare @allowedDatasetTypes varchar(255)
+	declare @allowedDatasetTypes varchar(255) = ''
 	
 	set @message = ''
+
+	BEGIN TRY 
 	
 	---------------------------------------------------
 	-- Populate a temporary table with the values in @reqRunIDList
@@ -67,39 +71,49 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
 	If @myError <> 0
-	Begin
-		Set @msg = 'Error parsing Request ID List'
-		RAISERROR (@msg, 10, 1)
-		return @myError
-	End
+		RAISERROR ('Error parsing Request ID List', 11, 1)
 	
 	If @myRowCount = 0
-	Begin
 		-- @reqRunIDList was empty; nothing to do
-		Set @msg = 'Request ID list was empty; nothing to do'
-		RAISERROR (@msg, 10, 1)
-		return 51312
-	End
+		RAISERROR ('Request ID list was empty; nothing to do', 11, 2)
+
 
 	if @mode = 'instrument'
 	Begin -- <a>
-		Set @instrumentName = @newValue
 		
 		-- Make sure the Run Type (i.e. Dataset Type) defined for each of the run requests
-		-- is appropriate for instrument @instrumentName
+		-- is appropriate for instrument (or instrument group) @instrumentName
 		-- 
 
 		---------------------------------------------------
-		-- Resolve instrument ID
+		-- Determine the Instrument Group
+		---------------------------------------------------
+		
+		-- Set the instrument group to @newValue for now
+		set @InstrumentGroup = @newValue
+		
+		IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+		Begin
+			-- Try to update instrument group using T_Instrument_Name
+			SELECT @InstrumentGroup = IN_Group
+			FROM T_Instrument_Name
+			WHERE IN_Name = @newValue
+		End
+		
+		
+		---------------------------------------------------
+		-- Make sure a valid instrument group was chosen (or auto-selected via an instrument name)
+		-- This also assures the text is properly capitalized
 		---------------------------------------------------
 
-		execute @instrumentID = GetinstrumentID @instrumentName
-		if @instrumentID = 0
-		begin
-			set @msg = 'Could not find entry in database for instrument "' + @instrumentName + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51313
-		end
+		SELECT @InstrumentGroup = IN_Group
+		FROM T_Instrument_Group
+		WHERE IN_Group = @InstrumentGroup
+		--	
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		IF @myRowCount = 0
+			RAISERROR ('Could not find entry in database for instrument group (or instrument) "%s"', 11, 3, @newValue)
 
 		---------------------------------------------------
 		-- Populate a temporary table with the dataset type names
@@ -131,7 +145,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		-- Step through the entries in #TmpDatasetTypeList and verify each
-		--  Dataset Type against T_Instrument_Allowed_Dataset_Type
+		--  Dataset Type against T_Instrument_Group_Allowed_DS_Type
 		
 		SELECT @DatasetTypeID = Min(DatasetTypeID)-1
 		FROM #TmpDatasetTypeList
@@ -154,30 +168,20 @@ As
 			Else
 			Begin -- <c>
 				---------------------------------------------------
-				-- Verify that dataset type is valid for given instrument
+				-- Verify that dataset type is valid for given instrument group
 				---------------------------------------------------				
 
-				If Not Exists (SELECT * FROM T_Instrument_Allowed_Dataset_Type WHERE Instrument = @instrumentName AND Dataset_Type = @DatasetTypeName)
+				If Not Exists (SELECT * FROM T_Instrument_Group_Allowed_DS_Type WHERE IN_Group = @InstrumentGroup AND Dataset_Type = @DatasetTypeName)
 				begin
-					Set @allowedDatasetTypes = ''
-					
-					SELECT @allowedDatasetTypes = @allowedDatasetTypes + ', ' + Dataset_Type
-					FROM T_Instrument_Allowed_Dataset_Type 
-					WHERE Instrument = @instrumentName
-					ORDER BY Dataset_Type
+					SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@InstrumentGroup)
 
-					-- Remove the leading two characters
-					If Len(@allowedDatasetTypes) > 0
-						Set @allowedDatasetTypes = Substring(@allowedDatasetTypes, 3, Len(@allowedDatasetTypes))
-
-					set @msg = 'Dataset Type "' + @DatasetTypeName + '" is invalid for instrument "' + @instrumentName + '"; valid types are "' + @allowedDatasetTypes + '"'
+					set @msg = 'Dataset Type "' + @DatasetTypeName + '" is invalid for instrument group "' + @InstrumentGroup + '"; valid types are "' + @allowedDatasetTypes + '"'
 					If @RequestIDCount > 1
 						set @msg = @msg + '; ' + Convert(varchar(12), @RequestIDCount) + ' conflicting Request IDs, starting with ID ' + Convert(varchar(12), @RequestIDFirst)
 					Else
 						set @msg = @msg + '; conflicting Request ID is ' + Convert(varchar(12), @RequestIDFirst)
 					
-					RAISERROR (@msg, 10, 1)
-					return 51315
+					RAISERROR (@msg, 11, 4)
 				end
 	
 			End -- </c>
@@ -211,14 +215,15 @@ As
 	-------------------------------------------------
 	if @mode = 'instrument'
 	begin
+		
 		UPDATE T_Requested_Run
-		SET	RDS_instrument_name = @newValue
+		SET	RDS_instrument_name = @InstrumentGroup
 		FROM T_Requested_Run RR INNER JOIN
 			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		Set @message = 'Changed the instrument to ' + @newValue + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		Set @message = 'Changed the instrument group to ' + @InstrumentGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	end
@@ -254,8 +259,7 @@ As
 				if @myError <> 0
 				begin -- <d>
 					Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @RequestID) + ': ' + @message
-					RAISERROR (@msg, 10, 1)
-					return 51310
+					RAISERROR (@msg, 11, 5)
 				end	-- </d>
 				
 				Set @CountDeleted = @CountDeleted + 1
@@ -266,8 +270,18 @@ As
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	end -- </a>
+		
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_Ops_Admin] AS [dbo]
@@ -277,6 +291,8 @@ GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [PNL\D3M578] AS [dbo]
 GO

@@ -114,3 +114,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [Limited_Table_Write] AS [dbo]
+GO

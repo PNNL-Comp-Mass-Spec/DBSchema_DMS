@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetBatchRequestedRunList
+
+CREATE FUNCTION GetBatchRequestedRunList
 /****************************************************
 **
 **	Desc: 
@@ -38,5 +39,6 @@ AS
 
 		RETURN @list
 	END
+
 
 GO

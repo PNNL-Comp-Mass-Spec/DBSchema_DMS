@@ -82,6 +82,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[DeleteParamEntriesForID] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteParamEntriesForID] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteParamEntriesForID] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteParamEntriesForID] TO [PNL\D3M580] AS [dbo]

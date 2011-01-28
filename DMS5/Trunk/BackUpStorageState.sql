@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[BackUpStorageState]
+CREATE Procedure dbo.BackUpStorageState
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +19,7 @@ CREATE Procedure [dbo].[BackUpStorageState]
 **	Date:	04/18/2002
 **			04/07/2006 grk - Got ride of CDBurn stuff
 **			05/01/2009 mem - Updated description field in t_storage_path and t_storage_path_bkup to be named SP_description
+**			08/30/2010 mem - Now copying IN_Created
 **    
 *****************************************************/
 (
@@ -34,7 +35,7 @@ As
 	set @message = ''
 
 	---------------------------------------------------
-	-- 
+	-- Clear t_storage_path_bkup
 	---------------------------------------------------
 
 	DELETE FROM t_storage_path_bkup
@@ -48,7 +49,7 @@ As
 	end
 
 	---------------------------------------------------
-	-- 
+	-- Populate t_storage_path_bkup
 	---------------------------------------------------
 
 	INSERT INTO t_storage_path_bkup
@@ -70,7 +71,7 @@ As
 	end
 
 	---------------------------------------------------
-	-- 
+	-- Clear T_Instrument_Name_Bkup
 	---------------------------------------------------
 
 	DELETE FROM T_Instrument_Name_Bkup
@@ -85,23 +86,24 @@ As
 	end
 
 	---------------------------------------------------
-	-- 
+	-- Populate T_Instrument_Name_Bkup
 	---------------------------------------------------
 
 	INSERT INTO [T_Instrument_Name_Bkup]
 	   (IN_name, Instrument_ID, IN_class, IN_source_path_ID, 
 	   IN_storage_path_ID, IN_capture_method, 
 	   IN_Room_Number, 
-	   IN_Description)
-	SELECT 
-	IN_name, 
-	Instrument_ID, 
-	IN_class, 
-	IN_source_path_ID, 
-	   IN_storage_path_ID, 
-	   IN_capture_method, 
-	   IN_Room_Number, 
-	   IN_Description
+	   IN_Description,
+	   IN_Created)
+	SELECT IN_name,
+	       Instrument_ID,
+	       IN_class,
+	       IN_source_path_ID,
+	       IN_storage_path_ID,
+	       IN_capture_method,
+	       IN_Room_Number,
+	       IN_Description,
+	       IN_Created
 	FROM T_Instrument_Name
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -116,7 +118,8 @@ As
 	return @myError
 
 
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [PNL\D3M578] AS [dbo]
 GO

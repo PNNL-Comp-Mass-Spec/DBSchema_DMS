@@ -212,6 +212,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetFileInfoFromFile] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoFromFile] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoFromFile] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoFromFile] TO [PNL\D3M580] AS [dbo]

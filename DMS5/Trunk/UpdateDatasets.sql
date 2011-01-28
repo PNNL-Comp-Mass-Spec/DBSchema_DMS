@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDatasets
+CREATE PROCEDURE UpdateDatasets
 /****************************************************
 **
 **	Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateDatasets
 **	Auth:	jds
 **	Date:	09/21/2006
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**			08/19/2010 grk - try-catch for error handling
 **    
 *****************************************************/
 (
@@ -47,6 +48,8 @@ As
 	set @DatasetStateUpdated = 0
 	set @DatasetRatingUpdated = 0
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
@@ -54,16 +57,14 @@ As
 	if @datasetList = ''
 	begin
 		set @msg = 'Dataset list is empty'
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 1)
 	end
 
 
 	if (@findText = '[no change]' and @replaceText <> '[no change]') OR (@findText <> '[no change]' and @replaceText = '[no change]')
 	begin
 		set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
-		RAISERROR (@msg, 10, 1)
-		return 51001
+		RAISERROR (@msg, 11, 2)
 	end
 
 	---------------------------------------------------
@@ -79,8 +80,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary dataset table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 3)
 	end
 
  	---------------------------------------------------
@@ -97,8 +97,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary dataset table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 4)
 	end
 
  	---------------------------------------------------
@@ -121,14 +120,14 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error checking dataset existence'
-		return 51007
+		set @msg = 'Error checking dataset existence'
+		RAISERROR (@msg, 11, 20)
 	end
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following datasets from list were not in database:"' + @list + '"'
-		return 51007
+		set @msg = 'The following datasets from list were not in database:"' + @list + '"'
+		RAISERROR (@msg, 11, 20)
 	end
 	
 	declare @datasetCount int
@@ -157,15 +156,13 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error looking up state name'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 5)
 		end
 		--
 		if @stateID = 0
 		begin
 			set @msg = 'Could not find state'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 6)
 		end
 	end -- if @state
 
@@ -188,15 +185,13 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error looking up rating name'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 7)
 		end
 		--
 		if @ratingID = 0
 		begin
 			set @msg = 'Could not find rating'
-			RAISERROR (@msg, 10, 1)
-			return 51007
+			RAISERROR (@msg, 11, 8)
 		end
 	end -- if @rating
 
@@ -227,9 +222,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
-				rollback transaction @transName
-				RAISERROR (@msg, 10, 1)
-				return 51004
+				RAISERROR (@msg, 11, 9)
 			end
 			
 			Set @DatasetStateUpdated = 1
@@ -247,9 +240,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
-				rollback transaction @transName
-				RAISERROR (@msg, 10, 1)
-				return 51004
+				RAISERROR (@msg, 11, 10)
 			end
 			
 			Set @DatasetRatingUpdated = 1
@@ -267,9 +258,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
-				rollback transaction @transName
-				RAISERROR (@msg, 10, 1)
-				return 51004
+				RAISERROR (@msg, 11, 11)
 			end
 		end
 
@@ -285,9 +274,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
-				rollback transaction @transName
-				RAISERROR (@msg, 10, 1)
-				return 51004
+				RAISERROR (@msg, 11, 12)
 			end
 		end
 
@@ -321,14 +308,20 @@ As
 		
 	end -- update mode
 
- 	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
 	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasets] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [PNL\D3M578] AS [dbo]
 GO

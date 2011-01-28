@@ -14,20 +14,22 @@ CREATE PROCEDURE CopyRequestedRun
 **	Date:	02/26/2010
 **			03/03/2010 grk - added status field
 **			08/04/2010 mem - Now using the Created date from the original request as the Created date for the new request
+**			08/30/2010 mem - Now clearing @message after a successful call to UpdateRequestedRunCopyFactors
 **
 *****************************************************/
+(
 	@requestID int,
 	@datasetID int,
 	@status VARCHAR(24),
 	@notation varchar(256),
 	@message varchar(255) output
+)
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -141,7 +143,13 @@ As
 		set @message = 'Problem copying factors to new request'
 		goto Done
 	end
-
+	else
+	begin
+		-- @message may contain the text 'Nothing to copy'
+		-- We don't need that text appearing on the web page, so we'll clear @message
+		set @message = ''
+	end
+	
 	---------------------------------------------------
 	-- Copy proposal users for new auto request
 	-- from original request
@@ -165,9 +173,11 @@ As
 	end
 
 	---------------------------------------------------
-	-- 
+	-- Exit
 	---------------------------------------------------
 	--
 Done:
 	return @myError
+GO
+GRANT VIEW DEFINITION ON [dbo].[CopyRequestedRun] TO [Limited_Table_Write] AS [dbo]
 GO

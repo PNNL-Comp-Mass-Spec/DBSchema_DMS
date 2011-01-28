@@ -164,3 +164,5 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RefreshCachedPTDBs] TO [Limited_Table_Write] AS [dbo]
+GO

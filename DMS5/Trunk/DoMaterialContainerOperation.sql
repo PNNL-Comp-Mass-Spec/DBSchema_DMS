@@ -15,6 +15,7 @@ CREATE Procedure DoMaterialContainerOperation
 **	Auth:	grk
 **	Date:	07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **			10/01/2009 mem - Expanded error message
+**			08/19/2010 grk - try-catch for error handling
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -37,6 +38,8 @@ As
 	set @message = ''
     declare @msg varchar(512)
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- convert name to ID
 	---------------------------------------------------
@@ -54,8 +57,7 @@ As
 	if @tmpID = 0
 	begin
 		set @msg = 'Could not find the container for @mode="' + @mode + '" and @name="' + @name + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51222
+		RAISERROR (@msg, 11, 1)
 	end
 	else
 	begin
@@ -75,22 +77,30 @@ As
 							@containerList,
 							@newValue,
 							@comment,
-							@message output,
+							@msg output,
    							@callingUser
 
 
 		if @myError <> 0
 		begin
-			set @msg = 'xx'
-			RAISERROR (@msg, 10, 1)
-			return @myError
+			RAISERROR (@msg, 11, 2)
 		end
 	end
 
-	
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[DoMaterialContainerOperation] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [PNL\D3M578] AS [dbo]
 GO

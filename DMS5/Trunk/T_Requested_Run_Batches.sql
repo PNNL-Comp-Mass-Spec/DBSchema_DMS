@@ -20,15 +20,18 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Requested_Run_Batches] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
 After Update

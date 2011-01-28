@@ -50,11 +50,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign]
 	[CM_created] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+
 /****** Object:  Trigger [dbo].[trig_d_Campaign] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_d_Campaign] on [dbo].[T_Campaign]
 For Delete
 /****************************************************
@@ -90,11 +93,14 @@ AS
 	ORDER BY Campaign_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_i_Campaign] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Campaign] on [dbo].[T_Campaign]
 For Insert
 /****************************************************
@@ -119,11 +125,14 @@ AS
 	ORDER BY inserted.Campaign_ID
 
 GO
+
 /****** Object:  Trigger [dbo].[trig_u_Campaign] ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger trig_u_Campaign on T_Campaign
 For Update
 /****************************************************

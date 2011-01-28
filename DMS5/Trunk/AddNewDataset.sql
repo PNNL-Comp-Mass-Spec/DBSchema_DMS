@@ -14,6 +14,8 @@ CREATE PROCEDURE dbo.AddNewDataset
 **		create new datasets automatically following
 **		an instrument run.
 **
+**		This procedure is called by the DataImportManager (DIM)
+**
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	grk
@@ -24,6 +26,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
 **			02/13/2008 mem - Increased size of @Dataset_Name to varchar(128) (Ticket #602)
 **			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**			09/09/2010 mem - Now always looking up the request number associated with the new dataset
 **    
 *****************************************************/
 (
@@ -35,10 +38,17 @@ AS
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
+
+	DECLARE @hDoc int
+	declare @dsid int
+
+	declare @tmp int
+
+	declare @internalStandards varchar(64)
+	declare @AddUpdateTimeStamp datetime
 	
 	set @message = ''
 
@@ -55,7 +65,7 @@ AS
 		@Operator_PRN		varchar(64),  -- @operPRN
 		@Comment			varchar(512), -- @comment
 		@Interest_Rating	varchar(32),  -- @rating
-		@Request			int,          -- @requestID
+		@Request			int,          -- @requestID; this might get updated by AddUpdateDataset
 		@EMSL_Usage_Type	varchar(50),  -- @eusUsageType
 		@EMSL_Proposal_ID	varchar(10),  -- @eusProposalID
 		@EMSL_Users_List	varchar(1024), -- @eusUsersList
@@ -84,7 +94,6 @@ AS
 	---------------------------------------------------
 	-- Parse the XML input
 	---------------------------------------------------
-	DECLARE @hDoc int
 	EXEC sp_xml_preparedocument @hDoc OUTPUT, @xmlDoc
 
  	---------------------------------------------------
@@ -187,10 +196,7 @@ AS
 	-- establish default parameters
  	---------------------------------------------------
 
-	declare @internalStandards varchar(64)
 	set @internalStandards  = 'none'
-
-	declare @AddUpdateTimeStamp datetime
 	set @AddUpdateTimeStamp = GetDate()
 	
 	---------------------------------------------------
@@ -229,116 +235,106 @@ AS
 		goto DONE
 
 
-	if @Request = 0 Or Len(@DatasetCreatorPRN) > 0
-	Begin -- <a>
-		---------------------------------------------------
-		-- Use Dataset Name to lookup the Dataset ID
-		---------------------------------------------------
-		
-		declare @dsid int
-		set @dsid = 0
-		--
-		SELECT @dsid = Dataset_ID
-		FROM T_Dataset
-		WHERE (Dataset_Num = @Dataset_Name)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to resolve dataset ID'
-			RAISERROR (@message, 10, 1)
-			return 51034
-		end
-		if @dsid = 0
-		begin
-			set @message = 'Could not resolve dataset ID'
-			RAISERROR (@message, 10, 1)
-			return 51035
-		end
-		
-		---------------------------------------------------
-		-- Find request associated with dataset (if not given)
-		---------------------------------------------------
-		
-		if @Request = 0
-		begin -- <b1>
-
-			---------------------------------------------------
-			-- get request ID using dataset ID
-			---------------------------------------------------
-			
-			declare @tmp int
-			set @tmp = 0
-			--
-			SELECT @tmp = ID
-			FROM T_Requested_Run
-			WHERE (DatasetID = @dsid)		
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error trying to resolve request ID'
-				RAISERROR (@message, 10, 1)
-				return 51036
-			end
-			if @tmp = 0
-			begin
-				set @message = 'Could not find request'
-				RAISERROR (@message, 10, 1)
-				return 51037
-			end
-			set @Request = @tmp
-		end -- </b1>
-		
-		If Len(@DatasetCreatorPRN) > 0
-		Begin -- <b2>
-			---------------------------------------------------
-			-- Update T_Event_Log to reflect use @DatasetCreatorPRN for the creation of this dataset
-			---------------------------------------------------
-			
-			UPDATE T_Event_Log
-			SET Entered_By = @DatasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
-			FROM T_Event_Log
-			WHERE Target_ID = @dsid AND
-				  Target_State = 1 AND 
-				  Target_Type = 4 AND 
-				  Entered Between @AddUpdateTimeStamp AND DateAdd(minute, 1, @AddUpdateTimeStamp)
-			    
-		End -- </b2>
-		
-	End -- </a>
+	---------------------------------------------------
+	-- It's possible that @Request got updated by AddUpdateDataset
+	-- Lookup the current value
+	---------------------------------------------------
 	
-	---------------------------------------------------
-	-- Update the associated request with run start/finish values
-	---------------------------------------------------
-
-	UPDATE T_Requested_Run
-	SET
-		RDS_Run_Start = @Run_Start, 
-		RDS_Run_Finish = @Run_Finish
-	WHERE (ID = @Request)
+	-- First use Dataset Name to lookup the Dataset ID
+	--		
+	set @dsid = 0
+	--
+	SELECT @dsid = Dataset_ID
+	FROM T_Dataset
+	WHERE (Dataset_Num = @Dataset_Name)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to update run times'
+		set @message = 'Error trying to resolve dataset ID'
 		RAISERROR (@message, 10, 1)
-		return 51033
+		return 51034
 	end
+	if @dsid = 0
+	begin
+		set @message = 'Could not resolve dataset ID'
+		RAISERROR (@message, 10, 1)
+		return 51035
+	end
+	
+	---------------------------------------------------
+	-- Find request associated with dataset
+	---------------------------------------------------
+	
+	set @tmp = 0
+	--
+	SELECT @tmp = ID
+	FROM T_Requested_Run
+	WHERE (DatasetID = @dsid)		
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error trying to resolve request ID'
+		RAISERROR (@message, 10, 1)
+		return 51036
+	end
+	
+	if @tmp <> 0
+		set @Request = @tmp
+	
+	
+	If Len(@DatasetCreatorPRN) > 0
+	Begin -- <a>
+		---------------------------------------------------
+		-- Update T_Event_Log to reflect @DatasetCreatorPRN creating this dataset
+		---------------------------------------------------
+		
+		UPDATE T_Event_Log
+		SET Entered_By = @DatasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
+		FROM T_Event_Log
+		WHERE Target_ID = @dsid AND
+				Target_State = 1 AND 
+				Target_Type = 4 AND 
+				Entered Between @AddUpdateTimeStamp AND DateAdd(minute, 1, @AddUpdateTimeStamp)
+			
+	End -- </a>
+		
 
+	---------------------------------------------------
+	-- Update the associated request with run start/finish values
+	---------------------------------------------------
 
+	If @Request <> 0
+	Begin
+		UPDATE T_Requested_Run
+		SET
+			RDS_Run_Start = @Run_Start, 
+			RDS_Run_Finish = @Run_Finish
+		WHERE (ID = @Request)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error trying to update run times'
+			RAISERROR (@message, 10, 1)
+			return 51033
+		end
+	End
 
  	---------------------------------------------------
-	-- 
+	-- Done
  	---------------------------------------------------
 Done:
 	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [PNL\D3M578] AS [dbo]
 GO

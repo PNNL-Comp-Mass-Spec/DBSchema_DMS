@@ -21,68 +21,55 @@ CREATE Procedure dbo.PostLogEntry
 **			03/30/2009 mem - Added parameter @duplicateEntryHoldoffHours
 **						   - Expanded the size of @type, @message, and @postedBy
 **			07/20/2009 grk - eliminate health log (http://prismtrac.pnl.gov/trac/ticket/742)
+**			09/13/2010 mem - Eliminate analysis log
+**						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
 **    
 *****************************************************/
+(
 	@type varchar(128),
 	@message varchar(4096),
 	@postedBy varchar(128)= 'na',
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
+)
 As
 	Declare @duplicateRowCount int
 	Set @duplicateRowCount = 0
 	
+	If (@postedBy Like 'Space%') And @type In ('Health', 'Normal')
+	Begin
+		-- Auto-update @duplicateEntryHoldoffHours to be 24 if it is zero
+		-- Otherwise we get way too many health/status log entries
 		
-	If ( charindex('analysis', lower(@postedBy)) > 0) or (( charindex('results', lower(@postedBy)) > 0)) or (( charindex('extraction', lower(@postedBy)) > 0)) 
-	Begin
-		If IsNull(@duplicateEntryHoldoffHours, 0) > 0
-		Begin
-			SELECT @duplicateRowCount = COUNT(*)
-			FROM T_Analysis_Log
-			WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
-		End
-
-		If @duplicateRowCount = 0
-		Begin
-			INSERT INTO T_Analysis_Log
-			(posted_by, posting_time, type, message) 
-			VALUES ( @postedBy, GETDATE(), @type, @message)
-			--
-			if @@rowcount <> 1
-			begin
-				RAISERROR ('Update was unsuccessful for T_Analysis_Log table',
-					10, 1)
-				return 51192
-			end
-		End
+		If @duplicateEntryHoldoffHours = 0
+			Set @duplicateEntryHoldoffHours = 24
 	End
-	Else
+	
+	
+	If IsNull(@duplicateEntryHoldoffHours, 0) > 0
 	Begin
-		If IsNull(@duplicateEntryHoldoffHours, 0) > 0
-		Begin
-			SELECT @duplicateRowCount = COUNT(*)
-			FROM T_Log_Entries
-			WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
-		End
+		SELECT @duplicateRowCount = COUNT(*)
+		FROM T_Log_Entries
+		WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+	End
 
-		If @duplicateRowCount = 0
-		Begin
-			INSERT INTO T_Log_Entries
-			(posted_by, posting_time, type, message) 
-			VALUES ( @postedBy, GETDATE(), @type, @message)
-			--
-			if @@rowcount <> 1
-			begin
-				RAISERROR ('Update was unsuccessful for T_Log_Entries table',
-					10, 1)
-				return 51191
-			end
-		End
+	If @duplicateRowCount = 0
+	Begin
+		INSERT INTO T_Log_Entries (posted_by, posting_time, type, message) 
+		VALUES ( @postedBy, GETDATE(), @type, @message)
+		--
+		if @@rowcount <> 1
+		begin
+			RAISERROR ('Update was unsuccessful for T_Log_Entries table', 10, 1)
+			return 51191
+		end
 	End
 			
 	return 0
 
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M578] AS [dbo]
 GO

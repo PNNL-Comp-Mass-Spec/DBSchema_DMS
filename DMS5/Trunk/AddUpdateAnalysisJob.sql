@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.AddUpdateAnalysisJob
+CREATE Procedure AddUpdateAnalysisJob
 /****************************************************
 **
 **	Desc: Adds new analysis job to job table
@@ -45,6 +45,9 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **			05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			08/18/2010 mem - Now allowing job update if state is Failed, in addition to New or Holding
+**			08/19/2010 grk - try-catch for error handling
+**			08/26/2010 mem - Added parameter @PreventDuplicateJobs
 **    
 *****************************************************/
 (
@@ -62,10 +65,11 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@stateName varchar(32),
-    @jobNum varchar(32) = "0" output,
+    @jobNum varchar(32) = '0' output,
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
 	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@PreventDuplicateJobs tinyint = 0			-- Only used if @Mode is 'add'; ignores job with state 4 or 14 (failed or do not export)
 )
 As
 	set nocount on
@@ -87,6 +91,7 @@ As
 	set @comment = IsNull(@comment, '')
 	set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
 	set @callingUser = IsNull(@callingUser, '')
+	Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 0)
 	
 	set @message = ''
 
@@ -95,7 +100,8 @@ As
     declare @batchID int
 	set @batchID = 0
 
-	
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates and resets)
 	---------------------------------------------------
@@ -118,20 +124,18 @@ As
 		if @jobID = 0
 		begin	
 			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in database '
-			RAISERROR (@msg, 10, 1)
-			return 51004
+			RAISERROR (@msg, 11, 4)
 		end
 	end
 
 	if @mode = 'update'
 	begin
-		-- changes only allowed to jobs in 'new' or 'holding' state
+		-- changes only allowed to jobs in 'new', 'failed', or 'holding' state
 		--
-		if @stateID <> 1 and @stateID <> 8
+		if Not @stateID IN (1,5,8)
 		begin
-				set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new" or "holding" state '
-				RAISERROR (@msg, 10, 1)
-				return 51005
+			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
+			RAISERROR (@msg, 11, 5)
 		end
 	end
 
@@ -153,15 +157,13 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error trying to resolve processor group name'
-			RAISERROR (@msg, 10, 1)
-			return 51008
+			RAISERROR (@msg, 11, 8)
 		end
 		--
 		if @gid = 0
 		begin
 			set @msg = 'Processor group name not found'
-			RAISERROR (@msg, 10, 1)
-			return 51009
+			RAISERROR (@msg, 11, 9)
 		end
 	end
 
@@ -184,8 +186,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51007
+		RAISERROR (@msg, 11, 7)
 	end
 
 	---------------------------------------------------
@@ -202,8 +203,7 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary table'
-		RAISERROR (@msg, 10, 1)
-		return 51011
+		RAISERROR (@msg, 11, 11)
 	end
 
 	---------------------------------------------------
@@ -226,8 +226,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error resolving default organism name'
-			RAISERROR (@msg, 10, 1)
-			return 51012
+			RAISERROR (@msg, 11, 12)
 		end
 	end
 
@@ -269,8 +268,7 @@ As
 	--
 	if @result <> 0
 	begin
-		RAISERROR (@msg, 10, 1)
-		return 53108
+		RAISERROR (@msg, 11, 18)
 	end
 
 	---------------------------------------------------
@@ -297,6 +295,49 @@ As
 	--
 	if @mode = 'add'
 	begin
+
+		If @PreventDuplicateJobs <> 0
+		Begin
+			-- See if an existing, matching job already exists
+			-- If it does, do not add another job
+			
+			Declare @ExistingJobCount int = 0
+			Declare @ExistingMatchingJob int = 0
+			
+			SELECT @ExistingJobCount = COUNT(*), 
+			       @ExistingMatchingJob = MAX(AJ_JobID)
+			FROM
+				T_Dataset DS INNER JOIN
+				T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
+				T_Analysis_Tool AJT ON AJ.AJ_analysisToolID = AJT.AJT_toolID INNER JOIN
+				T_Organisms Org ON AJ.AJ_organismID = Org.Organism_ID  INNER JOIN
+				T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
+				#TD ON #TD.Dataset_Num = DS.Dataset_Num
+			WHERE
+				(NOT (AJ.AJ_StateID IN (5, 14))) AND
+				AJT.AJT_toolName = @toolName AND 
+				AJ.AJ_parmFileName = @parmFileName AND 
+				AJ.AJ_settingsFileName = @settingsFileName AND 
+				( (	@protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
+					Org.OG_name = IsNull(@organismName, Org.OG_name)
+				) OR
+				(	@protCollNameList <> 'na' AND 
+					AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
+					AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
+				) 
+				)
+		
+			If @ExistingJobCount > 0
+			Begin
+				set @message = 'Job not created since duplicate job exists: ' + Convert(varchar(12), @ExistingMatchingJob)
+				
+				-- Do not change this error code since SP CreatePredefinedAnalysesJobs 
+				-- checks for error code 52500
+				return 52500
+			End		
+		End
+		
+
 		---------------------------------------------------
 		-- get ID for new job (#744)
 		---------------------------------------------------
@@ -305,8 +346,7 @@ As
 		if @jobID = 0
 		begin
 			set @msg = 'Failed to get valid new job ID'
-			RAISERROR (@msg, 10, 1)
-			return 51018
+			RAISERROR (@msg, 11, 15)
 		end
 		set @jobNum = cast(@jobID as varchar(32))
 	
@@ -360,10 +400,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @msg = 'Insert new job operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51013
+			RAISERROR (@msg, 11, 13)
 		end
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -383,10 +421,8 @@ As
 			--
 			if @myError <> 0
 			begin
-				rollback transaction @transName
 				set @msg = 'Insert new job association failed'
-				RAISERROR (@msg, 10, 1)
-				return 51014
+				RAISERROR (@msg, 11, 14)
 			end
 		end
 
@@ -422,8 +458,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Error looking up state name'
-				RAISERROR (@msg, 10, 1)
-				return 51015
+				RAISERROR (@msg, 11, 15)
 			end
 		end		
 
@@ -443,8 +478,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error looking up existing job association'
-			RAISERROR (@msg, 10, 1)
-			return 51016
+			RAISERROR (@msg, 11, 16)
 		end
 		
 		---------------------------------------------------
@@ -478,10 +512,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @msg = 'Update operation failed: "' + @jobNum + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51017
+			RAISERROR (@msg, 11, 17)
 		end
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -540,10 +572,8 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @msg = 'Error deleting existing association for job'
-			RAISERROR (@msg, 10, 1)
-			return 51021
+			RAISERROR (@msg, 11, 21)
 		end
 
 		commit transaction @transName
@@ -558,6 +588,15 @@ As
 		
 	end -- update mode
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	
 	return @myError
 
 GO
@@ -566,6 +605,8 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [PNL\D3M578] AS [dbo]
 GO

@@ -163,6 +163,8 @@ GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [PNL\D3M580] AS [dbo]

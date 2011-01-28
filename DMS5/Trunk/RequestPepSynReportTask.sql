@@ -255,6 +255,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[RequestPepSynReportTask] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestPepSynReportTask] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[RequestPepSynReportTask] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestPepSynReportTask] TO [PNL\D3M580] AS [dbo]

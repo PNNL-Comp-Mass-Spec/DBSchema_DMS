@@ -146,6 +146,8 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetRunComplete] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SetRunComplete] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetRunComplete] TO [PNL\D3M580] AS [dbo]

@@ -101,6 +101,8 @@ GRANT EXECUTE ON [dbo].[UpdateEUSUsers] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateEUSUsers] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsers] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsers] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsers] TO [PNL\D3M580] AS [dbo]

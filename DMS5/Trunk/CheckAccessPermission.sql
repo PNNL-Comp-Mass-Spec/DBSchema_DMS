@@ -29,6 +29,8 @@ AS
 	RETURN @result
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckAccessPermission] TO [Limited_Table_Write] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[CheckAccessPermission] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CheckAccessPermission] TO [PNL\D3M580] AS [dbo]
