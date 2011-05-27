@@ -78,6 +78,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Block_include_ID] ON [dbo].[T_
 INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Requested_Run_RDS_Name] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Name] ON [dbo].[T_Requested_Run] 
+(
+	[RDS_Name] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Requested_Run_RDS_NameCode] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_NameCode] ON [dbo].[T_Requested_Run] 
 (
@@ -195,6 +202,10 @@ REFERENCES [T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Users]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [CK_T_Requested_Run_RequestedRunName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([RDS_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [CK_T_Requested_Run_RequestedRunName_WhiteSpace]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_BatchID]  DEFAULT ((0)) FOR [RDS_BatchID]
 GO

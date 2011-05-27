@@ -15,6 +15,13 @@ CREATE TABLE [dbo].[T_Requested_Run_EUS_Users](
 ) ON [PRIMARY]
 
 GO
+
+/****** Object:  Index [IX_T_Requested_Run_EUS_Users_Request_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_EUS_Users_Request_ID] ON [dbo].[T_Requested_Run_EUS_Users] 
+(
+	[Request_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
 GRANT DELETE ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write] AS [dbo]

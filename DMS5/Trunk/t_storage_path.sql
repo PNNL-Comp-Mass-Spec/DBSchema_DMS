@@ -1,19 +1,20 @@
-/****** Object:  Table [dbo].[t_storage_path] ******/
+/****** Object:  Table [dbo].[T_Storage_Path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[t_storage_path](
+CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_path_ID] [int] IDENTITY(10,1) NOT NULL,
 	[SP_path] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SP_machine_name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_vol_name_client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_vol_name_server] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SP_function] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SP_instrument_name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[SP_function] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[SP_instrument_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_code] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_URL] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[SP_created] [datetime] NULL,
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY NONCLUSTERED 
 (
 	[SP_path_ID] ASC
@@ -23,22 +24,18 @@ CREATE TABLE [dbo].[t_storage_path](
 GO
 
 /****** Object:  Index [IX_t_storage_path_Machine_Name_Path_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_t_storage_path_Machine_Name_Path_ID] ON [dbo].[t_storage_path] 
+CREATE NONCLUSTERED INDEX [IX_t_storage_path_Machine_Name_Path_ID] ON [dbo].[T_Storage_Path] 
 (
 	[SP_machine_name] ASC,
 	[SP_path_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_iu_Storage_Path] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE Trigger [dbo].[trig_iu_Storage_Path] on [dbo].[t_storage_path]
+CREATE Trigger [dbo].[trig_iu_Storage_Path] on [dbo].[T_Storage_Path]
 After Insert, Update
 /****************************************************
 **
@@ -71,5 +68,11 @@ AS
 
 	End
 
-
+GO
+ALTER TABLE [dbo].[T_Storage_Path]  WITH CHECK ADD  CONSTRAINT [FK_t_storage_path_T_Instrument_Name] FOREIGN KEY([SP_instrument_name])
+REFERENCES [T_Instrument_Name] ([IN_name])
+GO
+ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
+GO
+ALTER TABLE [dbo].[T_Storage_Path] ADD  CONSTRAINT [DF_T_Storage_Path_SP_created]  DEFAULT (getdate()) FOR [SP_created]
 GO

@@ -3,12 +3,17 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_EUS_Users_List_Report
+
+CREATE VIEW [dbo].[V_EUS_Users_List_Report]
 AS
-SELECT     dbo.T_EUS_Users.PERSON_ID AS ID, dbo.T_EUS_Users.NAME_FM AS Name, dbo.T_EUS_Site_Status.Name AS [Site Status], 
-                      dbo.GetEUSUsersProposalList(dbo.T_EUS_Users.PERSON_ID) AS Proposals, REPLACE(dbo.T_EUS_Users.NAME_FM, ',', '_') AS [#URL_Name]
-FROM         dbo.T_EUS_Users INNER JOIN
-                      dbo.T_EUS_Site_Status ON dbo.T_EUS_Users.Site_Status = dbo.T_EUS_Site_Status.ID
+SELECT U.PERSON_ID AS ID,
+       U.NAME_FM AS Name,
+       SS.Name AS [Site Status],
+       dbo.GetEUSUsersProposalList(U.PERSON_ID) AS Proposals,
+       U.Last_Affected
+FROM T_EUS_Users U
+     INNER JOIN T_EUS_Site_Status SS
+       ON U.Site_Status = SS.ID
 
 
 GO

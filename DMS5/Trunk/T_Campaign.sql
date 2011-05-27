@@ -173,6 +173,10 @@ REFERENCES [T_Research_Team] ([ID])
 GO
 ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Research_Team]
 GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Campaign_Num],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
 GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]

@@ -9,14 +9,15 @@ AS
 SELECT P.PROPOSAL_ID AS ID,
        S.Name AS State,
        P.Title,
+       P.Call_Type,
+       P.Proposal_Start_Date,
+       P.Proposal_End_Date,
        P.Import_Date AS [Import Date],
-       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'N') AS [EUS Users]
+       P.Last_Affected,
+       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'V') AS [EUS Users]
 FROM dbo.T_EUS_Proposals P
      INNER JOIN T_EUS_Proposal_State_Name S
        ON P.State_ID = S.ID
-
-
-
 
 
 GO

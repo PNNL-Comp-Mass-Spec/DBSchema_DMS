@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Instrument_List_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
@@ -20,6 +18,7 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_status AS Status,
        InstName.IN_usage AS Usage,
        InstName.IN_operations_role AS [Ops Role],
+       Case When ISNULL(InstName.Auto_Define_Storage_Path, 0) = 0 Then 'No' Else 'Yes' End AS [Auto Define Storage],
        dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID ) AS [Allowed Dataset Types],
        InstName.IN_Created as Created
 FROM dbo.T_Instrument_Name InstName
@@ -29,7 +28,6 @@ FROM dbo.T_Instrument_Name InstName
                          SP_vol_name_server + SP_path AS Source
                   FROM t_storage_path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
-
 
 
 GO

@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Analysis_Job_Export]
 AS
 SELECT AJ.AJ_jobID AS Job, DS.Dataset_Num AS Dataset, 
@@ -34,7 +35,11 @@ FROM dbo.T_Analysis_Job AJ INNER JOIN
     dbo.T_Campaign Campaign ON Exp.EX_campaign_ID = Campaign.Campaign_ID INNER JOIN
     dbo.T_Organisms Org ON Exp.EX_organism_ID = Org.Organism_ID INNER JOIN
     dbo.V_Dataset_Archive_Path DSArch ON DS.Dataset_ID = DSArch.Dataset_ID
-WHERE (AJ.AJ_StateID = 4) AND (DS.DS_rating >= 1)
+WHERE (AJ.AJ_StateID = 4) AND
+      (DS.DS_rating >= 1 OR 
+       -- Include datasets with rating "Rerun (Good Data)"
+       DS.DS_rating = -6)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Export] TO [PNL\D3M578] AS [dbo]

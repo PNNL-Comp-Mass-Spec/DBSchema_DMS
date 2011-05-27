@@ -39,6 +39,9 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **						   - Expanded protein Collection fields and variables to varchar(4000)
 **			09/24/2010 mem - Now testing for a rating of -6 (Not Accepted)
 **			11/18/2010 mem - Rearranged rating check code for clarity
+**			02/09/2011 mem - Added support for predefines with Trigger_Before_Disposition = 1
+**						   - Added parameter @CreateJobsForUnreviewedDatasets
+**			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **
 *****************************************************/
 (
@@ -46,7 +49,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 	@outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
 	@message varchar(512) = '' output,
 	@RaiseErrorMessages tinyint = 1,
-	@ExcludeDatasetsNotReleased tinyint = 1		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
+	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
+	@CreateJobsForUnreviewedDatasets tinyint = 1	-- When non-zero, then will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
 )
 As
 	set nocount on
@@ -61,6 +65,7 @@ As
 	Set @datasetNum = IsNull(@datasetNum, '')
 	Set @RaiseErrorMessages = IsNull(@RaiseErrorMessages, 1)
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
+	Set @CreateJobsForUnreviewedDatasets = IsNull(@CreateJobsForUnreviewedDatasets, 1)
 
 	---------------------------------------------------
 	-- Validate @outputType
@@ -132,9 +137,13 @@ As
 		
 		goto done
 	end
-	--
+	
+	-- Only perform the following checks if the rating is less than 2
 	if (@Rating < 2)
 	begin
+		-- Continue with these checks if the rating is > -10 or if we are creating jobs
+		-- (If the rating is -10 and @outputType is not 'Export Jobs', then we want to 
+		--  allow the predefined analysis rules to be evaluated so that we can preview the results)
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
 			If @ExcludeDatasetsNotReleased = 0 And @Rating IN (-5, -6)
@@ -145,16 +154,28 @@ As
 			End
 			Else
 			Begin
-				-- Do not allow the jobs to be created
-				set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetNum
-
-				If @RaiseErrorMessages <> 0
+				If @Rating = -10 And @CreateJobsForUnreviewedDatasets <> 0
 				Begin
-					Set @myError = 53501
-					RAISERROR (@message, 10, 1)
+					-- Dataset is unreviewed, but @CreateJobsForUnreviewedDatasets is non-zero
+					-- Allow the jobs to be created
+					Set @message = ''
 				End
+				Else
+				Begin
+					-- Do not allow the jobs to be created
+					-- Note that SP CreatePredefinedAnalysesJobs expects the format of @message to be something like:
+					--   Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
+					-- Thus, be sure to update CreatePredefinedAnalysesJobs if you change the following line
+					set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetNum
 
-				goto done
+					If @RaiseErrorMessages <> 0
+					Begin
+						Set @myError = 53501
+						RAISERROR (@message, 10, 1)
+					End
+
+					goto done
+				End
 			End
 		end
 	end
@@ -189,6 +210,8 @@ As
 		AD_proteinOptionsList varchar(256), 
 		AD_priority int NOT NULL ,
 		AD_nextLevel int NULL ,
+		Trigger_Before_Disposition tinyint NOT NULL ,
+		Propagation_Mode tinyint NOT NULL ,
 		AD_ID int  NOT NULL 
 	)
 	--
@@ -209,6 +232,8 @@ As
 			[Seq.] int NULL, 
 			Rule_ID int, 
 			[Next Lvl.] int NULL, 
+			[Trigger Mode] varchar(32) NULL,
+			[Export Mode] varchar(32) NULL,
 			[Action] varchar(64) NULL, 
 			[Reason] varchar(256) NULL,
 			[Notes] varchar(256) NULL,
@@ -241,7 +266,7 @@ As
 					
 	---------------------------------------------------
 	-- Populate the rule holding table with rules
-	-- that target dataset satisfies
+	-- that the target dataset satisfies
 	---------------------------------------------------
 
 	INSERT INTO #AD (
@@ -270,6 +295,8 @@ As
 		AD_proteinOptionsList, 
 		AD_priority,
 		AD_nextLevel,
+		Trigger_Before_Disposition,
+		Propagation_Mode,
 		AD_ID
 	)
 	SELECT
@@ -298,6 +325,8 @@ As
 		PA.AD_proteinOptionsList, 
 		PA.AD_priority,
 		PA.AD_nextLevel,
+		PA.Trigger_Before_Disposition,
+		PA.Propagation_Mode,
 		PA.AD_ID
 	FROM T_Predefined_Analysis PA INNER JOIN
 		 T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID
@@ -316,6 +345,13 @@ As
 		AND (NOT (@Experiment LIKE PA.AD_experimentExclCriteria) OR (PA.AD_experimentExclCriteria = ''))
 		AND (NOT (@Dataset LIKE PA.AD_datasetExclCriteria) OR (PA.AD_datasetExclCriteria = ''))
 		AND ((@Organism LIKE PA.AD_organismNameCriteria) OR (PA.AD_organismNameCriteria = ''))
+		AND (
+			  -- Note that we always create jobs for predefines with Trigger_Before_Disposition = 1
+			  -- Procedure SchedulePredefinedAnalyses will typically be called with @PreventDuplicateJobs = 1 so duplicate jobs will not get created after a dataset is reviewed
+		     (PA.Trigger_Before_Disposition = 1) OR 
+		     (@Rating <> -10 AND PA.Trigger_Before_Disposition = 0) OR
+		     (@outputType = 'Show Rules')
+		    )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -328,7 +364,9 @@ As
 	if @myRowCount = 0
 	begin
 		set @message = 'No rules found'
-		
+		If @Rating = -10
+			set @message = @message + ' (dataset is unreviewed)'
+			
 		if @outputType = 'Show Rules' Or @OutputType = 'Show Jobs'
 		Begin
 			SELECT @datasetNum AS Dataset, 'No matching rules were found' as Message
@@ -342,7 +380,7 @@ As
 	if @outputType = 'Show Rules'
 	Begin
 		INSERT INTO #RuleEval (
-			[Level], [Seq.], Rule_ID, [Next Lvl.], 
+			[Level], [Seq.], Rule_ID, [Next Lvl.], [Trigger Mode], [Export Mode],
 			[Action], [Reason], 
 			[Notes], [Analysis Tool],
 			[Instrument Class Crit.], [Instrument Crit.], 
@@ -358,6 +396,14 @@ As
 			[Prot. Coll.], [Prot. Opts.],
 			Priority, [Processor Group])
 		SELECT	AD_level, AD_sequence, AD_ID, AD_nextLevel,
+		        CASE WHEN Trigger_Before_Disposition = 1
+					 THEN 'Before Disposition' 
+					 ELSE 'Normal' 
+					 END AS [Trigger Mode],
+				CASE Propagation_Mode WHEN 0 
+				     THEN 'Export' 
+				     ELSE 'No Export' 
+				     END AS [Export Mode],
 				'Skip' AS [Action], 'Level skip' AS [Reason], 
 				'' AS [Notes], AD_analysisToolName,
 				AD_instrumentClassCriteria, AD_instrumentNameCriteria,
@@ -414,7 +460,8 @@ As
 		ownerPRN varchar(128),
 		comment varchar(128),
 		associatedProcessorGroup varchar(64),
-		numJobs int
+		numJobs int,
+		propagationMode tinyint
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -448,6 +495,8 @@ As
 	declare @comment varchar(128)
 	declare @associatedProcessorGroup varchar(64)
 	declare @paRuleID int
+	declare @TriggerBeforeDisposition tinyint
+	declare @PropagationMode tinyint
 
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
@@ -490,7 +539,9 @@ As
 			@priority = AD_priority,
 			@RuleNextLevel = AD_nextLevel,
 			@associatedProcessorGroup = '',
-			@paRuleID = AD_ID
+			@paRuleID = AD_ID,
+			@TriggerBeforeDisposition = Trigger_Before_Disposition,
+			@PropagationMode = Propagation_Mode
 		FROM #AD
 		WHERE AD_level >= @minLevel
 		ORDER BY AD_level, AD_Sequence, AD_ID
@@ -526,7 +577,7 @@ As
 				SELECT *
 				FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
 				     INNER JOIN T_Analysis_Tool Tool
-				       ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
+				     ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
 				WHERE Tool.AJT_toolName = @analysisToolName AND
 				      ADT.Dataset_Type = @DatasetType
 				)
@@ -538,7 +589,19 @@ As
 			End
 			
 			If @UseRule = 1
+			Begin
+				If @Rating = -10 And @TriggerBeforeDisposition = 0
+				Begin
+					Set @RuleAction = 'Skip'
+					Set @RuleActionReason = 'Dataset is unreviewed'
+					Set @UseRule = 0
+				End
+								
+			End
+			
+			If @UseRule = 1
 			Begin -- <c>
+							
 				---------------------------------------------------
 				-- evaluate rule precedence 
 				---------------------------------------------------
@@ -669,7 +732,8 @@ As
 					ownerPRN,
 					comment,
 					associatedProcessorGroup,
-					numJobs
+					numJobs,
+					propagationMode
 				) VALUES (
 					@datasetNum,
 					@priority,
@@ -683,7 +747,8 @@ As
 					@ownerPRN,
 					@comment,
 					@associatedProcessorGroup,
-					@numJobs
+					@numJobs,
+					@PropagationMode
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -751,7 +816,8 @@ As
 			organismName as Organism,
 			proteinCollectionList AS Protein_Collections,
 			proteinOptionsList AS Protein_Options, 
-			ownerPRN as Owner
+			ownerPRN as Owner,
+			CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
 		FROM #JB
 		--
 		goto Done
@@ -777,7 +843,8 @@ As
 			ownerPRN,
 			comment,
 			associatedProcessorGroup,
-			numJobs
+			numJobs,
+			propagationMode
 		)
 		SELECT 
 			datasetNum,
@@ -792,7 +859,8 @@ As
 			ownerPRN,
 			comment,
 			associatedProcessorGroup,
-			numJobs
+			numJobs,
+			propagationMode
 		 FROM #JB
 	end
 

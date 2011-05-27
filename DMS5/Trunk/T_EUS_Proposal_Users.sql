@@ -7,6 +7,8 @@ CREATE TABLE [dbo].[T_EUS_Proposal_Users](
 	[Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Person_ID] [int] NOT NULL,
 	[Of_DMS_Interest] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[State_ID] [tinyint] NOT NULL,
+	[Last_Affected] [datetime] NULL,
  CONSTRAINT [PK_T_EUS_Proposal_Users] PRIMARY KEY CLUSTERED 
 (
 	[Proposal_ID] ASC,
@@ -34,4 +36,8 @@ GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users] CHECK CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Users]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Of_DMS_Interest]  DEFAULT ('Y') FOR [Of_DMS_Interest]
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Active_With_Proposal]  DEFAULT ((1)) FOR [State_ID]
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

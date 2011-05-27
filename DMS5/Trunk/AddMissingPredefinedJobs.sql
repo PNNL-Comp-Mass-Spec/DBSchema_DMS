@@ -19,17 +19,23 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **			05/14/2009 mem - Added parameters @AnalysisToolNameFilter and @ExcludeDatasetsNotReleased
 **			10/25/2010 mem - Added parameter @DatasetNameIgnoreExistingJobs
 **			11/18/2010 mem - Now skipping datasets with a rating of -6 (Rerun, good data) when @ExcludeDatasetsNotReleased is non-zero
+**			02/10/2011 mem - Added parameters @ExcludeUnreviewedDatasets and @InstrumentSkipList
+**			05/24/2011 mem - Added parameter @IgnoreJobsCreatedBeforeDisposition
+**						   - Added support for rating -7
 **
 *****************************************************/
 (
 	@InfoOnly tinyint = 0,
 	@MaxDatasetsToProcess int = 0,
-	@DayCountForRecentDatasets int = 30,			-- Will examine datasets created within this many days of the present
-	@PreviewOutputType varchar(12) = 'Show Jobs',	-- Used if @InfoOnly = 1; options are 'Show Rules' or 'Show Jobs'
-	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines and jobs that match the given tool name (can contain wildcards)
-	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating of -1, -2, and -10)
+	@DayCountForRecentDatasets int = 30,						-- Will examine datasets created within this many days of the present
+	@PreviewOutputType varchar(12) = 'Show Jobs',				-- Used if @InfoOnly = 1; options are 'Show Rules' or 'Show Jobs'
+	@AnalysisToolNameFilter varchar(128) = '',					-- Optional: if not blank, then only considers predefines and jobs that match the given tool name (can contain wildcards)
+	@ExcludeDatasetsNotReleased tinyint = 1,					-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating of -1, -2, and -10)
+	@ExcludeUnreviewedDatasets tinyint = 1,						-- When non-zero, then excludes datasets with a rating of -10
+	@InstrumentSkipList varchar(1024) = 'Agilent_GC_MS_01, TSQ_1, TSQ_3',		-- Comma-separated list of instruments to skip
 	@message varchar(512) = '' output,
-	@DatasetNameIgnoreExistingJobs varchar(128) = ''	-- If defined, then we'll create predefined jobs for this dataset even if it has existing jobs
+	@DatasetNameIgnoreExistingJobs varchar(128) = '',			-- If defined, then we'll create predefined jobs for this dataset even if it has existing jobs
+	@IgnoreJobsCreatedBeforeDisposition tinyint = 1				-- When non-zero, then ignore jobs created before the dataset was dispositioned
 )
 As
 	set nocount on
@@ -63,8 +69,11 @@ As
 	Set @PreviewOutputType = IsNull(@PreviewOutputType, 'Show Rules')
 	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
+	Set @ExcludeUnreviewedDatasets = IsNull(@ExcludeUnreviewedDatasets, 1)
+	Set @InstrumentSkipList = IsNull(@InstrumentSkipList, '')
 	set @message = ''
 	Set @DatasetNameIgnoreExistingJobs = IsNull(@DatasetNameIgnoreExistingJobs, '')
+	Set @IgnoreJobsCreatedBeforeDisposition = IsNull(@IgnoreJobsCreatedBeforeDisposition, 1)
 
 	If @DayCountForRecentDatasets < 1
 		Set @DayCountForRecentDatasets = 1
@@ -96,12 +105,15 @@ As
 	-- Populate #TmpDSRatingExclusionList
 	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-1)		-- No Data (Blank/Bad)
 	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-2)		-- Data Files Missing
-	INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-10)		-- Unreviewed
+	
+	If @ExcludeUnreviewedDatasets <> 0
+		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-10)		-- Unreviewed
 	
 	If @ExcludeDatasetsNotReleased <> 0
 	Begin
 		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-5)	-- Not Released
 		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-6)	-- Rerun (Good Data)
+		INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-7)	-- Rerun (Superseded)
 	End
 
 	---------------------------------------------------
@@ -142,6 +154,7 @@ As
 
 	-- Now exclude any datasets that have analysis jobs in T_Analysis_Job
 	-- Filter on @AnalysisToolNameFilter if not empty
+	--
 	UPDATE #Tmp_DatasetsToProcess
 	Set Process_Dataset = 0
 	FROM #Tmp_DatasetsToProcess DS
@@ -149,8 +162,8 @@ As
 	                  FROM dbo.T_Analysis_Job AJ
 	                       INNER JOIN dbo.T_Analysis_Tool Tool
 	                         ON AJ.AJ_analysisToolID = Tool.AJT_toolID
-	                  WHERE (@AnalysisToolNameFilter = '' OR 
-	                         Tool.AJT_toolName LIKE @AnalysisToolNameFilter) 
+	                  WHERE (@AnalysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @AnalysisToolNameFilter) AND
+	                        (@IgnoreJobsCreatedBeforeDisposition = 0 OR AJ.AJ_DatasetUnreviewed = 0 )
 	                 ) JL
 	       ON DS.Dataset_ID = JL.Dataset_ID
 	--
@@ -162,13 +175,28 @@ As
 		Goto Done
 	End
 
+	-- Exclude datasets from instruments in @InstrumentSkipList
+	If @InstrumentSkipList <> ''
+	Begin
+		UPDATE #Tmp_DatasetsToProcess
+		SET Process_Dataset = 0
+		FROM #Tmp_DatasetsToProcess Target
+		 INNER JOIN T_Dataset DS
+		       ON Target.Dataset_ID = DS.Dataset_ID
+		     INNER JOIN T_Instrument_Name InstName 
+		     ON InstName.Instrument_ID = DS.DS_instrument_name_ID
+    	     INNER JOIN dbo.udfParseDelimitedList(@InstrumentSkipList, ',') AS ExclusionList 
+    	       ON InstName.IN_name = ExclusionList.Value
+	End
+	
+	-- Add dataset @DatasetNameIgnoreExistingJobs
 	If @DatasetNameIgnoreExistingJobs <> ''
 	Begin
 		UPDATE #Tmp_DatasetsToProcess
 		SET Process_Dataset = 1
 		FROM #Tmp_DatasetsToProcess Target
 		     INNER JOIN T_Dataset DS
-		       ON Target.Dataset_ID = Ds.Dataset_ID
+		  ON Target.Dataset_ID = DS.Dataset_ID
 		WHERE DS.Dataset_Num = @DatasetNameIgnoreExistingJobs
 	End
 		

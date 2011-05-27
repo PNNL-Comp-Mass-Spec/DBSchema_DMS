@@ -27,7 +27,7 @@ CREATE Procedure SetCaptureTaskComplete
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0, -- @completionCode = 0 -> success, @completionCode = 1 -> failure, @completionCode = 2 -> not ready 100 -> success (capture broker)
+	@completionCode int = 0, -- @completionCode = 0 -> success, @completionCode = 1 -> failure, @completionCode = 2 -> not ready, 100 -> success (capture broker)
 	@message varchar(512) output
 )
 As

@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_EUS_Users](
 	[PERSON_ID] [int] NOT NULL,
 	[NAME_FM] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Site_Status] [tinyint] NOT NULL,
+	[Last_Affected] [datetime] NULL,
  CONSTRAINT [PK_T_EUS_Users] PRIMARY KEY CLUSTERED 
 (
 	[PERSON_ID] ASC
@@ -32,4 +33,6 @@ GO
 ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF__T_EUS_Use__NAME___7484378A]  DEFAULT (null) FOR [NAME_FM]
 GO
 ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF_T_EUS_Users_Stie_Status]  DEFAULT (2) FOR [Site_Status]
+GO
+ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF_T_EUS_Users_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

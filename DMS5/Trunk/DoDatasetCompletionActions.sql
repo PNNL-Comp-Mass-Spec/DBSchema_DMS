@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure DoDatasetCompletionActions
 /****************************************************
 **
@@ -18,8 +19,10 @@ CREATE Procedure DoDatasetCompletionActions
 **  Date:	11/04/2002
 **			08/06/2003 grk - added handling for "Not Ready" state
 **			07/01/2005 grk - changed to use "SchedulePredefinedAnalyses"
-**			11/18/2010 mem - Now checking dataset rating and not calling ?? if the rating is -10 (unreviewed)
+**			11/18/2010 mem - Now checking dataset rating and not calling SchedulePredefinedAnalyses if the rating is -10 (unreviewed)
 **						   - Removed CD burn schedule code
+**			02/09/2011 mem - Added back calling SchedulePredefinedAnalyses regardless of dataset rating
+**						   - Required since predefines with Trigger_Before_Disposition should create jobs even if a dataset is unreviewed
 **    
 *****************************************************/
 (
@@ -176,11 +179,11 @@ As
 	commit transaction @transName
 	
    	---------------------------------------------------
-	-- Schedule default analyses for this dataset (if the rating is not -10 = Unreviewed)
+	-- Schedule default analyses for this dataset
+	-- Call SchedulePredefinedAnalyses even if the rating is -10 = Unreviewed
 	---------------------------------------------------
 	--
-	If @datasetRating <> -10
-		execute @result = SchedulePredefinedAnalyses @datasetNum
+	execute @result = SchedulePredefinedAnalyses @datasetNum
 
    	---------------------------------------------------
 	-- Exit

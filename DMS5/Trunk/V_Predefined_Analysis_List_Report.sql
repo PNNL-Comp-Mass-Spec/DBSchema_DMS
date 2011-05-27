@@ -12,6 +12,14 @@ SELECT PA.AD_ID AS ID,
        PA.AD_sequence AS [Seq.],
        PA.AD_nextLevel AS [Next Lvl.],
        PA.AD_analysisToolName AS [Analysis Tool],
+       CASE WHEN PA.Trigger_Before_Disposition = 1
+            THEN 'Before Disposition' 
+            ELSE 'Normal' 
+            END AS [Trigger Mode],
+       CASE PA.Propagation_Mode
+           WHEN 0 THEN 'Export'
+           ELSE 'No Export'
+       END AS [Export Mode],
        PA.AD_instrumentNameCriteria AS [Instrument Crit.],
        PA.AD_organismNameCriteria AS [Organism Crit.],
        PA.AD_campaignNameCriteria AS [Campaign Crit.],
@@ -31,7 +39,8 @@ SELECT PA.AD_ID AS ID,
        PA.AD_organismDBName AS [Organism DB],
        PA.AD_proteinCollectionList AS [Prot. Coll. List],
        PA.AD_proteinOptionsList AS [Prot. Opts. List],
-       PA.AD_priority AS priority
+       PA.AD_priority AS priority,
+       PA.Last_Affected
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID

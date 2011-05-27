@@ -5,14 +5,14 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_requestID] [int] IDENTITY(1000,1) NOT NULL,
-	[AJR_requestName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJR_requestName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_created] [datetime] NOT NULL,
 	[AJR_analysisToolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_organism_ID] [int] NOT NULL,
-	[AJR_datasets] [varchar](6000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJR_datasets] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_requestor] [int] NOT NULL,
 	[AJR_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_state] [int] NOT NULL,
@@ -20,6 +20,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_workPackage] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_jobCount] [int] NULL,
+	[AJR_specialProcessing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJR_requestID] ASC
@@ -62,7 +63,7 @@ REFERENCES [T_Users] ([ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] CHECK CONSTRAINT [FK_T_Analysis_Job_Request_T_Users]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT (0) FOR [AJR_state]
+ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT ((0)) FOR [AJR_state]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_AJR_proteinCollectionList]  DEFAULT ('na') FOR [AJR_proteinCollectionList]
 GO

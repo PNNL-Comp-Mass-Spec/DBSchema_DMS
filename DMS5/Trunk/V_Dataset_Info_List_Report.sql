@@ -14,7 +14,11 @@ SELECT DS.Dataset_ID AS ID,
        DS.Scan_Count AS [Scan Count Total],
        DSInfo.ScanCountMS AS [Scan Count MS],
        DSInfo.ScanCountMSn AS [Scan Count MSn],
-       CONVERT(decimal(9,2), DSInfo.Elution_Time_Max) AS [Elution Time Max],
+       CONVERT(decimal(9, 2), 
+         CASE WHEN ISNULL(DSInfo.Elution_Time_Max, 0) < 1E6 
+              THEN DSInfo.Elution_Time_Max
+              ELSE 1E6
+         END) AS [Elution Time Max],
        DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), 
          ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
@@ -50,10 +54,6 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-
-
-
-
 
 
 GO

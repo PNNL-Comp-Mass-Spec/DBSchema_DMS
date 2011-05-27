@@ -31,7 +31,8 @@ SELECT
                             WHERE
                               ( [Function] = 'AnalysisXfer' )
                           ) AS Transfer_Folder_Path,
-  AJ.AJ_resultsFolderName AS Results_Folder_Name
+  AJ.AJ_resultsFolderName AS Results_Folder_Name,
+  AJ.AJ_specialProcessing as Special_Processing
 FROM
   dbo.T_Analysis_Job AS AJ
   INNER JOIN dbo.T_Dataset AS DS ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -42,6 +43,7 @@ FROM
   INNER JOIN dbo.T_Instrument_Class AS InstClass ON Inst.IN_class = InstClass.IN_class
   INNER JOIN dbo.T_Dataset_Archive AS DSArch ON DS.Dataset_ID = DSArch.AS_Dataset_ID
   INNER JOIN dbo.T_Archive_Path AS ArchPath ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobParameters] TO [PNL\D3M578] AS [dbo]
 GO

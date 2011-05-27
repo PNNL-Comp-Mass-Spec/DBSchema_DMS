@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.BackUpStorageState
+CREATE Procedure BackUpStorageState
 /****************************************************
 **
 **	Desc: 
@@ -17,8 +16,8 @@ CREATE Procedure dbo.BackUpStorageState
 **
 **	Auth:	grk
 **	Date:	04/18/2002
-**			04/07/2006 grk - Got ride of CDBurn stuff
-**			05/01/2009 mem - Updated description field in t_storage_path and t_storage_path_bkup to be named SP_description
+**			04/07/2006 grk - Got rid of CDBurn stuff
+**			05/01/2009 mem - Updated description field in T_Storage_Path and T_Storage_Path_Bkup to be named SP_description
 **			08/30/2010 mem - Now copying IN_Created
 **    
 *****************************************************/
@@ -35,10 +34,10 @@ As
 	set @message = ''
 
 	---------------------------------------------------
-	-- Clear t_storage_path_bkup
+	-- Clear T_Storage_Path_Bkup
 	---------------------------------------------------
 
-	DELETE FROM t_storage_path_bkup
+	DELETE FROM T_Storage_Path_Bkup
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -49,17 +48,17 @@ As
 	end
 
 	---------------------------------------------------
-	-- Populate t_storage_path_bkup
+	-- Populate T_Storage_Path_Bkup
 	---------------------------------------------------
 
-	INSERT INTO t_storage_path_bkup
+	INSERT INTO T_Storage_Path_Bkup
 	   (SP_path_ID, SP_path, SP_vol_name_client, 
 	   SP_vol_name_server, SP_function, SP_instrument_name, 
 	   SP_code, SP_description)
 	SELECT SP_path_ID, SP_path, SP_vol_name_client, 
 	   SP_vol_name_server, SP_function, SP_instrument_name, 
 	   SP_code, SP_description
-	FROM t_storage_path
+	FROM T_Storage_Path
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

@@ -19,10 +19,11 @@ CREATE PROCEDURE ValidateProteinCollectionListForDatasets
 **			02/28/2008 grk/mem - Detect duplicate names in protein collection list (https://prismtrac.pnl.gov/trac/ticket/650)
 **			07/09/2010 mem - Now auto-adding protein collections associated with the digestion enzyme for the experiments associated with the datasets; this is typically used to add trypsin contaminants to the search
 **			09/02/2010 mem - Changed RAISERROR severity level from 10 to 11
+**			03/21/2011 mem - Expanded @datasets to varchar(max)
 **    
 *****************************************************/
 (
-    @datasets varchar(7800),
+    @datasets varchar(max),
     @protCollNameList varchar(4000)='' output,
     @CollectionCountAdded int = 0 output,
     @ShowMessages tinyint = 1,

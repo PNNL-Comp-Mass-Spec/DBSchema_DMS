@@ -25,6 +25,7 @@ CREATE PROCEDURE SchedulePredefinedAnalyses
 **			07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
 **			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
 **			08/26/2010 grk - Gutted original and moved guts to CreatePredefinedAnalysesJobs - now just entering dataset into work queue
+**			05/24/2011 mem - Added back support for @infoOnly
 **    
 *****************************************************/
 (
@@ -80,23 +81,34 @@ As
  	-- However, if the dataset already exists and has state 'New', don't add another row
  	---------------------------------------------------
 
-	IF NOT EXISTS (SELECT * FROM T_Predefined_Analysis_Scheduling_Queue WHERE Dataset_ID = @datasetID AND State = 'New')
-		INSERT INTO dbo.T_Predefined_Analysis_Scheduling_Queue( Dataset_Num,
-		                                                        Dataset_ID,
-		                                                        CallingUser,
-		                                                        AnalysisToolNameFilter,
-		                                                        ExcludeDatasetsNotReleased,
-		                                                        PreventDuplicateJobs,
-		                                                        State,
-		                                                        Message )
-		VALUES (@datasetNum, @datasetID, 
-		        @callingUser, 
-		        @AnalysisToolNameFilter, 
-		        @ExcludeDatasetsNotReleased,
-		        @PreventDuplicateJobs,
-		        @state, 
-		        @message)
-
+	IF EXISTS (SELECT * FROM T_Predefined_Analysis_Scheduling_Queue WHERE Dataset_ID = @datasetID AND State = 'New')
+	Begin
+		If @InfoOnly <> 0
+			Print 'Skip ' + @datasetNum + ' since already has a "New" entry in T_Predefined_Analysis_Scheduling_Queue'
+	End
+	Else
+	Begin
+		If @InfoOnly <> 0
+			Print 'Add new row to T_Predefined_Analysis_Scheduling_Queue for ' + @datasetNum
+		Else
+			INSERT INTO dbo.T_Predefined_Analysis_Scheduling_Queue( Dataset_Num,
+																	Dataset_ID,
+																	CallingUser,
+																	AnalysisToolNameFilter,
+																	ExcludeDatasetsNotReleased,
+																	PreventDuplicateJobs,
+																	State,
+																	Message )
+			VALUES (@datasetNum, 
+			        @datasetID, 
+					@callingUser, 
+					@AnalysisToolNameFilter, 
+					@ExcludeDatasetsNotReleased,
+					@PreventDuplicateJobs,
+					@state, 
+					@message)
+	End
+	
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output

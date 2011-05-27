@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Scans_List_Report]
 AS
 SELECT DS.Dataset_ID AS ID,
@@ -15,7 +14,11 @@ SELECT DS.Dataset_ID AS ID,
        DST.ScanCount AS [Scan Count],
        DST.ScanFilter AS [Scan Filter],
        DS.Scan_Count AS [Scan Count Total],
-       CONVERT(decimal(9,2), DSInfo.Elution_Time_Max) AS [Elution Time Max],
+       CONVERT(decimal(9, 2), 
+         CASE WHEN ISNULL(DSInfo.Elution_Time_Max, 0) < 1E6 
+              THEN DSInfo.Elution_Time_Max
+              ELSE 1E6
+         END) AS [Elution Time Max],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DST.Entry_ID AS [ScanType Entry ID]
 FROM dbo.T_Dataset DS
@@ -27,7 +30,6 @@ FROM dbo.T_Dataset DS
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      INNER JOIN dbo.T_Dataset_ScanTypes DST
        ON DS.Dataset_ID = DST.Dataset_ID
-
 
 
 GO

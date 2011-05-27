@@ -14,12 +14,14 @@ CREATE Procedure AddArchiveDataset
 **                          dataset
 **	
 **
-**		Auth: grk
-**		Date: 1/26/2001
-**            04/04/2006 grk - added setting holdoff interval
-**            01/14/2010 grk - assign storage path on creation of archive entry
-**            01/22/2010 grk - existing entry in archive table prevents duplicate, but doesn't raise error
-**    
+**	Auth:	grk
+**	Date:	01/26/2001
+**			04/04/2006 grk - Added setting holdoff interval
+**			01/14/2010 grk - Assign storage path on creation of archive entry
+**			01/22/2010 grk - Existing entry in archive table prevents duplicate, but doesn't raise error
+**			05/11/2011 mem - Now calling GetInstrumentArchivePathForNewDatasets to determine @archivePathID
+**			05/12/2011 mem - Now passing @DatasetID and @AutoSwitchActiveArchive to GetInstrumentArchivePathForNewDatasets
+**
 *****************************************************/
 (
 	@datasetID int
@@ -28,30 +30,49 @@ As
 	declare @holdOffHours int
 	set @holdOffHours = 72
 	
-	DECLARE @myError INT
-	SET @myError = 0
+	declare @myError int
+	declare @myRowCount int
+	set @myError = 0
+	set @myRowCount = 0
+
 	DECLARE @message VARCHAR(512)
 	SET @message = ''
 	
    	---------------------------------------------------
-	-- don't allow duplicate datasetIDs in table
+	-- don't allow duplicate dataset IDs in table
 	---------------------------------------------------
 	--
-	declare @n int
-	SELECT @n = COUNT(*)
-	FROM T_Dataset_Archive 
-	GROUP BY AS_Dataset_ID 
-	HAVING (AS_Dataset_ID = @datasetID)
-	if @n > 0
+	If Exists (SELECT * FROM T_Dataset_Archive WHERE (AS_Dataset_ID = @datasetID))
 	begin
-		return
-/*
-		RAISERROR ('Dataset already in archive table',
-			10, 1)
-		return 51101
-*/
+		-- Dataset already in archive table
+		return 0
 	end
 
+	---------------------------------------------------
+	-- Lookup the Instrument ID
+	---------------------------------------------------
+	
+	declare @instrumentID int = 0
+	--
+	SELECT @instrumentID = DS_instrument_name_ID
+	FROM T_Dataset
+	WHERE Dataset_ID = @DatasetID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error looking up dataset info'
+		RAISERROR (@message, 10, 1)
+	end
+	--
+	if @instrumentID = 0
+	begin
+		set @message = 'Dataset ID ' + Convert(varchar(12), @DatasetID) + ' not found in T_Dataset'
+		RAISERROR (@message, 10, 1)
+	end
+	
+	
    	---------------------------------------------------
 	-- get assigned archive path
 	---------------------------------------------------
@@ -59,13 +80,11 @@ As
 	declare @archivePathID int
 	set @archivePathID = 0
 	--
-	exec @myError = GetAssignedArchivePath
-						@datasetID,
-						@archivePathID output,
-						@message output
+	exec @archivePathID = GetInstrumentArchivePathForNewDatasets @instrumentID, @DatasetID, @AutoSwitchActiveArchive=1, @infoOnly=0
 	--
-	if @myError <> 0
+	if @archivePathID = 0
 	begin
+		set @message = 'GetInstrumentArchivePathForNewDatasets returned zero for an archive path ID for dataset ' + Convert(varchar(12), @DatasetID)
 		RAISERROR (@message, 10, 1)
 		return @myError
 	end
@@ -91,15 +110,16 @@ As
 		  DATEADD(Hour, @holdOffHours, GETDATE())
 		)
 	--
-	if @@rowcount <> 1
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	if @myRowCount <> 1
 	begin
 		RAISERROR ('Update was unsuccessful for archive table',
 			10, 1)
 		return 51100
 	end
-	--	print 'new archive table entry'  -- debug only
-	return
 
+	return
 
 GO
 GRANT EXECUTE ON [dbo].[AddArchiveDataset] TO [DMS_SP_User] AS [dbo]

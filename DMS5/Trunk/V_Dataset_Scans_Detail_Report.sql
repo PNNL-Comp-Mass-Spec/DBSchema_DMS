@@ -41,7 +41,11 @@ SELECT DS.Dataset_ID AS ID,
                                           'Q3MS'        , 
                                           'CID-SRM'
                                          )        THEN DST.ScanCount ELSE 0 END) AS [ScanCount Other],
-       CONVERT(decimal(9,2), DSInfo.Elution_Time_Max) AS [Elution Time Max],
+       CONVERT(decimal(9, 2), 
+         CASE WHEN ISNULL(DSInfo.Elution_Time_Max, 0) < 1E6 
+              THEN DSInfo.Elution_Time_Max
+              ELSE 1E6
+         END) AS [Elution Time Max],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)]
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_DatasetTypeName DTN
@@ -55,6 +59,7 @@ FROM dbo.T_Dataset DS
 GROUP BY DS.Dataset_ID, DS.Dataset_Num, InstName.IN_name, DTN.DST_name, 
          DS.Scan_Count, DSInfo.Elution_Time_Max,DS.File_Size_Bytes,
          DSInfo.Scan_Types
+
 
 
 GO

@@ -37,6 +37,10 @@ CREATE NONCLUSTERED INDEX [IX_T_Material_Locations_ID_include_Tag] ON [dbo].[T_M
 )
 INCLUDE ( [Tag]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Tag],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Shelf]  DEFAULT ('na') FOR [Shelf]
 GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Rack]  DEFAULT ('na') FOR [Rack]

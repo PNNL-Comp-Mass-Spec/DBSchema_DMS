@@ -41,26 +41,31 @@ CREATE Procedure AddAnalysisJobGroup
 **			04/22/2010 grk - try-catch for error handling
 **			05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			01/31/2011 mem - Expanded @datasetList to varchar(max)
+**			02/24/2011 mem - No longer skipping jobs with state "No Export" when finding datasets that have existing, matching jobs
+**			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
+**			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed
 **
 *****************************************************/
 (
-    @datasetList varchar(6000),
+    @datasetList varchar(max),
     @priority int = 2,
 	@toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(255),
-    @organismDBName varchar(64),
+    @organismDBName varchar(64),					-- 'na' if using protein collections
     @organismName varchar(64),
 	@protCollNameList varchar(4000),
 	@protCollOptionsList varchar(256),
     @ownerPRN varchar(32),
     @comment varchar(512) = null,
-    @requestID int,
-	@associatedProcessorGroup varchar(64),
-    @propagationMode varchar(24),
+    @specialProcessing varchar(512) = null,
+    @requestID int,									-- 0 if not associated with a request; otherwise, Request ID in T_Analysis_Job_Request
+	@associatedProcessorGroup varchar(64) = '',
+    @propagationMode varchar(24) = 'Export',		-- 'Export', 'No Export'
     @removeDatasetsWithJobs VARCHAR(12) = 'Y',
-	@mode varchar(12), 
-	@message varchar(512) output,
+	@mode varchar(12),								-- 'add', 'update', 'preview'
+	@message varchar(512) = '' output,
 	@callingUser varchar(128) = ''
 )
 As
@@ -128,7 +133,8 @@ As
 		AS_state_ID int NULL,
 		Dataset_Type varchar(64) NULL,
 		DS_rating smallint NULL,
-		Job int NULL
+		Job int NULL,
+		Dataset_Unreviewed tinyint NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -193,7 +199,7 @@ As
 			T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
 			#TD ON #TD.Dataset_Num = DS.Dataset_Num
 		WHERE
-			(NOT (AJ.AJ_StateID IN (5, 14))) AND
+			(NOT (AJ.AJ_StateID IN (5))) AND
 			AJT.AJT_toolName = @toolName AND 
 			AJ.AJ_parmFileName = @parmFileName AND 
 			AJ.AJ_settingsFileName = @settingsFileName AND 
@@ -218,10 +224,8 @@ As
 		BEGIN --<remove-a>
 			-- remove datasets from list that have existing jobs
 			--
-			DELETE FROM
-			#TD
-			WHERE
-			Dataset_Num IN (SELECT Dataset FROM @matchingJobDatasets)
+			DELETE FROM #TD
+			WHERE Dataset_Num IN (SELECT Dataset FROM @matchingJobDatasets)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
@@ -280,6 +284,20 @@ As
 	--
 	if @result <> 0
 		RAISERROR ('ValidateAnalysisJobParameters:%s', 11, 8, @msg)
+	
+	
+	---------------------------------------------------
+	-- Populate the Dataset_Unreviewed column in #TD
+	---------------------------------------------------
+	--
+	UPDATE #TD
+	SET Dataset_Unreviewed = CASE WHEN DS.DS_rating = -10 THEN 1 ELSE 0 END
+	FROM T_Dataset DS
+		INNER JOIN #TD
+		ON DS.Dataset_Num = #TD.Dataset_Num
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
 	
 	if @mode = 'add'
 	begin
@@ -426,11 +444,13 @@ As
 			AJ_organismID, 
 			AJ_datasetID, 
 			AJ_comment,
+			AJ_specialProcessing,
 			AJ_owner,
 			AJ_batchID,
 			AJ_StateID,
 			AJ_requestID,
-			AJ_propagationMode
+			AJ_propagationMode,
+			AJ_DatasetUnreviewed
 		) SELECT
 			Job,
 			@priority, 
@@ -444,11 +464,13 @@ As
 			@organismID, 
 			#TD.Dataset_ID, 
 			REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), #TD.Dataset_ID)),
+			@specialProcessing,
 			@ownerPRN,
 			@batchID,
 			@stateID,
 			@requestID,
-			@propMode
+			@propMode,
+			IsNull(Dataset_Unreviewed, 1)
 		FROM #TD		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -24,5 +24,9 @@ REFERENCES [T_LC_Cart_State_Name] ([ID])
 GO
 ALTER TABLE [dbo].[T_LC_Cart] CHECK CONSTRAINT [FK_T_LC_Cart_T_LC_Cart_State]
 GO
+ALTER TABLE [dbo].[T_LC_Cart]  WITH CHECK ADD  CONSTRAINT [CK_T_LC_Cart_CartName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Cart_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_LC_Cart] CHECK CONSTRAINT [CK_T_LC_Cart_CartName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_LC_Cart] ADD  CONSTRAINT [DF_T_LC_Cart_Cart_State_ID]  DEFAULT (2) FOR [Cart_State_ID]
 GO

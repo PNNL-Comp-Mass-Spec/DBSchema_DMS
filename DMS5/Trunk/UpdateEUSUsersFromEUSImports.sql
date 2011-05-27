@@ -15,133 +15,251 @@ CREATE Procedure UpdateEUSUsersFromEUSImports
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 3/1/2006
+**	Auth:	grk
+**	Date:	03/01/2006 grk - Initial version
+**			03/24/2011 mem - Updated to use V_EUS_Import_Proposal_Participants
+**			03/25/2011 mem - Updated to remove entries from T_EUS_Proposal_Users if the row is no longer in V_EUS_Import_Proposal_Participants yet the proposal is still active
+**			04/01/2011 mem - No longer removing entries from T_EUS_Proposal_Users; now changing to state 5="No longer associated with proposal"
+**						   - Added support for state 4="Permanently associated with proposal"
 **    
 *****************************************************/
-	@message varchar(512) output
+(
+	@message varchar(512)='' output
+)
 As
-	declare @delim char(1)
-	set @delim = ','
-
-	declare @done int
-	declare @count int
+	Set Nocount On
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
-	---------------------------------------------------
-	-- Add any EUS users to DMS EUS users table that
-	-- are not already present.  Consider only EUS
-	-- proposals that are currently in the active state.
-	---------------------------------------------------
-
-	INSERT INTO T_EUS_Users
-	(PERSON_ID, NAME_FM)
-	SELECT DISTINCT
-		PERSON_ID, NAME_FM
-	FROM EMSL_User.dbo.USERS
-	WHERE
-		PROPOSAL_ID IN 
-		(
-			SELECT     PROPOSAL_ID
-			FROM         T_EUS_Proposals
-			WHERE     (State_ID = 2)
-		)
-		AND PERSON_ID NOT IN
-		(
-			SELECT     PERSON_ID
-			FROM         T_EUS_Users
-		)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error while trying to add EUS users to DMS'
-      return 51007
-    end
-
-	---------------------------------------------------
-	-- Add any EUS associations to DMS tables that
-	-- are not already present.  Mark any such added 
-	-- associations as of interest to DMS.  Consider 
-	-- only EUS proposals that are currently in the 
-	-- active state.
-	---------------------------------------------------
-
-	INSERT INTO T_EUS_Proposal_Users
-						(Proposal_ID, Person_ID, Of_DMS_Interest)
-	SELECT DISTINCT PROPOSAL_ID,PERSON_ID, 'Y'
-	FROM EMSL_User.dbo.USERS
-	WHERE
-		PROPOSAL_ID IN 
-		(
-			SELECT     PROPOSAL_ID
-			FROM         T_EUS_Proposals
-			WHERE     (State_ID = 2)
-		)
-	AND NOT EXISTS
-	(
-	SELECT Proposal_ID, Person_ID
-	FROM         T_EUS_Proposal_Users
-	WHERE     
-		(T_EUS_Proposal_Users.Proposal_ID = EMSL_User.dbo.USERS.PROPOSAL_ID) AND 
-		(T_EUS_Proposal_Users.Person_ID = EMSL_User.dbo.USERS.PERSON_ID)
-	)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error while trying to add EUS user-to-proposal associations to DMS'
-      return 51008
-    end
-
-
-	---------------------------------------------------
-	-- Remove any associations that are present in DMS 
-	-- EUS user-to-proposal association table, but no 
-	-- longer present in EUS.  Consider only EUS proposals
-	--  that are currently in the active state.
-	---------------------------------------------------
+	Declare @MergeUpdateCount int
+	Declare @MergeInsertCount int
+	Declare @MergeDeleteCount int
 	
-	DELETE
-	FROM T_EUS_Proposal_Users
-	WHERE
-		PROPOSAL_ID IN 
-		(
-			SELECT     PROPOSAL_ID
-			FROM         T_EUS_Proposals
-			WHERE     (State_ID = 2)
+	Set @MergeUpdateCount = 0
+	Set @MergeInsertCount = 0
+	Set @MergeDeleteCount = 0
+
+	declare @CallingProcName varchar(128)
+	declare @CurrentLocation varchar(128)
+	Set @CurrentLocation = 'Start'
+	
+	Begin Try
+
+		---------------------------------------------------
+		-- Create the temporary table that will be used to
+		-- track the number of inserts, updates, and deletes 
+		-- performed by the MERGE statement
+		---------------------------------------------------
+		
+		CREATE TABLE #Tmp_UpdateSummary (
+			UpdateAction varchar(32)
 		)
-	AND NOT EXISTS
-	(
-		SELECT DISTINCT PROPOSAL_ID,PERSON_ID
-		FROM EMSL_User.dbo.USERS
-		WHERE     
-			(T_EUS_Proposal_Users.Proposal_ID = EMSL_User.dbo.USERS.PROPOSAL_ID) AND 
-			(T_EUS_Proposal_Users.Person_ID = EMSL_User.dbo.USERS.PERSON_ID)
-	)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error while trying to remove EUS user-to-proposal associations in DMS that are no longer in EUS'
-      return 51009
-    end
+		
+		CREATE CLUSTERED INDEX #IX_Tmp_UpdateSummary ON #Tmp_UpdateSummary (UpdateAction)
 
+		Set @CurrentLocation = 'Update T_EUS_Users'
+		
+		---------------------------------------------------
+		-- Use a MERGE Statement to synchronize 
+		-- T_EUS_User with V_EUS_Import_Proposal_Participants
+		---------------------------------------------------
+
+		MERGE T_EUS_Users AS target
+		USING 
+			(
+			   SELECT DISTINCT Source.PERSON_ID,
+			                   Source.NAME_FM,
+			                   CASE WHEN HANFORD_ID IS NULL 
+			                        THEN 2		-- Offsite
+			                        ELSE 1		-- Onsite
+			                        END as Site_Status
+			   FROM dbo.V_EUS_Import_Proposal_Participants Source
+			        INNER JOIN ( SELECT PROPOSAL_ID
+			                     FROM T_EUS_Proposals
+			                     WHERE State_ID IN (1,2)
+			                    ) DmsEUSProposals
+			          ON Source.PROPOSAL_ID = DmsEUSProposals.PROPOSAL_ID
+			) AS Source (	PERSON_ID, NAME_FM, Site_Status)
+		ON (target.PERSON_ID = source.PERSON_ID)
+		WHEN Matched AND 
+					(	target.NAME_FM <> source.NAME_FM OR
+						target.Site_Status <> source.Site_Status
+					)
+			THEN UPDATE 
+				Set	NAME_FM = source.NAME_FM, 
+					Site_Status = source.Site_Status,
+					Last_Affected = GetDate()
+		WHEN Not Matched THEN
+			INSERT (PERSON_ID, NAME_FM, Site_Status, Last_Affected)
+			VALUES (source.PERSON_ID, source.NAME_FM, source.Site_Status, GetDate())
+		-- Uncomment the following to Delete data from T_EUS_Users
+		-- WHEN NOT MATCHED BY SOURCE THEN
+		-- 	DELETE 
+		OUTPUT $action INTO #Tmp_UpdateSummary
+		;
+	
+		if @myError <> 0
+		begin
+			set @message = 'Error merging V_EUS_Import_Proposal_Participants with T_EUS_Users (ErrorID = ' + Convert(varchar(12), @myError) + ')'
+			execute PostLogEntry 'Error', @message, 'UpdateEUSUsersFromEUSImports'
+			goto Done
+		end
+
+
+		set @MergeUpdateCount = 0
+		set @MergeInsertCount = 0
+		set @MergeDeleteCount = 0
+
+		SELECT @MergeInsertCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'INSERT'
+
+		SELECT @MergeUpdateCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'UPDATE'
+
+		SELECT @MergeDeleteCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'DELETE'
+		
+		If @MergeUpdateCount > 0 OR @MergeInsertCount > 0 OR @MergeDeleteCount > 0
+		Begin
+			Set @message = 'Updated T_EUS_Users: ' + Convert(varchar(12), @MergeInsertCount) + ' added; ' + Convert(varchar(12), @MergeUpdateCount) + ' updated'
+			
+			If @MergeDeleteCount > 0
+				Set @message = @message + '; ' + Convert(varchar(12), @MergeDeleteCount) + ' deleted'
+				
+			Exec PostLogEntry 'Normal', @message, 'UpdateEUSUsersFromEUSImports'
+			Set @message = ''
+		End
+		
+		
+		Set @CurrentLocation = 'Update T_EUS_Proposal_Users'
+		
+		---------------------------------------------------
+		-- Use a MERGE Statement to synchronize 
+		-- T_EUS_User with V_EUS_Import_Proposal_Participants
+		---------------------------------------------------
+
+		DELETE FROM #Tmp_UpdateSummary
+
+		MERGE T_EUS_Proposal_Users AS target
+		USING 
+			(
+			   SELECT DISTINCT Source.PROPOSAL_ID, 
+                               Source.PERSON_ID,
+                               'Y' AS Of_DMS_Interest
+			   FROM dbo.V_EUS_Import_Proposal_Participants Source
+			        INNER JOIN ( SELECT PROPOSAL_ID
+			                     FROM T_EUS_Proposals
+			                     WHERE State_ID IN (1,2) 
+			                   ) DmsEUSProposals
+			          ON Source.PROPOSAL_ID = DmsEUSProposals.PROPOSAL_ID
+			) AS Source (Proposal_ID, Person_ID, Of_DMS_Interest)
+		ON (target.Proposal_ID = source.Proposal_ID AND
+		    target.Person_ID = source.Person_ID)
+		WHEN MATCHED AND IsNull(target.State_ID, 0) NOT IN (1, 4)
+			THEN UPDATE 
+				Set	State_ID = 1,
+					Last_Affected = GetDate()
+		WHEN Not Matched THEN
+			INSERT (Proposal_ID, Person_ID, Of_DMS_Interest, State_ID, Last_Affected)
+			VALUES (source.Proposal_ID, source.PERSON_ID, source.Of_DMS_Interest, 1, GetDate())
+		WHEN NOT MATCHED BY SOURCE AND IsNull(State_ID, 0) NOT IN (2,4) THEN
+			-- User/proposal mapping is defined in T_EUS_Proposal_Users but not in V_EUS_Import_Proposal_Participants
+			-- Flag entry to indicate we need to possibly update the state for this row to 5 (checked later in the procedure)
+			UPDATE SET State_ID=3, Last_Affected = GetDate()
+		OUTPUT $action INTO #Tmp_UpdateSummary
+		;
+	
+		if @myError <> 0
+		begin
+			set @message = 'Error merging V_EUS_Import_Proposal_Participants with T_EUS_Proposal_Users (ErrorID = ' + Convert(varchar(12), @myError) + ')'
+			execute PostLogEntry 'Error', @message, 'UpdateEUSUsersFromEUSImports'
+			goto Done
+		end
+
+
+		set @MergeUpdateCount = 0
+		set @MergeInsertCount = 0
+		set @MergeDeleteCount = 0
+
+		SELECT @MergeInsertCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'INSERT'
+
+		SELECT @MergeUpdateCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'UPDATE'
+
+		SELECT @MergeDeleteCount = COUNT(*)
+		FROM #Tmp_UpdateSummary
+		WHERE UpdateAction = 'DELETE'
+		
+		
+		---------------------------------------------------
+		-- Update rows in T_EUS_Proposal_Users where State_ID is 3=Unknown
+		-- but the associated proposal has state of 3=Inactive
+		---------------------------------------------------
+		
+		UPDATE T_EUS_Proposal_Users
+		SET State_ID = 2
+		FROM T_EUS_Proposal_Users
+		     INNER JOIN T_EUS_Proposals
+		       ON T_EUS_Proposal_Users.Proposal_ID = T_EUS_Proposals.PROPOSAL_ID
+		WHERE T_EUS_Proposal_Users.State_ID = 3 AND
+		      T_EUS_Proposals.State_ID IN (3,4)
+		--
+		SELECT @myRowCount = @@rowcount, @myError = @@error
+		
+		
+		---------------------------------------------------
+		-- Update rows in T_EUS_Proposal_Users that still have State_ID is 3=Unknown
+		-- but the associated proposal has state 2=Active
+		---------------------------------------------------
+
+		UPDATE T_EUS_Proposal_Users
+		SET State_ID = 5
+		FROM T_EUS_Proposal_Users
+		     INNER JOIN T_EUS_Proposals
+		       ON T_EUS_Proposal_Users.Proposal_ID = T_EUS_Proposals.PROPOSAL_ID
+		WHERE T_EUS_Proposal_Users.State_ID = 3 AND
+		      T_EUS_Proposals.State_ID = 2
+		--
+		SELECT @myRowCount = @@rowcount, @myError = @@error
+
+		
+		If @MergeUpdateCount > 0 OR @MergeInsertCount > 0 OR @MergeDeleteCount > 0
+		Begin
+			Set @message = 'Updated T_EUS_Proposal_Users: ' + Convert(varchar(12), @MergeInsertCount) + ' added; ' + Convert(varchar(12), @MergeUpdateCount) + ' updated'
+			
+			If @MergeDeleteCount > 0
+				Set @message = @message + '; ' + Convert(varchar(12), @MergeDeleteCount) + ' deleted'
+				
+			Exec PostLogEntry 'Normal', @message, 'UpdateEUSUsersFromEUSImports'
+			Set @message = ''
+		End
+		
+		
+	End Try
+	Begin Catch
+		-- Error caught; log the error then abort processing
+		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateEUSUsersFromEUSImports')
+		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+								@ErrorNum = @myError output, @message = @message output
+		Goto Done		
+	End Catch
 
 	---------------------------------------------------
-	-- 
+	-- Done
 	---------------------------------------------------
+			
+Done:
+	Return @myError
 
-
-	return @myError
 
 GO
 GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]

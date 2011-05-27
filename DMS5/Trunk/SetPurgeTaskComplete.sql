@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.SetPurgeTaskComplete
 /****************************************************
 **
@@ -17,11 +18,14 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **	Date:	03/04/2003
 **			02/16/2007 grk - add completion code options and also set archive state (Ticket #131)
 **			08/04/2008 mem - Now updating column AS_instrument_data_purged (Ticket #683)
+**			01/26/2011 grk - modified actions for @completionCode = 2 to bump holdoff and call broker
+**			01/28/2011 mem - Changed holdoff bump from 12 to 24 hours when @completionCode = 2
+**			02/01/2011 mem - Added support for @completionCode 3
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0, -- @completionCode = 0 -> success, @completionCode <> 0 -> failure
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required
 	@message varchar(512) output
 )
 As
@@ -41,7 +45,7 @@ As
  	declare @result int
 	declare @instrumentClass varchar(32)
 		
-  ---------------------------------------------------
+	---------------------------------------------------
 	-- resolve dataset into ID
 	---------------------------------------------------
 	--
@@ -58,7 +62,7 @@ As
 		goto done
 	end
 
-  ---------------------------------------------------
+	---------------------------------------------------
 	-- check current archive state
 	---------------------------------------------------
 
@@ -97,14 +101,21 @@ As
 Code 0 (success) --> 
 	Set T_Dataset_Archive.AS_state_ID to 4 (Purged). 
 	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+
 Code 1 (failed) --> 
 	Set T_Dataset_Archive.AS_state_ID to 8 (Failed). 
 	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+
 Code 2 (update reqd) --> 
 	Set T_Dataset_Archive.AS_state_ID to 3 (Complete). 
 	Set T_Dataset_Archive.AS_update_state_ID to 2 (Update Required)
 
+Code 3 (Stage MD5 file required) --> 
+	Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+	Set AS_StageMD5_Required to 1
 */
+
 	-- (success)
 	if @completionCode = 0 
 	begin
@@ -124,8 +135,17 @@ Code 2 (update reqd) -->
 	begin
 		set @completionState = 3    -- complete
 		set @currentUpdateState = 2 -- Update Required
+		EXEC S_MakeNewArchiveUpdateJob @datasetNum, '', 1, 0, @message output
 		goto SetStates
 	end
+
+    -- (MD5 results file is missing; need to have stageMD5 file created by the DatasetPurgeArchiveHelper)
+	if @completionCode = 3
+	begin
+		set @completionState = 3    -- complete
+		goto SetStates
+	end
+
 
 	-- if we got here, completion code was not recognized.  Bummer.
 	--
@@ -136,7 +156,14 @@ SetStates:
 	UPDATE T_Dataset_Archive
 	SET
 		AS_state_ID = @completionState,
-		AS_update_state_ID = @currentUpdateState  
+		AS_update_state_ID = @currentUpdateState,
+		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2 THEN DATEADD(HOUR, 24, GETDATE()) 
+		                             WHEN @completionCode = 3     THEN DATEADD(HOUR, 12, GETDATE()) 
+		                             ELSE AS_purge_holdoff_date 
+		                        END, 
+		AS_StageMD5_Required = CASE WHEN @completionCode = 3      THEN 1
+		                            ELSE AS_StageMD5_Required
+		                        END
 	WHERE  (AS_Dataset_ID = @datasetID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -172,6 +199,7 @@ Done:
 		RAISERROR (@message, 10, 1)
 	end
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_Ops_Admin] AS [dbo]

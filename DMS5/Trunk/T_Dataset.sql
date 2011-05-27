@@ -131,6 +131,15 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstNameID_Dataset_DatasetID] ON [dbo].[
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ON [dbo].[T_Dataset] 
+(
+	[DS_instrument_name_ID] ASC,
+	[DS_Last_Affected] ASC
+)
+INCLUDE ( [DS_state_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ON [dbo].[T_Dataset] 
 (
@@ -318,6 +327,13 @@ AS
 	End
 
 GO
+/****** Object:  Trigger [dbo].[trig_ud_T_Dataset] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_ud_T_Dataset]ON [dbo].[T_Dataset]FOR UPDATE, DELETE AS/********************************************************	Desc: **		Prevents updating or deleting all rows in the table****	Auth:	mem**	Date:	02/08/2011*******************************************************/BEGIN    DECLARE @Count int    SET @Count = @@ROWCOUNT;    IF @Count >= (	SELECT i.rowcnt AS TableRowCount                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id                     WHERE o.name = 'T_Dataset' AND o.type = 'u' AND i.indid < 2                 )    BEGIN        RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Dataset)',16,1)        ROLLBACK TRANSACTION        RETURN;    ENDEND
+GO
 GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
@@ -364,7 +380,8 @@ GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Secondary_Sep]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_t_storage_path] FOREIGN KEY([DS_storage_path_ID])
-REFERENCES [t_storage_path] ([SP_path_ID])
+REFERENCES [T_Storage_Path] ([SP_path_ID])
+ON UPDATE CASCADE
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_t_storage_path]
@@ -374,6 +391,10 @@ REFERENCES [T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Users]
+GO
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Dataset_Num],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace]
 GO
 ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_LC_column_ID]  DEFAULT (0) FOR [DS_LC_column_ID]
 GO

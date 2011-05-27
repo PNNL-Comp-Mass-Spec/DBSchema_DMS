@@ -15,3 +15,7 @@ CREATE TABLE [dbo].[T_Research_Team](
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Research_Team]  WITH CHECK ADD  CONSTRAINT [CK_T_Research_Team_TeamName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Team],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Research_Team] CHECK CONSTRAINT [CK_T_Research_Team_TeamName_WhiteSpace]
+GO

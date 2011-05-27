@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddUpdateAnalysisJob
 /****************************************************
 **
@@ -48,6 +47,9 @@ CREATE Procedure AddUpdateAnalysisJob
 **			08/18/2010 mem - Now allowing job update if state is Failed, in addition to New or Holding
 **			08/19/2010 grk - try-catch for error handling
 **			08/26/2010 mem - Added parameter @PreventDuplicateJobs
+**			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
+**			04/26/2011 mem - Added parameter @PreventDuplicatesIgnoresNoExport
+**			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed when adding new jobs
 **    
 *****************************************************/
 (
@@ -62,6 +64,7 @@ CREATE Procedure AddUpdateAnalysisJob
 	@organismDBName varchar(64),
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
+    @specialProcessing varchar(512) = null,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@stateName varchar(32),
@@ -69,7 +72,8 @@ CREATE Procedure AddUpdateAnalysisJob
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
 	@message varchar(512) output,
 	@callingUser varchar(128) = '',
-	@PreventDuplicateJobs tinyint = 0			-- Only used if @Mode is 'add'; ignores job with state 4 or 14 (failed or do not export)
+	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
+	@PreventDuplicatesIgnoresNoExport tinyint = 1
 )
 As
 	set nocount on
@@ -92,6 +96,7 @@ As
 	set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
 	set @callingUser = IsNull(@callingUser, '')
 	Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 0)
+	Set @PreventDuplicatesIgnoresNoExport = IsNull(@PreventDuplicatesIgnoresNoExport, 1)
 	
 	set @message = ''
 
@@ -218,7 +223,7 @@ As
 			T_Experiments INNER JOIN
 			T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID INNER JOIN
 			T_Organisms ON T_Experiments.Ex_organism_ID = T_Organisms.Organism_ID
-		WHERE     
+		WHERE 
 			(T_Dataset.Dataset_Num = @datasetNum)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -298,8 +303,10 @@ As
 
 		If @PreventDuplicateJobs <> 0
 		Begin
+			---------------------------------------------------
 			-- See if an existing, matching job already exists
 			-- If it does, do not add another job
+			---------------------------------------------------
 			
 			Declare @ExistingJobCount int = 0
 			Declare @ExistingMatchingJob int = 0
@@ -314,7 +321,8 @@ As
 				T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
 				#TD ON #TD.Dataset_Num = DS.Dataset_Num
 			WHERE
-				(NOT (AJ.AJ_StateID IN (5, 14))) AND
+				( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 14) OR
+				  @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5              ) AND
 				AJT.AJT_toolName = @toolName AND 
 				AJ.AJ_parmFileName = @parmFileName AND 
 				AJ.AJ_settingsFileName = @settingsFileName AND 
@@ -337,6 +345,15 @@ As
 			End		
 		End
 		
+		
+		---------------------------------------------------
+		-- Check whether the dataset is unreviewed
+		---------------------------------------------------
+		Declare @DatasetUnreviewed tinyint = 0
+		
+		IF Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @datasetID AND DS_Rating = -10)
+			Set @DatasetUnreviewed = 1
+
 
 		---------------------------------------------------
 		-- get ID for new job (#744)
@@ -373,10 +390,12 @@ As
 			AJ_organismID, 
 			AJ_datasetID, 
 			AJ_comment,
+			AJ_specialProcessing,
 			AJ_owner,
 			AJ_batchID,
 			AJ_StateID,
-			AJ_propagationMode
+			AJ_propagationMode,
+			AJ_DatasetUnreviewed
 		) VALUES (
 			@jobID,
 			@priority, 
@@ -390,10 +409,12 @@ As
 			@organismID, 
 			@datasetID, 
 			REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
+			@specialProcessing,
 			@ownerPRN,
 			@batchID,
 			@stateID,
-			@propMode
+			@propMode,
+			@DatasetUnreviewed
 		)			
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -501,6 +522,7 @@ As
 			AJ_organismID = @organismID, 
 			AJ_datasetID = @datasetID, 
 			AJ_comment = @comment,
+			AJ_specialProcessing = @specialProcessing,
 			AJ_owner = @ownerPRN,
 			AJ_StateID = @stateID,
 			AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL END, 

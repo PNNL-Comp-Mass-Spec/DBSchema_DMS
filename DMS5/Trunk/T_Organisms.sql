@@ -128,6 +128,10 @@ ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name
 GO
 ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Name_NoSpace]
 GO
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([OG_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()) FOR [OG_created]
 GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT (1) FOR [OG_Active]

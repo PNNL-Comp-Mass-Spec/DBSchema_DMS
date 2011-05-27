@@ -125,6 +125,10 @@ REFERENCES [T_Analysis_Tool] ([AJT_toolName])
 GO
 ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Settings_Files]
 GO
+ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([File_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Description]  DEFAULT ('') FOR [Description]
 GO
 ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)) FOR [Active]

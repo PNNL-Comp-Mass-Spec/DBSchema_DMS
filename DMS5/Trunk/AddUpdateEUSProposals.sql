@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateEUSProposals
+CREATE Procedure AddUpdateEUSProposals
 /****************************************************
 **
 **	Desc: Adds new or updates existing EUS Proposals in database
@@ -18,15 +18,15 @@ CREATE Procedure dbo.AddUpdateEUSProposals
 **		@EUSPropImpDate EUS Proposal Import Date
 **		@EUSUsersList EUS User list
 **
-**		Auth: jds
-**		Date: 08/15/2006
-**			  11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)   
-**		      
+**	Auth:	jds
+**	Date:	08/15/2006
+**			11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)  
+**			04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **    
 *****************************************************/
 (
 	@EUSPropID varchar(10), 
-	@EUSPropState varchar(32), 
+	@EUSPropState varchar(32),				-- 1=New, 2=Active, 3=Inactive, 4=No Interest
 	@EUSPropTitle varchar(2048), 
 	@EUSPropImpDate varchar(22),
 	@EUSUsersList varchar(4096), 
@@ -37,15 +37,15 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
-
+	Declare @EUSPropStateID int
+	
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -86,7 +86,10 @@ As
 		return @myError
 
 	set @myError = 0
-	if @EUSPropState = '2' and LEN(@EUSUsersList) < 1
+	
+	Set @EUSPropStateID = Convert(int, @EUSPropState)
+	
+	if @EUSPropStateID = 2 and LEN(@EUSUsersList) < 1
 	begin
 		set @myError = 51000
 		RAISERROR ('An "Active" EUS Proposal must have at least 1 associated EMSL User', 10, 1)
@@ -94,25 +97,7 @@ As
 	--
 	if @myError <> 0
 		return @myError
-	---------------------------------------------------
-	-- clear all associations if the user list is blank
-	---------------------------------------------------
 	
-	if @EUSUsersList = ''
-	begin
-		DELETE FROM T_EUS_Proposal_Users
-		WHERE     (Proposal_ID = @EUSPropID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Error trying to clear all user associations for this proposal'
-			RAISERROR (@msg, 10, 1)
-			return 51081
-		end
-	end
-
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -164,7 +149,7 @@ As
 		) VALUES (
 			@EUSPropID, 
 			@EUSPropTitle, 
-			@EUSPropState, 
+			@EUSPropStateID, 
 			@EUSPropImpDate
 		)
 
@@ -193,7 +178,7 @@ As
 		UPDATE T_EUS_Proposals 
 		SET 
 			TITLE = @EUSPropTitle, 
-			State_ID = @EUSPropState, 
+			State_ID = @EUSPropStateID, 
 			Import_Date = @EUSPropImpDate 
 		WHERE (PROPOSAL_ID = @EUSPropID)
 		--
@@ -208,74 +193,85 @@ As
 	end -- update mode
 
 
-		---------------------------------------------------
-		-- delete users that do not exsit in the  
-		-- T_EUS_Users table to prevent join failure
-		---------------------------------------------------
+	---------------------------------------------------
+	-- Associate users in @eusUsersList with the proposal
+	---------------------------------------------------
 
-		CREATE TABLE #tempEUSUsers (
-	           PERSON_ID int
-	           )
+	CREATE TABLE #tempEUSUsers (
+	        PERSON_ID int
+	       )
 
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error creating temporary user table'
-			return 51008
-		end
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error creating temporary user table'
+		return 51008
+	end
 
-		INSERT INTO #tempEUSUsers
-			(Person_ID)
-		SELECT 
-			CAST(Item as int) as EUS_Person_ID
-		FROM 
-			MakeTableFromList(@eusUsersList)
-		WHERE 
-			CAST(Item as int) IN
-			(
-				SELECT Person_ID
-				FROM  T_EUS_Users 
-			)
+	INSERT INTO #tempEUSUsers
+		(Person_ID)
+	SELECT EUS_Person_ID
+	FROM ( SELECT CAST(Item AS int) AS EUS_Person_ID
+	       FROM MakeTableFromList ( @eusUsersList ) 
+	     ) SourceQ
+	     INNER JOIN T_EUS_Users
+	       ON SourceQ.EUS_Person_ID = T_EUS_Users.Person_ID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error trying to add to temporary user table'
+		return 51009
+	end
+	
+	---------------------------------------------------
+	-- add associations between proposal and users 
+	-- who are in list, but not in association table
+	---------------------------------------------------
+	--
+	Declare @ProposalUserStateID int
+	
+	If @EUSPropStateID IN (1,2)
+		Set @ProposalUserStateID = 1
+	Else
+		Set @ProposalUserStateID = 2
+	
+	
+	MERGE T_EUS_Proposal_Users AS target
+	USING 
+		(
+			SELECT @EUSPropID AS Proposal_ID,
+			        Person_ID,
+			        'Y' AS Of_DMS_Interest
+			FROM #tempEUSUsers
+		) AS Source (Proposal_ID, Person_ID, Of_DMS_Interest)
+	ON (target.Proposal_ID = source.Proposal_ID AND
+		target.Person_ID = source.Person_ID)
+	WHEN MATCHED AND IsNull(target.State_ID, 0) NOT IN (@ProposalUserStateID, 4)
+		THEN UPDATE 
+			Set	State_ID = @ProposalUserStateID,
+				Last_Affected = GetDate()
+	WHEN Not Matched THEN
+		INSERT (Proposal_ID, Person_ID, Of_DMS_Interest, State_ID, Last_Affected)
+		VALUES (source.Proposal_ID, source.PERSON_ID, source.Of_DMS_Interest, @ProposalUserStateID, GetDate())
+	WHEN NOT MATCHED BY SOURCE AND IsNull(State_ID, 0) NOT IN (4) THEN
+		-- User/proposal mapping is defined in T_EUS_Proposal_Users but not in #tempEUSUsers
+		-- Change state to 5="No longer associated with proposal"
+		UPDATE SET State_ID=5, Last_Affected = GetDate()
+	;
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error trying to add associations between users and proposal'
+		return 51083
+	end
 
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to add to temporary user table'
-			return 51009
-		end
-		---------------------------------------------------
-		-- add associations between proposal and users 
-		-- who are in list, but not in association table
-		---------------------------------------------------
-		--
-		INSERT INTO T_EUS_Proposal_Users
-			(Person_ID, Proposal_ID)
-		SELECT 
-			Person_ID, @EUSPropID as Proposal_ID
-		FROM 
-			#tempEUSUsers
-		WHERE 
-			PERSON_ID NOT IN
-			(
-				SELECT Person_ID
-				FROM  T_EUS_Proposal_Users 
-				WHERE Proposal_ID = @EUSPropID
-			)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to add associations for new users'
-			return 51083
-		end
-
+		
 	return 0
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS_EUS_Admin] AS [dbo]

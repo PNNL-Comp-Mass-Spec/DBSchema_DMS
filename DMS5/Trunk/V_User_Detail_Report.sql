@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_User_Detail_Report]
 AS
 SELECT U_PRN AS PRN,
@@ -15,9 +14,9 @@ SELECT U_PRN AS PRN,
        U_update as UserUpdate,
        dbo.GetUserOperationsList(ID) AS [Operations List],
        U_comment as Comment,
-       ID
+       ID,
+       U_created AS Created_DMS
 FROM dbo.T_Users
-
 
 
 GO

@@ -27,6 +27,10 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			02/13/2008 mem - Increased size of @Dataset_Name to varchar(128) (Ticket #602)
 **			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **			09/09/2010 mem - Now always looking up the request number associated with the new dataset
+**			03/04/2011 mem - Now validating that @Run_Finish is not a future date
+**			03/07/2011 mem - Now auto-defining experiment name if empty for QC_Shew and Blank datasets
+**						   - Now auto-defining EMSL usage type to Maintenance for QC_Shew and Blank datasets
+**			05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
 **    
 *****************************************************/
 (
@@ -49,6 +53,9 @@ AS
 
 	declare @internalStandards varchar(64)
 	declare @AddUpdateTimeStamp datetime
+	
+	declare @RunStartDate datetime
+	declare @RunFinishDate datetime
 	
 	set @message = ''
 
@@ -176,10 +183,10 @@ AS
 	Set @DatasetCreatorPRN   = IsNull(@DatasetCreatorPRN, '')
 	
  	---------------------------------------------------
-	-- check for QC datasets
+	-- check for QC or Blank datasets
  	---------------------------------------------------
 
-	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR @Dataset_Name LIKE 'Blank%'
+	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR (@Dataset_Name LIKE 'Blank%' AND Not @Dataset_Name LIKE '%-bad')
 	begin
 		-- Auto set interest rating to 5
 		-- Initially set @Interest_Rating to the text 'Released' but then query
@@ -191,6 +198,30 @@ AS
 		FROM T_DatasetRatingName
 		WHERE (DRN_state_ID = 5)
 	end
+
+ 	---------------------------------------------------
+	-- Possibly auto-define the experiment
+ 	---------------------------------------------------
+ 	--
+	if @Experiment_Name = ''
+	Begin
+		If @Dataset_Name Like 'Blank%'
+			Set @Experiment_Name = 'Blank'
+		Else
+		If @Dataset_Name Like 'QC_Shew_1[0-9]_[0-9][0-9]%'
+			Set @Experiment_Name = Substring(@Dataset_Name, 1, 13)
+		
+	End
+	
+ 	---------------------------------------------------
+	-- Possibly auto-define the @EMSL_Usage_Type
+ 	---------------------------------------------------
+ 	--
+	if @EMSL_Usage_Type = ''
+	Begin
+		If @Dataset_Name Like 'Blank%' OR @Dataset_Name Like 'QC_Shew%'
+			Set @EMSL_Usage_Type = 'MAINTENANCE'
+	End
 
  	---------------------------------------------------
 	-- establish default parameters
@@ -309,10 +340,29 @@ AS
 
 	If @Request <> 0
 	Begin
+	
+		If @Run_Start <> ''
+			Set @RunStartDate = Convert(datetime, @Run_Start)
+		Else
+			Set @RunStartDate = Null
+			
+		If @Run_Finish <> ''
+			Set @RunFinishDate = Convert(datetime, @Run_Finish)
+		Else
+			Set @RunFinishDate = Null
+			
+		If Not @RunStartDate Is Null and Not @RunFinishDate Is Null
+		Begin
+			-- Check whether the @RunFinishDate value is in the future
+			-- If it is, update it to match @RunStartDate
+			If DateDiff(day, GetDate(), @RunFinishDate) > 1
+				Set @RunFinishDate = @RunStartDate			
+		End
+		
 		UPDATE T_Requested_Run
 		SET
-			RDS_Run_Start = @Run_Start, 
-			RDS_Run_Finish = @Run_Finish
+			RDS_Run_Start = @RunStartDate, 
+			RDS_Run_Finish = @RunFinishDate
 		WHERE (ID = @Request)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

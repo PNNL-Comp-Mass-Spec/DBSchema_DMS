@@ -3,9 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE Procedure [dbo].[AddUpdateStorage]
+CREATE Procedure AddUpdateStorage
 /****************************************************
 **
 **	Desc: 
@@ -41,17 +39,18 @@ CREATE Procedure [dbo].[AddUpdateStorage]
 **	Auth:	grk
 **	Date:	04/15/2002
 **			05/01/2009 mem - Updated description field in t_storage_path to be named SP_description
+**			05/09/2011 mem - Now validating @instrumentName
 **    
 *****************************************************/
 (
 	@path varchar(255), 
 	@volNameClient varchar(128),
 	@volNameServer varchar(128),
-	@storFunction varchar(50),
+	@storFunction varchar(50),				-- 'inbox', 'old-storage', or 'raw-storage'
 	@instrumentName varchar(50),
 	@description varchar(255) = '(na)',
     @ID varchar(32) output,
-	@mode varchar(12) = 'add', -- or 'update'
+	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output
 )
 As
@@ -111,6 +110,17 @@ As
 		set @machineName = replace(@volNameServer, '\', '')
 	else
 		set @machineName = replace(@volNameClient, '\', '')
+	
+	---------------------------------------------------
+	-- Verify instrument name
+	---------------------------------------------------
+	
+	IF NOT Exists (SELECT * FROM T_Instrument_Name WHERE IN_name = @instrumentName)
+	Begin
+		set @msg = 'Unknown instrument "' + @instrumentName + '"'
+		RAISERROR (@msg, 10, 1)
+		return 51038
+	End
 	
 	---------------------------------------------------
 	-- Only one input path allowed for given instrument
@@ -481,7 +491,6 @@ As
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin] AS [dbo]

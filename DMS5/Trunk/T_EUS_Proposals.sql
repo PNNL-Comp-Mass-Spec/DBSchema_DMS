@@ -8,6 +8,10 @@ CREATE TABLE [dbo].[T_EUS_Proposals](
 	[TITLE] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[State_ID] [int] NOT NULL,
 	[Import_Date] [datetime] NOT NULL,
+	[Call_Type] [varchar](100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Proposal_Start_Date] [datetime] NULL,
+	[Proposal_End_Date] [datetime] NULL,
+	[Last_Affected] [datetime] NULL,
  CONSTRAINT [PK_T_EUS_Proposals] PRIMARY KEY NONCLUSTERED 
 (
 	[PROPOSAL_ID] ASC
@@ -40,4 +44,6 @@ GO
 ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_State_ID]  DEFAULT (1) FOR [State_ID]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_Import_Date]  DEFAULT (getdate()) FOR [Import_Date]
+GO
+ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

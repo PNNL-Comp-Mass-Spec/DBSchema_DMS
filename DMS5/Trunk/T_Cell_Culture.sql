@@ -200,6 +200,10 @@ REFERENCES [T_Material_Containers] ([ID])
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers]
 GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([CC_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Container_ID]  DEFAULT ((1)) FOR [CC_Container_ID]
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Material_Active]  DEFAULT ('Active') FOR [CC_Material_Active]

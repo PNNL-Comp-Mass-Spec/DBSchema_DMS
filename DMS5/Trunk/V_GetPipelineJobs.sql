@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_GetPipelineJobs]
+CREATE VIEW V_GetPipelineJobs
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS Priority,
@@ -14,7 +13,8 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_settingsFileName AS Settings_File_Name,
        AJ.AJ_StateID AS State,
        SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path,
-       AJ.AJ_Comment AS Comment
+       AJ.AJ_Comment AS Comment,
+       AJ.AJ_specialProcessing as Special_Processing
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID
@@ -28,7 +28,6 @@ FROM dbo.T_Analysis_Job AS AJ
 WHERE (AJ.AJ_StateID IN (1, 8)) AND
       (DA.AS_state_ID IN (3, 4, 10)) AND
       (DA.AS_update_state_ID <> 3)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobs] TO [PNL\D3M578] AS [dbo]

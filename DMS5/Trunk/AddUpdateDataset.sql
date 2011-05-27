@@ -44,6 +44,11 @@ CREATE Procedure AddUpdateDataset
 **			09/09/2010 mem - Now passing @AutoPopulateUserListIfBlank to AddUpdateRequestedRun
 **						   - Relaxed EUS validation to ignore @eusProposalID, @eusUsageType, and @eusUsersList if @requestID is non-zero
 **						   - Auto-updating RequestID, experiment, and EUS information for "Blank" datasets
+**			03/10/2011 mem - Tweaked text added to dataset comment when dataset type is auto-updated or auto-defined
+**			05/11/2011 mem - Now calling GetInstrumentStoragePathForNewDatasets
+**			05/12/2011 mem - Now passing @RefDate and @AutoSwitchActiveStorage to GetInstrumentStoragePathForNewDatasets
+**			05/24/2011 mem - Now checking for change of rating from -5, -6, or -7 to 5
+**						   - Now ignoring AJ_DatasetUnreviewed jobs when determining whether or not to call SchedulePredefinedAnalyses
 **    
 *****************************************************/
 (
@@ -416,11 +421,26 @@ As
 			If @comment = 'na'
 				Set @comment = ''
 			
-			If @comment <> ''
-				Set @comment = @comment + '; '
-			
-			Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
-						
+			If @msTypeOld <> ''
+			Begin
+				-- Update the comment since we changed the dataset type from @msTypeOld to @msType
+				If @comment <> ''
+					Set @comment = @comment + '; '
+				
+				Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+			End
+			Else
+			Begin
+				-- @msTypeOld was blank
+				-- Update the comment only if this is not an IMS dataset
+				If Not @instrumentName Like 'IMS%'
+				Begin
+					If @comment <> ''
+						Set @comment = @comment + '; '
+					
+					Set @comment = @comment + 'Auto-defined dataset type using default: ' + @msType
+				End
+			End						
 		End
 		Else
 		Begin
@@ -509,27 +529,6 @@ As
 			set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
 			RAISERROR (@msg, 11, 19)
 		End
-	end
-
-	---------------------------------------------------
-	-- assign storage path ID
-	---------------------------------------------------
-	--
-	declare @storagePathID int
-	set @storagePathID = 2 -- index of "none" in table
-	--
-	SELECT
-	  @storagePathID = t_storage_path.SP_path_ID
-	FROM
-	  T_Instrument_Name
-	  INNER JOIN t_storage_path ON T_Instrument_Name.IN_storage_path_ID = t_storage_path.SP_path_ID
-	WHERE
-		T_Instrument_Name.Instrument_ID = @instrumentID
-	--
-	IF @storagePathID = 2
-	begin
-		set @msg = 'Valid storage path could not be found'
-		RAISERROR (@msg, 11, 43)
 	end
 
 	---------------------------------------------------
@@ -755,6 +754,27 @@ As
 	
 	if @Mode = 'add' 
 	begin -- <AddMode>
+	
+		---------------------------------------------------
+		-- Lookup storage path ID
+		---------------------------------------------------
+		--
+		declare @storagePathID int
+		declare @RefDate datetime
+		
+		set @storagePathID = 0
+		set @RefDate = GetDate()
+		--
+		Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @RefDate, @AutoSwitchActiveStorage=1, @infoOnly=0
+		--
+		IF @storagePathID = 0
+		begin
+			set @storagePathID = 2 -- index of "none" in table
+			set @msg = 'Valid storage path could not be found'
+			RAISERROR (@msg, 11, 43)
+		end
+		
+		
 		-- Start transaction
 		--
 		declare @transName varchar(32)
@@ -787,7 +807,7 @@ As
 				@datasetNum,
 				@operPRN,
 				@comment,
-				getdate(),
+				@RefDate,
 				@instrumentID,
 				@datasetTypeID,
 				@wellNum,
@@ -952,11 +972,12 @@ As
 		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
 			
-		-- If rating changed from -5 to 5, then check if any jobs exist for this dataset
+		-- If rating changed from -5, -6, or -7 to 5, then check if any jobs exist for this dataset
 		-- If no jobs are found, then call SchedulePredefinedAnalyses for this dataset
-		If @ratingID >= 2 and IsNull(@curDSRatingID, -1000) = -5
+		-- Skip jobs with AJ_DatasetUnreviewed=1 when looking for existing jobs (these jobs were created before the dataset was dispositioned)
+		If @ratingID >= 2 and IsNull(@curDSRatingID, -1000) IN (-5, -6, -7)
 		Begin
-			If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID))
+			If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID) AND AJ_DatasetUnreviewed = 0 )
 			Begin
 				Exec SchedulePredefinedAnalyses @datasetNum, @callingUser=@callingUser
 				

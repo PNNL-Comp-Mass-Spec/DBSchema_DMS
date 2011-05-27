@@ -44,6 +44,10 @@ ALTER TABLE [dbo].[T_Param_Files]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Param_File
 GO
 ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [CK_T_Param_Files]
 GO
+ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_Files_ParamFileName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Param_File_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [CK_T_Param_Files_ParamFileName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Param_File_Description]  DEFAULT ('') FOR [Param_File_Description]
 GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Date_Created]  DEFAULT (getdate()) FOR [Date_Created]

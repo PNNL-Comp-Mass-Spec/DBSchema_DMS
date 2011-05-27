@@ -1,9 +1,9 @@
-/****** Object:  Table [dbo].[t_storage_path_bkup] ******/
+/****** Object:  Table [dbo].[T_Storage_Path_Bkup] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[t_storage_path_bkup](
+CREATE TABLE [dbo].[T_Storage_Path_Bkup](
 	[SP_path_ID] [int] NOT NULL,
 	[SP_path] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SP_vol_name_client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

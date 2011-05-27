@@ -15,21 +15,21 @@ CREATE Procedure AddUpdateArchivePath
 **		@ArchiveID  unique identifier for the new archive path
 **	
 **
-**		Auth: jds
-**		Date:
-**		06/24/2004 jds - initial release
-**		12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
+**	Auth: jds
+**	Date:	06/24/2004 jds - initial release
+**			12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
+**			05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @NetworkSharePath, and @ArchiveNote to larger varchar() variables
 **    
 *****************************************************/
 (
-	@ArchiveID varchar(32) output, --varchar(5),
-	@ArchivePath varchar(50),
-	@ArchiveServer varchar(32),
+	@ArchiveID varchar(32) output,			-- ID value (as a string)
+	@ArchivePath varchar(128),
+	@ArchiveServer varchar(64),
 	@instrumentName varchar(24),
-	@NetworkSharePath varchar(64),
-	@ArchiveNote varchar(50),
+	@NetworkSharePath varchar(128),
+	@ArchiveNote varchar(128),
 	@ArchiveFunction varchar(32),
-	@mode varchar(12) = 'add', -- or 'update'
+	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output
 )
 As
@@ -89,7 +89,7 @@ As
 	declare @ArchiveID1 int
 	set @ArchiveID1 = 0
 	--
-	execute @ARchiveID1 = GetArchivePathID @ArchivePath
+	execute @ArchiveID1 = GetArchivePathID @ArchivePath
 
 	-- cannot create an entry that already exists
 	--
@@ -124,8 +124,9 @@ As
 	declare @tempArchiveID int
 	if @ArchiveFunction <> 'Active'
 	begin
-		SELECT @tempArchiveID = AP_Path_ID FROM T_Archive_Path
-		WHERE AP_Path_ID = @ArchiveID and AP_Function = 'Active'
+		SELECT @tempArchiveID = AP_Path_ID 
+		FROM T_Archive_Path
+		WHERE AP_Path_ID = @ArchiveID AND AP_Function = 'Active'
 		if @tempArchiveID <> 0
 		begin
 			set @msg = 'You are prevented from setting non Active for instrument "' + @instrumentName + '"'

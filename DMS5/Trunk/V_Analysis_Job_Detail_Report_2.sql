@@ -25,6 +25,7 @@ SELECT AJ.AJ_jobID AS JobNum,
        CONVERT(decimal(9, 2), AJ.AJ_ProcessingTimeMinutes) AS [Runtime Minutes],
        AJ.AJ_owner AS Owner,
        AJ.AJ_comment AS [Comment],
+       AJ.AJ_specialProcessing AS [Special Processing],
        DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Results Folder Path],
        DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Results Folder Path],
        SPath.SP_URL + DS.Dataset_Num + '/' + AJ.AJ_resultsFolderName + '/' AS [Data Folder Link],
@@ -45,39 +46,40 @@ SELECT AJ.AJ_jobID AS JobNum,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS [Export Mode]
-FROM T_Analysis_Job AJ
-     INNER JOIN T_Dataset DS
+       END AS [Export Mode],
+       CASE WHEN AJ.AJ_DatasetUnreviewed = 0 Then 'No' Else 'Yes' End AS [Dataset Unreviewed]
+FROM dbo.T_Analysis_Job AS AJ
+     INNER JOIN dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
-     INNER JOIN V_Dataset_Folder_Paths DFP
+     INNER JOIN dbo.V_Dataset_Folder_Paths AS DFP
        ON DFP.Dataset_ID = DS.Dataset_ID
-     INNER JOIN t_storage_path SPath
+     INNER JOIN dbo.t_storage_path AS SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN T_Analysis_Tool AnalysisTool
+     INNER JOIN dbo.T_Analysis_Tool AS AnalysisTool
        ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
-     INNER JOIN T_Analysis_State_Name ASN
+     INNER JOIN dbo.T_Analysis_State_Name AS ASN
        ON AJ.AJ_StateID = ASN.AJS_stateID
-     INNER JOIN T_Instrument_Name InstName
+     INNER JOIN dbo.T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_Organisms Org
+     INNER JOIN dbo.T_Organisms AS Org
        ON Org.Organism_ID = AJ.AJ_organismID
      LEFT OUTER JOIN ( SELECT Job,
                               COUNT(*) AS MT_DB_Count
-                       FROM T_MTS_MT_DB_Jobs_Cached
-                       GROUP BY Job ) MTSMT
+                       FROM dbo.T_MTS_MT_DB_Jobs_Cached
+                       GROUP BY Job ) AS MTSMT
        ON AJ.AJ_jobID = MTSMT.Job
      LEFT OUTER JOIN ( SELECT Job,
                               COUNT(*) AS PT_DB_Count
-                       FROM T_MTS_PT_DB_Jobs_Cached
-                       GROUP BY Job ) MTSPT
+                       FROM dbo.T_MTS_PT_DB_Jobs_Cached
+                       GROUP BY Job ) AS MTSPT
        ON AJ.AJ_jobID = MTSPT.Job
-     LEFT OUTER JOIN ( SELECT PM.DMS_Job,
+     LEFT OUTER JOIN ( SELECT DMS_Job,
                               COUNT(*) AS PMTasks
-                       FROM T_MTS_Peak_Matching_Tasks_Cached AS PM
-                       GROUP BY PM.DMS_Job ) AS PMTaskCountQ
+                       FROM dbo.T_MTS_Peak_Matching_Tasks_Cached AS PM
+                       GROUP BY DMS_Job ) AS PMTaskCountQ
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
-     LEFT OUTER JOIN T_Analysis_Job_Processor_Group AJPG
-                     INNER JOIN T_Analysis_Job_Processor_Group_Associations AJPGA
+     LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AS AJPG
+                     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
 

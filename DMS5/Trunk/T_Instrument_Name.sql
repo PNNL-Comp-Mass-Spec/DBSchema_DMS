@@ -12,7 +12,6 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_storage_path_ID] [int] NULL,
 	[IN_capture_method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_status] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[IN_default_CDburn_sched] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Room_Number] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Description] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_usage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -22,6 +21,13 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_Capture_Exclusion_Window] [real] NOT NULL,
 	[IN_Capture_Log_Level] [tinyint] NOT NULL,
 	[IN_Created] [datetime] NULL,
+	[Auto_Define_Storage_Path] [tinyint] NOT NULL,
+	[Auto_SP_Vol_Name_Client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_Vol_Name_Server] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_Archive_Server_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_Archive_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_Archive_Share_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY NONCLUSTERED 
 (
 	[Instrument_ID] ASC
@@ -57,6 +63,16 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Name_Instrument_Group]
 GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_storage_path_SourcePathID] FOREIGN KEY([IN_source_path_ID])
+REFERENCES [T_Storage_Path] ([SP_path_ID])
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_storage_path_SourcePathID]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_storage_path_StoragePathID] FOREIGN KEY([IN_storage_path_ID])
+REFERENCES [T_Storage_Path] ([SP_path_ID])
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_storage_path_StoragePathID]
+GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name] CHECK  (([IN_operations_role]='Unused' OR ([IN_operations_role]='QC' OR ([IN_operations_role]='Research' OR ([IN_operations_role]='Production' OR [IN_operations_role]='Unknown')))))
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name]
@@ -78,4 +94,6 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_log_level]  DEFAULT ((1)) FOR [IN_Capture_Log_Level]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Auto_Define_Storage_Path]  DEFAULT ((0)) FOR [Auto_Define_Storage_Path]
 GO

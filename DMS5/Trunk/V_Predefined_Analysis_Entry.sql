@@ -35,7 +35,9 @@ SELECT PA.AD_level AS [level],
        PA.AD_description AS description,
        PA.AD_creator AS creator,
        PA.AD_ID AS ID,
-       PA.AD_nextLevel AS nextLevel
+       PA.AD_nextLevel AS nextLevel,
+       PA.Trigger_Before_Disposition AS TriggerBeforeDisposition,
+       CASE PA.Propagation_Mode WHEN 0 THEN 'Export' ELSE 'No Export' END AS PropagationMode
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID

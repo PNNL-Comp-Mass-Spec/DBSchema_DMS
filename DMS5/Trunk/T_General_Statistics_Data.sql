@@ -1,0 +1,26 @@
+/****** Object:  Table [T_General_Statistics] ******/
+/****** RowCount: 22 ******/
+SET IDENTITY_INSERT [T_General_Statistics] ON
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1000,'Job_Count','All','691913','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1001,'Job_Count','Last 7 days','2085','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1002,'Job_Count','Last 30 days','11128','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1003,'Job_Count','New','0','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1004,'Campaign_Count','All','569','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1005,'Campaign_Count','Last 7 days','0','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1006,'Campaign_Count','Last 30 days','5','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1007,'CellCulture_Count','All','2073','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1008,'CellCulture_Count','Last 7 days','1','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1009,'CellCulture_Count','Last 30 days','39','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1010,'Dataset_Count','All','215476','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1011,'Dataset_Count','Last 7 days','650','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1012,'Dataset_Count','Last 30 days','3479','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1013,'Experiment_Count','All','93861','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1014,'Experiment_Count','Last 7 days','218','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1015,'Experiment_Count','Last 30 days','891','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1016,'Organism_Count','All','235','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1017,'Organism_Count','Last 7 days','0','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1018,'Organism_Count','Last 30 days','1','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1019,'RawDataTB','All','176.450','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1020,'RawDataTB','Last 7 days','0.310','5/27/2011 1:33:02 PM')
+INSERT INTO [T_General_Statistics] (Entry_ID, Category, Label, Value, Last_Affected) VALUES (1021,'RawDataTB','Last 30 days','1.080','5/27/2011 1:33:02 PM')
+SET IDENTITY_INSERT [T_General_Statistics] OFF

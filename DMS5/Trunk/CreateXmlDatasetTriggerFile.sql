@@ -3,21 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[CreateXmlDatasetTriggerFile]
+CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 /****************************************************
-**		File: 
-**		Name: CreateXmlDatasetTriggerFile
-**		Desc: Creates an XML dataset trigger file to deposit into a directory
+**	File: 
+**	Name:	CreateXmlDatasetTriggerFile
+**	Desc:	Creates an XML dataset trigger file to deposit into a directory
 **			where the DIM will pick it up, validate the dataset file(s) are available,
 **			and submit back to DMS
 **
-**		Return values: 0: success, otherwise, error code
+**	Return values: 0: success, otherwise, error code
 ** 
-**		Parameters:
-**
-**		Auth: jds
-**		Date: 10/03/2007
-**		04/26/2010 grk - widened @Dataset_Name to 128 characters
+**	Auth:	jds
+**	Date:	10/03/2007
+**			04/26/2010 grk - widened @Dataset_Name to 128 characters
+**			02/03/2011 mem - Now calling XMLQuoteCheck() to replace double quotes with &quot;
 **    
 *****************************************************/
 	@Dataset_Name		varchar(128),  -- @datasetNum
@@ -64,51 +63,53 @@ set nocount on
 
 	---------------------------------------------------
 	-- create XML dataset trigger file lines
+	-- Be sure to replace double quote characters with &quot; to avoid mal-formed XML
+	-- In reality, only the comment should have double-quote characters, but we'll check all text fields just to be safe
 	---------------------------------------------------
-	declare @tmpXmlLine varchar(4000)
-	DECLARE @result int
+	Declare @tmpXmlLine varchar(4000)
+	Declare @result int
 
 	--XML Header
 	set @tmpXmlLine = '<?xml version="1.0" ?>' + char(13) + char(10)
 	set @tmpXmlLine = @tmpXmlLine + '<Dataset>' + char(13) + char(10)
 	--Dataset Name
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Name" Value="' + @Dataset_Name + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Name" Value="' + dbo.XMLQuoteCheck(@Dataset_Name) + '"/>' + char(13) + char(10)
 	--Experiment Name
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Experiment Name" Value="' + @Experiment_Name + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Experiment Name" Value="' + dbo.XMLQuoteCheck(@Experiment_Name) + '"/>' + char(13) + char(10)
 	--Instrument Name
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Instrument Name" Value="' + @Instrument_Name + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Instrument Name" Value="' +dbo.XMLQuoteCheck( @Instrument_Name) + '"/>' + char(13) + char(10)
 	--Separation Type
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Separation Type" Value="' + @Separation_Type + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Separation Type" Value="' + dbo.XMLQuoteCheck(@Separation_Type) + '"/>' + char(13) + char(10)
 	--LC Cart Name
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Name" Value="' + @LC_Cart_Name + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Name" Value="' + dbo.XMLQuoteCheck(@LC_Cart_Name) + '"/>' + char(13) + char(10)
 	--LC Column
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Column" Value="' + @LC_Column + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Column" Value="' + dbo.XMLQuoteCheck(@LC_Column) + '"/>' + char(13) + char(10)
 	--Wellplate Number
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Number" Value="' + @Wellplate_Number + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Number" Value="' + dbo.XMLQuoteCheck(@Wellplate_Number) + '"/>' + char(13) + char(10)
 	--Well Number
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Well Number" Value="' + @Well_Number + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Well Number" Value="' + dbo.XMLQuoteCheck(@Well_Number) + '"/>' + char(13) + char(10)
 	--Dataset Type
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Type" Value="' + @Dataset_Type + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Type" Value="' + dbo.XMLQuoteCheck(@Dataset_Type) + '"/>' + char(13) + char(10)
 	--Operator (PRN)
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Operator (PRN)" Value="' + @Operator_PRN + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Operator (PRN)" Value="' + dbo.XMLQuoteCheck(@Operator_PRN) + '"/>' + char(13) + char(10)
 	--Dataset Creator (PRN)
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="DS Creator (PRN)" Value="' + @DSCreator_PRN + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="DS Creator (PRN)" Value="' + dbo.XMLQuoteCheck(@DSCreator_PRN) + '"/>' + char(13) + char(10)
 	--Comment
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Comment" Value="' + @Comment + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Comment" Value="' + dbo.XMLQuoteCheck(@Comment) + '"/>' + char(13) + char(10)
 	--Interest Rating
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Interest Rating" Value="' + @Interest_Rating + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Interest Rating" Value="' + dbo.XMLQuoteCheck(@Interest_Rating) + '"/>' + char(13) + char(10)
 	--Request
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Request" Value="' + cast(@Request as varchar(32)) + '"/>' + char(13) + char(10)
 	--EMSL Proposal ID
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' + isnull(@EMSL_Proposal_ID, '') + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' + dbo.XMLQuoteCheck(IsNull(@EMSL_Proposal_ID, '')) + '"/>' + char(13) + char(10)
 	--EMSL Usage Type
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Usage Type" Value="' + @EMSL_Usage_Type + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Usage Type" Value="' + dbo.XMLQuoteCheck(@EMSL_Usage_Type) + '"/>' + char(13) + char(10)
 	--EMSL Users List
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Users List" Value="' + @EMSL_Users_List + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Users List" Value="' + dbo.XMLQuoteCheck(@EMSL_Users_List) + '"/>' + char(13) + char(10)
 	--Run Start
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Start" Value="' + @Run_Start + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Start" Value="' + dbo.XMLQuoteCheck(@Run_Start) + '"/>' + char(13) + char(10)
 	--Run Finish
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Finish" Value="' + @Run_Finish + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Finish" Value="' + dbo.XMLQuoteCheck(@Run_Finish) + '"/>' + char(13) + char(10)
 	--Close XML file
 	set @tmpXmlLine = @tmpXmlLine + '</Dataset>' + char(13) + char(10)
 
@@ -202,6 +203,7 @@ DestroyFSO:
 Done:
 	
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateXmlDatasetTriggerFile] TO [Limited_Table_Write] AS [dbo]

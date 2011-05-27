@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdatePredefinedAnalysis
+
+CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 /****************************************************
 ** 
 **	Desc: Adds a new default analysis to DB 
@@ -27,6 +28,8 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 **			08/28/2010 mem - Now using T_Instrument_Group_Allowed_DS_Type to determine allowed dataset types for matching instruments
 **						   - Added try-catch for error handling
 **			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to lookup the allowed instrument class names for a given analysis tool
+**			02/09/2011 mem - Added parameter @TriggerBeforeDisposition
+**			02/16/2011 mem - Added parameter @PropagationMode
 **    
 *****************************************************/
 (
@@ -60,7 +63,9 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 	@campaignExclCriteria varchar(128)='',
 	@experimentExclCriteria varchar(128)='',
 	@datasetExclCriteria varchar(128)='',
-	@datasetTypeCriteria varchar(64)=''
+	@datasetTypeCriteria varchar(64)='',
+	@TriggerBeforeDisposition tinyint = 0,
+	@PropagationMode varchar(24)='Export'
 )
 As
 	set nocount on
@@ -144,6 +149,15 @@ As
 	Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria    , '')))
 	Set @datasetTypeCriteria     = LTrim(RTrim(IsNull(@datasetTypeCriteria    , '')))
 
+	---------------------------------------------------
+	-- Resolve propagation mode 
+	---------------------------------------------------
+	declare @propMode tinyint
+	set @propMode = CASE IsNull(@PropagationMode, '')
+						WHEN 'Export' THEN 0 
+						WHEN 'No Export' THEN 1 
+						ELSE 0 
+					END 
 
 	---------------------------------------------------
 	-- Validate @sequence and @nextLevel
@@ -468,7 +482,9 @@ As
 			AD_enabled, 
 			AD_description, 
 			AD_creator,
-			AD_nextLevel
+			AD_nextLevel,
+			Trigger_Before_Disposition,
+			Propagation_Mode
 		) VALUES (
 			@level, 
 			@seqVal, 
@@ -497,7 +513,9 @@ As
 			@enabled, 
 			@description, 
 			@creator,
-			@nextLevelVal
+			@nextLevelVal,
+			IsNull(@TriggerBeforeDisposition, 0),
+			@propMode
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -551,7 +569,9 @@ As
 			AD_enabled = @enabled, 
 			AD_description = @description, 
 			AD_creator = @creator,
-			AD_nextLevel = @nextLevelVal
+			AD_nextLevel = @nextLevelVal,
+			Trigger_Before_Disposition = IsNull(@TriggerBeforeDisposition, 0),
+			Propagation_Mode = @propMode
 		WHERE (AD_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

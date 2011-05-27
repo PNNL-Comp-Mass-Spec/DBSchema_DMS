@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.RequestPurgeTask
+
+CREATE Procedure RequestPurgeTask
 /****************************************************
 **
 **	Desc: 
@@ -14,7 +15,7 @@ CREATE Procedure dbo.RequestPurgeTask
 **
 **		Alternatively, if @infoOnly is > 0, then will return the
 **		next N datasets that would be purged on the specified server,
-**		or on a series of servers (if @StorageServerName and/or @StorageVol are blank)
+**		or on a series of servers (if @StorageServerName and/or @ServerDisk are blank)
 **		N is 10 if @infoOnly = 1; N is @infoOnly if @infoOnly is greater than 1
 **
 **		Note that PreviewPurgeTaskCandidates calls this procedure, sending a positive value for @infoOnly
@@ -24,28 +25,25 @@ CREATE Procedure dbo.RequestPurgeTask
 **  If DatasetID is returned 0, no available dataset was found
 **
 **  Example syntax for Preview:
-**     exec RequestPurgeTask 'proto-9', @StorageVol='g:\', @infoOnly = 1
+**     exec RequestPurgeTask 'proto-9', @ServerDisk='g:\', @infoOnly = 1
 **
 **	Auth:	grk
 **	Date:	03/04/2003
 **			02/11/2005 grk - added @RawDataType to output
 **			06/02/2009 mem - Decreased population of #PD to be limited to 2 rows
 **			12/13/2010 mem - Added @infoOnly and defined defaults for several parameters
-**			12/30/2010 mem - Updated to allow @StorageServerName and/or @StorageVol to be blank
+**			12/30/2010 mem - Updated to allow @StorageServerName and/or @ServerDisk to be blank
 **						   - Added @PreviewSql
 **			01/04/2011 mem - Now initially favoring datasets at least 4 months old, then checking datasets where the most recent job was a year ago, then looking at newer datasets
+**			01/11/2011 dac/mem - Modified for use with new space manager
+**			01/11/2011 dac - Added samba path for dataset as return param
+**			02/01/2011 mem - Added parameter @ExcludeStageMD5RequiredDatasets
 **    
 *****************************************************/
 (
-	@StorageServerName varchar(64),					-- Input param: Storage server to use, for example 'proto-9'; if blank, then returns candidates for all storage servers; when blank, then @StorageVol is ignored
-	@dataset varchar(128) = '' output,
-	@DatasetID int = 0 output,
-	@Folder varchar(256) = '' output, 
-	@StorageVol varchar(256) output,				-- Input/output param: Volume on storage server to use, for example 'g:\'; if blank, then returns candidates for all drives on given server (or all servers if @StorageServerName is blank)
-	@storagePath varchar(256) = '' output, 
-	@StorageVolExternal varchar(256) = '' output,	-- Use instead of @StorageVol when manager is not on same machine as dataset folder
-	@RawDataType varchar(32) = '' output,
-	@ParamList varchar(1024) = '' output,			-- for future use
+	@StorageServerName varchar(64),					-- Storage server to use, for example 'proto-9'; if blank, then returns candidates for all storage servers; when blank, then @ServerDisk is ignored
+	@ServerDisk varchar(256),						-- Disk on storage server to use, for example 'g:\'; if blank, then returns candidates for all drives on given server (or all servers if @StorageServerName is blank)
+	@ExcludeStageMD5RequiredDatasets tinyint = 1,	-- If 1, then excludes datasets with StageMD5_Required > 0
 	@message varchar(512) = '' output,
 	@infoOnly int = 0,								-- Set to positive number to preview the candidates; 1 will preview the first 10 candidates; values over 1 will return the specified number of candidates
 	@PreviewSql tinyint = 0
@@ -68,11 +66,21 @@ As
 	Declare @HoldoffDays int
 	Declare @OrderByCol varchar(64)
 
+	Declare
+		@dataset varchar(128) = '',
+		@DatasetID INT = 0,
+		@Folder varchar(256) = '', 
+		@storagePath varchar(256), 
+		@ServerDiskExternal varchar(256) = '',
+		@RawDataType varchar(32) = '',
+		@NoDatasetFound INT = -53000,
+		@SambaStoragePath varchar(128) = ''
+		
 	Declare @S varchar(2048)
 	
 	Set @CandidateCount = 0
 	Set @PreviewCount = 2
-
+	set @message = ''
 	
 	--------------------------------------------------
 	-- Validate the inputs
@@ -80,18 +88,19 @@ As
 	Set @StorageServerName = IsNull(@StorageServerName, '')
 	
 	If @StorageServerName = ''
-		Set @StorageVol = ''
+		Set @ServerDisk = ''
 	Else
-		Set @StorageVol = IsNull(@StorageVol, '')
+		Set @ServerDisk = IsNull(@ServerDisk, '')
 
+	Set @ExcludeStageMD5RequiredDatasets = IsNull(@ExcludeStageMD5RequiredDatasets, 1)
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 
 	If @infoOnly = 0
 	Begin
-		-- Verify that both @StorageServerName and @StorageVol are specified
-		If @StorageServerName = '' OR @StorageVol = ''
+		-- Verify that both @StorageServerName and @ServerDisk are specified
+		If @StorageServerName = '' OR @ServerDisk = ''
 		Begin
-			Set @message = 'Error, both a storage server and a storage volume must be specified when @infoOnly = 0'
+			Set @message = 'Error, both a storage server and a storage disk must be specified when @infoOnly = 0'
 			Set @myError = 50000
 			Goto Done
 		End
@@ -106,19 +115,6 @@ As
 	
 	Set @PreviewSql = IsNull(@PreviewSql, 0)
 	
-	
-	--------------------------------------------------
-	-- Clear the outputs
-	--------------------------------------------------	
-	set @DatasetID = 0
-	set @dataset = ''
-	set @DatasetID = ''
-	set @Folder = ''
-	set @storagePath = ''
-	set @StorageVolExternal = ''
-	set @RawDataType = ''
-	set @ParamList = ''
-	set @message = ''
 
 	--------------------------------------------------
 	-- temporary table to hold candidate purgable datasets
@@ -147,6 +143,18 @@ As
 		OrderByCol varchar(64)		
 	)
 	
+	---------------------------------------------------
+	-- Reset AS_StageMD5_Required for any datasets with AS_purge_holdoff_date older than the current date/time
+	---------------------------------------------------
+	
+	UPDATE T_Dataset_Archive
+	SET AS_StageMD5_Required = 0
+	WHERE AS_StageMD5_Required > 0 AND
+	      ISNULL(AS_purge_holdoff_date, GETDATE()) <= GETDATE()
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
 	---------------------------------------------------
 	-- populate temporary table with a small pool of 
 	-- purgable datasets for given storage server
@@ -222,11 +230,14 @@ As
 				Set @S = @S +        ' ServerVol'
 				Set @S = @S + ' FROM ' + @PurgeViewName
 				Set @S = @S + ' WHERE     (StorageServerName = ''' + @StorageServerName + ''')'
-				Set @S = @S +       ' AND (ServerVol = ''' + @StorageVol + ''')'
+				Set @S = @S +       ' AND (ServerVol = ''' + @ServerDisk + ''')'
+
+				If @ExcludeStageMD5RequiredDatasets > 0
+					Set @S = @S +   ' AND (StageMD5_Required = 0) '
 				
 				If @HoldoffDays >= 0
-					Set @S = @S +   ' AND DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays)
-
+					Set @S = @S +   ' AND (DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays) + ')'
+				
 				Set @S = @S + ' ORDER BY ' + @OrderByCol + ', Dataset_ID'
 			*/
 			
@@ -235,7 +246,7 @@ As
 				Set @PurgeViewSourceDesc = @PurgeViewSourceDesc + '_' + Convert(varchar(24), @HoldoffDays) + 'MinDays'
 				
 			-- Find the top @PreviewCount candidates for each drive on each server 
-			-- (limiting by @StorageServerName or @StorageVol if they are defined)
+			-- (limiting by @StorageServerName or @ServerDisk if they are defined)
 			
 			Set @S = ''
 			Set @S = @S + ' INSERT INTO #PD( DatasetID,'
@@ -254,7 +265,8 @@ As
 			Set @S = @S +               ' Row_Number() OVER ( PARTITION BY Src.StorageServerName, Src.ServerVol '
 			Set @S = @S +                                   ' ORDER BY Src.' + @OrderByCol + ', Src.Dataset_ID ) AS RowNumVal,'
 			Set @S = @S +               ' Src.StorageServerName,'
-			Set @S = @S +               ' Src.ServerVol'
+			Set @S = @S +               ' Src.ServerVol,'
+			Set @S = @S +               ' Src.StageMD5_Required'
 			Set @S = @S +        ' FROM ' + @PurgeViewName + ' Src'
 			Set @S = @S +               ' LEFT OUTER JOIN #TmpStorageVolsToSkip '
 			Set @S = @S +                 ' ON Src.StorageServerName = #TmpStorageVolsToSkip.StorageServerName AND'
@@ -263,16 +275,19 @@ As
 			Set @S = @S +                 ' ON Src.Dataset_ID = #PD.DatasetID'
 			Set @S = @S +        ' WHERE #TmpStorageVolsToSkip.StorageServerName IS NULL'
 			Set @S = @S +               ' AND #PD.DatasetID IS NULL '
-				
+			
+			If @ExcludeStageMD5RequiredDatasets > 0
+					Set @S = @S +       ' AND (StageMD5_Required = 0) '
+					
 			If @StorageServerName <> ''
 				Set @S = @S +           ' AND (Src.StorageServerName = ''' + @StorageServerName + ''')'
 
-			If @StorageVol <> ''
-				Set @S = @S +           ' AND (Src.ServerVol = ''' + @StorageVol + ''')'
+			If @ServerDisk <> ''
+				Set @S = @S +           ' AND (Src.ServerVol = ''' + @ServerDisk + ''')'
 
 			If @HoldoffDays >= 0
-				Set @S = @S +           ' AND DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays)
-
+				Set @S = @S +           ' AND (DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays) + ')'
+			
 			Set @S = @S +     ') LookupQ'
 			Set @S = @S + ' WHERE RowNumVal <= ' + Convert(varchar(12), @PreviewCount)
 			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, ' + @OrderByCol + ', Dataset_ID'
@@ -300,7 +315,7 @@ As
 			End
 			Else
 			Begin -- <c>
-				If @StorageServerName <> '' AND @StorageVol <> ''
+				If @StorageServerName <> '' AND @ServerDisk <> ''
 				Begin
 					If @CandidateCount >= @PreviewCount
 						Set @Continue = 0
@@ -339,7 +354,7 @@ As
 		  DFP.Dataset,
 		       DFP.Dataset_Folder_Path,
 		       DFP.Archive_Folder_Path,
-		       DA.AS_State_ID AS Achive_State_ID,
+		  DA.AS_State_ID AS Achive_State_ID,
 		       DA.AS_State_Last_Affected AS Achive_State_Last_Affected,
 		       DA.AS_Purge_Holdoff_Date AS Purge_Holdoff_Date,
 		       DA.AS_Instrument_Data_Purged AS Instrument_Data_Purged,
@@ -392,6 +407,8 @@ As
 	if @datasetID = 0
 	begin
 		rollback transaction @transName
+		SET @message = 'no datasets found'
+		SET @myError = @NoDatasetFound
 		goto done
 	end
 	
@@ -417,13 +434,14 @@ As
 	---------------------------------------------------
 	-- get information for assigned dataset
 	---------------------------------------------------
-
+	
+	/*
 	SELECT @dataset = DS.Dataset_Num,
 	       @DatasetID = DS.Dataset_ID,
 	       @Folder = DS.DS_folder_name,
-	       @StorageVol = SPath.SP_vol_name_server,
+	       @ServerDisk = SPath.SP_vol_name_server,
 	       @storagePath = SPath.SP_path,
-	       @StorageVolExternal = SPath.SP_vol_name_client,
+	       @ServerDiskExternal = SPath.SP_vol_name_client,
 	       @RawDataType = InstClass.raw_data_type
 	FROM T_Dataset DS
 	     INNER JOIN T_Dataset_Archive DA
@@ -435,6 +453,28 @@ As
 	     INNER JOIN T_Instrument_Class InstClass
 	       ON InstName.IN_class = InstClass.IN_class
 	WHERE DS.Dataset_ID = @datasetID
+	*/
+	
+	SELECT @dataset = DS.Dataset_Num,
+	       @DatasetID = DS.Dataset_ID,
+	 @Folder = DS.DS_folder_name,
+	       @ServerDisk = SPath.SP_vol_name_server,
+	       @storagePath = SPath.SP_path,
+	       @ServerDiskExternal = SPath.SP_vol_name_client,
+	       @RawDataType = InstClass.raw_data_type,
+	       @SambaStoragePath = T_Archive_Path.AP_network_share_path
+	FROM T_Dataset DS
+	     INNER JOIN T_Dataset_Archive DA
+	       ON DS.Dataset_ID = DA.AS_Dataset_ID
+	     INNER JOIN T_Storage_Path SPath
+	       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+	     INNER JOIN T_Instrument_Name InstName
+	       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+	     INNER JOIN T_Instrument_Class InstClass
+	       ON InstName.IN_class = InstClass.IN_class
+	     INNER JOIN T_Archive_Path
+	       ON DA.AS_storage_path_ID = T_Archive_Path.AP_path_ID
+	WHERE DS.Dataset_ID = @datasetID	
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -444,7 +484,39 @@ As
 		set @message = 'Find purgeable dataset operation failed'
 		goto done
 	end
-	
+
+	---------------------------------------------------
+	-- temp table to hold job parameters
+	---------------------------------------------------
+	--
+	CREATE TABLE #ParamTab
+	(
+		[Name] VARCHAR(128),
+		[Value] VARCHAR(MAX)
+	)
+
+	---------------------------------------------------
+	-- populate job parameters table
+	---------------------------------------------------
+	-- 
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('dataset', @dataset)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('DatasetID', @DatasetID)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('Folder', @Folder)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('StorageVol', @ServerDisk)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('storagePath', @storagePath)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('StorageVolExternal', @ServerDiskExternal)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('RawDataType', @RawDataType)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('SambaStoragePath', @SambaStoragePath)
+
+	---------------------------------------------------
+	-- output parameters as resultset 
+	---------------------------------------------------
+	SELECT
+		Name AS Parameter,
+		Value
+	FROM
+		#ParamTab
+
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

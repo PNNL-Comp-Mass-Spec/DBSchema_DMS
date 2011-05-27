@@ -46,6 +46,10 @@ ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_User_Status] CHECK
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_User_Status]
 GO
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_UserName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([U_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_UserName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_status]  DEFAULT ('Active') FOR [U_Status]
 GO
 ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_active]  DEFAULT ('Y') FOR [U_active]

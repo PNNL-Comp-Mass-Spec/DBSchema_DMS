@@ -25,6 +25,9 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
 **			08/26/2010 grk - This was cloned from SchedulePredefinedAnalyses; added try-catch error handling 
 **			08/26/2010 mem - Added output parameter @JobsCreated
+**			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
+**			04/11/2011 mem - Updated call to AddUpdateAnalysisJob
+**			04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to AddUpdateAnalysisJob
 **    
 *****************************************************/
 (
@@ -80,6 +83,7 @@ As
 		comment varchar(128),
 		associatedProcessorGroup varchar(64),
 		numJobs int,
+		propagationMode tinyint,
 		ID int IDENTITY (1, 1) NOT NULL
 	)
 	--
@@ -124,8 +128,9 @@ As
 	declare @proteinCollectionList varchar(4000)
 	declare @proteinOptionsList varchar(256)
 	declare @comment varchar(128)
-	declare @ID int
-
+	declare @propagationMode tinyint
+	declare @propagationModeText varchar(24)
+		
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
 	
@@ -159,7 +164,8 @@ As
 			@ownerPRN  = ownerPRN,
 			@comment = comment,
 			@associatedProcessorGroup = associatedProcessorGroup,
-			@ID = ID
+			@propagationMode = propagationMode,
+			@currID = ID
 		FROM #JX
 		WHERE ID > @currID
 		ORDER BY ID
@@ -167,9 +173,8 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		---------------------------------------------------
-		-- remember index and evaluate terminating conditions
+		-- Evaluate terminating conditions
 		---------------------------------------------------
-		Set @currID = @ID
 		--
 		If @myError <> 0 OR @myRowCount <> 1
 			Set @done = 1
@@ -186,6 +191,11 @@ As
 					Set @CreateJob = 0
 			End
 
+			If IsNull(@propagationMode, 0) = 0
+				Set @propagationModeText = 'Export'
+			Else
+				Set @propagationModeText = 'No Export'
+			
 			If @CreateJob <> 0
 			Begin -- <c>
 			
@@ -199,25 +209,26 @@ As
 					-- create the job
 					---------------------------------------------------
 					execute @result = AddUpdateAnalysisJob
-								@datasetNum,
-								@priority,
-								@analysisToolName,
-								@parmFileName,
-								@settingsFileName,
-								@organismName,
-								@proteinCollectionList,
-								@proteinOptionsList,
-								@organismDBName,
-								@ownerPRN,
-								@comment,
-								@associatedProcessorGroup,
-								@propagationMode = 'Export',
+								@datasetNum = @datasetNum,
+								@priority = @priority,
+								@toolName = @analysisToolName,
+								@parmFileName = @parmFileName,
+								@settingsFileName = @settingsFileName,
+								@organismName = @organismName,
+								@protCollNameList = @proteinCollectionList,
+								@protCollOptionsList = @proteinOptionsList,
+								@organismDBName = @organismDBName,
+								@ownerPRN = @ownerPRN,
+								@comment = @comment,
+								@associatedProcessorGroup = @associatedProcessorGroup,
+								@propagationMode = @propagationModeText,
 								@stateName = 'new',
 								@jobNum = @jobNum output,
 								@mode = 'add',				
 								@message = @NewMessage output,
 								@callingUser = @callingUser,
-								@PreventDuplicateJobs = @PreventDuplicateJobs
+								@PreventDuplicateJobs = @PreventDuplicateJobs,
+								@PreventDuplicatesIgnoresNoExport = 0
 
 					-- If there was an error creating the job, remember it
 					-- otherwise bump the job count

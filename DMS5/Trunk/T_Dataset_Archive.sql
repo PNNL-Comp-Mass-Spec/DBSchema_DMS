@@ -19,6 +19,7 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_verification_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AS_instrument_data_purged] [tinyint] NULL,
 	[AS_Last_Successful_Archive] [datetime] NULL,
+	[AS_StageMD5_Required] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
@@ -47,6 +48,17 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archi
 (
 	[AS_state_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Archive_StateID_UpdateStateID_Include_DatasetID_PurgeHoldoff_StageMD5Required] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StateID_UpdateStateID_Include_DatasetID_PurgeHoldoff_StageMD5Required] ON [dbo].[T_Dataset_Archive] 
+(
+	[AS_state_ID] ASC,
+	[AS_update_state_ID] ASC
+)
+INCLUDE ( [AS_Dataset_ID],
+[AS_purge_holdoff_date],
+[AS_StageMD5_Required]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Archive_StoragePathID] ******/
@@ -256,4 +268,6 @@ GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()) FOR [AS_state_Last_Affected]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_StageMD5_Required]  DEFAULT ((0)) FOR [AS_StageMD5_Required]
 GO

@@ -19,7 +19,7 @@ CREATE Procedure dbo.DeleteDataset
 **	Date:	01/26/2001
 **			03/01/2004 grk - added unconsume scheduled run
 **			04/07/2006 grk - got rid of dataset list stuff
-**			04/07/2006 grk - Got ride of CDBurn stuff
+**			04/07/2006 grk - Got rid of CDBurn stuff
 **			05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			05/08/2009 mem - Now checking T_Dataset_Info
@@ -27,7 +27,7 @@ CREATE Procedure dbo.DeleteDataset
 *****************************************************/
 (
 	@datasetNum varchar(128),
-    @message varchar(512) output,
+    @message varchar(512)='' output,
 	@callingUser varchar(128) = ''
 )
 As

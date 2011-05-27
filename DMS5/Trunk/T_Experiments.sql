@@ -102,13 +102,19 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Exper
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Experiments_Wellplate_Well_Experiment] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Wellplate_Well_Experiment] ON [dbo].[T_Experiments] 
+(
+	[EX_wellplate_num] ASC,
+	[EX_well_num] ASC,
+	[Experiment_Num] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
 /****** Object:  Trigger [dbo].[trig_d_Experiments] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Experiments] on [dbo].[T_Experiments]
 For Delete
 /****************************************************
@@ -144,14 +150,11 @@ AS
 	ORDER BY Exp_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Experiments] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Experiments] on [dbo].[T_Experiments]
 For Insert
 /****************************************************
@@ -176,14 +179,11 @@ AS
 	ORDER BY inserted.Exp_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Experiments] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_Experiments] on [dbo].[T_Experiments]
 For Update
@@ -210,6 +210,13 @@ AS
 		ORDER BY inserted.Exp_ID
 	End
 
+GO
+/****** Object:  Trigger [dbo].[trig_ud_T_Experiments] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_ud_T_Experiments]ON [dbo].[T_Experiments]FOR UPDATE, DELETE AS/********************************************************	Desc: **		Prevents updating or deleting all rows in the table****	Auth:	mem**	Date:	02/08/2011*******************************************************/BEGIN    DECLARE @Count int    SET @Count = @@ROWCOUNT;    IF @Count >= (	SELECT i.rowcnt AS TableRowCount                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id                     WHERE o.name = 'T_Experiments' AND o.type = 'u' AND i.indid < 2                 )    BEGIN        RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Experiments)',16,1)        ROLLBACK TRANSACTION        RETURN;    ENDEND
 GO
 GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
 GO
@@ -262,6 +269,10 @@ REFERENCES [T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Users]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Experiment_Num],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace]
 GO
 ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Container_ID]  DEFAULT ((1)) FOR [EX_Container_ID]
 GO

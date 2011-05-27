@@ -196,6 +196,10 @@ REFERENCES [T_Sample_Prep_Request_State_Name] ([State_ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name]
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Request_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT (1) FOR [State]

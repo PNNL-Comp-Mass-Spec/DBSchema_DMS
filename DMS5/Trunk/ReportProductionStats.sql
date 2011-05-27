@@ -24,6 +24,9 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **						   - Added checking for invalid dates
 **			09/09/2010 mem - Now reporting % Study Specific datasets
 **			09/26/2010 grk - Added accounting for reruns
+**			02/03/2011 mem - Now using Dataset Acq Time (Acq_Time_Start) instead of Dataset Created (DS_Created), provided Acq_Time_Start is not null
+**			03/30/2011 mem - Now reporting number of Unreviewed datasets
+**						   -- Removed the Troubleshooting column since datasets are no longer being updated that start with TS or MD
 **    
 *****************************************************/
 (
@@ -123,9 +126,10 @@ AS
 		convert(decimal(5,1), [Total]/@daysInRange) as [Datasets per day],
 		[Blank] as [Blank Datasets],
 		[QC] as [QC Datasets],
-		[TS] as [Troubleshooting],
+		-- [TS] as [Troubleshooting],
 		[Bad] as [Bad Datasets],
 		[Reruns] AS [Reruns],
+		[Unreviewed] AS [Unreviewed],
 		convert(decimal(5,1), ([Blank] * 100.0/[Total])) as [% Blank Datasets],
 		convert(decimal(5,1), ([QC] * 100.0/[Total])) as [% QC Datasets],
 		convert(decimal(5,1), ([Bad] * 100.0/[Total])) as [% Bad Datasets],
@@ -136,16 +140,18 @@ AS
 		Instrument as [Inst.]
 	FROM (
 		SELECT Instrument, [Total], 
-			[Bad],[Blank], [QC], [TS], [Reruns],
-			[Total] - ([Blank] + [QC] + [TS] + [Bad] + [Reruns]) AS [Study Specific]			    
+			[Bad],[Blank], [QC], [Reruns],[Unreviewed],
+			[Total] - ([Blank] + [QC] + [Bad] +     -- [TS] +
+			[Reruns] + [Unreviewed]) AS [Study Specific]			    
 		FROM
 			(SELECT Instrument, 
 					SUM([Total]) AS [Total],
 					SUM([Bad]) AS [Bad],			-- Bad
 					SUM([Blank]) AS [Blank],		-- Blank
 					SUM([QC]) AS [QC],				-- QC
-					SUM([TS]) AS [TS],				-- Troubleshooting and Method Development
-					SUM([Reruns]) AS [Reruns]
+					-- SUM([TS]) AS [TS],			-- Troubleshooting and Method Development
+					SUM([Reruns]) AS [Reruns],
+					SUM([Unreviewed]) AS [Unreviewed]
 			FROM
 				(	SELECT
 						I.IN_Name as Instrument, 
@@ -154,8 +160,8 @@ AS
 						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Blank],	-- Blank
 						SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN 1 ELSE 0 END) AS [QC],			-- QC
 						SUM(CASE WHEN D.DS_Rating = -6 THEN 1 ELSE 0 END) AS [Reruns],				-- Rerun (Good Data)
-						SUM(CASE WHEN D.Dataset_Num LIKE 'TS%' 
-								OR D.Dataset_Num LIKE 'MD%' THEN 1 ELSE 0 END) AS [TS]			-- Troubleshooting or Method Development
+						-- SUM(CASE WHEN D.Dataset_Num LIKE 'TS%' OR D.Dataset_Num LIKE 'MD%' THEN 1 ELSE 0 END) AS [TS],				-- Troubleshooting or Method Development
+						0 AS [Unreviewed]
 					FROM
 						T_Dataset D INNER JOIN
 						T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID
@@ -165,7 +171,7 @@ AS
 							) AND
 						D.DS_Rating <> -10 AND						-- Exclude unreviewed datasets
 						(I.IN_operations_role = 'Production' OR @productionOnly = 0) AND
-						D.DS_created BETWEEN @stDate AND @eDate
+						ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate
 					GROUP BY I.IN_Name
 					UNION
 					SELECT
@@ -174,8 +180,9 @@ AS
 						SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Bad],	-- Bad
 						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Blank],	-- Blank
 						0 AS [QC],																	-- QC
-						0 AS [TS],																	-- Troubleshooting or Method Development
-						0 AS [Reruns]																-- Rerun (Good Data)
+						0 AS [Reruns],																-- Rerun (Good Data)
+						-- 0 AS [TS],																-- Troubleshooting or Method Development
+						0 AS [Unreviewed]
 					FROM
 						T_Dataset D INNER JOIN
 						T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID
@@ -184,7 +191,28 @@ AS
 							D.DS_State_ID = 4
 						) AND
 						(I.IN_operations_role = 'Production' OR @productionOnly = 0) AND
-						D.DS_created BETWEEN @stDate AND @eDate
+						ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate
+					GROUP BY I.IN_Name
+					UNION
+					SELECT
+						I.IN_Name as Instrument, 
+						COUNT(*) AS [Total],
+						0 AS [Bad],																	-- Bad
+						0 AS [Blank],																-- Blank
+						0 AS [QC],																	-- QC
+						0 AS [Reruns],																-- Rerun (Good Data),
+						-- 0 AS [TS],																-- Troubleshooting or Method Development
+						COUNT(*) AS [Unreviewed]
+					FROM
+						T_Dataset D INNER JOIN
+						T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID
+					WHERE NOT ( D.Dataset_Num LIKE 'Bad%' OR
+								D.DS_Rating IN (-1,-2,-5) OR
+								D.DS_State_ID = 4
+							) AND
+						D.DS_Rating = -10 AND						-- Exclude unreviewed datasets
+						(I.IN_operations_role = 'Production' OR @productionOnly = 0) AND
+						ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate
 					GROUP BY I.IN_Name
 				) StatsQ
 			GROUP BY Instrument	

@@ -12,11 +12,13 @@ CREATE PROCEDURE AddUpdateInstrument
 **
 **	Parameters:
 **
-**	Auth: grk
-**		06/07/2005 grk - Initial release
-**		10/15/2008 grk - Allowed for null Usage
-**		08/27/2010 mem - Added parameter @InstrumentGroup
-**					   - try-catch for error handling
+**	Auth:	grk
+**	Date:	06/07/2005 grk - Initial release
+**			10/15/2008 grk - Allowed for null Usage
+**			08/27/2010 mem - Added parameter @InstrumentGroup
+**					       - try-catch for error handling
+**			05/12/2011 mem - Added @AutoDefineStoragePath and related @AutoSP parameters
+**			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **    
 *****************************************************/
 (
@@ -30,6 +32,15 @@ CREATE PROCEDURE AddUpdateInstrument
 	@Description varchar(50),
 	@Usage varchar(50),
 	@OperationsRole varchar(50),
+
+	@AutoDefineStoragePath varchar(32) = 'No',	-- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
+	@AutoSPVolNameClient varchar(128),
+	@AutoSPVolNameServer varchar(128),
+	@AutoSPPathRoot varchar(128),
+	@AutoSPArchiveServerName varchar(64),
+	@AutoSPArchivePathRoot varchar(128),
+	@AutoSPArchiveSharePathRoot varchar(128),
+
 	@mode varchar(12) = 'update', -- 'add' has been disabled since 2008; instead use http://dms2.pnl.gov/new_instrument/create
 	@message varchar(512) = '' output
 )
@@ -74,46 +85,33 @@ As
 	
 	end
 
-
 	---------------------------------------------------
-	-- action for add mode
+	-- Resolve Yes/No parameters to 0 or 1
+	---------------------------------------------------
+	--
+	Declare @valAutoDefineStoragePath tinyint = 0
+
+	If @AutoDefineStoragePath = 'Yes' Or @AutoDefineStoragePath = 'Y' OR @AutoDefineStoragePath = '1'
+		Set @valAutoDefineStoragePath = 1
+	
+	---------------------------------------------------
+	-- Validate the @AutoSP parameteres
+	---------------------------------------------------
+
+	exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @AutoSPVolNameClient, @AutoSPVolNameServer,
+                                                   @AutoSPPathRoot, @AutoSPArchiveServerName, 
+                                                   @AutoSPArchivePathRoot, @AutoSPArchiveSharePathRoot
+
+	if @myError <> 0
+		return @myError
+	
+	---------------------------------------------------
+	-- Note: the add mode is not enabled in this stored procedure
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
-		RAISERROR ('The "add" instrument mode is disabled for this page; instead, use http://dms2.pnl.gov/new_instrument/create', 11, 5)
-	 
-		INSERT INTO T_Instrument_Name (
-			IN_name, 
-			IN_class, 
-			IN_group,
-			IN_capture_method, 
-			IN_status, 
-			IN_Room_Number, 
-			IN_Description, 
-			IN_usage, 
-			IN_operations_role
-		) VALUES (
-			@InstrumentName, 
-			@InstrumentClass,
-			@InstrumentGroup, 
-			@CaptureMethod, 
-			@Status, 
-			@RoomNumber, 
-			@Description, 
-			@Usage, 
-			@OperationsRole
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-			RAISERROR ('Insert operation failed', 11, 6)
-		  
-		-- return ID of newly created entry
-		--
-		set @InstrumentID = IDENT_CURRENT('T_Instrument_Name')
-
-	end -- add mode
+		RAISERROR ('The "add" instrument mode is disabled for this page; instead, use http://dms2.pnl.gov/new_instrument/create', 11, 5)	 
+	end 
 
 	---------------------------------------------------
 	-- action for update mode
@@ -123,18 +121,24 @@ As
 	begin
 		set @myError = 0
 		--
-
-		UPDATE T_Instrument_Name 
-		SET 
-			IN_name = @InstrumentName, 
-			IN_class = @InstrumentClass, 
-			IN_Group = @InstrumentGroup,
-			IN_capture_method = @CaptureMethod, 
-			IN_status = @Status, 
-			IN_Room_Number = @RoomNumber, 
-			IN_Description = @Description, 
-			IN_usage = @Usage, 
-			IN_operations_role = @OperationsRole
+			
+		UPDATE T_Instrument_Name
+		SET IN_name = @InstrumentName,
+		    IN_class = @InstrumentClass,
+		    IN_Group = @InstrumentGroup,
+		    IN_capture_method = @CaptureMethod,
+		    IN_status = @Status,
+		    IN_Room_Number = @RoomNumber,
+		    IN_Description = @Description,
+		    IN_usage = @Usage,
+		    IN_operations_role = @OperationsRole,
+		    Auto_Define_Storage_Path = @valAutoDefineStoragePath,
+		    Auto_SP_Vol_Name_Client = @AutoSPVolNameClient,
+		    Auto_SP_Vol_Name_Server = @AutoSPVolNameServer,
+		    Auto_SP_Path_Root = @AutoSPPathRoot,
+		    Auto_SP_Archive_Server_Name = @AutoSPArchiveServerName,
+		    Auto_SP_Archive_Path_Root = @AutoSPArchivePathRoot,
+		    Auto_SP_Archive_Share_Path_Root = @AutoSPArchiveSharePathRoot
 		WHERE (Instrument_ID = @InstrumentID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -154,7 +158,6 @@ As
 	END CATCH
 	
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS_Instrument_Admin] AS [dbo]

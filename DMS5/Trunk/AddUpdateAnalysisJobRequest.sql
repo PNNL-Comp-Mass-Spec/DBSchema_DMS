@@ -43,11 +43,15 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			04/21/2010 grk - try-catch for error handling
 **			05/05/2010 mem - Now passing @requestorPRN to ValidateAnalysisJobParameters as input/output
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			03/21/2011 mem - Expanded @datasets to varchar(max) and @requestName to varchar(128)
+**						   - Now using SCOPE_IDENTITY() to determine the ID of the newly added request
+**			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
+**			05/16/2011 mem - Now auto-removing duplicate datasets and auto-formatting @datasets
 **    
 *****************************************************/
 (
-    @datasets varchar(6000),
-    @requestName varchar(64),
+    @datasets varchar(max),
+    @requestName varchar(128),
     @toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(255),
@@ -57,6 +61,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @requestorPRN varchar(32),
     @workPackage varchar(24),
     @comment varchar(512) = null,
+    @specialProcessing varchar(512) = null,
     @adminReviewReqd VARCHAR(32),
     @state varchar(32),
     @requestID int output,
@@ -107,13 +112,7 @@ As
 	--
 	if @mode = 'add'
 	begin
-		set @hit = 0
-		SELECT 
-			@hit = AJR_requestID
-		FROM         T_Analysis_Job_Request
-		WHERE (AJR_requestName = @requestName)
-		--
-		if @hit <> 0
+		IF Exists (SELECT AJR_requestID FROM T_Analysis_Job_Request WHERE AJR_requestName = @requestName)
 			RAISERROR ('Cannot add: request with same name already in database', 11, 4)
 	end
 
@@ -161,21 +160,35 @@ As
 		RAISERROR ('Failed to create temporary table', 11, 10)
 
 	---------------------------------------------------
-	-- Populate table from dataset list  
+	-- Populate table from dataset list
+	-- Remove any duplicates that may be present
 	---------------------------------------------------
 	--
-	INSERT INTO #TD
-		(Dataset_Num)
-	SELECT
-		Item
-	FROM
-		MakeTableFromList(@datasets)
+	INSERT INTO #TD ( Dataset_Num )
+	SELECT DISTINCT Item
+	FROM MakeTableFromList ( @datasets )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 		RAISERROR ('Error populating temporary table', 11, 8)
 
+
+	---------------------------------------------------
+	-- Regenerate the dataset list, sorting by dataset name
+	---------------------------------------------------
+	--
+	Set @datasets = ''
+	
+	SELECT @datasets = @datasets + Dataset_Num + ', '
+	FROM #TD
+	ORDER BY Dataset_Num
+	
+	-- Remove the trailing comma
+	If Len(@datasets) > 0
+	Set @datasets = SubString(@datasets, 1, Len(@datasets)-1)
+
+	
 	---------------------------------------------------
 	-- Validate @protCollNameList
 	-- Note that ValidateProteinCollectionListForDatasets
@@ -199,40 +212,6 @@ As
 
 		if @result <> 0
 			return @result
-	End
-	
-	---------------------------------------------------
-	-- Check for duplicate datasets in #TD
-	---------------------------------------------------
-	--
-	declare @DuplicateDatasetList varchar(4000)
-	declare @DuplicateDatasetCount int
-	--
-	Set @DuplicateDatasetCount = 0
-	
-	SELECT @DuplicateDatasetCount = COUNT(*)
-	FROM (	SELECT Dataset_Num
-			FROM #TD
-			GROUP BY Dataset_Num
-			HAVING Count(*) > 1
-		 ) DuplicateQ
-	
-	If @DuplicateDatasetCount > 0
-	Begin
-		Set @DuplicateDatasetList = ''
-		SELECT @DuplicateDatasetList = @DuplicateDatasetList + Dataset_Num + ', '
-		FROM #TD
-		GROUP BY Dataset_Num
-		HAVING Count(*) > 1
-		ORDER BY Dataset_Num
-		
-		-- Remove the trailing comma if the length is less than 400 characters, otherwise truncate
-		If Len(@DuplicateDatasetList) < 400
-			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, Len(@DuplicateDatasetList)-1)
-		Else
-			Set @DuplicateDatasetList = Left(@DuplicateDatasetList, 397) + '...'
-				
-		RAISERROR ('Duplicate dataset(s) found: %s', 11, 9, @DuplicateDatasetList)
 	End
 	
 	---------------------------------------------------
@@ -346,15 +325,18 @@ As
 			AJR_parmFileName, 
 			AJR_settingsFileName, AJR_organismDBName, AJR_organism_ID, 
 			AJR_proteinCollectionList, AJR_proteinOptionsList,
-			AJR_datasets, AJR_comment, 
+			AJR_datasets, AJR_comment, AJR_specialProcessing,
 			AJR_state, AJR_requestor, AJR_workPackage
 		)
 		VALUES
 		(
-			@requestName, getdate(), @toolName, @parmFileName, 
+			@requestName, 
+			getdate(), 
+			@toolName, 
+			@parmFileName, 
 			@settingsFileName, @organismDBName, @organismID, 
 			@protCollNameList, @protCollOptionsList,
-			@datasets, @comment, 
+			@datasets, @comment, @specialProcessing,
 			@stateID, @userID, @workPackage
 		)		
 		--
@@ -363,9 +345,9 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert new job operation failed', 11, 9)
 		--
-		set @newRequestNum = IDENT_CURRENT('T_Analysis_Job_Request')
+		set @newRequestNum = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Request')
 
-		-- return job number of newly created job
+		-- return job number of newly created request
 		--
 		set @requestID = cast(@newRequestNum as varchar(32))
 
@@ -381,21 +363,21 @@ As
 		set @myError = 0
 		--
 		UPDATE T_Analysis_Job_Request
-		SET
-		AJR_requestName = @requestName,
-		AJR_analysisToolName = @toolName, 
-		AJR_parmFileName = @parmFileName, 
-		AJR_settingsFileName = @settingsFileName, 
-		AJR_organismDBName = @organismDBName, 
-		AJR_organism_ID = @organismID, 
-		AJR_proteinCollectionList = @protCollNameList, 
-		AJR_proteinOptionsList = @protCollOptionsList,
-		AJR_datasets = @datasets, 
-		AJR_comment = @comment, 
-		AJR_state = @stateID,
-		AJR_requestor = @userID,
-		AJR_workPackage = @workPackage
-		WHERE     (AJR_requestID = @requestID)
+		SET AJR_requestName = @requestName,
+		    AJR_analysisToolName = @toolName,
+		    AJR_parmFileName = @parmFileName,
+		    AJR_settingsFileName = @settingsFileName,
+		    AJR_organismDBName = @organismDBName,
+		    AJR_organism_ID = @organismID,
+		    AJR_proteinCollectionList = @protCollNameList,
+		    AJR_proteinOptionsList = @protCollOptionsList,
+		    AJR_datasets = @datasets,
+		    AJR_comment = @comment,
+		    AJR_specialProcessing = @specialProcessing,
+		    AJR_state = @stateID,
+		    AJR_requestor = @userID,
+		    AJR_workPackage = @workPackage
+		WHERE (AJR_requestID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

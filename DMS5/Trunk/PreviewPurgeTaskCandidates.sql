@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.PreviewPurgeTaskCandidates
+
+CREATE PROCEDURE PreviewPurgeTaskCandidates
 /****************************************************
 **
 **	Desc: 
@@ -15,6 +16,8 @@ CREATE PROCEDURE dbo.PreviewPurgeTaskCandidates
 **	
 **	Auth:	mem
 **	Date:	12/30/2010 mem - Initial version
+**			01/11/2011 mem - Renamed parameter @ServerVol to @ServerDisk when calling RequestPurgeTask
+**			02/01/2011 mem - Now passing parameter @ExcludeStageMD5RequiredDatasets to RequestPurgeTask
 **    
 *****************************************************/
 (
@@ -52,12 +55,14 @@ As
 	
 	Exec @myError = RequestPurgeTask
 						@StorageServerName = @StorageServerName,
-						@StorageVol = @StorageVol,					
+						@ServerDisk = @StorageVol,
+						@ExcludeStageMD5RequiredDatasets = 0,
 						@message = @message output,
 						@infoOnly = @DatasetsPerShare,
 						@PreviewSql = @PreviewSql
 	
 	return @myError
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[PreviewPurgeTaskCandidates] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -6,10 +6,19 @@ GO
 
 CREATE VIEW [dbo].[V_Predefined_Analysis_Detail_Report]
 AS
-SELECT PA.AD_ID AS ID, PA.AD_level AS [Level], 
+SELECT PA.AD_ID AS ID, 
+    PA.AD_level AS [Level], 
     PA.AD_sequence AS Sequence, 
     PA.AD_instrumentClassCriteria AS [Instrument Class Criteria], 
     PA.AD_nextLevel AS [Next Level], 
+    CASE WHEN PA.Trigger_Before_Disposition = 1
+		THEN 'Before Disposition' 
+		ELSE 'Normal' 
+		END AS [Trigger Mode],
+	CASE PA.Propagation_Mode
+           WHEN 0 THEN 'Export'
+           ELSE 'No Export'
+       END AS [Export Mode],
     PA.AD_campaignNameCriteria AS [Campaign Criteria], 
     PA.AD_campaignExclCriteria AS [Campaign Exclusion],
     PA.AD_experimentNameCriteria AS [Experiment Criteria], 
@@ -31,7 +40,9 @@ SELECT PA.AD_ID AS ID, PA.AD_level AS [Level],
     PA.AD_proteinCollectionList AS [Protein Collection List], 
     PA.AD_proteinOptionsList AS [Protein Options List], 
     PA.AD_priority AS priority, PA.AD_enabled AS enabled, 
-    PA.AD_created AS created, PA.AD_description AS Description, 
+    PA.AD_created AS created, 
+    PA.Last_Affected,
+    PA.AD_description AS Description, 
     PA.AD_creator AS Creator
 FROM T_Predefined_Analysis PA INNER JOIN
      T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID

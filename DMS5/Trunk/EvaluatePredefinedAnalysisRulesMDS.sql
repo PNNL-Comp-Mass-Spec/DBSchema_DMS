@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
 ** 
@@ -20,6 +21,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **			03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
 **			07/22/2008 grk - Changed protein collection column names for final list report output
+**			02/09/2011 mem - Now passing @ExcludeDatasetsNotReleased and @CreateJobsForUnreviewedDatasets to EvaluatePredefinedAnalysisRules
+**			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **    
 *****************************************************/
 (
@@ -55,6 +58,7 @@ As
 		comment varchar(128),
 		associatedProcessorGroup varchar(64),
 		numJobs int,
+		propagationMode tinyint,
 		ID int IDENTITY (1, 1) NOT NULL
 	)
 	--
@@ -69,7 +73,7 @@ As
 
 	---------------------------------------------------
 	---------------------------------------------------
-	-- process list into datasets
+	-- Process list into datasets
 	-- and make job for each one
 	---------------------------------------------------
 	---------------------------------------------------
@@ -88,7 +92,7 @@ As
 	declare @tFld varchar(128)
 
 	---------------------------------------------------
-	-- process list into datasets and get set of generated jobs
+	-- Process list into datasets and get set of generated jobs
 	-- for each one into job holding table
 	---------------------------------------------------
 	--
@@ -101,7 +105,7 @@ As
 		set @count = @count + 1
 
 		---------------------------------------------------
-		-- process the next dataset from the list
+		-- Process the next dataset from the list
 		---------------------------------------------------
 
 		set @tFld = ''
@@ -110,7 +114,7 @@ As
 		if @tFld <> ''
 		begin
 			---------------------------------------------------
-			-- add jobs created for the dataset to the 
+			-- Add jobs created for the dataset to the 
 			-- job holding table (#JX)
 			---------------------------------------------------
 			set @message = ''
@@ -118,7 +122,9 @@ As
 									@tFld, 
 									'Export Jobs', 
 									@message output,
-									@RaiseErrorMessages=0
+									@RaiseErrorMessages=0,
+									@ExcludeDatasetsNotReleased=0,
+									@CreateJobsForUnreviewedDatasets=1
 
 		end
 	end
@@ -142,14 +148,16 @@ As
 		organismName as Organism,
 		proteinCollectionList as [Protein_Collections],
 		proteinOptionsList as [Protein_Options], 
-		ownerPRN as Owner
+		ownerPRN as Owner,
+		CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
 	FROM #JX
 
 	---------------------------------------------------
-	--
+	-- Exit
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User] AS [dbo]
