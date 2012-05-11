@@ -1,0 +1,133 @@
+/****** Object:  StoredProcedure [dbo].[UpdateMissedDMSFileInfo] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE UpdateMissedDMSFileInfo
+/****************************************************
+**
+**  Desc:
+**		Calls UpdateDatasetFileInfoXML for datasets
+**		that have info defined in T_Dataset_Info_XML
+**		yet the dataset has a null value for File_Info_Last_Modified in DMS
+**
+**
+**  Return values: 0: success, otherwise, error code
+**
+**  Parameters:
+**
+**  Auth:	mem
+**  Date:	12/19/2011 mem - Initial version
+**    
+*****************************************************/
+(
+	@DeleteFromTableOnSuccess tinyint = 1,
+	@message varchar(512) = '' output,
+	@infoOnly tinyint = 0
+)
+As
+	set nocount on
+
+	declare @myError int
+	declare @myRowCount int
+	set @myError = 0
+	set @myRowCount = 0
+		
+	Declare @continue tinyint
+	Declare @DatasetID int
+	
+	--------------------------------------------
+	-- Validate the inputs
+	--------------------------------------------
+	--
+	set @DeleteFromTableOnSuccess = IsNull(@DeleteFromTableOnSuccess, 1)
+	set @message = ''
+	set @infoOnly = IsNull(@infoOnly, 0)
+	
+	--------------------------------------------
+	-- Create a table to hold datasets to process
+	--------------------------------------------
+	--
+	CREATE TABLE #TmpDatasetsToProcess (
+		Dataset_ID int not null
+	)
+	
+	CREATE CLUSTERED INDEX #Ix_TmpDatasetsToProcess ON #TmpDatasetsToProcess (Dataset_ID)
+
+	--------------------------------------------
+	-- Look for Datasets with entries in T_Dataset_Info_XML but null values for File_Info_Last_Modified in DMS
+	--------------------------------------------
+	--
+	INSERT INTO #TmpDatasetsToProcess (Dataset_ID)
+	SELECT DI.Dataset_ID
+	FROM T_Dataset_Info_XML DI
+	     LEFT OUTER JOIN S_DMS_T_Dataset
+	       ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID
+	WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL)
+	--
+	SELECT @myRowCount = @@RowCount
+	
+	--------------------------------------------
+	-- Look for datasets with conflicting values for scan count or file size
+	-- Will only update if the Cache_Date in T_Dataset_Info_XML is newer than
+	-- the File_Info_Last_Modified date in T_Dataset
+	--------------------------------------------
+	--
+	INSERT INTO #TmpDatasetsToProcess (Dataset_ID)
+	SELECT Dataset_ID
+	       -- , Scan_Count_Old, ScanCountNew
+	       -- , File_Size_Bytes_Old, FileSizeBytesNew
+	FROM ( SELECT Dataset_ID,
+	              Scan_Count_Old,
+	              File_Size_Bytes_Old,
+	              DS_Info_Xml.query('/DatasetInfo/AcquisitionInfo/ScanCount').value('(/ScanCount)[1]', 'int') AS ScanCountNew,
+	              DS_Info_Xml.query('/DatasetInfo/AcquisitionInfo/FileSizeBytes').value('(/FileSizeBytes)[1]', 'bigint') AS FileSizeBytesNew
+	       FROM ( SELECT DI.Dataset_ID,
+	                     DI.Cache_Date,
+	                     S_DMS_T_Dataset.File_Info_Last_Modified,
+	                     Dataset_Num,
+	                     DI.DS_Info_XML,
+	                     S_DMS_T_Dataset.Scan_Count AS Scan_Count_Old,
+	                     S_DMS_T_Dataset.File_Size_Bytes AS File_Size_Bytes_Old
+	              FROM T_Dataset_Info_XML DI
+	                   INNER JOIN S_DMS_T_Dataset
+	                     ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID 
+	                        AND
+	                        DI.Cache_Date > S_DMS_T_Dataset.File_Info_Last_Modified ) InnerQ ) FilterQ
+	WHERE (ScanCountNew <> ISNULL(Scan_Count_Old, 0)) OR
+	      (FileSizeBytesNew <> ISNULL(File_Size_Bytes_Old, 0) AND FileSizeBytesNew > 0)
+	--
+	SELECT @myRowCount = @@RowCount
+
+	
+	--------------------------------------------
+	-- Process each of the datasets in #TmpDatasetsToProcess
+	--------------------------------------------
+	
+	Set @continue = 1
+	Set @DatasetID = -1
+	
+	While @continue = 1
+	Begin
+		SELECT TOP 1 @DatasetID = Dataset_ID
+		FROM #TmpDatasetsToProcess
+		WHERE Dataset_ID > @DatasetID
+		ORDER BY Dataset_ID
+		--
+		SELECT @myRowCount = @@RowCount
+		
+		If @myRowCount = 0
+			Set @continue = 0
+		Else
+		Begin
+			Exec @myError = UpdateDMSFileInfoXML @DatasetID, @DeleteFromTableOnSuccess, @message output, @infoOnly
+			
+			if @myError <> 0
+				set @continue = 0
+			
+		End
+		
+	End
+	
+	return @myError
+GO

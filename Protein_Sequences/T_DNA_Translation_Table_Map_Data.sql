@@ -1,0 +1,21 @@
+/****** Object:  Table [T_DNA_Translation_Table_Map] ******/
+/****** RowCount: 18 ******/
+/****** Columns: DNA_Translation_Table_ID ******/
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (0)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (1)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (2)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (3)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (4)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (5)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (6)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (9)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (10)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (11)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (12)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (13)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (14)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (15)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (16)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (21)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (22)
+INSERT INTO [T_DNA_Translation_Table_Map] VALUES (23)
