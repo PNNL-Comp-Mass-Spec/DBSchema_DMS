@@ -18,6 +18,7 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_status AS Status,
        InstName.IN_usage AS Usage,
        InstName.IN_operations_role AS [Ops Role],
+       InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
        Case When ISNULL(InstName.Auto_Define_Storage_Path, 0) = 0 Then 'No' Else 'Yes' End AS [Auto Define Storage],
        dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID ) AS [Allowed Dataset Types],
        InstName.IN_Created as Created

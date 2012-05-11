@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure UpdateEUSUsersFromEUSImports
+
+CREATE Procedure dbo.UpdateEUSUsersFromEUSImports
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +22,8 @@ CREATE Procedure UpdateEUSUsersFromEUSImports
 **			03/25/2011 mem - Updated to remove entries from T_EUS_Proposal_Users if the row is no longer in V_EUS_Import_Proposal_Participants yet the proposal is still active
 **			04/01/2011 mem - No longer removing entries from T_EUS_Proposal_Users; now changing to state 5="No longer associated with proposal"
 **						   - Added support for state 4="Permanently associated with proposal"
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			03/19/2012 mem - Now populating HID
 **    
 *****************************************************/
 (
@@ -72,6 +75,10 @@ As
 			(
 			   SELECT DISTINCT Source.PERSON_ID,
 			                   Source.NAME_FM,
+			                   CASE WHEN HANFORD_ID IS NULL
+			                        THEN NULL
+			                        ELSE 'H' + HANFORD_ID
+			                        END AS HID,
 			                   CASE WHEN HANFORD_ID IS NULL 
 			                        THEN 2		-- Offsite
 			                        ELSE 1		-- Onsite
@@ -82,22 +89,24 @@ As
 			                     WHERE State_ID IN (1,2)
 			                    ) DmsEUSProposals
 			          ON Source.PROPOSAL_ID = DmsEUSProposals.PROPOSAL_ID
-			) AS Source (	PERSON_ID, NAME_FM, Site_Status)
+			) AS Source (	PERSON_ID, NAME_FM, HID, Site_Status)
 		ON (target.PERSON_ID = source.PERSON_ID)
 		WHEN Matched AND 
 					(	target.NAME_FM <> source.NAME_FM OR
+						(IsNull(target.HID, '') <> source.HID AND NOT source.HID is null) OR
 						target.Site_Status <> source.Site_Status
 					)
 			THEN UPDATE 
 				Set	NAME_FM = source.NAME_FM, 
+					HID = IsNull(source.HID, target.HID),
 					Site_Status = source.Site_Status,
 					Last_Affected = GetDate()
 		WHEN Not Matched THEN
-			INSERT (PERSON_ID, NAME_FM, Site_Status, Last_Affected)
-			VALUES (source.PERSON_ID, source.NAME_FM, source.Site_Status, GetDate())
-		-- Uncomment the following to Delete data from T_EUS_Users
+			INSERT (PERSON_ID, NAME_FM, HID, Site_Status, Last_Affected)
+			VALUES (source.PERSON_ID, source.NAME_FM, source.HID, source.Site_Status, GetDate())
+		-- Note: don't delete data from T_EUS_Users
 		-- WHEN NOT MATCHED BY SOURCE THEN
-		-- 	DELETE 
+		--  could DELETE
 		OUTPUT $action INTO #Tmp_UpdateSummary
 		;
 	
@@ -258,7 +267,18 @@ As
 	---------------------------------------------------
 			
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = ''
+	Exec PostUsageLogEntry 'UpdateEUSUsersFromEUSImports', @UsageMessage
+
+
 	Return @myError
+
 
 
 GO

@@ -4,10 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2]
 AS
 SELECT AJ.AJ_jobID AS JobNum,
        DS.Dataset_Num AS Dataset,
+       E.Experiment_Num AS Experiment,
        DS.DS_folder_name AS [Dataset Folder],
        DFP.Dataset_Folder_Path AS [Dataset Folder Path],
        DFP.Archive_Folder_Path AS [Archive Folder Path],
@@ -26,9 +28,16 @@ SELECT AJ.AJ_jobID AS JobNum,
        AJ.AJ_owner AS Owner,
        AJ.AJ_comment AS [Comment],
        AJ.AJ_specialProcessing AS [Special Processing],
-       DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Results Folder Path],
+       CASE WHEN AJ.AJ_Purged = 0
+       THEN DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName 
+       ELSE 'Purged: ' + DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName
+       END AS [Results Folder Path],
        DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Results Folder Path],
-       SPath.SP_URL + DS.Dataset_Num + '/' + AJ.AJ_resultsFolderName + '/' AS [Data Folder Link],
+       CASE WHEN AJ.AJ_Purged = 0
+       THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
+       ELSE DFP.Dataset_URL
+       END AS [Data Folder Link],
+       dbo.GetJobPSMStats(AJ.AJ_JobID) AS [PSM Stats],
        ISNULL(MTSPT.PT_DB_Count, 0) AS [MTS PT DB Count],
        ISNULL(MTSMT.MT_DB_Count, 0) AS [MTS MT DB Count],
        ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
@@ -51,6 +60,8 @@ SELECT AJ.AJ_jobID AS JobNum,
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
+     INNER JOIN dbo.T_Experiments AS E
+       ON DS.Exp_ID = E.Exp_ID
      INNER JOIN dbo.V_Dataset_Folder_Paths AS DFP
        ON DFP.Dataset_ID = DS.Dataset_ID
      INNER JOIN dbo.t_storage_path AS SPath
@@ -82,6 +93,7 @@ FROM dbo.T_Analysis_Job AS AJ
                      INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
+
 
 
 

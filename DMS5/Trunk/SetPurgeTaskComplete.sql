@@ -21,11 +21,15 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			01/26/2011 grk - modified actions for @completionCode = 2 to bump holdoff and call broker
 **			01/28/2011 mem - Changed holdoff bump from 12 to 24 hours when @completionCode = 2
 **			02/01/2011 mem - Added support for @completionCode 3
+**			09/02/2011 mem - Now updating AJ_Purged for jobs associated with this dataset
+**						   - Now calling PostUsageLogEntry
+**			01/27/2012 mem - Now bumping AS_purge_holdoff_date by 90 minutes when @completionCode = 3
+**			04/17/2012 mem - Added support for @completionCode = 4 (drive missing)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing
 	@message varchar(512) output
 )
 As
@@ -139,13 +143,23 @@ Code 3 (Stage MD5 file required) -->
 		goto SetStates
 	end
 
-    -- (MD5 results file is missing; need to have stageMD5 file created by the DatasetPurgeArchiveHelper)
+	-- (MD5 results file is missing; need to have stageMD5 file created by the DatasetPurgeArchiveHelper)
 	if @completionCode = 3
 	begin
 		set @completionState = 3    -- complete
 		goto SetStates
 	end
 
+	-- (Drive Missing)
+	if @completionCode = 4
+	begin
+		set @message = 'Drive not found for dataset ' + @datasetNum
+		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		set @message = ''
+		
+		set @completionState = 3    -- complete
+		goto SetStates
+	end
 
 	-- if we got here, completion code was not recognized.  Bummer.
 	--
@@ -157,8 +171,8 @@ SetStates:
 	SET
 		AS_state_ID = @completionState,
 		AS_update_state_ID = @currentUpdateState,
-		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2 THEN DATEADD(HOUR, 24, GETDATE()) 
-		                             WHEN @completionCode = 3     THEN DATEADD(HOUR, 12, GETDATE()) 
+		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2    THEN DATEADD(HOUR, 24, GETDATE()) 
+		                             WHEN @completionCode IN (2,3,4) THEN DATEADD(MINUTE, 90, GETDATE()) 
 		                             ELSE AS_purge_holdoff_date 
 		                        END, 
 		AS_StageMD5_Required = CASE WHEN @completionCode = 3      THEN 1
@@ -187,6 +201,14 @@ SetStates:
 		      IsNull(AS_instrument_data_purged, 0) = 0
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		-- Also update AJ_Purged in T_Analysis_Job
+		UPDATE T_Analysis_Job
+		SET AJ_Purged = 1
+		WHERE AJ_datasetID = @datasetID AND AJ_Purged = 0
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
 	End
 
 	---------------------------------------------------
@@ -194,11 +216,21 @@ SetStates:
 	---------------------------------------------------
 	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Dataset: ' + @datasetNum
+	Exec PostUsageLogEntry 'SetPurgeTaskComplete', @UsageMessage
+
 	if @message <> '' 
 	begin
 		RAISERROR (@message, 10, 1)
 	end
 	return @myError
+
 
 
 GO
@@ -211,4 +243,6 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [PNL\D3M580] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [svc-dms] AS [dbo]
 GO

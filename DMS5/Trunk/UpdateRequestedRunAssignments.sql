@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure dbo.UpdateRequestedRunAssignments
 /****************************************************
 **
@@ -24,12 +25,17 @@ CREATE Procedure dbo.UpdateRequestedRunAssignments
 **			08/28/2010 mem - Now auto-switching @newValue to be instrument group instead of instrument name (when @mode = 'instrument')
 **						   - Now validating dataset type for instrument using T_Instrument_Group_Allowed_DS_Type
 **						   - Added try-catch for error handling
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			12/12/2011 mem - Added parameter @callingUser, which is passed to DeleteRequestedRun
 **    
 *****************************************************/
+(
 	@mode varchar(32), -- 'priority', 'instrument', 'delete'
 	@newValue varchar(512),
 	@reqRunIDList varchar(2048),
-	@message varchar(512)='' output
+	@message varchar(512)='' output,
+	@callingUser varchar(128) = ''
+)
 As
 
 	set nocount on
@@ -51,7 +57,8 @@ As
 	declare @RequestIDFirst int
 
 	declare @allowedDatasetTypes varchar(255) = ''
-	
+	Declare @RequestCount int = 0
+
 	set @message = ''
 
 	BEGIN TRY 
@@ -77,6 +84,7 @@ As
 		-- @reqRunIDList was empty; nothing to do
 		RAISERROR ('Request ID list was empty; nothing to do', 11, 2)
 
+	Set @RequestCount = @myRowCount
 
 	if @mode = 'instrument'
 	Begin -- <a>
@@ -254,7 +262,8 @@ As
 			Begin -- <c>
 				exec @myError = DeleteRequestedRun
 										@RequestID,
-										@message output
+										@message output,
+										@callingUser
 
 				if @myError <> 0
 				begin -- <d>
@@ -279,8 +288,19 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
-	
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Updated ' + Convert(varchar(12), @RequestCount) + ' requested run'
+	If @RequestCount <> 1
+		Set @UsageMessage = @UsageMessage + 's'
+	Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @UsageMessage
+
 	return 0
+
 
 
 GO

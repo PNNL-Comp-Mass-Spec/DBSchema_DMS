@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Param_File_Types] ******/
-/****** RowCount: 19 ******/
+/****** RowCount: 22 ******/
 /****** Columns: Param_File_Type_ID, Param_File_Type ******/
 INSERT INTO [T_Param_File_Types] VALUES (1,'(none)')
 INSERT INTO [T_Param_File_Types] VALUES (1000,'Sequest')
@@ -20,3 +20,6 @@ INSERT INTO [T_Param_File_Types] VALUES (1014,'DTA_Gen')
 INSERT INTO [T_Param_File_Types] VALUES (1015,'MSClusterDAT_Gen')
 INSERT INTO [T_Param_File_Types] VALUES (1016,'OMSSA')
 INSERT INTO [T_Param_File_Types] VALUES (1017,'MultiAlign')
+INSERT INTO [T_Param_File_Types] VALUES (1018,'MSGFDB')
+INSERT INTO [T_Param_File_Types] VALUES (1019,'MSAlign')
+INSERT INTO [T_Param_File_Types] VALUES (1020,'SMAQC')

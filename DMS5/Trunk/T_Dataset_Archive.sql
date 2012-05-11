@@ -77,14 +77,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_
 )
 INCLUDE ( [AS_purge_holdoff_date]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Delete
 /****************************************************
@@ -119,14 +116,11 @@ AS
 	ORDER BY AS_Dataset_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
@@ -165,14 +159,11 @@ AS
 
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************
@@ -245,22 +236,22 @@ AS
 	End
 
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
 REFERENCES [T_Archive_Path] ([AP_path_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path]
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
 REFERENCES [T_Archive_Update_State_Name] ([AUS_stateID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name]
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset] FOREIGN KEY([AS_Dataset_ID])
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset] FOREIGN KEY([AS_Dataset_ID])
 REFERENCES [T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset]
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName] FOREIGN KEY([AS_state_ID])
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName] FOREIGN KEY([AS_state_ID])
 REFERENCES [T_DatasetArchiveStateName] ([DASN_StateID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]

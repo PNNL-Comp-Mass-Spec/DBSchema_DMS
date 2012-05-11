@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
 /****************************************************
 **
@@ -18,6 +19,7 @@ CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
 **
 **	Auth:	mem
 **	Date:	03/25/2011 mem - Initial version
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -76,7 +78,17 @@ As
 		      posted_By LIKE 'UpdateEUS%'
 	End
 	
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = ''
+	Exec PostUsageLogEntry 'UpdateEUSInfoFromEUSImports', @UsageMessage
+
+
  	Return @myError
+
 
 
 GO

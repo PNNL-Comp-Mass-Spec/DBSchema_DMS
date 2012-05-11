@@ -21,10 +21,11 @@ CREATE PROCEDURE ValidateEUSUsage
 **	Date:	07/11/2007 grk - Initial Version
 **			09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
 **						   - Now auto-clearing @eusProposalID and @eusUsersList if @eusUsageType is not 'USER'
+**			12/12/2011 mem - Now auto-fixing @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
 **
 *****************************************************/
 (
-	@eusUsageType varchar(50),
+	@eusUsageType varchar(50) output,
 	@eusProposalID varchar(10) output,
 	@eusUsersList varchar(1024) output,
 	@eusUsageTypeID int output,
@@ -48,6 +49,17 @@ As
 	set @message = ''
 	Set @eusUsersList = IsNull(@eusUsersList, '')
 	Set @AutoPopulateUserListIfBlank = IsNull(@AutoPopulateUserListIfBlank, 0)
+
+	-- Auto-fix @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
+	If @eusUsageType Like 'Cap%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
+		Set @eusUsageType = 'CAP_DEV'
+
+	If @eusUsageType Like 'Maint%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
+		Set @eusUsageType = 'MAINTENANCE'
+
+	If @eusUsageType Like 'Brok%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
+		Set @eusUsageType = 'BROKEN'
+
 
 	---------------------------------------------------
 	-- resolve EUS usage type name to ID

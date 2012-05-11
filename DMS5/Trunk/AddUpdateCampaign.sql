@@ -28,6 +28,9 @@ CREATE Procedure AddUpdateCampaign
 **			02/07/2010 mem - No longer validating @progmgrPRN or @piPRN in this procedure since this is now handled by UpdateResearchTeamForCampaign
 **			03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
 **			04/21/2010 grk - try-catch for error handling
+**			10/27/2011 mem - Added parameter @FractionEMSLFunded
+**			12/01/2011 mem - Updated @FractionEMSLFunded to be a required value
+**			               - Now calling AlterEventLogEntryUser for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
 **    
 *****************************************************/
 (
@@ -49,6 +52,7 @@ CREATE Procedure AddUpdateCampaign
 	@Organisms varchar(256),
 	@ExperimentPrefixes varchar(256),
 	@DataReleaseRestrictions varchar(128),
+	@FractionEMSLFunded varchar(24),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
    	@callingUser varchar(128) = ''
@@ -57,15 +61,20 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
+	
+	declare @StateID int
+	declare @PercentEMSLFunded int
 
+	-- Leave this as Null for now
+	declare @FractionEMSLFundedValue decimal(3, 2) = 0
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -84,7 +93,7 @@ As
 	--
 	if LEN(@piPRN) < 1
 		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
-
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -133,8 +142,36 @@ As
 		RAISERROR ('Error resolving data release restriction', 11, 6)
 	--
 	if @DataReleaseRestrictionsID < 0
-		RAISERROR ('Could not resolve data release restriction', 11, 7)
+		RAISERROR ('Could not resolve data release restriction; please select a valid entry from the list', 11, 7)
 
+	---------------------------------------------------
+	-- Validate Fraction EMSL Funded
+	-- If @FractionEMSLFunded is empty we treat it as a Null value
+	---------------------------------------------------
+	--
+	
+	Set @FractionEMSLFunded = IsNull(@FractionEMSLFunded, '')
+	If Len(@FractionEMSLFunded) > 0
+	Begin
+		If Isnumeric(@FractionEMSLFunded) = 0
+		Begin
+			RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
+		End
+	
+		Set @FractionEMSLFundedValue = Convert(decimal(3, 2), @FractionEMSLFunded)
+		If @FractionEMSLFundedValue < 0 
+			Set @FractionEMSLFundedValue = 0
+		
+		If @FractionEMSLFundedValue > 1
+		Begin
+			Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @FractionEMSLFunded + ' is greater than 1)'
+			RAISERROR (@msg, 11, 4)
+		End
+	End
+	Else
+		RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
+	
+	
 	---------------------------------------------------
 	-- transaction name
 	---------------------------------------------------
@@ -201,7 +238,8 @@ As
 			CM_Experiment_Prefixes,
 			CM_created,
 			CM_Research_Team,
-			CM_Data_Release_Restrictions
+			CM_Data_Release_Restrictions,
+			CM_Fraction_EMSL_Funded
 		) VALUES (
 			@campaignNum, 
 			@projectNum, 
@@ -215,7 +253,8 @@ As
 			@ExperimentPrefixes,
 			GETDATE(),
 			@researchTeamID,
-			@DataReleaseRestrictionsID
+			@DataReleaseRestrictionsID,
+			@FractionEMSLFundedValue
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -227,12 +266,16 @@ As
 
 		commit transaction @transName
 		
-		declare @StateID int
 		set @StateID = 1
+		set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
+		Begin
 			Exec AlterEventLogEntryUser 1, @CampaignID, @StateID, @callingUser
+			Exec AlterEventLogEntryUser 9, @CampaignID, @PercentEMSLFunded, @callingUser
+			Exec AlterEventLogEntryUser 10, @CampaignID, @DataReleaseRestrictionsID, @callingUser
+		End
 			
 	end -- add mode
 
@@ -261,7 +304,8 @@ As
 			CM_EUS_Proposal_List = @EUSProposalList,
 			CM_Organisms = @Organisms,
 			CM_Experiment_Prefixes = @ExperimentPrefixes,
-			CM_Data_Release_Restrictions = @DataReleaseRestrictionsID
+			CM_Data_Release_Restrictions = @DataReleaseRestrictionsID,
+			CM_Fraction_EMSL_Funded = @FractionEMSLFundedValue
 		WHERE (Campaign_Num = @campaignNum)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -289,6 +333,15 @@ As
 			RAISERROR (@message, 11, 1)
 
 		commit transaction @transName
+		
+		set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
+		
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+		Begin
+			Exec AlterEventLogEntryUser 9, @CampaignID, @PercentEMSLFunded, @callingUser
+			Exec AlterEventLogEntryUser 10, @CampaignID, @DataReleaseRestrictionsID, @callingUser
+		End
 	end -- update mode
 
 	END TRY
@@ -300,6 +353,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User] AS [dbo]

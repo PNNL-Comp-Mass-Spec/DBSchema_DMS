@@ -40,7 +40,7 @@ REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
 GO
 ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [FK_T_Param_Files_T_Param_File_Types]
 GO
-ALTER TABLE [dbo].[T_Param_Files]  WITH NOCHECK ADD  CONSTRAINT [CK_T_Param_Files] CHECK  ((charindex(' ',[Param_File_Name])=(0)))
+ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_Files] CHECK  ((charindex(' ',[Param_File_Name])=(0)))
 GO
 ALTER TABLE [dbo].[T_Param_Files] CHECK CONSTRAINT [CK_T_Param_Files]
 GO

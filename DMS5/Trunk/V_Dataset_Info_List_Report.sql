@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Info_List_Report]
 AS
 SELECT DS.Dataset_ID AS ID,
@@ -19,8 +20,8 @@ SELECT DS.Dataset_ID AS ID,
               THEN DSInfo.Elution_Time_Max
               ELSE 1E6
          END) AS [Elution Time Max],
-       DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), 
-         ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
+       DS.Acq_Length_Minutes AS [Acq Length],
+       -- DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DSInfo.TIC_Max_MS,
        DSInfo.TIC_Max_MSn,
@@ -54,6 +55,7 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
+
 
 
 GO

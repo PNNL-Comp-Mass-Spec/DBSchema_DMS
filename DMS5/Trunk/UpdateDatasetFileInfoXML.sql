@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure dbo.UpdateDatasetFileInfoXML
 /****************************************************
 ** 
@@ -55,6 +56,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			08/03/2010 mem - Removed unneeded fields from the T_Dataset_Info MERGE Source
 **			09/01/2010 mem - Now checking for invalid dates and storing Null in Acq_Time_Start and Acq_Time_End if invalid
 **			09/09/2010 mem - Fixed bug extracting StartTime and EndTime values
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -350,7 +352,7 @@ As
 						ELSE NewInfo.Acq_Time_End END,
 		Scan_Count = NewInfo.ScanCount, 
 		File_Size_Bytes = NewInfo.FileSizeBytes, 
-		File_Info_Last_Modified = GetDate()
+		File_Info_Last_Modified = GetDate()		
 	FROM @DSInfoTable NewInfo INNER JOIN 
 	     T_Dataset DS ON 
 		  NewInfo.Dataset_Name = DS.Dataset_Num
@@ -362,6 +364,7 @@ As
 		set @message = 'Error updating T_Dataset'
 		goto Done
 	end	
+	
 	
 	-----------------------------------------------
 	-- Add/Update T_Dataset_Info using a MERGE statement
@@ -489,8 +492,22 @@ Done:
 	
 	If Len(@message) > 0 AND @InfoOnly <> 0
 		Print @message
-			
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	If IsNull(@DatasetName, '') = ''
+		Set @UsageMessage = 'Dataset ID: ' + Convert(varchar(12), @DatasetID)
+	Else
+		Set @UsageMessage = 'Dataset: ' + @DatasetName
+
+	If @InfoOnly = 0
+		Exec PostUsageLogEntry 'UpdateDatasetFileInfoXML', @UsageMessage
+
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [Limited_Table_Write] AS [dbo]

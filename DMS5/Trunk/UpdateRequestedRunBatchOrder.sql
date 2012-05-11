@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateRequestedRunBatchOrder
+
+CREATE Procedure [dbo].[UpdateRequestedRunBatchOrder]
 /****************************************************
 **
 **	Desc: 
@@ -13,15 +14,18 @@ CREATE PROCEDURE UpdateRequestedRunBatchOrder
 **
 **	Parameters:
 **
-**		Auth: grk
-**		Date: 12/9/2005
-**             3/21/2006  grk -- added max block number stuff
-**             4/24/2006  grk -- fixed 30 block max limit
-**             7/12/2006  grk -- added last updated batch
+**	Auth: 	grk
+**	Date: 	12/09/2005
+**          03/21/2006 grk - added max block number stuff
+**          04/24/2006 grk - fixed 30 block max limit
+**          07/12/2006 grk - added last updated batch
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
+(
     @batchID int,
 	@message varchar(512) output
+)
 AS
 	set nocount on
 
@@ -103,26 +107,26 @@ AS
 		set @num = @num + 1
 
 		if @myRowCount = 0 
-			-- if none found, we are done
-			begin
-				set @done = 1
-			end
+		-- if none found, we are done
+		begin
+			set @done = 1
+		end
 		else
+		begin
+			-- otherwise, upate entry with random value
+			--
+			UPDATE #XR
+			SET Random = rand()
+			WHERE Request_ID = @rid
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
 			begin
-				-- otherwise, upate entry with random value
-				--
-				UPDATE #XR
-				SET Random = rand()
-				WHERE Request_ID = @rid
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @message = 'Failed to update random values'
-					goto Done
-				end
+				set @message = 'Failed to update random values'
+				goto Done
 			end
+		end
 	end
 
 	---------------------------------------------------
@@ -349,10 +353,19 @@ AS
 		set @message = 'Failed to update "last ordered" for batch'
 		goto Done
 	end
-	
 
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Batch: ' + Convert(varchar(12), @batchID)
+	Exec PostUsageLogEntry 'UpdateRequestedRunBatchOrder', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchOrder] TO [Limited_Table_Write] AS [dbo]

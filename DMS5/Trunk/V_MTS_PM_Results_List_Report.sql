@@ -25,8 +25,13 @@ SELECT PM.DMS_Job AS Job,
        PM.AMT_Count_10pct_FDR AS [AMTs 10pct FDR],
        PM.AMT_Count_25pct_FDR AS [AMTs 25pct FDR],
        PM.AMT_Count_50pct_FDR AS [AMTs 50pct FDR],
+       PM.QID,
+       PM.MD_ID,
        AJ.AJ_parmFileName AS [Parm File],
-       AJ.AJ_settingsFileName AS Settings_File
+       AJ.AJ_settingsFileName AS Settings_File,
+       PM.Ini_File_Name, 
+       PM.Comparison_Mass_Tag_Count, 
+       PM.MD_State
 FROM T_Dataset DS
      INNER JOIN T_Analysis_Job AJ
        ON DS.Dataset_ID = AJ.AJ_datasetID

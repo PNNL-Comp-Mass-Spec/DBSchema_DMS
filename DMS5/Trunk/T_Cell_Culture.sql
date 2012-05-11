@@ -68,14 +68,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Cu
 	[CC_Container_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Cell_Culture] on [dbo].[T_Cell_Culture]
 For Delete
 /****************************************************
@@ -111,14 +108,11 @@ AS
 	ORDER BY CC_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Cell_Culture] on [dbo].[T_Cell_Culture]
 For Insert
 /****************************************************
@@ -143,14 +137,11 @@ AS
 	ORDER BY inserted.CC_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_Cell_Culture] on [dbo].[T_Cell_Culture]
 For Update
@@ -185,12 +176,12 @@ GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
 REFERENCES [T_Campaign] ([Campaign_ID])
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Campaign]
 GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name] FOREIGN KEY([CC_Type])
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name] FOREIGN KEY([CC_Type])
 REFERENCES [T_Cell_Culture_Type_Name] ([ID])
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name]

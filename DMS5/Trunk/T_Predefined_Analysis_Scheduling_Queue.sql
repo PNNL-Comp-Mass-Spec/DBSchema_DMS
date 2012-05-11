@@ -38,14 +38,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Predefined_Analysis_Scheduling_Queue_State] ON [
 	[State] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Predefined_Analysis_Scheduling_Queue] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 create Trigger trig_u_Predefined_Analysis_Scheduling_Queue on T_Predefined_Analysis_Scheduling_Queue
 For Update
@@ -73,6 +70,11 @@ AS
 
 	End
 
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Predefined_Analysis_Scheduling_Queue_State] FOREIGN KEY([State])
+REFERENCES [T_Predefined_Analysis_Scheduling_Queue_State] ([State])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] CHECK CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Predefined_Analysis_Scheduling_Queue_State]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Queue_AnalysisToolNameFilter]  DEFAULT ('') FOR [AnalysisToolNameFilter]
 GO

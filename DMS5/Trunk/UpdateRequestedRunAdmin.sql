@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateRequestedRunAdmin
+CREATE Procedure UpdateRequestedRunAdmin
 /****************************************************
 **
 **	Desc: 
@@ -13,14 +13,18 @@ CREATE PROCEDURE UpdateRequestedRunAdmin
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 03/09/2010
+**	Auth: 	grk
+**	Date: 	03/09/2010
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			12/12/2011 mem - Now calling AlterEventLogEntryUserMultiID
 **    
 *****************************************************/
+(
 	@requestList text,
-	@mode varchar(32), -- 
+	@mode varchar(32),				-- 'Active', 'Inactive', or 'delete'
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
+)
 As
 	SET NOCOUNT ON 
 
@@ -36,6 +40,8 @@ As
 
 	SET @message = ''
 
+	Declare @UsageMessage varchar(512) = ''
+	Declare @stateID int = 0
 
 	-----------------------------------------------------------
 	-- temp table to hold list of requests
@@ -44,7 +50,8 @@ As
 	CREATE TABLE #TMP (
 		Item VARCHAR(128),
 		Status VARCHAR(32) NULL,
-		Origin VARCHAR(32) NULL
+		Origin VARCHAR(32) NULL,
+		ItemID int NULL
 	)
 	SET @xml = @requestList
 	--
@@ -59,7 +66,7 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error trying to convert list'
-		GOTO Done
+		GOTO DoneNoLog
 	end
 
 	-----------------------------------------------------------
@@ -80,32 +87,55 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error trying to get status'
-		GOTO done
+		GOTO DoneNoLog
 	end
 	
 	IF EXISTS (SELECT * FROM #TMP WHERE Status IS NULL)
 	BEGIN
 		SET @myError = 51012
 		set @message = 'There were invalid request IDs'
-		GOTO done
+		GOTO DoneNoLog
 	end
 
 	IF EXISTS (SELECT * FROM #TMP WHERE not Status IN ('Active', 'Inactive'))
 	BEGIN
 		SET @myError = 51013
 		set @message = 'Cannot change requests that are in status other than "Active" or "Inactive"'
-		GOTO done
+		GOTO DoneNoLog
 	end
 
 	IF EXISTS (SELECT * FROM #TMP WHERE not Origin = 'user')
 	BEGIN
 		SET @myError = 51013
-		set @message = 'Cannot change requests were not entered by user'
-		GOTO done
+		set @message = 'Cannot change requests that were not entered by user'
+		GOTO DoneNoLog
 	end
 
+
 	-----------------------------------------------------------
-	-- 
+	-- Populate column ItemID in #TMP
+	-----------------------------------------------------------
+	--
+	UPDATE #TMP
+	SET ItemID = CONVERT(INT, Item) 
+	
+	-----------------------------------------------------------
+	-- Populate a temporary table with the list of Requested Run IDs to be updated or deleted
+	-----------------------------------------------------------
+	--
+	CREATE TABLE #TmpIDUpdateList (
+		TargetID int NOT NULL
+	)
+	
+	CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+	
+	INSERT INTO #TmpIDUpdateList (TargetID)
+	SELECT DISTINCT ItemID
+	FROM #TMP
+	ORDER BY ItemID
+
+	-----------------------------------------------------------
+	--  Update status
 	-----------------------------------------------------------
 	--
 	IF @mode = 'Active' OR @mode = 'Inactive'
@@ -115,7 +145,7 @@ As
 		SET 
 			RDS_Status = @mode
 		WHERE 
-			ID IN (SELECT CONVERT(INT, Item) FROM #TMP)
+			ID IN (SELECT ItemID FROM #TMP)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -124,11 +154,28 @@ As
 			set @message = 'Error trying to update status'
 			GOTO done
 		end
+
+		Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' requests'
+
+		If Len(@callingUser) > 0
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			-- This procedure uses #TmpIDUpdateList
+			--
+			SELECT @stateID = State_ID
+			FROM T_Requested_Run_State_Name
+			WHERE (State_Name = @mode)
+			
+			Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
+
+		End
+		
 		GOTO Done
 	END
 
 	-----------------------------------------------------------
-	-- 
+	-- Delete requests
 	-----------------------------------------------------------
 	--
 	IF @mode = 'delete'
@@ -136,7 +183,7 @@ As
 		DELETE FROM  
 			T_Requested_Run
 		WHERE 
-			ID IN (SELECT CONVERT(INT, Item) FROM #TMP)		
+			ID IN (SELECT ItemID FROM #TMP)		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -145,14 +192,32 @@ As
 			set @message = 'Error trying to delete requests'
 			GOTO done
 		end
+
+		Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' requests'
+
+		If Len(@callingUser) > 0
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			-- This procedure uses #TmpIDUpdateList
+			--
+			set @stateID = 0
+			
+			Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
+
+		End
+		
 		GOTO Done
 	END
-
-	-----------------------------------------------------------
-	-- 
-	-----------------------------------------------------------
-	--
+	
 Done:
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+	
+	Exec PostUsageLogEntry 'UpdateRequestedRunAdmin', @UsageMessage
+
+DoneNoLog:
 	return @myError
 
 GO

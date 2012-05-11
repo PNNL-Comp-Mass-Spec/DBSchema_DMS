@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateResearchTeamForCampaign
+
+CREATE Procedure [dbo].[UpdateResearchTeamForCampaign]
 /****************************************************
 **
 **	Desc:
@@ -17,9 +18,10 @@ CREATE PROCEDURE UpdateResearchTeamForCampaign
 **	Auth:	grk
 **	Date:	02/05/2010
 **			02/07/2010 mem - Added code to try to auto-resolve cases where a team member's name was entered instead of a username (PRN)
-**								- Since a Like clause is used, % characters in the name will be treated as wildcards
-**								- However, "anderson, gordon" will be split into two entries: "anderson" and "gordon" when MakeTableFromList is called
-**								- Thus, use "anderson%gordon" to match the "anderson, gordon" entry in T_Users
+**                         - Since a Like clause is used, % characters in the name will be treated as wildcards
+**                         - However, "anderson, gordon" will be split into two entries: "anderson" and "gordon" when MakeTableFromList is called
+**                         - Thus, use "anderson%gordon" to match the "anderson, gordon" entry in T_Users
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -359,7 +361,17 @@ AS
 	end
 
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = 'Campaign: ' + @campaignNum
+	Exec PostUsageLogEntry 'UpdateResearchTeamForCampaign', @UsageMessage
+
 	RETURN @myError
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateResearchTeamForCampaign] TO [DMS_User] AS [dbo]
 GO

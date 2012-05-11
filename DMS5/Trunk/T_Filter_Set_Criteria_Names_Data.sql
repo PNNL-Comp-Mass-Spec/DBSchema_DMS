@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Filter_Set_Criteria_Names] ******/
-/****** RowCount: 22 ******/
+/****** RowCount: 25 ******/
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] ON
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (1,'Spectrum_Count','Number of distinct spectra the peptide is observed in, taking into account datasets analyzed multiple times')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (2,'Charge','Peptide charge')
@@ -23,4 +23,7 @@ INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criteri
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (20,'Inspect_FScore','Inspect FScore')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (21,'Inspect_PValue','Inspect PValue')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (22,'MSGF_SpecProb','MSGF Spectrum Probability value; closer to 0 is higher confidence')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (23,'MSGFDB_SpecProb','MSGFDB Spectrum Probability; closer to 0 is higher confidence')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (24,'MSGFDB_PValue','MSGFDB PValue')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (25,'MSGFDB_FDR','MSGFDB FDR')
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] OFF

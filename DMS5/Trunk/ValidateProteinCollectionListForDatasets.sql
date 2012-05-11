@@ -20,6 +20,7 @@ CREATE PROCEDURE ValidateProteinCollectionListForDatasets
 **			07/09/2010 mem - Now auto-adding protein collections associated with the digestion enzyme for the experiments associated with the datasets; this is typically used to add trypsin contaminants to the search
 **			09/02/2010 mem - Changed RAISERROR severity level from 10 to 11
 **			03/21/2011 mem - Expanded @datasets to varchar(max)
+**			03/14/2012 mem - Now preventing both Tryp_Pig_Bov and Tryp_Pig from being included in @protCollNameList
 **    
 *****************************************************/
 (
@@ -274,6 +275,20 @@ As
 		
 		Set @CollectionCountAdded = @myRowCount
 
+		-- Check for the presence of both ? and ? in #ProteinCollections
+		Set @myRowCount = 0
+		SELECT @myRowCount = COUNT(*)
+		FROM #ProteinCollections 
+		WHERE Protein_Collection_Name IN ('Tryp_Pig_Bov', 'Tryp_Pig')
+		
+		If @myRowCount = 2
+		Begin
+			DELETE FROM #ProteinCollections 
+			WHERE Protein_Collection_Name = 'Tryp_Pig'
+			
+			Set @CollectionCountAdded = @CollectionCountAdded - 1
+		End
+		
 		--------------------------------------------------------------
 		-- Collapse #ProteinCollections into @protCollNameList
 		-- The Order By statements in this query assure that the 

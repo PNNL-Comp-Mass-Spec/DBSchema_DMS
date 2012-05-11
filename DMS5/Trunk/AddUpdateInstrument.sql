@@ -19,6 +19,7 @@ CREATE PROCEDURE AddUpdateInstrument
 **					       - try-catch for error handling
 **			05/12/2011 mem - Added @AutoDefineStoragePath and related @AutoSP parameters
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
+**			11/30/2011 mem - Added parameter @PercentEMSLOwned
 **    
 *****************************************************/
 (
@@ -32,6 +33,7 @@ CREATE PROCEDURE AddUpdateInstrument
 	@Description varchar(50),
 	@Usage varchar(50),
 	@OperationsRole varchar(50),
+	@PercentEMSLOwned varchar(24),				-- % of instrument owned by EMSL; number between 0 and 100
 
 	@AutoDefineStoragePath varchar(32) = 'No',	-- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
 	@AutoSPVolNameClient varchar(128),
@@ -40,8 +42,8 @@ CREATE PROCEDURE AddUpdateInstrument
 	@AutoSPArchiveServerName varchar(64),
 	@AutoSPArchivePathRoot varchar(128),
 	@AutoSPArchiveSharePathRoot varchar(128),
-
-	@mode varchar(12) = 'update', -- 'add' has been disabled since 2008; instead use http://dms2.pnl.gov/new_instrument/create
+	
+	@mode varchar(12) = 'update',			-- Note that 'add' is not allowed in this procedure; instead use http://dms2.pnl.gov/new_instrument/create (which in turn calls AddNewInstrument)
 	@message varchar(512) = '' output
 )
 As
@@ -63,6 +65,15 @@ As
 	if @Usage is null
 		set @Usage = ''
 
+	if IsNumeric(@PercentEMSLOwned) = 0
+		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
+
+	Declare @PercentEMSLOwnedVal int
+	set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
+
+	if @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
+		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
+		
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
@@ -132,6 +143,7 @@ As
 		    IN_Description = @Description,
 		    IN_usage = @Usage,
 		    IN_operations_role = @OperationsRole,
+		    Percent_EMSL_Owned = @PercentEMSLOwnedVal,
 		    Auto_Define_Storage_Path = @valAutoDefineStoragePath,
 		    Auto_SP_Vol_Name_Client = @AutoSPVolNameClient,
 		    Auto_SP_Vol_Name_Server = @AutoSPVolNameServer,

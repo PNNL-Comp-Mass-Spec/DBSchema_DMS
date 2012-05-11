@@ -47,9 +47,10 @@ CREATE Procedure AddUpdateAnalysisJob
 **			08/18/2010 mem - Now allowing job update if state is Failed, in addition to New or Holding
 **			08/19/2010 grk - try-catch for error handling
 **			08/26/2010 mem - Added parameter @PreventDuplicateJobs
-**			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
+**			03/29/2011 grk - Added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
 **			04/26/2011 mem - Added parameter @PreventDuplicatesIgnoresNoExport
 **			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed when adding new jobs
+**			05/03/2012 mem - Added parameter @SpecialProcessingWaitUntilReady
 **    
 *****************************************************/
 (
@@ -73,7 +74,8 @@ CREATE Procedure AddUpdateAnalysisJob
 	@message varchar(512) output,
 	@callingUser varchar(128) = '',
 	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
-	@PreventDuplicatesIgnoresNoExport tinyint = 1
+	@PreventDuplicatesIgnoresNoExport tinyint = 1,
+	@SpecialProcessingWaitUntilReady tinyint = 0		-- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
 )
 As
 	set nocount on
@@ -137,7 +139,7 @@ As
 	begin
 		-- changes only allowed to jobs in 'new', 'failed', or 'holding' state
 		--
-		if Not @stateID IN (1,5,8)
+		If Not @stateID IN (1,5,8,19)
 		begin
 			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
 			RAISERROR (@msg, 11, 5)
@@ -370,6 +372,9 @@ As
 		declare @newJobNum int
 		Set @stateID = 1
 		
+		If IsNull(@SpecialProcessingWaitUntilReady, 0) > 0 And IsNull(@specialProcessing, '') <> ''
+			Set @stateID = 19
+			
 		---------------------------------------------------
 		-- start transaction
 		--
@@ -461,7 +466,7 @@ As
 		---------------------------------------------------
 		-- Resolve state ID according to mode and state name
 		--
-		set @stateID = 0
+		set @stateID = -1
 		--
 		if @mode = 'reset' 
 		begin
@@ -481,11 +486,17 @@ As
 				set @msg = 'Error looking up state name'
 				RAISERROR (@msg, 11, 15)
 			end
+			
+			if @stateID = -1
+			begin
+				set @msg = 'State name not recognized: ' + @stateName
+				RAISERROR (@msg, 11, 15)
+			end
 		end		
 
 		---------------------------------------------------
 		-- is there an existing association between the job
-		-- that a processor group?
+		-- and a processor group?
 		--
 		declare @pgaAssocID int
 		set @pgaAssocID = 0

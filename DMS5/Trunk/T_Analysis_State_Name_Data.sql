@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_State_Name] ******/
-/****** RowCount: 19 ******/
+/****** RowCount: 20 ******/
 /****** Columns: AJS_stateID, AJS_name ******/
 INSERT INTO [T_Analysis_State_Name] VALUES (0,'(none)')
 INSERT INTO [T_Analysis_State_Name] VALUES (1,'New')
@@ -19,4 +19,5 @@ INSERT INTO [T_Analysis_State_Name] VALUES (15,'SpecialClusterFailed')
 INSERT INTO [T_Analysis_State_Name] VALUES (16,'Data Extraction Required')
 INSERT INTO [T_Analysis_State_Name] VALUES (17,'Data Extraction In Progress')
 INSERT INTO [T_Analysis_State_Name] VALUES (18,'Data Extraction Failed')
+INSERT INTO [T_Analysis_State_Name] VALUES (19,'Special Proc. Waiting')
 INSERT INTO [T_Analysis_State_Name] VALUES (99,'Job Broker Failure')

@@ -3,11 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
- create VIEW V_EUS_Active_Proposal_List_Report
+
+CREATE VIEW [dbo].[V_EUS_Active_Proposal_List_Report]
 AS
 SELECT     PROPOSAL_ID AS [Proposal ID], TITLE AS Title
 FROM         T_EUS_Proposals
-WHERE     (State_ID = 2)
+WHERE     (State_ID in (2,5))
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Active_Proposal_List_Report] TO [PNL\D3M578] AS [dbo]

@@ -36,12 +36,14 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			05/02/2008 grk - repaired leaking query and arranged for default add state to be "Pending Approval"
 **			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
 **			12/02/2009 grk - don't allow change to "Prep in Progress" unless someone has been assigned
-**			03/11/2010- grk - added Facility field
-**			04/14/2010- grk - widened @CellCultureList field
+**			03/11/2010 grk - added Facility field
+**			04/14/2010 grk - widened @CellCultureList field
 **			04/22/2010 grk - try-catch for error handling
 **			08/09/2010 grk - added handling for 'Closed (containers and material)'
 **			08/15/2010 grk - widened @CellCultureList field
 **			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
+**			08/15/2011 grk - added Separation_Type
+**			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **    
 *****************************************************/
 (
@@ -81,6 +83,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 	@postdigestIntStd varchar(50),
 	@Facility VARCHAR(32),
 	@ID int output,
+	@SeparationType varchar(1200),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -299,7 +302,7 @@ As
 	---------------------------------------------------
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
-						@eusUsageType,
+						@eusUsageType output,
 						@eusProposalID output,
 						@eusUsersList output,
 						@eusUsageTypeID output,
@@ -398,7 +401,8 @@ As
 			Instrument_Name, 
 			Dataset_Type,
 			Technical_Replicates,
-			Facility
+			Facility,
+			Separation_Type
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
@@ -434,7 +438,8 @@ As
 			@instrumentGroup,
 			@DatasetType,
 			@TechnicalReplicates,
-			@Facility
+			@Facility,
+			@SeparationType
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -507,7 +512,8 @@ As
 			Instrument_Name = @instrumentGroup, 
 			Dataset_Type = @DatasetType,
 			Technical_Replicates = @TechnicalReplicates,
-			Facility = @Facility
+			Facility = @Facility,
+			Separation_Type = @SeparationType
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

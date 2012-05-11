@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Event_Target] ******/
-/****** RowCount: 9 ******/
+/****** RowCount: 12 ******/
 /****** Columns: ID, Name, Target_Table, Target_ID_Column, Target_State_Column ******/
 INSERT INTO [T_Event_Target] VALUES (0,'(none)','(none)','(none)','(none)')
 INSERT INTO [T_Event_Target] VALUES (1,'Campaign','T_Campaign','Campaign_ID','(none)')
@@ -10,3 +10,6 @@ INSERT INTO [T_Event_Target] VALUES (5,'Analysis Job','T_Analysis_Job','AJ_jobID
 INSERT INTO [T_Event_Target] VALUES (6,'Archive','T_Dataset_Archive','AS_Dataset_ID','AS_state_ID')
 INSERT INTO [T_Event_Target] VALUES (7,'Archive Update','T_Dataset_Archive','AS_Dataset_ID','AS_update_state_ID')
 INSERT INTO [T_Event_Target] VALUES (8,'Dataset Rating','T_Dataset','Dataset_ID','DS_rating')
+INSERT INTO [T_Event_Target] VALUES (9,'Campaign Percent EMSL Funded','T_Campaign','Campaign_ID','CM_Fraction_EMSL_Funded')
+INSERT INTO [T_Event_Target] VALUES (10,'Campaign Data Release State','T_Campaign','Campaign_ID','CM_Data_Release_Restrictions')
+INSERT INTO [T_Event_Target] VALUES (11,'Requested Run','T_Requested_Run','ID','RDS_Status')

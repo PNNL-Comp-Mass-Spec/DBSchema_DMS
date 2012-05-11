@@ -12,10 +12,11 @@ CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 **
 **	Auth:	mem
 **	Date:	02/18/2010
-**	02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
-**	03/02/2010 grk - added status field to requested run
-**	03/17/2010 grk - added filtering for request name contains
-**	03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
+**			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**			03/02/2010 grk - added status field to requested run
+**			03/17/2010 grk - added filtering for request name contains
+**			03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
+**			02/17/2012 mem - Updated to delete data from #REQS only if @NameContains is not blank
 **    
 *****************************************************/
 (
@@ -52,37 +53,43 @@ AS
 		FactorName VARCHAR(128) NULL 
 	)
 
-	-----------------------------------------
-	-- populate it with list of requests
-	-----------------------------------------
-	--
-	DECLARE @itemList VARCHAR(48)
-	SET @itemList = CONVERT(varchar(12), @BatchID)
-	EXEC @myError = GetRequestedRunsFromItemList
-							@itemList,
-							'Batch_ID',
-							@message OUTPUT
-	--
-	IF @myError <> 0
-		RETURN @myError
-
-	-----------------------------------------
-	-- filter by request name
-	-----------------------------------------
-	-- 
-	DELETE FROM
-		#REQS
-	WHERE
-		NOT EXISTS (
-			SELECT ID
-			FROM T_Requested_Run
-			WHERE
-				ID = Request AND
-				RDS_Name LIKE '%' + @NameContains + '%'
-		)
-	--
-	SELECT @myRowCount = @@rowcount, @myError = @@error
-
+	If IsNull(@BatchID, 0) > 0
+	Begin
+		-----------------------------------------
+		-- Populate #REQS with the requests that correspond to batch @BatchID
+		-----------------------------------------
+		--
+		DECLARE @itemList VARCHAR(48)
+		SET @itemList = CONVERT(varchar(12), @BatchID)
+		EXEC @myError = GetRequestedRunsFromItemList
+								@itemList,
+								'Batch_ID',
+								@message OUTPUT
+		--
+		IF @myError <> 0
+			RETURN @myError
+	End
+	
+	If IsNull(@NameContains, '') <> ''
+	Begin
+		-----------------------------------------
+		-- filter by request name
+		-----------------------------------------
+		-- 
+		DELETE FROM
+			#REQS
+		WHERE
+			NOT EXISTS (
+				SELECT ID
+				FROM T_Requested_Run
+				WHERE
+					ID = Request AND
+					RDS_Name LIKE '%' + @NameContains + '%'
+			)
+		--
+		SELECT @myRowCount = @@rowcount, @myError = @@error
+	End
+	
 	-----------------------------------------
 	-- Build the Sql for obtaining the factors 
 	-- for the requests

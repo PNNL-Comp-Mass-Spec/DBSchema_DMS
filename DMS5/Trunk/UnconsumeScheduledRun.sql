@@ -44,6 +44,7 @@ CREATE Procedure UnconsumeScheduledRun
 **		02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **	    03/02/2010 grk - added status field to requested run
 **		08/04/2010 mem - No longer updating the "date created" date for the recycled request
+**		12/13/2011 mem - Added parameter @callingUser, which is sent to CopyRequestedRun, AlterEventLogEntryUser, and DeleteRequestedRun
 **    
 *****************************************************/
 (
@@ -51,7 +52,8 @@ CREATE Procedure UnconsumeScheduledRun
 	@wellplateNum varchar(50),
 	@wellNum varchar(50),
 	@retainHistory tinyint = 0,
-	@message varchar(255) output
+	@message varchar(255) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -163,7 +165,8 @@ As
 									@datasetID,
 									'Completed',
 									@notation,
-									@message output
+									@message output,
+									@callingUser
 			--
 			if @myError <> 0
 			begin
@@ -188,10 +191,12 @@ As
 		-- Reset the requested run to 'Active'
 		-- Do not update RDS_Created; we want to keep it as the original date for planning purposes
 		--
+		Declare @newStatus varchar(24) = 'Active'
+		
 		UPDATE
 			T_Requested_Run
 		SET
-			RDS_Status = 'Active',
+			RDS_Status = @newStatus,
 			RDS_Run_Start = NULL,
 			RDS_Run_Finish = NULL,
 			DatasetID = NULL,
@@ -208,6 +213,18 @@ As
 			return 51007
 		end
 
+		If Len(@callingUser) > 0
+		Begin
+			Declare @stateID int = 0
+
+			SELECT @stateID = State_ID
+			FROM T_Requested_Run_State_Name
+			WHERE (State_Name = @newStatus)
+
+			Exec AlterEventLogEntryUser 11, @requestID, @stateID, @callingUser
+		End
+
+
 	END --<a>
 	ELSE
 	BEGIN --<b>
@@ -220,7 +237,8 @@ As
 		BEGIN --<d>
 			EXEC @myError = DeleteRequestedRun
 								 @requestID,
-								 @message OUTPUT 
+								 @message OUTPUT,
+								 @callingUser 
 			--
 			if @myError <> 0
 			begin

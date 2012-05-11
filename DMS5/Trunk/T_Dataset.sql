@@ -30,6 +30,8 @@ CREATE TABLE [dbo].[T_Dataset](
 	[Scan_Count] [int] NULL,
 	[File_Size_Bytes] [bigint] NULL,
 	[File_Info_Last_Modified] [datetime] NULL,
+	[Interval_to_Next_DS] [int] NULL,
+	[Acq_Length_Minutes]  AS (isnull(datediff(minute,[Acq_Time_Start],[Acq_Time_End]),(0))) PERSISTED NOT NULL,
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY NONCLUSTERED 
 (
 	[Dataset_ID] ASC
@@ -131,6 +133,16 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstNameID_Dataset_DatasetID] ON [dbo].[
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Dataset_InstrumentNameID_AcqTimeStart_include_DatasetID_DSRating] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_AcqTimeStart_include_DatasetID_DSRating] ON [dbo].[T_Dataset] 
+(
+	[DS_instrument_name_ID] ASC,
+	[Acq_Time_Start] ASC
+)
+INCLUDE ( [Dataset_ID],
+[DS_rating]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ON [dbo].[T_Dataset] 
 (
@@ -154,6 +166,15 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_LC_column_ID] ON [dbo].[T_Dataset]
 (
 	[DS_LC_column_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Rating_include_InstrumentID_DatasetID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Rating_include_InstrumentID_DatasetID] ON [dbo].[T_Dataset] 
+(
+	[DS_rating] ASC
+)
+INCLUDE ( [DS_instrument_name_ID],
+[Dataset_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_State_ID] ******/
@@ -184,14 +205,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_R
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
 For Delete
 /****************************************************
@@ -229,14 +247,11 @@ AS
 	ORDER BY Dataset_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 /****************************************************
@@ -267,14 +282,11 @@ AS
 	ORDER BY inserted.Dataset_ID
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_u_Dataset on T_Dataset
 For Update
@@ -338,55 +350,54 @@ GRANT SELECT ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Dataset] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetRatingName] FOREIGN KEY([DS_rating])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetRatingName] FOREIGN KEY([DS_rating])
 REFERENCES [T_DatasetRatingName] ([DRN_state_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetRatingName]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetStateName] FOREIGN KEY([DS_state_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetStateName] FOREIGN KEY([DS_state_ID])
 REFERENCES [T_DatasetStateName] ([Dataset_state_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetStateName]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetTypeName] FOREIGN KEY([DS_type_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetTypeName] FOREIGN KEY([DS_type_ID])
 REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetTypeName]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Experiments] FOREIGN KEY([Exp_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Experiments]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Instrument_Name] FOREIGN KEY([DS_instrument_name_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Instrument_Name] FOREIGN KEY([DS_instrument_name_ID])
 REFERENCES [T_Instrument_Name] ([Instrument_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Instrument_Name]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Internal_Standards] FOREIGN KEY([DS_internal_standard_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Internal_Standards] FOREIGN KEY([DS_internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Internal_Standards]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_LC_Column] FOREIGN KEY([DS_LC_column_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_LC_Column] FOREIGN KEY([DS_LC_column_ID])
 REFERENCES [T_LC_Column] ([ID])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_LC_Column]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Secondary_Sep] FOREIGN KEY([DS_sec_sep])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Secondary_Sep] FOREIGN KEY([DS_sec_sep])
 REFERENCES [T_Secondary_Sep] ([SS_name])
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Secondary_Sep]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_t_storage_path] FOREIGN KEY([DS_storage_path_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_t_storage_path] FOREIGN KEY([DS_storage_path_ID])
 REFERENCES [T_Storage_Path] ([SP_path_ID])
-ON UPDATE CASCADE
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_t_storage_path]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Dataset_T_Users] FOREIGN KEY([DS_Oper_PRN])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Users] FOREIGN KEY([DS_Oper_PRN])
 REFERENCES [T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO

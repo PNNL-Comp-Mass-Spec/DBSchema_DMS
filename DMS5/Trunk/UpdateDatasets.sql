@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDatasets
+
+CREATE Procedure [dbo].[UpdateDatasets]
 /****************************************************
 **
 **	Desc:
@@ -17,6 +18,7 @@ CREATE PROCEDURE UpdateDatasets
 **	Date:	09/21/2006
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			08/19/2010 grk - try-catch for error handling
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -47,6 +49,8 @@ As
 	declare @DatasetRatingUpdated tinyint
 	set @DatasetStateUpdated = 0
 	set @DatasetRatingUpdated = 0
+
+	declare @datasetCount int = 0
 
 	BEGIN TRY 
 
@@ -129,9 +133,6 @@ As
 		set @msg = 'The following datasets from list were not in database:"' + @list + '"'
 		RAISERROR (@msg, 11, 20)
 	end
-	
-	declare @datasetCount int
-	set @datasetCount = 0
 	
 	SELECT @datasetCount = COUNT(*) 
 	FROM #TDS
@@ -316,7 +317,18 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+	
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
+	Exec PostUsageLogEntry 'UpdateDatasets', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [DMS2_SP_User] AS [dbo]

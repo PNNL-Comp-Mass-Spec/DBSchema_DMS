@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[MoveHistoricLogEntries]
+CREATE Procedure dbo.MoveHistoricLogEntries
 /****************************************************
 **
 **	Desc: Move log entries from main log into the 
@@ -13,25 +13,26 @@ CREATE Procedure [dbo].[MoveHistoricLogEntries]
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	grk
 **	Date:	06/14/2001
 **			03/10/2009 mem - Now removing non-noteworthy entries from T_Log_Entries before moving old entries to DMSHistoricLog1
+**			10/04/2011 mem - Removed @DBName parameter
 **    
 *****************************************************/
 (
-	@intervalHrs int = 72,
-	@DBName varchar(64) = 'DMS'
+	@intervalHrs int = 120
 )
 As
 	set nocount on
 	declare @cutoffDateTime datetime
 	
+	-- Require that @intervalHrs be at least 12
+	If IsNull(@intervalHrs, 0) < 12
+		Set @intervalHrs = 12
+
 	set @cutoffDateTime = dateadd(hour, -1 * @intervalHrs, getdate())
 
+	Declare @DBName varchar(64)
 	set @DBName = DB_NAME()
 
 	set nocount off
@@ -60,7 +61,7 @@ As
     
 	-- Copy entries into the historic log database
 	--
-	INSERT INTO DMSHistoricLog1..T_Historic_Log_Entries
+	INSERT INTO DMSHistoricLog1.dbo.T_Historic_Log_Entries
 		(Entry_ID, posted_by, posting_time, type, message, DBName) 
 	SELECT 
 		 Entry_ID, posted_by, posting_time, type, message, @DBName

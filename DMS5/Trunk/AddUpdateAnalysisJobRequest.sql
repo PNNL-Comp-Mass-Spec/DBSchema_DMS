@@ -47,6 +47,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **						   - Now using SCOPE_IDENTITY() to determine the ID of the newly added request
 **			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
 **			05/16/2011 mem - Now auto-removing duplicate datasets and auto-formatting @datasets
+**			04/02/2012 mem - Now auto-removing datasets named 'Dataset' or 'Dataset_Num' in @datasets
 **    
 *****************************************************/
 (
@@ -173,6 +174,12 @@ As
 	if @myError <> 0
 		RAISERROR ('Error populating temporary table', 11, 8)
 
+	---------------------------------------------------
+	-- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
+	---------------------------------------------------
+	--
+	DELETE FROM #TD
+	WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
 
 	---------------------------------------------------
 	-- Regenerate the dataset list, sorting by dataset name

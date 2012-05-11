@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateInstrumentGroupAllowedDatasetType
+
+CREATE Procedure [dbo].[UpdateInstrumentGroupAllowedDatasetType]
 /****************************************************
 **
 **	Desc:
@@ -17,6 +18,7 @@ CREATE PROCEDURE UpdateInstrumentGroupAllowedDatasetType
 **	Date:	09/19/2009 grk - Initial release (Ticket #749, http://prismtrac.pnl.gov/trac/ticket/749)
 **			02/12/2010 mem - Now making sure @DatasetType is properly capitalized
 **			08/28/2010 mem - Updated to work with instrument groups
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
 (
@@ -149,8 +151,17 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Instrument group: ' + @InstrumentGroup
+	Exec PostUsageLogEntry 'UpdateInstrumentGroupAllowedDatasetType', @UsageMessage
+
 	return @myError
 	
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DMS_SP_User] AS [dbo]

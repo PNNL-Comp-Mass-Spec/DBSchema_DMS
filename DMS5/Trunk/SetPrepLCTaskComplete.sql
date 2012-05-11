@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SetPrepLCTaskComplete
+
+CREATE Procedure [dbo].[SetPrepLCTaskComplete]
 /****************************************************
 **
 **	Desc:
@@ -14,7 +15,8 @@ CREATE Procedure SetPrepLCTaskComplete
 **	Parameters: 
 **
 **	Auth: grk
-**	05/08/2010
+**	Date:	05/08/2010
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -45,6 +47,15 @@ As
 			ID = @ID
 		
 	END
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'ID: ' + Convert(varchar(12), @ID)
+	Exec PostUsageLogEntry 'SetPrepLCTaskComplete', @UsageMessage
+
 
 GO
 GRANT EXECUTE ON [dbo].[SetPrepLCTaskComplete] TO [DMS2_SP_User] AS [dbo]

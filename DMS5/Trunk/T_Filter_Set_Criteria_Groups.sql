@@ -19,7 +19,7 @@ GRANT SELECT ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write] AS
 GO
 GRANT UPDATE ON [dbo].[T_Filter_Set_Criteria_Groups] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Filter_Set_Criteria_Groups]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Filter_Set_Criteria_Groups_T_Filter_Sets] FOREIGN KEY([Filter_Set_ID])
+ALTER TABLE [dbo].[T_Filter_Set_Criteria_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Filter_Set_Criteria_Groups_T_Filter_Sets] FOREIGN KEY([Filter_Set_ID])
 REFERENCES [T_Filter_Sets] ([Filter_Set_ID])
 GO
 ALTER TABLE [dbo].[T_Filter_Set_Criteria_Groups] CHECK CONSTRAINT [FK_T_Filter_Set_Criteria_Groups_T_Filter_Sets]

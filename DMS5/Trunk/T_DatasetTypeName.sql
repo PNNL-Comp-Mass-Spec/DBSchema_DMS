@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_DatasetTypeName](
 GO
 
 /****** Object:  Index [IX_T_DatasetTypeName_Name] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_DatasetTypeName_Name] ON [dbo].[T_DatasetTypeName] 
+CREATE UNIQUE CLUSTERED INDEX [IX_T_DatasetTypeName_Name] ON [dbo].[T_DatasetTypeName] 
 (
 	[DST_name] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]

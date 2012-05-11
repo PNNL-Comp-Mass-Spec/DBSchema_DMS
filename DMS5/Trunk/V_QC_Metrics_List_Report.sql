@@ -5,7 +5,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -25,8 +24,11 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Acq_Time_End AS [Acquisition End],
        DSN.DSS_name AS State,
        DSRating.DRN_name AS Rating,
-       LC.SC_Column_Number AS [LC Column]
-
+       LC.SC_Column_Number AS [LC Column],
+       AJ.AJ_created AS Created,
+       AJ.AJ_start AS Started,
+       AJ.AJ_finish AS Finished,
+       PM.Ini_File_Name
        --DS.Dataset_ID AS ID,
        --PM.Job_Start AS Task_Start,
        --PM.Task_ID,
@@ -49,8 +51,7 @@ SELECT DS.Dataset_Num AS Dataset,
        --       THEN DSInfo.Elution_Time_Max
        --       ELSE 1E6
        --  END) AS [Elution Time Max],
-       --DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), 
-       --  ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
+       --DS.Acq_Length_Minutes AS [Acq Length],
        --DSInfo.TIC_Max_MS,
        --DSInfo.TIC_Max_MSn,
        --DSInfo.BPI_Max_MS,
@@ -70,8 +71,8 @@ FROM T_Dataset DS
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
      RIGHT OUTER JOIN T_MTS_Peak_Matching_Tasks_Cached PM
        ON AJ.AJ_jobID = PM.DMS_Job
-     INNER JOIN T_Dataset_Info DSInfo
-       ON DS.Dataset_ID = DSInfo.Dataset_ID
+--     INNER JOIN T_Dataset_Info DSInfo
+--       ON DS.Dataset_ID = DSInfo.Dataset_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
      INNER JOIN T_DatasetRatingName DSRating
@@ -80,10 +81,11 @@ FROM T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-     INNER JOIN T_DatasetTypeName DTN
-       ON DS.DS_type_ID = DTN.DST_Type_ID
+--     INNER JOIN T_DatasetTypeName DTN
+--       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Storage_Path SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
+
 
 
 

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateRequestedRunBatchBlocking
+
+CREATE Procedure [dbo].[UpdateRequestedRunBatchBlocking]
 /****************************************************
 **
 **	Desc: 
@@ -14,16 +15,19 @@ CREATE Procedure UpdateRequestedRunBatchBlocking
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 1/12/2006
-**		      4/25/2006 grk - added more commands
+**	Auth: 	grk
+**	Date: 	01/12/2006
+**		    04/25/2006 grk - added more commands
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@batchID int,
 	@reqRunIDList varchar(2048),
 	@newValue varchar(512),
 	@mode varchar(32), -- 
 	@message varchar(512) output
+)
 As
 	declare @delim char(1)
 	set @delim = ','
@@ -42,6 +46,8 @@ As
 	declare @tPos int
 	set @tPos = 1
 	declare @tFld varchar(128)
+
+	Declare @RequestCount int = 0
 
 	-------------------------------------------------
 	-- Cannot change locked batch
@@ -85,6 +91,8 @@ As
 			RAISERROR ('operation failed: "%d"', 10, 1, @myError )
 			return 51310
 		end	
+
+		Set @RequestCount = @myRowCount
 	end
 
 	-------------------------------------------------
@@ -104,6 +112,8 @@ As
 			RAISERROR ('operation failed: "%d"', 10, 1, @myError)
 			return 51310
 		end	
+
+		Set @RequestCount = @myRowCount
 	end
 	
 	-------------------------------------------------
@@ -115,10 +125,25 @@ As
 			RAISERROR (@message, 10, 1)
 			return 51001
 		end
+
+		SELECT @RequestCount = COUNT(*)
+		FROM T_Requested_Run
+		WHERE (RDS_BatchID = @batchID)
+
 	end
 
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Updated ' + Convert(varchar(12), @RequestCount) + ' requested run'
+	If @RequestCount <> 1
+		Set @UsageMessage = @UsageMessage + 's'
+	Exec PostUsageLogEntry 'UpdateRequestedRunBatchBlocking', @UsageMessage
 
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunBatchBlocking] TO [DMS_User] AS [dbo]

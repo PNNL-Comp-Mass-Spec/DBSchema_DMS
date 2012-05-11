@@ -9,7 +9,7 @@ AS
 SELECT DS.Dataset_ID,
        SPath.SP_machine_name AS StorageServerName,
        SPath.SP_vol_name_server AS ServerVol,
-       MAX(AJ.AJ_created) AS MostRecentJob,
+       MAX(COALESCE(AJ.AJ_Start, AJ.AJ_created)) AS MostRecentJob,	-- Note: Do not use AJ_Finish since numerous old jobs were re-run in December 2011
        InstClass.raw_data_type,
        DA.AS_StageMD5_Required AS StageMD5_Required
 FROM dbo.T_Dataset AS DS

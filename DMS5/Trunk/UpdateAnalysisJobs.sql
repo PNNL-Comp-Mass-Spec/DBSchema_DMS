@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateAnalysisJobs
+
+CREATE Procedure [dbo].[UpdateAnalysisJobs]
 /****************************************************
 **
 **	Desc:
@@ -39,6 +40,7 @@ CREATE PROCEDURE UpdateAnalysisJobs
 **			09/16/2009 mem - Expanded @JobList to varchar(max)
 **						   - Now calls UpdateAnalysisJobsWork to do the work
 **			08/19/2010 grk - try-catch for error handling
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
 (
@@ -72,7 +74,8 @@ As
 
 	set @message = ''
 
-	declare @msg varchar(512)
+	Declare @msg varchar(512)
+	Declare @JobCount int = 0
 
 	BEGIN TRY 
     
@@ -119,6 +122,8 @@ As
 		RAISERROR (@msg, 11, 3)
 	end
 
+	Set @JobCount = @myRowCount
+
 	---------------------------------------------------
 	-- Call UpdateAnalysisJobs to do the work
 	-- It uses #TAJ to determine which jobs to update
@@ -154,7 +159,17 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
+	Exec PostUsageLogEntry 'UpdateAnalysisJobs', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [DMS2_SP_User] AS [dbo]

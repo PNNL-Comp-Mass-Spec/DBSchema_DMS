@@ -18,12 +18,14 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **			08/06/2008 mem - Added new filter criteria: SeparationType, CampaignExclusion, ExperimentExclusion, and DatasetExclusion (Ticket #684)
 **			09/04/2009 mem - Added DatasetType filter
 **						   - Added parameters @InfoOnly and @previewSql
+**			05/03/2012 mem - Added parameter @PopulateTempTable
 **    
 *****************************************************/
 	@ruleID int,
 	@message varchar(512)='' output,
 	@InfoOnly tinyint = 0,				-- When 1, then returns the count of the number of datasets, not the actual datasets
-	@previewSql tinyint = 0
+	@previewSql tinyint = 0,
+	@PopulateTempTable tinyint = 0		-- When 1, then populates table T_Tmp_PredefinedAnalysisDatasets with the results
 As
 	set nocount on
 	
@@ -59,8 +61,16 @@ As
 	Set @ruleID = IsNull(@ruleID, 0)
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	Set @previewSql = IsNull(@previewSql, 0)
+	set @PopulateTempTable = IsNull(@PopulateTempTable, 0)
 	set @message = ''
 
+
+	If @PopulateTempTable <> 0
+	Begin
+		If Exists (Select * from sys.tables where name = 'T_Tmp_PredefinedAnalysisDatasets')
+			Drop Table T_Tmp_PredefinedAnalysisDatasets
+	End
+	
 
 	SELECT     
 		@instrumentClassCriteria = AD_instrumentClassCriteria,
@@ -151,6 +161,8 @@ As
 		Set @S = @S +        ' Campaign, Experiment, Organism,'
 		Set @S = @S +        ' Experiment_Labelling, Experiment_Comment,'
 		Set @S = @S +        ' Dataset_Comment, Dataset_Type, Separation_Type'
+		If @PopulateTempTable <> 0
+			Set @S = @S + ' INTO T_Tmp_PredefinedAnalysisDatasets'
 		Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'
 		Set @S = @S + ' ' + @SqlWhere
 		Set @S = @S + ' ORDER BY ID DESC'
@@ -185,11 +197,21 @@ As
 		Set @S = @S + ' ' + @SqlWhere
 	End
 
+	If @PopulateTempTable <> 0 And @previewSql = 0
+		Select 'Populating table T_Tmp_PredefinedAnalysisDatasets' as Message
+
 	If @previewSql = 0
 		Exec (@S)
 	Else
 		Print @S	
-
+	
+	If @PopulateTempTable <> 0 And @previewSql = 0
+	Begin
+		CREATE INDEX IX_T_Tmp_PredefinedAnalysisDatasets_Dataset_ID ON T_Tmp_PredefinedAnalysisDatasets (ID)
+		Set @S = 'SELECT * FROM T_Tmp_PredefinedAnalysisDatasets'
+		Exec (@S)		
+	End
+		
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

@@ -16,6 +16,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_Description] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_usage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_operations_role] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Percent_EMSL_Owned] [int] NOT NULL,
 	[IN_max_simultaneous_captures] [smallint] NOT NULL,
 	[IN_Max_Queued_Datasets] [smallint] NOT NULL,
 	[IN_Capture_Exclusion_Window] [real] NOT NULL,
@@ -28,7 +29,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Auto_SP_Archive_Server_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Share_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
- CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY NONCLUSTERED 
+ CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
@@ -84,6 +85,8 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_usage]  DEFAULT ('') FOR [IN_usage]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_operations_role]  DEFAULT ('Unknown') FOR [IN_operations_role]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Percent_EMSL_Owned]  DEFAULT ((0)) FOR [Percent_EMSL_Owned]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_count_max]  DEFAULT ((1)) FOR [IN_max_simultaneous_captures]
 GO

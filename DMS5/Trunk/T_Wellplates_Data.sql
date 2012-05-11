@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 88 ******/
+/****** RowCount: 98 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -89,4 +89,14 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1086,'WSU_BF_PC_Pool','Created by experiment fraction entry (WSU_BF_PC_Pool)','3/7/2011 3:44:13 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1087,'Tgon_Pool','Created by experiment fraction entry (Tgon_LW_Pool)','4/14/2011 2:39:43 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1088,'Sarc_Dev2','Created by experiment fraction entry (Sarc_Non2)','5/11/2011 4:12:51 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1089,'NL_MT_Sol','Created by experiment fraction entry (NL_MT_Soluble)','6/29/2011 11:00:19 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1090,'EDRN_Cell_Pellet','Created by experiment fraction entry (EDRN_VCap_Pellet)','7/12/2011 8:41:42 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1091,'NCRR_PERS_POOL','Created by experiment fraction entry (NCRR_PERS_POOL)','9/30/2011 5:31:58 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1092,'RBAL_Pool_Con','Created by experiment fraction entry (RBAL_Pool_Con)','9/30/2011 6:02:07 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1093,'RBAL_Pool_Dust','Created by experiment fraction entry (RBAL_Pool_Dust)','9/30/2011 6:06:22 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1094,'RBAL_Pool','Created by experiment fraction entry (RBAL_Pool_Con)','10/3/2011 5:57:04 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1095,'WP-1095','Baynes2SC_Glu_HpH (_05 and _30)','12/8/2011 1:15:34 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1096,'WP-1096','XBridge_005_QCtest','12/8/2011 5:37:25 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1097,'Gbem_substrate_pool','SCX fractionation of Gbem_bulk/NP/FC/Fum pooled sample, experiment Gbem_substrate_pool','3/7/2012 9:04:06 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1098,'ND132_test_01','HpH fractions for global, soluble and insoluble prep used to test method on new organism.  Will be used to build database for AMT tag approach.','3/7/2012 2:48:49 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF

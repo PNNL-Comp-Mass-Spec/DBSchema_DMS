@@ -51,7 +51,7 @@ REFERENCES [T_Experiment_Groups] ([Group_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Group_Members] CHECK CONSTRAINT [FK_T_Experiment_Group_Members_T_Experiment_Groups]
 GO
-ALTER TABLE [dbo].[T_Experiment_Group_Members]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Group_Members_T_Experiments] FOREIGN KEY([Exp_ID])
+ALTER TABLE [dbo].[T_Experiment_Group_Members]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Group_Members_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Group_Members] CHECK CONSTRAINT [FK_T_Experiment_Group_Members_T_Experiments]

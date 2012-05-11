@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processor_Group_Membership] ******/
-/****** RowCount: 1124 ******/
+/****** RowCount: 1127 ******/
 /****** Columns: Processor_ID, Group_ID, Membership_Enabled, Last_Affected, Entered_By ******/
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (210,100,'Y','2/23/2007 7:20:30 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (223,100,'Y','2/23/2007 7:20:30 PM','PNL\D3L243')
@@ -64,6 +64,7 @@ INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (268,139,'Y','7/1
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (268,140,'Y','7/13/2009 5:05:55 PM','D3M578 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (268,141,'Y','7/13/2009 5:05:55 PM','D3M578 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (268,143,'N','7/13/2009 5:05:55 PM','D3M578 (via DMSWebUser)')
+INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (268,150,'Y','4/18/2012 3:31:59 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (269,100,'Y','2/28/2008 4:52:16 PM','DMSWebUser')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (269,107,'Y','2/28/2008 4:52:16 PM','DMSWebUser')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (269,112,'Y','2/28/2008 4:52:16 PM','DMSWebUser')
@@ -87,6 +88,7 @@ INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (270,141,'Y','6/4
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (270,145,'Y','4/5/2010 11:14:05 AM','D3L243 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (270,147,'Y','4/27/2010 9:22:09 AM','D3L243 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (270,149,'Y','3/18/2011 4:34:34 PM','D3L243 (via DMSWebUser)')
+INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (270,150,'Y','4/18/2012 3:32:04 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (271,100,'Y','5/20/2008 3:34:27 PM','PNL\D3M578')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (271,106,'Y','5/20/2008 3:34:27 PM','PNL\D3M578')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (271,109,'Y','5/20/2008 3:34:27 PM','PNL\D3M578')
@@ -137,6 +139,7 @@ INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (306,140,'Y','6/4
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (306,145,'Y','4/5/2010 11:14:05 AM','D3L243 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (306,146,'Y','4/20/2010 10:04:02 AM','D3L243 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (306,147,'Y','4/27/2010 9:22:09 AM','D3L243 (via DMSWebUser)')
+INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (306,150,'Y','4/18/2012 3:32:07 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (307,100,'Y','12/4/2008 5:18:19 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (308,100,'Y','12/4/2008 5:18:22 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group_Membership] VALUES (309,100,'Y','12/4/2008 5:18:24 PM','PNL\D3L243')

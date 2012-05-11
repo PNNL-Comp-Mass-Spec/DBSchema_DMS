@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetRunRequestDatasetList
+
+
+CREATE FUNCTION [dbo].[GetRunRequestDatasetList]
 /****************************************************
 **
 **	Desc: 
@@ -13,8 +15,9 @@ create FUNCTION GetRunRequestDatasetList
 **	Parameters:
 **	
 **
-**		Auth: grk
-**		Date: 11/9/2005
+**	Auth:	grk
+**	Date:	11/9/2005
+**			05/03/2012 mem - Updated @entryList to varchar(max)
 **    
 *****************************************************/
 (
@@ -26,7 +29,7 @@ RETURNS @datasets TABLE
    )
 AS
 	BEGIN
-		declare @entryList varchar(7000)
+		declare @entryList varchar(max)
 		declare @message varchar(512)
 		--
 		SELECT @entryList = AJR_datasets
@@ -93,7 +96,7 @@ AS
 			set @field = ltrim(rtrim(substring(@entryList, @curPos, @EndOfField - @curPos)))
 
 			-- advance current starting position beyond current field
-			-- and set end-of-line condidtion if it is past the end of the line
+			-- and set end-of-line condition if it is past the end of the line
 			--
 			set @curPos = @EndOfField + 1
 			if @curPos > LEN(@entryList)
@@ -110,5 +113,7 @@ AS
 
 		RETURN
 	END
+
+
 
 GO

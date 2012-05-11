@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 **
 **    Auth: grk
 **    Date: 03/09/2011 
+**          03/26/2012 grk - added "PostedBy"
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -23,6 +24,7 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 	@ID int,
 	@Cart varchar(128),
 	@DateOfChange VARCHAR(32),
+	@PostedBy VARCHAR(64),
 	@Description varchar(128),
 	@Note text,
 	@mode varchar(12) = 'add', -- or 'update'
@@ -48,6 +50,11 @@ As
 	---------------------------------------------------
 
 	-- future: this could get more complicated
+
+	IF @PostedBy IS NULL OR @PostedBy = ''
+	BEGIN 
+		SET @PostedBy = @callingUser
+	END 
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
@@ -87,7 +94,7 @@ As
 		CASE WHEN @DateOfChange = '' THEN GETDATE() ELSE @DateOfChange END,
 		@Description,
 		@Note,
-		@callingUser
+		@PostedBy
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -115,7 +122,7 @@ As
 		Date_Of_Change = @DateOfChange,
 		Description = @Description,
 		Note = @Note,
-		EnteredBy = @callingUser
+		EnteredBy = @PostedBy
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

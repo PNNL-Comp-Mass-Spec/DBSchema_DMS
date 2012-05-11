@@ -16,7 +16,8 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **
 **    Auth: grk
 **    Date: 04/23/2010
-**			04/30/2010 grk - Added call to CallSendMessage
+**          04/30/2010 grk - Added call to CallSendMessage
+**          09/23/2011 grk -- accomodate researcher field in AssureMaterialContainersExist
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -72,9 +73,14 @@ As
 	-- 
 	---------------------------------------------------
 	--
+	DECLARE @Researcher VARCHAR(128)
 	DECLARE @ReceivedByUserID int
 	SET @ReceivedByUserID = 0
-	SELECT @ReceivedByUserID = ID FROM T_Users WHERE U_PRN = @ReceivedBy
+	SELECT 
+		@ReceivedByUserID = ID,
+		@Researcher = U_Name + ' (' + U_PRN + ')'
+	FROM T_Users 
+	WHERE U_PRN = @ReceivedBy
 	--
 	IF @CampaignID = 0
 		RAISERROR('User "%s" could not be found', 11, 16, @ReceivedBy)
@@ -123,6 +129,7 @@ As
 						@ContainerList = @cl OUTPUT,
 						@Comment = '',
 						@Type = '',
+						@Researcher = @Researcher,
 						@mode = 'verify_only',
 						@message = @msg output,
 						@callingUser = ''
@@ -168,6 +175,7 @@ As
 						@ContainerList = @ContainerList OUTPUT,
 						@Comment = @Comment,
 						@Type = 'Box',
+						@Researcher = @Researcher,
 						@mode = 'create',
 						@message = @msg output,
 						@callingUser = @callingUser

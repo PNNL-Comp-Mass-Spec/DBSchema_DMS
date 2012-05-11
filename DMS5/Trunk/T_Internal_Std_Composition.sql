@@ -27,7 +27,7 @@ GRANT UPDATE ON [dbo].[T_Internal_Std_Composition] TO [Limited_Table_Write] AS [
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Internal_Std_Composition] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components] FOREIGN KEY([Component_ID])
+ALTER TABLE [dbo].[T_Internal_Std_Composition]  WITH CHECK ADD  CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components] FOREIGN KEY([Component_ID])
 REFERENCES [T_Internal_Std_Components] ([Internal_Std_Component_ID])
 GO
 ALTER TABLE [dbo].[T_Internal_Std_Composition] CHECK CONSTRAINT [FK_T_Internal_Standards_Composition_T_Internal_Std_Components]

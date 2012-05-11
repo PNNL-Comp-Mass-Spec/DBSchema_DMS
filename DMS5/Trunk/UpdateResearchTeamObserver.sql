@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateResearchTeamObserver
+
+CREATE Procedure [dbo].[UpdateResearchTeamObserver]
 /****************************************************
 **
 **  Desc:
@@ -13,18 +14,19 @@ CREATE PROCEDURE UpdateResearchTeamObserver
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 04/03/2010
-**    04/03/2010 grk - initial release
-**    04/04/2010 grk - callable as operatons_sproc
+**	Auth: 	grk
+**	Date: 	04/03/2010
+**			04/03/2010 grk - initial release
+**			04/04/2010 grk - callable as operatons_sproc
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
+(
 	@campaignNum varchar(64),
 	@mode varchar(12) = 'add', -- or 'remove'
 	@message varchar(512) output,
    	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
@@ -142,12 +144,18 @@ As
 			  )
 	END 
 	
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = 'Campaign: ' + @campaignNum + '; user: ' + @PRN + '; mode: ' + @mode
+	Exec PostUsageLogEntry 'UpdateResearchTeamObserver', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateResearchTeamObserver] TO [DMS2_SP_User] AS [dbo]

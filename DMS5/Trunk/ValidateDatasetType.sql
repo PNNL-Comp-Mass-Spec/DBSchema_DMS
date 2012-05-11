@@ -18,6 +18,8 @@ CREATE Procedure dbo.ValidateDatasetType
 **	Date:	05/13/2010 mem - Initial version
 **			05/14/2010 mem - Added support for the generic scan types MSn and HMSn
 **			05/17/2010 mem - Updated @AutoDefineOnAllMismatches to default to 1
+**			08/30/2011 mem - Updated to prevent MS-HMSn from getting auto-defined
+**			03/27/2012 mem - Added support for GC-MS
 **    
 *****************************************************/
 (
@@ -46,6 +48,8 @@ As
 
 	Declare @ActualCountMS int
 	Declare @ActualCountHMS int
+	Declare @ActualCountGCMS int
+	
 	Declare @ActualCountCIDMSn int
 	Declare @ActualCountCIDHMSn int
 	Declare @ActualCountETDMSn int
@@ -108,6 +112,7 @@ As
 	SELECT 
 	       @ActualCountMS   = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
 	       @ActualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
+	       @ActualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
 	
            @ActualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then 1 Else 0 End),
            @ActualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then 1 Else 0 End),
@@ -312,14 +317,29 @@ AutoDefineDSType:
 			-- MS-MSn
 			-- HMS-MSn
 			-- HMS-HMSn
+			-- GC-MS
 		-- In addition, if HCD scans are present, then -HCD will be in the middle
 		-- Furthermore, if ETD scans are present, then -ETD or -CID/ETD will be in the middle
 
 		If @ActualCountHMS > 0
 			Set @DSTypeAutoGen = 'HMS'
 		Else
+		Begin
 			Set @DSTypeAutoGen = 'MS'
-
+			
+			If @ActualCountMS = 0 And (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountHCD) > 0
+			Begin
+				-- Dataset only has fragmentation spectra and no MS1 spectra
+				-- Since all of the fragmentation spectra are high res, use 'HMS'
+				Set @DSTypeAutoGen = 'HMS'
+			End
+			
+			If @ActualCountGCMS > 0
+			Begin
+				Set @DSTypeAutoGen = 'GC-MS'
+			End
+		End
+		
 		If @ActualCountHCD > 0
 			Set @DSTypeAutoGen = @DSTypeAutoGen + '-HCD'
 

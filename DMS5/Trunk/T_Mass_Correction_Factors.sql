@@ -33,14 +33,11 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Mass_Correction_Factors_Mass_Correction_T
 	[Mass_Correction_Tag] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_i_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Insert
@@ -64,14 +61,11 @@ AS
 
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_u_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Update

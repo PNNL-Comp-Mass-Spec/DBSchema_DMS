@@ -45,11 +45,12 @@ CREATE TABLE [dbo].[T_Requested_Run](
 
 GO
 
-/****** Object:  Index [IX_T_Requested_Run_BatchID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID] ON [dbo].[T_Requested_Run] 
+/****** Object:  Index [IX_T_Requested_Run_BatchID_include_ExpID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID_include_ExpID] ON [dbo].[T_Requested_Run] 
 (
 	[RDS_BatchID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)
+INCLUDE ( [Exp_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Requested_Run_Dataset_ID_Include_Created_ID_Batch] ******/
@@ -68,6 +69,16 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_DatasetID_Status] ON [dbo].[T_Requ
 	[DatasetID] ASC,
 	[RDS_Status] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Requested_Run_Exp_ID_Include_NameIDStatus] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Exp_ID_Include_NameIDStatus] ON [dbo].[T_Requested_Run] 
+(
+	[Exp_ID] ASC
+)
+INCLUDE ( [RDS_Name],
+[ID],
+[RDS_Status]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Requested_Run_RDS_Block_include_ID] ******/
@@ -99,16 +110,82 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Run_Order_include_ID] ON [dbo]
 )
 INCLUDE ( [ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
+/****** Object:  Trigger [dbo].[trig_d_Requested_Run] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create Trigger trig_d_Requested_Run on T_Requested_Run
+For Delete
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the deleted Requested Run
+**
+**	Auth:	mem
+**	Date:	12/12/2011 mem - Initial version
+**    
+*****************************************************/
+AS
+	Set NoCount On
 
+	-- Add entries to T_Event_Log for each Requested Run deleted from T_Requested_Run
+	INSERT INTO T_Event_Log
+		(
+			Target_Type, 
+			Target_ID, 
+			Target_State, 
+			Prev_Target_State, 
+			Entered,
+			Entered_By
+		)
+	SELECT 11 AS Target_Type,
+	       ID AS Target_ID,
+	       0 AS Target_State,
+	       RRS.State_ID AS Prev_Target_State,
+	       GETDATE(),
+	       suser_sname() + '; ' + IsNull(deleted.RDS_Name, '??')
+	FROM deleted
+	     INNER JOIN T_Requested_Run_State_Name RRS
+	       ON deleted.RDS_Status = RRS.State_Name
+	ORDER BY deleted.ID
+
+GO
+/****** Object:  Trigger [dbo].[trig_i_Requested_Run] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create Trigger trig_i_Requested_Run on T_Requested_Run
+For Insert
+/****************************************************
+**
+**	Desc: 
+**		Makes an entry in T_Event_Log for the new Requested Run
+**
+**	Auth:	mem
+**	Date:	12/12/2011 mem - Initial version
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+	SELECT 11 AS Target_Type, inserted.ID, RRS.State_ID, 0, GetDate()
+	FROM inserted INNER JOIN T_Requested_Run_State_Name RRS
+		   ON inserted.RDS_Status = RRS.State_Name
+	ORDER BY inserted.ID
+
+GO
 /****** Object:  Trigger [dbo].[trig_u_Requested_Run] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE Trigger [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
+CREATE Trigger trig_u_Requested_Run on T_Requested_Run
 After Insert, Update
 /****************************************************
 **
@@ -118,6 +195,7 @@ After Insert, Update
 **	Auth:	mem
 **	Date:	08/05/2010 mem - Initial version
 **			08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
+**			12/12/2011 mem - Now updating T_Event_Log
 **    
 *****************************************************/
 AS
@@ -146,7 +224,21 @@ AS
 			 INNER JOIN T_Users U
 			   ON RRB.Owner = U.ID
 	End
-
+	
+	If Update(RDS_Status)
+	Begin
+		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+		SELECT 11 AS Target_Type, inserted.ID, RRSNew.State_ID, RRSOld.State_ID, GetDate()
+		FROM deleted
+		     INNER JOIN inserted
+		       ON deleted.ID = inserted.ID
+		     INNER JOIN T_Requested_Run_State_Name RRSOld
+		       ON deleted.RDS_Status = RRSOld.State_Name
+		     INNER JOIN T_Requested_Run_State_Name RRSNew
+		       ON inserted.RDS_Status = RRSNew.State_Name
+		WHERE deleted.RDS_Status <> inserted.RDS_Status
+		ORDER BY inserted.ID
+	End
 
 GO
 GRANT DELETE ON [dbo].[T_Requested_Run] TO [Limited_Table_Write] AS [dbo]
@@ -196,6 +288,11 @@ ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_
 REFERENCES [T_Requested_Run_Batches] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_State_Name] FOREIGN KEY([RDS_Status])
+REFERENCES [T_Requested_Run_State_Name] ([State_Name])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_State_Name]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Oper_PRN])
 REFERENCES [T_Users] ([U_PRN])

@@ -29,11 +29,16 @@ CREATE PROCEDURE AddRequestedRuns
 **		07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **		03/02/2010 grk - added status field to requested run
 **		08/27/2010 mem - Now referring to @instrumentName as an instrument group
+**		09/29/2011 grk - fixed limited size of variable holding delimited list of experiments from group
+**		12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
+**		02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
+**		02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **
 *****************************************************/
-	@experimentGroupID varchar(12) = '',
+(
+	@experimentGroupID varchar(12) = '',	-- Specify ExperimentGroupID or ExperimentList, but not both
 	@experimentList varchar(3500) = '',
-	@requestNamePrefix varchar(32) = '',
+	@requestNamePrefix varchar(32) = '',	-- Actually used as the request name Suffix
 	@operPRN varchar(64),
 	@instrumentName varchar(64),			-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
 	@workPackage varchar(50),
@@ -48,96 +53,123 @@ CREATE PROCEDURE AddRequestedRuns
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@secSep varchar(64) = 'LC-ISCO-Standard',
-	@MRMAttachment varchar(128)
+	@MRMAttachment varchar(128),
+	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
 
+	BEGIN TRY
+	
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
 
+	Set @experimentGroupID = IsNull(@experimentGroupID, '')
+	Set @experimentList = IsNull(@experimentList, '')	
+	
 	if @experimentGroupID <> '' AND @experimentList <> ''
 	begin
 		set @myError = 51130
 		set @message = 'Experiment Group ID and Experiment List cannot both be non-blank'
-		RAISERROR (@message,10, 1)
+		RAISERROR (@message, 11, 20)
 	end
 	--
 	if @experimentGroupID = '' AND @experimentList = ''
 	begin
 		set @myError = 51131
 		set @message = 'Experiment Group ID and Experiment List cannot both be blank'
-		RAISERROR (@message,10, 1)
+		RAISERROR (@message,11, 21)
 	end
+	--
+	If Len(@experimentGroupID) > 0
+	Begin
+		if IsNumeric(@experimentGroupID) = 0
+		Begin
+			set @myError = 51132
+			set @message = 'Experiment Group ID must be a number: ' + @experimentGroupID
+			RAISERROR (@message,11, 21)
+		End
+	End
 	--
 	if LEN(@operPRN) < 1
 	begin
 		set @myError = 51113
-		RAISERROR ('Operator payroll number/HID was blank',
-			10, 1)
+		RAISERROR ('Operator payroll number/HID was blank', 11, 22)
 	end
 	--
 	if LEN(@instrumentName) < 1
 	begin
 		set @myError = 51114
-		RAISERROR ('Instrument group was blank',
-			10, 1)
+		RAISERROR ('Instrument group was blank', 11, 23)
 	end
 	--
 	if LEN(@msType) < 1
 	begin
 		set @myError = 51115
-		RAISERROR ('Dataset type was blank',
-			10, 1)
+		RAISERROR ('Dataset type was blank', 11, 24)
 	end
 	--
 	if LEN(@workPackage) < 1
 	begin
 		set @myError = 51115
-		RAISERROR ('Work package was blank',
-			10, 1)
+		RAISERROR ('Work package was blank', 11, 25)
 	end
 	--
 	if @myError <> 0
 		return @myError
-		
+
 	---------------------------------------------------
-	-- If experiment group is given, generate experiment
-	-- list from it
+	-- Populate a temorary table with the experiments to process
 	---------------------------------------------------
 	
-	if @experimentGroupID <> ''
-	begin
-		SELECT @experimentList = @experimentList + T_Experiments.Experiment_Num + ','
-		FROM 
-			T_Experiments INNER JOIN
-			T_Experiment_Group_Members ON T_Experiments.Exp_ID = T_Experiment_Group_Members.Exp_ID LEFT OUTER JOIN
-			T_Experiment_Groups ON T_Experiments.Exp_ID <> T_Experiment_Groups.Parent_Exp_ID AND 
-			T_Experiment_Group_Members.Group_ID = T_Experiment_Groups.Group_ID
-		WHERE     (T_Experiment_Groups.Group_ID = CONVERT(int, @experimentGroupID))	
-	end
+	Declare @tblExperimentsToProcess Table
+	(
+		EntryID int identity(1,1),
+		Experiment varchar(256)
+	)
+	
+	
+	If @experimentGroupID <> ''
+	Begin
+		---------------------------------------------------
+		-- Determine experiment names using experiment group ID
+		---------------------------------------------------
+		
+		INSERT INTO @tblExperimentsToProcess (Experiment)
+		SELECT T_Experiments.Experiment_Num
+		FROM T_Experiments
+		     INNER JOIN T_Experiment_Group_Members
+		       ON T_Experiments.Exp_ID = T_Experiment_Group_Members.Exp_ID
+		     LEFT OUTER JOIN T_Experiment_Groups
+		       ON T_Experiments.Exp_ID <> T_Experiment_Groups.Parent_Exp_ID 
+		          AND
+		          T_Experiment_Group_Members.Group_ID = T_Experiment_Groups.Group_ID
+		WHERE (T_Experiment_Groups.Group_ID = CONVERT(int, @experimentGroupID))
+		ORDER BY T_Experiments.Experiment_Num
+	End
+	Else
+	Begin
+		---------------------------------------------------
+		-- Parse @experimentList to determine experiment names
+		---------------------------------------------------
 
-	---------------------------------------------------
-	-- make sure experiment list is not too big
-	---------------------------------------------------
-
-	if LEN(@experimentList) >= 3500
-	begin
-		set @myError = 51115
-		set @message = 'Experiment list is too long'
-		RAISERROR (@message, 10, 1)
-	end
-
+		INSERT INTO @tblExperimentsToProcess (Experiment)
+		SELECT Value
+		FROM dbo.udfParseDelimitedList(@experimentList, ',')
+		WHERE Len(Value) > 0
+		ORDER BY Value
+	End
+		
 	---------------------------------------------------
 	-- set up wellplate stuff to force lookup 
 	-- from experiments
@@ -149,12 +181,13 @@ As
 	set @wellNum  = '(lookup)'
 
 	---------------------------------------------------
-	-- Step through experiment list and make 
+	-- Step through experiments in @tblExperimentsToProcess and make 
 	-- run request entry for each one
 	---------------------------------------------------
 
 	declare @reqName varchar(64)
 	declare @request int
+	Declare @ExperimentName varchar(64)
 	
 	declare @suffix varchar(64)
 	set @suffix = ISNULL(@requestNamePrefix, '')
@@ -163,38 +196,31 @@ As
 		set @suffix = '_' + @suffix
 	end
 
-	declare @delim char(1)
-	set @delim = ','
-
-	declare @done int
-	declare @count int
-
-	declare @tPos int
-	set @tPos = 1
-	declare @tFld varchar(128)
-
-	-- process list into datasets
-	-- and make job for each one
-	--
-	set @count = 0
-	set @done = 0
-
+	declare @done int = 0
+	declare @count int = 0
+	declare @EntryID int = 0
+	
 	while @done = 0 and @myError = 0
 	begin
-		set @count = @count + 1
 		
-		-- process the  next field from the ID list
+		SELECT TOP 1 @EntryID = EntryID, 
+					 @ExperimentName = Experiment
+		FROM @tblExperimentsToProcess
+		WHERE EntryID > @EntryID
+		ORDER BY EntryID
 		--
-		set @tFld = ''
-		execute @done = NextField @experimentList, @delim, @tPos output, @tFld output
-		
-		if @tFld <> ''
-		begin
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+		If @myRowCount = 0
+			Set @Done = 1
+		Else
+		Begin
 			set @message = ''
-			set @reqName = @tFld + @suffix
+			set @reqName = @ExperimentName + @suffix
 			EXEC @myError = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
-									@experimentNum = @tFld,
+									@experimentNum = @ExperimentName,
 									@operPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = @workPackage,
@@ -212,17 +238,26 @@ As
 									@message = @message output,
 									@secSep = @secSep,
 									@MRMAttachment = @MRMAttachment,
-									@status = 'Active'
+									@status = 'Active',
+									@callingUser = @callingUser
 			--
-			set @message = '[' + @tFld + '] ' + @message 
+			set @message = '[' + @ExperimentName + '] ' + @message 
+			
 			if @myError <> 0
-				return @myError
+				RAISERROR (@message, 11, 1)
+
+			set @count = @count + 1
+			
 		end
 	end
 	
 	set @message = 'Number of requests created:' + cast(@count as varchar(12))
-/**/
-	return 0
+
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+	END CATCH
+	return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]

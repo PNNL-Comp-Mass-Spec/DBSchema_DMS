@@ -13,6 +13,7 @@ CREATE PROCEDURE RefreshCachedMTSJobMappingMTDBs
 **
 **	Auth:	mem
 **	Date:	04/21/2010 mem - Initial Version
+**			10/21/2011 mem - Now checking for duplicate rows in T_MTS_MT_DB_Jobs_Cached
 **
 *****************************************************/
 (
@@ -41,6 +42,42 @@ AS
 	Set @MergeUpdateCount = 0
 	Set @MergeInsertCount = 0
 	Set @MergeDeleteCount = 0
+
+	-- Make sure we don't have duplicate rows in T_MTS_MT_DB_Jobs_Cached
+	-- Duplicates were found in October 2011 after deleting several databases from MTS
+	--
+	DELETE T_MTS_MT_DB_Jobs_Cached
+	FROM T_MTS_MT_DB_Jobs_Cached target
+	     INNER JOIN ( SELECT Server_Name,
+	                         MT_DB_Name,
+	                         Job,
+	                         ResultType,
+	                         MIN(CachedInfo_ID) AS MinID
+	                  FROM T_MTS_MT_DB_Jobs_Cached
+	                  GROUP BY Server_Name, MT_DB_Name, Job, ResultType
+	                  HAVING COUNT(*) > 1 
+	                ) DupQ
+	       ON target.Server_Name = DupQ.Server_Name AND
+	          target.MT_DB_Name = DupQ.MT_DB_Name AND
+	          target.Job = DupQ.Job AND
+	          target.ResultType = DupQ.ResultType AND
+	          target.CachedInfo_ID <> DupQ.MinID
+	--
+	Set @myRowCount = @@RowCount
+	
+	If @myRowCount > 0
+	Begin
+		Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' duplicate '
+		If @myRowCount = 1
+			Set @message = @message + 'entry'
+		Else
+			Set @message = @message + 'entries'			
+		Set @message = @message + ' from T_MTS_MT_DB_Jobs_Cached; this is unexpected'
+		
+		execute PostLogEntry 'Error', @message, 'RefreshCachedMTSJobMappingMTDBs'
+		
+		Set @message = ''
+	End
 
 	---------------------------------------------------
 	-- Create the temporary table that will be used to
@@ -123,7 +160,7 @@ AS
 		if @myError <> 0
 		begin
 			set @message = 'Error merging S_MTS_Analysis_Job_to_MT_DB_Map with T_MTS_MT_DB_Jobs_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-			execute PostLogEntry 'Error', @message, 'SyncJobInfo'
+			execute PostLogEntry 'Error', @message, 'RefreshCachedMTSJobMappingMTDBs'
 			goto Done
 		end
 

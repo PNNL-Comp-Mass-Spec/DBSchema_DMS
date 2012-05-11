@@ -14,31 +14,31 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 03/30/2011 
-**    03/30/2011 grk - don't allow duplicate entries
+**  Auth:	grk
+**  Date:	03/30/2011 
+**			03/30/2011 grk - don't allow duplicate entries
+**			12/16/2011 mem - Convert null descriptions to empty strings
 **    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int,
 	@FileName varchar(256),
 	@Description varchar(1024),
 	@EntityType varchar(64),
-	@EntityID VARCHAR(256),
+	@EntityID VARCHAR(256),			-- Must be text because Experiment and Campaign file attachments are tracked via Experiment Name or Campaign Name
 	@FileSizeBytes varchar(12),
 	@ArchiveFolderPath varchar(256),
 	@FileMimeType varchar(256),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
@@ -109,7 +109,7 @@ As
 		File_Mime_Type
 		) VALUES (
 		@FileName,
-		@Description,
+		IsNull(@Description, ''),
 		@EntityType,
 		@EntityID,
 		@callingUser,
@@ -139,7 +139,7 @@ As
 		--
 		UPDATE T_File_Attachment 
 		SET 
-		Description = @Description,
+		Description = IsNull(@Description, ''),
 		Entity_Type = @EntityType,
 		Entity_ID = @EntityID,
 		File_Size_Bytes = @FileSizeBytes,
@@ -167,7 +167,7 @@ As
 	END CATCH
 
 	return @myError
- 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateFileAttachment] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE Procedure UpdateEUSProposalsFromEUSImports
+CREATE Procedure dbo.UpdateEUSProposalsFromEUSImports
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +18,8 @@ CREATE Procedure UpdateEUSProposalsFromEUSImports
 **	Date:	03/24/2011 mem - Initial version
 **			03/25/2011 mem - Now automatically setting proposal state_id to 3=Inactive
 **			05/02/2011 mem - Now changing proposal state_ID to 2=Active if the proposal is present in V_EUS_Import_Proposals but the proposal's state in T_EUS_Proposals is not 2=Active or 4=No Interest
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			01/27/2012 mem - Added support for state 5=Permanently Active
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ As
 					Call_Type = source.Call_Type,
 					Proposal_Start_Date = source.Proposal_Start_Date,
 					Proposal_End_Date = source.Proposal_End_Date,
-					State_ID = CASE WHEN State_ID = 4 THEN 4 ELSE 2 END,
+					State_ID = CASE WHEN State_ID IN (4, 5) THEN target.State_ID ELSE 2 END,
 					Last_Affected = GetDate()
 		WHEN Not Matched THEN
 			INSERT (PROPOSAL_ID, TITLE, State_ID, Import_Date, 
@@ -149,7 +150,16 @@ As
 	---------------------------------------------------
 			
 Done:
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = ''
+	Exec PostUsageLogEntry 'UpdateEUSProposalsFromEUSImports', @UsageMessage
+
 	Return @myError
+
 
 
 GO

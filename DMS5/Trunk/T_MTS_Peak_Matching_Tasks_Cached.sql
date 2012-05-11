@@ -25,6 +25,11 @@ CREATE TABLE [dbo].[T_MTS_Peak_Matching_Tasks_Cached](
 	[AMT_Count_10pct_FDR] [int] NULL,
 	[AMT_Count_25pct_FDR] [int] NULL,
 	[AMT_Count_50pct_FDR] [int] NULL,
+	[MD_ID] [int] NULL,
+	[QID] [int] NULL,
+	[Ini_File_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comparison_Mass_Tag_Count] [int] NULL,
+	[MD_State] [tinyint] NULL,
  CONSTRAINT [PK_T_MTS_Peak_Matching_Tasks_Cached] PRIMARY KEY NONCLUSTERED 
 (
 	[CachedInfo_ID] ASC

@@ -34,6 +34,7 @@ CREATE Procedure AddNewInstrument
 **			05/12/2011 mem - Added @AutoDefineStoragePath
 **						   - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
+**			11/30/2011 mem - Added parameter @PercentEMSLOwned
 **    
 *****************************************************/
 (
@@ -56,6 +57,7 @@ CREATE Procedure AddNewInstrument
 	@Usage varchar(50),					-- optional description of instrument usage
 	@OperationsRole varchar(50),		-- Production, QC, Research, or Unused
 	@InstrumentGroup varchar(64),		-- Item in T_Instrument_Group
+	@PercentEMSLOwned varchar(24),		-- % of instrument owned by EMSL; number between 0 and 100
 	
 	@AutoDefineStoragePath varchar(32) = 'No',	-- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
 	@message varchar(512) output
@@ -79,7 +81,16 @@ As
 	-- Validate the inputs
 	---------------------------------------------------
 	Set @AutoDefineStoragePath = IsNull(@AutoDefineStoragePath, 'No')
+
+	if IsNumeric(@PercentEMSLOwned) = 0
+		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
+
+	Declare @PercentEMSLOwnedVal int
+	set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
 	
+	if @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
+		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
+		
 	---------------------------------------------------
 	-- Make sure instrument is not already in instrument table
 	---------------------------------------------------
@@ -192,7 +203,8 @@ As
 		IN_Room_Number, 
 		IN_Description,
 		IN_usage, 
-		IN_operations_role,		
+		IN_operations_role,	
+		Percent_EMSL_Owned,	
 		Auto_Define_Storage_Path,
         Auto_SP_Vol_Name_Client,
         Auto_SP_Vol_Name_Server,
@@ -212,6 +224,7 @@ As
 		@iDescription,
 		IsNull(@Usage, ''),
 		@OperationsRole,
+		@PercentEMSLOwnedVal,
 		@valAutoDefineStoragePath,
 		@AutoSPVolNameClient,
 		@AutoSPVolNameServer,

@@ -11,6 +11,28 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **     Evaluate predefined analysis rules for given
 **     dataset and generate the specifed ouput type 
 **
+**	The calling procedure must create table #JX
+**
+		CREATE TABLE #JX (
+			datasetNum varchar(128),
+			priority varchar(8),
+			analysisToolName varchar(64),
+			parmFileName varchar(255),
+			settingsFileName varchar(128),
+			organismDBName varchar(128),
+			organismName varchar(128),
+			proteinCollectionList varchar(4000),
+			proteinOptionsList varchar(256), 
+			ownerPRN varchar(128),
+			comment varchar(128),
+			associatedProcessorGroup varchar(64),
+			numJobs int,
+			propagationMode tinyint,
+			specialProcessing varchar(512),
+			ID int IDENTITY (1, 1) NOT NULL
+		)
+**
+**
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Parameters:
@@ -42,6 +64,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			02/09/2011 mem - Added support for predefines with Trigger_Before_Disposition = 1
 **						   - Added parameter @CreateJobsForUnreviewedDatasets
 **			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
+**			05/03/2012 mem - Added support for the Special Processing field
 **
 *****************************************************/
 (
@@ -212,6 +235,7 @@ As
 		AD_nextLevel int NULL ,
 		Trigger_Before_Disposition tinyint NOT NULL ,
 		Propagation_Mode tinyint NOT NULL ,
+		Special_Processing varchar(512) NULL,
 		AD_ID int  NOT NULL 
 	)
 	--
@@ -258,6 +282,7 @@ As
 			[Organism DB] varchar(64) NULL, 
 			[Prot. Coll.] varchar(4000) NULL, 
 			[Prot. Opts.] varchar(256) NULL,
+			[Special Proc.] varchar(512) NULL,
 			Priority int NULL, 
 			[Processor Group] varchar(64) NULL
 		)
@@ -297,6 +322,7 @@ As
 		AD_nextLevel,
 		Trigger_Before_Disposition,
 		Propagation_Mode,
+		Special_Processing,
 		AD_ID
 	)
 	SELECT
@@ -327,6 +353,7 @@ As
 		PA.AD_nextLevel,
 		PA.Trigger_Before_Disposition,
 		PA.Propagation_Mode,
+		PA.AD_specialProcessing,
 		PA.AD_ID
 	FROM T_Predefined_Analysis PA INNER JOIN
 		 T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID
@@ -394,6 +421,7 @@ As
 			[Parm File], [Settings File],
 			Organism, [Organism DB], 
 			[Prot. Coll.], [Prot. Opts.],
+			[Special Proc.],
 			Priority, [Processor Group])
 		SELECT	AD_level, AD_sequence, AD_ID, AD_nextLevel,
 		        CASE WHEN Trigger_Before_Disposition = 1
@@ -417,6 +445,7 @@ As
 				AD_parmFileName, AD_settingsFileName,
 				AD_organismName, AD_organismDBName, 
 				AD_proteinCollectionList, AD_proteinOptionsList, 
+				Special_Processing,
 				AD_priority, '' AS [Processor Group]
 		FROM #AD
 		ORDER BY AD_level, AD_Sequence, AD_ID
@@ -461,7 +490,8 @@ As
 		comment varchar(128),
 		associatedProcessorGroup varchar(64),
 		numJobs int,
-		propagationMode tinyint
+		propagationMode tinyint,
+		specialProcessing varchar(512)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -497,6 +527,7 @@ As
 	declare @paRuleID int
 	declare @TriggerBeforeDisposition tinyint
 	declare @PropagationMode tinyint
+	declare @SpecialProcessing varchar(512)
 
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
@@ -541,7 +572,8 @@ As
 			@associatedProcessorGroup = '',
 			@paRuleID = AD_ID,
 			@TriggerBeforeDisposition = Trigger_Before_Disposition,
-			@PropagationMode = Propagation_Mode
+			@PropagationMode = Propagation_Mode,
+			@SpecialProcessing = Special_Processing
 		FROM #AD
 		WHERE AD_level >= @minLevel
 		ORDER BY AD_level, AD_Sequence, AD_ID
@@ -733,7 +765,8 @@ As
 					comment,
 					associatedProcessorGroup,
 					numJobs,
-					propagationMode
+					propagationMode,
+					specialProcessing
 				) VALUES (
 					@datasetNum,
 					@priority,
@@ -748,7 +781,8 @@ As
 					@comment,
 					@associatedProcessorGroup,
 					@numJobs,
-					@PropagationMode
+					@PropagationMode,
+					@SpecialProcessing
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -817,7 +851,8 @@ As
 			proteinCollectionList AS Protein_Collections,
 			proteinOptionsList AS Protein_Options, 
 			ownerPRN as Owner,
-			CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
+			CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode,
+			specialProcessing AS Special_Processing
 		FROM #JB
 		--
 		goto Done
@@ -844,7 +879,8 @@ As
 			comment,
 			associatedProcessorGroup,
 			numJobs,
-			propagationMode
+			propagationMode,
+			specialProcessing
 		)
 		SELECT 
 			datasetNum,
@@ -860,7 +896,8 @@ As
 			comment,
 			associatedProcessorGroup,
 			numJobs,
-			propagationMode
+			propagationMode,
+			specialProcessing
 		 FROM #JB
 	end
 

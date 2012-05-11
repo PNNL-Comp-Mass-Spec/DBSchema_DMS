@@ -38,6 +38,10 @@ CREATE Procedure RequestPurgeTask
 **			01/11/2011 dac/mem - Modified for use with new space manager
 **			01/11/2011 dac - Added samba path for dataset as return param
 **			02/01/2011 mem - Added parameter @ExcludeStageMD5RequiredDatasets
+**			01/10/2012 mem - Now using V_Purgable_Datasets_NoInterest_NoRecentJob instead of V_Purgable_Datasets_NoInterest
+**			01/16/2012 mem - Now returning Instrument, Dataset_Created, and Dataset_YearQuarter when @PreviewSql > 0
+**			01/18/2012 mem - Now including Instrument, DatasetCreated, and DatasetYearQuarter when requesting an actual purge task (@infoOnly = 0)
+**						   - Using @infoOnly = -1 will now show the parameter table that would be returned if an actual purge task were assigned
 **    
 *****************************************************/
 (
@@ -45,7 +49,7 @@ CREATE Procedure RequestPurgeTask
 	@ServerDisk varchar(256),						-- Disk on storage server to use, for example 'g:\'; if blank, then returns candidates for all drives on given server (or all servers if @StorageServerName is blank)
 	@ExcludeStageMD5RequiredDatasets tinyint = 1,	-- If 1, then excludes datasets with StageMD5_Required > 0
 	@message varchar(512) = '' output,
-	@infoOnly int = 0,								-- Set to positive number to preview the candidates; 1 will preview the first 10 candidates; values over 1 will return the specified number of candidates
+	@infoOnly int = 0,								-- Set to positive number to preview the candidates; 1 will preview the first 10 candidates; values over 1 will return the specified number of candidates; Set to -1 to preview the Parameter table that would be returned if a single purge task candidate was chosen from #PD
 	@PreviewSql tinyint = 0
 )
 As
@@ -74,7 +78,10 @@ As
 		@ServerDiskExternal varchar(256) = '',
 		@RawDataType varchar(32) = '',
 		@NoDatasetFound INT = -53000,
-		@SambaStoragePath varchar(128) = ''
+		@SambaStoragePath varchar(128) = '',
+		@Instrument varchar(128) = '',
+		@DatasetCreated datetime,
+		@DatasetYearQuarter varchar(32) = ''
 		
 	Declare @S varchar(2048)
 	
@@ -95,12 +102,12 @@ As
 	Set @ExcludeStageMD5RequiredDatasets = IsNull(@ExcludeStageMD5RequiredDatasets, 1)
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 
-	If @infoOnly = 0
+	If @infoOnly <= 0
 	Begin
 		-- Verify that both @StorageServerName and @ServerDisk are specified
 		If @StorageServerName = '' OR @ServerDisk = ''
 		Begin
-			Set @message = 'Error, both a storage server and a storage disk must be specified when @infoOnly = 0'
+			Set @message = 'Error, both a storage server and a storage disk must be specified when @infoOnly <= 0'
 			Set @myError = 50000
 			Goto Done
 		End
@@ -163,26 +170,28 @@ As
 	-- The candidates come from three separate views, which we define in #TmpPurgeViews
 	--
 	-- We're querying each view twice because we want to first purge datasets at least 
-	-- ~4 months old with rating No Interest, then purge datasets with the most recent job over 365 days ago, 
-	-- then start purging newer datasets
-	--
-	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoInterest', 120,  'Created')
+	--   ~4 months old with rating No Interest, 
+	--   then purge datasets that are 6 months old and don't have a job, 
+	--   then purge datasets with the most recent job over 365 days ago, 
+	-- If we still don't have enough candidates, we query the views again to start purging newer datasets
 	
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoJob',      160, 'Created')
+	VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 120, 'Created')
+	
+	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
+	VALUES ('V_Purgable_Datasets_NoJob',                  160, 'Created')
 
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets',            365, 'MostRecentJob')
-	
-	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoInterest', 14,  'Created')
+	VALUES ('V_Purgable_Datasets',                        365, 'MostRecentJob')
 
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoJob',      21, 'Created')
+	VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 21,  'Created')
+
+	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
+	VALUES ('V_Purgable_Datasets_NoJob',                  21, 'Created')
 	
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets',            -1, 'MostRecentJob')
+	VALUES ('V_Purgable_Datasets',                        -1, 'MostRecentJob')
 	
 	---------------------------------------------------
 	-- Process each of the views in #TmpPurgeViews
@@ -197,7 +206,7 @@ As
 		SELECT TOP 1 @PurgeViewEntryID = EntryID,
 		             @PurgeViewName = PurgeViewName,
 		             @HoldoffDays = HoldoffDays,
-		             @OrderByCol = OrderByCol
+		   @OrderByCol = OrderByCol
 		FROM #TmpPurgeViews
 		WHERE EntryID > @PurgeViewEntryID
 		ORDER BY EntryID
@@ -220,7 +229,7 @@ As
 				Set @S = @S + ' INSERT INTO #PD( DatasetID,'
 				Set @S = @S +                  ' MostRecent,'
 				Set @S = @S +                  ' Source,'
-				Set @S = @S +                  ' StorageServerName,'
+				Set @S = @S +       ' StorageServerName,'
 				Set @S = @S +                  ' ServerVol)'
 				Set @S = @S + ' SELECT TOP (' + Convert(varchar(12), @PreviewCount) + ')'
 				Set @S = @S +        ' Dataset_ID, '
@@ -244,10 +253,12 @@ As
 			Set @PurgeViewSourceDesc = @PurgeViewName
 			If @HoldoffDays >= 0
 				Set @PurgeViewSourceDesc = @PurgeViewSourceDesc + '_' + Convert(varchar(24), @HoldoffDays) + 'MinDays'
-				
+			
+			---------------------------------------------------
 			-- Find the top @PreviewCount candidates for each drive on each server 
 			-- (limiting by @StorageServerName or @ServerDisk if they are defined)
-			
+			---------------------------------------------------
+			--
 			Set @S = ''
 			Set @S = @S + ' INSERT INTO #PD( DatasetID,'
 			Set @S = @S +                  ' MostRecent,'
@@ -280,7 +291,7 @@ As
 					Set @S = @S +       ' AND (StageMD5_Required = 0) '
 					
 			If @StorageServerName <> ''
-				Set @S = @S +           ' AND (Src.StorageServerName = ''' + @StorageServerName + ''')'
+				Set @S = @S +  ' AND (Src.StorageServerName = ''' + @StorageServerName + ''')'
 
 			If @ServerDisk <> ''
 				Set @S = @S +           ' AND (Src.ServerVol = ''' + @ServerDisk + ''')'
@@ -308,7 +319,7 @@ As
 			Set @CandidateCount = @CandidateCount + @myRowCount
 		
 		
-			If (@infoOnly = 0)
+			If (@infoOnly <= 0)
 			Begin
 				If @CandidateCount > 0
 					Set @continue = 0
@@ -322,22 +333,24 @@ As
 				End
 				Else
 				Begin -- <d>
+					---------------------------------------------------
 					-- Count the number of candidates on each volume on each storage server
 					-- Add entries to #TmpStorageVolsToSkip
-					
+					---------------------------------------------------
+					--
 					INSERT INTO #TmpStorageVolsToSkip( StorageServerName,
-													   ServerVol )
+					                                   ServerVol )
 					SELECT Src.StorageServerName,
-						Src.ServerVol
+					       Src.ServerVol
 					FROM ( SELECT StorageServerName,
-								ServerVol
-						FROM #PD
-						GROUP BY StorageServerName, ServerVol
-						HAVING COUNT(*) >= @PreviewCount 
-						) AS Src
-						LEFT OUTER JOIN #TmpStorageVolsToSkip AS Target
-						ON Src.StorageServerName = Target.StorageServerName AND
-							Src.ServerVol = Target.ServerVol
+					              ServerVol
+					       FROM #PD
+					       GROUP BY StorageServerName, ServerVol
+					       HAVING COUNT(*) >= @PreviewCount 
+					     ) AS Src
+					     LEFT OUTER JOIN #TmpStorageVolsToSkip AS Target
+					       ON Src.StorageServerName = Target.StorageServerName AND
+					          Src.ServerVol = Target.ServerVol
 					WHERE Target.ServerVol IS NULL
 					
 				End -- </d>
@@ -348,36 +361,46 @@ As
 	End -- </a>
 	
 		
-	If @infoOnly <> 0
+	If @infoOnly > 0
 	Begin
+		---------------------------------------------------
+		-- Preview the purge task candidates, then exit
+		---------------------------------------------------
+		--
 		SELECT #PD.*,
-		  DFP.Dataset,
+		       DFP.Dataset,
 		       DFP.Dataset_Folder_Path,
 		       DFP.Archive_Folder_Path,
-		  DA.AS_State_ID AS Achive_State_ID,
+		       DA.AS_State_ID AS Achive_State_ID,
 		       DA.AS_State_Last_Affected AS Achive_State_Last_Affected,
 		       DA.AS_Purge_Holdoff_Date AS Purge_Holdoff_Date,
 		       DA.AS_Instrument_Data_Purged AS Instrument_Data_Purged,
 		       dbo.udfCombinePaths(SPath.SP_vol_name_client, SPath.SP_path) AS Storage_Path_Client,
 		       dbo.udfCombinePaths(SPath.SP_vol_name_Server, SPath.SP_path) AS Storage_Path_Server,
-		       ArchPath.AP_archive_path AS Archive_Path_Unix
+		       ArchPath.AP_archive_path AS Archive_Path_Unix,
+		       DS.DS_folder_name AS Dataset_Folder_Name,
+		       DFP.Instrument,
+		       DFP.Dataset_Created,
+		       DFP.Dataset_YearQuarter
 		FROM #PD
 		     INNER JOIN T_Dataset_Archive DA
 		       ON DA.AS_Dataset_ID = #PD.DatasetID
-		     INNER JOIN V_Dataset_Folder_Paths DFP
+		     INNER JOIN V_Dataset_Folder_Paths_Ex DFP
 		       ON DA.AS_Dataset_ID = DFP.Dataset_ID
-		     INNER JOIN T_Dataset DS	     
-	           ON DS.Dataset_ID = DA.AS_Dataset_ID
+		     INNER JOIN T_Dataset DS
+		       ON DS.Dataset_ID = DA.AS_Dataset_ID
 		     INNER JOIN T_Storage_Path SPath
-	          ON DS.DS_storage_path_ID = SPath.SP_path_ID
-	         INNER JOIN T_Archive_Path ArchPath
-	          ON DA.AS_storage_path_ID = ArchPath.AP_path_ID
+		       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+		     INNER JOIN T_Archive_Path ArchPath
+		       ON DA.AS_storage_path_ID = ArchPath.AP_path_ID
 		ORDER BY #PD.EntryID
 
 		Goto Done		
 	End
 	
+	---------------------------------------------------
 	-- Start transaction
+	---------------------------------------------------
 	--
 	declare @transName varchar(32)
 	set @transName = 'RequestPurgeTask'
@@ -387,7 +410,7 @@ As
 	-- Select and lock a specific purgable dataset by joining
 	-- from the local pool to the actual archive table
 	---------------------------------------------------
-
+	
 	SELECT TOP 1 @datasetID = AS_Dataset_ID
 	FROM T_Dataset_Archive WITH ( HoldLock )
 	     INNER JOIN #PD
@@ -412,57 +435,43 @@ As
 		goto done
 	end
 	
-	---------------------------------------------------
-	-- update archive state to show purge in progress
-	---------------------------------------------------
+	If @infoOnly = 0
+	Begin
+		---------------------------------------------------
+		-- update archive state to show purge in progress
+		---------------------------------------------------
 
-	UPDATE T_Dataset_Archive
-	SET AS_state_ID = 7 -- "purge in progress"
-	WHERE (AS_Dataset_ID = @datasetID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		rollback transaction @transName
-		set @message = 'Update operation failed'
-		goto done
-	end
-
+		UPDATE T_Dataset_Archive
+		SET AS_state_ID = 7 -- "purge in progress"
+		WHERE (AS_Dataset_ID = @datasetID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Update operation failed'
+			goto done
+		end
+	End
+	
 	commit transaction @transName
 
 	---------------------------------------------------
 	-- get information for assigned dataset
 	---------------------------------------------------
-	
-	/*
+	--
 	SELECT @dataset = DS.Dataset_Num,
 	       @DatasetID = DS.Dataset_ID,
 	       @Folder = DS.DS_folder_name,
 	       @ServerDisk = SPath.SP_vol_name_server,
 	       @storagePath = SPath.SP_path,
 	       @ServerDiskExternal = SPath.SP_vol_name_client,
-	       @RawDataType = InstClass.raw_data_type
-	FROM T_Dataset DS
-	     INNER JOIN T_Dataset_Archive DA
-	       ON DS.Dataset_ID = DA.AS_Dataset_ID
-	     INNER JOIN T_Storage_Path SPath
-	       ON DS.DS_storage_path_ID = SPath.SP_path_ID
-	     INNER JOIN T_Instrument_Name InstName
-	       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-	     INNER JOIN T_Instrument_Class InstClass
-	       ON InstName.IN_class = InstClass.IN_class
-	WHERE DS.Dataset_ID = @datasetID
-	*/
-	
-	SELECT @dataset = DS.Dataset_Num,
-	       @DatasetID = DS.Dataset_ID,
-	 @Folder = DS.DS_folder_name,
-	       @ServerDisk = SPath.SP_vol_name_server,
-	       @storagePath = SPath.SP_path,
-	       @ServerDiskExternal = SPath.SP_vol_name_client,
 	       @RawDataType = InstClass.raw_data_type,
-	       @SambaStoragePath = T_Archive_Path.AP_network_share_path
+	       @SambaStoragePath = T_Archive_Path.AP_network_share_path,
+	       @Instrument = DFP.Instrument,
+	       @DatasetCreated = DFP.Dataset_Created,
+	       @DatasetYearQuarter = DFP.Dataset_YearQuarter	       
 	FROM T_Dataset DS
 	     INNER JOIN T_Dataset_Archive DA
 	       ON DS.Dataset_ID = DA.AS_Dataset_ID
@@ -474,13 +483,14 @@ As
 	       ON InstName.IN_class = InstClass.IN_class
 	     INNER JOIN T_Archive_Path
 	       ON DA.AS_storage_path_ID = T_Archive_Path.AP_path_ID
-	WHERE DS.Dataset_ID = @datasetID	
+	     INNER JOIN V_Dataset_Folder_Paths_Ex DFP
+	       ON DA.AS_Dataset_ID = DFP.Dataset_ID
+	WHERE DS.Dataset_ID = @datasetID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0 or @myRowCount <> 1
 	begin
-		rollback transaction @transName
 		set @message = 'Find purgeable dataset operation failed'
 		goto done
 	end
@@ -506,11 +516,15 @@ As
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('storagePath', @storagePath)
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('StorageVolExternal', @ServerDiskExternal)
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('RawDataType', @RawDataType)
-	INSERT INTO #ParamTab( Name, Value ) VALUES  ('SambaStoragePath', @SambaStoragePath)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('SambaStoragePath', @SambaStoragePath)	
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('Instrument', @Instrument)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('DatasetCreated', Convert(varchar(64), @DatasetCreated, 120))
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('DatasetYearQuarter', @DatasetYearQuarter)
 
 	---------------------------------------------------
 	-- output parameters as resultset 
 	---------------------------------------------------
+	--
 	SELECT
 		Name AS Parameter,
 		Value
@@ -534,4 +548,6 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [PNL\D3M580] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [svc-dms] AS [dbo]
 GO

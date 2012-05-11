@@ -45,6 +45,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			02/24/2011 mem - No longer skipping jobs with state "No Export" when finding datasets that have existing, matching jobs
 **			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
 **			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed
+**			06/15/2011 mem - Now ignoring organism, protein collection, and organism DB when looking for existing jobs and the analysis tool does not use an organism database
 **
 *****************************************************/
 (
@@ -172,9 +173,10 @@ As
 	WHERE Dataset_Num LIKE '%' + char(10) + '%'
 
 	---------------------------------------------------
-	-- if mode is set to remove them,
-	-- find datasets from temp table that have existing
-	-- jobs that match criteria from request
+	-- If @removeDatasetsWithJobs is not "N" then
+	--  find datasets from temp table that have existing
+	--  jobs that match criteria from request
+	-- If AJT_orgDbReqd = 0, then we ignore organism, protein collection, and organism DB
 	---------------------------------------------------
 	--
 	DECLARE @numMatchingDatasets INT
@@ -209,7 +211,10 @@ As
 			  (	@protCollNameList <> 'na' AND 
 				AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
 				AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
-			  ) 
+			  ) OR
+			  (
+				AJT.AJT_orgDbReqd = 0
+			  )
 			)
 		GROUP BY DS.Dataset_Num
 		--

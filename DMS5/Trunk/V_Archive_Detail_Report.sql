@@ -18,8 +18,8 @@ SELECT DS.Dataset_Num AS Dataset,
        TAP.AP_archive_path AS [Archive Path],
        TAP.AP_Server_Name AS [Archive Server],
        DA.AS_instrument_data_purged AS [Instrument Data Purged],
-       TAP.AP_network_share_path + '\' + DS.Dataset_Num AS [Network Share Path],
-       TAP.AP_archive_URL + DS.Dataset_Num AS [Archive URL]
+       TAP.AP_network_share_path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num) AS [Network Share Path],
+       TAP.AP_archive_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) AS [Archive URL]
 FROM dbo.T_Dataset_Archive DA
      INNER JOIN dbo.T_Dataset DS
        ON DA.AS_Dataset_ID = DS.Dataset_ID
@@ -31,6 +31,7 @@ FROM dbo.T_Dataset_Archive DA
        ON DS.DS_instrument_name_ID = TIN.Instrument_ID
      INNER JOIN dbo.T_Archive_Update_State_Name AUS
        ON DA.AS_update_state_ID = AUS.AUS_stateID
+
 
 
 GO

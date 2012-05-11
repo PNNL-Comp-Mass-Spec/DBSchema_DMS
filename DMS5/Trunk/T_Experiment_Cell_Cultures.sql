@@ -14,12 +14,12 @@ CREATE TABLE [dbo].[T_Experiment_Cell_Cultures](
 ) ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[T_Experiment_Cell_Cultures]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Cell_Culture] FOREIGN KEY([CC_ID])
+ALTER TABLE [dbo].[T_Experiment_Cell_Cultures]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Cell_Culture] FOREIGN KEY([CC_ID])
 REFERENCES [T_Cell_Culture] ([CC_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Cell_Cultures] CHECK CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Cell_Culture]
 GO
-ALTER TABLE [dbo].[T_Experiment_Cell_Cultures]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Experiments] FOREIGN KEY([Exp_ID])
+ALTER TABLE [dbo].[T_Experiment_Cell_Cultures]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Cell_Cultures] CHECK CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Experiments]

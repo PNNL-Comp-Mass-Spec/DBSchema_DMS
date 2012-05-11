@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[MoveEventLogEntries]
+
+CREATE Procedure dbo.MoveEventLogEntries
 /****************************************************
 **
 **	Desc: Move log entries from event log into the 
@@ -14,22 +15,23 @@ CREATE Procedure [dbo].[MoveEventLogEntries]
 **
 **	Auth:	grk
 **	Date:	07/13/2009
+**			10/04/2011 mem - Removed @DBName parameter
 **    
 *****************************************************/
 (
-	@intervalDays int = 365,
-	@DBName varchar(64) = 'DMS5'
+	@intervalDays int = 365
 )
 As
 	set nocount on
 	declare @cutoffDateTime datetime
 
-	-- Require that @intervalDays be at least 32	
+	-- Require that @intervalDays be at least 32
 	If IsNull(@intervalDays, 0) < 32
 		Set @intervalDays = 32
 
 	set @cutoffDateTime = dateadd(day, -1 * @intervalDays, getdate())
 
+	Declare @DBName varchar(64)
 	set @DBName = DB_NAME()
 
 	set nocount off

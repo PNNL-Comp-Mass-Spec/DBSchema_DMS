@@ -8,6 +8,10 @@ CREATE TABLE [dbo].[T_Analysis_Status_Monitor_Params](
 	[StatusFileNamePath] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CheckBoxState] [tinyint] NOT NULL,
 	[UseForStatusCheck] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Analysis_Status_Monitor_Params] PRIMARY KEY CLUSTERED 
+(
+	[ProcessorID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY],
  CONSTRAINT [IX_T_Analysis_Status_Monitor_Params] UNIQUE NONCLUSTERED 
 (
 	[ProcessorID] ASC

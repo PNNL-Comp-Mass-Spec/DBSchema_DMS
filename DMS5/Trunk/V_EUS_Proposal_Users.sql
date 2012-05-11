@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_EUS_Proposal_Users]
 AS
 SELECT U.PERSON_ID AS [User ID],
@@ -14,8 +13,8 @@ SELECT U.PERSON_ID AS [User ID],
 FROM T_EUS_Proposal_Users PU
      INNER JOIN T_EUS_Users U
        ON PU.Person_ID = U.PERSON_ID
-WHERE (PU.Of_DMS_Interest = 'Y')
-
+WHERE PU.Of_DMS_Interest = 'Y' AND 
+      PU.State_ID <> 5 
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposal_Users] TO [PNL\D3M578] AS [dbo]

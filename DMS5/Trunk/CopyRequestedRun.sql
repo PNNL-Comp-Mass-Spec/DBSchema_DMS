@@ -15,6 +15,8 @@ CREATE PROCEDURE CopyRequestedRun
 **			03/03/2010 grk - added status field
 **			08/04/2010 mem - Now using the Created date from the original request as the Created date for the new request
 **			08/30/2010 mem - Now clearing @message after a successful call to UpdateRequestedRunCopyFactors
+**			12/13/2011 mem - Added parameter @callingUser, which is sent to UpdateRequestedRunCopyFactors
+**			04/25/2012 mem - Fixed @callingUser bug when updating @callingUserUnconsume
 **
 *****************************************************/
 (
@@ -22,7 +24,8 @@ CREATE PROCEDURE CopyRequestedRun
 	@datasetID int,
 	@status VARCHAR(24),
 	@notation varchar(256),
-	@message varchar(255) output
+	@message varchar(255) output,
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -34,6 +37,8 @@ As
 	
 	set @message = ''
 
+	Set @callingUser = IsNull(@callingUser, '')
+	
 	---------------------------------------------------
 	-- We are done if there is no associated request
 	---------------------------------------------------
@@ -128,15 +133,40 @@ As
 	--
 	declare @newReqID int
 	set @newReqID = IDENT_CURRENT('T_Requested_Run')
-	--
-	-- copy factors from the request being unconsumed to the 
+	
+	
+	If Len(@callingUser) > 0
+	Begin
+		Declare @stateID int = 0
+
+		SELECT @stateID = State_ID
+		FROM T_Requested_Run_State_Name
+		WHERE (State_Name = @status)
+
+		Exec AlterEventLogEntryUser 11, @newReqID, @stateID, @callingUser
+	End
+
+	------------------------------------------------------------
+	-- Copy factors from the request being unconsumed to the 
 	-- renumbered copy being retained in the history
+	------------------------------------------------------------
 	--
+	-- First define the calling user text
+	--
+	declare @callingUserUnconsume varchar(128)
+	
+	If IsNull(@callingUser, '') <> ''
+		set @callingUserUnconsume = '(unconsume for ' + @callingUser + ')'
+	else
+		set @callingUserUnconsume = '(unconsume)'
+	
+	-- Now copy the factors
+	--	
 	EXEC @myError = UpdateRequestedRunCopyFactors 
 						@requestID,
 						@newReqID,
 						@message OUTPUT,
-						'(unconsume)'
+						@callingUserUnconsume
 	--
 	if @myError <> 0
 	begin

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateRequestedRunBatchParameters
+CREATE Procedure UpdateRequestedRunBatchParameters
 /****************************************************
 **
 **	Desc: 
@@ -14,15 +14,19 @@ CREATE PROCEDURE UpdateRequestedRunBatchParameters
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 02/09/2010
-**		02/16/2010 grk - eliminated batchID from arg list
+**	Auth: 	grk
+**	Date: 	02/09/2010
+**			02/16/2010 grk - eliminated batchID from arg list
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			12/15/2011 mem - Now updating @callingUser to SUSER_SNAME() if empty
 **    
 *****************************************************/
+(
 	@blockingList text,
-	@mode varchar(32), -- 
+	@mode varchar(32),			-- 'update'
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
+)
 As
 	SET NOCOUNT ON 
 
@@ -36,7 +40,16 @@ As
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
 
+	-----------------------------------------------------------
+	-- Validate the inputs
+	-----------------------------------------------------------
+	
 	SET @message = ''
+
+	If IsNull(@callingUser, '') = ''
+		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		
+	DECLARE @batchID int = 0
 
 	-----------------------------------------------------------
 	-- temp table to hold new parameters
@@ -60,8 +73,8 @@ As
 		INSERT INTO #TMP
 			( Parameter, Request, Value )
 		select
-			xmlNode.value('@t', 'nvarchar(256)') Parameter,
-			xmlNode.value('@i', 'nvarchar(256)') Request,
+			xmlNode.value('@t', 'nvarchar(256)') Parameter,		-- will be 'BF', 'BK', or 'RO'
+			xmlNode.value('@i', 'nvarchar(256)') Request,		-- Request ID
 			xmlNode.value('@v', 'nvarchar(256)') Value
 		FROM @xml.nodes('//r') AS R(xmlNode)
 		--
@@ -149,9 +162,6 @@ As
 		-- get batch from temp table and verify it is
 		-- not 0
 		-------------------------------------------------
-		--
-		DECLARE @batchID int
-		SET @batchID = 0
 		--
 		SELECT 
 			@batchID = #BAT.BatchID 
@@ -284,10 +294,14 @@ As
 		END
 	END --<c>
 
-	-----------------------------------------------------------
-	-- 
-	-----------------------------------------------------------
-	--
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = 'Batch: ' + Convert(varchar(12), @batchID)
+	Exec PostUsageLogEntry 'UpdateRequestedRunBatchParameters', @UsageMessage
 
 	return 0
 

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Predefined_Analysis_Detail_Report]
+CREATE VIEW dbo.V_Predefined_Analysis_Detail_Report
 AS
 SELECT PA.AD_ID AS ID, 
     PA.AD_level AS [Level], 
@@ -39,7 +39,9 @@ SELECT PA.AD_ID AS ID,
     PA.AD_organismDBName AS [Organism Db Name], 
     PA.AD_proteinCollectionList AS [Protein Collection List], 
     PA.AD_proteinOptionsList AS [Protein Options List], 
-    PA.AD_priority AS priority, PA.AD_enabled AS enabled, 
+    PA.AD_specialProcessing as [Special Processing],
+    PA.AD_priority AS priority,
+    PA.AD_enabled AS enabled, 
     PA.AD_created AS created, 
     PA.Last_Affected,
     PA.AD_description AS Description, 

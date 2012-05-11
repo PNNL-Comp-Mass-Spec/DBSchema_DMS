@@ -5,7 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE Procedure dbo.UpdateAnalysisJobStateNameCached
+
+CREATE Procedure [dbo].[UpdateAnalysisJobStateNameCached]
 /****************************************************
 **
 **	Desc: Updates column AJ_StateNameCached in T_Analysis_Job
@@ -17,6 +18,7 @@ CREATE Procedure dbo.UpdateAnalysisJobStateNameCached
 **
 **	Auth:	mem
 **	Date:	12/12/2007 mem - Initial version (Ticket #585)
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
 (
@@ -33,6 +35,8 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 	
+	Declare @JobCount int = 0
+
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
@@ -43,7 +47,6 @@ As
 	
 	If @JobFinish = 0
 		Set @JobFinish = 2147483647
-
 
 	---------------------------------------------------
 	-- Update the specified jobs
@@ -78,10 +81,12 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @myRowCount = 0
+		Set @JobCount = @myRowCount
+
+		If @JobCount = 0
 			Set @message = ''
 		else
-			Set @message = ' Updated the cached job state name for ' + Convert(varchar(12), @myRowCount) + ' jobs'
+			Set @message = ' Updated the cached job state name for ' + Convert(varchar(12), @JobCount) + ' jobs'
 	End
 
 	
@@ -89,7 +94,19 @@ As
 	-- Exit
 	---------------------------------------------------
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
+
+	If @infoOnly = 0
+		Exec PostUsageLogEntry 'UpdateAnalysisJobStateNameCached', @UsageMessage
+
 	return @myError
+
 
 
 GO

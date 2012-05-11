@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -20,8 +21,8 @@ SELECT DS.Dataset_Num AS Dataset,
               THEN DSInfo.Elution_Time_Max
               ELSE 1E6
          END) AS [Elution Time Max],
-       DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), 
-         ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
+       DS.Acq_Length_Minutes AS [Acq Length],
+       --DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        CONVERT(varchar(32), DSInfo.TIC_Max_MS) AS TIC_Max_MS,
        CONVERT(varchar(32), DSInfo.TIC_Max_MSn) AS TIC_Max_MSn,
@@ -48,15 +49,15 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID AS ID,
        CASE
            WHEN DS.DS_state_ID IN (3, 4) AND
-                NOT ISNULL(DSA.AS_state_ID, 0) = 4 THEN SPath.SP_vol_name_client + SPath.SP_path + DS.Dataset_Num
+                NOT ISNULL(DSA.AS_state_ID, 0) = 4 THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
            ELSE '(not available)'
        END AS [Dataset Folder Path],
        CASE
-           WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10) THEN DAP.Archive_Path + '\' + DS.Dataset_Num
+           WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10) THEN DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
            ELSE '(not available)'
        END AS [Archive Folder Path],
-	   SPath.SP_URL + DS.Dataset_Num + '/' AS [Data Folder Link],
-       SPath.SP_URL + DS.Dataset_Num + '/QC/index.html' AS [QC Link],
+	   SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS [Data Folder Link],
+       SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/index.html' AS [QC Link],
        DSInfo.Last_Affected AS [DSInfo Updated]
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
@@ -87,6 +88,8 @@ FROM T_DatasetStateName DSN
        ON DSA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
+
+
 
 
 GO

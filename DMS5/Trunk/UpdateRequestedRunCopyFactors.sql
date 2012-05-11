@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateRequestedRunCopyFactors
+
+CREATE Procedure dbo.UpdateRequestedRunCopyFactors
 /****************************************************
 **
 **	Desc: 
@@ -14,14 +15,18 @@ CREATE PROCEDURE UpdateRequestedRunCopyFactors
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 02/24/2010
+**	Auth: 	grk
+**	Date: 	02/24/2010
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			04/25/2012 mem - Now assuring that @callingUser is not blank
 **    
 *****************************************************/
+(
 	@srcRequestID INT,
 	@destRequestID INT,
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
+)
 As
 	SET NOCOUNT ON 
 
@@ -33,6 +38,8 @@ As
 
 	SET @message = ''
 
+	Set @callingUser = IsNull(@callingUser, '(copy factors)')
+	
 	-----------------------------------------------------------
 	-- Temp table to hold factors being copied
 	-----------------------------------------------------------
@@ -137,12 +144,17 @@ As
 	VALUES
 		(@callingUser, @changeSummary)
 
-	-----------------------------------------------------------
-	-- 
-	-----------------------------------------------------------
-	--
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = 'Source: ' + Convert(varchar(12), @srcRequestID) + '; Target: ' + Convert(varchar(12), @destRequestID)
+	Exec PostUsageLogEntry 'UpdateRequestedRunCopyFactors', @UsageMessage
 
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunCopyFactors] TO [Limited_Table_Write] AS [dbo]

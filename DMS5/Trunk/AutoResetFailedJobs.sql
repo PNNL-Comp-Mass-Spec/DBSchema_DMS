@@ -17,6 +17,8 @@ CREATE Procedure AutoResetFailedJobs
 **	Auth:	mem
 **	Date:	09/30/2010 mem - Initial Version
 **			10/01/2010 mem - Added call to PostLogEntry when changing ManagerErrorCleanupMode for a processor
+**			02/16/2012 mem - Fixed major bug that reset the state for all steps of a job to state 2, rather than only resetting the state for the running step
+**						   - Fixed bug finding jobs that are running, but started over 60 minutes ago and for which the processor is reporting Stopped_Error in T_Processor_Status
 **
 *****************************************************/
 (
@@ -82,6 +84,7 @@ As
 			Step_State int NOT NULL,
 			Processor varchar(128) NOT NULL,
 			Comment varchar(750) NOT null,
+			Job_Finish datetime Null,
 			NewJobState int null,
 			NewStepState int null,
 			NewComment varchar(750) null,
@@ -92,14 +95,15 @@ As
 		-- Populate a temporary table with jobs that failed within the last @WindowHours hours
 		---------------------------------------------------
 		--
-		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment)
+		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment, Job_Finish)
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
 		       J.AJ_StateID AS Job_State,
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
-		       IsNull(J.AJ_comment, '') AS Comment
+		       IsNull(J.AJ_comment, '') AS Comment,
+		       J.AJ_finish as Job_Finish
 		FROM T_Analysis_Job J
 		     INNER JOIN DMS_Pipeline.dbo.T_Job_Steps JS
 		       ON J.AJ_jobID = JS.Job
@@ -115,23 +119,25 @@ As
 		-- the processor is reporting Stopped_Error in T_Processor_Status
 		---------------------------------------------------
 		--
-		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment)
+		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment, Job_Finish)
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
 		       J.AJ_StateID AS Job_State,
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
-		       IsNull(J.AJ_comment, '') AS Comment
-		FROM T_Analysis_Job J INNER JOIN
-			DMS_Pipeline.dbo.T_Job_Steps JS ON 
-			J.AJ_jobID = JS.Job INNER JOIN
-			DMS_Pipeline.dbo.T_Processor_Status ProcStatus ON 
-			JS.Processor = ProcStatus.Processor_Name
-		WHERE (J.AJ_StateID = 2) AND (JS.State = 4) AND 
-			(ProcStatus.Mgr_Status = 'Stopped Error') AND 
-			(JS.Start >= DATEADD(hour, - 1, GETDATE())) AND 
-			(DATEDIFF(minute, ProcStatus.Status_Date, GETDATE()) < 30)
+		       IsNull(J.AJ_comment, '') AS Comment,
+		       J.AJ_finish as Job_Finish
+		FROM T_Analysis_Job J
+		     INNER JOIN DMS_Pipeline.dbo.T_Job_Steps JS
+		       ON J.AJ_jobID = JS.Job
+		     INNER JOIN DMS_Pipeline.dbo.T_Processor_Status ProcStatus
+		       ON JS.Processor = ProcStatus.Processor_Name
+		WHERE (J.AJ_StateID = 2) AND
+		      (JS.State = 4) AND
+		      (ProcStatus.Mgr_Status = 'Stopped Error') AND
+		      (JS.Start <= DATEADD(HOUR, - 1, GETDATE())) AND
+		      (DATEDIFF(MINUTE, ProcStatus.Status_Date, GETDATE()) < 30)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -299,7 +305,7 @@ As
 								-- Reset the step back to state 2=Enabled
 								UPDATE DMS_Pipeline.dbo.T_Job_Steps
 								SET State = 2
-								WHERE Job = @Job								
+								WHERE Job = @Job And Step_Number = @StepNumber							
 							End
 							
 							Set @ResetReason = 'job step in progress but manager reports "Stopped Error"'

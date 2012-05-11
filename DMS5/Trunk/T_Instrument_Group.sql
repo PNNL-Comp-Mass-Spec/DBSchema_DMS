@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_Instrument_Group](
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active] [tinyint] NOT NULL,
 	[Default_Dataset_Type] [int] NULL,
+	[Allocation_Tag] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Instrument_Group] PRIMARY KEY CLUSTERED 
 (
 	[IN_Group] ASC

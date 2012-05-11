@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 /****************************************************
 ** 
@@ -24,6 +25,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 **	Auth:	mem
 **	Date:	09/15/2005
 **			08/27/2007 mem - Added support for a 9th column in the source file
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -202,12 +204,20 @@ As
 	--
 	Set @UpdateCount =  @myRowCount
 
-		
 	Set @message = 'Done: Updated ' + Convert(varchar(9), @UpdateCount) + ' datasets (out of ' + Convert(varchar(9), @NumLoaded) + ' in the Dataset Info File)'
 	
 Done:
 	
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = @DatasetInfoFilePath
+	Exec PostUsageLogEntry 'UpdateDatasetFileInfoFromFile', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetFileInfoFromFile] TO [D3L243] AS [dbo]

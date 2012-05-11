@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure SetArchiveUpdateTaskComplete
+
+CREATE Procedure [dbo].[SetArchiveUpdateTaskComplete]
 /****************************************************
 **
 **	Desc: Sets status of task to successful
@@ -17,21 +18,18 @@ CREATE Procedure SetArchiveUpdateTaskComplete
 **	@datasetNum				dataset for which archive task is being completed
 **  @completionCode			0->success, 1->failure, anything else ->no intermediate files
 **
-**		Auth: grk
-**		Date: 12/3/2002   
-**    
-**		Mod: dac
-**		Date: 12/6/2002
-**		Corrected state values used in update state test, update complete output
-**
-**		Mod: dac
-**		Date: 11/30/2007
-**		Removed unused processor name parameter
+**	Auth: grk
+**	Date:	12/03/2002
+**		 	12/06/2002 dac - Corrected state values used in update state test, update complete output
+**		 	11/30/2007 dac - Removed unused processor name parameter
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
+(
 	@datasetNum varchar(128),
-   @completionCode int = 0,
+	@completionCode int = 0,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -111,10 +109,16 @@ As
 	---------------------------------------------------
 	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Dataset: ' + @datasetNum
+	Exec PostUsageLogEntry 'SetArchiveUpdateTaskComplete', @UsageMessage
+
 	return @myError
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[SetArchiveUpdateTaskComplete] TO [DMS_SP_User] AS [dbo]

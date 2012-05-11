@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDatasetDispositionsByName
+
+CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
 /****************************************************
 **
 **	Desc:
@@ -15,8 +16,9 @@ CREATE PROCEDURE UpdateDatasetDispositionsByName
 **	Parameters:
 **
 **	Auth:	grk
-**	Date:	10/15/08 grk -- initial release (Ticket #582)
+**	Date:	10/15/2008 grk -- initial release (Ticket #582)
 **			08/19/2010 grk - try-catch for error handling
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **
 *****************************************************/
 (
@@ -35,6 +37,8 @@ As
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
+
+	Declare @datasetCount int = 0
 
 	BEGIN TRY 
 
@@ -126,6 +130,8 @@ As
 		RAISERROR (@message, 11, 12)
 	end
 
+	Set @datasetCount = @myRowCount
+
  	---------------------------------------------------
 	-- call sproc to update dataset disposition
 	---------------------------------------------------
@@ -147,7 +153,17 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
+	Exec PostUsageLogEntry 'UpdateDatasetDispositionsByName', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositionsByName] TO [DMS2_SP_User] AS [dbo]

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateRequestedRunLCCartParams
+
+CREATE Procedure [dbo].[UpdateRequestedRunLCCartParams]
 /****************************************************
 **
 **	Desc: 
@@ -14,23 +15,26 @@ CREATE Procedure UpdateRequestedRunLCCartParams
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 04/13/2007     - (ticket #424)
-**		      04/13/2007 grk - added spread function and used MakeTableFromList
-**		      04/17/2007 grk - added ability to set priority
-**		      04/17/2007 grk - added 'clear assignments' function
-**		      04/17/2007 grk - added 'fill_into_gaps' function
-**		      04/18/2007 grk - added ability to handle blanks to cart/col assignment function
-**		      04/18/2007 grk - 'fill_into_gaps' function adds requests in canonical sort order
-**		      04/18/2007 grk - New requests supersede existing assignments in 'fill_into_gaps' function
-**		      04/18/2007 grk - 'fill_into_gaps' function can handle empty columns and min col count
-**		      01/27/2010 grk - increased size of @reqRunIDList
+**	Auth: 	grk
+**	Date: 	04/13/2007     - (ticket #424)
+**			04/13/2007 grk - added spread function and used MakeTableFromList
+**			04/17/2007 grk - added ability to set priority
+**			04/17/2007 grk - added 'clear assignments' function
+**			04/17/2007 grk - added 'fill_into_gaps' function
+**			04/18/2007 grk - added ability to handle blanks to cart/col assignment function
+**			04/18/2007 grk - 'fill_into_gaps' function adds requests in canonical sort order
+**			04/18/2007 grk - New requests supersede existing assignments in 'fill_into_gaps' function
+**			04/18/2007 grk - 'fill_into_gaps' function can handle empty columns and min col count
+**			01/27/2010 grk - increased size of @reqRunIDList
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@mode varchar(32), -- 
 	@newValue1 varchar(512),
 	@newValue2 varchar(512),
 	@reqRunIDList varchar(7000)
+)
 As
 	declare @myError int
 	set @myError = 0
@@ -353,7 +357,16 @@ As
 
 	end -- mode
 
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = ''
+	Exec PostUsageLogEntry 'UpdateRequestedRunLCCartParams', @UsageMessage
+
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunLCCartParams] TO [DMS_LC_Column_Admin] AS [dbo]

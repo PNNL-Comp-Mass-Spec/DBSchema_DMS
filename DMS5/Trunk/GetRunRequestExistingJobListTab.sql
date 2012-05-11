@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
+
+CREATE FUNCTION [dbo].[GetRunRequestExistingJobListTab]
 /****************************************************
 **
 **	Desc: 
@@ -25,6 +26,7 @@ CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 **			01/26/2007 mem - now getting organism name from T_Organisms (Ticket #368)
 **			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			03/27/2009 mem - Updated Where clause logic for Peptide_Hit jobs to ignore organism name when using a Protein Collection List
+**			05/03/2012 mem - Now comparing the special processing field
 **    
 *****************************************************/
 (
@@ -51,7 +53,8 @@ AS
 				@organismName varchar(255),
 				@resultType varchar(32),
 				@proteinCollectionList varchar(4000),
-				@proteinOptionsList varchar(256)
+				@proteinOptionsList varchar(256),
+				@specialProcessing varchar(512)
 		
 		-- Lookup the entries for @RequestID in T_Analysis_Job_Request
 		--
@@ -61,7 +64,8 @@ AS
 				@organismDBName = AJR.AJR_organismDBName, 
 				@organismName = Org.OG_Name,
 				@proteinCollectionList = AJR.AJR_proteinCollectionList,
-				@proteinOptionsList = AJR.AJR_proteinOptionsList
+				@proteinOptionsList = AJR.AJR_proteinOptionsList,
+				@specialProcessing = AJR.AJR_specialProcessing
 		FROM T_Analysis_Job_Request AJR INNER JOIN
 			 T_Organisms Org ON AJR.AJR_organism_ID = Org.Organism_ID
 		WHERE AJR.AJR_requestID = @RequestID
@@ -100,6 +104,7 @@ AS
 			WHERE AJT.AJT_toolName = @analysisToolName AND
 			      AJ.AJ_parmFileName = @parmFileName AND
 			      AJ.AJ_settingsFileName = @settingsFileName AND
+			      ISNULL(AJ.AJ_specialProcessing, '') = ISNULL(@specialProcessing, '') AND
 			      (@resultType NOT LIKE '%Peptide_Hit%' OR
 			       @resultType LIKE '%Peptide_Hit%' AND
 			       (
@@ -121,6 +126,7 @@ AS
 		
 		RETURN
 	END
+
 
 
 GO

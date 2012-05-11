@@ -10,7 +10,11 @@ CREATE TABLE [dbo].[T_Sample_Submission](
 	[Container_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Description] [varchar](4096) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Storage_Path] [int] NULL,
-	[Created] [datetime] NOT NULL
+	[Created] [datetime] NOT NULL,
+ CONSTRAINT [PK_T_Sample_Submission] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

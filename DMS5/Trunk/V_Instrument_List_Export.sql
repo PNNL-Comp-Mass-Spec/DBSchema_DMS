@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Instrument_List_Export]
 AS	
 SELECT Inst.Instrument_ID AS ID,
@@ -18,7 +19,8 @@ SELECT Inst.Instrument_ID AS ID,
        SrcPath.Source_Path AS SourcePath,
        StoragePath.Storage_Path AS StoragePath,
        InstClass.is_purgable AS IsPurgable,
-       InstClass.requires_preparation AS RequiresPreparation
+       InstClass.requires_preparation AS RequiresPreparation,
+       Inst.Percent_EMSL_Owned AS PercentEMSLOwned
 FROM dbo.T_Instrument_Name Inst
      INNER JOIN ( SELECT SP_path_ID,
                          SP_vol_name_client + SP_path AS Storage_Path
@@ -30,6 +32,7 @@ FROM dbo.T_Instrument_Name Inst
        ON SrcPath.SP_path_ID = Inst.IN_source_path_ID
      INNER JOIN dbo.T_Instrument_Class InstClass
        ON Inst.IN_class = InstClass.IN_class
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Export] TO [PNL\D3M578] AS [dbo]

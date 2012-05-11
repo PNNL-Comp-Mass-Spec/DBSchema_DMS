@@ -26,6 +26,7 @@ CREATE Procedure DoDatasetOperation
 **			08/19/2010 grk - try-catch for error handling
 **			05/25/2011 mem - Fixed bug that reported "mode was unrecognized" for valid modes
 **						   - Removed 'restore' mode
+**			01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_ActiveOrComplete
 **    
 *****************************************************/
 (
@@ -77,14 +78,11 @@ As
 	end
 
 	---------------------------------------------------
-	-- Delete dataset if it is in "new" state only
+	-- Delete dataset regardless of state
 	---------------------------------------------------
-
+	--
 	if @mode = 'delete_all'
 	begin
-		---------------------------------------------------
-		-- delete the dataset
-		---------------------------------------------------
 
 		execute @result = DeleteDataset @datasetNum, @message output, @callingUser
 		--
@@ -99,7 +97,7 @@ As
 	---------------------------------------------------
 	-- Delete dataset if it is in "new" state only
 	---------------------------------------------------
-
+	--
 	if @mode = 'delete'
 	begin
 
@@ -112,6 +110,23 @@ As
 			set @msg = 'Dataset "' + @datasetNum + '" must be in "new" state to be deleted by user'
 			RAISERROR (@msg, 11, 3)
 		end
+		
+		---------------------------------------------------
+		-- Verify that the dataset does not have an active or completed capture job
+		---------------------------------------------------
+
+		If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State <= 2)
+		begin
+			set @msg = 'Dataset "' + @datasetNum + '" is being processed by the DMS_Capture database; unable to delete'
+			RAISERROR (@msg, 11, 3)
+		end		
+
+		If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State > 2)
+		begin
+			set @msg = 'Dataset "' + @datasetNum + '" has been processed by the DMS_Capture database; unable to delete'
+			RAISERROR (@msg, 11, 3)
+		end		
+		
 		
 		---------------------------------------------------
 		-- delete the dataset
@@ -130,7 +145,7 @@ As
 	---------------------------------------------------
 	-- Reset state of failed dataset to 'new' 
 	---------------------------------------------------
-
+	--
 	if @mode = 'reset'
 	begin
 
@@ -165,72 +180,6 @@ As
 		set @ValidMode = 1
 	end -- mode 'reset'
 	
-	/*
-		---------------------------------------------------
-		-- set state of dataset to "Restore Requested"
-		---------------------------------------------------
-
-		if @mode = 'restore'
-		begin
-
-			-- if dataset not in complete state, can't request restore
-			--
-			if @CurrentState <> 3
-			begin
-				set @msg = 'Dataset "' + @datasetNum + '" cannot be restored unless it is in completed state'
-				RAISERROR (@msg, 11, 7)
-			end
-
-			-- if dataset not in purged archive state, can't request restore
-			--
-			declare @as int
-			set @as = 0
-			--
-			SELECT 
-				@as = T_Dataset_Archive.AS_state_ID
-			FROM 
-				T_Dataset_Archive INNER JOIN
-				T_Dataset ON T_Dataset_Archive.AS_Dataset_ID = T_Dataset.Dataset_ID
-			WHERE
-				T_Dataset.Dataset_ID = @datasetID
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @msg = 'Error trying to check archive state'
-				RAISERROR (@msg, 11, 8)
-			end
-			--
-			if @as <> 4
-			begin
-				set @msg = 'Dataset "' + @datasetNum + '" cannot be restored unless it is purged state'
-				RAISERROR (@msg, 11, 20)
-			end
-
-			-- Update state of dataset to "Restore Requested"
-			--
-			Set @NewState = 10		-- "restore required" state
-			
-			UPDATE T_Dataset 
-			SET DS_state_ID = @NewState 
-			WHERE (Dataset_ID = @datasetID)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0 or @myRowCount <> 1
-			begin
-				set @msg = 'Update was unsuccessful for dataset table "' + @datasetNum + '"'
-				RAISERROR (@msg, 11, 9)
-			end
-
-			-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-			If Len(@callingUser) > 0
-				Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
-
-			set @ValidMode = 1
-		end -- mode 'restore'	
-	*/
 	
 	if @ValidMode = 0
 	begin

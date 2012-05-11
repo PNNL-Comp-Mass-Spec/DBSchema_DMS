@@ -14,6 +14,7 @@ CREATE PROCEDURE GetRequestedRunsFromItemList
 **	Auth:	grk
 **	Date:	03/22/2010
 **	03/22/2010 grk - initial release
+**	03/12/2012 grk - added 'Data_Package_ID' mode
 **    
 *****************************************************/
 (
@@ -97,6 +98,11 @@ AS
 	BEGIN
 		SELECT @Item = Item FROM #ITEMS WHERE Item NOT IN (SELECT CONVERT(VARCHAR(12), Exp_ID) AS Item FROM dbo.T_Experiments)
 	END
+	ELSE
+	IF @itemType = 'Data_Package_ID'
+	BEGIN 
+		SELECT @Item = '' -- for now, later to validation
+	END
 	--
 	If @item <> ''
 	Begin
@@ -162,6 +168,17 @@ AS
 		FROM V_Requested_Run_Unified_List
 		WHERE Experiment_ID IN (SELECT Item FROM #ITEMS)	
 	END
+	ELSE
+	IF @itemType = 'Data_Package_ID' 
+	BEGIN 
+		INSERT INTO #REQS
+		( Request )
+			SELECT DISTINCT ID
+			FROM T_Requested_Run	TR
+			INNER join  S_V_Data_Package_Datasets_Export SE ON TR.DatasetID = SE.Dataset_ID
+			WHERE   Data_Package_ID IN (SELECT CONVERT(INT, Item) FROM #ITEMS) 
+	END
+
 GO
 GRANT EXECUTE ON [dbo].[GetRequestedRunsFromItemList] TO [DMS2_SP_User] AS [dbo]
 GO

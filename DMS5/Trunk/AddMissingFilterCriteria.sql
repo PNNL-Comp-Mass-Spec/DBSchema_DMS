@@ -15,6 +15,7 @@ CREATE Procedure dbo.AddMissingFilterCriteria
 **			10/30/2008 mem - Added Inspect MQScore, Inspect TotalPRMScore, and Inspect FScore
 **			07/21/2009 mem - Added Inspect PValue
 **			07/27/2010 mem - Added MSGF_SpecProb
+**			09/16/2011 mem - Added MSGFDB_SpecProb, MSGFDB_PValue, and MSGFDB_FDR
 **    
 *****************************************************/
 (
@@ -137,6 +138,21 @@ AS
 							Set @CriterionValue = 0
 						End
 
+						If @CriterionID = 16
+						Begin
+							-- Peptide_Prophet_Probability
+							Set @CriterionComparison = '>='	
+							Set @CriterionValue = -100
+						End
+
+						If @CriterionID = 17
+						Begin
+							-- RankScore
+							Set @CriterionComparison = '>='	
+							Set @CriterionValue = 0
+						End
+
+
 						If @CriterionID = 18
 						Begin
 							-- Inspect MQScore
@@ -171,7 +187,29 @@ AS
 							Set @CriterionComparison = '<='	
 							Set @CriterionValue = 1
 						End
-												
+
+						If @CriterionID = 23
+						Begin
+							-- MSGFDB_SpecProb
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
+							
+						If @CriterionID = 24
+						Begin
+							-- MSGFDB_PValue
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
+							
+						If @CriterionID = 25
+						Begin
+							-- MSGFDB_FDR
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
+							
+																			
 						INSERT INTO T_Filter_Set_Criteria
 							(Filter_Criteria_Group_ID, Criterion_ID, Criterion_Comparison, Criterion_Value)
 						VALUES (@GroupID, @CriterionID, @CriterionComparison, @CriterionValue)

@@ -49,6 +49,12 @@ CREATE Procedure AddUpdateDataset
 **			05/12/2011 mem - Now passing @RefDate and @AutoSwitchActiveStorage to GetInstrumentStoragePathForNewDatasets
 **			05/24/2011 mem - Now checking for change of rating from -5, -6, or -7 to 5
 **						   - Now ignoring AJ_DatasetUnreviewed jobs when determining whether or not to call SchedulePredefinedAnalyses
+**			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
+**			12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
+**			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
+**			01/11/2012 mem - Added parameter @AggregationJobDataset
+**			02/29/2012 mem - Now auto-updating the @eus parameters if null
+**			               - Now raising an error if other key parameters are null/empty
 **    
 *****************************************************/
 (
@@ -68,10 +74,11 @@ CREATE Procedure AddUpdateDataset
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
-	@requestID int = 0,
-	@mode varchar(12) = 'add', -- or 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
+	@requestID int = 0,						-- Only valid if @mode is 'add', 'check_add', or 'add_trigger'; ignored if @mode is 'update' or 'check_update'
+	@mode varchar(12) = 'add',				-- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
 	@message varchar(512) output,
-   	@callingUser varchar(128) = ''
+   	@callingUser varchar(128) = '',
+   	@AggregationJobDataset tinyint = 0			-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
 )
 As
 	set nocount on
@@ -83,7 +90,8 @@ As
 	
 	declare @msg varchar(256)
 	declare @folderName varchar(128)
-
+	declare @AddingDataset tinyint = 0
+	
 	declare @result int
 	declare @Warning varchar(256)
 	declare @ExperimentCheck varchar(128)
@@ -99,7 +107,13 @@ As
 	Set @internalStandards = IsNull(@internalStandards, '')
 	if @internalStandards = '' Or @internalStandards = 'na'
 		set @internalStandards = 'none'
-
+	
+	if IsNull(@mode, '') = ''
+	begin
+		set @msg = '@mode was blank'
+		RAISERROR (@msg, 11, 17)
+	end
+		
 	if IsNull(@secSep, '') = ''
 	begin
 		set @msg = 'Separation type was blank'
@@ -145,6 +159,8 @@ As
 	end
 	--
 	set @msType = IsNull(@msType, '')
+	
+	-- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_trigger or update
 	if @msType = '' And NOT @mode In ('Add', 'Bad')
 	begin
 		set @msg = 'Dataset type was blank'
@@ -157,14 +173,38 @@ As
 		RAISERROR (@msg, 11, 15)
 	end
 
+	-- Assure that @comment is not null and assure that it doesn't have &quot;
 	set @comment = IsNull(@comment, '')
-
+	If @comment LIKE '%&quot;%'
+		Set @comment = Replace(@comment, '&quot;', '"')
+	
+	-- 
+	If IsNull(@rating, '') = ''
+	begin
+		set @msg = 'Rating was blank'
+		RAISERROR (@msg, 11, 15)
+	end
+	
 	If IsNull(@wellplateNum, '') = ''
 		set @wellplateNum = 'na'
 	
 	if IsNull(@wellNum, '') = ''
 		set @wellNum = 'na'
 
+	Set @eusProposalID = IsNull(@eusProposalID, '')
+	Set @eusUsageType = IsNull(@eusUsageType, '')
+	Set @eusUsersList = IsNull(@eusUsersList, '')
+	
+	Set @requestID = IsNull(@requestID, 0)
+	
+	---------------------------------------------------
+	-- Determine if we are adding or check_adding a dataset
+	---------------------------------------------------
+	If @mode IN ('add', 'check_add', 'add_trigger')
+		Set @AddingDataset = 1
+	Else
+		SEt @AddingDataset = 0
+	
 	---------------------------------------------------
 	-- validate dataset name
 	---------------------------------------------------
@@ -197,6 +237,7 @@ As
 	begin
 		set @ratingID = -1 -- "No Data"
 		set @Mode = 'add'
+		set @AddingDataset = 1
 	end
 	else
 	begin
@@ -245,7 +286,7 @@ As
 	begin
 		-- cannot create an entry that already exists
 		--
-		if @mode IN ('add', 'check_add', 'add_trigger')
+		if @AddingDataset = 1
 		begin
 			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" since already in database '
 			RAISERROR (@msg, 11, 5)
@@ -336,7 +377,7 @@ As
 	---------------------------------------------------
 	-- If Dataset starts with "Blank", then make sure @experimentNum contains "Blank"
 	---------------------------------------------------
-	If @datasetNum Like 'Blank%' And @mode IN ('add', 'check_add', 'add_trigger')	
+	If @datasetNum Like 'Blank%' And @AddingDataset = 1
 	Begin
 		If NOT @ExperimentNum LIKE '%blank%'
 			Set @ExperimentNum = 'blank'		
@@ -406,7 +447,7 @@ As
 		-- Could not resolve @msType to a dataset type
 		-- If @mode is Add, we will auto-update @msType to the default
 		--
-		If @mode = 'Add' And IsNull(@DefaultDatasetTypeID, 0) > 0
+		If @AddingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
 		Begin
 			-- Use the default dataset type
 			Set @datasetTypeID = @DefaultDatasetTypeID
@@ -458,7 +499,7 @@ As
 		
 	exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 
-	If @result <> 0 And @mode IN ('add', 'check_add', 'add_trigger') And IsNull(@DefaultDatasetTypeID, 0) > 0
+	If @result <> 0 And @AddingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
 	Begin
 		-- Dataset type is not valid for this instrument group
 		-- However, @mode is Add, so we will auto-update @msType to the default
@@ -497,7 +538,7 @@ As
 	-- Check for instrument changing when dataset not in new state
 	---------------------------------------------------
 	--
-	if (@mode = 'update' or @mode = 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
+	if @mode IN ('update', 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
 	begin
 		set @msg = 'Cannot change instrument if dataset not in "new" state'
 		RAISERROR (@msg, 11, 23)
@@ -535,7 +576,7 @@ As
 	-- Verify acceptable combination of EUS fields
 	---------------------------------------------------
 	
-	if @requestID <> 0 AND @mode IN ('add', 'check_add', 'add_trigger')
+	if @requestID <> 0 AND @AddingDataset = 1
 	begin	   
 		If (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
 		Begin
@@ -574,7 +615,7 @@ As
 	---------------------------------------------------
 	-- If the dataset starts with "blank" and @requestID is zero, perform some additional checks
 	---------------------------------------------------
-	If @requestID = 0 AND @mode IN ('add', 'check_add', 'add_trigger')
+	If @requestID = 0 AND @AddingDataset = 1
 	Begin
 		-- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
 		If @datasetNum Like 'Blank%' And @eusProposalID = '' And @eusUsageType = ''
@@ -678,7 +719,7 @@ As
 			---------------------------------------------------
 			declare @eusUsageTypeID int
 			exec @myError = ValidateEUSUsage
-							@eusUsageType,
+							@eusUsageType output,
 							@eusProposalID output,
 							@eusUsersList output,
 							@eusUsageTypeID output,
@@ -781,7 +822,10 @@ As
 		set @transName = 'AddNewDataset'
 		begin transaction @transName
 
-		Set @newDSStateID = 1
+		If IsNull(@AggregationJobDataset, 0) = 1
+			Set @newDSStateID = 3
+		Else
+			Set @newDSStateID = 1
 		
 		-- insert values into a new row
 		--
@@ -875,7 +919,8 @@ As
 									@MRMAttachment = '',
 									@status = 'Completed',
 									@SkipTransactionRollback = 1,
-									@AutoPopulateUserListIfBlank = 1		-- Auto populate @eusUsersList if blank since this is an Auto-Request
+									@AutoPopulateUserListIfBlank = 1,		-- Auto populate @eusUsersList if blank since this is an Auto-Request
+									@callingUser = @callingUser
 			--
 			set @myError = @result
 			--
@@ -923,7 +968,7 @@ As
 		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 				Set @warning = @message
 				
-		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output
+		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser
 		--
 		set @myError = @result
 		--

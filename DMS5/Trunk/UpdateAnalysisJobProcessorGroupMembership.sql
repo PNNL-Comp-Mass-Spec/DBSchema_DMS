@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupMembership
+
+CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupMembership]
 /****************************************************
 **
 **	Desc:
@@ -19,6 +20,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupMembership
 **			02/20/2007 grk - Fixed reference to group ID
 **			02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -307,8 +309,16 @@ AS
 		
 	End
 
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Processor group: ' + Convert(varchar(12), @pgid)
+	Exec PostUsageLogEntry 'UpdateAnalysisJobProcessorGroupMembership', @UsageMessage
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS_Analysis] AS [dbo]

@@ -50,6 +50,13 @@ CREATE Procedure AddUpdateRequestedRun
 **			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **			09/01/2010 mem - Added parameter @SkipTransactionRollback
 **			09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
+**			07/29/2011 mem - Now querying T_Requested_Run with both @reqName and @status when the mode is update or check_update
+**			11/29/2011 mem - Tweaked warning messages when checking for existing request
+**			12/05/2011 mem - Updated @transName to use a custom transaction name
+**			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
+**			               - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
+**			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
+**			01/09/2012 grk - added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
 **
 *****************************************************/
 (
@@ -74,7 +81,8 @@ CREATE Procedure AddUpdateRequestedRun
 	@MRMAttachment varchar(128),
 	@status VARCHAR(24) = 'Active',				-- 'Active', 'Inactive', 'Completed'
 	@SkipTransactionRollback tinyint = 0,		-- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
-	@AutoPopulateUserListIfBlank tinyint = 0	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+	@AutoPopulateUserListIfBlank tinyint = 0,	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
@@ -114,7 +122,7 @@ As
 	---------------------------------------------------
 
 	if LEN(@reqName) < 1
-		RAISERROR ('Dataset number was blank', 11, 110)
+		RAISERROR ('Request name was blank', 11, 110)
 	--
 	if LEN(@experimentNum) < 1
 		RAISERROR ('Experiment number was blank', 11, 111)
@@ -130,7 +138,12 @@ As
 	--
 	if LEN(@workPackage) < 1
 		RAISERROR ('Work package was blank', 11, 116)
-	--
+	
+	-- Assure that @comment is not null and assure that it doesn't have &quot;
+	set @comment = IsNull(@comment, '')
+	If @comment LIKE '%&quot;%'
+		Set @comment = Replace(@comment, '&quot;', '"')
+
 	if @myError <> 0
 		return @myError
 
@@ -150,26 +163,52 @@ As
 		
 	---------------------------------------------------
 	-- Is entry already in database?
+	-- Note that if a request is recycled, the old and new requests
+	--  will have the same name but different IDs
+	-- When @mode is Update, we should first look for an existing request
+	--  with name @reqName and status @status
+	-- If a match is not found, then simply look for a request with the same name
 	---------------------------------------------------
 
-	declare @requestID int
-	set @requestID = 0
-	declare @oldEusProposalID varchar(10)
-	set @oldEusProposalID = ''
-	DECLARE @oldStatus VARCHAR(24)
-	SET @oldStatus = ''
-	--
-	SELECT 
-		@requestID = ISNULL(ID, 0), 
-		@oldEusProposalID = RDS_EUS_Proposal_ID,
-		@oldStatus = RDS_Status
-	FROM T_Requested_Run
-	WHERE (RDS_Name = @reqName)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
+	declare @requestID int = 0
+	declare @oldEusProposalID varchar(10) = ''
+	declare @oldStatus varchar(24) = ''
+	declare @MatchFound tinyint = 0 
+	
+	If @mode IN ('update', 'check_update')
+	Begin
+		SELECT 
+			@requestID = ISNULL(ID, 0), 
+			@oldEusProposalID = RDS_EUS_Proposal_ID,
+			@oldStatus = RDS_Status
+		FROM T_Requested_Run
+		WHERE RDS_Name = @reqName AND
+		      RDS_Status = @status
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
+
+		if @myRowCount > 0
+			Set @MatchFound = 1
+	End
+	
+	if @MatchFound = 0
+	Begin
+		SELECT 
+			@requestID = ISNULL(ID, 0), 
+			@oldEusProposalID = RDS_EUS_Proposal_ID,
+			@oldStatus = RDS_Status
+		FROM T_Requested_Run
+		WHERE RDS_Name = @reqName
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
+	End
+	
 	
 	-- need non-null request even if we are just checking
 	--
@@ -178,38 +217,40 @@ As
 	-- cannot create an entry that already exists
 	--
 	if @requestID <> 0 and (@mode IN ('add', 'check_add'))
-		RAISERROR ('Cannot add: Requested Dataset "%s" already in database', 11, 4, @reqName)
-	
-	-- need non-null request even if we are just checking
-	--
-	set @request = @requestID
+		RAISERROR ('Cannot add: Requested Run "%s" already in database; cannot add', 11, 4, @reqName)
 
 	-- cannot update a non-existent entry
 	--
 	if @requestID = 0 and (@mode IN ('update', 'check_update'))
-		RAISERROR ('Cannot update: Requested Dataset "%s" is not in database', 11, 4, @reqName)
+		RAISERROR ('Cannot update: Requested Run "%s" is not in database; cannot update', 11, 4, @reqName)
 	
 	---------------------------------------------------
-	--
+	-- Confirm that the new status value is valid
 	---------------------------------------------------
 	--
-	IF @Mode = 'add' AND @status ='Completed'
+	IF @mode IN ('add', 'check_add') AND @status ='Completed'
 		SET @status = 'Active'
 	--
-	IF @Mode = 'add' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	IF @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
 		RAISERROR ('Status "%s" is not valid', 11, 37, @status)
 	--
-	IF @Mode = 'update' AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	IF @mode IN ('update', 'check_update') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
 		RAISERROR ('Status "%s" is not valid', 11, 38, @status)
 	--
-	IF @Mode = 'update' AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
+	IF @mode IN ('update', 'check_update') AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
 	Begin
 		set @msg = 'Cannot set status of request to "Completed" when existing status is "' + @oldStatus + '"'
 		RAISERROR (@msg, 11, 39)
 	End
 	--
-	IF @Mode = 'update' AND (@oldStatus = 'Completed' AND @status <> 'Completed')
+	IF @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
 		RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
+
+	Declare @StatusID int = 0
+	
+	SELECT @StatusID = State_ID
+	FROM T_Requested_Run_State_Name
+	WHERE (State_Name = @status)
 
 	---------------------------------------------------
 	-- get experiment ID from experiment number 
@@ -275,6 +316,7 @@ As
 						@instrumentName output,
 						@msType output,
 						@instrumentSettings output,
+						@secSep output,
 						@msg output
 	if @myError <> 0
 		RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
@@ -368,7 +410,7 @@ As
 	---------------------------------------------------
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
-						@eusUsageType,
+						@eusUsageType output,
 						@eusProposalID output,
 						@eusUsersList output,
 						@eusUsageTypeID output,
@@ -384,8 +426,8 @@ As
 	---------------------------------------------------
 	--
 	---------------------------------------------------
-	declare @transName varchar(32)
-	set @transName = 'AddUpdateRequestedRun'
+	declare @transName varchar(256)
+	set @transName = 'AddUpdateRequestedRun_' + @reqName
 
 	---------------------------------------------------
 	-- Lookup misc fields (only effective for experiments
@@ -460,6 +502,12 @@ As
 		
 		set @request = IDENT_CURRENT('T_Requested_Run')
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+		Begin
+			Exec AlterEventLogEntryUser 11, @request, @StatusID, @callingUser
+		End
+
 		-- assign users to the request
 		--
 		exec @myError = AssignEUSUsersToRequestedRun
@@ -472,6 +520,7 @@ As
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
 
 		commit transaction @transName
+		
 	end -- add mode
 
 	---------------------------------------------------
@@ -509,10 +558,16 @@ As
 		if @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @reqName)
 
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		If Len(@callingUser) > 0
+		Begin
+			Exec AlterEventLogEntryUser 11, @requestID, @StatusID, @callingUser
+		End
+		
 		-- assign users to the request
 		--
 		exec @myError = AssignEUSUsersToRequestedRun
-								@request,
+								@requestID,
 								@eusProposalID,
 								@eusUsersList,
 								@msg output

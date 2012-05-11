@@ -23,6 +23,8 @@ CREATE Procedure dbo.DeleteDataset
 **			05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			05/08/2009 mem - Now checking T_Dataset_Info
+**			12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
+**						   - Now checking T_Dataset_QC and T_Dataset_ScanTypes
 **    
 *****************************************************/
 (
@@ -75,7 +77,7 @@ As
 	--
 	if @datasetID = 0
 	begin
-		set @message = 'Datset does not exist"' + @datasetNum + '"'
+		set @message = 'Dataset does not exist"' + @datasetNum + '"'
 		return 51141
 	end
 
@@ -132,7 +134,7 @@ As
 	-- restore any consumed requested runs
 	---------------------------------------------------
 
-	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, 0, @message output
+	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, 0, @message output, @callingUser
 	if @result <> 0
 	begin
 		rollback transaction @transName
@@ -149,10 +151,34 @@ As
 	if @@error <> 0
 	begin
 		rollback transaction @transName
-		RAISERROR ('Delete from dataset info table was unsuccessful for dataset', 10, 1)
+		RAISERROR ('Delete from Dataset Info table was unsuccessful for dataset', 10, 1)
 		return 51132
 	end
-		
+	
+	---------------------------------------------------
+	-- Delete any entries in T_Dataset_QC
+	---------------------------------------------------
+	DELETE FROM T_Dataset_QC
+	WHERE Dataset_ID = @datasetID
+	if @@error <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete from Dataset QC table was unsuccessful for dataset', 10, 1)
+		return 51133
+	end
+	
+	---------------------------------------------------
+	-- Delete any entries in T_Dataset_ScanTypes
+	---------------------------------------------------
+	DELETE FROM T_Dataset_ScanTypes
+	WHERE Dataset_ID = @datasetID
+	if @@error <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete from Dataset ScanTypes table was unsuccessful for dataset', 10, 1)
+		return 51134
+	end
+	
 	---------------------------------------------------
 	-- delete entry from dataset table
 	---------------------------------------------------

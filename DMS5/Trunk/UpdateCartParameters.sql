@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateCartParameters
+
+CREATE Procedure [dbo].[UpdateCartParameters]
 /****************************************************
 **
 **	Desc: 
@@ -20,16 +21,19 @@ CREATE Procedure UpdateCartParameters
 **    @message   - blank if update was successful,		
 **                 description of error if not
 **
-**		Auth: grk
-**		Date: 12/16/2003
-**            2/27/2006 grk - added cart ID stuff
-**            5/10/2006 grk - added verification of request ID
+**	Auth: 	grk
+**	Date: 	12/16/2003
+**          02/27/2006 grk - added cart ID stuff
+**          05/10/2006 grk - added verification of request ID
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@mode varchar(32), -- 'CartName', 'RunStart', 'RunFinish', 'RunStatus', 'InternalStandard'
 	@requestID int,
 	@newValue varchar(512) output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -104,9 +108,6 @@ As
 		end
 	end
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	if @mode = 'RunStatus'
 	begin
 		UPDATE T_Requested_Run
@@ -116,9 +117,6 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	end
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	if @mode = 'RunStart'
 	begin
 		if @newValue = ''
@@ -133,9 +131,6 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	end
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	if @mode = 'RunFinish'
 	begin		
 		if @newValue = ''
@@ -150,9 +145,6 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	end
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	if @mode = 'InternalStandard'
 	begin
 		UPDATE T_Requested_Run
@@ -164,6 +156,14 @@ As
 
 
 	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Request ' + Convert(varchar(12), @requestID)
+	Exec PostUsageLogEntry 'UpdateCartParameters', @UsageMessage
+
+	---------------------------------------------------
 	-- report any errors
 	---------------------------------------------------
 	if @myError <> 0 or @myRowCount = 0
@@ -173,6 +173,7 @@ As
 	end	
 
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateCartParameters] TO [DMS_SP_User] AS [dbo]

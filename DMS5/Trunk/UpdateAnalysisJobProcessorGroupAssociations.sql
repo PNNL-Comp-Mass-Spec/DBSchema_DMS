@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupAssociations
+
+CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupAssociations]
 /****************************************************
 **
 **	Desc:
@@ -19,6 +20,7 @@ CREATE PROCEDURE dbo.UpdateAnalysisJobProcessorGroupAssociations
 **			02/20/2007 grk - fixed references to "Group" column in associations table
 **						   - 'add' mode now removes association with any other groups
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -233,10 +235,15 @@ AS
 	End
 
 	---------------------------------------------------
-	-- 
+	-- Log SP usage
 	---------------------------------------------------
 
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @jobCount) + ' jobs updated'
+	Exec PostUsageLogEntry 'UpdateAnalysisJobProcessorGroupAssociations', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupAssociations] TO [DMS_Analysis] AS [dbo]

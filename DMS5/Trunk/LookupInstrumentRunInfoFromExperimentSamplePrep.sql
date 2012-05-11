@@ -15,14 +15,16 @@ CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
+**  Auth: grk
+**  Date: 09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
+**        01/09/2012 grk - added @secSep
 **
 *****************************************************/
 	@experimentNum varchar(64),
 	@instrumentName varchar(64) output,
 	@DatasetType varchar(20) output,
 	@instrumentSettings varchar(512) output,
+	@secSep varchar(64) output,
 	@message varchar(512) output
 As
 	set nocount on
@@ -80,12 +82,14 @@ As
 	Declare
 		@irInstName varchar(64),
 		@irDSType varchar(20),
-		@irInstSettings varchar(512)
+		@irInstSettings varchar(512),
+		@irSecSep varchar(64)
 
 	SELECT
 		@irInstName = ISNULL(Instrument_Name, ''),
 		@irDSType = ISNULL(Dataset_Type, ''),
-		@irInstSettings = ISNULL(Instrument_Analysis_Specifications, '')
+		@irInstSettings = ISNULL(Instrument_Analysis_Specifications, ''),
+		@irSecSep = ISNULL(Separation_Type, '')
 	FROM 
 		T_Sample_Prep_Request
 	WHERE 
@@ -105,6 +109,8 @@ As
 	set @instrumentName = CASE WHEN @instrumentName = @ovr THEN @irInstName ELSE @instrumentName END
 	set @DatasetType = CASE WHEN @DatasetType = @ovr THEN @irDSType ELSE @DatasetType END
 	set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @irInstSettings ELSE @instrumentSettings END
+	set @secSep = CASE WHEN @secSep = @ovr THEN @irSecSep ELSE @secSep END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]

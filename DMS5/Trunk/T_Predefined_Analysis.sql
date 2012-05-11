@@ -29,6 +29,7 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_proteinCollectionList] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_proteinOptionsList] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_priority] [int] NOT NULL,
+	[AD_specialProcessing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AD_enabled] [tinyint] NOT NULL,
 	[AD_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AD_created] [datetime] NOT NULL,

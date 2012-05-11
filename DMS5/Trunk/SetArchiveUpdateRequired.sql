@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure SetArchiveUpdateRequired
+
+CREATE Procedure [dbo].[SetArchiveUpdateRequired]
 /****************************************************
 **
 **	Desc: Sets archive status of dataset
@@ -18,10 +19,13 @@ CREATE Procedure SetArchiveUpdateRequired
 **		Date: 12/3/2002   
 **            03/06/2007 grk - add changes for deep purge (ticket #403)
 **            03/07/2007 dac - fixed incorrect check for "in progress" update states (ticket #408)
+**			  09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128),
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -101,9 +105,16 @@ As
 	---------------------------------------------------
 	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Dataset: ' + @datasetNum
+	Exec PostUsageLogEntry 'SetArchiveUpdateRequired', @UsageMessage
+
 	return @myError
-
-
 
 
 GO

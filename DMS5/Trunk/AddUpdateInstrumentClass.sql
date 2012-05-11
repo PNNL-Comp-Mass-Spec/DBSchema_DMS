@@ -143,7 +143,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Insert operation failed: "' + @InstrumentClass + '"'
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@msg, 15, 1)
 			return 51007
 		end
 	end -- add mode
@@ -172,7 +172,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Update operation failed: "' + @InstrumentClass + '"'
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@msg, 15, 1)
 			return 51004
 		end
 	end -- update mode

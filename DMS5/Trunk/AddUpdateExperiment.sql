@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddUpdateExperiment
 /****************************************************
 **
@@ -29,6 +28,10 @@ CREATE Procedure AddUpdateExperiment
 **			04/22/2010 grk - try-catch for error handling
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @researcherPRN contains a person's real name rather than their username
 **			05/18/2010 mem - Now validating that @internalStandard and @postdigestIntStd are active internal standards when creating a new experiment (@mode is 'add' or 'check_add')
+**			11/15/2011 grk - added alkylation field
+**			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
+**			03/26/2012 mem - Now validating @container
+**			               - Updated to validate additional terms when @mode = 'check_add'
 **
 *****************************************************/
 (
@@ -48,7 +51,8 @@ CREATE Procedure AddUpdateExperiment
 	@postdigestIntStd varchar(50),
 	@wellplateNum varchar(64),
 	@wellNum varchar(8),
-	@mode varchar(12) = 'add', -- or 'update'
+	@alkylation VARCHAR(1),
+	@mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
 	@callingUser varchar(128) = ''
@@ -93,6 +97,11 @@ As
 	if LEN(@labelling) < 1
 		RAISERROR ('Labelling was blank', 11, 35)
 
+	-- Assure that @comment is not null and assure that it doesn't have &quot;
+	set @comment = IsNull(@comment, '')
+	If @comment LIKE '%&quot;%'
+		Set @comment = Replace(@comment, '&quot;', '"')
+
 	---------------------------------------------------
 	-- validate name
 	---------------------------------------------------
@@ -130,12 +139,12 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @experimentID <> 0 and (@mode = 'add' or @mode = 'check_add')
+	if @experimentID <> 0 and (@mode In ('add', 'check_add'))
 		RAISERROR ('Cannot add: Experiment "%s" already in database', 11, 39, @experimentNum)
 
 	-- cannot update a non-existent entry
 	--
-	if @experimentID = 0 and (@mode = 'update' or @mode = 'check_update')
+	if @experimentID = 0 and (@mode In ('update', 'check_update'))
 		RAISERROR ('Cannot update: Experiment "%s" is not in database', 11, 40, @experimentNum)
 
 	---------------------------------------------------
@@ -192,7 +201,7 @@ As
 	DECLARE @totalCount INT
 	declare @wellIndex int
 	--
-	SELECT @totalCount = CASE WHEN @mode = 'add' THEN 1 ELSE 0 END
+	SELECT @totalCount = CASE WHEN @mode In ('add', 'check_add') THEN 1 ELSE 0 END
 	--
 	exec @myError = ValidateWellplateLoading
 						@wellplateNum  output,
@@ -205,10 +214,10 @@ As
 
 	-- make sure we do not put two experiments in the same place
 	--
-	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode = 'add'
+	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
 		RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 45)
 	--
-	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode = 'update'
+	if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode In ('update', 'check_update')
 		RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 46)
 
 	---------------------------------------------------
@@ -253,7 +262,7 @@ As
 	if @internalStandardID = 0
 		RAISERROR ('Could not find entry in database for predigestion internal standard "%s"', 11, 49, @internalStandard)
 
-	if (@mode = 'add' or @mode = 'check_add') And @internalStandardState <> 'A'
+	if (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
 		RAISERROR ('Predigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @internalStandard)
 
 	---------------------------------------------------
@@ -272,43 +281,55 @@ As
 	if @postdigestIntStdID = 0
 		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 50, @postdigestIntStdID)
 
-	if (@mode = 'add' or @mode = 'check_add') And @internalStandardState <> 'A'
+	if (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
 		RAISERROR ('Postdigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @postdigestIntStd)
 
 	---------------------------------------------------
 	-- Resolve container name to ID
+	-- Auto-switch name from 'none' to 'na'
 	---------------------------------------------------
+
+	If @container = 'none'
+		Set @container = 'na'
 
 	declare @contID int
 	set @contID = 0
 	--
 	SELECT @contID = ID
-	FROM         T_Material_Containers
-	WHERE     (Tag = @container)
+	FROM T_Material_Containers
+	WHERE (Tag = @container)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-		RAISERROR ('Could not resove container name "%s" to ID', 11, 51, @container)
+	If @contID = 0 Or @myError <> 0
+		RAISERROR ('Invalid container name "%s"', 11, 51, @container)
 
 	---------------------------------------------------
-	-- Resolve current container id to name
+	-- Resolve current container id to name 
+	-- (skip if adding experiment)
 	---------------------------------------------------
 	declare @curContainerName varchar(125)
 	set @curContainerName = ''
 	--
-	SELECT @curContainerName = Tag 
-	FROM T_Material_Containers 
-	WHERE ID = @curContainerID
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Error resolving name of current container', 11, 53)
-
+	If Not @mode In ('add', 'check_add')
+	Begin
+		SELECT @curContainerName = Tag 
+		FROM T_Material_Containers 
+		WHERE ID = @curContainerID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Error resolving name of current container', 11, 53)
+	End
+	
 	---------------------------------------------------
 	-- Resolve cell cultures
+	-- Auto-switch from 'none' or 'na' to '(none)'
 	---------------------------------------------------
+	
+	If @cellCultureList IN ('none', 'na')
+		Set @cellCultureList = '(none)'
 	
 	-- create tempoary table to hold names of cell cultures as input
 	--
@@ -382,7 +403,8 @@ As
 				EX_postdigest_internal_std_ID,
 				EX_Container_ID,
 				EX_wellplate_num, 
-				EX_well_num 
+				EX_well_num,
+				EX_Alkylation
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
@@ -401,7 +423,8 @@ As
 				@postdigestIntStdID,
 				@contID,
 				@wellplateNum,
-				@wellNum
+				@wellNum,
+				@alkylation
 
 			)
 		--
@@ -477,7 +500,8 @@ As
 			EX_postdigest_internal_std_ID = @postdigestIntStdID,
 			EX_Container_ID = @contID,
 			EX_wellplate_num = @wellplateNum, 
-			EX_well_num = @wellNum
+			EX_well_num = @wellNum,
+			EX_Alkylation = @alkylation
 		WHERE 
 			(Experiment_Num = @experimentNum)
 		--

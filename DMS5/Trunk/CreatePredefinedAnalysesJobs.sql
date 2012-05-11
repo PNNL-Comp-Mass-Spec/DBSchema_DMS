@@ -28,6 +28,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **			04/11/2011 mem - Updated call to AddUpdateAnalysisJob
 **			04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to AddUpdateAnalysisJob
+**			05/03/2012 mem - Added support for the Special Processing field
 **    
 *****************************************************/
 (
@@ -84,6 +85,7 @@ As
 		associatedProcessorGroup varchar(64),
 		numJobs int,
 		propagationMode tinyint,
+		specialProcessing varchar(512),
 		ID int IDENTITY (1, 1) NOT NULL
 	)
 	--
@@ -130,6 +132,7 @@ As
 	declare @comment varchar(128)
 	declare @propagationMode tinyint
 	declare @propagationModeText varchar(24)
+	declare @specialProcessing varchar(512)
 		
 	declare @jobNum varchar(32)
 	declare @ownerPRN varchar(32)
@@ -165,6 +168,7 @@ As
 			@comment = comment,
 			@associatedProcessorGroup = associatedProcessorGroup,
 			@propagationMode = propagationMode,
+			@specialProcessing = specialProcessing,
 			@currID = ID
 		FROM #JX
 		WHERE ID > @currID
@@ -228,7 +232,9 @@ As
 								@message = @NewMessage output,
 								@callingUser = @callingUser,
 								@PreventDuplicateJobs = @PreventDuplicateJobs,
-								@PreventDuplicatesIgnoresNoExport = 0
+								@PreventDuplicatesIgnoresNoExport = 0,
+								@specialProcessing = @specialProcessing,
+								@SpecialProcessingWaitUntilReady = 1
 
 					-- If there was an error creating the job, remember it
 					-- otherwise bump the job count

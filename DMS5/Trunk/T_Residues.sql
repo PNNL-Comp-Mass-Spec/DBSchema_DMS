@@ -29,14 +29,11 @@ CREATE CLUSTERED INDEX [IX_T_Residues_Symbol] ON [dbo].[T_Residues]
 	[Residue_Symbol] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_i_Residues] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_i_Residues on dbo.T_Residues
 For Insert
@@ -57,14 +54,11 @@ AS
 
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Residues] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger trig_u_Residues on dbo.T_Residues
 For Update

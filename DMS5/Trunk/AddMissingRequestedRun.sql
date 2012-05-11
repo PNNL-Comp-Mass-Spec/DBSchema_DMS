@@ -11,6 +11,15 @@ CREATE Procedure dbo.AddMissingRequestedRun
 **
 **			The requested run will be named 'AutoReq_DatasetName'
 **
+**
+**			Note that this procedure is similar to AddRequestedRunToExistingDataset, 
+**			though that procedure has parameter @templateRequestID which defines
+**			an existing requested run ID from which to lookup EUS information
+**
+**			In contrast, this procedure is intended to be run via automation
+**			to add requested runs to existing datasets that don't yet have one
+**
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	mem

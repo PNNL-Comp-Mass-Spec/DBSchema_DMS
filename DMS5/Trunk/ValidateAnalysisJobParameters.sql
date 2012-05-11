@@ -39,6 +39,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
 **			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to determine valid instrument classes for a given analysis tool
+**			01/12/2012 mem - Now validating that the analysis tool is active (T_Analysis_Tool.AJT_active > 0)
 **
 *****************************************************/
 (
@@ -228,7 +229,16 @@ As
 		set @message = 'Could not find entry in database for analysis tool "' + @toolName + '"'
 		return 53102
 	end
-				
+
+	---------------------------------------------------
+	-- Make sure the analysis tool is active
+	---------------------------------------------------
+	If Not Exists (SELECT * FROM T_Analysis_Tool WHERE (AJT_toolID = @analysisToolID) AND (AJT_active > 0))
+	begin
+		set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
+		return 53103
+	end
+	
 	---------------------------------------------------
 	-- get organism ID using organism name
 	---------------------------------------------------

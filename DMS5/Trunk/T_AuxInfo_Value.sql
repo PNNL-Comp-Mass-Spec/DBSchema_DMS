@@ -31,7 +31,7 @@ GRANT SELECT ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_AuxInfo_Value] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_AuxInfo_Value]  WITH NOCHECK ADD  CONSTRAINT [FK_T_AuxInfo_Value_T_AuxInfo_Description] FOREIGN KEY([AuxInfo_ID])
+ALTER TABLE [dbo].[T_AuxInfo_Value]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Value_T_AuxInfo_Description] FOREIGN KEY([AuxInfo_ID])
 REFERENCES [T_AuxInfo_Description] ([ID])
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Value] CHECK CONSTRAINT [FK_T_AuxInfo_Value_T_AuxInfo_Description]

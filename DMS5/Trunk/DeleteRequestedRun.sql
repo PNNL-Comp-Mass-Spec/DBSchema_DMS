@@ -17,10 +17,14 @@ CREATE Procedure DeleteRequestedRun
 **	Date:	02/23/2006
 **			10/29/2009 mem - Made @message an optional output parameter
 **          02/26/2010 grk - delete factors
+**			12/12/2011 mem - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
 **    
 *****************************************************/
+(
 	@requestID int = 0,
-	@message varchar(512)='' output
+	@message varchar(512)='' output,
+	@callingUser varchar(128) = ''
+)
 As
 	declare @delim char(1)
 	set @delim = ','
@@ -102,9 +106,19 @@ As
 		goto Done
 	end		
 
+	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	If Len(@callingUser) > 0
+	Begin
+		Declare @stateID int
+		Set @stateID = 0
+		
+		Exec AlterEventLogEntryUser 11, @requestID, @stateID, @callingUser
+	End
+
 	commit transaction @transName
+		
 	---------------------------------------------------
-	-- 
+	-- Complete
 	---------------------------------------------------
 	--
 Done:

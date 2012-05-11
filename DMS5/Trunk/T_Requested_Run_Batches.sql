@@ -24,14 +24,11 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 ) ON [PRIMARY]
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_Requested_Run_Batches] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
 After Update
@@ -81,7 +78,7 @@ GRANT SELECT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo
 GO
 GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
+ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
 REFERENCES [T_Users] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] CHECK CONSTRAINT [FK_T_Requested_Run_Batches_T_Users]

@@ -19,6 +19,7 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 **			04/24/2010 grk - replaced @project with @SamplePrepRequest
 **			04/26/2010 grk - @SamplePrepRequest can be multiple
 **			05/06/2010 grk - added storage path
+**			08/25/2011 grk - added QC field
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -37,6 +38,7 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 	@SamplePrepRequest varchar(1024),
 	@NumberOfRuns varchar(12),
 	@InstrumentPressure varchar(32),
+	@QualityControl varchar(2048),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -101,7 +103,8 @@ As
 			Sample_Type,
 			SamplePrepRequest,
 			Number_Of_Runs,
-			Instrument_Pressure
+			Instrument_Pressure,
+			Quality_Control	
 		) VALUES (
 			@Tab,
 			@Instrument,
@@ -115,7 +118,8 @@ As
 			@SampleType,
 			@SamplePrepRequest,
 			@NumberOfRuns,
-			@InstrumentPressure
+			@InstrumentPressure,
+			@QualityControl 
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -151,7 +155,8 @@ As
 		Sample_Type = @SampleType,
 		SamplePrepRequest = @SamplePrepRequest,
 		Number_Of_Runs = @NumberOfRuns,
-		Instrument_Pressure = @InstrumentPressure
+		Instrument_Pressure = @InstrumentPressure,
+		Quality_Control = @QualityControl 
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

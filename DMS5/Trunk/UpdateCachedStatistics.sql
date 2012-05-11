@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **	Auth:	mem
 **	Date:	11/04/2008 mem - Initial version (Ticket: #698)
 **			12/21/2009 mem - Added parameter @UpdateJobRequestStatistics
+**			10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
 **    
 *****************************************************/
 (
@@ -66,11 +67,18 @@ As
 		UPDATE T_Param_Files
 		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0)
 		FROM T_Param_Files PF
-			LEFT OUTER JOIN ( SELECT AJ_parmFileName AS Param_File_Name,
-									COUNT(*) AS JobCount
-							FROM dbo.T_Analysis_Job
-							GROUP BY AJ_parmFileName ) StatsQ
-			ON PF.Param_File_Name = StatsQ.Param_File_Name
+		     LEFT OUTER JOIN ( SELECT AJ.AJ_parmFileName AS Param_File_Name,
+		                              PFT.Param_File_Type_ID,
+		                              COUNT(*) AS JobCount
+		                       FROM T_Analysis_Job AJ
+		                            INNER JOIN T_Analysis_Tool AnTool
+		                              ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
+		                            INNER JOIN T_Param_File_Types PFT
+		                              ON AnTool.AJT_paramFileType = PFT.Param_File_Type_ID
+		                       GROUP BY AJ.AJ_parmFileName, PFT.Param_File_Type_ID 
+		                     ) StatsQ
+		       ON PF.Param_File_Name = StatsQ.Param_File_Name AND
+		          PF.Param_File_Type_ID = StatsQ.Param_File_Type_ID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -82,11 +90,16 @@ As
 		UPDATE T_Settings_Files
 		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0)
 		FROM T_Settings_Files SF
-			LEFT OUTER JOIN ( SELECT AJ_settingsFileName AS Settings_File_Name,
-									COUNT(*) AS JobCount
-							FROM dbo.T_Analysis_Job
-							GROUP BY AJ_settingsFileName ) StatsQ
-			ON SF.File_Name = StatsQ.Settings_File_Name
+		     LEFT OUTER JOIN ( SELECT AJ.AJ_settingsFileName AS Settings_File_Name,
+		                              AnTool.AJT_toolName,
+		                              COUNT(*) AS JobCount
+		                       FROM T_Analysis_Job AJ
+		                            INNER JOIN T_Analysis_Tool AnTool
+		                              ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
+		                       GROUP BY AJ.AJ_settingsFileName, AnTool.AJT_toolName 
+		                     ) StatsQ
+		       ON SF.Analysis_Tool = StatsQ.AJT_toolName AND
+		          SF.File_Name = StatsQ.Settings_File_Name
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	End -- </a1>

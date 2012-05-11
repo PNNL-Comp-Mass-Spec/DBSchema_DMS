@@ -66,3 +66,5 @@ As
 GO
 GRANT VIEW DEFINITION ON [dbo].[PreviewPurgeTaskCandidates] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[PreviewPurgeTaskCandidates] TO [svc-dms] AS [dbo]
+GO

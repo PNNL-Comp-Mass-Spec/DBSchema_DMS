@@ -6,22 +6,27 @@ GO
 
 CREATE VIEW [dbo].[V_Organism_List_Report]
 AS
-SELECT Organism_ID AS ID,
-       OG_name AS Name,
-       OG_Genus AS Genus,
-       OG_Species AS Species,
-       OG_Strain AS Strain,
-       OG_description AS Description,
-       OG_Short_Name AS Short_Name,
-       OG_Domain AS Domain,
-       OG_Kingdom AS Kingdom,
-       OG_Phylum AS Phylum,
-       OG_Class AS Class,
-       OG_Order AS [Order],
-       OG_Family AS Family,
-       OG_created AS Created,
-       OG_Active AS Active
-FROM dbo.T_Organisms
+SELECT O.Organism_ID AS ID,
+       O.OG_name AS Name,
+       O.OG_Genus AS Genus,
+       O.OG_Species AS Species,
+       O.OG_Strain AS Strain,
+       O.OG_description AS Description,
+       COUNT(PC.Name) AS [Protein Collections],
+       O.OG_Short_Name AS Short_Name,
+       O.OG_Domain AS Domain,
+       O.OG_Kingdom AS Kingdom,
+       O.OG_Phylum AS Phylum,
+       O.OG_Class AS Class,
+       O.OG_Order AS [Order],
+       O.OG_Family AS Family,
+       O.OG_created AS Created,
+       O.OG_Active AS Active
+FROM dbo.T_Organisms O
+     LEFT OUTER JOIN V_Protein_Collection_Name PC
+       ON O.OG_Name = PC.[Organism Name]
+GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description, O.OG_Short_Name,
+         O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, O.OG_Family, O.OG_created, O.OG_Active
 
 
 GO

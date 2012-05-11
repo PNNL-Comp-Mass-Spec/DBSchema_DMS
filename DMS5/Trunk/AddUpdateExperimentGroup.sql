@@ -14,15 +14,20 @@ CREATE PROCEDURE AddUpdateExperimentGroup
 **
 **    Auth: grk
 **    Date: 07/11/2006
+**			09/13/2011 grk - Added Researcher
+**			11/10/2011 grk - Removed character size limit from experiment list
+**			11/10/2011 grk - Added Tab field
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
   @ID int output,
   @GroupType varchar(50),
+  @Tab VARCHAR(128),
   @Description varchar(512),
-  @ExperimentList varchar(4000),
+  @ExperimentList varchar(MAX),
   @ParentExp varchar(50),
+  @Researcher VARCHAR(50),
   @mode varchar(12) = 'add', -- or 'update'
   @message varchar(512) output
 As
@@ -182,12 +187,43 @@ As
     return 51221
   end
 
+  ---------------------------------------------------
+  -- Resolve researcher PRN
+  ---------------------------------------------------
+
+  declare @userID int
+  execute @userID = GetUserID @researcher
+  if @userID = 0
+  begin
+    -- Could not find entry in database for PRN @researcher
+    -- Try to auto-resolve the name
+
+    Declare @MatchCount int
+    Declare @NewPRN varchar(64)
+
+    exec AutoResolveNameToPRN @researcher, @MatchCount output, @NewPRN output, @userID output
+
+    If @MatchCount = 1
+    Begin
+      -- Single match found; update @researcher
+      Set @researcher = @NewPRN
+    End
+    Else
+    Begin
+     set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+     RAISERROR (@message, 10, 1)
+     return 51037
+    End
+
+  end
+
+  ---------------------------------------------------
   -- start transaction
   --
   declare @transName varchar(32)
   set @transName = 'AddUpdateExperimentGroup'
   begin transaction @transName
-
+  
   ---------------------------------------------------
   -- action for add mode
   ---------------------------------------------------
@@ -198,12 +234,16 @@ As
       EG_Group_Type, 
       EG_Created, 
       EG_Description, 
-      Parent_Exp_ID
+      Parent_Exp_ID,
+      Researcher,
+      Tab
    ) VALUES (
       @GroupType, 
       getdate(), 
       @Description, 
-      @ParentExpID
+      @ParentExpID,
+      @Researcher,
+      @Tab
    )
    --
    SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -235,7 +275,9 @@ As
     SET 
       EG_Group_Type = @GroupType, 
       EG_Description = @Description, 
-      Parent_Exp_ID = @ParentExpID
+      Parent_Exp_ID = @ParentExpID,
+      Researcher = @Researcher,
+      TAB = @Tab
     WHERE (Group_ID = @ID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

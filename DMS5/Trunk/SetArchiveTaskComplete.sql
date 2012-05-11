@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.SetArchiveTaskComplete
+
+CREATE Procedure [dbo].[SetArchiveTaskComplete]
 /****************************************************
 **
 **	Desc: Sets status of task to successful
@@ -22,6 +23,7 @@ CREATE PROCEDURE dbo.SetArchiveTaskComplete
 **			11/27/2007 dac - removed @processorname param, which is no longer required
 **			03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
 **          12/17/2009 grk - added special success code '100' for use by capture broker 
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -79,9 +81,7 @@ As
 
    	---------------------------------------------------
 	-- Update dataset archive state 
-	---------------------------------------------------
-	
-	-- decide what 
+	---------------------------------------------------	
 	
 	if @completionCode = 0 OR @completionCode = 100 -- task completed successfully
 		begin
@@ -134,7 +134,17 @@ As
 	---------------------------------------------------
 	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Dataset: ' + @datasetNum
+	Exec PostUsageLogEntry 'SetArchiveTaskComplete', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[SetArchiveTaskComplete] TO [DMS_SP_User] AS [dbo]

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group_Allowed_DS_Type] ******/
-/****** RowCount: 72 ******/
+/****** RowCount: 77 ******/
 /****** Columns: IN_Group, Dataset_Type, Comment ******/
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('11T','HMS','Typical mode')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('11T','HMS-HMSn','Rarely used')
@@ -10,10 +10,14 @@ INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Agilent_Ion_Trap','MS-
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Agilent_TOF','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Agilent_TOF_V2','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Agilent_TOF_V2','HMS-HMSn','Typical mode')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_Amazon_Ion_Trap','MS-CID/ETD-MSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_Amazon_Ion_Trap','MS-ETD-MSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_Amazon_Ion_Trap','MS-MSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_FTMS','HMS','Typical mode')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_FTMS','HMS-HMSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_QTOF','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Bruker_QTOF','HMS-HMSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('DataFolders','DataFiles','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Exactive','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('FT_ZippedSFolders','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('GC-TSQ','GC-MS','')
@@ -48,6 +52,7 @@ INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Orbitrap-HCD','HMS-HMS
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Orbitrap-HCD','HMS-MSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Orbitrap-HCD','MS-MSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Other','HMS-HMSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Other','HMS-MSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Other','MS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('Other','MS-MSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QTrap','MRM','')

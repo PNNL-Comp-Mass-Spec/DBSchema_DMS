@@ -18,6 +18,7 @@ CREATE FUNCTION dbo.GetInstrumentRunDatasets
 **		Date: 09/14/2010
 **      
 **		09/04/2010 grk - initial release
+**		02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes
 **    
 *****************************************************/
 (
@@ -73,7 +74,7 @@ AS
 			T_Dataset.Dataset_Num AS Dataset ,
 			T_Dataset.Acq_Time_Start AS Time_Start,
 			T_Dataset.Acq_Time_End AS Time_End,
-			DATEDIFF(minute, T_Dataset.Acq_Time_Start, T_Dataset.Acq_Time_End) AS Duration,
+			T_Dataset.Acq_Length_Minutes AS Duration,
 			@instrument
 		FROM
 			T_Dataset

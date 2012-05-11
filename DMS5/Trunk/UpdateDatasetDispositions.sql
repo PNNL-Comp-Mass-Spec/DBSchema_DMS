@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDatasetDispositions
+
+CREATE Procedure dbo.UpdateDatasetDispositions
 /****************************************************
 **
 **	Desc:
@@ -21,6 +22,8 @@ CREATE PROCEDURE UpdateDatasetDispositions
 **			08/15/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **			08/19/2010 grk - try-catch for error handling
 **			11/18/2010 mem - Updated logic for calling SchedulePredefinedAnalyses to include dataset state 4 (Inactive)
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
 **
 *****************************************************/
 (
@@ -44,6 +47,8 @@ As
 
 	declare @msg varchar(512)
 	declare @list varchar(1024)
+
+	Declare @datasetCount int = 0
 
 	BEGIN TRY 
 
@@ -153,7 +158,6 @@ As
 		return 51007
 	end
 	
-	declare @datasetCount int
 	SELECT @datasetCount = count(*) FROM #TDS
 	set @message = 'Number of affected datasets:' + cast(@datasetCount as varchar(12))
 	
@@ -279,7 +283,7 @@ As
 					--
 					if @recycleRequest = 'Yes'
 					begin
-						exec @myError = UnconsumeScheduledRun @curDatasetName, 'na', 'na', 1, @message output					
+						exec @myError = UnconsumeScheduledRun @curDatasetName, 'na', 'na', 1, @message output, @callingUser
 						--
 						if @myError <> 0
 						begin
@@ -329,7 +333,17 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
+	Exec PostUsageLogEntry 'UpdateDatasetDispositions', @UsageMessage
+
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler] AS [dbo]

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.NextField
+CREATE Procedure NextField
 /****************************************************
 **
 **	Desc: Parses off and returns next field from string.
@@ -62,7 +62,6 @@ As
 		set @EOL = 1
 
 	return @EOL
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[NextField] TO [Limited_Table_Write] AS [dbo]

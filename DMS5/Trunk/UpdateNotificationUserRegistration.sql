@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateNotificationUserRegistration
+
+CREATE Procedure [dbo].[UpdateNotificationUserRegistration]
 /****************************************************
 **
 **  Desc:
@@ -13,12 +14,12 @@ CREATE PROCEDURE UpdateNotificationUserRegistration
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 04/03/2010
+**	Auth: 	grk
+**	Date: 	04/03/2010
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
+(
 	@PRN varchar(15),
 	@Name varchar(64),
 	@RequestedRunBatch varchar(4),
@@ -28,6 +29,7 @@ CREATE PROCEDURE UpdateNotificationUserRegistration
 	@mode varchar(12) = 'update',
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
@@ -197,13 +199,19 @@ As
 	END
 
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-	--
-
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'User ' + IsNull(@PRN, 'NULL')
+	Exec PostUsageLogEntry 'UpdateNotificationUserRegistration', @UsageMessage
+
+
 	return @myError
+
 
 
 GO

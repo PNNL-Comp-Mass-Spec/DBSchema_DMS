@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 **    03/20/2008 grk -- initial release
 **    07/18/2008 grk -- added checking for location's container limit
 **    11/25/2008 grk -- corrected udpdate not to check for room if location doesn't change
+**    07/28/2011 grk -- added owner field
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -25,6 +26,7 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 	@Location varchar(24),
 	@Comment varchar(1024),
 	@Barcode varchar(32),
+	@Researcher VARCHAR(128),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output, 
 	@callingUser varchar(128) = ''
@@ -200,22 +202,23 @@ As
 	begin
 		-- future: accept '<next bag>' or '<next box> and generate container name
 	
-		INSERT INTO T_Material_Containers (
-			Tag, 
-			Type, 
-			Comment, 
-			Barcode, 
-			Location_ID, 
-			Status
-		) VALUES (
-			@Container, 
-			@Type, 
-			@Comment, 
-			@Barcode, 
-			@LocationID, 
-			@Status
-		)
-		/**/
+  INSERT    INTO T_Material_Containers
+            ( Tag ,
+              Type ,
+              Comment ,
+              Barcode ,
+              Location_ID ,
+              Status ,
+              Researcher
+            )
+  VALUES    ( @Container ,
+              @Type ,
+              @Comment ,
+              @Barcode ,
+              @LocationID ,
+              @Status ,
+              @Researcher
+            )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -246,14 +249,14 @@ As
 	begin
 		set @myError = 0
 		--
-		UPDATE T_Material_Containers 
-		SET 
-			Type = @Type, 
-			Comment = @Comment, 
-			Barcode = @Barcode, 
-			Location_ID = @LocationID, 
-			Status = @Status
-		WHERE (Tag = @Container)
+		UPDATE  T_Material_Containers
+		SET     Type = @Type ,
+				Comment = @Comment ,
+				Barcode = @Barcode ,
+				Location_ID = @LocationID ,
+				Status = @Status ,
+				Researcher = @Researcher
+		WHERE   ( Tag = @Container )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

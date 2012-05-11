@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEntityAnnotations]
+
+CREATE Procedure [dbo].[UpdateEntityAnnotations]
 /****************************************************
 **
 **	Desc: 
@@ -15,9 +16,9 @@ CREATE PROCEDURE [dbo].[UpdateEntityAnnotations]
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 05/03/2007
-**      (only does experiment annotations at present)
+**	Auth: 	grk
+**	Date: 	05/03/2007 (only does experiment annotations at present)
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
 (
@@ -37,6 +38,7 @@ As
 	
 	set @message = ''
 
+	Declare @EntityCount int = 0
 
 	---------------------------------------------------
 	--  Create temporary table to hold list of tracking entities
@@ -93,6 +95,8 @@ As
 		set @message = 'Error populating temporary entity table'
 		goto DONE
 	end
+
+	Set @EntityCount = @myRowCount
 
  	---------------------------------------------------
 	-- Populate parameter table from XML parameter description  
@@ -174,7 +178,19 @@ As
 	end
      
 DONE:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Updated ' + Convert(varchar(12), @EntityCount) + ' ' + IsNull(@entityType, '??')
+	If @EntityCount <> 1
+		Set @UsageMessage = @UsageMessage + 's'
+	Exec PostUsageLogEntry 'UpdateEntityAnnotations', @UsageMessage
+
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateEntityAnnotations] TO [DMS_Annotation_User] AS [dbo]
 GO

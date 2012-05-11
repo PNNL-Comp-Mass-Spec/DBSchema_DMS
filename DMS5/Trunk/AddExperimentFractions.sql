@@ -31,11 +31,16 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
 **			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **			07/31/2009 grk - added prep LC run field (http://prismtrac.pnl.gov/trac/ticket/743)
+**			09/13/2011 grk - added researcher to experiment group
+**			10/03/2011 grk - added try-catch error handling
+**			11/10/2011 grk - Added Tab field
+**			11/15/2011 grk - added handling for experiment alkylation field
 **    
 *****************************************************/
 (
 	@parentExperiment varchar(128),       -- Parent experiment for group (must already exist)
 	@groupType varchar(20) = 'Fraction',  -- 'None', 'Fraction'
+	@tab VARCHAR(128),
 	@description varchar(512),            -- Purpose of group
 	@totalCount int,                      -- Number of new experiments to automatically create
 	@groupID int,                         -- ID of newly created experiment group
@@ -91,6 +96,7 @@ AS
 	declare @samplePrepRequest int
 	declare @internalStandardID int
 	declare @postdigestIntStdID int
+	DECLARE @alkylation CHAR(1)
 
 	declare @ExperimentIDList varchar(8000)
 	Set @ExperimentIDList = ''
@@ -98,6 +104,9 @@ AS
 	declare @MaterialIDList varchar(8000)
 	Set @MaterialIDList = ''
 
+
+	BEGIN TRY
+	
 	---------------------------------------------------
 	-- Validate arguments
 	---------------------------------------------------
@@ -107,9 +116,7 @@ AS
 	if @totalCount > @maxCount
 	begin
 		set @message = 'Cannot create more than ' + convert(varchar(12), @maxCount) + ' child experments'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51004
-		goto Done
+		RAISERROR (@message, 11, 4)
 	end
 
 	-- make sure that we don't overflow our alloted space for digits
@@ -117,9 +124,7 @@ AS
 	if @startingIndex + (@totalCount * @step) > 999
 	begin
 		set @message = 'Automatic numbering parameters will require too many digits'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51005
-		goto Done
+		RAISERROR (@message, 11, 5)
 	end
 
 	---------------------------------------------------
@@ -147,7 +152,8 @@ AS
 		@samplePrepRequest = EX_sample_prep_request_ID,
 		@internalStandardID = EX_internal_standard_ID,
 		@postdigestIntStdID = EX_postdigest_internal_std_ID,
-		@parentContainerID = EX_Container_ID
+		@parentContainerID = EX_Container_ID,
+		@alkylation = EX_Alkylation
 	FROM	T_Experiments
 	WHERE (Experiment_Num = @parentExperiment)
 	--
@@ -156,9 +162,7 @@ AS
 	if @myError <> 0 OR @ParentExperimentID = 0
 	begin
 		set @message = 'Could not find parent experiment in database'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51006
-		goto Done
+		RAISERROR (@message, 11, 6)
 	end
 
 	---------------------------------------------------
@@ -174,8 +178,7 @@ AS
 						@message output
 	if @myError <> 0
 	begin
-		RAISERROR (@message, 10, 1)
-		return @myError
+		RAISERROR (@message, 11, 7)
 	end
 
 	---------------------------------------------------
@@ -226,9 +229,7 @@ AS
 		if @myError <> 0 OR @matchCount <> 1
 		begin
 			set @message = 'Could not find sample prep request'
-			RAISERROR (@message, 10, 1)
-			set @myError = 51029
-			goto Done
+			RAISERROR (@message, 11, 8)
 		end
 	end
 
@@ -249,8 +250,7 @@ AS
 		if @myRowCount = 0
 		begin
 			set @message = 'Could not find entry in database for internal standard "' + @internalStandard + '"'
-			RAISERROR (@message, 10, 1)
-			return 51009
+			RAISERROR (@message, 11, 9)
 		end
 		Set @internalStandardID = @tmpID
 	end
@@ -272,8 +272,7 @@ AS
 		if @myRowCount = 0
 		begin
 			set @message = 'Could not find entry in database for postdigestion internal standard "' + @tmpID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51009
+			RAISERROR (@message, 11, 10)
 		end
 		Set @postdigestIntStdID = @tmpID
 	end
@@ -284,13 +283,37 @@ AS
 	-- 
 	if @researcher <> 'parent'
 	begin
-		set @researcherPRN = @researcher
+		declare @userID int
+		execute @userID = GetUserID @researcher
+		if @userID = 0
+		begin
+			-- Could not find entry in database for PRN @researcher
+			-- Try to auto-resolve the name
+
+			Declare @NewPRN varchar(64)
+
+			exec AutoResolveNameToPRN @researcher, @matchCount output, @NewPRN output, @userID output
+
+			If @matchCount = 1
+			Begin
+			  -- Single match found; update @researcher
+			  Set @researcher = @NewPRN
+			End
+			Else
+			Begin
+			 set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+			 RAISERROR (@message, 11, 11)
+			End
+		end
+		SET @researcherPRN = @researcher
 	end
-/*** ***/
 
 	---------------------------------------------------
 	-- Set up transaction around multiple table modifications
 	---------------------------------------------------
+	
+--RAISERROR ('Researcher:%s', 11, 40, @researcherPRN)
+
 
 	declare @transName varchar(32)
 	set @transName = 'AddBatchExperimentEntry'
@@ -299,29 +322,31 @@ AS
 	---------------------------------------------------
 	-- Make Experiment group entry
 	---------------------------------------------------
-	
-	INSERT INTO T_Experiment_Groups (
-		EG_Group_Type,
-		Parent_Exp_ID,
-		 EG_Description,
-		 Prep_LC_Run_ID,
-		 EG_Created
-	) VALUES (
-		@groupType,
-		@ParentExperimentID,
-		@description,
-		@prepLCRunID,
-		GETDATE()
+	INSERT  INTO T_Experiment_Groups ( 
+		EG_Group_Type ,
+		Parent_Exp_ID ,
+		EG_Description ,
+		Prep_LC_Run_ID ,
+		EG_Created ,
+		Researcher,
+		Tab
 	)
+	VALUES  ( 
+		@groupType ,
+		@ParentExperimentID ,
+		@description ,
+		@prepLCRunID ,
+		GETDATE() ,
+		@researcherPRN,
+		@tab
+	)	
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Failed to insert of new group entry into database'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51007
-		goto Done
+		set @message = 'Failed to insert new group entry into database'
+		RAISERROR (@message, 11, 12)
 	end
 	
 	set @groupID = SCOPE_IDENTITY()
@@ -339,9 +364,7 @@ AS
 	if @myError <> 0
 	begin
 		set @message = 'Failed to update group reference for experiment'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51008
-		goto Done
+		RAISERROR (@message, 11, 14)
 	end
 
 	---------------------------------------------------
@@ -379,8 +402,7 @@ AS
 			rollback transaction @transName
 			set @message = 'Failed to add new fraction experiment because name already in database'
 			set @myError = 51002
-			RAISERROR (@message, 10, 1)
-			goto Done
+			RAISERROR (@message, 11, 16)
 		end
 
 		-- insert new experiment into database
@@ -402,7 +424,8 @@ AS
 			EX_internal_standard_ID,
 			EX_postdigest_internal_std_ID,
 			EX_wellplate_num, 
-			EX_well_num 
+			EX_well_num,
+			EX_Alkylation
 		) VALUES (
 			@newExpName, 
 			@researcherPRN, 
@@ -420,7 +443,8 @@ AS
 			@internalStandardID,
 			@postdigestIntStdID,
 			@wellplateNum,
-			@wn
+			@wn,
+			@alkylation
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -429,8 +453,7 @@ AS
 		begin
 			rollback transaction @transName
 			set @message = 'Insert operation failed!'
-			RAISERROR (@message, 10, 1)
-			goto Done
+			RAISERROR (@message, 11, 17)
 		end
 		
 		set @newExpID = SCOPE_IDENTITY()
@@ -444,10 +467,9 @@ AS
 		--
 		if @result <> 0
 		begin
-			set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @newExpName + '" ' + @message
-			RAISERROR (@msg, 10, 1)
 			rollback transaction @transName
-			return @result
+			set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @newExpName + '" ' + @message
+			RAISERROR (@msg, 11, 18)
 		end
 
 
@@ -465,9 +487,7 @@ AS
 		begin
 			rollback transaction @transName
 			set @message = 'Failed to update group reference for new experiment'
-			RAISERROR (@message, 10, 1)
-			set @myError = 51008
-			goto Done
+			RAISERROR (@message, 11, 19)
 		end
 	
 		---------------------------------------------------
@@ -512,9 +532,7 @@ AS
 		begin
 			rollback transaction @transName
 			set @message = 'Failed to find parent container'
-			RAISERROR (@message, 10, 1)
-			set @myError = 51019
-			goto Done
+			RAISERROR (@message, 11, 20)
 		end
 	end
 
@@ -534,9 +552,7 @@ AS
 	Begin
 		if @@TRANCOUNT > 0
 			rollback transaction @transName
-		RAISERROR (@message, 10, 1)
-		set @myError = @result
-		goto Done
+		RAISERROR (@message, 11, 22)
 	End
 	
 	---------------------------------------------------
@@ -558,9 +574,7 @@ AS
 		if @@TRANCOUNT > 0
 			rollback transaction @transName
 		set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
-		RAISERROR (@message, 10, 1)
-		set @myError = 51009
-		goto Done
+		RAISERROR (@message, 11, 23)
 	End
 
 	---------------------------------------------------
@@ -568,12 +582,19 @@ AS
 	---------------------------------------------------
 		
 	commit transaction @transName
-/******/
+
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
-Done:
-	RETURN @myError
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	return @myError
 
 
 GO

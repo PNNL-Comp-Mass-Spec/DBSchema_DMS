@@ -3,11 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-CREATE  Procedure dbo.AddUpdateEUSUsers
+CREATE Procedure dbo.AddUpdateEUSUsers
 /****************************************************
 **
 **	Desc: Adds new or updates existing EUS Users in database
@@ -16,12 +12,14 @@ CREATE  Procedure dbo.AddUpdateEUSUsers
 **
 **	Parameters: 
 **
-**		@EUSPersonID  EUS Proposal ID
-**		@EUSNameFm EUS Proposal State
-**		@EUSSiteStatus EUS Proposal Title
+**		@EUSPersonID     EUS Proposal ID
+**		@EUSNameFm       EUS Proposal State
+**		@EUSSiteStatus   EUS Proposal Title
+**		@HanfordID       Hanford ID
 **
-**		Auth: jds
-**		Date: 09/1/2006
+**	Auth:	jds
+**	Date:	09/01/2006
+**			03/19/2012 mem - Added @HanfordID
 **		      
 **		      
 **    
@@ -30,6 +28,7 @@ CREATE  Procedure dbo.AddUpdateEUSUsers
 	@EUSPersonID varchar(32), 
 	@EUSNameFm varchar(50), 
 	@EUSSiteStatus varchar(32), 
+	@HanfordID varchar(50),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -75,6 +74,9 @@ As
 	if @myError <> 0
 		return @myError
 
+	If Len(IsNull(@HanfordID, '')) = 0
+		Set @HanfordID = Null
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -110,11 +112,15 @@ As
 		INSERT INTO dbo.T_EUS_Users (
 			PERSON_ID, 
 			NAME_FM, 
-			Site_Status
+			Site_Status,
+			HID,
+			Last_Affected
 		) VALUES (
 			@EUSPersonID, 
 			@EUSNameFm, 
-			@EUSSiteStatus
+			@EUSSiteStatus,
+			@HanfordID,
+			GetDate()
 		)
 
 		--
@@ -140,7 +146,9 @@ As
 		UPDATE  T_EUS_Users
 		SET 
 			NAME_FM = @EUSNameFm, 
-			Site_Status =  @EUSSiteStatus
+			Site_Status =  @EUSSiteStatus,
+			HID = @HanfordID,
+			Last_Affected = GetDate()
 		WHERE (PERSON_ID = @EUSPersonID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

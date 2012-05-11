@@ -4,11 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure dbo.UpdateAnalysisJobProcessingStats
 /****************************************************
 **
-**	Desc: Sets archive status of dataset
-**        to update required
+**	Desc: Updates job state, start, and finish in T_Analysis_Job
+**
+**		  Sets archive status of dataset to update required
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -16,6 +18,9 @@ CREATE Procedure dbo.UpdateAnalysisJobProcessingStats
 **
 **	Auth:	mem
 **	Date:	06/02/2009 mem - Initial version
+**			09/02/2011 mem - Now setting AJ_Purged to 0 when job is complete, no-export, or failed
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			04/18/2012 mem - Now preventing addition of @JobCommentAddnl to the comment field if it already contains @JobCommentAddnl
 **    
 *****************************************************/
 (
@@ -47,6 +52,8 @@ As
 	Set @DatasetName = ''
 	
 	Declare @UpdateCodeExpected int
+	
+	Set @JobCommentAddnl = LTrim(RTrim(IsNull(@JobCommentAddnl, '')))
 	
    	---------------------------------------------------
 	-- Validate the inputs
@@ -105,7 +112,7 @@ As
 		       @AssignedProcessor AS AJ_AssignedProcessorName_New,
 		       CASE
 		           WHEN @NewBrokerJobState = 2 THEN AJ_Comment
-		           ELSE IsNull(AJ_comment, '') + IsNull(@JobCommentAddnl, '')
+		           ELSE IsNull(AJ_comment, '') + @JobCommentAddnl
 		       END AS Comment_New,
 		       AJ_organismDBName,
 		       IsNull(@OrganismDBName, AJ_organismDBName) AS AJ_organismDBName_New,
@@ -124,25 +131,34 @@ As
 		-- Update the values
 		UPDATE T_Analysis_Job
 		SET AJ_StateID = @NewDMSJobState,
-		    AJ_start = CASE
-		                   WHEN @NewBrokerJobState >= 2 THEN IsNull(@JobStart, GetDate())
-		                   ELSE AJ_start
+		    AJ_start = CASE WHEN @NewBrokerJobState >= 2 
+		                    THEN IsNull(@JobStart, GetDate())
+		                    ELSE AJ_start
 		               END,
-		    AJ_finish = CASE
-		                    WHEN @NewBrokerJobState IN (4, 5) THEN @JobFinish
-		                    ELSE AJ_finish
+		    AJ_finish = CASE WHEN @NewBrokerJobState IN (4, 5) 
+		                     THEN @JobFinish
+		                     ELSE AJ_finish
 		                END,
 		    AJ_resultsFolderName = @resultsFolderName,
 		    AJ_AssignedProcessorName = 'Job_Broker',
-		    AJ_comment = CASE
-		                     WHEN @NewBrokerJobState = 2 THEN AJ_Comment
-		                ELSE IsNull(AJ_comment, '') + IsNull(@JobCommentAddnl, '')
+		    AJ_comment = CASE WHEN @NewBrokerJobState = 2 
+		                      THEN AJ_Comment
+		                      ELSE 
+		                           CASE WHEN CHARINDEX(@JobCommentAddnl, IsNull(AJ_comment, '')) > 0 
+		                                THEN IsNull(AJ_comment, '')
+		                                ELSE IsNull(AJ_comment, '') + @JobCommentAddnl
+		                           END
 		                 END,
 		    AJ_organismDBName = IsNull(@OrganismDBName, AJ_organismDBName),
-		    AJ_ProcessingTimeMinutes = CASE
-		                                   WHEN @NewBrokerJobState <> 2 THEN @ProcessingTimeMinutes
-		                                   ELSE AJ_ProcessingTimeMinutes
-		                               END
+		    AJ_ProcessingTimeMinutes = CASE WHEN @NewBrokerJobState <> 2 
+		                                    THEN @ProcessingTimeMinutes
+		                                    ELSE AJ_ProcessingTimeMinutes
+		                               END,
+		    -- Note: setting AJ_Purged to 0 even if job failed since admin might later manually set job to complete and we want AJ_Purged to be 0 in that case
+		    AJ_Purged = CASE WHEN @NewBrokerJobState IN (4, 5, 14) 
+		                     THEN 0
+		                     ELSE AJ_Purged
+		                END
 		WHERE AJ_jobID = @job
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -170,6 +186,7 @@ As
 	---------------------------------------------------
 	--
 Done:
+
 	return @myError
 
 

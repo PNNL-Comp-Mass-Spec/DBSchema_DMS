@@ -17,6 +17,8 @@ CREATE FUNCTION dbo.GetFileAttachmentPath
 **	Auth:	grk
 **	Date:	04/16/2011
 **          04/26/2011 grk - added sample prep request
+**          08/23/2011 grk - added experiment_group
+**          11/15/2011 grk - added sample_submission
 **    
 *****************************************************/
 (
@@ -140,6 +142,23 @@ AS
 		WHERE ID = @entityID 
 		SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created))
 	END 
+	-------------------------------------------------------
+	ELSE IF @entityType = 'experiment_group' 
+	BEGIN
+		SET @entityType = 'experiment_group'
+		SELECT @created = EG_Created
+		FROM T_Experiment_Groups
+		WHERE Group_ID = @entityID
+		SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created))
+	END 
+	-------------------------------------------------------
+	ELSE IF @entityType = 'sample_submission' 
+    BEGIN
+        SELECT  @created = Created
+        FROM    dbo.T_Sample_Submission
+        WHERE   ID = @entityID
+        SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
+    END
 	
 	RETURN @entityType + '/' + @spreadFolder + '/' + @entityID
 	END

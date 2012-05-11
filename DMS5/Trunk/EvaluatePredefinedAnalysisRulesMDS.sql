@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
+CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
 ** 
 **	Desc: 
@@ -15,7 +14,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	grk
-**	Date:	6/23/2005
+**	Date:	06/23/2005
 **			03/28/2006 grk - added protein collection fields
 **			04/04/2006 grk - increased sized of param file name
 **			03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
@@ -23,6 +22,9 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRulesMDS
 **			07/22/2008 grk - Changed protein collection column names for final list report output
 **			02/09/2011 mem - Now passing @ExcludeDatasetsNotReleased and @CreateJobsForUnreviewedDatasets to EvaluatePredefinedAnalysisRules
 **			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
+**			02/20/2012 mem - Now using a temporary table to track the dataset names in @datasetList
+**			02/22/2012 mem - Switched to using a table-variable for dataset names (instead of a physical temporary table)
+**			05/03/2012 mem - Added support for the Special Processing field
 **    
 *****************************************************/
 (
@@ -36,7 +38,13 @@ As
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
+
+	declare @jobNum varchar(32)
+	declare @jobID int
+	declare @DatasetName varchar(128)
+	declare @result int
 	
+	Set @datasetList = IsNull(@datasetList, '')
 	set @message = ''
 
 	---------------------------------------------------
@@ -59,6 +67,7 @@ As
 		associatedProcessorGroup varchar(64),
 		numJobs int,
 		propagationMode tinyint,
+		specialProcessing varchar(512),
 		ID int IDENTITY (1, 1) NOT NULL
 	)
 	--
@@ -72,61 +81,63 @@ As
 	end
 
 	---------------------------------------------------
-	---------------------------------------------------
 	-- Process list into datasets
 	-- and make job for each one
 	---------------------------------------------------
-	---------------------------------------------------
 
-	declare @jobNum varchar(32)
-	declare @jobID int
-	
-	declare @delim char(1)
-	set @delim = ','
+	Declare @tblDatasetsToProcess Table
+	(
+		EntryID int identity(1,1),
+		Dataset varchar(256)
+	)
 
-	declare @done int
-	declare @count int
-
-	declare @tPos int
-	set @tPos = 1
-	declare @tFld varchar(128)
+	INSERT INTO @tblDatasetsToProcess (Dataset)
+	SELECT Value
+	FROM dbo.udfParseDelimitedList(@datasetList, ',')
+	WHERE Len(Value) > 0
+	ORDER BY Value
 
 	---------------------------------------------------
 	-- Process list into datasets and get set of generated jobs
 	-- for each one into job holding table
 	---------------------------------------------------
 	--
-	set @count = 0
-	set @done = 0
-	declare @result int
+	declare @done int = 0
+	declare @count int = 0
+	declare @EntryID int = 0
 
 	while @done = 0 and @myError = 0
 	begin
-		set @count = @count + 1
-
-		---------------------------------------------------
-		-- Process the next dataset from the list
-		---------------------------------------------------
-
-		set @tFld = ''
-		execute @done = NextField @datasetList, @delim, @tPos output, @tFld output
 		
-		if @tFld <> ''
-		begin
+		SELECT TOP 1 @EntryID = EntryID, 
+					 @DatasetName = Dataset
+		FROM @tblDatasetsToProcess
+		WHERE EntryID > @EntryID
+		ORDER BY EntryID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+		If @myRowCount = 0
+			Set @Done = 1
+		Else
+		Begin
 			---------------------------------------------------
 			-- Add jobs created for the dataset to the 
 			-- job holding table (#JX)
 			---------------------------------------------------
 			set @message = ''
 			exec @result = EvaluatePredefinedAnalysisRules 
-									@tFld, 
+									@DatasetName, 
 									'Export Jobs', 
 									@message output,
 									@RaiseErrorMessages=0,
 									@ExcludeDatasetsNotReleased=0,
 									@CreateJobsForUnreviewedDatasets=1
 
-		end
+			set @count = @count + 1
+
+		End
 	end
 	
 	---------------------------------------------------
@@ -148,6 +159,7 @@ As
 		organismName as Organism,
 		proteinCollectionList as [Protein_Collections],
 		proteinOptionsList as [Protein_Options], 
+		specialProcessing AS [Special_Processing],
 		ownerPRN as Owner,
 		CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
 	FROM #JX
@@ -157,7 +169,6 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User] AS [dbo]

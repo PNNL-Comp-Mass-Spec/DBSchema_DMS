@@ -10,6 +10,8 @@ CREATE TABLE [dbo].[T_Experiment_Groups](
 	[EG_Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Parent_Exp_ID] [int] NOT NULL,
 	[Prep_LC_Run_ID] [int] NULL,
+	[Researcher] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Tab] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Experiment_Groups] PRIMARY KEY CLUSTERED 
 (
 	[Group_ID] ASC
@@ -43,10 +45,15 @@ GRANT SELECT ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Experiment_Groups] TO [PNL\D3M578] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Experiment_Groups]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
+ALTER TABLE [dbo].[T_Experiment_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
 REFERENCES [T_Experiments] ([Exp_ID])
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups_T_Experiments]
 GO
-ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT (0) FOR [Parent_Exp_ID]
+ALTER TABLE [dbo].[T_Experiment_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Users] FOREIGN KEY([Researcher])
+REFERENCES [T_Users] ([U_PRN])
+GO
+ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups_T_Users]
+GO
+ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT ((0)) FOR [Parent_Exp_ID]
 GO

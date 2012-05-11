@@ -7,13 +7,18 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Users_Detail_Report]
 AS
-SELECT U.PERSON_ID AS ID,
-       U.NAME_FM AS Name,
+SELECT EU.PERSON_ID AS ID,
+       EU.NAME_FM AS Name,
+       EU.HID AS Hanford_ID,
        SS.Name AS [Site Status],
-       U.Last_Affected
-FROM T_EUS_Users U
+       EU.Last_Affected,
+       U.U_PRN AS PRN,
+       U.ID AS DMS_User_ID
+FROM T_EUS_Users EU
      INNER JOIN T_EUS_Site_Status SS
-       ON U.Site_Status = SS.ID
+       ON EU.Site_Status = SS.ID
+     LEFT OUTER JOIN T_Users U
+       ON EU.HID = U.U_HID
 
 
 GO

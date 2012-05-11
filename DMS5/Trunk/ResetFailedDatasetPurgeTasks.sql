@@ -10,7 +10,7 @@ CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 **	Desc:	Looks for dataset archive entries with state 8=Purge Failed
 **			Examines the "Archive State Last Affected" column and 
 **			  resets any entries that entered the Purge Failed state
-**			  at leaste @ResetHoldoffHours hours before the present
+**			  at least @ResetHoldoffHours hours before the present
 **
 **	Return values: 0: success, otherwise, error code
 ** 

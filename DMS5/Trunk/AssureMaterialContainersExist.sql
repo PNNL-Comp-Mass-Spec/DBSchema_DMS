@@ -17,6 +17,7 @@ CREATE PROCEDURE AssureMaterialContainersExist
 **
 **    Auth: grk
 **    04/27/2010 grk -- initial release
+**    09/23/2011 grk -- accomodate researcher field in AddUpdateMaterialContainer
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -25,6 +26,7 @@ CREATE PROCEDURE AssureMaterialContainersExist
 	@ContainerList varchar(1024) OUTPUT,
 	@Comment varchar(1024),
 	@Type varchar(32) = 'Box',
+	@Researcher VARCHAR(128),
 	@mode varchar(12) = 'verify_only', -- or 'create'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -116,9 +118,10 @@ AS
 			EXEC @myError = AddUpdateMaterialContainer
 								@Container = @container output,
 								@Type = @Type,
-								@Location = @item,
+								@Location = @item, 
 								@Comment = @Comment,
 								@Barcode = '',
+								@Researcher = @Researcher,
 								@mode = 'add',
 								@message = @msg output, 
 								@callingUser = @callingUser

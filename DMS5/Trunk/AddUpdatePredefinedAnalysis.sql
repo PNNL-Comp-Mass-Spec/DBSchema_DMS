@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.AddUpdatePredefinedAnalysis
+CREATE Procedure AddUpdatePredefinedAnalysis
 /****************************************************
 ** 
 **	Desc: Adds a new default analysis to DB 
@@ -30,6 +29,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to lookup the allowed instrument class names for a given analysis tool
 **			02/09/2011 mem - Added parameter @TriggerBeforeDisposition
 **			02/16/2011 mem - Added parameter @PropagationMode
+**			05/02/2012 mem - Added parameter @SpecialProcessing
 **    
 *****************************************************/
 (
@@ -65,7 +65,8 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 	@datasetExclCriteria varchar(128)='',
 	@datasetTypeCriteria varchar(64)='',
 	@TriggerBeforeDisposition tinyint = 0,
-	@PropagationMode varchar(24)='Export'
+	@PropagationMode varchar(24)='Export',
+	@SpecialProcessing varchar(512)=''
 )
 As
 	set nocount on
@@ -139,7 +140,7 @@ As
 	Set @experimentNameCriteria  = LTrim(RTrim(IsNull(@experimentNameCriteria , '')))
 	Set @instrumentNameCriteria  = LTrim(RTrim(IsNull(@instrumentNameCriteria , '')))
 	Set @organismNameCriteria    = LTrim(RTrim(IsNull(@organismNameCriteria   , '')))
-	Set @datasetNameCriteria = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
+	Set @datasetNameCriteria     = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
 	Set @expCommentCriteria      = LTrim(RTrim(IsNull(@expCommentCriteria     , '')))
 	Set @labellingInclCriteria   = LTrim(RTrim(IsNull(@labellingInclCriteria  , '')))
 	Set @labellingExclCriteria   = LTrim(RTrim(IsNull(@labellingExclCriteria  , '')))
@@ -148,7 +149,8 @@ As
 	Set @experimentExclCriteria  = LTrim(RTrim(IsNull(@experimentExclCriteria , '')))
 	Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria    , '')))
 	Set @datasetTypeCriteria     = LTrim(RTrim(IsNull(@datasetTypeCriteria    , '')))
-
+	Set @SpecialProcessing       = LTrim(RTrim(IsNull(@SpecialProcessing      , '')))
+	
 	---------------------------------------------------
 	-- Resolve propagation mode 
 	---------------------------------------------------
@@ -321,7 +323,7 @@ As
 						INNER JOIN T_Analysis_Tool Tool
 						ON AIC.Analysis_Tool_ID = Tool.AJT_toolID
 					WHERE Tool.AJT_toolName = @analysisToolName AND 
-					     AIC.Instrument_Class = @instrumentClass				
+					    AIC.Instrument_Class = @instrumentClass				
 					)
 				Begin -- <d2>
 					-- Example criteria that will result in this message: Instrument Class=BRUKERFTMS, Tool=XTandem
@@ -479,6 +481,7 @@ As
 			AD_proteinCollectionList,
 			AD_proteinOptionsList,
 			AD_priority, 
+			AD_specialProcessing,
 			AD_enabled, 
 			AD_description, 
 			AD_creator,
@@ -510,6 +513,7 @@ As
 			@protCollNameList,
 			@protCollOptionsList,
 			@priority, 
+			@SpecialProcessing,
 			@enabled, 
 			@description, 
 			@creator,
@@ -566,6 +570,7 @@ As
 			AD_proteinCollectionList = @protCollNameList,
 			AD_proteinOptionsList = @protCollOptionsList,
 			AD_priority = @priority, 
+			AD_specialProcessing = @SpecialProcessing,
 			AD_enabled = @enabled, 
 			AD_description = @description, 
 			AD_creator = @creator,
@@ -593,7 +598,6 @@ As
 	END CATCH
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis] AS [dbo]

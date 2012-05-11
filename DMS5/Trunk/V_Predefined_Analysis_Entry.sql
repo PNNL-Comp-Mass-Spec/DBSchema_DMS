@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Predefined_Analysis_Entry]
 AS
 SELECT PA.AD_level AS [level],
@@ -37,10 +38,12 @@ SELECT PA.AD_level AS [level],
        PA.AD_ID AS ID,
        PA.AD_nextLevel AS nextLevel,
        PA.Trigger_Before_Disposition AS TriggerBeforeDisposition,
-       CASE PA.Propagation_Mode WHEN 0 THEN 'Export' ELSE 'No Export' END AS PropagationMode
+       CASE PA.Propagation_Mode WHEN 0 THEN 'Export' ELSE 'No Export' END AS PropagationMode,
+       PA.AD_specialProcessing as specialProcessing
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
+
 
 
 GO

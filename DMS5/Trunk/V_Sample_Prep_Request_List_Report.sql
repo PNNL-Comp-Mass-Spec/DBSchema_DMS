@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
 AS
 SELECT SPR.ID,
@@ -24,6 +25,7 @@ SELECT SPR.ID,
        SPR.Biohazard_Level AS BiohazardLevel,
        SPR.Campaign,
        SPR.[Comment],
+       SPR.Work_Package_Number AS WP,
        SPR.Instrument_Name AS [Instrument],
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
        Case 
@@ -42,6 +44,7 @@ FROM dbo.T_Sample_Prep_Request SPR
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
 WHERE (SPR.State > 0)
+
 
 
 GO

@@ -6,11 +6,14 @@ GO
 
 
 
-CREATE VIEW dbo.V_EUS_Users_Entry
-AS
-SELECT  PERSON_ID AS ID, NAME_FM AS Name, Site_Status AS SiteStatus
-FROM T_EUS_Users
 
+CREATE VIEW [dbo].[V_EUS_Users_Entry]
+AS
+SELECT PERSON_ID AS ID,
+       NAME_FM AS Name,
+       HID AS Hanford_ID,
+       Site_Status AS SiteStatus
+FROM T_EUS_Users
 
 
 GO

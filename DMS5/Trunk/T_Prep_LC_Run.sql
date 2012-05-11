@@ -21,28 +21,13 @@ CREATE TABLE [dbo].[T_Prep_LC_Run](
 	[Instrument_Pressure] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Storage_Path] [int] NULL,
 	[Uploaded] [datetime] NULL,
+	[Quality_Control] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Prep_LC_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_Instrument_Storage] FOREIGN KEY([Storage_Path])
-REFERENCES [T_Prep_Instrument_Storage] ([SP_path_ID])
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run] CHECK CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_Instrument_Storage]
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_Instruments] FOREIGN KEY([Instrument])
-REFERENCES [T_Prep_Instruments] ([Name])
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run] CHECK CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_Instruments]
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_LC_Column] FOREIGN KEY([LC_Column])
-REFERENCES [T_Prep_LC_Column] ([Column_Name])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Prep_LC_Run] CHECK CONSTRAINT [FK_T_Prep_LC_Run_T_Prep_LC_Column]
 GO
 ALTER TABLE [dbo].[T_Prep_LC_Run] ADD  CONSTRAINT [DF_T_Prep_LC_Run_Guard_Column]  DEFAULT ('No') FOR [Guard_Column]
 GO

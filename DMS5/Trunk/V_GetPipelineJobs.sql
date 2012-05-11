@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_GetPipelineJobs
+
+
+CREATE VIEW [dbo].[V_GetPipelineJobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS Priority,
@@ -14,7 +16,8 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_StateID AS State,
        SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path,
        AJ.AJ_Comment AS Comment,
-       AJ.AJ_specialProcessing as Special_Processing
+       AJ.AJ_specialProcessing as Special_Processing,
+       AJ.AJ_Owner AS Owner
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID
@@ -26,8 +29,16 @@ FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.t_storage_path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
 WHERE (AJ.AJ_StateID IN (1, 8)) AND
-      (DA.AS_state_ID IN (3, 4, 10)) AND
-      (DA.AS_update_state_ID <> 3)
+      (
+		-- If a QC_Shew dataset has been dispositioned (DS_Rating >= 1), then allow an analysis job to run even if the dataset has not yet been archived (or archiving is in progress)
+		--   We do, however, prevent analysis if a purge is in progress
+		-- For all other datasets, we require that the dataset be archived or purged
+        (Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7))
+        OR
+        (DA.AS_state_ID IN (3, 4, 9, 10))
+      )
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobs] TO [PNL\D3M578] AS [dbo]

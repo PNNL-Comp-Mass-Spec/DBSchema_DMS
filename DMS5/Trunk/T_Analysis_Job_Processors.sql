@@ -32,14 +32,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processors_ID_Name_State_Machine] O
 INCLUDE ( [State],
 [Machine]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processors] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 create TRIGGER [dbo].[trig_u_T_Analysis_Job_Processors] ON [dbo].[T_Analysis_Job_Processors] 
 FOR UPDATE
 AS

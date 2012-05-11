@@ -17,14 +17,11 @@ CREATE TABLE [dbo].[T_Analysis_Job_Annotations](
 ) ON [PRIMARY]
 
 GO
-
 /****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Annotations] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE TRIGGER [dbo].[trig_u_T_Analysis_Job_Annotations] ON [dbo].[T_Analysis_Job_Annotations] 
 FOR UPDATE

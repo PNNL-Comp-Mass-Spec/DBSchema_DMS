@@ -6,14 +6,26 @@ GO
 CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 /****************************************************
 **
-**	Desc: 
-**		Creates a requested run and associates it with
-**		the given dataset if there is not currently one
+**	Desc:	Creates a requested run and associates it with
+**			the given dataset if there is not currently one
+**
+**			The requested run will be named 'AutoReq_DatasetName'
+**
+**
+**			Note that this procedure is similar to AddMissingRequestedRun, 
+**			though that procedure is intended to be run via automation
+**			to add requested runs to existing datasets that don't yet have one
+**
+**			In contrast, this procedure has parameter @templateRequestID which defines
+**			an existing requested run ID from which to lookup EUS information
+**
 **
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	grk
-**			05/23/2011 grk - initial release
+**	Date:	05/23/2011 grk - initial release
+**			11/29/2011 mem - Now auto-determining OperPRN if @callingUser is empty
+**			12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
 **    
 *****************************************************/
 (
@@ -28,9 +40,8 @@ AS
 	SET NOCOUNT ON
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -87,8 +98,9 @@ AS
 	@experimentNum varchar(64),
 	@instrumentName varchar(64),
 	@msType varchar(20),
-	@comment varchar(1024) = 'na',
+	@comment varchar(1024) = 'Automatically created by Dataset entry',
 	@workPackage varchar(50)  = 'none',
+	@operPRN varchar(128) = '',
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024) = '',
@@ -123,6 +135,7 @@ AS
 	BEGIN 
 		SELECT  
 			@workPackage = RDS_WorkPackage ,
+			@operPRN = RDS_Oper_PRN,
 			@eusProposalID = RDS_EUS_Proposal_ID ,
 			@eusUsageType = EUT.Name ,
 			@eusUsersList = dbo.GetRequestedRunEUSUsersList(RR.ID, 'I')
@@ -130,7 +143,17 @@ AS
 			T_Requested_Run AS RR
 			INNER JOIN dbo.T_EUS_UsageType AS EUT ON RR.RDS_EUS_UsageType = EUT.ID
 		WHERE
-			RR.ID = @templateRequestID			
+			RR.ID = @templateRequestID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount <> 1
+		Begin
+			Set @message = 'Template request ID ' + Convert(varchar(12), @templateRequestID) + ' not found'
+			RAISERROR (@message, 11, 10)
+		End
+		
+		Set @comment = @comment + ' using request ' + Convert(varchar(12), @templateRequestID)
 	END 
 
 	---------------------------------------------------
@@ -140,6 +163,9 @@ AS
 	IF ISNULL(@templateRequestID, 0) = 0
 		RAISERROR ('For now, a template request is mandatory', 11, 10)
 
+	if IsNull(@callingUser, '') <> ''
+		Set @operPRN = @callingUser
+		
 	---------------------------------------------------
 	-- create requested run and attach it to dataset
 	---------------------------------------------------	
@@ -147,7 +173,7 @@ AS
 	EXEC @myError = dbo.AddUpdateRequestedRun 
 							@reqName = @reqName,
 							@experimentNum = @experimentNum,
-							@operPRN = @callingUser,
+							@operPRN = @operPRN,
 							@instrumentName = @instrumentName,
 							@workPackage = @workPackage,
 							@msType = @msType,
@@ -155,7 +181,7 @@ AS
 							@wellplateNum = 'na',
 							@wellNum = 'na',
 							@internalStandard = 'na',
-							@comment = 'Automatically created by Dataset entry',
+							@comment = @comment,
 							@eusProposalID = @eusProposalID,
 							@eusUsageType = @eusUsageType,
 							@eusUsersList = @eusUsersList,
@@ -166,7 +192,8 @@ AS
 							@MRMAttachment = '',
 							@status = 'Completed',
 							@SkipTransactionRollback = 1,
-							@AutoPopulateUserListIfBlank = 1		-- Auto populate @eusUsersList if blank since this is an Auto-Request
+							@AutoPopulateUserListIfBlank = 1,		-- Auto populate @eusUsersList if blank since this is an Auto-Request
+							@callingUser = @callingUser
 
 	if @myError <> 0
 		RAISERROR (@msg, 11, 6)
@@ -178,7 +205,7 @@ AS
 	-- consume the requested run 
 	---------------------------------------------------
 			
-	exec @myError = ConsumeScheduledRun @dID, @request, @msg output
+	exec @myError = ConsumeScheduledRun @dID, @request, @msg output, @callingUser
 	if @myError <> 0
 		RAISERROR (@msg, 11, 8)
 

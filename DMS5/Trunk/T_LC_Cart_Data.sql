@@ -26,7 +26,7 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (37,'Osprey',2,'15 Minute Separation')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (38,'VENUS',2,'metal-free, up to 5k psi')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (39,'SATURN',2,'manual single column LC cart w/ SPE')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (40,'2D_online',2,'1st Dimension, HILIC,2nd Dimension, RPLC,20 online fractionation storage loops')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (40,'2D_online',10,'1st Dimension, HILIC,2nd Dimension, RPLC,20 online fractionation storage loops')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (41,'Tambora',2,'Agilent cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (42,'Mazama',2,'Agilent Cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (43,'Tiger',2,'First ARRA NexGen L 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')

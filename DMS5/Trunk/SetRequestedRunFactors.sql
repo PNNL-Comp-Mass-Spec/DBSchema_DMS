@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SetRequestedRunFactors
+
+CREATE Procedure [dbo].[SetRequestedRunFactors]
 /****************************************************
 **
 **	Desc: 
@@ -13,12 +14,15 @@ CREATE PROCEDURE SetRequestedRunFactors
 **
 **	Parameters: 
 **
-**	Auth: grk
-**	03/22/2010 grk - initial release
+**	Auth: 	grk
+**	Date: 	03/22/2010 grk - initial release
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@factorList text,
 	@message varchar(512) OUTPUT
+)
 As
 	SET NOCOUNT ON 
 
@@ -39,8 +43,17 @@ As
 						@factorList,
 						@message OUTPUT,
 						@callingUser
-						
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = ''
+	Exec PostUsageLogEntry 'SetRequestedRunFactors', @UsageMessage
+	
 	RETURN @myError
+
 GO
 GRANT EXECUTE ON [dbo].[SetRequestedRunFactors] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_URL] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_created] [datetime] NULL,
- CONSTRAINT [PK_t_storage_path] PRIMARY KEY NONCLUSTERED 
+ CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
 (
 	[SP_path_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
@@ -71,6 +71,7 @@ AS
 GO
 ALTER TABLE [dbo].[T_Storage_Path]  WITH CHECK ADD  CONSTRAINT [FK_t_storage_path_T_Instrument_Name] FOREIGN KEY([SP_instrument_name])
 REFERENCES [T_Instrument_Name] ([IN_name])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
 GO

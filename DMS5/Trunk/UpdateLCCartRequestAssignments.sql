@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateLCCartRequestAssignments
+
+CREATE Procedure [dbo].[UpdateLCCartRequestAssignments]
 /****************************************************
 **
 **	Desc: 
@@ -13,13 +14,16 @@ CREATE PROCEDURE UpdateLCCartRequestAssignments
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 03/10/2010
+**	Auth: 	grk
+**	Date: 	03/10/2010
+**			09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@cartAssignmentList text,
 	@mode varchar(32), -- 
 	@message varchar(512) output
+)
 As
 	SET NOCOUNT ON 
 
@@ -138,16 +142,22 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to remove unchanged requests'
+		set @message = 'Error updating requested runs'
 		GOTO Done
 	end
 
-	-----------------------------------------------------------
-	-- 
-	-----------------------------------------------------------
-	--
 Done:
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = Convert(varchar(12), @myRowCount) + ' requested runs updated'
+	Exec PostUsageLogEntry 'UpdateLCCartRequestAssignments', @UsageMessage
+
 	RETURN @myError
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateLCCartRequestAssignments] TO [DMS2_SP_User] AS [dbo]
 GO

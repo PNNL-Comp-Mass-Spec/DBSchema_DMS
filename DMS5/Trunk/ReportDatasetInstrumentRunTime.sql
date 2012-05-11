@@ -14,13 +14,14 @@ CREATE PROCEDURE ReportDatasetInstrumentRunTime
 **
 **	Auth:	grk
 **	Date:	05/26/2011 grk - initial release
+**			01/31/2012 grk - Added Interval column to output and made separaate interval rows an option
 **    
 *****************************************************/
 (
 	@startDate varchar(24) = '',
 	@endDate varchar(24) = '',
 	@instrumentName VARCHAR(64) = 'Exact01',
-	@reportOptions VARCHAR(64) = 'Show All', -- 'No Intervals', ??
+	@reportOptions VARCHAR(64) = 'Show All', -- 'No Intervals', 'Intervals Only'
 	@message varchar(256) output
 )
 AS
@@ -101,7 +102,7 @@ AS
 	---------------------------------------------------
 
 	SELECT * 
-	FROM dbo.GetDatasetInstrumentRuntime(@stDate, @eDate, @instrumentName)
+	FROM dbo.GetDatasetInstrumentRuntime(@stDate, @eDate, @instrumentName, @reportOptions)
 	ORDER BY Seq
 
 	END TRY

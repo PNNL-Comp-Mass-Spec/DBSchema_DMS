@@ -4,11 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[AppendToText]
+CREATE FUNCTION dbo.AppendToText
 /****************************************************
 **
 **	Desc:	Appends a new string to an existing string, using the specified delimiter
-**			If @AddDuplicateText = 0, then checks first to make sure the comment doesn't already contain the new text
+**			Use @AddDuplicateText = 0 to prevent duplicate text from being added
+**			Use @AddDuplicateText = 1 to allow duplicate text to be added
 **
 **	Returns the updated comment
 **

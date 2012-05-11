@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateSampleRequestAssignments
+CREATE Procedure UpdateSampleRequestAssignments
 /****************************************************
 **
 **	Desc: 
@@ -14,60 +14,71 @@ CREATE PROCEDURE UpdateSampleRequestAssignments
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 6/14/2005
-**		Date: 7/26/2005 grk -- added 'req_assignment'
-**		Date: 8/2/2005  grk -- assignement also sets state to "open"
-**		Date: 8/14/2005  grk -- update state changed date
-**		Date: 3/14/2006  grk -- added stuff for estimated completion date
+**	Auth: grk
+**	Date: 	06/14/2005
+**			07/26/2005 grk - added 'req_assignment'
+**			08/02/2005 grk - assignement also sets state to "open"
+**			08/14/2005 grk - update state changed date
+**			03/14/2006 grk - added stuff for estimated completion date
+**			09/02/2011 mem - Now calling PostUsageLogEntry
+**			02/20/2012 mem - Now using a temporary table to track the requests to update
+**			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **    
 *****************************************************/
-	@mode varchar(32), -- 'priority', 'state', 'assignment', 'delete', 'req_assignment', 'est_completion'
+(
+	@mode varchar(32),		-- 'priority', 'state', 'assignment', 'delete', 'req_assignment', 'est_completion'
 	@newValue varchar(512),
 	@reqIDList varchar(2048)
+)
 As
-	declare @delim char(1)
-	set @delim = ','
-
-	declare @done int
-	declare @count int
-
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
-	--
-	declare @id int
+
 	declare @dt datetime
-	--
-	declare @tPos int
-	set @tPos = 1
-	declare @tFld varchar(128)
 
-	-- process lists into rows
-	-- and insert into DB table
-	--
-	set @count = 0
-	set @done = 0
+	declare @done int = 0
+	declare @count int = 0
+	declare @id int = 0
+	declare @RequestIDNum varchar(12)
+	
+	---------------------------------------------------
+	-- Populate a temorary table with the requests to process
+	---------------------------------------------------
+	
+	Declare @tblRequestsToProcess Table
+	(
+		RequestID int
+	)
 
+	INSERT INTO @tblRequestsToProcess (RequestID)
+	SELECT Value
+	FROM dbo.udfParseDelimitedIntegerList(@reqIDList, ',')
+	ORDER BY Value
+	
+	-- Process each request in @tblRequestsToProcess
+	--
 	while @done = 0
 	begin
-		set @count = @count + 1
-
-		-- process the  next field from the ID list
+		SELECT TOP 1 @id = RequestID
+		FROM @tblRequestsToProcess
+		WHERE RequestID > @id
+		ORDER BY RequestID
 		--
-		set @tFld = ''
-		execute @done = NextField @reqIDList, @delim, @tPos output, @tFld output
-		
-		if @tFld <> ''
-		begin
-			set @id = cast(@tFld as int)
+		SELECT @myError = @@error, @myRowCount = @@rowcount
 
+		If @myRowCount = 0
+			Set @Done = 1
+		Else
+		Begin
+			set @count = @count + 1
+			Set @RequestIDNum = Convert(varchar(12), @id)
+		
 			-------------------------------------------------
 			if @mode = 'est_completion'
 			begin
-				set @dt =  CONVERT(datetime, @newValue)
+				set @dt = CONVERT(datetime, @newValue)
 				--
 				UPDATE T_Sample_Prep_Request
 				SET	[Estimated_Completion] = @dt
@@ -94,12 +105,13 @@ As
 			end
 
 			-------------------------------------------------
+			-- This mode is used for web page option "Assign selected requests to preparer(s)"
 			if @mode = 'assignment'
 			begin
 				UPDATE T_Sample_Prep_Request
 				SET	Assigned_Personnel = @newValue,
-				StateChanged = getdate(),
-				[State] = 2 -- "open"
+				    StateChanged = getdate(),
+				    [State] = 2 -- "open"
 				WHERE (ID = @id)	
 				--	
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -107,12 +119,13 @@ As
 
 
 			-------------------------------------------------
+			-- This mode is used for web page option "Assign selected requests to requested personnel"
 			if @mode = 'req_assignment'
 			begin
 				UPDATE T_Sample_Prep_Request
 				SET	Assigned_Personnel = Requested_Personnel,
-				StateChanged = getdate(),
-				[State] = 2 -- "open"
+				    StateChanged = getdate(),
+				    [State] = 2 -- "open"
 				WHERE (ID = @id)	
 				--	
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -133,7 +146,7 @@ As
 				--
 				if @myError <> 0
 				begin
-					RAISERROR ('lookup state failed: "%s"', 10, 1, @tFld)
+					RAISERROR ('lookup state failed: "%s"', 10, 1, @RequestIDNum)
 					return 51310
 				end	
 				--
@@ -148,8 +161,8 @@ As
 			-------------------------------------------------
 			if @mode = 'delete'
 			begin
---				DELETE FROM T_Sample_Prep_Request
---				WHERE (ID = @id)
+				-- Deletes are ignored by this procedure
+				-- Use DeleteSamplePrepRequest instead
 				--	
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 			end
@@ -157,11 +170,21 @@ As
 			-------------------------------------------------
 			if @myError <> 0
 			begin
-				RAISERROR ('operation failed: "%s"', 10, 1, @tFld)
+				RAISERROR ('operation failed for: "%s"', 10, 1, @RequestIDNum)
 				return 51310
 			end	
 		end
 	end
+
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512) = ''
+	Set @UsageMessage = 'Updated ' + Convert(varchar(12), @count) + ' prep request'
+	If @count <> 0
+		Set @UsageMessage = @UsageMessage + 's'
+	Exec PostUsageLogEntry 'UpdateSampleRequestAssignments', @UsageMessage
 
 	return 0
 

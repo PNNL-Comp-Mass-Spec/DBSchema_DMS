@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SetArchiveUpdateTaskBusy
+
+CREATE Procedure [dbo].[SetArchiveUpdateTaskBusy]
 /****************************************************
 **
 **	Desc: 
@@ -15,11 +16,14 @@ CREATE Procedure SetArchiveUpdateTaskBusy
 **
 **	Auth: grk
 **	Date: 12/15/2009
+**		  09/02/2011 mem - Now calling PostUsageLogEntry
 **    
 *****************************************************/
+(
 	@datasetNum varchar(128),
 	@StorageServerName VARCHAR(64),
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -49,7 +53,17 @@ As
 		set @message = 'Update operation failed'
 	end
 
+	---------------------------------------------------
+	-- Log SP usage
+	---------------------------------------------------
+
+	Declare @UsageMessage varchar(512)
+	Set @UsageMessage = 'Dataset: ' + @datasetNum
+	Exec PostUsageLogEntry 'SetArchiveUpdateTaskBusy', @UsageMessage
+
+
 	RETURN @myError
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskBusy] TO [Limited_Table_Write] AS [dbo]
 GO

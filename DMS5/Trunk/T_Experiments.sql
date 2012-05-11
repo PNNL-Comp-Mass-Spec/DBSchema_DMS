@@ -24,6 +24,7 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_postdigest_internal_std_ID] [int] NOT NULL,
 	[EX_wellplate_num] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_well_num] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EX_Alkylation] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY NONCLUSTERED 
 (
 	[Exp_ID] ASC
@@ -185,15 +186,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_u_Experiments] on [dbo].[T_Experiments]
 For Update
 /****************************************************
 **
 **	Desc: 
 **		Makes an entry in T_Entity_Rename_Log if the experiment is renamed
+**		Renames entries in T_File_Attachment
 **
 **	Auth:	mem
 **	Date:	07/19/2010 mem - Initial version
+**			03/23/2012 mem - Now updating T_File_Attachment
 **    
 *****************************************************/
 AS
@@ -208,7 +212,17 @@ AS
 		SELECT 3, inserted.Exp_ID, deleted.Experiment_Num, inserted.Experiment_Num, GETDATE()
 		FROM deleted INNER JOIN inserted ON deleted.Exp_ID = inserted.Exp_ID
 		ORDER BY inserted.Exp_ID
+		
+		UPDATE T_File_Attachment
+		SET Entity_ID = inserted.Experiment_Num
+		FROM T_File_Attachment FA
+		     INNER JOIN deleted
+		       ON deleted.Experiment_Num = FA.Entity_ID
+		     INNER JOIN inserted
+		       ON deleted.Exp_ID = inserted.Exp_ID
+		WHERE (Entity_Type = 'experiment')
 	End
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Experiments] ******/
@@ -224,22 +238,22 @@ GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
 REFERENCES [T_Campaign] ([Campaign_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Campaign]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Enzymes] FOREIGN KEY([EX_enzyme_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Enzymes] FOREIGN KEY([EX_enzyme_ID])
 REFERENCES [T_Enzymes] ([Enzyme_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Enzymes]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
 REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards1]
@@ -249,22 +263,22 @@ REFERENCES [T_Material_Containers] ([ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Material_Containers]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Organisms]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
 REFERENCES [T_Sample_Labelling] ([Label])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Labelling]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
 REFERENCES [T_Sample_Prep_Request] ([ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH NOCHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
 REFERENCES [T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO
@@ -285,4 +299,6 @@ GO
 ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT ((0)) FOR [EX_internal_standard_ID]
 GO
 ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)) FOR [EX_postdigest_internal_std_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Alkylation]  DEFAULT ('N') FOR [EX_Alkylation]
 GO

@@ -14,6 +14,7 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
 **
 **    Auth: grk
 **    Date: 09/30/2008
+**          03/19/2012 grk - added "PostedBy"
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -21,6 +22,7 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
   @ID int,
   @Instrument varchar(24),
   @DateOfChange varchar(24),
+  @PostedBy VARCHAR(64),
   @Description varchar(128),
   @Note text,
   @mode varchar(12) = 'add', -- or 'update'
@@ -43,6 +45,11 @@ As
   ---------------------------------------------------
 
   -- future: this could get more complicated
+  
+  IF @PostedBy IS NULL OR @PostedBy = ''
+  BEGIN 
+	SET @PostedBy = @callingUser
+  END 
   
 
   ---------------------------------------------------
@@ -91,7 +98,7 @@ As
     @Description, 
     @Note, 
     getdate(), 
-    @callingUser
+    @PostedBy
   )
  /**/
     --
@@ -125,7 +132,7 @@ As
       Date_Of_Change = @DateOfChange,
       Description = @Description, 
       Note = @Note, 
-      EnteredBy = @callingUser
+      EnteredBy = @PostedBy
     WHERE (ID = @ID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
