@@ -65,6 +65,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **						   - Added parameter @CreateJobsForUnreviewedDatasets
 **			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **			05/03/2012 mem - Added support for the Special Processing field
+**			09/25/2012 mem - Expanded @organismName and @organismDBName to varchar(128)
 **
 *****************************************************/
 (
@@ -216,7 +217,7 @@ As
 		AD_experimentNameCriteria varchar (128)  NOT NULL ,
 		AD_experimentExclCriteria varchar (128)  NOT NULL ,
 		AD_instrumentNameCriteria varchar (64)  NOT NULL ,
-		AD_organismNameCriteria varchar (64)  NOT NULL ,
+		AD_organismNameCriteria varchar (128)  NOT NULL ,
 		AD_datasetNameCriteria varchar (128)  NOT NULL ,
 		AD_datasetExclCriteria varchar (128)  NOT NULL ,
 		AD_datasetTypeCriteria varchar (64)  NOT NULL ,
@@ -227,8 +228,8 @@ As
 		AD_analysisToolName varchar (64)  NOT NULL ,
 		AD_parmFileName varchar (255)  NOT NULL ,
 		AD_settingsFileName varchar (255)  NULL ,
-		AD_organismName varchar (64)  NOT NULL ,
-		AD_organismDBName varchar (64)  NOT NULL ,
+		AD_organismName varchar (128)  NOT NULL ,
+		AD_organismDBName varchar (128)  NOT NULL ,
 		AD_proteinCollectionList varchar(4000),
 		AD_proteinOptionsList varchar(256), 
 		AD_priority int NOT NULL ,
@@ -268,7 +269,7 @@ As
 			[Campaign Exclusion] varchar(128),
 			[Experiment Crit.] varchar(128) NULL, 
 			[Experiment Exclusion] varchar(128),
-			[Organism Crit.] varchar(64) NULL, 
+			[Organism Crit.] varchar(128) NULL, 
 			[Dataset Crit.] varchar(128) NULL, 
 			[Dataset Exclusion] varchar(128),
 			[Dataset Type] varchar(128),
@@ -278,8 +279,8 @@ As
 			[Separation Type Crit.] varchar(64) NULL,
 			[Parm File] varchar(255) NULL, 
 			[Settings File] varchar(255) NULL,
-			Organism varchar(64) NULL, 
-			[Organism DB] varchar(64) NULL, 
+			Organism varchar(128) NULL, 
+			[Organism DB] varchar(128) NULL, 
 			[Prot. Coll.] varchar(4000) NULL, 
 			[Prot. Opts.] varchar(256) NULL,
 			[Special Proc.] varchar(512) NULL,
@@ -514,14 +515,14 @@ As
 	declare @priority int
 	declare @parmFileName varchar(255)
 	declare @settingsFileName varchar(255)
-	declare @organismDBName varchar(64)
+	declare @organismDBName varchar(128)
 	declare @proteinCollectionList varchar(4000)
 	declare @proteinOptionsList varchar(256)
 	
 	declare @proteinCollectionListValidated varchar(4000)
 
 	declare @analysisToolName varchar(64)
-	declare @organismName varchar(64)
+	declare @organismName varchar(128)
 	declare @comment varchar(128)
 	declare @associatedProcessorGroup varchar(64)
 	declare @paRuleID int

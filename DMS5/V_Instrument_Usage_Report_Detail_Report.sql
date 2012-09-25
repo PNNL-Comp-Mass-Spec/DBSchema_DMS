@@ -21,3 +21,7 @@ CREATE VIEW V_Instrument_Usage_Report_Detail_Report AS
 	Seq AS [Seq]
 FROM T_EMSL_Instrument_Usage_Report
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

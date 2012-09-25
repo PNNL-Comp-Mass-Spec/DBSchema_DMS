@@ -31,3 +31,7 @@ WHERE Not DS.DS_Rating Between -5 and 1
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [PNL\D3M580] AS [dbo]
+GO

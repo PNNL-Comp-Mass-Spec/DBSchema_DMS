@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -28,7 +29,8 @@ SELECT DS.Dataset_Num AS Dataset,
        AJ.AJ_created AS Created,
        AJ.AJ_start AS Started,
        AJ.AJ_finish AS Finished,
-       PM.Ini_File_Name
+       PM.Ini_File_Name,
+       PM.MD_State
        --DS.Dataset_ID AS ID,
        --PM.Job_Start AS Task_Start,
        --PM.Task_ID,
@@ -88,5 +90,8 @@ FROM T_Dataset DS
 
 
 
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_QC_Metrics_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_QC_Metrics_List_Report] TO [PNL\D3M580] AS [dbo]
 GO

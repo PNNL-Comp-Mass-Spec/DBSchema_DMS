@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_GetPipelineJobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -32,12 +31,11 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
       (
 		-- If a QC_Shew dataset has been dispositioned (DS_Rating >= 1), then allow an analysis job to run even if the dataset has not yet been archived (or archiving is in progress)
 		--   We do, however, prevent analysis if a purge is in progress
-		-- For all other datasets, we require that the dataset be archived or purged
+		-- For all other datasets, we require that the dataset be archived (states 3 or 10) or purged (states 4, 9, 14, 15)
         (Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7))
         OR
-        (DA.AS_state_ID IN (3, 4, 9, 10))
+        (DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
       )
-
 
 
 GO

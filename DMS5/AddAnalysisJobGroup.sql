@@ -46,6 +46,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
 **			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed
 **			06/15/2011 mem - Now ignoring organism, protein collection, and organism DB when looking for existing jobs and the analysis tool does not use an organism database
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **
 *****************************************************/
 (
@@ -54,8 +55,8 @@ CREATE Procedure AddAnalysisJobGroup
 	@toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(255),
-    @organismDBName varchar(64),					-- 'na' if using protein collections
-    @organismName varchar(64),
+    @organismDBName varchar(128),					-- 'na' if using protein collections
+    @organismName varchar(128),
 	@protCollNameList varchar(4000),
 	@protCollOptionsList varchar(256),
     @ownerPRN varchar(32),

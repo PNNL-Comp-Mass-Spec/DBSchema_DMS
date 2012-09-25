@@ -1,10 +1,20 @@
 /****** Object:  Table [T_Notification_Entity_User] ******/
-/****** RowCount: 16 ******/
+/****** RowCount: 26 ******/
 /****** Columns: User_ID, Entity_Type_ID ******/
+INSERT INTO [T_Notification_Entity_User] VALUES (15,1)
+INSERT INTO [T_Notification_Entity_User] VALUES (15,2)
+INSERT INTO [T_Notification_Entity_User] VALUES (15,3)
+INSERT INTO [T_Notification_Entity_User] VALUES (15,4)
+INSERT INTO [T_Notification_Entity_User] VALUES (15,5)
 INSERT INTO [T_Notification_Entity_User] VALUES (17,1)
 INSERT INTO [T_Notification_Entity_User] VALUES (17,2)
 INSERT INTO [T_Notification_Entity_User] VALUES (17,3)
 INSERT INTO [T_Notification_Entity_User] VALUES (17,4)
+INSERT INTO [T_Notification_Entity_User] VALUES (2035,1)
+INSERT INTO [T_Notification_Entity_User] VALUES (2035,2)
+INSERT INTO [T_Notification_Entity_User] VALUES (2035,3)
+INSERT INTO [T_Notification_Entity_User] VALUES (2035,4)
+INSERT INTO [T_Notification_Entity_User] VALUES (2035,5)
 INSERT INTO [T_Notification_Entity_User] VALUES (2086,1)
 INSERT INTO [T_Notification_Entity_User] VALUES (2086,2)
 INSERT INTO [T_Notification_Entity_User] VALUES (2086,3)

@@ -18,7 +18,7 @@ CREATE Procedure DeleteExperimentGroup
 **    
 *****************************************************/
 	@groupID int = 0,
-	@message varchar(512) output
+	@message varchar(512)='' output
 As
 	declare @delim char(1)
 	set @delim = ','

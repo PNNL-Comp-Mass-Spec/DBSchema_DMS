@@ -265,5 +265,5 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[EnableDisableManagers] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[EnableDisableManagers] TO [Mgr_Config_Admin] AS [dbo]
 GO

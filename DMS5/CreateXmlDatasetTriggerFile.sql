@@ -17,6 +17,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 **	Date:	10/03/2007
 **			04/26/2010 grk - widened @Dataset_Name to 128 characters
 **			02/03/2011 mem - Now calling XMLQuoteCheck() to replace double quotes with &quot;
+**			07/31/2012 mem - Now using udfCombinePaths to build the output file path
 **    
 *****************************************************/
 	@Dataset_Name		varchar(128),  -- @datasetNum
@@ -54,7 +55,7 @@ set nocount on
 	where [Function] = 'DIMTriggerFileDir'
 
 	declare @filename varchar(150)
-	set @filename = @filePath + 'man_' + @Dataset_Name + '.xml'
+	set @filename = dbo.udfCombinePaths(@filePath, 'man_' + @Dataset_Name + '.xml')
 
 	declare @xmlLine varchar(50)
 	set @xmlLine = ''
@@ -144,7 +145,7 @@ set nocount on
 
 	If @result = 1
 	begin
-		set @message = 'Trigger file already exists.  Enter a different dataset name'
+		set @message = 'Trigger file already exists (' + @FileName + ').  Enter a different dataset name'
 		set @myError = 62
 	    goto DestroyFSO
 	end

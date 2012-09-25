@@ -25,11 +25,13 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **						   - Now calling PostUsageLogEntry
 **			01/27/2012 mem - Now bumping AS_purge_holdoff_date by 90 minutes when @completionCode = 3
 **			04/17/2012 mem - Added support for @completionCode = 4 (drive missing)
+**			06/12/2012 mem - Added support for @completionCode = 5 and @completionCode = 6  (corresponding to Archive States 14 and 15)
+**			06/15/2012 mem - No longer changing the purge holdoff date if @completionCode = 4 (drive missing)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder
 	@message varchar(512) output
 )
 As
@@ -53,10 +55,9 @@ As
 	-- resolve dataset into ID
 	---------------------------------------------------
 	--
-	SELECT 
-		@datasetID = T_Dataset.Dataset_ID
-	FROM   T_Dataset 
-	WHERE     (Dataset_Num = @datasetNum)	
+	SELECT @datasetID = T_Dataset.Dataset_ID
+	FROM T_Dataset
+	WHERE (Dataset_Num = @datasetNum)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -67,7 +68,7 @@ As
 	end
 
 	---------------------------------------------------
-	-- check current archive state
+	-- Determine current "Archive" state and current "ArchiveUpdate" state
 	---------------------------------------------------
 
 	declare @currentState as int
@@ -102,22 +103,38 @@ As
 	-- based upon completion code
 	---------------------------------------------------
 /*
-Code 0 (success) --> 
+Code 0 (success) 
 	Set T_Dataset_Archive.AS_state_ID to 4 (Purged). 
 	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-Code 1 (failed) --> 
+Code 1 (failed)
 	Set T_Dataset_Archive.AS_state_ID to 8 (Failed). 
 	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-Code 2 (update reqd) --> 
+Code 2 (update reqd)
 	Set T_Dataset_Archive.AS_state_ID to 3 (Complete). 
 	Set T_Dataset_Archive.AS_update_state_ID to 2 (Update Required)
+	Bump up Purge Holdoff Date by 90 minutes
 
-Code 3 (Stage MD5 file required) --> 
+Code 3 (Stage MD5 file required)
 	Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
 	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 	Set AS_StageMD5_Required to 1
+	Bump up Purge Holdoff Date by 90 minutes
+	
+Code 4 (Drive Missing)
+	Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+	Leave Purge Holdoff Date unchanged
+
+Code 5 (Purged Instrument Data and any other auto-purge items)
+	Set T_Dataset_Archive.AS_state_ID to 14
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+
+Code 6 (Purged all data except QC folder)
+	Set T_Dataset_Archive.AS_state_ID to 15
+	Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+	
 */
 
 	-- (success)
@@ -161,6 +178,20 @@ Code 3 (Stage MD5 file required) -->
 		goto SetStates
 	end
 
+	-- (Purged Instrument Data and any other auto-purge items)
+	if @completionCode = 5
+	begin
+		set @completionState = 14    -- complete
+		goto SetStates
+	end
+	
+	-- (Purged all data except QC folder)
+	if @completionCode = 6
+	begin
+		set @completionState = 15    -- complete
+		goto SetStates
+	end
+	
 	-- if we got here, completion code was not recognized.  Bummer.
 	--
 	set @message = 'Completion code was not recognized'
@@ -171,11 +202,11 @@ SetStates:
 	SET
 		AS_state_ID = @completionState,
 		AS_update_state_ID = @currentUpdateState,
-		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2    THEN DATEADD(HOUR, 24, GETDATE()) 
-		                             WHEN @completionCode IN (2,3,4) THEN DATEADD(MINUTE, 90, GETDATE()) 
+		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2    THEN DATEADD(  HOUR, 24, GETDATE()) 
+		                             WHEN @completionCode IN (2,3)   THEN DATEADD(MINUTE, 90, GETDATE()) 
 		                             ELSE AS_purge_holdoff_date 
 		                        END, 
-		AS_StageMD5_Required = CASE WHEN @completionCode = 3      THEN 1
+		AS_StageMD5_Required = CASE WHEN @completionCode = 3         THEN 1
 		                            ELSE AS_StageMD5_Required
 		                        END
 	WHERE  (AS_Dataset_ID = @datasetID)
@@ -189,20 +220,39 @@ SetStates:
 		goto done
 	end
 	
-	if @completionState = 4
+	If @completionState in (4, 14)
 	Begin
 		-- Dataset was purged; update AS_instrument_data_purged to be 1
-		-- This field is useful if an analysis job is run on a purged dataset, since, 
-		--  when that happens, AS_state_ID will go back to 3=Complete, and we therefore
+		-- This field is useful because, if an analysis job is run on a purged dataset,
+		--  then AS_state_ID will change back to 3=Complete, and we therefore
 		--  wouldn't be able to tell if the raw instrument file is available
+		-- Note that trigger trig_u_Dataset_Archive will likely have already updated AS_instrument_data_purged
+		--
 		UPDATE T_Dataset_Archive
 		SET AS_instrument_data_purged = 1
 		WHERE AS_Dataset_ID = @datasetID AND
 		      IsNull(AS_instrument_data_purged, 0) = 0
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
+	
+	If @completionState in (4)
+	Begin
+		-- Make sure QC_Data_Purged is now 1
+		-- Note that trigger trig_u_Dataset_Archive will likely have already updated AS_instrument_data_purged
+		--
+		UPDATE T_Dataset_Archive
+		SET QC_Data_Purged = 1
+		WHERE AS_Dataset_ID = @datasetID AND
+		      IsNull(QC_Data_Purged, 0) = 0
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
 		
-		-- Also update AJ_Purged in T_Analysis_Job
+	
+	If @completionState IN (4, 15)
+	Begin
+		-- Update AJ_Purged in T_Analysis_Job for all jobs associated with this dataset
 		UPDATE T_Analysis_Job
 		SET AJ_Purged = 1
 		WHERE AJ_datasetID = @datasetID AND AJ_Purged = 0
@@ -230,8 +280,6 @@ Done:
 		RAISERROR (@message, 10, 1)
 	end
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_Ops_Admin] AS [dbo]

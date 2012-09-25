@@ -57,5 +57,5 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SelectManagerControlParams] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[SelectManagerControlParams] TO [Mgr_Config_Admin] AS [dbo]
 GO

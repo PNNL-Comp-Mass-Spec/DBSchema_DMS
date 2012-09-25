@@ -24,6 +24,7 @@ CREATE PROCEDURE CreateStepsForJob
 **			02/05/2009 grk - modified for extension jobs (http://prismtrac.pnl.gov/trac/ticket/720)
 **			05/25/2011 mem - Removed @priority parameter and removed priority column from T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
+**			04/16/2012 grk - Added error checking for missing step tools
 **    
 *****************************************************/
 (
@@ -43,6 +44,24 @@ As
 	
 	set @message = ''
 
+	---------------------------------------------------
+	-- make sure that the tools in the script exist
+	---------------------------------------------------
+	--
+	DECLARE @missingTools VARCHAR(2048) = ''
+	--
+	SELECT @missingTools = CASE WHEN @missingTools = '' THEN Step_Tool ELSE @missingTools + ', ' + Step_Tool END 
+	FROM    ( SELECT    xmlNode.value('@Tool', 'nvarchar(128)') Step_Tool
+			  FROM      @scriptXML.nodes('//Step') AS R ( xmlNode )
+			) TS
+	WHERE   NOT Step_Tool IN ( SELECT [Name] FROM dbo.T_Step_Tools )
+	--
+	if @missingTools <> ''
+	begin
+		SET @myError = 51047
+		set @message = 'Step tool(s) ' + @missingTools + ' do not exist in tools list' 
+		goto Done
+	end
 
 	---------------------------------------------------
 	-- make set of job steps for job based on scriptXML

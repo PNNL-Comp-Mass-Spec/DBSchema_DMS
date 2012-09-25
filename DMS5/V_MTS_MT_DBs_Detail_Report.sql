@@ -52,3 +52,7 @@ GROUP BY LookupQ.MT_DB_Name, LookupQ.MT_DB_ID, LookupQ.Description, LookupQ.Orga
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MTS_MT_DBs_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_MTS_MT_DBs_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

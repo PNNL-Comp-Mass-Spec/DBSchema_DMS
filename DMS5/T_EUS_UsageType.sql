@@ -24,7 +24,3 @@ GRANT UPDATE ON [dbo].[T_EUS_UsageType] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_EUS_UsageType] TO [DMS_User] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_EUS_UsageType] TO [DMSReader] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_EUS_UsageType] TO [DMSWebUser] AS [dbo]
-GO

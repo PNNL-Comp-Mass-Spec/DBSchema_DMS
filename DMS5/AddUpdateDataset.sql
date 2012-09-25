@@ -55,6 +55,8 @@ CREATE Procedure AddUpdateDataset
 **			01/11/2012 mem - Added parameter @AggregationJobDataset
 **			02/29/2012 mem - Now auto-updating the @eus parameters if null
 **			               - Now raising an error if other key parameters are null/empty
+**			09/12/2012 mem - Now auto-changing HMS-HMSn to IMS-HMS-HMSn for IMS datasets
+**						   - Now requiring that the dataset name be 90 characters or less (longer names can lead to "path-too-long" errors; Windows has a 254 character path limit)
 **    
 *****************************************************/
 (
@@ -227,6 +229,12 @@ As
 		RAISERROR (@msg, 11, 2)
 	end
 
+	If Len(@datasetNum) > 90
+	begin
+		set @msg = 'Dataset name cannot be over 90 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
+		RAISERROR (@msg, 11, 1)
+	end
+	
 	---------------------------------------------------
 	-- Resolve id for rating
 	---------------------------------------------------
@@ -502,26 +510,47 @@ As
 	If @result <> 0 And @AddingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
 	Begin
 		-- Dataset type is not valid for this instrument group
-		-- However, @mode is Add, so we will auto-update @msType to the default
+		-- However, @mode is Add, so we will auto-update @msType
 		--
-		Set @datasetTypeID = @DefaultDatasetTypeID	
-
-		Set @msTypeOld = @msType
-		
-		-- Update @msType			
-		SELECT @msType = DST_name
-		FROM T_DatasetTypeName
-		WHERE (DST_Type_ID = @datasetTypeID)
-
 		If @comment = 'na'
 			Set @comment = ''
 		
 		If @comment <> ''
 			Set @comment = @comment + '; '
 		
-		Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+		If @msType IN ('HMS-MSn', 'HMS-HMSn') And Exists (SELECT IGADST.Dataset_Type 
+		                                                  FROM T_Instrument_Group ING INNER JOIN 
+		                                                       T_Instrument_Name InstName ON ING.IN_Group = InstName.IN_Group INNER JOIN
+                                                               T_Instrument_Group_Allowed_DS_Type IGADST ON ING.IN_Group = IGADST.IN_Group
+                                                          WHERE InstName.IN_Name = @instrumentName AND IGADST.Dataset_Type = 'IMS-HMS-HMSn')
+        Begin
+			-- This is an IMS MS/MS dataset
+			Set @msType = 'IMS-HMS-HMSn'
+			execute @datasetTypeID = GetDatasetTypeID @msType
+			
+			Set @comment = @comment + 'Auto-switched dataset type from HMS-HMSn to ' + @msType
+        End
+        Else
+        Begin
+			-- Not an IMS dataset; change @datasetTypeID to zero so that the default dataset type is used
+			Set @datasetTypeID = 0
+		End
 		
-		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group)
+		If @datasetTypeID = 0
+		Begin
+			Set @datasetTypeID = @DefaultDatasetTypeID	
+
+			Set @msTypeOld = @msType
+			
+			-- Update @msType			
+			SELECT @msType = DST_name
+			FROM T_DatasetTypeName
+			WHERE (DST_Type_ID = @datasetTypeID)
+			
+			Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+		End
+		
+		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group, which would indicate indvalid data in table T_Instrument_Group)
 		exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 	End
 	

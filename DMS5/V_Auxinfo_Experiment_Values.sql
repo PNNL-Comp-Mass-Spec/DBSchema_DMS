@@ -18,3 +18,7 @@ FROM    T_AuxInfo_Category
 WHERE   ( T_AuxInfo_Category.Target_Type_ID = 500 )                
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Auxinfo_Experiment_Values] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Auxinfo_Experiment_Values] TO [PNL\D3M580] AS [dbo]
+GO

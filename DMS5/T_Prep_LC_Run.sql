@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Prep_LC_Run](
 	[ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Tab] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Instrument] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Type] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[LC_Column] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[LC_Column_2] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -28,6 +28,11 @@ CREATE TABLE [dbo].[T_Prep_LC_Run](
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Prep_LC_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Prep_LC_Run_T_Instrument_Name] FOREIGN KEY([Instrument])
+REFERENCES [T_Instrument_Name] ([IN_name])
+GO
+ALTER TABLE [dbo].[T_Prep_LC_Run] CHECK CONSTRAINT [FK_T_Prep_LC_Run_T_Instrument_Name]
 GO
 ALTER TABLE [dbo].[T_Prep_LC_Run] ADD  CONSTRAINT [DF_T_Prep_LC_Run_Guard_Column]  DEFAULT ('No') FOR [Guard_Column]
 GO

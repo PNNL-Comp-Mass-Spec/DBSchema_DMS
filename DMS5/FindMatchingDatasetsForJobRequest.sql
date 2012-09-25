@@ -21,6 +21,7 @@ CREATE PROCEDURE FindMatchingDatasetsForJobRequest
 **			02/11/2009 mem - Updated to allow for OrgDBName to not be 'na' when using protein collection lists
 **			06/17/2009 mem - Updated to ignore OrganismName when using protein collection lists
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -43,8 +44,8 @@ AS
 		@toolName varchar(64),
 		@parmFileName varchar(255),
 		@settingsFileName varchar(255),
-		@organismDBName varchar(64),
-		@organismName varchar(64),
+		@organismDBName varchar(128),
+		@organismName varchar(128),
 		@proteinCollectionList varchar(512),
 		@proteinOptionsList varchar(256)
 

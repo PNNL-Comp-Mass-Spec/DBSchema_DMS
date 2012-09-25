@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetDatasetInstrumentRuntime
+CREATE FUNCTION GetDatasetInstrumentRuntime
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +21,7 @@ CREATE FUNCTION dbo.GetDatasetInstrumentRuntime
 **			02/06/2012 grk - Added @endIntervalEOD padding to pick up trailing interval
 **			02/07/2012 grk - Added anchoring of long intervals to beginning and end of month.
 **			02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes
+**			06/08/2012 grk - added lookup for @maxNormalInterval
 **    
 *****************************************************/
 (
@@ -51,7 +52,7 @@ RETURNS @TX TABLE (
 )
 AS
 	BEGIN
-		DECLARE @maxNormalInterval INT = 90
+		DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
 
 		---------------------------------------------------
 		-- set up flags that control content 
@@ -328,4 +329,5 @@ AS
 
  	RETURN
 	END
+
 GO

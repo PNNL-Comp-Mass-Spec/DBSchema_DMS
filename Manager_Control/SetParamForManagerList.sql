@@ -134,5 +134,5 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SetParamForManagerList] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[SetParamForManagerList] TO [Mgr_Config_Admin] AS [dbo]
 GO

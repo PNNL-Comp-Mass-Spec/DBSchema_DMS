@@ -100,7 +100,7 @@ Done:
 
 	return @myError
 GO
-GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [Mgr_Config_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [svc-dms] AS [dbo]
 GO

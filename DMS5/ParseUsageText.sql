@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **    Date: 03/02/2012 
 **    03/11/2012 grk - added OtherNotAvailable
 **    03/11/2012 grk - return commment without usage text
+**    09/18/2012 grk - added 'Operator' and 'PropUser' keywords
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -46,6 +47,10 @@ AS
 		Seq int IDENTITY(1,1) NOT NULL
 	)
 
+	CREATE TABLE #TN (
+		UsageKey varchar(32)
+	)
+
 	---------------------------------------------------
 	-- temp table to hold location of usage text
 	---------------------------------------------------
@@ -58,7 +63,8 @@ AS
 	-- usage keywords
 	---------------------------------------------------
 	
-	DECLARE @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User, Proposal'
+	DECLARE @usageKeys VARCHAR(256) = 'CapDev, Operator, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User, Proposal, PropUser'
+	DECLARE @nonPercentageKeys VARCHAR(256) =  'Operator, Proposal, PropUser'
 
 	BEGIN TRY 
 		---------------------------------------------------
@@ -78,6 +84,12 @@ AS
 		UPDATE #TU
 		SET UsageKey = LTRIM(RTRIM(UsageKey))
 
+		INSERT INTO #TN (UsageKey)
+		SELECT Item FROM dbo.MakeTableFromList(@nonPercentageKeys)
+		
+		UPDATE #TN
+		SET UsageKey = LTRIM(RTRIM(UsageKey))
+
 		---------------------------------------------------
 		-- look for keywords in text and update table with
 		-- corresponding values
@@ -95,7 +107,7 @@ AS
 		WHILE @done = 0
 		BEGIN --<a>
 			---------------------------------------------------
-			-- get next keywork to look for
+			-- get next keyword to look for
 			---------------------------------------------------
 			SET @kw = ''
 			SELECT TOP 1 
@@ -122,7 +134,7 @@ AS
 				-- if we found a keyword in the text
 				-- parse out its values and save that in the usage table
 				---------------------------------------------------
-				
+			
 				IF @index > 0
 				BEGIN --<c>
 					SET @bot = @index
@@ -148,7 +160,6 @@ AS
 				END --<c>
 			END --<b>
 		END --<a>
-		
 		---------------------------------------------------
 		-- clear keywords not found from table
 		---------------------------------------------------
@@ -158,9 +169,9 @@ AS
 		---------------------------------------------------
 		-- verify percentage total
 		---------------------------------------------------
-		
+
 		DECLARE @total INT = 0
-		SELECT @total = @total + CASE WHEN UsageKey <> 'Proposal' THEN CONVERT(INT, UsageValue) ELSE 0 END 
+		SELECT @total = @total + CASE WHEN NOT UsageKey IN (SELECT UsageKey FROM #TN) THEN CONVERT(INT, UsageValue) ELSE 0 END 
 		FROM #TU
 
 		IF @total <> 100
@@ -220,4 +231,8 @@ AS
 
 	RETURN @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [PNL\D3M580] AS [dbo]
 GO

@@ -184,3 +184,7 @@ GRANT EXECUTE ON [dbo].[GetRequestedRunsFromItemList] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [PNL\D3M580] AS [dbo]
+GO

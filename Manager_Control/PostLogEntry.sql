@@ -52,7 +52,7 @@ As
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [Mgr_Config_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [svc-dms] AS [dbo]
 GO

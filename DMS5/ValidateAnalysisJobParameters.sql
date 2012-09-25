@@ -40,14 +40,15 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
 **			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to determine valid instrument classes for a given analysis tool
 **			01/12/2012 mem - Now validating that the analysis tool is active (T_Analysis_Tool.AJT_active > 0)
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **
 *****************************************************/
 (
 	@toolName varchar(64),
 	@parmFileName varchar(255) output,
 	@settingsFileName varchar(255) output,
-	@organismDBName varchar(64) output,
-	@organismName varchar(64),
+	@organismDBName varchar(128) output,		-- Legacy fasta file; typically 'na'
+	@organismName varchar(128),
 	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
 	@ownerPRN varchar(64) output,

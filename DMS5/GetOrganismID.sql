@@ -4,14 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
-
-
-
-
-Create Procedure GetOrganismID
+CREATE Procedure GetOrganismID
 /****************************************************
 **
 **	Desc: Gets organismID for given organism name
@@ -20,12 +13,13 @@ Create Procedure GetOrganismID
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 1/26/2001
+**	Auth:	grk
+**	Date:	01/26/2001
+**			09/25/2012 mem - Expanded @organismName to varchar(128)
 **    
 *****************************************************/
 (
-	@organismName varchar(80) = " "
+	@organismName varchar(128) = ''
 )
 As
 	declare @organismID int

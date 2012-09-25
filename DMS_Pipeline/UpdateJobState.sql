@@ -84,6 +84,7 @@ CREATE PROCEDURE UpdateJobState
 **			11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
 **			12/31/2011 mem - Fixed PostedBy name when calling PostLogEntry
 **			01/12/2012 mem - Added parameter @infoOnly
+**			09/25/2012 mem - Expanded @orgDBName and Organism_DB_Name to varchar(128)
 **    
 *****************************************************/
 (
@@ -110,7 +111,7 @@ As
 	declare @resultsFolderName varchar(64)
 	Set @resultsFolderName = ''
 	--
-	declare @orgDBName varchar(64)
+	declare @orgDBName varchar(128)
 	Set @orgDBName = ''
 	
 	declare @JobPropagationMode int
@@ -156,7 +157,7 @@ As
 		Job int,
 		NewState int,
 		Results_Folder_Name varchar(128),
-		Organism_DB_Name varchar(64),
+		Organism_DB_Name varchar(128),
 		Dataset_Name varchar(128),
 		Dataset_ID int
 	)

@@ -117,5 +117,11 @@ AS
 	RETURN @myError
  
 GO
+GRANT EXECUTE ON [dbo].[ReportDatasetInstrumentRunTime] TO [DMS_SP_User] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[ReportDatasetInstrumentRunTime] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentRunTime] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentRunTime] TO [PNL\D3M580] AS [dbo]
 GO

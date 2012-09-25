@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Organism_ID] [int] IDENTITY(40,1) NOT NULL,
 	[OG_organismDBPath] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[OG_organismDBName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[OG_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_created] [datetime] NULL,
 	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Short_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -24,6 +24,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Mito_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Active] [tinyint] NULL,
+	[OG_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY CLUSTERED 
 (
 	[Organism_ID] ASC

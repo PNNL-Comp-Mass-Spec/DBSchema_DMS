@@ -405,5 +405,3 @@ declare @myError int
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerControlParams_original] TO [DMSWebUser] AS [dbo]
-GO

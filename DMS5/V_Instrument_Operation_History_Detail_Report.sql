@@ -12,3 +12,7 @@ FROM         dbo.T_Instrument_Operation_History LEFT OUTER JOIN
                       dbo.T_Users ON dbo.T_Instrument_Operation_History.EnteredBy = dbo.T_Users.U_PRN
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Operation_History_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Operation_History_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

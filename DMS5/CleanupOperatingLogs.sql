@@ -10,7 +10,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **	Desc:	Deletes Info entries from T_Log_Entries if they are
 **			more than @InfoHoldoffWeeks weeks old
 **
-**			Move old log entries and event entries to DMSHistoricLog1
+**			Move old log entries and event entries to DMSHistoricLog
 **
 **	Return values: 0: success, otherwise, error code
 ** 
@@ -18,6 +18,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **
 **	Auth:	mem
 **	Date:	10/04/2011 mem - Initial version
+**			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **    
 *****************************************************/
 (
@@ -52,7 +53,7 @@ As
 			Set @EventLogRetentionIntervalDays = 32
 
 		----------------------------------------------------
-		-- Move old log entries from T_Log_Entries to DMSHistoricLog1
+		-- Move old log entries from T_Log_Entries to DMSHistoricLog
 		----------------------------------------------------
 		--
 		Set @CurrentLocation = 'Call MoveHistoricLogEntries'
@@ -60,7 +61,7 @@ As
 		exec @myError = MoveHistoricLogEntries @LogRetentionIntervalHours
 
 		----------------------------------------------------
-		-- Move old log entries from T_Analysis_Log to DMSHistoricLog1
+		-- Move old log entries from T_Analysis_Log to DMSHistoricLog
 		----------------------------------------------------
 		--
 		Set @CurrentLocation = 'Call MoveAnalysisLogEntries'
@@ -68,7 +69,7 @@ As
 		exec @myError = MoveAnalysisLogEntries @LogRetentionIntervalHours
 		
 		----------------------------------------------------
-		-- Move old events from T_Event_Log to DMSHistoricLog1
+		-- Move old events from T_Event_Log to DMSHistoricLog
 		----------------------------------------------------
 		--
 		Set @CurrentLocation = 'Call MoveEventLogEntries'
@@ -88,4 +89,8 @@ Done:
 	return @myError
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[CleanupOperatingLogs] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CleanupOperatingLogs] TO [PNL\D3M580] AS [dbo]
 GO

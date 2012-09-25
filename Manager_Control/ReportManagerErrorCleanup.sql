@@ -175,5 +175,7 @@ Done:
 	return @myError
 	
 GO
+GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup] TO [Mgr_Config_Admin] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup] TO [svc-dms] AS [dbo]
 GO

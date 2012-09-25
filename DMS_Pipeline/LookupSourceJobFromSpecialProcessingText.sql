@@ -16,6 +16,8 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingText
 **	Date:	05/03/2012 mem - Initial version (extracted from LookupSourceJobFromSpecialProcessingParam)
 **			05/04/2012 mem - Added parameters @TagName and @AutoQueryUsed
 **						   - Removed the SourceJobResultsFolder parameter
+**			07/12/2012 mem - Added support for $ThisDataset in an Auto-query Where Clause
+**			07/13/2012 mem - Added support for $Replace(x,y,z) in an Auto-query Where Clause
 **    
 *****************************************************/
 (
@@ -86,8 +88,11 @@ As
 				-- Example:
 				--  SourceJob:Auto{Tool = "Decon2LS_V2" AND Settings_File = "Decon2LS_FF_IMS_UseHardCodedFilters_20ppm_NoFlags_2011-02-04.xml"}
 				--
-				-- Example 2:				
+				-- Example 2:
 				--  SourceJob:Auto{Tool = "XTandem" AND Settings_File = "IonTrapDefSettings_DeconMSN_CIDOnly.xml" AND [Parm File] = "xtandem_Rnd1PartTryp_Rnd2DynMetOx.xml"}, Job2:Auto{Tool = "MASIC_Finnigan"}
+				--
+				-- Example 3:
+				--  SourceJob:Auto{Tool = "Decon2LS_V2" AND [Parm File] = "LTQ_FT_Lipidomics_2012-04-16.xml"}, Job2:Auto{Tool = "Decon2LS_V2" AND [Parm File] = "LTQ_FT_Lipidomics_2012-04-16.xml" AND Dataset LIKE "$Replace($ThisDataset,_Pos,)%NEG"}
 				
 				Set @AutoQueryUsed = 1				
 				Set @IndexStart = CharIndex(@TagName + 'Auto', @SpecialProcessingText)
@@ -98,16 +103,93 @@ As
 
 					-- Replace double quotes with single quotes
 					set @WhereClause = REPLACE(@WhereClause, '"', '''')
-					
+
 					Set @IndexStart = CHARINDEX('{', @WhereClause)
 					Set @IndexEnd = CHARINDEX('}', @WhereClause)
-					
+
 					If @IndexStart > 0 And @IndexEnd > @IndexStart
 						Set @WhereClause = SUBSTRING(@WhereClause, @IndexStart+1, @IndexEnd-@IndexStart-1)
 					Else
 						Set @WhereClause= ''
+					
+					If @WhereClause Like '%$ThisDataset%'
+					Begin
+						-- The Where Clause contains a Dataset filter clause utilizing this dataset's name
+						Set @WhereClause = Replace(@WhereClause, '$ThisDataset', @Dataset)
+						Set @WhereClause = 'WHERE (' + @WhereClause + ')'
+					End
+					Else
+					Begin
+						Set @WhereClause = 'WHERE (Dataset = ''' + @Dataset + ''') AND (' + @WhereClause + ')'
+					End
+
+					If @WhereClause Like '%$Replace(%'
+					Begin -- <g>
+						-- The Where Clause contains a Replace Text command of the form: $Replace(DatasetName,'_Pos','') or $Replace(DatasetName,_Pos,)
+						-- First split up the where clause to obtain the text before and after the replacement directive
 						
-					Set @WhereClause = 'WHERE Dataset = ''' + @Dataset + ''' AND ' + @WhereClause
+						Set @IndexStart = CHARINDEX('$Replace', @WhereClause)
+						Set @IndexEnd = CHARINDEX(')', @WhereClause, @IndexStart)
+
+						If @IndexStart > 0 And @IndexEnd > @IndexStart
+						Begin -- <h>
+							Declare @Part1 varchar(1024) = ''
+							Declare @Part2 varchar(1024) = ''
+							Declare @Part3 varchar(1024) = ''
+
+							Set @Part1 = SUBSTRING(@WhereClause, 1, @IndexStart-1)
+							Set @Part2 = SUBSTRING(@WhereClause, @IndexStart, @IndexEnd - @IndexStart+1)
+							Set @Part3 = SUBSTRING(@WhereClause, @IndexEnd+1, LEN(@WhereClause))
+
+							-- The replacement command is now in @Part2, for example: $Replace(MyLipidDataset,_Pos,)
+							-- Split this command at the ( and , characters to allow us to perform the replacment
+							
+							Set @IndexStart = CHARINDEX('(', @Part2)
+							Set @IndexEnd = CHARINDEX(',', @Part2, @IndexStart)				
+							
+							If @IndexStart > 0 And @IndexEnd > @IndexStart
+							Begin -- <i>
+								Declare @TextToSearch varchar(512)
+								Declare @TextToFind varchar(512)
+								Declare @Replacement varchar(512)
+								
+								-- We have determined the text to search
+								Set @TextToSearch = SUBSTRING(@Part2, @IndexStart+1, @IndexEnd - @IndexStart-1)
+								
+								Set @IndexStart = @IndexEnd + 1
+								Set @IndexEnd = CHARINDEX(',', @Part2, @IndexStart)		
+								
+								If @IndexEnd > @IndexStart
+								Begin -- <j>
+									-- We have determined the text to match
+									Set @TextToFind =  SUBSTRING(@Part2, @IndexStart, @IndexEnd - @IndexStart)
+								
+									Set @IndexStart = @IndexEnd + 1
+									Set @IndexEnd = CHARINDEX(')', @Part2, @IndexStart)		
+									
+									If @IndexEnd >= @IndexStart
+									Begin -- <k>
+										-- We have determined the replacement text
+										Set @Replacement = SUBSTRING(@Part2, @IndexStart, @IndexEnd - @IndexStart)
+								
+										-- Make sure the text doesn't have any single quotes
+										-- This would be the case if @SpecialProcessingText originally contained "$Replace($ThisDataset,"_Pos","")%NEG"}'
+										Set @TextToFind = REPLACE(@TextToFind, '''', '')
+										Set @Replacement = REPLACE(@Replacement, '''', '')
+										--select @part2, '[' + @TextToSearch + ']', '[' + @TextToFind + ']', '[' + @Replacement + ']'
+
+										Set @Part2 = REPLACE(@TextToSearch, @TextToFind, @Replacement)
+										--select @Part2
+										
+										Set @WhereClause = @Part1 + @Part2 + @Part3
+									End -- <k>
+
+								End -- <j>
+							End -- <i>							
+						End -- <h>
+						
+					End -- </g>
+
 					
 					-- By default, order by Job Descending
 					-- However, if @WhereClause already contains ORDER BY then we don't want to add another one
@@ -130,7 +212,7 @@ As
 					Begin
 						Set @WarningMessage = 'Unable to determine SourceJob for job ' + Convert(varchar(12), @Job) + ' using query ' + @S
 					End
-												
+
 				End -- </f>
 				
 			End -- </e>

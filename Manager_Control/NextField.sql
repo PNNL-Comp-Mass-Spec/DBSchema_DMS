@@ -64,5 +64,5 @@ As
 	return @EOL
 
 GO
-GRANT EXECUTE ON [dbo].[NextField] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[NextField] TO [Mgr_Config_Admin] AS [dbo]
 GO

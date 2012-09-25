@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[ValidateAnalysisJobProteinParameters]
+CREATE Procedure dbo.ValidateAnalysisJobProteinParameters
 /****************************************************
 **
 **	Desc:
@@ -30,6 +30,8 @@ CREATE Procedure [dbo].[ValidateAnalysisJobProteinParameters]
 **			10/04/2007 mem - Expanded @protCollNameList from varchar(512) to varchar(max)
 **							 Expanded @organismName from varchar(64) to varchar(128)
 **			01/12/2012 mem - Updated error message for error -50001
+**			05/15/2012 mem - Updated error message for error -50001
+**			09/25/2012 mem - Expanded @organismDBFileName to varchar(128)
 
 **	Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -43,7 +45,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobProteinParameters]
 (
     @organismName varchar(128),
     @ownerPRN varchar(30),
-	@organismDBFileName varchar(64),
+	@organismDBFileName varchar(128),
     @protCollNameList varchar(max) output,
     @protCollOptionsList varchar(256) output,
 	@message varchar(512) output
@@ -93,7 +95,7 @@ As
 	
 	If (Len(@organismDBFileName) = 0 and Len(@protCollNameList) = 0) OR (@organismDBFileName = 'na' AND @protCollNameList = 'na')
 	Begin
-		Set @msg = 'Org DB validation failure: Protein collection list and Organism DB name cannot both blank (or "na")'
+		Set @msg = 'Org DB validation failure: Protein collection list and Legacy Fasta (OrgDBName) name cannot both be blank (or "na")'
 		Set @myError = -50001
 		RAISERROR(@msg, 10 ,1)
 	End

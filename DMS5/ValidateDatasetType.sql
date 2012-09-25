@@ -20,6 +20,7 @@ CREATE Procedure dbo.ValidateDatasetType
 **			05/17/2010 mem - Updated @AutoDefineOnAllMismatches to default to 1
 **			08/30/2011 mem - Updated to prevent MS-HMSn from getting auto-defined
 **			03/27/2012 mem - Added support for GC-MS
+**			08/15/2012 mem - Added support for IMS-HMS-HMSn
 **    
 *****************************************************/
 (
@@ -170,11 +171,18 @@ As
 	Begin
 		-- Dataset contains CID or ETD HMSn spectra, but the current dataset type doesn't reflect that this is an HMSn dataset
 
-		If Not @CurrentDatasetType LIKE 'IMS%'
-			Set @AutoDefineDSType = 1
+		If @CurrentDatasetType = 'IMS-HMS'
+		Begin
+			Set @NewDatasetType = 'IMS-HMS-HMSn'
+		End
 		Else
-			Set @NewDatasetType = ' an HMS-based dataset type'	
-
+		Begin
+			If Not @CurrentDatasetType LIKE 'IMS%'
+				Set @AutoDefineDSType = 1
+			Else
+				Set @NewDatasetType = ' an HMS-based dataset type'	
+		End
+		
 		Goto AutoDefineDSType
 	End
 
@@ -184,7 +192,7 @@ As
 		-- Dataset contains CID or ETD MSn spectra, but the current dataset type doesn't reflect that this is an MSn dataset
 		If @CurrentDatasetType = 'IMS-HMS'
 		Begin
-			Set @NewDatasetType = 'IMS-MSn-HMS'
+			Set @NewDatasetType = 'IMS-HMS-MSn'
 		End
 		Else
 		Begin
@@ -501,4 +509,8 @@ Done:
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [PNL\D3M580] AS [dbo]
 GO

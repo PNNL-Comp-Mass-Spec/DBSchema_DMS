@@ -1,8 +1,8 @@
 /****** Object:  Database [Manager_Control] ******/
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
-( NAME = N'ManagerControl', FILENAME = N'I:\SQLServerData\Manager_Control_data.mdf' , SIZE = 20160KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'ManagerControl', FILENAME = N'I:\SQLServerData\Manager_Control.mdf' , SIZE = 26944KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'I:\SQLServerData\Manager_Control_log.ldf' , SIZE = 2560KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'ManagerControl_log', FILENAME = N'H:\SQLServerData\Manager_Control_log.ldf' , SIZE = 1280KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Manager_Control] SET COMPATIBILITY_LEVEL = 100
@@ -74,9 +74,17 @@ GRANT CONNECT TO [DMS_Guest] AS [dbo]
 GO
 GRANT CONNECT TO [DMS_User] AS [dbo]
 GO
+GRANT CONNECT TO [DMSReader] AS [dbo]
+GO
+GRANT SHOWPLAN TO [DMSReader] AS [dbo]
+GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
-GRANT CONNECT TO [mtuser] AS [dbo]
+GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
+GO
+GRANT CONNECT TO [MTUser] AS [dbo]
+GO
+GRANT SHOWPLAN TO [MTUser] AS [dbo]
 GO
 GRANT CONNECT TO [PNL\D3m480] AS [dbo]
 GO

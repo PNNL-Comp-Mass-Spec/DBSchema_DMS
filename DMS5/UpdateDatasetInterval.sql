@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDatasetInterval
+CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
 /****************************************************
 **
 **  Desc: 
@@ -17,12 +17,14 @@ CREATE PROCEDURE dbo.UpdateDatasetInterval
 **  Auth:	grk
 **  Date:	02/08/2012 
 **			02/10/2012 mem - Now updating Acq_Length_Minutes in T_Dataset
-**			02/13/2012 grk - Raised @maxNormalInterval to 90 minutes
+**			02/13/2012 grk - Raised @maxNormalInterval to ninety minutes
 **			02/15/2012 mem - No longer updating Acq_Length_Minutes in T_Dataset since now a computed column
 **			03/07/2012 mem - Added parameter @infoOnly
 **			               - Now validating @instrumentName
 **			03/29/2012 grk - interval values in T_Run_Interval were not being updated
 **			04/10/2012 grk - now deleting "short" long intervals
+**			06/08/2012 grk - added lookup for @maxNormalInterval
+**			08/30/2012 grk - extended dataset update to include beginning of next month
 **    
 *****************************************************/
 (
@@ -43,7 +45,7 @@ AS
 	set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	
-	DECLARE @maxNormalInterval INT = 90
+	DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
 	
 	BEGIN TRY 
 
@@ -203,7 +205,7 @@ AS
 			---------------------------------------------------
 			
 			DELETE FROM T_Run_Interval
-			WHERE (Interval < 90)
+			WHERE (Interval < @maxNormalInterval)
 			      
 			COMMIT TRANSACTION @transName
 		End
@@ -222,5 +224,8 @@ AS
 
 	RETURN @myError
 
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetInterval] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetInterval] TO [PNL\D3M580] AS [dbo]
 GO

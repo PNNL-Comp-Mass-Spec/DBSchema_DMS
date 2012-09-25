@@ -43,5 +43,3 @@ FROM
 		T_Scripts CROSS APPLY Contents.nodes('//Depends_On') AS R(xmlNode)
 ) TD
 GO
-GRANT SELECT ON [dbo].[V_Script_Dot_Format] TO [DMSWebUser] AS [dbo]
-GO

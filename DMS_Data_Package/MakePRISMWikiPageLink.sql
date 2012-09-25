@@ -17,6 +17,7 @@ CREATE FUNCTION dbo.MakePRISMWikiPageLink
 **			06/10/2009 grk - using package name for link
 **			06/11/2009 mem - Removed space from before https://
 **			06/26/2009 mem - Updated link format to be @baseURL plus the data package name
+**			09/21/2012 mem - Changed from https:// to http://
 **    
 *****************************************************/
 (
@@ -29,7 +30,7 @@ BEGIN
 	DECLARE @result varchar(256)
 	
 	DECLARE @baseURL varchar(64)
-	set @baseURL = 'https://prismwiki.pnl.gov/wiki/DataPackages:' -- FUTURE: look this up in table?
+	set @baseURL = 'http://prismwiki.pnl.gov/wiki/DataPackages:'
 
 	DECLARE @temp varchar(512)
 	Set @temp = IsNull(@packageName, '')

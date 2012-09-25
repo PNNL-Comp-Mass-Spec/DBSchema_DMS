@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateInstrumentUsageReport 
+CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport] 
 /****************************************************
 **
 **  Desc: 
@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateInstrumentUsageReport
 **
 **    Auth: grk
 **    Date: 03/27/2012 
+**          09/11/2012 grk - changed type of @Start
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -24,7 +25,7 @@ CREATE PROCEDURE AddUpdateInstrumentUsageReport
 	@EMSLInstID int,
 	@Instrument varchar(64),
 	@Type varchar(128),
-	@Start datetime,
+	@Start VARCHAR(32),
 	@Minutes int,
 	@Year int,
 	@Month int,
@@ -124,4 +125,8 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
 GO

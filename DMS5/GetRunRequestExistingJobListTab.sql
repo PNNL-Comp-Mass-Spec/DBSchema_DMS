@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE FUNCTION [dbo].[GetRunRequestExistingJobListTab]
+CREATE FUNCTION dbo.GetRunRequestExistingJobListTab
 /****************************************************
 **
 **	Desc: 
@@ -27,6 +27,7 @@ CREATE FUNCTION [dbo].[GetRunRequestExistingJobListTab]
 **			10/11/2007 mem - Expanded protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **			03/27/2009 mem - Updated Where clause logic for Peptide_Hit jobs to ignore organism name when using a Protein Collection List
 **			05/03/2012 mem - Now comparing the special processing field
+**			09/25/2012 mem - Expanded @organismDBName to varchar(128)
 **    
 *****************************************************/
 (
@@ -49,7 +50,7 @@ AS
 		declare @analysisToolName varchar(64),
 				@parmFileName varchar(255),
 				@settingsFileName varchar(255),
-				@organismDBName varchar(64),
+				@organismDBName varchar(128),
 				@organismName varchar(255),
 				@resultType varchar(32),
 				@proteinCollectionList varchar(4000),

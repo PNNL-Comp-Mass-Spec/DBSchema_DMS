@@ -49,3 +49,7 @@ WHERE EXISTS ( SELECT FactorID,
                      (TYPE = 'Run_Request') )
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_Factor_Metadata] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_Factor_Metadata] TO [PNL\D3M580] AS [dbo]
+GO

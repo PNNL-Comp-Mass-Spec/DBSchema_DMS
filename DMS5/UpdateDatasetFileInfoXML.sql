@@ -57,6 +57,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			09/01/2010 mem - Now checking for invalid dates and storing Null in Acq_Time_Start and Acq_Time_End if invalid
 **			09/09/2010 mem - Fixed bug extracting StartTime and EndTime values
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			08/21/2012 mem - Now including DatasetID in the error message
 **    
 *****************************************************/
 (
@@ -139,13 +140,13 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error extracting the dataset name from @DatasetInfoXML'
+		set @message = 'Error extracting the dataset name from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end
 		
 	If @myRowCount = 0 or IsNull(@DatasetName, '') = ''
 	Begin
-		set @message = 'XML in @DatasetInfoXML is not in the expected form; Could not match /DatasetInfo/Dataset'
+		set @message = 'XML in @DatasetInfoXML is not in the expected form for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML; Could not match /DatasetInfo/Dataset'
 		Set @myError = 50000
 		goto Done
 	End
@@ -194,7 +195,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error extracting data from @DatasetInfoXML'
+		set @message = 'Error extracting data from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end
 
@@ -247,7 +248,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error parsing ScanType nodes in @DatasetInfoXML'
+		set @message = 'Error parsing ScanType nodes in @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end
 	
@@ -267,7 +268,7 @@ As
 		
 		If @myRowCount = 0
 		Begin
-			Set @message = 'Warning: dataset not found in table T_Dataset: ' + @DatasetName
+			Set @message = 'Warning: dataset "' + @DatasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
 			Set @myError = 50001
 			Goto Done
 		End
@@ -361,7 +362,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error updating T_Dataset'
+		set @message = 'Error updating T_Dataset for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end	
 	
@@ -420,7 +421,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error updating T_Dataset_Info'
+		set @message = 'Error updating T_Dataset_Info for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end	
 	
@@ -447,7 +448,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error updating T_Dataset_ScanTypes'
+		set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
 		goto Done
 	end	
 	
@@ -511,4 +512,8 @@ Done:
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [PNL\D3M580] AS [dbo]
 GO

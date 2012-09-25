@@ -178,5 +178,5 @@ nextItem:
 
 	return 0
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateManagerParamDefaults] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddUpdateManagerParamDefaults] TO [Mgr_Config_Admin] AS [dbo]
 GO

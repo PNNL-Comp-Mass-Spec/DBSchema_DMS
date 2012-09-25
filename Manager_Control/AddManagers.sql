@@ -83,5 +83,5 @@ declare @myError int
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddManagers] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddManagers] TO [Mgr_Config_Admin] AS [dbo]
 GO

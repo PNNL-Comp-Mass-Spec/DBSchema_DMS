@@ -34,5 +34,5 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[DisableAnalysisManagers] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[DisableAnalysisManagers] TO [Mgr_Config_Admin] AS [dbo]
 GO

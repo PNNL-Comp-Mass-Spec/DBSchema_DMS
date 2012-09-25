@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE UpdateInputFolderUsingSpecialProcessingParam
+CREATE PROCEDURE UpdateInputFolderUsingSpecialProcessingParam
 /****************************************************
 **
 **	Desc:	Updates the input folder name using the SourceJob:0000 tag defined for the specified jobs
@@ -16,6 +16,7 @@ create PROCEDURE UpdateInputFolderUsingSpecialProcessingParam
 **	Date:	03/21/2011 mem - Initial Version
 **			03/22/2011 mem - Now calling AddUpdateJobParameter to store the SourceJob in T_Job_Parameters
 **			04/04/2011 mem - Updated to use the Special_Processing param instead of the job comment
+**			07/13/2012 mem - Now determining job parameters with additional items if SourceJob2 is defined: SourceJob2, SourceJob2Dataset, SourceJob2FolderPath, and SourceJob2FolderPathArchive
 **    
 *****************************************************/
 (
@@ -41,6 +42,11 @@ As
 
 	Declare @SourceJob int
 	Declare @SourceJobText varchar(12)
+
+	Declare @SourceJob2 int
+	Declare @SourceJob2Dataset varchar(256)
+	Declare @SourceJob2FolderPath varchar(512)
+	Declare @SourceJob2FolderPathArchive varchar(512)
 	
 	CREATE TABLE #Tmp_JobList (
 		Job int NOT NULL,
@@ -54,6 +60,10 @@ As
 		Step int NOT NULL,
 		SourceJob int NULL,
 		SourceJobResultsFolder varchar(255) NULL,
+		SourceJob2 int NULL,
+		SourceJob2Dataset varchar(256) NULL,
+		SourceJob2FolderPath varchar(512) NULL,
+		SourceJob2FolderPathArchive varchar(512) NULL,
 		WarningMessage varchar(1024) NULL
 	)
 
@@ -167,10 +177,13 @@ As
 			While @Continue = 1 And @myError = 0
 			Begin -- <c>
 				SELECT TOP 1 @Job = Job,
-				             @SourceJob = SourceJob
+				             @SourceJob = SourceJob,
+				             @SourceJob2 = SourceJob2,
+				             @SourceJob2Dataset = SourceJob2Dataset,
+				             @SourceJob2FolderPath = SourceJob2FolderPath,
+				             @SourceJob2FolderPathArchive = SourceJob2FolderPathArchive
 				FROM #Tmp_Source_Job_Folders
-				WHERE Job > @Job AND
-				      NOT SourceJob IS NULL
+				WHERE Job > @Job
 				ORDER BY Job, Step
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -179,9 +192,20 @@ As
 					Set @Continue = 0
 				Else
 				Begin -- <d>
-					Set @SourceJobText = Convert(varchar(12), @SourceJob)
+					If IsNull(@SourceJob, 0) > 0
+					Begin
+						Set @SourceJobText = Convert(varchar(12), @SourceJob)					
+						Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob', @SourceJobText, @DeleteParam=0, @infoOnly=0
+					End
 					
-					Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob', @SourceJobText, @DeleteParam=0, @infoOnly=0
+					If IsNull(@SourceJob2, 0) > 0
+					Begin
+						Set @SourceJobText = Convert(varchar(12), @SourceJob2)					
+						Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2', @SourceJobText, @DeleteParam=0, @infoOnly=0
+						Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2Dataset', @SourceJob2Dataset, @DeleteParam=0, @infoOnly=0
+						Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2FolderPath', @SourceJob2FolderPath, @DeleteParam=0, @infoOnly=0
+						Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2FolderPathArchive', @SourceJob2FolderPathArchive, @DeleteParam=0, @infoOnly=0
+					End
 					
 				End -- </d>
 			End -- </c>

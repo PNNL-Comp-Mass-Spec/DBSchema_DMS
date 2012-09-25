@@ -154,8 +154,6 @@ As
 GO
 GRANT EXECUTE ON [dbo].[GetMetadataForDataset] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetMetadataForDataset] TO [DMSWebUser] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[GetMetadataForDataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMetadataForDataset] TO [PNL\D3M578] AS [dbo]

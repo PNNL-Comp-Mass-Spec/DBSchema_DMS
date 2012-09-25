@@ -15,3 +15,7 @@ FROM
   T_Notification_Event
   INNER JOIN T_Notification_Event_Type ON T_Notification_Event.Event_Type = T_Notification_Event_Type.ID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Event_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Event_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

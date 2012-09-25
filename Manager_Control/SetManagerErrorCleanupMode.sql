@@ -163,5 +163,5 @@ Done:
 	return @myError
 	
 GO
-GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [mtuser] AS [dbo]
+GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [Mgr_Config_Admin] AS [dbo]
 GO

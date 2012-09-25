@@ -42,6 +42,9 @@ CREATE Procedure RequestPurgeTask
 **			01/16/2012 mem - Now returning Instrument, Dataset_Created, and Dataset_YearQuarter when @PreviewSql > 0
 **			01/18/2012 mem - Now including Instrument, DatasetCreated, and DatasetYearQuarter when requesting an actual purge task (@infoOnly = 0)
 **						   - Using @infoOnly = -1 will now show the parameter table that would be returned if an actual purge task were assigned
+**			06/14/2012 mem - Now sorting by Purge_Priority, then by OrderByCol
+**						   - Now including PurgePolicy in the job parameters table (0=Auto, 1=Purge All except QC Subfolder, 2=Purge All)
+**						   - Now looking for state 3, 14, or 15 when actually selecting a dataset to purge
 **    
 *****************************************************/
 (
@@ -81,7 +84,8 @@ As
 		@SambaStoragePath varchar(128) = '',
 		@Instrument varchar(128) = '',
 		@DatasetCreated datetime,
-		@DatasetYearQuarter varchar(32) = ''
+		@DatasetYearQuarter varchar(32) = '',
+		@PurgePolicy tinyint
 		
 	Declare @S varchar(2048)
 	
@@ -133,7 +137,8 @@ As
 		MostRecent  datetime,
 		Source varchar(90),
 		StorageServerName varchar(64) NULL,
-		ServerVol varchar(128) NULL
+		ServerVol varchar(128) NULL,
+		Purge_Priority tinyint
 	) 
 
 	CREATE INDEX #IX_PD_StorageServerAndVol ON #PD (StorageServerName, ServerVol)
@@ -147,7 +152,7 @@ As
 		EntryID int identity(1,1),
 		PurgeViewName varchar(64),
 		HoldoffDays int,
-		OrderByCol varchar(64)		
+		OrderByCol varchar(64)	,	
 	)
 	
 	---------------------------------------------------
@@ -179,7 +184,7 @@ As
 	VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 120, 'Created')
 	
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoJob',                  160, 'Created')
+	VALUES ('V_Purgable_Datasets_NoJob',                  180, 'Created')
 
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
 	VALUES ('V_Purgable_Datasets',                        365, 'MostRecentJob')
@@ -188,10 +193,10 @@ As
 	VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 21,  'Created')
 
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets_NoJob',                  21, 'Created')
+	VALUES ('V_Purgable_Datasets_NoJob',                  21,  'Created')
 	
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets',                        -1, 'MostRecentJob')
+	VALUES ('V_Purgable_Datasets',                        21,  'MostRecentJob')
 	
 	---------------------------------------------------
 	-- Process each of the views in #TmpPurgeViews
@@ -206,7 +211,7 @@ As
 		SELECT TOP 1 @PurgeViewEntryID = EntryID,
 		             @PurgeViewName = PurgeViewName,
 		             @HoldoffDays = HoldoffDays,
-		   @OrderByCol = OrderByCol
+		             @OrderByCol = OrderByCol
 		FROM #TmpPurgeViews
 		WHERE EntryID > @PurgeViewEntryID
 		ORDER BY EntryID
@@ -229,14 +234,16 @@ As
 				Set @S = @S + ' INSERT INTO #PD( DatasetID,'
 				Set @S = @S +                  ' MostRecent,'
 				Set @S = @S +                  ' Source,'
-				Set @S = @S +       ' StorageServerName,'
-				Set @S = @S +                  ' ServerVol)'
+				Set @S = @S +                  ' StorageServerName,'
+				Set @S = @S +                  ' ServerVol,'
+				Set @S = @S +                  ' Purge_Priority)'
 				Set @S = @S + ' SELECT TOP (' + Convert(varchar(12), @PreviewCount) + ')'
 				Set @S = @S +        ' Dataset_ID, '
 				Set @S = @S +          @OrderByCol + ', '
 				Set @S = @S +        '''' + @PurgeViewName + ''' AS Source,'
 				Set @S = @S +        ' StorageServerName,'
-				Set @S = @S +        ' ServerVol'
+				Set @S = @S +        ' ServerVol,'
+				Set @S = @S +        ' Purge_Priority'
 				Set @S = @S + ' FROM ' + @PurgeViewName
 				Set @S = @S + ' WHERE     (StorageServerName = ''' + @StorageServerName + ''')'
 				Set @S = @S +       ' AND (ServerVol = ''' + @ServerDisk + ''')'
@@ -247,7 +254,7 @@ As
 				If @HoldoffDays >= 0
 					Set @S = @S +   ' AND (DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays) + ')'
 				
-				Set @S = @S + ' ORDER BY ' + @OrderByCol + ', Dataset_ID'
+				Set @S = @S + ' ORDER BY Purge_Priority, ' + @OrderByCol + ', Dataset_ID'
 			*/
 			
 			Set @PurgeViewSourceDesc = @PurgeViewName
@@ -264,12 +271,14 @@ As
 			Set @S = @S +                  ' MostRecent,'
 			Set @S = @S +                  ' Source,'
 			Set @S = @S +                  ' StorageServerName,'
-			Set @S = @S +                  ' ServerVol)'
+			Set @S = @S +                  ' ServerVol,'
+			Set @S = @S +                  ' Purge_Priority)'			
 			Set @S = @S + ' SELECT Dataset_ID, '
 			Set @S = @S +          @OrderByCol + ', '
 			Set @S = @S +        ' Source,'
 			Set @S = @S +        ' StorageServerName,'
-			Set @S = @S +        ' ServerVol'
+			Set @S = @S +        ' ServerVol,'
+			Set @S = @S +        ' Purge_Priority'
 			Set @S = @S + ' FROM ( SELECT Src.Dataset_ID, '
 			Set @S = @S +                'Src.' + @OrderByCol + ', '
 			Set @S = @S +               '''' + @PurgeViewSourceDesc + ''' AS Source,'
@@ -277,12 +286,13 @@ As
 			Set @S = @S +                                   ' ORDER BY Src.' + @OrderByCol + ', Src.Dataset_ID ) AS RowNumVal,'
 			Set @S = @S +               ' Src.StorageServerName,'
 			Set @S = @S +               ' Src.ServerVol,'
-			Set @S = @S +               ' Src.StageMD5_Required'
+			Set @S = @S +               ' Src.StageMD5_Required,'
+			Set @S = @S +               ' Src.Purge_Priority'
 			Set @S = @S +        ' FROM ' + @PurgeViewName + ' Src'
 			Set @S = @S +               ' LEFT OUTER JOIN #TmpStorageVolsToSkip '
 			Set @S = @S +                 ' ON Src.StorageServerName = #TmpStorageVolsToSkip.StorageServerName AND'
 			Set @S = @S +                ' Src.ServerVol         = #TmpStorageVolsToSkip.ServerVol '
-			Set @S = @S +               ' LEFT OUTER JOIN #PD '
+			Set @S = @S + ' LEFT OUTER JOIN #PD '
 			Set @S = @S +                 ' ON Src.Dataset_ID = #PD.DatasetID'
 			Set @S = @S +        ' WHERE #TmpStorageVolsToSkip.StorageServerName IS NULL'
 			Set @S = @S +               ' AND #PD.DatasetID IS NULL '
@@ -301,7 +311,7 @@ As
 			
 			Set @S = @S +     ') LookupQ'
 			Set @S = @S + ' WHERE RowNumVal <= ' + Convert(varchar(12), @PreviewCount)
-			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, ' + @OrderByCol + ', Dataset_ID'
+			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, Purge_Priority, ' + @OrderByCol + ', Dataset_ID'
 			
 			If @PreviewSql <> 0
 				Print @S
@@ -415,7 +425,7 @@ As
 	FROM T_Dataset_Archive WITH ( HoldLock )
 	     INNER JOIN #PD
 	       ON DatasetID = AS_Dataset_ID
-	WHERE (AS_state_ID = 3)
+	WHERE (AS_state_ID IN (3, 14, 15))
 	ORDER BY #PD.EntryID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -471,7 +481,8 @@ As
 	       @SambaStoragePath = T_Archive_Path.AP_network_share_path,
 	       @Instrument = DFP.Instrument,
 	       @DatasetCreated = DFP.Dataset_Created,
-	       @DatasetYearQuarter = DFP.Dataset_YearQuarter	       
+	       @DatasetYearQuarter = DFP.Dataset_YearQuarter,
+	       @PurgePolicy = DA.Purge_Policy
 	FROM T_Dataset DS
 	     INNER JOIN T_Dataset_Archive DA
 	       ON DS.Dataset_ID = DA.AS_Dataset_ID
@@ -520,6 +531,8 @@ As
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('Instrument', @Instrument)
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('DatasetCreated', Convert(varchar(64), @DatasetCreated, 120))
 	INSERT INTO #ParamTab( Name, Value ) VALUES  ('DatasetYearQuarter', @DatasetYearQuarter)
+	INSERT INTO #ParamTab( Name, Value ) VALUES  ('PurgePolicy', @PurgePolicy)
+	
 
 	---------------------------------------------------
 	-- output parameters as resultset 

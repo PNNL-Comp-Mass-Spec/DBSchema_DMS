@@ -15,3 +15,7 @@ FROM         T_Sample_Submission AS TSS INNER JOIN
                       T_Prep_File_Storage AS TPFS ON TSS.Storage_Path = TPFS.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Submission_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Submission_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

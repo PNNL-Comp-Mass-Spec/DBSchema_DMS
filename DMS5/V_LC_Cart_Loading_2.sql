@@ -29,3 +29,7 @@ WHERE
   ( T_Requested_Run.RDS_Status = 'Active' )  
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Loading_2] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Loading_2] TO [PNL\D3M580] AS [dbo]
+GO

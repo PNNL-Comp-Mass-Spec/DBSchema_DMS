@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateEMSLInstrumentUsageReport
+CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -18,6 +18,8 @@ CREATE PROCEDURE UpdateEMSLInstrumentUsageReport
 **    Date: 03/21/2012 
 **          03/26/2012 grk - added code to clean up comments and pin trans-month interval starting time
 **          04/09/2012 grk - modified algorithm
+**			06/08/2012 grk - added lookup for @maxNormalInterval
+**          08/30/2012 grk - don't overwrite existing non-blank items, do auto-comment non-onsite datasets
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -41,6 +43,7 @@ AS
 	---------------------------------------------------
 	---------------------------------------------------
 	BEGIN TRY 
+		DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
 
 		---------------------------------------------------
 		-- figure out our time context
@@ -170,23 +173,21 @@ AS
 			
 		IF(@monthNow = @month) AND (@yearNow = @year)
 		BEGIN --<m>	
-			UPDATE T_EMSL_Instrument_Usage_Report
+			UPDATE TEIUR
 			SET
-				T_EMSL_Instrument_Usage_Report.Minutes = #STAGING.Minutes,
-				Start = #STAGING.Start, 
-				Proposal = #STAGING.Proposal, 
-				Usage = #STAGING.Usage, 
-				Users = #STAGING.Users, 
-				Operator = #STAGING.Operator, 
-				[Year] = #STAGING.Year, 
-				[Month] = #STAGING.Month,
-				Comment = #STAGING.Comment
-			FROM
-				T_EMSL_Instrument_Usage_Report
-				INNER JOIN #STAGING ON dbo.T_EMSL_Instrument_Usage_Report.ID = #STAGING.ID 
-				AND dbo.T_EMSL_Instrument_Usage_Report.Type = #STAGING.Type
-			WHERE
-				#STAGING.Mark = 1
+			[Minutes] = #STAGING.Minutes ,
+			Start = #STAGING.Start ,
+			Proposal = CASE WHEN ISNULL(TEIUR.Proposal, '') = '' THEN #STAGING.Proposal ELSE TEIUR.Proposal END ,
+			Usage = CASE WHEN ISNULL(TEIUR.Usage, '') = '' THEN #STAGING.Usage ELSE TEIUR.Usage END ,
+			Users = CASE WHEN ISNULL(TEIUR.Users, '') = '' THEN #STAGING.Users ELSE TEIUR.Users END ,
+			Operator = CASE WHEN ISNULL(TEIUR.Operator, '') = '' THEN #STAGING.Operator ELSE TEIUR.Operator END ,
+			[Year] = #STAGING.Year ,
+			[Month] = #STAGING.Month ,
+			Comment = CASE WHEN ISNULL(TEIUR.Comment, '') = '' THEN #STAGING.Comment ELSE TEIUR.Comment END
+			FROM T_EMSL_Instrument_Usage_Report TEIUR
+				INNER JOIN #STAGING ON TEIUR.ID = #STAGING.ID
+				AND TEIUR.Type = #STAGING.Type
+			WHERE #STAGING.Mark = 1
 		END --<m>
 
 		---------------------------------------------------
@@ -195,28 +196,67 @@ AS
 	
 		DELETE FROM #STAGING
 		WHERE Type = 'Interval'
-		AND Minutes < 90
+		AND Minutes < @maxNormalInterval
 
 		---------------------------------------------------
 		-- add new values from staging table to database
 		---------------------------------------------------
 
-		INSERT INTO T_EMSL_Instrument_Usage_Report
-		 (EMSL_Inst_ID, Instrument, Type, Start, Minutes, Proposal, Usage, Users, Operator, Comment, Year, Month, ID, Seq)
-		SELECT EMSL_Inst_ID, Instrument, Type, Start, Minutes, Proposal, Usage, Users, Operator, Comment, Year, Month, ID, Seq
-		 FROM #STAGING
+		INSERT INTO T_EMSL_Instrument_Usage_Report ( 
+			EMSL_Inst_ID ,
+			Instrument ,
+			Type ,
+			Start ,
+			Minutes ,
+			Proposal ,
+			Usage ,
+			Users ,
+			Operator ,
+			Comment ,
+			Year ,
+			Month ,
+			ID ,
+			Seq
+		)
+			SELECT  EMSL_Inst_ID ,
+			Instrument ,
+			Type ,
+			Start ,
+			Minutes ,
+			Proposal ,
+			Usage ,
+			Users ,
+			Operator ,
+			Comment ,
+			Year ,
+			Month ,
+			ID ,
+			Seq
+		FROM    #STAGING
 		WHERE [Mark] = 0 
 		AND NOT [EMSL_Inst_ID] IS NULL
 		ORDER BY [Start]
 
 		---------------------------------------------------
-		-- clean out and short "long intervals"
+		-- clean out short "long intervals"
 		---------------------------------------------------
 	
 		DELETE FROM T_EMSL_Instrument_Usage_Report
 		WHERE ID IN (SELECT ID FROM #STAGING)
 		AND Type = 'Interval'
-		AND Minutes < 90
+		AND Minutes < @maxNormalInterval
+
+		---------------------------------------------------
+		-- add automatic log references for missing comments
+		---------------------------------------------------
+
+		UPDATE T_EMSL_Instrument_Usage_Report
+		SET Comment = dbo.GetNearestPrecedingLogEntry(Seq, 0) 
+		WHERE   ( Year = @year)
+				AND ( Month = @month )
+				AND Type = 'Dataset'
+				AND Usage <> 'ONSITE'
+				AND ISNULL(Comment, '') = ''
 			
 	---------------------------------------------------
 	---------------------------------------------------
@@ -232,4 +272,8 @@ AS
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
 GO

@@ -15,3 +15,7 @@ FROM            T_Requested_Run INNER JOIN
                          T_Experiments ON T_Requested_Run.Exp_ID = T_Experiments.Exp_ID
 WHERE        (T_Requested_Run.RDS_Status = 'Active')
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Request_Loading_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Request_Loading_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

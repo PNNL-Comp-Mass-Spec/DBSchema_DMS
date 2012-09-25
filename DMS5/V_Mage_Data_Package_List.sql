@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Mage_Data_Package_List AS
+CREATE view V_Mage_Data_Package_List as
 SELECT  ID ,
         Name AS Package ,
         Description ,
@@ -14,6 +14,10 @@ SELECT  ID ,
         [Last Modified] ,
         Created ,
         Share_Path AS Folder ,
-        REPLACE(Share_Path, 'protoapps', 'a1.emsl.pnl.gov\prismarch') AS Archive_Path
-FROM    S_V_Data_Package_Export    
+        '' AS Archive_Path
+FROM    dbo.S_V_Data_Package_Export
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Data_Package_List] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Data_Package_List] TO [PNL\D3M580] AS [dbo]
 GO

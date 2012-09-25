@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Filter_Sets] ******/
-/****** RowCount: 112 ******/
+/****** RowCount: 113 ******/
 SET IDENTITY_INSERT [T_Filter_Sets] ON
 INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (100,3,'Yates custom 1, no cleavage rules','XCorr >= 1.9, 2.2, or 3.5 for 1+, 2+, or >=3+ if seen once, XCorr >= 1.9 if seen >= 2 times, no cleavage rules, min length 4','3/27/2004 1:59:48 PM','8/19/2004 2:21:10 PM')
 INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (101,3,'Yates custom 2, no cleavage rules','XCorr >= 1.9, 2.2, or 3.5 for 1+, 2+, or >=3+ if seen once or twice, XCorr >= 1.9 if seen >= 3 times, no cleavage rules, min length 4','3/27/2004 1:59:48 PM','8/19/2004 2:21:10 PM')
@@ -113,4 +113,5 @@ INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Fil
 INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (219,3,'MSGF <= 1E-10, partially/fully tryptic; no pep prophet filter','MSGF <= 1E-10, partially/fully tryptic or protein terminal; no peptide prophet filter','2/27/2012 11:59:55 AM','2/27/2012 11:59:55 AM')
 INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (220,3,'MSGF <= 1E-11; no pep prophet filter','MSGF <= 1E-11, no cleavage rules; no peptide prophet filter','2/27/2012 11:59:59 AM','2/27/2012 11:59:59 AM')
 INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (221,1,'Peptide DB minima 11 with MSGF <= 1E-9','MSGF <= 1E-9; XCorr >= 1.5 for 1+ or 2+, XCorr >= 2.5 for >=3+, partially/fully tryptic or protein terminal; DeltaCn <= 0.1; XCorr >= 3 for 1+ non-tryptic; XCorr >= 4 for >= 2+ non-tryptic','4/3/2012 10:43:59 AM','4/3/2012 10:43:59 AM')
+INSERT INTO [T_Filter_Sets] (Filter_Set_ID, Filter_Type_ID, Filter_Set_Name, Filter_Set_Description, Date_Created, Date_Modified) VALUES (222,3,'MSGF <= 2E-9, partially/fully tryptic; peptide prophet >= 0.5','MSGF <= 2E-9, partially/fully tryptic or protein terminal; peptide prophet >= 0.5','6/29/2012 3:14:41 PM','6/29/2012 3:14:41 PM')
 SET IDENTITY_INSERT [T_Filter_Sets] OFF

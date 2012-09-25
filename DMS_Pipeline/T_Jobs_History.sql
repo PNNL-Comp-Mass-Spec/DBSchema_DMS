@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Jobs_History](
 	[Dataset] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_ID] [int] NULL,
 	[Results_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Organism_DB_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Organism_DB_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Special_Processing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Imported] [datetime] NULL,
 	[Start] [datetime] NULL,

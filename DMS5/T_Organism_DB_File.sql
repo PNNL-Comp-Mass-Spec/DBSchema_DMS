@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Organism_DB_File](
 	[NumProteins] [int] NULL,
 	[NumResidues] [bigint] NULL,
 	[Valid] [smallint] NULL,
+	[OrgFile_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_T_Organism_DB_File] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

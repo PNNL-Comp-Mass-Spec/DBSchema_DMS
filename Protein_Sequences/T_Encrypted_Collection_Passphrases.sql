@@ -44,6 +44,16 @@ DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [DMSWebUser] AS [db
 GO
 DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [DMSWebUser] AS [dbo]
 GO
+DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
+GO
+DENY INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
+GO
+DENY REFERENCES ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
+GO
+DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
+GO
+DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
+GO
 DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_User] AS [dbo]
 GO
 DENY INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_User] AS [dbo]
@@ -73,16 +83,6 @@ GO
 DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\d3l243] AS [dbo]
 GO
 DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\d3l243] AS [dbo]
-GO
-DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
-GO
-DENY INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
-GO
-DENY REFERENCES ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
-GO
-DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
-GO
-DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
 GO
 DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [public] AS [dbo]
 GO

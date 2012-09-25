@@ -98,5 +98,9 @@ GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [PNL\D3M580] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [svc-dms] AS [dbo]
 GO

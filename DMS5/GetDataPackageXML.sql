@@ -13,8 +13,9 @@ CREATE FUNCTION dbo.GetDataPackageXML
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 04/25/2012
+**		Auth:	grk
+**		Date:	04/25/2012
+**				05/06/2012 grk - Added support for experiments
 **    
 *****************************************************/
 (

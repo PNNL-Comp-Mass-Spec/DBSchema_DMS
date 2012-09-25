@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Sample_Submission] ******/
-/****** RowCount: 116 ******/
+/****** RowCount: 122 ******/
 SET IDENTITY_INSERT [T_Sample_Submission] ON
 INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (1,15,17,'na','Software testing',10,'5/11/2010 3:29:15 PM')
 INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (6,2410,2046,'','Samples are Salmonella typhimurium mutants from Fred Heffron''s lab. Currently (5/17/09) they are still in secondary containment on the bottom shelf of -80 Freezer D',10,'5/17/2010 9:21:32 AM')
@@ -117,4 +117,10 @@ INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Contain
 INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (134,2301,2097,'MC-3671','Rat ovarian granulosa cells (8 samples) from Mary Huzicker-Dunn, WSU; 04/24/2012',,'4/26/2012 10:02:17 AM')
 INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (135,2690,2197,'MC-3678','4 aliquots of frozen, powderized ovarian tumor tissues from a fourth patient (JB5464) to assess the effects of ischemia time on post-translating processing. From Sherri Davies at Wash U. Received 5/2/12.',,'5/2/2012 2:09:24 PM')
 INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (136,2585,2085,'MC-3688','Cellulose-adapted community culture - solid biomass, bacterial cell pellets and supernatant. John Gladden - Singer group - CDN 5/11/12',,'5/11/2012 3:04:15 PM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (137,2376,2085,'MC-2219','WT control and RDr2-HA samples from Jeremy Haag - CDN',,'6/5/2012 3:48:06 PM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (138,2421,2197,'MC-3720','Calu3 2B4 human lung cell line cells infected with wild type SARS-CoV and two mutant strains of virus delta nsp 16 and ExoN1 and have been inactivated in 8M urea.',,'6/13/2012 2:59:22 PM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (139,2393,2097,'MC-3726','Windber RI - cell pellets; 06/19/2012',,'6/19/2012 3:28:32 PM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (140,2754,2097,'MC-3738','9 samples from Shweta Bhatt, Joslin Diabetes Center, Boston; 06/20/2012',,'7/17/2012 6:45:41 PM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (141,2393,2097,'MC-3726','Windber RI - cell pellets; 07/19/2012',,'7/19/2012 11:21:17 AM')
+INSERT INTO [T_Sample_Submission] (ID, Campaign_ID, Received_By_User_ID, Container_List, Description, Storage_Path, Created) VALUES (142,2585,2085,'MC-3750','Singer project fractions MCC, Xylan, IL, AFEX',,'7/27/2012 3:16:48 PM')
 SET IDENTITY_INSERT [T_Sample_Submission] OFF

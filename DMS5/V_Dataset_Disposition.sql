@@ -6,12 +6,13 @@ GO
 
 
 
+
 CREATE view [dbo].[V_Dataset_Disposition] as
 SELECT DS.Dataset_ID AS ID,
        '' AS [Sel.],
        DS.Dataset_Num AS Dataset,
        SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + InstName.In_Name AS SMAQC,
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + InstName.In_Name AS SMAQC,
        LCC.Cart_Name AS [LC Cart],
        RRH.RDS_BatchID AS Batch,
        RRH.ID AS Request,
@@ -35,6 +36,7 @@ FROM T_LC_Cart AS LCC
      INNER JOIN t_storage_path AS SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
 WHERE (DS.DS_rating = -10)
+
 
 
 

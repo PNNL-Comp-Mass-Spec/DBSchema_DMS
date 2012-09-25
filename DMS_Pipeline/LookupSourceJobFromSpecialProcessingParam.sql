@@ -16,6 +16,10 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 **				Step int NOT NULL,
 **				SourceJob int NULL,
 **				SourceJobResultsFolder varchar(255) NULL,
+**				SourceJob2 int NULL,
+**				SourceJob2Dataset varchar(256) NULL,
+**				SourceJob2FolderPath varchar(512) NULL,
+**				SourceJob2FolderPathArchive varchar(512) NULL,
 **				WarningMessage varchar(1024) NULL
 **			)
 **	
@@ -27,6 +31,8 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 **			04/20/2011 mem - Updated to support cases where @SpecialProcessingText contains ORDER BY
 **			05/03/2012 mem - Now calling LookupSourceJobFromSpecialProcessingText to parse @SpecialProcessingText
 **			05/04/2012 mem - Now passing @TagName and @AutoQueryUsed to LookupSourceJobFromSpecialProcessingText
+**			07/12/2012 mem - Now looking up details for Job2 (if defined in the Special_Processing text)
+**			07/13/2012 mem - Now storing SourceJob2Dataset in #Tmp_Source_Job_Folders
 **    
 *****************************************************/
 (
@@ -45,11 +51,18 @@ As
 	Declare @Job int
 	
 	Declare @Dataset varchar(255)
+	Declare	@TagName varchar(12)
 	Declare @SpecialProcessingText varchar(1024)
 	
 	Declare @SourceJob int
 	Declare @AutoQueryUsed tinyint
 	Declare @SourceJobResultsFolder varchar(255)
+	Declare @SourceJobValid tinyint
+
+	Declare @SourceJob2 int
+	Declare @SourceJob2Dataset varchar(256)
+	Declare @SourceJob2FolderPath varchar(512)
+	Declare @SourceJob2FolderPathArchive varchar(512)
 	
 	Declare @WarningMessage varchar(1024)
 	
@@ -91,10 +104,14 @@ As
 				Set @Dataset = ''
 				Set @SpecialProcessingText = ''
 				Set @SourceJob = 0
+				Set @AutoQueryUsed = 0
 				Set @SourceJobResultsFolder = 'UnknownFolder_Invalid_SourceJob'
 				Set @WarningMessage = ''				
-				
+				Set @SourceJobValid = 0
+			
+				-------------------------------------------------	
 				-- Lookup the Dataset for this job
+				-------------------------------------------------
 				--		
 				SELECT @Dataset = Dataset
 				FROM T_Jobs
@@ -103,7 +120,11 @@ As
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				
 				If @myRowCount = 0
+				Begin
+					-- Job not found
+					--
 					Set @WarningMessage = 'Job ' + Convert(varchar(12), @Job) +  ' not found in T_Jobs'
+				End
 				Else
 				Begin
 					
@@ -132,7 +153,7 @@ As
 								
 				If @WarningMessage = ''
 				Begin
-					Declare	@TagName varchar(12) = 'SourceJob'
+					Set @TagName = 'SourceJob'
 					
 					Exec @myError = LookupSourceJobFromSpecialProcessingText 
 											  @Job,
@@ -163,6 +184,7 @@ As
 				Begin
 					
 					-- Lookup the results folder for the source job
+					--
 					SELECT @SourceJobResultsFolder = IsNull([Results Folder], '')
 					FROM S_DMS_V_Analysis_Job_Info
 					WHERE Job = @SourceJob
@@ -171,6 +193,8 @@ As
 				
 					If @myRowCount = 0
 						Set @WarningMessage = 'Source Job ' + Convert(varchar(12), @Job) +  'not found in DMS'
+					Else
+						Set @SourceJobValid = 1
 				End
 		
 				-- Store the results
@@ -178,8 +202,89 @@ As
 				UPDATE #Tmp_Source_Job_Folders
 				SET SourceJob = @SourceJob,
 					SourceJobResultsFolder = @SourceJobResultsFolder,
+					SourceJob2 = NULL,
+					SourceJob2Dataset = NULL,
+					SourceJob2FolderPath = NULL,
+					SourceJob2FolderPathArchive = NULL,
 					WarningMessage = @WarningMessage
-				WHERE Entry_ID = @EntryID
+				WHERE Entry_ID = @EntryID	
+	
+				
+				-- Clear the warning message
+				--			
+				Set @WarningMessage = ''
+				Set @AutoQueryUsed = 0
+				Set @SourceJob2 = 0
+				Set @SourceJob2Dataset = ''
+				Set @SourceJob2FolderPath = 'na'
+				Set @SourceJob2FolderPathArchive = 'na'
+				
+				If @SourceJobValid = 1
+				Begin
+				
+					-------------------------------------------------
+					-- Check whether a 2nd source job is defined
+					-------------------------------------------------
+					--
+					Set @TagName = 'Job2'
+					
+					Exec @myError = LookupSourceJobFromSpecialProcessingText 
+											  @Job,
+					                          @Dataset, 
+					                          @SpecialProcessingText, 
+					                          @TagName,
+					                          @SourceJob=@SourceJob2 output, 
+					                          @AutoQueryUsed=@AutoQueryUsed output,
+					                          @WarningMessage=@WarningMessage output, 
+					                          @PreviewSql = @PreviewSql
+					
+					If IsNull(@WarningMessage, '') <> ''
+					Begin
+						execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
+						
+						If @WarningMessage Like '%exception%'
+							Set @SourceJob2FolderPath = 'UnknownFolder_Exception_Determining_SourceJob2'
+						Else
+						Begin
+							If @AutoQueryUsed <> 0
+								Set @SourceJob2FolderPath = 'UnknownFolder_AutoQuery_SourceJob2_NoResults'						
+						End						
+					End
+					
+				End
+		
+				Set @SourceJob2 = IsNull(@SourceJob2, 0)
+				
+				If @SourceJob2 > 0 AND @WarningMessage = ''
+				Begin
+					
+					-- Lookup the results folder for @SourceJob2
+					--
+					SELECT @SourceJob2Dataset = Dataset,
+					       @SourceJob2FolderPath = dbo.udfCombinePaths(dbo.udfCombinePaths([Dataset Storage Path], [Dataset]), [Results Folder]),
+						   @SourceJob2FolderPathArchive = dbo.udfCombinePaths(dbo.udfCombinePaths([Archive Folder Path], [Dataset]), [Results Folder])
+					FROM S_DMS_V_Analysis_Job_Info
+					WHERE Job = @SourceJob2 And Not [Results Folder] Is Null
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+					If @myRowCount = 0
+						Set @WarningMessage = 'Source Job #2 ' + Convert(varchar(12), @SourceJob2) +  'not found in DMS, or has a null value for [Results Folder]'
+				End
+		
+				If @SourceJob2 > 0 OR @WarningMessage <> ''
+				Begin
+					-- Store the results
+					--
+					UPDATE #Tmp_Source_Job_Folders
+					SET SourceJob2 = @SourceJob2,
+					    SourceJob2Dataset = @SourceJob2Dataset,
+						SourceJob2FolderPath = @SourceJob2FolderPath,
+						SourceJob2FolderPathArchive = @SourceJob2FolderPathArchive,
+						WarningMessage = @WarningMessage
+					WHERE Entry_ID = @EntryID
+				END
+					
 	
 			End Try
 			Begin Catch

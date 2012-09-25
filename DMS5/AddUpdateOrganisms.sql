@@ -23,16 +23,18 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			11/20/2009 mem - Removed parameter @orgDBLocalPath
 **			12/03/2009 mem - Now making sure that @orgDBPath starts with two slashes and ends with one slash
 **			08/04/2010 grk - try-catch for error handling
+**			08/01/2012 mem - Now calling RefreshCachedOrganisms in MT_Main on ProteinSeqs
+**			09/25/2012 mem - Expanded @orgName and @orgDBName to varchar(128)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@orgName varchar(50),
+	@orgName varchar(128),
 	@orgShortName varchar(128),
 	@orgDBPath varchar(255),
 	@orgStorageLocation varchar(256),
-	@orgDBName varchar(64),
+	@orgDBName varchar(128),
 	@orgDescription varchar(256),
 	@orgDomain varchar(64),
 	@orgKingdom varchar(64),
@@ -353,6 +355,26 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+
+	BEGIN TRY 
+
+		-- Update the cached organism info in MT_Main on ProteinSeqs
+		-- This table is used by the Protein_Sequences database and we want to assure that it is up-to-date
+		-- Note that the table is auto-updated once per hour by a Sql Server Agent job running on ProteinSeqs
+		-- This hourly update captures any changes manually made to table T_Organisms
+		
+		Exec ProteinSeqs.MT_Main.dbo.RefreshCachedOrganisms
+
+	END TRY
+	BEGIN CATCH 
+		Declare @LogMessage varchar(256)
+		EXEC FormatErrorMessage @message=@LogMessage output, @myError=@myError output
+		
+		exec PostLogEntry 'Error', @LogMessage, 'AddUpdateOrganisms'
+		
+	END CATCH
+	
 	return @myError
 
 GO

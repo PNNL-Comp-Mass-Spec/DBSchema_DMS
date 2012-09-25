@@ -3,13 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PreviewRequestStepTask]
+CREATE PROCEDURE dbo.PreviewRequestStepTask
 /****************************************************
 **
 **	Desc: Previews the next step task that would be returned for a given processor
 **
 **	Auth:	mem
 **			01/06/2011 mem
+**			07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into RequestStepTask
 **
 *****************************************************/
 (
@@ -28,15 +29,32 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 	
+	Declare @serverPerspectiveEnabled tinyint = 0
+	Declare @perspective varchar(64) = ''
+	
 	Set @infoOnly = IsNull(@infoOnly, 1)
 	If @infoOnly < 1
 		Set @infoOnly = 1
-		
+	
+	-- Lookup the value for "perspective" for this manager in the manager control DB
+	SELECT @perspective = ParameterValue
+	FROM V_Mgr_Params
+	WHERE (ManagerName = @processorName) AND (ParameterName = 'perspective')
+	
+	If IsNull(@perspective, '') = ''
+	Begin
+		Set @message = 'The "Perspective" parameter was not found for manager "' + @processorName + '" in V_Mgr_Params'
+	End
+	
+	If @perspective = 'server'
+		Set @serverPerspectiveEnabled = 1
+	
 	Exec RequestStepTask    @processorName, 
 							@jobNumber = @jobNumber output, 
 							@message = @message output, 
 							@infoonly = @infoOnly,
-							@JobCountToPreview=@JobCountToPreview
+							@JobCountToPreview=@JobCountToPreview,
+							@serverPerspectiveEnabled=@serverPerspectiveEnabled
 
 	If Exists (Select * FROM T_Jobs WHERE Job = @JobNumber)
 		SELECT @jobNumber AS JobNumber,

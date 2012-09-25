@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Instrument_List_Report]
+CREATE VIEW V_Instrument_List_Report
 AS
 SELECT InstName.Instrument_ID AS ID,
        InstName.IN_name AS Name,
@@ -23,13 +22,12 @@ SELECT InstName.Instrument_ID AS ID,
        dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID ) AS [Allowed Dataset Types],
        InstName.IN_Created as Created
 FROM dbo.T_Instrument_Name InstName
-     INNER JOIN dbo.t_storage_path SPath
+     LEFT OUTER JOIN dbo.t_storage_path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN ( SELECT SP_path_ID,
+     LEFT OUTER JOIN ( SELECT SP_path_ID,
                          SP_vol_name_server + SP_path AS Source
                   FROM t_storage_path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [PNL\D3M578] AS [dbo]

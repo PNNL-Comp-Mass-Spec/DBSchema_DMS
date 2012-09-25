@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Predefined_Analysis_List_Report
+
+CREATE VIEW [dbo].[V_Predefined_Analysis_List_Report]
 AS
 SELECT PA.AD_ID AS ID,
        PA.AD_instrumentClassCriteria AS [Instrument Class],
@@ -40,12 +41,14 @@ SELECT PA.AD_ID AS ID,
        PA.AD_proteinCollectionList AS [Prot. Coll. List],
        PA.AD_proteinOptionsList AS [Prot. Opts. List],
        PA.AD_specialProcessing AS [Special Proc.],
+       PA.AD_description AS Description,
        PA.AD_priority AS priority,
        PA.Last_Affected
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
 WHERE (PA.AD_enabled > 0)
+
 
 
 GO

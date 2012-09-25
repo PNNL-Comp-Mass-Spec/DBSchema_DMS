@@ -35,5 +35,5 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[DisableArchiveDependentManagers] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[DisableArchiveDependentManagers] TO [Mgr_Config_Admin] AS [dbo]
 GO

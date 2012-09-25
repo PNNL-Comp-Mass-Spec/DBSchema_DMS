@@ -1,8 +1,8 @@
 /****** Object:  Database [DMSHistoricLogPipeline] ******/
 CREATE DATABASE [DMSHistoricLogPipeline] ON  PRIMARY 
-( NAME = N'DMSHistLogPipeline_dat', FILENAME = N'C:\SQLServerData\DMSHistLogPipeline_data.mdf' , SIZE = 14736640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'DMSHistLogPipeline_dat', FILENAME = N'H:\SQLServerData\DMSHistoricLogPipeline.mdf' , SIZE = 14736640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'DMSHistLogPipeline_log', FILENAME = N'H:\SQLServerData\DMSHistLogPipeline_log.ldf' , SIZE = 13888KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'DMSHistLogPipeline_log', FILENAME = N'E:\SQLServerData\DMSHistoricLogPipeline_log.ldf' , SIZE = 13888KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMSHistoricLogPipeline] SET COMPATIBILITY_LEVEL = 100

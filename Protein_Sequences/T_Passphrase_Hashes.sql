@@ -15,13 +15,3 @@ CREATE TABLE [dbo].[T_Passphrase_Hashes](
 ) ON [PRIMARY]
 
 GO
-DENY DELETE ON [dbo].[T_Passphrase_Hashes] TO [DMSReader] AS [dbo]
-GO
-DENY INSERT ON [dbo].[T_Passphrase_Hashes] TO [DMSReader] AS [dbo]
-GO
-DENY REFERENCES ON [dbo].[T_Passphrase_Hashes] TO [DMSReader] AS [dbo]
-GO
-DENY SELECT ON [dbo].[T_Passphrase_Hashes] TO [DMSReader] AS [dbo]
-GO
-DENY UPDATE ON [dbo].[T_Passphrase_Hashes] TO [DMSReader] AS [dbo]
-GO

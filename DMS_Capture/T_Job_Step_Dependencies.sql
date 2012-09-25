@@ -34,6 +34,7 @@ INCLUDE ( [Evaluated],
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps] FOREIGN KEY([Job_ID], [Step_Number])
 REFERENCES [T_Job_Steps] ([Job], [Step_Number])
+ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies] CHECK CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps]
 GO

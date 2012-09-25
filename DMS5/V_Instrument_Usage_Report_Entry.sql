@@ -23,3 +23,7 @@ FROM T_EMSL_Instrument_Usage_Report
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_Entry] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_Entry] TO [PNL\D3M580] AS [dbo]
+GO

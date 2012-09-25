@@ -117,3 +117,7 @@ GRANT EXECUTE ON [dbo].[GetRequestedRunFactorsForExport] TO [DMS2_SP_User] AS [d
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [PNL\D3M580] AS [dbo]
+GO

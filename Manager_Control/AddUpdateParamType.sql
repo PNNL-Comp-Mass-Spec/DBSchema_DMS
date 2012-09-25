@@ -127,5 +127,5 @@ As
 
 	return 0
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamType] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddUpdateParamType] TO [Mgr_Config_Admin] AS [dbo]
 GO

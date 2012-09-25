@@ -133,7 +133,5 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateSingleMgrControlParam] TO [DMSWebUser] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[UpdateSingleMgrControlParam] TO [Mgr_Config_Admin] AS [dbo]
 GO

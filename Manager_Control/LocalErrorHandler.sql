@@ -118,5 +118,5 @@ As
 GO
 GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [Mgr_Config_Admin] AS [dbo]
 GO

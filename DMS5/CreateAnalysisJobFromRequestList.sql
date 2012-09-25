@@ -19,6 +19,9 @@ CREATE PROCEDURE dbo.CreateAnalysisJobFromRequestList
 **			09/20/2007 mem - Now checks for existing jobs if @mode <> 'add'
 **			02/27/2009 mem - Expanded @comment to varchar(512)
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			08/01/2012 mem - Now sending @specialProcessing to AddAnalysisJobGroup
+**						   - Updated @datasetList to be varchar(max)
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **
 *****************************************************/
 (
@@ -40,10 +43,11 @@ As
 		@toolName varchar(64),
 		@parmFileName varchar(255),
 		@settingsFileName varchar(255),
-		@organismDBName varchar(64),
-		@organismName varchar(64),
-		@datasetList varchar(6000),
+		@organismDBName varchar(128),
+		@organismName varchar(128),
+		@datasetList varchar(max),
 		@comment varchar(512),
+		@specialProcessing varchar(512),
 		@ownerPRN varchar(32),
 		@protCollNameList varchar(512),
 		@protCollOptionsList varchar(256),
@@ -58,10 +62,11 @@ As
 		toolName varchar(64),
 		parmFileName varchar(255),
 		settingsFileName varchar(64),
-		organismDBName varchar(64),
-		organismName varchar(64),
-		datasetList varchar(6000),
+		organismDBName varchar(128),
+		organismName varchar(128),
+		datasetList varchar(max),
 		comment varchar(255),
+		specialProcessing varchar(512),
 		ownerPRN varchar(32),
 		protCollNameList varchar(512),
 		protCollOptionsList varchar(256),
@@ -83,6 +88,7 @@ As
 		organismName,
 		datasetList,
 		comment,
+		specialProcessing,
 		ownerPRN,
 		protCollNameList,
 		protCollOptionsList,
@@ -97,6 +103,7 @@ As
 	  AJR_organismName,
 	  AJR_datasets,
 	  AJR_comment,
+	  AJR_specialProcessing,
 	  requestor,
 	  protCollNameList,
 	  protCollOptionsList,
@@ -192,7 +199,8 @@ As
 				@organismDBName = organismDBName,
 				@organismName = organismName,
 				@datasetList = datasetList,
-				@comment =  comment,
+				@comment = comment,
+				@specialProcessing = specialProcessing,
 				@ownerPRN =  ownerPRN,
 				@protCollNameList = protCollNameList,
 				@protCollOptionsList = protCollOptionsList
@@ -227,22 +235,24 @@ As
 			-- Use it to make a bunch of jobs
 			-------------------------------------------------
 			exec @result = AddAnalysisJobGroup
-								@datasetList,
-								@priority,
-								@toolName,
-								@parmFileName,
-								@settingsFileName,
-								@organismDBName,
-								@organismName,
-								@protCollNameList,
-								@protCollOptionsList,
-								@ownerPRN,
-								@comment,
-								@requestID,
-								@associatedProcessorGroup,
-								@propagationMode,
-								@mode, 
-								@message  output
+								@datasetList=@datasetList,
+								@priority=@priority,
+								@toolName=@toolName,
+								@parmFileName=@parmFileName,
+								@settingsFileName=@settingsFileName,
+								@organismDBName=@organismDBName,
+								@organismName=@organismName,
+								@protCollNameList=@protCollNameList,
+								@protCollOptionsList=@protCollOptionsList,
+								@ownerPRN=@ownerPRN,
+								@comment=@comment,
+								@specialProcessing=@specialProcessing,
+								@requestID=@requestID,
+								@associatedProcessorGroup=@associatedProcessorGroup,
+								@propagationMode=@propagationMode,
+								@removeDatasetsWithJobs='Y',
+								@mode=@mode, 
+								@message=@message output
 
 			Set @message = IsNull(@message, '')
 			If @ExistingJobCount > 0

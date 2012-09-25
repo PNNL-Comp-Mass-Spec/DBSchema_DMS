@@ -104,5 +104,3 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[EnableDisableArchiveStepTools] TO [dmsreader] AS [dbo]
-GO

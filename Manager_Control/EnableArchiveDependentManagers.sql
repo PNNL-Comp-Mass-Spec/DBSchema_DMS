@@ -31,3 +31,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[EnableArchiveDependentManagers] TO [Mgr_Config_Admin] AS [dbo]
+GO

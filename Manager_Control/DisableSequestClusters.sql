@@ -33,3 +33,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[DisableSequestClusters] TO [Mgr_Config_Admin] AS [dbo]
+GO

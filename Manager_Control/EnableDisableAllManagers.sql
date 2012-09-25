@@ -106,3 +106,5 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[EnableDisableAllManagers] TO [Mgr_Config_Admin] AS [dbo]
+GO

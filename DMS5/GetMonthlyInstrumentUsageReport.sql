@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetMonthlyInstrumentUsageReport
+CREATE PROCEDURE dbo.GetMonthlyInstrumentUsageReport
 /****************************************************
 **
 **  Desc: 
@@ -22,6 +22,10 @@ CREATE PROCEDURE GetMonthlyInstrumentUsageReport
 **    03/15/2012 grk - added 'report' @outputFormat
 **    03/20/2012 grk - added users to 'report' @outputFormat
 **    03/21/2012 grk - added operator ID for ONSITE interval to 'report' @outputFormat
+**    08/21/2012 grk - added code to pull comment from dataset
+**    08/28/2012 grk - added code to clear comment from ONSITE capability type
+**	  08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
+**	  09/11/2012 grk - added percent column to 'rollup' mode
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -101,7 +105,38 @@ As
 		FROM
 			dbo.GetRunTrackingMonthlyInfo(@instrument, @year, @month, '') AS GRTMI
 			LEFT OUTER JOIN T_Requested_Run AS TRR ON GRTMI.ID = TRR.DatasetID 
-			INNER JOIN T_EUS_UsageType TEUT ON TRR.RDS_EUS_UsageType = TEUT.ID
+			INNER JOIN T_EUS_UsageType TEUT ON TRR.RDS_EUS_UsageType = TEUT.ID;
+			
+		---------------------------------------------------
+		-- Pull comments from datasets
+		--
+		-- The Common Table Expression (CTE) is used to create a cleaned up comment that removes 
+		--  text of the form Auto-switched dataset type from HMS-MSn to HMS-HCD-HMSn on 2012-01-01
+		---------------------------------------------------
+		
+		WITH DSCommentClean (Dataset_ID, Comment)
+		AS ( SELECT Dataset_ID, REPLACE(DS_Comment, TextToRemove, '') AS Comment
+			 FROM ( SELECT Dataset_ID, DS_Comment,
+						   SUBSTRING(DS_Comment, AutoSwitchIndex, AutoSwitchIndex + AutoSwitchIndexEnd) AS TextToRemove
+					FROM ( SELECT Dataset_ID, DS_Comment, AutoSwitchIndex,
+								  PATINDEX('%[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]%', AutoSwitchTextPortion) + 10 AS AutoSwitchIndexEnd
+							FROM ( SELECT Dataset_ID, DS_Comment, AutoSwitchIndex,
+							              SUBSTRING(DS_Comment, AutoSwitchIndex, 200) AS AutoSwitchTextPortion
+									FROM ( SELECT Dataset_ID, DS_Comment,
+									              PATINDEX('%Auto-switched dataset type from%to%on [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]%', DS_comment) AS AutoSwitchIndex
+											FROM T_Dataset DS INNER JOIN 
+											     #TR ON DS.Dataset_ID = #TR.ID
+										  ) FilterQ
+									WHERE AutoSwitchIndex > 0 
+								  ) FilterQ2 
+						   ) FilterQ3 
+				    ) FilterQ4
+		  )
+     	UPDATE #TR
+		SET Comment = IsNull(DSCommentClean.Comment, IsNull(TDS.DS_comment, ''))
+		FROM #TR INNER JOIN
+		     T_Dataset AS TDS ON TDS.Dataset_ID = #TR.ID LEFT OUTER JOIN 
+		     DSCommentClean ON DSCommentClean.Dataset_ID = #TR.ID;
 
 		---------------------------------------------------
 		-- make a temp table to work with long intervals
@@ -127,7 +162,7 @@ As
 				TRI.START,
 				TRI.Usage,
 				TRI.Comment
-		FROM    T_Run_Interval TRI
+		FROM  T_Run_Interval TRI
 				INNER JOIN #TR ON TRI.ID = #TR.ID
 
 
@@ -250,6 +285,14 @@ As
 		---------------------------------------------------
 		
 		DELETE FROM #TQ WHERE [Interval] = 0
+		
+		---------------------------------------------------
+		-- Clean up unecessary comments
+		---------------------------------------------------
+		
+		UPDATE #TQ
+		SET Comment = ''
+		WHERE Usage = 'ONSITE'
 
 		---------------------------------------------------
 		-- add apportioned long intervals to report table
@@ -402,6 +445,13 @@ As
 
 		IF @outputFormat = 'rollup'
 		BEGIN 
+			SELECT  				[Type],
+				[Minutes],
+				CONVERT(DECIMAL(10,1), CONVERT(FLOAT, [Minutes])/@minutesInMonth * 100.0) AS [Percentage],
+				[Usage],
+				Proposal
+			FROM 
+			(					          
 			SELECT 
 				[Type],
 				SUM(CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END) AS [Minutes],
@@ -409,6 +459,7 @@ As
 				Proposal
 			FROM #TR
 			GROUP BY [Type], [Usage], Proposal
+			) TQZ
 			ORDER BY [Type], [Usage], Proposal
 		END	
 		
@@ -442,4 +493,8 @@ As
 
 GO
 GRANT EXECUTE ON [dbo].[GetMonthlyInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetMonthlyInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetMonthlyInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
 GO

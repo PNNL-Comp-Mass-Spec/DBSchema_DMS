@@ -35,6 +35,8 @@ CREATE PROCEDURE RequestStepTask
 **			04/12/2011 mem - Now making an entry in T_Job_Step_Processing_Log for each job step assigned
 **			05/18/2011 mem - No longer making an entry in T_Job_Request_Log for every request
 **						   - Now showing the top @JobCountToPreview candidate steps when @infoOnly is > 0
+**			07/26/2012 mem - Added parameter @serverPerspectiveEnabled
+**			09/17/2012 mem - Now returning metadata for step tool DatasetQuality instead of step tool DatasetInfo
 **
 *****************************************************/
   (
@@ -43,22 +45,24 @@ CREATE PROCEDURE RequestStepTask
     @message VARCHAR(512) OUTPUT,
     @infoOnly TINYINT = 0,				-- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
     @ManagerVersion VARCHAR(128) = '',
-    @JobCountToPreview INT = 10
+    @JobCountToPreview INT = 10,
+    @serverPerspectiveEnabled tinyint = 0
   )
 AS 
-  SET nocount ON
+	SET nocount ON
 
-  DECLARE @myError INT
-  DECLARE @myRowCount INT
-  SET @myError = 0
-  SET @myRowCount = 0
-	
-  DECLARE @jobAssigned TINYINT
-  SET @jobAssigned = 0
+	DECLARE @myError INT
+	DECLARE @myRowCount INT
+	SET @myError = 0
+	SET @myRowCount = 0
 
-  DECLARE @CandidateJobStepsToRetrieve INT
-  SET @CandidateJobStepsToRetrieve = 25
+	DECLARE @jobAssigned TINYINT
+	SET @jobAssigned = 0
 
+	DECLARE @CandidateJobStepsToRetrieve INT
+	SET @CandidateJobStepsToRetrieve = 25
+
+	DECLARE @excludeCaptureTasks tinyint = 0
 
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
@@ -70,6 +74,7 @@ AS
 	SET @infoOnly = ISNULL(@infoOnly, 0)
 	SET @ManagerVersion = ISNULL(@ManagerVersion, '')
 	SET @JobCountToPreview = ISNULL(@JobCountToPreview, 10)
+	SET @serverPerspectiveEnabled = ISNULL(@serverPerspectiveEnabled, 0)
 
 
 	IF @JobCountToPreview > @CandidateJobStepsToRetrieve 
@@ -159,7 +164,7 @@ AS
       Processor_Assignment_Applies CHAR(1)
     )
 	--
-  INSERT  INTO #AvailableProcessorTools
+	INSERT INTO #AvailableProcessorTools
           ( Tool_Name,
             Tool_Priority,
             Only_On_Storage_Server,
@@ -227,10 +232,10 @@ AS
       Available_Capacity INT
     )
 	--
-  INSERT  INTO #InstrumentLoading
+	INSERT  INTO #InstrumentLoading
           ( Instrument,
             Captures_In_Progress,
-            Max_Simultaneous_Captures,
+         Max_Simultaneous_Captures,
             Available_Capacity
           )
           SELECT
@@ -281,7 +286,7 @@ AS
 		Assigned_To_This_Processor INT,
 		Assigned_To_Any_Processor INT
 	)
-	INSERT  INTO #InstrumentProcessor (
+	INSERT INTO #InstrumentProcessor (
 		Instrument,
 		Assigned_To_This_Processor,
 		Assigned_To_Any_Processor
@@ -305,6 +310,22 @@ AS
       GOTO Done
     END
 
+	If @processorIsAssigned = 0 And @serverPerspectiveEnabled <> 0
+	Begin
+		-- The capture task managers running on the Proto-x servers have "perspective" = "server"
+		-- During dataset capture, if perspective="server" then the manager will use dataset paths of the form E:\Exact04\2012_1
+		--   In contrast, CTM's with  perspective="client" will use dataset paths of the form \\proto-5\Exact04\2012_1
+		-- Therefore, capture tasks that occur on the Proto-x servers should be limited to instruments whose data is stored on the same server as the CTM
+		--   This is accomplished via one or more mapping rows in table T_Processor_Instrument in the DMS_Capture DB
+		-- If a capture task manager running on a Proto-x server has the DatasetCapture tool enabled, yet does not have an entry in T_Processor_Instrument, 
+		--   then we do not allow capture tasks to be assigned (to thus avoid drive path problems)
+		Set @excludeCaptureTasks = 1
+		
+		If @infoOnly > 0
+			Print 'Note: setting @excludeCaptureTasks=1 because this processor does not have any entries in T_Processor_Instrument yet @serverPerspectiveEnabled=1'
+	End
+
+	
 	---------------------------------------------------
 	-- table variable to hold job step candidates
 	-- for possible assignment
@@ -326,46 +347,47 @@ AS
 	-- by processor in order of assignment priority
 	---------------------------------------------------
 	--
-	INSERT  INTO #Tmp_CandidateJobSteps
+	INSERT INTO #Tmp_CandidateJobSteps
           ( Job,
-            Step_Number,
+   Step_Number,
             Job_Priority,
             Step_Tool,
             Tool_Priority
           )
           SELECT TOP ( @CandidateJobStepsToRetrieve )
-            T_Jobs.Job,
-            Step_Number,
-            T_Jobs.Priority,
-            Step_Tool,
-            Tool_Priority
+            J.Job,
+            JS.Step_Number,
+            J.Priority,
+            JS.Step_Tool,
+            APT.Tool_Priority
           FROM
-            T_Job_Steps
-            INNER JOIN dbo.T_Jobs ON T_Job_Steps.Job = T_Jobs.Job
-            INNER JOIN #AvailableProcessorTools ON Step_Tool = Tool_Name
-            LEFT OUTER JOIN #InstrumentProcessor ON #InstrumentProcessor.Instrument = T_Jobs.Instrument
-            LEFT OUTER JOIN #InstrumentLoading ON #InstrumentLoading.Instrument = T_Jobs.Instrument
+            T_Job_Steps JS
+            INNER JOIN dbo.T_Jobs J ON JS.Job = J.Job
+            INNER JOIN #AvailableProcessorTools APT ON JS.Step_Tool = APT.Tool_Name
+            LEFT OUTER JOIN #InstrumentProcessor IP ON IP.Instrument = J.Instrument
+            LEFT OUTER JOIN #InstrumentLoading IL ON IL.Instrument = J.Instrument
           WHERE
-			GETDATE() > dbo.T_Job_Steps.Next_Try
-            AND ( T_Job_Steps.State = 2 )
-            AND Bionet_OK = 'Y'
-            AND T_Jobs.State < 100
-            AND NOT ( Only_On_Storage_Server = 'Y' AND Storage_Server <> @machine )
-            AND ( #AvailableProcessorTools.Instrument_Capacity_Limited = 'N' OR (NOT ISNULL(Available_Capacity, 1) < 1) )
+			GETDATE() > JS.Next_Try
+            AND ( JS.State = 2 )
+            AND APT.Bionet_OK = 'Y'
+            AND J.State < 100
+            AND NOT ( APT.Only_On_Storage_Server = 'Y' AND Storage_Server <> @machine )
+            AND NOT ( @excludeCaptureTasks = 1 AND JS.Step_Tool = 'DatasetCapture' )
+            AND ( APT.Instrument_Capacity_Limited = 'N' OR (NOT ISNULL(IL.Available_Capacity, 1) < 1) )
             AND (
-				(Processor_Assignment_Applies = 'N')
+				(APT.Processor_Assignment_Applies = 'N')
 				OR
 				( 
-					( @processorIsAssigned > 0 AND isnull(Assigned_To_This_Processor, 0) > 0 ) 
+					( @processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0 ) 
 					OR 
-					( @processorIsAssigned = 0 AND isnull(Assigned_To_Any_Processor, 0) = 0 ) 
+					( @processorIsAssigned = 0 AND ISNULL(IP.Assigned_To_Any_Processor, 0) = 0 ) 
 				)
 			)
           ORDER BY
-            Tool_Priority,
-            T_Jobs.Priority,
-            T_Jobs.Job,
-            Step_Number
+            APT.Tool_Priority,
+            J.Priority,
+            J.Job,
+            JS.Step_Number
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -454,7 +476,7 @@ AS
         State = 4,
         Processor = @processorName,
         Machine = @machine,
-        Start = GETDATE(),
+  Start = GETDATE(),
         Finish = NULL
       WHERE
         Job = @jobNumber
@@ -510,7 +532,7 @@ AS
 		@message OUTPUT, @DebugMode = @infoOnly
 
 		-- get metadata for dataset if request is going to dataset info tool
-		IF @stepTool = 'DatasetInfo'
+		IF @stepTool = 'DatasetQuality'
 		BEGIN
 			DECLARE @dataset VARCHAR(128)
 			SELECT @dataset = Dataset FROM T_Jobs WHERE Job = @jobNumber
@@ -582,29 +604,6 @@ AS
 	--
   Done:
   
-	/*
-	** Uncomment the following to log all job requests
-		
-		INSERT INTO T_Job_Request_Log (
-			Processor,
-			ReturnCode,
-			Message,
-			Num_Tools,
-			Num_Candidates,
-			Job,
-			Step
-		) VALUES (
-			@processorName,
-			@myError,
-			@message,
-			@num_tools,
-			@num_candidates,
-			@jobNumber,
-			@stepNumber
-		)
-		
-	*
-	*/
 
   RETURN @myError
 

@@ -27,6 +27,7 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 **						   - Now checking for invalid dataset names
 **			09/18/2009 grk - Cleaned up unused parameters
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -34,8 +35,8 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 	@toolName varchar(64),
 	@parmFileName varchar(255),
 	@settingsFileName varchar(255),
-	@organismDBName varchar(64),
-	@organismName varchar(64),
+	@organismDBName varchar(128),
+	@organismName varchar(128),
 	@protCollNameList varchar(512),
 	@protCollOptionsList varchar(256),
 	@message varchar(512) = '' output		

@@ -51,6 +51,9 @@ CREATE Procedure AddUpdateAnalysisJob
 **			04/26/2011 mem - Added parameter @PreventDuplicatesIgnoresNoExport
 **			05/24/2011 mem - Now populating column AJ_DatasetUnreviewed when adding new jobs
 **			05/03/2012 mem - Added parameter @SpecialProcessingWaitUntilReady
+**			06/12/2012 mem - Removed unused code related to Archive State in #TD
+**			09/18/2012 mem - Now clearing @organismDBName if @mode='reset' and we're searching a protein collection
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -59,10 +62,10 @@ CREATE Procedure AddUpdateAnalysisJob
 	@toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(255),
-    @organismName varchar(64),
+    @organismName varchar(128),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
-	@organismDBName varchar(64),
+	@organismDBName varchar(128),
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
@@ -146,6 +149,15 @@ As
 		end
 	end
 
+	if @mode = 'reset'
+	begin
+		If @organismDBName Like 'ID[_]%' And IsNull(@protCollNameList, '') Not In ('', 'na')
+		Begin
+			-- We are resetting a job that used a protein collection; clear @organismDBName
+			Set @organismDBName = ''
+		End
+	end
+	
 	---------------------------------------------------
 	-- resolve processor group ID
 	---------------------------------------------------
@@ -279,14 +291,12 @@ As
 	end
 
 	---------------------------------------------------
-	-- 
+	-- Lookup the Dataset ID
 	---------------------------------------------------
 	--
-	declare @archiveState int		
 	declare @datasetID int
 	--
 	SELECT TOP 1 @datasetID = Dataset_ID FROM #TD
-	SELECT TOP 1 @archiveState = AS_state_ID FROM #TD
 
 
 	---------------------------------------------------

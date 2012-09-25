@@ -29,6 +29,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Auto_SP_Archive_Server_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Share_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Default_Purge_Policy] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
@@ -64,6 +65,11 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Name_Instrument_Group]
 GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Ops_Role] FOREIGN KEY([IN_operations_role])
+REFERENCES [T_Instrument_Ops_Role] ([Role])
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Ops_Role]
+GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_storage_path_SourcePathID] FOREIGN KEY([IN_source_path_ID])
 REFERENCES [T_Storage_Path] ([SP_path_ID])
 GO
@@ -73,10 +79,6 @@ ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrume
 REFERENCES [T_Storage_Path] ([SP_path_ID])
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_storage_path_StoragePathID]
-GO
-ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name] CHECK  (([IN_operations_role]='Unused' OR ([IN_operations_role]='QC' OR ([IN_operations_role]='Research' OR ([IN_operations_role]='Production' OR [IN_operations_role]='Unknown')))))
-GO
-ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Group]  DEFAULT ('Other') FOR [IN_Group]
 GO
@@ -99,4 +101,6 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Auto_Define_Storage_Path]  DEFAULT ((0)) FOR [Auto_Define_Storage_Path]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Default_Purge_Policy]  DEFAULT ((0)) FOR [Default_Purge_Policy]
 GO

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Notification_Event_Type] ******/
-/****** RowCount: 12 ******/
+/****** RowCount: 13 ******/
 /****** Columns: ID, Name, Target_Entity_Type, Link_Template, Visible ******/
 INSERT INTO [T_Notification_Event_Type] VALUES (1,'Requested Run Batch Start',1,'requested_run_batch/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (2,'Requested Run Batch Finish',1,'requested_run_batch/show/@ID@','Y')
@@ -13,3 +13,4 @@ INSERT INTO [T_Notification_Event_Type] VALUES (14,'Sample Prep Req (Prep Comple
 INSERT INTO [T_Notification_Event_Type] VALUES (15,'Sample Prep Req (Closed)',3,'sample_prep_request/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (16,'Sample Prep Req (Pending Approval)',3,'sample_prep_request/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (20,'Dataset Not Released',4,'dataset/report/-/@ID@','Y')
+INSERT INTO [T_Notification_Event_Type] VALUES (21,'Dataset Released',5,'dataset/report/-/@ID@','Y')

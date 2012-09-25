@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Scripts_History](
 ) ON [PRIMARY]
 
 GO
+GRANT UPDATE ON [dbo].[T_Scripts_History] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]

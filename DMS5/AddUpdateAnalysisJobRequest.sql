@@ -48,6 +48,10 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/29/2011 grk - added @specialProcessing argument (http://redmine.pnl.gov/issues/304)
 **			05/16/2011 mem - Now auto-removing duplicate datasets and auto-formatting @datasets
 **			04/02/2012 mem - Now auto-removing datasets named 'Dataset' or 'Dataset_Num' in @datasets
+**			05/15/2012 mem - Added @organismDBName
+**			07/16/2012 mem - Now auto-changing @protCollOptionsList to "seq_direction=forward,filetype=fasta" if the tool is MSGFDB and the options start with "seq_direction=decoy"
+**			07/24/2012 mem - Now allowing @protCollOptionsList to be "seq_direction=decoy,filetype=fasta" for MSGFDB searches where the parameter file name contains "_NoDecoy"
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -58,12 +62,13 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @settingsFileName varchar(255),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
-    @organismName varchar(64),
+    @organismName varchar(128),
+    @organismDBName varchar(128) = 'na',		-- Legacy fasta file; typically 'na'
     @requestorPRN varchar(32),
     @workPackage varchar(24),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
-    @adminReviewReqd VARCHAR(32),
+    @adminReviewReqd VARCHAR(32) = 'No',			-- Legacy parameter; no longer used
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add', -- or 'update'
@@ -89,9 +94,6 @@ As
 	set @message = ''
 
 	declare @msg varchar(512)
-
-	declare @organismDBName varchar(64)
-	set @organismDBName = 'na'
 
 	---------------------------------------------------
 	-- Validate @adminReviewReqd
@@ -278,6 +280,18 @@ As
 			Set @NotReleasedList = Left(@NotReleasedList, 397) + '...'
 			
 		RAISERROR ('Dataset(s) found with rating "Not Released": %s', 11, 110, @NotReleasedList)
+	End
+
+	---------------------------------------------------
+	-- Assure that we are not running a decoy search if using MSGFDB
+	-- However, if the parameter file contains _NoDecoy in the name, then we'll allow @protCollOptionsList to contain Decoy
+	---------------------------------------------------
+	--
+	If @toolName LIKE 'MSGFDB%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+	Begin
+		Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
+		If IsNull(@message, '') = ''
+			Set @message = 'Note: changed protein options to forward-only since MSGFDB parameter files typically have tda=1'
 	End
 
 	---------------------------------------------------

@@ -50,7 +50,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 05/11/2012 16:16:25 ******/
+/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 09/25/2012 13:19:05 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IDX_Job_Plus_Step] ON [dbo].[T_Job_Steps] 
 (
 	[Job_Plus_Step] ASC
@@ -197,7 +197,48 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TRIGGER [dbo].[trig_ud_T_Job_Steps]ON [dbo].[T_Job_Steps]FOR UPDATE, DELETE AS/********************************************************	Desc: **		Prevents updating or deleting all rows in the table****	Auth:	mem**	Date:	02/08/2011*******************************************************/BEGIN    DECLARE @Count int    SET @Count = @@ROWCOUNT;    IF @Count >= (	SELECT i.rowcnt AS TableRowCount                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id                     WHERE o.name = 'T_Job_Steps' AND o.type = 'u' AND i.indid < 2                 )    BEGIN        RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Job_Steps)',16,1)        ROLLBACK TRANSACTION        RETURN;    ENDEND
+
+CREATE TRIGGER [dbo].[trig_ud_T_Job_Steps]
+ON [dbo].[T_Job_Steps]
+FOR UPDATE, DELETE AS
+/****************************************************
+**
+**	Desc: 
+**		Prevents updating or deleting all rows in the table
+**
+**	Auth:	mem
+**	Date:	02/08/2011
+**			07/08/2012 mem - Added row counts to the error message
+**
+*****************************************************/
+BEGIN
+
+    DECLARE @Count int = @@ROWCOUNT;
+	Declare @tableRowCount int = -1
+
+	SELECT @tableRowCount = i.rowcnt
+	FROM dbo.sysobjects o
+	     INNER JOIN dbo.sysindexes i
+	       ON o.id = i.id
+	WHERE o.name = 'T_Job_Steps' AND
+	      o.TYPE = 'u' AND
+	      i.indid < 2
+	
+    IF @Count >= @tableRowCount
+    BEGIN
+    
+		Declare @message varchar(512)                     
+		Set @message = 'Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Job_Steps).  Trying to update ' + convert(varchar(12), @Count) + ' rows while table has ' + CONVERT(varchar(12), @tableRowCount) + ' rows'
+		
+		RAISERROR(@message,16,1)
+		ROLLBACK TRANSACTION
+		RETURN;
+			
+    END
+
+END
+
+
 GO
 GRANT INSERT ON [dbo].[T_Job_Steps] TO [Limited_Table_Write] AS [dbo]
 GO

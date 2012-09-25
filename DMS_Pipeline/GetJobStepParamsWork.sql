@@ -28,6 +28,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			07/01/2010 mem - Now constructing a comma separated list of shared result folders instead of just returning the first one
 **			10/11/2011 grk - Added step input and output folders
 **			01/19/2012 mem - Now adding DataPackageID
+**			07/09/2012 mem - Updated to support the "step" attribute of a "param" element containing Yes and a number, for example "Yes (3)"
 **    
 *****************************************************/
 (
@@ -180,25 +181,43 @@ AS
 	-- Exclude DataPackageID since we obtained that from T_Jobs
 	---------------------------------------------------
 	--
-	-- to allow for more than one instance of a tool
-	-- in a single script, look at parameters in sections 
-	-- that either are not locked to any setp 
-	-- (step number is null) or are locked to the current step
+	-- To allow for more than one instance of a tool in a single script, 
+	--  look at parameters in sections that either are not locked to any step (step number is null) 
+	--  or are locked to the current step
 	--
-	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], [Value])
-	SELECT Section, Name, Value
-	FROM (	SELECT
-				xmlNode.value('@Section', 'nvarchar(256)') Section,
-				xmlNode.value('@Name', 'nvarchar(256)') Name,
-				xmlNode.value('@Value', 'nvarchar(4000)') Value
-			FROM
-				T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
-			WHERE
-				T_Job_Parameters.Job = @jobNumber AND
-				((xmlNode.value('@Step', 'nvarchar(128)') IS NULL) OR (xmlNode.value('@Step', 'nvarchar(128)') = @stepNumber))		
-		) LookupQ
-	WHERE Name <> 'DataPackageID'
+	-- Prior to June 2012, step locking would use notation like this:
+	--  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="2" />
+	--
+	-- We now use notatio like this:
+	--  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="Yes (2)" />
+	--
+	-- Thus, the following uses a series of REPLACE commands to remove text from the Step attribute, 
+	--  replacing the following three strings with ""
+	--   "Yes ("
+	--   "No ("
+	--   ")"
 	
+	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], [Value])	
+	SELECT Section, Name, [Value]	
+	FROM ( SELECT Section,
+	              Name,
+	              [Value],
+	              CASE
+	                  WHEN Step = '' THEN 0
+	                  WHEN IsNumeric(Step) = 1 THEN Convert(int, Step)
+	                  ELSE 0
+	              END AS StepNumber
+	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
+	                     xmlNode.value('@Name', 'nvarchar(256)') AS Name,
+	                     xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
+	                     REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
+	              FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+	              WHERE T_Job_Parameters.Job = @jobNumber 
+	            ) LookupQ 
+	     ) ConvertQ
+	WHERE Name <> 'DataPackageID' AND
+	      (StepNumber = 0 OR
+	       StepNumber = @stepNumber)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

@@ -17,6 +17,7 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 	[Authentication_Hash] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Contents_Encrypted] [tinyint] NULL,
 	[Uploaded_By] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Collection_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_T_Protein_Collections] PRIMARY KEY CLUSTERED 
 (
 	[Protein_Collection_ID] ASC

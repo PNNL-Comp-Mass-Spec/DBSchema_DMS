@@ -17,13 +17,13 @@ CREATE PROCEDURE CopyHistoryToJob
 **	Date:	02/06/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			03/12/2012 mem - Added column Tool_Version_ID
-**			03/21/2012 mem - Now using disabling identity_insert prior to inserting a row into T_Jobs
+**			03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Jobs
 **						   - Fixed bug finding most recent successful job in T_Jobs_History
 **    
 *****************************************************/
 (
 	@job int,
-	@message varchar(512) output
+	@message varchar(512) = '' output
 )
 As
 	set nocount on

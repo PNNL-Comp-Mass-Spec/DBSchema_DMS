@@ -1,4 +1,4 @@
-/****** Object:  View [dbo].[v_assigned_storage] ******/
+/****** Object:  View [dbo].[V_assigned_storage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -35,7 +35,7 @@ FROM T_Instrument_Name INNER JOIN
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[v_assigned_storage] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_assigned_storage] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[v_assigned_storage] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_assigned_storage] TO [PNL\D3M580] AS [dbo]
 GO

@@ -30,6 +30,7 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 **			02/09/2011 mem - Added parameter @TriggerBeforeDisposition
 **			02/16/2011 mem - Added parameter @PropagationMode
 **			05/02/2012 mem - Added parameter @SpecialProcessing
+**			09/25/2012 mem - Expanded @organismNameCriteria and @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 	@campaignNameCriteria varchar(128),
 	@experimentNameCriteria varchar(128),
 	@instrumentNameCriteria varchar(64),
-	@organismNameCriteria varchar(64),
+	@organismNameCriteria varchar(128),
 	@datasetNameCriteria varchar(128),
 	@expCommentCriteria varchar(128),
 	@labellingInclCriteria varchar(64),
@@ -47,8 +48,8 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 	@analysisToolName varchar(64),
 	@parmFileName varchar(255),
 	@settingsFileName varchar(255),
-	@organismName varchar(64),
-	@organismDBName varchar(64),
+	@organismName varchar(128),
+	@organismDBName varchar(128),
 	@protCollNameList varchar(512),
 	@protCollOptionsList varchar(256),
 	@priority int,

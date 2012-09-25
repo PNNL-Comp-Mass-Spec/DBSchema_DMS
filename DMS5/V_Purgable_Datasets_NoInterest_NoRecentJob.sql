@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Purgable_Datasets_NoInterest_NoRecentJob]
 AS
 SELECT Dataset_ID,
@@ -12,7 +13,8 @@ SELECT Dataset_ID,
        Created,
        raw_data_type,
        StageMD5_Required,
-       MostRecentJob
+       MostRecentJob,
+       Purge_Priority
 FROM V_Purgable_Datasets_NoInterest
 WHERE DATEDIFF(DAY, MostRecentJob, GETDATE()) > 60
 

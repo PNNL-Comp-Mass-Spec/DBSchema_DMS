@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.ValidateProteinCollectionParams
+CREATE Procedure ValidateProteinCollectionParams
 /****************************************************
 ** 
 **	Desc:	Validates the organism DB and/or protein collection options
@@ -15,12 +14,14 @@ CREATE Procedure dbo.ValidateProteinCollectionParams
 **
 **	Auth:	mem
 **	Date:	08/26/2010
+**			05/15/2012 mem - Now verifying that @organismDBName is 'na' if @protCollNameList is defined, or vice versa
+**			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **    
 *****************************************************/
 (
 	@toolName varchar(64),						-- If blank, then will assume @orgDbReqd=1
-	@organismDBName varchar(64) output,
-	@organismName varchar(64),
+	@organismDBName varchar(128) output,
+	@organismName varchar(128),
 	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
 	@ownerPRN varchar(64) = '',					-- Only required if the user chooses an "Encrypted" protein collection; as of August 2010 we don't have any encrypted protein collections
@@ -105,12 +106,78 @@ As
 	begin
 		if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
 		begin
-			set @message = 'Protein parameters must all be "na"; you have: OrgDBName = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
+			set @message = 'Protein parameters must all be "na"; you have: Legacy Fasta (OrgDBName) = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
 			return 53093
 		end
 	end
 	else
 	begin
+		
+		If Not @organismDBName In ('', 'na')
+		Begin
+			If Not @protCollNameList In ('', 'na')
+			Begin
+				set @message = 'Cannot define both a Legacy Fasta file and a Protein Collection List; one must be "na"'
+				return 53104
+			End
+			
+			If @protCollNameList In ('', 'na') and Not @protCollOptionsList In ('', 'na')
+			Begin
+				Set @protCollOptionsList = 'na'
+			End
+			
+			-- Verify that @organismDBName is defined in T_Organism_DB_File and that the organism matches up 
+				
+			If Not Exists (
+				SELECT *
+				FROM T_Organism_DB_File ODB INNER JOIN
+					 T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+				WHERE (ODB.FileName = @organismDBName) AND (O.OG_name = @organismName) And Active > 0 And Valid > 0
+				)
+			Begin
+				-- Match not found; try matching the name but not the organism
+				Declare @OrganismMatch varchar(128) = ''
+			
+				SELECT @OrganismMatch = O.OG_name
+				FROM T_Organism_DB_File ODB INNER JOIN
+					 T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+				WHERE (ODB.FileName = @organismDBName) And Active > 0 And Valid > 0
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				
+				If @myRowCount > 0
+				Begin
+					set @message = 'Legacy Fasta file "' + @organismDBName + '" is defined for organism ' + @OrganismMatch + '; you specified organism ' + @organismName + '; cannot continue'
+					return 53120
+				End
+				Else
+				Begin
+					-- Match still not found; check if it is disabled
+					
+					If Exists (
+						SELECT *
+						FROM T_Organism_DB_File ODB INNER JOIN
+							T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+						WHERE (ODB.FileName = @organismDBName) And (Active = 0 Or Valid = 0)
+						)
+					Begin
+						set @message = 'Legacy Fasta file "' + @organismDBName + '" is disabled and cannot be used (T_Organism_DB_File)'
+						return 53121
+					End
+					Else
+					Begin
+						set @message = 'Legacy Fasta file "' + @organismDBName + '" is not a recognized fasta file'
+						return 53122
+					End
+					
+				End
+			
+			End
+	
+			
+		End
+		
 		if @debugMode <> 0
 		begin
 			Set @message =  'Calling ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters: ' +

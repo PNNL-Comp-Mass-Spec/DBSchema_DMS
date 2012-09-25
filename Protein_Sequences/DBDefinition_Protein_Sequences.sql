@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences_Data.MDF' , SIZE = 44864000KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 49361152KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'I:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 23855872KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 1988992KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -78,7 +78,7 @@ GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
-GRANT CONNECT TO [EMSL-Prism.Users.DMS_JobRunner] AS [dbo]
+GRANT CONNECT TO [EMSL-Prism.Users.DMS_Guest] AS [dbo]
 GO
 GRANT CONNECT TO [EMSL-Prism.Users.DMS_User] AS [dbo]
 GO
@@ -100,23 +100,7 @@ GRANT CONNECT TO [pnl\d3l243] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3m480] AS [dbo]
 GO
-GRANT CONNECT TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
-GO
-GRANT CONTROL TO [PRISMSeqReader] AS [dbo]
-GO
 GRANT CONNECT TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT EXECUTE TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT REFERENCES TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT SELECT TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT SHOWPLAN TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT VIEW DEFINITION TO [PRISMSeqReader] AS [dbo]
-GO
-GRANT VIEW DATABASE STATE TO [PRISMSeqReader] AS [dbo]
 GO
 GRANT CONNECT TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

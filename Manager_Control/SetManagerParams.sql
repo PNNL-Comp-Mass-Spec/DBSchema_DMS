@@ -205,7 +205,5 @@ As
 DONE:
 	return @myError
 GO
-GRANT EXECUTE ON [dbo].[SetManagerParams] TO [DMSWebUser] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[SetManagerParams] TO [Mgr_Config_Admin] AS [dbo]
 GO

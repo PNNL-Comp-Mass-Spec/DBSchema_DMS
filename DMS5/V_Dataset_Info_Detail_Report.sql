@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -49,11 +48,11 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID AS ID,
        CASE
            WHEN DS.DS_state_ID IN (3, 4) AND
-                NOT ISNULL(DSA.AS_state_ID, 0) = 4 THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
+                ISNULL(DSA.AS_state_ID, 0) <> 4 THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
            ELSE '(not available)'
        END AS [Dataset Folder Path],
        CASE
-           WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10) THEN DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
+           WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10, 14, 15) THEN DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
            ELSE '(not available)'
        END AS [Archive Folder Path],
 	   SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS [Data Folder Link],
@@ -90,6 +89,8 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DAP.Dataset_ID
 
 
-
-
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Info_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Info_Detail_Report] TO [PNL\D3M580] AS [dbo]
 GO

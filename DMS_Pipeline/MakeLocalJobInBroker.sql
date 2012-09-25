@@ -24,6 +24,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			01/19/2012 mem - Added parameter @DataPackageID
 **			02/07/2012 mem - Now validating that @DataPackageID is > 0 when @scriptName is MultiAlign_Aggregator
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
+**			08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
 **
 *****************************************************/
 (
@@ -193,6 +194,8 @@ AS
 	if @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CreateStepsForJob: ' + Convert(varchar(12), @myError)
+		If IsNull(@message, '') <> ''
+			Set @msg = @msg + '; ' + @message
 		goto Done
 	End
 

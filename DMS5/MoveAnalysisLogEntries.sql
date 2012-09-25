@@ -17,6 +17,7 @@ CREATE Procedure dbo.MoveAnalysisLogEntries
 **	Date:	06/14/2001
 **			03/10/2009 mem - Now removing non-noteworthy entries from T_Analysis_Log before moving old entries to DMSHistoricLog1
 **			10/04/2011 mem - Removed @DBName parameter
+**			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **    
 *****************************************************/
 (
@@ -57,7 +58,7 @@ As
 	
 	-- put entries into historic log
 	--
-	INSERT INTO DMSHistoricLog1.dbo.T_Historic_Log_Entries
+	INSERT INTO DMSHistoricLog.dbo.T_Historic_Log_Entries
 		(Entry_ID, posted_by, posting_time, type, message, DBName) 
 	SELECT 
 		 Entry_ID, posted_by, posting_time, type, message, @DBName

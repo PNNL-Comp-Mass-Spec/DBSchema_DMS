@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			06/17/2008 dac - Added default values for completionMessage, evaluationCode, and evaluationMessage
 **			10/05/2009 mem - Now allowing for CPU_Load to be null in T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
+**			09/25/2012 mem - Expanded @organismDBName to varchar(128)
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
     @completionMessage varchar(256) = '',
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
-	@organismDBName varchar(64) = ''
+	@organismDBName varchar(128) = ''
 )
 As
 	set nocount on

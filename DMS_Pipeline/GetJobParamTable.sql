@@ -32,6 +32,7 @@ CREATE PROCEDURE GetJobParamTable
 **			08/01/2011 mem - Now filtering on Analysis_Tool when querying V_DMS_SettingsFiles
 **			05/07/2012 mem - Now including DatasetType
 **			05/07/2012 mem - Now including Experiment
+**			08/23/2012 mem - Now calling CheckAddSpecialProcessingParam to look for a DataImportFolder entry
 **    
 *****************************************************/
 (
@@ -355,8 +356,7 @@ AS
 	-- Check whether the Special_Processing field has an AMT DB defined
 	-- If it does, then add this as a new parameter in the JobParameters section
 	---------------------------------------------------
-	--	
-	
+	--		
 	exec CheckAddSpecialProcessingParam 'AMTDB'
 	
 	-- If AMTDB is defined, then we need to lookup the name of the server on which the MT DB resides
@@ -395,6 +395,12 @@ AS
 		exec AddUpdateTmpParamTabEntry 'JobParameters', 'AMTDBServer', @AMTDBServer
 	End
 	
+	--------------------------------------------------
+	-- Check whether the Special_Processing field has a Data Import Folder defined
+	-- If it does, then add this as a new parameter in the JobParameters section
+	---------------------------------------------------
+	--		
+	exec CheckAddSpecialProcessingParam 'DataImportFolder'
 	
 
   	---------------------------------------------------

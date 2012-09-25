@@ -31,8 +31,6 @@ CREATE NONCLUSTERED INDEX [IX_T_Log_Entries_Posting_Time] ON [dbo].[T_Log_Entrie
 	[posting_time] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-GRANT UPDATE ON [dbo].[T_Log_Entries] ([Entered_By]) TO [DMSWebUser] AS [dbo]
-GO
 ALTER TABLE [dbo].[T_Log_Entries] ADD  CONSTRAINT [DF_T_Log_Entries_posting_time]  DEFAULT (getdate()) FOR [posting_time]
 GO
 ALTER TABLE [dbo].[T_Log_Entries] ADD  CONSTRAINT [DF_T_Log_Entries_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]

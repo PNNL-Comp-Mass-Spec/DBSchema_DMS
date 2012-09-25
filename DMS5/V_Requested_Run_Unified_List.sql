@@ -13,3 +13,7 @@ FROM         T_Requested_Run INNER JOIN
                       T_Dataset ON T_Requested_Run.DatasetID = T_Dataset.Dataset_ID  
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Unified_List] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Unified_List] TO [PNL\D3M580] AS [dbo]
+GO

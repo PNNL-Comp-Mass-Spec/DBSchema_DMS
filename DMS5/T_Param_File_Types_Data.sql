@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Param_File_Types] ******/
-/****** RowCount: 22 ******/
+/****** RowCount: 23 ******/
 /****** Columns: Param_File_Type_ID, Param_File_Type ******/
 INSERT INTO [T_Param_File_Types] VALUES (1,'(none)')
 INSERT INTO [T_Param_File_Types] VALUES (1000,'Sequest')
@@ -23,3 +23,4 @@ INSERT INTO [T_Param_File_Types] VALUES (1017,'MultiAlign')
 INSERT INTO [T_Param_File_Types] VALUES (1018,'MSGFDB')
 INSERT INTO [T_Param_File_Types] VALUES (1019,'MSAlign')
 INSERT INTO [T_Param_File_Types] VALUES (1020,'SMAQC')
+INSERT INTO [T_Param_File_Types] VALUES (1021,'LipidMapSearch')

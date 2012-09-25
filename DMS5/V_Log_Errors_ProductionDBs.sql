@@ -16,3 +16,7 @@ SELECT 'DMS_Pipeline' AS DB, Entry_ID, posted_by, posting_time, type, message, E
 FROM DMS_Pipeline.dbo.V_Log_Errors
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_ProductionDBs] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_ProductionDBs] TO [PNL\D3M580] AS [dbo]
+GO

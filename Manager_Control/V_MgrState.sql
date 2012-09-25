@@ -13,11 +13,17 @@ FROM T_MgrState MS
 	JOIN T_ParamType PT ON PT.ParamID = MS.TypeID
 
 GO
-GRANT DELETE ON [dbo].[V_MgrState] TO [DMSWebUser] AS [dbo]
-GO
 GRANT INSERT ON [dbo].[V_MgrState] TO [DMSWebUser] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[V_MgrState] TO [DMSWebUser] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[V_MgrState] TO [DMSWebUser] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[V_MgrState] TO [Mgr_Config_Admin] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[V_MgrState] TO [Mgr_Config_Admin] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[V_MgrState] TO [Mgr_Config_Admin] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_MgrState] TO [Mgr_Config_Admin] AS [dbo]
 GO

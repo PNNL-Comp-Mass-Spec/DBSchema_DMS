@@ -21,10 +21,11 @@ CREATE FUNCTION dbo.ExtractTaggedName
 **	Date:	04/13/2009 grk - Initial release (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **			07/29/2009 mem - Updated to return nothing if @tag is not found in @text
 **						   - Added additional delimiters when searching for the end of the text to return after the tag
+**			08/23/2012 mem - Expanded @tag from varchar(12) to varchar(64)
 **    
 *****************************************************/
 (
-	@tag varchar(12) = 'DTA:',
+	@tag varchar(64) = 'DTA:',
 	@text varchar(4096)
 )
 RETURNS VARCHAR(256)

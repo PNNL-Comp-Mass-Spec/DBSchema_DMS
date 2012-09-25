@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 98 ******/
+/****** RowCount: 104 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -99,4 +99,10 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1096,'WP-1096','XBridge_005_QCtest','12/8/2011 5:37:25 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1097,'Gbem_substrate_pool','SCX fractionation of Gbem_bulk/NP/FC/Fum pooled sample, experiment Gbem_substrate_pool','3/7/2012 9:04:06 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1098,'ND132_test_01','HpH fractions for global, soluble and insoluble prep used to test method on new organism.  Will be used to build database for AMT tag approach.','3/7/2012 2:48:49 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1099,'ALZ_Fractions','Created by experiment fraction entry (Alz_HPH_Frac)','7/16/2012 4:28:12 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1100,'Bhens_OM Samples','Created by experiment fraction entry (Bhens_OM_01)','7/18/2012 2:07:57 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1101,'GLBRC_iTRAQ4_LIMS318','A01-A12: GLBRC_iTRAQ4_LIMS318_T2_01-12; C01-C12: GLBRC_iTRAQ4_LIMS318_T3_01-12; E01-E12: GLBRC_iTRAQ4_LIMS318_T4_01-12; G01-G12: GLBRC_iTRAQ4_LIMS318_T5_01-12','7/25/2012 4:48:43 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1102,'GLBRC_iTRAQ4_LIMS320','A01-A12: GLBRC_iTRAQ4_LIMS320_T2_01-12; C01-C12: GLBRC_iTRAQ4_LIMS320_T3_01-12; E01-E12: GLBRC_iTRAQ4_LIMS320_T4_01-12; G01-G12: GLBRC_iTRAQ4_LIMS320_T5_01-12','7/25/2012 4:51:51 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1103,'GLBRC_iTRAQ4_LIMS327','A01-A12: GLBRC_iTRAQ4_LIMS327_T2_01-12; C01-C12: GLBRC_iTRAQ4_LIMS327_T3_01-12; E01-E12: GLBRC_iTRAQ4_LIMS327_T4_01-12; G01-G12: GLBRC_iTRAQ4_LIMS327_T5_01-12','7/25/2012 4:52:11 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1104,'Phototroph_iTRAQ4_2012-09','Comparison of photo and nonphoto lifestyles across three anoxygenic phototrophs','9/19/2012 4:19:15 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF

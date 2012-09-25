@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 27 ******/
+/****** RowCount: 32 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (27,'DataFiles','DMS Pipeline Data',0)
 INSERT INTO [T_DatasetTypeName] VALUES (18,'GC-MS','Full scan GC-MS',1)
@@ -21,10 +21,15 @@ INSERT INTO [T_DatasetTypeName] VALUES (3,'HMS-MSn','High res MS with low res CI
 INSERT INTO [T_DatasetTypeName] VALUES (16,'HMS-PQD-CID/ETD-MSn','High res MS with low res PQD MSn and low res CID or ETD MSn (decision tree)',1)
 INSERT INTO [T_DatasetTypeName] VALUES (17,'HMS-PQD-ETD-MSn','High res MS with low res PQD MSn and low res ETD-based MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (6,'IMS-HMS','Ion mobility sep then high res MS detection',1)
-INSERT INTO [T_DatasetTypeName] VALUES (7,'IMS-MSn-HMS','Ion mobility sep, fragmentation of all ions, high res MS',1)
+INSERT INTO [T_DatasetTypeName] VALUES (30,'IMS-HMS-HMSn','Ion mobility sep with high res MS, fragmentation of all ions with high res MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (7,'IMS-HMS-MSn','Ion mobility sep, fragmentation of all ions, high res MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (26,'MALDI-HMS','MALDI MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (9,'MRM','Multiple reaction monitoring-triple quad',1)
 INSERT INTO [T_DatasetTypeName] VALUES (4,'MS','Low resolution MS spectra only',1)
 INSERT INTO [T_DatasetTypeName] VALUES (10,'MS-CID/ETD-MSn','Low res MS, with low res, alternating CID and ETD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (8,'MS-ETD-MSn','Low res MS with low res ETD-based MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (28,'MS-HCD-CID-MSn','Low res MS with low res, alternating CID and HCD MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (29,'MS-HCD-MSn','Low res MS with low res HCD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (2,'MS-MSn','Low res MS with low res CID MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (100,'Tracking','Instrument usage tracking only - no capture',1)
+INSERT INTO [T_DatasetTypeName] VALUES (31,'UV','UV detector',1)

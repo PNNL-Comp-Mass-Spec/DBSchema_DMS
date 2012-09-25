@@ -116,7 +116,7 @@ As
 	Set @UseBigBangQuery = IsNull(@UseBigBangQuery, 1)
 	
 	Set @ThrottleByStartTime = IsNull(@ThrottleByStartTime, 1)
-	Set @MaxStepNumToThrottle = IsNull(@MaxStepNumToThrottle, 1)
+	Set @MaxStepNumToThrottle = IsNull(@MaxStepNumToThrottle, 10)
 	Set @ThrottleAllStepTools = IsNull(@ThrottleAllStepTools, 0)
 
 	If @MaxStepNumToThrottle < 1

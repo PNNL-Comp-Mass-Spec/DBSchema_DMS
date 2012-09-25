@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDatasetIntervalForMultipleInstruments
+CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 /****************************************************
 **
 **  Desc: 
@@ -24,10 +24,12 @@ CREATE PROCEDURE UpdateDatasetIntervalForMultipleInstruments
 **			03/27/2012 grk - Added code to delete entries from T_EMSL_Instrument_Usage_Report
 **			03/27/2012 grk - Using V_Instrument_Tracked
 **          04/09/2012 grk - modified algorithm
+**			08/02/2012 mem - Updated @DaysToProcess to default to 60 days instead of 30 days
+**          09/18/2012 grk - only do EMSL instrumet updates for EMLS instruments 
 **    
 *****************************************************/
 (
-    @DaysToProcess int = 30,
+    @DaysToProcess int = 60,
     @UpdateEMSLInstrumentUsage tinyint = 1,
     @infoOnly tinyint = 0,
 	@message varchar(512) = '' output
@@ -61,6 +63,10 @@ As
 	DECLARE @prevDate DATETIME = DATEADD(MONTH, -1, @endDate)						
 	DECLARE @prevMonth INT = DATEPART(MONTH, @prevDate)
 	DECLARE @prevYear INT = DATEPART(YEAR, @prevDate)
+
+	DECLARE @nextMonth INT = DATEPART(MONTH, DATEADD(MONTH, 1, @endDate))
+	DECLARE @nextYear INT = DATEPART(YEAR, DATEADD(MONTH, 1, @endDate))
+	DECLARE @bonm DATETIME = CONVERT(VARCHAR(12), @nextMonth) + '/1/' + CONVERT(VARCHAR(12), @nextYear)
 	
 	---------------------------------------------------
 	-- temp table to hold list of production instruments
@@ -68,7 +74,8 @@ As
 	
 	CREATE TABLE #Tmp_Instruments (
 		Seq INT IDENTITY(1,1) NOT NULL,
-		Instrument varchar(65)
+		Instrument varchar(65),
+		EMSL char(1)
 	)
 
 	---------------------------------------------------
@@ -80,21 +87,22 @@ As
 		-- get list of tracked instruments
 		---------------------------------------------------
 
-		INSERT INTO #Tmp_Instruments (Instrument)
-		SELECT [Name] FROM V_Instrument_Tracked
+		INSERT INTO #Tmp_Instruments (Instrument, EMSL)
+		SELECT [Name], EUS_Primary_Instrument AS EMSL FROM V_Instrument_Tracked
 
 		---------------------------------------------------
 		-- update intervals for given instrument
 		---------------------------------------------------
 		
 		DECLARE @instrument VARCHAR(64)
+		DECLARE @emslInstrument CHAR(1)
 		DECLARE @index INT = 0
 		DECLARE @done TINYINT = 0
 
 		WHILE @done = 0
 		BEGIN -- <a>
 			SET @instrument = NULL 
-			SELECT TOP 1 @instrument = Instrument 
+			SELECT TOP 1 @instrument = Instrument, @emslInstrument = EMSL
 			FROM #Tmp_Instruments 
 			WHERE Seq > @index
 			
@@ -106,9 +114,9 @@ As
 			END 
 			ELSE 
 			BEGIN -- <b>
-				EXEC UpdateDatasetInterval @instrument, @startDate, @endDate, @message output, @infoOnly=@infoOnly
+				EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
 				
-				If @UpdateEMSLInstrumentUsage <> 0
+				If @UpdateEMSLInstrumentUsage <> 0 AND @emslInstrument = 'Y'
 				BEGIN --<c>
 					---------------------------------------------------
 					-- if we just crossed the monthly boundary,
@@ -143,4 +151,8 @@ As
 		
 	RETURN @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetIntervalForMultipleInstruments] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetIntervalForMultipleInstruments] TO [PNL\D3M580] AS [dbo]
 GO

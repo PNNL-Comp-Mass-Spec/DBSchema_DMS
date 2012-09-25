@@ -19,3 +19,7 @@ FROM            (SELECT        RunDate, Proposal_ID, Category, Duration
                                                     WHERE        (TRR.RDS_EUS_Proposal_ID IS NOT NULL) AND (TD.DS_state_ID = 3)) AS TX) AS TQ
 GROUP BY dbo.GetFiscalYearFromDate(RunDate), Proposal_ID, Category
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Actual_Usage_By_Category] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Actual_Usage_By_Category] TO [PNL\D3M580] AS [dbo]
+GO

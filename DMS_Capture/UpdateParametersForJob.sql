@@ -19,6 +19,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			04/13/2010 mem - Fixed bug that didn't properly update T_Job_Parameters when #Job_Parameters contains multiple jobs (because @jobList contained multiple jobs)
 **						   - Added support for jobs being present in T_Jobs but not present in T_Job_Parameters
 **			05/18/2011 mem - Updated @jobList to varchar(max)
+**			09/17/2012 mem - Now updating Storage_Server in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
 **    
 *****************************************************/
 (
@@ -98,6 +99,22 @@ As
 		[Parameters] xml NULL
 	)
 
+	IF @DebugMode = 0
+	Begin
+		-- Update the Storage Server stored in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
+		--
+		UPDATE T_Jobs
+		SET Storage_Server = DCJP.Storage_Server_Name
+		FROM T_Jobs
+				INNER JOIN V_DMS_Capture_Job_Parameters DCJP
+				ON T_Jobs.Dataset_ID = DCJP.Dataset_ID
+				INNER JOIN #Jobs
+				ON #Jobs.Job = T_Jobs.Job
+		WHERE IsNull(DCJP.Storage_Server_Name, '') <> '' AND IsNull(T_Jobs.Storage_Server, '') <> DCJP.Storage_Server_Name
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
+			
 	---------------------------------------------------
 	-- loop through jobs and accumulate parameters
 	-- into temp table
@@ -188,7 +205,7 @@ As
 		WHERE T_Job_Parameters.Job IS NULL
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-
+		    
 	END
 
 	---------------------------------------------------

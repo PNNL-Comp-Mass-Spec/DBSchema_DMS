@@ -379,3 +379,7 @@ GRANT EXECUTE ON [dbo].[UpdateResearchTeamForCampaign] TO [DMS2_SP_User] AS [dbo
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateResearchTeamForCampaign] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateResearchTeamForCampaign] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateResearchTeamForCampaign] TO [PNL\D3M580] AS [dbo]
+GO

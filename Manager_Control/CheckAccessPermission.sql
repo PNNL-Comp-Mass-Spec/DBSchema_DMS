@@ -29,5 +29,5 @@ AS
 	RETURN @result
 
 GO
-GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [Mgr_Config_Admin] AS [dbo]
 GO

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 43 ******/
+/****** RowCount: 44 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
@@ -30,18 +30,19 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (41,'Tambora',2,'Agilent cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (42,'Mazama',2,'Agilent Cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (43,'Tiger',2,'First ARRA NexGen L 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (44,'Lion',2,'Next Generation LC 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (44,'Lion',2,'Second Dimension HILIC cart.  Next Generation LC 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (45,'Lynx',2,'2nd ARRA Next-Gen 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (46,'Cougar',2,'3rd ARRA Next Generation LC 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (47,'Cheetah',2,'4th ARRA Next Gen Platform 3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (48,'Harrier',2,'4 Column Phospho Cart')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (49,'Gandalf',2,'#4 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:F10NPB865N;nBSM2:F10NPB866N.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (50,'Aragorn',2,'#2 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:G10NPB891N;nBSM2:E10NPB861N.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (51,'Legolas',2,'#3 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:E10NPB63N;nBSM2:E10NPB864N.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (52,'Gimli',2,'#1 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:E10NPB859N;nBSM2:E10NPB860N.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (53,'Frodo',2,'#5 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:F10NPB868N;nBSM2:F10NPB869N.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (54,'Sauron',2,'#6 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:F10NPB870N;nBSM2:F10NPB872N.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (49,'Gandalf',2,'#4 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:F10NPB865N;nBSM2:F10NPB866N;nSM:F10NPS742M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (50,'Aragorn',2,'#2 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:G10NPB891N;nBSM2:E10NPB862N;nSM:F10NPS739M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (51,'Legolas',2,'#3 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:E10NPB863N;nSM:F10NPS741M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (52,'Gimli',2,'#1 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:E10NPB859N;nSM:L10NPS876M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (53,'Frodo',2,'#5 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:F10NPB868N;nBSM2:F10NPB869N;nSM:F10NPS743M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (54,'Sauron',2,'#6 2D Waters NanoAcquity LC, easy conversion to 1D cart.  Serial numbers nBSM:H10NPB926N;nBSM2:F10NPB872N;nSM:F10NPS745M.')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (57,'Auto_2D_online',2,'Auto version of 2D_online. Fractions from 1st D RPLC are transferred online w/ UV monitoring to 2nd D WCX-HILIC which has 4 SPEs and 4 columns.')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (58,'Polaroid',2,'Constant Flow Waters Nano-Acquity (1d only)')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (58,'Polaroid',2,'Constant Flow Waters Nano-Acquity (1d only). Serial numbers nBSM:M10NPB053N;nSM:A11NPS920M.')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (60,'Jaguar',2,'3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (61,'Samwise',2,'NanoAcquity cart acquired from Tox-Refurbished for Global Lipidomics. Serial numbers nBSM:M08NPB528N;nBSM2:A09NPB545N;nSM:A09NPS508M.')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

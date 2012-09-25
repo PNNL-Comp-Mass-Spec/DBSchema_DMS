@@ -16,3 +16,7 @@ FROM         dbo.T_Research_Team INNER JOIN
                       dbo.T_Campaign_Tracking ON dbo.T_Campaign.Campaign_ID = dbo.T_Campaign_Tracking.C_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Staff_Roles_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Staff_Roles_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

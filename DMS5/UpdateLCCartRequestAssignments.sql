@@ -163,3 +163,7 @@ GRANT EXECUTE ON [dbo].[UpdateLCCartRequestAssignments] TO [DMS2_SP_User] AS [db
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [Limited_Table_Write] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [PNL\D3M580] AS [dbo]
+GO

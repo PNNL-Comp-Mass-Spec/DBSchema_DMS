@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateUser]
+CREATE Procedure dbo.AddUpdateUser
 /****************************************************
 **
 **	Desc: Adds new or updates existing User in database
@@ -24,6 +24,7 @@ CREATE Procedure [dbo].[AddUpdateUser]
 **			11/03/2006 JDS - Added support for U_Status field, removed @AccessList varchar(256)
 **			01/23/2008 grk - Added @UserUpdate
 **			10/14/2010 mem - Added @Comment
+**			06/01/2012 mem - Added Try/Catch block
 **
 *****************************************************/
 (
@@ -50,6 +51,8 @@ As
 	
 	declare @msg varchar(256)
 
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
@@ -59,28 +62,28 @@ As
 	begin
 		set @myError = 51000
 		RAISERROR ('User PRN was blank',
-			10, 1)
+			11, 1)
 	end
 
 	if LEN(@UserName) < 1
 	begin
 		set @myError = 51001
 		RAISERROR ('User Name was blank',
-			10, 1)
+			11, 1)
 	end
 	--
 	if LEN(@HanfordIDNum) < 1
 	begin
 		set @myError = 51002
 		RAISERROR ('Hanford ID number was blank',
-			10, 1)
+			11, 1)
 	end
 	--
 	if LEN(@UserStatus) < 1
 	begin
 		set @myError = 51004
 		RAISERROR ('User status was blank',
-			10, 1)
+			11, 1)
 	end
 	--
 	if @myError <> 0
@@ -100,7 +103,7 @@ As
 	if @UserID <> 0 and @mode = 'add'
 	begin
 		set @msg = 'Cannot add: User "' + @UserPRN + '" already in database '
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51004
 	end
 
@@ -109,7 +112,7 @@ As
 	if @UserID = 0 and @mode = 'update'
 	begin
 		set @msg = 'Cannot update: User "' + @UserPRN + '" is not in database '
-		RAISERROR (@msg, 10, 1)
+		RAISERROR (@msg, 11, 1)
 		return 51004
 	end
 
@@ -144,7 +147,7 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Insert operation failed: "' + @UserPRN + '"'
-			RAISERROR (@msg, 10, 1)
+			RAISERROR (@msg, 11, 1)
 			return 51007
 		end
 	end -- add mode
@@ -176,7 +179,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed: "' + @UserPRN + '"'
-				RAISERROR (@msg, 10, 1)
+				RAISERROR (@msg, 11, 1)
 				return 51004
 			end
 		end
@@ -198,7 +201,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed: "' + @UserPRN + '"'
-				RAISERROR (@msg, 10, 1)
+				RAISERROR (@msg, 11, 1)
 				return 51004
 			end
 		end
@@ -293,6 +296,15 @@ As
 			return 51083
 		end
 
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+	END CATCH
+	
 	return 0
 
 

@@ -16,23 +16,13 @@ CREATE TABLE [dbo].[T_MgrState](
 ) ON [PRIMARY]
 
 GO
-GRANT ALTER ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
+GRANT INSERT ON [dbo].[T_MgrState] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT CONTROL ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
+GRANT SELECT ON [dbo].[T_MgrState] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT DELETE ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
+GRANT UPDATE ON [dbo].[T_MgrState] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT INSERT ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
-GO
-GRANT TAKE OWNERSHIP ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[T_MgrState] TO [DMSWebUser] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[T_MgrState] TO [Mgr_Config_Admin] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_MgrState] ADD  CONSTRAINT [DF_T_MgrState_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

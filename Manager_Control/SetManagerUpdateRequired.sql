@@ -147,3 +147,5 @@ Done:
 	return @myError
 	
 GO
+GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
+GO

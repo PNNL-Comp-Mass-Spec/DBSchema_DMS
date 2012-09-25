@@ -9,3 +9,7 @@ SELECT     DST_Name AS Dataset_Type, DST_Description AS Description, CASE WHEN D
 FROM         dbo.T_DatasetTypeName
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Dataset_Type] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Dataset_Type] TO [PNL\D3M580] AS [dbo]
+GO

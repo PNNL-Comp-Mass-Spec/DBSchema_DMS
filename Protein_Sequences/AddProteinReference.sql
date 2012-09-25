@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddProteinReference]
 
 /****************************************************
@@ -31,7 +30,7 @@ CREATE PROCEDURE [dbo].[AddProteinReference]
 	@protein_ID int,
 	@nameDescHash varchar(40),
 	@message varchar(256) output,
-	@MaxProteinNameLength int = 25
+	@MaxProteinNameLength int = 34
 )
 As
 	set nocount on

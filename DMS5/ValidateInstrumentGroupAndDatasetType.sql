@@ -15,6 +15,7 @@ CREATE Procedure ValidateInstrumentGroupAndDatasetType
 **	Auth:	mem
 **	Date:	08/27/2010 mem - Initial version
 **			09/09/2020 mem - Removed print statements
+**			07/04/2012 grk - Added handling for 'Tracking' type
 **
 *****************************************************/
 (
@@ -48,6 +49,10 @@ As
 	---------------------------------------------------
 		
 	execute @datasetTypeID = GetDatasetTypeID @DatasetType
+	
+	-- No further validation required for certain dataset types
+	IF @datasetTypeID IN (100)
+	GOTO Done
 	
 	if @datasetTypeID = 0
 	begin
@@ -101,4 +106,8 @@ Done:
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentGroupAndDatasetType] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentGroupAndDatasetType] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentGroupAndDatasetType] TO [PNL\D3M580] AS [dbo]
 GO

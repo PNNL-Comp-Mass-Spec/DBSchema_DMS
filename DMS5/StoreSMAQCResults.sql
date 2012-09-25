@@ -37,6 +37,7 @@ CREATE Procedure dbo.StoreSMAQCResults
 **			02/13/2012 mem - Added 32 more metrics
 **			04/29/2012 mem - Replaced P_1 with P_1A and P_1B
 **			05/02/2012 mem - Added C_2B, C_3A, and P_2B
+**			09/17/2012 mem - Now assuring that the values are no larger than 1E+38
 **    
 *****************************************************/
 (
@@ -257,6 +258,15 @@ As
 	       ON Target.Name = FilterQ.Name
 
 
+	-- Do not allow values to be larger than 1E+38 or smaller than -1E+38
+	UPDATE @MeasurementsTable
+	SET Value = 1E+38
+	WHERE Value > 1E+38
+
+	UPDATE @MeasurementsTable
+	SET Value = -1E+38
+	WHERE Value < -1E+38
+
 	
 	-----------------------------------------------
 	-- Populate @KnownMetricsTable using data in @MeasurementsTable
@@ -414,6 +424,10 @@ Done:
 
 GO
 GRANT EXECUTE ON [dbo].[StoreSMAQCResults] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[StoreSMAQCResults] TO [svc-dms] AS [dbo]
 GO

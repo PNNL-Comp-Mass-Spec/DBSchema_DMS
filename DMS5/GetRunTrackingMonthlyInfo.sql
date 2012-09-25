@@ -16,6 +16,7 @@ CREATE FUNCTION dbo. GetRunTrackingMonthlyInfo
 **	Auth: grk   
 **		02/14/2012 grk - initial release
 **		02/15/2012 grk - added interval comment handing
+**		06/08/2012 grk - added lookup for @maxNormalInterval
 **    
 *****************************************************/
 (
@@ -39,7 +40,7 @@ RETURNS @TX TABLE (
 )
 AS
 	BEGIN
-		DECLARE @maxNormalInterval INT = 90
+		DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
 		DECLARE @message VARCHAR(512) = ''
 	
 		---------------------------------------------------

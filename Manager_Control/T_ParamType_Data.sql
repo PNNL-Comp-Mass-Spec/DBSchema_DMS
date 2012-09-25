@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 143 ******/
+/****** RowCount: 148 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -144,4 +144,9 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (15
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (158,'PVMProgLoc','','Folder containing PVM on Sequest clusters')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (159,'IDPickerProgLoc','','Folder containing IDPicker-related .Exe files')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (160,'PeptideListToXMLProgLoc','','Folder containing PeptideListToXML.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (161,'LipidToolsProgLoc','','Folder containing LipidTools.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (162,'MgrSettingGroupName','','Parameter group to use for this manager; points to a Ghost manager that has parameters defined in T_ParamValue')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (163,'TargetedWorkflowsProgLoc','','Folder containing TargetedWorkflowConsole.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (164,'IonMobilityMsMsProgLoc','','Folder containing IonMobilityMsMsConsole.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (165,'QuameterProgLoc','','Folder containing Quameter.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF

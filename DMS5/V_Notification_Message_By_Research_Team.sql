@@ -26,3 +26,7 @@ FROM         V_Notification_Datasets_By_Research_Team
 WHERE     Entered > DATEADD(HOUR, - 24, GETDATE())
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Research_Team] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Research_Team] TO [PNL\D3M580] AS [dbo]
+GO

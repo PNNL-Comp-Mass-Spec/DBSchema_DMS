@@ -23,3 +23,7 @@ FROM T_Predefined_Analysis_Scheduling_Queue
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Scheduling_Queue_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Scheduling_Queue_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

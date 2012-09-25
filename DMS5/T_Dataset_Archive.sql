@@ -20,6 +20,9 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_instrument_data_purged] [tinyint] NULL,
 	[AS_Last_Successful_Archive] [datetime] NULL,
 	[AS_StageMD5_Required] [tinyint] NOT NULL,
+	[QC_Data_Purged] [tinyint] NOT NULL,
+	[Purge_Policy] [tinyint] NOT NULL,
+	[Purge_Priority] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
@@ -164,6 +167,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************
@@ -178,7 +182,10 @@ For Update
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **						   - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
-**			08/04/2008 mem - Now updating AS_instrument_data_purged if AS_state_ID changes for 4 (Ticket #683)
+**			08/04/2008 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 (Ticket #683)
+**			06/06/2012 mem - Now updating AS_state_Last_Affected and AS_update_state_Last_Affected only if the state actually changes
+**			06/11/2012 mem - Now updating QC_Data_Purged to 1 if AS_state_ID changes to 4
+**			06/12/2012 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 or 14
 **    
 *****************************************************/
 AS
@@ -200,14 +207,25 @@ AS
 
 		UPDATE T_Dataset_Archive
 		SET AS_state_Last_Affected = @CurrentDate
-		FROM T_Dataset_Archive DA INNER JOIN
-			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		FROM T_Dataset_Archive DA
+		     INNER JOIN inserted
+		       ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		     INNER JOIN deleted
+		       ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
+		WHERE inserted.AS_state_ID <> deleted.AS_state_ID
 
 		UPDATE T_Dataset_Archive
 		SET AS_instrument_data_purged = 1
 		FROM T_Dataset_Archive DA INNER JOIN
 			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
-		WHERE inserted.AS_state_ID = 4 AND IsNull(inserted.AS_instrument_data_purged, 0) = 0
+		WHERE inserted.AS_state_ID in (4, 14) AND IsNull(inserted.AS_instrument_data_purged, 0) = 0
+		
+		UPDATE T_Dataset_Archive
+		SET QC_Data_Purged = 1
+		FROM T_Dataset_Archive DA INNER JOIN
+			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		WHERE inserted.AS_state_ID = 4 AND IsNull(inserted.QC_Data_Purged, 0) = 0
+		
 	End
 
 	If Update(AS_update_state_ID)
@@ -220,8 +238,12 @@ AS
 
 		UPDATE T_Dataset_Archive
 		SET AS_update_state_Last_Affected = @CurrentDate
-		FROM T_Dataset_Archive DA INNER JOIN
-			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		FROM T_Dataset_Archive DA
+		     INNER JOIN inserted
+		       ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+		     INNER JOIN deleted
+		       ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
+		WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
 	End
 
 	If Update(AS_state_ID) OR
@@ -234,6 +256,9 @@ AS
 			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 		WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
 	End
+
+
+
 
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
@@ -261,4 +286,10 @@ GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_StageMD5_Required]  DEFAULT ((0)) FOR [AS_StageMD5_Required]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_QC_Data_Purged]  DEFAULT ((0)) FOR [QC_Data_Purged]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Policy]  DEFAULT ((0)) FOR [Purge_Policy]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Priority]  DEFAULT ((3)) FOR [Purge_Priority]
 GO

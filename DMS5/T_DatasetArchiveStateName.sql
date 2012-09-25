@@ -5,7 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_DatasetArchiveStateName](
 	[DASN_StateID] [int] NOT NULL,
-	[DASN_StateName] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[DASN_StateName] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_DatasetArchiveStateName] PRIMARY KEY CLUSTERED 
 (
 	[DASN_StateID] ASC

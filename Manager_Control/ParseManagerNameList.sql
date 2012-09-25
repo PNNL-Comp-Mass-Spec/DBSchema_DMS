@@ -145,5 +145,5 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[ParseManagerNameList] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[ParseManagerNameList] TO [Mgr_Config_Admin] AS [dbo]
 GO

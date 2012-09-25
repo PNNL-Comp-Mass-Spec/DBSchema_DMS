@@ -23,3 +23,7 @@ FROM V_Dataset_List_Report_2 DL LEFT OUTER JOIN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_List] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_List] TO [PNL\D3M580] AS [dbo]
+GO

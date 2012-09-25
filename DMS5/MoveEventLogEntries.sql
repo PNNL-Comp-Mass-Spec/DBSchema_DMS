@@ -16,6 +16,7 @@ CREATE Procedure dbo.MoveEventLogEntries
 **	Auth:	grk
 **	Date:	07/13/2009
 **			10/04/2011 mem - Removed @DBName parameter
+**			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ As
 
 	-- Copy entries into the historic log database
 	--	
-	INSERT INTO DMSHistoricLog1.dbo.T_Event_Log
+	INSERT INTO DMSHistoricLog.dbo.T_Event_Log
 	([Index], Target_Type, Target_ID, Target_State, Prev_Target_State, Entered, Entered_By)
 	SELECT     [Index], Target_Type, Target_ID, Target_State, Prev_Target_State, Entered, Entered_By
 	FROM T_Event_Log

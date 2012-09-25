@@ -57,6 +57,7 @@ CREATE Procedure UpdateRequestedRunFactors
 **			12/08/2011 mem - Added additional blacklisted factor names: Experiment, Dataset, Name, and Status
 **			12/09/2011 mem - Now checking for invalid Requested Run IDs
 **			12/15/2011 mem - Added support for the "type" attribute in the <id> tag
+**			09/12/2012 mem - Now auto-removing columns Dataset_ID, Dataset, or Experiment if they are present as factor names
 **    
 *****************************************************/
 (
@@ -97,10 +98,10 @@ As
 	--
 	CREATE TABLE #TMP (
 		Entry_ID int Identity(1,1),
-		Identifier varchar(128) null,
+		Identifier varchar(128) null,		-- Could be RequestID or DatasetName
 		Factor varchar(128) null,
 		Value varchar(128) null,
-		DatasetID INT null,
+		DatasetID INT null,					-- DatasetID; not always present
 		RequestID INT null,
 		UpdateSkipCode tinyint			-- 0 to update, 1 means unchanged, 2 means invalid factor name
 	)
@@ -376,7 +377,7 @@ As
 	End
 	
 	-----------------------------------------------------------
-	-- Make sure factor is not in blacklist
+	-- Make sure factor name is not in blacklist
 	-- Note that Javascript code behind http://dms2.pnl.gov/requested_run_factors/param
 	--  auto-removes column "Block" if it is present
 	-----------------------------------------------------------
@@ -407,6 +408,16 @@ As
 		return 51015
 	end
 
+	-----------------------------------------------------------
+	-- Auto-remove standard DMS names from the factor table
+	-----------------------------------------------------------
+	-- 
+	DELETE FROM #Tmp
+	WHERE Factor IN ('Dataset_ID', 'Dataset', 'Experiment')
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	
 	-----------------------------------------------------------
 	-- Check for invalid Request IDs in the factors table
 	-----------------------------------------------------------
@@ -516,7 +527,7 @@ As
 		WHERE UpdateSkipCode = 0 AND
 		      #tmp.Value <> '' AND
 		      NOT EXISTS ( SELECT *
-		                 FROM T_Factor
+		                FROM T_Factor
 		                   WHERE #tmp.RequestID = T_Factor.TargetID AND
 		                         #tmp.Factor = T_Factor.Name AND
 		                         T_Factor.Type = 'Run_Request' )
@@ -567,4 +578,8 @@ GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunFactors] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [PNL\D3M580] AS [dbo]
 GO

@@ -36,3 +36,7 @@ FROM T_EUS_Proposal_State_Name
        ON T_EUS_Proposals.PROPOSAL_ID = TAL.Proposal_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allocation_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allocation_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

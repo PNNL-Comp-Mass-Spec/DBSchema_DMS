@@ -21,6 +21,8 @@ CREATE Procedure AddArchiveDataset
 **			01/22/2010 grk - Existing entry in archive table prevents duplicate, but doesn't raise error
 **			05/11/2011 mem - Now calling GetInstrumentArchivePathForNewDatasets to determine @archivePathID
 **			05/12/2011 mem - Now passing @DatasetID and @AutoSwitchActiveArchive to GetInstrumentArchivePathForNewDatasets
+**			06/01/2012 mem - Bumped up @holdOffHours to 2 weeks
+**			06/12/2012 mem - Now looking up the Purge_Policy in T_Instrument_Name
 **
 *****************************************************/
 (
@@ -28,7 +30,7 @@ CREATE Procedure AddArchiveDataset
 )
 As
 	declare @holdOffHours int
-	set @holdOffHours = 72
+	set @holdOffHours = 336			-- 2 weeks
 	
 	declare @myError int
 	declare @myRowCount int
@@ -71,10 +73,9 @@ As
 		set @message = 'Dataset ID ' + Convert(varchar(12), @DatasetID) + ' not found in T_Dataset'
 		RAISERROR (@message, 10, 1)
 	end
-	
-	
+		
    	---------------------------------------------------
-	-- get assigned archive path
+	-- Get the assigned archive path
 	---------------------------------------------------
 	--
 	declare @archivePathID int
@@ -89,6 +90,18 @@ As
 		return @myError
 	end
 	
+	---------------------------------------------------
+	-- Lookup the purge policy for this instrument
+	---------------------------------------------------
+	declare @PurgePolicy tinyint = 0
+	
+	SELECT @PurgePolicy = Default_Purge_Policy
+	FROM T_Instrument_Name
+	WHERE Instrument_ID = @instrumentID
+	
+	Set @PurgePolicy = IsNull(@PurgePolicy, 0)
+	
+	
    	---------------------------------------------------
 	-- make entry into archive table
 	---------------------------------------------------
@@ -99,7 +112,8 @@ As
 		  AS_update_state_ID,
 		  AS_storage_path_ID,
 		  AS_datetime,
-		  AS_purge_holdoff_date
+		  AS_purge_holdoff_date,
+		  Purge_Policy
 		)
 	VALUES
 		( @datasetID,
@@ -107,15 +121,15 @@ As
 		  1,
 		  @archivePathID,
 		  GETDATE(),
-		  DATEADD(Hour, @holdOffHours, GETDATE())
+		  DATEADD(Hour, @holdOffHours, GETDATE()),
+		  @PurgePolicy
 		)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
 	if @myRowCount <> 1
 	begin
-		RAISERROR ('Update was unsuccessful for archive table',
-			10, 1)
+		RAISERROR ('Update was unsuccessful for archive table', 10, 1)
 		return 51100
 	end
 

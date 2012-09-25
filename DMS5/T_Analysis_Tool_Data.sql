@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 50 ******/
+/****** RowCount: 54 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, AJT_toolTag ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)')
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest')
@@ -51,3 +51,7 @@ INSERT INTO [T_Analysis_Tool] VALUES (46,'MAC_IMPROV','Broker_Job',1,'(na)','(na
 INSERT INTO [T_Analysis_Tool] VALUES (47,'MSDeconv_Bruker','MSDeconv',1019,'\\gigasax\DMS_Parameter_Files\MSAlign\','C:\DMS_Parameter_Files\MSAlign\','??','MSD_HMMA_Peak','no ',1,'mzXML',0,'N','MSDeconv')
 INSERT INTO [T_Analysis_Tool] VALUES (48,'MSGFDB_Bruker','MSGFDB',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','MSGFDB_MzXML_Bruker.xml','MSG_Peptide_Hit','no ',1,'mzXML',1,'Y','MSGFDB')
 INSERT INTO [T_Analysis_Tool] VALUES (49,'MAC_Label_Free','Broker_Job',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)')
+INSERT INTO [T_Analysis_Tool] VALUES (50,'MAC_iTRAQ','Broker_Job',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)')
+INSERT INTO [T_Analysis_Tool] VALUES (51,'LipidMapSearch','LipidMapSearch',1021,'\\gigasax\DMS_Parameter_Files\LipidMapSearch\','C:\DMS_Parameter_Files\LipidMapSearch\','??','LMS','no ',1,'(na)',0,'N','LipidMapSearch')
+INSERT INTO [T_Analysis_Tool] VALUES (52,'MSGFDB_IMS','MSGFDB',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IMSDefSettings.xml','MSG_Peptide_Hit','no ',1,'DeconTools_ISOs',1,'Y','MSGFDB')
+INSERT INTO [T_Analysis_Tool] VALUES (53,'ProSightPC','ProSightPC',1,'(na)','(na)','ProSight_DataImport.xml','Data','no ',1,'Text',0,'N','ProSightPC')

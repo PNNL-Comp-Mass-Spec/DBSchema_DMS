@@ -9,3 +9,7 @@ SELECT        TIH.ID, TIH.Cart, TIH.Date_Of_Change AS [Date Of Change], TIH.Desc
 FROM            T_LC_Cart_Config_History AS TIH LEFT OUTER JOIN
                          T_Users AS TU ON TIH.EnteredBy = TU.U_PRN
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

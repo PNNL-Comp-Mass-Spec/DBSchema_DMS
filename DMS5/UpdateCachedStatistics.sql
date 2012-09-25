@@ -10,6 +10,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **			- Job_Usage_Count in T_Param_Files
 **			- Job_Usage_Count in T_Settings_Files
 **			- Job_Count in T_Analysis_Job_Request
+**			- Job_Usage_Count in T_Protein_Collection_Usage
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **	Date:	11/04/2008 mem - Initial version (Ticket: #698)
 **			12/21/2009 mem - Added parameter @UpdateJobRequestStatistics
 **			10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
+**			09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling UpdateProteinCollectionUsage
 **    
 *****************************************************/
 (
@@ -102,6 +104,14 @@ As
 		          SF.File_Name = StatsQ.Settings_File_Name
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		
+		------------------------------------------------
+		-- Update Usage Counts for Protein Collections
+		------------------------------------------------
+		--
+		Exec UpdateProteinCollectionUsage @message output
+		
 	End -- </a1>
 	
 	If @UpdateGeneralStatistics <> 0

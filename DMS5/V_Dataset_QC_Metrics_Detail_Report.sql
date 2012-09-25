@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE view [dbo].[V_Dataset_QC_Metrics_Detail_Report]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
@@ -14,53 +15,53 @@ SELECT InstName.IN_Group AS [Instrument Group],
        DS.Dataset_Num AS Dataset,
        DFP.Dataset_Folder_Path AS [Dataset Folder Path],
        DQC.SMAQC_Job,
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS 'QC Metric Stats',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS 'QC Metric Stats',
        /*
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_1A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_1B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_2A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_3B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4C' AS 'Chromatography Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_1A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_1B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_2A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_3B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/C_4C' AS 'Chromatography Plots',
        
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_1A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_1B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_2A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_2B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_3A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_3B' AS 'Data Sampling Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_1A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_1B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_2A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_2B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_3A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/DS_3B' AS 'Data Sampling Plots',
        
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_1A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_1B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_2, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3C' AS 'Ion Related Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_1A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_1B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_2, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/IS_3C' AS 'Ion Related Plots',
        
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_1, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_2A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_2B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_3A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_3B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5C, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5D' AS 'MS1 Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_1, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_2A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_2B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_3A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_3B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5C, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS1_5D' AS 'MS1 Plots',
 
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_1, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_2, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_3, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4C, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4D' AS 'MS2 Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_1, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_2, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_3, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4C, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/MS2_4D' AS 'MS2 Plots',
        
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_1A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_1B, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_2A, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_2C, ' +
-       'http://prismweb.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_3' AS 'Peptide ID Plots',
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_1A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_1B, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_2A, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_2C, ' +
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name + '/P_3' AS 'Peptide ID Plots',
        */
        
        DQC.C_1A, DQC.C_1B, DQC.C_2A, DQC.C_2B, DQC.C_3A, DQC.C_3B, DQC.C_4A, DQC.C_4B, DQC.C_4C, 
@@ -81,4 +82,9 @@ FROM T_Dataset_QC DQC
        ON DQC.Dataset_ID = DFP.Dataset_ID
 
 
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Detail_Report] TO [PNL\D3M580] AS [dbo]
 GO

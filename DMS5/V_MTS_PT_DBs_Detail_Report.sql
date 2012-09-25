@@ -33,3 +33,7 @@ GROUP BY PTDBs.Peptide_DB_Name, PTDBs.Peptide_DB_ID, PTDBs.Description,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MTS_PT_DBs_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_MTS_PT_DBs_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO
