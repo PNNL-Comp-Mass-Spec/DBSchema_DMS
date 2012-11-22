@@ -13,6 +13,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 **
 **	Auth:	mem
 **	Date:	09/11/2012 mem - Initial version
+**			11/20/2012 mem - Now updating Job_Usage_Count_Last12Months
 **
 *****************************************************/
 (
@@ -28,13 +29,6 @@ AS
 	Set @myError = 0
 
 	set @message = ''
-
-	Declare @DeleteCount int
-	Declare @UpdateCount int
-	Declare @InsertCount int
-	Set @DeleteCount = 0
-	Set @UpdateCount = 0
-	Set @InsertCount = 0
 
 	Declare @S varchar(max)
 
@@ -80,7 +74,27 @@ AS
 			execute PostLogEntry 'Error', @message, 'UpdateProteinCollectionUsage'
 		End
 
-		-- Update the usage counts in T_Protein_Collection_Usage
+		-- Update the usage counts in T_Protein_Collection_Usage for the last 12 months
+		--
+		UPDATE T_Protein_Collection_Usage
+		SET Job_Usage_Count_Last12Months = UsageQ.Job_Usage_Count
+		FROM T_Protein_Collection_Usage Target
+		     INNER JOIN ( SELECT ProteinCollectionName,
+		                         COUNT(DISTINCT Job) AS Job_Usage_Count
+		                  FROM ( SELECT AJ_JobID AS Job,
+		                                ProteinCollections.Item AS ProteinCollectionName
+		                         FROM T_Analysis_Job
+		                              CROSS APPLY dbo.MakeTableFromListDelim ( AJ_ProteinCollectionList, ',' ) ProteinCollections
+		                         WHERE COALESCE(AJ_created, AJ_Start, AJ_finish) >= DateAdd(month, -12, GetDate()) AND AJ_ProteinCollectionList <> 'na' 
+		                        ) SplitQ
+		                  GROUP BY ProteinCollectionName 
+		                 ) AS UsageQ
+		       ON Target.Name = UsageQ.ProteinCollectionName
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+		-- Update the usage counts in T_Protein_Collection_Usage for all years
 		--
 		UPDATE T_Protein_Collection_Usage
 		SET Job_Usage_Count = UsageQ.Job_Usage_Count,
@@ -91,7 +105,7 @@ AS
 		                         MAX(JobDate) AS Most_Recent_Date
 		                  FROM ( SELECT AJ_JobID AS Job,
 		                                ProteinCollections.Item AS ProteinCollectionName,
-		                                COALESCE(AJ_finish, AJ_start, AJ_created) AS JobDate
+		                                COALESCE(AJ_created, AJ_Start, AJ_finish) AS JobDate
 		                         FROM T_Analysis_Job
 		                              CROSS APPLY dbo.MakeTableFromListDelim ( AJ_ProteinCollectionList, ',' ) ProteinCollections
 		                         WHERE AJ_ProteinCollectionList <> 'na' 
@@ -102,6 +116,7 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
+		
 		
 	End Try
 	Begin Catch

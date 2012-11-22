@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 **	Auth:	grk
 **	Date:	08/28/2012
 **          08/31/2012 grk - fixed spelling error in message
+**          10/03/2012 grk - Maintenance usage no longer requires comment
 **    
 *****************************************************/
 (
@@ -73,7 +74,7 @@ AS
 		IF @Usage = 'CAP_DEV' AND ISNULL(@Operator, '') = ''
 			SET @Message = @Message + 'Capability Development requires an operator' + ', ' 
 
-		IF @Usage != 'ONSITE' AND ISNULL(@Comment, '') = ''
+		IF NOT @Usage IN ('ONSITE', 'MAINTENANCE') AND ISNULL(@Comment, '') = ''
 			SET @Message = @Message + 'Missing Comment' + ', ' 
 
 		IF @Usage = 'OFFSITE' AND @Proposal = '' 

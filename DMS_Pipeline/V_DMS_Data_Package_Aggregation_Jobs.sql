@@ -3,13 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_DMS_Data_Package_Aggregation_Jobs
+
+
+CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
 SELECT Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
        DatasetFolder, ResultsFolder, MAX(SharedResultsFolder) AS SharedResultsFolder,
        DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
        ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
-       ResultType, DS_created, PackageComment
+       ResultType, DS_created, PackageComment, RawDataType, Experiment
 FROM ( SELECT Src.Data_Package_ID,
               Src.Job,
               Src.Tool,
@@ -31,7 +33,9 @@ FROM ( SELECT Src.Data_Package_ID,
               Src.ProteinOptions,
               Src.ResultType,
               Src.DS_created,
-              ISNULL(Src.PackageComment, '') AS PackageComment
+              ISNULL(Src.PackageComment, '') AS PackageComment,
+              Src.RawDataType,
+              Src.Experiment
        FROM dbo.S_Data_Package_Aggregation_Jobs Src
             LEFT OUTER JOIN S_Production_Pipeline_Job_Steps_History JSH
               ON Src.Job = JSH.Job AND
@@ -41,6 +45,7 @@ FROM ( SELECT Src.Data_Package_ID,
 GROUP BY Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
          DatasetFolder, ResultsFolder, DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
          ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
-         ResultType, DS_created, PackageComment
+         ResultType, DS_created, PackageComment, RawDataType, Experiment
+
 
 GO

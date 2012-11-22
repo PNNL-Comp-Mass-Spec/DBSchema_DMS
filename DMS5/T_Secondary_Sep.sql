@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Secondary_Sep](
 	[SS_ID] [int] NOT NULL,
 	[SS_comment] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SS_active] [tinyint] NOT NULL,
+	[Sep_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Secondary_Sep] PRIMARY KEY NONCLUSTERED 
 (
 	[SS_ID] ASC
@@ -35,6 +36,11 @@ GO
 GRANT SELECT ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Secondary_Sep]  WITH CHECK ADD  CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group] FOREIGN KEY([Sep_Group])
+REFERENCES [T_Separation_Group] ([Sep_Group])
+GO
+ALTER TABLE [dbo].[T_Secondary_Sep] CHECK CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group]
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_SS_comment]  DEFAULT ('') FOR [SS_comment]
 GO

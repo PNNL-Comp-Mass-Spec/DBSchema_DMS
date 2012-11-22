@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdatePrepLCRun
+CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 /****************************************************
 **
 **  Desc: 
@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 **			04/26/2010 grk - @SamplePrepRequest can be multiple
 **			05/06/2010 grk - added storage path
 **			08/25/2011 grk - added QC field
+**			09/30/2011 grk - added datasets field
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -39,6 +40,7 @@ CREATE PROCEDURE AddUpdatePrepLCRun
 	@NumberOfRuns varchar(12),
 	@InstrumentPressure varchar(32),
 	@QualityControl varchar(2048),
+	@Datasets varchar(MAX),	
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -83,10 +85,33 @@ As
 	end
 
 	---------------------------------------------------
+	-- resolve dataset list
+	---------------------------------------------------	CREATE TABLE #DSL (
+	  Dataset VARCHAR(128) ,
+	  Dataset_ID INT NULL
+	)
+
+	INSERT INTO #DSL
+	( Dataset )
+	SELECT Item AS Dataset
+	FROM dbo.MakeTableFromList(@datasets)
+
+	UPDATE #DSL
+	SET Dataset_ID = dbo.T_Dataset.Dataset_ID
+	FROM #DSL
+	INNER JOIN dbo.T_Dataset ON #DSL.Dataset = dbo.T_Dataset.Dataset_Num
+
+	---------------------------------------------------
+	-- define transaction
+	---------------------------------------------------	declare @transName varchar(32) = 'AddUpdatePrepLCRun'
+
+	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
+		---------------------------------------------------
+		begin transaction @transName
 
 		---------------------------------------------------
 		--
@@ -131,6 +156,12 @@ As
 		--
 		set @ID = IDENT_CURRENT('T_Prep_LC_Run')
 
+		INSERT INTO dbo.T_Prep_LC_Run_Dataset
+		        ( Prep_LC_Run_ID, Dataset_ID )
+		SELECT @ID AS Prep_LC_Run_ID, Dataset_ID 
+		FROM #DSL				
+		
+		commit transaction @transName
 	end -- add mode
 
 	---------------------------------------------------
@@ -139,6 +170,9 @@ As
 	--
 	if @Mode = 'update' 
 	begin
+		---------------------------------------------------
+		begin transaction @transName
+		
 		set @myError = 0
 		--
 		UPDATE T_Prep_LC_Run 
@@ -146,7 +180,7 @@ As
 		Tab = @Tab,
 		Instrument = @Instrument,
 		Type = @Type,
-		LC_Column = @LCColumn,
+		LC_Column = @LCColumn,    
 		LC_Column_2 = @LCColumn2,	
 		Comment = @Comment,
 		Guard_Column = @GuardColumn,
@@ -164,6 +198,19 @@ As
 		if @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
 
+		-- add new datasets
+		INSERT INTO dbo.T_Prep_LC_Run_Dataset
+		        ( Prep_LC_Run_ID, Dataset_ID )
+		SELECT @ID AS Prep_LC_Run_ID, Dataset_ID 
+		FROM #DSL
+		WHERE NOT #DSL.Dataset_ID IN (SELECT Dataset_ID FROM T_Prep_LC_Run_Dataset WHERE Prep_LC_Run_ID = @ID)
+		
+		-- delete removed datasets
+		DELETE FROM T_Prep_LC_Run_Dataset
+		WHERE Prep_LC_Run_ID = @ID 
+		AND NOT T_Prep_LC_Run_Dataset.Dataset_ID IN (SELECT Dataset_ID FROM #DSL)
+
+		commit transaction @transName
 	end -- update mode
 
 	END TRY

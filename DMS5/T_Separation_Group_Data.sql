@@ -1,0 +1,23 @@
+/****** Object:  Table [T_Separation_Group] ******/
+/****** RowCount: 20 ******/
+/****** Columns: Sep_Group, Comment, Active ******/
+INSERT INTO [T_Separation_Group] VALUES ('CE','',1)
+INSERT INTO [T_Separation_Group] VALUES ('GC','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-2D-Formic','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-2D-HILIC','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Eksigent','',0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_100min','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_1hr','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_30min','',0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_3hr','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_4hr','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_5hr','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_80min','',0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-IntactProtein_200min','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_LipidSoluble','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_WaterSoluble','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Phospho','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-PRISM','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-TFA_100minute','',1)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Waters_High_pH','',1)
+INSERT INTO [T_Separation_Group] VALUES ('Other','',1)

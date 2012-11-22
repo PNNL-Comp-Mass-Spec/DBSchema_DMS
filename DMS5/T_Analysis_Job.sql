@@ -129,6 +129,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_include_DatasetID] ON [dbo].
 INCLUDE ( [AJ_datasetID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Analysis_Job_ToolID_include_ParmFile] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_include_ParmFile] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_analysisToolID] ASC
+)
+INCLUDE ( [AJ_parmFileName]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJStart] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_ToolID_JobID_DatasetID_include_AJStart] ON [dbo].[T_Analysis_Job] 
 (
@@ -329,6 +337,11 @@ ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Jo
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Organisms]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_YesNo] FOREIGN KEY([AJ_DatasetUnreviewed])
+REFERENCES [T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_YesNo]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_priority]  DEFAULT ((2)) FOR [AJ_priority]
 GO

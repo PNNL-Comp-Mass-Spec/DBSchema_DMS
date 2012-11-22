@@ -281,6 +281,11 @@ REFERENCES [T_DatasetArchiveStateName] ([DASN_StateID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
 GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_YesNo] FOREIGN KEY([AS_instrument_data_purged])
+REFERENCES [T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_YesNo]
+GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()) FOR [AS_state_Last_Affected]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]

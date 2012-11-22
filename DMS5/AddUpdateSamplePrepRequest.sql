@@ -44,6 +44,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **			08/15/2011 grk - added Separation_Type
 **			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
+**			10/19/2012 mem - Now auto-changing @SeparationType to Separation_Group if @SeparationType specifies a separation type
 **    
 *****************************************************/
 (
@@ -81,10 +82,10 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 	@UseSingleLCColumn varchar(50),
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
-	@Facility VARCHAR(32),
+	@Facility varchar(32),
 	@ID int output,
-	@SeparationType varchar(1200),
-	@mode varchar(12) = 'add', -- or 'update'
+	@SeparationType varchar(256),			-- Separation group
+	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -309,6 +310,19 @@ As
 						@msg output
 	if @myError <> 0
 		RAISERROR ('ValidateEUSUsage:%s', 11, 1, @msg)
+
+	---------------------------------------------------
+	-- Auto-change separation type to separation group, if applicable
+	---------------------------------------------------
+	--	
+	declare @sepGroup varchar(64) = ''
+	
+	SELECT @sepGroup = Sep_Group
+	FROM T_Secondary_Sep
+	WHERE SS_Name = @SeparationType	
+	
+	If IsNull(@sepGroup, '') <> ''
+		Set @SeparationType = @sepGroup
 
 	---------------------------------------------------
 	-- Is entry already in database?

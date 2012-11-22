@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateCellCulture
+
+CREATE Procedure [dbo].[AddUpdateCellCulture]
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -21,13 +22,15 @@ CREATE Procedure AddUpdateCellCulture
 **			03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
 **			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN and @piPRN contain a person's real name rather than their username
 **			08/19/2010 grk - try-catch for error handling
+**			11/15/2012 mem - Renamed parameter @ownerPRN to @contactPRN; renamed column CC_Owner_PRN to CC_Contact_PRN
+**						   - Added new fields to support peptide standards
 **    
 *****************************************************/
 (
-	@cellCultureName varchar(64), 
-	@sourceName varchar(64), 
-	@ownerPRN varchar(64), 
-	@piPRN varchar(32), 
+	@cellCultureName varchar(64),	-- Name of biomaterial or peptide sequence if tracking an MRM peptide
+	@sourceName varchar(64), 		-- Source that the material came from; can be a person (onsite or offsite) or a company
+	@contactPRN varchar(64),	    -- Contact for the Source; typically PNNL staff, but can be offsite person
+	@piPRN varchar(32), 			-- Project lead
 	@cultureType varchar(32), 
 	@reason varchar(500),
 	@comment varchar(500),
@@ -35,15 +38,22 @@ CREATE Procedure AddUpdateCellCulture
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
+	@geneName varchar(128),
+	@geneLocation varchar(128),
+	@modCount varchar(20)	,		-- Will be converted to a Smallint
+	@modifications varchar(500),
+	@mass          varchar(30),		-- Will be converted to a float
+	@purchaseDate  varchar(30),		-- Will be converted to a date
+	@peptidePurity varchar(64),
+	@purchaseQuantity varchar(128),
 	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -61,12 +71,11 @@ As
 	set @myError = 0
 	if LEN(@campaignNum) < 1
 	begin
-		RAISERROR ('campaign Number was blank', 11, 1)
-	end
-	--
-	if LEN(@ownerPRN) < 1
+		RAISERROR ('Campaign Name was blank', 11, 1)
+	end	
+	if LEN(@contactPRN) < 1
 	begin
-		RAISERROR ('Owner PRN was blank', 11, 2)
+		RAISERROR ('Contact Name was blank', 11, 3)
 	end
 	--
 	if LEN(@piPRN) < 1
@@ -87,19 +96,56 @@ As
 	if LEN(@cultureType) < 1
 	begin
 		set @myError = 51001
-		RAISERROR ('Culture Type was blank', 11, 1)
+		RAISERROR ('Culture Type was blank', 11, 6)
 	end
 	--
 	if LEN(@reason) < 1
 	begin
-		RAISERROR ('Reason was blank', 11, 6)
+		RAISERROR ('Reason was blank', 11, 7)
 	end
 	--
 	if LEN(@campaignNum) < 1
 	begin
-		RAISERROR ('Campaign Num was blank', 11, 7)
+		RAISERROR ('Campaign Num was blank', 11, 8)
 	end
 
+	Declare @modCountValue smallint
+	Declare @massValue float
+	Declare @purchaseDateValue datetime
+			
+	Set @modCount = ISNULL(@modCount, '')
+	If @modCount = ''
+		Set @modCountValue = 0
+	Else
+	Begin
+		If ISNUMERIC(@modCount) = 1
+			Set @modCountValue = CONVERT(smallint, @modCount)
+		Else
+			RAISERROR ('Error, non-numeric modification count: %s', 11, 9, @modCount)
+	End	
+	
+	Set @mass = ISNULL(@mass, '')
+	If @mass = ''
+		Set @massValue = 0
+	Else
+	Begin
+		If ISNUMERIC(@mass) = 1
+			Set @massValue = CONVERT(float, @mass)
+		Else
+			RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
+	End
+	
+	Set @purchaseDate = ISNULL(@purchaseDate, '')
+	If @purchaseDate = ''
+		Set @purchaseDateValue = null
+	Else
+	Begin
+		If IsDate(@purchaseDate) = 1
+			Set @purchaseDateValue = CONVERT(datetime, @purchaseDate)
+		Else
+			RAISERROR ('Error, invalid purchase date: %s', 11, 9, @purchaseDate)
+	End		
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -151,7 +197,7 @@ As
 	--
 	if @campaignID = 0
 	begin
-		set @msg = 'Could not resolve campaign num "' + @campaignNum + '" to ID"'
+		set @msg = 'Could not resolve campaign name "' + @campaignNum + '" to ID"'
 		RAISERROR (@msg, 11, 13)
 	end
 	
@@ -181,6 +227,9 @@ As
 	declare @contID int
 	set @contID = 0
 	--
+	If ISNULL(@container, '') = ''
+		Set @container = 'na'
+
 	SELECT @contID = ID
 	FROM         T_Material_Containers
 	WHERE     (Tag = @container)
@@ -223,18 +272,18 @@ As
 	Declare @MatchCount int
 	Declare @NewPRN varchar(64)
 
-	execute @userID = GetUserID @ownerPRN
+	execute @userID = GetUserID @contactPRN
 	if @userID = 0
 	begin
-		-- Could not find entry in database for PRN @ownerPRN
+		-- Could not find entry in database for PRN @contactPRN
 		-- Try to auto-resolve the name
 		
-		exec AutoResolveNameToPRN @ownerPRN, @MatchCount output, @NewPRN output, @userID output
+		exec AutoResolveNameToPRN @contactPRN, @MatchCount output, @NewPRN output, @userID output
 
 		If @MatchCount = 1
 		Begin
-			-- Single match found; update @ownerPRN
-			Set @ownerPRN = @NewPRN
+			-- Single match found; update @contactPRN
+			Set @contactPRN = @NewPRN
 		End
 		
 	end
@@ -273,25 +322,41 @@ As
 		INSERT INTO T_Cell_Culture (
 			CC_Name, 
 			CC_Source_Name, 
-			CC_Owner_PRN, 
+			CC_Contact_PRN, 
 			CC_PI_PRN, 
 			CC_Type, 
 			CC_Reason, 
 			CC_Comment, 
 			CC_Campaign_ID,
-			CC_Created,
-			CC_Container_ID
+			CC_Container_ID,
+			Gene_Name        ,
+			Gene_Location    ,
+			Mod_Count        ,
+			Modifications    ,
+			Mass             ,
+			Purchase_Date    ,
+			Peptide_Purity   ,
+			Purchase_Quantity,			
+			CC_Created
 		) VALUES (
 			@cellCultureName,
 			@sourceName,
-			@ownerPRN,
+			@contactPRN,
 			@piPRN,
 			@typeID,
 			@reason,
 			@comment,
 			@campaignID,
-			GETDATE(),
-			@contID
+			@contID,
+			@geneName,
+			@geneLocation,
+			@modCountValue,
+			@modifications,
+			@massValue,
+			@purchaseDateValue,
+			@peptidePurity,
+			@purchaseQuantity,			
+			GETDATE()			
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -336,14 +401,22 @@ As
 		--
 		UPDATE T_Cell_Culture
 		SET 
-			CC_Source_Name = @sourceName, 
-			CC_Owner_PRN = @ownerPRN, 
-			CC_PI_PRN = @piPRN, 
-			CC_Type = @typeID, 
-			CC_Reason = @reason, 
-			CC_Comment = @comment, 
-			CC_Campaign_ID = @campaignID,
-			CC_Container_ID = @contID
+			CC_Source_Name    = @sourceName, 
+			CC_Contact_PRN    = @contactPRN, 
+			CC_PI_PRN         = @piPRN, 
+			CC_Type           = @typeID, 
+			CC_Reason         = @reason, 
+			CC_Comment        = @comment, 
+			CC_Campaign_ID    = @campaignID,
+			CC_Container_ID   = @contID,
+			Gene_Name         = @geneName,
+			Gene_Location     = @geneLocation,
+			Mod_Count         = @modCountValue,
+			Modifications     = @modifications,
+			Mass              = @massValue,
+			Purchase_Date     = @purchaseDateValue,
+			Peptide_Purity    = @peptidePurity,
+			Purchase_Quantity = @purchaseQuantity
 		WHERE (CC_Name = @cellCultureName)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -378,6 +451,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User] AS [dbo]

@@ -17,6 +17,7 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			02/18/2008 grk - Modified to accept jobs in failed state (Ticket #723)
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
+**			09/28/2012 mem - Now allowing a job to be deleted if state 19 = "Special Proc. Waiting"
 **    
 *****************************************************/
 (
@@ -49,8 +50,8 @@ As
 		return 55322
 	end
 
-	-- verify that analysis job is still in 'new' state
-	if NOT @state IN (1,5)
+	-- verify that analysis job has state 'new', 'failed', or 'Special Proc. Waiting'
+	if NOT @state IN (1,5,19)
 	begin
 		set @message = 'Job "' + @jobNum + '" must be in "new" or "failed" state to be deleted by user'
 		return 55323

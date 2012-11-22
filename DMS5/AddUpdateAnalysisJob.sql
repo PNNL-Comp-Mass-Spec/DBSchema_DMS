@@ -21,7 +21,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			02/10/2005 grk - fixed update to include assigned processor
 **			03/28/2006 grk - added protein collection fields
 **			04/04/2006 grk - increased size of param file name
-**			04/07/2006 grk - revised valiation logic to use ValidateAnalysisJobParameters
+**			04/07/2006 grk - revised validation logic to use ValidateAnalysisJobParameters
 **			04/11/2006 grk - added state field and reset mode
 **			04/21/2006 grk - reset now allowed even if job not in "new" state
 **			06/01/2006 grk - added code to handle '(default)' organism
@@ -68,7 +68,7 @@ CREATE Procedure AddUpdateAnalysisJob
 	@organismDBName varchar(128),
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
-    @specialProcessing varchar(512) = null,
+   @specialProcessing varchar(512) = null,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@stateName varchar(32),

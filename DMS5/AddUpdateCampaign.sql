@@ -31,6 +31,7 @@ CREATE Procedure AddUpdateCampaign
 **			10/27/2011 mem - Added parameter @FractionEMSLFunded
 **			12/01/2011 mem - Updated @FractionEMSLFunded to be a required value
 **			               - Now calling AlterEventLogEntryUser for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
+**			10/23/2012 mem - Now validating that @FractionEMSLFunded is a number between 0 and 1 using a real (since conversion of 100 to Decimal(3, 2) causes an overflow error)
 **    
 *****************************************************/
 (
@@ -158,15 +159,20 @@ As
 			RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
 		End
 	
-		Set @FractionEMSLFundedValue = Convert(decimal(3, 2), @FractionEMSLFunded)
-		If @FractionEMSLFundedValue < 0 
-			Set @FractionEMSLFundedValue = 0
-		
-		If @FractionEMSLFundedValue > 1
+		If Convert(real, @FractionEMSLFunded) > 1
 		Begin
 			Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @FractionEMSLFunded + ' is greater than 1)'
 			RAISERROR (@msg, 11, 4)
 		End
+
+		If Convert(real, @FractionEMSLFunded) < 0
+		Begin
+			Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @FractionEMSLFunded + ' is less than 0)'
+			RAISERROR (@msg, 11, 4)
+		End
+		
+		Set @FractionEMSLFundedValue = Convert(decimal(3, 2), @FractionEMSLFunded)
+
 	End
 	Else
 		RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)

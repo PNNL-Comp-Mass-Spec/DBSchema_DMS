@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Requested_Run_List_Report
+
+CREATE VIEW [dbo].[V_Requested_Run_List_Report]
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
@@ -17,7 +18,7 @@ SELECT RR.ID AS Request,
        RR.RDS_comment AS Comment_____________,
        RR.RDS_note AS Note,
        DTN.DST_Name AS Type,
-       RR.RDS_Sec_Sep AS [Separation Type],
+       RR.RDS_Sec_Sep AS [Separation Group],
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well,
        RR.RDS_BatchID AS Batch,
@@ -34,6 +35,7 @@ FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
 WHERE (RR.RDS_priority = 0)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_List_Report] TO [PNL\D3M578] AS [dbo]

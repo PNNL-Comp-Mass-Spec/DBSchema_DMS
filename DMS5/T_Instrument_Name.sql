@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_capture_method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_status] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Room_Number] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[IN_Description] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_Description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_usage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_operations_role] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Percent_EMSL_Owned] [int] NOT NULL,
@@ -79,6 +79,11 @@ ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrume
 REFERENCES [T_Storage_Path] ([SP_path_ID])
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_storage_path_StoragePathID]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_YesNo] FOREIGN KEY([Auto_Define_Storage_Path])
+REFERENCES [T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_YesNo]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Group]  DEFAULT ('Other') FOR [IN_Group]
 GO

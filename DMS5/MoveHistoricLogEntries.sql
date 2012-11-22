@@ -18,6 +18,7 @@ CREATE Procedure dbo.MoveHistoricLogEntries
 **			03/10/2009 mem - Now removing non-noteworthy entries from T_Log_Entries before moving old entries to DMSHistoricLog1
 **			10/04/2011 mem - Removed @DBName parameter
 **			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
+**			10/15/2012 mem - Now excluding routine messages from BackupDMSDBs and RebuildFragmentedIndices
 **    
 *****************************************************/
 (
@@ -51,7 +52,10 @@ As
 		               'Verfication complete for all available tasks', 
 		               'Capture complete for all available tasks') OR
 	       message LIKE '%: No Data Files to import.' OR
-	       message LIKE '%: Completed task' )
+	       message LIKE '%: Completed task'           OR
+	       posted_by = 'BackupDMSDBs'             AND type = 'Normal' AND message LIKE 'DB Backup Complete (LogBU%' OR
+           posted_by = 'RebuildFragmentedIndices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
+	       )
 	--
 	if @@error <> 0
 	begin

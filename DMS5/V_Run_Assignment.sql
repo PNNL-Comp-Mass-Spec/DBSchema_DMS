@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_Run_Assignment] AS 
 SELECT RR.ID AS Request,
        '' AS [Sel.],
@@ -19,7 +18,7 @@ SELECT RR.ID AS Request,
        E.Experiment_Num AS Experiment,
        RR.RDS_instrument_name AS Instrument,
        DTN.DST_Name AS [Type],
-       RR.RDS_Sec_Sep AS [Separation Type],
+       RR.RDS_Sec_Sep AS [Separation Group],
        RR.RDS_instrument_setting AS [Inst. Settings],
        RR.RDS_special_instructions AS Instructions,
        RR.RDS_note AS Note,
@@ -42,7 +41,6 @@ FROM T_DatasetTypeName AS DTN
      INNER JOIN T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
 WHERE (RR.DatasetID IS NULL)
-
 
 
 GO

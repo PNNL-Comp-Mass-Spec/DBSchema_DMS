@@ -22,6 +22,11 @@ REFERENCES [T_DatasetTypeName] ([DST_Type_ID])
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_T_DatasetTypeName]
 GO
+ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_T_Instrument_Group_Allocation_Tag] FOREIGN KEY([Allocation_Tag])
+REFERENCES [T_Instrument_Group_Allocation_Tag] ([Allocation_Tag])
+GO
+ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_T_Instrument_Group_Allocation_Tag]
+GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Usage]  DEFAULT ('') FOR [Usage]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Comment]  DEFAULT ('') FOR [Comment]

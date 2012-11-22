@@ -25,6 +25,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			08/04/2010 grk - try-catch for error handling
 **			08/01/2012 mem - Now calling RefreshCachedOrganisms in MT_Main on ProteinSeqs
 **			09/25/2012 mem - Expanded @orgName and @orgDBName to varchar(128)
+**			11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta' 
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -34,7 +35,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 	@orgShortName varchar(128),
 	@orgDBPath varchar(255),
 	@orgStorageLocation varchar(256),
-	@orgDBName varchar(128),
+	@orgDBName varchar(128),				-- Default protein collection name (prior to 2012 was default fasta file)
 	@orgDescription varchar(256),
 	@orgDomain varchar(64),
 	@orgKingdom varchar(64),
@@ -81,13 +82,19 @@ As
 			RAISERROR ('Org. DB File Storage Path must start with \\ and end with \', 11, 8)
 		end
 	End
-		
+
 	set @orgName = IsNull(@orgName, '')
 	if Len(@orgName) < 1
 	begin
 		RAISERROR ('Organism Name cannot be blank', 11, 0)
 	end
-	
+
+	Set @orgDBName = IsNull(@orgDBName, '')
+	If @orgDBName Like '%.fasta'
+	Begin
+		RAISERROR ('Default Protein Collection cannot contain ".fasta"', 11, 0)
+	End
+		
 	set @orgActive = IsNull(@orgActive, '')
 	if Len(@orgActive) = 0 Or Not IsNumeric(@orgActive) = 1
 	begin

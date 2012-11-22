@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **
 **    Auth: grk
 **    Date: 09/01/2012 
+**    11/19/2012 grk - added work package and closed date
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -28,21 +29,24 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 	@AssignedPersonal varchar(256),
 	@Description varchar(5132),
 	@Comments varchar(MAX),
+	@WorkPackage VARCHAR(32),
 	@Status varchar(32),
 	@Priority varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 As
-	set nocount on
+	SET NOCOUNT ON
 
-	declare @myError int
+	DECLARE @myError INT
 	set @myError = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+	DECLARE @myRowCount INT
+	SET @myRowCount = 0
 
-	set @message = ''
+	SET @message = ''
+	
+	DECLARE @closed DATETIME = null
 
 	---------------------------------------------------
 	---------------------------------------------------
@@ -52,33 +56,47 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	-- future: this could get more complicated
-
+	IF @Status IN ('Completed', 'Not Implemented')
+	BEGIN 
+		SET @closed = GETDATE() 
+	END 
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 
 	if @mode = 'update'
-	begin
+	BEGIN
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		DECLARE @tmp INT = 0
+		DECLARE @curStatus VARCHAR(32) = ''
+		DECLARE @curClosed DATETIME = null
 		--
-		SELECT @tmp = ID
-		FROM  T_Operations_Tasks		WHERE (ID = @ID)
+		SELECT 
+			@tmp = ID,
+			@curStatus = Status,
+			@curClosed = Closed
+		FROM  T_Operations_Tasks
+		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 OR @tmp = 0
+		IF @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 16)
-	end
+			
+		IF @curStatus IN ('Completed', 'Not Implemented')
+		BEGIN 
+			SET @closed = @curClosed
+		END 
+		
+	END
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
-	begin
+	BEGIN
 
 	INSERT INTO T_Operations_Tasks (
 		Tab,
@@ -88,7 +106,9 @@ As
 		Description,
 		Comments,
 		Status,
-		Priority
+		Priority,
+		Work_Package,
+		Closed
 	) VALUES (
 		@Tab,
 		@Requestor,
@@ -97,46 +117,50 @@ As
 		@Description,
 		@Comments,
 		@Status,
-		@Priority 
+		@Priority,
+		@WorkPackage,
+		@closed
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
+	IF @myError <> 0
 		RAISERROR ('Insert operation failed', 11, 7)
 
 	-- return ID of newly created entry
 	--
-	set @ID = IDENT_CURRENT('T_Operations_Tasks')
+	SET @ID = IDENT_CURRENT('T_Operations_Tasks')
 
-	end -- add mode
+	END -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
+	IF @Mode = 'update' 
+	BEGIN
 		set @myError = 0
 		--
 		UPDATE T_Operations_Tasks 
 		SET 
-		Tab = @Tab,
-		Requestor = @Requestor,
-		Requested_Personal = @RequestedPersonal,
-		Assigned_Personal = @AssignedPersonal,
-		Description = @Description,
-		Comments = @Comments,
-		Status = @Status,
-		Priority = @Priority
+			Tab = @Tab,
+			Requestor = @Requestor,
+			Requested_Personal = @RequestedPersonal,
+			Assigned_Personal = @AssignedPersonal,
+			Description = @Description,
+			Comments = @Comments,
+			Status = @Status,
+			Priority = @Priority,
+			Work_Package = @WorkPackage,
+			Closed = @closed
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		IF @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
 
-	end -- update mode
+	END -- update mode
 
 	---------------------------------------------------
 	---------------------------------------------------
@@ -150,4 +174,8 @@ As
 	END CATCH
 	return @myError
 
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateOperationsTasks] TO [DMS_User] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[AddUpdateOperationsTasks] TO [DMS2_SP_User] AS [dbo]
 GO

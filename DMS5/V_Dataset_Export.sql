@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Export]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -34,7 +35,8 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Scan_Count AS [Scan Count],
        PreDigest.Name AS [PreDigest Int Std],
        PostDigest.Name AS [PostDigest Int Std],
-       DS.File_Size_Bytes / 1024.0 / 1024.0 AS [File Size MB]
+       DS.File_Size_Bytes / 1024.0 / 1024.0 AS [File Size MB],
+       ISNULL(DA.AS_instrument_data_purged, 0) AS Instrument_Data_Purged
 FROM T_Dataset DS
      INNER JOIN T_DatasetStateName DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
@@ -62,7 +64,9 @@ FROM T_Dataset DS
        ON E.EX_organism_ID = Org.Organism_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-
+     LEFT OUTER JOIN dbo.T_Dataset_Archive DA
+       ON DS.Dataset_ID = DA.AS_Dataset_ID
+WHERE Experiment_Num <> 'Tracking'
 
 
 GO

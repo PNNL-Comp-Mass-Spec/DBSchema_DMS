@@ -12,6 +12,8 @@ CREATE TABLE [dbo].[T_MTS_PT_DBs_Cached](
 	[Description] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Affected] [datetime] NOT NULL,
+	[MSMS_Jobs] [int] NULL,
+	[SIC_Jobs] [int] NULL,
  CONSTRAINT [PK_T_MTS_PT_DBs_Cached_DBID] PRIMARY KEY NONCLUSTERED 
 (
 	[Peptide_DB_ID] ASC

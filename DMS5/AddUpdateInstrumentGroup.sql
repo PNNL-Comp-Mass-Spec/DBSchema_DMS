@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 **	Date:	08/28/2010 grk - Initial version
 **			08/30/2010 mem - Added parameters @Usage and @Comment
 **			09/02/2010 mem - Added parameter @DefaultDatasetType
+**			10/18/2012 mem - Added parameter @AllocationTag
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -26,6 +27,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 	@Usage varchar(64),
 	@Comment varchar(512),
 	@Active tinyint,
+	@AllocationTag varchar(24),
 	@DefaultDatasetTypeName varchar(64),			-- This is allowed to be blank
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -86,8 +88,9 @@ As
 		                                Usage,
 		                                Comment,
 		                                Active,
+		                                Allocation_Tag,
 		                                Default_Dataset_Type )
-		VALUES(@InstrumentGroup, @Usage, @Comment, @Active, CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End )
+		VALUES(@InstrumentGroup, @Usage, @Comment, @Active, @AllocationTag, CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -108,6 +111,7 @@ As
 		SET Usage = @Usage,
 		    Comment = @Comment,
 		    Active = @Active,
+		    Allocation_Tag = @AllocationTag,
 		    Default_Dataset_Type = CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End 
 		WHERE (IN_Group = @InstrumentGroup)
 		--

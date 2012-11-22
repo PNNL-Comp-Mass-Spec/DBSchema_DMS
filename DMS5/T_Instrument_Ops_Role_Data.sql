@@ -1,6 +1,8 @@
 /****** Object:  Table [T_Instrument_Ops_Role] ******/
-/****** RowCount: 6 ******/
+/****** RowCount: 8 ******/
 /****** Columns: Role, Description ******/
+INSERT INTO [T_Instrument_Ops_Role] VALUES ('InSilico','In-silico instrument for tracking DMS_Pipeline_Data')
+INSERT INTO [T_Instrument_Ops_Role] VALUES ('Offsite','Non-PNNL instrument (Broad, MIT, etc.)')
 INSERT INTO [T_Instrument_Ops_Role] VALUES ('Production','Production, routine usage')
 INSERT INTO [T_Instrument_Ops_Role] VALUES ('QC','QC (tag no longer used)')
 INSERT INTO [T_Instrument_Ops_Role] VALUES ('Research','Research')

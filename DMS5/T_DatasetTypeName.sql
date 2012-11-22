@@ -24,5 +24,10 @@ CREATE UNIQUE CLUSTERED INDEX [IX_T_DatasetTypeName_Name] ON [dbo].[T_DatasetTyp
 GO
 GRANT SELECT ON [dbo].[T_DatasetTypeName] TO [DMS_LCMSNet_User] AS [dbo]
 GO
+ALTER TABLE [dbo].[T_DatasetTypeName]  WITH CHECK ADD  CONSTRAINT [FK_T_DatasetTypeName_T_YesNo] FOREIGN KEY([DST_Active])
+REFERENCES [T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_DatasetTypeName] CHECK CONSTRAINT [FK_T_DatasetTypeName_T_YesNo]
+GO
 ALTER TABLE [dbo].[T_DatasetTypeName] ADD  CONSTRAINT [DF_T_DatasetTypeName_DST_Active]  DEFAULT (1) FOR [DST_Active]
 GO

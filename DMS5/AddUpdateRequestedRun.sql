@@ -56,14 +56,15 @@ CREATE Procedure AddUpdateRequestedRun
 **			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **			               - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
 **			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
-**			01/09/2012 grk - added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
+**			01/09/2012 grk - Added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
+**			10/19/2012 mem - Now auto-updating secondary separation to separation group name when creating a new requested run
 **
 *****************************************************/
 (
 	@reqName varchar(128),
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
-	@instrumentName varchar(64),				-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
 	@workPackage varchar(50),
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
@@ -77,7 +78,7 @@ CREATE Procedure AddUpdateRequestedRun
 	@mode varchar(12) = 'add',					-- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
 	@request int output,
 	@message varchar(512) output,
-	@secSep varchar(64) = 'LC-ISCO-Standard',
+	@secSep varchar(64) = 'LC-Formic_100min',	-- Separation group
 	@MRMAttachment varchar(128),
 	@status VARCHAR(24) = 'Active',				-- 'Active', 'Inactive', 'Completed'
 	@SkipTransactionRollback tinyint = 0,		-- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
@@ -354,23 +355,41 @@ As
 
 	---------------------------------------------------
 	-- Resolve ID for @secSep
+	-- First look in T_Separation_Group
 	---------------------------------------------------
+	--
+	declare @sepID int = 0
+	declare @sepGroup varchar(64) = ''
+	
+	SELECT @sepGroup = Sep_Group
+	FROM T_Separation_Group
+	WHERE Sep_Group = @secSep	
+	
+	If IsNull(@sepGroup, '') <> ''
+		Set @secSep = @sepGroup
+	Else
+	Begin
+		-- Match not found; try T_Secondary_Sep
+		--
+		SELECT @sepID = SS_ID, @sepGroup = Sep_Group
+		FROM T_Secondary_Sep
+		WHERE SS_name = @secSep	
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Error trying to look up separation type ID', 11, 98)
+		--
+		if @sepID = 0
+			RAISERROR ('Separation group not recognized', 11, 99)
 
-	declare @sepID int
-	set @sepID = 0
-	--
-	SELECT @sepID = SS_ID
-	FROM T_Secondary_Sep
-	WHERE SS_name = @secSep	
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Error trying to look up separation type ID', 11, 98)
-	--
-	if @sepID = 0
-		RAISERROR ('Could not resolve separation type to ID', 11, 99)
-
+		If IsNull(@sepGroup, '') <> ''
+		Begin
+			-- Auto-update @secSep to be @sepGroup
+			Set @secSep = @sepGroup
+		End
+	End
+		
 	---------------------------------------------------
 	-- Resolve ID for MRM attachment
 	---------------------------------------------------

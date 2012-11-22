@@ -12,6 +12,7 @@ SELECT SUM(CASE
                ELSE 0
            END) AS [Usage Last 12 Months],
        SS.SS_name AS [Separation Type],
+       SS.Sep_Group as [Separation Group],
        SS.SS_comment AS [Separation Type Comment],
        SUM(CASE
                WHEN DS.Dataset_ID IS NULL THEN 0
@@ -22,7 +23,9 @@ FROM T_Secondary_Sep SS
      LEFT OUTER JOIN T_Dataset DS
        ON DS.DS_sec_sep = SS.SS_name
 WHERE (SS.SS_active <> 0)
-GROUP BY SS.SS_name, SS.SS_comment
+GROUP BY SS.SS_name, SS.SS_comment, SS.Sep_Group
+
+
 
 
 GO

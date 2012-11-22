@@ -18,26 +18,25 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_Room_Number AS Room,
        InstName.IN_capture_method AS Capture,
        InstName.IN_status AS Status,
-       InstName.IN_usage AS Usage,
+       InstName.IN_usage AS USAGE,
        InstName.IN_operations_role AS [Ops Role],
        InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
-       dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID) AS [Allowed Dataset Types],
+       dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS [Allowed Dataset Types],
        InstName.IN_Created AS Created,
-       CASE
-           WHEN ISNULL(InstName.Auto_Define_Storage_Path, 0) = 0 THEN 'No'
-           ELSE 'Yes'
-       END AS [Auto Define Storage],
-       Auto_SP_Vol_Name_Client + Auto_SP_Path_Root AS [Auto Defined Storage Path Root],
-       Auto_SP_Vol_Name_Server + Auto_SP_Path_Root AS [Auto Defined Storage Path On Server],
-       Auto_SP_Archive_Server_Name + Auto_SP_Archive_Path_Root AS [Auto Defined Archive Path Root],
-       Auto_SP_Archive_Share_Path_Root AS [Auto Defined Archive Share Path Root]
-FROM dbo.T_Instrument_Name InstName
-     INNER JOIN dbo.t_storage_path SPath
+       T_YesNo.Description AS [Auto Define Storage],
+       InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path Root],
+       InstName.Auto_SP_Vol_Name_Server + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path On Server],
+       InstName.Auto_SP_Archive_Server_Name + InstName.Auto_SP_Archive_Path_Root AS [Auto Defined Archive Path Root],
+       InstName.Auto_SP_Archive_Share_Path_Root AS [Auto Defined Archive Share Path Root]
+FROM T_Instrument_Name InstName
+     INNER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
      INNER JOIN ( SELECT SP_path_ID,
                          SP_vol_name_server + SP_path AS Source
-                  FROM t_storage_path ) S
+                  FROM T_Storage_Path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
+     INNER JOIN T_YesNo
+       ON InstName.Auto_Define_Storage_Path = T_YesNo.Flag
      LEFT OUTER JOIN T_Archive_Path AP
        ON AP.AP_instrument_name_ID = InstName.Instrument_ID AND
           AP.AP_Function = 'active'

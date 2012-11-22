@@ -3,16 +3,26 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_DEPkgr_Cell_Cultures
+
+CREATE VIEW [dbo].[V_DEPkgr_Cell_Cultures]
 AS
-SELECT     dbo.T_Cell_Culture.CC_ID AS Culture_ID, dbo.T_Cell_Culture.CC_Name AS Biomaterial_Source_Name, 
-                      dbo.T_Cell_Culture.CC_Reason AS Reason_For_Preparation, dbo.T_Cell_Culture.CC_Comment AS Comments, 
-                      dbo.T_Cell_Culture.CC_Source_Name AS Material_Source, Owner_Names.U_Name AS Owner_Name, PI_Names.U_Name AS PI_Name, 
-                      dbo.T_Cell_Culture.CC_Campaign_ID AS Campaign_ID, dbo.T_Campaign.Campaign_Num AS Campaign_Name
-FROM         dbo.T_Cell_Culture LEFT OUTER JOIN
-                      dbo.T_Campaign ON dbo.T_Cell_Culture.CC_Campaign_ID = dbo.T_Campaign.Campaign_ID LEFT OUTER JOIN
-                      dbo.T_Users PI_Names ON dbo.T_Cell_Culture.CC_PI_PRN = PI_Names.U_PRN LEFT OUTER JOIN
-                      dbo.T_Users Owner_Names ON dbo.T_Cell_Culture.CC_Owner_PRN = Owner_Names.U_PRN
+SELECT U.CC_ID AS Culture_ID,
+       U.CC_Name AS Biomaterial_Source_Name,
+       U.CC_Reason AS Reason_For_Preparation,
+       U.CC_Comment AS Comments,
+       U.CC_Source_Name AS Material_Source,
+       Source_Names.U_Name AS Owner_Name,
+       PI_Names.U_Name AS PI_Name,
+       U.CC_Campaign_ID AS Campaign_ID,
+       C.Campaign_Num AS Campaign_Name
+FROM T_Cell_Culture U
+     LEFT OUTER JOIN T_Campaign C
+       ON U.CC_Campaign_ID = C.Campaign_ID
+     LEFT OUTER JOIN T_Users PI_Names
+       ON U.CC_PI_PRN = PI_Names.U_PRN
+     LEFT OUTER JOIN T_Users Source_Names
+       ON U.CC_Contact_PRN = Source_Names.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DEPkgr_Cell_Cultures] TO [PNL\D3M578] AS [dbo]

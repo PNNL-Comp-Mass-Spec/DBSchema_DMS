@@ -32,6 +32,7 @@ CREATE Procedure AddUpdateExperiment
 **			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
 **			03/26/2012 mem - Now validating @container
 **			               - Updated to validate additional terms when @mode = 'check_add'
+**			11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
 **
 *****************************************************/
 (
@@ -328,13 +329,17 @@ As
 	-- Auto-switch from 'none' or 'na' to '(none)'
 	---------------------------------------------------
 	
-	If @cellCultureList IN ('none', 'na')
+	If @cellCultureList IN ('none', 'na', '')
 		Set @cellCultureList = '(none)'
 	
+	-- Replace commas with semicolons
+	If @cellCultureList Like '%,%'
+		Set @cellCultureList = Replace(@cellCultureList, ',', ';')
+		
 	-- create tempoary table to hold names of cell cultures as input
 	--
 	create table #CC (
-		name varchar(128) not null
+		CC_Name varchar(128) not null
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -344,8 +349,9 @@ As
 
 	-- get names of cell cultures from list argument into table
 	--
-	insert into #CC (name) 
-	select item from MakeTableFromListDelim(@cellCultureList, ';')
+	insert into #CC (CC_Name) 
+	Select item 
+	From MakeTableFromListDelim(@cellCultureList, ';')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -354,22 +360,22 @@ As
 	
 	-- verify that cell cultures exist
 	--
-	declare @cnt int
-	set @cnt = -1
-	SELECT @cnt = count(*) 
-	FROM #CC 
-	WHERE [name] not in (
-		SELECT CC_Name
-		FROM	T_Cell_Culture
-	)
+	declare @InvalidCCList varchar(255) = null
+	
+	SELECT @InvalidCCList = Coalesce(@InvalidCCList + ', ' + #CC.CC_Name, #CC.CC_Name)
+	FROM #CC
+	     LEFT OUTER JOIN T_Cell_Culture
+	       ON #CC.CC_Name = T_Cell_Culture.CC_Name
+	WHERE T_Cell_Culture.CC_Name IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 		RAISERROR ('Was not able to check for cell cultures in database', 11, 80)
 	--
-	if @cnt <> 0 
-		RAISERROR ('One or more cell cultures was not in database', 11, 81)
+	if IsNull(@InvalidCCList, '') <> ''
+		RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @InvalidCCList)
+
 
 	declare @transName varchar(32)
 

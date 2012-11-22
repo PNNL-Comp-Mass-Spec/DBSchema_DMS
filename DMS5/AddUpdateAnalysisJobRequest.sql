@@ -52,7 +52,12 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			07/16/2012 mem - Now auto-changing @protCollOptionsList to "seq_direction=forward,filetype=fasta" if the tool is MSGFDB and the options start with "seq_direction=decoy"
 **			07/24/2012 mem - Now allowing @protCollOptionsList to be "seq_direction=decoy,filetype=fasta" for MSGFDB searches where the parameter file name contains "_NoDecoy"
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
-**    
+**			11/05/2012 mem - Now auto-changing the settings file from FinniganDefSettings.xml to FinniganDefSettings_DeconMSN.xml if the request contains HMS% datasets
+**			11/05/2012 mem - Now disallowing mixing low res MS datasets with high res HMS dataset
+**			11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
+**			11/14/2012 mem - Now assuring that @toolName is properly capitalized
+**			11/20/2012 mem - Removed parameter @workPackage
+**
 *****************************************************/
 (
     @datasets varchar(max),
@@ -65,10 +70,9 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @organismName varchar(128),
     @organismDBName varchar(128) = 'na',		-- Legacy fasta file; typically 'na'
     @requestorPRN varchar(32),
-    @workPackage varchar(24),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
-    @adminReviewReqd VARCHAR(32) = 'No',			-- Legacy parameter; no longer used
+    @adminReviewReqd VARCHAR(32) = 'No',		-- Legacy parameter; no longer used
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add', -- or 'update'
@@ -224,7 +228,8 @@ As
 	End
 	
 	---------------------------------------------------
-	-- validate job parameters
+	-- Validate job parameters
+	-- Note that ValidateAnalysisJobParameters calls ValidateAnalysisJobRequestDatasets
 	---------------------------------------------------
 	--
 	declare @userID int
@@ -251,36 +256,14 @@ As
 	if @result <> 0
 		RAISERROR (@msg, 11, 8)
 
+
 	---------------------------------------------------
-	-- Make sure none of the datasets has a rating of -5 (Not Released)
+	-- Assure that @toolName is properly capitalized
 	---------------------------------------------------
 	--
-	declare @NotReleasedList varchar(4000)
-	declare @NotReleasedCount int
-	--
-	Set @NotReleasedCount = 0
-	
-	SELECT @NotReleasedCount = COUNT(*)
-	FROM #TD
-	WHERE DS_Rating = -5
-	
-	If @NotReleasedCount > 0
-	Begin
-		Set @NotReleasedList = ''
-		
-		SELECT @NotReleasedList = @NotReleasedList + Dataset_Num + ', '
-		FROM #TD
-		WHERE DS_Rating = -5
-		ORDER BY Dataset_Num
-		
-		-- Remove the trailing comma if the length is less than 400 characters, otherwise truncate
-		If Len(@NotReleasedList) < 400
-			Set @NotReleasedList = Left(@NotReleasedList, Len(@NotReleasedList)-1)
-		Else
-			Set @NotReleasedList = Left(@NotReleasedList, 397) + '...'
-			
-		RAISERROR ('Dataset(s) found with rating "Not Released": %s', 11, 110, @NotReleasedList)
-	End
+	SELECT @toolName = AJT_toolName 
+	FROM T_Analysis_Tool 
+	WHERE AJT_toolName = @toolName
 
 	---------------------------------------------------
 	-- Assure that we are not running a decoy search if using MSGFDB
@@ -294,6 +277,29 @@ As
 			Set @message = 'Note: changed protein options to forward-only since MSGFDB parameter files typically have tda=1'
 	End
 
+	---------------------------------------------------
+	-- Auto-update the settings file if one or more HMS datasets are present
+	-- but the user chose a settings file that is not appropriate for HMS datasets
+	---------------------------------------------------
+	--
+	IF EXISTS (SELECT * FROM #TD WHERE Dataset_Type LIKE 'hms%' OR Dataset_Type LIKE 'ims-hms%')
+	Begin
+		-- Possibly auto-update the settings file
+		Declare @AutoSupersedeName varchar(255) = ''
+		
+		SELECT @AutoSupersedeName = HMS_AutoSupersede
+		FROM T_Settings_Files
+		WHERE (File_Name = @settingsFileName)
+		
+		If IsNull(@AutoSupersedeName, '') <> ''
+		Begin
+			Set @settingsFileName = @AutoSupersedeName
+			
+			Declare @MsgToAppend varchar(255) = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'			
+			Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
+		End
+	End
+	
 	---------------------------------------------------
 	-- If mode is add, then force @state to 'new'
 	---------------------------------------------------
@@ -347,7 +353,7 @@ As
 			AJR_settingsFileName, AJR_organismDBName, AJR_organism_ID, 
 			AJR_proteinCollectionList, AJR_proteinOptionsList,
 			AJR_datasets, AJR_comment, AJR_specialProcessing,
-			AJR_state, AJR_requestor, AJR_workPackage
+			AJR_state, AJR_requestor
 		)
 		VALUES
 		(
@@ -358,7 +364,7 @@ As
 			@settingsFileName, @organismDBName, @organismID, 
 			@protCollNameList, @protCollOptionsList,
 			@datasets, @comment, @specialProcessing,
-			@stateID, @userID, @workPackage
+			@stateID, @userID
 		)		
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -396,8 +402,7 @@ As
 		    AJR_comment = @comment,
 		    AJR_specialProcessing = @specialProcessing,
 		    AJR_state = @stateID,
-		    AJR_requestor = @userID,
-		    AJR_workPackage = @workPackage
+		    AJR_requestor = @userID
 		WHERE (AJR_requestID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -415,6 +420,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis] AS [dbo]

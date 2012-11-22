@@ -9,10 +9,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 **	Desc: Validates analysis job parameters and returns internal
 **        values converted from external values (input arguments)
 **
-**  Note: This procedure depends upon the caller having created
-**  a temporary table for selected dataset information and
-**  having populated it dataset names before calling
-**  this procedure.
+**			Note: This procedure depends upon the caller having created
+**			temporary table #TD and populating it with the dataset names
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -41,6 +39,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to determine valid instrument classes for a given analysis tool
 **			01/12/2012 mem - Now validating that the analysis tool is active (T_Analysis_Tool.AJT_active > 0)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**			11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
 **
 *****************************************************/
 (
@@ -62,9 +61,8 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -72,124 +70,16 @@ As
 	declare @list varchar(1024)
 	declare @ParamFileTool varchar(128)
 	declare @SettingsFileTool varchar(128)
+	declare @result int
 
 	---------------------------------------------------
-	-- Update temp table from existing datasets
+	-- Validate the datasets in #TD
 	---------------------------------------------------
 	
-	UPDATE T
-	SET
-		T.Dataset_ID = T_Dataset.Dataset_ID, 
-		T.IN_class = T_Instrument_Class.IN_class, 
-		T.DS_state_ID = T_Dataset.DS_state_ID, 
-		T.AS_state_ID = isnull(T_Dataset_Archive.AS_state_ID, 0),
-		T.Dataset_Type = T_DatasetTypeName.DST_name,
-		T.DS_rating = T_Dataset.DS_Rating
-	FROM
-		#TD T INNER JOIN
-		T_Dataset ON T.Dataset_Num = T_Dataset.Dataset_Num INNER JOIN
-		T_Instrument_Name ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID INNER JOIN
-		T_Instrument_Class ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class INNER JOIN
-		T_DatasetTypeName ON T_DatasetTypeName.DST_Type_ID = T_Dataset.DS_type_ID LEFT OUTER JOIN
-		T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error populating temporary table'
-		return 51007
-	end
-
-	---------------------------------------------------
-	-- Verify that datasets in list all exist
-	---------------------------------------------------
-	--
-	set @list = ''
-	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
-	WHERE 
-		Dataset_ID IS NULL
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error checking dataset Existence'
-		return 51007
-	end
-	--
-	if @list <> ''
-	begin
-		set @message = 'The following datasets from list were not in database:"' + @list + '"'
-		return 51007
-	end	
-
-	---------------------------------------------------
-	-- Verify dataset state of datasets
-	-- if we are actually going to be making jobs
-	---------------------------------------------------
-	--
-	set @list = ''
-	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
-	WHERE 
-		(DS_state_ID <> 3)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error checking dataset state'
-		return 51007
-	end
-	--
-	if @list <> ''
-	begin
-		set @message = 'The following datasets were not in correct state:"' + @list + '"'
-		return 51007
-	end	
-
-	---------------------------------------------------
-	-- Verify rating of datasets
-	---------------------------------------------------
-	--
-	set @list = ''
-	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
-	WHERE (DS_rating IN (-1, -2))
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error checking dataset rating'
-		return 51007
-	end
-	--
-	if @list <> ''
-	begin
-		set @message = 'The following datasets have a rating of -1 (No Data) or -2 (Data Files Missing): "' + @list + '"'
-		return 51007
-	end	
+	exec @result = ValidateAnalysisJobRequestDatasets @message output
+		
+	If @result <> 0
+		return @result
 	
 	---------------------------------------------------
 	-- Resolve user ID for operator PRN
@@ -334,8 +224,6 @@ As
 	---------------------------------------------------
 	-- Validate param file for tool
 	---------------------------------------------------
-
-	declare @result int
 	--
 	set @result = 0
 	--

@@ -24,8 +24,9 @@ CREATE PROCEDURE dbo.GetMonthlyInstrumentUsageReport
 **    03/21/2012 grk - added operator ID for ONSITE interval to 'report' @outputFormat
 **    08/21/2012 grk - added code to pull comment from dataset
 **    08/28/2012 grk - added code to clear comment from ONSITE capability type
-**	  08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
-**	  09/11/2012 grk - added percent column to 'rollup' mode
+**    08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
+**    09/11/2012 grk - added percent column to 'rollup' mode
+**    09/18/2012 grk - handling "Operator" and "PropUser" prorata comment fields
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -45,7 +46,7 @@ As
 	set @myRowCount = 0
 
 	set @message = ''
-	
+
 	---------------------------------------------------
 	---------------------------------------------------
 	BEGIN TRY 
@@ -53,7 +54,7 @@ As
 		---------------------------------------------------
 		-- get maximum time available in month
 		---------------------------------------------------
-		
+
 		DECLARE @date DATETIME = CONVERT(DATE, @month + '/1/' + @year, 101)
 		DECLARE @daysInMonth int
 		SET @daysInMonth =  DAY(DATEADD (m, 1, DATEADD (d, 1 - DAY(@date), @date)) - 1) 
@@ -80,7 +81,7 @@ As
 			Users VARCHAR(1024) NULL,
 			Operator VARCHAR(128) NULL
 		)
-		
+
 		INSERT INTO #TR (
 			ID ,
 			[Type],
@@ -106,14 +107,14 @@ As
 			dbo.GetRunTrackingMonthlyInfo(@instrument, @year, @month, '') AS GRTMI
 			LEFT OUTER JOIN T_Requested_Run AS TRR ON GRTMI.ID = TRR.DatasetID 
 			INNER JOIN T_EUS_UsageType TEUT ON TRR.RDS_EUS_UsageType = TEUT.ID;
-			
+
 		---------------------------------------------------
 		-- Pull comments from datasets
 		--
 		-- The Common Table Expression (CTE) is used to create a cleaned up comment that removes 
 		--  text of the form Auto-switched dataset type from HMS-MSn to HMS-HCD-HMSn on 2012-01-01
 		---------------------------------------------------
-		
+
 		WITH DSCommentClean (Dataset_ID, Comment)
 		AS ( SELECT Dataset_ID, REPLACE(DS_Comment, TextToRemove, '') AS Comment
 			 FROM ( SELECT Dataset_ID, DS_Comment,
@@ -175,25 +176,27 @@ As
 		SET 
 			[Normal] = 0
 		WHERE #TR.ID IN (SELECT ID FROM #TI)
-		
+
 		---------------------------------------------------
 		-- make temp table to hold apportioned long interval values
 		---------------------------------------------------
-		
+
 		CREATE TABLE #TQ (
 			ID INT,
 			Start DATETIME,
 			[Interval] INT,
 			Proposal varchar(32) NULL,
 			[Usage] varchar(32) NULL,
-			Comment VARCHAR(4096) NULL 
+			Comment VARCHAR(4096) NULL,
+			Users VARCHAR(1024) NULL,
+			Operator VARCHAR(128) NULL
 		)
 
 		---------------------------------------------------
 		-- extract long interval apportionments from XML
 		-- and use to save apportioned intervals to the temp table
 		---------------------------------------------------
-		
+
 		INSERT INTO #TQ (ID , Start , [Interval] , Proposal , [Usage], Comment)
 		SELECT 
 			#TI.ID,
@@ -243,11 +246,12 @@ As
 		INNER JOIN #TR ON #TR.ID = #TI.ID
 				CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-		INSERT INTO #TQ (ID , Start, [Interval] , Proposal , [Usage], Comment)
+		INSERT INTO #TQ (ID , Start, [Interval], Operator , Proposal , [Usage], Comment)
 		SELECT 
 			#TI.ID,
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@CapDev', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
+			xmlNode.value('@Operator', 'varchar(32)') AS Operator,	
 			'' AS Proposal,
 			'CAP_DEV' AS Usage,
 			#TI.Comment
@@ -267,12 +271,13 @@ As
 		INNER JOIN #TR ON #TR.ID = #TI.ID
 				CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-		INSERT INTO #TQ (ID , Start, [Interval] , Proposal , [Usage], Comment)
+		INSERT INTO #TQ (ID , Start, [Interval] , Proposal, Users , [Usage], Comment)
 		SELECT 
 			#TI.ID,
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@User', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			xmlNode.value('@Proposal', 'varchar(32)') AS Proposal,
+			xmlNode.value('@PropUser', 'varchar(32)') AS Users,	
 			'ONSITE' AS Usage,
 			#TI.Comment
 		FROM #TI
@@ -283,16 +288,25 @@ As
 		---------------------------------------------------
 		-- Get rid of meaningless apportioned long intervals
 		---------------------------------------------------
-		
+
 		DELETE FROM #TQ WHERE [Interval] = 0
-		
+
+
+		---------------------------------------------------
+		-- debug 1		
+		---------------------------------------------------                            
+		IF @outputFormat = 'debug1'
+		BEGIN 
+			SELECT * FROM #TQ
+		END
+
 		---------------------------------------------------
 		-- Clean up unecessary comments
 		---------------------------------------------------
-		
+
 		UPDATE #TQ
 		SET Comment = ''
-		WHERE Usage = 'ONSITE'
+		WHERE Usage = 'ONSITE' OR Usage = 'CAP_DEV'
 
 		---------------------------------------------------
 		-- add apportioned long intervals to report table
@@ -306,7 +320,9 @@ As
 			[Interval] ,
 			Proposal ,
 			[Usage],
-			Comment
+			Comment,
+			Users,
+			Operator
 		)
 		SELECT    
 			ID ,
@@ -316,13 +332,23 @@ As
 			Interval ,
 			Proposal ,
 			Usage,
-			Comment
+			Comment,
+			Users,
+			Operator
 		FROM      #TQ
+
+		---------------------------------------------------
+		-- debug 2		
+		---------------------------------------------------                            
+		IF @outputFormat = 'debug2'
+		BEGIN 
+			SELECT * FROM #TR
+		END
 
 		---------------------------------------------------
 		-- zero interval values for datasets with long intervals
 		---------------------------------------------------
-		
+
 		UPDATE #TR
 		SET [Interval] = 0
 		WHERE [Type] = 'Dataset' AND [Normal] = 0
@@ -339,7 +365,7 @@ As
 		---------------------------------------------------
 		-- remove artifacts
 		---------------------------------------------------
-		
+
 		DELETE FROM #TR WHERE Duration = 0 AND [Interval] = 0
 
 		---------------------------------------------------
@@ -358,6 +384,13 @@ As
 		--SELECT * FROM #TQ ORDER BY Start
 		--SELECT * FROM #TI
 		--SELECT * FROM #TF
+		---------------------------------------------------
+		-- debug 3	
+		---------------------------------------------------                            
+		IF @outputFormat = 'debug3'
+		BEGIN 
+			SELECT * FROM #TR
+		END
 
 		---------------------------------------------------
 		-- provide output report according to mode
@@ -375,9 +408,10 @@ As
 			FROM     T_Instrument_Name AS TIN
 					LEFT OUTER JOIN T_EMSL_DMS_Instrument_Mapping AS TEDIM ON TIN.Instrument_ID = TEDIM.DMS_Instrument_ID
 			WHERE    ( TIN.IN_name = @instrument )
-			
+
 			-- get user lists for datasets
 			UPDATE #TR SET Users = '', Operator = ''
+			WHERE #TR.[Type] = 'Dataset'
 			--
 			UPDATE #TR
 			SET Operator = TEU.PERSON_ID
@@ -386,14 +420,14 @@ As
 					INNER JOIN T_Users AS TU ON TD.DS_Oper_PRN = TU.U_PRN
 					INNER JOIN T_EUS_Users AS TEU ON TU.U_HID = TEU.HID
 			WHERE #TR.[Type] = 'Dataset'
-			
+
 			-- get operator user ID for datasets
 			UPDATE  #TR
 			SET Users =  dbo.GetRequestedRunEUSUsersList(TRR.ID, 'I')
 			FROM #TR
 			INNER JOIN dbo.T_Requested_Run TRR ON #TR.ID = TRR.DatasetID
 			WHERE #TR.[Type] = 'Dataset'
-			
+
 			-- get operator user ID for ONSITE intervals
 			UPDATE  #TR
 			SET Operator =  TEU.PERSON_ID
@@ -402,7 +436,7 @@ As
 					INNER JOIN T_Users AS TU ON TRI.Entered_By = TU.U_PRN
 					INNER JOIN T_EUS_Users AS TEU ON TU.U_HID = TEU.HID			
 			WHERE #TR.[Type] = 'Interval' AND #TR.[Usage] = 'ONSITE'
-			
+
 			-- output report rows
 			SELECT 
 				@instrument AS Instrument,
@@ -438,14 +472,15 @@ As
 				ID 
 			 FROM #TR ORDER BY Start
 		END 
-		
+
 		---------------------------------------------------
 		-- rollup by type, category, and propsal
 		---------------------------------------------------
 
 		IF @outputFormat = 'rollup'
 		BEGIN 
-			SELECT  				[Type],
+			SELECT  
+				[Type],
 				[Minutes],
 				CONVERT(DECIMAL(10,1), CONVERT(FLOAT, [Minutes])/@minutesInMonth * 100.0) AS [Percentage],
 				[Usage],
@@ -462,11 +497,11 @@ As
 			) TQZ
 			ORDER BY [Type], [Usage], Proposal
 		END	
-		
+
 		---------------------------------------------------
 		-- check grand totals against available
 		---------------------------------------------------
-	 
+
 		IF @outputFormat = 'check'
 		BEGIN 
 			SELECT 
@@ -483,7 +518,7 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;

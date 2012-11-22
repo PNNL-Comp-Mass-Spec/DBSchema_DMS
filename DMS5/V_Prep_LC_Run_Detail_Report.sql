@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+-- V_Prep_LC_Run_Detail_Report
 
+--
 CREATE view [dbo].[V_Prep_LC_Run_Detail_Report] as
 SELECT TPR.ID,
        TPR.Tab,
@@ -21,8 +23,10 @@ SELECT TPR.ID,
        TPR.SamplePrepRequest AS [Sample Prep Request],
        TPR.Number_Of_Runs AS [Number Of Runs],
        dbo.GetPrepLCExperimentGroupsList(TPR.ID) AS [Experiment Groups],
-       TPR.Instrument_Pressure AS [Instrument Pressure]
+       TPR.Instrument_Pressure AS [Instrument Pressure],
+       dbo.GetHPLCRunDatasetList(TPR.ID, 'name') AS Datasets
 FROM T_Prep_LC_Run AS TPR
+
 
 
 GO

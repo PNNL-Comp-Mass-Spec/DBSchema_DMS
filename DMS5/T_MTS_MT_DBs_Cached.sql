@@ -12,7 +12,11 @@ CREATE TABLE [dbo].[T_MTS_MT_DBs_Cached](
 	[Description] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Campaign] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Peptide_DB] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Peptide_DB_Count] [smallint] NULL,
 	[Last_Affected] [datetime] NOT NULL,
+	[MSMS_Jobs] [int] NULL,
+	[MS_Jobs] [int] NULL,
  CONSTRAINT [PK_T_MTS_MT_DBs_Cached] PRIMARY KEY NONCLUSTERED 
 (
 	[MT_DB_ID] ASC

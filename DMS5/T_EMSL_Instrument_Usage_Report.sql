@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 	[Month] [int] NULL,
 	[ID] [int] NULL,
 	[Seq] [int] NOT NULL,
+	[Updated] [datetime] NOT NULL,
+	[UpdatedBy] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_EMSL_Instrument_Usage_Report] PRIMARY KEY NONCLUSTERED 
 (
 	[Seq] ASC
@@ -33,4 +35,6 @@ CREATE CLUSTERED INDEX [IX_T_EMSL_Instrument_Usage_Report] ON [dbo].[T_EMSL_Inst
 	[Year] ASC,
 	[Month] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_EMSL_Instrument_Usage_Report] ADD  CONSTRAINT [DF_T_EMSL_Instrument_Usage_Report_Updated]  DEFAULT (getdate()) FOR [Updated]
 GO

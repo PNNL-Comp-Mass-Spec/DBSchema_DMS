@@ -19,6 +19,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **	Auth:	mem
 **	Date:	10/04/2011 mem - Initial version
 **			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
+**			11/21/2012 mem - Removed call to MoveAnalysisLogEntries
 **    
 *****************************************************/
 (
@@ -59,14 +60,6 @@ As
 		Set @CurrentLocation = 'Call MoveHistoricLogEntries'
 		
 		exec @myError = MoveHistoricLogEntries @LogRetentionIntervalHours
-
-		----------------------------------------------------
-		-- Move old log entries from T_Analysis_Log to DMSHistoricLog
-		----------------------------------------------------
-		--
-		Set @CurrentLocation = 'Call MoveAnalysisLogEntries'
-		
-		exec @myError = MoveAnalysisLogEntries @LogRetentionIntervalHours
 		
 		----------------------------------------------------
 		-- Move old events from T_Event_Log to DMSHistoricLog

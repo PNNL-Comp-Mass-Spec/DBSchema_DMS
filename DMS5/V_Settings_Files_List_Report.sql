@@ -4,15 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Settings_Files_List_Report
+
+CREATE VIEW [dbo].[V_Settings_Files_List_Report]
 AS
 SELECT 
     ID AS [ID], 
     Analysis_Tool AS [Analysis Tool], 
     [File_Name] AS [File Name], 
     Description AS [Description], 
-    Active AS [Active]
+    Active AS [Active],
+    HMS_AutoSupersede
 FROM T_Settings_Files
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Settings_Files_List_Report] TO [PNL\D3M578] AS [dbo]

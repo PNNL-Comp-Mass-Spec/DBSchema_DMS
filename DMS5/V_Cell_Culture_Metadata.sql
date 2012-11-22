@@ -3,17 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Cell_Culture_Metadata
+
+CREATE VIEW [dbo].[V_Cell_Culture_Metadata]
 AS
-SELECT     dbo.T_Cell_Culture.CC_Name AS Name, dbo.T_Cell_Culture.CC_ID AS ID, dbo.T_Cell_Culture.CC_Source_Name AS Source, 
-                      dbo.T_Users.U_Name + ' (' + dbo.T_Cell_Culture.CC_Owner_PRN + ')' AS [Source Contact], 
-                      dbo.V_Users.U_Name + ' (' + dbo.T_Cell_Culture.CC_PI_PRN + ')' AS PI, dbo.T_Cell_Culture_Type_Name.Name AS Type, 
-                      dbo.T_Cell_Culture.CC_Reason AS Reason, dbo.T_Cell_Culture.CC_Comment AS Comment, dbo.T_Campaign.Campaign_Num AS Campaign
-FROM         dbo.T_Cell_Culture INNER JOIN
-                      dbo.T_Cell_Culture_Type_Name ON dbo.T_Cell_Culture.CC_Type = dbo.T_Cell_Culture_Type_Name.ID INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Cell_Culture.CC_Campaign_ID = dbo.T_Campaign.Campaign_ID LEFT OUTER JOIN
-                      dbo.T_Users ON dbo.T_Cell_Culture.CC_Owner_PRN = dbo.T_Users.U_PRN LEFT OUTER JOIN
-                      dbo.V_Users ON dbo.T_Cell_Culture.CC_PI_PRN = dbo.V_Users.U_PRN
+SELECT U.CC_Name AS Name,
+       U.CC_ID AS ID,
+       U.CC_Source_Name AS Source,
+       Case When U_Contact.U_Name Is Null 
+            Then U.CC_Contact_PRN 
+            Else U_Contact.U_Name + ' (' + U.CC_Contact_PRN + ')' 
+       END AS [Source Contact],
+       U_PI.U_Name + ' (' + U.CC_PI_PRN + ')' AS PI,
+       CTN.Name AS [Type],
+       U.CC_Reason AS Reason,
+       U.CC_Comment AS [Comment],
+       C.Campaign_Num AS Campaign
+FROM T_Cell_Culture U
+     INNER JOIN T_Cell_Culture_Type_Name CTN
+       ON U.CC_Type = CTN.ID
+     INNER JOIN T_Campaign C
+       ON U.CC_Campaign_ID = C.Campaign_ID
+     LEFT OUTER JOIN T_Users U_Contact
+       ON U.CC_Contact_PRN = U_Contact.U_PRN
+     LEFT OUTER JOIN T_Users U_PI
+       ON U.CC_PI_PRN = U_PI.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Metadata] TO [PNL\D3M578] AS [dbo]

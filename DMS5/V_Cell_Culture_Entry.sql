@@ -3,15 +3,36 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Cell_Culture_Entry
+
+
+CREATE VIEW [dbo].[V_Cell_Culture_Entry]
 AS
-SELECT     dbo.T_Cell_Culture.CC_Name AS Name, dbo.T_Cell_Culture.CC_Source_Name, dbo.T_Cell_Culture.CC_Owner_PRN, dbo.T_Cell_Culture.CC_PI_PRN, 
-                      dbo.T_Cell_Culture_Type_Name.Name AS CultureTypeName, dbo.T_Cell_Culture.CC_Reason, dbo.T_Cell_Culture.CC_Comment, 
-                      dbo.T_Campaign.Campaign_Num, dbo.T_Material_Containers.Tag AS container
-FROM         dbo.T_Cell_Culture INNER JOIN
-                      dbo.T_Cell_Culture_Type_Name ON dbo.T_Cell_Culture.CC_Type = dbo.T_Cell_Culture_Type_Name.ID INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Cell_Culture.CC_Campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
-                      dbo.T_Material_Containers ON dbo.T_Cell_Culture.CC_Container_ID = dbo.T_Material_Containers.ID
+SELECT U.CC_Name AS Name_or_Peptide,
+       U.CC_Source_Name,
+       U.CC_Contact_PRN,
+       U.CC_PI_PRN,
+       CTN.Name AS CultureTypeName,
+       U.CC_Reason,
+       U.CC_Comment,
+       C.Campaign_Num,
+       MC.Tag AS Container,
+       U.Gene_Name,
+       U.Gene_Location,
+       U.Mod_Count,
+       U.Modifications,
+       U.Mass,
+       CONVERT(varchar(32), U.Purchase_Date, 101) AS Purchase_Date,
+       U.Peptide_Purity,
+       U.Purchase_Quantity
+FROM T_Cell_Culture U
+     INNER JOIN T_Cell_Culture_Type_Name CTN
+       ON U.CC_Type = CTN.ID
+     INNER JOIN T_Campaign C
+       ON U.CC_Campaign_ID = C.Campaign_ID
+     INNER JOIN T_Material_Containers MC
+       ON U.CC_Container_ID = MC.ID
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Entry] TO [PNL\D3M578] AS [dbo]

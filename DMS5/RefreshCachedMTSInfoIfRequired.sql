@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.RefreshCachedMTSInfoIfRequired
 **	Auth:	mem
 **	Date:	02/02/2010 mem - Initial Version
 **			04/21/2010 mem - Now calling RefreshCachedMTSJobMappingPeptideDB' and RefreshCachedMTSJobMappingMTDBs
+**			11/21/2012 mem - Now updating job stats in T_MTS_PT_DBs_Cached and T_MTS_MT_DBs_Cached
 **    
 *****************************************************/
 (
@@ -198,7 +199,72 @@ As
 				
 			Set @Iteration = @Iteration + 1
 		End -- </a>
-				
+		
+		
+		If @infoOnly = 0
+		Begin
+			-- Update the Job stats in T_MTS_PT_DBs_Cached
+			--		
+			UPDATE T_MTS_PT_DBs_Cached
+			SET MSMS_Jobs = StatsQ.MSMS_Jobs,
+			    SIC_Jobs = StatsQ.SIC_Jobs
+			FROM T_MTS_PT_DBs_Cached Target
+			     INNER JOIN ( SELECT PTDBs.Peptide_DB_Name,
+			                         PTDBs.Server_Name,
+			                         SUM(CASE WHEN ISNULL(DBJobs.ResultType, '') LIKE '%Peptide_Hit' THEN 1
+			                                  ELSE 0
+			                             END) AS MSMS_Jobs,
+			                         SUM(CASE
+			                                 WHEN ISNULL(DBJobs.ResultType, '') = 'SIC' THEN 1
+			                                 ELSE 0
+			                             END) AS SIC_Jobs
+			                  FROM T_MTS_PT_DBs_Cached PTDBs
+			                       LEFT OUTER JOIN T_MTS_PT_DB_Jobs_Cached DBJobs
+			                         ON PTDBs.Peptide_DB_Name = DBJobs.Peptide_DB_Name 
+			                            AND
+			                            PTDBs.Server_Name = DBJobs.Server_Name
+			                  GROUP BY PTDBs.Peptide_DB_Name, PTDBs.Server_Name 
+			                ) StatsQ
+			       ON Target.Peptide_DB_Name = StatsQ.Peptide_DB_Name AND
+			          Target.Server_Name = StatsQ.Server_Name
+			WHERE IsNull(Target.MSMS_Jobs, -1) <> StatsQ.MSMS_Jobs OR
+			      IsNull(Target.SIC_Jobs, -1)  <> StatsQ.SIC_Jobs
+			--
+			SELECT @myRowCount = @@RowCount, @myError = @@Error
+			
+			
+			-- Update the Job stats in T_MTS_MT_DBs_Cached
+			--		
+			UPDATE T_MTS_MT_DBs_Cached
+			SET MSMS_Jobs = StatsQ.MSMS_Jobs,
+			    MS_Jobs = StatsQ.MS_Jobs
+			FROM T_MTS_MT_DBs_Cached Target
+			     INNER JOIN ( SELECT MTDBs.MT_DB_Name,
+			                         MTDBs.Server_Name,
+			                         SUM(CASE
+			                                 WHEN ISNULL(DBJobs.ResultType, '') LIKE '%Peptide_Hit' THEN 1
+			                                 ELSE 0
+			                             END) AS MSMS_Jobs,
+			                         SUM(CASE
+			                                 WHEN ISNULL(DBJobs.ResultType, '') = 'HMMA_Peak' THEN 1
+			                                 ELSE 0
+			                             END) AS MS_Jobs
+			                  FROM T_MTS_MT_DBs_Cached MTDBs
+			                       LEFT OUTER JOIN T_MTS_MT_DB_Jobs_Cached DBJobs
+			                         ON MTDBs.MT_DB_Name = DBJobs.MT_DB_Name 
+			                            AND
+			                            MTDBs.Server_Name = DBJobs.Server_Name
+			                  GROUP BY MTDBs.MT_DB_Name, MTDBs.Server_Name 
+			                ) StatsQ
+			       ON Target.MT_DB_Name = StatsQ.MT_DB_Name AND
+			          Target.Server_Name = StatsQ.Server_Name
+			WHERE IsNull(Target.MSMS_Jobs, -1) <> StatsQ.MSMS_Jobs OR
+			      IsNull(Target.MS_Jobs, -1)   <> StatsQ.MS_Jobs
+			--
+			SELECT @myRowCount = @@RowCount, @myError = @@Error
+			
+		End
+
 	End Try
 	Begin Catch
 		-- Error caught; log the error then abort processing

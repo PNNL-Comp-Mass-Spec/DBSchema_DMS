@@ -6,8 +6,8 @@ GO
 CREATE TABLE [dbo].[T_Cell_Culture](
 	[CC_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[CC_Source_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[CC_Owner_PRN] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[CC_PI_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CC_Contact_PRN] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[CC_PI_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CC_Type] [int] NULL,
 	[CC_Reason] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CC_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -16,6 +16,14 @@ CREATE TABLE [dbo].[T_Cell_Culture](
 	[CC_Container_ID] [int] NOT NULL,
 	[CC_Material_Active] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[CC_Created] [datetime] NULL,
+	[Gene_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Gene_Location] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Mod_Count] [smallint] NULL,
+	[Modifications] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Mass] [float] NULL,
+	[Purchase_Date] [datetime] NULL,
+	[Peptide_Purity] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Purchase_Quantity] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
@@ -190,6 +198,11 @@ ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Cultur
 REFERENCES [T_Material_Containers] ([ID])
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Users] FOREIGN KEY([CC_PI_PRN])
+REFERENCES [T_Users] ([U_PRN])
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Users]
 GO
 ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([CC_Name],(1))=(0)))
 GO

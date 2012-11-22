@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.RebuildFragmentedIndices
 **
 **	Auth:	mem
 **	Date:	11/12/2007
+**			10/15/2012 mem - Added spaces prior to printing debug messages
 **    
 *****************************************************/
 (
@@ -79,7 +80,8 @@ As
 	If @myRowCount = 0
 	Begin
 		Set @Message = 'All database indices have fragmentation levels below ' + convert(varchar(12), @MaxFragmentation) + '%'
-		Print @message
+		If @infoOnly <> 0
+			Print '  ' + @message
 		Goto Done
 	End
 
@@ -137,7 +139,7 @@ As
 	                   ON SO.Object_id = SC.object_id
 	                 INNER JOIN sys.types ST
 	                   ON SC.system_type_id = ST.system_type_id 
-	                      AND
+	               AND
 	            ST.name IN ('text', 'ntext', 'image', 'varchar(max)', 'nvarchar(max)', 'varbinary(max)', 'xml')
 	            WHERE SO.Object_ID = @objectID
 			End
@@ -176,7 +178,7 @@ As
 			Set @message = @message + 'Executing: ' + @command + ' Has Blob = ' + convert(nvarchar(2),@HasBlobColumn) 
 			
 			if @InfoOnly <> 0
-				PRINT @message
+				Print '  ' + @message
 			Else
 			Begin
 				EXEC (@command) 

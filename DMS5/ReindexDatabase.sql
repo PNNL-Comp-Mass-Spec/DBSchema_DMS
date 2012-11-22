@@ -3,9 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE PROCEDURE [dbo].[ReindexDatabase]
+CREATE PROCEDURE ReindexDatabase
 /****************************************************
 **
 **	Desc: 
@@ -24,6 +22,7 @@ CREATE PROCEDURE [dbo].[ReindexDatabase]
 **	Auth:	mem
 **	Date:	05/21/2008
 **			08/05/2010 mem - Added 6 new tables to reindex
+**			11/21/2012 mem - Removed T_Analysis_Log
 **    
 *****************************************************/
 (
@@ -84,9 +83,6 @@ As
 	Set @TableCount = @TableCount + 1
 	
 	DBCC DBREINDEX (T_Health_Entries, '', 90)
-	Set @TableCount = @TableCount + 1
-	
-	DBCC DBREINDEX (T_Analysis_Log, '', 90)
 	Set @TableCount = @TableCount + 1
 	
 	DBCC DBREINDEX (T_Log_Entries, '', 90)
@@ -191,8 +187,6 @@ As
 
 Done:
 	Return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [Limited_Table_Write] AS [dbo]

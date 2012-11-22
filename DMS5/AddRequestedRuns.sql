@@ -40,7 +40,7 @@ CREATE PROCEDURE AddRequestedRuns
 	@experimentList varchar(3500) = '',
 	@requestNamePrefix varchar(32) = '',	-- Actually used as the request name Suffix
 	@operPRN varchar(64),
-	@instrumentName varchar(64),			-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+	@instrumentName varchar(64),			-- Instrument group; could also contain "(lookup)"
 	@workPackage varchar(50),
 	@msType varchar(20),
 		-- optional arguments
@@ -52,7 +52,7 @@ CREATE PROCEDURE AddRequestedRuns
 	@comment varchar(1024) = "na",
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
-	@secSep varchar(64) = 'LC-ISCO-Standard',
+	@secSep varchar(64) = 'LC-Formic_100min',		-- Separation group
 	@MRMAttachment varchar(128),
 	@callingUser varchar(128) = ''
 )

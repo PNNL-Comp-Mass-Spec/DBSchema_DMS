@@ -13,6 +13,7 @@ CREATE PROCEDURE RefreshCachedMTDBs
 **
 **	Auth:	mem
 **	Date:	02/05/2010 mem - Initial Version
+**			10/15/2012 mem - Now updating Peptide_DB and Peptide_DB_Count
 **
 *****************************************************/
 (
@@ -68,19 +69,20 @@ AS
 
 
 
-		
-		-- Use a MERGE Statement (introduced in Sql Server 2008) to synchronize T_MTS_MT_DBs_Cached with S_MTS_MT_DBs
-
+		Set @CurrentLocation = 'Update T_MTS_MT_DBs_Cached by merging data from S_MTS_MT_DB'		
+		--
 		MERGE T_MTS_MT_DBs_Cached AS target
 		USING 
 			(SELECT Server_Name, MT_DB_ID, MT_DB_Name,
 					State_ID, State, [Description],
 					Organism, Campaign,
+					Peptide_DB, Peptide_DB_Count,
 					Last_Affected
 			 FROM   S_MTS_MT_DBs AS MTSDBInfo
 			) AS Source (	Server_Name, MT_DB_ID, MT_DB_Name,
 							State_ID, State, [Description],
-							Organism, Campaign,
+							Organism, Campaign, 
+							Peptide_DB, Peptide_DB_Count,
 							Last_Affected)
 		ON (target.MT_DB_ID = source.MT_DB_ID)
 		WHEN Matched AND 
@@ -91,6 +93,8 @@ AS
 						IsNull(target.[Description],'') <> IsNull(source.[Description],'') OR
 						IsNull(target.Organism,'') <> IsNull(source.Organism,'') OR
 						IsNull(target.Campaign,'') <> IsNull(source.Campaign,'') OR
+						IsNull(target.Peptide_DB,'') <> IsNull(source.Peptide_DB,'') OR
+						IsNull(target.Peptide_DB_Count, 0) <> IsNull(source.Peptide_DB_Count, 0) OR
 						IsNull(target.Last_Affected ,'')<> IsNull(source.Last_Affected,'')
 					)
 			THEN UPDATE 
@@ -101,16 +105,20 @@ AS
 					[Description] = source.[Description],
 					Organism = source.Organism, 
 					Campaign = source.Campaign,
+					Peptide_DB = source.Peptide_DB,
+					Peptide_DB_Count = source.Peptide_DB_Count,
 					Last_Affected = source.Last_Affected
 		WHEN Not Matched THEN
 			INSERT (Server_Name, MT_DB_ID, MT_DB_Name,
 					State_ID, State, [Description],
 					Organism, Campaign,
+					Peptide_DB, Peptide_DB_Count,
 					Last_Affected
 					)
 			VALUES (source.Server_Name, source.MT_DB_ID, source.MT_DB_Name,
 					source.State_ID, source.State, source.[Description],
-					source.Organism, source.Campaign,
+					source.Organism, source.Campaign, 
+					source.Peptide_DB, source.Peptide_DB_Count,
 					source.Last_Affected)
 		WHEN NOT MATCHED BY SOURCE THEN
 			DELETE 
@@ -156,7 +164,7 @@ AS
 	End Try
 	Begin Catch
 		-- Error caught; log the error then abort processing
-		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTSAnalysisJobInfo')
+		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTDBs')
 		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
 								@ErrorNum = @myError output, @message = @message output
 		Goto Done		

@@ -12,11 +12,12 @@ CREATE TABLE [dbo].[T_Settings_Files](
 	[Last_Updated] [datetime] NULL,
 	[Contents] [xml] NULL,
 	[Job_Usage_Count] [int] NULL,
+	[HMS_AutoSupersede] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 
@@ -84,13 +85,50 @@ GO
 
 CREATE Trigger [dbo].[trig_u_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Update
+/****************************************************
+**
+**	Desc: 
+**		Stores a copy of the XML file in T_Settings_Files_XML_History
+**
+**	Auth:	mem
+**	Date:	10/07/2008 mem
+**			11/05/2012 mem - Now validating HMS_AutoSupersede
+**    
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
-	if update(Analysis_Tool) or 
-	   update(File_Name) or 
-	   update(Contents)
+	If Update(HMS_AutoSupersede)
+	Begin
+		-- Make sure a valid name was entered into the HMS_AutoSupersede field
+		Declare @UpdatedSettingsFileName varchar(255) = ''
+		Declare @NewAutoSupersedeName varchar(255) = ''
+		
+		SELECT TOP 1 @UpdatedSettingsFileName = I.File_Name,
+		             @NewAutoSupersedeName = I.HMS_AutoSupersede
+		FROM inserted I
+		     LEFT OUTER JOIN T_Settings_Files SF
+		       ON I.HMS_AutoSupersede = SF.File_Name AND
+		          I.Analysis_Tool = SF.Analysis_Tool
+		WHERE I.HMS_AutoSupersede IS NOT NULL AND
+		      SF.File_Name IS NULL
+		
+		If ISNULL(@UpdatedSettingsFileName, '') <> ''
+		Begin
+			Declare @message varchar(512)
+			Set @message = 'HMS_AutoSupersede value of ' + ISNULL(@NewAutoSupersedeName, '??') + ' is not valid for ' + ISNULL(@UpdatedSettingsFileName, '???') + ' in T_Settings_Files (see trigger trig_u_T_Settings_Files)'
+			
+			RAISERROR(@message,16,1)
+	        ROLLBACK TRANSACTION
+		    RETURN
+		End
+	End
+
+	If Update(Analysis_Tool) Or 
+	   Update(File_Name) Or 
+	   Update(Contents)
+	Begin
 		INSERT INTO T_Settings_Files_XML_History(
 				Event_Action, ID, 
                 Analysis_Tool, File_Name, 
@@ -101,6 +139,8 @@ AS
 			   Description, Contents,
 			   GetDate(), SYSTEM_USER
 		FROM inserted
+	End
+		
 
 GO
 GRANT DELETE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]

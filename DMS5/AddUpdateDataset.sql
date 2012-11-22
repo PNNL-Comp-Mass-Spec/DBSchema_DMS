@@ -57,6 +57,8 @@ CREATE Procedure AddUpdateDataset
 **			               - Now raising an error if other key parameters are null/empty
 **			09/12/2012 mem - Now auto-changing HMS-HMSn to IMS-HMS-HMSn for IMS datasets
 **						   - Now requiring that the dataset name be 90 characters or less (longer names can lead to "path-too-long" errors; Windows has a 254 character path limit)
+**			11/21/2012 mem - Now requiring that the dataset name be at least 6 characters in length
+
 **    
 *****************************************************/
 (
@@ -232,7 +234,13 @@ As
 	If Len(@datasetNum) > 90
 	begin
 		set @msg = 'Dataset name cannot be over 90 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
-		RAISERROR (@msg, 11, 1)
+		RAISERROR (@msg, 11, 3)
+	end
+	
+	If Len(@datasetNum) < 6
+	begin
+		set @msg = 'Dataset name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
+		RAISERROR (@msg, 11, 3)
 	end
 	
 	---------------------------------------------------

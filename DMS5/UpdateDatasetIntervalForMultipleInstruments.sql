@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **          04/09/2012 grk - modified algorithm
 **			08/02/2012 mem - Updated @DaysToProcess to default to 60 days instead of 30 days
 **          09/18/2012 grk - only do EMSL instrumet updates for EMLS instruments 
+**          10/06/2012 grk - removed update of EMSL usage report for previous month
 **    
 *****************************************************/
 (
@@ -117,19 +118,7 @@ As
 				EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
 				
 				If @UpdateEMSLInstrumentUsage <> 0 AND @emslInstrument = 'Y'
-				BEGIN --<c>
-					---------------------------------------------------
-					-- if we just crossed the monthly boundary,
-					-- update previous month
-					--------------------------------------------------- 
-					IF @day <= 4
-					BEGIN --<d>
-						EXEC UpdateEMSLInstrumentUsageReport @instrument, @prevDate, @message output
-					END --<d>
-					
-					---------------------------------------------------
-					-- update curent month
-					--------------------------------------------------- 
+				BEGIN --<c>					
 					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output
 				END --<c>
 					

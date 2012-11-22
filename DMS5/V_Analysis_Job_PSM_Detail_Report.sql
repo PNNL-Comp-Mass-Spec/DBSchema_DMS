@@ -61,7 +61,7 @@ SELECT AJ.AJ_jobID AS Job,
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
        END AS [Export Mode],
-       CASE WHEN AJ.AJ_DatasetUnreviewed = 0 Then 'No' Else 'Yes' End AS [Dataset Unreviewed]
+       T_YesNo.Description AS [Dataset Unreviewed]
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -79,6 +79,8 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN dbo.T_Organisms AS Org
        ON Org.Organism_ID = AJ.AJ_organismID
+     INNER JOIN dbo.T_YesNo 
+       ON AJ.AJ_DatasetUnreviewed = T_YesNo.Flag
      LEFT OUTER JOIN ( SELECT Job,
                               COUNT(*) AS MT_DB_Count
                        FROM dbo.T_MTS_MT_DB_Jobs_Cached

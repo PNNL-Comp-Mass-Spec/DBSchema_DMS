@@ -43,7 +43,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[EUS_User_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Facility] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Separation_Type] [varchar](1200) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Separation_Type] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

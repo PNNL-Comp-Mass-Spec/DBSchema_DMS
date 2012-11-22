@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Seq_Local_Symbols_List] ******/
-/****** RowCount: 13 ******/
+/****** RowCount: 18 ******/
 SET IDENTITY_INSERT [T_Seq_Local_Symbols_List] ON
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (0,'-','No modification symbol')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (1,'*','First dynamic mod in Sequest')
@@ -14,4 +14,9 @@ INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Sym
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (10,'^','Fourth dynamic mod in Sequest v.27 (rev. 12)')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (11,'~','Fifth dynamic mod in Sequest v.27 (rev. 12)')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (12,'$','Sixth dynamic mod in Sequest v.27 (rev. 12)')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (13,'†','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (14,'‡','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (15,'¤','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (16,'º','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (17,'`','Additional dynamic mod supported by PHRP')
 SET IDENTITY_INSERT [T_Seq_Local_Symbols_List] OFF

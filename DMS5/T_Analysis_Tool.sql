@@ -18,6 +18,7 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
 	[AJT_orgDbReqd] [int] NULL,
 	[AJT_extractionRequired] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_toolTag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AJT_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC

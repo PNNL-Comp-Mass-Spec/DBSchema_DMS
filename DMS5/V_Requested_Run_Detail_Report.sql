@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
@@ -18,7 +19,7 @@ SELECT RR.ID AS Request,
        InstName.IN_Name AS [Instrument Used],
        RR.RDS_instrument_name AS [Instrument Group],
        DTN.DST_Name AS [Type],
-       RR.RDS_Sec_Sep AS [Separation Type],
+       RR.RDS_Sec_Sep AS [Separation Group],
        U.U_Name AS Requester,
        RR.RDS_Oper_PRN AS PRN,
        RR.RDS_created AS Created,
@@ -64,6 +65,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run AS FC
        ON FC.RR_ID = RR.ID
+
 
 
 GO

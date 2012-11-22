@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 -- 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
 AS
@@ -25,10 +26,11 @@ SELECT  SPR.ID ,
         SPR.Organism ,
         SPR.Biohazard_Level AS BiohazardLevel ,
         SPR.Campaign ,
-       SPR.[Comment],
+        SPR.[Comment],
         SPR.Work_Package_Number AS WP ,
         SPR.Instrument_Name AS Instrument ,
         SPR.Instrument_Analysis_Specifications AS [Inst. Analysis] ,
+        SPR.Separation_Type AS [Separation Group],
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
 			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
@@ -48,6 +50,7 @@ FROM    dbo.T_Sample_Prep_Request AS SPR
                           GROUP BY  Entity_ID
                         ) AS TA ON SPR.ID = TA.[Entity ID]
 WHERE   ( SPR.State > 0 )
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [PNL\D3M578] AS [dbo]

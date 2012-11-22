@@ -17,7 +17,6 @@ SELECT AR.AJR_requestID,
        AR.AJR_specialProcessing,
        ARS.StateName AS State,
        U.U_PRN AS requestor,
-       AR.AJR_workPackage AS workPackage,
        AR.AJR_proteinCollectionList AS protCollNameList,
        AR.AJR_proteinOptionsList AS protCollOptionsList,
        'No' AS adminReviewReqd
