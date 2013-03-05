@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Instrument_Detail_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
@@ -18,7 +19,7 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_Room_Number AS Room,
        InstName.IN_capture_method AS Capture,
        InstName.IN_status AS Status,
-       InstName.IN_usage AS USAGE,
+       InstName.IN_usage AS [Usage],
        InstName.IN_operations_role AS [Ops Role],
        InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
        dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS [Allowed Dataset Types],
@@ -40,6 +41,7 @@ FROM T_Instrument_Name InstName
      LEFT OUTER JOIN T_Archive_Path AP
        ON AP.AP_instrument_name_ID = InstName.Instrument_ID AND
           AP.AP_Function = 'active'
+
 
 
 GO

@@ -12,35 +12,24 @@ CREATE PROCEDURE GetProteinReferenceID
 **
 **	Parameters: 
 **
-**		Auth: kja
-**		Date: 10/08/2004
-**
-**		Changed for revised database architecture
-**		kja 2005-11-28
+**	Auth:	kja
+**	Date:	10/08/2004
+**			11/28/2005 kja - Changed for revised database architecture
+**			12/11/2012 mem - Removed commented-out code
 **    
 *****************************************************/
 (
 	@name varchar(128),
---	@description varchar(900),
---	@organism_ID int,
 	@nameDescHash varchar(40)
 )
 As
 	declare @reference_ID int
 	set @reference_ID = 0
 
-	SELECT @reference_ID = Reference_ID FROM T_Protein_Names
-	 WHERE (Reference_Fingerprint = @nameDescHash)
-	 
---	SELECT @reference_ID = Reference_ID FROM T_Protein_Names
---	 WHERE (Reference_Fingerprint = @nameDescHash AND Protein_ID = @protein_ID)
-	 
---	 if @@rowcount > 1
---	 begin
---		SELECT @reference_ID = Reference_ID FROM T_Protein_Names
---	     WHERE ([Name] = @name AND Description = @description AND Protein_ID = @protein_ID)
---	 end
-	
+	SELECT @reference_ID = Reference_ID
+	FROM T_Protein_Names
+	WHERE (Reference_Fingerprint = @nameDescHash)
+
 	return @reference_ID
 
 GO

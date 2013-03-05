@@ -85,6 +85,7 @@ CREATE PROCEDURE UpdateJobState
 **			12/31/2011 mem - Fixed PostedBy name when calling PostLogEntry
 **			01/12/2012 mem - Added parameter @infoOnly
 **			09/25/2012 mem - Expanded @orgDBName and Organism_DB_Name to varchar(128)
+**			02/21/2013 mem - Now updating the state of failed jobs in DMS back to state 2 if they are now in-progress or finished
 **    
 *****************************************************/
 (
@@ -116,7 +117,7 @@ As
 	
 	declare @JobPropagationMode int
 	Set @JobPropagationMode = 0
-
+	
 	declare @done tinyint
 	declare @JobCountToProcess int
 	declare @JobsProcessed int
@@ -143,7 +144,8 @@ As
 	Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
 	If @LoopingUpdateInterval < 2
 		Set @LoopingUpdateInterval = 2
-	
+
+	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	
 	---------------------------------------------------
 	-- FUTURE: may need to look at jobs in the holding
@@ -175,6 +177,7 @@ As
 		CREATE INDEX #IX_Tmp_JobStatePreview_Job ON #Tmp_JobStatePreview (Job)
 		
 	End
+	
 	---------------------------------------------------
 	-- determine what current state of active jobs should be
 	-- and get list of the ones that need be changed
@@ -183,7 +186,7 @@ As
 	INSERT INTO #Tmp_ChangedJobs (Job, 
 	                         NewState, 
 	                         Results_Folder_Name, 
-	                         Organism_DB_Name, 
+	       Organism_DB_Name, 
 	                         Dataset_Name,
 	                         Dataset_ID)
 	SELECT
@@ -325,7 +328,7 @@ As
 	Set @LastLogTime = GetDate()
 	--
 	While @done = 0
-	Begin --<a>
+	Begin -- <a1>
 		Set @job = 0
 		--
 		SELECT TOP 1 
@@ -346,7 +349,7 @@ As
 		If @job = 0
 			Set @done = 1
 		Else
-		Begin --<b>
+		Begin -- <b1>
 
 			---------------------------------------------------
 			-- Examine the steps for this job to determine actual start/End times
@@ -513,7 +516,7 @@ As
 			---------------------------------------------------
 			--
 			If @bypassDMS = 0 AND @jobInDMS > 0 And @infoOnly = 0
-			Begin --<c>
+			Begin --<c1>
 				-- DMS changes enabled, update DMS job state
 				
 				-- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
@@ -543,7 +546,7 @@ As
 				If @myError <> 0
 					Exec PostLogEntry 'Error', @message, 'UpdateJobState'
 					
-			End --</c>
+			End --</c1>
 
 			If @infoOnly = 0
 			Begin
@@ -555,7 +558,7 @@ As
 			End 
 
 			Set @JobsProcessed = @JobsProcessed + 1
-		End --</b>
+		End -- </b1>
 		
 		If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
 		Begin
@@ -567,15 +570,111 @@ As
 		If @MaxJobsToProcess > 0 And @JobsProcessed >= @MaxJobsToProcess
 			Set @done = 1
 			
-	End --</a>
+	End -- </a1>
 
+	
 	If @infoOnly > 0
 	Begin
+		---------------------------------------------------
+		-- Preview changes that would be made via the above while loop
+		---------------------------------------------------
+		--
 		SELECT *
 		FROM #Tmp_JobStatePreview
 		ORDER BY Job
 	End
 	
+	---------------------------------------------------
+	-- Look for jobs in DMS that are failed, yet are not failed in T_Jobs
+	---------------------------------------------------
+	--	
+	If @BypassDMS = 0
+	Begin -- <a2>
+		Declare @FailedJobsToReset AS Table (
+			Job int not null, 
+			NewState int not null)
+
+		INSERT INTO @FailedJobsToReset (Job,
+		                                NewState )
+		SELECT DMSJobs.AJ_JobID AS Job,
+		       J.State AS NewState
+		FROM S_DMS_T_Analysis_Job AS DMSJobs
+		     INNER JOIN T_Jobs AS J
+		       ON J.Job = DMSJobs.AJ_JobiD
+		WHERE DMSJobs.AJ_StateID = 5 AND
+		      J.State IN (1, 2, 4)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount > 0
+		Begin -- <b2>
+			-- We might have a large number of failed jobs
+			-- Thus, for safety, we'll create a physical temporary table with an index
+			-- then populate that table using @FailedJobsToReset
+			CREATE TABLE #Tmp_FailedJobsToReset ( 
+				Job int not null,
+				NewState int not null
+			)
+			
+			CREATE CLUSTERED INDEX #IX_Tmp_FailedJobsToReset ON #Tmp_FailedJobsToReset (Job)
+
+			INSERT INTO #Tmp_FailedJobsToReset (Job, NewState )
+			SELECT Job, NewState
+			FROM @FailedJobsToReset
+			
+			Set @done = 0
+			While @done = 0
+			Begin -- <c2>
+				Set @job = 0
+				--
+				SELECT TOP 1 
+					@job = Job,
+					@curJob = Job,
+					@newJobStateInBroker = NewState			
+				FROM   
+					#Tmp_FailedJobsToReset
+				WHERE
+					Job > @curJob
+				ORDER BY Job
+				
+				If @job = 0
+					Set @done = 1
+				Else
+				Begin -- <d2>
+					-- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
+					-- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job
+					--  and if the values don't match, then the update is not performed
+					
+					If @Job % 2 = 0
+						Set @UpdateCode = (@Job % 220) + 14
+					Else
+						Set @UpdateCode = (@Job % 125) + 11
+
+					-- Update the job start time based on the job steps
+					-- Note that if no steps have started yet, then @StartMin will be Null
+					Set @StartMin = null
+					
+					SELECT @StartMin = Min(Start)	   
+					FROM T_Job_Steps
+					WHERE (Job = @job) AND Not Start Is Null
+					
+					Exec @myError = S_DMS_UpdateFailedJobNowInProgress 
+							@Job = @job,
+							@NewBrokerJobState = @newJobStateInBroker,
+							@JobStart = @StartMin,
+							@UpdateCode = @UpdateCode,
+							@infoOnly = @infoOnly,
+							@message = @message output
+					
+					If @myError <> 0
+						Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+							
+				End	-- </d2>
+			End -- </c2>
+			
+		End -- </b2>
+	End -- </a2>
+
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

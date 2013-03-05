@@ -11,14 +11,12 @@ CREATE PROCEDURE AddUpdateProteinCollectionMember_New
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
 **	
 **
-**		Auth: kja
-**		Date: 10/06/2004
-**
-**		Modified: 11/23/2005 KJA
+**	Auth:	kja
+**	Date:	10/06/2004
+**			11/23/2005 kja - Added parameters
+**			12/11/2012 mem - Removed transaction
 **    
 *****************************************************/
 (	
@@ -32,10 +30,10 @@ CREATE PROCEDURE AddUpdateProteinCollectionMember_New
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
 
+	declare @myError int
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	declare @msg varchar(256)
@@ -55,66 +53,54 @@ As
 --	begin
 --		return 1  -- Entry already exists
 --	end
-		
-	---------------------------------------------------
-	-- Start transaction
-	---------------------------------------------------
-
-	declare @transName varchar(32)
-	set @transName = 'AddProteinCollectionMember'
-	begin transaction @transName
-
-
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
 	
 	if @mode = 'add'
 	begin
-	INSERT INTO T_Protein_Collection_Members (
-		Original_Reference_ID,
-		Protein_ID,
-		Protein_Collection_ID,
-		Sorting_Index
-	) VALUES (
-		@reference_ID,
-		@protein_ID, 
-		@protein_collection_ID,
-		@sorting_index
-	)
-	
-
---	INSERT INTO T_Protein_Collection_Members (
---		Protein_ID,
---		Protein_Collection_ID
---	) VALUES (
---		@protein_ID, 
---		@protein_collection_ID
---	)
-
-	
-	SELECT @member_ID = @@Identity 		
-
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
+		---------------------------------------------------
+		-- action for add mode
+		---------------------------------------------------
+		--
+		INSERT INTO T_Protein_Collection_Members (
+			Original_Reference_ID,
+			Protein_ID,
+			Protein_Collection_ID,
+			Sorting_Index
+		) VALUES (
+			@reference_ID,
+			@protein_ID, 
+			@protein_collection_ID,
+			@sorting_index
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount, @member_ID = SCOPE_IDENTITY()
+		--
+		if @myError <> 0
+		begin
+			set @msg = 'Insert operation failed for Protein_ID: "' + Convert(varchar(12), @protein_ID) + '"'
+			RAISERROR (@msg, 10, 1)
+			return 51007
+		end
 	end
 	
 	if @mode = 'update'
 	begin
+		---------------------------------------------------
+		-- action for update mode
+		---------------------------------------------------
+		--
 		UPDATE T_Protein_Collection_Members
 		SET Sorting_Index = @sorting_index
 		WHERE (Protein_ID = @protein_ID and Original_Reference_ID = @reference_ID and Protein_Collection_ID = @protein_collection_ID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+		if @myError <> 0
+		begin
+			set @msg = 'Update operation failed for Protein_ID: "' + Convert(varchar(12), @protein_ID) + '"'
+			RAISERROR (@msg, 10, 1)
+			return 51008
+		end
 	end
-	--
-	if @myError <> 0
-	begin
-		rollback transaction @transName
-		set @msg = 'Insert operation failed: "' + @protein_ID + '"'
-		RAISERROR (@msg, 10, 1)
-		return 51007
-	end
-		
-	commit transaction @transName
 		
 	return @member_ID
 

@@ -18,6 +18,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingText
 **						   - Removed the SourceJobResultsFolder parameter
 **			07/12/2012 mem - Added support for $ThisDataset in an Auto-query Where Clause
 **			07/13/2012 mem - Added support for $Replace(x,y,z) in an Auto-query Where Clause
+**			01/14/2012 mem - Added support for $ThisDatasetTrimAfter(x) in an Auto-query Where Clause
 **    
 *****************************************************/
 (
@@ -52,7 +53,15 @@ As
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
 	Set @CurrentLocation = 'Start'
-	
+
+	Declare @Part1 varchar(1024) = ''
+	Declare @Part2 varchar(1024) = ''
+	Declare @Part3 varchar(1024) = ''
+
+	Declare @TextToSearch varchar(512)
+	Declare @TextToFind varchar(512)
+	Declare @Replacement varchar(512)
+
 	------------------------------------------------
 	-- Validate the inputs
 	------------------------------------------------
@@ -82,7 +91,7 @@ As
 			
 			If @SourceJobText Like 'Auto%'
 			Begin -- <e>
-				-- Parse @SpecialProcessingText to look for @TagName:Auto  (Note that we must process @SpecialProcessingText since @SourceJobText won't have the full text)
+				-- Parse @SpecialProcessingText to look for		:Auto  (Note that we must process @SpecialProcessingText since @SourceJobText won't have the full text)
 				-- Then find { and }
 				-- The text between { and } will be used as a Where clause to query S_DMS_V_Analysis_Job_Info to find the best job for this dataset
 				-- Example:
@@ -115,8 +124,53 @@ As
 					If @WhereClause Like '%$ThisDataset%'
 					Begin
 						-- The Where Clause contains a Dataset filter clause utilizing this dataset's name
-						Set @WhereClause = Replace(@WhereClause, '$ThisDataset', @Dataset)
-						Set @WhereClause = 'WHERE (' + @WhereClause + ')'
+						
+						If @WhereClause Like '%$ThisDatasetTrimAfter%'
+						Begin  -- <g1>
+							-- The Where Clause contains a command of the form: $ThisDatasetTrimAfter(_Pos)
+							-- Find the specified characters in the dataset's name and remove any characters that follow them
+							-- Parse out the $ThisDatasetTrimAfter command and the text inside the parentheses just after the command
+							
+							Set @IndexStart = CHARINDEX('$ThisDatasetTrimAfter', @WhereClause)
+							Set @IndexEnd = CHARINDEX(')', @WhereClause, @IndexStart)
+
+							If @IndexStart > 0 And @IndexEnd > @IndexStart
+							Begin -- <h1>
+
+								Set @Part1 = SUBSTRING(@WhereClause, 1, @IndexStart-1)
+								Set @Part2 = SUBSTRING(@WhereClause, @IndexStart, @IndexEnd - @IndexStart+1)
+								Set @Part3 = SUBSTRING(@WhereClause, @IndexEnd+1, LEN(@WhereClause))
+								
+								-- The DatasetTrimmed directive is now in @Part2, for example: $ThisDatasetTrimAfter(_Pos)
+								-- Parse out the text between the parentheses
+							
+								Set @IndexStart = CHARINDEX('(', @Part2)
+								Set @IndexEnd = CHARINDEX(')', @Part2, @IndexStart)				
+
+								If @IndexStart > 0 And @IndexEnd > @IndexStart
+								Begin -- <i1>
+									Set @TextToFind = SUBSTRING(@Part2, @IndexStart+1, @IndexEnd - @IndexStart-1)
+
+									Set @IndexStart = CHARINDEX(@TextToFind, @Dataset)
+																		
+									If @IndexStart > 0
+									Begin
+										Set @Dataset = SUBSTRING(@Dataset, 1, @IndexStart+LEN(@TextToFind)-1)
+									End
+									
+								End -- <i1>
+								
+							End -- </h1>							
+							
+							Set @WhereClause = @Part1 + @Dataset + @Part3
+							Set @WhereClause = 'WHERE (' + @WhereClause + ')'
+							
+						End  -- </g1>
+						Else
+						Begin
+							Set @WhereClause = Replace(@WhereClause, '$ThisDataset', @Dataset)
+							Set @WhereClause = 'WHERE (' + @WhereClause + ')'
+						End
 					End
 					Else
 					Begin
@@ -124,7 +178,7 @@ As
 					End
 
 					If @WhereClause Like '%$Replace(%'
-					Begin -- <g>
+					Begin -- <g2>
 						-- The Where Clause contains a Replace Text command of the form: $Replace(DatasetName,'_Pos','') or $Replace(DatasetName,_Pos,)
 						-- First split up the where clause to obtain the text before and after the replacement directive
 						
@@ -132,10 +186,7 @@ As
 						Set @IndexEnd = CHARINDEX(')', @WhereClause, @IndexStart)
 
 						If @IndexStart > 0 And @IndexEnd > @IndexStart
-						Begin -- <h>
-							Declare @Part1 varchar(1024) = ''
-							Declare @Part2 varchar(1024) = ''
-							Declare @Part3 varchar(1024) = ''
+						Begin -- <h2>
 
 							Set @Part1 = SUBSTRING(@WhereClause, 1, @IndexStart-1)
 							Set @Part2 = SUBSTRING(@WhereClause, @IndexStart, @IndexEnd - @IndexStart+1)
@@ -148,10 +199,7 @@ As
 							Set @IndexEnd = CHARINDEX(',', @Part2, @IndexStart)				
 							
 							If @IndexStart > 0 And @IndexEnd > @IndexStart
-							Begin -- <i>
-								Declare @TextToSearch varchar(512)
-								Declare @TextToFind varchar(512)
-								Declare @Replacement varchar(512)
+							Begin -- <i2>
 								
 								-- We have determined the text to search
 								Set @TextToSearch = SUBSTRING(@Part2, @IndexStart+1, @IndexEnd - @IndexStart-1)
@@ -185,10 +233,10 @@ As
 									End -- <k>
 
 								End -- <j>
-							End -- <i>							
-						End -- <h>
+							End -- <i2>							
+						End -- <h2>
 						
-					End -- </g>
+					End -- </g2>
 
 					
 					-- By default, order by Job Descending

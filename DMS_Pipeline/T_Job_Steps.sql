@@ -50,7 +50,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 11/21/2012 16:07:05 ******/
+/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 03/04/2013 19:31:36 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IDX_Job_Plus_Step] ON [dbo].[T_Job_Steps] 
 (
 	[Job_Plus_Step] ASC
@@ -269,6 +269,7 @@ ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Step_Tool_Ver
 GO
 ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Step_Tools] FOREIGN KEY([Step_Tool])
 REFERENCES [T_Step_Tools] ([Name])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Step_Tools]
 GO

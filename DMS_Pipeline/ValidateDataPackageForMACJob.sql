@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 /****************************************************
 **
@@ -14,9 +15,12 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 **
 **
 **  Auth:	grk
-**  Date:	
-**  10/29/2012 grk - Initial release
-**  11/01/2012 grk - eliminated job template
+**  Date:	10/29/2012 grk - Initial release
+**			11/01/2012 grk - eliminated job template
+**			01/31/2013 mem - Renamed MSGFDB to MSGFPlus
+**			               - Updated error messages shown to user
+**			02/13/2013 mem - Fix misspelled word
+**			02/18/2013 mem - Fix misspelled word
 **
 *****************************************************/
 (
@@ -33,7 +37,8 @@ AS
 	declare @myRowCount int = 0
 
 	Set @DataPackageID = IsNull(@DataPackageID, 0)
-	
+	Set @tool = ''
+
 	DECLARE @DebugMode tinyint = 0
 
 	BEGIN TRY                
@@ -46,8 +51,8 @@ AS
 		      Dataset_ID INT ,
 		      Dataset VARCHAR(256) ,
 		      Decon2LS_V2 INT NULL ,
-		      MASIC_Finnigan INT NULL ,
-		      MSGFDB_MzXML INT NULL ,
+		      MASIC INT NULL ,
+		      MSGFPlus INT NULL ,
 		      Sequest INT NULL 
 		    )
 
@@ -70,71 +75,87 @@ AS
 		UPDATE #TX
 		SET 
 			Decon2LS_V2 = TZ.Decon2LS_V2,
-			MASIC_Finnigan = Tz.MASIC_Finnigan,
-			MSGFDB_MzXML = Tz.MSGFDB_MzXML,
+			MASIC = Tz.MASIC,
+			MSGFPlus = Tz.MSGFPlus,
 			Sequest = Tz.Sequest
 		FROM #TX INNER JOIN 
 		(
 			SELECT  
 				TPKG.Dataset,
 				SUM(CASE WHEN TPKG.Tool = 'Decon2LS_V2' THEN 1 ELSE 0 END) AS Decon2LS_V2,
-				SUM(CASE WHEN TPKG.Tool = 'MASIC_Finnigan' AND TD.[Parm File] LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC_Finnigan,
-				SUM(CASE WHEN TPKG.Tool = 'MSGFDB_MzXML' THEN 1 ELSE 0 END) AS MSGFDB_MzXML,
-				SUM(CASE WHEN TPKG.Tool = 'Sequest' THEN 1 ELSE 0 END) AS Sequest
+				SUM(CASE WHEN TPKG.Tool = 'MASIC_Finnigan' AND TD.[Parm File] LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC,
+				SUM(CASE WHEN TPKG.Tool LIKE 'MSGFPlus%' THEN 1 ELSE 0 END) AS MSGFPlus,
+				SUM(CASE WHEN TPKG.Tool LIKE 'Sequest%' THEN 1 ELSE 0 END) AS Sequest
 			FROM    S_Data_Package_Analysis_Jobs AS TPKG
 					INNER JOIN S_DMS_V_Analysis_Job_Info AS TD ON TPKG.Job = TD.Job
 			WHERE   ( TPKG.Data_Package_ID = @DataPackageID )
 			GROUP BY TPKG.Dataset
 		) TZ ON #TX.Dataset = TZ.Dataset
 
-		--SELECT * FROM #TX
+		
 		---------------------------------------------------
 		-- assess job/tool coverage of datasets
 		---------------------------------------------------
 
 		DECLARE 
 			@errMsg VARCHAR(4000) = '',
-			@decon2lsCount INT,
-			@masicCount INT,
-			@msgfdbCount INT,
-			@sequestCount INT,
-			@msgfdb0Count INT,
-			@sequest0Count INT
+			@DeconToolsCountNotOne INT,
+			@MasicCountNotOne INT,
+			@MSGFPlusCountExactlyOne INT,
+			@MSGFPlusCountNotOne INT,
+			@SequestCountExactlyOne INT,
+			@SequestCountNotOne INT
 
-		SELECT @decon2lsCount = COUNT(*) FROM #TX WHERE Decon2LS_V2 <> 1
-		SELECT @masicCount = COUNT(*) FROM #TX WHERE MASIC_Finnigan <> 1
-		SELECT @msgfdbCount = COUNT(*) FROM #TX WHERE MSGFDB_MzXML <> 1
-		SELECT @sequestCount = COUNT(*) FROM #TX WHERE Sequest <> 1
-		SELECT @msgfdb0Count = COUNT(*) FROM #TX WHERE MSGFDB_MzXML <> 0
-		SELECT @sequest0Count = COUNT(*) FROM #TX WHERE Sequest <> 0
-
-		IF @msgfdbCount = 0 AND @sequest0Count = 0
-		SET @tool = 'msgfdb'
-		ELSE
-		IF @sequestCount = 0 AND @msgfdb0Count = 0
-		SET @tool = 'sequest'
-
+		SELECT @DeconToolsCountNotOne = COUNT(*) FROM #TX WHERE Decon2LS_V2 <> 1
+		
+		SELECT @MasicCountNotOne = COUNT(*) FROM #TX WHERE MASIC <> 1
+		
+		SELECT @MSGFPlusCountExactlyOne = COUNT(*) FROM #TX WHERE MSGFPlus = 1
+		SELECT @MSGFPlusCountNotOne = COUNT(*) FROM #TX WHERE MSGFPlus <> 1
+		
+		SELECT @SequestCountExactlyOne = COUNT(*) FROM #TX WHERE Sequest = 1
+		SELECT @SequestCountNotOne = COUNT(*) FROM #TX WHERE Sequest <> 1
+		
 		DROP TABLE  #TX
 
+		IF @tool = '' And @MSGFPlusCountExactlyOne > 0 
+			If @MSGFPlusCountNotOne = 0
+				SET @tool = 'msgfplus'
+			Else
+				SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets); ' 
+				
+		IF @tool = '' And @SequestCountExactlyOne > 0
+			If @SequestCountNotOne = 0
+				SET @tool = 'sequest'
+			Else
+				SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets); ' 
+
+		IF @tool = '' 
+			SET @errMsg = @errMsg + 'Data package ' + Convert(varchar(12), @DataPackageID) + ' must have one or more MSGFPlus (or Sequest) jobs' 
+
 		---------------------------------------------------
-		-- determine of job/tool coverage is acceptable for 
+		-- determine if job/tool coverage is acceptable for 
 		-- given job template
 		---------------------------------------------------
 		
-		IF @scriptName IN ('MAC_Simple_Isobaric_Labelling')
+		IF @scriptName IN ('Isobaric_Labeling')
 		BEGIN 
-			IF @tool = '' SET @errMsg = @errMsg + 'There must be exactly one MSGFDB_MzXML job per dataset or one Sequest job per dataset; ' 
-			IF @decon2lsCount > 0 SET @errMsg = @errMsg + 'There must be exactly one Decon2LS_V2 job per dataset; '
-			IF @masicCount > 0 SET @errMsg = @errMsg + 'There must be exactly one MASIC_Finnigan job per dataset; '
-			IF @errMsg <> ''
-			BEGIN
-	 			RAISERROR('Data pckage is not configurated correctly for this job: %s', 11, 25, @errMsg)
-			END 							
+			IF @DeconToolsCountNotOne > 0 
+				SET @errMsg = @errMsg + 'There must be exactly one Decon2LS_V2 job per dataset; '
+			
+			IF @MasicCountNotOne > 0      
+				SET @errMsg = @errMsg + 'There must be exactly one MASIC_Finnigan job per dataset; '
 		END 
+
+		IF @errMsg <> ''
+		BEGIN
+	 		RAISERROR('Data package is not configured correctly for this job: %s', 11, 25, @errMsg)
+		END 							
 
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 	END CATCH      
 	return @myError
+
 GO

@@ -25,6 +25,8 @@ CREATE Procedure dbo.DeleteDataset
 **			05/08/2009 mem - Now checking T_Dataset_Info
 **			12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
 **						   - Now checking T_Dataset_QC and T_Dataset_ScanTypes
+**			02/19/2013 mem - No longer allowing deletion if analysis jobs exist
+**			02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
 **    
 *****************************************************/
 (
@@ -77,10 +79,18 @@ As
 	--
 	if @datasetID = 0
 	begin
-		set @message = 'Dataset does not exist"' + @datasetNum + '"'
+		set @msg = 'Dataset does not exist"' + @datasetNum + '"'
+		RAISERROR (@msg, 10, 1)
 		return 51141
 	end
 
+	If Exists (SELECT * FROM T_Analysis_Job WHERE AJ_datasetID = @datasetID)
+	Begin
+		set @msg = 'Cannot delete a dataset with existing analysis jobs'
+		RAISERROR (@msg, 10, 1)
+		return 51142
+	End
+	
 	---------------------------------------------------
 	-- Start transaction
 	---------------------------------------------------
@@ -88,7 +98,6 @@ As
 	declare @transName varchar(32)
 	set @transName = 'DeleteDataset'
 	begin transaction @transName
---	print 'start transaction' -- debug only
 
 	---------------------------------------------------
 	-- delete any entries for the dataset from the archive table
@@ -101,19 +110,6 @@ As
 		rollback transaction @transName
 		RAISERROR ('Delete from archive table was unsuccessful for dataset', 10, 1)
 		return 51131
-	end
-
-	---------------------------------------------------
-	-- delete any entries for the dataset from the analysis job table
-	---------------------------------------------------
-
-	DELETE FROM T_Analysis_Job 
-	WHERE (AJ_datasetID = @datasetID)	
-	if @@error <> 0
-	begin
-		rollback transaction @transName
-		RAISERROR ('Delete from analysis job table was unsuccessful for dataset', 10, 1)
-		return 51132
 	end
 	
 	---------------------------------------------------
@@ -134,7 +130,7 @@ As
 	-- restore any consumed requested runs
 	---------------------------------------------------
 
-	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, 0, @message output, @callingUser
+	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
 	if @result <> 0
 	begin
 		rollback transaction @transName

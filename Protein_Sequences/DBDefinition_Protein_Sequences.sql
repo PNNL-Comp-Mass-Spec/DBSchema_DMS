@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 49361152KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 54011520KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 1988992KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 29224192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100

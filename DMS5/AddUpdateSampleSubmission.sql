@@ -17,11 +17,13 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **    Auth: grk
 **    Date: 04/23/2010
 **          04/30/2010 grk - Added call to CallSendMessage
-**          09/23/2011 grk -- accomodate researcher field in AssureMaterialContainersExist
+**          09/23/2011 grk - Accomodate researcher field in AssureMaterialContainersExist
+**			02/06/2013 mem - Added logic to prevent duplicate entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int OUTPUT,
 	@Campaign varchar(64),
 	@ReceivedBy varchar(64),
@@ -31,6 +33,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
@@ -51,10 +54,26 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	-- future: this could get more complicated
+	Set @Campaign = IsNull(@Campaign, '')
+	If @Campaign = ''
+		RAISERROR('Campaign name cannot be empty', 11, 15)
+	
+	Set @ContainerList = IsNull(@ContainerList, '')
+	If @ContainerList = ''
+		RAISERROR('Container list cannot be empty', 11, 16)
+	
+	Set @ReceivedBy = IsNull(@ReceivedBy, '')
+	If @ReceivedBy = ''
+		RAISERROR('Received by name cannot be empty', 11, 17)
+		
+	Set @NewContainerComment = IsNull(@NewContainerComment, '')
+	
+	Set @Description = IsNull(@Description, '')
+	If @Description = ''
+		RAISERROR('Description cannot be blank', 11, 18)
 
 	---------------------------------------------------
-	-- 
+	-- Resolve Campaign ID
 	---------------------------------------------------
 	--
 	DECLARE @CampaignID int
@@ -67,10 +86,10 @@ As
 		Campaign_Num = @Campaign
 	--
 	IF @CampaignID = 0
-		RAISERROR('Campaign "%s" could not be found', 11, 15, @Campaign)
+		RAISERROR('Campaign "%s" could not be found', 11, 19, @Campaign)
 
 	---------------------------------------------------
-	-- 
+	-- Resolve PRN
 	---------------------------------------------------
 	--
 	DECLARE @Researcher VARCHAR(128)
@@ -83,7 +102,7 @@ As
 	WHERE U_PRN = @ReceivedBy
 	--
 	IF @CampaignID = 0
-		RAISERROR('User "%s" could not be found', 11, 16, @ReceivedBy)
+		RAISERROR('Username "%s" could not be found', 11, 20, @ReceivedBy)
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
@@ -103,11 +122,11 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = 0
-			RAISERROR ('No entry could be found in database for update', 11, 16)
+			RAISERROR ('No entry could be found in database for update', 11, 21)
 	end
 	
 	---------------------------------------------------
-	--
+	-- Define the transaction name
 	---------------------------------------------------
 	declare @transName varchar(32)
 	set @transName = 'AddUpdateSampleSubmission'
@@ -121,6 +140,7 @@ As
 
 		---------------------------------------------------
 		-- verify container list
+		---------------------------------------------------
 		--
 		DECLARE @cl varchar(1024)
 		SET @cl = @ContainerList
@@ -135,13 +155,25 @@ As
 						@callingUser = ''
 		--
 		IF @myError <> 0
-			RAISERROR('AssureMaterialContainersExist:%s', 11, 31, @message)
+			RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @message)
 
 		---------------------------------------------------
+		-- Verify that this doesn't duplicate an existing sample submission request
+		---------------------------------------------------
+		Set @ID = -1
+		--
+		SELECT @ID = ID
+		FROM T_Sample_Submission
+		WHERE Campaign_ID = @CampaignID AND Received_By_User_ID = @ReceivedByUserID AND Description = @Description
+		
+		If @ID > 0
+			RAISERROR('New sample submission is duplicate of existing sample submission, ID %d', 11, 23, @ID)
+		
+		---------------------------------------------------
+		-- Add the new data
+		--
 		begin transaction @transName
 
-		---------------------------------------------------
-		--
 		INSERT INTO T_Sample_Submission (
 			Campaign_ID,
 			Received_By_User_ID,
@@ -159,7 +191,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Insert operation failed', 11, 7)
+			RAISERROR ('Insert operation failed', 11, 24)
 
 		-- return ID of newly created entry
 		--
@@ -169,7 +201,10 @@ As
 		-- add containers (as needed)
 		--
 		DECLARE @Comment varchar(1024)
-		SET @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+		If @NewContainerComment = ''
+			SET @Comment = '(created via sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+		Else
+			SET @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
 		--
 		EXEC @myError = AssureMaterialContainersExist
 						@ContainerList = @ContainerList OUTPUT,
@@ -181,7 +216,7 @@ As
 						@callingUser = @callingUser
 		--
 		IF @myError <> 0
-			RAISERROR('AssureMaterialContainersExist:%s', 11, 31, @message)
+			RAISERROR('AssureMaterialContainersExist: %s', 11, 25, @message)
 
 		---------------------------------------------------
 		-- update container list for sample submission
@@ -190,10 +225,7 @@ As
 		SET Container_List = @ContainerList 
 		WHERE ID = @ID
 			
-		---------------------------------------------------
 		commit transaction @transName
-
-		---------------------------------------------------
 
 	end -- add mode
 
@@ -216,7 +248,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
+			RAISERROR ('Update operation failed: "%d"', 11, 26, @ID)
 
 	end -- update mode
 

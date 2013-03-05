@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Data_Package_Storage](
 	[Path_Local_Root] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Path_Shared_Root] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Path_Web_Root] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Path_Archive_Root] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[State] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Data_Package_Storage] PRIMARY KEY CLUSTERED 
 (

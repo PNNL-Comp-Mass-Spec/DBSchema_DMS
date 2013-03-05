@@ -20,6 +20,7 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **	Auth:	mem
 **	Date:	04/28/2011
 **			09/13/2011 mem - Updated to support script 'IMSDatasetCapture' in addition to 'DatasetCapture'
+**			11/05/2012 mem - Added additional Print statement
 **
 *****************************************************/
 (
@@ -102,6 +103,7 @@ As
 		Begin
 			Set @message = 'DatasetCapture job for dataset ' + @DatasetName + ' is not in State 5; unable to continue'
 			Set @myError = 50002
+			Print @message
 		End
 	End
 	

@@ -54,6 +54,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			06/12/2012 mem - Removed unused code related to Archive State in #TD
 **			09/18/2012 mem - Now clearing @organismDBName if @mode='reset' and we're searching a protein collection
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**			01/04/2013 mem - Now ignoring @organismName, @protCollNameList, @protCollOptionsList, and @organismDBName for analysis tools that do not use protein collections (AJT_orgDbReqd = 0)
 **    
 *****************************************************/
 (
@@ -68,7 +69,7 @@ CREATE Procedure AddUpdateAnalysisJob
 	@organismDBName varchar(128),
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
-   @specialProcessing varchar(512) = null,
+    @specialProcessing varchar(512) = null,
 	@associatedProcessorGroup varchar(64),
     @propagationMode varchar(24),
 	@stateName varchar(32),
@@ -187,7 +188,8 @@ As
 	end
 
 	---------------------------------------------------
-	-- Create temporary table to hold "list" of the dataset
+	-- Create temporary table to hold the dataset details
+	-- This table will only have one row
 	---------------------------------------------------
 
 	CREATE TABLE #TD (
@@ -333,19 +335,23 @@ As
 				T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
 				#TD ON #TD.Dataset_Num = DS.Dataset_Num
 			WHERE
-				( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 14) OR
-				  @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5              ) AND
-				AJT.AJT_toolName = @toolName AND 
-				AJ.AJ_parmFileName = @parmFileName AND 
-				AJ.AJ_settingsFileName = @settingsFileName AND 
-				( (	@protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
-					Org.OG_name = IsNull(@organismName, Org.OG_name)
-				) OR
-				(	@protCollNameList <> 'na' AND 
-					AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
-					AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
-				) 
-				)
+			    ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 14) OR
+			      @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
+			    ) AND
+			    AJT.AJT_toolName = @toolName AND 
+			    AJ.AJ_parmFileName = @parmFileName AND 
+			    AJ.AJ_settingsFileName = @settingsFileName AND 
+			    (
+			      ( @protCollNameList = 'na' AND 
+			        AJ.AJ_organismDBName = @organismDBName AND 
+			        Org.OG_name = IsNull(@organismName, Org.OG_name)
+			      ) OR
+			      ( @protCollNameList <> 'na' AND 
+			        AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
+ 			        AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
+			      ) OR 
+			      ( AJT.AJT_orgDbReqd = 0 )
+			    )
 		
 			If @ExistingJobCount > 0
 			Begin

@@ -40,6 +40,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			01/12/2012 mem - Now validating that the analysis tool is active (T_Analysis_Tool.AJT_active > 0)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
+**			11/28/2012 mem - Added candidate code to validate that high res MSn datasets are centroided if using MSGFDB
+**			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **
 *****************************************************/
 (
@@ -299,6 +301,70 @@ As
 				set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
 				return 53112
 			End
+			
+			---------------------------------------------------
+			-- If the dataset has high res MS/MS spectra and the search tool is MSGFPlus, then we must centroid the spectra
+			-- The following could be used to check for this if DMS knew whether or not a dataset has centroided spectra
+			-- As of 11/28/2012, DMS only knows if the spectra are high res or not; it doesn't know if they're centroided
+			---------------------------------------------------
+			
+			/*
+			If Exists (SELECT *	FROM #TD WHERE Dataset_Type LIKE 'HMS%HMSn%') AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery')
+			Begin
+				-- The selected settings file must use MSConvert with Centroiding enabled, or DeconMSn in conjunction with MSConvert
+				
+				Declare @DtaGenerator varchar(512)
+				Declare @CentroidSetting varchar(512)
+				
+				CREATE TABLE #Tmp_SettingsFile_Values (
+					KeyName varchar(512) NULL,
+					Value varchar(512) NULL
+				)
+				
+				INSERT INTO #Tmp_SettingsFile_Values (KeyName, Value)
+				SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
+				       xmlNode.value('@value', 'nvarchar(512)') AS Value
+				FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
+				WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
+				
+				SELECT @DtaGenerator = Value
+				FROM #Tmp_SettingsFile_Values
+				WHERE KeyName = 'DtaGenerator'
+				
+				If IsNull(@DtaGenerator, '') = ''
+				Begin
+					Set @message = 'Settings file "' + @settingsFileName + '" does not have DtaGenerator defined; unable to verify that centroiding is enabled'
+					return 53113
+				End
+				
+				If @DtaGenerator = 'MSConvert.exe'
+				Begin
+					SELECT @CentroidSetting = Value
+					FROM #Tmp_SettingsFile_Values
+					WHERE KeyName = 'CentroidMGF'
+					
+					Set @CentroidSetting = IsNull(@CentroidSetting, 'False')
+				End
+				
+				If @DtaGenerator = 'DeconMSN.exe'
+				Begin
+					SELECT @CentroidSetting = Value
+					FROM #Tmp_SettingsFile_Values
+					WHERE KeyName = 'CentroidDTAs'
+					
+					Set @CentroidSetting = IsNull(@CentroidSetting, 'False')
+				End
+				
+				If @CentroidSetting <> 'True'
+				Begin
+					If IsNull(@CentroidSetting, '') = ''
+						Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not use MSConvert or DeconMSn for DTA Generation; unable to determine if centroiding is enabled'
+					Else
+						Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not appear to have centroiding enabled'
+				End
+			End
+			*/
+			
 		End
 		else
 		begin

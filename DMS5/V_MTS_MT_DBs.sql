@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_MTS_MT_DBs]
 AS
 
@@ -20,6 +21,7 @@ SELECT MTDBs.MT_DB_ID,
        MTDBs.Server_Name,
        MTDBs.State_ID
 FROM T_MTS_MT_DBs_Cached MTDBs
+--WHERE NOT MTDBs.State IN ('Deleted', 'Frozen', 'Unused')
 
 
 GO

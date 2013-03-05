@@ -241,6 +241,7 @@ AS
 	End
 
 /* -- alternate way to extract XML into rowset
+   -- However, this method does not handle special characters, like é so don't use it
 	DECLARE @hDoc int
 	--
 	--
@@ -409,7 +410,7 @@ AS
 
 	SELECT @job AS Job,
 	       [Step_Number],
-	    [Section],
+	       [Section],
 	       [Name],
 	       [Value]
 	FROM #T_Tmp_ParamTab

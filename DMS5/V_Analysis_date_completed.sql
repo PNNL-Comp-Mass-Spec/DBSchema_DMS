@@ -1,4 +1,4 @@
-/****** Object:  View [dbo].[V_Analysis_date_completed] ******/
+/****** Object:  View [dbo].[V_Analysis_Date_Completed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,7 +17,7 @@ FROM dbo.T_Analysis_Job INNER JOIN
    dbo.T_Analysis_Tool ON 
    dbo.T_Analysis_Job.AJ_analysisToolID = dbo.T_Analysis_Tool.AJT_toolID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_date_completed] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Date_Completed] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_date_completed] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Date_Completed] TO [PNL\D3M580] AS [dbo]
 GO

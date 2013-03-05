@@ -33,7 +33,8 @@ SELECT C.Campaign_Num AS Campaign,
        CT.Dataset_Count AS Datasets,
        CT.Dataset_Most_Recent AS [Most Recent Dataset],
        CT.Job_Count AS [Analysis Jobs],
-       CT.Job_Most_Recent AS [Most Recent Analysis Job]
+       CT.Job_Most_Recent AS [Most Recent Analysis Job],
+       dbo.GetOSMPackageListForCampaign(C.Campaign_ID) AS [OSM Packages] 
 FROM T_Campaign AS C
      LEFT OUTER JOIN T_Research_Team AS RT
        ON C.CM_Research_Team = RT.ID
@@ -41,6 +42,7 @@ FROM T_Campaign AS C
        ON CT.C_ID = C.Campaign_ID
      INNER JOIN T_Data_Release_Restrictions
        ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]

@@ -86,7 +86,16 @@ AS
 		---------------------------------------------------
 		-- verify parameters
 		---------------------------------------------------
+
+		If @jobParam Is Null
+			RAISERROR('Web page bug: @jobParam is null', 11, 30)
+
+		If @jobParam = ''
+			RAISERROR('Web page bug: @jobParam is empty', 11, 30)
 		
+		--Declare @DebugMessage varchar(4096) = 'Contents of @jobParam: ' + @jobParam			
+		--exec PostLogEntry 'Debug', @DebugMessage, 'AddUpdateLocalJobInBroker'
+
 		exec @myError = VerifyJobParameters @jobParam, @scriptName, @message output
 		IF @myError > 0
 			RAISERROR(@message, 11, @myError)

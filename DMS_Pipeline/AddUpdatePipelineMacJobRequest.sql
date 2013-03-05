@@ -155,3 +155,5 @@ As
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdatePipelineMacJobRequest] TO [DMS_SP_User] AS [dbo]
+GO

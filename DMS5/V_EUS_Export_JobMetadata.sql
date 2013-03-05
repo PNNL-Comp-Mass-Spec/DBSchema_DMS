@@ -42,3 +42,7 @@ FROM T_Dataset D
 WHERE (AJ.AJ_StateID = 4)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_JobMetadata] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_JobMetadata] TO [PNL\D3M580] AS [dbo]
+GO

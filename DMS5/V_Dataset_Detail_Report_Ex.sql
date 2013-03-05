@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT
     DS.Dataset_Num AS Dataset,
@@ -36,7 +35,10 @@ SELECT
 	     THEN 'http://prismsupport.pnl.gov/dh/data_helper/qc_overview/' + DS.Dataset_Num
          ELSE  DFP.Dataset_URL + 'QC/index.html' 
     END AS [QC Link],
-    'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS 'QC Metric Stats',
+    CASE WHEN Experiment_Num LIKE 'QC[_]Shew%' 
+         THEN 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + IN_Name + '/filterDS/QC_Shew'
+         ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4) 
+    END AS 'QC Metric Stats',         
     ISNULL(JobCountQ.Jobs, 0) AS Jobs,
     ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
     ISNULL(FC.Factor_Count, 0) AS Factors,
@@ -105,6 +107,7 @@ FROM
 					  GROUP BY Dataset_ID
                     ) PredefinedJobQ ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
     CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
+
 
 
 

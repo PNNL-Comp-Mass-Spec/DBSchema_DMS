@@ -48,6 +48,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			06/15/2011 mem - Now ignoring organism, protein collection, and organism DB when looking for existing jobs and the analysis tool does not use an organism database
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			11/08/2012 mem - Now auto-updating @protCollOptionsList to have "seq_direction=forward" if it contains "decoy" and the search tool is MSGFDB and the parameter file does not contain "NoDecoy"
+**			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **
 *****************************************************/
 (
@@ -176,14 +177,14 @@ As
 
 
 	---------------------------------------------------
-	-- Auto-update @protCollOptionsList if it specifies a decoy search, but we're running MSGFDB and the parameter file does not contain "NoDecoy"
+	-- Auto-update @protCollOptionsList if it specifies a decoy search, but we're running MSGFPlus and the parameter file does not contain "NoDecoy"
 	---------------------------------------------------
 	--
-	If @toolName LIKE 'MSGFDB%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+	If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
 	Begin
 		Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 		If IsNull(@message, '') = ''
-			Set @message = 'Note: changed protein options to forward-only since MSGFDB parameter file should have tda=1'
+			Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter file should have tda=1'
 	End
 
 

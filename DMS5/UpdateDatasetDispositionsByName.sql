@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
+CREATE Procedure UpdateDatasetDispositionsByName
 /****************************************************
 **
 **	Desc:
@@ -19,6 +18,8 @@ CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
 **	Date:	10/15/2008 grk -- initial release (Ticket #582)
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			02/20/2013 mem - Expanded @message to varchar(1024)
+**			02/21/2013 mem - Now requiring @recycleRequest to be yes or no
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
     @comment varchar(512) = '',
     @recycleRequest varchar(32) = '', -- yes/no
     @mode varchar(12) = 'update',
-    @message varchar(512) output,
+    @message varchar(1024) output,
    	@callingUser varchar(128) = ''
 )
 As
@@ -43,12 +44,23 @@ As
 	BEGIN TRY 
 
  	---------------------------------------------------
+	-- Validate input parameters
+ 	---------------------------------------------------
+ 	
+ 	Set @rating = IsNull(@rating, '')
+	Set @recycleRequest = IsNull(@recycleRequest, '')
+	Set @comment = IsNull(@comment, '')
+	
+	If Not @recycleRequest IN ('yes', 'no')
+	Begin
+		set @message = 'RecycleRequest must be Yes or No (currently "' + @recycleRequest + '")'
+		RAISERROR (@message, 11, 11)
+	End
+	
+ 	---------------------------------------------------
 	-- convert dataset name list into dataset ID list
 	---------------------------------------------------
-    
- 	---------------------------------------------------
 	-- table variable for holding datasets from list
-	---------------------------------------------------
 	--
   	declare @tbl table (
 		DatasetID varchar(12),
@@ -163,7 +175,6 @@ As
 	Exec PostUsageLogEntry 'UpdateDatasetDispositionsByName', @UsageMessage
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositionsByName] TO [DMS2_SP_User] AS [dbo]

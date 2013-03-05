@@ -17,6 +17,8 @@ CREATE Procedure CreatePSMJobRequest
 **	Date:	11/14/2012 mem - Initial version
 **			11/21/2012 mem - No longer passing work package to AddUpdateAnalysisJobRequest
 **			               - Now calling PostUsageLogEntry
+**			12/13/2012 mem - Added parameter @previewMode, which indicates what should be passed to AddUpdateAnalysisJobRequest for @mode
+**			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **    
 *****************************************************/
 (
@@ -32,6 +34,7 @@ CREATE Procedure CreatePSMJobRequest
     @DynSTYPhosEnabled tinyint,
 	@comment varchar(512),
 	@ownerPRN varchar(64),
+	@previewMode tinyint = 0,
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -72,6 +75,7 @@ As
 		
 		Set @comment = IsNull(@comment, '')
 		Set @ownerPRN = IsNull(@ownerPRN, SUSER_SNAME())
+		set @previewMode = IsNull(@previewMode, 0)
 		Set @message = ''
 		Set @callingUser = IsNull(@callingUser, '')
 
@@ -245,16 +249,20 @@ As
 		ORDER BY COUNT(*) DESC
 	
 		---------------------------------------------------
-		-- Automatically switch from decoy to forward if using MSGFDB
+		-- Automatically switch from decoy to forward if using MSGFPlus
 		-- AddUpdateAnalysisJobRequest also does this, but it displays a warning message to the user
 		-- We don't want the warning message to appear when the user is using CreatePSMJobRequest; instead we silently update things
 		---------------------------------------------------
 		--
-		If @toolName LIKE 'MSGFDB%' And @protCollOptionsList Like '%decoy%' And @ParamFile Not Like '%[_]NoDecoy%'
+		If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @ParamFile Not Like '%[_]NoDecoy%'
 		Begin
 			Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 		End
 		
+		Declare @mode varchar(12) = 'add'
+		If @previewMode <> 0
+			Set @mode = 'PreviewAdd'
+
 		---------------------------------------------------
 		-- Now create the analysis job request
 		---------------------------------------------------
@@ -274,7 +282,7 @@ As
 				@adminReviewReqd = 'No',
 				@state = 'New',
 				@requestID = @requestID output,
-				@mode = 'add',
+				@mode = @mode,
 				@message = @message output
 		
 		
@@ -304,6 +312,5 @@ As
 	End
 	
 	return @myError
-
 
 GO

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[UpdateUserPermissions]
+CREATE PROCEDURE dbo.UpdateUserPermissions
 /****************************************************
 **
 **	Desc: Updates user permissions in the current DB
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissions]
 **
 **	Auth:	mem
 **	Date:	07/31/2012 mem - Initial Version
+**			11/01/2012 mem - Now updating EnableDisableArchiveStepTools
 **    
 *****************************************************/
 AS
@@ -37,6 +38,8 @@ AS
 	exec sp_addrolemember 'db_datareader', 'DMSWebUser'
 	-- exec sp_addrolemember 'db_datawriter', 'DMSWebUser'
 	exec sp_addrolemember 'DMS_SP_User', 'DMSWebUser'
+
+	grant execute on EnableDisableArchiveStepTools to DMSReader
 
 	grant showplan to DMSReader
 	grant showplan to DMSWebUser

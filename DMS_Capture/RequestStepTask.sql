@@ -37,6 +37,7 @@ CREATE PROCEDURE RequestStepTask
 **						   - Now showing the top @JobCountToPreview candidate steps when @infoOnly is > 0
 **			07/26/2012 mem - Added parameter @serverPerspectiveEnabled
 **			09/17/2012 mem - Now returning metadata for step tool DatasetQuality instead of step tool DatasetInfo
+**			02/25/2013 mem - Now returning the Machine name when @infoOnly > 0
 **
 *****************************************************/
   (
@@ -79,13 +80,6 @@ AS
 
 	IF @JobCountToPreview > @CandidateJobStepsToRetrieve 
 		SET @CandidateJobStepsToRetrieve = @JobCountToPreview
-
-	---------------------------------------------------
-	-- Show processor name if @infoOnly is non-zero
-	---------------------------------------------------
-	--
-	IF @infoOnly <> 0
-		SELECT @processorName AS Processor, @infoOnly AS infoOnlyLevel
 			
 	---------------------------------------------------
 	-- The capture task manager expects a non-zero 
@@ -126,7 +120,15 @@ AS
 		SET @myError = @jobNotAvailableErrorCode
 		GOTO Done
     END
-	
+
+
+	---------------------------------------------------
+	-- Show processor name and machine if @infoOnly is non-zero
+	---------------------------------------------------
+	--
+	IF @infoOnly <> 0
+		SELECT @processorName AS Processor, @infoOnly AS InfoOnlyLevel, @Machine as Machine
+			
 	---------------------------------------------------
 	-- Update processor's request timestamp
 	-- (to show when the processor was most recently active)

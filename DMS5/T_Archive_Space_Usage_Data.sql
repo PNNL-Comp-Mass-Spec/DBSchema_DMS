@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Archive_Space_Usage] ******/
-/****** RowCount: 32 ******/
+/****** RowCount: 33 ******/
 SET IDENTITY_INSERT [T_Archive_Space_Usage] ON
 INSERT INTO [T_Archive_Space_Usage] (Entry_ID, Sampling_Date, Data_MB, Files, Folders, Comment, Entered_By) VALUES (1,'1/1/2001 12:00:00 AM',157286,,,'','pnl\D3L243')
 INSERT INTO [T_Archive_Space_Usage] (Entry_ID, Sampling_Date, Data_MB, Files, Folders, Comment, Entered_By) VALUES (2,'7/1/2001 12:00:00 AM',262144,,,'','pnl\D3L243')

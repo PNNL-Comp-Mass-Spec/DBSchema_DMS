@@ -17,6 +17,7 @@ CREATE PROCEDURE CopyRequestedRun
 **			08/30/2010 mem - Now clearing @message after a successful call to UpdateRequestedRunCopyFactors
 **			12/13/2011 mem - Added parameter @callingUser, which is sent to UpdateRequestedRunCopyFactors
 **			04/25/2012 mem - Fixed @callingUser bug when updating @callingUserUnconsume
+**			02/21/2013 mem - Now verifying that a new row was added to T_Requested_Run
 **
 *****************************************************/
 (
@@ -43,6 +44,7 @@ As
 	-- We are done if there is no associated request
 	---------------------------------------------------
 	--
+	Set @requestID = IsNull(@requestID, 0)
 	if @requestID = 0
 	begin
 		goto Done
@@ -119,21 +121,32 @@ As
 		'auto',
 		CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END 
 	FROM
-		T_Requested_Run AS T_Requested_Run_1
+		T_Requested_Run
 	WHERE
 		ID = @requestID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
+	declare @newReqID int
+	set @newReqID = SCOPE_IDENTITY()
+	--
 	if @myError <> 0
 	begin
-		set @message = 'Problem trying to renumber request in history'
+		set @message = 'Problem trying to renumber request in history; @myError = ' + Convert(varchar(12), @myError)
+		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
 		goto Done
 	end
 	--
-	declare @newReqID int
-	set @newReqID = IDENT_CURRENT('T_Requested_Run')
-	
+	if @myRowCount = 0
+	begin
+		If Not Exists (Select * from T_Requested_Run Where ID = @requestID)		
+			set @message = 'Problem trying to renumber request in history; RequestID not found: ' + Convert(varchar(12), @requestID)
+		else
+			Set @message = 'Problem trying to renumber request in history; No rows added for RequestID ' + Convert(varchar(12), @requestID)
+			
+		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+		goto Done
+	end
 	
 	If Len(@callingUser) > 0
 	Begin
@@ -170,7 +183,8 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Problem copying factors to new request'
+		set @message = 'Problem copying factors to new request; @myError = ' + Convert(varchar(12), @myError)
+		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
 		goto Done
 	end
 	else
@@ -198,7 +212,8 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Problem trying to copy EUS users'
+		set @message = 'Problem trying to copy EUS users; @myError = ' + Convert(varchar(12), @myError)
+		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
 		goto Done
 	end
 

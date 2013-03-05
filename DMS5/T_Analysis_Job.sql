@@ -221,7 +221,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
+
+CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
 /****************************************************
 **
@@ -240,7 +241,7 @@ AS
 		Return
 
 	Set NoCount On
-
+	
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, 0, GetDate()
 	FROM inserted
@@ -252,6 +253,51 @@ AS
 		 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
 		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 
+
+GO
+/****** Object:  Trigger [dbo].[trig_iu_AnalysisJob] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Trigger [dbo].[trig_iu_AnalysisJob] on [dbo].[T_Analysis_Job]
+For Insert, Update
+/****************************************************
+**
+**	Desc: 
+**		Validates that the settings file name is valid
+**		Note: this procedure does not perform a tool-specific validation; it simply checks for a valid file name
+**
+**	Auth:	mem
+**			01/24/2013 mem - Initial version 
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+	
+	If Update(AJ_settingsFileName)
+	Begin		
+		Declare @InvalidSettingsFile varchar(128) = ''
+		
+		SELECT TOP 1 @InvalidSettingsFile = inserted.AJ_settingsFileName
+		FROM inserted
+			 LEFT OUTER JOIN T_Settings_Files SF
+			   ON inserted.AJ_settingsFileName = SF.File_Name
+		WHERE (SF.File_Name IS NULL)
+		
+		If ISNULL(@InvalidSettingsFile, '') <> ''
+		Begin
+			Declare @message varchar(256) = 'Invalid settings file: ' + @InvalidSettingsFile + ' (see trigger trig_iu_AnalysisJob)'
+			RAISERROR(@message,16,1)
+			ROLLBACK TRANSACTION
+			RETURN;
+		End
+	End
+
+
 GO
 /****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
@@ -259,7 +305,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
+CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
 /****************************************************
 **
@@ -279,7 +325,7 @@ AS
 		Return
 
 	Set NoCount On
-
+	
 	If Update(AJ_StateID)
 	Begin
 		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
@@ -295,6 +341,7 @@ AS
 			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 
 	End
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Analysis_Job] ******/

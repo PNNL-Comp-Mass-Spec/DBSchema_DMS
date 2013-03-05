@@ -11,9 +11,9 @@ CREATE PROCEDURE AddUpdateProteinCollectionMember
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
+**	---------------------------------------------------------------------------------
+**	-- This procedure has been superseded by AddUpdateProteinCollectionMember_New
+**	---------------------------------------------------------------------------------
 **
 **		Auth: kja
 **		Date: 10/06/2004

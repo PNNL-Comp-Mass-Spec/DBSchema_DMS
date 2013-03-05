@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 29 ******/
+/****** RowCount: 30 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,'')
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_GC-MS','Metabolomics','',1,18,'GC')
@@ -18,13 +18,14 @@ INSERT INTO [T_Instrument_Group] VALUES ('LCQ','Low res MS/MS','',1,2,'')
 INSERT INTO [T_Instrument_Group] VALUES ('LTQ','Low res MS/MS','',1,2,'LTQ')
 INSERT INTO [T_Instrument_Group] VALUES ('LTQ-ETD','Low res MS/MS ETD','',1,2,'LTQ')
 INSERT INTO [T_Instrument_Group] VALUES ('LTQ-FT','LC-HMS with MS/MS','',1,3,'FT')
+INSERT INTO [T_Instrument_Group] VALUES ('LTQ-Prep','LTQ in BSF sample prep lab','',1,2,'LTQ')
 INSERT INTO [T_Instrument_Group] VALUES ('MALDI-Imaging','MALDI Imaging','',1,26,'')
 INSERT INTO [T_Instrument_Group] VALUES ('MALDI-TOF','MALDI Spot','',1,26,'')
 INSERT INTO [T_Instrument_Group] VALUES ('Micromass_TOF','Research','',0,1,'')
 INSERT INTO [T_Instrument_Group] VALUES ('Orbitrap','LC-HMS with MS/MS','',1,3,'ORB')
-INSERT INTO [T_Instrument_Group] VALUES ('Orbitrap-HCD','LC-HMS with MS/MS; optionally HCD','Was originally used by LTQ_Orb_3, but changed LTQ_Orb_3 to the "Orbitrap" group in May 2012',0,3,'ORB')
 INSERT INTO [T_Instrument_Group] VALUES ('Other','Research','',1,,'')
 INSERT INTO [T_Instrument_Group] VALUES ('PrepHPLC','Prep HPLC Data folders','',1,31,'')
+INSERT INTO [T_Instrument_Group] VALUES ('QExactive','LC-HMS with MS/MS; optionally HCD','Was originally used by LTQ_Orb_3, but changed LTQ_Orb_3 to the "Orbitrap" group in May 2012.  Renamed this group from Orbitrap-HCD to QExactive in December 2012',1,5,'ORB')
 INSERT INTO [T_Instrument_Group] VALUES ('QTrap','Research','MRM',1,3,'QQQ')
 INSERT INTO [T_Instrument_Group] VALUES ('Sciex_TripleTOF','Research','',1,5,'')
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ','MRM','',1,9,'QQQ')

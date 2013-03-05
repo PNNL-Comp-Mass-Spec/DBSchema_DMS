@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.UpdateDatasetDispositions
+CREATE Procedure UpdateDatasetDispositions
 /****************************************************
 **
 **	Desc:
@@ -24,6 +23,8 @@ CREATE Procedure dbo.UpdateDatasetDispositions
 **			11/18/2010 mem - Updated logic for calling SchedulePredefinedAnalyses to include dataset state 4 (Inactive)
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
+**			02/20/2013 mem - Expanded @message to varchar(1024)
+**			02/21/2013 mem - More informative error messages
 **
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE Procedure dbo.UpdateDatasetDispositions
     @comment varchar(512) = '',
     @recycleRequest varchar(32) = '', -- yes/no
     @mode varchar(12) = 'update',
-    @message varchar(512) output,
+    @message varchar(1024) output,
    	@callingUser varchar(128) = ''
 )
 As
@@ -82,7 +83,7 @@ As
 	--
 	if @ratingID = 0
 	begin
-		set @msg = 'Could not find rating'
+		set @msg = 'Invalid rating: ' + @rating
 		RAISERROR (@msg, 11, 3)
 	end
 
@@ -259,10 +260,16 @@ As
 					-- update dataset
 					--
 					if @curComment <> '' AND @comment <> ''
-						set @curComment = @curComment + ' ' + @comment
+					Begin
+						-- Append the new comment only if it is not already present
+						If CharIndex(@comment, @curComment) <= 0
+							set @curComment = @curComment + ' ' + @comment
+					End
 					else
-					if @curComment = '' AND @comment <> ''
-						set @curComment = @comment
+					Begin
+						if @curComment = '' AND @comment <> ''
+							set @curComment = @comment
+					End
 					--
 					UPDATE T_Dataset
 					SET 
@@ -274,7 +281,7 @@ As
 					--
 					if @myError <> 0
 					begin
-						set @msg = 'Update operation failed'
+						set @msg = 'Update operation failed for dataset ' + @curDatasetName
 						RAISERROR (@msg, 11, 7)
 					end
 					
@@ -283,7 +290,7 @@ As
 					--
 					if @recycleRequest = 'Yes'
 					begin
-						exec @myError = UnconsumeScheduledRun @curDatasetName, 'na', 'na', 1, @message output, @callingUser
+						exec @myError = UnconsumeScheduledRun @curDatasetName, 'na', 'na', @retainHistory=1, @message=@message output, @callingUser=@callingUser
 						--
 						if @myError <> 0
 						begin
@@ -343,7 +350,6 @@ As
 	Exec PostUsageLogEntry 'UpdateDatasetDispositions', @UsageMessage
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler] AS [dbo]

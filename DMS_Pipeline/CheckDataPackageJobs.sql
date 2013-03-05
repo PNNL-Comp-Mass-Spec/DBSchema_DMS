@@ -165,3 +165,5 @@ BEGIN
 END
 
 GO
+GRANT SELECT ON [dbo].[CheckDataPackageJobs] TO [DMS_SP_User] AS [dbo]
+GO

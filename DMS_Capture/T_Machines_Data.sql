@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Machines] ******/
-/****** RowCount: 35 ******/
+/****** RowCount: 36 ******/
 /****** Columns: Machine, Total_CPUs, CPUs_Available, Bionet_Available ******/
 INSERT INTO [T_Machines] VALUES ('Auberry',8,8,'N')
 INSERT INTO [T_Machines] VALUES ('Mash-01',2,0,'Y')
@@ -13,6 +13,7 @@ INSERT INTO [T_Machines] VALUES ('Proto-10',2,0,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-3',2,0,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-4',2,0,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-5',2,0,'Y')
+INSERT INTO [T_Machines] VALUES ('Proto-6',2,2,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-7',2,0,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-8',2,0,'Y')
 INSERT INTO [T_Machines] VALUES ('Proto-9',2,0,'Y')

@@ -1,6 +1,7 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 32 ******/
+/****** RowCount: 33 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
+INSERT INTO [T_DatasetTypeName] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (27,'DataFiles','DMS Pipeline Data',0)
 INSERT INTO [T_DatasetTypeName] VALUES (18,'GC-MS','Full scan GC-MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (19,'GC-SIM','SIM scan GC-MS',1)

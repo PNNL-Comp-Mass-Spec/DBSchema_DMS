@@ -5,13 +5,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
+CREATE Procedure dbo.UpdateEUSInfoFromEUSImports
 /****************************************************
 **
 **	Desc: 
-**      Wrapper procedure to call UpdateEUSProposalsFromEUSImports
-**	    and UpdateEUSUsersFromEUSImports.  Intended to be manually
-**		run on an on-demand basis
+**      Wrapper procedure to call UpdateEUSProposalsFromEUSImports,
+**	     UpdateEUSUsersFromEUSImports, and UpdateEUSInstrumentsFromEUSImports
+**		Intended to be manually run on an on-demand basis
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -20,6 +20,7 @@ CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
 **	Auth:	mem
 **	Date:	03/25/2011 mem - Initial version
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			01/08/2013 mem - Now calling UpdateEUSInstrumentsFromEUSImports
 **    
 *****************************************************/
 (
@@ -41,21 +42,35 @@ As
 	SELECT @EntryID = MAX(entry_ID) 
 	FROM T_Log_Entries
 
-	-- Update EUS proposals
-	exec @myError = UpdateEUSProposalsFromEUSImports
 
-	If @myError <> 0 and @message = ''
-		Set @message = 'Error calling UpdateEUSProposalsFromEUSImports'
-	
 	If @myError = 0
 	Begin
-	
+		-- Update EUS proposals
+		exec @myError = UpdateEUSProposalsFromEUSImports
+
+		If @myError <> 0 and @message = ''
+			Set @message = 'Error calling UpdateEUSProposalsFromEUSImports'
+	End
+		
+	If @myError = 0
+	Begin	
 		-- Update EUS users
 		exec @myError = UpdateEUSUsersFromEUSImports
 		
 		If @myError <> 0  And @message = ''
 			Set @message = 'Error calling UpdateEUSUsersFromEUSImports'
 	End
+
+	
+	If @myError = 0
+	Begin
+		-- Update EUS instruments
+		exec @myError = UpdateEUSInstrumentsFromEUSImports
+		
+		If @myError <> 0  And @message = ''
+			Set @message = 'Error calling UpdateEUSInstrumentsFromEUSImports'
+	End
+	
 
 	If @myError = 0
 	Begin

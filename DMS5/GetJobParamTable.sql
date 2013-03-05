@@ -167,6 +167,7 @@ AS
 	SELECT @paramXML = Contents FROM T_Settings_Files WHERE File_Name = @settingsFileName
 
 /* -- alternate way to extract XML into rowset
+   -- However, this method does not handle special characters, like é so don't use it
 	DECLARE @hDoc int
 	--
 	--

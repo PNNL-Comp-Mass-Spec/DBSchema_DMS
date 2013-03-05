@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 148 ******/
+/****** RowCount: 149 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -131,7 +131,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (14
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (144,'PHRPProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (145,'MSDeconvProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (146,'MSAlignProgLoc','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (147,'RProgLoc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (147,'RProgLoc','','No longer used; the Cyclops plugin of the analysis manager auto-determines this using the registry')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (148,'CheckDataFolderCreateQueue','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (149,'SMAQCProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (150,'WorkDirMinFreeSpaceMB','','')
@@ -149,4 +149,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (16
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (163,'TargetedWorkflowsProgLoc','','Folder containing TargetedWorkflowConsole.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (164,'IonMobilityMsMsProgLoc','','Folder containing IonMobilityMsMsConsole.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (165,'QuameterProgLoc','','Folder containing Quameter.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (166,'PRIDEConverterProgLoc','','Folder containing pride-converter-2.0-SNAPSHOT.jar')
 SET IDENTITY_INSERT [T_ParamType] OFF

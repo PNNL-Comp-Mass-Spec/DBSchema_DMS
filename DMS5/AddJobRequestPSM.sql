@@ -17,6 +17,7 @@ CREATE PROCEDURE AddJobRequestPSM
 **			11/16/2012 grk - Added
 **			11/20/2012 grk - Added @organismName
 **			11/21/2012 mem - Now calling CreatePSMJobRequest
+**			12/13/2012 mem - Added support for @mode='preview'
 **
 *****************************************************/
 (
@@ -33,7 +34,7 @@ CREATE PROCEDURE AddJobRequestPSM
 	@ModificationDynMetOx varchar(24),    
 	@ModificationStatCysAlk varchar(24),
 	@ModificationDynSTYPhos varchar(24),
-	@mode VARCHAR(12) = 'add', 
+	@mode VARCHAR(12) = 'add',			-- 'add', 'preview', or 'debug'
 	@message VARCHAR(512) output,
 	@callingUser VARCHAR(128) = ''
 )
@@ -53,25 +54,30 @@ AS
 		
 		IF @mode = 'debug'	
 		BEGIN --<debug>
-			set @message = ''					
+			set @message = 'Debug mode; nothing to do'					
 		END --<debug>               
 
 		---------------------------------------------------
 		-- add mode
 		---------------------------------------------------
         
-		IF @mode = 'add'
+		IF @mode in ('add', 'preview')
 		BEGIN --<add>
 
+			DECLARE @previewMode tinyint = 0
+		
+			If @mode = 'preview'
+				Set @previewMode = 1
+					
 			DECLARE
 				@DynMetOxEnabled TINYINT = 0,    
 				@StatCysAlkEnabled tinyint = 0,
 				@DynSTYPhosEnabled tinyint = 0
-		
-				SELECT 	@DynMetOxEnabled = CASE WHEN @ModificationDynMetOx = 'Yes'	THEN 1 ELSE 0 END 
-				SELECT 	@StatCysAlkEnabled = CASE WHEN @ModificationStatCysAlk = 'Yes'	THEN 1 ELSE 0 END 
-				SELECT 	@DynSTYPhosEnabled = CASE WHEN @ModificationDynSTYPhos = 'Yes'	THEN 1 ELSE 0 END 
-		
+				
+			SELECT 	@DynMetOxEnabled = CASE WHEN @ModificationDynMetOx = 'Yes'	THEN 1 ELSE 0 END 
+			SELECT 	@StatCysAlkEnabled = CASE WHEN @ModificationStatCysAlk = 'Yes'	THEN 1 ELSE 0 END 
+			SELECT 	@DynSTYPhosEnabled = CASE WHEN @ModificationDynSTYPhos = 'Yes'	THEN 1 ELSE 0 END 
+				
 			EXEC @myError = CreatePSMJobRequest
 								@requestID = @requestID output,
 								@requestName = @requestName ,
@@ -85,6 +91,7 @@ AS
 								@DynSTYPhosEnabled = @DynSTYPhosEnabled,
 								@comment = @comment ,
 								@ownerPRN = @ownerPRN ,
+								@previewMode = @previewMode,
 								@message = @message  output,
 								@callingUser = @callingUser
 

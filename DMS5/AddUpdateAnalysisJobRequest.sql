@@ -57,6 +57,8 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
 **			11/14/2012 mem - Now assuring that @toolName is properly capitalized
 **			11/20/2012 mem - Removed parameter @workPackage
+**			12/13/2013 mem - Updated @mode to support 'PreviewAdd'
+**			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **
 *****************************************************/
 (
@@ -75,7 +77,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @adminReviewReqd VARCHAR(32) = 'No',		-- Legacy parameter; no longer used
     @state varchar(32),
     @requestID int output,
-    @mode varchar(12) = 'add', -- or 'update'
+    @mode varchar(12) = 'add',					-- 'add', 'update', or 'PreviewAdd'
     @message varchar(512) output
 )
 As
@@ -117,7 +119,7 @@ As
 
 	-- cannot create an entry with a duplicate name
 	--
-	if @mode = 'add'
+	if @mode IN ('add', 'PreviewAdd')
 	begin
 		IF Exists (SELECT AJR_requestID FROM T_Analysis_Job_Request WHERE AJR_requestName = @requestName)
 			RAISERROR ('Cannot add: request with same name already in database', 11, 4)
@@ -266,15 +268,15 @@ As
 	WHERE AJT_toolName = @toolName
 
 	---------------------------------------------------
-	-- Assure that we are not running a decoy search if using MSGFDB
+	-- Assure that we are not running a decoy search if using MSGFPlus
 	-- However, if the parameter file contains _NoDecoy in the name, then we'll allow @protCollOptionsList to contain Decoy
 	---------------------------------------------------
 	--
-	If @toolName LIKE 'MSGFDB%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+	If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
 	Begin
 		Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 		If IsNull(@message, '') = ''
-			Set @message = 'Note: changed protein options to forward-only since MSGFDB parameter files typically have tda=1'
+			Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter files typically have tda=1'
 	End
 
 	---------------------------------------------------
@@ -303,7 +305,7 @@ As
 	---------------------------------------------------
 	-- If mode is add, then force @state to 'new'
 	---------------------------------------------------
-	IF @mode = 'add' 
+	IF @mode IN ('add', 'PreviewAdd')
 	BEGIN
 		IF @adminReviewReqd = 'Yes' 
 			-- Lookup the name for state "New (Review Required)"
@@ -340,7 +342,7 @@ As
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
+	if @mode = 'add'
 	begin
 		declare @newRequestNum int
 		--
@@ -381,10 +383,18 @@ As
 	end -- add mode
 
 	---------------------------------------------------
+	-- action for add mode
+	---------------------------------------------------
+	if @mode = 'PreviewAdd'
+	begin
+		Set @message = 'Would create request "' + @requestName + '" with parameter file "' + @parmFileName + '" and settings file "' + @settingsFileName + '"'
+	end
+	
+	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin
 		-- Lookup the current state of the request
 		set @myError = 0
@@ -420,7 +430,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis] AS [dbo]

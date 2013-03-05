@@ -15,6 +15,7 @@ CREATE PROCEDURE ProcessWaitingSpecialProcJobs
 ** 
 **	Auth:	mem
 **	Date:	05/04/2012 mem - Initial version
+**			01/23/2013 mem - Fixed bug that only checked the status of jobs with tag 'SourceJob'
 **    
 *****************************************************/
 (
@@ -51,13 +52,11 @@ As
 	Declare @SourceJob int
 	Declare @AutoQueryUsed tinyint
 	Declare @SourceJobState int
-	Declare @SourceJobResultsFolder varchar(255)
 	Declare @WarningMessage varchar(512)
 	
 	Declare @TagAvailable tinyint
 	Declare @TagEntryID int
 	Declare @TagName varchar(12)
-	Declare @SourceJobCurrent int
 							
 	-- The following table variable tracks the tag names that we look for
 	Declare @TagNamesTable table (
@@ -128,8 +127,6 @@ As
 				Set @JobMessage = ''
 				Set @ReadyToProcess = 0
 						
-				Set @SourceJob = 0
-				Set @SourceJobResultsFolder = ''
 				Set @WarningMessage = ''
 			
 				-- Process @SpecialProcessingText to look for the tags in @TagNamesTable
@@ -154,7 +151,7 @@ As
 						Begin -- <e>
 							
 							Set @TagName = @TagName
-							Set @SourceJobCurrent = 0
+							Set @SourceJob = 0
 							Set @WarningMessage = ''
 							Set @ReadyToProcess = 0
 							
@@ -163,14 +160,14 @@ As
 										@Dataset, 
 										@SpecialProcessingText, 
 										@TagName,
-										@SourceJob = @SourceJobCurrent output, 
+										@SourceJob = @SourceJob output, 
 										@AutoQueryUsed = @AutoQueryUsed output,
 										@WarningMessage = @WarningMessage output, 
 										@PreviewSql = @PreviewSql
 							
 							Set @WarningMessage = IsNull(@WarningMessage, '')
 							
-							If @WarningMessage = '' And IsNull(@SourceJobCurrent, 0) > 0
+							If @WarningMessage = '' And IsNull(@SourceJob, 0) > 0
 								Set @ReadyToProcess = 1
 							Else
 								Set @JobMessage = @WarningMessage
@@ -178,9 +175,6 @@ As
 										
 							If @ReadyToProcess = 1
 							Begin -- <f>
-							
-								If @TagName = 'SourceJob'
-									Set @SourceJob = @SourceJobCurrent
 									
 								Set @SourceJobState = 0
 								

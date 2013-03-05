@@ -1,11 +1,11 @@
 /****** Object:  Table [T_Seq_Local_Symbols_List] ******/
-/****** RowCount: 18 ******/
+/****** RowCount: 24 ******/
 SET IDENTITY_INSERT [T_Seq_Local_Symbols_List] ON
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (0,'-','No modification symbol')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (1,'*','First dynamic mod in Sequest')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (2,'#','Second dynamic mod in Sequest')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (3,'@','Third dynamic mod in Sequest')
-INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (4,'$','Fourth dynamic mod in X!Tandem')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (4,'$','Fourth dynamic mod in X!Tandem; Sixth dynamic mod in Sequest v.27 (rev. 12)')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (5,'&','Fifth dynamic mod in X!Tandem')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (6,'!','Only used by X!Tandem')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (7,'%','Only used by X!Tandem')
@@ -13,10 +13,16 @@ INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Sym
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (9,']','Sequest uses this for peptide N-terminus dynamic mods')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (10,'^','Fourth dynamic mod in Sequest v.27 (rev. 12)')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (11,'~','Fifth dynamic mod in Sequest v.27 (rev. 12)')
-INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (12,'$','Sixth dynamic mod in Sequest v.27 (rev. 12)')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (13,'†','Additional dynamic mod supported by PHRP')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (14,'‡','Additional dynamic mod supported by PHRP')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (15,'¤','Additional dynamic mod supported by PHRP')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (16,'º','Additional dynamic mod supported by PHRP')
 INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (17,'`','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (18,'×','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (19,'÷','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (20,'ø','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (21,'¢','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (22,'=','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (23,'+','Additional dynamic mod supported by PHRP')
+INSERT INTO [T_Seq_Local_Symbols_List] (Local_Symbol_ID, Local_Symbol, Local_Symbol_Comment) VALUES (24,'_','Additional dynamic mod supported by PHRP')
 SET IDENTITY_INSERT [T_Seq_Local_Symbols_List] OFF

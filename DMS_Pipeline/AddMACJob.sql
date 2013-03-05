@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddMACJob
+CREATE PROCEDURE AddMACJob
 /****************************************************
 **
 **  Desc: 
@@ -13,9 +13,10 @@ CREATE PROCEDURE dbo.AddMACJob
 **
 **
 **  Auth:	grk
-**  Date:	
-**  10/27/2012 grk - Initial release
-**  11/01/2012 grk - eliminated job template
+**  Date:	10/27/2012 grk - Initial release
+**			11/01/2012 grk - eliminated job template
+**			12/11/2012 jds - added DataPackageID to MapMACJobParameters
+**			01/11/2013 mem - Now aborting if MapMACJobParameters returns an error code
 **
 *****************************************************/
 (
@@ -77,10 +78,10 @@ AS
 		WHERE Script = @scriptName
 		
 		IF @scriptID IS NULL
-			 RAISERROR('Scrit "%s" could not be found', 11, 3, @scriptName)
+			 RAISERROR('Scrit "%s" could not be found', 11, 22, @scriptName)
 		
 		IF @scriptEnabled = 'N'
-			 RAISERROR('Script "%s" is not enabled', 11, 4, @scriptName)
+			 RAISERROR('Script "%s" is not enabled', 11, 23, @scriptName)
 
 		---------------------------------------------------
 		-- is data package set up correctly for the job?
@@ -98,7 +99,7 @@ AS
 								'validate', 
 								@msg output
 		IF @valid <> 0
-			RAISERROR('%s', 11, 22, @msg)
+			RAISERROR('%s', 11, 24, @msg)
 		
 		---------------------------------------------------
 		-- get default job parameters from script
@@ -135,9 +136,13 @@ AS
 						@scriptName,				
 						@jobParam,
 						@tool,  
+						@DataPackageID,  
 						'map',					   
-						@msg output				
-					
+						@msg output
+		
+		if @result <> 0
+			RAISERROR(@msg, 11, 25)
+						
 		---------------------------------------------------
 		-- build final job param XML for creating job
 		---------------------------------------------------
@@ -203,6 +208,7 @@ AS
 
 	END CATCH
 	return @myError
+
 GO
 GRANT EXECUTE ON [dbo].[AddMACJob] TO [DMS_SP_User] AS [dbo]
 GO

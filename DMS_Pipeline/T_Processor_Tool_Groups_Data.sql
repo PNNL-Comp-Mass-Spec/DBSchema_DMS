@@ -9,7 +9,7 @@ INSERT INTO [T_Processor_Tool_Groups] VALUES (4,'Poweredge 1750 XP Pubs with ICR
 INSERT INTO [T_Processor_Tool_Groups] VALUES (5,'Poweredge 1850 XP Pubs',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (6,'Poweredge 1850 Windows 7 Pubs',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (7,'Poweredge 1950 quad core, 1 GB Pubs',1,'Windows 2003 Server Pubs')
-INSERT INTO [T_Processor_Tool_Groups] VALUES (8,'Poweredge 1950 quad core, 2 GB Pubs, Decon2LS_v2',1,'Running 32-bit Windows XP')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (8,'Poweredge 1950 quad core, 2 GB Pubs',1,'Running 32-bit Windows XP')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (9,'R610 Pubs, Group 1, Decon2LS_V2',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (10,'Sequest Clusters',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (11,'Old single core XP pubs',1,'')

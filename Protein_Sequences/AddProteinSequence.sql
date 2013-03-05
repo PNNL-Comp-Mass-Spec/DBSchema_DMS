@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[AddProteinSequence]
+CREATE PROCEDURE dbo.AddProteinSequence
 
 /****************************************************
 **
@@ -16,8 +16,9 @@ CREATE PROCEDURE [dbo].[AddProteinSequence]
 **
 **	
 **
-**		Auth: kja
-**		Date: 10/06/2004
+**	Auth:	kja
+**	Date:	10/06/2004
+**			12/11/2012 mem - Removed transaction
 **    
 *****************************************************/
 
@@ -29,16 +30,15 @@ CREATE PROCEDURE [dbo].[AddProteinSequence]
 	@average_mass float,
 	@sha1_hash varchar(40),
 	@is_encrypted tinyint,
-	@mode varchar(12) = 'add',
+	@mode varchar(12) = 'add',		-- The only option is "add"
 	@message varchar(512) output
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	declare @msg varchar(256)
@@ -57,22 +57,13 @@ As
 		return @Protein_ID
 	end
 			
-	
-	---------------------------------------------------
-	-- Start transaction
-	---------------------------------------------------
 
-	declare @transName varchar(32)
-	set @transName = 'AddProteinCollectionEntry'
-	begin transaction @transName
-
-
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
 	if @mode = 'add'
 	begin
-
+		---------------------------------------------------
+		-- action for add mode
+		---------------------------------------------------
+		--
 		INSERT INTO T_Proteins (
 			[Sequence],
 			Length,
@@ -94,24 +85,17 @@ As
 			GETDATE(),
 			GETDATE()
 		)
-		
-		
-	SELECT @Protein_ID = @@Identity 		
-		
 		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+		SELECT @myError = @@error, @myRowCount = @@rowcount, @Protein_ID = SCOPE_IDENTITY()
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @msg = 'Insert operation failed!'
 			RAISERROR (@msg, 10, 1)
 			return 51007
 		end
 	end
 		
-	commit transaction @transName
-
 	return @Protein_ID
 
 GO

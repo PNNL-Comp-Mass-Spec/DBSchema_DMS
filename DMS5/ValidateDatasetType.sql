@@ -23,6 +23,7 @@ CREATE Procedure dbo.ValidateDatasetType
 **			08/15/2012 mem - Added support for IMS-HMS-HMSn
 **			10/08/2012 mem - No longer overriding dataset type MALDI-HMS
 **			10/19/2012 mem - Improved support for IMS-HMS-HMSn
+**			02/28/2013 mem - No longer overriding dataset type C60-SIMS-HMS
 **    
 *****************************************************/
 (
@@ -382,7 +383,7 @@ As
 
 AutoDefineDSType:
 	
-	If Not @CurrentDatasetType LIKE 'IMS%' AND NOT @CurrentDatasetType IN ('MALDI-HMS')
+	If Not @CurrentDatasetType LIKE 'IMS%' AND NOT @CurrentDatasetType IN ('MALDI-HMS', 'C60-SIMS-HMS')
 	Begin
 		-- Auto-define the dataset type based on the scan type counts
 		-- The auto-defined types will be one of the following:

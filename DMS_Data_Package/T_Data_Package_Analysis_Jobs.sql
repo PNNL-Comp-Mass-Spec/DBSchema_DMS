@@ -19,6 +19,14 @@ CREATE TABLE [dbo].[T_Data_Package_Analysis_Jobs](
 ) ON [PRIMARY]
 
 GO
+
+/****** Object:  Index [IX_T_Data_Package_Analysis_Jobs_Job_Include_Data_Package_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Data_Package_Analysis_Jobs_Job_Include_Data_Package_ID] ON [dbo].[T_Data_Package_Analysis_Jobs] 
+(
+	[Job] ASC
+)
+INCLUDE ( [Data_Package_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+GO
 GRANT SELECT ON [dbo].[T_Data_Package_Analysis_Jobs] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_Analysis_Jobs] TO [DMS_SP_User] AS [dbo]

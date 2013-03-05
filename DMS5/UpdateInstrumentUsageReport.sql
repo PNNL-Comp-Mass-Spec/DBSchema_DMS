@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateInstrumentUsageReport 
+CREATE PROCEDURE UpdateInstrumentUsageReport 
 /****************************************************
 **
 **  Desc: 
@@ -24,7 +24,8 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **    Auth: grk
 **    Date: 10/07/2012 
 **          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
-**			11/21/2012 mem - Extended cutoff for 'relad' to be 45 days instead of 10 days
+**			11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
+**			01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 10 days
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -48,10 +49,14 @@ As
 
 	set @message = ''
 	 
-	DECLARE @msg VARCHAR(512) 	DECLARE @bom DATETIME 
+	DECLARE @msg VARCHAR(512) 
+
+	DECLARE @bom DATETIME 
 	DECLARE @bonm DATETIME
-	DECLARE @eom DATETIME 	DECLARE @coff DATETIME
-   	DECLARE @xml AS xml
+	DECLARE @eom DATETIME
+ 	DECLARE @coff DATETIME
+   
+	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
 
@@ -77,10 +82,10 @@ As
 		SET @bom = @month + '/1/' + @year		-- Beginning of the month that we are updating
 		SET @bonm = DATEADD(MONTH, 1, @bom)		-- Beginning of the next month after @bom
 		SET @eom = DATEADD(MINUTE, -1, @bonm)	-- End of the month that we are editing
-		SET @coff = DATEADD(DAY, 45, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
+		SET @coff = DATEADD(DAY, 90, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
 		
 		IF GETDATE() > @coff
-			RAISERROR ('Changes are not allowed to prior months after 45 days into the next month', 11, 13)
+			RAISERROR ('Changes are not allowed to prior months after 90 days into the next month', 11, 13)
 
 		-----------------------------------------------------------
 		-- foundational actions for various operations
@@ -258,7 +263,6 @@ As
 	END CATCH
 	return @myError
 
-	
 GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS_SP_User] AS [dbo]
 GO

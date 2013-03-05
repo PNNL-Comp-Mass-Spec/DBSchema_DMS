@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Filter_Set_Criteria_Name_Tool_Map] ******/
-/****** RowCount: 27 ******/
+/****** RowCount: 32 ******/
 /****** Columns: Criterion_ID, Analysis_Tool_ID ******/
 INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (1,0)
 INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (2,0)
@@ -28,3 +28,8 @@ INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (21,20)
 INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (22,1)
 INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (22,15)
 INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (22,20)
+INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (23,36)
+INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (24,36)
+INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (25,36)
+INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (26,38)
+INSERT INTO [T_Filter_Set_Criteria_Name_Tool_Map] VALUES (27,38)

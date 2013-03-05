@@ -94,6 +94,11 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool] FOREIGN KEY([AD_analysisToolName])
+REFERENCES [T_Analysis_Tool] ([AJT_toolName])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class] FOREIGN KEY([AD_instrumentClassCriteria])
 REFERENCES [T_Instrument_Class] ([IN_class])
 GO

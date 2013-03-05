@@ -4,15 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Instrument_Actual_List_Report] as
 SELECT UsageQ.Fiscal_Year,
        ISNULL(UsageQ.Proposal_ID, 0) AS Proposal_ID,
-       ISNULL(CONVERT(varchar(32), T_EUS_Proposals.TITLE) + '...', '-No Proposal-') AS Title,
+       ISNULL(CONVERT(varchar(32), T_EUS_Proposals.Title) + '...', '-No Proposal-') AS Title,
        T_EUS_Proposal_State_Name.Name AS Status,
        UsageQ.FT_Usage, UsageQ.IMS_Usage, UsageQ.ORB_Usage, UsageQ.EXA_Usage, UsageQ.LTQ_Usage, UsageQ.GC_Usage, UsageQ.QQQ_Usage,
        UsageQ.FT_Alloc, UsageQ.IMS_Alloc, UsageQ.ORB_Alloc, UsageQ.EXA_Alloc, UsageQ.LTQ_Alloc, UsageQ.GC_Alloc, UsageQ.QQQ_Alloc, 
+       UsageQ.FT_Actual + UsageQ.IMS_Actual + UsageQ.ORB_Actual + UsageQ.EXA_Actual + UsageQ.LTQ_Actual + UsageQ.GC_Actual + UsageQ.QQQ_Actual AS Total_Actual,
        UsageQ.FT_Actual, UsageQ.IMS_Actual, UsageQ.ORB_Actual, UsageQ.EXA_Actual, UsageQ.LTQ_Actual, UsageQ.GC_Actual, UsageQ.QQQ_Actual,
        UsageQ.Campaigns, UsageQ.Campaign_First, UsageQ.Campaign_Last,
+       UsageQ.FT_EMSL_Actual + UsageQ.IMS_EMSL_Actual + UsageQ.ORB_EMSL_Actual + UsageQ.EXA_EMSL_Actual + UsageQ.LTQ_EMSL_Actual + UsageQ.GC_EMSL_Actual + UsageQ.QQQ_EMSL_Actual AS Total_EMSL_Actual,
        UsageQ.FT_EMSL_Actual, UsageQ.IMS_EMSL_Actual, UsageQ.ORB_EMSL_Actual, UsageQ.EXA_EMSL_Actual, UsageQ.LTQ_EMSL_Actual, UsageQ.GC_EMSL_Actual, UsageQ.QQQ_EMSL_Actual
 FROM T_EUS_Proposal_State_Name
      INNER JOIN T_EUS_Proposals
@@ -115,6 +118,7 @@ FROM T_EUS_Proposal_State_Name
                   TAC.FY = TAL.Fiscal_Year 
      ) UsageQ
        ON T_EUS_Proposals.PROPOSAL_ID = UsageQ.Proposal_ID
+
 
 
 GO

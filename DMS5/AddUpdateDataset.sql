@@ -58,7 +58,7 @@ CREATE Procedure AddUpdateDataset
 **			09/12/2012 mem - Now auto-changing HMS-HMSn to IMS-HMS-HMSn for IMS datasets
 **						   - Now requiring that the dataset name be 90 characters or less (longer names can lead to "path-too-long" errors; Windows has a 254 character path limit)
 **			11/21/2012 mem - Now requiring that the dataset name be at least 6 characters in length
-
+**			01/22/2013 mem - Now updating the dataset comment if the default dataset type is invalid for the instrument group
 **    
 *****************************************************/
 (
@@ -558,8 +558,13 @@ As
 			Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
 		End
 		
-		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group, which would indicate indvalid data in table T_Instrument_Group)
+		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group, which would indicate invalid data in table T_Instrument_Group)
 		exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
+		
+		If @result <> 0
+		Begin
+			Set @comment = @comment + ' - Error: Default dataset type defined in T_Instrument_Group is invalid'
+		End
 	End
 	
 	if @result <> 0

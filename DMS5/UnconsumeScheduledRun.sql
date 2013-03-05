@@ -10,7 +10,7 @@ CREATE Procedure UnconsumeScheduledRun
 **  The intent is to recycle user-entered requests
 **  (where appropriate) and make sure there is
 **  a requested run for each dataset (unless
-**  datset is being deleted).
+**  dataset is being deleted).
 **
 **  Disassociates the currently-associated requested run 
 **  from the given dataset if the requested run was
@@ -45,6 +45,8 @@ CREATE Procedure UnconsumeScheduledRun
 **	    03/02/2010 grk - added status field to requested run
 **		08/04/2010 mem - No longer updating the "date created" date for the recycled request
 **		12/13/2011 mem - Added parameter @callingUser, which is sent to CopyRequestedRun, AlterEventLogEntryUser, and DeleteRequestedRun
+**		02/20/2013 mem - Added ability to lookup the original request from an auto-created recycled request
+**		02/21/2013 mem - Now validating that the RequestID extracted from "Automatically created by recycling request 12345" actually exists
 **    
 *****************************************************/
 (
@@ -52,7 +54,7 @@ CREATE Procedure UnconsumeScheduledRun
 	@wellplateNum varchar(50),
 	@wellNum varchar(50),
 	@retainHistory tinyint = 0,
-	@message varchar(255) output,
+	@message varchar(1024) output,
 	@callingUser varchar(128) = ''
 )
 As
@@ -64,7 +66,7 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 	
-	set @message = ''
+	set @message = IsNull(@message, '')
 
 	---------------------------------------------------
 	-- get datasetID
@@ -87,23 +89,27 @@ As
 	--
 	if @datasetID = 0
 	begin
-		set @message = 'Datset does not exist"' + @datasetNum + '"'
+		set @message = 'Dataset does not exist"' + @datasetNum + '"'
 		return 51141
 	end
 
 	---------------------------------------------------
 	-- Look for associated request for dataset
 	---------------------------------------------------	
-	declare @com varchar(1024)
+	declare @requestComment varchar(1024)
 	declare @requestID int
 	declare @requestOrigin char(4)
-
-	set @com = ''
+	
+	declare @requestIDOriginal int = 0
+	declare @CopyRequestedRun tinyint = 0
+	declare @RecycleOriginalRequest tinyint = 0
+	
+	set @requestComment = ''
 	set @requestID = 0
 	--
 	SELECT 
 		@requestID = ID,
-		@com = RDS_comment,
+		@requestComment = RDS_comment,
 		@requestOrigin = RDS_Origin
 	FROM T_Requested_Run
 	WHERE (DatasetID = @datasetID)
@@ -128,8 +134,7 @@ As
 	-- Was request automatically created by dataset entry?
 	---------------------------------------------------	
 	--
-	declare @autoCreatedRequest int
-	set @autoCreatedRequest = 0
+	declare @autoCreatedRequest int = 0
 	
 	IF @requestOrigin = 'auto'
 		set @autoCreatedRequest = 1
@@ -138,6 +143,7 @@ As
 	-- start transaction
 	---------------------------------------------------	
 	declare @notation varchar(256)
+	Declare @AddnlText varchar(1024)
 	
 	declare @transName varchar(32)
 	set @transName = 'UnconsumeScheduledRun'
@@ -149,40 +155,175 @@ As
 	---------------------------------------------------	
 
 	if @autoCreatedRequest = 0
-	BEGIN --<a>
+	BEGIN -- <a1>
 		---------------------------------------------------
 		-- original request was user-entered,
-		-- copy it (if commanded to) 
-		-- and set status to 'Completed'
+		-- We will copy it (if commanded to) and set status to 'Completed'
+		---------------------------------------------------
+		--		
+		Set @requestIDOriginal = @requestID
+		Set @RecycleOriginalRequest = 1
+
+		If @retainHistory = 1
+		Begin
+			Set @CopyRequestedRun = 1
+		End
+		
+	END -- </a1>
+	ELSE
+	BEGIN -- <a2>
+		---------------------------------------------------
+		-- original request was auto created 
+		-- delete it (if commanded to)
 		---------------------------------------------------
 		--
-		if  @retainHistory > 0
-		BEGIN --<c>
-			set @notation = 'Automatically created by recycling request ' + cast(@requestID as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101)
-			--
-			EXEC @myError = CopyRequestedRun
-									@requestID,
-									@datasetID,
-									'Completed',
-									@notation,
-									@message output,
-									@callingUser
+		if @retainHistory = 0
+		BEGIN -- <b2>
+			EXEC @myError = DeleteRequestedRun
+								 @requestID,
+								 @message OUTPUT,
+								 @callingUser 
 			--
 			if @myError <> 0
 			begin
 				rollback transaction @transName
-				return @myError
+				return 51052
 			end
-		END --<c>
-		--
+		END -- </b2>
+		Else
+		Begin -- <b3>
+		
+			---------------------------------------------------
+			-- original request was auto-created
+			-- Examine the request comment to determine if it was a recycled request
+			---------------------------------------------------
+			--			
+			If @requestComment Like '%Automatically created by recycling request [0-9]%[0-9] from dataset [0-9]%'
+			Begin -- <c>
+			
+				-- Determine the original request ID
+				--		
+				Declare @CharIndex int
+				Declare @Extracted varchar(1024)
+				Declare @OriginalRequestStatus varchar(32) = ''
+				Declare @OriginalRequesetDatasetID int = 0
+						       
+				Set @CharIndex = CHARINDEX('by recycling request', @requestComment)
+				
+				If @CharIndex > 0
+				Begin -- <d>
+					Set @Extracted = LTRIM(SUBSTRING(@requestComment, @CharIndex + LEN('by recycling request'), 20))					
+					
+					-- Comment is now of the form: "286793 from dataset"
+					-- Find the space after the number
+					--	
+					Set @CharIndex = CHARINDEX(' ', @Extracted)
+					
+					If @CharIndex > 0
+					Begin -- <e>
+						Set @Extracted = LTRIM(RTRIM(SUBSTRING(@Extracted, 1, @Charindex)))
+						
+						-- Original requested ID has been determined; copy the original request
+						--							
+						Set @requestIDOriginal = Convert(int, @Extracted)
+						Set @RecycleOriginalRequest = 1
+						
+						-- Make sure the original request actually exists
+						IF Not Exists (SELECT * FROM T_Requested_Run WHERE ID = @requestIDOriginal)
+						Begin
+							-- Original request doesn't exist; recycle this recycled one
+							Set @requestIDOriginal = @RequestID
+						End
+
+						-- Make sure that the original request is not active
+						-- In addition, lookup the dataset ID of the original request
+						
+						SELECT @OriginalRequestStatus = RDS_Status, 
+						       @OriginalRequesetDatasetID = DatasetID
+						FROM T_Requested_Run 
+						WHERE ID = @requestIDOriginal
+						
+						If @OriginalRequestStatus = 'Active' 
+						Begin							
+							-- The original request is active, don't recycle anything
+							
+							If @requestIDOriginal = @requestID
+							Begin
+								Set @AddnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since it is already active'
+								Exec PostLogEntry 'Warning', @AddnlText, 'UnconsumeScheduledRun'
+								
+								Set @AddnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' since it is already active'
+								Set @message = dbo.AppendToText(@message, @AddnlText, 0, '; ')
+							End
+							Else
+							Begin
+								Set @AddnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since dataset already has an active request (' + @Extracted + ')'
+								Exec PostLogEntry 'Warning', @AddnlText, 'UnconsumeScheduledRun'
+								
+								Set @AddnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' since dataset already has an active request (' + @Extracted + ')'
+								Set @message = dbo.AppendToText(@message, @AddnlText, 0, '; ')
+							End
+							
+							Set @requestIDOriginal = 0							
+						End
+						Else
+						Begin
+							Set @CopyRequestedRun = 1
+							Set @datasetID = @OriginalRequesetDatasetID
+						End
+							
+					End -- </e>
+				End -- </d>
+			End -- </c>
+			Else
+			Begin
+				Set @AddnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since AutoRequest'
+				Set @message = dbo.AppendToText(@message, @AddnlText, 0, '; ')
+			End
+			
+		End -- </b3>
+		
+	END -- <a2>
+
+
+	If @requestIDOriginal > 0 And @CopyRequestedRun = 1
+	BEGIN -- <a3>
+	
 		---------------------------------------------------
-		-- always recycle the original request
+		-- Copy the request and associate the dataset with the newly created request
+		---------------------------------------------------
+		--
+		-- Warning: The text "Automatically created by recycling request" is used earlier in this stored procedure; thus, do not update it here
+		--
+		set @notation = 'Automatically created by recycling request ' + cast(@requestIDOriginal as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101)
+		--
+		EXEC @myError = CopyRequestedRun
+								@requestIDOriginal,
+								@datasetID,
+								'Completed',
+								@notation,
+								@message output,
+								@callingUser
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			return @myError
+		end		
+	END -- </a3>
+
+
+	If @requestIDOriginal > 0 And @RecycleOriginalRequest = 1
+	Begin -- <a4>
+	
+		---------------------------------------------------
+		-- Recycle the original request
 		---------------------------------------------------	
 		--
 	    -- create annotation to be appended to comment
 	    --
 		set @notation = ' (recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
-		if len(@com) + len(@notation) > 1024
+		if len(@requestComment) + len(@notation) > 1024
 		begin
 			-- Dataset comment could become too long; do not append the additional note
 			set @notation = ''
@@ -202,7 +343,7 @@ As
 			DatasetID = NULL,
 			RDS_comment = RDS_comment + @notation
 		WHERE 
-			ID = @requestID
+			ID = @requestIDOriginal
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -221,35 +362,15 @@ As
 			FROM T_Requested_Run_State_Name
 			WHERE (State_Name = @newStatus)
 
-			Exec AlterEventLogEntryUser 11, @requestID, @stateID, @callingUser
+			Exec AlterEventLogEntryUser 11, @requestIDOriginal, @stateID, @callingUser
 		End
 
 
-	END --<a>
-	ELSE
-	BEGIN --<b>
-		---------------------------------------------------
-		-- original request was auto created 
-		-- delete it (if commanded to)
-		---------------------------------------------------
-		--
-		if  @retainHistory = 0
-		BEGIN --<d>
-			EXEC @myError = DeleteRequestedRun
-								 @requestID,
-								 @message OUTPUT,
-								 @callingUser 
-			--
-			if @myError <> 0
-			begin
-				rollback transaction @transName
-				return 51052
-			end
-		END --<d>
-	END --<b>
-
+	End -- </a4>
+	
+	
 	---------------------------------------------------
-	-- 
+	-- Commit the changes
 	---------------------------------------------------
 
 	commit transaction @transName

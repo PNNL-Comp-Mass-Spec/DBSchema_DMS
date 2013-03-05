@@ -151,10 +151,10 @@ GRANT SELECT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Settings_Files] FOREIGN KEY([Analysis_Tool])
+ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool])
 REFERENCES [T_Analysis_Tool] ([AJT_toolName])
 GO
-ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Settings_Files]
+ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool]
 GO
 ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([File_Name],(0))=(0)))
 GO

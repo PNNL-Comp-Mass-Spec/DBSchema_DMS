@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 44 ******/
+/****** RowCount: 54 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
@@ -10,7 +10,7 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (15,'Firefly',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (16,'Griffin',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (17,'Pegasus',2,'Fast Separation')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (18,'Phoenix',2,'')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (18,'Phoenix',10,'Installed Eksigent pumps November 2012.')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (19,'Raptor',2,'')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (20,'Roc',2,'Metabolomics Cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (27,'Falcon',2,'')
@@ -45,4 +45,14 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (58,'Polaroid',2,'Constant Flow Waters Nano-Acquity (1d only). Serial numbers nBSM:M10NPB053N;nSM:A11NPS920M.')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (60,'Jaguar',2,'3 Agilent Pumps (2 nano and 1 cap) 8 Two Position Valves and 4 Multi-Position valves, PAL')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (61,'Samwise',2,'NanoAcquity cart acquired from Tox-Refurbished for Global Lipidomics. Serial numbers nBSM:M08NPB528N;nBSM2:A09NPB545N;nSM:A09NPS508M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (62,'Blue_Spruce',2,'Advion Nanomate with LESA upgrade (Infusion, LC Coupling and LSEA tissue)')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (63,'Pippin',2,'NanoAcquity cart acquired from Tox-Refurbished for Global Lipidomics. Serial numbers nBSM:M08NPB528N;nBSM2:A09NPB545N;nSM:A09NPS508M.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (64,'Iris',2,'Manual LC in BSF 1208 for sample prep use')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (65,'Leopard',2,'New, used to be Roc')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (66,'Methow',2,'Eksigent pumps. Used to be Phoenix')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (67,'Rogue',2,'Used to be Lion, changed naming convention')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (68,'Snake',2,'Used to be Eagle renamed to reflect Eksigent')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (69,'Columbia',2,'Eksigent System.  Used to be Andromeda')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (70,'Smeagol',2,'#1 2D Waters NanoAcquity LC 1D cart.  Serial numbers nBSM:L12NPB418N;nSM:F12NPS111M')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (72,'Merry',2,'Waters 1D LC commercial system')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

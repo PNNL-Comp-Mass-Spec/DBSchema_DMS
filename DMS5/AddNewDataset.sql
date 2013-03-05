@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			03/07/2011 mem - Now auto-defining experiment name if empty for QC_Shew and Blank datasets
 **						   - Now auto-defining EMSL usage type to Maintenance for QC_Shew and Blank datasets
 **			05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
+**			01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
 **    
 *****************************************************/
 (
@@ -60,26 +61,28 @@ AS
 	set @message = ''
 
 	DECLARE
-		@Dataset_Name		varchar(128),  -- @datasetNum
-		@Experiment_Name	varchar(64),  -- @experimentNum
-		@Instrument_Name	varchar(64),  -- @instrumentName
-		@Separation_Type	varchar(64),  -- @secSep
-		@LC_Cart_Name		varchar(128), -- @LCCartName
-		@LC_Column			varchar(64),  -- @LCColumnNum
-		@Wellplate_Number	varchar(64),  -- @wellplateNum
-		@Well_Number		varchar(64),  -- @wellNum
-		@Dataset_Type		varchar(64),  -- @msType
-		@Operator_PRN		varchar(64),  -- @operPRN
-		@Comment			varchar(512), -- @comment
-		@Interest_Rating	varchar(32),  -- @rating
-		@Request			int,          -- @requestID; this might get updated by AddUpdateDataset
-		@EMSL_Usage_Type	varchar(50),  -- @eusUsageType
-		@EMSL_Proposal_ID	varchar(10),  -- @eusProposalID
-		@EMSL_Users_List	varchar(1024), -- @eusUsersList
-		@Run_Start		    varchar(64),
-		@Run_Finish		    varchar(64),
-		@DatasetCreatorPRN	varchar(128)	-- PRN of the person that created the dataset; typically only present in 
-											-- trigger files created due to a dataset manually being created by a user
+		@Dataset_Name		varchar(128) = '',
+		@Experiment_Name	varchar(64)  = '',
+		@Instrument_Name	varchar(64)  = '',
+		@Separation_Type	varchar(64)  = '',
+		@LC_Cart_Name		varchar(128) = '',
+		@LC_Column			varchar(64)  = '',
+		@Wellplate_Number	varchar(64)  = '',
+		@Well_Number		varchar(64)  = '',
+		@Dataset_Type		varchar(64)  = '',
+		@Operator_PRN		varchar(64)  = '',
+		@Comment			varchar(512) = '',
+		@Interest_Rating	varchar(32)  = '',
+		@Request			int          = '', -- @requestID; this might get updated by AddUpdateDataset
+		@EMSL_Usage_Type	varchar(50)  = '',
+		@EMSL_Proposal_ID	varchar(10)  = '',
+		@EMSL_Users_List	varchar(1024)  = '',
+		@Run_Start		    varchar(64)    = '',
+		@Run_Finish		    varchar(64)    = '',
+		@DatasetCreatorPRN	varchar(128)   = ''
+		
+		-- Note that @DatasetCreatorPRN is the PRN of the person that created the dataset; 
+		-- It is typically only present in trigger files created due to a dataset manually being created by a user
 
 	---------------------------------------------------
 	--  Create temporary table to hold list of parameters
@@ -97,18 +100,24 @@ AS
 		set @message = 'Failed to create temporary parameter table'
 		goto DONE
 	end
-	
-	---------------------------------------------------
-	-- Parse the XML input
-	---------------------------------------------------
-	EXEC sp_xml_preparedocument @hDoc OUTPUT, @xmlDoc
 
+	---------------------------------------------------
+	-- Convert @xmlDoc to XML
+	---------------------------------------------------
+	
+	Declare @xml xml = Convert(xml, @xmlDoc)
+	
  	---------------------------------------------------
 	-- Populate parameter table from XML parameter description  
 	---------------------------------------------------
 
 	INSERT INTO #TPAR (paramName, paramValue)
-	SELECT * FROM OPENXML(@hDoc, N'//Parameter')  with ([Name] varchar(128), [Value] varchar(512))
+	SELECT [Name], IsNull([Value], '')
+	FROM ( SELECT  xmlNode.value('@Name', 'varchar(128)') AS [Name], 
+	               xmlNode.value('@Value', 'varchar(512)') AS [Value]
+	       FROM @xml.nodes('/Dataset/Parameter') AS R(xmlNode)
+	) LookupQ
+	WHERE NOT [Name] IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -117,12 +126,6 @@ AS
 		set @message = 'Error populating temporary parameter table'
 		goto DONE
 	end
-    
- 	---------------------------------------------------
-	-- Remove the internal representation of the XML document.
- 	---------------------------------------------------
- 	
-	EXEC sp_xml_removedocument @hDoc
 
 	---------------------------------------------------
 	-- Trap 'parse_only' mode here
@@ -130,7 +133,7 @@ AS
 	if @mode = 'parse_only'
 	begin
 		--
-		SELECT CONVERT(char(24), paramName), paramValue FROM #TPAR
+		SELECT CONVERT(char(24), paramName) AS Name, paramValue FROM #TPAR
 		goto DONE
 	end
 
@@ -158,29 +161,6 @@ AS
 	SELECT	@Run_Finish		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
 	SELECT  @DatasetCreatorPRN   = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
-	---------------------------------------------------
-	-- Assure that none of the values is Null
-	---------------------------------------------------
-	
-	Set @Dataset_Name		 = IsNull(@Dataset_Name, '')
-	Set @Experiment_Name	 = IsNull(@Experiment_Name, '')
-	Set @Instrument_Name	 = IsNull(@Instrument_Name, '')
-	Set @Separation_Type	 = IsNull(@Separation_Type, '')
-	Set @LC_Cart_Name		 = IsNull(@LC_Cart_Name, '')
-	Set @LC_Column			 = IsNull(@LC_Column, '')	
-	Set @Wellplate_Number	 = IsNull(@Wellplate_Number, '')
-	Set @Well_Number		 = IsNull(@Well_Number, '')
-	Set @Dataset_Type		 = IsNull(@Dataset_Type, '')	
-	Set @Operator_PRN		 = IsNull(@Operator_PRN, '')
-	Set @Comment			 = IsNull(@Comment, '')
-	Set @Interest_Rating	 = IsNull(@Interest_Rating, '')
-	Set @Request			 = IsNull(@Request, 0)		
-	Set @EMSL_Usage_Type	 = IsNull(@EMSL_Usage_Type, '')
-	Set @EMSL_Proposal_ID	 = IsNull(@EMSL_Proposal_ID, '')
-	Set @EMSL_Users_List	 = IsNull(@EMSL_Users_List, '')
-	Set @Run_Start		   	 = IsNull(@Run_Start, '')
-	Set @Run_Finish		   	 = IsNull(@Run_Finish, '')
-	Set @DatasetCreatorPRN   = IsNull(@DatasetCreatorPRN, '')
 	
  	---------------------------------------------------
 	-- check for QC or Blank datasets

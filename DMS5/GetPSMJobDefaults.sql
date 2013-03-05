@@ -16,6 +16,7 @@ CREATE Procedure GetPSMJobDefaults
 **	Auth:	mem
 **	Date:	11/14/2012 mem - Initial version
 **			11/20/2012 mem - Added 3 new parameters: organism name, protein collection name, and protein collection options
+**			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **    
 *****************************************************/
 (
@@ -59,7 +60,7 @@ As
 		---------------------------------------------------
 		
 		Set @Metadata = ''
-		Set @toolName = 'MSGFDB'
+		Set @toolName = 'MSGFPlus'
 		Set @jobTypeName = ''
 		Set @jobTypeDesc = ''
 		Set @DynMetOxEnabled = 0

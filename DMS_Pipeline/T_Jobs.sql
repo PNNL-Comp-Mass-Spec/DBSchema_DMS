@@ -167,6 +167,7 @@ ALTER TABLE [dbo].[T_Jobs] CHECK CONSTRAINT [FK_T_Jobs_T_Job_State_Name]
 GO
 ALTER TABLE [dbo].[T_Jobs]  WITH CHECK ADD  CONSTRAINT [FK_T_Jobs_T_Scripts] FOREIGN KEY([Script])
 REFERENCES [T_Scripts] ([Script])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Jobs] CHECK CONSTRAINT [FK_T_Jobs_T_Scripts]
 GO

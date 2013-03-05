@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddProteinReference]
+CREATE PROCEDURE dbo.AddProteinReference
 
 /****************************************************
 **
@@ -20,6 +20,8 @@ CREATE PROCEDURE [dbo].[AddProteinReference]
 **			11/28/2005 kja - Changed for revised database architecture
 **			02/11/2011 mem - Now validating that protein name is 25 characters or less; also verifying it does not contain a space
 **			04/29/2011 mem - Added parameter @MaxProteinNameLength; default is 25
+**			12/11/2012 mem - Removed transaction
+**			01/10/2013 mem - Now validating that @MaxProteinNameLength is between 25 and 125; changed @MaxProteinNameLength to 32
 **
 *****************************************************/
 
@@ -30,7 +32,7 @@ CREATE PROCEDURE [dbo].[AddProteinReference]
 	@protein_ID int,
 	@nameDescHash varchar(40),
 	@message varchar(256) output,
-	@MaxProteinNameLength int = 34
+	@MaxProteinNameLength int = 32
 )
 As
 	set nocount on
@@ -43,6 +45,15 @@ As
 	declare @msg varchar(256)
 	Set @message = ''
 
+	If IsNull(@MaxProteinNameLength, 0) <= 0
+		Set @MaxProteinNameLength = 32
+	
+	If @MaxProteinNameLength < 25
+		Set @MaxProteinNameLength = 25
+	
+	If @MaxProteinNameLength > 125
+		Set @MaxProteinNameLength = 125
+		
 	---------------------------------------------------
 	-- Verify name does not contain a space and is not too long
 	---------------------------------------------------
@@ -82,65 +93,30 @@ As
 		-- Return the reference ID
 		return @Reference_ID
 	end
-	
 
-	---------------------------------------------------
-	-- Start transaction
-	---------------------------------------------------
-
-	declare @transName varchar(32)
-	set @transName = 'AddProteinReferenceEntry'
-	begin transaction @transName
-
---	INSERT INTO T_Protein_Names (
---		[Name],
---		Description,
---		Organism_ID,
---		Annotation_Type_ID,
---		Reference_Fingerprint,
---		DateAdded, Protein_ID
---	) VALUES (
---		@name, 
---		@description,
---		@organism_ID, 
---		@authority_ID,
---		@nameDescHash,
---		GETDATE(),
---		@protein_ID
---	)
-	
-		INSERT INTO T_Protein_Names (
-			[Name],
-			Description,
-			Annotation_Type_ID,
-			Reference_Fingerprint,
-			DateAdded, Protein_ID
-		) VALUES (
-			@name, 
-			@description,
-			@authority_ID,
-			@nameDescHash,
-			GETDATE(),
-			@protein_ID
-		)
-
-		
-		
-	--execute @Protein_ID = GetProteinID @length, @sha1_hash 		
-	SELECT @Reference_ID = @@Identity
-		
+	INSERT INTO T_Protein_Names (
+		[Name],
+		Description,
+		Annotation_Type_ID,
+		Reference_Fingerprint,
+		DateAdded, Protein_ID
+	) VALUES (
+		@name, 
+		@description,
+		@authority_ID,
+		@nameDescHash,
+		GETDATE(),
+		@protein_ID
+	)
 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+	SELECT @myError = @@error, @myRowCount = @@rowcount, @Reference_ID = SCOPE_IDENTITY()
 	--
 	if @myError <> 0
 	begin
-		rollback transaction @transName
 		set @msg = 'Insert operation failed!'
 		RAISERROR (@msg, 10, 1)
 		return 51007
 	end
-		
-	commit transaction @transName
 
 	return @Reference_ID
 

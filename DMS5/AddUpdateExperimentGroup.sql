@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateExperimentGroup
 **			09/13/2011 grk - Added Researcher
 **			11/10/2011 grk - Removed character size limit from experiment list
 **			11/10/2011 grk - Added Tab field
+**			02/20/2013 mem - Now reporting invalid experiment names
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -145,8 +146,10 @@ As
   
   UPDATE T
   SET T.Exp_ID = S.Exp_ID
-  FROM #XR T inner join
-  T_Experiments S ON T.Experiment_Num = S.Experiment_Num
+  FROM #XR T
+       INNER JOIN T_Experiments S
+         ON T.Experiment_Num = S.Experiment_Num
+
   --
   SELECT @myError = @@error, @myRowCount = @@rowcount
   --
@@ -157,7 +160,6 @@ As
     return 51219
   end
 
-
   ---------------------------------------------------
   -- check status of prospective member experiments
   ---------------------------------------------------
@@ -167,8 +169,8 @@ As
   --
   set @count = 0
   --
-  Select @count = count(*) 
-  from #XR
+  SELECT @count = count(*)
+  FROM #XR
   WHERE Exp_ID = 0
   --
   SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -182,7 +184,16 @@ As
 
   if @count <> 0
   begin
-    set @message = 'experimente run list contains experiments that do not exist'
+	Declare @InvalidExperiments varchar(256) = ''
+    SELECT @InvalidExperiments = @InvalidExperiments + Experiment_Num + ','
+    FROM #XR
+    WHERE Exp_ID = 0
+	
+	-- Remove the trailing comma
+	If @InvalidExperiments Like '%,'
+		Set @InvalidExperiments = Substring(@InvalidExperiments, 1, Len(@InvalidExperiments)-1)
+		
+    set @message = 'experiment run list contains experiments that do not exist: ' + @InvalidExperiments
     RAISERROR (@message, 10, 1)
     return 51221
   end
@@ -311,7 +322,7 @@ As
       rollback transaction @transName
       set @message = 'Failed trying to remove members from group'
       RAISERROR (@message, 10, 1)
-      return 51004
+  return 51004
     end
       
     -- add group members from temporary table that are not already members

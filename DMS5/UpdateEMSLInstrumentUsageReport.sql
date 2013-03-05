@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
+CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 /****************************************************
 **
 **  Desc: 
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          08/30/2012 grk - don't overwrite existing non-blank items, do auto-comment non-onsite datasets
 **          10/02/2012 grk - added debug output
 **          10/06/2012 grk - adding "updated by" date and user
+**			01/31/2013 mem - Now using IsNull(@message, '') when copying @message to @debug
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -38,7 +39,7 @@ AS
 	DECLARE @myRowCount int
 	SET @myRowCount = 0
 	 	DECLARE @debug VARCHAR(12) = ''
-	SET @debug = @message
+	SET @debug = IsNull(@message, '')
 
 	SET @message = ''
 	
