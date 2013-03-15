@@ -1,0 +1,54 @@
+From http://support.microsoft.com/?id=271509
+
+How to monitor SQL Server 2000 blocking
+Article ID : 271509 
+Last Review : December 13, 2005 
+This article was previously published under Q271509
+
+SUMMARY
+This article documents the usage and design of a stored procedure that you can use to diagnose blocking and performance issues.  For a description of how to understand and resolve blocking, see the following article in the Microsoft Knowledge Base: 
+224453 (http://support.microsoft.com/kb/224453/) Understanding and resolving SQL Server 7.0 blocking problem 
+
+
+MORE INFORMATION
+The following description of the sp_blocker_pss80 stored procedure captures this information:
+ • The starting time (according to the computer that is running SQL Server) so that this sampling of blocking can be time-aligned with other performance information, such as a Microsoft Windows NT Performance Monitor log or a SQL Profiler log. 
+ • Information about connections to SQL Server, by querying the sysprocesses system table. 
+ • Information about lock resources, by querying the syslockinfo system table. 
+ • Information about resource waits, by running DBCC SQLPERF(WAITSTATS). 
+ • The current running SQL Server Batch for connections that are blocked by others or blocking others, by running the DBCC INPUTBUFFER statement. 
+ • The ending time, according to the computer that is running SQL Server. 
+
+The stored procedure was created with the following optimizations to reduce the effect on performance and blocking by running this stored procedure:
+ • There is no output generated unless at least one connection is waiting on a resource. 
+ • The sysprocesses and syslockinfo system tables from the master database are queried directly, to increase performance and to prevent this stored procedure from becoming blocked. Therefore, this stored procedure is specific to Microsoft SQL Server 2000. 
+ • A small worktable is created by the cursor to obtain the DBCC INPUTBUFFER output; this should have no noticeable effect on the usage in the tempdb database. 
+ • Because the blocking can change while gathering the information, a fast mode exists, which increases performance by decreasing the results to relevant rows of the sysprocesses and syslockinfo system tables. 
+ • If trying to track non-lock resource waits, a latch mode exists, which causes the lock output to be omitted. 
+
+This stored procedure is useful by running it from any query tool. However, Microsoft suggests that you follow these steps to perform blocking analysis:
+1. Create the stored procedure sp_blocker_pss80, which is included at the end of this article, from any query tool while you are connected with a login that has sysadmin privileges on the SQL Server server or the instance of SQL Server you plan to monitor. 
+2. Create a script file with the following query to run the stored procedure in a loop. Note that the delay should be between 5 and 60 seconds:
+
+WHILE 1=1
+BEGIN
+   EXEC master.dbo.sp_blocker_pss80
+   -- Or for fast mode
+   -- EXEC master.dbo.sp_blocker_pss80 @fast=1
+   -- Or for latch mode
+   -- EXEC master.dbo.sp_blocker_pss80 @latch=1
+   WAITFOR DELAY '00:00:15'
+END
+GO
+ 
+3. This output is very useful when combined with a Microsoft Windows NT Performance Monitor log and a SQL Profiler log, so creating both at the same time is suggested. For information concerning which Profiler and Performance Monitor events to capture, and for information about how to interpret the results, see the following article in the Microsoft Knowledge Base:
+224453 (http://support.microsoft.com/kb/224453/) Understanding and resolving SQL Server 7.0 or 2000 blocking problems  
+
+4. Run the script file created in step 2 from either Isql.exe or the Osql.exe query tool in a Windows command prompt on the computer that is running SQL Server for which you intend to monitor to prevent networking problems from disconnecting the query tool. Following is an example command line that you can use to start Osql.exe, which assumes that the client is run from the computer that is running SQL Server, and that the script file name is Checkblk.sql. Make sure to correct the -S parameter, and replace "server" with the name of your SQL Server server (or "servername\instance" if you are monitoring a named instance) . Also correct the -i parameter, and replace "checkblk.sql" with the path and name to the script file created in step 2. 
+
+osql -E -Sserver -icheckblk.sql -ocheckblk.out -w2000
+
+Note that you must use the other command line switches for the following reasons:
+• To prevent line wrapping in the output files which makes it easier to read. 
+• To send the output to a file, specified with the -o parameter, instead of to the screen so that if the query tool has problems, you still have output until the query tool fails. 
+ 
