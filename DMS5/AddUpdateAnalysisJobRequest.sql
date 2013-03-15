@@ -59,6 +59,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			11/20/2012 mem - Removed parameter @workPackage
 **			12/13/2013 mem - Updated @mode to support 'PreviewAdd'
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
+**			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -78,7 +79,8 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add',					-- 'add', 'update', or 'PreviewAdd'
-    @message varchar(512) output
+    @message varchar(512) output,
+    @AutoRemoveNotReleasedDatasets tinyint = 0
 )
 As
 	set nocount on
@@ -253,7 +255,8 @@ As
 							@userID output,
 							@analysisToolID output, 
 							@organismID output,
-							@msg output
+							@msg output,
+							@AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets
 	--
 	if @result <> 0
 		RAISERROR (@msg, 11, 8)

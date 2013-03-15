@@ -23,6 +23,8 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			01/19/2012 mem - Added parameter @DataPackageID
 **			02/07/2012 mem - Now updating Transfer_Folder_Path after updating T_Job_Parameters
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
+**			03/07/2013 mem - Now calling ResetAggregationJob to reset jobs; supports resetting a job that succeeded
+**						   - No longer changing job state to 20; ResetAggregationJob will update the job state
 **
 *****************************************************/
 (
@@ -110,14 +112,13 @@ AS
 		BEGIN --<update>
 			BEGIN TRANSACTION
 			
-			-- update job and params
+			-- Update job and params
 			--
 			UPDATE   dbo.T_Jobs
 			SET      Priority = @priority ,
 					 Comment = @comment ,
 					 Owner = @ownerPRN ,
-					 DataPkgID = @DataPackageID,
-					 State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (UpdateJobState will handle final job state update)
+					 DataPkgID = @DataPackageID
 			WHERE    Job = @job
 			
 			UPDATE   dbo.T_Job_Parameters
@@ -154,27 +155,9 @@ AS
 			
 			IF @reset = 'Y'
 			BEGIN --<reset>
-				-- set any failed or holding job steps to waiting
-				--
-				UPDATE T_Job_Steps
-				SET State = 1,					-- 1=waiting
-				    Tool_Version_ID = 1			-- 1=Unknown
-				WHERE
-					State IN (6, 7) AND			-- 6=Failed, 7=Holding
-					Job  = @job
-
-				-- Reset the entries in T_Job_Step_Dependencies for any steps with state 1
-				--
-				UPDATE T_Job_Step_Dependencies
-				SET Evaluated = 0,
-					Triggered = 0
-				FROM T_Job_Step_Dependencies JSD INNER JOIN
-					T_Job_Steps JS ON 
-					JSD.Job_ID = JS.Job AND 
-					JSD.Step_Number = JS.Step_Number
-				WHERE
-					JS.State = 1 AND			-- 1=Waiting
-					JS.Job  = @job
+			
+				exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output							
+				
 			END --<reset>
 
 			COMMIT

@@ -17,10 +17,12 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **
 **	Auth:	mem
 **			11/12/2012 mem - Initial version (extracted code from AddUpdateAnalysisJobRequest and ValidateAnalysisJobParameters)
+**			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
 **
 *****************************************************/
 (
-	@message varchar(512) output
+	@message varchar(512) output,
+	@AutoRemoveNotReleasedDatasets tinyint = 0			-- When 1, then automatically removes datasets from #TD if they have an invalid rating
 )
 As
 	set nocount on
@@ -31,6 +33,8 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
+	
+	Set @AutoRemoveNotReleasedDatasets = IsNull(@AutoRemoveNotReleasedDatasets, 0)
 	
 	---------------------------------------------------
 	-- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
@@ -88,9 +92,20 @@ As
 			Set @list = Left(@list, Len(@list)-1)
 		Else
 			Set @list = Left(@list, 397) + '...'
+		
+		If @AutoRemoveNotReleasedDatasets = 0
+		Begin
+			set @message = Convert(varchar(12), @NotReleasedCount) + ' ' + dbo.CheckPlural(@NotReleasedCount, 'dataset', 'datasets') + ' are "Not Released": ' + @list
+			return 50101
+		End
+		Else
+		Begin
+			set @message = 'Skipped ' + Convert(varchar(12), @NotReleasedCount) + ' "Not Released" ' + dbo.CheckPlural(@NotReleasedCount, 'dataset', 'datasets') + ': ' + @list
 			
-		set @message = 'The following datasets have rating "Not Released": ' + @list
-		return 50101
+			DELETE FROM #TD
+			WHERE DS_Rating = -5
+			
+		End
 	End
 	
 	---------------------------------------------------

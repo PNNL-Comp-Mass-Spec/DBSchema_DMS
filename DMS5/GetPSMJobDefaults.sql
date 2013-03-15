@@ -17,6 +17,7 @@ CREATE Procedure GetPSMJobDefaults
 **	Date:	11/14/2012 mem - Initial version
 **			11/20/2012 mem - Added 3 new parameters: organism name, protein collection name, and protein collection options
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
+**			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
 **    
 *****************************************************/
 (
@@ -138,7 +139,7 @@ As
 		-- Validate the datasets in #TD
 		---------------------------------------------------
 		
-		exec @result = ValidateAnalysisJobRequestDatasets @message output
+		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1
 		
 		If @result <> 0
 			RAISERROR (@message, 11, 10)

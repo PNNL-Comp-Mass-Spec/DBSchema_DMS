@@ -21,11 +21,14 @@ SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel.],
        TD.Data_Package_ID,
        TM.[Organism DB],
        TM.[Protein Collection List],
-       TM.[Protein Options]
-FROM dbo.T_Data_Package_Datasets AS TD
-     LEFT OUTER JOIN dbo.S_V_Analysis_Job_List_Report_2 AS TM
+       TM.[Protein Options],
+       DS.Rating
+FROM T_Data_Package_Datasets AS TD
+     INNER JOIN S_V_Dataset_List_Report_2 AS DS
+       ON TD.Dataset_ID = DS.ID
+     LEFT OUTER JOIN S_V_Analysis_Job_List_Report_2 AS TM
        ON TD.Dataset = TM.Dataset
-     LEFT OUTER JOIN dbo.T_Data_Package_Analysis_Jobs AS TJ
+     LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TJ
        ON TJ.Job = TM.Job AND
           TJ.Data_Package_ID = TD.Data_Package_ID
 

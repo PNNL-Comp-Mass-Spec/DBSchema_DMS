@@ -19,6 +19,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingText
 **			07/12/2012 mem - Added support for $ThisDataset in an Auto-query Where Clause
 **			07/13/2012 mem - Added support for $Replace(x,y,z) in an Auto-query Where Clause
 **			01/14/2012 mem - Added support for $ThisDatasetTrimAfter(x) in an Auto-query Where Clause
+**			03/11/2013 mem - Added output parameter @AutoQuerySql
 **    
 *****************************************************/
 (
@@ -29,7 +30,8 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingText
 	@SourceJob int = 0 output,
 	@AutoQueryUsed tinyint = 0 output,
 	@WarningMessage varchar(512) = '' output,
-	@PreviewSql tinyint = 0
+	@PreviewSql tinyint = 0,
+	@AutoQuerySql nvarchar(2048) = '' output			-- The auto-query SQL that was used
 )
 As
 	Set nocount on
@@ -44,7 +46,6 @@ As
 	Declare @IndexStart int
 	Declare @IndexEnd int
 
-	Declare @S nvarchar(2048) = ''
 	Declare @sqlParams nvarchar(1024) = ''
 
 	Declare @WhereClause varchar(1024) = ''
@@ -73,6 +74,7 @@ As
 	Set @SourceJob = 0
 	Set @AutoQueryUsed = 0
 	Set @WarningMessage = ''
+	Set @AutoQuerySql = ''
 	
 	Begin Try
 		If @TagName Not Like '%:'
@@ -247,18 +249,18 @@ As
 						Set @OrderBy = 'ORDER BY Job Desc'
 					
 					-- Note that S_DMS_V_Analysis_Job_Info uses V_Source_Analysis_Job in DMS
-					Set @S = 'SELECT TOP 1 @SourceJob=Job FROM S_DMS_V_Analysis_Job_Info ' + @WhereClause + ' ' + @OrderBy
+					Set @AutoQuerySql = 'SELECT TOP 1 @SourceJob=Job FROM S_DMS_V_Analysis_Job_Info ' + @WhereClause + ' ' + @OrderBy
 					
 					Set @sqlParams = '@SourceJob int output'
 					
 					If @PreviewSql <> 0
-						Print @S
+						Print @AutoQuerySql
 
-					exec sp_executesql @S, @sqlParams, @SourceJob = @SourceJob output
+					exec sp_executesql @AutoQuerySql, @sqlParams, @SourceJob = @SourceJob output
 					
 					If @SourceJob = 0
 					Begin
-						Set @WarningMessage = 'Unable to determine SourceJob for job ' + Convert(varchar(12), @Job) + ' using query ' + @S
+						Set @WarningMessage = 'Unable to determine SourceJob for job ' + Convert(varchar(12), @Job) + ' using query ' + @AutoQuerySql
 					End
 
 				End -- </f>
@@ -285,7 +287,7 @@ As
 		
 		If @WhereClause <> ''
 		Begin
-			Set @WarningMessage = 'Query for SourceJob determination for job ' + Convert(varchar(12), @Job) + ': ' + @S
+			Set @WarningMessage = 'Query for SourceJob determination for job ' + Convert(varchar(12), @Job) + ': ' + @AutoQuerySql
 			execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingText'
 		End
 		

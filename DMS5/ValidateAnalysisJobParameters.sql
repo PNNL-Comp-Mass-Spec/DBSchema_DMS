@@ -42,6 +42,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
 **			11/28/2012 mem - Added candidate code to validate that high res MSn datasets are centroided if using MSGFDB
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
+**			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
 **
 *****************************************************/
 (
@@ -57,7 +58,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@userID int output,
 	@analysisToolID int output, 
 	@organismID int output,
-	@message varchar(512) output
+	@message varchar(512) output,
+	@AutoRemoveNotReleasedDatasets tinyint = 0
 )
 As
 	set nocount on
@@ -78,7 +80,7 @@ As
 	-- Validate the datasets in #TD
 	---------------------------------------------------
 	
-	exec @result = ValidateAnalysisJobRequestDatasets @message output
+	exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets
 		
 	If @result <> 0
 		return @result

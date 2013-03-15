@@ -33,6 +33,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 **			05/04/2012 mem - Now passing @TagName and @AutoQueryUsed to LookupSourceJobFromSpecialProcessingText
 **			07/12/2012 mem - Now looking up details for Job2 (if defined in the Special_Processing text)
 **			07/13/2012 mem - Now storing SourceJob2Dataset in #Tmp_Source_Job_Folders
+**			03/11/2013 mem - Now overriding @SourceJobResultsFolder if there is a problem determining the details for Job2
 **    
 *****************************************************/
 (
@@ -57,6 +58,7 @@ As
 	Declare @SourceJob int
 	Declare @AutoQueryUsed tinyint
 	Declare @SourceJobResultsFolder varchar(255)
+	Declare @SourceJobResultsFolderOverride varchar(255)
 	Declare @SourceJobValid tinyint
 
 	Declare @SourceJob2 int
@@ -64,7 +66,9 @@ As
 	Declare @SourceJob2FolderPath varchar(512)
 	Declare @SourceJob2FolderPathArchive varchar(512)
 	
+	Declare @AutoQuerySql nvarchar(2048)
 	Declare @WarningMessage varchar(1024)
+	Declare @LogMessage varchar(4096)
 	
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
@@ -106,9 +110,11 @@ As
 				Set @SourceJob = 0
 				Set @AutoQueryUsed = 0
 				Set @SourceJobResultsFolder = 'UnknownFolder_Invalid_SourceJob'
+				Set @SourceJobResultsFolderOverride = ''
 				Set @WarningMessage = ''				
 				Set @SourceJobValid = 0
-			
+				Set @AutoQuerySql = ''
+				
 				-------------------------------------------------	
 				-- Lookup the Dataset for this job
 				-------------------------------------------------
@@ -163,12 +169,14 @@ As
 					                          @SourceJob=@SourceJob output, 
 					                          @AutoQueryUsed=@AutoQueryUsed output,
 					                          @WarningMessage=@WarningMessage output, 
-					                          @PreviewSql = @PreviewSql
+					                          @PreviewSql = @PreviewSql,
+					                          @AutoQuerySql = @AutoQuerySql output
 					
 					If IsNull(@WarningMessage, '') <> ''
 					Begin
 						execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
 						
+						-- Override @SourceJobResultsFolder with an error message; this will force the job to fail since the input folder will not be found
 						If @WarningMessage Like '%exception%'
 							Set @SourceJobResultsFolder = 'UnknownFolder_Exception_Determining_SourceJob'
 						Else
@@ -218,6 +226,7 @@ As
 				Set @SourceJob2Dataset = ''
 				Set @SourceJob2FolderPath = 'na'
 				Set @SourceJob2FolderPathArchive = 'na'
+				Set @AutoQuerySql = ''
 				
 				If @SourceJobValid = 1
 				Begin
@@ -236,24 +245,41 @@ As
 					                          @SourceJob=@SourceJob2 output, 
 					                          @AutoQueryUsed=@AutoQueryUsed output,
 					                          @WarningMessage=@WarningMessage output, 
-					                          @PreviewSql = @PreviewSql
+					                          @PreviewSql = @PreviewSql,
+					                          @AutoQuerySql = @AutoQuerySql output
 					
 					If IsNull(@WarningMessage, '') <> ''
 					Begin
 						execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
 						
+						-- Override @SourceJobResultsFolder with an error message; this will force the job to fail since the input folder will not be found
 						If @WarningMessage Like '%exception%'
+						Begin
 							Set @SourceJob2FolderPath = 'UnknownFolder_Exception_Determining_SourceJob2'
+							Set @SourceJobResultsFolderOverride =  @SourceJob2FolderPath
+						End
 						Else
 						Begin
 							If @AutoQueryUsed <> 0
+							Begin
 								Set @SourceJob2FolderPath = 'UnknownFolder_AutoQuery_SourceJob2_NoResults'						
+								Set @SourceJobResultsFolderOverride =  @SourceJob2FolderPath
+							End
 						End						
 					End
 					
 				End
 		
 				Set @SourceJob2 = IsNull(@SourceJob2, 0)
+				
+				If @SourceJob2 = @SourceJob
+				Begin
+					Set @WarningMessage = 'Source Job 1 and Source Job 2 are identical (both ' + Convert(varchar(12), @SourceJob) + '); this is not allowed and likely indicates the Special Processing parameters for determining Job2 are incorrect'
+					Set @SourceJobResultsFolderOverride = 'UnknownFolder_Job1_and_Job2_are_both_' + Convert(varchar(12), @SourceJob)
+					
+					Set @LogMessage = 'Auto-query used to lookup Job2 for job ' + Convert(varchar(12), @Job) + ': ' + IsNull(@AutoQuerySql, '')
+					exec PostLogEntry 'Debug', @LogMessage, 'LookupSourceJobFromSpecialProcessingParam'
+				End
 				
 				If @SourceJob2 > 0 AND @WarningMessage = ''
 				Begin
@@ -284,7 +310,13 @@ As
 						WarningMessage = @WarningMessage
 					WHERE Entry_ID = @EntryID
 				END
-					
+				
+				If @SourceJobResultsFolderOverride <> ''
+				Begin
+					UPDATE #Tmp_Source_Job_Folders
+					SET SourceJobResultsFolder = @SourceJobResultsFolderOverride
+					WHERE Entry_ID = @EntryID	
+				End				
 	
 			End Try
 			Begin Catch
