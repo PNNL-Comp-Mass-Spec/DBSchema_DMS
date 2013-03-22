@@ -20,6 +20,7 @@ CREATE Procedure dbo.UpdateEUSProposalsFromEUSImports
 **			05/02/2011 mem - Now changing proposal state_ID to 2=Active if the proposal is present in V_EUS_Import_Proposals but the proposal's state in T_EUS_Proposals is not 2=Active or 4=No Interest
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			01/27/2012 mem - Added support for state 5=Permanently Active
+**			03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **    
 *****************************************************/
 (
@@ -71,31 +72,31 @@ As
 			(
 			   SELECT PROPOSAL_ID,
 			          TITLE,
-			          CALL_TYPE,
+			          PROPOSAL_TYPE,
 			          ACTUAL_START_DATE AS Proposal_Start_Date,
 			          ACTUAL_END_DATE AS Proposal_End_Date
 			   FROM dbo.V_EUS_Import_Proposals Source
-			) AS Source (	Proposal_ID, Title, Call_Type, Proposal_Start_Date, Proposal_End_Date)
-		ON (target.PROPOSAL_ID = source.PROPOSAL_ID)
+			) AS Source (	Proposal_ID, Title, Proposal_Type, Proposal_Start_Date, Proposal_End_Date)
+		ON (target.Proposal_ID = source.Proposal_ID)
 		WHEN Matched AND 
-					(	target.TITLE <> convert(varchar(2048), source.Title) OR
-						target.CALL_TYPE <> source.Call_Type OR
+					(	target.Title <> convert(varchar(2048), source.Title) OR
+						target.Proposal_Type <> source.Proposal_Type OR
 						IsNull(target.Proposal_Start_Date, '1/1/2000') <> source.Proposal_Start_Date OR
 						IsNull(target.Proposal_End_Date, '1/1/2000') <> source.Proposal_End_Date OR
 						target.State_ID NOT IN (2, 4)
 					)
 			THEN UPDATE 
-				Set	TITLE = source.TITLE, 
-					Call_Type = source.Call_Type,
+				Set	Title = source.Title, 
+					Proposal_Type = source.Proposal_Type,
 					Proposal_Start_Date = source.Proposal_Start_Date,
 					Proposal_End_Date = source.Proposal_End_Date,
 					State_ID = CASE WHEN State_ID IN (4, 5) THEN target.State_ID ELSE 2 END,
 					Last_Affected = GetDate()
 		WHEN Not Matched THEN
-			INSERT (PROPOSAL_ID, TITLE, State_ID, Import_Date, 
-			        Call_Type, Proposal_Start_Date, Proposal_End_Date, Last_Affected)
-			VALUES (source.PROPOSAL_ID, source.TITLE, 2, GetDate(), 
-			        source.Call_type, source.Proposal_Start_Date, source.Proposal_End_Date, GetDate())
+			INSERT (Proposal_ID, Title, State_ID, Import_Date, 
+			        Proposal_Type, Proposal_Start_Date, Proposal_End_Date, Last_Affected)
+			VALUES (source.Proposal_ID, source.Title, 2, GetDate(), 
+			        source.Proposal_Type, source.Proposal_Start_Date, source.Proposal_End_Date, GetDate())
 		WHEN NOT MATCHED BY SOURCE AND target.State_ID IN (1, 2)
 			THEN UPDATE SET State_ID = 3				-- Auto-change state to Inactive
 		OUTPUT $action INTO #Tmp_UpdateSummary
@@ -159,7 +160,6 @@ Done:
 	Exec PostUsageLogEntry 'UpdateEUSProposalsFromEUSImports', @UsageMessage
 
 	Return @myError
-
 
 
 GO

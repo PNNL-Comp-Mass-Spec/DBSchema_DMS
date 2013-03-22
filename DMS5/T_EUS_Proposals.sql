@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_EUS_Proposals](
-	[PROPOSAL_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[TITLE] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Title] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[State_ID] [int] NOT NULL,
 	[Import_Date] [datetime] NOT NULL,
-	[Call_Type] [varchar](100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Proposal_Type] [varchar](100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Proposal_Start_Date] [datetime] NULL,
 	[Proposal_End_Date] [datetime] NULL,
 	[Last_Affected] [datetime] NULL,
@@ -39,7 +39,7 @@ REFERENCES [T_EUS_Proposal_State_Name] ([ID])
 GO
 ALTER TABLE [dbo].[T_EUS_Proposals] CHECK CONSTRAINT [FK_T_EUS_Proposals_T_EUS_Proposal_State_Name]
 GO
-ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF__T_EUS_Pro__PROPO__71A7CADF]  DEFAULT ('') FOR [PROPOSAL_ID]
+ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF__T_EUS_Pro__PROPO__71A7CADF]  DEFAULT ('') FOR [Proposal_ID]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_State_ID]  DEFAULT (1) FOR [State_ID]
 GO

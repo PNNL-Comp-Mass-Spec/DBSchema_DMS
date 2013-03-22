@@ -12,11 +12,12 @@ SELECT AJ.AJ_jobID AS Job,
        DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
        AJ.AJ_settingsFileName AS Settings_File_Name,
+       AJ.AJ_parmFileName AS Parameter_File_Name,
        AJ.AJ_StateID AS State,
        SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path,
        AJ.AJ_Comment AS Comment,
        AJ.AJ_specialProcessing as Special_Processing,
-       AJ.AJ_Owner AS Owner
+       AJ.AJ_Owner AS Owner       
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID

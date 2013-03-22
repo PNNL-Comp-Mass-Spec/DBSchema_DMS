@@ -3,11 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
--- =============================================
--- Author:		<Author,,Name>
--- Create date: <Create Date, ,>
--- Description:	<Description, ,>
--- =============================================
+
 CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 /****************************************************
 **
@@ -21,6 +17,7 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 **	Date:	08/28/2012
 **          08/31/2012 grk - fixed spelling error in message
 **          10/03/2012 grk - Maintenance usage no longer requires comment
+**			03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **    
 *****************************************************/
 (
@@ -49,7 +46,7 @@ AS
 			@Title VARCHAR(2048) ,
 			@StateID INT ,
 			@ImportDate DATETIME ,
-			@CallType VARCHAR(100) ,
+			@ProposalType VARCHAR(100) ,
 			@ProposalStartDate DATETIME ,
 			@ProposalEndDate DATETIME ,
 			@LastAffected DATETIME 
@@ -84,16 +81,16 @@ AS
 		IF @Usage = 'ONSITE' AND ISNUMERIC(SUBSTRING(@Proposal, 1, 1)) = 0 
 			SET @Message = @Message + 'Preliminary Proposal number' + ', '
 
-		SELECT  @ProposalId = [PROPOSAL_ID] ,
-				@Title = [TITLE] ,
-				@StateID = [State_ID] ,
-				@ImportDate = [Import_Date] ,
-				@CallType = [Call_Type] ,
-				@ProposalStartDate = [Proposal_Start_Date] ,
-				@ProposalEndDate = [Proposal_End_Date] ,
-				@LastAffected = [Last_Affected]
+		SELECT  @ProposalId = Proposal_ID ,
+				@Title = Title ,
+				@StateID = State_ID ,
+				@ImportDate = Import_Date ,
+				@ProposalType = Proposal_Type ,
+				@ProposalStartDate = Proposal_Start_Date ,
+				@ProposalEndDate = Proposal_End_Date ,
+				@LastAffected = Last_Affected
 		FROM    T_EUS_Proposals
-		WHERE   PROPOSAL_ID = @Proposal 
+		WHERE   Proposal_ID = @Proposal 
 
 		IF @Usage = 'ONSITE' AND @ProposalId IS null
 			SET @Message = @Message + 'Proposal number is not in ERS' + ', '

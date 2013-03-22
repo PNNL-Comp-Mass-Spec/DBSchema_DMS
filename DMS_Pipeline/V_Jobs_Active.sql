@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Jobs_Active] 
 AS
 SELECT J.Job,
@@ -17,20 +15,16 @@ SELECT J.Job,
        J.Start,
        J.Finish,
        IsNull(AJPGA.Group_Name, '') AS Processor_Group,
-       ParamQ.Parameter_File,
-       ParamQ.Settings_File,
+       D.AJ_ParmFileName AS Parameter_File_Name,
+       D.AJ_SettingsFileName AS Settings_File_Name,
        J.Results_Folder_Name,
        J.Transfer_Folder_Path,
        Row_Number() OVER ( ORDER BY CASE WHEN J.Job_State_B = 'Failed' THEN 'a' ELSE J.Job_State_B END DESC, J.Job ) AS SortOrder
-FROM V_Pipeline_Jobs_List_Report J LEFT OUTER JOIN
-     V_DMS_Analysis_Job_Processor_Group_Association_Recent AJPGA ON J.Job = AJPGA.Job
-      LEFT OUTER JOIN ( 
-          SELECT Job,
-                 Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-                 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
-                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
-          FROM [T_Job_Parameters] 
-   ) ParamQ ON ParamQ.Job = J.Job
+FROM V_Pipeline_Jobs_List_Report J
+     LEFT OUTER JOIN V_DMS_Analysis_Job_Processor_Group_Association_Recent AJPGA
+       ON J.Job = AJPGA.Job
+     LEFT OUTER JOIN dbo.S_DMS_T_Analysis_Job D
+       ON J.Job = D.AJ_JobID
 WHERE J.Job_State_B NOT IN ('complete', 'failed') AND J.Imported >= DateAdd(day, -120, GetDate()) OR
       J.Job_State_B <> 'complete' AND J.Imported >= DateAdd(day, -31, GetDate()) OR
       J.Imported >= DateAdd(day, -1, GetDate()) OR
@@ -49,7 +43,7 @@ SELECT D.Job,
        NULL AS Start,
        NULL AS Finish,
        '' AS Processor_Group,
-       '' AS Param_File_Name,
+       D.Parameter_File_Name,
        D.Settings_File_Name,
        '' AS Results_Folder_Name,
        D.Transfer_Folder_Path,
@@ -59,9 +53,6 @@ FROM V_DMS_PipelineJobs D
        ON D.Job = J.Job
 WHERE D.State IN (1, 8) AND
       J.Job IS NULL
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Jobs_Active] TO [PNL\D3M578] AS [dbo]

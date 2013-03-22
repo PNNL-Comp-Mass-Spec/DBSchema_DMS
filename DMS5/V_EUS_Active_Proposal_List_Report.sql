@@ -6,10 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Active_Proposal_List_Report]
 AS
-SELECT     PROPOSAL_ID AS [Proposal ID], TITLE AS Title
-FROM         T_EUS_Proposals
-WHERE     (State_ID in (2,5))
-
+SELECT P.Proposal_ID AS [Proposal ID],
+       P.Title,
+       P.Proposal_Type
+FROM T_EUS_Proposals P
+WHERE (State_ID IN (2, 5))
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Active_Proposal_List_Report] TO [PNL\D3M578] AS [dbo]

@@ -30,7 +30,9 @@ SELECT AJ.AJ_jobID AS Job,
        END AS Folder,
        DS.DS_created AS Dataset_Created,
        AJ.AJ_finish AS Job_Finish,
-       DR.DRN_name AS Dataset_Rating
+       DR.DRN_name AS Dataset_Rating,
+       DS.DS_Sec_Sep as Separation_Type,
+       DTN.DST_name as Dataset_Type
 FROM V_Dataset_Archive_Path DAP
      RIGHT OUTER JOIN T_Analysis_Job AJ
                       INNER JOIN T_Dataset DS
@@ -50,6 +52,8 @@ FROM V_Dataset_Archive_Path DAP
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
      INNER JOIN T_DatasetRatingName DR
        ON DS.DS_rating = DR.DRN_state_ID
+     INNER JOIN T_DatasetTypeName DTN 
+       ON DS.DS_type_ID = DTN.DST_Type_ID
 
 
 GO
