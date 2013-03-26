@@ -10,9 +10,11 @@ CREATE Procedure dbo.UpdateUsersFromWarehouse
 **	Desc: 
 **		Updates user information in T_Users using linked server SQLSRVPROD02
 **
-**	Return values: 0: success, otherwise, error code
+**		Defined the linked server using:
+**			EXEC sp_addlinkedserver 'SQLSRVPROD02', '', 'SQLNCLI', 'SQLSRVPROD02,915'
+**			EXEC sp_addlinkedsrvlogin 'SQLSRVPROD02', 'FALSE', NULL, 'PRISM', '5GigYawn'
 **
-**	Parameters: 
+**	Return values: 0: success, otherwise, error code
 **
 **	Auth: 	mem
 **	Date: 	03/25/2013 mem - Initial version
