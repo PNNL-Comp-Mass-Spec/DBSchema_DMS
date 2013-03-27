@@ -15,7 +15,8 @@ SELECT J.Job,
        J.Imported,
        J.Start,
        J.Finish,
-       J.DataPkgID
+       J.DataPkgID,
+       J.Comment
 FROM dbo.T_Jobs_History J
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID

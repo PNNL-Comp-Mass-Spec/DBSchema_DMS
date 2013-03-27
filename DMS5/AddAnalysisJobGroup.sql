@@ -49,6 +49,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			11/08/2012 mem - Now auto-updating @protCollOptionsList to have "seq_direction=forward" if it contains "decoy" and the search tool is MSGFDB and the parameter file does not contain "NoDecoy"
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
+**			03/26/2013 mem - Now calling AlterEventLogEntryUser after updating T_Analysis_Job_Request
 **
 *****************************************************/
 (
@@ -89,8 +90,8 @@ As
 	declare @JobIDStart int
 	declare @JobIDEnd int
 		
-	declare @stateID int
-	Set @stateID = 1
+	declare @jobStateID int = 1
+	declare @requestStateID int = 0
 	
 	DECLARE @jobsCreated INT
 	SET @jobsCreated = 0
@@ -197,6 +198,7 @@ As
 	--
 	DECLARE @numMatchingDatasets INT
 	SET @numMatchingDatasets = 0
+	
 	DECLARE @removedDatasets VARCHAR(4096)
 	SET @removedDatasets = ''
 	--
@@ -374,10 +376,8 @@ As
 		begin
 
 			-- make sure @requestID is in state 1=new or state 5=new (Review Required)
-			declare @requestState int
-			set @requestState = 0
-			
-			SELECT	@requestState = AJR_State
+					
+			SELECT	@requestStateID = AJR_State
 			FROM	T_Analysis_Job_Request
 			WHERE	(AJR_RequestID = @requestID)
 			--
@@ -386,22 +386,32 @@ As
 			if @myError <> 0
 				RAISERROR ('Error looking up request state in T_Analysis_Job_Request', 11, 7)
 			
-			set @requestState = IsNull(@requestState,0)
+			set @requestStateID = IsNull(@requestStateID, 0)
 			
-			if @requestState = 1 OR @requestState = 5
+			if @requestStateID IN (1, 5)
 			begin
 				if @mode in ('add', 'update')
 				begin
 					-- mark request as used
 					--
+					Set @requestStateID = 2
+					
 					UPDATE	T_Analysis_Job_Request
-					SET		AJR_state = 2
+					SET		AJR_state = @requestStateID
 					WHERE	(AJR_requestID = @requestID)	
 					--
 					SELECT @myError = @@error, @myRowCount = @@rowcount
 					--
 					if @myError <> 0
 						RAISERROR ('Update operation failed', 11, 8)
+						
+					If Len(@callingUser) > 0
+					Begin
+						-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+						-- to alter the Entered_By field in T_Event_Log
+						--
+						Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+					End
 				end
 			end
 			else
@@ -488,7 +498,7 @@ As
 			@specialProcessing,
 			@ownerPRN,
 			@batchID,
-			@stateID,
+			@jobStateID,
 			@requestID,
 			@propMode,
 			IsNull(Dataset_Unreviewed, 1)
@@ -501,9 +511,20 @@ As
 			-- set request status to 'incomplete'
 			if @requestID > 1
 			begin
+				Set @requestStateID = 4
+				
 				UPDATE	T_Analysis_Job_Request
-				SET		AJR_state = 4
+				SET		AJR_state = @requestStateID
 				WHERE	AJR_requestID = @requestID
+				
+				If Len(@callingUser) > 0
+				Begin
+					-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+					-- to alter the Entered_By field in T_Event_Log
+					--
+					Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+				End
+							
 			end
 			--
 			RAISERROR ('Insert new job operation failed', 11, 7)
@@ -598,7 +619,7 @@ As
 			-- to alter the Entered_By field in T_Event_Log
 			--
 			If @batchID = 0
-				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+				Exec AlterEventLogEntryUser 5, @jobID, @jobStateID, @callingUser
 			Else
 			Begin
 				-- Populate a temporary table with the list of Job IDs just created
@@ -613,7 +634,7 @@ As
 				FROM T_Analysis_Job
 				WHERE AJ_batchID = @batchID
 					
-				Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser, @EntryTimeWindowSeconds=45
+				Exec AlterEventLogEntryUserMultiID 5, @jobStateID, @callingUser, @EntryTimeWindowSeconds=45
 			End
 		End
 

@@ -15,6 +15,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **
 **	Auth:	mem
 **			09/27/2012 mem - Initial version
+**			03/26/2013 mem - Added column Comment
 **    
 *****************************************************/
 (
@@ -181,7 +182,8 @@ As
 			Finish,
 			Transfer_Folder_Path,
 			Owner,
-			DataPkgID
+			DataPkgID,
+			Comment
 		)
 		SELECT 
 			JH.Job,
@@ -198,7 +200,8 @@ As
 			JH.Finish,
 			JH.Transfer_Folder_Path,
 			JH.Owner,
-			JH.DataPkgID
+			JH.DataPkgID,
+			JH.Comment
 		FROM T_Jobs_History JH
 			INNER JOIN #Tmp_JobsToCopy Src
 			ON JH.Job = Src.Job AND

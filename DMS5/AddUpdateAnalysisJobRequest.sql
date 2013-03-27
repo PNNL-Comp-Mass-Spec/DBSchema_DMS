@@ -60,6 +60,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			12/13/2013 mem - Updated @mode to support 'PreviewAdd'
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
+**			03/26/2013 mem - Added parameter @callingUser
 **
 *****************************************************/
 (
@@ -80,7 +81,8 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @requestID int output,
     @mode varchar(12) = 'add',					-- 'add', 'update', or 'PreviewAdd'
     @message varchar(512) output,
-    @AutoRemoveNotReleasedDatasets tinyint = 0
+    @AutoRemoveNotReleasedDatasets tinyint = 0,
+    @callingUser varchar(128)=''
 )
 As
 	set nocount on
@@ -383,6 +385,14 @@ As
 		--
 		set @requestID = cast(@newRequestNum as varchar(32))
 
+		If Len(@callingUser) > 0
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			--
+			Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
+		End
+				
 	end -- add mode
 
 	---------------------------------------------------
@@ -422,6 +432,15 @@ As
 		--
 		if @myError <> 0
 			RAISERROR ('Update operation failed: "%d"', 11, 4, @requestID)
+			
+		If Len(@callingUser) > 0
+		Begin
+			-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+			-- to alter the Entered_By field in T_Event_Log
+			--
+			Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
+		End
+		
 	end -- update mode
 
 	END TRY

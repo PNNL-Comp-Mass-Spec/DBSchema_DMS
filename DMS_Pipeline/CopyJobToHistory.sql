@@ -21,6 +21,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			11/14/2011 mem - Now copying column Transfer_Folder_Path
 **			01/09/2012 mem - Added column Owner
 **			01/19/2012 mem - Added columns DataPkgID and Memory_Usage_MB
+**			03/26/2013 mem - Added column Comment
 **    
 *****************************************************/
 (
@@ -93,6 +94,7 @@ As
 		Transfer_Folder_Path,
 		Owner,
 		DataPkgID,
+		Comment,
 		Saved
 	)
 	SELECT 
@@ -111,6 +113,7 @@ As
 		Transfer_Folder_Path,
 		Owner,
 		DataPkgID,
+		Comment,
 		@saveTime
 	FROM T_Jobs
 	WHERE Job = @job
@@ -179,7 +182,7 @@ As
 		goto Done
 	end
 
-   	---------------------------------------------------
+	---------------------------------------------------
 	-- copy parameters
 	---------------------------------------------------
 	--

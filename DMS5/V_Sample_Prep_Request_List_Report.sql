@@ -31,6 +31,10 @@ SELECT  SPR.ID ,
         SPR.Instrument_Name AS Instrument ,
         SPR.Instrument_Analysis_Specifications AS [Inst. Analysis] ,
         SPR.Separation_Type AS [Separation Group],
+        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 8 Then 1 Else 0 End) AS Experiments_Last_7Days,
+        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 32 Then 1 Else 0 End) AS Experiments_Last_31Days,
+        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 181 Then 1 Else 0 End) AS Experiments_Last_180Days,
+        SUM (Case When Not E.EX_created Is Null Then 1 Else 0 End) AS Experiments_Total,
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
 			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
@@ -49,7 +53,14 @@ FROM    dbo.T_Sample_Prep_Request AS SPR
                           WHERE     ( Entity_Type = 'sample_prep_request' ) And Active > 0
                           GROUP BY  Entity_ID
                         ) AS TA ON SPR.ID = TA.[Entity ID]
-WHERE   ( SPR.State > 0 )
+        LEFT OUTER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
+WHERE (SPR.State > 0)
+GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Priority, TA.Attachments,
+         SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
+         QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
+         QP.U_Name, SPR.Requester_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
+         SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Name,
+         SPR.Instrument_Analysis_Specifications, SPR.Separation_Type
 
 
 GO
