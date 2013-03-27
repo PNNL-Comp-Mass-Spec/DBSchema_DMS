@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 /****************************************************
 ** 
@@ -19,6 +18,7 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 **	Date:	08/26/2010 grk - initial release
 **			08/26/2010 mem - Added @MaxDatasetsToProcess and @InfoOnly
 **						   - Now passing @PreventDuplicateJobs to CreatePredefinedAnalysesJobs
+**			03/27/2013 mem - Now obtaining Dataset name from T_Dataset
 **    
 *****************************************************/
 (
@@ -67,16 +67,18 @@ AS
 	Begin
 		SET @datasetNum = ''
 
-		SELECT TOP 1 @currentItemID = Item,
-		             @datasetNum = Dataset_Num,
-		             @callingUser = CallingUser,
-		             @AnalysisToolNameFilter = AnalysisToolNameFilter,
-		             @ExcludeDatasetsNotReleased = ExcludeDatasetsNotReleased,
-		             @PreventDuplicateJobs = PreventDuplicateJobs
-		FROM T_Predefined_Analysis_Scheduling_Queue
-		WHERE State = 'New' AND
-		      Item > @currentItemID
-		ORDER BY Item ASC
+		SELECT TOP 1 @currentItemID = SQ.Item,
+		             @datasetNum = D.Dataset_Num,
+		             @callingUser = SQ.CallingUser,
+		             @AnalysisToolNameFilter = SQ.AnalysisToolNameFilter,
+		             @ExcludeDatasetsNotReleased = SQ.ExcludeDatasetsNotReleased,
+		             @PreventDuplicateJobs = SQ.PreventDuplicateJobs
+		FROM T_Predefined_Analysis_Scheduling_Queue SQ
+		     INNER JOIN T_Dataset D
+		       ON SQ.Dataset_ID = D.Dataset_ID
+		WHERE SQ.State = 'New' AND
+		      SQ.Item > @currentItemID
+		ORDER BY SQ.Item ASC
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	
@@ -145,8 +147,6 @@ AS
 	End
 
 	RETURN 0
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreatePendingPredefinedAnalysesTasks] TO [Limited_Table_Write] AS [dbo]

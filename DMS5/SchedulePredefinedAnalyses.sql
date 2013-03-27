@@ -26,6 +26,7 @@ CREATE PROCEDURE SchedulePredefinedAnalyses
 **			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
 **			08/26/2010 grk - Gutted original and moved guts to CreatePredefinedAnalysesJobs - now just entering dataset into work queue
 **			05/24/2011 mem - Added back support for @infoOnly
+**			03/27/2013 mem - No longer storing dataset name in T_Predefined_Analysis_Scheduling_Queue
 **    
 *****************************************************/
 (
@@ -91,16 +92,14 @@ As
 		If @InfoOnly <> 0
 			Print 'Add new row to T_Predefined_Analysis_Scheduling_Queue for ' + @datasetNum
 		Else
-			INSERT INTO dbo.T_Predefined_Analysis_Scheduling_Queue( Dataset_Num,
-																	Dataset_ID,
+			INSERT INTO dbo.T_Predefined_Analysis_Scheduling_Queue( Dataset_ID,
 																	CallingUser,
 																	AnalysisToolNameFilter,
 																	ExcludeDatasetsNotReleased,
 																	PreventDuplicateJobs,
 																	State,
 																	Message )
-			VALUES (@datasetNum, 
-			        @datasetID, 
+			VALUES (@datasetID, 
 					@callingUser, 
 					@AnalysisToolNameFilter, 
 					@ExcludeDatasetsNotReleased,

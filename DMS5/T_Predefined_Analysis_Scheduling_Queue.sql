@@ -5,7 +5,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue](
 	[Item] [int] IDENTITY(1,1) NOT NULL,
-	[Dataset_Num] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Dataset_ID] [int] NOT NULL,
 	[CallingUser] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AnalysisToolNameFilter] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -70,6 +69,9 @@ AS
 
 	End
 
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Dataset] FOREIGN KEY([Dataset_ID])
+REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Predefined_Analysis_Scheduling_Queue_State] FOREIGN KEY([State])
 REFERENCES [T_Predefined_Analysis_Scheduling_Queue_State] ([State])

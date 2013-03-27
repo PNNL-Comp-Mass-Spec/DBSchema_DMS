@@ -16,6 +16,10 @@ SELECT EL."Index",
            WHEN 6 THEN 'DS Archive'
            WHEN 7 THEN 'DS ArchUpdate'
            WHEN 8 THEN 'DS Rating'
+           WHEN 9 THEN 'Campaign Percent EMSL Funded'
+           WHEN 10 THEN 'Campaign Data Release State'
+           WHEN 11 THEN 'Requested Run'
+           WHEN 12 THEN 'Analysis Job Request'
            ELSE NULL
        END AS Target,
        EL.Target_ID,
@@ -41,6 +45,10 @@ SELECT EL."Index",
            WHEN 6 THEN DASN.DASN_StateName
            WHEN 7 THEN AUSN.AUS_name
            WHEN 8 THEN DSRN.DRN_name
+           WHEN 9 THEN '% EMSL Funded'
+           WHEN 10 THEN DRR.Name
+           WHEN 11 THEN RRSN.State_Name
+           WHEN 12 THEN AJRS.StateName
            ELSE NULL
        END AS State_Name,
        EL.Prev_Target_State,
@@ -62,7 +70,15 @@ FROM dbo.T_Event_Log EL
      LEFT OUTER JOIN dbo.T_Analysis_State_Name AJSN
        ON EL.Target_State = AJSN.AJS_stateID AND
           EL.Target_Type = 5
-
+     LEFT OUTER JOIN dbo.T_Data_Release_Restrictions DRR
+       ON EL.Target_State = DRR.ID AND
+          EL.Target_Type = 10
+     LEFT OUTER JOIN T_Requested_Run_State_Name RRSN
+       ON EL.Target_State = RRSN.State_ID AND
+          EL.Target_Type = 11
+     LEFT OUTER JOIN T_Analysis_Job_Request_State AJRS
+       ON EL.Target_State = AJRS.ID AND
+          EL.Target_Type = 12
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Event_Log] TO [PNL\D3M578] AS [dbo]
