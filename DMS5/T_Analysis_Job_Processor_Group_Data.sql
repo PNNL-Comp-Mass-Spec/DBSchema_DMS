@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processor_Group] ******/
-/****** RowCount: 42 ******/
+/****** RowCount: 43 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] ON
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (100,'General Processors','','Y','2/23/2007 7:07:08 PM','Y','2/23/2007 7:07:09 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (102,'Tom Metz Pubs','All four Decon2LS PCs purchased by Tom Metz','N','2/23/2007 7:16:22 PM','Y','3/18/2011 4:42:00 PM','pnl\D3L243')
@@ -43,4 +43,5 @@ INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description,
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (148,'R610 Pubs, Group 1, Mgrs 2 and 4','Pubs 36-39, 44-69, 80-89; Mgrs 2 and 4 only','Y','9/27/2010 8:27:01 PM','N','9/27/2010 8:27:01 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (149,'Sequest Clusters 2, 3, and 4','Clusters 2, 3, and 4','Y','3/18/2011 4:34:01 PM','N','3/18/2011 4:34:05 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (150,'Sequest Clusters 1, 3, and 5','Clusters 1, 3, and 5','Y','4/18/2012 3:31:28 PM','N','4/18/2012 3:31:28 PM','pnl\D3L243')
+INSERT INTO [T_Analysis_Job_Processor_Group] (ID, Group_Name, Group_Description, Group_Enabled, Group_Created, Available_For_General_Processing, Last_Affected, Entered_By) VALUES (151,'R610 Pubs, Group 2, Mgrs 3 and 5','Pubs 70-89; Mgrs 3 and 5 only','Y','1/29/2013 5:39:17 PM','N','1/29/2013 5:39:17 PM','D3L243 (via DMSWebUser)')
 SET IDENTITY_INSERT [T_Analysis_Job_Processor_Group] OFF

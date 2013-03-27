@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
+
+CREATE PROCEDURE dbo.CreatePendingPredefinedAnalysesTasks
 /****************************************************
 ** 
 **	Desc:
@@ -147,6 +148,8 @@ AS
 	End
 
 	RETURN 0
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreatePendingPredefinedAnalysesTasks] TO [Limited_Table_Write] AS [dbo]

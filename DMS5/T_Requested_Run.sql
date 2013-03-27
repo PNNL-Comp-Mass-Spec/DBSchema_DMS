@@ -265,7 +265,7 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
-REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
+REFERENCES [T_EUS_Proposals] ([Proposal_ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals]
 GO

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
+CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 /****************************************************
 **
 **	Desc: 

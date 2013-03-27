@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_EUS_Proposals_Helper_List_Report
+
+CREATE VIEW [dbo].[V_EUS_Proposals_Helper_List_Report]
 AS
 SELECT P.Proposal_ID AS [Proposal ID],
        P.Title,
@@ -16,6 +17,7 @@ FROM T_Dataset DS
      RIGHT OUTER JOIN T_EUS_Proposals P
        ON RR.RDS_EUS_Proposal_ID = P.Proposal_ID
 WHERE (P.State_ID IN (2, 5))
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_Helper_List_Report] TO [PNL\D3M578] AS [dbo]

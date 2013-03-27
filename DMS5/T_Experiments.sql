@@ -103,6 +103,14 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Exper
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
+/****** Object:  Index [IX_T_Experiments_PrepRequestID_include_Ex_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_PrepRequestID_include_Ex_Created] ON [dbo].[T_Experiments] 
+(
+	[EX_sample_prep_request_ID] ASC
+)
+INCLUDE ( [EX_created]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+
 /****** Object:  Index [IX_T_Experiments_Wellplate_Well_Experiment] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Experiments_Wellplate_Well_Experiment] ON [dbo].[T_Experiments] 
 (

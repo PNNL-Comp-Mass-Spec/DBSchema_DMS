@@ -174,7 +174,7 @@ GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals] FOREIGN KEY([EUS_Proposal_ID])
-REFERENCES [T_EUS_Proposals] ([PROPOSAL_ID])
+REFERENCES [T_EUS_Proposals] ([Proposal_ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals]
 GO

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION ExperimentsFromRequestMostRecentNDays
+
+CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
 /****************************************************
 **
 **	Desc: 
@@ -33,4 +34,6 @@ AS
 		
  		RETURN @n
 	END
+
+
 GO

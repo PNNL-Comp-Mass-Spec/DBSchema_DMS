@@ -37,21 +37,18 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Request_AJR_RequestID] ON [dbo].[T_
 INCLUDE ( [AJR_workPackage]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
 
-/****** Object:  Index [IX_T_Analysis_Job_Request_State_Created]    Script Date: 03/26/2013 17:37:49 ******/
+/****** Object:  Index [IX_T_Analysis_Job_Request_State_Created] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Request_State_Created] ON [dbo].[T_Analysis_Job_Request] 
 (
 	[AJR_state] ASC,
 	[AJR_created] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
 GO
-
-/****** Object:  Trigger [dbo].[trig_d_AnalysisJobRequest]    Script Date: 03/26/2013 17:37:49 ******/
+/****** Object:  Trigger [dbo].[trig_d_AnalysisJobRequest] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 create Trigger [dbo].[trig_d_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Delete
@@ -88,14 +85,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [dbo].[trig_i_AnalysisJobRequest]    Script Date: 03/26/2013 17:37:49 ******/
+/****** Object:  Trigger [dbo].[trig_i_AnalysisJobRequest] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_i_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Insert
@@ -121,14 +115,11 @@ AS
 
 
 GO
-
-/****** Object:  Trigger [dbo].[trig_u_AnalysisJobRequest]    Script Date: 03/26/2013 17:37:49 ******/
+/****** Object:  Trigger [dbo].[trig_u_AnalysisJobRequest] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Update

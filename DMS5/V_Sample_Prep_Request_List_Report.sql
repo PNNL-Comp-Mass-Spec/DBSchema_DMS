@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
--- 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
 AS
 SELECT  SPR.ID ,

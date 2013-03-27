@@ -121,3 +121,5 @@ GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [PNL\D3M578]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [PNL\D3M580] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[GetRequestedRunFactorsForExport] TO [RBAC-DMS_User] AS [dbo]
+GO
