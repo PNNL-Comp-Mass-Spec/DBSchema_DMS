@@ -7,7 +7,7 @@ CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
 /****************************************************
 **
 **	Desc: 
-**    Get values for instrument releated fields 
+**    Get values for instrument related fields 
 **    from the sample prep request associated with
 **    the given experiment (if there is one) 
 **
@@ -15,17 +15,20 @@ CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
 **
 **	Parameters: 
 **
-**  Auth: grk
-**  Date: 09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
-**        01/09/2012 grk - added @secSep
+**  Auth:	grk
+**  Date:	09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
+**			01/09/2012 grk - added @secSep
+**			03/28/2013 mem - Now returning more explicit error messages when the experiment does not have an associated sample prep request
 **
 *****************************************************/
+(
 	@experimentNum varchar(64),
 	@instrumentName varchar(64) output,
 	@DatasetType varchar(20) output,
 	@instrumentSettings varchar(512) output,
 	@secSep varchar(64) output,
 	@message varchar(512) output
+)
 As
 	set nocount on
 
@@ -56,8 +59,8 @@ As
     --
     if @myError <> 0
     begin
-      set @message = 'Error trying to find sample prep request'
-      return  @myError
+      set @message = 'Error trying to find sample prep request for experiment ' + @experimentNum + ': ' + Convert(varchar(12), @myError)
+      return @myError
     end
 
 	---------------------------------------------------
@@ -66,13 +69,23 @@ As
 	---------------------------------------------------
     if @samPrepID = 0
     begin
-		if (@instrumentName = @ovr) or (@DatasetType = @ovr) or (@instrumentSettings = @ovr)
+		if (@instrumentName = @ovr)
 		begin
-			set @message = 'Trying to look up instrument run information, but experiment has no sample prep request'
-			return  50966
+			set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentNum + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
+			return 50966
 		end
-		else
-			return  0
+		if (@DatasetType = @ovr)
+		begin
+			set @message = 'Run Type (Dataset Type) is set to "' + @ovr + '"; the experiment (' + @experimentNum + ') does not have a sample prep request, therefore we cannot auto-define the run type.'
+			return 50966
+		end
+    
+		if (@instrumentSettings = @ovr)
+		begin
+			set @instrumentSettings = 'na'
+		end
+
+		return  0
     end
 
 	---------------------------------------------------
@@ -99,7 +112,7 @@ As
     --
     if @myError <> 0
     begin
-      set @message = 'Error looking up EUS fields'
+      set @message = 'Error looking up EUS fields for sample prep request ' + Convert(varchar(12), @samPrepID)
       return  @myError
     end
 
@@ -111,6 +124,7 @@ As
 	set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @irInstSettings ELSE @instrumentSettings END
 	set @secSep = CASE WHEN @secSep = @ovr THEN @irSecSep ELSE @secSep END
 
+	return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]

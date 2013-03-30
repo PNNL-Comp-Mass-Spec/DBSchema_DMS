@@ -50,6 +50,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			11/08/2012 mem - Now auto-updating @protCollOptionsList to have "seq_direction=forward" if it contains "decoy" and the search tool is MSGFDB and the parameter file does not contain "NoDecoy"
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/26/2013 mem - Now calling AlterEventLogEntryUser after updating T_Analysis_Job_Request
+**			03/27/2013 mem - Now auto-updating @ownerPRN to @callingUser if @callingUser maps to a valid user
 **
 *****************************************************/
 (
@@ -62,7 +63,7 @@ CREATE Procedure AddAnalysisJobGroup
     @organismName varchar(128),
 	@protCollNameList varchar(4000),
 	@protCollOptionsList varchar(256),
-    @ownerPRN varchar(32),
+    @ownerPRN varchar(32),							-- Will get updated to @callingUser if @callingUser is valid
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @requestID int,									-- 0 if not associated with a request; otherwise, Request ID in T_Analysis_Job_Request
@@ -189,6 +190,21 @@ As
 	End
 
 
+	---------------------------------------------------
+	-- Auto-update @ownerPRN to @callingUser if possible
+	---------------------------------------------------
+	If Len(@callingUser) > 0
+	Begin
+		Declare @newPRN varchar(128) = @callinguser
+		Declare @slashIndex int = CHARINDEX('\', @newPRN)
+		
+		If @slashIndex > 0
+			Set @newPRN = SUBSTRING(@newPRN, @slashIndex+1, LEN(@newPRN))
+		
+		If Exists (SELECT * FROM T_Users Where U_PRN = @newPRN)
+			Set @ownerPRN = @newPRN
+	End
+	
 	---------------------------------------------------
 	-- If @removeDatasetsWithJobs is not "N" then
 	--  find datasets from temp table that have existing
