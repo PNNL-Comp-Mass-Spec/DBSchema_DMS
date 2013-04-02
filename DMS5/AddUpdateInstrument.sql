@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateInstrument
 **			05/12/2011 mem - Added @AutoDefineStoragePath and related @AutoSP parameters
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **			11/30/2011 mem - Added parameter @PercentEMSLOwned
+**			04/01/2013 mem - Expanded @Description to varchar(255)
 **    
 *****************************************************/
 (
@@ -30,7 +31,7 @@ CREATE PROCEDURE AddUpdateInstrument
 	@CaptureMethod varchar(10),
 	@Status varchar(8),
 	@RoomNumber varchar(50),
-	@Description varchar(50),
+	@Description varchar(255),
 	@Usage varchar(50),
 	@OperationsRole varchar(50),
 	@PercentEMSLOwned varchar(24),				-- % of instrument owned by EMSL; number between 0 and 100

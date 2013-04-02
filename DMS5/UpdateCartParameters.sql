@@ -26,6 +26,7 @@ CREATE Procedure [dbo].[UpdateCartParameters]
 **          02/27/2006 grk - added cart ID stuff
 **          05/10/2006 grk - added verification of request ID
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			04/02/2013 mem - Now using @message to return errors looking up cart name from T_LC_Cart
 **    
 *****************************************************/
 (
@@ -90,13 +91,13 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Error trying to look up cart ID'
+			set @message = 'Error trying to look up cart ID using "' + @newValue + '"'
 		end
 		else 
 		if @cartID = 0
 		begin
 			set @myError = 52117
-			set @msg = 'Could not resolve cart name to ID'
+			set @message = 'Invalid LC Cart name "' + @newValue + '"'
 		end
 		else
 		begin
@@ -173,7 +174,6 @@ As
 	end	
 
 	return 0
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateCartParameters] TO [DMS_SP_User] AS [dbo]

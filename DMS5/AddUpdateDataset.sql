@@ -59,6 +59,7 @@ CREATE Procedure AddUpdateDataset
 **						   - Now requiring that the dataset name be 90 characters or less (longer names can lead to "path-too-long" errors; Windows has a 254 character path limit)
 **			11/21/2012 mem - Now requiring that the dataset name be at least 6 characters in length
 **			01/22/2013 mem - Now updating the dataset comment if the default dataset type is invalid for the instrument group
+**			04/02/2013 mem - Now updating @LCCartName (if not blank) when updating an existing dataset
 **    
 *****************************************************/
 (
@@ -98,6 +99,7 @@ As
 	
 	declare @result int
 	declare @Warning varchar(256)
+	declare @WarningAddon varchar(128)
 	declare @ExperimentCheck varchar(128)
 	
 	set @message = ''
@@ -977,7 +979,7 @@ As
 		-- if a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
-		if @LCCartName <> '' and @LCCartName <> 'no update'
+		if @LCCartName NOT IN ('', 'no update')
 		begin
 		
 			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
@@ -1035,7 +1037,6 @@ As
 		SET 
 				DS_Oper_PRN = @operPRN, 
 				DS_comment = @comment, 
-				DS_instrument_name_ID = @instrumentID, 
 				DS_type_ID = @datasetTypeID, 
 				DS_well_num = @wellNum, 
 				DS_sec_sep = @secSep, 
@@ -1045,7 +1046,7 @@ As
 				DS_LC_column_ID = @columnID, 
 				DS_wellplate_num = @wellplateNum, 
 				DS_internal_standard_ID = @intStdID
-		WHERE (Dataset_Num = @datasetNum)
+		WHERE Dataset_ID = @datasetID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -1058,7 +1059,46 @@ As
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
-			
+
+
+		---------------------------------------------------
+		-- if a cart name is specified, update it for the 
+		-- requested run
+		---------------------------------------------------
+		if @LCCartName NOT IN ('', 'no update')
+		begin
+
+			-- Lookup the RequestID for this dataset
+			SELECT @requestID = RR.ID
+			FROM T_Dataset DS
+			     INNER JOIN T_Requested_Run RR
+			       ON DS.Dataset_ID = RR.DatasetID
+			WHERE DS.Dataset_ID = @datasetID
+
+			If IsNull(@requestID, 0) = 0
+			Begin
+				set @WarningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
+				set @warning = dbo.AppendToText(@warning, @WarningAddon, 0, '; ')
+			End
+			Begin
+				Set @WarningAddon = ''
+				exec @result = UpdateCartParameters
+									'CartName',
+									@requestID,
+									@LCCartName output,
+									@WarningAddon output
+				--
+				set @myError = @result
+				--
+				if @myError <> 0
+				begin
+					set @WarningAddon = 'Update LC cart name failed: ' + @WarningAddon
+					set @warning = dbo.AppendToText(@warning, @WarningAddon, 0, '; ')
+					set @myError = 0
+				end
+			End	
+		end
+					
 		-- If rating changed from -5, -6, or -7 to 5, then check if any jobs exist for this dataset
 		-- If no jobs are found, then call SchedulePredefinedAnalyses for this dataset
 		-- Skip jobs with AJ_DatasetUnreviewed=1 when looking for existing jobs (these jobs were created before the dataset was dispositioned)
@@ -1099,10 +1139,10 @@ As
 	If IsNull(@Warning, '') <> ''
 	Begin
 		If IsNull(@message, '') = ''
-			Set @message = @Warning
+			Set @message = 'Warning: ' + @Warning
 		Else
 			If @message <> @warning
-				Set @message = @warning + '; ' + @message
+				Set @message = 'Warning: ' + @warning + '; ' + @message
 	End
 
 
