@@ -22,9 +22,10 @@ CREATE PROCEDURE [dbo].[sp_Blitz]
 AS 
     SET NOCOUNT ON;
 /*
-    sp_Blitz v17 - January 27, 2013
+    sp_Blitz v18 - April 4, 2013
     
-    (C) 2013, Brent Ozar Unlimited
+    (C) 2013, Brent Ozar Unlimited. 
+	See http://BrentOzar.com/go/eula for the End User Licensing Agreement.
 
 To learn more, visit http://www.BrentOzar.com/blitz where you can download
 new versions for free, watch training videos on how it works, get more info on
@@ -50,6 +51,28 @@ Known limitations of this version:
 Unknown limitations of this version:
  - None.  (If we knew them, they'd be known.  Duh.)
  
+Changes in v18:
+ - Alin Selicean @AlinSelicean:
+   - Added check 93 looking for backups stored on the same drive letter as user
+	 database files. Will give false positives if both your user databases
+	 and backup files are mount points on the same drive letter, but hey,
+	 don't do that.
+   - Fixed typo in check 88 that wouldn't run if check 91 was being skipped.
+   - Improved check 72, non-aligned partitioned indexes, to include the 
+	 database name even if the index hadn't been used since restart.
+ - David Forck @Thirster42:
+   - Added check 94 for Agent jobs that are not set up to notify an operator
+	 upon failure.
+   - Improved check 80 to ignore max file sizes for filestream data files.
+ - Dino Maric added check 92 for free drive space. (Not an alert, just runs if
+   you set @CheckServerInfo = 1.) Doesn't include mount points.
+ - Eric Alter fixed bug with missing begin/end in check 83.
+ - Nigel Maneffa fixed a broken link in check 91 for merge replication.
+ - Added check 86 back in for elevated database permissions.
+ - Replaced @@SERVERNAME usage with SERVERPROPERTY('ServerName') because in
+   some cloud hosting environments, these don't match, and it's okay.
+ - Changed database name variables to be NVARCHAR(128). Dang SharePoint.
+	
 Changes in v17: 
  - Alin Selician:
    - Fixed bug in check 72 for partitioned indexes that weren't aligned.
@@ -81,8 +104,8 @@ Changes in v17:
    create the table
      CREATE TABLE dbo.Whatever
       (ID INT IDENTITY(1,1),
-      ServerName VARCHAR(50),
-      DatabaseName NVARCHAR(100), 
+      ServerName NVARCHAR(128),
+      DatabaseName NVARCHAR(128), 
       CheckID INT)
       
   ServerName = 'MyServer, DatabaseName = NULL, CheckId = NULL - will not check anything on servername MyServer
@@ -310,13 +333,13 @@ Explanation of priority levels:
     DECLARE @sqlcmd NVARCHAR(2500)
     SET @sqlcmd =  'insert into #GetChecks(ServerName, DatabaseName, CheckId )
             SELECT DISTINCT ServerName, DatabaseName, CheckId
-            FROM '+@exemptionpath + ' WHERE ServerName IS NULL OR ServerName = @@SERVERNAME '
+            FROM '+@exemptionpath + ' WHERE ServerName IS NULL OR ServerName = SERVERPROPERTY(''ServerName'') '
     EXEC(@sqlcmd)
   END
   
   IF OBJECT_ID('tempdb..#tempchecks') IS NOT NULL 
     DROP TABLE #tempchecks;
-  create table #tempchecks(DatabaseName varchar(100),
+  create table #tempchecks(DatabaseName NVARCHAR(128),
               CheckId int)
 
   insert into #tempchecks(DatabaseName)
@@ -324,14 +347,14 @@ Explanation of priority levels:
   from #GetChecks
   where CheckId is null
   and (ServerName is null 
-  or ServerName = @@servername)
+  or ServerName = SERVERPROPERTY('ServerName'))
 
   insert into #tempchecks(DatabaseName,CheckId)
   select  '',CheckId
   from #GetChecks
   where DatabaseName is null
   and (ServerName is null 
-  or ServerName = @@servername)
+  or ServerName = SERVERPROPERTY('ServerName'))
 
 
   IF OBJECT_ID('tempdb..#BlitzResults') IS NOT NULL 
@@ -339,7 +362,7 @@ Explanation of priority levels:
   CREATE TABLE #BlitzResults(
     ID INT IDENTITY(1, 1) ,
     CheckID INT ,
-    DatabaseName varchar(50),
+    DatabaseName NVARCHAR(128),
     Priority TINYINT ,
     FindingsGroup VARCHAR(50) ,
     Finding VARCHAR(200) ,
@@ -413,7 +436,7 @@ Explanation of priority levels:
   /* If we're outputting CSV, don't bother checking the plan cache because we cannot export plans. */
   IF @OutputType = 'CSV' SET @CheckProcedureCache = 0;
 
-  if ((@@SERVERNAME not in (select ServerName from #GetChecks where DatabaseName is null and CheckId is null)) or (@SkipChecksTable is null))
+  if ((SERVERPROPERTY('ServerName') not in (select ServerName from #GetChecks where DatabaseName is null and CheckId is null)) or (@SkipChecksTable is null))
   begin
     if not exists (select 1 from #tempchecks where CheckId = 1)
     begin
@@ -437,7 +460,7 @@ Explanation of priority levels:
     FROM    master.sys.databases d
     LEFT OUTER JOIN msdb.dbo.backupset b ON d.name = b.database_name
       AND b.type = 'D'
-      AND b.server_name = @@SERVERNAME /*Backupset ran on current server */
+      AND b.server_name = SERVERPROPERTY('ServerName') /*Backupset ran on current server */
     WHERE   d.database_id <> 2  /* Bonus points if you know what that means */
       AND d.state <> 1 /* Not currently restoring, like log shipping databases */
       AND d.is_in_standby = 0 /* Not a log shipping target database */
@@ -472,7 +495,7 @@ Explanation of priority levels:
                 FROM   msdb.dbo.backupset b
                 WHERE  d.name = b.database_name
                 AND b.type = 'D'
-                AND b.server_name = @@SERVERNAME /*Backupset ran on current server */)
+                AND b.server_name = SERVERPROPERTY('ServerName') /*Backupset ran on current server */)
 
     end
     
@@ -511,6 +534,32 @@ Explanation of priority levels:
               AND b.type = 'L'
               AND b.backup_finish_date >= DATEADD(dd, -7, GETDATE()) );
     end
+
+
+if not exists (select 1 from #tempchecks where CheckId = 93)
+begin
+INSERT  INTO #BlitzResults
+( CheckID ,
+Priority ,
+FindingsGroup ,
+Finding ,
+URL ,
+Details
+)
+SELECT DISTINCT 
+93 AS CheckID , 
+1 AS Priority , 
+'Backup' AS FindingsGroup , 
+'Backing Up to Same Drive Where Databases Reside' AS Finding , 
+'http://BrentOzar.com/go/backup' AS URL , 
+'Drive ' + UPPER(LEFT(bmf.physical_device_name,3)) + ' houses both database files AND backups taken in the last two weeks. This represents a serious risk if that array fails.' Details 
+FROM msdb.dbo.backupmediafamily AS bmf 
+INNER JOIN msdb.dbo.backupset AS bs ON bmf.media_set_id = bs.media_set_id 
+AND bs.backup_start_date >= (DATEADD(dd, -14, GETDATE()))
+WHERE UPPER(LEFT(bmf.physical_device_name,3)) IN 
+(SELECT DISTINCT UPPER(LEFT(mf.physical_name,3)) FROM sys.master_files AS mf)
+end
+
 
     if not exists (select 1 from #tempchecks where CheckId = 3)
     begin
@@ -950,9 +999,9 @@ Explanation of priority levels:
       ;
     end
 
-    if not exists (select 1 from #tempchecks where CheckId = 91)
+    if not exists (select 1 from #tempchecks where CheckId = 88)
     begin
-    EXEC dbo.sp_MSforeachdb 'USE [?];  IF EXISTS (SELECT * FROM  sys.tables WITH (NOLOCK) WHERE name = ''sysmergepublications'' ) IF EXISTS ( SELECT * FROM sysmergepublications WITH (NOLOCK) WHERE retention = 0)   INSERT INTO #BlitzResults (CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details) SELECT DISTINCT 88, DB_NAME(), 110, ''Performance'', ''Infinite merge replication metadata retention period'', ''http://BrentOzar.com/go/zzzzz_newsectionhere'', (''The ['' + DB_NAME() + ''] database has merge replication metadata retention period set to infinite - this can be the case of significant performance issues.'')';
+    EXEC dbo.sp_MSforeachdb 'USE [?];  IF EXISTS (SELECT * FROM  sys.tables WITH (NOLOCK) WHERE name = ''sysmergepublications'' ) IF EXISTS ( SELECT * FROM sysmergepublications WITH (NOLOCK) WHERE retention = 0)   INSERT INTO #BlitzResults (CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details) SELECT DISTINCT 88, DB_NAME(), 110, ''Performance'', ''Infinite merge replication metadata retention period'', ''http://BrentOzar.com/go/merge'', (''The ['' + DB_NAME() + ''] database has merge replication metadata retention period set to infinite - this can be the case of significant performance issues.'')';
     end
 
             
@@ -1999,6 +2048,36 @@ Explanation of priority levels:
     WHERE  [name] = 'model'
     )
     end
+
+if not exists (select 1 from #tempchecks where CheckId = 94)
+begin
+INSERT  INTO #BlitzResults
+( CheckID ,
+Priority ,
+FindingsGroup ,
+Finding ,
+URL ,
+Details)
+SELECT  94 AS CheckID ,
+50 as [Priority], 
+'Reliability' as FindingsGroup, 
+'Agent Jobs Without Failure Emails' as Finding, 
+'http://BrentOzar.com/go/alerts' as URL, 
+'The job ' + [name] + ' has not been set up to notify an operator if it fails.' as Details 
+FROM msdb.[dbo].[sysjobs] j 
+inner join 
+( 
+SELECT distinct 
+[job_id] 
+FROM [msdb].[dbo].[sysjobschedules] 
+where next_run_date>0 
+) s 
+on j.job_id=s.job_id 
+where j.enabled=1 
+and j.notify_email_operator_id=0 
+and j.notify_netsend_operator_id=0 
+and j.notify_page_operator_id=0        
+end
             
     IF @CheckUserDatabaseObjects = 1 
     BEGIN
@@ -2244,6 +2323,11 @@ Explanation of priority levels:
       (''['' + DB_NAME() + ''].['' + SPECIFIC_SCHEMA + ''].['' + SPECIFIC_NAME + ''] has WITH RECOMPILE in the stored procedure code, which may cause increased CPU usage due to constant recompiles of the code.'') 
       from [?].INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_DEFINITION LIKE N''%WITH RECOMPILE%''';
     end
+
+if not exists (select 1 from #tempchecks where CheckId = 86)
+begin
+            EXEC dbo.sp_MSforeachdb 'USE [?]; INSERT INTO #BlitzResults (CheckID, Priority, FindingsGroup, Finding, URL, Details) SELECT DISTINCT 86, 20, ''Security'', ''Elevated Permissions on a Database'', ''http://BrentOzar.com/go/elevated'', (''In ['' + DB_NAME() + ''], user ['' + u.name + '']  has the role ['' + g.name + ''].  This user can perform tasks beyond just reading and writing data.'') FROM [?].dbo.sysmembers m inner join [?].dbo.sysusers u on m.memberuid = u.uid inner join sysusers g on m.groupuid = g.uid where u.name <> ''dbo'' and g.name in (''db_owner'' , ''db_accessAdmin'' , ''db_securityadmin'' , ''db_ddladmin'')';
+end
             
   END /* IF @CheckUserDatabaseObjects = 1 */
 
@@ -2742,14 +2826,14 @@ Explanation of priority levels:
     begin
     CREATE TABLE #partdb
         (
-          dbname VARCHAR(100) ,
-          objectname VARCHAR(200) ,
-          type_desc VARCHAR(50)
+          dbname NVARCHAR(128) ,
+          objectname NVARCHAR(200) ,
+          type_desc NVARCHAR(128)
         )
   EXEC dbo.sp_MSforeachdb 
     'USE [?]; 
     insert into #partdb(dbname, objectname, type_desc)
-    SELECT distinct db_name(database_id) as DBName,o.name Object_Name,ds.type_desc
+    SELECT distinct db_name(DB_ID()) as DBName,o.name Object_Name,ds.type_desc
     FROM sys.objects AS o JOIN sys.indexes AS i ON o.object_id = i.object_id 
     JOIN sys.data_spaces ds on ds.data_space_id = i.data_space_id
     LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s ON i.object_id = s.object_id AND i.index_id = s.index_id AND s.database_id = DB_ID()
@@ -2776,7 +2860,7 @@ Explanation of priority levels:
               dbname as DatabaseName,
               100 AS Priority ,
               'Performance' AS FindingsGroup ,
-              'The partioned database ' + dbname
+              'The partitioned database ' + dbname
               + ' may have non-aligned indexes' AS Finding ,
               'http://BrentOzar.com/go/aligned' AS URL ,
               'Having non-aligned indexes on partitioned tables may cause inefficient query plans and CPU pressure' AS Details
@@ -2850,7 +2934,7 @@ Explanation of priority levels:
     'Global Trace Flag' AS FindingsGroup ,
     'TraceFlag On' AS Finding ,
     'http://www.BrentOzar.com/go/traceflags/' AS URL ,
-    'Trace flag ' + T.TraceFlag + ' is enabled globally.' ASDetails
+    'Trace flag ' + T.TraceFlag + ' is enabled globally.' AS Details
     FROM    #TraceStatus T
     end
     
@@ -2961,10 +3045,13 @@ Explanation of priority levels:
     WHERE step.command LIKE N'%SHRINKDATABASE%' OR step.command LIKE N'%SHRINKFILE%'
     end
                     
-    if not exists (select 1 from #tempchecks where CheckId = 81)
+    if not exists (select 1 from #tempchecks where CheckId = 80)
     begin
-    EXEC dbo.sp_MSforeachdb 'USE [?]; INSERT INTO #BlitzResults (CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details) SELECT DISTINCT 80, DB_NAME(), 50, ''Reliability'', ''Max File Size Set'', ''http://BrentOzar.com/go/maxsize'', (''The ['' + DB_NAME() + ''] database file '' + name + '' has a max file size set to '' + CAST(CAST(max_size AS BIGINT) * 8 / 1024 AS VARCHAR(100)) + ''MB. If it runs out of space, the database will stop working even though there may be drive space available.'') FROM sys.database_files WHERE max_size <> 268435456 AND max_size <> -1';
+    EXEC dbo.sp_MSforeachdb 'USE [?]; INSERT INTO #BlitzResults (CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details) SELECT DISTINCT 80, DB_NAME(), 50, ''Reliability'', ''Max File Size Set'', ''http://BrentOzar.com/go/maxsize'', (''The ['' + DB_NAME() + ''] database file '' + name + '' has a max file size set to '' + CAST(CAST(max_size AS BIGINT) * 8 / 1024 AS VARCHAR(100)) + ''MB. If it runs out of space, the database will stop working even though there may be drive space available.'') FROM sys.database_files WHERE max_size <> 268435456 AND max_size <> -1 AND type <> 2';
+	end
 
+	if not exists (select 1 from #tempchecks where CheckId = 81)
+	begin
     INSERT  INTO #BlitzResults
     ( CheckID ,
     Priority ,
@@ -2993,15 +3080,17 @@ Explanation of priority levels:
 		if not exists (select 1 from #tempchecks where CheckId = 83)
 		begin
 		IF EXISTS (SELECT * FROM sys.all_objects WHERE name = 'dm_server_services')
-		SET @StringToExecute = 'INSERT INTO #BlitzResults (CheckID, Priority, FindingsGroup, Finding, URL, Details)
-		SELECT  83 AS CheckID ,
-		250 AS Priority ,
-		''Server Info'' AS FindingsGroup ,
-		''Services'' AS Finding ,
-		'''' AS URL ,
-		N''Service: '' + servicename + N'' runs under service account '' + service_account + N''. Last startup time: '' + COALESCE(CAST(CAST(last_startup_time AS DATETIME) AS VARCHAR(50)), ''not shown.'') + ''. Startup type: '' + startup_type_desc + N'', currently '' + status_desc + ''.'' 
-		FROM sys.dm_server_services;'
-		EXECUTE(@StringToExecute);
+			BEGIN
+			SET @StringToExecute = 'INSERT INTO #BlitzResults (CheckID, Priority, FindingsGroup, Finding, URL, Details)
+			SELECT  83 AS CheckID ,
+			250 AS Priority ,
+			''Server Info'' AS FindingsGroup ,
+			''Services'' AS Finding ,
+			'''' AS URL ,
+			N''Service: '' + servicename + N'' runs under service account '' + service_account + N''. Last startup time: '' + COALESCE(CAST(CAST(last_startup_time AS DATETIME) AS VARCHAR(50)), ''not shown.'') + ''. Startup type: '' + startup_type_desc + N'', currently '' + status_desc + ''.'' 
+			FROM sys.dm_server_services;'
+			EXECUTE(@StringToExecute);
+			END
 		end
 
 		/* Check 84 - SQL Server 2012 */              
@@ -3079,6 +3168,29 @@ Explanation of priority levels:
 		WHERE database_id = 2
 		END
 
+	if not exists (select 1 from #tempchecks where CheckId = 92)
+	BEGIN
+	CREATE TABLE #driveInfo(drive NVARCHAR,SIZE DECIMAL(18,2))
+	INSERT INTO #driveInfo(drive,SIZE)
+	EXEC master..xp_fixeddrives
+
+	INSERT  INTO #BlitzResults
+	        ( CheckID ,
+	          Priority ,
+	          FindingsGroup ,
+	          Finding ,
+	          URL ,
+	          Details
+	        )
+	SELECT 92 AS CheckID ,
+	250 AS Priority ,
+	'ServerInfo' AS FindingsGroup ,
+	'Drive ' + i.drive + ' Space' as Finding,
+	'' AS URL ,
+	CAST(i.SIZE AS VARCHAR) + 'MB free on ' + i.drive + ' drive' AS Details
+	FROM #driveInfo AS i
+	DROP TABLE #driveInfo
+    END
 END /* IF @CheckServerInfo = 1 */
 
 
@@ -3109,7 +3221,7 @@ IF @IgnorePrioritiesBelow IS NOT NULL
     'Thanks from the Brent Ozar Unlimited team.  We hope you found this tool useful, and if you need help relieving your SQL Server pains, email us at Help@BrentOzar.com.'
     );
 
-    SET @Version = 17;
+    SET @Version = 18;
     INSERT  INTO #BlitzResults
     ( CheckID ,
     Priority ,
@@ -3121,7 +3233,7 @@ IF @IgnorePrioritiesBelow IS NOT NULL
     )
     VALUES  ( -1 ,
     0 ,
-    'sp_Blitz v17 Jan 27 2013' ,
+    'sp_Blitz v18 Apr 4 2013' ,
     'From Brent Ozar Unlimited' ,
     'http://www.BrentOzar.com/blitz/' ,
     'Thanks from the Brent Ozar Unlimited team.  We hope you found this tool useful, and if you need help relieving your SQL Server pains, email us at Help@BrentOzar.com.'
@@ -3135,8 +3247,8 @@ IF @IgnorePrioritiesBelow IS NOT NULL
 
         create table #exempt(
         ID int identity(1,1),
-        ServerName varchar(50),
-        DatabaseName varchar(100),
+        ServerName NVARCHAR(128),
+        DatabaseName NVARCHAR(128),
         CheckId int)
 
         insert into #exempt(ServerName,DatabaseName, CheckId)
@@ -3145,12 +3257,12 @@ IF @IgnorePrioritiesBelow IS NOT NULL
         where DatabaseName is not null
         and CheckId is not null
         and (ServerName is null 
-        or ServerName = @@SERVERNAME)
+        or ServerName = SERVERPROPERTY('ServerName'))
         
         while (select COUNT(*) from #exempt) > 0
         begin 
           declare @ID int,
-          @DatabaseName varchar(100),
+          @DatabaseName NVARCHAR(128),
           @checkid int
           set @ID = (select top 1 ID from #exempt)
           set @DatabaseName = (select DatabaseName from #exempt where ID = @ID)

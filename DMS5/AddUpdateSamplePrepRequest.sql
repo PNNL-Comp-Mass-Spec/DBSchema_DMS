@@ -45,6 +45,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			08/15/2011 grk - added Separation_Type
 **			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **			10/19/2012 mem - Now auto-changing @SeparationType to Separation_Group if @SeparationType specifies a separation type
+**			04/05/2013 mem - Now requiring that @EstimatedMSRuns be defined.  If it is non-zero, then instrument group, dataset type, and separation group must also be defined
 **    
 *****************************************************/
 (
@@ -119,12 +120,15 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 	--
-	if LEN(@instrumentName) < 1
-		RAISERROR ('Instrument group was blank', 11, 114)
-	--
-	if LEN(@DatasetType) < 1
-		RAISERROR ('Dataset type was blank', 11, 115)
+	Set @instrumentName = IsNull(@instrumentName, '')
+	
+	Set @DatasetType = IsNull(@DatasetType, '')
  
+	Set @TechnicalReplicates = IsNull(@TechnicalReplicates, '')
+ 
+	If Len(IsNull(@EstimatedMSRuns, '')) < 1
+		RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
+		
 	---------------------------------------------------
 	-- Validate instrument group and dataset type
 	---------------------------------------------------
@@ -134,11 +138,26 @@ As
 	-- Set the instrument group to @instrumentName for now
 	set @InstrumentGroup = @instrumentName
 
-	if NOT (@EstimatedMSRuns = '0' or @EstimatedMSRuns = 'None')
+	IF NOT (@EstimatedMSRuns IN ('0', 'None'))
 	begin
 		if @instrumentName = 'none' or @instrumentName = 'na'
 			RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @instrumentName)
-			
+		
+		If ISNUMERIC(@EstimatedMSRuns) = 0
+			RAISERROR ('Estimated runs must be an integer or "none"', 11, 116)
+		
+		If IsNull(@InstrumentGroup, '') = ''
+			RAISERROR ('Instrument group cannot be empty since the estimated MS run count is non-zero', 11, 117)
+
+		If IsNull(@DatasetType, '') = ''
+			RAISERROR ('Dataset type cannot be empty since the estimated MS run count is non-zero', 11, 118)
+
+		If IsNull(@SeparationType, '') = ''
+			RAISERROR ('Separation group cannot be empty since the estimated MS run count is non-zero', 11, 119)
+
+		If IsNull(@TechnicalReplicates, '') = ''
+			RAISERROR ('Technical Replicate count cannot be empty since the estimated MS run count is non-zero; enter "none" if no replicates', 11, 120)
+		
 		---------------------------------------------------
 		-- Determine the Instrument Group
 		---------------------------------------------------

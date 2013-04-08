@@ -33,6 +33,7 @@ CREATE Procedure AddUpdateExperiment
 **			03/26/2012 mem - Now validating @container
 **			               - Updated to validate additional terms when @mode = 'check_add'
 **			11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
+**			04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
 **
 *****************************************************/
 (
@@ -115,6 +116,12 @@ As
 			RAISERROR ('Experiment name may not contain spaces', 11, 36)
 		Else
 			RAISERROR ('Experiment name may not contain the character(s) "%s"', 11, 37, @badCh)
+	end
+
+	If Len(@experimentNum) < 6
+	begin
+		set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentNum)) + ' characters'
+		RAISERROR (@msg, 11, 37)
 	end
 
 	---------------------------------------------------

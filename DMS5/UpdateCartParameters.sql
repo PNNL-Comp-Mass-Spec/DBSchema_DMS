@@ -101,11 +101,16 @@ As
 		end
 		else
 		begin
+			-- Note: Only update the value if RDS_Cart_ID has changed
+			--
 			UPDATE T_Requested_Run
 			SET	RDS_Cart_ID = @cartID
-			WHERE (ID = @requestID)	
+			WHERE (ID = @requestID AND RDS_Cart_ID <> @cartID)
 			--	
 			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myError = 0 And @myRowCount < 1
+				Set @myRowCount = 1
 		end
 	end
 

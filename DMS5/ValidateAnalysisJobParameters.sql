@@ -43,6 +43,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			11/28/2012 mem - Added candidate code to validate that high res MSn datasets are centroided if using MSGFDB
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
+**			04/02/2013 mem - Now updating @message if it is blank yet @result is non-zero
 **
 *****************************************************/
 (
@@ -72,7 +73,7 @@ As
 	set @message = ''
 
 	declare @list varchar(1024)
-	declare @ParamFileTool varchar(128)
+	declare @ParamFileTool varchar(128) = '??NoMatch??'
 	declare @SettingsFileTool varchar(128)
 	declare @result int
 
@@ -83,7 +84,11 @@ As
 	exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets
 		
 	If @result <> 0
+	Begin
+		If IsNull(@message, '') = ''
+			Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobRequestDatasets in ValidateAnalysisJobParameters'
 		return @result
+	End
 	
 	---------------------------------------------------
 	-- Resolve user ID for operator PRN
@@ -254,7 +259,7 @@ As
 				WHERE (PF.Param_File_Name = @parmFileName)
 				ORDER BY ToolList.AJT_toolID
 
-				set @message = 'Parameter file "' + @parmFileName + '" is for tool ' + @ParamFileTool + '; not ' + @toolName
+				set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@ParamFileTool, '??') + '; not ' + IsNull(@toolName, '??')
 				return 53111
 			End
 		End
@@ -394,9 +399,15 @@ As
 					@ownerPRN,
 					@message output,
 					@debugMode=0
-		
-	return @result
 
+	if @result <> 0
+	Begin
+		If IsNull(@message, '') = ''
+			Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateProteinCollectionParams in ValidateAnalysisJobParameters'
+		return @result
+	End
+	
+	return @result
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [Limited_Table_Write] AS [dbo]

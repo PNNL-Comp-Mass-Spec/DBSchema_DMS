@@ -55,6 +55,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			09/18/2012 mem - Now clearing @organismDBName if @mode='reset' and we're searching a protein collection
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			01/04/2013 mem - Now ignoring @organismName, @protCollNameList, @protCollOptionsList, and @organismDBName for analysis tools that do not use protein collections (AJT_orgDbReqd = 0)
+**			04/02/2013 mem - Now updating @msg if it is blank yet @result is non-zero
 **    
 *****************************************************/
 (
@@ -271,6 +272,7 @@ As
 	--
 	declare @result int
 	set @result = 0
+	set @msg = ''
 	--
 	exec @result = ValidateAnalysisJobParameters
 							@toolName,
@@ -289,6 +291,8 @@ As
 	--
 	if @result <> 0
 	begin
+		If IsNull(@msg, '') = ''
+			Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobParameters'
 		RAISERROR (@msg, 11, 18)
 	end
 
@@ -336,7 +340,7 @@ As
 				#TD ON #TD.Dataset_Num = DS.Dataset_Num
 			WHERE
 			    ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 14) OR
-			      @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
+			    @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
 			    ) AND
 			    AJT.AJT_toolName = @toolName AND 
 			    AJ.AJ_parmFileName = @parmFileName AND 
