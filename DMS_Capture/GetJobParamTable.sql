@@ -32,6 +32,7 @@ CREATE PROCEDURE GetJobParamTable
 **			01/14/2010 grk - Removed path ID fields
 **			05/04/2010 grk - Added instrument class params
 **			03/23/2012 mem - Now including EUS_Instrument_ID
+**			04/09/2013 mem - Now looking up Perform_Calibration from S_DMS_T_Instrument_Name
 **    
 *****************************************************/
   (
@@ -160,6 +161,28 @@ AS
 		( Step_Number, [Section], [Name], Value )
 	VALUES
 		(NULL, 'JobParameters', 'RawDataType', @rawDataType)
+    
+    ---------------------------------------------------
+    -- Determine whether calibration should be performed 
+    -- (as of April 2013, only applies to IMS instruments)
+    ---------------------------------------------------
+    
+    Declare @PerformCalibration tinyint
+    Declare @PerformCalibrationText varchar(12)
+    
+    SELECT @PerformCalibration = Perform_Calibration
+    FROM S_DMS_T_Instrument_Name
+    WHERE IN_Name = @instrument_name
+    
+    If IsNull(@PerformCalibration, 0) = 0
+		Set @PerformCalibrationText = 'False'
+	Else
+		Set @PerformCalibrationText = 'True'		
+
+	INSERT INTO @paramTab
+		( Step_Number, [Section], [Name], Value )
+	VALUES
+		(NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)	    
     
   	---------------------------------------------------
 	-- output the table of parameters

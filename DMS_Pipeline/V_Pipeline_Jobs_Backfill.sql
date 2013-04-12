@@ -19,15 +19,13 @@ SELECT J.Job,
        J.Transfer_Folder_Path,
        J.[Comment],
        J.Owner,
-       JPT.ProcessingTimeMinutes
+       JPT.ProcessingTimeMinutes,
+       J.DataPkgID
 FROM T_Jobs J
      INNER JOIN T_Scripts S
        ON J.Script = S.Script
      INNER JOIN V_Job_Processing_Time JPT
        ON J.Job = JPT.Job
 WHERE (S.Backfill_to_DMS = 1)
-
-
-
 
 GO

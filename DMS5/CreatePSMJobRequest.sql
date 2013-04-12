@@ -20,6 +20,7 @@ CREATE Procedure CreatePSMJobRequest
 **			12/13/2012 mem - Added parameter @previewMode, which indicates what should be passed to AddUpdateAnalysisJobRequest for @mode
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
+**			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **    
 *****************************************************/
 (
@@ -196,6 +197,24 @@ As
 			           
 			RAISERROR (@msg, 11, 10)
 		End
+		
+		-- Count the number of QExactive datasets
+		--
+		Declare @QExactiveDSCount int = 0
+		
+		SELECT @QExactiveDSCount = COUNT(*)
+		FROM #TD
+		     INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+		     INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+		     INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
+		WHERE (InstGroup.IN_Group = 'QExactive')
+
+		If @QExactiveDSCount > 0
+		Begin
+			-- Auto-update the settings file since we have one or more Q Exactive datasets
+			Set @SettingsFile = dbo.AutoUpdateQExactiveSettingsFile(@SettingsFile)
+		End
+			
 		
 		-- Next determine the parameter file
 		-- 

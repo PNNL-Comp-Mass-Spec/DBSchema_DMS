@@ -18,6 +18,7 @@ CREATE PROCEDURE CreateJobSteps
 **	Date:	09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			01/14/2010 grk - Removed path ID fields
 **			05/25/2011 mem - Updated call to CreateStepsForJob
+**			04/09/2013 mem - Added additional comments
 **    
 *****************************************************/
 (
@@ -349,8 +350,8 @@ As
 				set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
 			end
 
-			-- get parameters for job (and also store in job parameters)
-			-- Parameters are returned in @pXML
+			-- get parameters for job (and also store in #Job_Parameters)
+			-- Parameters are returned in @pXML (though @pXML is not used by this procedure)
 			exec @myError = CreateParametersForJob @job, @datasetID, @pXML output, @message output, @DebugMode = @DebugMode
 
 			-- create the basic job structure (steps and dependencies)
@@ -422,7 +423,11 @@ As
 	Begin
 		if @mode = 'CreateFromImportedJobs'
 		begin
-			-- move temp tables to main tables
+			-- Copies data from the following temp tables to actual database tables:
+			--	 #Jobs
+			--	 #Job_Steps
+			--	 #Job_Step_Dependencies
+			--	 #Job_Parameters
 			exec MoveJobsToMainTables @message output
 		end
 

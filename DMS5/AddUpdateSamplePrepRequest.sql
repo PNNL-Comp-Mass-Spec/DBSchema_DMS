@@ -46,6 +46,11 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **			10/19/2012 mem - Now auto-changing @SeparationType to Separation_Group if @SeparationType specifies a separation type
 **			04/05/2013 mem - Now requiring that @EstimatedMSRuns be defined.  If it is non-zero, then instrument group, dataset type, and separation group must also be defined
+**			04/08/2013 grk - Added @BlockAndRandomizeSamples, @BlockAndRandomizeRuns,and @IOPSPermitsCurrent
+**			04/09/2013 grk - disregarding internal standards
+**			04/09/2013 grk - chaged priority to text "Normal/High", added @NumberOfBiomaterialRepsReceived, removed Facility field
+**			04/09/2013 mem - Renamed parameter @InstrumentName to @InstrumentGroup
+**			               - Renamed parameter @SeparationType to @SeparationGroup
 **    
 *****************************************************/
 (
@@ -74,18 +79,20 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 	@eusUsersList varchar(1024),
 	@ReplicatesofSamples varchar(512),  
 	@TechnicalReplicates varchar(64),
-	@instrumentName varchar(128),				-- Will typically contain an instrument group, not an instrument name; could also contain "None" or any other text
+	@instrumentGroup varchar(128),				-- Will typically contain an instrument group name; could also contain "None" or any other text
 	@DatasetType varchar(50),
 	@InstrumentAnalysisSpecifications varchar(512),
 	@Comment varchar(1024),
-	@Priority tinyint,
+	@Priority varchar(12),
 	@State varchar(32),
 	@UseSingleLCColumn varchar(50),
-	@internalStandard varchar(50),
-	@postdigestIntStd varchar(50),
-	@Facility varchar(32),
 	@ID int output,
-	@SeparationType varchar(256),			-- Separation group
+	@SeparationGroup varchar(256),			-- Separation group	
+	@BlockAndRandomizeSamples char(3),
+	@BlockAndRandomizeRuns char(3),
+	@IOPSPermitsCurrent char(3),
+	@ReasonForHighPriority varchar(1024),
+	@NumberOfBiomaterialRepsReceived int,
 	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -120,7 +127,7 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 	--
-	Set @instrumentName = IsNull(@instrumentName, '')
+	Set @InstrumentGroup = IsNull(@InstrumentGroup, '')
 	
 	Set @DatasetType = IsNull(@DatasetType, '')
  
@@ -128,20 +135,22 @@ As
  
 	If Len(IsNull(@EstimatedMSRuns, '')) < 1
 		RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
+
+	---------------------------------------------------
+	-- validate priority
+	---------------------------------------------------
+
+	IF @Priority <> 'Normal' AND ISNULL(@ReasonForHighPriority, '') = ''
+		RAISERROR ('Priority "%s" requires justification reason to be provided', 11, 37, @Priority)
 		
 	---------------------------------------------------
 	-- Validate instrument group and dataset type
 	---------------------------------------------------
 	--
-	Declare @InstrumentGroup varchar(128) = ''
-
-	-- Set the instrument group to @instrumentName for now
-	set @InstrumentGroup = @instrumentName
-
 	IF NOT (@EstimatedMSRuns IN ('0', 'None'))
 	begin
-		if @instrumentName = 'none' or @instrumentName = 'na'
-			RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @instrumentName)
+		If @InstrumentGroup IN ('none', 'na')
+			RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @InstrumentGroup)
 		
 		If ISNUMERIC(@EstimatedMSRuns) = 0
 			RAISERROR ('Estimated runs must be an integer or "none"', 11, 116)
@@ -152,7 +161,7 @@ As
 		If IsNull(@DatasetType, '') = ''
 			RAISERROR ('Dataset type cannot be empty since the estimated MS run count is non-zero', 11, 118)
 
-		If IsNull(@SeparationType, '') = ''
+		If IsNull(@SeparationGroup, '') = ''
 			RAISERROR ('Separation group cannot be empty since the estimated MS run count is non-zero', 11, 119)
 
 		If IsNull(@TechnicalReplicates, '') = ''
@@ -167,7 +176,9 @@ As
 			-- Try to update instrument group using T_Instrument_Name
 			SELECT @InstrumentGroup = IN_Group
 			FROM T_Instrument_Name
-			WHERE IN_Name = @instrumentName
+			WHERE IN_Name = @InstrumentGroup AND
+			      IN_Status <> 'inactive'
+
 		End
 
 		---------------------------------------------------
@@ -289,34 +300,6 @@ As
     if @StateID = 0
 		RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
     
- 	---------------------------------------------------
-	-- Resolve internal standard ID
-	---------------------------------------------------
-
-	declare @internalStandardID int
-	set @internalStandardID = 0
-	--
-	SELECT @internalStandardID = Internal_Std_Mix_ID
-	FROM T_Internal_Standards
-	WHERE (Name = @internalStandard)
-	--
-	if @internalStandardID = 0
-		RAISERROR ('Could not find entry in database for predigestion internal standard "%s"', 11, 9, @internalStandard)
-
-	---------------------------------------------------
-	-- Resolve postdigestion internal standard ID
-	---------------------------------------------------
-	-- 
-	declare @postdigestIntStdID int
-	set @postdigestIntStdID = 0
-	--
-	SELECT @postdigestIntStdID = Internal_Std_Mix_ID
-	FROM T_Internal_Standards
-	WHERE (Name = @postdigestIntStd)
-	--
-	if @postdigestIntStdID = 0
-		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 10, @postdigestIntStdID)
-
 	---------------------------------------------------
 	-- validate EUS type, proposal, and user list
 	---------------------------------------------------
@@ -334,15 +317,19 @@ As
 	-- Auto-change separation type to separation group, if applicable
 	---------------------------------------------------
 	--	
-	declare @sepGroup varchar(64) = ''
+	If Not Exists (SELECT * FROM T_Separation_Group WHERE Sep_Group = @SeparationGroup)
+	Begin
+		Declare @SeparationGroupAlt varchar(64) = ''
+		
+		SELECT @SeparationGroupAlt = Sep_Group
+		FROM T_Secondary_Sep
+		WHERE SS_Name = @SeparationGroup AND
+		      SS_Active = 1
+		
+		If IsNull(@SeparationGroupAlt, '') <> ''
+			Set @SeparationGroup = @SeparationGroupAlt
+	End
 	
-	SELECT @sepGroup = Sep_Group
-	FROM T_Secondary_Sep
-	WHERE SS_Name = @SeparationType	
-	
-	If IsNull(@sepGroup, '') <> ''
-		Set @SeparationType = @sepGroup
-
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -428,14 +415,16 @@ As
 			Comment, 
 			Priority, 
 			UseSingleLCColumn,
-			Internal_standard_ID, 
-			Postdigest_internal_std_ID,
 			State, 
 			Instrument_Name, 
 			Dataset_Type,
 			Technical_Replicates,
-			Facility,
-			Separation_Type
+			Separation_Type,
+			BlockAndRandomizeSamples,
+			BlockAndRandomizeRuns,
+			IOPSPermitsCurrent,
+			Reason_For_High_Priority,
+			Number_Of_Biomaterial_Reps_Received			
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
@@ -465,14 +454,16 @@ As
 			@Comment, 
 			@Priority, 
 			@UseSingleLCColumn,
-			@InternalstandardID, 
-			@postdigestIntStdID,
 			@StateID,
 			@instrumentGroup,
 			@DatasetType,
 			@TechnicalReplicates,
-			@Facility,
-			@SeparationType
+			@SeparationGroup,
+			@BlockAndRandomizeSamples,
+			@BlockAndRandomizeRuns,
+			@IOPSPermitsCurrent,
+			@ReasonForHighPriority,
+			@NumberOfBiomaterialRepsReceived
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -539,14 +530,16 @@ As
 			Comment = @Comment, 
 			Priority = @Priority, 
 			UseSingleLCColumn = @UseSingleLCColumn,
-			Internal_standard_ID = @InternalstandardID, 
-			Postdigest_internal_std_ID = @postdigestIntStdID,
 			State = @StateID,
 			Instrument_Name = @instrumentGroup, 
 			Dataset_Type = @DatasetType,
 			Technical_Replicates = @TechnicalReplicates,
-			Facility = @Facility,
-			Separation_Type = @SeparationType
+			Separation_Type = @SeparationGroup,
+			BlockAndRandomizeSamples = @BlockAndRandomizeSamples,
+			BlockAndRandomizeRuns = @BlockAndRandomizeRuns,
+			IOPSPermitsCurrent = @IOPSPermitsCurrent,
+			Reason_For_High_Priority = @ReasonForHighPriority,
+			Number_Of_Biomaterial_Reps_Received = @NumberOfBiomaterialRepsReceived 
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -29,7 +29,9 @@ SELECT TPJ.Data_Package_ID,
        DS.DS_created,
        TPJ.[Package Comment] AS PackageComment,
        InstClass.raw_data_type as RawDataType,
-       E.Experiment_Num AS Experiment
+       E.Experiment_Num AS Experiment,
+       E.EX_reason AS Experiment_Reason,
+       E.EX_comment AS Experiment_Comment
 FROM DMS5.dbo.T_Analysis_Job AS AJ
      INNER JOIN DMS5.dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID

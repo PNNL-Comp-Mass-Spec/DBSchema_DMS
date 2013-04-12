@@ -11,7 +11,7 @@ SELECT Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePat
        DatasetFolder, ResultsFolder, MAX(SharedResultsFolder) AS SharedResultsFolder,
        DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
        ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
-       ResultType, DS_created, PackageComment, RawDataType, Experiment
+       ResultType, DS_created, PackageComment, RawDataType, Experiment, Experiment_Reason, Experiment_Comment
 FROM ( SELECT Src.Data_Package_ID,
               Src.Job,
               Src.Tool,
@@ -35,7 +35,9 @@ FROM ( SELECT Src.Data_Package_ID,
               Src.DS_created,
               ISNULL(Src.PackageComment, '') AS PackageComment,
               Src.RawDataType,
-              Src.Experiment
+              Src.Experiment,
+              Src.Experiment_Reason,
+              Src.Experiment_Comment
        FROM dbo.S_Data_Package_Aggregation_Jobs Src
             LEFT OUTER JOIN S_Production_Pipeline_Job_Steps_History JSH
               ON Src.Job = JSH.Job AND
@@ -45,7 +47,6 @@ FROM ( SELECT Src.Data_Package_ID,
 GROUP BY Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
          DatasetFolder, ResultsFolder, DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
          ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
-         ResultType, DS_created, PackageComment, RawDataType, Experiment
-
+         ResultType, DS_created, PackageComment, RawDataType, Experiment, Experiment_Reason, Experiment_Comment
 
 GO

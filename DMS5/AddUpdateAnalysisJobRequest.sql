@@ -61,6 +61,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
 **			03/26/2013 mem - Added parameter @callingUser
+**			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **
 *****************************************************/
 (
@@ -88,10 +89,12 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
+
+	Declare @AutoSupersedeName varchar(255) = ''
+	Declare @MsgToAppend varchar(255)
 
 	BEGIN TRY 
 
@@ -292,7 +295,6 @@ As
 	IF EXISTS (SELECT * FROM #TD WHERE Dataset_Type LIKE 'hms%' OR Dataset_Type LIKE 'ims-hms%')
 	Begin
 		-- Possibly auto-update the settings file
-		Declare @AutoSupersedeName varchar(255) = ''
 		
 		SELECT @AutoSupersedeName = HMS_AutoSupersede
 		FROM T_Settings_Files
@@ -302,7 +304,32 @@ As
 		Begin
 			Set @settingsFileName = @AutoSupersedeName
 			
-			Declare @MsgToAppend varchar(255) = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'			
+			Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'			
+			Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
+		End
+	End
+
+	-- Count the number of QExactive datasets
+	--
+	Declare @QExactiveDSCount int = 0
+	
+	SELECT @QExactiveDSCount = COUNT(*)
+	FROM #TD
+		    INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+		    INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+		    INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
+	WHERE (InstGroup.IN_Group = 'QExactive')
+
+	If @QExactiveDSCount > 0
+	Begin
+		-- Auto-update the settings file since we have one or more Q Exactive datasets
+		Set @AutoSupersedeName = dbo.AutoUpdateQExactiveSettingsFile(@settingsFileName)
+		
+		If IsNull(@AutoSupersedeName, '') <> @settingsFileName
+		Begin
+			Set @settingsFileName = @AutoSupersedeName
+			
+			Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more QExactive datasets are included in this job request'			
 			Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
 		End
 	End

@@ -17,6 +17,7 @@ CREATE PROCEDURE AddMACJob
 **			11/01/2012 grk - eliminated job template
 **			12/11/2012 jds - added DataPackageID to MapMACJobParameters
 **			01/11/2013 mem - Now aborting if MapMACJobParameters returns an error code
+**			04/10/2013 mem - Now passing @callingUser to MakeLocalJobInBroker
 **
 *****************************************************/
 (
@@ -194,8 +195,9 @@ AS
 					@DebugMode,
 					@job OUTPUT,
 					@resultsFolderName OUTPUT,
-					@message output
-/**/
+					@message output,
+					@callingUser
+
 		END --<add>
 
 	END TRY

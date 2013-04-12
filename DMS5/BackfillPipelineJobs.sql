@@ -15,6 +15,7 @@ CREATE Procedure dbo.BackfillPipelineJobs
 **
 **	Auth:	mem
 **	Date:	01/12/2012
+**			04/10/2013 mem - Now looking up the Data Package ID using S_V_Pipeline_Jobs_Backfill
 **    
 *****************************************************/
 (
@@ -126,7 +127,8 @@ AS
 		       PJ.Transfer_Folder_Path,
 		       PJ.[Comment],
 		       PJ.Owner,
-		       PJ.ProcessingTimeMinutes
+		       PJ.ProcessingTimeMinutes,
+		       PJ.DataPkgID
 		FROM S_V_Pipeline_Jobs_Backfill PJ
 		     LEFT OUTER JOIN T_Analysis_Job J
 		       ON PJ.Job = J.AJ_jobID
@@ -157,7 +159,8 @@ AS
 		             @TransferFolderPath = PJ.Transfer_Folder_Path,
 		             @Comment = PJ.[Comment],
 		             @Owner = PJ.Owner,
-		             @ProcessingTimeMinutes = PJ.ProcessingTimeMinutes
+		             @ProcessingTimeMinutes = PJ.ProcessingTimeMinutes,
+		             @DataPackageID = PJ.DataPkgID
 		FROM S_V_Pipeline_Jobs_Backfill PJ
 		     LEFT OUTER JOIN T_Analysis_Job J
 		       ON PJ.Job = J.AJ_jobID
@@ -252,7 +255,6 @@ AS
 				--
 				Set @DatasetID = -1
 				Set @DatasetComment = ''
-				Set @DataPackageID = 0
 				
 				If IsNull(@Dataset, 'Aggregation') <> 'Aggregation'
 				Begin
@@ -274,14 +276,7 @@ AS
 					
 					Set @CurrentLocation = 'Auto-define the dataset to associate with job ' + @jobStr
 					
-					SELECT @DataPackageID = Param_Value
-					FROM S_V_Pipeline_Job_Parameters
-					WHERE Job = @Job AND
-						Param_Name = 'DataPackageID'
-					--
-					Select @myRowCount = @@RowCount, @myError = @@Error
-					
-					If @myRowCount = 0
+					If @DataPackageID <= 0
 					Begin -- <d1>
 						------------------------------------------------
 						-- Job doesn't have a data package ID
@@ -613,7 +608,6 @@ NextJob:
 Done:
 
 	Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[BackfillPipelineJobs] TO [PNL\D3M578] AS [dbo]

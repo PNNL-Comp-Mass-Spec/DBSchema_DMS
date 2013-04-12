@@ -25,6 +25,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			02/07/2012 mem - Now validating that @DataPackageID is > 0 when @scriptName is MultiAlign_Aggregator
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
 **			08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
+**			04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
 **
 *****************************************************/
 (
@@ -291,13 +292,13 @@ AS
 	begin	
 		-- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
 		--	
-		INSERT INTO T_Jobs
-		(Job, Priority, Script, State, Dataset, Dataset_ID, Transfer_Folder_Path, Comment, Storage_Server, Owner, DataPkgID)
-		VALUES
-		(@job, @priority, @scriptName, 1, @datasetNum, @datasetID, NULL, @comment, NULL, @ownerPRN, IsNull(@DataPackageID, 0))
+		INSERT INTO T_Jobs ( Job,  Priority, Script,   State, Dataset,     Dataset_ID, Transfer_Folder_Path, Comment, Storage_Server, Owner,            DataPkgID)
+		VALUES             (@job, @priority, @scriptName, 1, @datasetNum, @datasetID, NULL,                 @comment, NULL,          @ownerPRN, IsNull(@DataPackageID, 0))
 
 
 		exec @myError = MoveJobsToMainTables @message output
+		
+		exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser
 		
 	end
 
