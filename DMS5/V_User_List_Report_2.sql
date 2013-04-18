@@ -9,13 +9,13 @@ AS
 -- Note that a few DMS Users have multiple EUS Person_ID values
 -- That leads to duplicate rows in this report, 
 --   but it doesn't hurt anything (and is actually informative)
-SELECT U.U_PRN AS [Payroll Num],
+SELECT U.ID,
+       U.U_PRN AS [Payroll Num],
        U.U_HID AS [Hanford ID],
        U.U_Name AS Name,
        U.U_Status AS Status,
        dbo.GetUserOperationsList(U.ID) AS [Operations List],
        U.U_Comment as [Comment],
-       U.ID,
        U.U_created AS Created_DMS,
        EU.PERSON_ID AS EUS_Person_ID,
        ESS.Name AS EUS_Site_Status
