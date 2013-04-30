@@ -18,6 +18,8 @@ SELECT
   AJ.AJ_proteinCollectionList AS ProteinCollectionList,
   AJ.AJ_proteinOptionsList AS ProteinOptionsList,
   Inst.IN_class AS InstrumentClass,
+  Inst.IN_Group AS InstrumentGroup,
+  Inst.IN_Name AS Instrument,  
   InstClass.raw_data_type AS RawDataType,
   Tool.AJT_searchEngineInputFileFormats AS SearchEngineInputFileFormats,
   Org.OG_name AS Organism,
@@ -49,8 +51,6 @@ FROM
   INNER JOIN dbo.T_Archive_Path AS ArchPath ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
   INNER JOIN dbo.T_DatasetTypeName DTN ON DS.DS_type_ID = DTN.DST_Type_ID
   INNER JOIN dbo.T_Experiments Ex ON DS.Exp_ID = Ex.Exp_ID
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobParameters] TO [PNL\D3M578] AS [dbo]

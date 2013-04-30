@@ -31,6 +31,7 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 **			02/16/2011 mem - Added parameter @PropagationMode
 **			05/02/2012 mem - Added parameter @SpecialProcessing
 **			09/25/2012 mem - Expanded @organismNameCriteria and @organismName to varchar(128)
+**			04/18/2013 mem - Expanded @description to varchar(512)
 **    
 *****************************************************/
 (
@@ -54,7 +55,7 @@ CREATE Procedure AddUpdatePredefinedAnalysis
 	@protCollOptionsList varchar(256),
 	@priority int,
 	@enabled tinyint,
-	@description varchar(255),
+	@description varchar(512),
 	@creator varchar(50),
 	@nextLevel varchar(12),
 	@ID int output,

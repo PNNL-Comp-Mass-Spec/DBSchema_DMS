@@ -18,6 +18,8 @@ SELECT Job
       ,ProteinCollectionList
       ,ProteinOptionsList
       ,InstrumentClass
+      ,InstrumentGroup
+      ,Instrument
       ,RawDataType
       ,SearchEngineInputFileFormats
       ,Organism
@@ -31,7 +33,6 @@ SELECT Job
       ,DatasetType
       ,Experiment
   FROM S_DMS_V_GetPipelineJobParameters
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobParameters] TO [PNL\D3M578] AS [dbo]

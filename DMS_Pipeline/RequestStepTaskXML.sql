@@ -64,6 +64,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			10/17/2011 mem - Now considering Memory_Usage_MB
 **			11/01/2011 mem - Changed @HoldoffWindowMinutes from 7 to 3 minutes
 **			12/19/2011 mem - Now showing memory amounts in "Not enough memory available" error message
+**			04/25/2013 mem - Increased @MaxSimultaneousJobCount from 10 to 75; this is feasible since the storage servers now have the DMS_LockFiles share, which is used to prioritize copying large files
 **
 *****************************************************/
 (
@@ -99,7 +100,7 @@ As
 	Declare @MaxSimultaneousJobCount int
 
 	Set @HoldoffWindowMinutes = 3				-- Typically 3
-	Set @MaxSimultaneousJobCount = 10			-- Typically 10
+	Set @MaxSimultaneousJobCount = 75			-- Increased from 10 to 75 on 4/25/2013
 	Set @UseBigBangQuery = 1					-- Typically 1
 	
 	---------------------------------------------------
@@ -449,7 +450,7 @@ As
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
-		                       INNER JOIN T_Processor_Tool_Group_Details PTGD
+		     INNER JOIN T_Processor_Tool_Group_Details PTGD
 		           ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
 		           M.ProcTool_Group_ID = PTGD.Group_ID
 		                       INNER JOIN T_Step_Tools ST

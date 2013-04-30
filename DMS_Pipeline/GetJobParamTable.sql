@@ -33,6 +33,7 @@ CREATE PROCEDURE GetJobParamTable
 **			05/07/2012 mem - Now including DatasetType
 **			05/07/2012 mem - Now including Experiment
 **			08/23/2012 mem - Now calling CheckAddSpecialProcessingParam to look for a DataImportFolder entry
+**			04/23/2013 mem - Now including Instrument and InstrumentGroup
 **    
 *****************************************************/
 (
@@ -88,6 +89,8 @@ AS
 		  CONVERT(VarChar(2000),ProteinCollectionList)          AS ProteinCollectionList,
 		  CONVERT(VarChar(2000),ProteinOptionsList)             AS ProteinOptions,
 		  CONVERT(VarChar(2000),InstrumentClass)                AS InstClass,
+		  CONVERT(VarChar(2000),InstrumentGroup)                AS InstrumentGroup,
+		  CONVERT(VarChar(2000),Instrument)                     AS Instrument,
 		  CONVERT(VarChar(2000),RawDataType)                    AS RawDataType,
 		  CONVERT(VarChar(2000),DatasetType)                    AS DatasetType,
 		  CONVERT(VarChar(2000),Experiment)                     AS Experiment,
@@ -114,6 +117,8 @@ AS
 		ProteinCollectionList,
 		ProteinOptions,
 		InstClass,
+		InstrumentGroup,
+		Instrument,
 		RawDataType,
 		DatasetType,
 		Experiment,
