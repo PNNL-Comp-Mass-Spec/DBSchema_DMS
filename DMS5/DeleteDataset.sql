@@ -27,6 +27,7 @@ CREATE Procedure dbo.DeleteDataset
 **						   - Now checking T_Dataset_QC and T_Dataset_ScanTypes
 **			02/19/2013 mem - No longer allowing deletion if analysis jobs exist
 **			02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
+**			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
 **    
 *****************************************************/
 (
@@ -55,16 +56,11 @@ As
 	---------------------------------------------------
 	-- get datasetID and current state
 	---------------------------------------------------
-	declare @wellplateNum varchar(50)
-	declare @wellNum varchar(50)
-
 	set @datasetID = 0
 	--
 	SELECT  
 		@state = DS_state_ID,
-		@datasetID = Dataset_ID,
-		@wellplateNum = DS_wellplate_num, 
-		@wellNum = DS_well_num
+		@datasetID = Dataset_ID		
 	FROM T_Dataset 
 	WHERE (Dataset_Num = @datasetNum)
 	--
@@ -130,7 +126,7 @@ As
 	-- restore any consumed requested runs
 	---------------------------------------------------
 
-	exec @result = UnconsumeScheduledRun @datasetNum, @wellplateNum, @wellNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
+	exec @result = UnconsumeScheduledRun @datasetNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
 	if @result <> 0
 	begin
 		rollback transaction @transName

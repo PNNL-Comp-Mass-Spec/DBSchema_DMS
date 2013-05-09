@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Ops_Logs_List_Report] AS 
 SELECT  Entered ,
         EnteredBy ,
@@ -11,6 +12,7 @@ SELECT  Entered ,
         'Operation' AS Type ,
         '' AS ID ,
         CONVERT(VARCHAR(12),ID) AS Log ,
+	'' as Minutes ,
         Note ,
         0 AS [Request],
         '' AS [Usage] ,
@@ -27,6 +29,7 @@ SELECT  Date_Of_Change AS Entered ,
         'Configuration' AS Type ,
         '' AS ID ,
         CONVERT(VARCHAR(12),ID) AS Log ,
+		'' as Minutes ,
         Description AS Note ,
         0 AS [Request],
         '' AS [Usage] ,
@@ -43,7 +46,8 @@ SELECT  Start AS Entered ,
         'Long Interval' AS Type ,
         CONVERT(VARCHAR(12), ID) AS ID ,
         '' AS Log ,
-        '[' + CONVERT(VARCHAR(12), Interval) + '] ' + ISNULL(Comment, '') AS Note ,
+		CONVERT(VARCHAR(12), Interval) as Minutes ,
+        ISNULL(Comment, '') AS Note ,
         0 AS [Request],
         '' AS [Usage] ,
         '' AS Proposal ,
@@ -59,6 +63,7 @@ SELECT  DS.Acq_Time_Start AS Entered ,
         'Dataset' AS Type ,
         '' AS ID ,
         '' AS Log ,
+		CONVERT(VARCHAR(12),DS.Acq_Length_Minutes) as Minutes ,
         DS.Dataset_Num AS Note ,
         RR.ID AS [Request],
         EUT.Name AS [Usage] ,
@@ -72,6 +77,7 @@ FROM    T_EUS_UsageType EUT
         RIGHT OUTER JOIN T_Dataset DS
         INNER JOIN T_Instrument_Name ON DS.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID ON RR.DatasetID = DS.Dataset_ID
 WHERE   ( NOT ( DS.Acq_Time_Start IS NULL ))
+
 
 
 GO

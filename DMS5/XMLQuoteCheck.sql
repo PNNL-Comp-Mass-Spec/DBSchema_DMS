@@ -15,6 +15,7 @@ CREATE FUNCTION dbo.XMLQuoteCheck
 **	Auth:	mem
 **	Date:	02/03/2011 mem - Initial version
 **			02/25/2011 mem - Now replacing < and > with &lt; and &gt;
+**			05/08/2013 mem - Now changing Null strings to ''
 **
 *****************************************************/
 (
@@ -23,7 +24,7 @@ CREATE FUNCTION dbo.XMLQuoteCheck
 	RETURNS varchar(max)
 AS
 Begin
- 
+	Set @Text = IsNull(@Text, '')
 	Set @Text = Replace(@Text, '"', '&quot;')
 	Set @Text = Replace(@Text, '<', '&lt;')
 	Set @Text = Replace(@Text, '>', '&gt;')

@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddMissingRequestedRun
 **
 **	Auth:	mem
 **	Date:	10/20/1010 mem - Initial version
+**			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -130,8 +131,8 @@ As
 								@workPackage = 'none',
 								@msType = @msType,
 								@instrumentSettings = 'na',
-								@wellplateNum = 'na',
-								@wellNum = 'na',
+								@wellplateNum = NULL,
+								@wellNum = NULL,
 								@internalStandard = 'na',
 								@comment = 'Automatically created by Dataset entry',
 								@eusProposalID = @eusProposalID,

@@ -25,6 +25,7 @@ CREATE Procedure UpdateDatasetDispositions
 **			12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
 **			02/20/2013 mem - Expanded @message to varchar(1024)
 **			02/21/2013 mem - More informative error messages
+**			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
 **
 *****************************************************/
 (
@@ -290,7 +291,7 @@ As
 					--
 					if @recycleRequest = 'Yes'
 					begin
-						exec @myError = UnconsumeScheduledRun @curDatasetName, 'na', 'na', @retainHistory=1, @message=@message output, @callingUser=@callingUser
+						exec @myError = UnconsumeScheduledRun @curDatasetName, @retainHistory=1, @message=@message output, @callingUser=@callingUser
 						--
 						if @myError <> 0
 						begin

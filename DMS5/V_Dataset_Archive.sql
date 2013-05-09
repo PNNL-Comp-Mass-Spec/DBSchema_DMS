@@ -1,6 +1,6 @@
+/****** Object:  View [dbo].[V_Dataset_Archive] ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
@@ -40,12 +40,9 @@ FROM T_Dataset_Archive DA
      INNER JOIN T_Archive_Path AP
        ON DA.AS_storage_path_ID = AP.AP_path_ID
 
-GO
 
+GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Archive] TO [PNL\D3M578] AS [dbo]
 GO
-
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Archive] TO [PNL\D3M580] AS [dbo]
 GO
-
-

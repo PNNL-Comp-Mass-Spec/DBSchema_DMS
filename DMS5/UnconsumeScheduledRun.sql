@@ -47,12 +47,11 @@ CREATE Procedure UnconsumeScheduledRun
 **		12/13/2011 mem - Added parameter @callingUser, which is sent to CopyRequestedRun, AlterEventLogEntryUser, and DeleteRequestedRun
 **		02/20/2013 mem - Added ability to lookup the original request from an auto-created recycled request
 **		02/21/2013 mem - Now validating that the RequestID extracted from "Automatically created by recycling request 12345" actually exists
+**		05/08/2013 mem - Removed parameters @wellplateNum and @wellNum since no longer used
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@wellplateNum varchar(50),
-	@wellNum varchar(50),
 	@retainHistory tinyint = 0,
 	@message varchar(1024) output,
 	@callingUser varchar(128) = ''

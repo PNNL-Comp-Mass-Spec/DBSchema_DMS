@@ -60,6 +60,7 @@ CREATE Procedure AddUpdateDataset
 **			11/21/2012 mem - Now requiring that the dataset name be at least 6 characters in length
 **			01/22/2013 mem - Now updating the dataset comment if the default dataset type is invalid for the instrument group
 **			04/02/2013 mem - Now updating @LCCartName (if not blank) when updating an existing dataset
+**			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
 **    
 *****************************************************/
 (
@@ -191,11 +192,11 @@ As
 		RAISERROR (@msg, 11, 15)
 	end
 	
-	If IsNull(@wellplateNum, '') = ''
-		set @wellplateNum = 'na'
+	If IsNull(@wellplateNum, '') IN ('', 'na')
+		set @wellplateNum = NULL
 	
-	if IsNull(@wellNum, '') = ''
-		set @wellNum = 'na'
+	If IsNull(@wellNum, '') IN ('', 'na')
+		set @wellNum = NULL
 
 	Set @eusProposalID = IsNull(@eusProposalID, '')
 	Set @eusUsageType = IsNull(@eusUsageType, '')
@@ -949,8 +950,8 @@ As
 									@workPackage = 'none',
 									@msType = @msType,
 									@instrumentSettings = 'na',
-									@wellplateNum = 'na',
-									@wellNum = 'na',
+									@wellplateNum = NULL,
+									@wellNum = NULL,
 									@internalStandard = 'na',
 									@comment = 'Automatically created by Dataset entry',
 									@eusProposalID = @eusProposalID,

@@ -51,6 +51,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			04/09/2013 grk - chaged priority to text "Normal/High", added @NumberOfBiomaterialRepsReceived, removed Facility field
 **			04/09/2013 mem - Renamed parameter @InstrumentName to @InstrumentGroup
 **			               - Renamed parameter @SeparationType to @SeparationGroup
+**			05/02/2013 mem - Now validating that fields @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent are 'Yes', 'No', '', or Null
 **    
 *****************************************************/
 (
@@ -88,9 +89,9 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 	@UseSingleLCColumn varchar(50),
 	@ID int output,
 	@SeparationGroup varchar(256),			-- Separation group	
-	@BlockAndRandomizeSamples char(3),
-	@BlockAndRandomizeRuns char(3),
-	@IOPSPermitsCurrent char(3),
+	@BlockAndRandomizeSamples char(3),		-- 'Yes', 'No', or 'NA'
+	@BlockAndRandomizeRuns char(3),			-- 'Yes' or 'No'
+	@IOPSPermitsCurrent char(3),			-- 'Yes' or 'No'
 	@ReasonForHighPriority varchar(1024),
 	@NumberOfBiomaterialRepsReceived int,
 	@mode varchar(12) = 'add',				-- 'add' or 'update'
@@ -136,6 +137,15 @@ As
 	If Len(IsNull(@EstimatedMSRuns, '')) < 1
 		RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
 
+	If IsNull(@BlockAndRandomizeSamples, '') NOT IN ('', 'Yes', 'No', 'NA')
+		RAISERROR ('Field BlockAndRandomizeSamples should be Yes, No, or NA', 11, 116)
+	
+	If IsNull(@BlockAndRandomizeRuns, '') NOT IN ('', 'Yes', 'No')
+		RAISERROR ('Field BlockAndRandomizeRuns should be Yes or No', 11, 116)
+
+	If IsNull(@IOPSPermitsCurrent, '') NOT IN ('', 'Yes', 'No')
+		RAISERROR ('Field IOPSPermitsCurrent should be Yes or No', 11, 116)
+				
 	---------------------------------------------------
 	-- validate priority
 	---------------------------------------------------

@@ -1,4 +1,9 @@
-ALTER FUNCTION dbo.AutoUpdateQExactiveSettingsFile
+/****** Object:  UserDefinedFunction [dbo].[AutoUpdateQExactiveSettingsFile] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION dbo.AutoUpdateQExactiveSettingsFile
 /****************************************************
 **
 **	Desc: 
@@ -44,3 +49,5 @@ AS
 
 		RETURN @SettingsFile
 	END
+
+GO

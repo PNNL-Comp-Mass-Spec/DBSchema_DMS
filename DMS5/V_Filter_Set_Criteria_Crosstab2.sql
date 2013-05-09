@@ -23,7 +23,8 @@ SELECT PivotData.Filter_Set_ID,
 	   IsNull([MSGF_SpecProb], 0) AS [MSGF_SpecProb],
 	   IsNull([MSGFDB_SpecProb], 0) AS [MSGFDB_SpecProb],
 	   IsNull([MSGFDB_PValue], 0) AS [MSGFDB_PValue],
-	   IsNull([MSGFDB_FDR], 0) AS [MSGFDB_FDR],
+	   IsNull([MSGFPlus_QValue], 0) AS [MSGFPlus_QValue],
+	   IsNull([MSGFPlus_PepQValue], 0) AS [MSGFPlus_PepQValue],
 	   IsNull([MSAlign_PValue], 0) AS [MSAlign_PValue],
 	   IsNull([MSAlign_FDR], 0) AS [MSAlign_FDR],
 	   IsNull([Inspect_MQScore], 0) AS [Inspect_MQScore],
@@ -50,7 +51,7 @@ FROM ( SELECT Filter_Set_ID,
 	              [Mass], [DelCn], [DelCn2], [Discriminant_Score], [NET_Difference_Absolute], [Discriminant_Initial_Filter], [Protein_Count], [Terminus_State], 
 	              [XTandem_Hyperscore], [XTandem_LogEValue], [Peptide_Prophet_Probability], [RankScore], 
 	              [Inspect_MQScore], [Inspect_TotalPRMScore], [Inspect_FScore], [Inspect_PValue], 
-	              [MSGF_SpecProb], [MSGFDB_SpecProb], [MSGFDB_PValue], [MSGFDB_FDR], 
+	              [MSGF_SpecProb], [MSGFDB_SpecProb], [MSGFDB_PValue], [MSGFPlus_QValue], [MSGFPlus_PepQValue],
 	              [MSAlign_PValue], [MSAlign_FDR] ) 
 	       ) AS PivotData
 

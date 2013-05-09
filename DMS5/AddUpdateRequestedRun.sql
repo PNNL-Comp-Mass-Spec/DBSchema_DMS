@@ -58,6 +58,7 @@ CREATE Procedure AddUpdateRequestedRun
 **			12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
 **			01/09/2012 grk - Added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
 **			10/19/2012 mem - Now auto-updating secondary separation to separation group name when creating a new requested run
+**			05/08/2013 mem - Added @VialingConc and @VialingVol
 **
 *****************************************************/
 (
@@ -83,7 +84,9 @@ CREATE Procedure AddUpdateRequestedRun
 	@status VARCHAR(24) = 'Active',				-- 'Active', 'Inactive', 'Completed'
 	@SkipTransactionRollback tinyint = 0,		-- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
 	@AutoPopulateUserListIfBlank tinyint = 0,	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@VialingConc varchar(32) = Null,
+	@VialingVol varchar(32) = Null
 )
 As
 	set nocount on
@@ -246,6 +249,12 @@ As
 	--
 	IF @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
 		RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
+
+	If IsNull(@wellplateNum, '') IN ('', 'na')
+		set @wellplateNum = NULL
+	
+	If IsNull(@wellNum, '') IN ('', 'na')
+		set @wellNum = NULL
 
 	Declare @StatusID int = 0
 	
@@ -489,7 +498,9 @@ As
 				RDS_Sec_Sep,
 				RDS_MRM_Attachment,
 				RDS_Origin,
-				RDS_Status
+				RDS_Status,
+				Vialing_Conc,
+				Vialing_Vol
 			) 
 			VALUES 
 			(
@@ -511,7 +522,9 @@ As
 				@secSep,
 				@mrmAttachmentID,
 				@requestOrigin,
-				@status
+				@status,
+				@VialingConc,
+				@VialingVol 
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -569,7 +582,9 @@ As
 			RDS_Sec_Sep = @secSep,
 			RDS_MRM_Attachment = @mrmAttachmentID,
 			RDS_Status = @status,
-			RDS_created = CASE WHEN @oldStatus = 'Inactive' AND @status = 'Active' THEN GETDATE() ELSE RDS_created END
+			RDS_created = CASE WHEN @oldStatus = 'Inactive' AND @status = 'Active' THEN GETDATE() ELSE RDS_created END,
+			Vialing_Conc = @VialingConc,
+			Vialing_Vol = @VialingVol 
 		WHERE (ID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

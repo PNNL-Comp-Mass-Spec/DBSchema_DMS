@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdatePredefinedAnalysis
+
+CREATE Procedure [dbo].[AddUpdatePredefinedAnalysis]
 /****************************************************
 ** 
 **	Desc: Adds a new default analysis to DB 
@@ -600,6 +601,7 @@ As
 	END CATCH
 
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis] AS [dbo]

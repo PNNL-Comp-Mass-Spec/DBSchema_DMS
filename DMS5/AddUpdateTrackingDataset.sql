@@ -13,9 +13,10 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 07/03/2012 
-**    07/19/2012 grk - extended interval update range around dataset date
+**	Auth:	grk
+**	Date:	07/03/2012 
+**			07/19/2012 grk - Extended interval update range around dataset date
+**			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null instead of 'na'
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -58,8 +59,8 @@ As
 	---------------------------------------------------
 	 
 	DECLARE @requestID int = 0				-- Only valid if @mode is 'add', or 'check_add'; ignored if @mode is 'update' or 'check_update'
-	DECLARE @wellplateNum varchar(64) = 'na'
-	DECLARE @wellNum varchar(64) = 'na'
+	DECLARE @wellplateNum varchar(64) = NULL
+	DECLARE @wellNum varchar(64) = NULL
 	DECLARE @secSep varchar(64) = 'none'
 	DECLARE @rating varchar(32) = 'Unknown'
 
@@ -396,8 +397,8 @@ As
 									@workPackage = 'none',
 									@msType = @msType,
 									@instrumentSettings = 'na',
-									@wellplateNum = 'na',
-									@wellNum = 'na',
+									@wellplateNum = NULL,
+									@wellNum = NULL,
 									@internalStandard = 'na',
 									@comment = 'Automatically created by Dataset entry',
 									@eusProposalID = @eusProposalID,
@@ -508,7 +509,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
- 
+
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateTrackingDataset] TO [DMS2_SP_User] AS [dbo]
 GO

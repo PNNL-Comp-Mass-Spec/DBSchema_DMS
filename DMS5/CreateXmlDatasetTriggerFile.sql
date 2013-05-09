@@ -18,6 +18,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 **			04/26/2010 grk - widened @Dataset_Name to 128 characters
 **			02/03/2011 mem - Now calling XMLQuoteCheck() to replace double quotes with &quot;
 **			07/31/2012 mem - Now using udfCombinePaths to build the output file path
+**			05/08/2013 mem - Removed IsNull() checks since XMLQuoteCheck() now changes Nulls to empty strings
 **    
 *****************************************************/
 	@Dataset_Name		varchar(128),  -- @datasetNum
@@ -49,6 +50,12 @@ set nocount on
 	declare @myRowCount int
 	set @myRowCount = 0
 	
+	If @Request Is Null
+	Begin
+		Set @myError = 70
+		Goto done
+	End
+	
 	declare @filePath varchar(100)
 	select @filePath = server
 	from T_MiscPaths
@@ -66,7 +73,9 @@ set nocount on
 	-- create XML dataset trigger file lines
 	-- Be sure to replace double quote characters with &quot; to avoid mal-formed XML
 	-- In reality, only the comment should have double-quote characters, but we'll check all text fields just to be safe
+	-- Note that XMLQuoteCheck will also change Null values to empty strings
 	---------------------------------------------------
+	--
 	Declare @tmpXmlLine varchar(4000)
 	Declare @result int
 
@@ -102,7 +111,7 @@ set nocount on
 	--Request
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Request" Value="' + cast(@Request as varchar(32)) + '"/>' + char(13) + char(10)
 	--EMSL Proposal ID
-	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' + dbo.XMLQuoteCheck(IsNull(@EMSL_Proposal_ID, '')) + '"/>' + char(13) + char(10)
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' + dbo.XMLQuoteCheck(@EMSL_Proposal_ID) + '"/>' + char(13) + char(10)
 	--EMSL Usage Type
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Usage Type" Value="' + dbo.XMLQuoteCheck(@EMSL_Usage_Type) + '"/>' + char(13) + char(10)
 	--EMSL Users List

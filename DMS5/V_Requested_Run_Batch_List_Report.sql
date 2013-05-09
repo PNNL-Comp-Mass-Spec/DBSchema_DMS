@@ -3,13 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
+-- 
 CREATE view [dbo].[V_Requested_Run_Batch_List_Report] as
 SELECT RRB.ID,
        RRB.Batch AS Name,
        T.Requests,
        H.Runs,
+       SPQ.Blocked,
+       SPQ.BlkMissing,
        F.[First Request],
        F.[Last Request],
        RRB.Requested_Batch_Priority AS [Req. Priority],
@@ -91,7 +92,18 @@ FROM T_Requested_Run_Batches AS RRB
                      ) AS F
        ON F.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RR4.RDS_BatchID AS BatchID,
-                              MAX(QT.[Days In Queue]) AS [Days in Prep Queue]
+                              MAX(QT.[Days In Queue]) AS [Days in Prep Queue],
+                              SUM(CASE WHEN ISNULL(SPR.BlockAndRandomizeRuns, '') = 'yes'
+                                          AND ( ISNULL(RR4.RDS_Block, '') = ''
+                                                OR ISNULL(RR4.RDS_Run_Order, '') = ''
+                                              ) THEN 1
+                                     ELSE 0
+                                END) AS BlkMissing ,
+                                SUM(CASE WHEN ISNULL(RR4.RDS_Block, '') <> ''
+                                          AND ISNULL(RR4.RDS_Run_Order, '') <> ''
+                                     THEN 1
+                                     ELSE 0
+                                END) AS Blocked
                        FROM T_Requested_Run AS RR4
                             INNER JOIN T_Experiments AS E
                               ON RR4.Exp_ID = E.Exp_ID
@@ -105,6 +117,7 @@ FROM T_Requested_Run_Batches AS RRB
                      ) AS SPQ
        ON SPQ.BatchID = RRB.ID
 WHERE (RRB.ID > 0)
+
 
 
 GO

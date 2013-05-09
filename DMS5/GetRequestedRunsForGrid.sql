@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
 /****************************************************
 **
@@ -14,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
 **	Auth:	grk
 **	Date:	01/13/2013
 **	01/13/2013 grk - initial release
+**	03/14/2013 grk - removed "Active" status filter
 **    
 *****************************************************/
 (
@@ -38,7 +40,7 @@ AS
 	--
 	INSERT INTO #ITEMS (Item)
 	SELECT Item 
-	FROM .MakeTableFromList(@itemList)
+	FROM dbo.MakeTableFromList(@itemList)
 
 	-----------------------------------------
 	-- 
@@ -84,10 +86,10 @@ Run_Order varchar(8)
 		INNER JOIN T_Requested_Run_Batches TRB ON TRR.RDS_BatchID = TRB.ID
 		INNER JOIN T_Experiments TEX ON TRR.Exp_ID = TEX.Exp_ID
 	WHERE
-		TRR.RDS_Status = 'Active'
-		AND TRR.ID IN (SELECT Item FROM #ITEMS)
+		TRR.ID IN (SELECT Item FROM #ITEMS)
 		
 	RETURN @myError	
+
 
 GO
 GRANT EXECUTE ON [dbo].[GetRequestedRunsForGrid] TO [DMS_SP_User] AS [dbo]

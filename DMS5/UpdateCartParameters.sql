@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateCartParameters]
+CREATE Procedure dbo.UpdateCartParameters
 /****************************************************
 **
 **	Desc: 
@@ -179,6 +179,7 @@ As
 	end	
 
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateCartParameters] TO [DMS_SP_User] AS [dbo]

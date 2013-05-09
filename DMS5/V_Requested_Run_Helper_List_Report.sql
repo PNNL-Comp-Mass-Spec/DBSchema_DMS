@@ -3,18 +3,30 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Requested_Run_Helper_List_Report
+
+CREATE VIEW [dbo].[V_Requested_Run_Helper_List_Report]
 AS
-SELECT     dbo.T_Requested_Run.ID AS Request, dbo.T_Requested_Run.RDS_Name AS Name, dbo.T_Experiments.Experiment_Num AS Experiment, 
-                      dbo.T_Requested_Run.RDS_instrument_name AS Instrument, dbo.T_Users.U_Name AS Requester, dbo.T_Requested_Run.RDS_created AS Created, 
-                      dbo.T_Requested_Run.RDS_WorkPackage AS [Work Package], dbo.T_Requested_Run.RDS_comment AS Comment_____________, 
-                      dbo.T_Requested_Run.RDS_note AS Note, dbo.T_DatasetTypeName.DST_Name AS Type, dbo.T_Requested_Run.RDS_Well_Plate_Num AS Wellplate, 
-                      dbo.T_Requested_Run.RDS_Well_Num AS Well
-FROM         dbo.T_DatasetTypeName INNER JOIN
-                      dbo.T_Requested_Run ON dbo.T_DatasetTypeName.DST_Type_ID = dbo.T_Requested_Run.RDS_type_ID INNER JOIN
-                      dbo.T_Users ON dbo.T_Requested_Run.RDS_Oper_PRN = dbo.T_Users.U_PRN INNER JOIN
-                      dbo.T_Experiments ON dbo.T_Requested_Run.Exp_ID = dbo.T_Experiments.Exp_ID
-WHERE     (dbo.T_Requested_Run.RDS_BatchID = 0) AND (dbo.T_Requested_Run.DatasetID IS NULL)
+SELECT RR.ID AS Request,
+       RR.RDS_Name AS Name,
+       E.Experiment_Num AS Experiment,
+       RR.RDS_instrument_name AS Instrument,
+       U.U_Name AS Requester,
+       RR.RDS_created AS Created,
+       RR.RDS_WorkPackage AS [Work Package],
+       RR.RDS_comment AS Comment_____________,
+       DTN.DST_name AS [Type],
+       RR.RDS_Well_Plate_Num AS Wellplate,
+       RR.RDS_Well_Num AS Well
+FROM T_DatasetTypeName DTN
+     INNER JOIN T_Requested_Run RR
+       ON DTN.DST_Type_ID = RR.RDS_type_ID
+     INNER JOIN T_Users U
+       ON RR.RDS_Oper_PRN = U.U_PRN
+     INNER JOIN T_Experiments E
+       ON RR.Exp_ID = E.Exp_ID
+WHERE (RR.RDS_BatchID = 0) AND
+      (RR.DatasetID IS NULL)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Helper_List_Report] TO [PNL\D3M578] AS [dbo]

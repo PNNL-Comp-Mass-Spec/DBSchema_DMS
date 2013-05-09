@@ -18,6 +18,7 @@ CREATE PROCEDURE CopyRequestedRun
 **			12/13/2011 mem - Added parameter @callingUser, which is sent to UpdateRequestedRunCopyFactors
 **			04/25/2012 mem - Fixed @callingUser bug when updating @callingUserUnconsume
 **			02/21/2013 mem - Now verifying that a new row was added to T_Requested_Run
+**			05/08/2013 mem - Now copying Vialing_Conc and Vialing_Vol
 **
 *****************************************************/
 (
@@ -68,6 +69,8 @@ As
 		RDS_special_instructions,
 		RDS_Well_Plate_Num,
 		RDS_Well_Num,
+		Vialing_Conc,
+		Vialing_Vol,
 		RDS_priority,
 		RDS_note,
 		Exp_ID,
@@ -100,6 +103,8 @@ As
 		RDS_special_instructions,
 		RDS_Well_Plate_Num,
 		RDS_Well_Num,
+		Vialing_Conc,
+		Vialing_Vol,
 		RDS_priority,
 		RDS_note,
 		Exp_ID,

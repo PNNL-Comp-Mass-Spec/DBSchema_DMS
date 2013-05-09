@@ -26,6 +26,7 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **	Date:	05/23/2011 grk - initial release
 **			11/29/2011 mem - Now auto-determining OperPRN if @callingUser is empty
 **			12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
+**			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -178,8 +179,8 @@ AS
 							@workPackage = @workPackage,
 							@msType = @msType,
 							@instrumentSettings = 'na',
-							@wellplateNum = 'na',
-							@wellNum = 'na',
+							@wellplateNum = NULL,
+							@wellNum = NULL,
 							@internalStandard = 'na',
 							@comment = @comment,
 							@eusProposalID = @eusProposalID,

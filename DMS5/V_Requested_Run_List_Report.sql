@@ -15,15 +15,14 @@ SELECT RR.ID AS Request,
        RR.RDS_WorkPackage AS [Work Package],
        EUT.Name AS Usage,
        RR.RDS_EUS_Proposal_ID AS Proposal,
-       RR.RDS_comment AS Comment_____________,
-       RR.RDS_note AS Note,
-       DTN.DST_Name AS Type,
+       RR.RDS_comment AS Comment_____________,       
+       DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well,
        RR.RDS_BatchID AS Batch,
        RR.RDS_Blocking_Factor AS [Blocking Factor],
-       RR.RDS_Block AS Block,
+       RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order]
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR

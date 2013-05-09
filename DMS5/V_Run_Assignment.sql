@@ -4,13 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Run_Assignment] AS 
+CREATE VIEW [dbo].[V_Run_Assignment] 
+AS 
 SELECT RR.ID AS Request,
        '' AS [Sel.],
        RR.RDS_Name AS Name,
        RR.RDS_internal_standard AS [Internal Standard],
        RR.RDS_WorkPackage AS [Work Package],
-       EUT.Name AS USAGE,
+       EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS Proposal,
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
@@ -20,8 +21,6 @@ SELECT RR.ID AS Request,
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
        RR.RDS_instrument_setting AS [Inst. Settings],
-       RR.RDS_special_instructions AS Instructions,
-       RR.RDS_note AS Note,
        RR.RDS_priority AS Priority,
        RR.RDS_Well_Plate_Num AS [Well Plate],
        RR.RDS_BatchID AS Batch,

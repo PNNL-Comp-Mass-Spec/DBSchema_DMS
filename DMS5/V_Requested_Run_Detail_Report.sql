@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
@@ -25,12 +23,12 @@ SELECT RR.ID AS Request,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_Origin AS Origin,
-       RR.RDS_instrument_setting AS [Instrument Settings],
-       RR.RDS_special_instructions AS [Special Instructions],
-       RR.RDS_note AS Note,
-       RR.RDS_comment AS [Comment],
+       RR.RDS_instrument_setting AS [Instrument Settings],       
        RR.RDS_Well_Plate_Num AS [Well Plate],
        RR.RDS_Well_Num AS Well,
+       RR.Vialing_Conc AS [Vialing Concentration],
+       RR.Vialing_Vol AS [Vialing Volume],
+       RR.RDS_comment AS [Comment],
        ISNULL(FC.Factor_Count, 0) AS Factors,
        RRB.Batch AS [Batch Name],
        RR.RDS_BatchID AS Batch,
@@ -41,7 +39,9 @@ SELECT RR.ID AS Request,
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
-       dbo.T_Attachments.Attachment_Name AS [MRM Transistion List]
+       dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
+       RR.RDS_note AS Note,
+       RR.RDS_special_instructions AS [Special Instructions]
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
                 INNER JOIN dbo.T_Experiments AS E
@@ -65,6 +65,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run AS FC
        ON FC.RR_ID = RR.ID
+
 
 
 

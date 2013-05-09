@@ -4,27 +4,50 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Scheduled_Run_Export
+CREATE VIEW [dbo].[V_Scheduled_Run_Export]
 as
-SELECT     dbo.T_Requested_Run.ID AS Request, dbo.T_Requested_Run.RDS_Name AS Name, dbo.T_Requested_Run.RDS_priority AS Priority, 
-                      dbo.T_Requested_Run.RDS_instrument_name AS Instrument, dbo.T_DatasetTypeName.DST_Name AS Type, 
-                      dbo.T_Experiments.Experiment_Num AS Experiment, dbo.T_Users.U_Name AS Requester, dbo.T_Requested_Run.RDS_created AS Created, 
-                      dbo.T_Requested_Run.RDS_comment AS Comment, dbo.T_Requested_Run.RDS_note AS Note, 
-                      dbo.T_Requested_Run.RDS_WorkPackage AS [Work Package], dbo.T_Requested_Run.RDS_Well_Plate_Num AS [Wellplate Number], 
-                      dbo.T_Requested_Run.RDS_Well_Num AS [Well Number], dbo.T_Requested_Run.RDS_internal_standard AS [Internal Standard], 
-                      dbo.T_Requested_Run.RDS_instrument_setting AS [Instrument Settings], dbo.T_Requested_Run.RDS_special_instructions AS [Special Instructions], 
-                      dbo.T_LC_Cart.Cart_Name AS Cart, dbo.T_Requested_Run.RDS_Run_Start AS [Run Start], dbo.T_Requested_Run.RDS_Run_Finish AS [Run Finish], 
-                      dbo.T_EUS_UsageType.Name AS [Usage Type], dbo.GetRequestedRunEUSUsersList(dbo.T_Requested_Run.ID, 'V') AS [EUS Users], 
-                      dbo.T_Requested_Run.RDS_EUS_Proposal_ID AS [Proposal ID], dbo.T_Requested_Run.RDS_MRM_Attachment AS MRMFileID, 
-                      dbo.T_Requested_Run.RDS_Block AS Block, dbo.T_Requested_Run.RDS_Run_Order AS RunOrder, 
-                      dbo.T_Requested_Run.RDS_BatchID AS Batch
-FROM         dbo.T_DatasetTypeName INNER JOIN
-                      dbo.T_Requested_Run ON dbo.T_DatasetTypeName.DST_Type_ID = dbo.T_Requested_Run.RDS_type_ID INNER JOIN
-                      dbo.T_Users ON dbo.T_Requested_Run.RDS_Oper_PRN = dbo.T_Users.U_PRN INNER JOIN
-                      dbo.T_Experiments ON dbo.T_Requested_Run.Exp_ID = dbo.T_Experiments.Exp_ID INNER JOIN
-                      dbo.T_LC_Cart ON dbo.T_Requested_Run.RDS_Cart_ID = dbo.T_LC_Cart.ID INNER JOIN
-                      dbo.T_EUS_UsageType ON dbo.T_Requested_Run.RDS_EUS_UsageType = dbo.T_EUS_UsageType.ID
-WHERE     (dbo.T_Requested_Run.RDS_Status = 'Active')
+SELECT RR.ID AS Request,
+       RR.RDS_Name AS Name,
+       RR.RDS_priority AS Priority,
+       RR.RDS_instrument_name AS Instrument,
+       DTN.DST_name AS TYPE,
+       E.Experiment_Num AS Experiment,
+       U.U_Name AS Requester,
+       RR.RDS_created AS Created,
+       RR.RDS_comment AS [Comment],
+       RR.RDS_note AS Note,
+       RR.RDS_WorkPackage AS [Work Package],
+       RR.RDS_Well_Plate_Num AS [Wellplate Number],
+       RR.RDS_Well_Num AS [Well Number],
+       RR.RDS_internal_standard AS [Internal Standard],
+       RR.RDS_instrument_setting AS [Instrument Settings],
+       RR.RDS_special_instructions AS [Special Instructions],
+       LC.Cart_Name AS Cart,
+       RR.RDS_Run_Start AS [Run Start],
+       RR.RDS_Run_Finish AS [Run Finish],
+       EUT.Name AS [Usage Type],
+       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
+       RR.RDS_EUS_Proposal_ID AS [Proposal ID],
+       RR.RDS_MRM_Attachment AS MRMFileID,
+       RR.RDS_Block AS [Block],
+       RR.RDS_Run_Order AS RunOrder,
+       RR.RDS_BatchID AS Batch,
+       RR.Vialing_Conc,
+       RR.Vialing_Vol
+FROM T_DatasetTypeName DTN
+     INNER JOIN T_Requested_Run RR
+       ON DTN.DST_Type_ID = RR.RDS_type_ID
+     INNER JOIN T_Users U
+       ON RR.RDS_Oper_PRN = U.U_PRN
+     INNER JOIN T_Experiments E
+       ON RR.Exp_ID = E.Exp_ID
+     INNER JOIN T_LC_Cart LC
+       ON RR.RDS_Cart_ID = LC.ID
+     INNER JOIN T_EUS_UsageType EUT
+       ON RR.RDS_EUS_UsageType = EUT.ID
+WHERE (RR.RDS_Status = 'Active')
+
+
 GO
 GRANT SELECT ON [dbo].[V_Scheduled_Run_Export] TO [DMS_LCMSNet_User] AS [dbo]
 GO

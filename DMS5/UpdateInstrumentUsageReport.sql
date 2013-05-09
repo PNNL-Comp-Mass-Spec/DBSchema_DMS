@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateInstrumentUsageReport 
+CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport] 
 /****************************************************
 **
 **  Desc: 
@@ -26,6 +26,8 @@ CREATE PROCEDURE UpdateInstrumentUsageReport
 **          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
 **			11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
 **			01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 10 days
+**			04/03/2013 grk - Made Usage editable
+**			04/04/2013 grk - Clearing Usage on reload
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -126,7 +128,7 @@ As
 			-----------------------------------------------------------
 			
 			DECLARE @badFields VARCHAR(4096) = ''
-			SELECT DISTINCT @badFields = @badFields + Field + ',' FROM #TMP WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users')
+			SELECT DISTINCT @badFields = @badFields + Field + ',' FROM #TMP WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users', 'Usage')
 			--			                       
 			IF @badFields <> ''		
 				RAISERROR ('The following field(s) are not editable: %s', 11, 27, @badFields)
@@ -189,7 +191,13 @@ As
 			FROM T_EMSL_Instrument_Usage_Report
 			INNER JOIN #TMP ON Seq = Identifier
 			WHERE Field = 'Users'
-			
+
+			UPDATE T_EMSL_Instrument_Usage_Report
+			SET Usage = #TMP.Value
+			FROM T_EMSL_Instrument_Usage_Report
+			INNER JOIN #TMP ON Seq = Identifier
+			WHERE Field = 'Usage'
+
 			UPDATE T_EMSL_Instrument_Usage_Report
 			SET 
 				Updated = GETDATE(),
@@ -203,6 +211,7 @@ As
 		BEGIN		
 			UPDATE T_EMSL_Instrument_Usage_Report
 			SET 
+				Usage = '',
 				Proposal = '',
 				Users = '',
 				Operator = '',
@@ -262,6 +271,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS_SP_User] AS [dbo]

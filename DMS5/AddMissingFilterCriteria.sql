@@ -17,6 +17,8 @@ CREATE Procedure dbo.AddMissingFilterCriteria
 **			07/27/2010 mem - Added MSGF_SpecProb
 **			09/16/2011 mem - Added MSGFDB_SpecProb, MSGFDB_PValue, and MSGFDB_FDR
 **			12/04/2012 mem - Added MSAlign_PValue and MSAlign_FDR
+**			05/07/2013 mem - Added MSGFPlus_PepQValue
+**							 Renamed MSGFDB_FDR to MSGFPlus_QValue
 **    
 *****************************************************/
 (
@@ -205,7 +207,7 @@ AS
 							
 						If @CriterionID = 25
 						Begin
-							-- MSGFDB_FDR
+							-- MSGFPlus_QValue (previously MSGFDB_FDR)
 							Set @CriterionComparison = '<='	
 							Set @CriterionValue = 1
 						End
@@ -223,7 +225,14 @@ AS
 							Set @CriterionComparison = '<='	
 							Set @CriterionValue = 1
 						End
-																			
+
+						If @CriterionID = 28
+						Begin
+							-- MSGFPlus_PepQValue
+							Set @CriterionComparison = '<='	
+							Set @CriterionValue = 1
+						End
+						
 						INSERT INTO T_Filter_Set_Criteria
 							(Filter_Criteria_Group_ID, Criterion_ID, Criterion_Comparison, Criterion_Value)
 						VALUES (@GroupID, @CriterionID, @CriterionComparison, @CriterionValue)
