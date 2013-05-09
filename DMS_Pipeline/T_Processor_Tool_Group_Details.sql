@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Processor_Tool_Group_Details](
 	[Group_ID] ASC,
 	[Mgr_ID] ASC,
 	[Tool_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 100) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -59,13 +59,11 @@ AS
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups] FOREIGN KEY([Group_ID])
 REFERENCES [T_Processor_Tool_Groups] ([Group_ID])
-ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups]
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools] FOREIGN KEY([Tool_Name])
 REFERENCES [T_Step_Tools] ([Name])
-ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools]
 GO

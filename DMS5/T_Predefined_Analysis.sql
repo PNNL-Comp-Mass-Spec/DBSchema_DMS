@@ -31,7 +31,7 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_priority] [int] NOT NULL,
 	[AD_specialProcessing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AD_enabled] [tinyint] NOT NULL,
-	[AD_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AD_description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AD_created] [datetime] NOT NULL,
 	[AD_creator] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AD_nextLevel] [int] NULL,
@@ -41,7 +41,7 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
  CONSTRAINT [PK_T_Predefined_Analysis] PRIMARY KEY CLUSTERED 
 (
 	[AD_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 100) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

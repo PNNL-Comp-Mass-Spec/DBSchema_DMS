@@ -27,7 +27,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_Analysis_Specifications] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Priority] [tinyint] NULL,
+	[Priority] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[State] [tinyint] NOT NULL,
 	[ID] [int] IDENTITY(1000,1) NOT NULL,
@@ -44,10 +44,15 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Facility] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Separation_Type] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[BlockAndRandomizeSamples] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[BlockAndRandomizeRuns] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IOPSPermitsCurrent] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Reason_For_High_Priority] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Number_Of_Biomaterial_Reps_Received] [int] NOT NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -56,7 +61,7 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
 (
 	[Request_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 10) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
@@ -197,6 +202,10 @@ ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Samp
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace]
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Dataset_Type]  DEFAULT ('Normal') FOR [Dataset_Type]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Priority]  DEFAULT ('Normal') FOR [Priority]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT (1) FOR [State]
@@ -210,4 +219,6 @@ GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT (0) FOR [Postdigest_internal_std_ID]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Factility]  DEFAULT ('EMSL') FOR [Facility]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Number_Of_Biomaterial_Reps_Received]  DEFAULT ((0)) FOR [Number_Of_Biomaterial_Reps_Received]
 GO
