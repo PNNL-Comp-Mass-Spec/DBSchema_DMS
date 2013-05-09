@@ -9,7 +9,7 @@ CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
 SELECT Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
        DatasetFolder, ResultsFolder, MAX(SharedResultsFolder) AS SharedResultsFolder,
-       DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
+       DatasetID, Organism, InstrumentName AS Instrument, InstrumentGroup, InstrumentClass, Completed,
        ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
        ResultType, DS_created, PackageComment, RawDataType, Experiment, Experiment_Reason, Experiment_Comment
 FROM ( SELECT Src.Data_Package_ID,
@@ -24,6 +24,7 @@ FROM ( SELECT Src.Data_Package_ID,
               Src.DatasetID,
               Src.Organism,
               Src.InstrumentName,
+              Src.InstrumentGroup,
               Src.InstrumentClass,
               Src.Completed,
               Src.ParameterFileName,
@@ -45,7 +46,7 @@ FROM ( SELECT Src.Data_Package_ID,
                  JSH.Shared_Result_Version > 0 
      ) LookupQ
 GROUP BY Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
-         DatasetFolder, ResultsFolder, DatasetID, Organism, InstrumentName, InstrumentClass, Completed,
+         DatasetFolder, ResultsFolder, DatasetID, Organism, InstrumentName, InstrumentGroup, InstrumentClass, Completed,
          ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
          ResultType, DS_created, PackageComment, RawDataType, Experiment, Experiment_Reason, Experiment_Comment
 

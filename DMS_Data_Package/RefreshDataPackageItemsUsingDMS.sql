@@ -1,4 +1,9 @@
-ALTER PROCEDURE dbo.RefreshDataPackageItemsUsingDMS
+/****** Object:  StoredProcedure [dbo].[RefreshDataPackageItemsUsingDMS] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE dbo.RefreshDataPackageItemsUsingDMS
 /****************************************************
 **
 **	Desc:
@@ -72,3 +77,5 @@ As
 	---------------------------------------------------
 	return @myError
 
+
+GO

@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateOSMPackageItemsXML]
 **    Auth: grk
 **          10/22/2012 grk - initial release
 **          11/05/2012 grk - added working code for 'delete'
+**          03/20/2013 grk - update OSM package item count for 'delete'
 **
 *****************************************************/
 (
@@ -85,6 +86,35 @@ As
 				#TPI.Type = T_OSM_Package_Items.Item_Type
 			)
 		END 
+		
+		---------------------------------------------------
+		-- update OSM package item counts
+		---------------------------------------------------
+
+		DECLARE 
+			@currentId INT = 0,
+			@prevId INT = 0,
+			@done INT = 0
+		
+		WHILE @done = 0
+		BEGIN --<d>
+			SET @currentId = 0
+			
+			SELECT TOP 1 @currentId = ID
+			FROM (SELECT CONVERT(INT, Package) AS ID FROM #TPI) TZ
+			WHERE ID > @prevId
+			ORDER BY ID
+		
+			IF @currentId = 0
+			BEGIN --<e>
+				SET @done = 1
+			END --<e>
+			ELSE 
+			BEGIN  --<f>
+				SET @prevId = @currentId
+				EXEC UpdateOSMPackageItemCount @currentId
+			END --<f>
+		END --<d>
 		
 		---------------------------------------------------
 		-- Test mode for debugging

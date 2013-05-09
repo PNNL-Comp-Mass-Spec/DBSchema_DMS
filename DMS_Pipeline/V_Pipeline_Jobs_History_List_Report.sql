@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Pipeline_Jobs_History_List_Report
+
+
+CREATE VIEW [dbo].[V_Pipeline_Jobs_History_List_Report]
 AS
 SELECT J.Job,
        J.Priority,
@@ -16,11 +18,15 @@ SELECT J.Job,
        J.Start,
        J.Finish,
        J.DataPkgID,
+       J.Owner,
+       J.Transfer_Folder_Path,
        J.Comment
 FROM dbo.T_Jobs_History J
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID
 WHERE J.Most_Recent_Entry = 1
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_History_List_Report] TO [PNL\D3M578] AS [dbo]

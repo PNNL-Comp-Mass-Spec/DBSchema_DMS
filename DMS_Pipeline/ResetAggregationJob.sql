@@ -1,4 +1,9 @@
-ALTER PROCEDURE dbo.ResetAggregationJob
+/****** Object:  StoredProcedure [dbo].[ResetAggregationJob] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE dbo.ResetAggregationJob
 /****************************************************
 **
 **	Desc:	Resets an aggregation job
