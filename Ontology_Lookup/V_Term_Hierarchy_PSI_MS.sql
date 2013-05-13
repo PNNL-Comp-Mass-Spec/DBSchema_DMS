@@ -4,8 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Term_Hierarchy_PSI_MS
+CREATE VIEW [dbo].[V_Term_Hierarchy_PSI_MS]
 AS
+	-- This view uses a recursive query
+	-- It is elegant, but not efficient since the "term" and "term_relationship" tables are so large
+	-- Use view V_CV_PSI_MS instead
 	WITH TermHierarchy
 	AS (
 		SELECT Child.namespace,
@@ -20,7 +23,7 @@ AS
 			   0 AS Level
 		FROM term Child
 		WHERE (Child.is_root_term = 1) AND
-			  (Child.namespace = 'PSI-MS')
+			  (Child.namespace = 'MS')		-- Note that namespace 'MS' supersedes namespace 'PSI-MS'
 			   
 		UNION ALL
 		
@@ -38,10 +41,12 @@ AS
 			 INNER JOIN term_relationship
 			   ON Child.term_pk = term_relationship.subject_term_pk
 			 INNER JOIN TermHierarchy on term_relationship.object_term_pk = TermHierarchy.term_pk
-		WHERE (Child.namespace = 'PSI-MS')
+		WHERE (Child.namespace = 'MS')		-- Note that namespace 'MS' supersedes namespace 'PSI-MS'
 
 	)
 	SELECT *
 	FROM TermHierarchy
+
+
 
 GO

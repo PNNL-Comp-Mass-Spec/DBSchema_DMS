@@ -4,8 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Term_Hierarchy_PSI_MI
+
+CREATE VIEW [dbo].[V_Term_Hierarchy_PSI_MI]
 AS
+	-- This view uses a recursive query
+	-- It is elegant, but not efficient since the "term" and "term_relationship" tables are so large
+	-- Use view V_CV_PSI_MI instead
 	WITH TermHierarchy
 	AS (
 		SELECT Child.namespace,
@@ -43,5 +47,6 @@ AS
 	)
 	SELECT *
 	FROM TermHierarchy
+
 
 GO

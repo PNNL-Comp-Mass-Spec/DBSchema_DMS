@@ -1,8 +1,8 @@
 /****** Object:  Database [Ontology_Lookup] ******/
 CREATE DATABASE [Ontology_Lookup] ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 1458112KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 1833920KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 911360KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 1614656KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 100
@@ -67,4 +67,10 @@ GO
 ALTER DATABASE [Ontology_Lookup] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [Ontology_Lookup] SET DB_CHAINING OFF 
+GO
+GRANT CONNECT TO [DMSReader] AS [dbo]
+GO
+GRANT CONNECT TO [DMSWebUser] AS [dbo]
+GO
+GRANT CONNECT TO [svc-dms] AS [dbo]
 GO

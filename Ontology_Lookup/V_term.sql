@@ -1,4 +1,4 @@
-/****** Object:  View [dbo].[V_term] ******/
+/****** Object:  View [dbo].[V_Term] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
