@@ -5,8 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_CV_PRIDE](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
+	[Term_PK] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Term_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[identifier] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Identifier] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Is_Leaf] [tinyint] NOT NULL,
 	[Parent_term_name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Parent_term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,

@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_CV_Union]
 AS
 	SELECT 'BTO' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -18,7 +18,7 @@ AS
 	FROM T_CV_BTO
 	UNION
 	SELECT 'GO' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -29,7 +29,7 @@ AS
 	FROM T_CV_GO
 	UNION
 	SELECT 'PSI-MI' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -40,7 +40,7 @@ AS
 	FROM T_CV_MI
 	UNION
 	SELECT 'PSI-Mod' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -51,7 +51,7 @@ AS
 	FROM T_CV_MOD
 	UNION
 	SELECT 'PSI-MS' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -62,7 +62,7 @@ AS
 	FROM T_CV_MS
 	UNION
 	SELECT 'NEWT' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -73,7 +73,7 @@ AS
 	FROM T_CV_NEWT
 	UNION
 	SELECT 'PRIDE' AS Source,
-	       Entry_ID,
+	       Term_PK,
 		   Term_Name,
 		   identifier,
 		   Is_Leaf,
@@ -82,6 +82,7 @@ AS
 		   GrandParent_term_name,
 		   GrandParent_term_ID
 	FROM T_CV_PRIDE
+
 
 
 GO

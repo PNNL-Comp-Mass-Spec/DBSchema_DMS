@@ -7,21 +7,21 @@ GO
 
 CREATE VIEW [dbo].[V_Term_Lineage]
 AS
-SELECT Child.[namespace],
-       Child.ontology_id,
-       ontology.shortName AS Ontology,
-       Grandparent.term_name AS Grandparent_term_name,
-       Grandparent.identifier AS Grandparent_term_identifier,
-       Parent.term_name AS Parent_term_name,
-       Parent.identifier AS Parent_term_identifier,
+SELECT Child.term_pk,
        Child.term_name,
        Child.identifier,
+       Parent.term_name AS Parent_term_name,
+       Parent.identifier AS Parent_term_identifier,
+       Grandparent.term_name AS Grandparent_term_name,
+       Grandparent.identifier AS Grandparent_term_identifier,
        Child.is_leaf,
+       Child.is_obsolete,
+       Child.[namespace],
+       Child.ontology_id,
+       ontology.shortName AS Ontology,
        ParentChildRelationship.predicate_term_pk,
-       Grandparent.term_pk AS Grandparent_term_pk,
        Parent.term_pk AS Parent_term_pk,
-       Child.term_pk,
-       Child.is_obsolete
+       Grandparent.term_pk AS Grandparent_term_pk
 FROM ontology
      INNER JOIN term Child
        ON ontology.ontology_id = Child.ontology_id
