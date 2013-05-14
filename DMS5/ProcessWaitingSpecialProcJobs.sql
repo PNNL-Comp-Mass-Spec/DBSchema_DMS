@@ -16,10 +16,11 @@ CREATE PROCEDURE ProcessWaitingSpecialProcJobs
 **	Auth:	mem
 **	Date:	05/04/2012 mem - Initial version
 **			01/23/2013 mem - Fixed bug that only checked the status of jobs with tag 'SourceJob'
+**			05/14/2013 mem - Now auto-deleting jobs for bad datasets
 **    
 *****************************************************/
 (
-	@WaitThresholdHours int = 72,				-- Hours between when a job is created and when we'll start posting messages to the error log that the job is waiting too long
+	@WaitThresholdHours int = 96,				-- Hours between when a job is created and when we'll start posting messages to the error log that the job is waiting too long
 	@ErrorMessagePostingIntervalHours int = 24,	-- Hours between posting a message to the error log that a job has been waiting more than @WaitThresholdHours; used to prevent duplicate messages from being posted every few minutes
 	@InfoOnly tinyint = 0,						-- 1 to preview the jobs that would be set to state "New"; will also display any jobs waiting more than @WaitThresholdHours
 	@PreviewSql tinyint = 0,
@@ -42,7 +43,11 @@ As
 	Declare @Dataset varchar(256)
 	Declare @SpecialProcessingText varchar(1024)
 	Declare @LastAffected datetime
+	Declare @DatasetRating int
+	Declare @DatasetState int
+	
 	Declare @ReadyToProcess tinyint
+	Declare @DatasetIsBad tinyint
 	
 	Declare @JobMessage varchar(512)
 	
@@ -108,7 +113,9 @@ As
 			SELECT TOP 1 @Job = J.AJ_jobID,
 			             @Dataset = DS.Dataset_Num,
 			             @SpecialProcessingText = J.AJ_specialProcessing,
-			             @LastAffected = J.AJ_Last_Affected
+			             @LastAffected = J.AJ_Last_Affected,
+			             @DatasetRating = DS.DS_rating,
+			             @DatasetState = DS.DS_state_ID
 			FROM T_Analysis_Job J
 			     INNER JOIN T_Dataset DS
 			       ON J.AJ_datasetID = DS.Dataset_ID
@@ -126,12 +133,19 @@ As
 				Set @JobsProcessed = @JobsProcessed + 1					
 				Set @JobMessage = ''
 				Set @ReadyToProcess = 0
-						
+				Set @DatasetIsBad = 0
+				
 				Set @WarningMessage = ''
 			
 				-- Process @SpecialProcessingText to look for the tags in @TagNamesTable
 				Set @TagAvailable = 1
 				Set @TagEntryID = -1
+				
+				If @DatasetState = 4 Or @DatasetRating IN (-5, -2, -1)
+				Begin
+					Set @DatasetIsBad = 1
+					Set @TagAvailable = 0
+				End
 				
 				While @TagAvailable = 1
 				Begin -- <c1>
@@ -223,10 +237,20 @@ As
 							Set @JobMessage = @JobMessage + '; ' + @message2
 													 
 						If @InfoOnly = 0
-						Begin				
+						Begin
 							-- Log an error message
 							Set @message = 'Job ' + Convert(varchar(12), @Job) + ' has been in state "Special Proc. Waiting" for over ' + Convert(varchar(12), @WaitThresholdHours) + ' hours'
-							exec PostLogEntry 'Error', @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = @ErrorMessagePostingIntervalHours
+							
+							If @DatasetIsBad = 1
+							Begin
+								Exec DeleteAnalysisJob @Job
+								Set @message = @message + '; job deleted since dataset is bad'
+								exec PostLogEntry 'Warning', @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = 0
+							End
+							Else
+							Begin							
+								exec PostLogEntry 'Error',   @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = @ErrorMessagePostingIntervalHours
+							End
 						End
 														
 					End -- </d>

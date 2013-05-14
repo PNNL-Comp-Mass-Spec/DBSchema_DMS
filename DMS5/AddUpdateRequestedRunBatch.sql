@@ -25,6 +25,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			08/04/2010 grk - try-catch for error handling
 **			08/27/2010 mem - Now auto-switching @RequestedInstrument to be instrument group instead of instrument name
 **						   - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
+**			05/14/2013 mem - Expanded @RequestedCompletionDate to varchar(32) to support long dates of the form 'Jan 29 2010 12:00:00:000AM'
 **
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 	@RequestedRunList varchar(4000),
 	@OwnerPRN varchar(64),
 	@RequestedBatchPriority varchar(24),
-	@RequestedCompletionDate varchar(24),
+	@RequestedCompletionDate varchar(32),
 	@JustificationHighPriority varchar(512),
 	@RequestedInstrument varchar(64),				-- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
 	@Comment varchar(512),
