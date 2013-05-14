@@ -19,9 +19,10 @@ SELECT Organism_ID AS ID, OG_name AS orgName,
     OG_Order AS orgOrder, OG_Family AS orgFamily, 
     OG_Genus AS orgGenus, OG_Species AS orgSpecies, 
     OG_Strain AS orgStrain, 
+    NEWT_Identifier AS NEWT_ID,
     OG_DNA_Translation_Table_ID AS orgDNATransTabID, 
     OG_Mito_DNA_Translation_Table_ID AS orgMitoDNATransTabID,
-     OG_Active AS orgActive
+    OG_Active AS orgActive
 FROM dbo.T_Organisms
 
 

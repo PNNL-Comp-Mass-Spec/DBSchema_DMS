@@ -58,12 +58,12 @@ AS
 	INSERT INTO T_Organisms_Change_History (
 				Organism_ID, OG_name, OG_description, OG_Short_Name, 
 				OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
-				OG_Family, OG_Genus, OG_Species, OG_Strain, OG_Active, 
-				Entered, Entered_By)
+				OG_Family, OG_Genus, OG_Species, OG_Strain, NEWT_Identifier, 
+				OG_Active, Entered, Entered_By)
 	SELECT 	Organism_ID, OG_name, OG_description, OG_Short_Name, 
 			OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
-			OG_Family, OG_Genus, OG_Species, OG_Strain, OG_Active, 
-			GetDate(), SYSTEM_USER
+			OG_Family, OG_Genus, OG_Species, OG_Strain, NEWT_Identifier, 
+			OG_Active, GetDate(), SYSTEM_USER
 	FROM inserted
 
 GO
@@ -90,16 +90,17 @@ AS
 		update(OG_Genus) or
 		update(OG_Species) or
 		update(OG_Strain) or
+		update(NEWT_Identifier) or
 		update(OG_Active)
 		INSERT INTO T_Organisms_Change_History (
 					Organism_ID, OG_name, OG_description, OG_Short_Name, 
 					OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
-					OG_Family, OG_Genus, OG_Species, OG_Strain, OG_Active,
-					Entered, Entered_By)
+					OG_Family, OG_Genus, OG_Species, OG_Strain, NEWT_Identifier, 
+					OG_Active, Entered, Entered_By)
 		SELECT 	inserted.Organism_ID, inserted.OG_name, inserted.OG_description, inserted.OG_Short_Name, 
 				inserted.OG_Domain, inserted.OG_Kingdom, inserted.OG_Phylum, inserted.OG_Class, inserted.OG_Order, 
-				inserted.OG_Family, inserted.OG_Genus, inserted.OG_Species, inserted.OG_Strain, inserted.OG_Active,
-				GetDate(), SYSTEM_USER
+				inserted.OG_Family, inserted.OG_Genus, inserted.OG_Species, inserted.OG_Strain, inserted.NEWT_Identifier, 
+				inserted.OG_Active, GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
 
 GO

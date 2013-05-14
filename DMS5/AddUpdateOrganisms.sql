@@ -26,6 +26,8 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			08/01/2012 mem - Now calling RefreshCachedOrganisms in MT_Main on ProteinSeqs
 **			09/25/2012 mem - Expanded @orgName and @orgDBName to varchar(128)
 **			11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta' 
+**			05/10/2013 mem - Added @NEWTIdentifier
+**			05/13/2013 mem - Now validating @NEWTIdentifier against S_V_CV_NEWT
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -49,6 +51,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 	@orgDNATransTabID varchar(6), 
 	@orgMitoDNATransTabID varchar(6),
 	@orgActive varchar(3),
+	@NEWTIdentifier int,
 	@ID int output,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -118,6 +121,17 @@ As
 	Set @orgStrain = IsNull(@orgStrain, '')
 	
 	Set @ID = IsNull(@ID, 0)
+	
+	If IsNull(@NEWTIdentifier, 0) = 0
+		Set @NEWTIdentifier = null
+	Else
+	Begin
+		If Not Exists (select * from S_V_CV_NEWT where identifier = Convert(varchar(32), @NEWTIdentifier))
+		begin
+			Set @msg = 'Invalid NEWT ID "' + Convert(varchar(32), @NEWTIdentifier) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
+			RAISERROR (@msg, 11, 3)
+		end
+	End
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -271,7 +285,8 @@ As
 			OG_Strain,
 			OG_DNA_Translation_Table_ID, 
 			OG_Mito_DNA_Translation_Table_ID,
-			OG_Active
+			OG_Active,
+			NEWT_Identifier
 		) VALUES (
 			@orgName, 
 			@orgDBPath, 
@@ -291,7 +306,8 @@ As
 			@orgStrain,
 			@iOrgDNATransTabID, 
 			@iOrgMitoDNATransTabID,
-			@orgActive
+			@orgActive,
+			@NEWTIdentifier
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -336,8 +352,9 @@ As
 			OG_Species = @orgSpecies, 
 			OG_Strain = @orgStrain,
 			OG_DNA_Translation_Table_ID = @iOrgDNATransTabID, 
-			OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,
-			OG_Active = @orgActive
+			OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,			
+			OG_Active = @orgActive,
+			NEWT_Identifier = @NEWTIdentifier
 		WHERE (Organism_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
