@@ -25,14 +25,15 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_Mito_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Active] [tinyint] NULL,
 	[OG_RowVersion] [timestamp] NOT NULL,
+	[NEWT_Identifier] [int] NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY CLUSTERED 
 (
 	[Organism_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 100) ON [PRIMARY],
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Organisms_Name] UNIQUE NONCLUSTERED 
 (
 	[OG_name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 100) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -41,7 +42,7 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms] 
 (
 	[OG_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 100) ON [PRIMARY]
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Trigger [dbo].[trig_i_T_Organisms] ******/
 SET ANSI_NULLS ON
@@ -49,7 +50,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
+CREATE Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
 For Insert
 AS
 	If @@RowCount = 0
@@ -66,6 +67,7 @@ AS
 			OG_Active, GetDate(), SYSTEM_USER
 	FROM inserted
 
+
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
 SET ANSI_NULLS ON
@@ -73,7 +75,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
+CREATE Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
 For Update
 AS
 	If @@RowCount = 0
@@ -102,6 +104,7 @@ AS
 				inserted.OG_Family, inserted.OG_Genus, inserted.OG_Species, inserted.OG_Strain, inserted.NEWT_Identifier, 
 				inserted.OG_Active, GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
+
 
 GO
 GRANT INSERT ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
