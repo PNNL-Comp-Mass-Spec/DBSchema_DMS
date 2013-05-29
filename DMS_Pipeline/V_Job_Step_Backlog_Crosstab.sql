@@ -8,14 +8,17 @@ CREATE VIEW [dbo].[V_Job_Step_Backlog_Crosstab]
 AS
 SELECT PivotData.Posting_Time,
        IsNull([DTA_Gen], 0) AS [DTA_Gen],
+       IsNull([DTA_Refinery], 0) AS [DTA_Refinery],
        IsNull([Sequest], 0) AS [Sequest],
        IsNull([XTandem], 0) AS [XTandem],
-       IsNull([Inspect], 0) AS [Inspect],
+       IsNull([MSGFPlus], 0) AS [MSGFPlus],
        IsNull([Decon2LS], 0) AS [Decon2LS],
+       IsNull([Decon2LS_V2], 0) AS [Decon2LS_V2],
+       IsNull([LTQ_FTPek], 0) AS [LTQ_FTPek],
        IsNull([MASIC_Finnigan], 0) AS [MASIC_Finnigan],
+       IsNull([MSAlign], 0) AS [MSAlign],
        IsNull([Results_Transfer], 0) AS [Results_Transfer],
-       IsNull([DataExtractor], 0) AS [DataExtractor],
-       IsNull([InspectResultsAssembly], 0) AS [InspectResultsAssembly],
+       IsNull([DataExtractor], 0) AS [DataExtractor],      
        IsNull([MSXML_Gen], 0) AS [MSXML_Gen]
 FROM ( SELECT Convert(smalldatetime, Posting_time) AS Posting_Time,
               Step_Tool,
@@ -24,15 +27,14 @@ FROM ( SELECT Convert(smalldatetime, Posting_time) AS Posting_Time,
      ) AS SourceTable
      PIVOT ( SUM(Backlog_Count)
              FOR Step_Tool
-             IN ( [DTA_Gen], 
-                  [Sequest], [XTandem], [Inspect], 
-                  [DataExtractor], [InspectResultsAssembly], 
-                  [Decon2LS],
-                  [MASIC_Finnigan],
+             IN ( [DTA_Gen], [DTA_Refinery],
+                  [Sequest], [XTandem], [MSGFPlus],
+                  [DataExtractor],
+                  [Decon2LS],[Decon2LS_V2], [LTQ_FTPek],
+                  [MASIC_Finnigan], [MSAlign],
                   [Results_Transfer], 
                   [MSXML_Gen] 
              ) ) AS PivotData
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Backlog_Crosstab] TO [PNL\D3M578] AS [dbo]

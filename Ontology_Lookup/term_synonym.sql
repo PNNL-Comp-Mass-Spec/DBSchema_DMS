@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[term_synonym](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[term_synonym]  WITH NOCHECK ADD  CONSTRAINT [FK_term_synonym_term] FOREIGN KEY([term_pk])
+ALTER TABLE [dbo].[term_synonym]  WITH CHECK ADD  CONSTRAINT [FK_term_synonym_term] FOREIGN KEY([term_pk])
 REFERENCES [term] ([term_pk])
 GO
 ALTER TABLE [dbo].[term_synonym] CHECK CONSTRAINT [FK_term_synonym_term]

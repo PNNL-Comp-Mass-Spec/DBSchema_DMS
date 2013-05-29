@@ -28,6 +28,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta' 
 **			05/10/2013 mem - Added @NEWTIdentifier
 **			05/13/2013 mem - Now validating @NEWTIdentifier against S_V_CV_NEWT
+**			05/24/2013 mem - Added @NEWTIDList
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -52,6 +53,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 	@orgMitoDNATransTabID varchar(6),
 	@orgActive varchar(3),
 	@NEWTIdentifier int,
+	@NEWTIDList varchar(255),
 	@ID int output,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -126,11 +128,52 @@ As
 		Set @NEWTIdentifier = null
 	Else
 	Begin
-		If Not Exists (select * from S_V_CV_NEWT where identifier = Convert(varchar(32), @NEWTIdentifier))
-		begin
+		If Not Exists (Select * From S_V_CV_NEWT Where identifier = Convert(varchar(32), @NEWTIdentifier))
+		Begin
 			Set @msg = 'Invalid NEWT ID "' + Convert(varchar(32), @NEWTIdentifier) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
 			RAISERROR (@msg, 11, 3)
-		end
+		End
+	End
+	
+	Set @NEWTIDList = ISNULL(@NEWTIDList, '')
+	If LEN(@NEWTIDList) > 0
+	Begin
+		CREATE TABLE #NEWTIDs (
+			NEWT_ID_Text varchar(64),
+			NEWT_ID int NULL
+		)
+		
+		INSERT INTO #NEWTIDs (NEWT_ID_Text)
+		SELECT Value
+		FROM dbo.udfParseDelimitedList(@NEWTIDList, ',')
+		WHERE IsNull(Value, '') <> ''
+		
+		-- Look for non-numeric values
+		IF Exists (Select * from #NEWTIDs Where ISNUMERIC(NEWT_ID_Text) = 0)
+		BEGIN
+			Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @NEWTIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
+			RAISERROR (@msg, 11, 3)
+		END
+		
+		-- Make sure all of the NEWT IDs are Valid
+		UPDATE #NEWTIDs
+		SET NEWT_ID = CONVERT(int, NEWT_ID_Text)
+		WHERE ISNUMERIC(NEWT_ID_Text) = 1
+		
+		Declare @InvalidNEWTIDs varchar(255) = null
+		
+		SELECT @InvalidNEWTIDs = COALESCE(@InvalidNEWTIDs + ', ', '') + #NEWTIDs.NEWT_ID_Text
+		FROM #NEWTIDs
+		     LEFT OUTER JOIN S_V_CV_NEWT
+		       ON #NEWTIDs.NEWT_ID = S_V_CV_NEWT.identifier
+		WHERE S_V_CV_NEWT.identifier IS NULL
+
+		If LEN(ISNULL(@InvalidNEWTIDs, '')) > 0
+		Begin
+			Set @msg = 'Invalid NEWT ID(s) "' + @InvalidNEWTIDs + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
+			RAISERROR (@msg, 11, 3)
+		End
+		
 	End
 	
 	---------------------------------------------------
@@ -208,7 +251,7 @@ As
 		
 	if (@orgGenus = 'unknown'   or @orgGenus = 'na'   or @orgGenus = 'none') AND
 	   (@orgSpecies = 'unknown' or @orgSpecies = 'na' or @orgSpecies = 'none') AND
-	   (@orgStrain = 'unknown'  or @orgStrain = 'na'  or @orgStrain = 'none') 
+	   (@orgStrain = 'unknown'  or @orgStrain = 'na' or @orgStrain = 'none') 
 	Begin
 		Set @orgGenus = 'na'
 		Set @orgSpecies = 'na'
@@ -286,7 +329,8 @@ As
 			OG_DNA_Translation_Table_ID, 
 			OG_Mito_DNA_Translation_Table_ID,
 			OG_Active,
-			NEWT_Identifier
+			NEWT_Identifier,
+			NEWT_ID_List
 		) VALUES (
 			@orgName, 
 			@orgDBPath, 
@@ -307,7 +351,8 @@ As
 			@iOrgDNATransTabID, 
 			@iOrgMitoDNATransTabID,
 			@orgActive,
-			@NEWTIdentifier
+			@NEWTIdentifier,
+			@NEWTIDList
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -354,7 +399,8 @@ As
 			OG_DNA_Translation_Table_ID = @iOrgDNATransTabID, 
 			OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,			
 			OG_Active = @orgActive,
-			NEWT_Identifier = @NEWTIdentifier
+			NEWT_Identifier = @NEWTIdentifier,
+			NEWT_ID_List = @NEWTIDList
 		WHERE (Organism_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -400,6 +446,7 @@ As
 	END CATCH
 	
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin] AS [dbo]

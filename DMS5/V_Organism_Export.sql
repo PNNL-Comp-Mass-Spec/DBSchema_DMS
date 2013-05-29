@@ -6,30 +6,34 @@ GO
 
 
 
-
 CREATE VIEW [dbo].[V_Organism_Export]
 AS
-SELECT Organism_ID,
-       OG_name AS Name,
-       OG_description AS Description,
-       OG_Short_Name AS Short_Name,
-       OG_Domain AS Domain,
-       OG_Kingdom AS Kingdom,
-       OG_Phylum AS Phylum,
-       OG_Class AS Class,
-       OG_Order AS [Order],
-       OG_Family AS Family,
-       OG_Genus AS Genus,
-       OG_Species AS Species,
-       OG_Strain AS Strain,
-       OG_DNA_Translation_Table_ID AS DNA_Translation_Table_ID,
-       OG_Mito_DNA_Translation_Table_ID AS Mito_DNA_Translation_Table_ID,
-       NEWT_Identifier AS NEWT_ID,
-       OG_created AS Created,
-       OG_Active AS Active,
-       OG_organismDBPath AS OrganismDBPath,
-       OG_RowVersion
-FROM dbo.T_Organisms
+SELECT DISTINCT O.Organism_ID,
+       O.OG_name AS Name,
+       O.OG_description AS Description,
+       O.OG_Short_Name AS Short_Name,
+       O.OG_Domain AS Domain,
+       O.OG_Kingdom AS Kingdom,
+       O.OG_Phylum AS Phylum,
+       O.OG_Class AS Class,
+       O.OG_Order AS [Order],
+       O.OG_Family AS Family,
+       O.OG_Genus AS Genus,
+       O.OG_Species AS Species,
+       O.OG_Strain AS Strain,
+       O.OG_DNA_Translation_Table_ID AS DNA_Translation_Table_ID,
+       O.OG_Mito_DNA_Translation_Table_ID AS Mito_DNA_Translation_Table_ID,
+       O.NEWT_Identifier AS NEWT_ID,
+       NEWT.Term_Name AS NEWT_Name,
+       O.NEWT_ID_List AS NEWT_ID_List,
+       O.OG_created AS Created,
+       O.OG_Active AS Active,
+       O.OG_organismDBPath AS OrganismDBPath,
+       O.OG_RowVersion
+FROM dbo.T_Organisms O
+LEFT OUTER JOIN
+        S_V_CV_NEWT NEWT ON CONVERT(varchar(24), O.NEWT_Identifier) = NEWT.identifier
+
 
 
 

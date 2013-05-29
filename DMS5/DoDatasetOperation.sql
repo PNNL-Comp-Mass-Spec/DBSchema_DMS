@@ -144,6 +144,7 @@ As
 	
 	---------------------------------------------------
 	-- Reset state of failed dataset to 'new' 
+	-- This is used by the "Retry Capture" button on the dataset detail report page
 	---------------------------------------------------
 	--
 	if @mode = 'reset'

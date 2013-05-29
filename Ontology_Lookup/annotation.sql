@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[annotation](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[annotation]  WITH NOCHECK ADD  CONSTRAINT [FK_annotation_term] FOREIGN KEY([term_pk])
+ALTER TABLE [dbo].[annotation]  WITH CHECK ADD  CONSTRAINT [FK_annotation_term] FOREIGN KEY([term_pk])
 REFERENCES [term] ([term_pk])
 GO
 ALTER TABLE [dbo].[annotation] CHECK CONSTRAINT [FK_annotation_term]

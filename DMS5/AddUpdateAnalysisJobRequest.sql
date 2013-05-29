@@ -62,6 +62,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
 **			03/26/2013 mem - Added parameter @callingUser
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
+**			05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
 **
 *****************************************************/
 (
@@ -137,17 +138,16 @@ As
 	if @mode = 'update'
 	begin
 		set @hit = 0
-		SELECT 
-			@hit = AJR_requestID,
-			@curState =  AJR_state
-		FROM         T_Analysis_Job_Request
+		SELECT @hit = AJR_requestID,
+		       @curState = AJR_state
+		FROM T_Analysis_Job_Request
 		WHERE (AJR_requestID = @requestID)
 		--
 		if @hit = 0
 			RAISERROR ('Cannot update: entry is not in database', 11, 5)
 		--
-		if Not (@curState IN (1,5))
-			RAISERROR ('Cannot update: entry is not in "New" or New (Review Required) state', 11, 24)
+		if EXISTS (Select * From T_Analysis_Job Where AJ_RequestID = @requestID)
+			RAISERROR ('Cannot update: entry has analysis jobs associated with it', 11, 24)
 	end
 
 	---------------------------------------------------

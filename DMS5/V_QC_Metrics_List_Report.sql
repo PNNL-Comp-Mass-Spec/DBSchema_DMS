@@ -6,12 +6,14 @@ GO
 
 
 
+
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size MB],
        PM.AMT_Count_10pct_FDR AS [AMTs 10pct FDR],
        PM.AMT_Count_50pct_FDR AS [AMTs 50pct FDR],
+       PM.Refine_Mass_Cal_PPMShift AS PPM_Shift,
        PM.Results_URL,
        SPath.SP_URL + DS.Dataset_Num + '/QC/' + DS.Dataset_Num + '_BPI_MS.png'  AS [QC Link],
        PM.Task_Database,
@@ -87,6 +89,7 @@ FROM T_Dataset DS
 --       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Storage_Path SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
+
 
 
 

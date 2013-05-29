@@ -4,6 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report] as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_StateNameCached AS State ,
@@ -37,7 +39,9 @@ SELECT  AJ.AJ_jobID AS Job ,
         ELSE DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName 
         END AS [Results Folder Path],        
         DR.DRN_name AS Rating,
-        DS.Acq_Length_Minutes AS [Acq Length]
+        DS.Acq_Length_Minutes AS [Acq Length],
+        DS.Dataset_ID,
+        DS.Acq_Time_Start
 FROM    dbo.V_Dataset_Archive_Path AS DAP
         RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
         INNER JOIN dbo.T_Dataset AS DS ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -55,6 +59,8 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE (AJT_resultType LIKE '%peptide_hit'))
                                 
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [PNL\D3M578] AS [dbo]

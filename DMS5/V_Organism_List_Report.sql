@@ -23,13 +23,14 @@ SELECT O.Organism_ID AS ID,
        O.OG_Order AS [Order],
        O.OG_Family AS Family,
        O.NEWT_Identifier AS NEWT_ID,
+       O.NEWT_ID_List AS NEWT_ID_List,
        O.OG_created AS Created,
        O.OG_Active AS Active
 FROM dbo.T_Organisms O
      LEFT OUTER JOIN V_Protein_Collection_Name PC
        ON O.OG_Name = PC.[Organism Name]
 GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description, O.OG_organismDBName, O.OG_Short_Name,
-         O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, O.OG_Family, O.NEWT_Identifier, O.OG_created, O.OG_Active
+         O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, O.OG_Family, O.NEWT_Identifier, O.NEWT_ID_List, O.OG_created, O.OG_Active
 
 
 

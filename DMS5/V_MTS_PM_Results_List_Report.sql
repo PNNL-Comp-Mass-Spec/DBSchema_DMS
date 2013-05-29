@@ -4,6 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+
+
+
 CREATE VIEW [dbo].[V_MTS_PM_Results_List_Report]
 AS
 SELECT PM.DMS_Job AS Job,
@@ -25,13 +29,17 @@ SELECT PM.DMS_Job AS Job,
        PM.AMT_Count_10pct_FDR AS [AMTs 10pct FDR],
        PM.AMT_Count_25pct_FDR AS [AMTs 25pct FDR],
        PM.AMT_Count_50pct_FDR AS [AMTs 50pct FDR],
+       Refine_Mass_Cal_PPMShift AS PPM_Shift,
        PM.QID,
        PM.MD_ID,
        AJ.AJ_parmFileName AS [Parm File],
        AJ.AJ_settingsFileName AS Settings_File,
        PM.Ini_File_Name, 
        PM.Comparison_Mass_Tag_Count, 
-       PM.MD_State
+       PM.MD_State,
+       DS.Dataset_ID,
+       DS.Acq_Length_Minutes AS [Acq Length],
+       DS.Acq_Time_Start
 FROM T_Dataset DS
      INNER JOIN T_Analysis_Job AJ
        ON DS.Dataset_ID = AJ.AJ_datasetID
@@ -39,6 +47,10 @@ FROM T_Dataset DS
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
      RIGHT OUTER JOIN T_MTS_Peak_Matching_Tasks_Cached PM
        ON AJ.AJ_jobID = PM.DMS_Job
+
+
+
+
 
 
 GO

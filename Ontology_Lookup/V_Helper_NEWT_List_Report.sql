@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW [dbo].[V_Helper_NEWT_List_Report]
+
+CREATE VIEW [dbo].[V_Helper_NEWT_List_Report]
 AS
 	SELECT identifier,
 		   Term_Name,

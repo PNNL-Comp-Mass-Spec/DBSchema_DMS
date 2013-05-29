@@ -17,6 +17,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 **			10/13/2010 mem - Now updating AMT_Count_1pct_FDR through AMT_Count_50pct_FDR
 **			12/14/2011 mem - Added columns MD_ID and QID
 **			03/16/2012 mem - Added columns Ini_File_Name, Comparison_Mass_Tag_Count, and MD_State
+**			05/24/2013 mem - Added column Refine_Mass_Cal_PPMShift
 **
 *****************************************************/
 (
@@ -103,7 +104,7 @@ AS
 						DMS_Job, Output_Folder_Path, Results_URL,
 						AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
 						AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
-						AMT_Count_50pct_FDR,
+						AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
 						MD_ID, QID, 
 						Ini_File_Name, Comparison_Mass_Tag_Count, MD_State
 			  FROM ( SELECT	Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
@@ -112,7 +113,7 @@ AS
 							DMS_Job, Output_Folder_Path, Results_URL,
 							AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
 						    AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
-						    AMT_Count_50pct_FDR,
+						    AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
 						    MD_ID, QID,
 						    Ini_File_Name, Comparison_Mass_Tag_Count, MD_State,
 							RANK() OVER ( PARTITION BY tool_name, task_server, task_database, task_id 
@@ -127,7 +128,7 @@ AS
 						 DMS_Job, Output_Folder_Path, Results_URL, 
 						 AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
 						 AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
-						 AMT_Count_50pct_FDR,
+						 AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
 						 MD_ID, QID, 
 						 Ini_File_Name, Comparison_Mass_Tag_Count, MD_State)
 		ON (target.MTS_Job_ID = source.MTS_Job_ID AND target.DMS_Job = source.DMS_Job)
@@ -146,6 +147,7 @@ AS
 						IsNull(target.AMT_Count_10pct_FDR, 0) <> source.AMT_Count_10pct_FDR OR
 						IsNull(target.AMT_Count_25pct_FDR, 0) <> source.AMT_Count_25pct_FDR OR
 						IsNull(target.AMT_Count_50pct_FDR, 0) <> source.AMT_Count_50pct_FDR OR
+						IsNull(target.Refine_Mass_Cal_PPMShift, -9999) <> source.Refine_Mass_Cal_PPMShift OR						
 						IsNull(target.MD_ID, -1) <> source.MD_ID OR
 						IsNull(target.QID, -1) <> source.QID OR
 						IsNull(target.Ini_File_Name, '') <> source.Ini_File_Name OR
@@ -171,6 +173,7 @@ AS
 					AMT_Count_10pct_FDR = source.AMT_Count_10pct_FDR,  
 					AMT_Count_25pct_FDR = source.AMT_Count_25pct_FDR,  
 					AMT_Count_50pct_FDR = source.AMT_Count_50pct_FDR,
+					Refine_Mass_Cal_PPMShift = source.Refine_Mass_Cal_PPMShift,
 					MD_ID = source.MD_ID,
 					QID = source.QID,
 					Ini_File_Name = source.Ini_File_Name, 
@@ -197,6 +200,7 @@ AS
 						AMT_Count_10pct_FDR, 
 						AMT_Count_25pct_FDR, 
 						AMT_Count_50pct_FDR,
+						Refine_Mass_Cal_PPMShift,
 						MD_ID,
 						QID,
 						Ini_File_Name, 
@@ -209,7 +213,7 @@ AS
 					source.DMS_Job, source.Output_Folder_Path, source.Results_URL,
 					source.AMT_Count_1pct_FDR, source.AMT_Count_5pct_FDR,
 					source.AMT_Count_10pct_FDR, source.AMT_Count_25pct_FDR, 
-					source.AMT_Count_50pct_FDR,
+					source.AMT_Count_50pct_FDR, source.Refine_Mass_Cal_PPMShift,
 					source.MD_ID, source.QID,
 					source.Ini_File_Name, source.Comparison_Mass_Tag_Count, source.MD_State)
 		WHEN NOT MATCHED BY SOURCE And @FullRefreshPerformed <> 0 THEN

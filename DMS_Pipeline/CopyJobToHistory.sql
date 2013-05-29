@@ -53,7 +53,11 @@ As
  	---------------------------------------------------
  	--
   	if not @JobState in (4,5)
+  	Begin
+  		Set @message = 'Job state not 4 or 5; aborting'
+  		Print @message
 		goto Done
+	End
 
  	---------------------------------------------------
  	-- Define a common timestamp for all history entries

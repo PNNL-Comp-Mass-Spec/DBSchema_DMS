@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Organism_Detail_Report]
 AS
 SELECT O.Organism_ID AS ID,
@@ -21,6 +22,7 @@ SELECT O.Organism_ID AS ID,
        O.OG_Species AS Species,
        O.OG_Strain AS Strain,
        O.NEWT_Identifier AS NEWT_ID,
+       O.NEWT_ID_List AS NEWT_ID_List,
        NEWT.Term_Name AS NEWT_Name,
        O.OG_created AS Created,
        COUNT(PC.Name) AS [Protein Collections],
@@ -37,9 +39,12 @@ FROM dbo.T_Organisms O
        ON O.OG_Name = PC.[Organism Name]
 GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description,
          O.OG_Short_Name, O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, 
-         O.OG_Family, O.NEWT_Identifier, NEWT.Term_Name, O.OG_created, O.OG_Active,
+         O.OG_Family, O.NEWT_Identifier, O.NEWT_ID_List, NEWT.Term_Name, O.OG_created, O.OG_Active,
          O.OG_organismDBPath, O.OG_organismDBName, O.OG_Storage_Location,
-         O.OG_DNA_Translation_Table_ID, O.OG_Mito_DNA_Translation_Table_ID
+         O.OG_DNA_Translation_Table_ID, O.OG_Mito_DNA_Translation_Table_ID 
+
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_Detail_Report] TO [PNL\D3M578] AS [dbo]
