@@ -52,6 +52,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			04/09/2013 mem - Renamed parameter @InstrumentName to @InstrumentGroup
 **			               - Renamed parameter @SeparationType to @SeparationGroup
 **			05/02/2013 mem - Now validating that fields @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent are 'Yes', 'No', '', or Null
+**			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
 **    
 *****************************************************/
 (
@@ -321,8 +322,22 @@ As
 						@eusUsageTypeID output,
 						@msg output
 	if @myError <> 0
-		RAISERROR ('ValidateEUSUsage:%s', 11, 1, @msg)
+		RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
+	---------------------------------------------------
+	-- Validate the work package
+	---------------------------------------------------
+
+	Declare @allowNoneWP tinyint = 0
+	
+	exec @myError = ValidateWP
+						@workPackageNumber,
+						@allowNoneWP,
+						@msg output
+
+	if @myError <> 0
+		RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+		
 	---------------------------------------------------
 	-- Auto-change separation type to separation group, if applicable
 	---------------------------------------------------

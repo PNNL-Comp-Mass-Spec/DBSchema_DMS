@@ -59,6 +59,7 @@ CREATE Procedure AddUpdateRequestedRun
 **			01/09/2012 grk - Added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
 **			10/19/2012 mem - Now auto-updating secondary separation to separation group name when creating a new requested run
 **			05/08/2013 mem - Added @VialingConc and @VialingVol
+**			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ CREATE Procedure AddUpdateRequestedRun
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
-	@workPackage varchar(50),
+	@workPackage varchar(50),					-- Insrument group; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
 	@wellplateNum varchar(64) = 'na',
@@ -451,11 +452,6 @@ As
 	If IsNull(@msg, '') <> ''
 		Set @message = @msg
 
-	---------------------------------------------------
-	--
-	---------------------------------------------------
-	declare @transName varchar(256)
-	set @transName = 'AddUpdateRequestedRun_' + @reqName
 
 	---------------------------------------------------
 	-- Lookup misc fields (only effective for experiments
@@ -468,6 +464,28 @@ As
 						
 	if @myError <> 0
 		RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)	
+		
+		
+	---------------------------------------------------
+	-- Validate the work package
+	---------------------------------------------------
+
+	Declare @allowNoneWP tinyint = @AutoPopulateUserListIfBlank
+	
+	exec @myError = ValidateWP
+						@workPackage,
+						@allowNoneWP,
+						@msg output
+
+	if @myError <> 0
+		RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+
+		
+	---------------------------------------------------
+	-- Start a transaction
+	---------------------------------------------------
+	declare @transName varchar(256)
+	set @transName = 'AddUpdateRequestedRun_' + @reqName
 
 	---------------------------------------------------
 	-- action for add mode

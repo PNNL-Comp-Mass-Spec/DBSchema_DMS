@@ -9,7 +9,6 @@ CREATE TABLE [dbo].[T_Users](
 	[U_HID] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[ID] [int] IDENTITY(2000,1) NOT NULL,
 	[U_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[U_Access_Lists] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[U_email] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[U_domain] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[U_netid] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

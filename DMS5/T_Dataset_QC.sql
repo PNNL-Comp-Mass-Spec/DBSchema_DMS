@@ -96,6 +96,8 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[MS2_PrecZ_more] [real] NULL,
 	[MS2_PrecZ_likely_1] [real] NULL,
 	[MS2_PrecZ_likely_multi] [real] NULL,
+	[QCDM_Last_Affected] [datetime] NULL,
+	[QCDM] [real] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

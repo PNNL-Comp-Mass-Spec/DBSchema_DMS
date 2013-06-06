@@ -13,7 +13,6 @@ CREATE Procedure dbo.StoreSMAQCResults
 **
 **			Typical XML file contents
 **
-**			<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 **			<SMAQC_Results>
 **			  <Dataset>Shew119-01_17july02_earth_0402-10_4-20</Dataset>
 **			  <Job>780000</Job>

@@ -42,7 +42,6 @@ AS
             SPR.IOPSPermitsCurrent AS [IOPS Permits Current] ,
             SPR.Priority ,
 			SPR.Reason_For_High_Priority AS [Reason For High Priority],
-            SPR.Facility ,
             SN.State_Name AS State ,
             SPR.Created ,
             QT.[Complete or Closed] ,

@@ -22,6 +22,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **
 **	Auth:	mem
 **	Date:	05/16/2013 mem - Initial version
+**			06/04/2013 mem - Now replacing tab characters with spaces
 **    
 *****************************************************/
 (
@@ -199,6 +200,7 @@ AS
 		
 		Set @Row = Replace (@Row, CHAR(10), '')
 		Set @Row = Replace (@Row, CHAR(13), '')
+		Set @Row = Replace (@Row, CHAR(9), ' ')
 		Set @Row = LTrim(RTrim(IsNull(@Row, '')))
 		
 		If @Row <> ''

@@ -352,7 +352,7 @@ As
 
 			-- get parameters for job (and also store in #Job_Parameters)
 			-- Parameters are returned in @pXML (though @pXML is not used by this procedure)
-			exec @myError = CreateParametersForJob @job, @datasetID, @pXML output, @message output, @DebugMode = @DebugMode
+			exec @myError = CreateParametersForJob @job, @datasetID, @scriptName, @pXML output, @message output, @DebugMode = @DebugMode
 
 			-- create the basic job structure (steps and dependencies)
 			-- Details are stored in #Job_Steps and #Job_Step_Dependencies

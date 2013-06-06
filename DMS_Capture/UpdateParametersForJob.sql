@@ -123,7 +123,9 @@ As
 	declare @job int
 	declare @prevJob int
 	declare @datasetID int
+	declare @scriptName varchar(64)
 	declare @done tinyint
+	
 	set @done = 0
 	set @prevJob = 0
 	--
@@ -134,7 +136,8 @@ As
 		--
 		SELECT TOP 1 
 			@job = Job,
-			@datasetID = Dataset_ID
+			@datasetID = Dataset_ID,
+			@scriptName = Script
 		FROM 
 			#Jobs
 		WHERE Job > @prevJob
@@ -163,7 +166,7 @@ As
 
 			-- get parameters for job (and also store in temp table #Job_Parameters)
 			-- Parameters are returned in @pXML
-			exec @myError = CreateParametersForJob @job, @datasetID, @pXML output, @message output, @DebugMode = @DebugMode
+			exec @myError = CreateParametersForJob @job, @datasetID, @scriptName, @pXML output, @message output, @DebugMode = @DebugMode
 
 		end --<b>
 	end --<a>

@@ -14,12 +14,14 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 **	Auth:	mem
 **	Date:	05/07/2010 mem - Initial version
 **			09/08/2010 mem - Added parameter @AllowBlankResultsFolder
+**			05/31/2013 mem - Added parameter @PushDatasetToMyEMSL
 **    
 *****************************************************/
 (
 	@DatasetName varchar(128),
 	@ResultsFolderName varchar(128) = '',
 	@AllowBlankResultsFolder tinyint = 0,			-- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset folder and all subfolders
+	@PushDatasetToMyEMSL tinyint = 0,				-- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\a2.emsl.pnl.gov\dmsarch
 	@infoOnly tinyint = 0,							-- 0 To perform the update, 1 preview job that would be created
 	@message varchar(512)='' output
 )
@@ -33,6 +35,7 @@ As
 
 	Declare @DatasetID int
 	Declare @JobID int
+	Declare @Script varchar(64)
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -40,6 +43,7 @@ As
 
 	Set @ResultsFolderName = IsNull(@ResultsFolderName, '') 
 	Set @AllowBlankResultsFolder = IsNull(@AllowBlankResultsFolder, 0)
+	Set @PushDatasetToMyEMSL = IsNull(@PushDatasetToMyEMSL, 0)
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
 
@@ -97,6 +101,10 @@ As
 		Goto Done
 	End
 
+	If @PushDatasetToMyEMSL <> 0
+		Set @Script = 'MyEMSLDatasetPush'
+	Else
+		Set @Script = 'ArchiveUpdate'
 	
 	---------------------------------------------------
 	-- create new Archive Update job for specified dataset
@@ -105,7 +113,7 @@ As
 	If @infoOnly = 1
 	Begin
 		SELECT
-			'ArchiveUpdate' AS Script,
+			@Script AS Script,
 			@DatasetName AS Dataset,
 			@DatasetID AS Dataset_ID,
 			@ResultsFolderName AS Results_Folder_Name,
@@ -113,10 +121,10 @@ As
 	End
 	Else
 	Begin
-	
+		
 		INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
 		SELECT
-			'ArchiveUpdate' AS Script,
+			@Script AS Script,
 			@DatasetName AS Dataset,
 			@DatasetID AS Dataset_ID,
 			@ResultsFolderName AS Results_Folder_Name,
