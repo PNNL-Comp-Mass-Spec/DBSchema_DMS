@@ -11,6 +11,8 @@ SELECT PM.Dataset_ID,
        ISNULL(-PM.PPM_Shift, QCM.MS1_5C) AS Mass_Error_PPM,
        CONVERT(decimal(9,2), QCM.XIC_FWHM_Q3) AS XIC_FWHM_Q3,
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
+       DTN.DST_name AS [Dataset Type],
+       DS.DS_sec_sep AS [Separation Type],       
        PM.Task_ID AS PM_Task_ID,
        PM.Results_URL AS PM_Results_URL,
        PM.[AMTs 1pct FDR],
@@ -55,6 +57,10 @@ SELECT PM.Dataset_ID,
 FROM V_MTS_PM_Results_List_Report PM
      INNER JOIN V_Dataset_Folder_Paths DFP 
        ON PM.Dataset_ID = DFP.Dataset_ID
+     INNER JOIN T_Dataset DS
+       ON PM.Dataset_ID = DS.Dataset_ID
+     INNER JOIN T_DatasetTypeName DTN 
+       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN V_Dataset_QC_Metrics QCM
        ON PM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_Analysis_Job_PSM_List_Report PSM

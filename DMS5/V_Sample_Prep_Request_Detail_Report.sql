@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Detail_Report]
 AS
     SELECT  SPR.ID ,
@@ -31,7 +32,10 @@ AS
             SPR.UseSingleLCColumn AS [Use single LC column] ,
             SPR.BlockAndRandomizeRuns AS [Block And Randomize Runs] ,
             SPR.Sample_Naming_Convention AS [Sample Group Naming Prefix] ,
-            SPR.Work_Package_Number AS [Work Package Number] ,
+            CASE WHEN ISNULL(CC.Deactivated, 'N') = 'Y' THEN SPR.Work_Package_Number + ' (deactivated)'
+                 WHEN ISNULL(CC.Charge_Code_State, 1) = 0 THEN SPR.Work_Package_Number + ' (likely deactivated)'
+                 ELSE SPR.Work_Package_Number 
+            END AS [Work Package Number] ,
             SPR.Project_Number AS [Project Number] ,
             SPR.EUS_UsageType AS [EUS Usage Type] ,
             SPR.EUS_Proposal_ID AS [EUS Proposal] ,
@@ -41,7 +45,7 @@ AS
             SPR.Estimated_Completion AS [Estimated Completion] ,
             SPR.IOPSPermitsCurrent AS [IOPS Permits Current] ,
             SPR.Priority ,
-			SPR.Reason_For_High_Priority AS [Reason For High Priority],
+			SPR.Reason_For_High_Priority AS [Reason For High Priority],            
             SN.State_Name AS State ,
             SPR.Created ,
             QT.[Complete or Closed] ,
@@ -59,6 +63,7 @@ AS
                               GROUP BY  Request_ID
                             ) AS NU ON SPR.ID = NU.Request_ID
             LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
+            LEFT OUTER JOIN T_Charge_Code CC ON SPR.Work_Package_Number = CC.Charge_Code
 
 
 GO

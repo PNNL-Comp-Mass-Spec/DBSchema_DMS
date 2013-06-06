@@ -60,6 +60,7 @@ CREATE Procedure AddUpdateRequestedRun
 **			10/19/2012 mem - Now auto-updating secondary separation to separation group name when creating a new requested run
 **			05/08/2013 mem - Added @VialingConc and @VialingVol
 **			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
+**			06/06/2013 mem - Now showing warning if the work package is deactivated
 **
 *****************************************************/
 (
@@ -153,7 +154,7 @@ As
 		return @myError
 
 	---------------------------------------------------
-	-- validate name
+	-- Validate name
 	---------------------------------------------------
 
 	declare @badCh varchar(128)
@@ -264,7 +265,7 @@ As
 	WHERE (State_Name = @status)
 
 	---------------------------------------------------
-	-- get experiment ID from experiment number 
+	-- Get experiment ID from experiment number 
 	-- (and validate that it exists in database)
 	-- Also set wellplate and well from experiment
 	-- if called for
@@ -351,7 +352,7 @@ As
 	End
 	
 	---------------------------------------------------
-	-- validate instrument group and dataset type
+	-- Validate instrument group and dataset type
 	---------------------------------------------------
 	declare @datasetTypeID int
 	--
@@ -435,7 +436,7 @@ As
 		RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 	---------------------------------------------------
-	-- validate EUS type, proposal, and user list
+	-- Validate EUS type, proposal, and user list
 	---------------------------------------------------
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
@@ -477,10 +478,20 @@ As
 						@allowNoneWP,
 						@msg output
 
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('ValidateWP: %s', 11, 1, @msg)
 
-		
+	If @AutoPopulateUserListIfBlank = 0
+	Begin
+		If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')	   
+			Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ')
+		Else
+		Begin
+			If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
+				Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ')
+		End
+	End
+			
 	---------------------------------------------------
 	-- Start a transaction
 	---------------------------------------------------

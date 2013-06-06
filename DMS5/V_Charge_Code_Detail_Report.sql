@@ -15,6 +15,7 @@ SELECT CC.Charge_Code,
        CC.Inactive_Date_Most_Recent,
        CC.Inactive_Date,
        CC.SubAccount_Inactive_Date,
+       CC.Deactivated,
        CC.Setup_Date,
        CC.Usage_SamplePrep,
        CC.Usage_RequestedRun,
@@ -28,6 +29,7 @@ SELECT CC.Charge_Code,
 FROM T_Charge_Code CC
      LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map DMSUser
        ON CC.Charge_Code = DMSUser.Charge_Code
+
 
 
 GO

@@ -35,7 +35,10 @@ SELECT RR.ID AS Request,
        RR.RDS_Blocking_Factor AS [Blocking Factor],
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
-       RR.RDS_WorkPackage AS [Work Package],
+       CASE WHEN ISNULL(CC.Deactivated, 'N') = 'Y' THEN RR.RDS_WorkPackage + ' (deactivated)'
+                 WHEN ISNULL(CC.Charge_Code_State, 1) = 0 THEN RR.RDS_WorkPackage + ' (likely deactivated)'
+                 ELSE RR.RDS_WorkPackage 
+            END AS [Work Package],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
@@ -63,10 +66,10 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times QT
        ON RR.ID = QT.RequestedRun_ID
-     LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run AS FC
+     LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run FC
        ON FC.RR_ID = RR.ID
-
-
+     LEFT OUTER JOIN T_Charge_Code CC 
+       ON RR.RDS_WorkPackage = CC.Charge_Code
 
 
 GO

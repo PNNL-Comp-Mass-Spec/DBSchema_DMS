@@ -18,6 +18,7 @@ CREATE TABLE [dbo].[T_Charge_Code](
 	[Inactive_Date] [datetime] NULL,
 	[SubAccount_Inactive_Date] [datetime] NULL,
 	[Inactive_Date_Most_Recent] [datetime] NULL,
+	[Deactivated] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Auth_Amt] [numeric](12, 0) NOT NULL,
 	[Auth_PRN] [varchar](5) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auth_HID] [varchar](7) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -26,7 +27,7 @@ CREATE TABLE [dbo].[T_Charge_Code](
 	[Last_Affected] [datetime] NOT NULL,
 	[Usage_SamplePrep] [int] NULL,
 	[Usage_RequestedRun] [int] NULL,
-	[SortKey]  AS (CONVERT([varchar](3),(5)-[Charge_Code_State],(0))+[Charge_Code]),
+	[SortKey]  AS ((CONVERT([varchar](3),[Charge_Code_State],(0))+case when [Deactivated]='Y' then '0' else '1' end)+[Charge_Code]),
  CONSTRAINT [PK_T_Charge_Code] PRIMARY KEY CLUSTERED 
 (
 	[Charge_Code] ASC
@@ -49,7 +50,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 06/05/2013 19:37:23 ******/
+/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 06/06/2013 12:23:35 ******/
 CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code] 
 (
 	[SortKey] ASC
@@ -88,6 +89,8 @@ ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_
 REFERENCES [T_Charge_Code_State] ([Charge_Code_State])
 GO
 ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Deactivated]  DEFAULT ('N') FOR [Deactivated]
 GO
 ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Auto_Defined]  DEFAULT ((0)) FOR [Auto_Defined]
 GO

@@ -53,6 +53,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			               - Renamed parameter @SeparationType to @SeparationGroup
 **			05/02/2013 mem - Now validating that fields @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent are 'Yes', 'No', '', or Null
 **			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
+**			06/06/2013 mem - Now showing warning if the work package is deactivated
 **    
 *****************************************************/
 (
@@ -335,8 +336,16 @@ As
 						@allowNoneWP,
 						@msg output
 
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+
+	If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')	   
+		Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ')
+	Else
+	Begin
+		If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
+			Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ')
+	End
 		
 	---------------------------------------------------
 	-- Auto-change separation type to separation group, if applicable
