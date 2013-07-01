@@ -5,13 +5,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Users](
 	[U_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[U_Name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[U_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_HID] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[ID] [int] IDENTITY(2000,1) NOT NULL,
 	[U_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_email] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[U_domain] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[U_netid] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[U_Payroll] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[U_active] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_update] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[U_created] [datetime] NULL,

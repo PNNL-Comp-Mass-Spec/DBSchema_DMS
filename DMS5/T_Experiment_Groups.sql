@@ -52,6 +52,7 @@ ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Users] FOREIGN KEY([Researcher])
 REFERENCES [T_Users] ([U_PRN])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups] CHECK CONSTRAINT [FK_T_Experiment_Groups_T_Users]
 GO

@@ -19,7 +19,7 @@ SELECT RR.ID AS Request,
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
        U.U_Name AS Requester,
-       RR.RDS_Oper_PRN AS PRN,
+       RR.RDS_Oper_PRN AS [Username],
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_Origin AS Origin,
@@ -35,10 +35,10 @@ SELECT RR.ID AS Request,
        RR.RDS_Blocking_Factor AS [Blocking Factor],
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
-       CASE WHEN ISNULL(CC.Deactivated, 'N') = 'Y' THEN RR.RDS_WorkPackage + ' (deactivated)'
-                 WHEN ISNULL(CC.Charge_Code_State, 1) = 0 THEN RR.RDS_WorkPackage + ' (likely deactivated)'
-                 ELSE RR.RDS_WorkPackage 
-            END AS [Work Package],
+       RR.RDS_WorkPackage [Work Package],
+       CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
+            ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
+            END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
@@ -68,7 +68,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run FC
        ON FC.RR_ID = RR.ID
-     LEFT OUTER JOIN T_Charge_Code CC 
+     LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
 
 

@@ -32,6 +32,7 @@ CREATE Procedure dbo.ValidateAnalysisJobProteinParameters
 **			01/12/2012 mem - Updated error message for error -50001
 **			05/15/2012 mem - Updated error message for error -50001
 **			09/25/2012 mem - Expanded @organismDBFileName to varchar(128)
+**			06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
 
 **	Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -186,48 +187,21 @@ As
 	If @protCollNameList <> 'na'
 	Begin -- <a2>
 		
-		DECLARE @tmpCommaPosition int
-		Set @tmpCommaPosition = 0
-		DECLARE @tmpStartPosition int
-		Set @tmpStartPosition = 0
-		DECLARE @tmpEndPosition int
-		Set @tmpEndPosition = 0
-		DECLARE @tmpCollectionID int
-		
-		DECLARE @tmpCollName varchar(128)
 		DECLARE @collListTable table(Collection_ID int Identity(1,1), Collection_Name varchar(128))
-		DECLARE @tmpExtPosition int
+		
+		INSERT INTO @collListTable (Collection_Name)
+		SELECT DISTINCT LTrim(RTrim(Value))
+		FROM dbo.udfParseDelimitedList(@protCollNameList, ',')
 		
 		DECLARE @cleanCollNameList varchar(max)
 		Set @cleanCollNameList = ''
-
-		-- Get individual collection names, place into tmptable
+	
+		DECLARE @tmpCollName varchar(128)
+		DECLARE @tmpExtPosition int
+		DECLARE @tmpCollectionID int
 		
-		While (@tmpCommaPosition < Len(@protCollNameList))
-		Begin -- <b1>
-			Set @tmpCommaPosition =  CHARINDEX(',', @protCollNameList, @tmpStartPosition)
-			If @tmpCommaPosition = 0
-			Begin
-				Set	@tmpCommaPosition = Len(@protCollNameList) + 1
-			End
-			Set @tmpEndPosition = @tmpCommaPosition - @tmpStartPosition
-			
-			Set @tmpCollName = LTRIM(RTRIM(SUBSTRING(@protCollNameList, @tmpStartPosition, @tmpEndPosition)))
-
-			If Len(@tmpCollName) > 0
-			Begin
-				INSERT INTO @collListTable (Collection_Name)
-				VALUES (@tmpCollName)
-			End
-			
-			Set @tmpStartPosition = @tmpCommaPosition + 1
-		End -- </b1>
-
-		DECLARE @loopCounter int
-		Set @loopCounter = 0
-		
-		DECLARE @itemCounter int
-		Set @itemCounter = 0
+		DECLARE @loopCounter int = 0
+		DECLARE @itemCounter int = 0
 		
 		declare @isEncrypted tinyint
 		declare @isAuthorized tinyint
@@ -315,8 +289,8 @@ As
 		** Check Validity of Creation Options List
 		****************************************************************/
 		
-		Set @tmpCommaPosition = 0
-		Set @tmpStartPosition = 0
+		DECLARE @tmpCommaPosition int = 0
+		DECLARE @tmpStartPosition int = 0
 		
 		DECLARE @tmpOptionKeyword varchar(64)
 		DECLARE @tmpOptionKeywordID int
@@ -480,8 +454,6 @@ As
 	End -- </a2>
 	
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [BUILTIN\Administrators] AS [dbo]

@@ -175,14 +175,6 @@ AS
 	End
 
 GO
-GRANT DELETE ON [dbo].[T_ParamValue] TO [PNL\D3m480] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_ParamValue] TO [PNL\D3m480] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_ParamValue] TO [PNL\D3m480] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_ParamValue] TO [PNL\D3m480] AS [dbo]
-GO
 GRANT UPDATE ON [dbo].[T_ParamValue] ([Last_Affected]) TO [DMSWebUser] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_ParamValue] ([Entered_By]) TO [DMSWebUser] AS [dbo]

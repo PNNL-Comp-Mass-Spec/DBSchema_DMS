@@ -12,10 +12,10 @@ CREATE Procedure AddUpdateUser
 **
 **	Parameters: 
 **
-**		@UserPRN        D+Payroll number for the User
-**		@UserName       User's name 
-**		@HanfordIDNum	Hanford ID number for user
-**		@AccessList     List of access permissions for user 
+**		@Username                Network login for the User (was traditionally D+Payroll number, but switched to last name plus 3 digits around 2011)
+**		@LastNameFirstName       User's Last Name then First Name
+**		@HanfordIDNum	         Hanford ID number for user
+**		@AccessList              List of access permissions for user 
 **	
 **
 **	Auth:	grk
@@ -25,14 +25,17 @@ CREATE Procedure AddUpdateUser
 **			10/14/2010 mem - Added @Comment
 **			06/01/2012 mem - Added Try/Catch block
 **			06/05/2013 mem - Now calling AddUpdateUserOperations
+**			06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @Username)
 **
 *****************************************************/
 (
-	@UserPRN varchar(50), 
-	@UserName varchar(50), 
+	@Username varchar(50), 
 	@HanfordIDNum varchar(50), 
-	@UserStatus varchar(24), 
-	@UserUpdate varchar(1),
+	@LastNameFirstName varchar(128),		-- Cannot be blank (though this field is auto-updated by UpdateUsersFromWarehouse)
+	@Payroll varchar(32),					-- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
+	@Email varchar(64),						-- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
+	@UserStatus varchar(24),				-- Active or Inactive (whether or not user is Active in DMS)
+	@UserUpdate varchar(1),					-- Y or N  (whether or not to auto-update using UpdateUsersFromWarehouse)
 	@OperationsList varchar(1024),
 	@Comment varchar(512) = '',
 	@mode varchar(12) = 'add', -- or 'update'
@@ -58,17 +61,17 @@ As
 		---------------------------------------------------
 
 		set @myError = 0
-		if LEN(@UserPRN) < 1
+		if LEN(@Username) < 1
 		begin
 			set @myError = 51000
-			RAISERROR ('User PRN was blank',
+			RAISERROR ('Username was blank',
 				11, 1)
 		end
 
-		if LEN(@UserName) < 1
+		if LEN(@LastNameFirstName) < 1
 		begin
 			set @myError = 51001
-			RAISERROR ('User Name was blank',
+			RAISERROR ('Last Name, First Name was blank',
 				11, 1)
 		end
 		--
@@ -96,13 +99,13 @@ As
 		declare @UserID int
 		set @UserID = 0
 		--
-		execute @UserID = GetUserID @UserPRN
+		execute @UserID = GetUserID @Username
 
 		-- cannot create an entry that already exists
 		--
 		if @UserID <> 0 and @mode = 'add'
 		begin
-			set @msg = 'Cannot add: User "' + @UserPRN + '" already in database '
+			set @msg = 'Cannot add: User "' + @Username + '" already in database '
 			RAISERROR (@msg, 11, 1)
 			return 51004
 		end
@@ -111,7 +114,7 @@ As
 		--
 		if @UserID = 0 and @mode = 'update'
 		begin
-			set @msg = 'Cannot update: User "' + @UserPRN + '" is not in database '
+			set @msg = 'Cannot update: User "' + @Username + '" is not in database '
 			RAISERROR (@msg, 11, 1)
 			return 51004
 		end
@@ -126,13 +129,17 @@ As
 				U_PRN, 
 				U_Name, 
 				U_HID, 
+				U_Payroll,
+				U_Email,
 				U_Status, 
 				U_update,
 				U_comment
 			) VALUES (
-				@UserPRN,
-				@UserName,
+				@Username,
+				@LastNameFirstName,
 				@HanfordIDNum,
+				@Payroll,
+				@Email,
 				@UserStatus, 
 				@UserUpdate,
 				ISNULL(@Comment, '')
@@ -146,7 +153,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Insert operation failed: "' + @UserPRN + '"'
+				set @msg = 'Insert operation failed: "' + @Username + '"'
 				RAISERROR (@msg, 11, 1)
 				return 51007
 			end
@@ -165,19 +172,21 @@ As
 				--
 				UPDATE T_Users
 				SET 
-					U_Name = @UserName, 
+					U_Name = @LastNameFirstName, 
 					U_HID = @HanfordIDNum, 
+					U_Payroll = @Payroll,
+					U_Email = @Email,
 					U_Status = @UserStatus,
 					U_Active = 'N',
 					U_update = 'N',
 					U_comment = @Comment
-				WHERE (U_PRN = @UserPRN)
+				WHERE (U_PRN = @Username)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
 				if @myError <> 0
 				begin
-					set @msg = 'Update operation failed: "' + @UserPRN + '"'
+					set @msg = 'Update operation failed: "' + @Username + '"'
 					RAISERROR (@msg, 11, 1)
 					return 51004
 				end
@@ -188,18 +197,20 @@ As
 				--
 				UPDATE T_Users
 				SET 
-					U_Name = @UserName, 
+					U_Name = @LastNameFirstName, 
 					U_HID = @HanfordIDNum, 
+					U_Payroll = @Payroll,
+					U_Email = @Email,
 					U_Status = @UserStatus,
 					U_update = @UserUpdate,
 					U_comment = @Comment
-				WHERE (U_PRN = @UserPRN)
+				WHERE (U_PRN = @Username)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
 				if @myError <> 0
 				begin
-					set @msg = 'Update operation failed: "' + @UserPRN + '"'
+					set @msg = 'Update operation failed: "' + @Username + '"'
 					RAISERROR (@msg, 11, 1)
 					return 51004
 				end

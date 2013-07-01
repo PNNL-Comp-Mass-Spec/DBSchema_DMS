@@ -27,7 +27,8 @@ CREATE TABLE [dbo].[T_Charge_Code](
 	[Last_Affected] [datetime] NOT NULL,
 	[Usage_SamplePrep] [int] NULL,
 	[Usage_RequestedRun] [int] NULL,
-	[SortKey]  AS ((CONVERT([varchar](3),[Charge_Code_State],(0))+case when [Deactivated]='Y' then '0' else '1' end)+[Charge_Code]),
+	[Activation_State] [tinyint] NOT NULL,
+	[SortKey]  AS ((CONVERT([varchar](3),[Charge_Code_State],(0))+case when [Deactivated]='Y' then '0' else '1' end)+[Charge_Code]) PERSISTED,
  CONSTRAINT [PK_T_Charge_Code] PRIMARY KEY CLUSTERED 
 (
 	[Charge_Code] ASC
@@ -50,7 +51,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 06/06/2013 12:23:35 ******/
+/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 07/01/2013 12:49:27 ******/
 CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code] 
 (
 	[SortKey] ASC
@@ -61,12 +62,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Charge_Code] on [dbo].[T_Charge_Code]
 For Update
 /****************************************************
 **
 **	Desc: 
-**		Makes the Last_Affected column
+**		Updates the Last_Affected and Activation_State columns
+**
+**	Auth:	mem
+**	Date:	06/05/2013 mem - Initial Version
+**			06/07/2013 mem - Now updating Activation_State
+
 **    
 *****************************************************/
 AS
@@ -83,7 +90,32 @@ AS
 			 inserted ON CC.Charge_Code = inserted.Charge_Code
 
 	End
+	
+	If Update(Deactivated) OR
+	   Update(Charge_Code_State) OR
+	   Update(Usage_SamplePrep) OR
+	   Update(Usage_RequestedRun) OR
+	   Update(Activation_State)
+	Begin		
+		UPDATE T_Charge_Code
+		SET Activation_State = dbo.ChargeCodeActivationState(
+		          inserted.Deactivated, 
+		          inserted.Charge_Code_State, 
+		          inserted.Usage_SamplePrep, 
+		          inserted.Usage_RequestedRun)
+		FROM T_Charge_Code CC
+		     INNER JOIN inserted
+		       ON CC.Charge_Code = inserted.Charge_Code
 
+	End
+
+
+
+GO
+ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State] FOREIGN KEY([Activation_State])
+REFERENCES [T_Charge_Code_Activation_State] ([Activation_State])
+GO
+ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State]
 GO
 ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State] FOREIGN KEY([Charge_Code_State])
 REFERENCES [T_Charge_Code_State] ([Charge_Code_State])
@@ -97,4 +129,6 @@ GO
 ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Charge_Code_State]  DEFAULT ((1)) FOR [Charge_Code_State]
 GO
 ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Activation_State]  DEFAULT ((0)) FOR [Activation_State]
 GO

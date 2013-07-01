@@ -201,6 +201,7 @@ ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Materia
 GO
 ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Users] FOREIGN KEY([CC_PI_PRN])
 REFERENCES [T_Users] ([U_PRN])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Users]
 GO

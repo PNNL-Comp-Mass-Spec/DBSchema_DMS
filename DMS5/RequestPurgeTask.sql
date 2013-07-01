@@ -45,6 +45,7 @@ CREATE Procedure RequestPurgeTask
 **			06/14/2012 mem - Now sorting by Purge_Priority, then by OrderByCol
 **						   - Now including PurgePolicy in the job parameters table (0=Auto, 1=Purge All except QC Subfolder, 2=Purge All)
 **						   - Now looking for state 3, 14, or 15 when actually selecting a dataset to purge
+**			06/07/2013 mem - Now sorting by Archive_State_ID, Purge_Priority, then OrderByCol
 **    
 *****************************************************/
 (
@@ -196,7 +197,7 @@ As
 	VALUES ('V_Purgable_Datasets_NoJob',                  21,  'Created')
 	
 	INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-	VALUES ('V_Purgable_Datasets',                        21,  'MostRecentJob')
+	VALUES ('V_Purgable_Datasets',     21,  'MostRecentJob')
 	
 	---------------------------------------------------
 	-- Process each of the views in #TmpPurgeViews
@@ -283,10 +284,11 @@ As
 			Set @S = @S +                'Src.' + @OrderByCol + ', '
 			Set @S = @S +               '''' + @PurgeViewSourceDesc + ''' AS Source,'
 			Set @S = @S +               ' Row_Number() OVER ( PARTITION BY Src.StorageServerName, Src.ServerVol '
-			Set @S = @S +                                   ' ORDER BY Src.' + @OrderByCol + ', Src.Dataset_ID ) AS RowNumVal,'
+			Set @S = @S +                                   ' ORDER BY Src.Archive_State_ID, Src.Purge_Priority, Src.' + @OrderByCol + ', Src.Dataset_ID ) AS RowNumVal,'
 			Set @S = @S +               ' Src.StorageServerName,'
 			Set @S = @S +               ' Src.ServerVol,'
 			Set @S = @S +               ' Src.StageMD5_Required,'
+			Set @S = @S +               ' Src.Archive_State_ID,'
 			Set @S = @S +               ' Src.Purge_Priority'
 			Set @S = @S +        ' FROM ' + @PurgeViewName + ' Src'
 			Set @S = @S +               ' LEFT OUTER JOIN #TmpStorageVolsToSkip '
@@ -311,7 +313,7 @@ As
 			
 			Set @S = @S +     ') LookupQ'
 			Set @S = @S + ' WHERE RowNumVal <= ' + Convert(varchar(12), @PreviewCount)
-			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, Purge_Priority, ' + @OrderByCol + ', Dataset_ID'
+			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, Archive_State_ID, Purge_Priority, ' + @OrderByCol + ', Dataset_ID'
 			
 			If @PreviewSql <> 0
 				Print @S
@@ -400,7 +402,7 @@ As
 		     INNER JOIN T_Dataset DS
 		       ON DS.Dataset_ID = DA.AS_Dataset_ID
 		     INNER JOIN T_Storage_Path SPath
-		       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+		 ON DS.DS_storage_path_ID = SPath.SP_path_ID
 		     INNER JOIN T_Archive_Path ArchPath
 		       ON DA.AS_storage_path_ID = ArchPath.AP_path_ID
 		ORDER BY #PD.EntryID

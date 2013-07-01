@@ -6,12 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_User_Detail_Report]
 AS
-SELECT U.U_PRN AS PRN,
-       U.U_HID AS HID,
+SELECT U.U_PRN AS [Username],
+       U.U_HID AS [Hanford ID],       
        U.U_Name AS Name,
+       U.U_Payroll AS Payroll,
        U.U_email AS Email,
-       U.U_Status AS Status,
-       U.U_update AS UserUpdate,
+       U.U_Status AS [User Status],
+       U.U_update AS [User Update],
        dbo.GetUserOperationsList(U.ID) AS [Operations List],
        U.U_comment AS [Comment],
        U.ID,
@@ -31,6 +32,7 @@ FROM T_Users U
                             INNER JOIN T_EUS_Users EU
                               ON ESS.ID = EU.Site_Status ) EU
        ON EU.HID = U.U_HID AND EU.RowRank = 1
+
 
 
 GO

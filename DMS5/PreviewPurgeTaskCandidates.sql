@@ -18,6 +18,7 @@ CREATE PROCEDURE PreviewPurgeTaskCandidates
 **	Date:	12/30/2010 mem - Initial version
 **			01/11/2011 mem - Renamed parameter @ServerVol to @ServerDisk when calling RequestPurgeTask
 **			02/01/2011 mem - Now passing parameter @ExcludeStageMD5RequiredDatasets to RequestPurgeTask
+**			06/07/2013 mem - Now auto-updating @StorageServerName and @StorageVol to match the format required by RequestPurgeTask
 **    
 *****************************************************/
 (
@@ -49,6 +50,25 @@ As
 	If @DatasetsPerShare < 1
 		Set @DatasetsPerShare = 1
 
+	-- Auto change \\proto-6 to proto-6
+	If @StorageServerName Like '\\%'
+		Set @StorageServerName = Substring(@StorageServerName, 3, 50)
+
+	-- Auto change proto-6\ to proto-6
+	If @StorageServerName Like '%\'
+		Set @StorageServerName = Substring(@StorageServerName, 1, Len(@StorageServerName)-1)
+
+	-- Auto change drive F to F:\
+	If @StorageVol Like '[A-Z]'
+		Set @StorageVol = @StorageVol + ':\'
+	
+	-- Auto change drive F: to F:\
+	If @StorageVol Like '[a-z]:'
+		Set @StorageVol = @StorageVol + '\'
+	
+	Print 'Server: ' + @StorageServerName
+	Print 'Volume: ' + @StorageVol
+	
 	--------------------------------------------------
 	-- Call RequestPurgeTask to obtain the data
 	--------------------------------------------------

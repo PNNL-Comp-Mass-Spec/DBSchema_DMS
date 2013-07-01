@@ -25,6 +25,7 @@ CREATE Procedure dbo.StandardizeProteinCollectionList
 **	Date:	06/08/2006
 **			08/11/2006 mem - Updated to place contaminants collections at the end of the list
 **			10/04/2007 mem - Increased @protCollNameList from varchar(2048) to varchar(max)
+**			06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
 **    
 *****************************************************/
 (
@@ -51,7 +52,7 @@ As
 	-- Populate a temporary table with the protein collections 
 	-- in @protCollNameList
 	---------------------------------------------------
-	If @protCollNameList <> 'na' And @protCollNameList <> ''
+	If Not @protCollNameList IN ('', 'na')
 	Begin
 		CREATE TABLE #TmpProteinCollections (
 			Unique_ID int identity(1,1) NOT NULL,
@@ -61,14 +62,14 @@ As
 
 		-- Split @protCollNameList on commas and populate #TmpProteinCollections
 		INSERT INTO #TmpProteinCollections (Collection_Name)
-		SELECT Value
+		SELECT DISTINCT LTrim(RTrim(Value))
 		FROM dbo.udfParseDelimitedList(@protCollNameList, ',')
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 
 		-- Make sure no zero-length records are present in #TmpProteinCollections
 		DELETE FROM #TmpProteinCollections
-		WHERE Len(LTrim(RTrim(Collection_Name))) = 0
+		WHERE Len(Collection_Name) = 0
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 		

@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Purgable_Datasets_NoInterest]
 AS
 SELECT DS.Dataset_ID,
@@ -15,7 +13,8 @@ SELECT DS.Dataset_ID,
        InstClass.raw_data_type,
        DA.AS_StageMD5_Required AS StageMD5_Required,
        MAX(COALESCE(AJ.AJ_Start, AJ.AJ_created, DS.DS_Created)) AS MostRecentJob,	-- Note: Do not use AJ_Finish since numerous old jobs were re-run in December 2011
-       DA.Purge_Priority
+       DA.Purge_Priority,
+       DA.AS_state_ID AS Archive_State_ID
 FROM dbo.T_Dataset AS DS
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
@@ -43,10 +42,8 @@ WHERE (InstClass.is_purgable > 0) AND
       ) AND
       (DS.DS_rating < 2)
 GROUP BY DS.Dataset_ID, SPath.SP_machine_name, SPath.SP_vol_name_server, 
-         DS.DS_created, InstClass.raw_data_type, DA.AS_StageMD5_Required, DA.Purge_Priority
-
-
-
+         DS.DS_created, InstClass.raw_data_type, DA.AS_StageMD5_Required, 
+         DA.Purge_Priority, DA.AS_state_ID
 
 
 GO

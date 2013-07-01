@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Purgable_Datasets_NoJob]
 AS
 SELECT DS.Dataset_ID,
@@ -14,7 +12,8 @@ SELECT DS.Dataset_ID,
        DS.DS_created AS Created,
        InstClass.raw_data_type,
        DA.AS_StageMD5_Required AS StageMD5_Required,
-       DA.Purge_Priority
+       DA.Purge_Priority,
+       DA.AS_state_ID AS Archive_State_ID
 FROM dbo.T_Dataset AS DS
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
@@ -40,9 +39,6 @@ WHERE (InstClass.is_purgable > 0) AND
       ) AND
       (DS.Dataset_ID NOT IN ( SELECT AJ_datasetID
                               FROM dbo.T_Analysis_Job ))
-
-
-
 
 
 GO

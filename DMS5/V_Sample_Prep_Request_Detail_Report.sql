@@ -32,10 +32,8 @@ AS
             SPR.UseSingleLCColumn AS [Use single LC column] ,
             SPR.BlockAndRandomizeRuns AS [Block And Randomize Runs] ,
             SPR.Sample_Naming_Convention AS [Sample Group Naming Prefix] ,
-            CASE WHEN ISNULL(CC.Deactivated, 'N') = 'Y' THEN SPR.Work_Package_Number + ' (deactivated)'
-                 WHEN ISNULL(CC.Charge_Code_State, 1) = 0 THEN SPR.Work_Package_Number + ' (likely deactivated)'
-                 ELSE SPR.Work_Package_Number 
-            END AS [Work Package Number] ,
+            SPR.Work_Package_Number [Work Package Number] ,
+            ISNULL(CC.Activation_State_Name, 'Invalid') AS [Work Package State],
             SPR.Project_Number AS [Project Number] ,
             SPR.EUS_UsageType AS [EUS Usage Type] ,
             SPR.EUS_Proposal_ID AS [EUS Proposal] ,
@@ -63,7 +61,8 @@ AS
                               GROUP BY  Request_ID
                             ) AS NU ON SPR.ID = NU.Request_ID
             LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
-            LEFT OUTER JOIN T_Charge_Code CC ON SPR.Work_Package_Number = CC.Charge_Code
+            LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
+
 
 
 GO

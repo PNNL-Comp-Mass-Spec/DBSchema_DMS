@@ -4,9 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Charge_Code_Detail_Report]
 AS
 SELECT CC.Charge_Code,
+       CCA.Activation_State_Name AS State,
        CC.WBS_Title AS WBS,
        CC.Charge_Code_Title AS Title,
        CC.SubAccount AS SubAccount_ID,
@@ -27,9 +29,10 @@ SELECT CC.Charge_Code,
        CC.Charge_Code_State,
        CC.Last_Affected
 FROM T_Charge_Code CC
+     INNER JOIN T_Charge_Code_Activation_State CCA
+       ON CC.Activation_State = CCA.Activation_State
      LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map DMSUser
        ON CC.Charge_Code = DMSUser.Charge_Code
-
 
 
 GO

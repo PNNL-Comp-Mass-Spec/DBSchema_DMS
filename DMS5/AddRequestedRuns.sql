@@ -33,6 +33,8 @@ CREATE PROCEDURE AddRequestedRuns
 **		12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
 **		02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
 **		02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**		06/13/2013 mem - Added @VialingConc and @VialingVol
+					   - Now validating @WorkPackageNumber against T_Charge_Code
 **
 *****************************************************/
 (
@@ -41,7 +43,7 @@ CREATE PROCEDURE AddRequestedRuns
 	@requestNamePrefix varchar(32) = '',	-- Actually used as the request name Suffix
 	@operPRN varchar(64),
 	@instrumentName varchar(64),			-- Instrument group; could also contain "(lookup)"
-	@workPackage varchar(50),
+	@workPackage varchar(50),				-- Work Package; could also contain "(lookup)"
 	@msType varchar(20),
 		-- optional arguments
 	@instrumentSettings varchar(512) = "na",
@@ -54,6 +56,8 @@ CREATE PROCEDURE AddRequestedRuns
 	@message varchar(512) output,
 	@secSep varchar(64) = 'LC-Formic_100min',		-- Separation group
 	@MRMAttachment varchar(128),
+	@VialingConc varchar(32) = Null,
+	@VialingVol varchar(32) = Null,
 	@callingUser varchar(128) = ''
 )
 As
@@ -127,6 +131,24 @@ As
 	--
 	if @myError <> 0
 		return @myError
+		
+	---------------------------------------------------
+	-- Validate the work package
+	-- This validation also occurs in AddUpdateRequestedRun but we want to validate it now before we enter the while loop
+	---------------------------------------------------
+
+	Declare @allowNoneWP tinyint = 0
+	
+	If @workPackage <> '(lookup)'
+	Begin
+		exec @myError = ValidateWP
+							@workPackage,
+							@allowNoneWP,
+							@msg output
+
+		If @myError <> 0
+			RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+	End
 
 	---------------------------------------------------
 	-- Populate a temorary table with the experiments to process
@@ -239,7 +261,9 @@ As
 									@secSep = @secSep,
 									@MRMAttachment = @MRMAttachment,
 									@status = 'Active',
-									@callingUser = @callingUser
+									@callingUser = @callingUser,
+									@VialingConc = @VialingConc,
+									@VialingVol = @VialingVol
 			--
 			set @message = '[' + @ExperimentName + '] ' + @message 
 			

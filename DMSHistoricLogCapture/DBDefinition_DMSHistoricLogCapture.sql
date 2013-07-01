@@ -2,7 +2,7 @@
 CREATE DATABASE [DMSHistoricLogCapture] ON  PRIMARY 
 ( NAME = N'DMSHistLogCapture_dat', FILENAME = N'I:\SQLServerData\DMSHistoricLogCapture.mdf' , SIZE = 14736640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'DMSHistLogCapture_log', FILENAME = N'E:\SQLServerData\DMSHistoricLogCapture_log.ldf' , SIZE = 13888KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'DMSHistLogCapture_log', FILENAME = N'E:\SQLServerData\DMSHistoricLogCapture_log.ldf' , SIZE = 4736KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMSHistoricLogCapture] SET COMPATIBILITY_LEVEL = 100

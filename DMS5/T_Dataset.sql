@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[T_Dataset](
 	[File_Info_Last_Modified] [datetime] NULL,
 	[Interval_to_Next_DS] [int] NULL,
 	[Acq_Length_Minutes]  AS (isnull(datediff(minute,[Acq_Time_Start],[Acq_Time_End]),(0))) PERSISTED NOT NULL,
- CONSTRAINT [PK_T_Dataset] PRIMARY KEY NONCLUSTERED 
+ CONSTRAINT [PK_T_Dataset] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
@@ -40,17 +40,17 @@ CREATE TABLE [dbo].[T_Dataset](
 
 GO
 
-/****** Object:  Index [IX_T_Dataset_Created] ******/
-CREATE CLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
-(
-	[DS_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-
 /****** Object:  Index [IX_T_Dataset_Acq_Time_Start] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Acq_Time_Start] ON [dbo].[T_Dataset] 
 (
 	[Acq_Time_Start] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_Created] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Created] ON [dbo].[T_Dataset] 
+(
+	[DS_created] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 

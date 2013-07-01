@@ -63,6 +63,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/26/2013 mem - Added parameter @callingUser
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **			05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
+**			06/10/2013 mem - Now filtering on Analysis_Tool when checking whether an HMS_AutoSupersede file existing for the given settings file
 **
 *****************************************************/
 (
@@ -298,7 +299,8 @@ As
 		
 		SELECT @AutoSupersedeName = HMS_AutoSupersede
 		FROM T_Settings_Files
-		WHERE (File_Name = @settingsFileName)
+		WHERE [File_Name] = @settingsFileName AND
+		       Analysis_Tool = @toolName
 		
 		If IsNull(@AutoSupersedeName, '') <> ''
 		Begin

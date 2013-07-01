@@ -54,7 +54,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IX_T_Job_Steps_History_JobStepSavedCombo]    Script Date: 05/28/2013 20:07:56 ******/
+/****** Object:  Index [IX_T_Job_Steps_History_JobStepSavedCombo]    Script Date: 07/01/2013 12:49:12 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Job_Steps_History_JobStepSavedCombo] ON [dbo].[T_Job_Steps_History] 
 (
 	[JobStepSavedCombo] ASC

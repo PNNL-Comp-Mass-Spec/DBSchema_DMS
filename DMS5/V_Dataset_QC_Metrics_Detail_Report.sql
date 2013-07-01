@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Dataset_QC_Metrics_Detail_Report]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
@@ -79,7 +80,9 @@ SELECT InstName.IN_Group AS [Instrument Group],
        DQC.MS2_1, DQC.MS2_2, DQC.MS2_3, 
        DQC.MS2_4A, DQC.MS2_4B, DQC.MS2_4C, DQC.MS2_4D,
        DQC.P_1A, DQC.P_1B, DQC.P_2A, DQC.P_2B, DQC.P_2C, DQC.P_3,
-       DQC.Last_Affected AS Smaqc_Last_Affected
+       DQC.Last_Affected AS Smaqc_Last_Affected,
+       DQC.QCDM,
+       DQC.QCDM_Last_Affected
 FROM T_Dataset_QC DQC
      INNER JOIN T_Dataset DS
        ON DQC.Dataset_ID = DS.Dataset_ID
@@ -87,6 +90,7 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN dbo.V_Dataset_Folder_Paths DFP
        ON DQC.Dataset_ID = DFP.Dataset_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Detail_Report] TO [PNL\D3M578] AS [dbo]

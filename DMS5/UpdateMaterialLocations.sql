@@ -22,6 +22,7 @@ CREATE Procedure [dbo].[UpdateMaterialLocations]
 **	Auth: 	grk
 **	Date:	06/02/2013 grk - initial release
 **			06/03/2013 grk - added action attribute to XML
+**			06/06/2013 grk - added code to update status
 **    
 *****************************************************/
 (
@@ -64,7 +65,8 @@ As
 			Location VARCHAR(256),
 			ID VARCHAR(256) NULL,
 			[Action] VARCHAR(256) NULL,
-			[Value] VARCHAR(256) NULL
+			[Value] VARCHAR(256) NULL,
+			[Old_Value] VARCHAR(256) NULL
 		)
 
 		-----------------------------------------------------------
@@ -90,18 +92,36 @@ As
 		if @myError <> 0
 			RAISERROR ('Error reading in location list', 11, 9)
 			
+
+		-----------------------------------------------------------
+		-- Get current status values
+		-----------------------------------------------------------
+		
+		UPDATE [#TMP]
+			SET Old_Value = TML.Status
+		FROM T_Material_Locations AS TML
+			INNER JOIN [#TMP] ON TML.Tag = [#TMP].Location
+		WHERE ( [#TMP].Action = 'Status' )
+
+		-----------------------------------------------------------
+		-- Update status values that have changed
+		-----------------------------------------------------------
+
+		IF @infoOnly = 0
+		BEGIN
+			UPDATE T_Material_Locations
+			SET Status = [#TMP].Value
+			FROM [#TMP]
+				INNER JOIN T_Material_Locations ON T_Material_Locations.Tag = [#TMP].Location
+			WHERE ( [#TMP].Action = 'Status' )
+				AND ( NOT ( [#TMP].Value = ISNULL([#TMP].Old_Value, '') ) )
+		END			
+
 		-----------------------------------------------------------
 		IF @infoOnly > 0
 		BEGIN
 			SELECT * FROM #TMP
 		END			
-
-		-----------------------------------------------------------
-		-- 
-		-----------------------------------------------------------
-
-		RAISERROR ('Intentional Error: %d', 11, 66, @myRowCount)
-
 
 		---------------------------------------------------
 		-- Log SP usage

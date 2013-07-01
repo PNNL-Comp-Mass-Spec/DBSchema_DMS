@@ -18,6 +18,8 @@ CREATE Procedure dbo.UpdateUsersFromWarehouse
 **
 **	Auth: 	mem
 **	Date: 	03/25/2013 mem - Initial version
+**			06/07/2013 mem - Removed U_NetID since U_Prn tracks the username
+**						   - Added column U_Payroll to track the Payroll number
 **    
 *****************************************************/
 (
@@ -46,6 +48,7 @@ AS
 			Email varchar(128) NULL,
 			Domain varchar(64) NULL,
 			NetworkLogin varchar(64) NULL,
+			PNNL_Payroll varchar(32) NULL,
 			Active varchar(8) NOT NULL,
 			UpdateRequired tinyint NOT NULL
 		)
@@ -61,6 +64,7 @@ AS
 		                           Email,
 		                           Domain,
 		                           NetworkLogin,
+		                           PNNL_Payroll,
 		                           Active,
 		                           UpdateRequired )
 		SELECT U.ID,
@@ -68,6 +72,7 @@ AS
 		       INTERNET_EMAIL_ADDRESS,
 		       NETWORK_DOMAIN,
 		       NETWORK_ID,
+		       PNNL_PAY_NO,
 		       IsNull(ACTIVE_SW, 'N') AS Active,
 		       0 AS UpdateRequired
 		FROM T_Users U
@@ -87,6 +92,7 @@ AS
 		                           Email,
 		                           Domain,
 		                           NetworkLogin,
+		                           PNNL_Payroll,
 		                           Active,
 		                           UpdateRequired )
 		SELECT U.ID,
@@ -94,6 +100,7 @@ AS
 		       Src.internet_address,
 		       NetworkInfo.NETWORK_DOMAIN,
 		       NetworkInfo.NETWORK_ID,
+		       NULL AS PNNL_Payroll,
 		       IsNull(Src.pnl_maintained_sw, 'N') AS Active,
 		       0 AS UpdateRequired
 		FROM T_Users U
@@ -120,7 +127,7 @@ AS
 		WHERE IsNull(U.U_Name, '') <> IsNull(Src.Name, IsNull(U.U_Name, '')) OR
 		      IsNull(U.U_email, '') <> IsNull(Src.Email, IsNull(U.U_email, '')) OR
 		      IsNull(U.U_domain, '') <> IsNull(Src.Domain, IsNull(U.U_domain, '')) OR
-		      IsNull(U.U_netid, '') <> IsNull(Src.NetworkLogin, IsNull(U.U_netid, '')) OR
+		      IsNull(U.U_Payroll, '') <> IsNull(Src.PNNL_Payroll, IsNull(U.U_Payroll, '')) OR
 		      IsNull(U.U_active, '') <> IsNull(Src.Active, IsNull(U.U_active, ''))
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -137,7 +144,7 @@ AS
 				SET U_Name = IsNull(Src.Name, U.U_Name),
 				    U_email = IsNull(Src.Email, U.U_email),
 				    U_domain = IsNull(Src.Domain, U.U_domain),
-				    U_netid = IsNull(Src.NetworkLogin, U.U_netid),
+				    U_Payroll = IsNull(Src.PNNL_Payroll, U.U_Payroll),
 				    U_active = Src.Active,
 				    Last_Affected = GetDate()
 				FROM T_Users U
@@ -166,7 +173,8 @@ AS
 			SELECT U.U_Name,    Src.Name AS Name_New,
 			       U.U_email,   Src.Email AS EMail_New,
 			       U.U_domain,  Src.Domain AS Domain_New,
-			       U.U_netid,   Src.NetworkLogin AS NetworkLogin_New,
+			       U.U_Payroll, Src.PNNL_Payroll AS Payroll_New,
+			       U.U_PRN,     Src.NetworkLogin AS NetworkLogin_New,
 			       U.U_active,  Src.Active AS Active_New
 			FROM T_Users U
 			     INNER JOIN #Tmp_UserInfo Src
@@ -181,11 +189,13 @@ AS
 		----------------------------------------------------------
 		--
 		DECLARE @tblUserProblems TABLE ( ID      int NOT NULL,
-		                                 Warning varchar(128) )
+		                                 Warning varchar(128),
+		                                 NetworkLogin varchar(32) NULL )
 		
-		INSERT INTO @tblUserProblems (ID, Warning)
+		INSERT INTO @tblUserProblems (ID, Warning, NetworkLogin)
 		SELECT U.ID,
-		       'User not found in the Data Warehouse'
+		       'User not found in the Data Warehouse',
+		       U.U_PRN		-- U_PRN contains the network login
 		FROM T_Users U
 		     LEFT OUTER JOIN #Tmp_UserInfo Src
 		       ON U.ID = Src.ID
@@ -215,25 +225,27 @@ AS
 		End
 
 		----------------------------------------------------------
-		-- Look for users for which U_PRN does not match U_netID
+		-- Look for users for which U_PRN does not match NetworkLogin
 		----------------------------------------------------------
 		--
-		INSERT INTO @tblUserProblems (ID, Warning)
-		SELECT ID,
-		       'Mismatch between U_PRN and U_netID'
-		FROM T_Users
-		WHERE U_update = 'y' AND
-		      U_PRN <> U_netid AND
-		      IsNull(U_netid, '') <> ''
+		INSERT INTO @tblUserProblems (ID, Warning, NetworkLogin)
+		SELECT U.ID,
+		       'Mismatch between U_PRN in DMS and NetworkLogin in Warehouse',
+		       Src.NetworkLogin
+		FROM T_Users U INNER JOIN #Tmp_UserInfo Src
+		       ON U.ID = Src.ID
+		WHERE U.U_update = 'y' AND
+		      U.U_PRN <> Src.NetworkLogin AND
+		      IsNull(Src.NetworkLogin, '') <> ''
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 			
 	
 		If @infoOnly = 0 And @myRowCount > 0
 		Begin
-			Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' with mismatch between U_PRN and U_netID: '
+			Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' with mismatch between U_PRN in DMS and NetworkLogin in Warehouse: '
 			
-			SELECT @message = @message + IsNull(U.U_PRN, '??? Undefined U_PRN for ID=' + Convert(varchar(12), U.ID) + ' ???') + ', '
+			SELECT @message = @message + IsNull(U.U_PRN, '??? Undefined U_PRN for ID=' + Convert(varchar(12), U.ID) + ' ???') + '<>' + IsNull(M.NetworkLogin, '??') + ', '
 			FROM T_Users U
 				    INNER JOIN @tblUserProblems M
 				    ON U.ID = M.ID
@@ -259,7 +271,7 @@ AS
 				       U_Status,
 				       U_email,
 				       U_domain,
-				       U_netid,
+				       M.NetworkLogin,
 				       U_active,
 				       U_created
 				FROM T_Users U

@@ -51,6 +51,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/26/2013 mem - Now calling AlterEventLogEntryUser after updating T_Analysis_Job_Request
 **			03/27/2013 mem - Now auto-updating @ownerPRN to @callingUser if @callingUser maps to a valid user
+**			06/06/2013 mem - Now setting job state to 19="Special Proc. Waiting" if analysis tool has Use_SpecialProcWaiting enabled
 **
 *****************************************************/
 (
@@ -91,7 +92,7 @@ As
 	declare @JobIDStart int
 	declare @JobIDEnd int
 		
-	declare @jobStateID int = 1
+	declare @jobStateID int
 	declare @requestStateID int = 0
 	
 	DECLARE @jobsCreated INT
@@ -324,6 +325,19 @@ As
 	if @result <> 0
 		RAISERROR ('ValidateAnalysisJobParameters:%s', 11, 8, @msg)
 	
+	
+	---------------------------------------------------
+	-- New jobs typically have state 1
+	-- Update @jobStateID to 19="Special Proc. Waiting" if necessary
+	---------------------------------------------------
+	--
+	Set @jobStateID = 1
+	--
+	If IsNull(@specialProcessing, '') <> '' AND
+	   Exists (SELECT * FROM T_Analysis_Tool WHERE AJT_toolName = @toolName AND Use_SpecialProcWaiting > 0) 
+	Begin
+		Set @jobStateID = 19
+	End
 	
 	---------------------------------------------------
 	-- Populate the Dataset_Unreviewed column in #TD

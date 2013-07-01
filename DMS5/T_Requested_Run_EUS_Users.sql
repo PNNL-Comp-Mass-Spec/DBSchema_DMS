@@ -6,7 +6,6 @@ GO
 CREATE TABLE [dbo].[T_Requested_Run_EUS_Users](
 	[EUS_Person_ID] [int] NOT NULL,
 	[Request_ID] [int] NOT NULL,
-	[Site_Status] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Requested_Run_EUS_Users] PRIMARY KEY CLUSTERED 
 (
 	[EUS_Person_ID] ASC,
@@ -40,6 +39,4 @@ REFERENCES [T_Requested_Run] ([ID])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Requested_Run_EUS_Users] CHECK CONSTRAINT [FK_T_Requested_Run_EUS_Users_T_Requested_Run]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_EUS_Users] ADD  CONSTRAINT [DF_T_Requested_Run_EUS_Users_Site_Status]  DEFAULT ((1)) FOR [Site_Status]
 GO

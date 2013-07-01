@@ -19,6 +19,7 @@ CREATE Procedure AutoAddChargeCodeUsers
 **
 **	Auth:	mem
 **	Date:	06/05/2013 mem - Initial Version
+**			06/10/2013 mem - Now storing payroll number in U_Payroll and Network_ID in U_PRN
 **
 *****************************************************/
 (
@@ -46,14 +47,16 @@ As
 	---------------------------------------------------
 	
 	CREATE TABLE #Tmp_NewUsers (
-		PRN varchar(12),
-		HID varchar(12),
+		Payroll varchar(12),
+		HID varchar(12),	
+		LastName_FirstName varchar(128),
+		Network_ID varchar(12) NULL,	
 		DMS_ID int NULL
 	)
 
 	BEGIN TRY 
 
-		INSERT INTO #Tmp_NewUsers (PRN, HID)
+		INSERT INTO #Tmp_NewUsers (Payroll, HID)
 		SELECT CC.Resp_PRN, MAX(CC.Resp_HID)
 		FROM T_Charge_Code CC
 		     LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map UMap
@@ -64,28 +67,37 @@ As
 		       CC.Usage_RequestedRun > 0)
 		GROUP BY CC.Resp_PRN
     
+    	
+		UPDATE #Tmp_NewUsers
+		SET Network_ID = W.Network_ID,
+			LastName_FirstName = PREFERRED_NAME_FM
+		FROM #Tmp_NewUsers Target
+			INNER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_BMI_EMPLOYEE W
+			ON Target.HID = W.HANFORD_ID
+		WHERE IsNull(W.Network_ID, '') <> ''
 
 		If @infoOnly = 0
 		Begin
-			If Exists (SELECT * FROM #Tmp_NewUsers)
+			If Exists (SELECT * FROM #Tmp_NewUsers WHERE NOT Network_ID Is Null)
 			Begin
-			
-				INSERT INTO T_Users( U_PRN,
+		
+
+				INSERT INTO T_Users( U_PRN,         -- Network_ID (aka login) goes in the U_PRN field
 									 U_Name,
 									 U_HID,
+									 U_Payroll,		-- Payroll number goes in the Payroll field
 									 U_Status,
 									 U_update,
 									 U_comment )
-				SELECT Src.PRN,
-					W.PREFERRED_NAME_FM AS U_Name,
-					'H' + Src.HID,
-					'Active' AS U_Status,
-					'Y' AS U_update,
-					'' AS U_comment
-				FROM #Tmp_NewUsers Src
-					INNER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_BMI_EMPLOYEE W
-					ON Src.HID = W.HANFORD_ID
-				ORDER BY Src.PRN
+				SELECT Network_ID,
+					   LastName_FirstName,
+					   'H' + HID,
+					   Payroll,
+					   'Active' AS U_Status,
+					   'Y' AS U_update,
+					   '' AS U_comment
+				FROM #Tmp_NewUsers
+				ORDER BY Network_ID
 								--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -108,7 +120,8 @@ As
 				SET DMS_ID = U.ID
 				FROM #Tmp_NewUsers
 				     INNER JOIN T_Users U
-				       ON #Tmp_NewUsers.PRN = U.U_PRN
+				       ON #Tmp_NewUsers.Network_ID = U.U_PRN
+
 
 				---------------------------------------------------
 				-- Define the DMS_Guest operation for the newly added users
@@ -137,10 +150,10 @@ As
 		Else
 		Begin
 			-- Preview the new users
-			SELECT Src.*, W.PREFERRED_NAME_FM AS U_Name
-			FROM #Tmp_NewUsers Src
-					LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_BMI_EMPLOYEE W
-					ON Src.HID = W.HANFORD_ID
+			SELECT *
+			FROM #Tmp_NewUsers
+			WHERE NOT Network_ID Is Null
+			
 		End
 
 

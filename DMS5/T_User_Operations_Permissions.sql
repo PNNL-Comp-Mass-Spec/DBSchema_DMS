@@ -21,6 +21,8 @@ ALTER TABLE [dbo].[T_User_Operations_Permissions] CHECK CONSTRAINT [FK_T_User_Op
 GO
 ALTER TABLE [dbo].[T_User_Operations_Permissions]  WITH CHECK ADD  CONSTRAINT [FK_T_User_Operations_Permissions_T_Users] FOREIGN KEY([U_ID])
 REFERENCES [T_Users] ([ID])
+ON UPDATE CASCADE
+ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_User_Operations_Permissions] CHECK CONSTRAINT [FK_T_User_Operations_Permissions_T_Users]
 GO

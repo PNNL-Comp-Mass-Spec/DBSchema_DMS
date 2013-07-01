@@ -15,10 +15,11 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
 	[AJT_autoScanFolderFlag] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_active] [tinyint] NOT NULL,
 	[AJT_searchEngineInputFileFormats] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AJT_orgDbReqd] [int] NULL,
-	[AJT_extractionRequired] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AJT_orgDbReqd] [tinyint] NOT NULL,
+	[AJT_extractionRequired] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJT_toolTag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Use_SpecialProcWaiting] [tinyint] NOT NULL,
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC
@@ -45,4 +46,10 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_inactive]  DEFAULT ((1)) FOR [AJT_active]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_orgDbReqd]  DEFAULT ((0)) FOR [AJT_orgDbReqd]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_extractionRequired]  DEFAULT ('N') FOR [AJT_extractionRequired]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_Use_SpecialProcWaiting]  DEFAULT ((0)) FOR [Use_SpecialProcWaiting]
 GO
