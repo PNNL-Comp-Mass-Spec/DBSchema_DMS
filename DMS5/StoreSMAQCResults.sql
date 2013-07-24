@@ -37,6 +37,7 @@ CREATE Procedure dbo.StoreSMAQCResults
 **			04/29/2012 mem - Replaced P_1 with P_1A and P_1B
 **			05/02/2012 mem - Added C_2B, C_3A, and P_2B
 **			09/17/2012 mem - Now assuring that the values are no larger than 1E+38
+**			07/01/2013 mem - Added support for PSM_Source_Job
 **    
 *****************************************************/
 (
@@ -63,7 +64,8 @@ As
 	Declare @DatasetInfoTable table (
 		Dataset_ID int NULL ,
 		Dataset_Name varchar (128) NOT NULL ,
-		Job int NULL				-- Analysis job used to generate the SMAQC results
+		Job int NULL,				-- Analysis job used to generate the SMAQC results
+		PSM_Source_Job int NULL		-- MSGF+ or X!Tandem job whose results were used by SMAQDC
 	)
 
 
@@ -160,11 +162,13 @@ As
 	INSERT INTO @DatasetInfoTable (
 		Dataset_ID,
 		Dataset_Name,
-		Job
+		Job,
+		PSM_Source_Job
 	)
 	SELECT	@DatasetID AS DatasetID,
 			@DatasetName AS Dataset,
-			@ResultsXML.value('(/SMAQC_Results/Job)[1]', 'int') AS Job
+			@ResultsXML.value('(/SMAQC_Results/Job)[1]', 'int') AS Job,
+			@ResultsXML.value('(/SMAQC_Results/PSM_Source_Job)[1]', 'int') AS PSM_Source_Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -273,7 +277,7 @@ As
 	-----------------------------------------------
 	
 	INSERT INTO @KnownMetricsTable( Dataset_ID,
-                                    C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
+                               C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
                                     DS_1A, DS_1B, DS_2A, DS_2B, DS_3A, DS_3B, 
                                     IS_1A, IS_1B, IS_2, IS_3A, IS_3B, IS_3C, 
                                     MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
@@ -328,6 +332,7 @@ As
 	USING 
 		(SELECT	M.Dataset_ID, 
                 DI.Job,
+                DI.PSM_Source_Job,
                 C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
                 DS_1A, DS_1B, DS_2A, DS_2B, DS_3A, DS_3B, 
                 IS_1A, IS_1B, IS_2, IS_3A, IS_3B, IS_3C, 
@@ -336,7 +341,7 @@ As
                 P_1A, P_1B, P_2A, P_2B, P_2C, P_3
 		 FROM @KnownMetricsTable M INNER JOIN 
 		      @DatasetInfoTable DI ON M.Dataset_ID = DI.Dataset_ID
-		) AS Source (Dataset_ID, SMAQC_Job,
+		) AS Source (Dataset_ID, SMAQC_Job, PSM_Source_Job,
                      C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
                      DS_1A, DS_1B, DS_2A, DS_2B, DS_3A, DS_3B, 
                      IS_1A, IS_1B, IS_2, IS_3A, IS_3B, IS_3C, 
@@ -348,17 +353,19 @@ As
 	WHEN Matched 
 		THEN UPDATE 
 			Set SMAQC_Job = Source.SMAQC_Job,
+			    PSM_Source_Job = Source.PSM_Source_Job,
 			    C_1A = Source.C_1A, C_1B = Source.C_1B, C_2A = Source.C_2A, C_2B = Source.C_2B, C_3A = Source.C_3A, C_3B = Source.C_3B, C_4A = Source.C_4A, C_4B = Source.C_4B, C_4C = Source.C_4C, 
 			    DS_1A = Source.DS_1A, DS_1B = Source.DS_1B, DS_2A = Source.DS_2A, DS_2B = Source.DS_2B, DS_3A = Source.DS_3A, DS_3B = Source.DS_3B, 
 			    IS_1A = Source.IS_1A, IS_1B = Source.IS_1B, IS_2 = Source.IS_2, IS_3A = Source.IS_3A, IS_3B = Source.IS_3B, IS_3C = Source.IS_3C, 
 			    MS1_1 = Source.MS1_1, MS1_2A = Source.MS1_2A, MS1_2B = Source.MS1_2B, MS1_3A = Source.MS1_3A, MS1_3B = Source.MS1_3B, MS1_5A = Source.MS1_5A, MS1_5B = Source.MS1_5B, MS1_5C = Source.MS1_5C, MS1_5D = Source.MS1_5D, 
-			    MS2_1 = Source.MS2_1, MS2_2 = Source.MS2_2, MS2_3 = Source.MS2_3, MS2_4A = Source.MS2_4A, MS2_4B = Source.MS2_4B, MS2_4C = Source.MS2_4C, MS2_4D = Source.MS2_4D,
+			  MS2_1 = Source.MS2_1, MS2_2 = Source.MS2_2, MS2_3 = Source.MS2_3, MS2_4A = Source.MS2_4A, MS2_4B = Source.MS2_4B, MS2_4C = Source.MS2_4C, MS2_4D = Source.MS2_4D,
 			    P_1A = Source.P_1A, P_1B = Source.P_1B, P_2A = Source.P_2A, P_2B = Source.P_2B, P_2C = Source.P_2C, P_3 = Source.P_3,
 				Last_Affected = GetDate()
 				
 	WHEN Not Matched THEN
 		INSERT (Dataset_ID, 
 		        SMAQC_Job,
+		        PSM_Source_Job,
 		        C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
 		        DS_1A, DS_1B, DS_2A, DS_2B, DS_3A, DS_3B, 
 		        IS_1A, IS_1B, IS_2, IS_3A, IS_3B, IS_3C, 
@@ -369,6 +376,7 @@ As
 			   )
 		VALUES ( Source.Dataset_ID, 
 		         Source.SMAQC_Job,
+		         Source.PSM_Source_Job,
 		         Source.C_1A, Source.C_1B, Source.C_2A, Source.C_2B, Source.C_3A, Source.C_3B, Source.C_4A, Source.C_4B, Source.C_4C, 
 		         Source.DS_1A, Source.DS_1B, Source.DS_2A, Source.DS_2B, Source.DS_3A, Source.DS_3B, 
 		         Source.IS_1A, Source.IS_1B, Source.IS_2, Source.IS_3A, Source.IS_3B, Source.IS_3C, 

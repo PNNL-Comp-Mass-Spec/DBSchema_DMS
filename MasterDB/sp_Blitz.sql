@@ -223,6 +223,11 @@ AS
 	and then saves those in a temp table. As we run each check, we'll see if we
 	need to skip it.
 	
+	The Skip Checks table should have these columns:
+		ServerName, DatabaseName, and CheckID
+	If the DatabaseName column is Null, then the given CheckID will be skipped for 
+	all databases on the server specified by ServerName
+
 	Really anal-retentive users will note that the @SkipChecksServer parameter is
 	not used. YET. We added that parameter in so that we could avoid changing the
 	stored proc's surface area (interface) later.

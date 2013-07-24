@@ -17,7 +17,9 @@ CREATE PROCEDURE CreateParametersForJob
 **
 **	Auth:	grk
 **	Date:	09/05/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**			05/31/2013 mem - Aded parameter @scriptName
+**			05/31/2013 mem - Added parameter @scriptName
+**						   - Added support for script 'MyEMSLDatasetPush'
+**			07/11/2013 mem - Added support for script 'MyEMSLDatasetPushRecursive'
 **    
 *****************************************************/
 (
@@ -64,11 +66,18 @@ As
 	end
 
 	
-	If @ScriptName = 'MyEMSLDatasetPush'
+	If @ScriptName IN ('MyEMSLDatasetPush', 'MyEMSLDatasetPushRecursive')
 	Begin
 		INSERT INTO @Job_Parameters
 		(Job, Step_Number, [Section], [Name], Value)
 		Values (@job, Null, 'JobParameters', 'PushDatasetToMyEMSL', 'True')
+	End
+
+	If @ScriptName = 'MyEMSLDatasetPushRecursive'
+	Begin
+		INSERT INTO @Job_Parameters
+		(Job, Step_Number, [Section], [Name], Value)
+		Values (@job, Null, 'JobParameters', 'PushDatasetRecurse', 'True')
 	End
 
 	if @DebugMode <> 0

@@ -26,6 +26,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			03/07/2013 mem - Now calling ResetAggregationJob to reset jobs; supports resetting a job that succeeded
 **						   - No longer changing job state to 20; ResetAggregationJob will update the job state
 **			04/10/2013 mem - Now passing @CallingUser to MakeLocalJobInBroker
+**			07/23/2013 mem - Now calling PostLogEntry only once in the Catch block
 **
 *****************************************************/
 (
@@ -96,15 +97,9 @@ AS
 		If @jobParam = ''
 			RAISERROR('Web page bug: @jobParam is empty', 11, 30)
 		
-		--Declare @DebugMessage varchar(4096) = 'Contents of @jobParam: ' + @jobParam			
-		--exec PostLogEntry 'Debug', @DebugMessage, 'AddUpdateLocalJobInBroker'
-
 		exec @myError = VerifyJobParameters @jobParam, @scriptName, @message output
 		IF @myError > 0
 			RAISERROR(@message, 11, @myError)
-
---exec postlogentry 'Debug', @jobParam, 'AddUpdate'
---return 0
 
 		---------------------------------------------------
 		-- update mode 
@@ -204,8 +199,10 @@ AS
 		Set @message = IsNull(@message, 'Unknown error message')
 		Set @myError = IsNull(@myError, 'Unknown error details')
 		
-		exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
-		exec PostLogEntry 'Error', @myError, 'AddUpdateLocalJobInBroker'
+		Declare @LogMessage varchar(4096)
+		Set @LogMessage = @message + '; error code ' + Convert(varchar(12), @myError)
+		
+		exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
 		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0

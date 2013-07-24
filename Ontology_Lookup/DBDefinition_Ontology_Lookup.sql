@@ -1,8 +1,8 @@
 /****** Object:  Database [Ontology_Lookup] ******/
 CREATE DATABASE [Ontology_Lookup] ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 1833920KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 2088960KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 1614656KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 1792320KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 100
@@ -60,13 +60,15 @@ ALTER DATABASE [Ontology_Lookup] SET HONOR_BROKER_PRIORITY OFF
 GO
 ALTER DATABASE [Ontology_Lookup] SET  READ_WRITE 
 GO
-ALTER DATABASE [Ontology_Lookup] SET RECOVERY BULK_LOGGED 
+ALTER DATABASE [Ontology_Lookup] SET RECOVERY FULL 
 GO
 ALTER DATABASE [Ontology_Lookup] SET  MULTI_USER 
 GO
 ALTER DATABASE [Ontology_Lookup] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [Ontology_Lookup] SET DB_CHAINING OFF 
+GO
+GRANT CONNECT TO [d3m578] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO

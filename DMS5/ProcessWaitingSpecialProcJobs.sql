@@ -17,6 +17,7 @@ CREATE PROCEDURE ProcessWaitingSpecialProcJobs
 **	Date:	05/04/2012 mem - Initial version
 **			01/23/2013 mem - Fixed bug that only checked the status of jobs with tag 'SourceJob'
 **			05/14/2013 mem - Now auto-deleting jobs for bad datasets
+**			07/02/2013 mem - Changed filter for "bad datasets" to include -1 and -2 (previous included -5 aka Not Released)
 **    
 *****************************************************/
 (
@@ -45,6 +46,7 @@ As
 	Declare @LastAffected datetime
 	Declare @DatasetRating int
 	Declare @DatasetState int
+	Declare @ResultsFolderName varchar(128)
 	
 	Declare @ReadyToProcess tinyint
 	Declare @DatasetIsBad tinyint
@@ -115,7 +117,8 @@ As
 			             @SpecialProcessingText = J.AJ_specialProcessing,
 			             @LastAffected = J.AJ_Last_Affected,
 			             @DatasetRating = DS.DS_rating,
-			             @DatasetState = DS.DS_state_ID
+			             @DatasetState = DS.DS_state_ID,
+			             @ResultsFolderName = J.AJ_ResultsFolderName
 			FROM T_Analysis_Job J
 			     INNER JOIN T_Dataset DS
 			       ON J.AJ_datasetID = DS.Dataset_ID
@@ -141,10 +144,25 @@ As
 				Set @TagAvailable = 1
 				Set @TagEntryID = -1
 				
-				If @DatasetState = 4 Or @DatasetRating IN (-5, -2, -1)
+				Set @HoursSinceStateLastChanged = DateDiff(minute, @LastAffected, GetDate()) / 60.0
+				
+				If @DatasetState = 4 Or @DatasetRating IN (-2, -1)
 				Begin
-					Set @DatasetIsBad = 1
+						
 					Set @TagAvailable = 0
+					If @DatasetState = 4
+						Set @JobMessage = 'Bad dataset (state=4)'
+					Else
+						Set @JobMessage = 'Dataset rating is ' + Convert(varchar(4), @DatasetRating)
+
+					-- Mark the dataset as bad
+					-- However, if the job actually finished at some point in the past, then do not mark the dataset as bad
+					If IsNull(@ResultsFolderName, '') = ''
+					Begin
+						Set @DatasetIsBad = 1										
+						Set @JobMessage = @JobMessage + '; job ' + Convert(varchar(12), @Job) + ' will be auto-deleted in ' + Convert(varchar(12), @WaitThresholdHours - @HoursSinceStateLastChanged) + ' hours'
+					End
+										
 				End
 				
 				While @TagAvailable = 1
@@ -224,7 +242,6 @@ As
 				
 				If @ReadyToProcess = 0
 				Begin -- <c2>
-					Set @HoursSinceStateLastChanged = DateDiff(minute, @LastAffected, GetDate()) / 60.0
 					
 					If @HoursSinceStateLastChanged > @WaitThresholdHours And @PreviewSql = 0
 					Begin -- <d>
