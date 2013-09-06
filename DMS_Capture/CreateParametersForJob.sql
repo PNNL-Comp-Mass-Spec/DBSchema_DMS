@@ -43,6 +43,7 @@ As
 
 	---------------------------------------------------
 	-- get job parameters from main database
+	-- Note that the calling procedure must have already created temporary table #Jobs
 	---------------------------------------------------
 	--
 	declare @Job_Parameters table (
@@ -109,8 +110,6 @@ As
 	SELECT @pXML = Parameters
 	FROM #Job_Parameters
 	WHERE Job = @job
-
-print convert(varchar(4000), @pXML)
 
 	---------------------------------------------------
 	-- Exit

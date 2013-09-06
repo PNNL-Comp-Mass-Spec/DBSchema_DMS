@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Scripts_History](
 	[Results_Tag] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Contents] [xml] NULL,
 	[Parameters] [xml] NULL,
+	[Fields] [xml] NULL,
 	[Backfill_to_DMS] [tinyint] NULL,
 	[Entered] [datetime] NOT NULL,
 	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,

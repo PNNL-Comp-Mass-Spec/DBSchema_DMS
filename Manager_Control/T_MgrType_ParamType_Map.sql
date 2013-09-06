@@ -60,6 +60,11 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_MgrType_ParamType_Map]  WITH CHECK ADD  CONSTRAINT [FK_T_MgrType_ParamType_Map_T_MgrTypes] FOREIGN KEY([MgrTypeID])
+REFERENCES [T_MgrTypes] ([MT_TypeID])
+GO
+ALTER TABLE [dbo].[T_MgrType_ParamType_Map] CHECK CONSTRAINT [FK_T_MgrType_ParamType_Map_T_MgrTypes]
+GO
 ALTER TABLE [dbo].[T_MgrType_ParamType_Map]  WITH CHECK ADD  CONSTRAINT [FK_T_MgrType_ParamType_Map_T_ParamType] FOREIGN KEY([ParamTypeID])
 REFERENCES [T_ParamType] ([ParamID])
 ON UPDATE CASCADE

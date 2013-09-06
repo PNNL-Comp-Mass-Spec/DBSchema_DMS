@@ -20,6 +20,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **						   - Added support for jobs being present in T_Jobs but not present in T_Job_Parameters
 **			05/18/2011 mem - Updated @jobList to varchar(max)
 **			09/17/2012 mem - Now updating Storage_Server in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
+**			08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
 **    
 *****************************************************/
 (
@@ -38,6 +39,19 @@ As
 	
 	set @message = ''
 
+
+	-- Update Null values in T_Jobs
+	UPDATE T_Jobs
+	SET Storage_Server = IsNull(J.Storage_Server, VDD.Storage_Server_Name),
+	    Instrument = IsNull(J.Instrument, VDD.Instrument_Name),
+	    Instrument_Class = IsNull(J.Instrument_Class, VDD.Instrument_Class),
+	    Max_Simultaneous_Captures = IsNull(J.Max_Simultaneous_Captures, VDD.Max_Simultaneous_Captures)
+	FROM T_Jobs J
+	     INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
+	       ON J.Dataset_ID = VDD.Dataset_ID
+	WHERE J.Job IN ( SELECT CONVERT(int, Item) AS Job
+	                 FROM dbo.MakeTableFromList ( @jobList ) )
+		
 	---------------------------------------------------
 	-- create temp table for jobs that are being updated
 	-- and populate it
@@ -84,7 +98,7 @@ As
 		Instrument_Class,
 		Max_Simultaneous_Captures
 	FROM
-		T_Jobs
+		T_Jobs TJ
 	WHERE
 		Job IN (select CONVERT(INT, Item) AS Job FROM dbo.MakeTableFromList(@jobList))
 

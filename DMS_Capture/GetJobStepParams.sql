@@ -34,11 +34,14 @@ AS
 	declare @stepTool varchar(64)
 	declare @inputFolderName varchar(128)
 	declare @outputFolderName varchar(128)
+	declare @resultsFolderName varchar(128)	
+	declare @MyEMSLStatusURI varchar(128)
+	
 	set @stepTool = ''
 	set @inputFolderName = ''
 	set @outputFolderName = ''
-	declare @resultsFolderName varchar(128)
-	SET @resultsFolderName = ''
+	set @resultsFolderName = ''
+	set @MyEMSLStatusURI = ''
 
 	set @message = ''
 		
@@ -46,15 +49,16 @@ AS
 	-- Get basic job step parameters
 	---------------------------------------------------
 	--
-	SELECT
-		@stepTool = Step_Tool, 
-		@inputFolderName = Input_Folder_Name, 
-		@outputFolderName = Output_Folder_Name,
-		@resultsFolderName = Results_Folder_Name
-	FROM  T_Job_Steps INNER JOIN T_Jobs ON T_Job_Steps.Job = T_Jobs.Job
-	WHERE
-		T_Job_Steps.Job = @jobNumber AND 
-		Step_Number = @stepNumber
+	SELECT @stepTool = Step_Tool,
+	       @inputFolderName = Input_Folder_Name,
+	       @outputFolderName = Output_Folder_Name,
+	       @resultsFolderName = Results_Folder_Name
+	FROM T_Job_Steps
+	     INNER JOIN T_Jobs
+	       ON T_Job_Steps.Job = T_Jobs.Job
+	WHERE T_Job_Steps.Job = @jobNumber AND
+	      Step_Number = @stepNumber
+
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -71,6 +75,19 @@ AS
 		goto Done
 	end
 
+	-- Lookup the MyEMSL Status URI
+	-- We will only get a match if the step tool is ArchiveUpdate or DatasetArchive
+	-- Furthermore, we won't get a row until after the ArchiveUpdate or DatasetArchive step successfully completes
+	-- This URI will be used by the ArchiveVerify tool
+	--
+	SELECT TOP 1 @MyEMSLStatusURI = StatusU.URI_Path + CONVERT(varchar(16), MU.StatusNum) + '/xml'
+	FROM T_MyEMSL_Uploads MU
+	     INNER JOIN T_URI_Paths StatusU
+	       ON MU.StatusURI_PathID = StatusU.URI_PathID
+	WHERE MU.Job = @jobNumber AND
+	      MU.StatusURI_PathID > 1
+	ORDER BY MU.Entry_ID DESC
+
 	---------------------------------------------------
 	-- Get job step parameters
 	---------------------------------------------------
@@ -84,6 +101,7 @@ AS
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'ResultsFolderName', @resultsFolderName)
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'InputFolderName', @inputFolderName)
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'OutputFolderName', @outputFolderName)
+	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'MyEMSL_Status_URI', @MyEMSLStatusURI)
 
 	---------------------------------------------------
 	-- Get job parameters

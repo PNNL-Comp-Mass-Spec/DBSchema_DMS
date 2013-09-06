@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_Dataset_QC_Metrics_Detail_Report]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
@@ -82,7 +81,11 @@ SELECT InstName.IN_Group AS [Instrument Group],
        DQC.P_1A, DQC.P_1B, DQC.P_2A, DQC.P_2B, DQC.P_2C, DQC.P_3,
        DQC.Last_Affected AS Smaqc_Last_Affected,
        DQC.QCDM,
-       DQC.QCDM_Last_Affected
+       DQC.QCDM_Last_Affected,
+       DQC.MassErrorPPM,
+       DQC.MassErrorPPM_Refined,
+       DQC.MassErrorPPM_VIPER,
+       DQC.AMTs_10pct_FDR       
 FROM T_Dataset_QC DQC
      INNER JOIN T_Dataset DS
        ON DQC.Dataset_ID = DS.Dataset_ID

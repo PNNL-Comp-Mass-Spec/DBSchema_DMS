@@ -16,6 +16,7 @@ CREATE Procedure ValidateProteinCollectionParams
 **	Date:	08/26/2010
 **			05/15/2012 mem - Now verifying that @organismDBName is 'na' if @protCollNameList is defined, or vice versa
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**			08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
 **    
 *****************************************************/
 (
@@ -112,6 +113,21 @@ As
 	end
 	else
 	begin
+		If Not @organismDBName In ('', 'na') And Not @protCollNameList In ('', 'na')		
+		Begin
+			-- User defined both a Legacy Fasta file and a Protein Collection List
+			-- Auto-change @organismDBName to 'na' if possible
+			If Exists (SELECT * FROM T_Analysis_Job
+                       WHERE AJ_organismDBName = @organismDBName AND 
+                             AJ_proteinCollectionList = @protCollNameList AND 
+                             AJ_StateID IN (1, 2, 4, 14))
+            Begin
+				-- Existing job found with both this legacy fasta file name and this protein collection list
+				-- Thus, use the protein collection list and clear @organismDBName 
+				Set @organismDBName = ''
+            End
+		End
+		
 		
 		If Not @organismDBName In ('', 'na')
 		Begin

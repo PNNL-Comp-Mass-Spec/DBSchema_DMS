@@ -86,8 +86,6 @@ GRANT CONNECT TO [MTUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [MTUser] AS [dbo]
 GO
-GRANT CONNECT TO [PNL\D3m480] AS [dbo]
-GO
 GRANT CONNECT TO [RBAC-MgrConfig_Admin] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]

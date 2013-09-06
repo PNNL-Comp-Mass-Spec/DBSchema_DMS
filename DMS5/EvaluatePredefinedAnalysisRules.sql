@@ -66,6 +66,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **			05/03/2012 mem - Added support for the Special Processing field
 **			09/25/2012 mem - Expanded @organismName and @organismDBName to varchar(128)
+**			08/02/2013 mem - Added parameter @AnalysisToolNameFilter
 **
 *****************************************************/
 (
@@ -74,7 +75,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 	@message varchar(512) = '' output,
 	@RaiseErrorMessages tinyint = 1,
 	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
-	@CreateJobsForUnreviewedDatasets tinyint = 1	-- When non-zero, then will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+	@CreateJobsForUnreviewedDatasets tinyint = 1,	-- When non-zero, then will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+	@AnalysisToolNameFilter varchar(128) = ''		-- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
 As
 	set nocount on
@@ -90,7 +92,8 @@ As
 	Set @RaiseErrorMessages = IsNull(@RaiseErrorMessages, 1)
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
 	Set @CreateJobsForUnreviewedDatasets = IsNull(@CreateJobsForUnreviewedDatasets, 1)
-
+	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
+	
 	---------------------------------------------------
 	-- Validate @outputType
 	---------------------------------------------------
@@ -170,7 +173,7 @@ As
 		--  allow the predefined analysis rules to be evaluated so that we can preview the results)
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
-			If @ExcludeDatasetsNotReleased = 0 And @Rating IN (-5, -6)
+			If @ExcludeDatasetsNotReleased = 0 And @Rating IN (-4, -5, -6)
 			Begin
 				-- @ExcludeDatasetsNotReleased is 0 and @Rating is -5 or -6
 				-- Allow the jobs to be created
@@ -380,6 +383,7 @@ As
 		     (@Rating <> -10 AND PA.Trigger_Before_Disposition = 0) OR
 		     (@outputType = 'Show Rules')
 		    )
+		AND (@AnalysisToolNameFilter = '' Or PA.AD_analysisToolName LIKE @AnalysisToolNameFilter)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

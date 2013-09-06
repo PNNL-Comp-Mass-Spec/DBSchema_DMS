@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.RemoveOldJobs
 **			02/26/2009 mem - Now passing @LogDeletions=0 to RemoveSelectedJobs
 **			05/31/2009 mem - Updated @intervalDaysForSuccess to support partial days (e.g. 0.5)
 **			02/24/2012 mem - Added parameter @MaxJobsToProcess with a default of 25000
+**			08/20/2013 mem - Added parameter @LogDeletions
 **
 *****************************************************/
 (
@@ -28,7 +29,8 @@ CREATE PROCEDURE dbo.RemoveOldJobs
 	@message varchar(512)='' output,
 	@ValidateJobStepSuccess tinyint = 0,
 	@JobListOverride varchar(max) = '',		-- Comma separated list of jobs to remove from T_Jobs, T_Job_Steps, and T_Job_Parameters
-	@MaxJobsToProcess int = 25000
+	@MaxJobsToProcess int = 25000,
+	@LogDeletions tinyint = 0			-- When 1, then logs each deleted job number in T_Log_Entries; when 2 then prints a log message (but does not log to T_Log_Entries)
 )
 As
 	set nocount on
@@ -63,6 +65,9 @@ As
 		
 	Set @JobListOverride = IsNull(@JobListOverride, '')
 	
+	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 25000)
+	Set @LogDeletions = IsNull(@LogDeletions, 0)
+
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
 			
@@ -161,7 +166,7 @@ As
 	set @transName = 'RemoveOldJobs'
 	begin transaction @transName
 
-	exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions=0
+	exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions=@LogDeletions
 
 	if @myError = 0
  		commit transaction @transName

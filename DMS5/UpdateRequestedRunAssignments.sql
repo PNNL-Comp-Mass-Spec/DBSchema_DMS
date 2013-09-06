@@ -27,10 +27,11 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			12/12/2011 mem - Added parameter @callingUser, which is passed to DeleteRequestedRun
 **			06/26/2013 mem - Added mode 'instrumentIgnoreType' (doesn't validate dataset type when changing the instrument group) 
 **					   mem - Added mode 'datasetType'
+**			07/24/2013 mem - Added mode 'separationGroup'
 **    
 *****************************************************/
 (
-	@mode varchar(32), -- 'priority', 'instrument', 'instrumentIgnoreType', 'datasetType', 'delete'
+	@mode varchar(32), -- 'priority', 'instrument', 'instrumentIgnoreType', 'datasetType', 'delete', 'separationGroup'
 	@newValue varchar(512),
 	@reqRunIDList varchar(2048),
 	@message varchar(512)='' output,
@@ -50,9 +51,11 @@ As
 	declare @RequestID int
 
 	Declare @NewInstrumentGroup varchar(64) = ''
+	Declare @NewSeparationGroup varchar(64) = ''
+
 	Declare @NewDatasetType varchar(64) = ''
 	Declare @NewDatasetTypeID int = 0
-
+	
 	declare @datasetTypeID int
 	declare @datasetTypeName varchar(64)
 	
@@ -202,7 +205,42 @@ As
 			End -- </c>
 		End -- </b>
 	End -- </a>
-					
+
+	if @mode IN ('separationGroup')
+	Begin
+		
+		---------------------------------------------------
+		-- Validate the separation group
+		-- Mode 'separationGroup' is used by http://dms2.pnl.gov/requested_run_admin/report
+		---------------------------------------------------
+		--
+		-- Set the separation group to @newValue for now
+		set @NewSeparationGroup = @newValue
+		
+		IF NOT EXISTS (SELECT * FROM T_Separation_Group WHERE Sep_Group = @NewSeparationGroup)
+		Begin
+			-- Try to update Separation group using T_Secondary_Sep
+			SELECT @NewSeparationGroup = Sep_Group
+			FROM T_Secondary_Sep
+			WHERE SS_name = @newValue
+		End
+				
+		---------------------------------------------------
+		-- Make sure a valid separation group was chosen (or auto-selected via a separation name)
+		-- This also assures the text is properly capitalized
+		---------------------------------------------------
+
+		SELECT @NewSeparationGroup = Sep_Group
+		FROM T_Separation_Group
+		WHERE Sep_Group = @NewSeparationGroup
+		--	
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		IF @myRowCount = 0
+			RAISERROR ('Could not find entry in database for separation group "%s"', 11, 3, @newValue)
+
+	End
+
 
 	if @mode IN ('datasetType')
 	Begin
@@ -269,6 +307,22 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 		Set @message = 'Changed the instrument group to ' + @NewInstrumentGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		If @myRowcount > 1
+			Set @message = @message + 's'
+	end
+
+	-------------------------------------------------
+	if @mode IN ('separationGroup')
+	begin
+		
+		UPDATE T_Requested_Run
+		SET	RDS_Sec_Sep = @NewSeparationGroup
+		FROM T_Requested_Run RR INNER JOIN
+			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
+		--	
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		Set @message = 'Changed the separation group to ' + @NewSeparationGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	end

@@ -152,7 +152,50 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TRIGGER [dbo].[trig_ud_T_Jobs]ON [dbo].[T_Jobs]FOR UPDATE, DELETE AS/********************************************************	Desc: **		Prevents updating or deleting all rows in the table****	Auth:	mem**	Date:	02/08/2011*******************************************************/BEGIN    DECLARE @Count int    SET @Count = @@ROWCOUNT;    IF @Count >= (	SELECT i.rowcnt AS TableRowCount                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id                     WHERE o.name = 'T_Jobs' AND o.type = 'u' AND i.indid < 2                 )    BEGIN        RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Jobs)',16,1)        ROLLBACK TRANSACTION        RETURN;    ENDEND
+
+CREATE TRIGGER [dbo].[trig_ud_T_Jobs]
+ON [dbo].[T_Jobs]
+FOR UPDATE, DELETE AS
+/****************************************************
+**
+**	Desc: 
+**		Prevents updating or deleting all rows in the table
+**
+**	Auth:	mem
+**	Date:	02/08/2011
+**
+*****************************************************/
+BEGIN
+
+    DECLARE @DeletedRowCount int
+	Declare @TableRowCount int
+	
+    SET @DeletedRowCount = @@ROWCOUNT;
+
+	SELECT @TableRowCount = i.rowcnt
+	FROM dbo.sysobjects o
+	     INNER JOIN dbo.sysindexes i
+	       ON o.id = i.id
+	WHERE o.name = 'T_Jobs' AND
+	      o.TYPE = 'u' AND
+	      i.indid < 2
+                     
+    IF @DeletedRowCount >= @TableRowCount
+    BEGIN
+
+		Declare @msg varchar(512)
+		Set @msg = 'Cannot update or delete all ' + Convert(varchar(12), @DeletedRowCount) + ' rows ' + 
+		           '(@TableRowCount=' + CONVERT(varchar(12), @TableRowCount) + '). Use a WHERE clause (see trigger trig_ud_T_Jobs)'
+		
+        RAISERROR(@msg,16,1)
+        ROLLBACK TRANSACTION
+        RETURN;
+
+    END
+
+END
+
+
 GO
 GRANT INSERT ON [dbo].[T_Jobs] TO [Limited_Table_Write] AS [dbo]
 GO

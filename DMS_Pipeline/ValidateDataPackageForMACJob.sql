@@ -21,6 +21,8 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 **			               - Updated error messages shown to user
 **			02/13/2013 mem - Fix misspelled word
 **			02/18/2013 mem - Fix misspelled word
+**			08/13/2013 mem - Now validating required analysis tools for the MAC_iTRAQ script
+**			08/14/2013 mem - Now validating datasets and jobs for script Global_Label-Free_AMT_Tag
 **
 *****************************************************/
 (
@@ -118,27 +120,30 @@ AS
 		
 		DROP TABLE  #TX
 
-		IF @tool = '' And @MSGFPlusCountExactlyOne > 0 
-			If @MSGFPlusCountNotOne = 0
-				SET @tool = 'msgfplus'
-			Else
-				SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets); ' 
-				
-		IF @tool = '' And @SequestCountExactlyOne > 0
-			If @SequestCountNotOne = 0
-				SET @tool = 'sequest'
-			Else
-				SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets); ' 
+		if @scriptName Not In ('Global_Label-Free_AMT_Tag')
+		Begin
+			IF @tool = '' And @MSGFPlusCountExactlyOne > 0 
+				If @MSGFPlusCountNotOne = 0
+					SET @tool = 'msgfplus'
+				Else
+					SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets); ' 
+					
+			IF @tool = '' And @SequestCountExactlyOne > 0
+				If @SequestCountNotOne = 0
+					SET @tool = 'sequest'
+				Else
+					SET @errMsg = 'Data package ' + Convert(varchar(12), @DataPackageID) + ' does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets); ' 
 
-		IF @tool = '' 
-			SET @errMsg = @errMsg + 'Data package ' + Convert(varchar(12), @DataPackageID) + ' must have one or more MSGFPlus (or Sequest) jobs' 
-
+			IF @tool = '' 
+				SET @errMsg = @errMsg + 'Data package ' + Convert(varchar(12), @DataPackageID) + ' must have one or more MSGFPlus (or Sequest) jobs' 
+		End
+		
 		---------------------------------------------------
 		-- determine if job/tool coverage is acceptable for 
 		-- given job template
 		---------------------------------------------------
 		
-		IF @scriptName IN ('Isobaric_Labeling')
+		IF @scriptName IN ('Isobaric_Labeling', 'MAC_iTRAQ')
 		BEGIN 
 			IF @DeconToolsCountNotOne > 0 
 				SET @errMsg = @errMsg + 'There must be exactly one Decon2LS_V2 job per dataset; '
@@ -147,6 +152,12 @@ AS
 				SET @errMsg = @errMsg + 'There must be exactly one MASIC_Finnigan job per dataset; '
 		END 
 
+		IF @scriptName IN ('Global_Label-Free_AMT_Tag')
+		BEGIN 
+			IF @DeconToolsCountNotOne > 0 
+				SET @errMsg = @errMsg + 'There must be exactly one Decon2LS_V2 job per dataset; '
+		END
+		
 		IF @errMsg <> ''
 		BEGIN
 	 		RAISERROR('Data package is not configured correctly for this job: %s', 11, 25, @errMsg)

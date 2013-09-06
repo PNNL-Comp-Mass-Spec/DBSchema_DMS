@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Pipeline_Script_Detail_Report as
+
+CREATE view [dbo].[V_Pipeline_Script_Detail_Report] as
 SELECT ID,
        Script,
        Description,
@@ -13,8 +14,11 @@ SELECT ID,
        '<pre>' + REPLACE(REPLACE(LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), Contents),   '<', CHAR(13) + CHAR(10) + '<'))), '<', '&lt;'), '>', '&gt;') 
        + '</pre>' AS Contents,
        '<pre>' + REPLACE(REPLACE(LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), Parameters), '<', CHAR(13) + CHAR(10) + '<'))), '<', '&lt;'), '>', '&gt;') 
-       + '</pre>' AS Parameters
+       + '</pre>' AS Parameters,
+       '<pre>' + REPLACE(REPLACE(LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), Fields), '<', CHAR(13) + CHAR(10) + '<'))), '<', '&lt;'), '>', '&gt;') 
+       + '</pre>' AS Fields_for_Wizard
 FROM T_Scripts
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_Detail_Report] TO [PNL\D3M578] AS [dbo]

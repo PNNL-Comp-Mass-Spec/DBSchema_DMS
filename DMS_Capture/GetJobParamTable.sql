@@ -33,6 +33,8 @@ CREATE PROCEDURE GetJobParamTable
 **			05/04/2010 grk - Added instrument class params
 **			03/23/2012 mem - Now including EUS_Instrument_ID
 **			04/09/2013 mem - Now looking up Perform_Calibration from S_DMS_T_Instrument_Name
+**			08/20/2013 mem - Now looking up EUS_Proposal_ID
+**			09/04/2013 mem - Now including TransferFolderPath
 **    
 *****************************************************/
   (
@@ -120,7 +122,8 @@ AS
 		  CONVERT(varchar(2000), Archive_Server) AS Archive_Server,
 		  CONVERT(varchar(2000), Archive_Path) AS Archive_Path,
 		  CONVERT(varchar(2000), Archive_Network_Share_Path) AS Archive_Network_Share_Path,
-		  CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID
+		  CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID,
+		  CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID
 		FROM
 		  V_DMS_Capture_Job_Parameters
 		WHERE
@@ -128,7 +131,7 @@ AS
 	  ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Folder, Method, Capture_Exclusion_Window, Created , 
 											Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External, 
 											Archive_Server, Archive_Path, Archive_Network_Share_Path,
-											EUS_Instrument_ID
+											EUS_Instrument_ID, EUS_Proposal_ID
                    ) ) as TP
 	--	
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -184,6 +187,40 @@ AS
 	VALUES
 		(NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)	    
     
+    
+    ---------------------------------------------------
+	-- Lookup the Analysis Transfer folder (e.g. \\proto-6\DMS3_Xfer)
+	-- This folder is used to store metadata.txt files for dataset archive and archive update jobs
+	-- Those files are used by the ArchiveVerify tool to confirm that files were successfully imported into MyEMSL
+	---------------------------------------------------
+	--
+	Declare @StorageVolExternal varchar(128)
+	Declare @TransferFolderPath varchar(128)
+	
+	SELECT @StorageVolExternal = Value
+	FROM @paramTab
+	WHERE [Name] = 'Storage_Vol_External'
+	
+	SELECT @TransferFolderPath = Transfer_Folder_Path
+	FROM ( SELECT DISTINCT TStor.SP_vol_name_client AS Storage_Vol_External,
+	                       dbo.udfCombinePaths(TStor.SP_vol_name_client, Xfer.Client) AS Transfer_Folder_Path
+	       FROM S_DMS_t_storage_path AS TStor
+	            CROSS JOIN ( SELECT TOP 1 Client
+	                         FROM S_DMS_V_MiscPaths
+	                         WHERE [Function] = 'AnalysisXfer' ) AS Xfer
+	       WHERE ISNULL(TStor.SP_vol_name_client, '') <> '' AND
+	             TStor.SP_vol_name_client <> '(na)' 
+	     ) FolderQ
+	WHERE Storage_Vol_External = @StorageVolExternal
+
+	Set @TransferFolderPath = IsNull(@TransferFolderPath, '')
+	
+	INSERT INTO @paramTab
+		( Step_Number, [Section], [Name], Value )
+	VALUES
+		(NULL, 'JobParameters', 'TransferFolderPath', @TransferFolderPath)
+
+
   	---------------------------------------------------
 	-- output the table of parameters
 	---------------------------------------------------
@@ -201,5 +238,6 @@ AS
     [Name]
 
   RETURN @myError
+
 
 GO

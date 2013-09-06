@@ -19,6 +19,7 @@ CREATE PROCEDURE CopyHistoryToJob
 **			03/12/2012 mem - Added column Tool_Version_ID
 **			03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Jobs
 **						   - Fixed bug finding most recent successful job in T_Jobs_History
+**			08/27/2013 mem - Now calling UpdateParametersForJob
 **    
 *****************************************************/
 (
@@ -204,6 +205,15 @@ As
 
  	commit transaction @transName
 
+	---------------------------------------------------
+	-- Manually create the job parameters if they were not present in T_Job_Parameters
+	---------------------------------------------------
+	
+	If Not Exists (SELECT * FROM T_Job_Parameters WHERE Job = @job)
+	Begin
+		exec UpdateParametersForJob @job
+	End
+	
  	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

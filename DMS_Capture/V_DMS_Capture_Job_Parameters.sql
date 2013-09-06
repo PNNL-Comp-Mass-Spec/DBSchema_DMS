@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_DMS_Capture_Job_Parameters]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -17,6 +16,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TIN.IN_Max_Simultaneous_Captures AS Max_Simultaneous_Captures,
        TIN.IN_Capture_Exclusion_Window AS Capture_Exclusion_Window,
        EID.EUS_Instrument_ID,
+       RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
        DS.DS_created AS Created,
        TSrc.SP_path AS sourcePath,
        TSrc.SP_vol_name_server AS sourceVol,
@@ -46,7 +46,8 @@ FROM S_DMS_T_Dataset AS DS
        ON TDA.AS_storage_path_ID = TAP.AP_path_ID
      LEFT OUTER JOIN S_DMS_V_EUS_Instrument_ID_Lookup EID
        ON TIN.Instrument_ID = EID.Instrument_ID
-
+     LEFT OUTER JOIN S_DMS_T_Requested_Run RR
+       ON DS.Dataset_ID = RR.DatasetID
 
 
 GO

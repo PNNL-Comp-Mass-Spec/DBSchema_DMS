@@ -26,6 +26,7 @@ GRANT UPDATE ON [dbo].[T_Data_Package_Biomaterial] TO [DMS_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Biomaterial_T_Data_Package] FOREIGN KEY([Data_Package_ID])
 REFERENCES [T_Data_Package] ([ID])
+ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial] CHECK CONSTRAINT [FK_T_Data_Package_Biomaterial_T_Data_Package]
 GO

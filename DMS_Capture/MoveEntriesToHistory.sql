@@ -234,6 +234,7 @@ As
 	----------------------------------------------------------
 	-- Delete old entries in T_Job_Parameters_History
 	-- Note that this data is intentionally not copied to the historic log DB
+	--   because it is very easy to re-generate (use UpdateParametersForJob)
 	----------------------------------------------------------	
 	--
 	begin transaction @transName

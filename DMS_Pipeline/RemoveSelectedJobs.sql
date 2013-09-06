@@ -15,22 +15,24 @@ CREATE PROCEDURE RemoveSelectedJobs
 **	Auth:	grk
 **			02/19/2009 grk - initial release (Ticket #723)
 **			02/26/2009 mem - Added parameter @LogDeletions
-**          02/28/2009 grk - added logic to preserve record of successful shared results
+**          02/28/2009 grk - Added logic to preserve record of successful shared results
+**			08/20/2013 mem - Added support for @LogDeletions=2
+**						   - Now disabling trigger trig_ud_T_Jobs when deleting rows from T_Jobs (required because stored procedure RemoveOldJobs wraps the call to this procedure with a transaction)
 **
 *****************************************************/
 (
 	@infoOnly tinyint = 0,				-- 1 -> don't actually delete, just dump list of jobs that would have been
 	@message varchar(512)='' output,
-	@LogDeletions tinyint = 0			-- When 1, then logs each deleted job number in T_Log_Entries
+	@LogDeletions tinyint = 0			-- When 1, then logs each deleted job number in T_Log_Entries; when 2 then prints a log message (but does not log to T_Log_Entries)
 )
 As
-	set nocount on
+	Set nocount on
 	
 	declare @myError int
-	set @myError = 0
+	Set @myError = 0
 
 	declare @myRowCount int
-	set @myRowCount = 0
+	Set @myRowCount = 0
 	
 	Declare @Job int
 	Declare @continue tinyint
@@ -40,23 +42,23 @@ As
 	Set @LogDeletions = IsNull(@LogDeletions, 0)
 
 	---------------------------------------------------
-	-- bail if no candidates found
+	-- bail If no candidates found
  	---------------------------------------------------
 	--
 	declare @numJobs int
-	set @numJobs = 0
+	Set @numJobs = 0
 	--
 	SELECT @numJobs = COUNT(*) FROM #SJL
 	--
- 	if @numJobs = 0
+ 	If @numJobs = 0
 		goto Done
 
-	if @infoOnly > 0
-	begin
+	If @infoOnly > 0
+	Begin
 		SELECT * FROM #SJL
-	end 
+	End 
 	else
-	begin -- <a>
+	Begin -- <a>
  
 		---------------------------------------------------
 		-- preserve record of successfully completed
@@ -86,11 +88,11 @@ As
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		 --
-		if @myError <> 0
-		begin
-			set @message = 'Error preserving shared results'
+		If @myError <> 0
+		Begin
+			Set @message = 'Error preserving shared results'
 			goto Done
-		end
+		End
 
    		---------------------------------------------------
 		-- delete job dependencies
@@ -100,13 +102,16 @@ As
 		WHERE (Job_ID IN (SELECT Job FROM #SJL))
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-		 --
-		if @myError <> 0
-		begin
-			set @message = 'Error deleting T_Job_Step_Dependencies'
+		--
+		If @myError <> 0
+		Begin
+			Set @message = 'Error deleting T_Job_Step_Dependencies'
 			goto Done
-		end
-
+		End
+		
+		If @LogDeletions = 2
+			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Step_Dependencies'
+			
    		---------------------------------------------------
 		-- delete job parameters
 		---------------------------------------------------
@@ -116,12 +121,15 @@ As
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		 --
-		if @myError <> 0
-		begin
-			set @message = 'Error deleting T_Job_Parameters'
+		If @myError <> 0
+		Begin
+			Set @message = 'Error deleting T_Job_Parameters'
 			goto Done
-		end
+		End
  
+ 		If @LogDeletions = 2
+			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Parameters'
+
    		---------------------------------------------------
 		-- delete job steps
 		---------------------------------------------------
@@ -131,17 +139,20 @@ As
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		 --
-		if @myError <> 0
-		begin
-			set @message = 'Error deleting T_Job_Steps'
+		If @myError <> 0
+		Begin
+			Set @message = 'Error deleting T_Job_Steps'
 			goto Done
-		end
+		End
+
+ 		If @LogDeletions = 2
+			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Steps'
 
    		---------------------------------------------------
 		-- Delete entries in T_Jobs
 		---------------------------------------------------
 		--
-		If @LogDeletions <> 0
+		If @LogDeletions = 1
 		Begin -- <b1>
 		
 			---------------------------------------------------
@@ -174,11 +185,11 @@ As
  					--
 					SELECT @myError = @@error, @myRowCount = @@rowcount
 					--
-					if @myError <> 0
-					begin
-						set @message = 'Error deleting job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
+					If @myError <> 0
+					Begin
+						Set @message = 'Error deleting job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
 						goto Done
-					end
+					End
 					
 					Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
 					Exec PostLogEntry 'Normal', @message, 'RemoveSelectedJobs'
@@ -195,19 +206,26 @@ As
 			-- Delete in bulk
 			---------------------------------------------------
 		
+			Disable Trigger trig_ud_T_Jobs ON T_Jobs;
+		
 			DELETE FROM T_Jobs
 			WHERE Job IN (SELECT Job FROM #SJL)
  			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-			begin
-				set @message = 'Error deleting T_Jobs'
+			If @myError <> 0
+			Begin
+				Set @message = 'Error deleting T_Jobs'
 				goto Done
-			end
+			End
 			
+			If @LogDeletions = 2
+				print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Jobs';
+
+			Enable Trigger trig_ud_T_Jobs ON T_Jobs;
+
 		End -- </b2>
- 	end -- </a>
+ 	End -- </a>
 
  	---------------------------------------------------
 	-- Exit

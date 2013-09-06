@@ -14,6 +14,7 @@ CREATE PROCEDURE UpdateJobParamOrgDbInfoUsingDataPkg
 **	Auth:	mem
 **			03/20/2012 mem - Initial version
 **			09/11/2012 mem - Updated warning message used when data package does not have any jobs with a protein collection or legacy fasta file
+**			08/14/2013 mem - Now using the job script name which is used to decide whether or not to report a warning via @message
 **    
 *****************************************************/
 (
@@ -41,7 +42,8 @@ As
 		ProteinOptions varchar(256) NULL,
 		UseCount int NOT NULL
 	)
-		
+	
+	Declare @scriptName varchar(64)
 	Declare @OrganismName varchar(128) = ''
 	Declare @LegacyFastaFileName varchar(128) = ''
 	Declare @ProteinCollectionList varchar(2000) = ''
@@ -62,6 +64,15 @@ As
 	Set @deleteIfInvalid = IsNull(@deleteIfInvalid, 0)
 	Set @message = ''
 
+	---------------------------------------------------
+	-- Lookup the name of the job script
+	---------------------------------------------------
+	--
+	SELECT @scriptName = Script
+	FROM T_Jobs
+	WHERE Job = @Job
+	
+	Set @scriptName = IsNull(@scriptName, '??')
 	
 	---------------------------------------------------
 	-- Validate @DataPackageID
@@ -120,7 +131,9 @@ As
 		--
 		If @myRowCount = 0
 		Begin
-			Set @message = 'Note: Data package ' + Convert(varchar(12), @DataPackageID) + ' either has no jobs or has no jobs with a protein collection or legacy fasta file; pipeline job parameters will not contain organism, fasta file, or protein collection'
+			if @scriptName Not In ('Global_Label-Free_AMT_Tag', 'MultiAlign', 'MultiAlign_Aggregator')
+				Set @message = 'Note: Data package ' + Convert(varchar(12), @DataPackageID) + ' either has no jobs or has no jobs with a protein collection or legacy fasta file; pipeline job parameters will not contain organism, fasta file, or protein collection'
+				
 			Set @DataPackageID = -1
 		End
 		Else

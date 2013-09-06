@@ -89,7 +89,7 @@ AS
 		---------------------------------------------------
 		
 		DECLARE 
-			@tool VARCHAR(64) = '',
+			@tool VARCHAR(64) = '',			-- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
 			@msg VARCHAR(512) = '',	                 
 			@valid INT = 0
 

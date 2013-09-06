@@ -38,6 +38,10 @@ CREATE Procedure dbo.StoreSMAQCResults
 **			05/02/2012 mem - Added C_2B, C_3A, and P_2B
 **			09/17/2012 mem - Now assuring that the values are no larger than 1E+38
 **			07/01/2013 mem - Added support for PSM_Source_Job
+**			08/08/2013 mem - Now storing MS1_5C in MassErrorPPM if MassErrorPPM is null; 
+**							   Note that when running Dta_Refinery, MassErrorPPM will be populated with the mass error value prior to DtaRefinery
+**							   while MassErrorPPM_Refined will have the post-refinement error.  In that case, MS1_5C will have the 
+**							   post-refinement mass error (because that value comes from MSGF+ and MSGF+ uses the refined _dta.txt file)
 **    
 *****************************************************/
 (
@@ -358,8 +362,9 @@ As
 			    DS_1A = Source.DS_1A, DS_1B = Source.DS_1B, DS_2A = Source.DS_2A, DS_2B = Source.DS_2B, DS_3A = Source.DS_3A, DS_3B = Source.DS_3B, 
 			    IS_1A = Source.IS_1A, IS_1B = Source.IS_1B, IS_2 = Source.IS_2, IS_3A = Source.IS_3A, IS_3B = Source.IS_3B, IS_3C = Source.IS_3C, 
 			    MS1_1 = Source.MS1_1, MS1_2A = Source.MS1_2A, MS1_2B = Source.MS1_2B, MS1_3A = Source.MS1_3A, MS1_3B = Source.MS1_3B, MS1_5A = Source.MS1_5A, MS1_5B = Source.MS1_5B, MS1_5C = Source.MS1_5C, MS1_5D = Source.MS1_5D, 
-			  MS2_1 = Source.MS2_1, MS2_2 = Source.MS2_2, MS2_3 = Source.MS2_3, MS2_4A = Source.MS2_4A, MS2_4B = Source.MS2_4B, MS2_4C = Source.MS2_4C, MS2_4D = Source.MS2_4D,
+			    MS2_1 = Source.MS2_1, MS2_2 = Source.MS2_2, MS2_3 = Source.MS2_3, MS2_4A = Source.MS2_4A, MS2_4B = Source.MS2_4B, MS2_4C = Source.MS2_4C, MS2_4D = Source.MS2_4D,
 			    P_1A = Source.P_1A, P_1B = Source.P_1B, P_2A = Source.P_2A, P_2B = Source.P_2B, P_2C = Source.P_2C, P_3 = Source.P_3,
+			    MassErrorPPM = IsNull(Target.MassErrorPPM, Source.MS1_5C),
 				Last_Affected = GetDate()
 				
 	WHEN Not Matched THEN
@@ -371,7 +376,7 @@ As
 		        IS_1A, IS_1B, IS_2, IS_3A, IS_3B, IS_3C, 
 		        MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
 		        MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
-		        P_1A, P_1B, P_2A, P_2B, P_2C, P_3, 
+		        P_1A, P_1B, P_2A, P_2B, P_2C, P_3, MassErrorPPM,
 				Last_Affected 
 			   )
 		VALUES ( Source.Dataset_ID, 
@@ -382,7 +387,8 @@ As
 		         Source.IS_1A, Source.IS_1B, Source.IS_2, Source.IS_3A, Source.IS_3B, Source.IS_3C, 
 		         Source.MS1_1, Source.MS1_2A, Source.MS1_2B, Source.MS1_3A, Source.MS1_3B, Source.MS1_5A, Source.MS1_5B, Source.MS1_5C, Source.MS1_5D, 
 		         Source.MS2_1, Source.MS2_2, Source.MS2_3, Source.MS2_4A, Source.MS2_4B, Source.MS2_4C, Source.MS2_4D,
-		         Source.P_1A, Source.P_1B, Source.P_2A, Source.P_2B, Source.P_2C, Source.P_3,
+		         Source.P_1A, Source.P_1B, Source.P_2A, Source.P_2B, Source.P_2C, Source.P_3, 
+		         Source.MS1_5C,  -- Store MS1_5C in MassErrorPPM; if DTA_Refinery is run in the future, then MassErrorPPM will get auto-updated to the pre-refinement value computed by DTA_Refinery
 				 GetDate()
 			   )
 	;

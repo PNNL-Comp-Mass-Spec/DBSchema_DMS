@@ -3,11 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_User_Entry
+
+CREATE VIEW [dbo].[V_User_Entry]
 AS
 SELECT U_PRN AS Username,
        U_HID AS HanfordIDNum,
-       'Payroll, Last Name/First Name, and Email are auto-updated from the warehouse for users with "User Update" = Y' as EntryNote,
+       'Payroll, Last Name/First Name, and Email are auto-updated when "User Update" = Y' As EntryNote,
        U_Payroll AS Payroll,
        U_Name AS LastNameFirstName,
        U_email as Email,       
@@ -16,6 +17,7 @@ SELECT U_PRN AS Username,
        dbo.GetUserOperationsList(ID) AS OperationsList,
        U_comment AS Comment
 FROM dbo.T_Users
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_User_Entry] TO [PNL\D3M578] AS [dbo]

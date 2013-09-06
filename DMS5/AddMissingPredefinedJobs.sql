@@ -22,6 +22,8 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **			02/10/2011 mem - Added parameters @ExcludeUnreviewedDatasets and @InstrumentSkipList
 **			05/24/2011 mem - Added parameter @IgnoreJobsCreatedBeforeDisposition
 **						   - Added support for rating -7
+**			08/05/2013 mem - Now passing @AnalysisToolNameFilter to EvaluatePredefinedAnalysisRules when @InfoOnly is non-zero
+**						   - Added parameter @CampaignFilter
 **
 *****************************************************/
 (
@@ -35,7 +37,8 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 	@InstrumentSkipList varchar(1024) = 'Agilent_GC_MS_01, TSQ_1, TSQ_3',		-- Comma-separated list of instruments to skip
 	@message varchar(512) = '' output,
 	@DatasetNameIgnoreExistingJobs varchar(128) = '',			-- If defined, then we'll create predefined jobs for this dataset even if it has existing jobs
-	@IgnoreJobsCreatedBeforeDisposition tinyint = 1				-- When non-zero, then ignore jobs created before the dataset was dispositioned
+	@IgnoreJobsCreatedBeforeDisposition tinyint = 1,			-- When non-zero, then ignore jobs created before the dataset was dispositioned
+	@CampaignFilter varchar(128) = ''							-- Optional: if not blank, then filters on the given campaign name
 )
 As
 	set nocount on
@@ -74,6 +77,7 @@ As
 	set @message = ''
 	Set @DatasetNameIgnoreExistingJobs = IsNull(@DatasetNameIgnoreExistingJobs, '')
 	Set @IgnoreJobsCreatedBeforeDisposition = IsNull(@IgnoreJobsCreatedBeforeDisposition, 1)
+	Set @CampaignFilter = IsNull(@CampaignFilter, '')
 
 	If @DayCountForRecentDatasets < 1
 		Set @DayCountForRecentDatasets = 1
@@ -125,19 +129,25 @@ As
 	
 	-- First construct a list of all recent datasets that have an instrument class
 	-- that has an active predefined job
+	-- Optionally filter on campaign
 	--
 	INSERT INTO #Tmp_DatasetsToProcess( Dataset_ID, Process_Dataset )
 	SELECT DISTINCT DS.Dataset_ID, 1 AS Process_Dataset
-	FROM dbo.T_Dataset DS
-	     INNER JOIN dbo.T_Instrument_Name InstName
+	FROM T_Dataset DS
+	     INNER JOIN T_Instrument_Name InstName
 	       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+	     INNER JOIN T_Experiments E 
+	       ON DS.Exp_ID = E.Exp_ID 
+	     INNER JOIN T_Campaign C 
+	       ON E.EX_campaign_ID = C.Campaign_ID
 	WHERE (NOT DS.DS_rating IN (SELECT Rating FROM #TmpDSRatingExclusionList)) AND
 	      (DS.DS_state_ID = 3) AND
+	      (@CampaignFilter = '' Or C.Campaign_Num Like @CampaignFilter) AND
 	      (DS.DS_created BETWEEN DATEADD(day, -@DayCountForRecentDatasets, GETDATE()) AND 
 	                             DATEADD(hour, - 12, GETDATE())) AND
 	      InstName.IN_Class IN ( SELECT DISTINCT InstClass.IN_class
-	                             FROM dbo.T_Predefined_Analysis PA
-	                                  INNER JOIN dbo.T_Instrument_Class InstClass
+	                             FROM T_Predefined_Analysis PA
+	                                  INNER JOIN T_Instrument_Class InstClass
 	                                    ON PA.AD_instrumentClassCriteria = InstClass.IN_class
 	                             WHERE (PA.AD_enabled <> 0) AND
 	                                   (@AnalysisToolNameFilter = '' OR
@@ -159,8 +169,8 @@ As
 	Set Process_Dataset = 0
 	FROM #Tmp_DatasetsToProcess DS
 	     INNER JOIN ( SELECT AJ.AJ_datasetID AS Dataset_ID
-	                  FROM dbo.T_Analysis_Job AJ
-	                       INNER JOIN dbo.T_Analysis_Tool Tool
+	                  FROM T_Analysis_Job AJ
+	                       INNER JOIN T_Analysis_Tool Tool
 	                         ON AJ.AJ_analysisToolID = Tool.AJT_toolID
 	                  WHERE (@AnalysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @AnalysisToolNameFilter) AND
 	                        (@IgnoreJobsCreatedBeforeDisposition = 0 OR AJ.AJ_DatasetUnreviewed = 0 )
@@ -185,7 +195,7 @@ As
 		       ON Target.Dataset_ID = DS.Dataset_ID
 		     INNER JOIN T_Instrument_Name InstName 
 		     ON InstName.Instrument_ID = DS.DS_instrument_name_ID
-    	     INNER JOIN dbo.udfParseDelimitedList(@InstrumentSkipList, ',') AS ExclusionList 
+    	     INNER JOIN udfParseDelimitedList(@InstrumentSkipList, ',') AS ExclusionList 
     	       ON InstName.IN_name = ExclusionList.Value
 	End
 	
@@ -211,9 +221,9 @@ As
 			    DS.DS_rating,
 			    DTP.Process_Dataset
 		FROM #Tmp_DatasetsToProcess DTP
-			    INNER JOIN dbo.T_Dataset DS
+			    INNER JOIN T_Dataset DS
 			    ON DTP.Dataset_ID = DS.Dataset_ID
-			    INNER JOIN dbo.T_Instrument_Name InstName
+			    INNER JOIN T_Instrument_Name InstName
 			    ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 		WHERE DTP.Process_Dataset = 1
 		ORDER BY InstName.IN_name, DS.Dataset_ID
@@ -259,7 +269,7 @@ As
 			             @DatasetID = DTP.Dataset_ID,
 			             @DatasetName = DS.Dataset_Num
 			FROM #Tmp_DatasetsToProcess DTP
-			     INNER JOIN dbo.T_Dataset DS
+			     INNER JOIN T_Dataset DS
 			       ON DTP.Dataset_ID = DS.Dataset_ID
 			WHERE Entry_ID > @EntryID
 			ORDER BY Entry_ID
@@ -276,7 +286,7 @@ As
 					Begin
 						Set @CurrentLocation = 'Calling SchedulePredefinedAnalyses for ' + @DatasetName
 						
-						Exec EvaluatePredefinedAnalysisRules @DatasetName, @PreviewOutputType, @message = @message output, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
+						Exec EvaluatePredefinedAnalysisRules @DatasetName, @PreviewOutputType, @message = @message output, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased, @AnalysisToolNameFilter=@AnalysisToolNameFilter
 					End
 					
 					

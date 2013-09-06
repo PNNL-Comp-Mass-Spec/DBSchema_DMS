@@ -19,6 +19,7 @@ CREATE PROCEDURE AddUpdateScripts
 **			12/01/2011 mem - Expanded @Description to varchar(2000)
 **			01/09/2012 mem - Added parameter @BackfillToDMS
 						   - Changed ID field in T_Scripts to a non-identity based int
+**			08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
 **    
 *****************************************************/
 (
@@ -29,6 +30,7 @@ CREATE PROCEDURE AddUpdateScripts
 	@BackfillToDMS char(1),
 	@Contents TEXT,
 	@Parameters TEXT,
+	@Fields TEXT,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -133,7 +135,8 @@ As
 			Results_Tag, 
 			Backfill_to_DMS,
 			Contents,
-			Parameters
+			Parameters,
+			Fields
 		) VALUES (
 			@ScriptIDNew,
 			@Script, 
@@ -142,7 +145,8 @@ As
 			@ResultsTag, 
 			@BackFill,
 			@Contents,
-			@Parameters
+			@Parameters,
+			@Fields
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -186,7 +190,8 @@ As
 		  Results_Tag = @ResultsTag, 
 		  Backfill_to_DMS = @BackFill,
 		  Contents = @Contents,
-		  Parameters = @Parameters
+		  Parameters = @Parameters,
+		  Fields = @Fields
 		WHERE (Script = @Script)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

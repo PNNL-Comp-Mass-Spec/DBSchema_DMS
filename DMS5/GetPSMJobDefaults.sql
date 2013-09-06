@@ -18,6 +18,7 @@ CREATE Procedure GetPSMJobDefaults
 **			11/20/2012 mem - Added 3 new parameters: organism name, protein collection name, and protein collection options
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
+**			09/03/2013 mem - Added iTRAQ8
 **    
 *****************************************************/
 (
@@ -299,6 +300,11 @@ As
 		---------------------------------------------------
 
 		Set @jobTypeName = ''
+		
+		If @jobTypeName = '' And @TopLabeling Like '%itraq8%' And @TopDatasetType Like '%HCD%'
+		Begin
+			Set @jobTypeName = 'iTRAQ 8-plex'
+		End
 		
 		If @jobTypeName = '' And @TopLabeling Like '%itraq%' And @TopDatasetType Like '%HCD%'
 		Begin

@@ -11,8 +11,8 @@ CREATE TABLE [dbo].[T_Scripts](
 	[Results_Tag] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Contents] [xml] NULL,
 	[Parameters] [xml] NULL,
-	[Backfill_to_DMS] [tinyint] NOT NULL,
 	[Fields] [xml] NULL,
+	[Backfill_to_DMS] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Scripts] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -32,7 +32,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TRIGGER trig_d_Scripts ON T_Scripts 
+CREATE TRIGGER trig_d_Scripts ON dbo.T_Scripts 
 FOR DELETE
 AS
 	If @@RowCount = 0
@@ -52,7 +52,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TRIGGER trig_i_Scripts ON T_Scripts 
+CREATE TRIGGER trig_i_Scripts ON dbo.T_Scripts 
 FOR INSERT
 AS
 	If @@RowCount = 0
@@ -72,7 +72,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TRIGGER trig_u_Scripts ON T_Scripts 
+CREATE TRIGGER trig_u_Scripts ON dbo.T_Scripts 
 FOR UPDATE
 AS
 	If @@RowCount = 0

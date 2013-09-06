@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Dataset_QC_Metric_Names](
 	[Metric] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Source] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Category] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Short_Description] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Metric_Group] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Metric_Value] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Units] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,

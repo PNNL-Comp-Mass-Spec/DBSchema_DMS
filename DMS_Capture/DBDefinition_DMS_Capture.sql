@@ -1,8 +1,8 @@
 /****** Object:  Database [DMS_Capture] ******/
 CREATE DATABASE [DMS_Capture] ON  PRIMARY 
-( NAME = N'DMS_Capture', FILENAME = N'H:\SQLServerData\DMS_Capture.mdf' , SIZE = 9477440KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Capture', FILENAME = N'H:\SQLServerData\DMS_Capture.mdf' , SIZE = 8777152KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'DMS_Capture_log', FILENAME = N'G:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 12352KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'DMS_Capture_log', FILENAME = N'G:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 16768KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMS_Capture] SET COMPATIBILITY_LEVEL = 100

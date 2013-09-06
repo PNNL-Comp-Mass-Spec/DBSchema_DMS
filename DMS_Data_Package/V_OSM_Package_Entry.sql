@@ -13,7 +13,11 @@ CREATE VIEW [dbo].[V_OSM_Package_Entry] AS
 	Keywords AS Keywords,
 	Comment AS Comment,
 	Owner AS Owner,
-	[State] AS State
+	[State] AS STATE,
+	Sample_Prep_Requests as SamplePrepRequestList
 FROM T_OSM_Package
+
+
+
 
 GO

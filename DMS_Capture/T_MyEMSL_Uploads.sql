@@ -12,8 +12,6 @@ CREATE TABLE [dbo].[T_MyEMSL_Uploads](
 	[FileCountUpdated] [int] NULL,
 	[Bytes] [bigint] NULL,
 	[UploadTimeSeconds] [real] NULL,
-	[StatusURI] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[ContentURI] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[StatusURI_PathID] [int] NULL,
 	[ContentURI_PathID] [int] NULL,
 	[StatusNum] [int] NULL,
@@ -32,6 +30,13 @@ CREATE NONCLUSTERED INDEX [IX_T_MyEMSL_Uploads_Dataset_ID] ON [dbo].[T_MyEMSL_Up
 (
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_MyEMSL_Uploads_Job] ******/
+CREATE NONCLUSTERED INDEX [IX_T_MyEMSL_Uploads_Job] ON [dbo].[T_MyEMSL_Uploads] 
+(
+	[Job] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_MyEMSL_Uploads]  WITH CHECK ADD  CONSTRAINT [FK_T_MyEMSL_Uploads_T_URI_Paths_ContentURI] FOREIGN KEY([ContentURI_PathID])
 REFERENCES [T_URI_Paths] ([URI_PathID])

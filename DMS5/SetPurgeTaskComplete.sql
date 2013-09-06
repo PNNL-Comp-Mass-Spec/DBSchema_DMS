@@ -27,11 +27,14 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			04/17/2012 mem - Added support for @completionCode = 4 (drive missing)
 **			06/12/2012 mem - Added support for @completionCode = 5 and @completionCode = 6  (corresponding to Archive States 14 and 15)
 **			06/15/2012 mem - No longer changing the purge holdoff date if @completionCode = 4 (drive missing)
+**			08/13/2013 mem - Now using explicit parameter names when calling S_MakeNewArchiveUpdateJob
+**			08/15/2013 mem - Added support for @completionCode = 7 (dataset folder missing in archive)
+**			08/26/2013 mem - Now mentioning "permissions error" when @completionCode = 7
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive
 	@message varchar(512) output
 )
 As
@@ -156,7 +159,7 @@ Code 6 (Purged all data except QC folder)
 	begin
 		set @completionState = 3    -- complete
 		set @currentUpdateState = 2 -- Update Required
-		EXEC S_MakeNewArchiveUpdateJob @datasetNum, '', 1, 0, @message output
+		EXEC S_MakeNewArchiveUpdateJob @datasetNum, @ResultsFolderName='', @AllowBlankResultsFolder=1, @PushDatasetToMyEMSL=0, @message=@message output
 		goto SetStates
 	end
 
@@ -191,6 +194,17 @@ Code 6 (Purged all data except QC folder)
 		set @completionState = 15    -- complete
 		goto SetStates
 	end
+
+	-- (Dataset folder missing in archive)
+	if @completionCode = 7
+	begin
+		set @message = 'Dataset folder not found in archive, likely a permissions error; dataset ' + @datasetNum
+		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		set @message = ''
+		
+		set @completionState = 3    -- complete
+		goto SetStates
+	end
 	
 	-- if we got here, completion code was not recognized.  Bummer.
 	--
@@ -204,6 +218,7 @@ SetStates:
 		AS_update_state_ID = @currentUpdateState,
 		AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2    THEN DATEADD(  HOUR, 24, GETDATE()) 
 		                             WHEN @completionCode IN (2,3)   THEN DATEADD(MINUTE, 90, GETDATE()) 
+		                             WHEN @completionCode = 7        THEN DATEADD(  HOUR, 48, GETDATE()) 
 		                             ELSE AS_purge_holdoff_date 
 		                        END, 
 		AS_StageMD5_Required = CASE WHEN @completionCode = 3         THEN 1

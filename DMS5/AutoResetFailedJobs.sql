@@ -19,6 +19,10 @@ CREATE Procedure AutoResetFailedJobs
 **			10/01/2010 mem - Added call to PostLogEntry when changing ManagerErrorCleanupMode for a processor
 **			02/16/2012 mem - Fixed major bug that reset the state for all steps of a job to state 2, rather than only resetting the state for the running step
 **						   - Fixed bug finding jobs that are running, but started over 60 minutes ago and for which the processor is reporting Stopped_Error in T_Processor_Status
+**			07/25/2013 mem - Now auto-updating the settings file for MSGF+ jobs that report a comment similar to "MSGF+ skipped 99.2% of the spectra because they did not appear centroided"
+**						   - Now auto-resetting MSGF+ jobs that report "Not enough free memory"
+**			07/31/2013 mem - Now auto-updating the settings file for MSGF+ jobs that contain the text "None of the spectra are centroided; unable to process with MSGF+" in the comment
+**						   - Now auto-resetting jobs that report "Exception generating OrgDb file"
 **
 *****************************************************/
 (
@@ -42,14 +46,19 @@ As
 	declare @StepState int
 	declare @Processor varchar(128)
 	declare @Comment varchar(750)
-	
+	declare @SettingsFile varchar(255)
+	declare @AnalysisTool varchar(64)
+				             
 	Declare @NewJobState int
 	declare @NewComment varchar(750)
+	Declare @NewSettingsFile varchar(255)
+	Declare @SkipInfo varchar(255)
 	
 	declare @continue tinyint
 
 	declare @RetryJob tinyint
 	declare @SetProcessorAutoRecover tinyint
+	declare @SettingsFileChanged tinyint
 	
 	declare @RetryCount int
 	Declare @MatchIndex int
@@ -83,19 +92,24 @@ As
 			Job_State int NOT NULL,
 			Step_State int NOT NULL,
 			Processor varchar(128) NOT NULL,
-			Comment varchar(750) NOT null,
+			Comment varchar(750) NOT NULL,
 			Job_Finish datetime Null,
+			Settings_File varchar(255) NOT NULL,
+			AnalysisTool varchar(64) NOT NULL,
 			NewJobState int null,
 			NewStepState int null,
 			NewComment varchar(750) null,
-			ResetJob tinyint not null default 0		
+			NewSettingsFile varchar(255) null,
+			ResetJob tinyint not null default 0,
+			RerunAllJobSteps tinyint not null default 0
 		)
 
 		---------------------------------------------------
 		-- Populate a temporary table with jobs that failed within the last @WindowHours hours
 		---------------------------------------------------
 		--
-		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment, Job_Finish)
+		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, 
+		                            Processor, Comment, Job_Finish, Settings_File, AnalysisTool)
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
@@ -103,12 +117,16 @@ As
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
 		       IsNull(J.AJ_comment, '') AS Comment,
-		       J.AJ_finish as Job_Finish
+		       IsNull(J.AJ_finish, J.AJ_Start) as Job_Finish,
+		       J.AJ_settingsFileName,
+		       Tool.AJT_toolName
 		FROM T_Analysis_Job J
 		     INNER JOIN DMS_Pipeline.dbo.T_Job_Steps JS
-		       ON J.AJ_jobID = JS.Job
+		 ON J.AJ_jobID = JS.Job
+		     INNER JOIN T_Analysis_Tool Tool
+		       ON J.AJ_analysisToolID = Tool.AJT_toolID
 		WHERE J.AJ_StateID = 5 AND
-		      J.AJ_finish >= DATEADD(hour, -@WindowHours, GETDATE()) AND
+		      IsNull(J.AJ_finish, J.AJ_Start) >= DATEADD(hour, -@WindowHours, GETDATE()) AND
 		      JS.State = 6
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -119,7 +137,8 @@ As
 		-- the processor is reporting Stopped_Error in T_Processor_Status
 		---------------------------------------------------
 		--
-		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, Processor, Comment, Job_Finish)
+		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, 
+		                             Processor, Comment, Job_Finish, Settings_File, AnalysisTool)
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
@@ -127,12 +146,16 @@ As
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
 		       IsNull(J.AJ_comment, '') AS Comment,
-		       J.AJ_finish as Job_Finish
+		       IsNull(J.AJ_finish, J.AJ_Start) as Job_Finish,
+		       J.AJ_settingsFileName,
+		       Tool.AJT_toolName
 		FROM T_Analysis_Job J
 		     INNER JOIN DMS_Pipeline.dbo.T_Job_Steps JS
 		       ON J.AJ_jobID = JS.Job
 		     INNER JOIN DMS_Pipeline.dbo.T_Processor_Status ProcStatus
 		       ON JS.Processor = ProcStatus.Processor_Name
+		     INNER JOIN T_Analysis_Tool Tool
+		       ON J.AJ_analysisToolID = Tool.AJT_toolID
 		WHERE (J.AJ_StateID = 2) AND
 		      (JS.State = 4) AND
 		      (ProcStatus.Mgr_Status = 'Stopped Error') AND
@@ -154,11 +177,13 @@ As
 				
 				SELECT TOP 1 @Job = Job, 
 				             @StepNumber = Step_Number, 
-				             @StepTool = Step_Tool, 
+				             @StepTool = Step_Tool,				-- Step tool name
 				             @JobState = Job_State, 
 				             @StepState = Step_State, 
 				             @Processor = Processor,
-				             @Comment = Comment
+				             @Comment = Comment,
+				             @SettingsFile = Settings_File,
+				             @AnalysisTool = AnalysisTool		-- Overall Job Analysis Tool Name
 				FROM #Tmp_FailedJobs
 				WHERE Job > @Job
 				ORDER BY Job
@@ -173,6 +198,9 @@ As
 					Set @RetryJob = 0
 					Set @RetryCount = 0
 					Set @SetProcessorAutoRecover = 0
+					Set @SettingsFileChanged = 0
+					Set @NewSettingsFile = ''
+					Set @SkipInfo = ''
 					
 					-- Examine the comment to determine if we've retried this job before
 					-- Need to find the last instance of '(retry'
@@ -240,11 +268,62 @@ As
 					Begin
 						-- Job step is failed and overall job is failed
 						
-						If @StepTool = 'Decon2LS' And @RetryCount < 2
+						If @RetryJob = 0 And @StepTool = 'Decon2LS' And @RetryCount < 2
 							Set @RetryJob = 1
 							
-						If @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 5
+						If @RetryJob = 0 And @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 5
 							Set @RetryJob = 1
+						
+						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
+							Set @RetryJob = 1
+
+						If @RetryJob = 0 And @StepTool = 'MSGFPlus' And 
+						   (@Comment Like '%MSGF+ skipped % of the spectra because they did not appear centroided%' OR
+						    @Comment Like '%None of the spectra are centroided; unable to process with MSGF+%')
+						Begin
+							-- MSGF+ job that failed due to too many profile-mode spectra
+							-- Auto-change the SettingsFile to a MSConvert version if possible.
+							
+							Set @NewSettingsFile = ''
+							
+							SELECT @NewSettingsFile = MSGFPlus_AutoCentroid
+							FROM T_Settings_Files
+							WHERE Analysis_Tool = @AnalysisTool AND
+							      File_Name = @SettingsFile AND
+							      IsNull(MSGFPlus_AutoCentroid, '') <> ''
+		
+							If IsNull(@NewSettingsFile, '') <> ''
+							Begin
+							
+								Set @RetryJob = 1
+								Set @SettingsFileChanged = 1
+								
+								If @Comment Like '%None of the spectra are centroided; unable to process with MSGF+%'
+									Set @SkipInfo = 'None of the spectra are centroided'
+								Else
+								Begin
+									Set @MatchIndex = CharIndex('MSGF+ skipped', @Comment)
+									If @MatchIndex > 0
+										Set @SkipInfo = SubString(@Comment, @MatchIndex, Len(@Comment))
+									Else
+										Set @SkipInfo = 'MSGF+ skipped ??% of the spectra because they did not appear centroided'
+								End
+							End
+						End
+						
+						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone') And @Comment Like '%Not enough free memory%' And @RetryCount < 5
+							Set @RetryJob = 1
+						
+						If @RetryJob = 0 And @RetryCount < 5
+						Begin
+							-- Check for file copy errors from Aurora
+							If @Comment Like '%Error copying file \\a2%' Or
+							   @Comment Like '%File not found: \\a2%' Or
+							   @Comment Like '%Error copying %dta.zip%' Or
+							   @Comment Like '%Source dataset file file not found%'
+							  Set @RetryJob = 1
+
+						End
 						
 					End
 					
@@ -264,17 +343,28 @@ As
 					Begin
 						Set @NewComment = RTrim(@NewComment)
 						
-						If Len(@NewComment) > 0
-							Set @NewComment = @NewComment + ' '
-						
-						Set @NewComment = @NewComment + '(retry ' + @StepTool
-						
-						Set @RetryCount = @RetryCount + 1
-						if @RetryCount = 1
-							Set @NewComment = @NewComment + ')'
+						If @SettingsFileChanged = 1
+						Begin
+							-- Note: do not append a semicolon because if the job fails again in the future, then the text after the semicolon may get auto-removed							
+							If Len(@NewComment) > 0
+								Set @NewComment = @NewComment + ', '
+							
+							Set @NewComment = @NewComment + 'Auto-switched settings file from ' + @SettingsFile + ' (' + @SkipInfo + ')'
+						End
 						Else
-							Set @NewComment = @NewComment + ' #' + Convert(varchar(2), @RetryCount) + ')'
-						
+						Begin
+							If Len(@NewComment) > 0
+								Set @NewComment = @NewComment + ' '
+							
+							Set @NewComment = @NewComment + '(retry ' + @StepTool
+							
+							Set @RetryCount = @RetryCount + 1
+							if @RetryCount = 1
+								Set @NewComment = @NewComment + ')'
+							Else
+								Set @NewComment = @NewComment + ' #' + Convert(varchar(2), @RetryCount) + ')'
+						End
+												
 						If @StepState = 6
 						Begin
 							Set @NewJobState = 1
@@ -283,7 +373,9 @@ As
 							SET NewJobState = @NewJobState,
 								NewStepState = @StepState,
 							    NewComment = @NewComment,
-							    ResetJob = 1
+							    ResetJob = 1,
+							    NewSettingsFile = @NewSettingsFile,
+							    RerunAllJobSteps = @SettingsFileChanged
 							WHERE Job = @Job
 							
 							Set @ResetReason = 'job step failed in the last ' + convert(varchar(12), @WindowHours) + ' hours'
@@ -313,6 +405,21 @@ As
 						
 						If @infoOnly = 0
 						Begin
+						
+							If @SettingsFileChanged = 1
+							Begin
+								-- The settings file for this job has changed, thus we must re-generate the job in the pipeline DB
+								-- Note that deletes auto-cascade from T_Jobs to T_Job_Steps, T_Job_Parameters, and T_Job_Step_Dependencies
+								--
+								DELETE FROM DMS_Pipeline.dbo.T_Jobs
+								WHERE Job = @Job
+								
+								UPDATE T_Analysis_Job
+								SET AJ_settingsFileName = @NewSettingsFile
+								WHERE AJ_JobID = @Job
+								
+							End
+							
 							-- Update the JobState and Comment in T_Analysis_Job
 							UPDATE T_Analysis_Job
 							SET AJ_StateID = @NewJobState,

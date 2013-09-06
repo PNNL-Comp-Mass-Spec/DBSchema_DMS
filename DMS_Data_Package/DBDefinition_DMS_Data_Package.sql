@@ -1,6 +1,6 @@
 /****** Object:  Database [DMS_Data_Package] ******/
 CREATE DATABASE [DMS_Data_Package] ON  PRIMARY 
-( NAME = N'DMS_Data_Package', FILENAME = N'I:\SQLServerData\DMS_Data_Package.mdf' , SIZE = 402624KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Data_Package', FILENAME = N'I:\SQLServerData\DMS_Data_Package.mdf' , SIZE = 176448KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
 ( NAME = N'DMS_Data_Package_log', FILENAME = N'G:\SQLServerData\DMS_Data_Package_log.ldf' , SIZE = 2304KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS

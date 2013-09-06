@@ -35,6 +35,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
        CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
+       DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
        CASE
            WHEN RR.RDS_Status <> 'Active' THEN 0
@@ -62,6 +63,7 @@ FROM T_Requested_Run AS RR
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
+
 
 
 GO

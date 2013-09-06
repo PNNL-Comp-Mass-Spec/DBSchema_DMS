@@ -24,6 +24,7 @@ GRANT UPDATE ON [dbo].[T_Data_Package_Experiments] TO [DMS_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package] FOREIGN KEY([Data_Package_ID])
 REFERENCES [T_Data_Package] ([ID])
+ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_Experiments] CHECK CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package]
 GO

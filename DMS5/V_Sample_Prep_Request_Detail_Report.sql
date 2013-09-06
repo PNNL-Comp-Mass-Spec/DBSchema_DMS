@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Detail_Report]
 AS
     SELECT  SPR.ID ,
@@ -13,7 +12,7 @@ AS
             SPR.Reason ,
             SPR.Cell_Culture_List AS [Biomaterial List] ,
             SPR.Organism ,
-            SPR.Number_Of_Biomaterial_Reps_Received AS [Number Of Biomaterial Reps Received],
+            SPR.Number_Of_Biomaterial_Reps_Received AS [Number Of Biomaterial Reps Received] ,
             SPR.Biohazard_Level AS [Biohazard Level] ,
             SPR.Number_of_Samples AS [Number of Samples] ,
             SPR.BlockAndRandomizeSamples AS [Block And Randomize Samples] ,
@@ -33,7 +32,7 @@ AS
             SPR.BlockAndRandomizeRuns AS [Block And Randomize Runs] ,
             SPR.Sample_Naming_Convention AS [Sample Group Naming Prefix] ,
             SPR.Work_Package_Number [Work Package Number] ,
-            ISNULL(CC.Activation_State_Name, 'Invalid') AS [Work Package State],
+            ISNULL(CC.Activation_State_Name, 'Invalid') AS [Work Package State] ,
             SPR.Project_Number AS [Project Number] ,
             SPR.EUS_UsageType AS [EUS Usage Type] ,
             SPR.EUS_Proposal_ID AS [EUS Proposal] ,
@@ -43,13 +42,21 @@ AS
             SPR.Estimated_Completion AS [Estimated Completion] ,
             SPR.IOPSPermitsCurrent AS [IOPS Permits Current] ,
             SPR.Priority ,
-			SPR.Reason_For_High_Priority AS [Reason For High Priority],            
+            SPR.Reason_For_High_Priority AS [Reason For High Priority] ,
             SN.State_Name AS State ,
             SPR.Created ,
             QT.[Complete or Closed] ,
             QT.[Days In Queue] ,
             dbo.ExperimentsFromRequest(SPR.ID) AS Experiments ,
-            NU.Updates
+            NU.Updates ,
+            Biomaterial_Item_Count AS [Biomaterial Item Count] ,
+            Experiment_Item_Count AS [Experiment Item Count] ,
+            Experiment_Group_Item_Count AS [Experiment Group Item Count] ,
+            Material_Containers_Item_Count AS [Material Containers Item Count] ,
+            Requested_Run_Item_Count AS [Requested Run Item Count] ,
+            Dataset_Item_Count AS [Dataset Item Count] ,
+            HPLC_Runs_Item_Count AS [HPLC Runs Item Count] ,
+            SPR.Total_Item_Count
     FROM    T_Sample_Prep_Request AS SPR
             INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
             INNER JOIN T_Internal_Standards AS PreIntStd ON SPR.Internal_standard_ID = PreIntStd.Internal_Std_Mix_ID
@@ -62,8 +69,6 @@ AS
                             ) AS NU ON SPR.ID = NU.Request_ID
             LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
             LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Detail_Report] TO [PNL\D3M578] AS [dbo]

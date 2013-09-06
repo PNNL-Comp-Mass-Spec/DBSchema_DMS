@@ -18,6 +18,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 **			12/14/2011 mem - Added columns MD_ID and QID
 **			03/16/2012 mem - Added columns Ini_File_Name, Comparison_Mass_Tag_Count, and MD_State
 **			05/24/2013 mem - Added column Refine_Mass_Cal_PPMShift
+**			08/09/2013 mem - Now populating MassErrorPPM_VIPER and AMTs_10pct_FDR in T_Dataset_QC using Refine_Mass_Cal_PPMShift
 **
 *****************************************************/
 (
@@ -244,6 +245,28 @@ AS
 		SELECT @MergeDeleteCount = COUNT(*)
 		FROM #Tmp_UpdateSummary
 		WHERE UpdateAction = 'DELETE'
+
+		Set @CurrentLocation = 'Copy mass error and match stat values into T_Dataset_QC'
+
+		UPDATE T_Dataset_QC 
+		SET MassErrorPPM_VIPER = SourceQ.PPMShift_VIPER,
+		    AMTs_10pct_FDR = SourceQ.AMT_Count_10pct_FDR
+		FROM T_Dataset_QC DQC
+			INNER JOIN ( SELECT J.AJ_DatasetID AS Dataset_ID,
+								-PM.Refine_Mass_Cal_PPMShift AS PPMShift_VIPER,
+								PM.AMT_Count_10pct_FDR,
+								Row_Number() OVER ( PARTITION BY J.AJ_DatasetID ORDER BY J.AJ_JobID DESC, PM.MD_State, PM.Job_Finish DESC ) AS TaskRank
+						FROM T_MTS_Peak_Matching_Tasks_Cached PM
+							INNER JOIN T_Analysis_Job J
+								ON PM.DMS_Job = J.AJ_jobID
+						WHERE NOT (PM.Refine_Mass_Cal_PPMShift IS NULL) AND
+								PM.DMS_Job >= @JobMinimum AND
+								PM.DMS_Job <= @JobMaximum 
+						) SourceQ
+			ON DQC.Dataset_ID = SourceQ.Dataset_ID AND SourceQ.TaskRank = 1
+		WHERE ISNULL(DQC.MassErrorPPM_VIPER, -99999) <> SourceQ.PPMShift_VIPER OR
+		      ISNULL(DQC.AMTs_10pct_FDR, -1) <> SourceQ.AMT_Count_10pct_FDR
+		
 
 
 		Set @CurrentLocation = 'Update stats in T_MTS_Cached_Data_Status'

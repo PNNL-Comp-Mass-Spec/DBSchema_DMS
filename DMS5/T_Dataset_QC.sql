@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Dataset_QC](
 	[Dataset_ID] [int] NOT NULL,
 	[SMAQC_Job] [int] NULL,
+	[PSM_Source_Job] [int] NULL,
 	[Last_Affected] [datetime] NULL,
 	[C_1A] [real] NULL,
 	[C_1B] [real] NULL,
@@ -98,6 +99,10 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[MS2_PrecZ_likely_multi] [real] NULL,
 	[QCDM_Last_Affected] [datetime] NULL,
 	[QCDM] [real] NULL,
+	[MassErrorPPM] [real] NULL,
+	[MassErrorPPM_Refined] [real] NULL,
+	[MassErrorPPM_VIPER] [numeric](9, 4) NULL,
+	[AMTs_10pct_FDR] [int] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

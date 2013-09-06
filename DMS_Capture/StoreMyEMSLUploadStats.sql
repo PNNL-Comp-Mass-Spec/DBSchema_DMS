@@ -15,6 +15,8 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **	Date:	03/29/2012 mem - Initial version
 **			04/02/2012 mem - Now populating StatusURI_PathID, ContentURI_PathID, and StatusNum
 **			04/06/2012 mem - No longer posting a log message if @StatusURI is blank and @FileCountNew=0 and @FileCountUpdated=0
+**			08/19/2013 mem - Removed parameter @UpdateURIPathIDsForExistingJob
+**			09/06/2013 mem - No longer using @ContentURI
 **    
 *****************************************************/
 (
@@ -26,11 +28,10 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 	@Bytes bigint,
 	@UploadTimeSeconds real,
 	@StatusURI varchar(255),
-	@ContentURI varchar(255),
+	@ContentURI varchar(255)='',			-- No longer used (deprecated)
 	@ErrorCode int,
 	@message varchar(512)='' output,
-	@infoOnly tinyint = 0,
-	@UpdateURIPathIDsForExistingJob tinyint = 0
+	@infoOnly tinyint = 0
 )
 As
 	set nocount on
@@ -52,9 +53,6 @@ As
 	Declare @StatusURI_PathID int = 1
 	Declare @StatusURI_Path varchar(512) = ''
 	Declare @StatusNum int = null
-	
-	Declare @ContentURI_PathID int = 1
-	Declare @ContentURI_Path varchar(512) = ''
 		
 	---------------------------------------------------
 	-- Validate the inputs
@@ -68,7 +66,6 @@ As
 	
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
-	Set @UpdateURIPathIDsForExistingJob = IsNull(@UpdateURIPathIDsForExistingJob, 0)
 	
 	---------------------------------------------------
 	-- Make sure @Job is defined in T_Jobs
@@ -80,18 +77,6 @@ As
 		If @infoOnly <> 0
 			Print @message
 		return 50000
-	End
-	
-	If @UpdateURIPathIDsForExistingJob <> 0
-	Begin
-		SELECT @EntryID = Entry_ID, 
-		       @DatasetID = Dataset_ID,
-		       @StatusURI = StatusURI,
-		       @ContentURI = ContentURI
-		FROM T_MyEMSL_Uploads
-		WHERE (Job = @Job) AND StatusURI_PathID Is Null
-		ORDER BY Entry_ID
-
 	End
 	
 	-----------------------------------------------
@@ -190,14 +175,18 @@ As
 		End -- </b2>
 	End -- </a1>
 	
+	/*
+	 *
 	-----------------------------------------------
-	-- Analyze @ContentURI to determine the base URI, which isthe text up to and including /Instrument/Year_Quarter/
+	-- Deprecated code, since @ContentURI will now always be empty
+	--
+	-- Analyze @ContentURI to determine the base URI, which is the text up to and including /Instrument/Year_Quarter/
 	-- For example, in https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/LTQ_Orb_3/2012_1/Athal0501_26Mar12_Jaguar_12-02-27/
 	-- extract out     https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/LTQ_Orb_3/2012_1/
 	-----------------------------------------------
 	--
-	Set @ContentURI_PathID = 1
-	Set @ContentURI_Path = ''
+	Declare @ContentURI_PathID int = 1
+	Declare @ContentURI_Path varchar(512) = ''
 	
 	If @ContentURI = '' and @FileCountNew = 0 And @FileCountUpdated = 0
 	Begin
@@ -299,7 +288,7 @@ As
 
 		End -- </b4>
 	End -- </a2>
-	
+	*/	
 	
 	If @infoOnly <> 0
 	Begin
@@ -315,9 +304,7 @@ As
 		       @Bytes / 1024.0 / 1024.0 AS MB_Transferred,
 		       @UploadTimeSeconds AS UploadTimeSeconds,
 		       @StatusURI AS URI,
-		       @ContentURI AS ContentURI,		       		       
 		       @StatusURI_PathID AS StatusURI_PathID,
-		       @ContentURI_PathID AS ContentURI_PathID,
 		       @StatusNum as StatusNum,	
 		       @ErrorCode AS ErrorCode
 		       
@@ -326,73 +313,41 @@ As
 	Else
 	Begin -- <a3>
 		
-		If @UpdateURIPathIDsForExistingJob <> 0
-		Begin
-			If @StatusURI_PathID > 1 Or @ContentURI_PathID > 1
-			Begin
-				-----------------------------------------------
-				-- Update T_MyEmsl_Uploads
-				-----------------------------------------------
-				--
-				UPDATE T_MyEmsl_Uploads
-				SET StatusURI_PathID = @StatusURI_PathID,
-					ContentURI_PathID = @ContentURI_PathID,
-					StatusNum = @StatusNum
-				WHERE Entry_ID = @EntryID
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				--
-				if @myError <> 0
-				begin
-					set @message = 'Error updateing T_MyEmsl_Uploads for job ' + Convert(varchar(12), @job)
-				end	
-			End
-						
-		End
-		Else
-		Begin
-			
-			-----------------------------------------------
-			-- Add a new row to T_MyEmsl_Uploads
-			-----------------------------------------------
-			--
-			INSERT INTO T_MyEmsl_Uploads( Job,
-			                              Dataset_ID,
-			                              Subfolder,
-			                              FileCountNew,
-			                              FileCountUpdated,
-			                              Bytes,
-			                              UploadTimeSeconds,
-			                              StatusURI,
-			                              ContentURI,
-			                              StatusURI_PathID,
-			                              ContentURI_PathID,
-			                              StatusNum,
-			                              ErrorCode,
-			                              Entered )
-			SELECT @Job,
-			       @DatasetID,
-			       @Subfolder,
-			       @FileCountNew,
-			       @FileCountUpdated,
-			       @Bytes,
-			       @UploadTimeSeconds,
-			       @StatusURI,
-			       @ContentURI,
-			       @StatusURI_PathID,
-			       @ContentURI_PathID,
-			       @StatusNum,
-			       @ErrorCode,
-			       GetDate()
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error adding new row to T_MyEmsl_Uploads for job ' + Convert(varchar(12), @job)
-			end	
-			
-		End
+		-----------------------------------------------
+		-- Add a new row to T_MyEmsl_Uploads
+		-----------------------------------------------
+		--
+		INSERT INTO T_MyEmsl_Uploads( Job,
+			                            Dataset_ID,
+			                            Subfolder,
+			                            FileCountNew,
+			                            FileCountUpdated,
+			                            Bytes,
+			                            UploadTimeSeconds,
+			                            StatusURI_PathID,
+			                            StatusNum,
+			                            ErrorCode,
+			                            Entered )
+		SELECT @Job,
+			    @DatasetID,
+			    @Subfolder,
+			    @FileCountNew,
+			    @FileCountUpdated,
+			    @Bytes,
+			    @UploadTimeSeconds,
+			    @StatusURI_PathID,
+			    @StatusNum,
+			    @ErrorCode,
+			    GetDate()
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error adding new row to T_MyEmsl_Uploads for job ' + Convert(varchar(12), @job)
+		end	
+		
+
 		
 	End -- </a3>
 	

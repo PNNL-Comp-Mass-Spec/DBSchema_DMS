@@ -18,6 +18,7 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **	Auth:	mem
 **			11/12/2012 mem - Initial version (extracted code from AddUpdateAnalysisJobRequest and ValidateAnalysisJobParameters)
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
+**			08/02/2013 mem - Tweaked message for "Not Released" datasets
 **
 *****************************************************/
 (
@@ -95,7 +96,10 @@ As
 		
 		If @AutoRemoveNotReleasedDatasets = 0
 		Begin
-			set @message = Convert(varchar(12), @NotReleasedCount) + ' ' + dbo.CheckPlural(@NotReleasedCount, 'dataset', 'datasets') + ' are "Not Released": ' + @list
+			if @NotReleasedCount = 1
+				set @message = 'dataset is "Not Released": ' + @list
+			else
+				set @message = Convert(varchar(12), @NotReleasedCount) + ' datasets are "Not Released": ' + @list
 			return 50101
 		End
 		Else

@@ -29,6 +29,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			04/11/2011 mem - Updated call to AddUpdateAnalysisJob
 **			04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to AddUpdateAnalysisJob
 **			05/03/2012 mem - Added support for the Special Processing field
+**			08/02/2013 mem - Removed extra semicolon in status message
 **    
 *****************************************************/
 (
@@ -258,7 +259,7 @@ As
 							If @JobFailErrorCode = 0
 								Set @JobFailErrorCode = @result
 								
-							Set @message = @message + ' [' + convert(varchar(12), @result) + ']; '
+							Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
 						End
 					END 
 				End -- </d>
