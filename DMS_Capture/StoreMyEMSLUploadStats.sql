@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **			04/06/2012 mem - No longer posting a log message if @StatusURI is blank and @FileCountNew=0 and @FileCountUpdated=0
 **			08/19/2013 mem - Removed parameter @UpdateURIPathIDsForExistingJob
 **			09/06/2013 mem - No longer using @ContentURI
+**			09/11/2013 mem - No longer calling PostLogEntry if @StatusURI is invalid but @ErrorCode is non-zero
 **    
 *****************************************************/
 (
@@ -147,7 +148,10 @@ As
 		If @InvalidFormat <> 0
 		Begin
 			If @infoOnly = 0
-				Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
+			Begin
+				If @ErrorCode = 0
+					Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
+			End
 			else
 				Print @LogMsg
 		End
@@ -368,9 +372,6 @@ Done:
 		Print @message
 
 	Return @myError
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[StoreMyEMSLUploadStats] TO [svc-dms] AS [dbo]
