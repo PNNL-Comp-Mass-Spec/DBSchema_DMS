@@ -4,12 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Folder_Paths]
 AS
 SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
-       ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS Dataset_Folder_Path,
-       ISNULL(DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS Archive_Folder_Path,
+       ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client, 
+              dbo.udfCombinePaths(SPath.SP_path, 
+                                  ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
+       CASE
+           WHEN DAP.Archive_Path IS NULL THEN ''
+           ELSE dbo.udfCombinePaths(DAP.Archive_Path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))
+       END AS Archive_Folder_Path,
+       '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)) AS MyEMSL_Path_Flag,
        SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL,
        DAP.Instrument_Data_Purged
 FROM dbo.T_Dataset DS

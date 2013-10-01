@@ -628,7 +628,7 @@ As
 			If @eusUsageType = '(lookup)' and @eusProposalID = '(lookup)' and @eusUsersList = '(lookup)'
 				Set @Warning = ''
 			else
-				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request "' + Convert(varchar(12), @requestID) + ' was specified'
+				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request "' + Convert(varchar(12), @requestID) + '" was specified'
 				
 			-- When a request is specified, force @eusProposalID, @eusUsageType, and @eusUsersList to be blank
 			-- Previously, we would raise an error here

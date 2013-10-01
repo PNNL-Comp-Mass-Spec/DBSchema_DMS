@@ -18,7 +18,10 @@ FROM T_Predefined_Analysis_Scheduling_Queue SQ
      INNER JOIN T_Dataset D
        ON SQ.Dataset_ID = D.Dataset_ID
 WHERE Result_Code <> 0 AND
+      SQ.State Not In ('Ignore') AND
       Last_Affected >= DATEADD(DAY, -14, GETDATE())	-- Report errors within the last 14 days
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Job_Creation_Errors] TO [PNL\D3M578] AS [dbo]

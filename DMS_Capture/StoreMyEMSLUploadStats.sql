@@ -63,7 +63,6 @@ As
 	Set @DatasetID = IsNull(@DatasetID, 0)
 	Set @Subfolder = IsNull(@Subfolder, '')
 	Set @StatusURI = IsNull(@StatusURI, '')
-	Set @ContentURI = IsNull(@ContentURI, '')
 	
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
@@ -179,121 +178,6 @@ As
 		End -- </b2>
 	End -- </a1>
 	
-	/*
-	 *
-	-----------------------------------------------
-	-- Deprecated code, since @ContentURI will now always be empty
-	--
-	-- Analyze @ContentURI to determine the base URI, which is the text up to and including /Instrument/Year_Quarter/
-	-- For example, in https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/LTQ_Orb_3/2012_1/Athal0501_26Mar12_Jaguar_12-02-27/
-	-- extract out     https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/LTQ_Orb_3/2012_1/
-	-----------------------------------------------
-	--
-	Declare @ContentURI_PathID int = 1
-	Declare @ContentURI_Path varchar(512) = ''
-	
-	If @ContentURI = '' and @FileCountNew = 0 And @FileCountUpdated = 0
-	Begin
-		-- Nothing to do; leave@ContentURI_PathID as 1
-		Set @ContentURI_PathID = 1
-	End
-	Else
-	Begin -- <a2>
-		
-		-- Setup the log message in case we need it; also, set @InvalidFormat to 1 for now
-		Set @LogMsg = 'Unable to extract expected text from ContentURI for job ' + Convert(varchar(12), @Job) + ', dataset ' + Convert(varchar(12), @DatasetID)
-		Set @InvalidFormat = 1
-		
-		Set @CharLoc = CharIndex('/data/', @ContentURI)
-		If @CharLoc = 0
-			Set @LogMsg = @LogMsg + ': /data/ not found in ' + @ContentURI
-		Else
-		Begin -- <b3>
-			-- Extract out the base path, for example:
-			-- https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/
-			Set @ContentURI_Path = SUBSTRING(@ContentURI, 1, @CharLoc + 5)
-			
-			-- Extract out the text after /data/, for example:
-			-- LTQ_Orb_3/2012_1/Athal0501_26Mar12_Jaguar_12-02-27/
-			Set @SubString = SubString(@ContentURI, @CharLoc + 6, 255)
-			
-			-- Remove Instrument Name and Year_Quarter from @SubString and append to @ContentURI_Path
-			-- Do this by looking for the Year_Quarter folder, e.g. /2012_1/
-			set @CharLoc = PATINDEX('%/[2-9][0-9][0-9][0-9][_][0-9]/%', @SubString)
-
-			If @CharLoc <= 0
-			Begin -- <c1>
-				-- Match not found; look for the dataset name instead
-				
-				SELECT @Dataset = Dataset
-				FROM T_Jobs
-				WHERE Job = @Job
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				
-				If @myRowCount = 0
-				Begin
-					-- Job not found; log an error
-					Set @LogMsg = @LogMsg + ': Year_Quarter not found in the URI and Job not found in T_Jobs; ' + @ContentURI				
-				End
-				Else
-				Begin -- <d1>
-					-- Look for @Dataset in @SubString
-					Set @CharLoc = CharIndex(@Dataset, @SubString)
-					
-					If @CharLoc > 1
-					Begin
-						Set @ContentURI_Path = @ContentURI_Path + Substring(@SubString, 1, @CharLoc-1)
-						Set @SubString = SubString(@SubString, @CharLoc, 255)					
-						Set @InvalidFormat = 0
-					End
-					Else
-					Begin
-						Set @LogMsg = @LogMsg + ': Year_Quarter not found in the URI; dataset name also not found; ' + @ContentURI		
-					End				
-				End -- </d1>			
-				
-			End -- </c1>
-			Else
-			Begin
-				Set @ContentURI_Path = @ContentURI_Path + Substring(@SubString, 1, @CharLoc+7)
-				Set @SubString = SubString(@SubString, @CharLoc+8, 255)					
-				Set @InvalidFormat = 0			
-			End
-					
-		End -- </b3>
-		
-		If @InvalidFormat <> 0
-		Begin
-			If @infoOnly = 0
-				Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
-			else
-				Print @LogMsg
-		End
-		Else
-		Begin -- <b4>
-			-- Resolve @ContentURI_Path to @ContentURI_PathID
-			
-			Exec @ContentURI_PathID = GetURIPathID @ContentURI_Path, @infoOnly=@infoOnly
-			
-			If @ContentURI_PathID <= 1
-			Begin
-				Set @LogMsg = 'Unable to resolve ContentURI_Path to URI_PathID for job ' + Convert(varchar(12), @Job) + ', dataset ' + Convert(varchar(12), @DatasetID) + ': ' + @ContentURI_Path
-				
-				If @infoOnly = 0
-					Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
-				Else
-					Print @LogMsg
-			End		
-			Begin
-				-- Blank out @ContentURI since we have successfully resolved it into @ContentURI_PathID
-				Set @ContentURI = ''
-			End
-
-		End -- </b4>
-	End -- </a2>
-	*/	
-	
 	If @infoOnly <> 0
 	Begin
 		-----------------------------------------------
@@ -372,6 +256,9 @@ Done:
 		Print @message
 
 	Return @myError
+
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[StoreMyEMSLUploadStats] TO [svc-dms] AS [dbo]

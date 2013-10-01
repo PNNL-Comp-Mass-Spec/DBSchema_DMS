@@ -70,11 +70,6 @@ AS
 	End
 
 GO
-ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Dataset] FOREIGN KEY([Dataset_ID])
-REFERENCES [T_Dataset] ([Dataset_ID])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] CHECK CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Dataset]
-GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Queue_T_Predefined_Analysis_Scheduling_Queue_State] FOREIGN KEY([State])
 REFERENCES [T_Predefined_Analysis_Scheduling_Queue_State] ([State])
 GO

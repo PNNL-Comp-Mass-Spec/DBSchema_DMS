@@ -51,3 +51,11 @@ REFERENCES [T_Seq_Local_Symbols_List] ([Local_Symbol_ID])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Seq_Local_Symbols_List]
 GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_File_Mass_Mods_DynMod_LocalSymbolID] CHECK  ((case when [Mod_Type_Symbol]='D' then [Local_Symbol_ID] else (1) end>(0)))
+GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [CK_T_Param_File_Mass_Mods_DynMod_LocalSymbolID]
+GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_File_Mass_Mods_StatMod_LocalSymbolID] CHECK  ((case when [Mod_Type_Symbol]='S' then [Local_Symbol_ID] else (0) end=(0)))
+GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [CK_T_Param_File_Mass_Mods_StatMod_LocalSymbolID]
+GO

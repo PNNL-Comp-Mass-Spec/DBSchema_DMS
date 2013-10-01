@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2]
 AS
 SELECT AJ.AJ_jobID AS JobNum,
@@ -12,7 +11,10 @@ SELECT AJ.AJ_jobID AS JobNum,
        E.Experiment_Num AS Experiment,
        DS.DS_folder_name AS [Dataset Folder],
        DFP.Dataset_Folder_Path AS [Dataset Folder Path],
-       DFP.Archive_Folder_Path AS [Archive Folder Path],
+       CASE 
+           WHEN ISNULL(DA.MyEmslState, 0) > 1 THEN ''
+           ELSE DFP.Archive_Folder_Path 
+       END AS [Archive Folder Path],
        InstName.IN_name AS Instrument,
        AnalysisTool.AJT_toolName AS [Tool Name],
        AJ.AJ_parmFileName AS [Parm File],
@@ -28,14 +30,21 @@ SELECT AJ.AJ_jobID AS JobNum,
        AJ.AJ_owner AS Owner,
        AJ.AJ_comment AS [Comment],
        AJ.AJ_specialProcessing AS [Special Processing],
-       CASE WHEN AJ.AJ_Purged = 0
-       THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName) 
-       ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
+       CASE 
+           WHEN AJ.AJ_Purged = 0 THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName) 
+           ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
        END AS [Results Folder Path],
-       dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName) AS [Archive Results Folder Path],
-       CASE WHEN AJ.AJ_Purged = 0
-       THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
-       ELSE DFP.Dataset_URL
+       CASE
+           WHEN AJ.AJ_MyEMSLState > 0 THEN ''
+           ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName) 
+       END AS [Archive Results Folder Path],
+       CASE
+           WHEN AJ.AJ_MyEMSLState > 0 THEN dbo.GetMyEMSLUrlAnalysisJob(AJ.AJ_resultsFolderName)
+           ELSE ''
+       END AS [MyEMSL URL],
+       CASE 
+           WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
+           ELSE DFP.Dataset_URL
        END AS [Data Folder Link],
        dbo.GetJobPSMStats(AJ.AJ_JobID) AS [PSM Stats],
        ISNULL(MTSPT.PT_DB_Count, 0) AS [MTS PT DB Count],
@@ -56,7 +65,8 @@ SELECT AJ.AJ_jobID AS JobNum,
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
        END AS [Export Mode],
-       T_YesNo.Description AS [Dataset Unreviewed]
+       T_YesNo.Description AS [Dataset Unreviewed],
+       T_MyEMSLState.StateName AS [MyEMSL State]
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -74,8 +84,10 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN dbo.T_Organisms AS Org
        ON Org.Organism_ID = AJ.AJ_organismID
-     INNER JOIN dbo.T_YesNo 
+     INNER JOIN dbo.T_YesNo
        ON AJ.AJ_DatasetUnreviewed = T_YesNo.Flag
+     INNER JOIN T_MyEMSLState
+       ON AJ.AJ_MyEMSLState = T_MyEMSLState.MyEMSLState
      LEFT OUTER JOIN ( SELECT Job,
                               COUNT(*) AS MT_DB_Count
                        FROM dbo.T_MTS_MT_DB_Jobs_Cached
@@ -95,7 +107,8 @@ FROM dbo.T_Analysis_Job AS AJ
                      INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
                        ON AJPG.ID = AJPGA.Group_ID
        ON AJ.AJ_jobID = AJPGA.Job_ID
-
+     LEFT OUTER JOIN dbo.T_Dataset_Archive DA 
+       ON DS.Dataset_ID = DA.AS_Dataset_ID
 
 
 GO

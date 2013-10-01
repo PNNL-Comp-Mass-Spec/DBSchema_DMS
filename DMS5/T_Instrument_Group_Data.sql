@@ -1,7 +1,8 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 30 ******/
+/****** RowCount: 31 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,'')
+INSERT INTO [T_Instrument_Group] VALUES ('Agilent_FTMS','Research','',1,1,'FT')
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_GC-MS','Metabolomics','',1,18,'GC')
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_Ion_Trap','Research','',0,2,'')
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF','Research','',0,1,'')

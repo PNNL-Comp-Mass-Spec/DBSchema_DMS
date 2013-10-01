@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Data_Package_Paths]
 AS
 SELECT DP.ID,      
@@ -11,10 +12,12 @@ SELECT DP.ID,
        DP.Path_Team + '\' + DP.Path_Year + '\' + DP.Package_File_Folder AS Storage_Path_Relative,
        DPS.Path_Shared_Root + DP.Path_Team + '\' + DP.Path_Year + '\' + DP.Package_File_Folder AS Share_Path,
        DPS.Path_Web_Root + DP.Path_Team + '/' + DP.Path_Year + '/' + DP.Package_File_Folder AS Web_Path,
-       DPS.Path_Archive_Root + DP.Path_Team + '/' + DP.Path_Year + '/' + DP.Package_File_Folder AS Archive_Path
+       DPS.Path_Archive_Root + DP.Path_Team + '/' + DP.Path_Year + '/' + DP.Package_File_Folder AS Archive_Path,
+       dbo.[udfCombinePaths](DPS.Path_Local_Root, DP.Path_Team) + '\' + DP.Path_Year + '\' + DP.Package_File_Folder AS Local_Path
 FROM dbo.T_Data_Package AS DP
      INNER JOIN dbo.T_Data_Package_Storage AS DPS
        ON DP.Path_Root = DPS.ID
+
 
 
 

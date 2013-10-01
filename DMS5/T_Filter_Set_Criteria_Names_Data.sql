@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Filter_Set_Criteria_Names] ******/
-/****** RowCount: 27 ******/
+/****** RowCount: 28 ******/
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] ON
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (1,'Spectrum_Count','Number of distinct spectra the peptide is observed in, taking into account datasets analyzed multiple times')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (2,'Charge','Peptide charge')
@@ -25,7 +25,8 @@ INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criteri
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (22,'MSGF_SpecProb','MSGF Spectrum Probability value; closer to 0 is higher confidence')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (23,'MSGFDB_SpecProb','MSGFDB Spectrum Probability; closer to 0 is higher confidence')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (24,'MSGFDB_PValue','MSGFDB PValue')
-INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (25,'MSGFDB_FDR','MSGFDB FDR')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (25,'MSGFPlus_QValue','MSGF+ QValue (aka FDR for MSGFDB)')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (26,'MSAlign_PValue','MSAlign PValue')
 INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (27,'MSAlign_FDR','MSAlign FDR')
+INSERT INTO [T_Filter_Set_Criteria_Names] (Criterion_ID, Criterion_Name, Criterion_Description) VALUES (28,'MSGFPlus_PepQValue','MSGF+ PepQValue (aka PepFDR for MSGFDB)')
 SET IDENTITY_INSERT [T_Filter_Set_Criteria_Names] OFF

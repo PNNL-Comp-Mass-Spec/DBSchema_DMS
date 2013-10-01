@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Groups] ******/
-/****** RowCount: 22 ******/
+/****** RowCount: 23 ******/
 /****** Columns: Group_ID, Group_Name, Enabled, Comment ******/
 INSERT INTO [T_Processor_Tool_Groups] VALUES (0,'Disabled Processors',0,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (1,'Proto_Storage_Servers',1,'')
@@ -17,9 +17,10 @@ INSERT INTO [T_Processor_Tool_Groups] VALUES (12,'Peaks and Daffy Pubs',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (13,'Monroe Development Box',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (14,'Sandoval Development Box',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (15,'Poweredge 1850 XP Pubs with ICR2LS-Lite',1,'')
-INSERT INTO [T_Processor_Tool_Groups] VALUES (17,'R610 Pubs, Group 2, Decon2LS_V2',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; also supports MSXML_Bruker; Microsoft Forefront ignores DMS_WorkDir folders; 24 GB of ram (only 16 GB on Pub-74)')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (17,'R610 Pubs, Group 2, Decon2LS_V2, R 2.15.3',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; also supports MSXML_Bruker; have R 2.15.3; Microsoft Forefront ignores DMS_WorkDir folders; 24 GB of ram (only 16 GB on Pub-74)')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (18,'Crowell Development Box',1,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (19,'R610 Pub-88, Decon2LS_V2',1,'Pub-88 is connected to Chinook and can run XTandem_HPC')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (20,'R610 Pubs, Group 4, R 2.15.3',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; 24 GB of ram; have R 2.15.3')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (21,'R610 Pubs, Group 3, Decon2LS_V2',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; 24 GB of ram')
-INSERT INTO [T_Processor_Tool_Groups] VALUES (22,'R610 Pubs, Group 4, R 2.13.1',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; 24 GB of ram; have R 2.13.1')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (23,'Mallard',1,'Has .NET 4; running LCMSFeatureFinder and Decon2LS_V2')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (24,'PIC Pubs',1,'VMs running on PIC.  Have .NET 4, R 2.15.3, and CompassXtract (thus supporting MSXML_Bruker). 24 GB of ram')

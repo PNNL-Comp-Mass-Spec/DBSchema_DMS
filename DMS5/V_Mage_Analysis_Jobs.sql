@@ -8,7 +8,7 @@ GO
 CREATE VIEW [dbo].[V_Mage_Analysis_Jobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
-       AJ.AJ_StateNameCached AS State,
+       AJ.AJ_StateNameCached AS [State],
        DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
        AnalysisTool.AJT_toolName AS Tool,
@@ -24,36 +24,40 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_comment AS [Comment],
        ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder],
        CASE
-           WHEN AJ.AJ_Purged = 0 THEN ISNULL(SPath.SP_vol_name_client + SPath.SP_path +
-                                             ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName, '')
-           ELSE ISNULL(DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName, '')
+           WHEN AJ.AJ_Purged = 0 THEN ISNULL(DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName, '')
+           ELSE CASE
+                    WHEN AJ.AJ_MyEMSLState >= 1 THEN ISNULL(DFP.MyEMSL_Path_Flag + '\' + AJ.AJ_resultsFolderName, '')
+                    ELSE ISNULL(DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName, '')
+                END
        END AS Folder,
        DS.DS_created AS Dataset_Created,
        AJ.AJ_finish AS Job_Finish,
        DR.DRN_name AS Dataset_Rating,
-       DS.DS_Sec_Sep as Separation_Type,
-       DTN.DST_name as Dataset_Type
-FROM V_Dataset_Archive_Path DAP
-     RIGHT OUTER JOIN T_Analysis_Job AJ
-                      INNER JOIN T_Dataset DS
-                        ON AJ.AJ_datasetID = DS.Dataset_ID
-                      INNER JOIN T_Organisms Org
-                        ON AJ.AJ_organismID = Org.Organism_ID
-                      INNER JOIN T_Analysis_Tool AnalysisTool
-                        ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
-                      INNER JOIN T_Instrument_Name InstName
-                        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                      INNER JOIN T_Experiments E
-                        ON DS.Exp_ID = E.Exp_ID
-                      INNER JOIN T_Campaign C
-                        ON E.EX_campaign_ID = C.Campaign_ID
-       ON DAP.Dataset_ID = DS.Dataset_ID
+       DS.DS_Sec_Sep AS Separation_Type,
+       DTN.DST_name AS Dataset_Type,
+       AJ.AJ_requestID AS Request_ID
+FROM T_Analysis_Job AJ
+     INNER JOIN T_Dataset DS
+       ON AJ.AJ_datasetID = DS.Dataset_ID
+     INNER JOIN T_Organisms Org
+       ON AJ.AJ_organismID = Org.Organism_ID
+     INNER JOIN T_Analysis_Tool AnalysisTool
+       ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
+     INNER JOIN T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN T_Campaign C
+       ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
      INNER JOIN T_DatasetRatingName DR
        ON DS.DS_rating = DR.DRN_state_ID
-     INNER JOIN T_DatasetTypeName DTN 
+     INNER JOIN T_DatasetTypeName DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
+     INNER JOIN V_Dataset_Folder_Paths DFP
+       ON DS.Dataset_ID = DFP.Dataset_ID
+
 
 
 GO

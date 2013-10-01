@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 54 ******/
+/****** RowCount: 58 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (1,'unknown',1,'Not a valid cart')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used')
@@ -55,4 +55,8 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES 
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (69,'Columbia',2,'Eksigent System.  Used to be Andromeda')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (70,'Smeagol',2,'#1 2D Waters NanoAcquity LC 1D cart.  Serial numbers nBSM:L12NPB418N;nSM:F12NPS111M')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (72,'Merry',2,'Waters 1D LC commercial system')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (73,'Cedar',2,'LCMSnet controlled cart with Waters pumps and ISCO for loading.  Cart reconfigured in IDL to accommodate Waters Pumps')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (74,'Alder',2,'Being used for online digestion')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (75,'Nautilus',2,'The Nautilus LC cart is a 1200 series Agilent Nanopump and Auto sampler.')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description) VALUES (76,'Einstein',2,'ISCO pumps for Direct Infusion of DOM samples')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

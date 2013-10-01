@@ -36,6 +36,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_specialProcessing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_DatasetUnreviewed] [tinyint] NOT NULL,
 	[AJ_Purged] [tinyint] NOT NULL,
+	[AJ_MyEMSLState] [tinyint] NOT NULL,
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -380,6 +381,11 @@ REFERENCES [T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Dataset]
 GO
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_MyEMSLState] FOREIGN KEY([AJ_MyEMSLState])
+REFERENCES [T_MyEMSLState] ([MyEMSLState])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_MyEMSLState]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Organisms] FOREIGN KEY([AJ_organismID])
 REFERENCES [T_Organisms] ([Organism_ID])
 GO
@@ -417,4 +423,6 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_DatasetUnreviewed]  DEFAULT ((0)) FOR [AJ_DatasetUnreviewed]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_Purged]  DEFAULT ((0)) FOR [AJ_Purged]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_MyEMSLState]  DEFAULT ((0)) FOR [AJ_MyEMSLState]
 GO

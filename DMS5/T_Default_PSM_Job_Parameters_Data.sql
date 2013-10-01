@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Default_PSM_Job_Parameters] ******/
-/****** RowCount: 28 ******/
+/****** RowCount: 35 ******/
 SET IDENTITY_INSERT [T_Default_PSM_Job_Parameters] ON
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (16,'High Res MS1','MSGFPlus',0,0,0,'MSGFDB_PartTryp_NoMods_20ppmParTol.txt')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (20,'High Res MS1','MSGFPlus',0,1,0,'MSGFDB_PartTryp_StatCysAlk_20ppmParTol.txt')
@@ -21,6 +21,13 @@ INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, 
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (8,'iTRAQ 4-plex','Sequest',0,1,1,'sequest_HCD_N14_PartTryp_DynSTYPhos_Stat_C_Iodo_ITRAQ_4PLEX_Par50ppmFrag0pt05Da.params')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (11,'iTRAQ 4-plex','Sequest',1,0,0,'sequest_HCD_N14_PartTryp_DynMetOx_ITRAQ_4PLEX_Par50ppmFrag0pt05Da.params')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (14,'iTRAQ 4-plex','Sequest',1,1,0,'sequest_HCD_N14_PartTryp_DynMetOx_StatIodo_ITRAQ_4PLEX_Par50ppmFrag0pt05Da.params')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (29,'iTRAQ 8-plex','MSGFPlus',0,0,0,'MSGFDB_PartTryp_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (30,'iTRAQ 8-plex','MSGFPlus',0,0,1,'MSGFDB_PartTryp_DynSTYPhos_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (31,'iTRAQ 8-plex','MSGFPlus',0,1,0,'MSGFDB_PartTryp_Stat_CysAlk_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (32,'iTRAQ 8-plex','MSGFPlus',0,1,1,'MSGFDB_PartTryp_DynSTYPhos_Stat_CysAlk_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (33,'iTRAQ 8-plex','MSGFPlus',1,0,0,'MSGFDB_PartTryp_DynMetOx_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (34,'iTRAQ 8-plex','MSGFPlus',1,1,0,'MSGFDB_PartTryp_DynMetOx_Stat_CysAlk_iTRAQ_8Plex_20ppmParTol.txt')
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (35,'iTRAQ 8-plex','Sequest',1,1,0,'sequest_HCD_N14_PartTryp_DynMetOx_Stat_Cys_Iodo_ITRAQ_8PLEX_Par50ppmFrag0pt05Da.params')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (15,'Low Res MS1','MSGFPlus',0,0,0,'MSGFDB_PartTryp_NoMods.txt')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (19,'Low Res MS1','MSGFPlus',0,1,0,'MSGFDB_PartTryp_StatCysAlk.txt')
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name) VALUES (23,'Low Res MS1','MSGFPlus',1,0,0,'MSGFDB_PartTryp_MetOx.txt')

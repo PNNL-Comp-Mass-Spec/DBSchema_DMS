@@ -3,8 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
---
-CREATE VIEW V_Experiment_Detail_Report_Ex AS 
+
+CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex] AS 
 SELECT  E.Experiment_Num AS Experiment ,
         U.U_Name + ' (' + E.EX_researcher_PRN + ')' AS Researcher ,
         Org.OG_name AS Organism ,
@@ -32,7 +32,8 @@ SELECT  E.Experiment_Num AS Experiment ,
         ML.Tag AS Location ,
         E.Ex_Material_Active AS [Material Status] ,
         E.EX_wellplate_num AS [Wellplate Number] ,
-        E.EX_well_num AS [Well Number]
+        E.EX_well_num AS [Well Number],
+        dbo.GetMyEMSLUrlExperiment(E.Experiment_Num) [MyEMSL URL]
 FROM    T_Experiments AS E
         INNER JOIN T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID
         INNER JOIN T_Users AS U ON E.EX_researcher_PRN = U.U_PRN
@@ -69,6 +70,7 @@ FROM    T_Experiments AS E
                                                  GROUP BY Entity_ID
                                                ) AS FA ON EG.Group_ID = CONVERT(INT, FA.Entity_ID)
                         ) AS ExpGroupFileCount ON ExpGroupFileCount.Exp_ID = E.Exp_ID
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]
 GO

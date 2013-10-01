@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Sample_Labelling] ******/
-/****** RowCount: 18 ******/
+/****** RowCount: 19 ******/
 /****** Columns: Label, ID ******/
 INSERT INTO [T_Sample_Labelling] VALUES ('12C/13C',18)
 INSERT INTO [T_Sample_Labelling] VALUES ('Cleavable ICAT',8)
@@ -16,6 +16,7 @@ INSERT INTO [T_Sample_Labelling] VALUES ('PhIAT',4)
 INSERT INTO [T_Sample_Labelling] VALUES ('PhIST',10)
 INSERT INTO [T_Sample_Labelling] VALUES ('SP-ICAT',9)
 INSERT INTO [T_Sample_Labelling] VALUES ('Sulfo-NHS-LC-Biotin',7)
+INSERT INTO [T_Sample_Labelling] VALUES ('TMT10',19)
 INSERT INTO [T_Sample_Labelling] VALUES ('TMT2',16)
 INSERT INTO [T_Sample_Labelling] VALUES ('TMT6',17)
 INSERT INTO [T_Sample_Labelling] VALUES ('Unknown',0)

@@ -17,12 +17,13 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 	[AS_archive_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AS_update_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AS_verification_processor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[AS_instrument_data_purged] [tinyint] NULL,
+	[AS_instrument_data_purged] [tinyint] NOT NULL,
 	[AS_Last_Successful_Archive] [datetime] NULL,
 	[AS_StageMD5_Required] [tinyint] NOT NULL,
 	[QC_Data_Purged] [tinyint] NOT NULL,
 	[Purge_Policy] [tinyint] NOT NULL,
 	[Purge_Priority] [tinyint] NOT NULL,
+	[MyEMSLState] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
@@ -290,6 +291,11 @@ REFERENCES [T_DatasetArchiveStateName] ([DASN_StateID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
 GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState] FOREIGN KEY([MyEMSLState])
+REFERENCES [T_MyEMSLState] ([MyEMSLState])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState]
+GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_YesNo] FOREIGN KEY([AS_instrument_data_purged])
 REFERENCES [T_YesNo] ([Flag])
 GO
@@ -306,4 +312,6 @@ GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Policy]  DEFAULT ((0)) FOR [Purge_Policy]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Priority]  DEFAULT ((3)) FOR [Purge_Priority]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_MyEMSLState]  DEFAULT ((0)) FOR [MyEMSLState]
 GO

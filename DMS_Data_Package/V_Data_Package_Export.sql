@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Data_Package_Export]
 AS
 SELECT DP.ID,
@@ -25,11 +24,11 @@ SELECT DP.ID,
        DP.Package_File_Folder,
        DPP.Storage_Path_Relative,
        DPP.Share_Path,
-       DPP.Archive_Path
+       DPP.Archive_Path,
+       DPP.Local_Path
 FROM dbo.T_Data_Package DP
      INNER JOIN dbo.V_Data_Package_Paths AS DPP
        ON DP.ID = DPP.ID
-
 
 
 GO

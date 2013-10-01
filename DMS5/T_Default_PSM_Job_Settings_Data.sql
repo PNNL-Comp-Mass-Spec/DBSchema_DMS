@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Default_PSM_Job_Settings] ******/
-/****** RowCount: 40 ******/
+/****** RowCount: 56 ******/
 SET IDENTITY_INSERT [T_Default_PSM_Job_Settings] ON
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (23,'MSGFPlus','High Res ms1',0,0,'IonTrapDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (29,'MSGFPlus','High Res ms1',0,1,'IonTrapDefSettings_DeconMSN.xml')
@@ -9,6 +9,10 @@ INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, St
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (30,'MSGFPlus','iTRAQ 4-plex',0,1,'IonTrapDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (27,'MSGFPlus','iTRAQ 4-plex',1,0,'IonTrapDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (33,'MSGFPlus','iTRAQ 4-plex',1,1,'IonTrapDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (106,'MSGFPlus','iTRAQ 8-plex',0,0,'IonTrapDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (107,'MSGFPlus','iTRAQ 8-plex',0,1,'IonTrapDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (108,'MSGFPlus','iTRAQ 8-plex',1,0,'IonTrapDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (109,'MSGFPlus','iTRAQ 8-plex',1,1,'IonTrapDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (22,'MSGFPlus','Low Res ms1',0,0,'IonTrapDefSettings.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (28,'MSGFPlus','Low Res ms1',0,1,'IonTrapDefSettings.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (25,'MSGFPlus','Low Res ms1',1,0,'IonTrapDefSettings.xml')
@@ -21,6 +25,10 @@ INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, St
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (39,'MSGFPlus_DTARefinery','iTRAQ 4-plex',0,1,'IonTrapDefSettings_DeconMSN_DTARef_4plexITRAQ_phospho.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (37,'MSGFPlus_DTARefinery','iTRAQ 4-plex',1,0,'IonTrapDefSettings_DeconMSN_DTARef_StatCysAlk_4plexITRAQ.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (41,'MSGFPlus_DTARefinery','iTRAQ 4-plex',1,1,'IonTrapDefSettings_DeconMSN_DTARef_StatCysAlk_4plexITRAQ_phospho.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (110,'MSGFPlus_DTARefinery','iTRAQ 8-plex',0,0,'IonTrapDefSettings_DeconMSN_DTARef_8plexITRAQ.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (111,'MSGFPlus_DTARefinery','iTRAQ 8-plex',0,1,'IonTrapDefSettings_DeconMSN_DTARef_8plexITRAQ_phospho.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (112,'MSGFPlus_DTARefinery','iTRAQ 8-plex',1,0,'IonTrapDefSettings_DeconMSN_DTARef_StatCysAlk_8plexITRAQ.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (113,'MSGFPlus_DTARefinery','iTRAQ 8-plex',1,1,'IonTrapDefSettings_DeconMSN_DTARef_StatCysAlk_8plexITRAQ_phospho.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (3,'Sequest','High Res ms1',0,0,'FinniganDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (9,'Sequest','High Res ms1',0,1,'FinniganDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (6,'Sequest','High Res ms1',1,0,'FinniganDefSettings_DeconMSN.xml')
@@ -29,6 +37,10 @@ INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, St
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (10,'Sequest','iTRAQ 4-plex',0,1,'FinniganDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (7,'Sequest','iTRAQ 4-plex',1,0,'FinniganDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (13,'Sequest','iTRAQ 4-plex',1,1,'FinniganDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (114,'Sequest','iTRAQ 8-plex',0,0,'FinniganDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (115,'Sequest','iTRAQ 8-plex',0,1,'FinniganDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (116,'Sequest','iTRAQ 8-plex',1,0,'FinniganDefSettings_DeconMSN.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (117,'Sequest','iTRAQ 8-plex',1,1,'FinniganDefSettings_DeconMSN.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (1,'Sequest','Low Res ms1',0,0,'FinniganDefSettings.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (8,'Sequest','Low Res ms1',0,1,'FinniganDefSettings.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (5,'Sequest','Low Res ms1',1,0,'FinniganDefSettings.xml')
@@ -41,4 +53,8 @@ INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, St
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (19,'Sequest_DTARefinery','iTRAQ 4-plex',0,1,'FinniganDefSettings_DeconMSN_DTARef_4plexITRAQ_phospho.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (17,'Sequest_DTARefinery','iTRAQ 4-plex',1,0,'FinniganDefSettings_DeconMSN_DTARef_StatCysAlk_4plexITRAQ.xml')
 INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (21,'Sequest_DTARefinery','iTRAQ 4-plex',1,1,'FinniganDefSettings_DeconMSN_DTARef_StatCysAlk_4plexITRAQ_phospho.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (118,'Sequest_DTARefinery','iTRAQ 8-plex',0,0,'FinniganDefSettings_DeconMSN_DTARef_8plexITRAQ.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (119,'Sequest_DTARefinery','iTRAQ 8-plex',0,1,'FinniganDefSettings_DeconMSN_DTARef_8plexITRAQ_phospho.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (120,'Sequest_DTARefinery','iTRAQ 8-plex',1,0,'FinniganDefSettings_DeconMSN_DTARef_StatCysAlk_8plexITRAQ.xml')
+INSERT INTO [T_Default_PSM_Job_Settings] (Entry_ID, Tool_Name, Job_Type_Name, StatCysAlk, DynSTYPhos, Settings_File_Name) VALUES (121,'Sequest_DTARefinery','iTRAQ 8-plex',1,1,'FinniganDefSettings_DeconMSN_DTARef_StatCysAlk_8plexITRAQ_phospho.xml')
 SET IDENTITY_INSERT [T_Default_PSM_Job_Settings] OFF

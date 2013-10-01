@@ -23,6 +23,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **	Auth:	mem
 **	Date:	05/16/2013 mem - Initial version
 **			06/04/2013 mem - Now replacing tab characters with spaces
+**			09/16/2013 mem - Now allowing mod Heme_615 to be stored (even though it is from PNNL and not UniMod)
 **    
 *****************************************************/
 (
@@ -308,8 +309,8 @@ AS
 							--
 							SELECT @MassCorrectionID = Mass_Correction_ID
 							FROM T_Mass_Correction_Factors
-							WHERE Original_Source = 'UniMod' AND
-							      Original_Source_Name = @ModName
+							WHERE Original_Source_Name = @ModName AND
+							     (Original_Source = 'UniMod' OR @ModName = 'Heme_615')
 							--
 							SELECT @myRowCount = @@rowcount, @myError = @@error
 

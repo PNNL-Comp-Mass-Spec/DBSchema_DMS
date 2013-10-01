@@ -15,8 +15,8 @@ CREATE TABLE [dbo].[T_OSM_Package](
 	[Last_Modified] [datetime] NOT NULL,
 	[State] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Wiki_Page_Link] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Path_Root] [int] NULL,
 	[Sample_Prep_Requests] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Path_Root] [int] NULL,
  CONSTRAINT [PK_T_OSM_Package] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -29,15 +29,15 @@ REFERENCES [T_OSM_Package_Storage] ([ID])
 GO
 ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage]
 GO
-ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF__T_OSM_Pac__Packa__53D770D6]  DEFAULT ('General') FOR [Package_Type]
+ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Package_Type]  DEFAULT ('General') FOR [Package_Type]
 GO
-ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF__T_OSM_Pac__Descr__54CB950F]  DEFAULT ('') FOR [Description]
+ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Description]  DEFAULT ('') FOR [Description]
 GO
-ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF__T_OSM_Pac__Comme__55BFB948]  DEFAULT ('') FOR [Comment]
+ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Comment]  DEFAULT ('') FOR [Comment]
 GO
-ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF__T_OSM_Pac__Creat__56B3DD81]  DEFAULT (getdate()) FOR [Created]
+ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Last_Modified]  DEFAULT (getdate()) FOR [Last_Modified]
 GO
-ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF__T_OSM_Pac__State__57A801BA]  DEFAULT ('Active') FOR [State]
+ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_State]  DEFAULT ('Active') FOR [State]
 GO

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Archive]
 AS
 SELECT DA.AS_Dataset_ID,
@@ -28,6 +29,7 @@ SELECT DA.AS_Dataset_ID,
        DA.QC_Data_Purged,
        DA.Purge_Policy,
        DA.Purge_Priority,
+       DA.MyEMSLState,
        AP.AP_archive_path,
        AP.AP_network_share_path
 FROM T_Dataset_Archive DA
@@ -39,6 +41,7 @@ FROM T_Dataset_Archive DA
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      INNER JOIN T_Archive_Path AP
        ON DA.AS_storage_path_ID = AP.AP_path_ID
+
 
 
 GO

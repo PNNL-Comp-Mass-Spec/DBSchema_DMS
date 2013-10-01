@@ -14,7 +14,8 @@ CREATE PROCEDURE GetJobStepParams
 **
 **
 **	Auth:	grk
-**	09/08/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**	Date:	09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			08/30/2013 mem - Added MyEMSL_Status_URI
 **    
 *****************************************************/
 (
@@ -76,7 +77,7 @@ AS
 	end
 
 	-- Lookup the MyEMSL Status URI
-	-- We will only get a match if the step tool is ArchiveUpdate or DatasetArchive
+	-- We will only get a match if this job contains step tool ArchiveUpdate or DatasetArchive
 	-- Furthermore, we won't get a row until after the ArchiveUpdate or DatasetArchive step successfully completes
 	-- This URI will be used by the ArchiveVerify tool
 	--
