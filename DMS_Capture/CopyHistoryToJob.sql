@@ -20,10 +20,12 @@ CREATE PROCEDURE CopyHistoryToJob
 **			03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Jobs
 **						   - Fixed bug finding most recent successful job in T_Jobs_History
 **			08/27/2013 mem - Now calling UpdateParametersForJob
+**			10/21/2013 mem - Added @AssignNewJobNumber
 **    
 *****************************************************/
 (
 	@job int,
+	@AssignNewJobNumber tinyint = 0,			-- Set to 1 to assign a new job number when copying
 	@message varchar(512) = '' output
 )
 As
@@ -44,6 +46,8 @@ As
  	if IsNull(@job, 0) = 0
 		goto Done
 
+	Set @AssignNewJobNumber = IsNull(@AssignNewJobNumber, 0)
+	
  	---------------------------------------------------
 	-- Bail if job already exists in main tables
  	---------------------------------------------------
@@ -81,53 +85,66 @@ As
 	set @transName = 'CopyHistoryToJob'
 	begin transaction @transName
 
-	set identity_insert dbo.T_Jobs ON
+	
+	Declare @NewJob int = @Job
+	
+	If @AssignNewJobNumber = 0
+	Begin
+		set identity_insert dbo.T_Jobs ON		
+			
+		INSERT INTO T_Jobs( Job, Priority, Script, State,
+		                    Dataset, Dataset_ID, Results_Folder_Name,
+		                    Imported, Start, Finish )
+		SELECT Job, Priority, Script, State,
+		       Dataset, Dataset_ID, Results_Folder_Name,
+		       Imported, Start, Finish
+		FROM T_Jobs_History
+		WHERE Job = @job AND
+		      Saved = @dateStamp
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Error '
+			goto Done
+		end	
+	
+		set identity_insert dbo.T_Jobs OFF
+	End
+	Else
+	Begin
+		INSERT INTO T_Jobs( Priority, Script, State,
+		                    Dataset, Dataset_ID, Results_Folder_Name,
+		                    Imported, Start, Finish )
+		SELECT Priority, Script, State,
+		       Dataset, Dataset_ID, Results_Folder_Name,
+		       GetDate(), Start, Finish
+		FROM T_Jobs_History
+		WHERE Job = @job AND
+		      Saved = @dateStamp
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount, @NewJob = Scope_Identity()
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Error '
+			goto Done
+		end	
+		
+		If @NewJob is null
+		Begin
+			rollback transaction @transName
+			set @message = 'Error: Scope_Identity() returned null'
+			goto Done
+		end
+		
+		Print 'Cloned job ' + Convert(varchar(12), @job) + ' to create job ' + Convert(varchar(12), @NewJob)
+	End
 
   	---------------------------------------------------
-	-- copy jobs
-	---------------------------------------------------
-	--
-	INSERT INTO T_Jobs (
-		Job,
-		Priority,
-		Script,
-		State,
-		Dataset,
-		Dataset_ID,
-		Results_Folder_Name,
-		Imported,
-		Start,
-		Finish
-	)
-	SELECT 
-		Job,
-		Priority,
-		Script,
-		State,
-		Dataset,
-		Dataset_ID,
-		Results_Folder_Name,
-		Imported,
-		Start,
-		Finish
-	FROM
-		T_Jobs_History
-	WHERE
-		Job = @job AND
-		Saved = @dateStamp 
- 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-	if @myError <> 0
-	begin
-		rollback transaction @transName
-		set @message = 'Error '
-		goto Done
-	end
-
-	set identity_insert dbo.T_Jobs OFF
-
-   	---------------------------------------------------
 	-- copy steps
 	---------------------------------------------------
 	--
@@ -148,7 +165,7 @@ As
 		Evaluation_Message
 	)
 	SELECT 
-		Job,
+		@NewJob AS Job,
 		Step_Number,
 		Step_Tool,
 		State,
@@ -186,7 +203,7 @@ As
 		Parameters
 	)
 	SELECT
-		Job, 
+		@NewJob AS Job, 
 		Parameters
 	FROM
 		T_Job_Parameters_History
@@ -209,9 +226,9 @@ As
 	-- Manually create the job parameters if they were not present in T_Job_Parameters
 	---------------------------------------------------
 	
-	If Not Exists (SELECT * FROM T_Job_Parameters WHERE Job = @job)
+	If Not Exists (SELECT * FROM T_Job_Parameters WHERE Job = @NewJob)
 	Begin
-		exec UpdateParametersForJob @job
+		exec UpdateParametersForJob @NewJob
 	End
 	
  	---------------------------------------------------
@@ -219,6 +236,9 @@ As
 	---------------------------------------------------
 	--
 Done:
+	if @myError <> 0
+		print @message
+		
 	return @myError
 
 GO
