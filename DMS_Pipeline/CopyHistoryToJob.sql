@@ -26,6 +26,7 @@ CREATE PROCEDURE CopyHistoryToJob
 **			01/09/2012 mem - Added column Owner
 **			01/19/2012 mem - Added column DataPkgID
 **			03/26/2013 mem - Added column Comment
+**			12/10/2013 mem - Added support for failed jobs
 **    
 *****************************************************/
 (
@@ -78,6 +79,29 @@ As
 		set @message = 'Error '
 		goto Done
 	end
+		
+	If @myRowCount = 0
+	Begin
+		Print 'No successful jobs found in T_Jobs_History for job ' + Convert(varchar(12), @job) + '; will look for a failed job'
+		
+		-- find most recent historic job, regardless of job state
+		--
+		SELECT @dateStamp = MAX(Saved)
+		FROM T_Jobs_History
+		WHERE Job = @job
+		GROUP BY Job, State
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount = 0
+		Begin
+			Select 'Job not found in T_Jobs_History: ' + Convert(varchar(12), @job) AS Warning
+			Goto Done
+		End
+		
+		Print 'Match found, saved on ' + Convert(varchar(30), @dateStamp)
+		
+	End
 
  	---------------------------------------------------
  	-- Start transaction
@@ -197,6 +221,17 @@ As
 		set @message = 'Error '
 		goto Done
 	end
+
+	-- Change any waiting or enabled steps to state 7 (holding)
+	-- This is necessary since we don't save job dependencies
+	-- and thus T_Job_Step_Dependencies will not have any entries for this job
+	--
+	UPDATE T_Job_Steps
+	SET State = 7
+	WHERE Job = @Job AND
+	      State IN (1, 2)
+ 	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
    	---------------------------------------------------
 	-- copy parameters

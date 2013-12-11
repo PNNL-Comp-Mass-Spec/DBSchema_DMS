@@ -28,7 +28,7 @@ CREATE TABLE [dbo].[T_Charge_Code](
 	[Usage_SamplePrep] [int] NULL,
 	[Usage_RequestedRun] [int] NULL,
 	[Activation_State] [tinyint] NOT NULL,
-	[SortKey]  AS ((CONVERT([varchar](3),[Charge_Code_State],(0))+case when [Deactivated]='Y' then '0' else '1' end)+[Charge_Code]) PERSISTED,
+	[SortKey]  AS (case when [Activation_State]=(3) OR [Activation_State]=(0) then '0' else '1' end+(CONVERT([varchar](3),[Activation_State],(0))+[Charge_Code])) PERSISTED,
  CONSTRAINT [PK_T_Charge_Code] PRIMARY KEY CLUSTERED 
 (
 	[Charge_Code] ASC
@@ -51,7 +51,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 10/01/2013 15:19:56 ******/
+/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 12/10/2013 17:33:52 ******/
 CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code] 
 (
 	[SortKey] ASC

@@ -225,7 +225,7 @@ AS
 		if @myError <> 0
 		begin
 			set @message = 'Error merging S_MTS_Peak_Matching_Tasks with T_MTS_Peak_Matching_Tasks_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-			execute PostLogEntry 'Error', @message, 'SyncJobInfo'
+			execute PostLogEntry 'Error', @message, 'RefreshCachedMTSPeakMatchingTasks'
 			goto Done
 		end
 

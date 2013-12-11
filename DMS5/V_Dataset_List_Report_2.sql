@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_Dataset_List_Report_2] as 
 
 SELECT DS.Dataset_ID AS ID,
@@ -38,7 +37,8 @@ SELECT DS.Dataset_ID AS ID,
        RRH.RDS_WorkPackage AS [Work Package],
        RRH.RDS_Oper_PRN AS Requester,
        DASN.DASN_StateName AS [Archive State],
-       T_YesNo.Description AS [Inst. Data Purged]
+       T_YesNo.Description AS [Inst. Data Purged],
+	   DS.DateSortKey AS #DateSortKey
 FROM T_DatasetArchiveStateName DASN
      INNER JOIN T_Dataset_Archive DA
        ON DASN.DASN_StateID = DA.AS_state_ID
@@ -64,7 +64,6 @@ FROM T_DatasetArchiveStateName DASN
        ON DA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RRH
        ON DS.Dataset_ID = RRH.DatasetID
-
 
 
 GO

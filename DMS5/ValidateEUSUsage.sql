@@ -22,6 +22,7 @@ CREATE PROCEDURE ValidateEUSUsage
 **			09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
 **						   - Now auto-clearing @eusProposalID and @eusUsersList if @eusUsageType is not 'USER'
 **			12/12/2011 mem - Now auto-fixing @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
+**			11/20/2013 mem - Now automatically extracting the integers from @eusUsersList if it instead has user names and integers
 **
 *****************************************************/
 (
@@ -155,20 +156,48 @@ As
 			-- verify that all users in list have access to
 			-- given proposal
 			---------------------------------------------------
+			
+			If @eusUsersList Like '%[A-Z]%' And @eusUsersList Like '%([0-9]%' And @eusUsersList Like '%[0-9])%'
+			Begin 
+				-- @eusUsersList has entries of the form "Baker, Erin (41136)"
+				-- Parse @eusUsersList to only keep the integers and commas
+				--
+				Declare @StringLength int = Len(@eusUsersList)
+				Declare @CharNum int = 1
+				Declare @IntegerList varchar(1024) = ''
+
+				While @CharNum <= @StringLength
+				Begin
+					Declare @CurrentChar char = Substring(@eusUsersList, @CharNum, 1)
+					
+					If @CurrentChar = ',' Or IsNumeric(@CurrentChar) = 1
+					Begin
+						Set @IntegerList = @IntegerList + @CurrentChar
+					End
+
+					Set @CharNum = @CharNum + 1
+				End
+				
+				Set @eusUsersList = @IntegerList
+			End
+			
 
 			declare @tmpUsers TABLE
 			(
 				Item varchar(256)
 			)
    
+			-- Split items in @eusUsersList on commas
+			-- 
 			INSERT INTO @tmpUsers (Item)
 			SELECT Item
 			FROM MakeTableFromList(@eusUsersList)
 			
-			set @n = 0
 
-			SELECT 
-				@n = @n + (1 - isnumeric(item))
+			-- Look for entries that are not integers
+			--
+			set @n = 0
+			SELECT @n = @n + (1 - IsNumeric(item))
 			FROM @tmpUsers
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -267,7 +296,7 @@ As
 				End
 				
 				Set @eusUsersList = IsNull(@NewUserList, '')
-				Set @message = 'Warning: Removed useres from EUS User list that are not associated with proposal "' + @eusProposalID + '"'
+				Set @message = 'Warning: Removed users from EUS User list that are not associated with proposal "' + @eusProposalID + '"'
 								
 			End -- </c>
 			

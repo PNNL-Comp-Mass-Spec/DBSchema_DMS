@@ -16,11 +16,12 @@ CREATE Procedure ValidateInstrumentGroupAndDatasetType
 **	Date:	08/27/2010 mem - Initial version
 **			09/09/2020 mem - Removed print statements
 **			07/04/2012 grk - Added handling for 'Tracking' type
+**			11/12/2013 mem - Changed @instrumentName to be an input/output parameter
 **
 *****************************************************/
 (
 	@DatasetType varchar(20),
-	@instrumentGroup varchar(64),
+	@instrumentGroup varchar(64) output,			-- Input/output parameter
 	@datasetTypeID int output,
 	@message varchar(512) output
 )

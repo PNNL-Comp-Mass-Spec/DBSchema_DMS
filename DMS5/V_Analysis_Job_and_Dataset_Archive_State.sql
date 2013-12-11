@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_and_Dataset_Archive_State]
 AS
 SELECT AJ.AJ_jobID AS Job,
        CASE
-           WHEN AJ.AJ_StateID = 1 AND
-                DA.AS_update_state_ID = 3 THEN ASN.AJS_name + ' (Archive Update in Progress)'
            WHEN AJ.AJ_StateID = 1 AND
                 DA.AS_state_ID IN (3, 4, 10, 14, 15) THEN ASN.AJS_name
            WHEN AJ.AJ_StateID = 1 AND
@@ -28,6 +27,7 @@ FROM dbo.T_DatasetArchiveStateName AS DASN
                       INNER JOIN dbo.T_Dataset AS D
                         ON AJ.AJ_datasetID = D.Dataset_ID
        ON DA.AS_Dataset_ID = D.Dataset_ID
+
 
 
 GO

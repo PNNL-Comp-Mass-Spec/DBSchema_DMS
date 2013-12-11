@@ -13,6 +13,7 @@ CREATE PROCEDURE dbo.UpdateMyEMSLState
 **
 **	Auth:	mem
 **	Date:	09/11/2013 mem - Initial Version
+**			10/18/2013 mem - No excluding jobs that are in-progress when @AnalysisJobResultsFolder is empty
 **
 *****************************************************/
 (
@@ -41,7 +42,8 @@ AS
 		UPDATE T_Analysis_Job
 		SET AJ_MyEMSLState = @MyEMSLState
 		WHERE AJ_DatasetID = @DatasetID AND
-				AJ_MyEMSLState < @MyEMSLState
+				AJ_MyEMSLState < @MyEMSLState AND
+				AJ_StateID IN (4, 7, 14)
 
 	End
 	Else

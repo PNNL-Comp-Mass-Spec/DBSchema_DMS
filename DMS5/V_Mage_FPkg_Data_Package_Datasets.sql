@@ -3,7 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Mage_FPkg_Data_Package_Datasets as
+
+CREATE view [dbo].[V_Mage_FPkg_Data_Package_Datasets] AS
+/*
+ * This view was used by the File Packager tool written by Gary Kiebel in 2012
+ * As of September 2013 this tool is not in use and thus this view could likely be deleted in the future
+ */
 SELECT  VMD.Dataset_ID ,
         VMD.Dataset ,
         VMD.Experiment ,
@@ -22,6 +27,7 @@ SELECT  VMD.Dataset_ID ,
 FROM    V_Mage_FPkg_Dataset_List AS VMD
         INNER JOIN DMS_Data_Package.dbo.T_Data_Package_Datasets AS TPD ON VMD.Dataset_ID = TPD.Dataset_ID
         
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_FPkg_Data_Package_Datasets] TO [PNL\D3M578] AS [dbo]
 GO

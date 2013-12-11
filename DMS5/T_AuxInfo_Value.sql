@@ -6,7 +6,12 @@ GO
 CREATE TABLE [dbo].[T_AuxInfo_Value](
 	[AuxInfo_ID] [int] NOT NULL,
 	[Value] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Target_ID] [int] NOT NULL
+	[Target_ID] [int] NOT NULL,
+ CONSTRAINT [PK_T_AuxInfo_Value] PRIMARY KEY NONCLUSTERED 
+(
+	[AuxInfo_ID] ASC,
+	[Target_ID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

@@ -128,7 +128,7 @@ AS
 		if @myError <> 0
 		begin
 			set @message = 'Error merging S_MTS_MT_DBs with T_MTS_MT_DBs_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-			execute PostLogEntry 'Error', @message, 'SyncJobInfo'
+			execute PostLogEntry 'Error', @message, 'RefreshCachedMTDBs'
 			goto Done
 		end
 

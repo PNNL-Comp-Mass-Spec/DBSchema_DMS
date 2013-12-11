@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **    Auth: grk
 **    Date: 09/01/2012 
 **    11/19/2012 grk - added work package and closed date
+**    11/04/2013 grk - added @HoursSpent
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -30,6 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 	@Description varchar(5132),
 	@Comments varchar(MAX),
 	@WorkPackage VARCHAR(32),
+	@HoursSpent VARCHAR(12),
 	@Status varchar(32),
 	@Priority varchar(32),
 	@mode varchar(12) = 'add', -- or 'update'
@@ -108,7 +110,8 @@ As
 		Status,
 		Priority,
 		Work_Package,
-		Closed
+		Closed,
+		Hours_Spent
 	) VALUES (
 		@Tab,
 		@Requestor,
@@ -119,7 +122,8 @@ As
 		@Status,
 		@Priority,
 		@WorkPackage,
-		@closed
+		@closed,
+		@HoursSpent
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -152,7 +156,8 @@ As
 			Status = @Status,
 			Priority = @Priority,
 			Work_Package = @WorkPackage,
-			Closed = @closed
+			Closed = @closed,
+			Hours_Spent = @HoursSpent
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -173,7 +178,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
-
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOperationsTasks] TO [DMS_User] AS [dbo]
 GO

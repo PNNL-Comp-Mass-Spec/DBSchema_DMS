@@ -5,7 +5,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-
 CREATE VIEW [dbo].[V_Analysis_Job_Export_Ex]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -42,7 +41,8 @@ SELECT AJ.AJ_jobID AS Job,
        PreDigest_Int_Std.Name AS [PreDigest Int Std],
        PostDigest_Int_Std.Name AS [PostDigest Int Std],
        AJ_assignedProcessorName AS Processor,
-       AJ.AJ_requestID AS RequestID
+       AJ.AJ_requestID AS RequestID,
+       AJ.AJ_MyEMSLState AS MyEMSLState
 FROM dbo.T_Analysis_Job AJ
      INNER JOIN dbo.T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID

@@ -22,6 +22,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			09/11/2013 mem - Now auto-adjusting the holdoff interval for ArchiveVerify job steps
 **			09/18/2013 mem - Added support for @evaluationCode = 7
 **			09/19/2013 mem - Now skipping ArchiveStatusCheck when skipping ArchiveVerify
+**			10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
 **    
 *****************************************************/
 (
@@ -187,11 +188,20 @@ As
 		-- In either case, skip the ArchiveVerify and ArchiveStatusCheck steps for this job (if they exist)
 		
 		UPDATE T_Job_Steps
-		SET State = 3
+		SET State = 3,
+		    Completion_Code = 0,
+		    Completion_Message = '',
+		    Evaluation_Code = 0,
+		    Evaluation_Message = 
+		      CASE
+		          WHEN @evaluationCode = 6 THEN 'Skipped since MyEMSL upload was skipped'
+		          WHEN @evaluationCode = 7 THEN 'Skipped since MyEMSL files were already up-to-date'
+		          ELSE 'Skipped for unknown reason'
+		      END
 		WHERE Job = @job AND
 		      Step_Tool IN ('ArchiveVerify', 'ArchiveStatusCheck') AND
 		      NOT State IN (4, 5, 7)
-		
+
 	End
 
 	-- update was successful

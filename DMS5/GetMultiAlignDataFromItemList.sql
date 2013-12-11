@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMultiAlignDataFromItemList]
+CREATE FUNCTION dbo.GetMultiAlignDataFromItemList
 /****************************************************
 **	Desc: 
 **

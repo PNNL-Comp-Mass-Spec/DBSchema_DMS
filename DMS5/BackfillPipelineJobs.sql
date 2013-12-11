@@ -148,7 +148,7 @@ AS
 	Begin -- <a>
 
 		SELECT TOP 1 @Job = PJ.Job,
-		             @Priority = PJ.Priority,
+		              @Priority = PJ.Priority,
 		             @Script = PJ.Script,
 		             @State = PJ.State,
 		             @Dataset = PJ.Dataset,
@@ -608,6 +608,7 @@ NextJob:
 Done:
 
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[BackfillPipelineJobs] TO [PNL\D3M578] AS [dbo]

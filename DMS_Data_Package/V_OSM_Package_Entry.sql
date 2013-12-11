@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_OSM_Package_Entry] AS 
  SELECT 
 	ID AS ID,
@@ -14,10 +13,7 @@ CREATE VIEW [dbo].[V_OSM_Package_Entry] AS
 	Comment AS Comment,
 	Owner AS Owner,
 	[State] AS STATE,
-	Sample_Prep_Requests as SamplePrepRequestList
+	Sample_Prep_Requests as SamplePrepRequestList,
+	User_Folder_Path AS UserFolderPath
 FROM T_OSM_Package
-
-
-
-
 GO

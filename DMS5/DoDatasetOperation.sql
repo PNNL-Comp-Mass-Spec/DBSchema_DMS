@@ -27,6 +27,7 @@ CREATE Procedure DoDatasetOperation
 **			05/25/2011 mem - Fixed bug that reported "mode was unrecognized" for valid modes
 **						   - Removed 'restore' mode
 **			01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_ActiveOrComplete
+**			11/14/2013 mem - Now preventing reset if the first step of dataset capture succeeded
 **    
 *****************************************************/
 (
@@ -157,6 +158,14 @@ As
 			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@CurrentState as varchar(12))
 			RAISERROR (@msg, 11, 5)
 		end
+
+		-- Do not allow a reset if the dataset succeeded the first step of capture
+		If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (4,5))
+		begin
+			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset because it has already been successfully captured; please contact a system administrator for further assistance'
+			RAISERROR (@msg, 11, 5)
+		end
+
 
 		-- Update state of dataset to new
 		--

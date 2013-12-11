@@ -18,7 +18,9 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 **	Auth: 	mem
 **	Date: 	06/04/2013 mem - Initial version
 **			06/05/2013 mem - Now calling AutoAddChargeCodeUsers
-**			06/06/2013 mem - Added column DEACT_SW, which is "Y" when the charge code is Deactivated
+**			06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
+**			12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
+**						   - Now populating Activation_State when inserting new rows via the merge
 **    
 *****************************************************/
 (
@@ -113,12 +115,12 @@ AS
 		                             SubAccount,
 		                             SubAccount_Title,
 		                             Setup_Date,
-		                             SubAccount_Effective_Date,
+		               SubAccount_Effective_Date,
 		                             Inactive_Date,
 		                             SubAccount_Inactive_Date,
 		                             Deactivated,
-		      Auth_Amt,
-		          Auth_PRN,
+		                             Auth_Amt,
+		                             Auth_PRN,
 		                             Auth_HID)
 		SELECT CC.CHARGE_CD,
 		       CC.RESP_PAY_NO,
@@ -164,6 +166,11 @@ AS
 		
 			----------------------------------------------------------
 			-- Merge new/updated charge codes
+			--
+			-- Note that field Activation_State will be auto-updated by trigger trig_u_Charge_Code
+			-- whenever values in any of these fields change:
+			--    Deactivated, Charge_Code_State, Usage_SamplePrep, Usage_RequestedRun, Activation_State
+	   
 			----------------------------------------------------------
 			--
 			Set @CurrentLocation = 'Merge data'
@@ -195,7 +202,6 @@ AS
 						IsNull(target.Auth_HID, '') <> IsNull(source.Auth_HID, '')						
 						)
 				THEN UPDATE SET
-					Charge_Code = source.Charge_Code,
 					Resp_PRN = source.Resp_PRN,
 					Resp_HID = source.Resp_HID,
 					WBS_Title = source.WBS_Title,
@@ -216,12 +222,15 @@ AS
 			             Charge_Code, Resp_PRN, Resp_HID, WBS_Title, Charge_Code_Title,
 			             SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
 			             Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID,
-			             Auto_Defined, Charge_Code_State, Last_Affected
+			             Auto_Defined, Charge_Code_State, Activation_State, Last_Affected
 					) VALUES
 					( source.Charge_Code, source.Resp_PRN, source.Resp_HID, source.WBS_Title, source.Charge_Code_Title,
-			             source.SubAccount, source.SubAccount_Title, source.Setup_Date, source.SubAccount_Effective_Date,
-			             source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_PRN, source.Auth_HID,
-			             1, 1, GetDate()			-- Auto_Defined=1 and Charge_Code_State = 1 (Interest Unknown)
+			          source.SubAccount, source.SubAccount_Title, source.Setup_Date, source.SubAccount_Effective_Date,
+			          source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_PRN, source.Auth_HID,
+			          1,		-- Auto_Defined=1
+			          1,		-- Charge_Code_State = 1 (Interest Unknown)
+			          dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
+			          GetDate() 
 					)
 			OUTPUT $ACTION INTO #Tmp_UpdateSummary ;
 
@@ -272,13 +281,13 @@ AS
 			                  FROM ( SELECT Charge_Code,
 			                                COALESCE(Inactive_Date, SubAccount_Inactive_Date, Inactive_Date_Most_Recent) AS Inactive1,
 			                                COALESCE(SubAccount_Inactive_Date, Inactive_Date, Inactive_Date_Most_Recent) AS Inactive2
-			                         FROM T_Charge_Code 
+			                 FROM T_Charge_Code 
 			                        ) InnerQ 
 			               ) OuterQ
 			       ON target.Charge_Code = OuterQ.Charge_Code AND
 			          NOT OuterQ.Inactive_Date_Most_Recent IS NULL
 			WHERE target.Inactive_Date_Most_Recent <> OuterQ.Inactive_Date_Most_Recent OR
-			      target.Inactive_Date_Most_Recent IS NULL
+			    target.Inactive_Date_Most_Recent IS NULL
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			
@@ -296,8 +305,18 @@ AS
 			SELECT @myError = @@error, @myRowCount = @@rowcount      
 
 
-			-- Look for work packages that hvae a state of 0 but were created within the last 2 years and are not deactivated
-			-- Change their state back to 1
+			-- Set the state to 0 for deactivated work packages
+			--
+			UPDATE T_Charge_Code
+			SET Charge_Code_State = 0
+			WHERE (Charge_Code_State <> 0) AND
+			       Deactivated = 'Y'
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount      
+			       
+			       
+			-- Look for work packages that have a state of 0 but were created within the last 2 years and are not deactivated
+			-- Change their state back to 1 (Interest Unknown)
 			--
 			UPDATE T_Charge_Code
 			SET Charge_Code_State = 1
@@ -328,7 +347,7 @@ AS
 			--
             INSERT INTO #Tmp_WPsInUseLast3Years ( Charge_Code, Most_Recent_Usage)
             SELECT Charge_Code, Max(Most_Recent_Usage)
-            FROM ( SELECT ISNULL(A.Charge_Code, B.Charge_Code) AS Charge_Code,
+            FROM ( SELECT A.Charge_Code,
                           CASE WHEN A.Most_Recent_SPR >= IsNUll(B.Most_Recent_RR, A.Most_Recent_SPR) 
                                THEN A.Most_Recent_SPR
                                ELSE B.Most_Recent_RR

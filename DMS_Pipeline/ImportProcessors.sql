@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.ImportProcessors
 **	Auth:	grk
 **			06/03/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
 **			09/03/2009 mem - Now skipping disabled processors when looking for new processors to import
+**			11/11/2013 mem - Now setting ProcTool_Mgr_ID to 1 for newly added processors
 **    
 *****************************************************/
 (
@@ -40,9 +41,9 @@ As
 	---------------------------------------------------
 	--
 	INSERT INTO T_Local_Processors
-		(ID, Processor_Name, State, Groups, GP_Groups, Machine)
+		(ID, Processor_Name, State, Groups, GP_Groups, Machine, ProcTool_Mgr_ID)
 	SELECT
-		ID, Processor_Name, State, Groups, GP_Groups, Machine
+		ID, Processor_Name, State, Groups, GP_Groups, Machine, 1
 	FROM
 		V_DMS_PipelineProcessors VPP
 	WHERE VPP.State = 'E' AND

@@ -32,6 +32,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **						   - Now auto-defining EMSL usage type to Maintenance for QC_Shew and Blank datasets
 **			05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
 **			01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
+**			11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
 **    
 *****************************************************/
 (
@@ -210,6 +211,14 @@ AS
 	set @internalStandards  = 'none'
 	set @AddUpdateTimeStamp = GetDate()
 	
+	---------------------------------------------------
+	-- Check for the comment containing "Buzzard:" and nothing else
+	---------------------------------------------------
+	
+	Set @Comment = LTrim(RTrim(@Comment))
+	If @Comment = 'Buzzard:'
+		Set @Comment = ''
+
 	---------------------------------------------------
 	-- Create new dataset
 	---------------------------------------------------

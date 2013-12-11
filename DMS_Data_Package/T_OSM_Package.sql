@@ -17,6 +17,7 @@ CREATE TABLE [dbo].[T_OSM_Package](
 	[Wiki_Page_Link] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Prep_Requests] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Path_Root] [int] NULL,
+	[User_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_OSM_Package] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -24,10 +25,20 @@ CREATE TABLE [dbo].[T_OSM_Package](
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State] FOREIGN KEY([State])
+REFERENCES [T_OSM_Package_State] ([Name])
+GO
+ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State]
+GO
 ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage] FOREIGN KEY([Path_Root])
 REFERENCES [T_OSM_Package_Storage] ([ID])
 GO
 ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage]
+GO
+ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type] FOREIGN KEY([Package_Type])
+REFERENCES [T_OSM_Package_Type] ([Name])
+GO
+ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type]
 GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Package_Type]  DEFAULT ('General') FOR [Package_Type]
 GO

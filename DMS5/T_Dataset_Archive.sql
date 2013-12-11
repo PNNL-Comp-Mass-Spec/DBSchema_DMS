@@ -134,6 +134,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
@@ -146,6 +147,7 @@ For Insert
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
+**			11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
 **    
 *****************************************************/
 AS
@@ -170,6 +172,11 @@ AS
 		 inserted ON AJ.AJ_datasetID = inserted.AS_Dataset_ID INNER JOIN
 		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
 
+	UPDATE T_Cached_Dataset_Folder_Paths
+	SET UpdateRequired = 1
+	FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
+	     inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_u_Dataset_Archive] ******/
@@ -177,6 +184,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
@@ -196,6 +204,7 @@ For Update
 **			06/06/2012 mem - Now updating AS_state_Last_Affected and AS_update_state_Last_Affected only if the state actually changes
 **			06/11/2012 mem - Now updating QC_Data_Purged to 1 if AS_state_ID changes to 4
 **			06/12/2012 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 or 14
+**			11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
 **    
 *****************************************************/
 AS
@@ -267,7 +276,13 @@ AS
 		WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
 	End
 
-
+	If Update(AS_storage_path_ID)
+	Begin
+		UPDATE T_Cached_Dataset_Folder_Paths
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
+	         inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID
+	End
 
 
 GO

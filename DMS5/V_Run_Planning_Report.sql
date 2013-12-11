@@ -16,7 +16,7 @@ SELECT  GroupQ.[Inst. Group] ,
         GroupQ.Requester ,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue] ,
         GroupQ.[Days in Prep Queue] ,
-        TAC.Actual_Hours ,
+        Convert(decimal(10, 1), TAC.Actual_Hours) As Actual_Hours,
         TIGA.Allocated_Hours ,
         GroupQ.[Separation Group] ,
         CASE WHEN LEN(RequestLookupQ.RDS_comment) > 30
@@ -25,6 +25,7 @@ SELECT  GroupQ.[Inst. Group] ,
         END AS [Comment] ,
         GroupQ.[Min Request] ,
         GroupQ.[Work Package] ,
+		GroupQ.[WP State],
         GroupQ.Proposal ,
         TEUT.Name AS [Usage] ,
         GroupQ.Locked ,
@@ -37,7 +38,8 @@ SELECT  GroupQ.[Inst. Group] ,
              WHEN DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) <= 90
              THEN 90  -- Request is 60 to 90 days old
              ELSE 120                                                            -- Request is over 90 days old
-        END AS #DaysInQueue
+        END AS #DaysInQueue,
+		WPActivationState AS #WPActivationState
 FROM    ( SELECT    [Inst. Group] ,
                     MIN(RequestID) AS [Min Request] ,
                     COUNT(RequestName) AS [Run Count] ,
@@ -47,13 +49,15 @@ FROM    ( SELECT    [Inst. Group] ,
                     [Separation Group] ,
                     [DS Type] ,
                     [Work Package] ,
+					[WP State] ,
+					WPActivationState ,
                     Proposal ,
                     Locked ,
                     [Last Ordered] ,
                     [Request Name Code] ,
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue] ,
                     SUM(BlkMissing) AS BlkMissing ,
-                    SUM(Blocked) AS Blocked
+                    SUM(Blocked) AS Blocked					
           FROM      ( SELECT    RA.Instrument AS [Inst. Group] ,
                                 RA.[Separation Group] ,
                                 RA.[Type] AS [DS Type] ,
@@ -75,8 +79,11 @@ FROM    ( SELECT    [Inst. Group] ,
                                 RA.Requester ,
                                 RA.Created AS Request_Created ,
                                 RA.[Work Package] ,
+								ISNULL(CC.Activation_State_Name, '') AS [WP State],
+								CC.Activation_State AS WPActivationState,
                                 RA.Proposal ,
                                 RRB.Locked ,
+                                RA.Batch,
                                 CONVERT(DATETIME, FLOOR(CONVERT(FLOAT, RRB.Last_Ordered))) AS [Last Ordered] ,
                                 CASE WHEN SPR.ID = 0 THEN NULL
                                      ELSE QT.[Days In Queue]
@@ -96,8 +103,8 @@ FROM    ( SELECT    [Inst. Group] ,
                                 INNER JOIN T_Requested_Run_Batches AS RRB ON RA.Batch = RRB.ID
                                 INNER JOIN T_Experiments AS E ON RA.[Experiment ID] = E.Exp_ID
                                 INNER JOIN T_Sample_Prep_Request AS SPR ON E.EX_sample_prep_request_ID = SPR.ID
-                                LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times
-                                AS QT ON SPR.ID = QT.Request_ID
+                                LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
+								LEFT OUTER JOIN V_Charge_Code_Status AS CC ON RA.[Work Package] = CC.Charge_Code                                
                       WHERE     ( RA.Status = 'Active' )
                     ) AS RequestQ
           GROUP BY  [Inst. Group] ,
@@ -106,27 +113,17 @@ FROM    ( SELECT    [Inst. Group] ,
                     [Request Name Code] ,
                     Requester ,
                     [Work Package] ,
-                    Proposal ,
+					[WP State] ,
+					WPActivationState ,
+                    Proposal,
                     Locked ,
-                    [Last Ordered]
+                    [Last Ordered],
+                    Batch
         ) AS GroupQ
         INNER JOIN T_Requested_Run AS RequestLookupQ ON GroupQ.[Min Request] = RequestLookupQ.ID
         INNER JOIN T_EUS_UsageType AS TEUT ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
-        LEFT OUTER JOIN ( SELECT    TIN.IN_Group AS Inst_Group ,
-                                    TRR.RDS_EUS_Proposal_ID AS Proposal ,
-                                    CONVERT(DECIMAL(10, 1), SUM(TD.Acq_Length_Minutes)
-                                    / 60.0) AS Actual_Hours
-                          FROM      T_Dataset AS TD
-                                    INNER JOIN T_Requested_Run AS TRR ON TD.Dataset_ID = TRR.DatasetID
-                                    INNER JOIN T_Instrument_Name AS TIN ON TIN.Instrument_ID = TD.DS_instrument_name_ID
-                          WHERE     ( TD.DS_rating > 1 )
-                                    AND ( TRR.RDS_EUS_UsageType = 16 )
-                                    AND ( TD.DS_state_ID = 3 )
-                                    AND ( TD.Acq_Time_Start >= dbo.GetFiscalYearStart(1) )
-                          GROUP BY  TIN.IN_Group ,
-                                    TRR.RDS_EUS_Proposal_ID
-                        ) AS TAC ON TAC.Inst_Group = GroupQ.[Inst. Group]
-                                    AND TAC.Proposal = GroupQ.Proposal
+        LEFT OUTER JOIN T_Cached_Instrument_Usage_by_Proposal AS TAC ON TAC.IN_Group = GroupQ.[Inst. Group]
+                                    AND TAC.EUS_Proposal_ID = GroupQ.Proposal
         LEFT OUTER JOIN ( SELECT    QG.IN_Group ,
                                     QIA.Proposal_ID ,
                                     QIA.Allocated_Hours
@@ -135,7 +132,6 @@ FROM    ( SELECT    [Inst. Group] ,
                           WHERE     ( QIA.Fiscal_Year = dbo.GetFYFromDate(GETDATE()) )
                         ) AS TIGA ON TIGA.IN_Group = GroupQ.[Inst. Group]
                                      AND TIGA.Proposal_ID = GroupQ.Proposal
-
 
 
 GO

@@ -37,6 +37,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_DatasetUnreviewed] [tinyint] NOT NULL,
 	[AJ_Purged] [tinyint] NOT NULL,
 	[AJ_MyEMSLState] [tinyint] NOT NULL,
+	[AJ_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -173,7 +174,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
+CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Delete
 /****************************************************
 **
@@ -186,6 +187,7 @@ For Delete
 **			10/02/2007 mem - Updated to append the analysis tool name and 
 **							 dataset name for the deleted job to the Entered_By field (Ticket #543)
 **			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
+**			11/25/2013 mem - Now updating DeconTools_Job_for_QC in T_Dataset
 **    
 *****************************************************/
 AS
@@ -214,6 +216,27 @@ AS
 	     LEFT OUTER JOIN dbo.T_Analysis_Tool AnalysisTool
 	       ON deleted.AJ_analysisToolID = AnalysisTool.AJT_toolID
 	ORDER BY deleted.AJ_JobID
+
+	UPDATE target
+	SET DeconTools_Job_for_QC = Job
+	FROM T_Dataset target
+	     Left OUTER JOIN ( SELECT Dataset_ID,
+	                         J.AJ_JobID AS Job,
+	                         Row_number() OVER ( PARTITION BY J.AJ_datasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
+	                  FROM T_Dataset DS
+	                       LEFT OUTER JOIN T_Analysis_Tool Tool
+	                                       INNER JOIN T_Analysis_Job J
+	                                         ON Tool.AJT_toolID = J.AJ_analysisToolID AND
+	                                            Tool.AJT_toolBasename = 'Decon2LS'
+	                         ON J.AJ_datasetID = DS.Dataset_ID AND
+	                            NOT J.AJ_jobID IN ( SELECT AJ_jobID FROM deleted )
+	                  WHERE DS.Dataset_ID IN ( SELECT AJ_datasetID FROM deleted ) AND
+					        J.AJ_StateID IN (2, 4)
+				    ) SourceQ
+	       ON target.Dataset_ID = SourceQ.Dataset_ID And SourceQ.JobRank = 1
+	WHERE target.Dataset_ID IN ( SELECT AJ_datasetID FROM deleted ) AND
+	      Isnull(target.DeconTools_Job_for_QC, 0) <> Isnull(SourceQ.Job, -1)	
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
@@ -261,6 +284,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_iu_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert, Update
 /****************************************************
@@ -271,7 +295,9 @@ For Insert, Update
 **
 **	Auth:	mem
 **			01/24/2013 mem - Initial version 
-**    
+**			11/25/2013 mem - Now updating DeconTools_Job_for_QC in T_Dataset
+**			12/02/2013 mem - Refactored logic for updating DeconTools_Job_for_QC to use multiple small queries instead of one large Update query
+**
 *****************************************************/
 AS
 	If @@RowCount = 0
@@ -297,6 +323,36 @@ AS
 			RETURN;
 		End
 	End
+
+	If Update(AJ_StateID)
+	Begin
+		Declare @BestJobByDataset Table (Dataset_ID int, Job int)
+
+		Insert Into @BestJobByDataset (Dataset_ID, Job)
+		SELECT SourceQ.Dataset_ID, Job
+		FROM ( SELECT DS.Dataset_ID,
+					  J.AJ_jobID AS Job,
+					  Row_number() OVER ( PARTITION BY J.AJ_datasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
+			   FROM T_Dataset DS
+					INNER JOIN T_Analysis_Job J
+					  ON J.AJ_datasetID = DS.Dataset_ID
+					INNER JOIN T_Analysis_Tool Tool
+					  ON Tool.AJT_toolID = J.AJ_analysisToolID AND
+						 Tool.AJT_toolBasename = 'Decon2LS'
+			   WHERE J.AJ_datasetID IN ( SELECT AJ_datasetID FROM inserted ) AND
+					 J.AJ_StateID IN (2, 4) 
+		     ) SourceQ
+		WHERE SourceQ.JobRank = 1
+
+		UPDATE target
+		SET DeconTools_Job_for_QC = SourceQ.Job
+		FROM T_Dataset Target
+			 INNER JOIN @BestJobByDataset SourceQ
+			   ON Target.Dataset_ID = SourceQ.Dataset_ID
+		WHERE Isnull(target.DeconTools_Job_for_QC, 0) <> Isnull(SourceQ.Job, -1)
+
+	End
+
 
 
 GO

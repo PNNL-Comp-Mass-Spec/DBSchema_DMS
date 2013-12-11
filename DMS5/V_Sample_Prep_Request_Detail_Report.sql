@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_Sample_Prep_Request_Detail_Report]
+CREATE VIEW V_Sample_Prep_Request_Detail_Report
 AS
     SELECT  SPR.ID ,
             SPR.Request_Name AS [Request Name] ,
@@ -56,7 +56,12 @@ AS
             Requested_Run_Item_Count AS [Requested Run Item Count] ,
             Dataset_Item_Count AS [Dataset Item Count] ,
             HPLC_Runs_Item_Count AS [HPLC Runs Item Count] ,
-            SPR.Total_Item_Count
+            SPR.Total_Item_Count,
+			Case
+            When SPR.State <> 5 AND
+                 CC.Activation_State >= 3 THEN 10	-- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
+            Else CC.Activation_State
+            End AS #WPActivationState
     FROM    T_Sample_Prep_Request AS SPR
             INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
             INNER JOIN T_Internal_Standards AS PreIntStd ON SPR.Internal_standard_ID = PreIntStd.Internal_Std_Mix_ID

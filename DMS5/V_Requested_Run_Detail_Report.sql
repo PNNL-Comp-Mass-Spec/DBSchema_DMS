@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
+CREATE VIEW V_Requested_Run_Detail_Report
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
@@ -44,7 +43,12 @@ SELECT RR.ID AS Request,
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
        dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
        RR.RDS_note AS Note,
-       RR.RDS_special_instructions AS [Special Instructions]
+       RR.RDS_special_instructions AS [Special Instructions],
+       Case
+           When RR.RDS_Status = 'Active' AND
+                CC.Activation_State >= 3 THEN 10	-- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+		   Else CC.Activation_State
+       End AS #WPActivationState
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
                 INNER JOIN dbo.T_Experiments AS E
@@ -70,7 +74,6 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Detail_Report] TO [PNL\D3M578] AS [dbo]

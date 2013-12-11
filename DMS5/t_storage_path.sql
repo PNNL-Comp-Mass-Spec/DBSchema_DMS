@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_URL] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_created] [datetime] NULL,
+	[SPath_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
 (
 	[SP_path_ID] ASC

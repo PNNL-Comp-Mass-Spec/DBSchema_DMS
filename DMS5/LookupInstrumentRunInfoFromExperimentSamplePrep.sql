@@ -125,6 +125,7 @@ As
 	set @secSep = CASE WHEN @secSep = @ovr THEN @irSecSep ELSE @secSep END
 
 	return 0
+	
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]

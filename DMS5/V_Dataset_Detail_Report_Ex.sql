@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -19,9 +18,10 @@ SELECT DS.Dataset_Num AS Dataset,
        U.U_Name + ' (' + DS.DS_Oper_PRN + ')' AS Operator,
        DS.DS_comment AS [Comment],
        TDRN.DRN_name AS Rating,
-       RRH.ID AS Request,
-       DS.DS_created AS Created,
        TDSN.DSS_name AS State,
+       DS.Dataset_ID AS ID,
+       DS.DS_created AS Created,
+       RRH.ID AS Request,
        CASE
            WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
            ELSE CASE
@@ -39,6 +39,10 @@ SELECT DS.Dataset_Num AS Dataset,
            WHEN DA.QC_Data_Purged > 0 THEN ''
            ELSE DFP.Dataset_URL + 'QC/index.html'
        END AS [QC Link],
+	   CASE
+           WHEN DA.QC_Data_Purged > 0 THEN ''
+           ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
+       END AS [QC 2D],
        CASE
            WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + IN_Name + '/filterDS/QC_Shew'
@@ -48,7 +52,6 @@ SELECT DS.Dataset_Num AS Dataset,
        ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
        ISNULL(FC.Factor_Count, 0) AS Factors,
        ISNULL(PredefinedJobQ.JobCount, 0) AS [Predefines Triggered],
-       DS.Dataset_ID AS ID,
        DS.Acq_Time_Start AS [Acquisition Start],
        DS.Acq_Time_End AS [Acquisition End],
        RRH.RDS_Run_Start AS [Run Start],
@@ -120,13 +123,14 @@ FROM dbo.t_storage_path AS SPath
        ON PMTaskCountQ.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Dataset AS FC
        ON FC.Dataset_ID = DS.Dataset_ID
+     Left Outer Join dbo.T_Analysis_Job J
+	   On DS.DeconTools_Job_for_QC = J.AJ_JobID
      LEFT OUTER JOIN ( SELECT Dataset_ID,
                               SUM(jobs_created) AS JobCount
                        FROM T_Predefined_Analysis_Scheduling_Queue
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-
 
 
 

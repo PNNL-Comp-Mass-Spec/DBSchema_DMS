@@ -61,6 +61,8 @@ CREATE Procedure AddUpdateRequestedRun
 **			05/08/2013 mem - Added @VialingConc and @VialingVol
 **			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
 **			06/06/2013 mem - Now showing warning if the work package is deactivated
+**			11/12/2013 mem - Added @requestIDForUpdate
+**						   - Now auto-capitalizing @instrumentGroup
 **
 *****************************************************/
 (
@@ -68,7 +70,7 @@ CREATE Procedure AddUpdateRequestedRun
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
-	@workPackage varchar(50),					-- Insrument group; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
+	@workPackage varchar(50),					-- Instrument group; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
 	@wellplateNum varchar(64) = 'na',
@@ -88,15 +90,15 @@ CREATE Procedure AddUpdateRequestedRun
 	@AutoPopulateUserListIfBlank tinyint = 0,	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
 	@callingUser varchar(128) = '',
 	@VialingConc varchar(32) = Null,
-	@VialingVol varchar(32) = Null
+	@VialingVol varchar(32) = Null,
+	@requestIDForUpdate int = Null				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -111,7 +113,7 @@ As
 	BEGIN TRY
 
 	---------------------------------------------------
-	--
+	-- Preliminary steps
 	---------------------------------------------------
 	--
 	DECLARE @requestOrigin CHAR(4)
@@ -145,6 +147,8 @@ As
 	if LEN(@workPackage) < 1
 		RAISERROR ('Work package was blank', 11, 116)
 	
+	Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
+	
 	-- Assure that @comment is not null and assure that it doesn't have &quot;
 	set @comment = IsNull(@comment, '')
 	If @comment LIKE '%&quot;%'
@@ -177,42 +181,76 @@ As
 	---------------------------------------------------
 
 	declare @requestID int = 0
+	declare @oldReqName varchar(128) = ''
 	declare @oldEusProposalID varchar(10) = ''
 	declare @oldStatus varchar(24) = ''
 	declare @MatchFound tinyint = 0 
 	
 	If @mode IN ('update', 'check_update')
 	Begin
-		SELECT 
-			@requestID = ISNULL(ID, 0), 
-			@oldEusProposalID = RDS_EUS_Proposal_ID,
-			@oldStatus = RDS_Status
-		FROM T_Requested_Run
-		WHERE RDS_Name = @reqName AND
-		      RDS_Status = @status
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-			RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
+		If @requestIDForUpdate > 0
+		Begin
+			SELECT @oldReqName = RDS_Name,
+			       @requestID = ID,
+			       @oldEusProposalID = RDS_EUS_Proposal_ID,
+			       @oldStatus = RDS_Status
+			FROM T_Requested_Run
+			WHERE ID = @requestIDForUpdate
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+				RAISERROR ('Error looking for request ID %d', 11, 7, @requestIDForUpdate)
 
-		if @myRowCount > 0
-			Set @MatchFound = 1
+			If @oldReqName <> @reqName
+			Begin
+				If @status <> 'Active'
+					RAISERROR ('Requested run is not active; cannot rename: "%s"', 11, 7, @oldReqName)
+				
+				If Exists (Select * from T_Requested_Run Where RDS_Name = @reqName)
+					RAISERROR ('Cannot rename "%s" since new name already exists: "%s"', 11, 7, @oldReqName, @reqName)
+			End
+
+			If @myRowCount > 0
+				Set @MatchFound = 1
+
+		End				  
+		Else
+		Begin
+			SELECT @oldReqName = RDS_Name,
+			       @requestID = ID,
+			       @oldEusProposalID = RDS_EUS_Proposal_ID,
+			       @oldStatus = RDS_Status
+			FROM T_Requested_Run
+			WHERE RDS_Name = @reqName AND
+			      RDS_Status = @status
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+				RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
+
+			If @myRowCount > 0
+				Set @MatchFound = 1
+		End
 	End
 	
 	if @MatchFound = 0
 	Begin
-		SELECT 
-			@requestID = ISNULL(ID, 0), 
-			@oldEusProposalID = RDS_EUS_Proposal_ID,
-			@oldStatus = RDS_Status
+		-- Match not found when filtering on Status
+		-- Query again, but this time ignore RDS_Status
+		--
+		SELECT @oldReqName = RDS_Name,
+		       @requestID = ID,
+		       @oldEusProposalID = RDS_EUS_Proposal_ID,
+		       @oldStatus = RDS_Status
 		FROM T_Requested_Run
 		WHERE RDS_Name = @reqName
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Error trying to find existing request: "$s"', 11, 7, @reqName)
+			RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
 	End
 	
 	
@@ -228,7 +266,13 @@ As
 	-- cannot update a non-existent entry
 	--
 	if @requestID = 0 and (@mode IN ('update', 'check_update'))
-		RAISERROR ('Cannot update: Requested Run "%s" is not in database; cannot update', 11, 4, @reqName)
+	Begin
+		If @requestIDForUpdate > 0
+			RAISERROR ('Cannot update: Requested Run ID "%d" is not in database; cannot update', 11, 4, @requestIDForUpdate)
+		else
+			RAISERROR ('Cannot update: Requested Run "%s" is not in database; cannot update', 11, 4, @reqName)
+	End
+		
 	
 	---------------------------------------------------
 	-- Confirm that the new status value is valid
@@ -238,10 +282,10 @@ As
 		SET @status = 'Active'
 	--
 	IF @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
-		RAISERROR ('Status "%s" is not valid', 11, 37, @status)
+		RAISERROR ('Status "%s" is not valid; must be Active, Inactive, or Completed', 11, 37, @status)
 	--
 	IF @mode IN ('update', 'check_update') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
-		RAISERROR ('Status "%s" is not valid', 11, 38, @status)
+		RAISERROR ('Status "%s" is not valid; must be Active, Inactive, or Completed', 11, 38, @status)
 	--
 	IF @mode IN ('update', 'check_update') AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
 	Begin
@@ -358,7 +402,7 @@ As
 	--
 	exec @myError = ValidateInstrumentGroupAndDatasetType
 							@msType,
-							@instrumentGroup,
+							@instrumentGroup output,
 							@datasetTypeID output,
 							@msg output 
 	if @myError <> 0
@@ -596,6 +640,7 @@ As
 		--
 		UPDATE T_Requested_Run 
 		SET 
+			RDS_Name = Case When @requestIDForUpdate > 0 Then @reqName Else RDS_Name End,
 			RDS_Oper_PRN = @operPRN, 
 			RDS_comment = @comment, 
 			RDS_instrument_name = @instrumentGroup, 

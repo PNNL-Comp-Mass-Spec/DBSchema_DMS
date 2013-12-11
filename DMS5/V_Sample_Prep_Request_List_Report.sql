@@ -3,10 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
+CREATE VIEW V_Sample_Prep_Request_List_Report
 AS
 SELECT SPR.ID ,
        SPR.Request_Name AS RequestName ,
@@ -42,9 +39,12 @@ SELECT SPR.ID ,
 			When QT.[Days In Queue] <= 60 Then	60	-- Request is 30 to 60 days old
 			When QT.[Days In Queue] <= 90 Then	90	-- Request is 60 to 90 days old
 			Else 120								-- Request is over 90 days old
-		End
-		AS #DaysInQueue,
-		CC.Activation_State AS #WPActivationState
+		END AS #DaysInQueue,
+       CASE
+           WHEN SPR.State <> 5 AND
+                CC.Activation_State >= 3 THEN 10	-- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
+           ELSE CC.Activation_State
+       END AS #WPActivationState
 FROM    T_Sample_Prep_Request AS SPR
         INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
         LEFT OUTER JOIN T_Users AS QP ON SPR.Requester_PRN = QP.U_PRN
@@ -65,8 +65,6 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Name,
          SPR.Instrument_Analysis_Specifications, SPR.Separation_Type,
          CC.Activation_State, CC.Activation_State_Name
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [PNL\D3M578] AS [dbo]

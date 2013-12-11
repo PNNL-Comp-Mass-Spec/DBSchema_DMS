@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
+CREATE PROCEDURE dbo.UpdateDatasetInterval
 /****************************************************
 **
 **  Desc: 
@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
 **			04/10/2012 grk - now deleting "short" long intervals
 **			06/08/2012 grk - added lookup for @maxNormalInterval
 **			08/30/2012 grk - extended dataset update to include beginning of next month
+**			11/19/2013 mem - Now updating Interval_to_Next_DS in T_Dataset only if the newly computed interval differs from the stored interval
 **    
 *****************************************************/
 (
@@ -172,14 +173,18 @@ AS
 			FROM T_Dataset DS
 			     INNER JOIN #Tmp_Durations
 			       ON DS.Dataset_ID = #Tmp_Durations.ID
+			WHERE IsNull(DS.Interval_to_Next_DS, 0) <> Coalesce(#Tmp_Durations.[Interval], DS.Interval_to_Next_DS, 0)
 
 			---------------------------------------------------
 			-- update interval in long interval table
 			---------------------------------------------------
 
 			UPDATE dbo.T_Run_Interval
-			SET Interval = #Tmp_Durations.[Interval]
-			FROM dbo.T_Run_Interval INNER JOIN #TMP_Durations ON dbo.T_Run_Interval.ID = #TMP_Durations.ID
+			SET [Interval] = #Tmp_Durations.[Interval]
+			FROM dbo.T_Run_Interval target
+			     INNER JOIN #Tmp_Durations
+			       ON target.ID = #TMP_Durations.ID
+			WHERE IsNull(target.[Interval], 0) <> Coalesce(#Tmp_Durations.[Interval], target.[Interval], 0)
 
 			---------------------------------------------------
 			-- make entries in interval tracking table

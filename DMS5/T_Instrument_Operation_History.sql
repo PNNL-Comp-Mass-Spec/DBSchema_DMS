@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Instrument_Operation_History](
 (
 	[ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Instrument_Operation_History] ADD  CONSTRAINT [DF_T_Instrument_Operation_History_Entered]  DEFAULT (getdate()) FOR [Entered]

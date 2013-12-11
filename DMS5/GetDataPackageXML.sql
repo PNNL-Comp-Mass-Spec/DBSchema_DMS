@@ -13,9 +13,9 @@ CREATE FUNCTION dbo.GetDataPackageXML
 **
 **	Parameters: 
 **
-**		Auth:	grk
-**		Date:	04/25/2012
-**				05/06/2012 grk - Added support for experiments
+**	Auth:	grk
+**	Date:	04/25/2012
+**			05/06/2012 grk - Added support for experiments
 **    
 *****************************************************/
 (
@@ -84,11 +84,11 @@ BEGIN
 					Created ,
 					TEX.EX_reason AS Reason,
 					[Package Comment] AS Package_Comment
-			FROM     S_V_Data_Package_Experiments_Export AS TDPA
-			INNER JOIN T_Experiments TEX ON TDPA.Experiment_ID = TEX.Exp_ID
+			FROM     S_V_Data_Package_Experiments_Export AS TDPE
+			INNER JOIN T_Experiments TEX ON TDPE.Experiment_ID = TEX.Exp_ID
 			INNER JOIN T_Campaign TC ON TC.Campaign_ID = TEX.EX_campaign_ID
 			INNER JOIN dbo.T_Organisms TRG ON TRG.Organism_ID = TEX.EX_organism_ID
-			WHERE   TDPA.Data_Package_ID = @DataPackageID
+			WHERE   TDPE.Data_Package_ID = @DataPackageID
 			) experiment
 		FOR XML AUTO, TYPE
 		)        
@@ -115,9 +115,9 @@ BEGIN
 					Instrument ,
 					Created ,
 					[Package Comment] AS Package_Comment
-			FROM    S_V_Data_Package_Datasets_Export AS TDPA
-					INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = TDPA.Dataset_ID
-			WHERE   TDPA.Data_Package_ID = @DataPackageID
+			FROM    S_V_Data_Package_Datasets_Export AS TDPD
+					INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = TDPD.Dataset_ID
+			WHERE   TDPD.Data_Package_ID = @DataPackageID
 			) dataset
 		FOR XML AUTO, TYPE
 		)        
@@ -146,10 +146,10 @@ BEGIN
 					VMA.[Protein Options] ,
 					VMA.Comment ,
 					VMA.State ,
-					TPA.[Package Comment] AS Package_Comment
-			FROM  S_V_Data_Package_Analysis_Jobs_Export AS TPA 
-					INNER JOIN V_Mage_Analysis_Jobs AS VMA  ON VMA.Job = TPA.Job
-			WHERE TPA.Data_Package_ID = @DataPackageID 
+					DPJ.[Package Comment] AS Package_Comment
+			FROM  S_V_Data_Package_Analysis_Jobs_Export AS DPJ 
+					INNER JOIN V_Mage_Analysis_Jobs AS VMA  ON VMA.Job = DPJ.Job
+			WHERE DPJ.Data_Package_ID = @DataPackageID 
 			) job
 		FOR XML AUTO, TYPE
 		)        
@@ -193,11 +193,11 @@ BEGIN
 			SELECT  DS.Dataset_ID ,
 					ISNULL(AP.AP_archive_path, '') + '/' +
 					ISNULL(DS.DS_folder_name, DS.Dataset_Num) AS Folder_Path
-			FROM    S_V_Data_Package_Datasets_Export AS TDPA
-					INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = TDPA.Dataset_ID
+			FROM    S_V_Data_Package_Datasets_Export AS TDPD
+					INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = TDPD.Dataset_ID
 					INNER JOIN T_Dataset_Archive AS DA ON DA.AS_Dataset_ID = DS.Dataset_ID
 					INNER JOIN T_Archive_Path AS AP ON AP.AP_path_ID = DA.AS_storage_path_ID
-			WHERE   TDPA.Data_Package_ID = @DataPackageID
+			WHERE   TDPD.Data_Package_ID = @DataPackageID
 			) dataset_path
 		FOR XML AUTO, TYPE
 		)        
@@ -214,17 +214,17 @@ BEGIN
 		SET @jobPathXML = (
 		SELECT * FROM (
 			SELECT  --TDPA.Data_Package_ID ,
-					TDPA.Job ,
+					DPJ.Job ,
 					-- TDPA.Tool ,
 					ISNULL(AP.AP_archive_path, '') + '/' +
 					ISNULL(TDS.DS_folder_name, TDS.Dataset_Num) + '/' +
 					ISNULL(AJ.AJ_resultsFolderName, '') AS Folder_Path
-			FROM    S_V_Data_Package_Analysis_Jobs_Export AS TDPA
-					INNER JOIN T_Dataset AS TDS ON TDS.Dataset_Num = TDPA.Dataset
+			FROM    S_V_Data_Package_Analysis_Jobs_Export AS DPJ
+					INNER JOIN T_Dataset AS TDS ON TDS.Dataset_Num = DPJ.Dataset
 					INNER JOIN T_Dataset_Archive AS DA ON DA.AS_Dataset_ID = TDS.Dataset_ID
 					INNER JOIN T_Archive_Path AS AP ON AP.AP_path_ID = DA.AS_storage_path_ID
-					INNER JOIN T_Analysis_Job AS AJ ON AJ.AJ_jobID = TDPA.Job
-			WHERE TDPA.Data_Package_ID = @DataPackageID
+					INNER JOIN T_Analysis_Job AS AJ ON AJ.AJ_jobID = DPJ.Job
+			WHERE DPJ.Data_Package_ID = @DataPackageID
 			) job_path
 		FOR XML AUTO, TYPE
 		)        	

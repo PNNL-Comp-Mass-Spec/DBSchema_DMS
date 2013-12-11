@@ -32,6 +32,9 @@ CREATE TABLE [dbo].[T_Dataset](
 	[File_Info_Last_Modified] [datetime] NULL,
 	[Interval_to_Next_DS] [int] NULL,
 	[Acq_Length_Minutes]  AS (isnull(datediff(minute,[Acq_Time_Start],[Acq_Time_End]),(0))) PERSISTED NOT NULL,
+	[DateSortKey] [datetime] NOT NULL,
+	[DS_RowVersion] [timestamp] NOT NULL,
+	[DeconTools_Job_for_QC] [int] NULL,
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC
@@ -104,6 +107,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_DatasetID_InstrumentNameID_StoragePathID
 	[DS_instrument_name_ID] ASC,
 	[DS_storage_path_ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Dataset_DateSortKey] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_DateSortKey] ON [dbo].[T_Dataset] 
+(
+	[DateSortKey] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 
 /****** Object:  Index [IX_T_Dataset_Exp_ID] ******/
@@ -261,6 +271,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
 For Insert
 /****************************************************
@@ -272,6 +283,7 @@ For Insert
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry for DS_Rating (Ticket #519)
 **			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
+**			11/22/2013 mem - Now updating DateSortKey
 **    
 *****************************************************/
 AS
@@ -290,6 +302,19 @@ AS
 	FROM inserted
 	ORDER BY inserted.Dataset_ID
 
+	-- This query must stay sync'd where the Update query in trigger trig_u_Dataset
+	UPDATE T_Dataset
+	SET DateSortKey = CASE
+	                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
+	                      ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+	                  END
+	FROM T_Dataset DS
+	     INNER JOIN inserted
+	       ON DS.Dataset_ID = INSERTED.Dataset_ID
+	     INNER JOIN T_Experiments E
+	       ON DS.Exp_ID = E.Exp_ID
+
+
 GO
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
@@ -297,7 +322,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger trig_u_Dataset on T_Dataset
+CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
 For Update
 /****************************************************
 **
@@ -310,6 +335,8 @@ For Update
 **			08/15/2007 mem - Updated to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
 **			11/01/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
 **			07/19/2010 mem - Now updating T_Entity_Rename_Log if the dataset is renamed
+**			11/15/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
+**			11/22/2013 mem - Now updating DateSortKey
 **    
 *****************************************************/
 AS
@@ -346,6 +373,30 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
 		ORDER BY inserted.Dataset_ID
 	End
+
+	If Update(Dataset_Num) OR Update(DS_folder_name)
+	Begin
+		UPDATE T_Cached_Dataset_Folder_Paths
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
+			 inserted ON DFP.Dataset_ID = inserted.Dataset_ID
+	End
+
+	If Update(Acq_Time_Start) Or Update(DS_created)
+	Begin
+		-- This query must stay sync'd where the Update query in trigger trig_i_Dataset
+		UPDATE T_Dataset
+		SET DateSortKey = CASE
+		                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
+		                      ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+		                  END
+		FROM T_Dataset DS
+		     INNER JOIN inserted
+		       ON DS.Dataset_ID = INSERTED.Dataset_ID
+		     INNER JOIN T_Experiments E
+		       ON DS.Exp_ID = E.Exp_ID
+	End
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Dataset] ******/
@@ -429,4 +480,6 @@ GO
 ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_rating]  DEFAULT (2) FOR [DS_rating]
 GO
 ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_PrepServerName]  DEFAULT ('na') FOR [DS_PrepServerName]
+GO
+ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DateSortKey]  DEFAULT (getdate()) FOR [DateSortKey]
 GO

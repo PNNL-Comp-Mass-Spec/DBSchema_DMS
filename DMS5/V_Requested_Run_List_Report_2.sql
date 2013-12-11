@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Requested_Run_List_Report_2] 
+CREATE VIEW V_Requested_Run_List_Report_2 
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
@@ -22,6 +21,7 @@ SELECT RR.ID AS Request,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_WorkPackage AS [Work Package],
+	   ISNULL(CC.Activation_State_Name, '') AS [WP State],
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS Proposal,
        RR.RDS_comment AS [Comment],
@@ -43,7 +43,12 @@ SELECT RR.ID AS Request,
            WHEN QT.[Days In Queue] <= 60 THEN 60
            WHEN QT.[Days In Queue] <= 90 THEN 90
            ELSE 120
-       END AS [#DaysInQueue]
+       END AS [#DaysInQueue],
+       CASE
+           WHEN RR.RDS_Status = 'Active' AND
+                CC.Activation_State >= 3 THEN 10	-- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+           ELSE CC.Activation_State
+       END AS #WPActivationState
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
@@ -63,8 +68,8 @@ FROM T_Requested_Run AS RR
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
-
-
+     LEFT OUTER JOIN V_Charge_Code_Status CC
+       ON RR.RDS_WorkPackage = CC.Charge_Code
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_List_Report_2] TO [PNL\D3M578] AS [dbo]

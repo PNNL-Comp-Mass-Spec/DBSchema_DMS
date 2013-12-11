@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE AddMassCorrectionEntry
+CREATE PROCEDURE AddMassCorrectionEntry
 /****************************************************
 **
 **	Desc: Adds a new or updates an existing global modification
@@ -16,13 +16,14 @@ create PROCEDURE AddMassCorrectionEntry
 **		@paramFileDesc  description of paramfileentry 
 **	
 **
-**		Auth: kja
-**		Date: 08/02/2004
+**	Auth:	kja
+**	Date:	08/02/2004
+**			10/17/2013 mem - Expanded @modDescription to varchar(128)
 **    
 *****************************************************/
 (
 	@modName char(8),
-	@modDescription varchar(64),
+	@modDescription varchar(128),
 	@modMassChange float(8),
 	@modAffectedAtom char(1) = '-',
 	@message varchar(512) output

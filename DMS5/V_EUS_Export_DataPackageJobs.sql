@@ -3,7 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_EUS_Export_DataPackageJobs
+
+
+CREATE VIEW [dbo].[V_EUS_Export_DataPackageJobs]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
        D.Dataset_Num AS Dataset,
@@ -43,6 +45,8 @@ FROM T_Dataset D
      INNER JOIN S_V_Data_Package_Export DP
        ON DP.ID = DPJ.Data_Package_ID
 WHERE (AJ.AJ_StateID = 4)
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_DataPackageJobs] TO [PNL\D3M578] AS [dbo]

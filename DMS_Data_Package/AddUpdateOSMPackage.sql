@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOSMPackage]
 **          08/20/2013 grk - added handling for onenote file path
 **          08/21/2013 grk - removed @NoteFilesLink
 **          08/21/2013 grk - added call to create onenote folder
+**          11/04/2013 grk - added @UserFolderPath
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -36,6 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOSMPackage]
 	@Owner varchar(128),
 	@State varchar(32),
 	@SamplePrepRequestList VARCHAR(4096),
+	@UserFolderPath VARCHAR(512),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -156,7 +158,8 @@ As
 		State,
 		Wiki_Page_Link,
 		Path_Root,
-		Sample_Prep_Requests
+		Sample_Prep_Requests,
+		User_Folder_Path
 	) VALUES (
 		@Name,
 		@PackageType,
@@ -167,7 +170,8 @@ As
 		@State,
 		@wikiLink,
 		@rootPath,
-		@goodIDs
+		@goodIDs,
+		@UserFolderPath
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -199,7 +203,8 @@ As
 			Owner = @Owner,
 			State = @State,
 			Last_Modified = GETDATE(),
-			Sample_Prep_Requests = @goodIDs
+			Sample_Prep_Requests = @goodIDs,
+			User_Folder_Path = @UserFolderPath
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -226,9 +231,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOSMPackage] TO [DMS_SP_User] AS [dbo]

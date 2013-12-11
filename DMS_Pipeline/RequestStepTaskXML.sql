@@ -450,7 +450,7 @@ As
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
-		     INNER JOIN T_Processor_Tool_Group_Details PTGD
+		                       INNER JOIN T_Processor_Tool_Group_Details PTGD
 		           ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
 		           M.ProcTool_Group_ID = PTGD.Group_ID
 		                       INNER JOIN T_Step_Tools ST

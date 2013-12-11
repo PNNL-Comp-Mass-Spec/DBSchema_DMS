@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 	[Mass_Correction_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Mass_Correction_Tag] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Description] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Description] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Monoisotopic_Mass_Correction] [float] NOT NULL,
 	[Average_Mass_Correction] [float] NULL,
 	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -38,7 +38,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger trig_i_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Insert
 AS
@@ -58,15 +57,12 @@ AS
 			GetDate(), SYSTEM_USER
 	FROM inserted
 
-
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger trig_u_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
 For Update
 AS
@@ -92,8 +88,6 @@ AS
 				GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
 
-
-
 GO
 GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
 GO
@@ -113,7 +107,7 @@ GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((((not([Mass_Correction_Tag] like '%:%'))) and ((not([Mass_Correction_Tag] like '%,%')))))
+ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((NOT [Mass_Correction_Tag] like '%:%' AND NOT [Mass_Correction_Tag] like '%,%'))
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
 GO
