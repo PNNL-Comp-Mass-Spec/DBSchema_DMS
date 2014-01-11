@@ -22,6 +22,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **          10/01/2009 mem - Now populating Campaign in T_Data_Package_Biomaterial
 **          12/31/2009 mem - Added DISTINCT keyword to the INSERT INTO queries in case the source views include some duplicate rows (in particular, S_V_Experiment_Detail_Report_Ex)
 **          05/23/2010 grk - create this sproc from common function factored out of UpdateDataPackageItems and UpdateDataPackageItemsXML
+**			12/31/2013 mem - Added support for EUS Proposals
 **
 *****************************************************/
 (
@@ -53,10 +54,10 @@ As
 		-- not down
 		--
 		IF @mode = 'add'
-		BEGIN --<add_associated_items>
+		BEGIN -- <add_associated_items>
 	 
 			-- add datasets to list that are parents of jobs in list
-			-- that are not already in list
+			-- (and are not already in list)
  			INSERT INTO #TPI (Package, Type, Identifier)
 			SELECT DISTINCT
 				TP.Package, 
@@ -74,8 +75,8 @@ As
 					WHERE #TPI.Type = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.Package = TP.Package
 				)
 
-			-- add experiments to list that are parents of datsets in list
-			-- that are not already in list
+			-- add experiments to list that are parents of datasets in list
+			-- (and are not already in list)
  			INSERT INTO #TPI (Package, Type, Identifier)
 			SELECT DISTINCT
 				TP.Package, 
@@ -93,8 +94,28 @@ As
 					WHERE #TPI.Type = 'Experiment' AND #TPI.Identifier = TX.Experiment AND #TPI.Package = TP.Package
 				)
 
+			-- add EUS Proposals to list that are parents of datasets in list
+			-- (and are not already in list)
+ 			INSERT INTO #TPI (Package, Type, Identifier)
+			SELECT DISTINCT
+				TP.Package, 
+				'EUSProposal',
+				TX.[EMSL Proposal]
+			FROM
+				#TPI TP
+				INNER JOIN S_V_Dataset_List_Report_2 TX
+				ON TP.Identifier = TX.Dataset 
+			WHERE
+				TP.Type = 'Dataset' 
+				AND NOT EXISTS (
+					SELECT * 
+					FROM #TPI 
+					WHERE #TPI.Type = 'EUSProposal' AND #TPI.Identifier = TX.[EMSL Proposal] AND #TPI.Package = TP.Package
+				)
+
+
 			-- add biomaterial items to list that are associated with experiments in list
-			-- that are not already in list
+			-- (and are not already in list)
  			INSERT INTO #TPI (Package, Type, Identifier)
 			SELECT DISTINCT
 				TP.Package, 
@@ -111,7 +132,7 @@ As
 					FROM #TPI 
 					WHERE #TPI.Type = 'Biomaterial' AND #TPI.Identifier = TX.Cell_Culture_Name AND #TPI.Package = TP.Package
 				)
-		END --<add_associated_items>
+		END -- </add_associated_items>
 
 		---------------------------------------------------
 		-- biomaterial operations
@@ -194,6 +215,80 @@ As
 			set @itemCountChanged = @itemCountChanged + @myRowCount
 		END --<add biomaterial>
 
+
+		---------------------------------------------------
+		-- EUS Proposal operations
+		---------------------------------------------------
+
+		IF @mode = 'delete'
+		BEGIN --<delete EUS Proposals>
+			DELETE FROM  T_Data_Package_EUS_Proposals
+			WHERE EXISTS (
+				SELECT * 
+				FROM #TPI
+				WHERE 
+				#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+				#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
+				#TPI.Type = 'EUSProposal'
+			)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			set @itemCountChanged = @itemCountChanged + @myRowCount
+		END --<delete EUS Proposal>
+
+
+		IF @mode = 'comment'
+		BEGIN --<comment EUS Proposals>
+			UPDATE T_Data_Package_EUS_Proposals
+			SET [Package Comment] = @comment
+			WHERE EXISTS (
+				SELECT * 
+				FROM #TPI
+				WHERE 
+				#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+				#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
+				#TPI.Type = 'EUSProposal'
+			)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			set @itemCountChanged = @itemCountChanged + @myRowCount
+		END --<comment EUS Proposals>
+		
+		IF @mode = 'add'
+		BEGIN --<add EUS Proposals>
+		
+			-- get rid of any duplicates  
+			DELETE FROM #TPI
+			WHERE EXISTS (
+				SELECT * 
+				FROM T_Data_Package_EUS_Proposals TX
+				WHERE 
+				#TPI.Package = TX.Data_Package_ID AND #TPI.Identifier = TX.Proposal_ID AND #TPI.Type = 'EUSProposal'
+			)
+			-- add new items
+			INSERT INTO T_Data_Package_EUS_Proposals(
+				Data_Package_ID,
+				Proposal_ID,
+				[Package Comment]
+			)
+			SELECT DISTINCT
+				#TPI.Package,
+				TX.ID,
+				@comment
+			FROM   
+				#TPI
+				INNER JOIN S_V_EUS_Proposals_List_Report TX
+				ON #TPI.Identifier = TX.ID
+			WHERE #TPI.Type = 'EUSProposal'
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			set @itemCountChanged = @itemCountChanged + @myRowCount
+		END --<add EUS Proposals>
+		
+		
 		---------------------------------------------------
 		-- experiment operations
 		---------------------------------------------------

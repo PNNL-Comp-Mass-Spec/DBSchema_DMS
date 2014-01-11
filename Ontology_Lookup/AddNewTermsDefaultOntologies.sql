@@ -12,6 +12,7 @@ CREATE PROCEDURE AddNewTermsDefaultOntologies
 **
 **	Auth:	mem
 **	Date:	05/13/2013 mem - Initial Version
+**			12/04/2013 mem - Added CL
 **
 *****************************************************/
 (
@@ -30,6 +31,7 @@ AS
 	--
 
 	exec @myError = AddNewTerms @OntologyName='BTO',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+	exec @myError = AddNewTerms @OntologyName='CL',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
 	exec @myError = AddNewTerms @OntologyName='GO',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
 	exec @myError = AddNewTerms @OntologyName='MI',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_MI
 	exec @myError = AddNewTerms @OntologyName='MOD',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_Mod

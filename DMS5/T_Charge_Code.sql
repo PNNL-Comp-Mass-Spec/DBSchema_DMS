@@ -51,7 +51,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 12/10/2013 17:33:52 ******/
+/****** Object:  Index [IX_T_Charge_Code_SortKey]    Script Date: 01/10/2014 17:51:08 ******/
 CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code] 
 (
 	[SortKey] ASC

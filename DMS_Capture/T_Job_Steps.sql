@@ -43,7 +43,7 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
-/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 12/10/2013 17:37:31 ******/
+/****** Object:  Index [IDX_Job_Plus_Step]    Script Date: 01/10/2014 17:56:58 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IDX_Job_Plus_Step] ON [dbo].[T_Job_Steps] 
 (
 	[Job_Plus_Step] ASC

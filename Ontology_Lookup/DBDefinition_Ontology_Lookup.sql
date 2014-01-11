@@ -1,8 +1,8 @@
 /****** Object:  Database [Ontology_Lookup] ******/
 CREATE DATABASE [Ontology_Lookup] ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 2088960KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 2392064KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 1792320KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 8791168KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 100

@@ -103,6 +103,8 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[MassErrorPPM_Refined] [real] NULL,
 	[MassErrorPPM_VIPER] [numeric](9, 4) NULL,
 	[AMTs_10pct_FDR] [int] NULL,
+	[Phos_2A] [real] NULL,
+	[Phos_2C] [real] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

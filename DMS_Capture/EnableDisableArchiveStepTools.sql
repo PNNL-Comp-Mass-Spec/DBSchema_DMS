@@ -16,6 +16,7 @@ CREATE Procedure dbo.EnableDisableArchiveStepTools
 **	Auth:	mem
 **	Date:	05/06/2011 mem - Initial version
 **			05/12/2011 mem - Added comment parameter
+**			12/16/2013 mem - Added step tools 'ArchiveVerify' and 'ArchiveStatusCheck'
 **    
 *****************************************************/
 (
@@ -63,14 +64,14 @@ As
 	If @infoOnly <> 0
 		SELECT @Task as Task, *
 		FROM T_Processor_Tool
-		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND (Enabled = @OldState)
+		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate', 'ArchiveVerify', 'ArchiveStatusCheck')) AND (Enabled = @OldState)
 	Else
 	Begin
 		-- Update the Enabled column
 		--
 		UPDATE T_Processor_Tool
 		Set Enabled = @NewState
-		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND (Enabled = @OldState)
+		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate', 'ArchiveVerify', 'ArchiveStatusCheck')) AND (Enabled = @OldState)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		

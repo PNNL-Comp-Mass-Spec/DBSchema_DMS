@@ -21,6 +21,7 @@ CREATE PROCEDURE UpdateMissedMyEMSLStateValues
 **
 **  Auth:	mem
 **  Date:	09/10/2013 mem - Initial version
+**			12/13/2013 mem - Tweaked log message
 **    
 *****************************************************/
 (
@@ -79,7 +80,7 @@ As
 
 	If @myRowCount > 0
 	Begin
-		Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + ' dataset(s) that need MyEMSLState set to 1: '
+		Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset that needs', ' datasets that need') + ' MyEMSLState set to 1: '
 		
 		-- Append the dataset IDs
 		SELECT @message = @message + Convert(varchar(12), EntityID) + ', '
@@ -127,7 +128,7 @@ As
 	
 	If @myRowCount > 0
 	Begin
-		Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + ' analysis job(s) that need MyEMSLState set to 1: '
+		Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' analysis job that needs', ' analysis jobs that need') + ' MyEMSLState set to 1: '
 		
 		-- Append the Job IDs
 		SELECT @message = @message + Convert(varchar(12), EntityID) + ', '

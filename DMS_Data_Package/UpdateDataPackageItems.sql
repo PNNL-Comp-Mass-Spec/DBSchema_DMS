@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDataPackageItems]
+CREATE PROCEDURE dbo.UpdateDataPackageItems
 /****************************************************
 **
 **	Desc:
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItems]
 **          06/10/2009 grk - changed size of item list to max
 **          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
 **          03/07/2012 grk - changed data type of @itemList from varchar(max) to text
+**			12/31/2013 mem - Added support for EUS Proposals
 **
 *****************************************************/
 (
@@ -60,6 +61,7 @@ As
 					 WHEN @itemType = 'datasets' THEN 'Dataset'
 					 WHEN @itemType = 'experiments' THEN 'Experiment'
 					 WHEN @itemType = 'biomaterial' THEN 'Biomaterial'
+					 WHEN @itemType = 'proposals' THEN 'EUSProposal'
 					 ELSE ''
 				END 
 		--

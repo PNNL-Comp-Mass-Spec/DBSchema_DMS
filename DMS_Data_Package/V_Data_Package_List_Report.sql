@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Data_Package_List_Report]
 AS
 SELECT DP.ID,
@@ -18,6 +19,7 @@ SELECT DP.ID,
        DP.Total_Item_Count AS Total,
        DP.Analysis_Job_Item_Count AS Jobs,
        DP.Dataset_Item_Count AS Datasets,
+	   DP.EUS_Proposal_Item_Count AS Proposals,
        DP.Experiment_Item_Count AS Experiments,
        DP.Biomaterial_Item_Count AS Biomaterial,
        DP.Last_Modified AS [Last Modified],
@@ -27,6 +29,7 @@ FROM dbo.T_Data_Package DP
        ON DP.Owner = U1.U_PRN
      LEFT OUTER JOIN S_V_Users U2
        ON DP.Requester = U2.U_PRN
+
 
 
 

@@ -65,6 +65,8 @@ CREATE PROCEDURE RequestStepTaskXML
 **			11/01/2011 mem - Changed @HoldoffWindowMinutes from 7 to 3 minutes
 **			12/19/2011 mem - Now showing memory amounts in "Not enough memory available" error message
 **			04/25/2013 mem - Increased @MaxSimultaneousJobCount from 10 to 75; this is feasible since the storage servers now have the DMS_LockFiles share, which is used to prioritize copying large files
+**			01/10/2014 mem - Now only assigning Results_Transfer tasks to the storage server on which the dataset resides
+**						   - Changed @ThrottleByStartTime to 0
 **
 *****************************************************/
 (
@@ -76,7 +78,7 @@ CREATE PROCEDURE RequestStepTaskXML
 	@AnalysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
 	@JobCountToPreview int = 10,				-- The number of jobs to preview when @infoOnly >= 1
 	@UseBigBangQuery tinyint = 1,				-- When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs)
-	@ThrottleByStartTime tinyint = 1,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server)
+	@ThrottleByStartTime tinyint = 0,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
 	@MaxStepNumToThrottle int = 10,
 	@ThrottleAllStepTools tinyint = 0,			-- When 0, then will not throttle Sequest or Results_Transfer steps
 	@LogSPUsage tinyint = 0
@@ -116,7 +118,7 @@ As
 	Set @JobCountToPreview = IsNull(@JobCountToPreview, 10)
 	Set @UseBigBangQuery = IsNull(@UseBigBangQuery, 1)
 	
-	Set @ThrottleByStartTime = IsNull(@ThrottleByStartTime, 1)
+	Set @ThrottleByStartTime = IsNull(@ThrottleByStartTime, 0)
 	Set @MaxStepNumToThrottle = IsNull(@MaxStepNumToThrottle, 10)
 	Set @ThrottleAllStepTools = IsNull(@ThrottleAllStepTools, 0)
 
@@ -365,12 +367,145 @@ As
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Populate #Tmp_CandidateJobSteps'
 
 	---------------------------------------------------
+	-- Look for available Results_Transfer steps
+	-- Only assign a Results_Transfer step to a manager running on the job's storage server
+	---------------------------------------------------
+	
+	If Exists (SELECT *
+	           FROM T_Local_Processors LP 
+	                INNER JOIN T_Machines M 
+	                  ON LP.Machine = M.Machine 
+	                INNER JOIN T_Processor_Tool_Group_Details PTGD 
+	                  ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND 
+	                     M.ProcTool_Group_ID = PTGD.Group_ID
+	           WHERE LP.Processor_Name = @processorName And 
+	                 PTGD.Enabled > 0 And 
+	                 PTGD.Tool_Name = 'Results_Transfer')
+	Begin
+
+		INSERT INTO #Tmp_CandidateJobSteps (
+			Job,
+			Step_Number,
+			Job_Priority,
+			Step_Tool,
+			Tool_Priority,
+			Memory_Usage_MB,
+			Storage_Server,
+			Machine,
+			Association_Type
+		)
+		SELECT TOP (@CandidateJobStepsToRetrieve)
+			TJS.Job, 
+			TJS.Step_Number,
+			TJ.Priority AS Job_Priority,
+			TJS.Step_Tool,
+			1 As Tool_Priority,
+			TJS.Memory_Usage_MB,
+			TJ.Storage_Server,
+			TP.Machine,
+			CASE
+				-- transfer tool steps for jobs that are in the midst of an archive operation
+				WHEN (TJ.Archive_Busy = 1) 
+					THEN 102
+				-- Results_Transfer step for job without a specific storage server
+				When TJ.Storage_Server Is Null
+					THEN 6
+				-- Results_Transfer step to be run on the job-specific storage server
+				ELSE 5
+			END AS Association_Type
+		FROM ( SELECT TJ.Job,
+		              TJ.Priority,		-- Job_Priority
+		              TJ.Archive_Busy,
+		              TJ.Storage_Server
+		       FROM T_Jobs TJ
+		       WHERE TJ.State <> 8
+		     ) TJ
+		     INNER JOIN T_Job_Steps TJS
+		       ON TJ.Job = TJS.Job
+		     INNER JOIN ( SELECT LP.Processor_Name,
+		                         M.Machine
+		                  FROM T_Machines M
+		                       INNER JOIN T_Local_Processors LP
+		                         ON M.Machine = LP.Machine
+		                  WHERE LP.Processor_Name = @processorName
+		     ) TP
+		       ON TJS.Step_Tool = 'Results_Transfer' AND 
+		          TP.Machine = IsNull(TJ.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
+		WHERE TJS.State = 2
+		ORDER BY 
+			Association_Type,
+			TJ.Priority,		-- Job_Priority
+			Job, 
+			Step_Number
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount = 0 And @infoOnly <> 0
+		Begin
+			-- Look for results transfer tasks that need to be handled by another storage server
+			--
+			INSERT INTO #Tmp_CandidateJobSteps (
+				Job,
+				Step_Number,
+				Job_Priority,
+				Step_Tool,
+				Tool_Priority,
+				Memory_Usage_MB,
+				Storage_Server,
+				Machine,
+				Association_Type
+			)
+			SELECT TOP (@CandidateJobStepsToRetrieve)
+				TJS.Job, 
+				TJS.Step_Number,
+				TJ.Priority AS Job_Priority,
+				TJS.Step_Tool,
+				1 As Tool_Priority,
+				TJS.Memory_Usage_MB,
+				TJ.Storage_Server,
+				TP.Machine,
+				CASE
+					-- transfer tool steps for jobs that are in the midst of an archive operation
+					WHEN (TJ.Archive_Busy = 1) 
+						THEN 102
+					-- Results_Transfer step to be run on the job-specific storage server
+					ELSE 106
+				END AS Association_Type
+			FROM ( SELECT TJ.Job,
+						TJ.Priority,		-- Job_Priority
+						TJ.Archive_Busy,
+						TJ.Storage_Server
+				    FROM T_Jobs TJ
+				    WHERE TJ.State <> 8
+				  ) TJ
+				  INNER JOIN T_Job_Steps TJS
+				    ON TJ.Job = TJS.Job
+				  INNER JOIN ( SELECT LP.Processor_Name,
+									M.Machine
+							FROM T_Machines M
+								INNER JOIN T_Local_Processors LP
+									ON M.Machine = LP.Machine
+							WHERE LP.Processor_Name = @processorName
+				) TP
+				ON TJS.Step_Tool = 'Results_Transfer' AND 
+					TP.Machine <> TJ.Storage_Server
+			WHERE TJS.State = 2
+			ORDER BY 
+				Association_Type,
+				TJ.Priority,		-- Job_Priority
+				Job, 
+				Step_Number
+		End
+		
+	End
+		
+	---------------------------------------------------
 	-- get list of viable job step assignments organized
 	-- by processor in order of assignment priority
 	---------------------------------------------------
 	--
 	If @UseBigBangQuery <> 0 OR @infoOnly <> 0
-	Begin
+	Begin -- <UseBigBang>
 		-- *********************************************************************************
 		-- Big-bang query
 		-- This query can be very expensive if there is a large number of active jobs
@@ -451,12 +586,13 @@ As
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
 		                       INNER JOIN T_Processor_Tool_Group_Details PTGD
-		           ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
-		           M.ProcTool_Group_ID = PTGD.Group_ID
+		                         ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
+		                            M.ProcTool_Group_ID = PTGD.Group_ID
 		                       INNER JOIN T_Step_Tools ST
-		          ON PTGD.Tool_Name = ST.Name
+		                         ON PTGD.Tool_Name = ST.Name
 		                  WHERE LP.Processor_Name = @processorName AND
-		                        PTGD.Enabled > 0
+		                        PTGD.Enabled > 0 AND
+		                        PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 		     ) TP
 		       ON TP.Tool_Name = TJS.Step_Tool
 		WHERE TJS.State = 2
@@ -471,9 +607,9 @@ As
 			Step_Number
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-	End
+	End -- </UseBigBang>
 	Else
-	Begin
+	Begin -- <UseMultiStep>
 		-- Not using the Big-bang query
 		-- Lookup the GP_Groups count for this processor
 		
@@ -494,7 +630,7 @@ As
 		Set @ProcessorGP = IsNull(@ProcessorGP, 0)
 
 		If @ProcessorGP = 0
-		Begin
+		Begin -- <LimitedProcessingMachine>
 			-- Processor does not do general processing
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
@@ -522,7 +658,7 @@ As
 			       FROM T_Jobs TJ
 			       WHERE TJ.State <> 8 ) TJ
 			     INNER JOIN T_Job_Steps TJS
-			   ON TJ.Job = TJS.Job
+		           ON TJ.Job = TJS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
 			                         PTGD.Tool_Name,
@@ -542,7 +678,8 @@ As
 			                       INNER JOIN T_Step_Tools ST
 			                         ON PTGD.Tool_Name = ST.Name
 			                  WHERE PTGD.Enabled > 0 AND
-			                        LP.Processor_Name = @processorName
+			                        LP.Processor_Name = @processorName AND
+			    PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = TJS.Step_Tool
 			WHERE TP.CPUs_Available >= TP.CPU_Load AND
@@ -563,9 +700,9 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		End
+		End -- </LimitedProcessingMachine>
 		Else
-		Begin
+		Begin -- <GeneralProcessingMachine>
 			-- Processor does do general processing
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
@@ -632,7 +769,8 @@ As
 			                       INNER JOIN T_Step_Tools ST
 			                         ON PTGD.Tool_Name = ST.Name
 			                  WHERE PTGD.Enabled > 0 AND
-			                        LP.Processor_Name = @processorName
+			           LP.Processor_Name = @processorName AND
+			                        PTGD.Tool_Name <> 'Results_Transfer'			-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = TJS.Step_Tool
 			WHERE TP.CPUs_Available >= TP.CPU_Load AND
@@ -672,9 +810,9 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		End	
+		End	 -- </GeneralProcessingMachine>
 	
-	End
+	End -- </UseMultiStep>
 
 	---------------------------------------------------
 	-- Check for jobs with Association_Type 101
@@ -693,6 +831,8 @@ As
 	---------------------------------------------------
 	-- Check for storage servers for which too many 
 	-- steps have recently started (and are still running)
+	--
+	-- As of January 2013, this is no longer a necessity because copying of large files now uses lock files
 	---------------------------------------------------
 	--
 	If @ThrottleByStartTime <> 0
@@ -767,7 +907,7 @@ As
 			SET Association_Type = 103,
 				Alternate_Specific_Processor = LJP.Alternate_Processor + 
 				                               CASE WHEN Alternate_Processor_Count > 1
-				                               THEN ' and others'
+				           THEN ' and others'
 				                               ELSE ''
 				                               END
 			FROM #Tmp_CandidateJobSteps CJS
@@ -820,7 +960,7 @@ As
 	--   Assignment priority (prefer directly associated jobs to general pool)
 	--   Job-Tool priority
 	--   Overall job priority
-	--   Later steps over earler steps
+	--   Later steps over earlier steps
 	--   Job number
 	---------------------------------------------------
 	--
@@ -977,12 +1117,15 @@ As
 		           WHEN 2 THEN 'Specific Association'
 		           WHEN 3 THEN 'Non-associated'
 		           WHEN 4 THEN 'Non-associated Generic'
+		           WHEN 5 THEN 'Results_Transfer task (specific to this processor''s server)'
+		         WHEN 6 THEN 'Results_Transfer task (null storage_server)'
 		           WHEN 100 THEN 'Invalid: Not recognized'
 		           WHEN 101 THEN 'Invalid: CPUs all busy'
 		           WHEN 102 THEN 'Invalid: Archive in progress'
 		           WHEN 103 THEN 'Invalid: Job associated with ' + Alternate_Specific_Processor
 		           WHEN 104 THEN 'Invalid: Storage Server has had ' + Convert(varchar(12), @MaxSimultaneousJobCount) + ' job steps start within the last ' + Convert(varchar(12), @HoldoffWindowMinutes)  + ' minutes'
 		           WHEN 105 THEN 'Invalid: Not enough memory available (' + Convert(varchar(12), CJS.Memory_Usage_MB) + ' > ' + Convert(varchar(12), @availableMemoryMB) + ', see T_Job_Steps.Memory_Usage_MB)'
+		           WHEN 106 THEN 'Invalid: Results_transfer task must run on ' + CJS.Storage_Server
 		           ELSE 'Warning: Unknown association type'
 		       END AS Association_Type,
 		       Tool_Priority,
@@ -995,7 +1138,7 @@ As
 		FROM #Tmp_CandidateJobSteps CJS
 		     INNER JOIN T_Jobs J
 		       ON CJS.Job = J.Job
-
+		ORDER BY Seq
 	End
 
 	---------------------------------------------------

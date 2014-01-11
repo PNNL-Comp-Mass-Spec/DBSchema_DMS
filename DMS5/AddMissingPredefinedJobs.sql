@@ -229,6 +229,24 @@ As
 		ORDER BY InstName.IN_name, DS.Dataset_ID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		IF @InfoOnly > 1
+			SELECT 'Ignored' As Comment,
+			        InstName.IN_name,
+					DS.Dataset_ID,
+					DS.Dataset_Num,
+					DS.DS_created,
+					DS.DS_comment,
+					DS.DS_state_ID,
+					DS.DS_rating,
+					DTP.Process_Dataset
+			FROM #Tmp_DatasetsToProcess DTP
+					INNER JOIN T_Dataset DS
+					ON DTP.Dataset_ID = DS.Dataset_ID
+					INNER JOIN T_Instrument_Name InstName
+					ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+			WHERE DTP.Process_Dataset = 0
+			ORDER BY InstName.IN_name, DS.Dataset_ID
 	End
 
 	-- Count the number of entries with Process_Dataset = 1 in #Tmp_DatasetsToProcess

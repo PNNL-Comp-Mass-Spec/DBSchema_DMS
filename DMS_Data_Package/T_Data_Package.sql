@@ -20,6 +20,7 @@ CREATE TABLE [dbo].[T_Data_Package](
 	[Path_Team] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Biomaterial_Item_Count] [int] NOT NULL,
 	[Experiment_Item_Count] [int] NOT NULL,
+	[EUS_Proposal_Item_Count] [int] NOT NULL,
 	[Dataset_Item_Count] [int] NOT NULL,
 	[Analysis_Job_Item_Count] [int] NOT NULL,
 	[Total_Item_Count] [int] NOT NULL,
@@ -100,6 +101,8 @@ GO
 ALTER TABLE [dbo].[T_Data_Package] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Item_Count]  DEFAULT ((0)) FOR [Biomaterial_Item_Count]
 GO
 ALTER TABLE [dbo].[T_Data_Package] ADD  CONSTRAINT [DF_T_Data_Package_Experiment_Item_Count]  DEFAULT ((0)) FOR [Experiment_Item_Count]
+GO
+ALTER TABLE [dbo].[T_Data_Package] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposal_Item_Count]  DEFAULT ((0)) FOR [EUS_Proposal_Item_Count]
 GO
 ALTER TABLE [dbo].[T_Data_Package] ADD  CONSTRAINT [DF_T_Data_Package_Dataset_Item_Count]  DEFAULT ((0)) FOR [Dataset_Item_Count]
 GO

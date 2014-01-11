@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.ResetIdentityFieldSeed
 **	Date:	12/30/2005
 **			02/17/2006 mem - Now updating current identity to @IdentitySeed-1 if a table is empty; necessary if the user makes a single entry in a table then deletes the row
 **			02/18/2007 mem - Ported to the Protein_Sequences DB
+**			12/05/2013 mem - Removed reference to Aux_Info table
 **
 *****************************************************/
 (
@@ -95,7 +96,6 @@ AS
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Log_Entries', 'Entry_ID')
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Naming_Authorities', 'Authority_ID')
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Position_Info', 'Position_ID')
-	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Aux_Info', 'Info_ID')
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Collection_Members',				'Member_ID')
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Collections',		'Protein_Collection_ID')
 	INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Names', 'Reference_ID')

@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT	JS.Job,
@@ -39,10 +38,12 @@ SELECT	JS.Job,
 		JS.Completion_Message,
 		JS.Evaluation_Code,
 		JS.Evaluation_Message,
+		JS.Dataset_ID,
 		JS.Transfer_Folder_Path
 FROM (
 	SELECT JS.Job,
 		   J.Dataset,
+		   J.Dataset_ID,
 		   JS.Step_Number AS Step,
 		   S.Script,
 		   JS.Step_Tool AS Tool,
@@ -77,6 +78,7 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
+
 
 
 

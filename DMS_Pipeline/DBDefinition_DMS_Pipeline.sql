@@ -1,6 +1,6 @@
 /****** Object:  Database [DMS_Pipeline] ******/
 CREATE DATABASE [DMS_Pipeline] ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 8179392KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 9255104KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
 ( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'G:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS

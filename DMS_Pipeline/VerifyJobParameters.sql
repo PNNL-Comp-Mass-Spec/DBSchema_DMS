@@ -15,6 +15,7 @@ CREATE PROCEDURE VerifyJobParameters
 **  Auth:	grk
 **  Date:	10/06/2010 grk - Initial release
 **			11/25/2010 mem - Now validating that the script exists in T_Scripts
+**			12/10/2013 grk - problem inserting null values into #TPD
 **
 *****************************************************/
 (
@@ -59,8 +60,8 @@ AS
 	CREATE TABLE #TPD (
 		[Section] Varchar(128),
 		[Name] Varchar(128),
-		[Value] Varchar(max),
-		[Reqd] Varchar(32)
+		[Value] Varchar(max) NULL,
+		[Reqd] Varchar(32) NULL
 	)
 
 	INSERT INTO #TPD ([Section], [Name], [Value], [Reqd])	

@@ -16,6 +16,7 @@ CREATE Procedure dbo.BackfillPipelineJobs
 **	Auth:	mem
 **	Date:	01/12/2012
 **			04/10/2013 mem - Now looking up the Data Package ID using S_V_Pipeline_Jobs_Backfill
+**			01/02/2014 mem - Added support for PeptideAtlas staging jobs
 **    
 *****************************************************/
 (
@@ -48,6 +49,7 @@ AS
 	
 	Declare @Continue tinyint
 	Declare @JobsProcessed int = 0
+	Declare @PeptideAtlasStagingTask tinyint = 0
 	
 	Declare @AnalysisToolID int
 	Declare @OrganismID int
@@ -148,7 +150,7 @@ AS
 	Begin -- <a>
 
 		SELECT TOP 1 @Job = PJ.Job,
-		              @Priority = PJ.Priority,
+		         @Priority = PJ.Priority,
 		             @Script = PJ.Script,
 		             @State = PJ.State,
 		             @Dataset = PJ.Dataset,
@@ -169,7 +171,6 @@ AS
 		ORDER BY PJ.Job
 		--
 		Select @myRowCount = @@RowCount, @myError = @@Error
-		
 		
 		If @myRowCount = 0
 			Set @continue = 0
@@ -203,6 +204,11 @@ AS
 					
 					Goto NextJob
 				End
+				
+				If @Script = 'PeptideAtlas'
+					Set @PeptideAtlasStagingTask = 1
+				Else
+					Set @PeptideAtlasStagingTask = 0
 				
 				---------------------------------------------------
 				-- Lookup OrganismID for organism 'None'
@@ -313,6 +319,12 @@ AS
 						Begin
 							-- Data Package found
 							Set @Dataset = 'DataPackage_' + @DataPackageFolder
+														
+							If @PeptideAtlasStagingTask <> 0
+							Begin
+								Set @Dataset = @Dataset + '_Staging'
+							End
+							
 						End
 						
 						Set @DatasetComment = 'http://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @DataPackageID)
@@ -418,10 +430,32 @@ AS
 								
 								If IsNull(@StoragePathRelative, '') <> ''
 								Begin
+									If @PeptideAtlasStagingTask <> 0
+									Begin
+										-- The data files will be stored at a path of the form:
+										--   \\protoapps\PeptideAtlas_Staging\829_Organelle_Targeting_ABPP
+										-- Need to determine the path ID
+										
+										Declare @PeptideAtlasStagingPathID int = 0
+										
+										SELECT @PeptideAtlasStagingPathID = SP_path_ID
+										FROM T_Storage_Path
+										WHERE (SP_path IN ('PeptideAtlas_Staging', 'PeptideAtlas_Staging\'))
+
+										If IsNull(@PeptideAtlasStagingPathID, 0) > 0
+										Begin
+											UPDATE T_Dataset
+											SET DS_Storage_Path_ID = @PeptideAtlasStagingPathID
+											WHERE Dataset_ID = @DatasetID
+											
+											Set @StoragePathRelative = @DataPackageFolder
+										End
+									End
+									
 									-- Update the Dataset Folder for the newly-created dataset
 									UPDATE T_Dataset
 									SET DS_folder_name = @StoragePathRelative
-									WHERE (Dataset_ID = @DatasetID)
+									WHERE Dataset_ID = @DatasetID
 								End
 
 							End

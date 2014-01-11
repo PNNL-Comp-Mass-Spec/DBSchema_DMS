@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Groups] ******/
-/****** RowCount: 23 ******/
+/****** RowCount: 24 ******/
 /****** Columns: Group_ID, Group_Name, Enabled, Comment ******/
 INSERT INTO [T_Processor_Tool_Groups] VALUES (0,'Disabled Processors',0,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (1,'Proto_Storage_Servers',1,'')
@@ -24,3 +24,4 @@ INSERT INTO [T_Processor_Tool_Groups] VALUES (20,'R610 Pubs, Group 4, R 2.15.3',
 INSERT INTO [T_Processor_Tool_Groups] VALUES (21,'R610 Pubs, Group 3, Decon2LS_V2',1,'Have .NET 4; running LCMSFeatureFinder and Decon2LS_V2; 24 GB of ram')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (23,'Mallard',1,'Has .NET 4; running LCMSFeatureFinder and Decon2LS_V2')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (24,'PIC Pubs',1,'VMs running on PIC.  Have .NET 4, R 2.15.3, and CompassXtract (thus supporting MSXML_Bruker). 24 GB of ram')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (25,'Kiebel Development Box',1,'')

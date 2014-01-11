@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Data_Package_Detail_Report]
 AS
 SELECT DP.ID,
@@ -24,6 +25,7 @@ SELECT DP.ID,
        DP.Mass_Tag_Database AS [AMT Tag Database],
        DP.Biomaterial_Item_Count AS [Biomaterial Item Count],
        DP.Experiment_Item_Count AS [Experiment Item Count],
+	   DP.EUS_Proposal_Item_Count AS [EUS Proposals Count],
        DP.Dataset_Item_Count AS [Dataset Item Count],
        DP.Analysis_Job_Item_Count AS [Analysis Job Item Count],
        DP.Total_Item_Count AS [Total Item Count],
@@ -35,6 +37,7 @@ FROM dbo.T_Data_Package AS DP
        ON DP.Owner = U1.U_PRN
      LEFT OUTER JOIN S_V_Users U2
        ON DP.Requester = U2.U_PRN
+
 
 
 GO

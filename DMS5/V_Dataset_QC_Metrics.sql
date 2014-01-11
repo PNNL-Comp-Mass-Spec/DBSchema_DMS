@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Dataset_QC_Metrics]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
@@ -19,6 +20,7 @@ SELECT InstName.IN_Group AS [Instrument Group],
        DQC.AMTs_10pct_FDR,
        CONVERT(decimal(9,1), DQC.XIC_FWHM_Q2) AS XIC_FWHM_Q2,
        CONVERT(decimal(9,2), DQC.XIC_WideFrac) AS XIC_WideFrac,       
+	   DQC.Phos_2C, 
        DQC.Quameter_Job,
        DQC.XIC_FWHM_Q1, DQC.XIC_FWHM_Q3, DQC.XIC_Height_Q2, DQC.XIC_Height_Q3, DQC.XIC_Height_Q4, 
        DQC.RT_Duration, DQC.RT_TIC_Q1, DQC.RT_TIC_Q2, DQC.RT_TIC_Q3, DQC.RT_TIC_Q4, DQC.RT_MS_Q1, DQC.RT_MS_Q2, DQC.RT_MS_Q3, DQC.RT_MS_Q4, 
@@ -37,7 +39,7 @@ SELECT InstName.IN_Group AS [Instrument Group],
        DQC.MS1_5A, DQC.MS1_5B, DQC.MS1_5C, DQC.MS1_5D, 
        DQC.MS2_1, DQC.MS2_2, DQC.MS2_3, 
        DQC.MS2_4A, DQC.MS2_4B, DQC.MS2_4C, DQC.MS2_4D,
-       DQC.P_1A, DQC.P_1B, DQC.P_2A, DQC.P_2B, DQC.P_3,
+       DQC.P_1A, DQC.P_1B, DQC.P_2A, DQC.P_2B, DQC.P_3, DQC.Phos_2A,
        DQC.MassErrorPPM_Refined,
        DQC.Last_Affected AS Smaqc_Last_Affected,
        DQC.PSM_Source_Job,
@@ -50,6 +52,7 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_DatasetRatingName DRN
        ON DS.DS_rating = DRN.DRN_state_ID
+
 
 
 GO

@@ -16,6 +16,7 @@ CREATE PROCEDURE UpdateDataPackageItemCounts
 **	Date:	06/09/2009 mem - Code ported from procedure UpdateDataPackageItems
 **			06/10/2009 mem - Updated to support item counts of zero
 **			06/10/2009 grk - Added update for total count
+**			12/31/2013 mem - Added support for EUS Proposals
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -33,15 +34,11 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 
-	declare @JobCount int
-	declare @DatasetCount int
-	declare @ExperimentCount int
-	declare @BiomaterialCount int
-	
-	set @JobCount = 0
-	set @DatasetCount = 0
-	set @ExperimentCount = 0
-	set @BiomaterialCount = 0
+	declare @JobCount int = 0
+	declare @DatasetCount int = 0
+	declare @ProposalCount int = 0
+	declare @ExperimentCount int = 0
+	declare @BiomaterialCount int = 0
 	
 	---------------------------------------------------
 	-- Validate input fields
@@ -62,6 +59,10 @@ As
 	FROM T_Data_Package_Datasets
 	WHERE Data_Package_ID = @packageID
 
+	SELECT @ProposalCount = COUNT(*)
+	FROM T_Data_Package_EUS_Proposals
+	WHERE Data_Package_ID = @packageID
+
 	SELECT @ExperimentCount = COUNT(*)
 	FROM T_Data_Package_Experiments
 	WHERE Data_Package_ID = @packageID
@@ -77,6 +78,7 @@ As
 	UPDATE T_Data_Package
 	SET Analysis_Job_Item_Count = @JobCount,
         Dataset_Item_Count = @DatasetCount,
+        EUS_Proposal_Item_Count = @ProposalCount,
         Experiment_Item_Count = @ExperimentCount,
         Biomaterial_Item_Count = @BiomaterialCount,
         Total_Item_Count = @JobCount + @DatasetCount + @ExperimentCount + @BiomaterialCount

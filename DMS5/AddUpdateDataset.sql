@@ -225,6 +225,10 @@ As
 		Else
 			set @msg = 'Dataset name may not contain the character(s) "' + @badCh + '"'
 
+		-- Declare @DebugMsg varchar(512)
+		-- Set @DebugMsg = 'Problem with dataset ' + @datasetnum + ': ' + @msg
+		-- exec postlogentry 'Debug', @DebugMsg, 'AddUpdateDataset'
+
 		RAISERROR (@msg, 11, 1)
 	end
 
