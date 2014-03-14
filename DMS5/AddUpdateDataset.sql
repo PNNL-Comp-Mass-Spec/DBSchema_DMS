@@ -61,6 +61,7 @@ CREATE Procedure AddUpdateDataset
 **			01/22/2013 mem - Now updating the dataset comment if the default dataset type is invalid for the instrument group
 **			04/02/2013 mem - Now updating @LCCartName (if not blank) when updating an existing dataset
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
+**			02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
 **    
 *****************************************************/
 (
@@ -232,7 +233,7 @@ As
 		RAISERROR (@msg, 11, 1)
 	end
 
-	if (@datasetNum like '%raw') or (@datasetNum like '%wiff') 
+	if @AggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
 	begin
 		set @msg = 'Dataset name may not end in "raw" or "wiff"'
 		RAISERROR (@msg, 11, 2)

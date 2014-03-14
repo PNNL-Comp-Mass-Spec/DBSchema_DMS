@@ -15,10 +15,12 @@ CREATE Procedure AutoUpdateDatasetRatingViaQCMetrics
 ** 
 **	Auth:	mem
 **	Date:	10/18/2012
+**			01/16/2014 mem - Added parameter @ExperimentExclusion
 **    
 *****************************************************/
 (
 	@CampaignName varchar(128) = 'QC-Shew-Standard',					-- Campaign name to filter on; filter uses Like so the name can contain a wild card
+	@ExperimentExclusion varchar(128) = '%Intact%',
 	@DatasetCreatedMinimum datetime = '1/1/2000',
 	@InfoOnly tinyint = 1,
 	@message varchar(128) = '' output 
@@ -43,6 +45,10 @@ As
 	If @CampaignName = ''
 		Set @CampaignName = 'QC-Shew-Standard'
 	
+	Set @ExperimentExclusion = IsNull(@ExperimentExclusion, '')
+	If @ExperimentExclusion = ''
+		Set @ExperimentExclusion = 'FakeNonExistentExperiment'
+		
 	Set @DatasetCreatedMinimum = IsNull(@DatasetCreatedMinimum, '1/1/2000')
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	Set @message = ''
@@ -59,22 +65,23 @@ As
 	INSERT INTO #Tmp_DatasetsToUpdate (Dataset_ID)
 	SELECT DS.Dataset_ID
 	FROM T_Dataset DS
-		INNER JOIN T_Instrument_Name InstName
-		ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-		INNER JOIN T_Dataset_QC DQC
-		ON DS.Dataset_ID = DQC.Dataset_ID
-		INNER JOIN T_Experiments E
-		ON DS.Exp_ID = E.Exp_ID
-		INNER JOIN T_Campaign C
-		ON E.EX_campaign_ID = C.Campaign_ID
-		INNER JOIN T_DatasetTypeName DTN
-		ON DS.DS_type_ID = DTN.DST_Type_ID
-	WHERE (DS.DS_rating = 5) AND
-		  (DQC.P_2A < @ThresholdP_2A) AND				-- Number of tryptic peptides; total spectra count
-		  (DQC.P_2C < @ThresholdP_2C) AND				-- Number of tryptic peptides; unique peptide count
-		  (DTN.DST_name LIKE '%msn%') AND
-		  (DS.DS_created >= @DatasetCreatedMinimum) AND
-		  (C.Campaign_Num Like @CampaignName)
+	     INNER JOIN T_Instrument_Name InstName
+	       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+	     INNER JOIN T_Dataset_QC DQC
+	       ON DS.Dataset_ID = DQC.Dataset_ID
+	     INNER JOIN T_Experiments E
+	       ON DS.Exp_ID = E.Exp_ID
+	     INNER JOIN T_Campaign C
+	       ON E.EX_campaign_ID = C.Campaign_ID
+	     INNER JOIN T_DatasetTypeName DTN
+	       ON DS.DS_type_ID = DTN.DST_Type_ID
+	WHERE DS.DS_rating = 5 AND
+	      DQC.P_2A < @ThresholdP_2A AND      -- Number of tryptic peptides; total spectra count
+	      DQC.P_2C < @ThresholdP_2C AND      -- Number of tryptic peptides; unique peptide count
+	      DTN.DST_name LIKE '%msn%' AND
+	      DS.DS_created >= @DatasetCreatedMinimum AND
+	      C.Campaign_Num LIKE @CampaignName AND
+	      NOT E.Experiment_Num LIKE @ExperimentExclusion		  
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	

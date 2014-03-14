@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.RemoveOldJobs
 **			05/31/2009 mem - Updated @intervalDaysForSuccess to support partial days (e.g. 0.5)
 **			02/24/2012 mem - Added parameter @MaxJobsToProcess with a default of 25000
 **			08/20/2013 mem - Added parameter @LogDeletions
+**			03/10/2014 mem - Added call to SynchronizeJobStatsWithJobSteps
 **
 *****************************************************/
 (
@@ -70,7 +71,13 @@ As
 
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
-			
+
+	---------------------------------------------------
+	-- Make sure the job Start and Finish values are up-to-date
+	---------------------------------------------------
+	--
+	Exec SynchronizeJobStatsWithJobSteps @infoOnly=0
+
 	---------------------------------------------------
  	-- add old successful jobs to be removed to list
  	---------------------------------------------------

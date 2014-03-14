@@ -34,6 +34,7 @@ CREATE PROCEDURE GetJobParamTable
 **			05/07/2012 mem - Now including Experiment
 **			08/23/2012 mem - Now calling CheckAddSpecialProcessingParam to look for a DataImportFolder entry
 **			04/23/2013 mem - Now including Instrument and InstrumentGroup
+**			01/30/2014 mem - Now using S_DMS_V_Settings_File_Lookup when a match is not found in V_DMS_SettingsFiles for the given settings file and analysis tool
 **    
 *****************************************************/
 (
@@ -221,6 +222,37 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	If @myRowCount = 0
+	Begin
+		-- Settings file not found for tool @AnalysisToolName
+		-- Try relaxing the tool name specification
+		
+		Declare @settingsFileNameMappedTool varchar(128)
+		declare @AnalysisToolNameMappedTool varchar(128)
+		
+		SELECT Top 1 @settingsFileNameMappedTool = File_Name,
+		             @AnalysisToolNameMappedTool = Mapped_Tool
+		FROM dbo.S_DMS_V_Settings_File_Lookup
+		WHERE File_Name = @settingsFileName AND
+		      Analysis_Tool = @AnalysisToolName
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If IsNull(@settingsFileNameMappedTool, '') = ''
+		Begin
+			Set @myRowCount = 0
+		End
+		Else
+		Begin
+			SELECT @paramXML = Contents
+			FROM V_DMS_SettingsFiles
+			WHERE File_Name = @settingsFileNameMappedTool AND
+			      Analysis_Tool = @AnalysisToolNameMappedTool
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+		End		
+	End
+	
 	If @myRowCount = 0
 	Begin
 		If @DebugMode <> 0

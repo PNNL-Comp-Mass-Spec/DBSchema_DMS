@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateSamplePrepRequest
+CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -36,7 +36,6 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			05/02/2008 grk - repaired leaking query and arranged for default add state to be "Pending Approval"
 **			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
 **			12/02/2009 grk - don't allow change to "Prep in Progress" unless someone has been assigned
-**			03/11/2010 grk - added Facility field
 **			04/14/2010 grk - widened @CellCultureList field
 **			04/22/2010 grk - try-catch for error handling
 **			08/09/2010 grk - added handling for 'Closed (containers and material)'
@@ -54,6 +53,8 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			05/02/2013 mem - Now validating that fields @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent are 'Yes', 'No', '', or Null
 **			06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
 **			06/06/2013 mem - Now showing warning if the work package is deactivated
+**			01/23/2014 mem - Now requiring that the work package be active when creating a new sample prep requeset
+**			03/13/2014 grk - Added ability to edit closed SPR for staff with permissions (OMCDA-1071)
 **    
 *****************************************************/
 (
@@ -391,7 +392,7 @@ As
 
 		-- changes not allowed if in "closed" state
 		--
-		if @currentStateID = 5
+		if @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
 			RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
 		-- don't allow change to "Prep in Progress" 
@@ -412,6 +413,21 @@ As
 		--
 		if @myError <> 0 OR @myRowCount> 0
 			RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
+			
+		-- Make sure the work package number is not inactive
+		--
+		Declare @ActivationState tinyint = 10
+		Declare @ActivationStateName varchar(128)
+		
+		SELECT @ActivationState = CCAS.Activation_State,
+		       @ActivationStateName = CCAS.Activation_State_Name
+		FROM T_Charge_Code CC
+		     INNER JOIN T_Charge_Code_Activation_State CCAS
+		       ON CC.Activation_State = CCAS.Activation_State
+		WHERE (CC.Charge_Code = @WorkPackageNumber)
+
+		If @ActivationState >= 3
+			RAISERROR ('Cannot use inactive Work Package "%s" for a new sample prep request', 11, 8, @WorkPackageNumber)
 	end
 
 	---------------------------------------------------

@@ -85,6 +85,14 @@ As
 		Set @myError = 50002
 		Goto Done
 	End
+
+	-- Uncomment to debug	
+	-- Declare @DebugMsg varchar(512) = 'Updating job state for ' + convert(varchar(12), @Job) + 
+	--          ', NewDMSJobState = ' + convert(varchar(12), @NewDMSJobState) +
+	--          ', NewBrokerJobState = ' + convert(varchar(12), @NewBrokerJobState) +
+	--          ', JobCommentAddnl = ' + IsNull(@JobCommentAddnl, '')
+	--
+	-- exec PostLogEntry 'Debug', @DebugMsg, UpdateAnalysisJobProcessingStats
 	
 	---------------------------------------------------
 	-- Perform (or preview) the update

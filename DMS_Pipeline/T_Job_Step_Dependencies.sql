@@ -11,7 +11,13 @@ CREATE TABLE [dbo].[T_Job_Step_Dependencies](
 	[Test_Value] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluated] [tinyint] NOT NULL,
 	[Triggered] [tinyint] NOT NULL,
-	[Enable_Only] [tinyint] NOT NULL
+	[Enable_Only] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Job_Step_Dependencies] PRIMARY KEY NONCLUSTERED 
+(
+	[Job_ID] ASC,
+	[Step_Number] ASC,
+	[Target_Step_Number] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

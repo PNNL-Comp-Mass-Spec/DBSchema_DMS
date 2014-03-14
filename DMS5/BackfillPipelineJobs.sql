@@ -17,6 +17,7 @@ CREATE Procedure dbo.BackfillPipelineJobs
 **	Date:	01/12/2012
 **			04/10/2013 mem - Now looking up the Data Package ID using S_V_Pipeline_Jobs_Backfill
 **			01/02/2014 mem - Added support for PeptideAtlas staging jobs
+**			02/27/2014 mem - Now truncating dataset name to 90 characters if too long
 **    
 *****************************************************/
 (
@@ -331,6 +332,16 @@ AS
 						
 					End -- </d2>
 					
+					If Len(@Dataset) > 90
+					Begin
+						-- Truncate the dataset name to avoid triggering an error in AddUpdateDataset
+						Set @Dataset = Substring(@Dataset, 1, 90)
+					End
+					
+					-- Make sure there are no spaces or periods in @Dataset
+					Set @Dataset = Replace(@Dataset, ' ', '_')
+					Set @Dataset = Replace(@Dataset, '.', '_')
+					
 					------------------------------------------------
 					-- Now that we have constructed the name of the dataset to auto-create, see if it already exists
 					------------------------------------------------
@@ -495,7 +506,7 @@ AS
 						       IsNull(@Comment, ''),    -- comment
 						       @Owner,                  -- owner
 						       @State,                  -- StateID
-						       'Job_Broker',            -- assignedProcessorName
+						       'Job_Broker',  -- assignedProcessorName
 						       @Results_Folder_Name,    -- resultsFolderName
 						       'na',                    -- proteinCollectionList
 						       'na',                    -- proteinOptionsList

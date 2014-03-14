@@ -22,6 +22,7 @@ CREATE PROCEDURE UpdateMissedMyEMSLStateValues
 **  Auth:	mem
 **  Date:	09/10/2013 mem - Initial version
 **			12/13/2013 mem - Tweaked log message
+**			02/27/2014 mem - Now updating the appropriate ArchiveUpdate job if the job steps were skipped
 **    
 *****************************************************/
 (
@@ -99,6 +100,20 @@ As
 			      MyEMSLState < 1
 			      
 			exec PostLogEntry 'Error', @message, 'UpdateMissedMyEMSLStateValues'
+
+			-- Reset skipped ArchiveVerify steps for the affected datasets
+			--			
+			UPDATE T_Job_Steps
+			SET State = 2
+			WHERE Job IN ( SELECT M.Job
+			               FROM T_MyEMSL_Uploads M
+			                    INNER JOIN #Tmp_IDsToUpdate U
+			                      ON M.Dataset_ID = U.EntityID
+			               WHERE M.ErrorCode = 0 ) AND
+			      State = 3 AND
+			      Step_Tool IN ('ArchiveVerify', 'ArchiveStatusCheck')
+
+
 		End
 	End
 	
@@ -115,7 +130,7 @@ As
 	FROM S_DMS_T_Analysis_Job J
 	     INNER JOIN ( SELECT Dataset_ID,
 	                         Subfolder
-	                  FROM T_MyEMSL_Uploads
+	       FROM T_MyEMSL_Uploads
 	                  WHERE StatusURI_PathID > 1 AND
 	                        Entered >= DATEADD(day, -@WindowDays, GETDATE()) AND
 	                        ISNULL(Subfolder, '') <> '' 
@@ -149,6 +164,23 @@ As
 			      
 			exec PostLogEntry 'Error', @message, 'UpdateMissedMyEMSLStateValues'
 		End
+		
+		-- Reset skipped ArchiveVerify steps for the datasets associated with the affected jobs
+		--
+		UPDATE V_Job_Steps
+		SET State = 2
+		FROM V_Job_Steps JS
+		     INNER JOIN T_MyEMSL_Uploads U
+		       ON JS.Job = U.Job
+		WHERE JS.Dataset_ID IN ( SELECT J.AJ_DatasetID
+		                          FROM S_DMS_T_Analysis_Job J
+		                               INNER JOIN #Tmp_IDsToUpdate U
+		                                 ON J.AJ_JobID = U.EntityID ) AND
+		      JS.Tool IN ('ArchiveVerify') AND
+		      JS.State = 3 AND
+		      U.ErrorCode = 0
+
+		
 	End
 	
 	return @myError

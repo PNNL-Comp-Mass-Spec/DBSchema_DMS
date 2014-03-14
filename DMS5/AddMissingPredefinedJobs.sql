@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **						   - Added support for rating -7
 **			08/05/2013 mem - Now passing @AnalysisToolNameFilter to EvaluatePredefinedAnalysisRules when @InfoOnly is non-zero
 **						   - Added parameter @CampaignFilter
+**			01/08/2014 mem - Now returning additional debug information when @InfoOnly > 0
 **
 *****************************************************/
 (

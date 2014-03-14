@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
+CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **          10/02/2012 grk - added debug output
 **          10/06/2012 grk - adding "updated by" date and user
 **			01/31/2013 mem - Now using IsNull(@message, '') when copying @message to @debug
+**			03/12/2014 grk - Allowed null [EMSL_Inst_ID] in #STAGING (OMCDA-1058)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -38,7 +39,8 @@ AS
 
 	DECLARE @myRowCount int
 	SET @myRowCount = 0
-	 	DECLARE @debug VARCHAR(12) = ''
+	 
+	DECLARE @debug VARCHAR(12) = ''
 	SET @debug = IsNull(@message, '')
 
 	SET @message = ''
@@ -68,7 +70,7 @@ AS
 		---------------------------------------------------
 
 		CREATE TABLE #STAGING (
-			[EMSL_Inst_ID] INT,
+			[EMSL_Inst_ID] INT NULL,
 			[Instrument] VARCHAR(64),
 			[Type] VARCHAR(128),
 			[Start] DATETIME,
@@ -211,7 +213,7 @@ AS
 				Seq
 			FROM    #STAGING
 			WHERE [Mark] = 0 
-			AND NOT [EMSL_Inst_ID] IS NULL
+			--AND NOT [EMSL_Inst_ID] IS NULL
 			ORDER BY [Start]
 		
 			---------------------------------------------------
@@ -314,7 +316,7 @@ AS
 				Seq
 			FROM    #STAGING
 			WHERE [Mark] = 0 
-			AND NOT [EMSL_Inst_ID] IS NULL
+			--AND NOT [EMSL_Inst_ID] IS NULL
 			ORDER BY [Start]
 
 			---------------------------------------------------
@@ -373,7 +375,6 @@ AS
 			ROLLBACK TRANSACTION;
 	END CATCH
 	RETURN @myError
-
 GO
 GRANT EXECUTE ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
 GO

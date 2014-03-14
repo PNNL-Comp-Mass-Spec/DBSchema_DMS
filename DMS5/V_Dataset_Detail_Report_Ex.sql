@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -30,7 +31,7 @@ SELECT DS.Dataset_Num AS Dataset,
                 END
        END AS [Dataset Folder Path],
        CASE
-           WHEN DA.MyEMSLState > 0 THEN ''
+           WHEN DA.MyEMSLState > 0 And DS.DS_created >= '9/17/2013' Then ''
            ELSE DFP.Archive_Folder_Path
        END AS [Archive Folder Path],
        dbo.GetMyEMSLUrlDatasetName(Dataset_Num) AS [MyEMSL URL],
@@ -131,7 +132,6 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-
 
 
 GO

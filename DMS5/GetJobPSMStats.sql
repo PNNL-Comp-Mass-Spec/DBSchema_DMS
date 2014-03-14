@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetJobPSMStats]
+CREATE FUNCTION dbo.GetJobPSMStats
 /****************************************************
 **
 **	Desc: 
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[GetJobPSMStats]
 **	Date:	02/22/2012 mem - Initial version
 **			05/08/2012 mem - Now showing FDR-based stats if Total_PSMs_FDR_Filter > 0
 **			05/11/2012 mem - Now displaying FDR as a percentage
+**			01/17/2014 mem - Added support for MSGF_Threshold_Is_EValue = 1
 **    
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
 		           'Total PSMs: ' +       CONVERT(varchar(12), Total_PSMs) + ', ' + 
 		           'Unique Peptides: ' +  CONVERT(varchar(12), Unique_Peptides) + ', ' + 
 		           'Unique Proteins: ' +  CONVERT(varchar(12), Unique_Proteins) + 
-		           '  (MSGF < ' + CONVERT(varchar(12), MSGF_Threshold) + ')'
+		           '  (' + CASE WHEN MSGF_Threshold_Is_EValue > 0 THEN 'EValue' ELSE 'MSGF' END + ' < ' + CONVERT(varchar(12), MSGF_Threshold) + ')'
 		         END
 		FROM T_Analysis_Job_PSM_Stats
 		WHERE (Job = @Job)

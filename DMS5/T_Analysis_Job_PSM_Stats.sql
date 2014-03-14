@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats](
 	[Job] [int] NOT NULL,
 	[MSGF_Threshold] [float] NOT NULL,
 	[FDR_Threshold] [float] NOT NULL,
+	[MSGF_Threshold_Is_EValue] [tinyint] NOT NULL,
 	[Spectra_Searched] [int] NULL,
 	[Total_PSMs] [int] NULL,
 	[Unique_Peptides] [int] NULL,
@@ -23,6 +24,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats](
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_FDR_Threshold]  DEFAULT ((1)) FOR [FDR_Threshold]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_MSGF_Threshold_Is_EValue]  DEFAULT ((0)) FOR [MSGF_Threshold_Is_EValue]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

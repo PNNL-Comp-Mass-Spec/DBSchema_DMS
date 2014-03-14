@@ -44,6 +44,9 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
 **			04/02/2013 mem - Now updating @message if it is blank yet @result is non-zero
+**			02/28/2014 mem - Now throwing an error if trying to search a large Fasta file with a parameter file that will result in a very slow search
+**			03/13/2014 mem - Added custom message to be displayed when trying to reset a MAC job
+**						   - Added optional parameter @Job
 **
 *****************************************************/
 (
@@ -60,7 +63,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@analysisToolID int output, 
 	@organismID int output,
 	@message varchar(512) output,
-	@AutoRemoveNotReleasedDatasets tinyint = 0
+	@AutoRemoveNotReleasedDatasets tinyint = 0,
+	@Job int = 0
 )
 As
 	set nocount on
@@ -135,7 +139,16 @@ As
 	---------------------------------------------------
 	If Not Exists (SELECT * FROM T_Analysis_Tool WHERE (AJT_toolID = @analysisToolID) AND (AJT_active > 0))
 	begin
-		set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
+		If @mode = 'reset' And @toolName LIKE 'MAC[_]%'
+		Begin
+			set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
+			If IsNull(@Job, 0) > 0
+				set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/show/' + Convert(varchar(12), @Job)
+			Else
+				set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
+		End
+		else
+			set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
 		return 53103
 	end
 	
@@ -407,7 +420,50 @@ As
 		return @result
 	End
 	
+	---------------------------------------------------
+	-- Make sure the user is not scheduling an extremely long MSGF+ search	
+	---------------------------------------------------
+	If @toolName Like '%MSGFPlus%' And @organismDBName <> 'na' And @organismDBName <> ''
+	Begin
+		Declare @NumResidues bigint = 0
+		
+		SELECT @NumResidues = NumResidues
+		FROM T_Organism_DB_File
+		WHERE FileName = @organismDBName
+		
+		
+		If IsNull(@NumResidues, 0) > 500000000 Or
+		   @organismDBName In (
+				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24.fasta',
+				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24_reversed.fasta',
+				'uniprot_2012_1_combined_bacterial_sprot_trembl_2012-02-20.fasta',
+				'uniprot2012_7_ArchaeaBacteriaFungiSprotTrembl_2012-07-11.fasta',
+				'uniref50_2013-02-14.fasta',
+				'uniref90_2013-02-14.fasta',
+				'BP_Sediment_Genomes_Jansson_stop-to-stop_6frames.fasta',
+				'GOs_PredictedByClustering_2009-02-11.fasta',
+				'Shew_MR1_GOs_Meso_2009-02-11.fasta',
+				'Switchgrass_Rhiz_MG-RAST_metagenome_DecoyWithContams_2013-10-10.fasta')
+		Begin
+			If Not
+			   ( @parmFileName Like '%PartTryp_NoMods%' Or
+			     @parmFileName Like '%PartTryp_StatCysAlk.txt' Or
+			     @parmFileName Like '%PartTryp_StatCysAlk_[0-9]%ppm%' Or
+			     @parmFileName Like '%[_]Tryp[_]%'
+			   )
+			Begin
+			
+				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large; you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
+				Set @result = 65350
+				
+				return @result
+			End
+		End
+		
+	End	
+	
 	return @result
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [Limited_Table_Write] AS [dbo]

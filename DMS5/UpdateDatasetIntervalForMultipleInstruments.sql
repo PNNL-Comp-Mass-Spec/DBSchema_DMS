@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **			08/02/2012 mem - Updated @DaysToProcess to default to 60 days instead of 30 days
 **          09/18/2012 grk - only do EMSL instrumet updates for EMLS instruments 
 **          10/06/2012 grk - removed update of EMSL usage report for previous month
+**			03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
 **    
 *****************************************************/
 (
@@ -75,8 +76,9 @@ As
 	
 	CREATE TABLE #Tmp_Instruments (
 		Seq INT IDENTITY(1,1) NOT NULL,
-		Instrument varchar(65),
-		EMSL char(1)
+		Instrument VARCHAR(65),
+		EMSL CHAR(1),
+		Tracked TINYINT
 	)
 
 	---------------------------------------------------
@@ -88,8 +90,8 @@ As
 		-- get list of tracked instruments
 		---------------------------------------------------
 
-		INSERT INTO #Tmp_Instruments (Instrument, EMSL)
-		SELECT [Name], EUS_Primary_Instrument AS EMSL FROM V_Instrument_Tracked
+		INSERT INTO #Tmp_Instruments (Instrument, EMSL, Tracked)
+		SELECT [Name], EUS_Primary_Instrument AS EMSL, Tracked FROM V_Instrument_Tracked
 
 		---------------------------------------------------
 		-- update intervals for given instrument
@@ -97,13 +99,14 @@ As
 		
 		DECLARE @instrument VARCHAR(64)
 		DECLARE @emslInstrument CHAR(1)
+		DECLARE @tracked TINYINT
 		DECLARE @index INT = 0
 		DECLARE @done TINYINT = 0
 
 		WHILE @done = 0
 		BEGIN -- <a>
 			SET @instrument = NULL 
-			SELECT TOP 1 @instrument = Instrument, @emslInstrument = EMSL
+			SELECT TOP 1 @instrument = Instrument, @emslInstrument = EMSL, @tracked = Tracked
 			FROM #Tmp_Instruments 
 			WHERE Seq > @index
 			
@@ -117,7 +120,7 @@ As
 			BEGIN -- <b>
 				EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
 				
-				If @UpdateEMSLInstrumentUsage <> 0 AND @emslInstrument = 'Y'
+				If @UpdateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
 				BEGIN --<c>					
 					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output
 				END --<c>

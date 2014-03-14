@@ -86,6 +86,7 @@ CREATE PROCEDURE UpdateJobState
 **			01/12/2012 mem - Added parameter @infoOnly
 **			09/25/2012 mem - Expanded @orgDBName and Organism_DB_Name to varchar(128)
 **			02/21/2013 mem - Now updating the state of failed jobs in DMS back to state 2 if they are now in-progress or finished
+**			03/13/2014 mem - Now updating @jobInDMS even if @DatasetID is 0
 **    
 *****************************************************/
 (
@@ -389,6 +390,22 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
+			---------------------------------------------------
+			-- Roll up step completion comments
+			---------------------------------------------------
+			--
+			declare @comment varchar(255) -- FUTURE: 
+			Set @comment = ''
+			--
+			SELECT @comment = @comment + CASE 
+											WHEN LTrim(RTrim(Completion_Message)) = '' 
+											THEN '' 
+											Else '; ' + Completion_Message 
+										End
+			FROM T_Job_Steps
+			WHERE Job = @job AND Not Completion_Message Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
 
 			---------------------------------------------------
 			-- Examine the steps for this job to determine total processing time
@@ -415,7 +432,7 @@ As
 			Begin
 				
 				---------------------------------------------------
-				-- update local job state and timestamp (If appropriate)
+				-- update local job state, timestamp (if appropriate), and comment
 				---------------------------------------------------
 				--				
 				UPDATE T_Jobs
@@ -430,6 +447,11 @@ As
 						CASE 
 						WHEN @newJobStateInBroker IN (4, 5) THEN @FinishMax					-- 4=Complete, 5=Failed
 						Else Finish
+						End,
+					Comment = 
+						CASE 
+						WHEN @newJobStateInBroker IN (4, 5) THEN @Comment					-- 4=Complete, 5=Failed
+						Else Comment
 						End
 				WHERE Job = @job
  				--
@@ -438,7 +460,7 @@ As
 			End
 
 			---------------------------------------------------
-			-- figure out what DMS job state etc should be
+			-- figure out what DMS job state should be
 			-- and update it
 			---------------------------------------------------
 			--
@@ -466,33 +488,16 @@ As
 					                AND
 					                Step_Tool = 'DataExtractor' )
 					Set @NewDMSJobState = 14
-			End			
-
-			---------------------------------------------------
-			-- Roll up step completion comments
-			---------------------------------------------------
-			--
-			declare @comment varchar(255) -- FUTURE: 
-			Set @comment = ''
-			--
-			SELECT @comment = @comment + CASE 
-											WHEN LTrim(RTrim(Completion_Message)) = '' 
-											THEN '' 
-											Else '; ' + Completion_Message 
-										End
-			FROM T_Job_Steps
-			WHERE Job = @job AND Not Completion_Message Is Null
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+			End		
 							
 			---------------------------------------------------
-			-- decide on the fasta file name to save in job
+			-- Decide on the fasta file name to save in job
 			-- In addition, check whether the job has a Propagation mode of 1
 			---------------------------------------------------
 			declare @jobInDMS INT = 0
 			--
-			IF @datasetID <> 0
-			BEGIN 
+			If @datasetID <> 0
+			Begin 
 				SELECT @orgDBName = CASE
 										WHEN AJ_proteinCollectionList = 'na' 
 										THEN AJ_organismDBName
@@ -504,7 +509,16 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				SET @jobInDMS = @myRowCount
-			END 
+			End 
+			Else
+			Begin
+				SELECT @JobPropagationMode = AJ_propagationMode
+				FROM S_DMS_T_Analysis_Job
+				WHERE AJ_JobID = @job
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				SET @jobInDMS = @myRowCount
+			End
 
 			-- If the DMS job state is 4=complete, but @JobPropagationMode is non-zero,
 			-- then change the DMS job state to 14=No Export
@@ -518,6 +532,10 @@ As
 			If @bypassDMS = 0 AND @jobInDMS > 0 And @infoOnly = 0
 			Begin --<c1>
 				-- DMS changes enabled, update DMS job state
+
+				-- Uncomment to debug
+				-- Declare @DebugMsg varchar(512) = 'Calling S_DMS_UpdateAnalysisJobProcessingStats for job ' + Convert(varchar(12), @Job)
+				-- exec PostLogEntry 'Debug', @DebugMsg, 'UpdateJobState'
 				
 				-- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
 				-- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job

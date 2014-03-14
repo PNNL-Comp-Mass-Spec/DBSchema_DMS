@@ -15,6 +15,7 @@ CREATE Procedure StoreJobPSMStats
 **	Auth:	mem
 **	Date:	02/21/2012 mem - Initial version
 **			05/08/2012 mem - Added @FDRThreshold, @TotalPSMsFDRFilter, @UniquePeptidesFDRFilter, and @UniqueProteinsFDRFilter
+**			01/17/2014 mem - Added @MSGFThresholdIsEValue
 **    
 *****************************************************/
 (
@@ -28,6 +29,7 @@ CREATE Procedure StoreJobPSMStats
 	@TotalPSMsFDRFilter int = 0,		-- Stats based on @FDRThreshold  (Number of identified spectra)
 	@UniquePeptidesFDRFilter int = 0,	-- Stats based on @FDRThreshold
 	@UniqueProteinsFDRFilter int = 0,	-- Stats based on @FDRThreshold
+	@MSGFThresholdIsEValue tinyint = 0,	-- Set to 1 if @MSGFThreshold is actually an EValue
 	@message varchar(255) = '' output,
 	@infoOnly tinyint = 0
 )
@@ -47,6 +49,7 @@ As
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)	
 	Set @FDRThreshold = IsNull(@FDRThreshold, 1)
+	Set @MSGFThresholdIsEValue = IsNull(@MSGFThresholdIsEValue, 0)
 	
 	---------------------------------------------------
 	-- Make sure @Job is defined in T_Analysis_Job
@@ -67,6 +70,7 @@ As
 		SELECT @Job AS Job,
 		       @MSGFThreshold AS MSGF_Threshold,
 		       @FDRThreshold AS FDR_Threshold,
+		       @MSGFThresholdIsEValue AS MSGF_Threshold_Is_EValue,
 		       @SpectraSearched AS Spectra_Searched,
 		       @TotalPSMs AS Total_PSMs_MSGF,
 		       @UniquePeptides AS Unique_Peptides_MSGF,
@@ -88,6 +92,7 @@ As
 		(SELECT @Job AS Job,
                 @MSGFThreshold AS MSGF_Threshold,
                 @FDRThreshold AS FDR_Threshold,
+                @MSGFThresholdIsEValue AS MSGF_Threshold_Is_EValue,
                 @SpectraSearched AS Spectra_Searched,
                 @TotalPSMs AS Total_PSMs_MSGF,
                 @UniquePeptides AS Unique_Peptides_MSGF,
@@ -95,7 +100,7 @@ As
                 @TotalPSMsFDRFilter AS Total_PSMs_FDR,
 		        @UniquePeptidesFDRFilter AS Unique_Peptides_FDR,
 		        @UniqueProteinsFDRFilter AS Unique_Proteins_FDR
-		) AS Source (Job, MSGF_Threshold, FDR_Threshold, Spectra_Searched,
+		) AS Source (Job, MSGF_Threshold, FDR_Threshold, MSGF_Threshold_Is_EValue, Spectra_Searched,
                      Total_PSMs_MSGF, Unique_Peptides_MSGF, Unique_Proteins_MSGF,
                      Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR)
 	    ON (target.Job = Source.Job)
@@ -104,12 +109,13 @@ As
 		THEN UPDATE 
 			Set MSGF_Threshold = Source.MSGF_Threshold,
 			    FDR_Threshold = Source.FDR_Threshold,
+			    MSGF_Threshold_Is_EValue = Source.MSGF_Threshold_Is_EValue,
                 Spectra_Searched = Source.Spectra_Searched,
                 Total_PSMs = Source.Total_PSMs_MSGF, 
                 Unique_Peptides = Source.Unique_Peptides_MSGF, 
                 Unique_Proteins = Source.Unique_Proteins_MSGF,
                 Total_PSMs_FDR_Filter = Source.Total_PSMs_FDR, 
-                Unique_Peptides_FDR_Filter = Source.Unique_Peptides_FDR, 
+        Unique_Peptides_FDR_Filter = Source.Unique_Peptides_FDR, 
                 Unique_Proteins_FDR_Filter = Source.Unique_Proteins_FDR,
                 Last_Affected = GetDate()
 				
@@ -117,6 +123,7 @@ As
 		INSERT (Job,
 		        MSGF_Threshold,
 		        FDR_Threshold,
+		        MSGF_Threshold_Is_EValue,
 		        Spectra_Searched,
 		        Total_PSMs,
 		        Unique_Peptides,
@@ -129,6 +136,7 @@ As
 		VALUES ( Source.Job,
 		         Source.MSGF_Threshold,
 		         Source.FDR_Threshold,
+		         Source.MSGF_Threshold_Is_EValue,
 		         Source.Spectra_Searched,
                  Source.Total_PSMs_MSGF, 
                  Source.Unique_Peptides_MSGF, 

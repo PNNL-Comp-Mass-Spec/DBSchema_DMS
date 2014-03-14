@@ -20,6 +20,7 @@ CREATE FUNCTION dbo.DatasetPreference
 **			04/09/2007 mem - Added matching of QC_Shew datasets in addition to QC datasets (Ticket #430)
 **			04/11/2008 mem - Added matching of SE_QC_Shew datasets in addition to QC datasets
 **			05/12/2011 mem - Now excluding datasets that end in -bad
+**			01/16/2014 mem - Added QC_ShewIntact datasets
 **    
 *****************************************************/
 (
@@ -30,10 +31,11 @@ AS
 	BEGIN
 		declare @result tinyint
 	
-		if (@datasetNum LIKE 'QC[_][0-9][0-9]%' OR 
-		    @datasetNum LIKE 'QC[_]Shew[_][0-9][0-9]%' OR 
-		    @datasetNum LIKE 'SE_QC[_]Shew[_][0-9][0-9]%')
-		    AND Not @datasetNum LIKE '%-bad'
+		if  (@datasetNum LIKE 'QC[_][0-9][0-9]%' OR 
+		     @datasetNum LIKE 'QC[_]Shew[_][0-9][0-9]%' OR 
+		     @datasetNum LIKE 'SE_QC[_]Shew[_][0-9][0-9]%' OR
+		     @datasetNum LIKE 'QC[_]ShewIntact%'
+		    ) AND Not @datasetNum LIKE '%-bad'
 			set @result = 1
 		else
 			set @result = 0

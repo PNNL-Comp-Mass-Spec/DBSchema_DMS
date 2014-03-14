@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Archive]
 AS
 SELECT DA.AS_Dataset_ID,
@@ -34,7 +35,8 @@ SELECT DA.AS_Dataset_ID,
                                   ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
        AP.AP_archive_path,
        AP.AP_network_share_path,
-       DS.Dataset_Num AS Dataset
+       DS.Dataset_Num AS Dataset,
+	   DA.AS_Dataset_ID As Dataset_ID
 FROM T_Dataset_Archive DA
      INNER JOIN T_Dataset DS
        ON DA.AS_Dataset_ID = DS.Dataset_ID
@@ -46,6 +48,7 @@ FROM T_Dataset_Archive DA
        ON DA.AS_storage_path_ID = AP.AP_path_ID
      INNER JOIN dbo.T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
+
 
 
 GO

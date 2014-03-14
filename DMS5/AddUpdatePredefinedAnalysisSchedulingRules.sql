@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 /****************************************************
@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 **	Date:	06/23/2005
 **			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
+**			02/28/2014 mem - Now auto-converting null values to empty strings
 **    
 *****************************************************/
 (
@@ -47,6 +48,10 @@ As
 
 	set @processorGroup = LTrim(RTrim(IsNull(@processorGroup, '')))
 	set @processorGroupID = Null
+	
+	Set @instrumentClass = IsNull(@instrumentClass, '')
+	Set @instrumentName = IsNull(@instrumentName, '')
+	Set @datasetName = IsNull(@datasetName, '')
 	
 	If Len(@processorGroup) > 0
 	Begin

@@ -118,5 +118,3 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithJobSteps] TO [Limited_Table_Write] AS [dbo]
-GO

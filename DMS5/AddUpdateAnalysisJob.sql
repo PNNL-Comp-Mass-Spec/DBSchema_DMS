@@ -56,6 +56,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			01/04/2013 mem - Now ignoring @organismName, @protCollNameList, @protCollOptionsList, and @organismDBName for analysis tools that do not use protein collections (AJT_orgDbReqd = 0)
 **			04/02/2013 mem - Now updating @msg if it is blank yet @result is non-zero
+**			03/13/2014 mem - Now passing @Job to ValidateAnalysisJobParameters
 **    
 *****************************************************/
 (
@@ -287,7 +288,8 @@ As
 							@userID output,
 							@analysisToolID output, 
 							@organismID output,
-							@msg output
+							@msg output,
+							@Job = @jobID
 	--
 	if @result <> 0
 	begin

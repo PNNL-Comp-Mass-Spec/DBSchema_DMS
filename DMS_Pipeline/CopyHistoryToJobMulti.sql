@@ -16,6 +16,8 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **	Auth:	mem
 **			09/27/2012 mem - Initial version
 **			03/26/2013 mem - Added column Comment
+**			01/20/2014 mem - Added T_Job_Step_Dependencies_History
+**			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
 **    
 *****************************************************/
 (
@@ -116,7 +118,7 @@ As
 								MAX(JH.Saved) AS MostRecentDate
 						FROM T_Jobs_History JH
 							INNER JOIN #Tmp_JobsToCopy Src
-								ON JH.Job = Src.Job
+							  ON JH.Job = Src.Job
 						WHERE State = 4
 						GROUP BY JH.Job 
 						) DateQ
@@ -204,8 +206,8 @@ As
 			JH.Comment
 		FROM T_Jobs_History JH
 			INNER JOIN #Tmp_JobsToCopy Src
-			ON JH.Job = Src.Job AND
-				JH.Saved = Src.DateStamp
+			  ON JH.Job = Src.Job AND
+			     JH.Saved = Src.DateStamp
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -264,10 +266,10 @@ As
 			H.Evaluation_Message
 		FROM T_Job_Steps_History H
 			INNER JOIN T_Step_Tools ST
-			ON H.Step_Tool = ST.Name
+			  ON H.Step_Tool = ST.Name
 			INNER JOIN #Tmp_JobsToCopy Src
-			ON H.Job = Src.Job AND
-				H.Saved = Src.DateStamp
+			  ON H.Job = Src.Job AND
+			     H.Saved = Src.DateStamp
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -294,8 +296,8 @@ As
 		FROM
 			T_Job_Parameters_History JPH
 			INNER JOIN #Tmp_JobsToCopy Src
-			ON JPH.Job = Src.Job AND
-				JPH.Saved = Src.DateStamp
+			  ON JPH.Job = Src.Job AND
+			     JPH.Saved = Src.DateStamp
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -305,8 +307,141 @@ As
 			set @message = 'Error '
 			goto Done
 		end
+			     
+		---------------------------------------------------
+		-- Copy job step dependencies
+		---------------------------------------------------
+		--	
+		-- First delete any extra steps that are in T_Job_Step_Dependencies
+		--
+		DELETE T_Job_Step_Dependencies
+		FROM T_Job_Step_Dependencies Target
+		     LEFT OUTER JOIN T_Job_Step_Dependencies_History Source
+		       ON Target.Job_ID = Source.Job_ID AND
+		          Target.Step_Number = Source.Step_Number AND
+		          Target.Target_Step_Number = Source.Target_Step_Number
+		WHERE Target.Job_ID IN ( SELECT Job
+		                         FROM #Tmp_JobsToCopy ) AND
+		      Source.Job_ID IS NULL
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			rollback transaction @transName
+			set @message = 'Error '
+			goto Done
+		end
+		
+		-- Now add/update the job step dependencies
+		--	
+		MERGE T_Job_Step_Dependencies AS target
+		USING ( SELECT Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+				       Evaluated, Triggered, Enable_Only
+				FROM T_Job_Step_Dependencies_History H
+				     INNER JOIN #Tmp_JobsToCopy Src
+				       ON H.Job_Id = Src.Job
+			) AS Source (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+			ON (target.Job_ID = source.Job_ID And 
+				target.Step_Number = source.Step_Number And
+				target.Target_Step_Number = source.Target_Step_Number)
+		WHEN Matched THEN 
+			UPDATE Set 
+				Condition_Test = source.Condition_Test,
+				Test_Value = source.Test_Value,
+				Evaluated = source.Evaluated,
+				Triggered = source.Triggered,
+				Enable_Only = source.Enable_Only
+		WHEN Not Matched THEN
+			INSERT (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+					Evaluated, Triggered, Enable_Only)
+			VALUES (source.Job_ID, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+					source.Evaluated, source.Triggered, source.Enable_Only)
+		;		
+ 		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		
+		-- Fill in the dependencies for jobs that didn't have any data in T_Job_Step_Dependencies
+		--
+		CREATE TABLE #Tmp_JobsMissingDependencies (
+			Job int NOT NULL,
+			Script varchar(64) NOT NULL,
+			SimilarJob int NULL
+		)
+		
+		-- Find jobs that didn't have cached dependencies
+		--
+		INSERT INTO #Tmp_JobsMissingDependencies (Job, Script)
+		SELECT DISTINCT J.Job,
+		                J.Script
+		FROM T_Jobs J
+		     INNER JOIN #Tmp_JobsToCopy Src
+		       ON J.Job = Src.Job
+		     LEFT OUTER JOIN T_Job_Step_Dependencies D
+		       ON J.Job = D.Job_ID
+		WHERE D.Job_ID IS NULL
+ 		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
 
+		
+		If Exists (Select * From #Tmp_JobsMissingDependencies)
+		Begin
+			-- One or more jobs did not have cached dependencies
+			-- For each job, find a matching job that used the same script and _does_ have cached dependencies
+
+			UPDATE #Tmp_JobsMissingDependencies
+			SET SimilarJob = Source.SimilarJob
+			FROM #Tmp_JobsMissingDependencies target
+			     INNER JOIN ( SELECT Job,
+			                         SimilarJob,
+			                         Script
+			                  FROM ( SELECT MD.Job,
+			                                JobsWithDependencies.Job AS SimilarJob,
+			                                JobsWithDependencies.Script,
+			                                Row_Number() OVER ( Partition By MD.Job 
+			                                                    Order By JobsWithDependencies.Job ) AS SimilarJobRank
+			                         FROM #Tmp_JobsMissingDependencies MD
+			                              INNER JOIN ( SELECT JH.Job, JH.Script
+			                                           FROM T_Jobs_History JH INNER JOIN
+			                                                T_Job_Step_Dependencies_History JSD ON JH.Job = JSD.Job_ID
+			                                         ) AS JobsWithDependencies			                              
+			                                ON MD.Script = JobsWithDependencies.Script AND
+			                                   JobsWithDependencies.Job > MD.Job 
+			                       ) AS MatchQ
+			                  WHERE SimilarJobRank = 1 
+			                 ) AS source
+			       ON Target.Job = Source.Job
+ 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		
+			INSERT INTO T_Job_Step_Dependencies( Job_ID,
+			                                     Step_Number,
+			                                     Target_Step_Number,
+			                                     Condition_Test,
+			                                     Test_Value,
+			                                     Evaluated,
+			                                     Triggered,
+			                                     Enable_Only )
+			SELECT MD.Job AS Job_ID,
+			       Step_Number,
+			       Target_Step_Number,
+			       Condition_Test,
+			       Test_Value,
+			       0 AS Evaluated,
+			       0 AS Triggered,
+			       Enable_Only
+			FROM T_Job_Step_Dependencies_History H
+			     INNER JOIN #Tmp_JobsMissingDependencies MD
+			       ON H.Job_ID = MD.SimilarJob
+	 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		End
+		
  		commit transaction @transName
+
 
 		---------------------------------------------------
 		-- Jobs successfully copied

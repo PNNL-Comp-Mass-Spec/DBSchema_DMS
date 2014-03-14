@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupAssociations]
+CREATE Procedure dbo.UpdateAnalysisJobProcessorGroupAssociations
 /****************************************************
 **
 **	Desc:
@@ -21,14 +21,15 @@ CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupAssociations]
 **						   - 'add' mode now removes association with any other groups
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			01/24/2014 mem - Added default values to three of the parameters.
 **    
 *****************************************************/
 (
     @JobList varchar(6000),
     @processorGroupID varchar(32),
-    @newValue varchar(64),			-- ignore for now, may need in future
-    @mode varchar(12) = '',			-- 'add', 'replace', 'remove'
-    @message varchar(512) output,
+    @newValue varchar(64)='',			-- ignore for now, may need in future
+    @mode varchar(12) = 'add',			-- 'add', 'replace', 'remove'
+    @message varchar(512)='' output,
 	@callingUser varchar(128) = ''
 )
 AS

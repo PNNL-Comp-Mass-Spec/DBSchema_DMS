@@ -22,6 +22,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			01/09/2012 mem - Added column Owner
 **			01/19/2012 mem - Added columns DataPkgID and Memory_Usage_MB
 **			03/26/2013 mem - Added column Comment
+**			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **    
 *****************************************************/
 (
@@ -204,6 +205,64 @@ As
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
      --
+	if @myError <> 0
+	begin
+		rollback transaction @transName
+		set @message = 'Error '
+		goto Done
+	end
+
+	---------------------------------------------------
+	-- Copy job step dependencies
+	---------------------------------------------------
+	--
+	-- First delete any extra steps for this job that are in T_Job_Step_Dependencies_History
+	DELETE T_Job_Step_Dependencies_History
+	FROM T_Job_Step_Dependencies_History Target
+	     LEFT OUTER JOIN T_Job_Step_Dependencies Source
+	       ON Target.Job_ID = Source.Job_ID AND
+	          Target.Step_Number = Source.Step_Number AND
+	          Target.Target_Step_Number = Source.Target_Step_Number
+	WHERE Target.Job_ID = @job AND
+	      Source.Job_ID IS NULL
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+	if @myError <> 0
+	begin
+		rollback transaction @transName
+		set @message = 'Error '
+		goto Done
+	end
+		
+	-- Now add/update the job step dependencies
+	--
+	MERGE T_Job_Step_Dependencies_History AS target
+	USING ( SELECT Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+	               Evaluated, Triggered, Enable_Only
+	        FROM T_Job_Step_Dependencies
+	        WHERE Job_ID = @job	
+	      ) AS Source (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+	       ON (target.Job_ID = source.Job_ID And 
+	           target.Step_Number = source.Step_Number And
+	           target.Target_Step_Number = source.Target_Step_Number)
+	WHEN Matched THEN 
+		UPDATE Set 
+			Condition_Test = source.Condition_Test,
+			Test_Value = source.Test_Value,
+			Evaluated = source.Evaluated,
+			Triggered = source.Triggered,
+			Enable_Only = source.Enable_Only,
+			Saved = @saveTime
+	WHEN Not Matched THEN
+		INSERT (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+		        Evaluated, Triggered, Enable_Only, Saved)
+		VALUES (source.Job_ID, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+		        source.Evaluated, source.Triggered, source.Enable_Only, @saveTime)
+	;		
+ 	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
 	if @myError <> 0
 	begin
 		rollback transaction @transName
