@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_CV_Union]
 AS
 	SELECT 'BTO' AS Source,
@@ -94,8 +95,17 @@ AS
 		   GrandParent_term_name,
 		   GrandParent_term_ID
 	FROM T_CV_PRIDE
-
-
+	UNION
+	SELECT 'DOID' AS Source,
+	       Term_PK,
+		   Term_Name,
+		   identifier,
+		   Is_Leaf,
+		   Parent_term_name,
+		   Parent_term_ID,
+		   GrandParent_term_name,
+		   GrandParent_term_ID
+	FROM T_CV_DOID
 
 
 GO

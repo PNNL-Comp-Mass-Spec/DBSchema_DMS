@@ -13,6 +13,7 @@ CREATE PROCEDURE AddNewTermsDefaultOntologies
 **	Auth:	mem
 **	Date:	05/13/2013 mem - Initial Version
 **			12/04/2013 mem - Added CL
+**			03/17/2014 mem - Added DOID (disease ontology)
 **
 *****************************************************/
 (
@@ -38,6 +39,7 @@ AS
 	exec @myError = AddNewTerms @OntologyName='MS',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_MS
 	exec @myError = AddNewTerms @OntologyName='PRIDE', @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
 	exec @myError = AddNewTerms @OntologyName='NEWT',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+	exec @myError = AddNewTerms @OntologyName='DOID',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
 
 	---------------------------------------------------
 	-- exit
