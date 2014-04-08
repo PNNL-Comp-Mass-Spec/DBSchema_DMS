@@ -35,6 +35,7 @@ CREATE PROCEDURE GetJobParamTable
 **			08/23/2012 mem - Now calling CheckAddSpecialProcessingParam to look for a DataImportFolder entry
 **			04/23/2013 mem - Now including Instrument and InstrumentGroup
 **			01/30/2014 mem - Now using S_DMS_V_Settings_File_Lookup when a match is not found in V_DMS_SettingsFiles for the given settings file and analysis tool
+**			03/14/2014 mem - Added InstrumentDataPurged
 **    
 *****************************************************/
 (
@@ -82,6 +83,7 @@ AS
 		  CONVERT(VarChar(2000),Archive_Folder_Path)            AS DatasetArchivePath,
 		  CONVERT(VarChar(2000),Dataset_Storage_Path)           AS DatasetStoragePath,
 		  CONVERT(VarChar(2000),Transfer_Folder_Path)           AS transferFolderPath,
+		  CONVERT(VarChar(2000),InstrumentDataPurged)           AS InstrumentDataPurged,		  
 		  CONVERT(VarChar(2000),ParamFileName)                  AS ParmFileName,
 		  CONVERT(VarChar(2000),SettingsFileName)               AS SettingsFileName,
 		  CONVERT(VarChar(2000),Special_Processing)             AS Special_Processing,
@@ -110,6 +112,7 @@ AS
 		DatasetStoragePath,
 		DatasetArchivePath,
 		transferFolderPath,
+		InstrumentDataPurged,
 		ParmFileName,
 		SettingsFileName,
 		Special_Processing,

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AdjustParamsForLocalJob]
+CREATE PROCEDURE dbo.AdjustParamsForLocalJob
 /****************************************************
 **
 **	Desc: 
@@ -15,7 +15,8 @@ CREATE PROCEDURE [dbo].[AdjustParamsForLocalJob]
 **	Auth:	grk
 **			10/16/2010 grk - Initial release
 **			01/19/2012 mem - Added parameter @DataPackageID
-**			01/03/2014 grk - added logic for CacheFolderRootPath
+**			01/03/2014 grk - Added logic for CacheFolderRootPath
+**			03/14/2014 mem - Added job parameter InstrumentDataPurged
 **
 *****************************************************/
 (
@@ -60,10 +61,11 @@ AS
 	-- do processing for certain parameters
 	---------------------------------------------------
 	DECLARE @id int
-	DECLARE @path VARCHAR(260) = ''
+	DECLARE @archiveFolderPath VARCHAR(260) = ''
 	DECLARE @dataPkgName VARCHAR(128) = ''
 	DECLARE @dataPkgSharePath VARCHAR(260) = ''
 	DECLARE @xferPath VARCHAR(260) = ''
+	DECLARE @instrumentDataPurged tinyint = 0
 
 	---------------------------------------------------
 	-- get data package info (if one is specified)
@@ -144,12 +146,13 @@ AS
 		DECLARE @transferFolderPath VARCHAR(260) = ''
 
 		--
-		SELECT @path = [Archive Folder Path],
+		SELECT @archiveFolderPath = [Archive Folder Path],
 		       @dataset = Dataset,
 		       @datasetStoragePath = [Dataset Storage Path],
 		       @rawDataType = RawDataType,
 		       @sourceResultsFolder = [Results Folder],
-		       @transferFolderPath = transferFolderPath
+		       @transferFolderPath = transferFolderPath,
+		       @instrumentDataPurged = InstrumentDataPurged
 		FROM S_DMS_V_Analysis_Job_Info
 		WHERE Job = @id
 		
@@ -171,11 +174,12 @@ AS
 			               'RawDataType', 
 			               'DatasetStoragePath', 
 			               'transferFolderPath', 
-			               'DatasetFolderName')
+			               'DatasetFolderName',
+			               'InstrumentDataPurged')
 			--
 						
 			INSERT INTO #PARAMS ( Section, Name, Value )
-			SELECT 'JobParameters', 'DatasetArchivePath', @path
+			SELECT 'JobParameters', 'DatasetArchivePath', @archiveFolderPath
 			UNION
 			SELECT 'JobParameters', 'DatasetNum', @dataset
 			UNION
@@ -186,6 +190,8 @@ AS
 			SELECT 'JobParameters', 'transferFolderPath', @transferFolderPath
 			UNION
 			SELECT 'JobParameters', 'DatasetFolderName', @dataset
+			UNION
+			SELECT 'JobParameters', 'InstrumentDataPurged', @instrumentDataPurged
 			
 			SET @changed = 1
 		END 

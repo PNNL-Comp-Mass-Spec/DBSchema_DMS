@@ -32,7 +32,11 @@ SELECT Job
       ,Special_Processing
       ,DatasetType
       ,Experiment
+	  ,InstrumentDataPurged
   FROM S_DMS_V_GetPipelineJobParameters
+
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobParameters] TO [PNL\D3M578] AS [dbo]
