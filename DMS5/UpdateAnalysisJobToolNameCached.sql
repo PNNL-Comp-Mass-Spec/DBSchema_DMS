@@ -1,15 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobStateNameCached] ******/
+/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobToolNameCached] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-CREATE Procedure dbo.UpdateAnalysisJobStateNameCached
+CREATE Procedure dbo.UpdateAnalysisJobToolNameCached
 /****************************************************
 **
-**	Desc: Updates column AJ_StateNameCached in T_Analysis_Job
+**	Desc: Updates column AJ_ToolNameCached in T_Analysis_Job
 **		  for 1 or more jobs
 **
 **	Return values: 0: success, otherwise, error code
@@ -17,9 +15,7 @@ CREATE Procedure dbo.UpdateAnalysisJobStateNameCached
 **	Parameters:
 **
 **	Auth:	mem
-**	Date:	12/12/2007 mem - Initial version (Ticket #585)
-**			09/02/2011 mem - Now calling PostUsageLogEntry
-**			04/03/2014 mem - Now showing @message when @infoOnly > 0
+**	Date:	04/03/2014 mem - Initial version
 **
 *****************************************************/
 (
@@ -55,18 +51,18 @@ As
 	If @infoOnly <> 0
 	Begin
 		SELECT	AJ.AJ_jobID AS Job,
-				AJ.AJ_StateNameCached AS State_Name_Cached,
-				AJDAS.Job_State AS New_State_Name_Cached
+				AJ.AJ_ToolNameCached AS Tool_Name_Cached,
+				AnalysisTool.AJT_toolName AS New_Tool_Name_Cached
 		FROM dbo.T_Analysis_Job AJ INNER JOIN 
-		     dbo.V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		     dbo.T_Analysis_Tool AnalysisTool ON AJ.AJ_AnalysisToolID = AnalysisTool.AJT_ToolId
 		WHERE (AJ.AJ_jobID >= @JobStart) AND
 			  (AJ.AJ_jobID <= @JobFinish) AND
-			  ISNULL(AJ.AJ_StateNameCached, '') <> IsNull(AJDAS.Job_State, '')
+			  ISNULL(AJ.AJ_ToolNameCached, '') <> IsNull(AnalysisTool.AJT_toolName, '')
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		If @myRowCount = 0
-			Set @message = 'All jobs have up-to-date cached job state names'
+			Set @message = 'All jobs have up-to-date cached analysis tool names'
 		else
 			Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + ' jobs to update'
 			
@@ -75,12 +71,12 @@ As
 	Else
 	Begin
 		UPDATE T_Analysis_Job
-		SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
-		FROM dbo.T_Analysis_Job AJ INNER JOIN
-			 dbo.V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		SET AJ_ToolNameCached = IsNull(AnalysisTool.AJT_toolName, '')
+		FROM dbo.T_Analysis_Job AJ INNER JOIN 
+		     dbo.T_Analysis_Tool AnalysisTool ON AJ.AJ_AnalysisToolID = AnalysisTool.AJT_ToolId
 		WHERE (AJ.AJ_jobID >= @JobStart) AND 
 			  (AJ.AJ_jobID <= @JobFinish) AND
-			  IsNull(AJ_StateNameCached, '') <> IsNull(AJDAS.Job_State, '')
+			  IsNull(AJ_ToolNameCached, '') <> IsNull(AnalysisTool.AJT_toolName, '')
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -89,7 +85,7 @@ As
 		If @JobCount = 0
 			Set @message = ''
 		else
-			Set @message = ' Updated the cached job state name for ' + Convert(varchar(12), @JobCount) + ' jobs'
+			Set @message = ' Updated the cached analysis tool name for ' + Convert(varchar(12), @JobCount) + ' jobs'
 	End
 
 	
@@ -106,16 +102,10 @@ Done:
 	Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
 
 	If @infoOnly = 0
-		Exec PostUsageLogEntry 'UpdateAnalysisJobStateNameCached', @UsageMessage
+		Exec PostUsageLogEntry 'UpdateAnalysisJobToolNameCached', @UsageMessage
 
 	return @myError
 
 
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [PNL\D3M580] AS [dbo]
 GO

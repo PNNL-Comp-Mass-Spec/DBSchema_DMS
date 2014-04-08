@@ -17,6 +17,7 @@ CREATE Procedure ValidateInstrumentGroupAndDatasetType
 **			09/09/2020 mem - Removed print statements
 **			07/04/2012 grk - Added handling for 'Tracking' type
 **			11/12/2013 mem - Changed @instrumentName to be an input/output parameter
+**			03/25/2014 mem - Now auto-updating dataset type from HMS-HMSn to HMS-HCD-HMSn for group QExactive
 **
 *****************************************************/
 (
@@ -52,14 +53,21 @@ As
 	execute @datasetTypeID = GetDatasetTypeID @DatasetType
 	
 	-- No further validation required for certain dataset types
-	IF @datasetTypeID IN (100)
-	GOTO Done
+	-- In particular, dataset type 100 (Tracking)
+	If @datasetTypeID IN (100)
+	Begin
+		Goto Done
+	End
 	
 	if @datasetTypeID = 0
 	begin
 		set @message = 'Could not find entry in database for dataset type "' + @DatasetType + '"'
 		return 51118
 	end
+	
+	-- Possibly auto-update the dataset type
+	If @instrumentGroup = 'QExactive' AND @DatasetType IN ('HMS-HMSn')
+		Set @DatasetType = 'HMS-HCD-HMSn'
 	
 	---------------------------------------------------
 	-- Verify that dataset type is valid for given instrument group

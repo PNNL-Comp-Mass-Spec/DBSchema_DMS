@@ -11,7 +11,7 @@ SELECT  GroupQ.[Inst. Group] ,
         GroupQ.[Run Count] ,
         GroupQ.Blocked ,
         GroupQ.BlkMissing ,
-        GroupQ.[Batch or Experiment] ,
+        GroupQ.[Request Name or Batch],
         RequestLookupQ.RDS_BatchID AS Batch ,
         GroupQ.Requester ,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue] ,
@@ -19,10 +19,7 @@ SELECT  GroupQ.[Inst. Group] ,
         Convert(decimal(10, 1), TAC.Actual_Hours) As Actual_Hours,
         TIGA.Allocated_Hours ,
         GroupQ.[Separation Group] ,
-        CASE WHEN LEN(RequestLookupQ.RDS_comment) > 30
-             THEN SUBSTRING(RequestLookupQ.RDS_comment, 1, 27) + '...'
-             ELSE RequestLookupQ.RDS_comment
-        END AS [Comment] ,
+        RequestLookupQ.RDS_comment AS [Comment] ,
         GroupQ.[Min Request] ,
         GroupQ.[Work Package] ,
 		GroupQ.[WP State],
@@ -43,7 +40,7 @@ SELECT  GroupQ.[Inst. Group] ,
 FROM    ( SELECT    [Inst. Group] ,
                     MIN(RequestID) AS [Min Request] ,
                     COUNT(RequestName) AS [Run Count] ,
-                    MIN([Batch/Experiment]) AS [Batch or Experiment] ,
+                    MIN([Batch/Request]) AS [Request Name or Batch],
                     Requester ,
                     MIN(Request_Created) AS [Date Created] ,
                     [Separation Group] ,
@@ -63,9 +60,9 @@ FROM    ( SELECT    [Inst. Group] ,
                                 RA.[Type] AS [DS Type] ,
                                 RA.Request AS RequestID ,
                                 RA.Name AS RequestName ,
-                                CASE WHEN RA.Batch = 0
-                                     THEN LEFT(RA.Experiment, 20)
-                                          + CASE WHEN LEN(RA.Experiment) > 20
+                               CASE WHEN RA.Batch = 0
+                                     THEN LEFT(RA.Name, 20)
+                                          + CASE WHEN LEN(RA.Name) > 20
                                                  THEN '...'
                                                  ELSE ''
                                             END
@@ -74,7 +71,7 @@ FROM    ( SELECT    [Inst. Group] ,
                                                  THEN '...'
                                                  ELSE ''
                                             END
-                                END AS [Batch/Experiment] ,
+                                END AS [Batch/Request] ,                                
                                 RA.[Request Name Code] ,
                                 RA.Requester ,
                                 RA.Created AS Request_Created ,

@@ -64,6 +64,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **			05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
 **			06/10/2013 mem - Now filtering on Analysis_Tool when checking whether an HMS_AutoSupersede file existing for the given settings file
+**			03/28/2014 mem - Auto-changing @protCollOptionsList to "seq_direction=decoy,filetype=fasta" if the tool is MODa and the options start with "seq_direction=forward"
 **
 *****************************************************/
 (
@@ -286,6 +287,18 @@ As
 		Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 		If IsNull(@message, '') = ''
 			Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter files typically have tda=1'
+	End
+
+	---------------------------------------------------
+	-- Assure that we are running a decoy search if using MODa
+	-- However, if the parameter file contains _NoDecoy in the name, then we'll allow @protCollOptionsList to contain Decoy
+	---------------------------------------------------
+	--
+	If @toolName LIKE 'MODa%' And @protCollOptionsList Not Like '%decoy%' 
+	Begin
+		Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
+		If IsNull(@message, '') = ''
+			Set @message = 'Note: changed protein options to decoy since MODa requires decoy proteins to perform FDR-based filtering'
 	End
 
 	---------------------------------------------------

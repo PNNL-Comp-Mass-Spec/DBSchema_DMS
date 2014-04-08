@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Number_of_Samples] [int] NULL,
 	[Sample_Name_List] [varchar](1500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Type] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Prep_Method] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Prep_Method] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Prep_By_Robot] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Special_Instructions] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Naming_Convention] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

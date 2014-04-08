@@ -1,7 +1,7 @@
 /****** Object:  StoredProcedure [dbo].[FindSamplePrepRequest] ******/
 SET ANSI_NULLS ON
 GO
-SET QUOTED_IDENTIFIER OFF
+SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.FindSamplePrepRequest
 /****************************************************
@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.FindSamplePrepRequest
 **	Auth:	grk
 **	Date:	05/15/2006
 **			12/20/2006 mem - Now querying V_Find_Sample_Prep_Request using dynamic SQL (Ticket #349)
+**			03/14/2014 mem - Expanded @PrepMethod to varchar(512)
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -31,7 +32,7 @@ CREATE PROCEDURE dbo.FindSamplePrepRequest
 	@Priority varchar(20) = '',
 	@State varchar(32) = '',
 	@Reason varchar(512) = '',
-	@PrepMethod varchar(128) = '',
+	@PrepMethod varchar(512) = '',
 	@RequestedPersonnel varchar(32) = '',
 	@AssignedPersonnel varchar(256) = '',
 	@Requester varchar(85) = '',
@@ -53,8 +54,8 @@ As
 	set @message = ''
 
 
-	declare @S varchar(4000)
-	declare @W varchar(3800)
+	declare @S varchar(max)
+	declare @W varchar(max)
 
 	---------------------------------------------------
 	-- Validate input fields

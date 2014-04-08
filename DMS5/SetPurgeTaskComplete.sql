@@ -30,6 +30,7 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			08/13/2013 mem - Now using explicit parameter names when calling S_MakeNewArchiveUpdateJob
 **			08/15/2013 mem - Added support for @completionCode = 7 (dataset folder missing in archive)
 **			08/26/2013 mem - Now mentioning "permissions error" when @completionCode = 7
+**			03/21/2014 mem - Tweaked log message for @completionCode = 7
 **    
 *****************************************************/
 (
@@ -195,10 +196,10 @@ Code 6 (Purged all data except QC folder)
 		goto SetStates
 	end
 
-	-- (Dataset folder missing in archive)
+	-- (Dataset folder missing in archive, either in MyEMSL or at \\a2.emsl.pnl.gov\dmsarch)
 	if @completionCode = 7
 	begin
-		set @message = 'Dataset folder not found in archive, likely a permissions error; dataset ' + @datasetNum
+		set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetNum
 		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
 		set @message = ''
 		

@@ -69,7 +69,7 @@ CREATE Procedure AddUpdateDataset
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),
-	@msType varchar(50),
+	@msType varchar(50),					-- Dataset Type
 	@LCColumnNum varchar(64),
 	@wellplateNum varchar(64) = 'na',
 	@wellNum varchar(64) = 'na',

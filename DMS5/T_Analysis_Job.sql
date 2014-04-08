@@ -38,6 +38,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_Purged] [tinyint] NOT NULL,
 	[AJ_MyEMSLState] [tinyint] NOT NULL,
 	[AJ_RowVersion] [timestamp] NOT NULL,
+	[AJ_ToolNameCached] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -86,6 +87,13 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_StateNameCached] ON [dbo].[T_Analysis_Job] 
 (
 	[AJ_StateNameCached] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+
+/****** Object:  Index [IX_T_Analysis_Job_AJ_ToolNameCached] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_AJ_ToolNameCached] ON [dbo].[T_Analysis_Job] 
+(
+	[AJ_ToolNameCached] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 
@@ -244,8 +252,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Insert
 /****************************************************
@@ -258,6 +264,7 @@ For Insert
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
+**			04/03/2014 mem - Now updating AJ_ToolNameCached
 **    
 *****************************************************/
 AS
@@ -272,10 +279,12 @@ AS
 	ORDER BY inserted.AJ_jobID
 
 	UPDATE T_Analysis_Job
-	SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+	SET AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
+	    AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
 	FROM T_Analysis_Job AJ INNER JOIN
 		 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
-		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job INNER JOIN
+		T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
 
 
 GO
@@ -375,6 +384,7 @@ For Update
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			11/01/2007 mem - Added Set NoCount statement (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
+**			04/03/2014 mem - Now updating AJ_ToolNameCached
 **    
 *****************************************************/
 AS
@@ -396,6 +406,17 @@ AS
 		FROM T_Analysis_Job AJ INNER JOIN
 			 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
 			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+
+	End
+
+	If Update(AJ_analysisToolID)
+	Begin
+		
+		UPDATE T_Analysis_Job
+		SET AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
+		FROM T_Analysis_Job AJ INNER JOIN
+			 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
+			 T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
 
 	End
 
@@ -481,4 +502,6 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_Purged]  DEFAULT ((0)) FOR [AJ_Purged]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_MyEMSLState]  DEFAULT ((0)) FOR [AJ_MyEMSLState]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] ADD  CONSTRAINT [DF_T_Analysis_Job_AJ_ToolNameCached]  DEFAULT ('') FOR [AJ_ToolNameCached]
 GO
