@@ -23,6 +23,7 @@ CREATE PROCEDURE UpdateMissedMyEMSLStateValues
 **  Date:	09/10/2013 mem - Initial version
 **			12/13/2013 mem - Tweaked log message
 **			02/27/2014 mem - Now updating the appropriate ArchiveUpdate job if the job steps were skipped
+**			03/25/2014 mem - Changed log message type to be a warning
 **    
 *****************************************************/
 (
@@ -99,7 +100,7 @@ As
 			WHERE AS_Dataset_ID IN (SELECT EntityID FROM #Tmp_IDsToUpdate) AND
 			      MyEMSLState < 1
 			      
-			exec PostLogEntry 'Error', @message, 'UpdateMissedMyEMSLStateValues'
+			exec PostLogEntry 'Warning', @message, 'UpdateMissedMyEMSLStateValues'
 
 			-- Reset skipped ArchiveVerify steps for the affected datasets
 			--			
@@ -162,7 +163,7 @@ As
 			WHERE AJ_JobID IN (SELECT EntityID FROM #Tmp_IDsToUpdate) AND
 			      AJ_MyEMSLState < 1
 			      
-			exec PostLogEntry 'Error', @message, 'UpdateMissedMyEMSLStateValues'
+			exec PostLogEntry 'Warning', @message, 'UpdateMissedMyEMSLStateValues'
 		End
 		
 		-- Reset skipped ArchiveVerify steps for the datasets associated with the affected jobs
