@@ -12,23 +12,23 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Tools](
 (
 	[Tool_ID] ASC,
 	[Processor_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Tools] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Tools_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Tools_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Job_Processors] FOREIGN KEY([Processor_ID])
-REFERENCES [T_Analysis_Job_Processors] ([ID])
+REFERENCES [dbo].[T_Analysis_Job_Processors] ([ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Job_Processors]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Tool] FOREIGN KEY([Tool_ID])
-REFERENCES [T_Analysis_Tool] ([AJT_toolID])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] CHECK CONSTRAINT [FK_T_Analysis_Job_Processor_Tools_T_Analysis_Tool]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Tools_Entered]  DEFAULT (getdate()) FOR [Entered]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Tools_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

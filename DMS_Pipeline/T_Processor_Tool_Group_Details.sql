@@ -16,9 +16,23 @@ CREATE TABLE [dbo].[T_Processor_Tool_Group_Details](
 	[Group_ID] ASC,
 	[Mgr_ID] ASC,
 	[Tool_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups] FOREIGN KEY([Group_ID])
+REFERENCES [dbo].[T_Processor_Tool_Groups] ([Group_ID])
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools] FOREIGN KEY([Tool_Name])
+REFERENCES [dbo].[T_Step_Tools] ([Name])
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Processor_Tool_Group_Details] ******/
 SET ANSI_NULLS ON
@@ -56,18 +70,4 @@ AS
 	End
 
 
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups] FOREIGN KEY([Group_ID])
-REFERENCES [T_Processor_Tool_Groups] ([Group_ID])
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Processor_Tool_Groups]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools] FOREIGN KEY([Tool_Name])
-REFERENCES [T_Step_Tools] ([Name])
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Comment]  DEFAULT ('') FOR [Comment]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

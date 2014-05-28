@@ -15,9 +15,29 @@ CREATE TABLE [dbo].[T_Param_Entries](
  CONSTRAINT [PK_T_Param_Entries] PRIMARY KEY CLUSTERED 
 (
 	[Param_Entry_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
+GO
+ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
+REFERENCES [dbo].[T_Param_Files] ([Param_File_ID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Param_Entries] CHECK CONSTRAINT [FK_T_Param_Entries_T_Param_Files]
 GO
 /****** Object:  Trigger [dbo].[trig_d_T_Param_Entries] ******/
 SET ANSI_NULLS ON
@@ -154,24 +174,4 @@ AS
 	End -- </a>
 
 
-GO
-GRANT DELETE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] TO [DMS_ParamFile_Admin] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Param_Entries]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Entries_T_Param_Files] FOREIGN KEY([Param_File_ID])
-REFERENCES [T_Param_Files] ([Param_File_ID])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Param_Entries] CHECK CONSTRAINT [FK_T_Param_Entries_T_Param_Files]
-GO
-ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered]  DEFAULT (getdate()) FOR [Entered]
-GO
-ALTER TABLE [dbo].[T_Param_Entries] ADD  CONSTRAINT [DF_T_Param_Entries_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

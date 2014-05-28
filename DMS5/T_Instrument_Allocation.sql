@@ -17,9 +17,15 @@ CREATE TABLE [dbo].[T_Instrument_Allocation](
 	[Allocation_Tag] ASC,
 	[Proposal_ID] ASC,
 	[Fiscal_Year] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Instrument_Allocation] ******/
 SET ANSI_NULLS ON
@@ -150,10 +156,4 @@ AS
 		ORDER BY inserted.Allocation_Tag, inserted.Proposal_ID
 	End
 
-GO
-ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Comment]  DEFAULT ('') FOR [Comment]
-GO
-ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Entered]  DEFAULT (getdate()) FOR [Entered]
-GO
-ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

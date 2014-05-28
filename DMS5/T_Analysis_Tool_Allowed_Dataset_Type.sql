@@ -11,21 +11,21 @@ CREATE TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type](
 (
 	[Analysis_Tool_ID] ASC,
 	[Dataset_Type] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Dataset_Type_Comment]  DEFAULT ('') FOR [Comment]
+GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool_ID])
-REFERENCES [T_Analysis_Tool] ([AJT_toolID])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolID])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Analysis_Tool]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_DatasetTypeName] FOREIGN KEY([Dataset_Type])
-REFERENCES [T_DatasetTypeName] ([DST_name])
+REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_DatasetTypeName]
-GO
-ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Dataset_Type_Comment]  DEFAULT ('') FOR [Comment]
 GO

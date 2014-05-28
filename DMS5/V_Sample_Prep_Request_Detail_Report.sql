@@ -24,7 +24,7 @@ AS
             SPR.Comment ,
             SPR.Estimated_MS_runs AS [MS Runs To Be Generated] ,
             SPR.Technical_Replicates AS [Technical Replicates] ,
-            SPR.Instrument_Name AS [Instrument Group] ,
+            SPR.Instrument_Group AS [Instrument Group] ,
             SPR.Dataset_Type AS [Dataset Type] ,
             SPR.Separation_Type AS [Separation Group] ,
             SPR.Instrument_Analysis_Specifications AS [Instrument Analysis Specifications] ,
@@ -36,7 +36,7 @@ AS
             SPR.Project_Number AS [Project Number] ,
             SPR.EUS_UsageType AS [EUS Usage Type] ,
             SPR.EUS_Proposal_ID AS [EUS Proposal] ,
-            SPR.EUS_User_List AS [EUS Users] ,
+			dbo.GetSamplePrepRequestEUSUsersList(SPR.ID, 'V') As [EUS User],            
             SPR.Requested_Personnel AS [Requested Personnel] ,
             SPR.Assigned_Personnel AS [Assigned Personnel] ,
             SPR.Estimated_Completion AS [Estimated Completion] ,
@@ -64,8 +64,6 @@ AS
             End AS #WPActivationState
     FROM    T_Sample_Prep_Request AS SPR
             INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
-            INNER JOIN T_Internal_Standards AS PreIntStd ON SPR.Internal_standard_ID = PreIntStd.Internal_Std_Mix_ID
-            INNER JOIN T_Internal_Standards AS PostIntStd ON SPR.Postdigest_internal_std_ID = PostIntStd.Internal_Std_Mix_ID
             LEFT OUTER JOIN T_Users AS QP ON SPR.Requester_PRN = QP.U_PRN
             LEFT OUTER JOIN ( SELECT    Request_ID ,
                                         COUNT(*) AS Updates

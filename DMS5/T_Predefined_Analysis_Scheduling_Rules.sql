@@ -17,14 +17,9 @@ CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules](
  CONSTRAINT [PK_T_Predefined_Analysis_Scheduling_Rules] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group] FOREIGN KEY([SR_processorGroupID])
-REFERENCES [T_Analysis_Job_Processor_Group] ([ID])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] CHECK CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Rules_SR_instrumentClass]  DEFAULT ('') FOR [SR_instrumentClass]
 GO
@@ -39,4 +34,9 @@ GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Rules_SR_enabled]  DEFAULT (1) FOR [SR_enabled]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Rules_SR_Created]  DEFAULT (getdate()) FOR [SR_Created]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group] FOREIGN KEY([SR_processorGroupID])
+REFERENCES [dbo].[T_Analysis_Job_Processor_Group] ([ID])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] CHECK CONSTRAINT [FK_T_Predefined_Analysis_Scheduling_Rules_T_Analysis_Job_Processor_Group]
 GO

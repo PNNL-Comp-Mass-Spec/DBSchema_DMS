@@ -27,54 +27,89 @@ CREATE TABLE [dbo].[T_Cell_Culture](
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
+GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Cell_Culture_CC_Campaign_ID] ******/
-CREATE CLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture] 
+CREATE CLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Campaign_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Cell_Culture_CC_Created] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Created] ON [dbo].[T_Cell_Culture] 
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Created] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Cell_Culture_CC_Name] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Name] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Cell_Culture_CCName_ContainerID_CCID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CCName_ContainerID_CCID] ON [dbo].[T_Cell_Culture] 
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CCName_ContainerID_CCID] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Name] ASC,
 	[CC_Container_ID] ASC,
 	[CC_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Cell_Culture_Container_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Culture] 
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Container_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Cell_Culture_ID_ContainerID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Culture] 
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Culture]
 (
 	[CC_ID] ASC,
 	[CC_Container_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Container_ID]  DEFAULT ((1)) FOR [CC_Container_ID]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Material_Active]  DEFAULT ('Active') FOR [CC_Material_Active]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
+REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Campaign]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name] FOREIGN KEY([CC_Type])
+REFERENCES [dbo].[T_Cell_Culture_Type_Name] ([ID])
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers] FOREIGN KEY([CC_Container_ID])
+REFERENCES [dbo].[T_Material_Containers] ([ID])
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Users] FOREIGN KEY([CC_PI_PRN])
+REFERENCES [dbo].[T_Users] ([U_PRN])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Users]
+GO
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([CC_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON
@@ -177,39 +212,4 @@ AS
 	End
 
 
-GO
-GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
-REFERENCES [T_Campaign] ([Campaign_ID])
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Campaign]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name] FOREIGN KEY([CC_Type])
-REFERENCES [T_Cell_Culture_Type_Name] ([ID])
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Cell_Culture_Type_Name]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers] FOREIGN KEY([CC_Container_ID])
-REFERENCES [T_Material_Containers] ([ID])
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Material_Containers]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Users] FOREIGN KEY([CC_PI_PRN])
-REFERENCES [T_Users] ([U_PRN])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Users]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([CC_Name],(1))=(0)))
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Container_ID]  DEFAULT ((1)) FOR [CC_Container_ID]
-GO
-ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Material_Active]  DEFAULT ('Active') FOR [CC_Material_Active]
 GO

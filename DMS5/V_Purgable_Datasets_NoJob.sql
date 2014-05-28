@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Purgable_Datasets_NoJob]
 AS
 SELECT DS.Dataset_ID,
@@ -25,7 +26,7 @@ FROM dbo.T_Dataset AS DS
        ON InstName.IN_class = InstClass.IN_class
 WHERE (InstClass.is_purgable > 0) AND
       (DA.AS_state_ID = 3 OR 
-       DA.AS_state_ID = 14 And DA.AS_state_Last_Affected < DATEADD(DAY, -90, GETDATE()) OR
+       --DA.AS_state_ID = 14 And DA.AS_state_Last_Affected < DATEADD(DAY, -90, GETDATE()) OR
        DA.AS_state_ID = 15 And Purge_Policy = 2
       ) AND
       (DS.DS_rating NOT IN (-2, -10)) AND
@@ -39,6 +40,7 @@ WHERE (InstClass.is_purgable > 0) AND
       ) AND
       (DS.Dataset_ID NOT IN ( SELECT AJ_datasetID
                               FROM dbo.T_Analysis_Job ))
+
 
 
 GO

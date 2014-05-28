@@ -17,24 +17,53 @@ CREATE TABLE [dbo].[T_Settings_Files](
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT DELETE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Settings_Files_Analysis_Tool_File_Name] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Settings_Files_Analysis_Tool_File_Name] ON [dbo].[T_Settings_Files] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Settings_Files_Analysis_Tool_File_Name] ON [dbo].[T_Settings_Files]
 (
 	[Analysis_Tool] ASC,
 	[File_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Settings_Files_File_Name] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Settings_Files_File_Name] ON [dbo].[T_Settings_Files] 
+CREATE NONCLUSTERED INDEX [IX_T_Settings_Files_File_Name] ON [dbo].[T_Settings_Files]
 (
 	[File_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Description]  DEFAULT ('') FOR [Description]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)) FOR [Active]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
+GO
+ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolName])
+GO
+ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool]
+GO
+ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([File_Name],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_T_Settings_Files] ******/
 SET ANSI_NULLS ON
@@ -150,29 +179,4 @@ AS
 	End
 		
 
-GO
-GRANT DELETE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Settings_Files] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool])
-REFERENCES [T_Analysis_Tool] ([AJT_toolName])
-GO
-ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool]
-GO
-ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([File_Name],(0))=(0)))
-GO
-ALTER TABLE [dbo].[T_Settings_Files] CHECK CONSTRAINT [CK_T_Settings_Files_SettingsFileName_WhiteSpace]
-GO
-ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Description]  DEFAULT ('') FOR [Description]
-GO
-ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)) FOR [Active]
-GO
-ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
-GO
-ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
 GO

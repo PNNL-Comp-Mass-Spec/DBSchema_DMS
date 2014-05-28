@@ -17,21 +17,51 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
  CONSTRAINT [PK_T_Mass_Correction_Factors] PRIMARY KEY NONCLUSTERED 
 (
 	[Mass_Correction_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Mass_Correction_Factors_MonoisotopicMass_and_AffectedAtom] UNIQUE CLUSTERED 
 (
 	[Monoisotopic_Mass_Correction] ASC,
 	[Affected_Atom] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
+GO
+GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Mass_Correction_Factors_Mass_Correction_Tag] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Mass_Correction_Factors_Mass_Correction_Tag] ON [dbo].[T_Mass_Correction_Factors] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Mass_Correction_Factors_Mass_Correction_Tag] ON [dbo].[T_Mass_Correction_Factors]
 (
 	[Mass_Correction_Tag] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Affected_Atom]  DEFAULT ('-') FOR [Affected_Atom]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source]  DEFAULT ('') FOR [Original_Source]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT ('') FOR [Original_Source_Name]
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((NOT [Mass_Correction_Tag] like '%:%' AND NOT [Mass_Correction_Tag] like '%,%'))
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
 GO
 /****** Object:  Trigger [dbo].[trig_i_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
@@ -88,32 +118,4 @@ AS
 				GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
 
-GO
-GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
-GO
-GRANT DELETE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Mass_Correction_Factors] TO [PNL\D3M578] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((NOT [Mass_Correction_Tag] like '%:%' AND NOT [Mass_Correction_Tag] like '%,%'))
-GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
-GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Affected_Atom]  DEFAULT ('-') FOR [Affected_Atom]
-GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source]  DEFAULT ('') FOR [Original_Source]
-GO
-ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT ('') FOR [Original_Source_Name]
 GO

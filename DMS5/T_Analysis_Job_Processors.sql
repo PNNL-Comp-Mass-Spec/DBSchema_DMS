@@ -14,23 +14,39 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processors](
  CONSTRAINT [T_Analysis_Job_Processors_PK] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Analysis_Job_Processors] UNIQUE CLUSTERED 
 (
 	[Processor_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+GRANT UPDATE ON [dbo].[T_Analysis_Job_Processors] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Analysis_Job_Processors_ID_Name_State_Machine] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processors_ID_Name_State_Machine] ON [dbo].[T_Analysis_Job_Processors] 
+CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Processors_ID_Name_State_Machine] ON [dbo].[T_Analysis_Job_Processors]
 (
 	[ID] ASC,
 	[Processor_Name] ASC
 )
-INCLUDE ( [State],
-[Machine]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE ( 	[State],
+	[Machine]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_State]  DEFAULT ('E') FOR [State]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Notes]  DEFAULT ('') FOR [Notes]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors]  WITH CHECK ADD  CONSTRAINT [CK_T_Analysis_Job_Processors_State] CHECK  (([State]='D' OR [State]='E'))
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processors] CHECK CONSTRAINT [CK_T_Analysis_Job_Processors_State]
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Analysis_Job_Processors] ******/
 SET ANSI_NULLS ON
@@ -71,18 +87,4 @@ AS
 			 inserted ON T_Analysis_Job_Processors.ID = inserted.ID
 	End
 
-GO
-GRANT UPDATE ON [dbo].[T_Analysis_Job_Processors] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors]  WITH CHECK ADD  CONSTRAINT [CK_T_Analysis_Job_Processors_State] CHECK  (([State]='D' OR [State]='E'))
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors] CHECK CONSTRAINT [CK_T_Analysis_Job_Processors_State]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_State]  DEFAULT ('E') FOR [State]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Notes]  DEFAULT ('') FOR [Notes]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
-GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processors] ADD  CONSTRAINT [DF_T_Analysis_Job_Processors_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

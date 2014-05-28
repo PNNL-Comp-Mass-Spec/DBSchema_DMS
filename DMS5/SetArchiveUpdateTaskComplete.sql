@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE Procedure [dbo].[SetArchiveUpdateTaskComplete]
+CREATE Procedure dbo.SetArchiveUpdateTaskComplete
 /****************************************************
 **
 **	Desc: Sets status of task to successful
@@ -23,6 +23,7 @@ CREATE Procedure [dbo].[SetArchiveUpdateTaskComplete]
 **		 	12/06/2002 dac - Corrected state values used in update state test, update complete output
 **		 	11/30/2007 dac - Removed unused processor name parameter
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			04/16/2014 mem - Now changing archive state to 3 if it is 14
 **
 *****************************************************/
 (
@@ -76,26 +77,39 @@ As
 		goto done
 	end
 
+	Set @completionCode = IsNull(@completionCode, 0)
+	
    	---------------------------------------------------
 	-- Update dataset archive state 
 	---------------------------------------------------
 	
-	if @completionCode = 0  -- task completed sat
-		begin
-			UPDATE    T_Dataset_Archive
-			SET              AS_update_state_ID = 4, AS_last_update = GETDATE()
-			WHERE     (AS_Dataset_ID = @datasetID)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-		end
-	else
-		begin
-			UPDATE T_Dataset_Archive
-			SET    AS_update_state_ID = 5
-			WHERE  (AS_Dataset_ID = @datasetID)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-		end
+	If @completionCode = 0
+	Begin
+		-- Success
+		UPDATE T_Dataset_Archive
+		SET AS_update_state_ID = 4,
+		    AS_state_ID = CASE
+		                      WHEN AS_state_ID = 14 THEN 3
+		                      ELSE AS_state_ID
+		                  END,
+		    AS_last_update = GETDATE()
+		WHERE (AS_Dataset_ID = @datasetID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
+	Else
+	Begin
+		-- Error
+		UPDATE T_Dataset_Archive
+		SET AS_update_state_ID = 5,
+		    AS_state_ID = CASE
+		                      WHEN AS_state_ID = 14 THEN 3
+		                      ELSE AS_state_ID
+		                  END
+		WHERE(AS_Dataset_ID = @datasetID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
 	--
 	if @myError <> 0 or @myRowCount <> 1
 	begin

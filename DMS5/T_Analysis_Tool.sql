@@ -23,16 +23,9 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-
-/****** Object:  Index [IX_T_Analysis_Tool_Name] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Analysis_Tool_Name] ON [dbo].[T_Analysis_Tool] 
-(
-	[AJT_toolName] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 GRANT INSERT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
@@ -40,10 +33,14 @@ GRANT SELECT ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Tool] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
-REFERENCES [T_Param_File_Types] ([Param_File_Type_ID])
+SET ANSI_PADDING ON
+
 GO
-ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
+/****** Object:  Index [IX_T_Analysis_Tool_Name] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Analysis_Tool_Name] ON [dbo].[T_Analysis_Tool]
+(
+	[AJT_toolName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_inactive]  DEFAULT ((1)) FOR [AJT_active]
 GO
@@ -52,4 +49,9 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_extractionRequired]  DEFAULT ('N') FOR [AJT_extractionRequired]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_Use_SpecialProcWaiting]  DEFAULT ((0)) FOR [Use_SpecialProcWaiting]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
+REFERENCES [dbo].[T_Param_File_Types] ([Param_File_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] CHECK CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types]
 GO

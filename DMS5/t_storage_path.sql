@@ -19,17 +19,27 @@ CREATE TABLE [dbo].[T_Storage_Path](
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
 (
 	[SP_path_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_t_storage_path_Machine_Name_Path_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_t_storage_path_Machine_Name_Path_ID] ON [dbo].[T_Storage_Path] 
+CREATE NONCLUSTERED INDEX [IX_t_storage_path_Machine_Name_Path_ID] ON [dbo].[T_Storage_Path]
 (
 	[SP_machine_name] ASC,
 	[SP_path_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Storage_Path] ADD  CONSTRAINT [DF_T_Storage_Path_SP_created]  DEFAULT (getdate()) FOR [SP_created]
+GO
+ALTER TABLE [dbo].[T_Storage_Path]  WITH CHECK ADD  CONSTRAINT [FK_t_storage_path_T_Instrument_Name] FOREIGN KEY([SP_instrument_name])
+REFERENCES [dbo].[T_Instrument_Name] ([IN_name])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
 GO
 /****** Object:  Trigger [dbo].[trig_iu_Storage_Path] ******/
 SET ANSI_NULLS ON
@@ -69,12 +79,4 @@ AS
 
 	End
 
-GO
-ALTER TABLE [dbo].[T_Storage_Path]  WITH CHECK ADD  CONSTRAINT [FK_t_storage_path_T_Instrument_Name] FOREIGN KEY([SP_instrument_name])
-REFERENCES [T_Instrument_Name] ([IN_name])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
-GO
-ALTER TABLE [dbo].[T_Storage_Path] ADD  CONSTRAINT [DF_T_Storage_Path_SP_created]  DEFAULT (getdate()) FOR [SP_created]
 GO

@@ -34,11 +34,12 @@ CREATE Procedure AddUpdateExperiment
 **			               - Updated to validate additional terms when @mode = 'check_add'
 **			11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
 **			04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
+**			05/09/2014 mem - Expanded @campaignNum from varchar(50) to varchar(64)
 **
 *****************************************************/
 (
 	@experimentNum varchar(50),
-	@campaignNum varchar(50),
+	@campaignNum varchar(64),
 	@researcherPRN varchar(50),
 	@organismName varchar(50),
 	@reason varchar(250) = 'na',

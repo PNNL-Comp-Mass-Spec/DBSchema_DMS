@@ -14,24 +14,24 @@ CREATE TABLE [dbo].[T_Sample_Submission](
  CONSTRAINT [PK_T_Sample_Submission] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Sample_Submission] ADD  CONSTRAINT [DF_T_Sample_Submission_Created]  DEFAULT (getdate()) FOR [Created]
+GO
 ALTER TABLE [dbo].[T_Sample_Submission]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Submission_T_Campaign] FOREIGN KEY([Campaign_ID])
-REFERENCES [T_Campaign] ([Campaign_ID])
+REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Submission] CHECK CONSTRAINT [FK_T_Sample_Submission_T_Campaign]
 GO
 ALTER TABLE [dbo].[T_Sample_Submission]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Submission_T_Prep_File_Storage] FOREIGN KEY([Storage_Path])
-REFERENCES [T_Prep_File_Storage] ([ID])
+REFERENCES [dbo].[T_Prep_File_Storage] ([ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Submission] CHECK CONSTRAINT [FK_T_Sample_Submission_T_Prep_File_Storage]
 GO
 ALTER TABLE [dbo].[T_Sample_Submission]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Submission_T_Users] FOREIGN KEY([Received_By_User_ID])
-REFERENCES [T_Users] ([ID])
+REFERENCES [dbo].[T_Users] ([ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Submission] CHECK CONSTRAINT [FK_T_Sample_Submission_T_Users]
-GO
-ALTER TABLE [dbo].[T_Sample_Submission] ADD  CONSTRAINT [DF_T_Sample_Submission_Created]  DEFAULT (getdate()) FOR [Created]
 GO

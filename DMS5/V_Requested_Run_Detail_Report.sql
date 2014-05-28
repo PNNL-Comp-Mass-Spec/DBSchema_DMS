@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Requested_Run_Detail_Report
+
+CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
@@ -40,7 +41,7 @@ SELECT RR.ID AS Request,
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
+       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
        RR.RDS_note AS Note,
        RR.RDS_special_instructions AS [Special Instructions],
@@ -74,6 +75,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Detail_Report] TO [PNL\D3M578] AS [dbo]

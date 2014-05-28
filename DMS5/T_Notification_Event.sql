@@ -11,14 +11,14 @@ CREATE TABLE [dbo].[T_Notification_Event](
  CONSTRAINT [PK_T_Notification_Event] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Notification_Event] ADD  CONSTRAINT [DF_T_Notification_Event_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
 ALTER TABLE [dbo].[T_Notification_Event]  WITH CHECK ADD  CONSTRAINT [FK_T_Notification_Event_T_Notification_Event_Type] FOREIGN KEY([Event_Type])
-REFERENCES [T_Notification_Event_Type] ([ID])
+REFERENCES [dbo].[T_Notification_Event_Type] ([ID])
 GO
 ALTER TABLE [dbo].[T_Notification_Event] CHECK CONSTRAINT [FK_T_Notification_Event_T_Notification_Event_Type]
-GO
-ALTER TABLE [dbo].[T_Notification_Event] ADD  CONSTRAINT [DF_T_Notification_Event_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

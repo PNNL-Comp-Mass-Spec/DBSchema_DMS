@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Data_Type_Name] ******/
-/****** RowCount: 14 ******/
+/****** RowCount: 15 ******/
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] ON
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (1,'dot_raw_files',0,'.Raw','')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (2,'dot_wiff_files',0,'.Wiff','')
@@ -15,4 +15,5 @@ INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name,
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (12,'bruker_tof_baf',1,' ','.D folder from Maxis instrument')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (13,'data_folders',1,'','Used for miscellaneous data files')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (15,'dot_mzml_files',0,'.mzML','.mzML file')
+INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (16,'ab_sequencing_folder',1,'','')
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] OFF

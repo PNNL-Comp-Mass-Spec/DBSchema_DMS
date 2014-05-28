@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_EUS_Proposal_Users](
 (
 	[Proposal_ID] ASC,
 	[Person_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -25,19 +25,19 @@ GRANT SELECT ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_EUS_Proposal_Users] TO [DMS_EUS_Admin] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_EUS_Proposal_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Proposals] FOREIGN KEY([Proposal_ID])
-REFERENCES [T_EUS_Proposals] ([Proposal_ID])
-GO
-ALTER TABLE [dbo].[T_EUS_Proposal_Users] CHECK CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Proposals]
-GO
-ALTER TABLE [dbo].[T_EUS_Proposal_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Users] FOREIGN KEY([Person_ID])
-REFERENCES [T_EUS_Users] ([PERSON_ID])
-GO
-ALTER TABLE [dbo].[T_EUS_Proposal_Users] CHECK CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Users]
-GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Of_DMS_Interest]  DEFAULT ('Y') FOR [Of_DMS_Interest]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Active_With_Proposal]  DEFAULT ((1)) FOR [State_ID]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposal_Users] ADD  CONSTRAINT [DF_T_EUS_Proposal_Users_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Proposals] FOREIGN KEY([Proposal_ID])
+REFERENCES [dbo].[T_EUS_Proposals] ([Proposal_ID])
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users] CHECK CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Proposals]
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Users] FOREIGN KEY([Person_ID])
+REFERENCES [dbo].[T_EUS_Users] ([PERSON_ID])
+GO
+ALTER TABLE [dbo].[T_EUS_Proposal_Users] CHECK CONSTRAINT [FK_T_EUS_Proposal_Users_T_EUS_Users]
 GO

@@ -13,15 +13,9 @@ CREATE TABLE [dbo].[T_Machines](
  CONSTRAINT [PK_T_Machines] PRIMARY KEY CLUSTERED 
 (
 	[Machine] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[T_Machines]  WITH CHECK ADD  CONSTRAINT [FK_T_Machines_T_Processor_Tool_Groups] FOREIGN KEY([ProcTool_Group_ID])
-REFERENCES [T_Processor_Tool_Groups] ([Group_ID])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Machines] CHECK CONSTRAINT [FK_T_Machines_T_Processor_Tool_Groups]
 GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Total_CPUs]  DEFAULT ((2)) FOR [Total_CPUs]
 GO
@@ -32,4 +26,10 @@ GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Memory_Available]  DEFAULT ((4000)) FOR [Memory_Available]
 GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_ProcTool_Group_ID]  DEFAULT ((0)) FOR [ProcTool_Group_ID]
+GO
+ALTER TABLE [dbo].[T_Machines]  WITH CHECK ADD  CONSTRAINT [FK_T_Machines_T_Processor_Tool_Groups] FOREIGN KEY([ProcTool_Group_ID])
+REFERENCES [dbo].[T_Processor_Tool_Groups] ([Group_ID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Machines] CHECK CONSTRAINT [FK_T_Machines_T_Processor_Tool_Groups]
 GO

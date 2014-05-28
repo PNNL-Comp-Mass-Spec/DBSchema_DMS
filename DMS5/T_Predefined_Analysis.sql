@@ -41,9 +41,68 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
  CONSTRAINT [PK_T_Predefined_Analysis] PRIMARY KEY CLUSTERED 
 (
 	[AD_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaign_Name]  DEFAULT ('') FOR [AD_campaignNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaignExclCriteria]  DEFAULT ('') FOR [AD_campaignExclCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experiment_Name]  DEFAULT ('') FOR [AD_experimentNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experimentExclCriteria]  DEFAULT ('') FOR [AD_experimentExclCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrument_Name]  DEFAULT ('') FOR [AD_instrumentNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organism_Name]  DEFAULT ('') FOR [AD_organismNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetNameCriteria]  DEFAULT ('') FOR [AD_datasetNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetExclCriteria]  DEFAULT ('') FOR [AD_datasetExclCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetTypeCriteria]  DEFAULT ('') FOR [AD_datasetTypeCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_expCommentCriteria]  DEFAULT ('') FOR [AD_expCommentCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingInclusion]  DEFAULT ('') FOR [AD_labellingInclCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingExclusion]  DEFAULT ('') FOR [AD_labellingExclCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_separationTypeCriteria]  DEFAULT ('') FOR [AD_separationTypeCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organismDBName]  DEFAULT ('default') FOR [AD_organismDBName]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Analysis_Job_AD_proteinCollectionList]  DEFAULT ('na') FOR [AD_proteinCollectionList]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Analysis_Job_AD_proteinOptionsList]  DEFAULT ('na') FOR [AD_proteinOptionsList]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_priority]  DEFAULT ((2)) FOR [AD_priority]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_enabled]  DEFAULT ((0)) FOR [AD_enabled]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_created]  DEFAULT (getdate()) FOR [AD_created]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Trigger_Before_Disposition]  DEFAULT ((0)) FOR [Trigger_Before_Disposition]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Propagation_Mode]  DEFAULT ((0)) FOR [Propagation_Mode]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool] FOREIGN KEY([AD_analysisToolName])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolName])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class] FOREIGN KEY([AD_instrumentClassCriteria])
+REFERENCES [dbo].[T_Instrument_Class] ([IN_class])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms] FOREIGN KEY([AD_organism_ID])
+REFERENCES [dbo].[T_Organisms] ([Organism_ID])
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Predefined_Analysis] ******/
 SET ANSI_NULLS ON
@@ -93,63 +152,4 @@ AS
 			 inserted ON PA.AD_ID = inserted.AD_ID
 	End
 
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool] FOREIGN KEY([AD_analysisToolName])
-REFERENCES [T_Analysis_Tool] ([AJT_toolName])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Analysis_Tool]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class] FOREIGN KEY([AD_instrumentClassCriteria])
-REFERENCES [T_Instrument_Class] ([IN_class])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Instrument_Class]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis]  WITH CHECK ADD  CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms] FOREIGN KEY([AD_organism_ID])
-REFERENCES [T_Organisms] ([Organism_ID])
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaign_Name]  DEFAULT ('') FOR [AD_campaignNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaignExclCriteria]  DEFAULT ('') FOR [AD_campaignExclCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experiment_Name]  DEFAULT ('') FOR [AD_experimentNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experimentExclCriteria]  DEFAULT ('') FOR [AD_experimentExclCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrument_Name]  DEFAULT ('') FOR [AD_instrumentNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organism_Name]  DEFAULT ('') FOR [AD_organismNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetNameCriteria]  DEFAULT ('') FOR [AD_datasetNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetExclCriteria]  DEFAULT ('') FOR [AD_datasetExclCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetTypeCriteria]  DEFAULT ('') FOR [AD_datasetTypeCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_expCommentCriteria]  DEFAULT ('') FOR [AD_expCommentCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingInclusion]  DEFAULT ('') FOR [AD_labellingInclCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingExclusion]  DEFAULT ('') FOR [AD_labellingExclCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_separationTypeCriteria]  DEFAULT ('') FOR [AD_separationTypeCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organismDBName]  DEFAULT ('default') FOR [AD_organismDBName]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Analysis_Job_AD_proteinCollectionList]  DEFAULT ('na') FOR [AD_proteinCollectionList]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Analysis_Job_AD_proteinOptionsList]  DEFAULT ('na') FOR [AD_proteinOptionsList]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_priority]  DEFAULT ((2)) FOR [AD_priority]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_enabled]  DEFAULT ((0)) FOR [AD_enabled]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_created]  DEFAULT (getdate()) FOR [AD_created]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Trigger_Before_Disposition]  DEFAULT ((0)) FOR [Trigger_Before_Disposition]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Propagation_Mode]  DEFAULT ((0)) FOR [Propagation_Mode]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

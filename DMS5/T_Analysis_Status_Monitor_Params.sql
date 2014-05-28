@@ -11,21 +11,21 @@ CREATE TABLE [dbo].[T_Analysis_Status_Monitor_Params](
  CONSTRAINT [PK_T_Analysis_Status_Monitor_Params] PRIMARY KEY CLUSTERED 
 (
 	[ProcessorID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY],
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Analysis_Status_Monitor_Params] UNIQUE NONCLUSTERED 
 (
 	[ProcessorID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Status_Monitor_Params_T_Analysis_Job_Processors] FOREIGN KEY([ProcessorID])
-REFERENCES [T_Analysis_Job_Processors] ([ID])
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] CHECK CONSTRAINT [FK_T_Analysis_Status_Monitor_Params_T_Analysis_Job_Processors]
 GO
 ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] ADD  CONSTRAINT [DF_T_Analysis_Status_Monitor_Params_CheckBoxState]  DEFAULT (0) FOR [CheckBoxState]
 GO
 ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] ADD  CONSTRAINT [DF_T_Analysis_Status_Monitor_Params_UseForStatusCheck]  DEFAULT (1) FOR [UseForStatusCheck]
+GO
+ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Status_Monitor_Params_T_Analysis_Job_Processors] FOREIGN KEY([ProcessorID])
+REFERENCES [dbo].[T_Analysis_Job_Processors] ([ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] CHECK CONSTRAINT [FK_T_Analysis_Status_Monitor_Params_T_Analysis_Job_Processors]
 GO

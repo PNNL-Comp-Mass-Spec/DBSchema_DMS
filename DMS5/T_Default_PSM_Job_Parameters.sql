@@ -18,9 +18,19 @@ CREATE TABLE [dbo].[T_Default_PSM_Job_Parameters](
 	[DynMetOx] ASC,
 	[StatCysAlk] ASC,
 	[DynSTYPhos] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Analysis_Tool] FOREIGN KEY([Tool_Name])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolName])
+GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters] CHECK CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Analysis_Tool]
+GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Default_PSM_Job_Types] FOREIGN KEY([Job_Type_Name])
+REFERENCES [dbo].[T_Default_PSM_Job_Types] ([Job_Type_Name])
+GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters] CHECK CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Default_PSM_Job_Types]
 GO
 /****** Object:  Trigger [dbo].[trig_iu_T_Default_PSM_Job_Parameters] ******/
 SET ANSI_NULLS ON
@@ -79,14 +89,4 @@ AS
 
 
 
-GO
-ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Analysis_Tool] FOREIGN KEY([Tool_Name])
-REFERENCES [T_Analysis_Tool] ([AJT_toolName])
-GO
-ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters] CHECK CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Analysis_Tool]
-GO
-ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Default_PSM_Job_Types] FOREIGN KEY([Job_Type_Name])
-REFERENCES [T_Default_PSM_Job_Types] ([Job_Type_Name])
-GO
-ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters] CHECK CONSTRAINT [FK_T_Default_PSM_Job_Parameters_T_Default_PSM_Job_Types]
 GO

@@ -12,16 +12,9 @@ CREATE TABLE [dbo].[T_Secondary_Sep](
  CONSTRAINT [PK_T_Secondary_Sep] PRIMARY KEY NONCLUSTERED 
 (
 	[SS_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-
-/****** Object:  Index [IX_T_Secondary_Sep] ******/
-CREATE UNIQUE CLUSTERED INDEX [IX_T_Secondary_Sep] ON [dbo].[T_Secondary_Sep] 
-(
-	[SS_name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 GRANT SELECT ON [dbo].[T_Secondary_Sep] TO [DMS_LCMSNet_User] AS [dbo]
 GO
@@ -37,12 +30,21 @@ GRANT SELECT ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Secondary_Sep]  WITH CHECK ADD  CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group] FOREIGN KEY([Sep_Group])
-REFERENCES [T_Separation_Group] ([Sep_Group])
+SET ANSI_PADDING ON
+
 GO
-ALTER TABLE [dbo].[T_Secondary_Sep] CHECK CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group]
+/****** Object:  Index [IX_T_Secondary_Sep] ******/
+CREATE UNIQUE CLUSTERED INDEX [IX_T_Secondary_Sep] ON [dbo].[T_Secondary_Sep]
+(
+	[SS_name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_SS_comment]  DEFAULT ('') FOR [SS_comment]
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_SS_active]  DEFAULT (1) FOR [SS_active]
+GO
+ALTER TABLE [dbo].[T_Secondary_Sep]  WITH CHECK ADD  CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group] FOREIGN KEY([Sep_Group])
+REFERENCES [dbo].[T_Separation_Group] ([Sep_Group])
+GO
+ALTER TABLE [dbo].[T_Secondary_Sep] CHECK CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group]
 GO

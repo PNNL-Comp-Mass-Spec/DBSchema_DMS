@@ -28,96 +28,167 @@ CREATE TABLE [dbo].[T_Experiments](
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY CLUSTERED 
 (
 	[Exp_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
+GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Experiments_CampaignID_ExpID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_CampaignID_ExpID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_CampaignID_ExpID] ON [dbo].[T_Experiments]
 (
 	[EX_campaign_ID] ASC,
 	[Exp_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_Container_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID] ON [dbo].[T_Experiments]
 (
 	[EX_Container_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_EX_campaign_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments]
 (
 	[EX_campaign_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_EX_created] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_created] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_created] ON [dbo].[T_Experiments]
 (
 	[EX_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_Exp_ID_EX_campaign_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_Exp_ID_EX_campaign_ID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Exp_ID_EX_campaign_ID] ON [dbo].[T_Experiments]
 (
 	[Exp_ID] ASC,
 	[EX_campaign_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Experiments_Experiment_Num] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Experiments_Experiment_Num] ON [dbo].[T_Experiments]
 (
 	[Experiment_Num] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Experiments_ExperimentNum_ContainerID_ExpID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExperimentNum_ContainerID_ExpID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExperimentNum_ContainerID_ExpID] ON [dbo].[T_Experiments]
 (
 	[Experiment_Num] ASC,
 	[EX_Container_ID] ASC,
 	[Exp_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Experiments_ExpID_CampaignID_ExpNum] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_CampaignID_ExpNum] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_CampaignID_ExpNum] ON [dbo].[T_Experiments]
 (
 	[Exp_ID] ASC,
 	[EX_campaign_ID] ASC,
 	[Experiment_Num] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_ExpID_ContainerID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_ExpID_ContainerID] ON [dbo].[T_Experiments]
 (
 	[Exp_ID] ASC,
 	[EX_Container_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Experiments_PrepRequestID_include_Ex_Created] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_PrepRequestID_include_Ex_Created] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_PrepRequestID_include_Ex_Created] ON [dbo].[T_Experiments]
 (
 	[EX_sample_prep_request_ID] ASC
 )
-INCLUDE ( [EX_created]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE ( 	[EX_created]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Experiments_Wellplate_Well_Experiment] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_Wellplate_Well_Experiment] ON [dbo].[T_Experiments] 
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Wellplate_Well_Experiment] ON [dbo].[T_Experiments]
 (
 	[EX_wellplate_num] ASC,
 	[EX_well_num] ASC,
 	[Experiment_Num] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Container_ID]  DEFAULT ((1)) FOR [EX_Container_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_Ex_Material_Active]  DEFAULT ('Active') FOR [Ex_Material_Active]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_enzyme_ID]  DEFAULT ((10)) FOR [EX_enzyme_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT ((0)) FOR [EX_sample_prep_request_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT ((0)) FOR [EX_internal_standard_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)) FOR [EX_postdigest_internal_std_ID]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Alkylation]  DEFAULT ('N') FOR [EX_Alkylation]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
+REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Campaign]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Enzymes] FOREIGN KEY([EX_enzyme_ID])
+REFERENCES [dbo].[T_Enzymes] ([Enzyme_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Enzymes]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
+REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
+REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards1]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Material_Containers] FOREIGN KEY([EX_Container_ID])
+REFERENCES [dbo].[T_Material_Containers] ([ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Material_Containers]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
+REFERENCES [dbo].[T_Organisms] ([Organism_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Organisms]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
+REFERENCES [dbo].[T_Sample_Labelling] ([Label])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Labelling]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
+REFERENCES [dbo].[T_Sample_Prep_Request] ([ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
+REFERENCES [dbo].[T_Users] ([U_PRN])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Users]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Experiment_Num],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Experiments] ******/
 SET ANSI_NULLS ON
@@ -239,74 +310,4 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TRIGGER [dbo].[trig_ud_T_Experiments]ON [dbo].[T_Experiments]FOR UPDATE, DELETE AS/********************************************************	Desc: **		Prevents updating or deleting all rows in the table****	Auth:	mem**	Date:	02/08/2011*******************************************************/BEGIN    DECLARE @Count int    SET @Count = @@ROWCOUNT;    IF @Count >= (	SELECT i.rowcnt AS TableRowCount                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id                     WHERE o.name = 'T_Experiments' AND o.type = 'u' AND i.indid < 2                 )    BEGIN        RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Experiments)',16,1)        ROLLBACK TRANSACTION        RETURN;    ENDEND
-GO
-GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
-REFERENCES [T_Campaign] ([Campaign_ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Campaign]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Enzymes] FOREIGN KEY([EX_enzyme_ID])
-REFERENCES [T_Enzymes] ([Enzyme_ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Enzymes]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards] FOREIGN KEY([EX_internal_standard_ID])
-REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Internal_Standards1] FOREIGN KEY([EX_postdigest_internal_std_ID])
-REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Internal_Standards1]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Material_Containers] FOREIGN KEY([EX_Container_ID])
-REFERENCES [T_Material_Containers] ([ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Material_Containers]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Organisms] FOREIGN KEY([EX_organism_ID])
-REFERENCES [T_Organisms] ([Organism_ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Organisms]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Labelling] FOREIGN KEY([EX_Labelling])
-REFERENCES [T_Sample_Labelling] ([Label])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Labelling]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request] FOREIGN KEY([EX_sample_prep_request_ID])
-REFERENCES [T_Sample_Prep_Request] ([ID])
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
-REFERENCES [T_Users] ([U_PRN])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Users]
-GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Experiment_Num],(0))=(0)))
-GO
-ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Container_ID]  DEFAULT ((1)) FOR [EX_Container_ID]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_Ex_Material_Active]  DEFAULT ('Active') FOR [Ex_Material_Active]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_enzyme_ID]  DEFAULT ((10)) FOR [EX_enzyme_ID]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_sample_prep_request_ID]  DEFAULT ((0)) FOR [EX_sample_prep_request_ID]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_internal_standard_ID]  DEFAULT ((0)) FOR [EX_internal_standard_ID]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)) FOR [EX_postdigest_internal_std_ID]
-GO
-ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Alkylation]  DEFAULT ('N') FOR [EX_Alkylation]
 GO

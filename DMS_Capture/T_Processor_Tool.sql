@@ -14,9 +14,22 @@ CREATE TABLE [dbo].[T_Processor_Tool](
 (
 	[Processor_Name] ASC,
 	[Tool_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Priority]  DEFAULT ((3)) FOR [Priority]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Enabled]  DEFAULT ((1)) FOR [Enabled]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_T_Step_Tools] FOREIGN KEY([Tool_Name])
+REFERENCES [dbo].[T_Step_Tools] ([Name])
+GO
+ALTER TABLE [dbo].[T_Processor_Tool] CHECK CONSTRAINT [FK_T_Processor_Tool_T_Step_Tools]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Processor_Tool] ******/
 SET ANSI_NULLS ON
@@ -55,17 +68,4 @@ AS
 
 
 
-GO
-ALTER TABLE [dbo].[T_Processor_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_T_Step_Tools] FOREIGN KEY([Tool_Name])
-REFERENCES [T_Step_Tools] ([Name])
-GO
-ALTER TABLE [dbo].[T_Processor_Tool] CHECK CONSTRAINT [FK_T_Processor_Tool_T_Step_Tools]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Priority]  DEFAULT ((3)) FOR [Priority]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Enabled]  DEFAULT ((1)) FOR [Enabled]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Comment]  DEFAULT ('') FOR [Comment]
-GO
-ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

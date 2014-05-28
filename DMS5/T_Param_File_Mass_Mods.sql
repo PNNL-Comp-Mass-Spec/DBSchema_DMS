@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Param_File_Mass_Mods](
  CONSTRAINT [PK_T_Peptide_Mod_Param_File_List_Ex] PRIMARY KEY CLUSTERED 
 (
 	[Mod_Entry_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -26,28 +26,28 @@ GO
 GRANT UPDATE ON [dbo].[T_Param_File_Mass_Mods] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Mass_Correction_Factors] FOREIGN KEY([Mass_Correction_ID])
-REFERENCES [T_Mass_Correction_Factors] ([Mass_Correction_ID])
+REFERENCES [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Mass_Correction_Factors]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Modification_Types] FOREIGN KEY([Mod_Type_Symbol])
-REFERENCES [T_Modification_Types] ([Mod_Type_Symbol])
+REFERENCES [dbo].[T_Modification_Types] ([Mod_Type_Symbol])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Modification_Types]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Param_Files] FOREIGN KEY([Param_File_ID])
-REFERENCES [T_Param_Files] ([Param_File_ID])
+REFERENCES [dbo].[T_Param_Files] ([Param_File_ID])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Param_Files]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Residues] FOREIGN KEY([Residue_ID])
-REFERENCES [T_Residues] ([Residue_ID])
+REFERENCES [dbo].[T_Residues] ([Residue_ID])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Residues]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Seq_Local_Symbols_List] FOREIGN KEY([Local_Symbol_ID])
-REFERENCES [T_Seq_Local_Symbols_List] ([Local_Symbol_ID])
+REFERENCES [dbo].[T_Seq_Local_Symbols_List] ([Local_Symbol_ID])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Seq_Local_Symbols_List]
 GO

@@ -26,23 +26,46 @@ CREATE TABLE [dbo].[T_Campaign](
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY CLUSTERED 
 (
 	[Campaign_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Campaign_Campaign_Num] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Campaign_Campaign_Num] ON [dbo].[T_Campaign]
 (
 	[Campaign_Num] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Campaign_CM_created] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign] 
+CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign]
 (
 	[CM_created] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]
+GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions] FOREIGN KEY([CM_Data_Release_Restrictions])
+REFERENCES [dbo].[T_Data_Release_Restrictions] ([ID])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions]
+GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Research_Team] FOREIGN KEY([CM_Research_Team])
+REFERENCES [dbo].[T_Research_Team] ([ID])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Research_Team]
+GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Campaign_Num],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Campaign] ******/
 SET ANSI_NULLS ON
@@ -193,26 +216,4 @@ AS
 
 
 
-GO
-GRANT SELECT ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Campaign] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions] FOREIGN KEY([CM_Data_Release_Restrictions])
-REFERENCES [T_Data_Release_Restrictions] ([ID])
-GO
-ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions]
-GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Research_Team] FOREIGN KEY([CM_Research_Team])
-REFERENCES [T_Research_Team] ([ID])
-GO
-ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Research_Team]
-GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Campaign_Num],(1))=(0)))
-GO
-ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace]
-GO
-ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
-GO
-ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]
 GO

@@ -12,22 +12,22 @@ CREATE TABLE [dbo].[T_Research_Team_Membership](
 	[Team_ID] ASC,
 	[Role_ID] ASC,
 	[User_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership]  WITH CHECK ADD  CONSTRAINT [FK_T_Research_Team_Membership_T_Research_Team] FOREIGN KEY([Team_ID])
-REFERENCES [T_Research_Team] ([ID])
+REFERENCES [dbo].[T_Research_Team] ([ID])
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership] CHECK CONSTRAINT [FK_T_Research_Team_Membership_T_Research_Team]
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership]  WITH CHECK ADD  CONSTRAINT [FK_T_Research_Team_Membership_T_Research_Team_Roles] FOREIGN KEY([Role_ID])
-REFERENCES [T_Research_Team_Roles] ([ID])
+REFERENCES [dbo].[T_Research_Team_Roles] ([ID])
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership] CHECK CONSTRAINT [FK_T_Research_Team_Membership_T_Research_Team_Roles]
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership]  WITH CHECK ADD  CONSTRAINT [FK_T_Research_Team_Membership_T_Users] FOREIGN KEY([User_ID])
-REFERENCES [T_Users] ([ID])
+REFERENCES [dbo].[T_Users] ([ID])
 GO
 ALTER TABLE [dbo].[T_Research_Team_Membership] CHECK CONSTRAINT [FK_T_Research_Team_Membership_T_Users]
 GO

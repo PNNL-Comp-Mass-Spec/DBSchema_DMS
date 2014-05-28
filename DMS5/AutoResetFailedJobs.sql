@@ -23,6 +23,7 @@ CREATE Procedure AutoResetFailedJobs
 **						   - Now auto-resetting MSGF+ jobs that report "Not enough free memory"
 **			07/31/2013 mem - Now auto-updating the settings file for MSGF+ jobs that contain the text "None of the spectra are centroided; unable to process with MSGF+" in the comment
 **						   - Now auto-resetting jobs that report "Exception generating OrgDb file"
+**			04/17/2014 mem - Updated check for "None of the spectra are centroided" to be more generic
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ As
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
-		       J.AJ_StateID AS Job_State,
+		   J.AJ_StateID AS Job_State,
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
 		       IsNull(J.AJ_comment, '') AS Comment,
@@ -277,9 +278,11 @@ As
 						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
 							Set @RetryJob = 1
 
-						If @RetryJob = 0 And @StepTool = 'MSGFPlus' And 
-						   (@Comment Like '%MSGF+ skipped % of the spectra because they did not appear centroided%' OR
-						    @Comment Like '%None of the spectra are centroided; unable to process with MSGF+%')
+						If @RetryJob = 0 And @StepTool LIKE 'MSGFPlus%' And 
+						   (@Comment Like '%None of the spectra are centroided; unable to process%' OR
+						    @Comment Like '%skipped % of the spectra because they did not appear centroided%' OR
+						    @Comment Like '%skip % of the spectra because they do not appear centroided%'
+						    )
 						Begin
 							-- MSGF+ job that failed due to too many profile-mode spectra
 							-- Auto-change the SettingsFile to a MSConvert version if possible.
@@ -298,7 +301,7 @@ As
 								Set @RetryJob = 1
 								Set @SettingsFileChanged = 1
 								
-								If @Comment Like '%None of the spectra are centroided; unable to process with MSGF+%'
+								If @Comment Like '%None of the spectra are centroided; unable to process%'
 									Set @SkipInfo = 'None of the spectra are centroided'
 								Else
 								Begin
@@ -306,7 +309,15 @@ As
 									If @MatchIndex > 0
 										Set @SkipInfo = SubString(@Comment, @MatchIndex, Len(@Comment))
 									Else
-										Set @SkipInfo = 'MSGF+ skipped ??% of the spectra because they did not appear centroided'
+									Begin
+										
+										Set @MatchIndex = CharIndex('MSGF+ will likely skip', @Comment)
+										If @MatchIndex > 0
+											Set @SkipInfo = SubString(@Comment, @MatchIndex, Len(@Comment))
+										Else
+											Set @SkipInfo = 'MSGF+ skipped ??% of the spectra because they did not appear centroided'
+											
+									End
 								End
 							End
 						End

@@ -4,6 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Sample_Prep_Request](
+	[ID] [int] IDENTITY(1000,1) NOT NULL,
+	[Request_Type] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Request_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requester_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Reason] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -23,6 +25,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[User_Proposal_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Replicates_of_Samples] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Technical_Replicates] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Instrument_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_Analysis_Specifications] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -30,7 +33,6 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Priority] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[State] [tinyint] NOT NULL,
-	[ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[StateChanged] [datetime] NOT NULL,
 	[UseSingleLCColumn] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -61,23 +63,83 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Sample_Prep_Request] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_Prep_Request]
 (
 	[Request_Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Request_Type]  DEFAULT ('Default') FOR [Request_Type]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Dataset_Type]  DEFAULT ('Normal') FOR [Dataset_Type]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Priority]  DEFAULT ('Normal') FOR [Priority]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()) FOR [Created]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT ((1)) FOR [State]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_StateChanged]  DEFAULT (getdate()) FOR [StateChanged]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_UseSingleLCColumn]  DEFAULT ('No') FOR [UseSingleLCColumn]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT ((0)) FOR [Internal_standard_ID]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT ((0)) FOR [Postdigest_internal_std_ID]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Factility]  DEFAULT ('EMSL') FOR [Facility]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Number_Of_Biomaterial_Reps_Received]  DEFAULT ((0)) FOR [Number_Of_Biomaterial_Reps_Received]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals] FOREIGN KEY([EUS_Proposal_ID])
+REFERENCES [dbo].[T_EUS_Proposals] ([Proposal_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
+REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards1] FOREIGN KEY([Postdigest_internal_std_ID])
+REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards1]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name] FOREIGN KEY([State])
+REFERENCES [dbo].[T_Sample_Prep_Request_State_Name] ([State_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_Type_Name] FOREIGN KEY([Request_Type])
+REFERENCES [dbo].[T_Sample_Prep_Request_Type_Name] ([Request_Type])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_Type_Name]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Request_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Delete
 /****************************************************
@@ -111,7 +173,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Insert
 /****************************************************
@@ -147,7 +208,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
 /****************************************************
@@ -177,57 +237,4 @@ AS
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
 
-
-GO
-GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals] FOREIGN KEY([EUS_Proposal_ID])
-REFERENCES [T_EUS_Proposals] ([Proposal_ID])
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
-REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards1] FOREIGN KEY([Postdigest_internal_std_ID])
-REFERENCES [T_Internal_Standards] ([Internal_Std_Mix_ID])
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards1]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name] FOREIGN KEY([State])
-REFERENCES [T_Sample_Prep_Request_State_Name] ([State_ID])
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_State_Name]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Request_Name],(1))=(0)))
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Dataset_Type]  DEFAULT ('Normal') FOR [Dataset_Type]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Priority]  DEFAULT ('Normal') FOR [Priority]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Created]  DEFAULT (getdate()) FOR [Created]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State]  DEFAULT (1) FOR [State]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_StateChanged]  DEFAULT (getdate()) FOR [StateChanged]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_UseSingleLCColumn]  DEFAULT ('No') FOR [UseSingleLCColumn]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT (0) FOR [Internal_standard_ID]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT (0) FOR [Postdigest_internal_std_ID]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Factility]  DEFAULT ('EMSL') FOR [Facility]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Number_Of_Biomaterial_Reps_Received]  DEFAULT ((0)) FOR [Number_Of_Biomaterial_Reps_Received]
 GO

@@ -16,14 +16,14 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Items](
 	[ID] ASC,
 	[Item_ID] ASC,
 	[Item_Type] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request_Items] ADD  DEFAULT (getdate()) FOR [Item_Added]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Items]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Items_T_Sample_Prep_Request] FOREIGN KEY([ID])
-REFERENCES [T_Sample_Prep_Request] ([ID])
+REFERENCES [dbo].[T_Sample_Prep_Request] ([ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Items] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_Items_T_Sample_Prep_Request]
-GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request_Items] ADD  DEFAULT (getdate()) FOR [Item_Added]
 GO

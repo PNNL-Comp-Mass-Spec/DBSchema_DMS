@@ -1,4 +1,8 @@
 /****** Object:  StoredProcedure [D3L243].[ValidateAnalysisJobResultsFolder] ******/
+SET ANSI_NULLS OFF
+GO
+SET QUOTED_IDENTIFIER OFF
+GO
 CREATE PROCEDURE [D3L243].[ValidateAnalysisJobResultsFolder]
 	@Job [int],
 	@JobCompleteHoldoffMinutes [int],

@@ -27,68 +27,105 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
  CONSTRAINT [PK_T_Dataset_Archive] PRIMARY KEY CLUSTERED 
 (
 	[AS_Dataset_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
 /****** Object:  Index [IX_Dataset_Archive_DatasetID_StateID] ******/
-CREATE NONCLUSTERED INDEX [IX_Dataset_Archive_DatasetID_StateID] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_Dataset_Archive_DatasetID_StateID] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_Dataset_ID] ASC,
 	[AS_state_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_Last_Successful_Archive] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_Last_Successful_Archive] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_Last_Successful_Archive] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_Last_Successful_Archive] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_StageMD5_Required_include_DatasetID_PurgeHoldoffDate] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StageMD5_Required_include_DatasetID_PurgeHoldoffDate] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StageMD5_Required_include_DatasetID_PurgeHoldoffDate] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_StageMD5_Required] ASC
 )
-INCLUDE ( [AS_Dataset_ID],
-[AS_purge_holdoff_date]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE ( 	[AS_Dataset_ID],
+	[AS_purge_holdoff_date]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_State] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_State] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_state_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_StateID_UpdateStateID_Include_DatasetID_PurgeHoldoff_StageMD5Required] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StateID_UpdateStateID_Include_DatasetID_PurgeHoldoff_StageMD5Required] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StateID_UpdateStateID_Include_DatasetID_PurgeHoldoff_StageMD5Required] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_state_ID] ASC,
 	[AS_update_state_ID] ASC
 )
-INCLUDE ( [AS_Dataset_ID],
-[AS_purge_holdoff_date],
-[AS_StageMD5_Required]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE ( 	[AS_Dataset_ID],
+	[AS_purge_holdoff_date],
+	[AS_StageMD5_Required]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_StoragePathID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StoragePathID] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_StoragePathID] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_storage_path_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ON [dbo].[T_Dataset_Archive] 
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_Archive_UpdateStateID_DatasetID_StateID_Include_PurgeHoldoffDate] ON [dbo].[T_Dataset_Archive]
 (
 	[AS_update_state_ID] ASC,
 	[AS_Dataset_ID] ASC,
 	[AS_state_ID] ASC
 )
-INCLUDE ( [AS_purge_holdoff_date]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE ( 	[AS_purge_holdoff_date]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()) FOR [AS_state_Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_StageMD5_Required]  DEFAULT ((0)) FOR [AS_StageMD5_Required]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_QC_Data_Purged]  DEFAULT ((0)) FOR [QC_Data_Purged]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Policy]  DEFAULT ((0)) FOR [Purge_Policy]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Priority]  DEFAULT ((3)) FOR [Purge_Priority]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_MyEMSLState]  DEFAULT ((0)) FOR [MyEMSLState]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
+REFERENCES [dbo].[T_Archive_Path] ([AP_path_ID])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
+REFERENCES [dbo].[T_Archive_Update_State_Name] ([AUS_stateID])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset] FOREIGN KEY([AS_Dataset_ID])
+REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName] FOREIGN KEY([AS_state_ID])
+REFERENCES [dbo].[T_DatasetArchiveStateName] ([DASN_StateID])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState] FOREIGN KEY([MyEMSLState])
+REFERENCES [dbo].[T_MyEMSLState] ([MyEMSLState])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_YesNo] FOREIGN KEY([AS_instrument_data_purged])
+REFERENCES [dbo].[T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_YesNo]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Dataset_Archive] ******/
 SET ANSI_NULLS ON
@@ -285,48 +322,4 @@ AS
 	End
 
 
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path] FOREIGN KEY([AS_storage_path_ID])
-REFERENCES [T_Archive_Path] ([AP_path_ID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
-REFERENCES [T_Archive_Update_State_Name] ([AUS_stateID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset] FOREIGN KEY([AS_Dataset_ID])
-REFERENCES [T_Dataset] ([Dataset_ID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName] FOREIGN KEY([AS_state_ID])
-REFERENCES [T_DatasetArchiveStateName] ([DASN_StateID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState] FOREIGN KEY([MyEMSLState])
-REFERENCES [T_MyEMSLState] ([MyEMSLState])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_YesNo] FOREIGN KEY([AS_instrument_data_purged])
-REFERENCES [T_YesNo] ([Flag])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_YesNo]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_state_Last_Affected]  DEFAULT (getdate()) FOR [AS_state_Last_Affected]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_instrument_data_purged]  DEFAULT ((0)) FOR [AS_instrument_data_purged]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_AS_StageMD5_Required]  DEFAULT ((0)) FOR [AS_StageMD5_Required]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_QC_Data_Purged]  DEFAULT ((0)) FOR [QC_Data_Purged]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Policy]  DEFAULT ((0)) FOR [Purge_Policy]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_Purge_Priority]  DEFAULT ((3)) FOR [Purge_Priority]
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] ADD  CONSTRAINT [DF_T_Dataset_Archive_MyEMSLState]  DEFAULT ((0)) FOR [MyEMSLState]
 GO

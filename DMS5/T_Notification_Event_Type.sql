@@ -12,14 +12,14 @@ CREATE TABLE [dbo].[T_Notification_Event_Type](
  CONSTRAINT [PK_T_Notification_Event_Type] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Notification_Event_Type] ADD  CONSTRAINT [DF_T_Notification_Event_Type_Visible]  DEFAULT ('Y') FOR [Visible]
+GO
 ALTER TABLE [dbo].[T_Notification_Event_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Notification_Event_Type_T_Notification_Entity_Type] FOREIGN KEY([Target_Entity_Type])
-REFERENCES [T_Notification_Entity_Type] ([ID])
+REFERENCES [dbo].[T_Notification_Entity_Type] ([ID])
 GO
 ALTER TABLE [dbo].[T_Notification_Event_Type] CHECK CONSTRAINT [FK_T_Notification_Event_Type_T_Notification_Entity_Type]
-GO
-ALTER TABLE [dbo].[T_Notification_Event_Type] ADD  CONSTRAINT [DF_T_Notification_Event_Type_Visible]  DEFAULT ('Y') FOR [Visible]
 GO

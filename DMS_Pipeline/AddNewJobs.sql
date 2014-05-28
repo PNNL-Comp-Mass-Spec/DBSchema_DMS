@@ -63,6 +63,7 @@ CREATE PROCEDURE AddNewJobs
 **			01/09/2012 mem - Now populating Owner in T_Jobs
 **			01/12/2012 mem - Now only auto-adding jobs for scripts with Backfill_to_DMS = 0
 **			01/19/2012 mem - Now populating DataPkgID in T_Jobs
+**			04/28/2014 mem - Bumped up @MaxJobsToAddResetOrResume from 1 million to 1 billion
 **    
 *****************************************************/
 (
@@ -114,7 +115,7 @@ As
 		goto Done
 
 	If @MaxJobsToProcess <= 0
-		Set @MaxJobsToAddResetOrResume = 1000000
+		Set @MaxJobsToAddResetOrResume = 1000000000
 	Else
 		Set @MaxJobsToAddResetOrResume = @MaxJobsToProcess
 

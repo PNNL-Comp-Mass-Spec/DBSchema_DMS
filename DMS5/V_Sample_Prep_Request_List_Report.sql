@@ -57,7 +57,7 @@ FROM    T_Sample_Prep_Request AS SPR
                         ) AS TA ON SPR.ID = TA.[Entity ID]
         LEFT OUTER JOIN T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
         LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
-WHERE (SPR.State > 0)
+WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
 GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Priority, TA.Attachments,
          SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
          QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,

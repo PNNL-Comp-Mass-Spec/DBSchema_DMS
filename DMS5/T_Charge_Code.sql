@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-SET ARITHABORT ON
-GO
 CREATE TABLE [dbo].[T_Charge_Code](
 	[Charge_Code] [varchar](6) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Resp_PRN] [varchar](5) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -32,18 +30,19 @@ CREATE TABLE [dbo].[T_Charge_Code](
  CONSTRAINT [PK_T_Charge_Code] PRIMARY KEY CLUSTERED 
 (
 	[Charge_Code] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Charge_Code_Resp_PRN] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_Resp_PRN] ON [dbo].[T_Charge_Code] 
+CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_Resp_PRN] ON [dbo].[T_Charge_Code]
 (
 	[Resp_PRN] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-
 SET ARITHABORT ON
 SET CONCAT_NULL_YIELDS_NULL ON
 SET QUOTED_IDENTIFIER ON
@@ -51,11 +50,33 @@ SET ANSI_NULLS ON
 SET ANSI_PADDING ON
 SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
+
+GO
 /****** Object:  Index [IX_T_Charge_Code_SortKey] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code] 
+CREATE NONCLUSTERED INDEX [IX_T_Charge_Code_SortKey] ON [dbo].[T_Charge_Code]
 (
 	[SortKey] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Deactivated]  DEFAULT ('N') FOR [Deactivated]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Auto_Defined]  DEFAULT ((0)) FOR [Auto_Defined]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Charge_Code_State]  DEFAULT ((1)) FOR [Charge_Code_State]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Activation_State]  DEFAULT ((0)) FOR [Activation_State]
+GO
+ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State] FOREIGN KEY([Activation_State])
+REFERENCES [dbo].[T_Charge_Code_Activation_State] ([Activation_State])
+GO
+ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State]
+GO
+ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State] FOREIGN KEY([Charge_Code_State])
+REFERENCES [dbo].[T_Charge_Code_State] ([Charge_Code_State])
+GO
+ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Charge_Code] ******/
 SET ANSI_NULLS ON
@@ -111,24 +132,4 @@ AS
 
 
 
-GO
-ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State] FOREIGN KEY([Activation_State])
-REFERENCES [T_Charge_Code_Activation_State] ([Activation_State])
-GO
-ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_Activation_State]
-GO
-ALTER TABLE [dbo].[T_Charge_Code]  WITH CHECK ADD  CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State] FOREIGN KEY([Charge_Code_State])
-REFERENCES [T_Charge_Code_State] ([Charge_Code_State])
-GO
-ALTER TABLE [dbo].[T_Charge_Code] CHECK CONSTRAINT [FK_T_Charge_Code_T_Charge_Code_State]
-GO
-ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Deactivated]  DEFAULT ('N') FOR [Deactivated]
-GO
-ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Auto_Defined]  DEFAULT ((0)) FOR [Auto_Defined]
-GO
-ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Charge_Code_State]  DEFAULT ((1)) FOR [Charge_Code_State]
-GO
-ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
-GO
-ALTER TABLE [dbo].[T_Charge_Code] ADD  CONSTRAINT [DF_T_Charge_Code_Activation_State]  DEFAULT ((0)) FOR [Activation_State]
 GO

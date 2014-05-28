@@ -20,9 +20,32 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Created]  DEFAULT (getdate()) FOR [Created]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Locking]  DEFAULT ('Yes') FOR [Locked]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Batch_Priority]  DEFAULT ('Normal') FOR [Requested_Batch_Priority]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Instrument]  DEFAULT ('na') FOR [Requested_Instrument]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
+REFERENCES [dbo].[T_Users] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] CHECK CONSTRAINT [FK_T_Requested_Run_Batches_T_Users]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Requested_Run_Batches] ******/
 SET ANSI_NULLS ON
@@ -67,27 +90,4 @@ AS
 	End
 
 
-GO
-GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
-REFERENCES [T_Users] ([ID])
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches] CHECK CONSTRAINT [FK_T_Requested_Run_Batches_T_Users]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Created]  DEFAULT (getdate()) FOR [Created]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Locking]  DEFAULT ('Yes') FOR [Locked]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Batch_Priority]  DEFAULT ('Normal') FOR [Requested_Batch_Priority]
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Instrument]  DEFAULT ('na') FOR [Requested_Instrument]
 GO

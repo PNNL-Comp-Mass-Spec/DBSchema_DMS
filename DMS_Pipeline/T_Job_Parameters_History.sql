@@ -12,16 +12,19 @@ CREATE TABLE [dbo].[T_Job_Parameters_History](
 (
 	[Job] ASC,
 	[Saved] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
-
 /****** Object:  Index [IX_T_Job_Parameters_History_MostRecentEntry] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Parameters_History_MostRecentEntry] ON [dbo].[T_Job_Parameters_History] 
+CREATE NONCLUSTERED INDEX [IX_T_Job_Parameters_History_MostRecentEntry] ON [dbo].[T_Job_Parameters_History]
 (
 	[Most_Recent_Entry] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Job_Parameters_History] ADD  CONSTRAINT [DF_T_Job_Parameters_History_Saved]  DEFAULT (getdate()) FOR [Saved]
+GO
+ALTER TABLE [dbo].[T_Job_Parameters_History] ADD  CONSTRAINT [DF_T_Job_Parameters_History_Most_Recent_Entry]  DEFAULT ((0)) FOR [Most_Recent_Entry]
 GO
 /****** Object:  Trigger [dbo].[trig_d_T_Job_Parameters_History] ******/
 SET ANSI_NULLS ON
@@ -96,8 +99,4 @@ AS
 
 	End
 
-GO
-ALTER TABLE [dbo].[T_Job_Parameters_History] ADD  CONSTRAINT [DF_T_Job_Parameters_History_Saved]  DEFAULT (getdate()) FOR [Saved]
-GO
-ALTER TABLE [dbo].[T_Job_Parameters_History] ADD  CONSTRAINT [DF_T_Job_Parameters_History_Most_Recent_Entry]  DEFAULT ((0)) FOR [Most_Recent_Entry]
 GO

@@ -26,16 +26,9 @@ CREATE TABLE [dbo].[T_Organisms_Change_History](
  CONSTRAINT [PK_T_Organisms_Change_History] PRIMARY KEY CLUSTERED 
 (
 	[Event_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-
-/****** Object:  Index [IX_T_Organisms_Change_History] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Organisms_Change_History] ON [dbo].[T_Organisms_Change_History] 
-(
-	[Organism_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 GRANT INSERT ON [dbo].[T_Organisms_Change_History] TO [DMS_Limited_Organism_Write] AS [dbo]
 GO
@@ -44,6 +37,12 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[T_Organisms_Change_History] TO [DMS_Limited_Organism_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Organisms_Change_History] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
+GO
+/****** Object:  Index [IX_T_Organisms_Change_History] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Organisms_Change_History] ON [dbo].[T_Organisms_Change_History]
+(
+	[Organism_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Organisms_Change_History] ADD  CONSTRAINT [DF_T_Organisms_Change_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

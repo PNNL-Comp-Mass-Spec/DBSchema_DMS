@@ -20,6 +20,7 @@ CREATE Procedure dbo.UpdateAnalysisJobStateNameCached
 **	Date:	12/12/2007 mem - Initial version (Ticket #585)
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			04/03/2014 mem - Now showing @message when @infoOnly > 0
+**			05/27/2014 mem - Now using a temporary table to track the jobs that need to be updated (due to deadlock issues)
 **
 *****************************************************/
 (
@@ -49,19 +50,34 @@ As
 	If @JobFinish = 0
 		Set @JobFinish = 2147483647
 
+	CREATE TABLE #Tmp_JobsToUpdate (
+		Job Int Not Null
+	)
+	
 	---------------------------------------------------
-	-- Update the specified jobs
+	-- Find jobs that need to be updated
 	---------------------------------------------------
+	--
+	INSERT INTO #Tmp_JobsToUpdate (Job)
+	SELECT AJ.AJ_JobID
+	FROM T_Analysis_Job AJ INNER JOIN
+			V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+	WHERE (AJ.AJ_jobID >= @JobStart) AND 
+			(AJ.AJ_jobID <= @JobFinish) AND
+			IsNull(AJ_StateNameCached, '') <> IsNull(AJDAS.Job_State, '')
+
 	If @infoOnly <> 0
 	Begin
+		---------------------------------------------------
+		-- Preview the jobs
+		---------------------------------------------------
+		--
 		SELECT	AJ.AJ_jobID AS Job,
 				AJ.AJ_StateNameCached AS State_Name_Cached,
 				AJDAS.Job_State AS New_State_Name_Cached
-		FROM dbo.T_Analysis_Job AJ INNER JOIN 
-		     dbo.V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
-		WHERE (AJ.AJ_jobID >= @JobStart) AND
-			  (AJ.AJ_jobID <= @JobFinish) AND
-			  ISNULL(AJ.AJ_StateNameCached, '') <> IsNull(AJDAS.Job_State, '')
+		FROM T_Analysis_Job AJ INNER JOIN 
+		     V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		WHERE AJ.AJ_jobID IN (Select Job From #Tmp_JobsToUpdate)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -74,22 +90,29 @@ As
 	End
 	Else
 	Begin
-		UPDATE T_Analysis_Job
-		SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
-		FROM dbo.T_Analysis_Job AJ INNER JOIN
-			 dbo.V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
-		WHERE (AJ.AJ_jobID >= @JobStart) AND 
-			  (AJ.AJ_jobID <= @JobFinish) AND
-			  IsNull(AJ_StateNameCached, '') <> IsNull(AJDAS.Job_State, '')
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		Set @JobCount = @myRowCount
+		If Exists (Select * From #Tmp_JobsToUpdate)
+		Begin
+			---------------------------------------------------
+			-- Update the jobs
+			---------------------------------------------------
+			--
+			UPDATE T_Analysis_Job
+			SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+			FROM T_Analysis_Job AJ INNER JOIN
+				V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+			WHERE AJ.AJ_jobID IN (Select Job From #Tmp_JobsToUpdate)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @JobCount = 0
-			Set @message = ''
-		else
-			Set @message = ' Updated the cached job state name for ' + Convert(varchar(12), @JobCount) + ' jobs'
+			Set @JobCount = @myRowCount
+
+			If @JobCount = 0
+				Set @message = ''
+			Else
+				Set @message = ' Updated the cached job state name for ' + Convert(varchar(12), @JobCount) + ' jobs'
+		End
+		
 	End
 
 	

@@ -24,6 +24,7 @@ CREATE Procedure dbo.ValidateDatasetType
 **			10/08/2012 mem - No longer overriding dataset type MALDI-HMS
 **			10/19/2012 mem - Improved support for IMS-HMS-HMSn
 **			02/28/2013 mem - No longer overriding dataset type C60-SIMS-HMS
+**			05/08/2014 mem - No longer updated the dataset comment with "Auto-switched dataset type from HMS-HMSn to HMS-HCD-HMSn"
 **    
 *****************************************************/
 (
@@ -536,10 +537,14 @@ FixDSType:
 	
 		If @NewDSTypeID <> 0
 		Begin
-
-			Set @message = 'Auto-switched dataset type from ' + @CurrentDatasetType + ' to ' + @NewDatasetType + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
-
-			Exec @DSComment = AppendToText @DSComment, @message, @AddDuplicateText = 0, @Delimiter = '; '
+			-- Append a message to the dataset comment
+			-- However, do not append "Auto-switched dataset type from HMS-HMSn to HMS-HCD-HMSn" since this happens for nearly every Q-Exactive dataset
+			--
+			If Not (@CurrentDatasetType = 'HMS-HMSn' And @NewDatasetType = 'HMS-HCD-HMSn')
+			Begin
+				Set @message = 'Auto-switched dataset type from ' + @CurrentDatasetType + ' to ' + @NewDatasetType + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
+				Exec @DSComment = AppendToText @DSComment, @message, @AddDuplicateText = 0, @Delimiter = '; '
+			End
 			
 			If @infoOnly = 0
 			Begin
@@ -569,7 +574,7 @@ FixDSType:
 		End
 	End
 
-
+ 
 Done:
 
 	If @InfoOnly <> 0

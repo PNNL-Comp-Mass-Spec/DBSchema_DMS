@@ -1,7 +1,8 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 33 ******/
+/****** RowCount: 39 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
+INSERT INTO [T_DatasetTypeName] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (27,'DataFiles','DMS Pipeline Data or Data Packages',0)
 INSERT INTO [T_DatasetTypeName] VALUES (18,'GC-MS','Full scan GC-MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (19,'GC-SIM','SIM scan GC-MS',1)
@@ -25,6 +26,7 @@ INSERT INTO [T_DatasetTypeName] VALUES (6,'IMS-HMS','Ion mobility sep then high 
 INSERT INTO [T_DatasetTypeName] VALUES (30,'IMS-HMS-HMSn','Ion mobility sep with high res MS, fragmentation of all ions with high res MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (7,'IMS-HMS-MSn','Ion mobility sep, fragmentation of all ions, high res MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (26,'MALDI-HMS','MALDI MS',1)
+INSERT INTO [T_DatasetTypeName] VALUES (38,'MP_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (9,'MRM','Multiple reaction monitoring-triple quad',1)
 INSERT INTO [T_DatasetTypeName] VALUES (4,'MS','Low resolution MS spectra only',1)
 INSERT INTO [T_DatasetTypeName] VALUES (10,'MS-CID/ETD-MSn','Low res MS, with low res, alternating CID and ETD MSn',1)
@@ -32,5 +34,9 @@ INSERT INTO [T_DatasetTypeName] VALUES (8,'MS-ETD-MSn','Low res MS with low res 
 INSERT INTO [T_DatasetTypeName] VALUES (28,'MS-HCD-CID-MSn','Low res MS with low res, alternating CID and HCD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (29,'MS-HCD-MSn','Low res MS with low res HCD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (2,'MS-MSn','Low res MS with low res CID MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (37,'PE_Seq','DNA Sequencing Reads',1)
+INSERT INTO [T_DatasetTypeName] VALUES (33,'RNA_Seq','DNA Sequencing Reads',1)
+INSERT INTO [T_DatasetTypeName] VALUES (34,'smRNA_Seq','DNA Sequencing Reads',1)
+INSERT INTO [T_DatasetTypeName] VALUES (36,'Target_DNA_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (100,'Tracking','Instrument usage tracking only - no capture',1)
 INSERT INTO [T_DatasetTypeName] VALUES (31,'UV','UV detector',1)

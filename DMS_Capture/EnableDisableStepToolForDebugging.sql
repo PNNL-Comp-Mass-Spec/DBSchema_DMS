@@ -13,6 +13,7 @@ CREATE PROCEDURE EnableDisableStepToolForDebugging
 **
 **	Auth:	mem
 **	Date:	10/29/2013 mem - Initial version
+**			04/30/2014 mem - Now validating @Tool
 **
 *****************************************************/
 (
@@ -34,6 +35,12 @@ As
 	---------------------------------------------------
 	Declare @NewValueForPubs tinyint
 
+	If Not Exists (SELECT * FROM T_Processor_Tool WHERE Tool_Name = @Tool)
+	Begin
+		Print 'Tool not found: "' + @Tool + '"; cannot continue'
+		Goto Done
+	End
+	
 	If IsNull(@DebugMode, 0) = 0
 	Begin
 		-- Disable debugging

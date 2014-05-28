@@ -18,28 +18,28 @@ CREATE TABLE [dbo].[T_Material_Locations](
  CONSTRAINT [PK_T_Material_Locations] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Material_Locations] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Material_Locations] ON [dbo].[T_Material_Locations] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Material_Locations] ON [dbo].[T_Material_Locations]
 (
 	[Tag] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Material_Locations_ID_include_Tag] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Material_Locations_ID_include_Tag] ON [dbo].[T_Material_Locations] 
+CREATE NONCLUSTERED INDEX [IX_T_Material_Locations_ID_include_Tag] ON [dbo].[T_Material_Locations]
 (
 	[ID] ASC
 )
-INCLUDE ( [Tag]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Tag],(0))=(0)))
-GO
-ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace]
+INCLUDE ( 	[Tag]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Shelf]  DEFAULT ('na') FOR [Shelf]
 GO
@@ -52,4 +52,8 @@ GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Status]  DEFAULT ('Active') FOR [Status]
 GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Container_Limit]  DEFAULT ((1)) FOR [Container_Limit]
+GO
+ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Tag],(0))=(0)))
+GO
+ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace]
 GO

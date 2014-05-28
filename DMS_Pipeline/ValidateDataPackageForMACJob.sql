@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 **			02/18/2013 mem - Fix misspelled word
 **			08/13/2013 mem - Now validating required analysis tools for the MAC_iTRAQ script
 **			08/14/2013 mem - Now validating datasets and jobs for script Global_Label-Free_AMT_Tag
+**			04/20/2014 mem - Now mentioning ReporterTol param file when MASIC counts are not correct for an Isobaric_Labeling or MAC_iTRAQ script
 **
 *****************************************************/
 (
@@ -149,7 +150,7 @@ AS
 				SET @errMsg = @errMsg + 'There must be exactly one Decon2LS_V2 job per dataset; '
 			
 			IF @MasicCountNotOne > 0      
-				SET @errMsg = @errMsg + 'There must be exactly one MASIC_Finnigan job per dataset; '
+				SET @errMsg = @errMsg + 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name); '
 		END 
 
 		IF @scriptName IN ('Global_Label-Free_AMT_Tag')

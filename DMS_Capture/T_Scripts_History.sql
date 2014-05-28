@@ -14,8 +14,8 @@ CREATE TABLE [dbo].[T_Scripts_History](
  CONSTRAINT [PK_T_Scripts_History] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 GRANT DELETE ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]
@@ -26,12 +26,12 @@ GRANT SELECT ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Scripts_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Scripts_History_T_Scripts] FOREIGN KEY([Script])
-REFERENCES [T_Scripts] ([Script])
-GO
-ALTER TABLE [dbo].[T_Scripts_History] CHECK CONSTRAINT [FK_T_Scripts_History_T_Scripts]
-GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
+GO
+ALTER TABLE [dbo].[T_Scripts_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Scripts_History_T_Scripts] FOREIGN KEY([Script])
+REFERENCES [dbo].[T_Scripts] ([Script])
+GO
+ALTER TABLE [dbo].[T_Scripts_History] CHECK CONSTRAINT [FK_T_Scripts_History_T_Scripts]
 GO

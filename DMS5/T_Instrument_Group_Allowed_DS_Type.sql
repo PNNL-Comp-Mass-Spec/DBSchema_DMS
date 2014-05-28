@@ -11,21 +11,21 @@ CREATE TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type](
 (
 	[IN_Group] ASC,
 	[Dataset_Type] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Comment]  DEFAULT ('') FOR [Comment]
+GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type] FOREIGN KEY([Dataset_Type])
-REFERENCES [T_DatasetTypeName] ([DST_name])
+REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] CHECK CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_Instrument_Group_IN_Group] FOREIGN KEY([IN_Group])
-REFERENCES [T_Instrument_Group] ([IN_Group])
+REFERENCES [dbo].[T_Instrument_Group] ([IN_Group])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] CHECK CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_Instrument_Group_IN_Group]
-GO
-ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Comment]  DEFAULT ('') FOR [Comment]
 GO

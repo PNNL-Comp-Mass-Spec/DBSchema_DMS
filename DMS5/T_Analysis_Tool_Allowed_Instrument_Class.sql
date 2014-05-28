@@ -11,21 +11,21 @@ CREATE TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class](
 (
 	[Analysis_Tool_ID] ASC,
 	[Instrument_Class] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Instrument_Class_Comment]  DEFAULT ('') FOR [Comment]
+GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Instrument_Class_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool_ID])
-REFERENCES [T_Analysis_Tool] ([AJT_toolID])
+REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolID])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Instrument_Class_T_Analysis_Tool]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Instrument_Class_T_Instrument_Class] FOREIGN KEY([Instrument_Class])
-REFERENCES [T_Instrument_Class] ([IN_class])
+REFERENCES [dbo].[T_Instrument_Class] ([IN_class])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Instrument_Class_T_Instrument_Class]
-GO
-ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Instrument_Class_Comment]  DEFAULT ('') FOR [Comment]
 GO

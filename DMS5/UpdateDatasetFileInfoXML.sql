@@ -31,6 +31,10 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **				<StartTime>2002-07-17 05:54:34 PM</StartTime>
 **				<EndTime>2002-07-17 08:24:38 PM</EndTime>
 **				<FileSizeBytes>10221594</FileSizeBytes>
+**    			<ProfileScanCountMS1>1062</ProfileScanCountMS1>
+**    			<ProfileScanCountMS2>0</ProfileScanCountMS2>
+**    			<CentroidScanCountMS1>0</CentroidScanCountMS1>
+**    			<CentroidScanCountMS2>3098</CentroidScanCountMS2>
 **			</AcquisitionInfo>
 **			<TICInfo>
 **				<TIC_Max_MS>3.0909E+08</TIC_Max_MS>
@@ -58,6 +62,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			09/09/2010 mem - Fixed bug extracting StartTime and EndTime values
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			08/21/2012 mem - Now including DatasetID in the error message
+**			04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
 **    
 *****************************************************/
 (
@@ -106,7 +111,11 @@ As
 		TIC_Median_MS real NULL,
 		TIC_Median_MSn real NULL,
 		BPI_Median_MS real NULL,
-		BPI_Median_MSn real NULL
+		BPI_Median_MSn real NULL,
+		ProfileScanCount_MS int NULL,
+		ProfileScanCount_MSn int NULL,
+		CentroidScanCount_MS int NULL,
+		CentroidScanCount_MSn int NULL
 	)
 
 
@@ -172,7 +181,11 @@ As
 		TIC_Median_MS,
 		TIC_Median_MSn,
 		BPI_Median_MS,
-		BPI_Median_MSn
+		BPI_Median_MSn,
+		ProfileScanCount_MS,
+		ProfileScanCount_MSn,
+		CentroidScanCount_MS,
+		CentroidScanCount_MSn
 	)
 	SELECT	@DatasetID AS DatasetID,
 			@DatasetName AS Dataset,
@@ -189,7 +202,11 @@ As
 			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MS)[1]', 'real') AS TIC_Median_MS,
 			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MSn)[1]', 'real') AS TIC_Median_MSn,
 			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MS)[1]', 'real') AS BPI_Median_MS,
-			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn       
+			@DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn,
+			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
+			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
+			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
+			@DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -312,9 +329,7 @@ As
 		
 		Goto Done
 	End
-	
-	
-	
+		
 	-----------------------------------------------
 	-- Validate/fix the Acq_Time entries
 	-----------------------------------------------
@@ -378,14 +393,18 @@ As
 					TIC_Max_MS, TIC_Max_MSn,
 					BPI_Max_MS, BPI_Max_MSn,
 					TIC_Median_MS, TIC_Median_MSn,
-					BPI_Median_MS, BPI_Median_MSn
+					BPI_Median_MS, BPI_Median_MSn,
+					ProfileScanCount_MS, ProfileScanCount_MSn,
+					CentroidScanCount_MS, CentroidScanCount_MSn
 		 FROM @DSInfoTable
 		) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn,
 					Elution_Time_Max, AcqTimeMinutes, 
 					TIC_Max_MS, TIC_Max_MSn,
 					BPI_Max_MS, BPI_Max_MSn,
 					TIC_Median_MS, TIC_Median_MSn,
-					BPI_Median_MS, BPI_Median_MSn)
+					BPI_Median_MS, BPI_Median_MSn,
+					ProfileScanCount_MS, ProfileScanCount_MSn,
+					CentroidScanCount_MS, CentroidScanCount_MSn)
 	ON (target.Dataset_ID = Source.Dataset_ID)
 	WHEN Matched 
 		THEN UPDATE 
@@ -400,6 +419,10 @@ As
 				TIC_Median_MSn = Source.TIC_Median_MSn,
 				BPI_Median_MS = Source.BPI_Median_MS,
 				BPI_Median_MSn = Source.BPI_Median_MSn,
+				ProfileScanCount_MS = Source.ProfileScanCount_MS,
+				ProfileScanCount_MSn = Source.ProfileScanCount_MSn,
+				CentroidScanCount_MS = Source.CentroidScanCount_MS,
+				CentroidScanCount_MSn = Source.CentroidScanCount_MSn,
 				Last_Affected = GetDate()
 	WHEN Not Matched THEN
 		INSERT ( Dataset_ID, ScanCountMS , 
@@ -408,12 +431,16 @@ As
 				BPI_Max_MS , BPI_Max_MSn , 
 				TIC_Median_MS , TIC_Median_MSn , 
 				BPI_Median_MS , BPI_Median_MSn , 
+				ProfileScanCount_MS , ProfileScanCount_MSn,
+				CentroidScanCount_MS, CentroidScanCount_MSn,
 				Last_Affected )
 		VALUES ( Source.Dataset_ID, Source.ScanCountMS, Source.ScanCountMSn, Source.Elution_Time_Max,
 				Source.TIC_Max_MS, Source.TIC_Max_MSn,
 				Source.BPI_Max_MS, Source.BPI_Max_MSn,
 				Source.TIC_Median_MS, Source.TIC_Median_MSn,
 				Source.BPI_Median_MS, Source.BPI_Median_MSn,
+				Source.ProfileScanCount_MS , Source.ProfileScanCount_MSn,
+				Source.CentroidScanCount_MS, Source.CentroidScanCount_MSn,
 				GetDate())
 	;
 	--

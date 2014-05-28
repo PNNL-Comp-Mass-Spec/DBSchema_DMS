@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
+CREATE PROCEDURE AddUpdateSamplePrepRequest
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -55,6 +55,8 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **			06/06/2013 mem - Now showing warning if the work package is deactivated
 **			01/23/2014 mem - Now requiring that the work package be active when creating a new sample prep requeset
 **			03/13/2014 grk - Added ability to edit closed SPR for staff with permissions (OMCDA-1071)
+**			05/19/2014 mem - Now populating Request_Type
+**			05/20/2014 mem - Now storing InstrumentGroup in column Instrument_Group instead of Instrument_Name
 **    
 *****************************************************/
 (
@@ -105,9 +107,8 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
@@ -125,6 +126,8 @@ As
 	ELSE 
 		SET @retireMaterial = 0
 
+	Declare @RequestType varchar(16) = 'Default'
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -309,7 +312,7 @@ As
     --
     if @myError <> 0
       RAISERROR ('Error trying to resolving state name', 11, 83)
-    --
+ --
     if @StateID = 0
 		RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
     
@@ -373,15 +376,16 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		Declare @tmp int = 0
+		Declare @currentAssignedPersonnel VARCHAR(256)
+		Declare @RequestTypeExisting varchar(16)
 		set @currentStateID = 0
-		DECLARE @currentAssignedPersonnel VARCHAR(256)
 		--
 		SELECT 
 			@tmp = ID, 
 			@currentStateID = State, 
-			@currentAssignedPersonnel = Assigned_Personnel
+			@currentAssignedPersonnel = Assigned_Personnel,
+			@RequestTypeExisting = Request_Type
 		FROM  T_Sample_Prep_Request
 		WHERE (ID = @ID)
 		--
@@ -397,8 +401,12 @@ As
 
 		-- don't allow change to "Prep in Progress" 
 		-- unless someone has been assigned @AssignedPersonnel @currentAssignedPersonnel
-		IF @State = 'Prep in Progress' AND ((@AssignedPersonnel = '') OR (@AssignedPersonnel = 'na'))
+		If @State = 'Prep in Progress' AND ((@AssignedPersonnel = '') OR (@AssignedPersonnel = 'na'))
 			RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
+	
+		If @RequestTypeExisting <> @RequestType
+			RAISERROR ('Cannot edit requests of type %s with the sample_prep_request page; use http://dms2.pnl.gov/rna_prep_request/report', 11, 7, @RequestTypeExisting)
+			
 	end
 
 	if @mode = 'add'
@@ -466,7 +474,7 @@ As
 			Priority, 
 			UseSingleLCColumn,
 			State, 
-			Instrument_Name, 
+			Instrument_Group, 
 			Dataset_Type,
 			Technical_Replicates,
 			Separation_Type,
@@ -474,7 +482,8 @@ As
 			BlockAndRandomizeRuns,
 			IOPSPermitsCurrent,
 			Reason_For_High_Priority,
-			Number_Of_Biomaterial_Reps_Received			
+			Number_Of_Biomaterial_Reps_Received,
+			Request_Type		
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
@@ -513,7 +522,8 @@ As
 			@BlockAndRandomizeRuns,
 			@IOPSPermitsCurrent,
 			@ReasonForHighPriority,
-			@NumberOfBiomaterialRepsReceived
+			@NumberOfBiomaterialRepsReceived,
+			@RequestType
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -581,7 +591,8 @@ As
 			Priority = @Priority, 
 			UseSingleLCColumn = @UseSingleLCColumn,
 			State = @StateID,
-			Instrument_Name = @instrumentGroup, 
+			Instrument_Group = @instrumentGroup, 
+			Instrument_Name = Null,
 			Dataset_Type = @DatasetType,
 			Technical_Replicates = @TechnicalReplicates,
 			Separation_Type = @SeparationGroup,

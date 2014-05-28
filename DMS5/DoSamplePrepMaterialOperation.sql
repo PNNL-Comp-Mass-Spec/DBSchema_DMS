@@ -14,11 +14,12 @@ CREATE Procedure DoSamplePrepMaterialOperation
 **
 **	Auth:	grk
 **	Date:	08/08/2008 grk - Initial version
-
+**
+**
+** // GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
-// GRANT  EXECUTE  ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
 *****************************************************/
 (
 	@ID varchar(128),
@@ -29,10 +30,9 @@ CREATE Procedure DoSamplePrepMaterialOperation
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
+	declare @myError int	
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
@@ -41,6 +41,7 @@ As
 	SET @requestID = CONVERT(INT, @ID)
 	
 	DECLARE @comment varchar(512)
+	
 	SET @comment = 'Retired as part of closing sample prep request ' + @ID
 
 	BEGIN TRY
@@ -60,17 +61,18 @@ As
 			)
 
 			-- get biomaterial associated with the prep request
-			INSERT  INTO #RTI
-					( ItemType ,
-					  ItemName,
-					  CanRetire
-					)
-			SELECT  'Biomaterial' AS ItemName,
-					Biomaterial,
-					CASE WHEN Biomaterial_Status = 'Active' THEN 'Yes' ELSE 'No (material not Active)' END AS CanRetire
-			FROM    V_Sample_Prep_Biomaterial_Location_List_Report
-			WHERE ID = @requestID
-			AND NOT Container = 'na'
+			INSERT INTO #RTI( ItemType,
+				                ItemName,
+				                CanRetire )
+			SELECT 'Biomaterial' AS ItemName,
+				    Biomaterial,
+				    CASE
+				        WHEN Biomaterial_Status = 'Active' THEN 'Yes'
+				        ELSE 'No (material not Active)'
+				    END AS CanRetire
+			FROM V_Sample_Prep_Biomaterial_Location_List_Report
+			WHERE ID = @requestID AND
+				    NOT Container = 'na'
 			
 			-- get ID for biomaterial
 		   UPDATE   #RTI
@@ -82,17 +84,18 @@ As
 					   ) TM ON TM.NAME = #RTI.ItemName
 			
 			-- get containers holding the biomaterial
-			INSERT  INTO #RTI
-					( ItemType ,
-					  ItemName,
-					  CanRetire
-					)
-			SELECT Distinct 'Container' AS ItemName,
-					Container,
-					CASE WHEN Container_Status = 'Active' THEN 'Yes' ELSE 'No (container not Active)' END AS CanRetire
-			FROM    V_Sample_Prep_Biomaterial_Location_List_Report
-			WHERE ID = @requestID
-			AND NOT Container = 'na'
+			INSERT INTO #RTI( ItemType,
+				                ItemName,
+				                CanRetire )
+			SELECT DISTINCT 'Container' AS ItemName,
+				            Container,
+				            CASE
+				                WHEN Container_Status = 'Active' THEN 'Yes'
+				                ELSE 'No (container not Active)'
+				            END AS CanRetire
+			FROM V_Sample_Prep_Biomaterial_Location_List_Report
+			WHERE ID = @requestID AND
+				    NOT Container = 'na'
 			
 			-- get ID for containers
 			 UPDATE #RTI
@@ -191,8 +194,6 @@ As
 		EXEC FormatErrorMessage @message output, @myError output
 	END CATCH
 	return @myError
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[DoSamplePrepMaterialOperation] TO [DMS2_SP_User] AS [dbo]

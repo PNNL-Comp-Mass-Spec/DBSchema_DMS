@@ -15,11 +15,13 @@ CREATE PROCEDURE UnholdCandidateJobSteps
 **
 **	Auth:	mem
 **	Date:	12/20/2011 mem - Initial version
+**			04/24/2014 mem - Added parameter @MaxCandidatesPlusJobs
 **    
 *****************************************************/
 (
-	@StepTool varchar(64) = 'DataExtractor',
-	@TargetCandidates int = 250,
+	@StepTool varchar(64) = 'MASIC_Finnigan',
+	@TargetCandidates int = 15,
+	@MaxCandidatesPlusJobs int = 30,
 	@message varchar(512) = '' output
 )
 As
@@ -32,6 +34,7 @@ As
 
 
 	Declare @CandidateSteps int = 0
+	Declare @CandidatesPlusJobs int = 0
 	Declare @JobsToRelease int = 0
 	
 	-----------------------------------------------------------
@@ -48,16 +51,25 @@ As
 	--
 	SELECT @CandidateSteps = COUNT(*)
 	FROM dbo.T_Job_Steps
-	WHERE state = 2 AND
+	WHERE State = 2 AND
 	      step_tool = @StepTool
 
+	SELECT @CandidatesPlusJobs = COUNT(*)
+	FROM dbo.T_Job_Steps
+	WHERE State In (2, 4) AND
+	      step_tool = @StepTool
+	
 	-----------------------------------------------------------
 	-- Compute the number of jobs that need to be released (un-held)
 	-----------------------------------------------------------
-	Set @JobsToRelease = @TargetCandidates - @CandidateSteps
+	
+	Set @JobsToRelease = @MaxCandidatesPlusJobs - @CandidatesPlusJobs
+	If @JobsToRelease > @TargetCandidates
+		Set @JobsToRelease = @TargetCandidates
 
+	
 	If @TargetCandidates = 1 And @JobsToRelease > 0 OR
-	   @TargetCandidates > 1 And @JobsToRelease > 1
+	   @TargetCandidates >= 1 And @JobsToRelease >= 1
 	Begin
 		-----------------------------------------------------------
 		-- Un-hold @JobsToRelease jobs
@@ -82,7 +94,7 @@ As
 	End
 	Else
 	Begin
-		set @message = 'Already have ' + CONVERT(varchar(12), @CandidateSteps) + ' candidate jobs; nothing to do'
+		set @message = 'Already have ' + CONVERT(varchar(12), @CandidateSteps) + ' candidate jobs and ' + Convert(varchar(12), @CandidatesPlusJobs - @CandidateSteps) + ' running jobs; nothing to do'
 	End
 
 	Return @myError
