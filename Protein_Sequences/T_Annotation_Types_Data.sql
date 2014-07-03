@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Annotation_Types] ******/
-/****** RowCount: 29 ******/
+/****** RowCount: 30 ******/
 SET IDENTITY_INSERT [T_Annotation_Types] ON
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (1,'Locus','TIGR Locus','DR0001',1)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (2,'Gene Symbol','NCBI Gene Symbol','dnaN',2)
@@ -30,4 +30,5 @@ INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Exa
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (31,'ENSEMBL','Protein description from ENSEMBL database','',9)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (32,'Sanger','Sequences from the Sanger Institute','LinJ01_0010',3)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (33,'Trembl ID','Uniprot Trembl ID','tr|A2NTS4',8)
+INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (34,'Accession Number','MScDB Accession','MScDB:00000033',21)
 SET IDENTITY_INSERT [T_Annotation_Types] OFF

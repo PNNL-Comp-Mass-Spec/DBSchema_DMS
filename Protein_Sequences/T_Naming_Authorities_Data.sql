@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Naming_Authorities] ******/
-/****** RowCount: 19 ******/
+/****** RowCount: 20 ******/
 SET IDENTITY_INSERT [T_Naming_Authorities] ON
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (1,'TIGR','The Institute for Genomic Research','http://www.tigr.org/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (2,'NCBI','National Center for Biotechnology Information','http://www.ncbi.nlm.nih.gov/')
@@ -20,4 +20,5 @@ INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (18,'CyanoBase','Genome Database for Cyanobacteria','http://www.kazusa.or.jp/cyano/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (19,'SGD','Saccharomyces Genome Database','http://www.yeastgenome.org/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (20,'TAIR','The Arabidopsis Information Resource','http://www.arabidopsis.org/')
+INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (21,'MScDB','Mass Spectrometry Centric Protein Sequence Database for Proteomics','http://www.wzw.tum.de/proteomics/content/research/software/mscdb/')
 SET IDENTITY_INSERT [T_Naming_Authorities] OFF
