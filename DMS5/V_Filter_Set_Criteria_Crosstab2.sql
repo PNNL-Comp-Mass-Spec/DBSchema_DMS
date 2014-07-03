@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Set_Criteria_Crosstab2]
 AS
 SELECT PivotData.Filter_Set_ID,
@@ -54,6 +55,7 @@ FROM ( SELECT Filter_Set_ID,
 	              [MSGF_SpecProb], [MSGFDB_SpecProb], [MSGFDB_PValue], [MSGFPlus_QValue], [MSGFPlus_PepQValue],
 	              [MSAlign_PValue], [MSAlign_FDR] ) 
 	       ) AS PivotData
+
 
 
 GO

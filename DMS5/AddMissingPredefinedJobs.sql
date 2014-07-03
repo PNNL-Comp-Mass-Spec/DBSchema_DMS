@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **			08/05/2013 mem - Now passing @AnalysisToolNameFilter to EvaluatePredefinedAnalysisRules when @InfoOnly is non-zero
 **						   - Added parameter @CampaignFilter
 **			01/08/2014 mem - Now returning additional debug information when @InfoOnly > 0
+**			06/18/2014 mem - Now passing default to udfParseDelimitedList
 **
 *****************************************************/
 (
@@ -196,7 +197,7 @@ As
 		       ON Target.Dataset_ID = DS.Dataset_ID
 		     INNER JOIN T_Instrument_Name InstName 
 		     ON InstName.Instrument_ID = DS.DS_instrument_name_ID
-    	     INNER JOIN udfParseDelimitedList(@InstrumentSkipList, ',') AS ExclusionList 
+    	     INNER JOIN udfParseDelimitedList(@InstrumentSkipList, default) AS ExclusionList 
     	       ON InstName.IN_name = ExclusionList.Value
 	End
 	

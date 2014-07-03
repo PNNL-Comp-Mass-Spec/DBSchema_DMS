@@ -22,17 +22,17 @@ CREATE TABLE [dbo].[T_Archived_Output_Files](
  CONSTRAINT [PK_T_Archived_Output_Files] PRIMARY KEY CLUSTERED 
 (
 	[Archived_File_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Archived_Output_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Archived_Output_Files_T_Archived_File_States] FOREIGN KEY([Archived_File_State_ID])
-REFERENCES [T_Archived_File_States] ([Archived_File_State_ID])
+REFERENCES [dbo].[T_Archived_File_States] ([Archived_File_State_ID])
 GO
 ALTER TABLE [dbo].[T_Archived_Output_Files] CHECK CONSTRAINT [FK_T_Archived_Output_Files_T_Archived_File_States]
 GO
 ALTER TABLE [dbo].[T_Archived_Output_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Archived_Output_Files_T_Archived_File_Types] FOREIGN KEY([Archived_File_Type_ID])
-REFERENCES [T_Archived_File_Types] ([Archived_File_Type_ID])
+REFERENCES [dbo].[T_Archived_File_Types] ([Archived_File_Type_ID])
 GO
 ALTER TABLE [dbo].[T_Archived_Output_Files] CHECK CONSTRAINT [FK_T_Archived_Output_Files_T_Archived_File_Types]
 GO

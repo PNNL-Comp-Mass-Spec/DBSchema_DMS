@@ -12,10 +12,12 @@ CREATE PROCEDURE dbo.SetManagerUpdateRequired
 **
 **	Auth:	mem
 **	Date:	01/24/2009 mem - Initial version
+**			04/17/2014 mem - Expanded @ManagerList to varchar(max) and added parameter @showTable
 **
 *****************************************************/
 (
-	@ManagerList varchar(4000) = '',
+	@ManagerList varchar(max) = '',
+	@showTable tinyint = 0,
 	@message varchar(512) = '' output
 )
 AS
@@ -26,7 +28,9 @@ AS
 	set @myError = 0
 	set @myRowCount = 0
 	
-	set @message = ''
+	Set @showTable = IsNull(@showTable, 0)
+	Set @message = ''
+	
 	
 	Declare @mgrID int	
 	Declare @ParamID int
@@ -140,6 +144,15 @@ AS
 		Print @message
 	End
 
+	If @showTable <> 0
+	Begin
+		SELECT U.*
+		FROM V_AnalysisMgrParams_UpdateRequired U
+		     INNER JOIN #TmpManagerList L
+		       ON U.MgrID = L.MgrId
+		ORDER BY Manager DESC
+	End
+	
 	---------------------------------------------------
 	-- Exit the procedure
 	---------------------------------------------------
@@ -148,4 +161,6 @@ Done:
 	
 GO
 GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [MTUser] AS [dbo]
 GO

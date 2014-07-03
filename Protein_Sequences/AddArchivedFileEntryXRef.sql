@@ -17,8 +17,9 @@ CREATE PROCEDURE AddArchivedFileEntryXRef
 **
 **	
 **
-**		Auth: kja
-**		Date: 03/17/2006
+**	Auth:	kja
+**	Date:	03/17/2006 - kja
+**			03/12/2014 - Now validating @Collection_ID and @Archived_File_ID
 **    
 *****************************************************/
 
@@ -36,7 +37,23 @@ As
 	declare @myRowCount int
 	set @myRowCount = 0
 	
-	declare @msg varchar(256)
+	Set @message = ''
+
+	-------------------------------------------------
+	-- Verify the File ID and Collection ID
+	---------------------------------------------------
+
+	If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @Collection_ID)
+	Begin
+		Set @message = 'Protein_Collection_ID ' + Convert(varchar(12), @Collection_ID) + ' not found in T_Protein_Collections'
+		Return 51000
+	End
+	
+	If Not Exists (SELECT * FROM T_Archived_Output_Files WHERE Archived_File_ID = @Archived_File_ID)
+	Begin
+		Set @message = 'Archived_File_ID ' + Convert(varchar(12), @Archived_File_ID) + ' not found in T_Archived_Output_Files'
+		Return 51001
+	End	
 
 	---------------------------------------------------
 	-- Start transaction
@@ -54,15 +71,10 @@ As
 	FROM T_Archived_Output_File_Collections_XRef
 	WHERE 
 		(Archived_File_ID = @Archived_File_ID AND
-		Protein_Collection_ID = @Collection_ID)
+		 Protein_Collection_ID = @Collection_ID)
 		
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
---	if @myRowCount > 0
----	begin
---		commit transaction @transname
---		return 0
---	end
+
 	
 	-------------------------------------------------
 	-- action for add mode
@@ -70,18 +82,16 @@ As
 	if @myRowCount = 0
 	begin
 
-	INSERT INTO T_Archived_Output_File_Collections_XRef (Archived_File_ID, Protein_Collection_ID)
-	VALUES (@Archived_File_ID, @Collection_ID)
-		
-				
+		INSERT INTO T_Archived_Output_File_Collections_XRef (Archived_File_ID, Protein_Collection_ID)
+		VALUES (@Archived_File_ID, @Collection_ID)					
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
 			rollback transaction @transName
-			set @msg = 'Insert operation failed!'
-			RAISERROR (@msg, 10, 1)
+			set @message = 'Insert operation failed!'
+			RAISERROR (@message, 10, 1)
 			return 51007
 		end
 	end

@@ -13,22 +13,22 @@ CREATE TABLE [dbo].[T_DNA_Structures](
  CONSTRAINT [PK_T_DNA_Structures] PRIMARY KEY CLUSTERED 
 (
 	[DNA_Structure_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_DNA_Structures]  WITH CHECK ADD  CONSTRAINT [FK_T_DNA_Structures_T_DNA_Structure_Types] FOREIGN KEY([DNA_Structure_Type_ID])
-REFERENCES [T_DNA_Structure_Types] ([DNA_Structure_Type_ID])
+REFERENCES [dbo].[T_DNA_Structure_Types] ([DNA_Structure_Type_ID])
 GO
 ALTER TABLE [dbo].[T_DNA_Structures] CHECK CONSTRAINT [FK_T_DNA_Structures_T_DNA_Structure_Types]
 GO
 ALTER TABLE [dbo].[T_DNA_Structures]  WITH CHECK ADD  CONSTRAINT [FK_T_DNA_Structures_T_DNA_Translation_Table_Map] FOREIGN KEY([DNA_Translation_Table_ID])
-REFERENCES [T_DNA_Translation_Table_Map] ([DNA_Translation_Table_ID])
+REFERENCES [dbo].[T_DNA_Translation_Table_Map] ([DNA_Translation_Table_ID])
 GO
 ALTER TABLE [dbo].[T_DNA_Structures] CHECK CONSTRAINT [FK_T_DNA_Structures_T_DNA_Translation_Table_Map]
 GO
 ALTER TABLE [dbo].[T_DNA_Structures]  WITH CHECK ADD  CONSTRAINT [FK_T_DNA_Structures_T_Genome_Assembly] FOREIGN KEY([Assembly_ID])
-REFERENCES [T_Genome_Assembly] ([Assembly_ID])
+REFERENCES [dbo].[T_Genome_Assembly] ([Assembly_ID])
 GO
 ALTER TABLE [dbo].[T_DNA_Structures] CHECK CONSTRAINT [FK_T_DNA_Structures_T_Genome_Assembly]
 GO

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Step_Backlog_Crosstab]
 AS
 SELECT PivotData.Posting_Time,
@@ -35,6 +36,8 @@ FROM ( SELECT Convert(smalldatetime, Posting_time) AS Posting_Time,
                   [Results_Transfer], 
                   [MSXML_Gen] 
              ) ) AS PivotData
+
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Backlog_Crosstab] TO [PNL\D3M578] AS [dbo]

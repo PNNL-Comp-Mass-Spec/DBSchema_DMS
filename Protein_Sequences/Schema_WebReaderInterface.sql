@@ -1,3 +1,3 @@
 /****** Object:  Schema [WebReaderInterface] ******/
-CREATE SCHEMA [WebReaderInterface] AUTHORIZATION [dbo]
+CREATE SCHEMA [WebReaderInterface]
 GO

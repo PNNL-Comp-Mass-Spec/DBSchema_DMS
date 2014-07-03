@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Set_Report]
 AS
 SELECT FST.Filter_Type_Name,

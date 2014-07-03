@@ -14,26 +14,45 @@ CREATE TABLE [dbo].[T_ParamValue](
  CONSTRAINT [PK_T_ParamValue] PRIMARY KEY NONCLUSTERED 
 (
 	[Entry_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-
+GRANT UPDATE ON [dbo].[T_ParamValue] ([Last_Affected]) TO [DMSWebUser] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_ParamValue] ([Entered_By]) TO [DMSWebUser] AS [dbo]
+GO
 /****** Object:  Index [IX_T_ParamValue] ******/
-CREATE UNIQUE CLUSTERED INDEX [IX_T_ParamValue] ON [dbo].[T_ParamValue] 
+CREATE UNIQUE CLUSTERED INDEX [IX_T_ParamValue] ON [dbo].[T_ParamValue]
 (
 	[MgrID] ASC,
 	[TypeID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
-
 /****** Object:  Index [IX_T_ParamValue_TypeID_Include_EntryID_MgrID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_ParamValue_TypeID_Include_EntryID_MgrID] ON [dbo].[T_ParamValue] 
+CREATE NONCLUSTERED INDEX [IX_T_ParamValue_TypeID_Include_EntryID_MgrID] ON [dbo].[T_ParamValue]
 (
 	[TypeID] ASC
 )
-INCLUDE ( [Entry_ID],
-[MgrID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+INCLUDE ( 	[Entry_ID],
+	[MgrID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_ParamValue] ADD  CONSTRAINT [DF_T_ParamValue_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_ParamValue] ADD  CONSTRAINT [DF_T_ParamValue_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
+GO
+ALTER TABLE [dbo].[T_ParamValue]  WITH CHECK ADD  CONSTRAINT [FK_T_ParamValue_T_Mgrs] FOREIGN KEY([MgrID])
+REFERENCES [dbo].[T_Mgrs] ([M_ID])
+ON UPDATE CASCADE
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_ParamValue] CHECK CONSTRAINT [FK_T_ParamValue_T_Mgrs]
+GO
+ALTER TABLE [dbo].[T_ParamValue]  WITH CHECK ADD  CONSTRAINT [FK_T_ParamValue_T_ParamType] FOREIGN KEY([TypeID])
+REFERENCES [dbo].[T_ParamType] ([ParamID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_ParamValue] CHECK CONSTRAINT [FK_T_ParamValue_T_ParamType]
 GO
 /****** Object:  Trigger [dbo].[trig_d_T_ParamValue] ******/
 SET ANSI_NULLS ON
@@ -174,25 +193,4 @@ AS
 
 	End
 
-GO
-GRANT UPDATE ON [dbo].[T_ParamValue] ([Last_Affected]) TO [DMSWebUser] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_ParamValue] ([Entered_By]) TO [DMSWebUser] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_ParamValue]  WITH CHECK ADD  CONSTRAINT [FK_T_ParamValue_T_Mgrs] FOREIGN KEY([MgrID])
-REFERENCES [T_Mgrs] ([M_ID])
-ON UPDATE CASCADE
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[T_ParamValue] CHECK CONSTRAINT [FK_T_ParamValue_T_Mgrs]
-GO
-ALTER TABLE [dbo].[T_ParamValue]  WITH CHECK ADD  CONSTRAINT [FK_T_ParamValue_T_ParamType] FOREIGN KEY([TypeID])
-REFERENCES [T_ParamType] ([ParamID])
-ON UPDATE CASCADE
-GO
-ALTER TABLE [dbo].[T_ParamValue] CHECK CONSTRAINT [FK_T_ParamValue_T_ParamType]
-GO
-ALTER TABLE [dbo].[T_ParamValue] ADD  CONSTRAINT [DF_T_ParamValue_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
-GO
-ALTER TABLE [dbo].[T_ParamValue] ADD  CONSTRAINT [DF_T_ParamValue_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO

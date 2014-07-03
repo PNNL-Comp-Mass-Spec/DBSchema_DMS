@@ -1,6 +1,6 @@
 /****** Object:  Database [DMS_Pipeline] ******/
 CREATE DATABASE [DMS_Pipeline] ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 9858752KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 10356160KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
 ( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'G:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -58,8 +58,6 @@ ALTER DATABASE [DMS_Pipeline] SET READ_COMMITTED_SNAPSHOT OFF
 GO
 ALTER DATABASE [DMS_Pipeline] SET HONOR_BROKER_PRIORITY OFF 
 GO
-ALTER DATABASE [DMS_Pipeline] SET  READ_WRITE 
-GO
 ALTER DATABASE [DMS_Pipeline] SET RECOVERY FULL 
 GO
 ALTER DATABASE [DMS_Pipeline] SET  MULTI_USER 
@@ -67,6 +65,41 @@ GO
 ALTER DATABASE [DMS_Pipeline] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [DMS_Pipeline] SET DB_CHAINING OFF 
+GO
+USE [DMS_Pipeline]
+GO
+/****** Object:  User [DMSReader] ******/
+CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [DMSWebUser] ******/
+CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [pnl\aldr699] ******/
+CREATE USER [pnl\aldr699] FOR LOGIN [PNL\aldr699] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\D3L243] ******/
+CREATE USER [PNL\D3L243] FOR LOGIN [PNL\D3L243] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\D3M578] ******/
+CREATE USER [PNL\D3M578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\D3M580] ******/
+CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [pnl\D3Y513] ******/
+CREATE USER [pnl\D3Y513] FOR LOGIN [PNL\D3Y513] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [pnl\mtsproc] ******/
+CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\MTSProc] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [RBAC-DMS_User] ******/
+CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
+GO
+/****** Object:  User [RBAC-Web_Analysis] ******/
+CREATE USER [RBAC-Web_Analysis] FOR LOGIN [PNL\EMSL-Prism.Users.Web_Analysis]
+GO
+/****** Object:  User [svc-dms] ******/
+CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
@@ -101,4 +134,6 @@ GO
 GRANT CONNECT TO [RBAC-Web_Analysis] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
+GO
+ALTER DATABASE [DMS_Pipeline] SET  READ_WRITE 
 GO

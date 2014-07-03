@@ -2,7 +2,7 @@
 CREATE DATABASE [DMS5] ON  PRIMARY 
 ( NAME = N'DMS4_dat', FILENAME = N'H:\SQLServerData\DMS5.mdf' , SIZE = 21549952KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'DMS4_log', FILENAME = N'G:\SQLServerData\DMS5_log.ldf' , SIZE = 15936KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'DMS4_log', FILENAME = N'G:\SQLServerData\DMS5_log.ldf' , SIZE = 58688KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMS5] SET COMPATIBILITY_LEVEL = 100
@@ -58,8 +58,6 @@ ALTER DATABASE [DMS5] SET READ_COMMITTED_SNAPSHOT OFF
 GO
 ALTER DATABASE [DMS5] SET HONOR_BROKER_PRIORITY OFF 
 GO
-ALTER DATABASE [DMS5] SET  READ_WRITE 
-GO
 ALTER DATABASE [DMS5] SET RECOVERY FULL 
 GO
 ALTER DATABASE [DMS5] SET  MULTI_USER 
@@ -67,6 +65,56 @@ GO
 ALTER DATABASE [DMS5] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [DMS5] SET DB_CHAINING OFF 
+GO
+USE [DMS5]
+GO
+/****** Object:  User [BUILTIN\Administrators] ******/
+CREATE USER [BUILTIN\Administrators] FOR LOGIN [BUILTIN\Administrators]
+GO
+/****** Object:  User [D3L243] ******/
+CREATE USER [D3L243] FOR LOGIN [PNL\D3L243] WITH DEFAULT_SCHEMA=[D3L243]
+GO
+/****** Object:  User [DMSReader] ******/
+CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [DMSWebUser] ******/
+CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [LCMSNetUser] ******/
+CREATE USER [LCMSNetUser] FOR LOGIN [LCMSNetUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [NWFS_Samba_User] ******/
+CREATE USER [NWFS_Samba_User] FOR LOGIN [nwfs_samba_user] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\brow950] ******/
+CREATE USER [PNL\brow950] FOR LOGIN [PNL\brow950] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\D3M578] ******/
+CREATE USER [PNL\D3M578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[PNL\D3M578]
+GO
+/****** Object:  User [PNL\D3M580] ******/
+CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[PNL\D3M580]
+GO
+/****** Object:  User [PNL\D3Y513] ******/
+CREATE USER [PNL\D3Y513] FOR LOGIN [PNL\D3Y513] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [pnl\mtsadmin] ******/
+CREATE USER [pnl\mtsadmin] FOR LOGIN [PNL\MTSADMIN] WITH DEFAULT_SCHEMA=[pnl\mtsadmin]
+GO
+/****** Object:  User [RBAC-DMS_Guest] ******/
+CREATE USER [RBAC-DMS_Guest] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_Guest]
+GO
+/****** Object:  User [RBAC-DMS_User] ******/
+CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
+GO
+/****** Object:  User [RBAC-Param_File_Admin] ******/
+CREATE USER [RBAC-Param_File_Admin] FOR LOGIN [PNL\EMSL-Prism.Users.Param_File_Admin]
+GO
+/****** Object:  User [RBAC-Web_Analysis] ******/
+CREATE USER [RBAC-Web_Analysis] FOR LOGIN [PNL\EMSL-Prism.Users.Web_Analysis]
+GO
+/****** Object:  User [svc-dms] ******/
+CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
 GRANT CONNECT TO [BUILTIN\Administrators] AS [dbo]
 GO
@@ -153,4 +201,6 @@ GO
 GRANT CONNECT TO [RBAC-Web_Analysis] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
+GO
+ALTER DATABASE [DMS5] SET  READ_WRITE 
 GO

@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Sample_Prep_Request_Active_List_Report]
+CREATE VIEW V_Sample_Prep_Request_Active_List_Report
 as
 SELECT SPR.ID,
        SPR.Request_Name AS RequestName,
@@ -26,7 +25,7 @@ SELECT SPR.ID,
        SPR.[Comment],
        SPR.Work_Package_Number AS [Work Package],
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
-       SPR.Instrument_Name AS [Inst. Name],
+       SPR.Instrument_Group AS [Inst. Group],
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
@@ -49,8 +48,7 @@ FROM T_Sample_Prep_Request SPR
        ON SPR.ID = QT.Request_ID
 	 LEFT OUTER JOIN V_Charge_Code_Status CC 
 	   ON SPR.Work_Package_Number = CC.Charge_Code
-WHERE (NOT (SPR.State IN (0, 4, 5)))
-
+WHERE (NOT (SPR.State IN (0, 4, 5))) And SPR.Request_Type = 'Default'
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [PNL\D3M578] AS [dbo]

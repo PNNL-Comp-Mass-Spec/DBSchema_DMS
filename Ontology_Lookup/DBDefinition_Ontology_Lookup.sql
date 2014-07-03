@@ -1,8 +1,8 @@
 /****** Object:  Database [Ontology_Lookup] ******/
 CREATE DATABASE [Ontology_Lookup] ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 2392064KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 2333632KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 8791168KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 256832KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 100
@@ -58,8 +58,6 @@ ALTER DATABASE [Ontology_Lookup] SET READ_COMMITTED_SNAPSHOT OFF
 GO
 ALTER DATABASE [Ontology_Lookup] SET HONOR_BROKER_PRIORITY OFF 
 GO
-ALTER DATABASE [Ontology_Lookup] SET  READ_WRITE 
-GO
 ALTER DATABASE [Ontology_Lookup] SET RECOVERY FULL 
 GO
 ALTER DATABASE [Ontology_Lookup] SET  MULTI_USER 
@@ -68,6 +66,20 @@ ALTER DATABASE [Ontology_Lookup] SET PAGE_VERIFY CHECKSUM
 GO
 ALTER DATABASE [Ontology_Lookup] SET DB_CHAINING OFF 
 GO
+USE [Ontology_Lookup]
+GO
+/****** Object:  User [d3m578] ******/
+CREATE USER [d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [DMSReader] ******/
+CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [DMSWebUser] ******/
+CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [svc-dms] ******/
+CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
+GO
 GRANT CONNECT TO [d3m578] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
@@ -75,4 +87,6 @@ GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
+GO
+ALTER DATABASE [Ontology_Lookup] SET  READ_WRITE 
 GO

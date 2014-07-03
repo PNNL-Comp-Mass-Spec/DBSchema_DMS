@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
 SELECT '' AS [Sel.],
@@ -41,7 +42,8 @@ FROM T_Sample_Prep_Request SPR
        ON SPR.Requester_PRN = QP.U_PRN
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
-WHERE (SPR.State > 0)
+WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
+
 
 
 

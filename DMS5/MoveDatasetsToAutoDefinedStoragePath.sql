@@ -17,6 +17,7 @@ CREATE PROCEDURE MoveDatasetsToAutoDefinedStoragePath
 **	Auth:	mem
 **	Date:	05/12/2011 mem - Initial version
 **			05/14/2011 mem - Updated the content of MoveCmd
+**			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
 **    
 *****************************************************/
 (
@@ -78,7 +79,7 @@ AS
 	
 		INSERT INTO #TmpDatasets (DatasetID)
 		SELECT DISTINCT Value
-		FROM dbo.udfParseDelimitedIntegerList(@DatasetIDList, ',')		
+		FROM dbo.udfParseDelimitedIntegerList(@DatasetIDList, default)		
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 

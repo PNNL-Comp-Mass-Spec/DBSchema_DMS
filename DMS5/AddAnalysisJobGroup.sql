@@ -699,6 +699,7 @@ Explain:
 	END CATCH
 	return @myError
 
+
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis] AS [dbo]
 GO

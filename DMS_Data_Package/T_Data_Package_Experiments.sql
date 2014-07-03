@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_Data_Package_Experiments](
 (
 	[Data_Package_ID] ASC,
 	[Experiment_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -22,13 +22,13 @@ GRANT SELECT ON [dbo].[T_Data_Package_Experiments] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_Experiments] TO [DMS_SP_User] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Data_Package_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package] FOREIGN KEY([Data_Package_ID])
-REFERENCES [T_Data_Package] ([ID])
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[T_Data_Package_Experiments] CHECK CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package]
-GO
 ALTER TABLE [dbo].[T_Data_Package_Experiments] ADD  CONSTRAINT [DF_T_Data_Package_Experiments_Item Added]  DEFAULT (getdate()) FOR [Item Added]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Experiments] ADD  CONSTRAINT [DF_T_Data_Package_Experiments_Package Comment]  DEFAULT ('') FOR [Package Comment]
+GO
+ALTER TABLE [dbo].[T_Data_Package_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package] FOREIGN KEY([Data_Package_ID])
+REFERENCES [dbo].[T_Data_Package] ([ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[T_Data_Package_Experiments] CHECK CONSTRAINT [FK_T_Data_Package_Experiments_T_Data_Package]
 GO

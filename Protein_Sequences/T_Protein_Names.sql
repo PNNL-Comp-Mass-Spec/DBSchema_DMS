@@ -14,42 +14,9 @@ CREATE TABLE [dbo].[T_Protein_Names](
  CONSTRAINT [PK_T_Protein_Names] PRIMARY KEY NONCLUSTERED 
 (
 	[Reference_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-
-/****** Object:  Index [IX_T_Protein_Names_Protein_ID_Reference_ID] ******/
-CREATE UNIQUE CLUSTERED INDEX [IX_T_Protein_Names_Protein_ID_Reference_ID] ON [dbo].[T_Protein_Names] 
-(
-	[Protein_ID] ASC,
-	[Reference_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-
-/****** Object:  Index [IX_T_Protein_Names_Name] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Protein_Names_Name] ON [dbo].[T_Protein_Names] 
-(
-	[Name] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-
-/****** Object:  Index [IX_T_Protein_Names_ProteinID_include_RefID_Name_Description_AnnotationTypeID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Protein_Names_ProteinID_include_RefID_Name_Description_AnnotationTypeID] ON [dbo].[T_Protein_Names] 
-(
-	[Protein_ID] ASC
-)
-INCLUDE ( [Reference_ID],
-[Name],
-[Description],
-[Annotation_Type_ID]) WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-
-/****** Object:  Index [IX_T_Protein_Names_Ref_Fingerprint] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Names_Ref_Fingerprint] ON [dbo].[T_Protein_Names] 
-(
-	[Reference_Fingerprint] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 GRANT REFERENCES ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
 GO
@@ -57,17 +24,55 @@ GRANT SELECT ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Protein_Names]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Names_T_Annotation_Types] FOREIGN KEY([Annotation_Type_ID])
-REFERENCES [T_Annotation_Types] ([Annotation_Type_ID])
+/****** Object:  Index [IX_T_Protein_Names_Protein_ID_Reference_ID] ******/
+CREATE UNIQUE CLUSTERED INDEX [IX_T_Protein_Names_Protein_ID_Reference_ID] ON [dbo].[T_Protein_Names]
+(
+	[Protein_ID] ASC,
+	[Reference_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Protein_Names] CHECK CONSTRAINT [FK_T_Protein_Names_T_Annotation_Types]
+SET ANSI_PADDING ON
+
 GO
-ALTER TABLE [dbo].[T_Protein_Names]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Names_T_Proteins] FOREIGN KEY([Protein_ID])
-REFERENCES [T_Proteins] ([Protein_ID])
+/****** Object:  Index [IX_T_Protein_Names_Name] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Protein_Names_Name] ON [dbo].[T_Protein_Names]
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Protein_Names] CHECK CONSTRAINT [FK_T_Protein_Names_T_Proteins]
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Protein_Names_ProteinID_include_RefID_Name_Description_AnnotationTypeID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Protein_Names_ProteinID_include_RefID_Name_Description_AnnotationTypeID] ON [dbo].[T_Protein_Names]
+(
+	[Protein_ID] ASC
+)
+INCLUDE ( 	[Reference_ID],
+	[Name],
+	[Description],
+	[Annotation_Type_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Protein_Names_Ref_Fingerprint] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Names_Ref_Fingerprint] ON [dbo].[T_Protein_Names]
+(
+	[Reference_Fingerprint] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Protein_Names] ADD  CONSTRAINT [DF_T_Protein_Names_Authority_ID]  DEFAULT (6) FOR [Annotation_Type_ID]
 GO
 ALTER TABLE [dbo].[T_Protein_Names] ADD  CONSTRAINT [DF_T_Protein_Names_DateAdded]  DEFAULT (getdate()) FOR [DateAdded]
+GO
+ALTER TABLE [dbo].[T_Protein_Names]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Names_T_Annotation_Types] FOREIGN KEY([Annotation_Type_ID])
+REFERENCES [dbo].[T_Annotation_Types] ([Annotation_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Protein_Names] CHECK CONSTRAINT [FK_T_Protein_Names_T_Annotation_Types]
+GO
+ALTER TABLE [dbo].[T_Protein_Names]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Names_T_Proteins] FOREIGN KEY([Protein_ID])
+REFERENCES [dbo].[T_Proteins] ([Protein_ID])
+GO
+ALTER TABLE [dbo].[T_Protein_Names] CHECK CONSTRAINT [FK_T_Protein_Names_T_Proteins]
 GO

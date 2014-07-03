@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Sets_By_Analysis_Tool]
 AS
 SELECT FS.Filter_Set_ID,
@@ -21,6 +22,7 @@ FROM T_Filter_Set_Criteria_Groups FSCG
                   ON FSCM.Analysis_Tool_ID = Tool.AJT_toolID
        ON FSC.Criterion_ID = FSCM.Criterion_ID
 GROUP BY FSCM.Analysis_Tool_ID, FS.Filter_Set_ID, Tool.AJT_toolName
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets_By_Analysis_Tool] TO [PNL\D3M578] AS [dbo]

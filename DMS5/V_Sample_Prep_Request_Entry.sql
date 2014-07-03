@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Entry]
 AS
     SELECT  SPR.Request_Name AS RequestName ,
@@ -25,7 +26,7 @@ AS
             SPR.Estimated_MS_runs AS EstimatedMSRuns ,
             SPR.Work_Package_Number AS WorkPackageNumber ,
             SPR.Replicates_of_Samples AS ReplicatesofSamples ,
-            SPR.Instrument_Name AS InstrumentGroup ,
+            SPR.Instrument_Group AS InstrumentGroup ,
             SPR.Technical_Replicates AS TechnicalReplicates ,
             SPR.Dataset_Type AS DatasetType ,
             SPR.Instrument_Analysis_Specifications AS InstrumentAnalysisSpecifications ,
@@ -47,6 +48,7 @@ AS
             Number_Of_Biomaterial_Reps_Received AS NumberOfBiomaterialRepsReceived
     FROM    T_Sample_Prep_Request AS SPR
             INNER JOIN T_Sample_Prep_Request_State_Name ON SPR.State = T_Sample_Prep_Request_State_Name.State_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Entry] TO [PNL\D3M578] AS [dbo]

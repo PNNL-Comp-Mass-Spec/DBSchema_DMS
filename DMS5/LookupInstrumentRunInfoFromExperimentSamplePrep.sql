@@ -19,6 +19,7 @@ CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
 **  Date:	09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
 **			01/09/2012 grk - added @secSep
 **			03/28/2013 mem - Now returning more explicit error messages when the experiment does not have an associated sample prep request
+**			06/10/2014 mem - Now using Instrument_Group in T_Sample_Prep_Request
 **
 *****************************************************/
 (
@@ -99,7 +100,7 @@ As
 		@irSecSep varchar(64)
 
 	SELECT
-		@irInstName = ISNULL(Instrument_Name, ''),
+		@irInstName = COALESCE(Instrument_Group, Instrument_Name, ''),
 		@irDSType = ISNULL(Dataset_Type, ''),
 		@irInstSettings = ISNULL(Instrument_Analysis_Specifications, ''),
 		@irSecSep = ISNULL(Separation_Type, '')

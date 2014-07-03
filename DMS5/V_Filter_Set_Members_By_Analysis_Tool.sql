@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Set_Members_By_Analysis_Tool]
 AS
 SELECT FS.Filter_Type_ID,
@@ -25,6 +26,7 @@ FROM V_Filter_Sets FS
      INNER JOIN T_Analysis_Tool Tool
        ON FSCM.Analysis_Tool_ID = Tool.AJT_toolID
     
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Filter_Set_Members_By_Analysis_Tool] TO [PNL\D3M578] AS [dbo]

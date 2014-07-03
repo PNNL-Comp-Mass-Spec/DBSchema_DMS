@@ -21,24 +21,9 @@ CREATE TABLE [dbo].[T_OSM_Package](
  CONSTRAINT [PK_T_OSM_Package] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 90) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
-GO
-ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State] FOREIGN KEY([State])
-REFERENCES [T_OSM_Package_State] ([Name])
-GO
-ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State]
-GO
-ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage] FOREIGN KEY([Path_Root])
-REFERENCES [T_OSM_Package_Storage] ([ID])
-GO
-ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage]
-GO
-ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type] FOREIGN KEY([Package_Type])
-REFERENCES [T_OSM_Package_Type] ([Name])
-GO
-ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type]
 GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Package_Type]  DEFAULT ('General') FOR [Package_Type]
 GO
@@ -51,4 +36,19 @@ GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Last_Modified]  DEFAULT (getdate()) FOR [Last_Modified]
 GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_State]  DEFAULT ('Active') FOR [State]
+GO
+ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State] FOREIGN KEY([State])
+REFERENCES [dbo].[T_OSM_Package_State] ([Name])
+GO
+ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_State]
+GO
+ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage] FOREIGN KEY([Path_Root])
+REFERENCES [dbo].[T_OSM_Package_Storage] ([ID])
+GO
+ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Storage]
+GO
+ALTER TABLE [dbo].[T_OSM_Package]  WITH CHECK ADD  CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type] FOREIGN KEY([Package_Type])
+REFERENCES [dbo].[T_OSM_Package_Type] ([Name])
+GO
+ALTER TABLE [dbo].[T_OSM_Package] CHECK CONSTRAINT [FK_T_OSM_Package_T_OSM_Package_Type]
 GO

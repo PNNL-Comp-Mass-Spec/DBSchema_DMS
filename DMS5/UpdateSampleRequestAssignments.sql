@@ -23,6 +23,7 @@ CREATE Procedure UpdateSampleRequestAssignments
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			02/20/2012 mem - Now using a temporary table to track the requests to update
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
 **    
 *****************************************************/
 (
@@ -54,7 +55,7 @@ As
 
 	INSERT INTO @tblRequestsToProcess (RequestID)
 	SELECT Value
-	FROM dbo.udfParseDelimitedIntegerList(@reqIDList, ',')
+	FROM dbo.udfParseDelimitedIntegerList(@reqIDList, default)
 	ORDER BY Value
 	
 	-- Process each request in @tblRequestsToProcess

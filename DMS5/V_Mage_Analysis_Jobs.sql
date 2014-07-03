@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Mage_Analysis_Jobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -57,6 +58,7 @@ FROM T_Analysis_Job AJ
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
+
 
 
 

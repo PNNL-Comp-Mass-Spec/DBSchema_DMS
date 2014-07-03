@@ -455,6 +455,8 @@ As
 	
 	return @myError
 
+
+
 GO
 GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [BUILTIN\Administrators] AS [dbo]
 GO

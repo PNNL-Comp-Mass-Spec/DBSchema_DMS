@@ -829,6 +829,7 @@ Done:
 
 	Return @myError
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[BackupDMSDBs] TO [Limited_Table_Write] AS [dbo]
 GO

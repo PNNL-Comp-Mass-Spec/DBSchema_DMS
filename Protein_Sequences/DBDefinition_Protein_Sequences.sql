@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 54011520KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 66719488KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 29224192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 3523840KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -58,8 +58,6 @@ ALTER DATABASE [Protein_Sequences] SET READ_COMMITTED_SNAPSHOT OFF
 GO
 ALTER DATABASE [Protein_Sequences] SET HONOR_BROKER_PRIORITY OFF 
 GO
-ALTER DATABASE [Protein_Sequences] SET  READ_WRITE 
-GO
 ALTER DATABASE [Protein_Sequences] SET RECOVERY FULL 
 GO
 ALTER DATABASE [Protein_Sequences] SET  MULTI_USER 
@@ -67,6 +65,56 @@ GO
 ALTER DATABASE [Protein_Sequences] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [Protein_Sequences] SET DB_CHAINING OFF 
+GO
+USE [Protein_Sequences]
+GO
+/****** Object:  User [BUILTIN\Administrators] ******/
+CREATE USER [BUILTIN\Administrators] FOR LOGIN [BUILTIN\Administrators]
+GO
+/****** Object:  User [d3m580] ******/
+CREATE USER [d3m580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[d3m580]
+GO
+/****** Object:  User [DMSReader] ******/
+CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [DMSWebUser] ******/
+CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [EMSL-Prism.Users.DMS_Guest] ******/
+CREATE USER [EMSL-Prism.Users.DMS_Guest] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_Guest]
+GO
+/****** Object:  User [EMSL-Prism.Users.DMS_User] ******/
+CREATE USER [EMSL-Prism.Users.DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
+GO
+/****** Object:  User [emsl-prism.Users.Web_Analysis] ******/
+CREATE USER [emsl-prism.Users.Web_Analysis] FOR LOGIN [PNL\EMSL-Prism.Users.Web_Analysis]
+GO
+/****** Object:  User [MTAdmin] ******/
+CREATE USER [MTAdmin] FOR LOGIN [mtadmin] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [MTS_DB_Dev] ******/
+CREATE USER [MTS_DB_Dev] FOR LOGIN [ProteinSeqs\MTS_DB_Dev]
+GO
+/****** Object:  User [MTS_DB_Lite] ******/
+CREATE USER [MTS_DB_Lite] FOR LOGIN [ProteinSeqs\MTS_DB_Lite]
+GO
+/****** Object:  User [MTS_DB_Reader] ******/
+CREATE USER [MTS_DB_Reader] FOR LOGIN [ProteinSeqs\MTS_DB_Reader]
+GO
+/****** Object:  User [MTUser] ******/
+CREATE USER [MTUser] FOR LOGIN [mtuser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [pnl\D3E383] ******/
+CREATE USER [pnl\D3E383] FOR LOGIN [PNL\D3E383] WITH DEFAULT_SCHEMA=[pnl\D3E383]
+GO
+/****** Object:  User [pnl\d3l243] ******/
+CREATE USER [pnl\d3l243] FOR LOGIN [PNL\D3L243] WITH DEFAULT_SCHEMA=[pnl\d3l243]
+GO
+/****** Object:  User [PRISMSeqReader] ******/
+CREATE USER [PRISMSeqReader] FOR LOGIN [PRISMSeqReader] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [svc-dms] ******/
+CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
 GRANT CONNECT TO [BUILTIN\Administrators] AS [dbo]
 GO
@@ -105,4 +153,6 @@ GO
 GRANT CONNECT TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
+GO
+ALTER DATABASE [Protein_Sequences] SET  READ_WRITE 
 GO

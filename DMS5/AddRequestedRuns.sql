@@ -35,6 +35,7 @@ CREATE PROCEDURE AddRequestedRuns
 **		02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **		06/13/2013 mem - Added @VialingConc and @VialingVol
 					   - Now validating @WorkPackageNumber against T_Charge_Code
+**		06/18/2014 mem - Now passing default to udfParseDelimitedList
 **
 *****************************************************/
 (
@@ -187,7 +188,7 @@ As
 
 		INSERT INTO @tblExperimentsToProcess (Experiment)
 		SELECT Value
-		FROM dbo.udfParseDelimitedList(@experimentList, ',')
+		FROM dbo.udfParseDelimitedList(@experimentList, default)
 		WHERE Len(Value) > 0
 		ORDER BY Value
 	End

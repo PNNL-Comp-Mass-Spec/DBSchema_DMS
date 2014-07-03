@@ -21,16 +21,53 @@ CREATE TABLE [dbo].[T_Protein_Collections](
  CONSTRAINT [PK_T_Protein_Collections] PRIMARY KEY CLUSTERED 
 (
 	[Protein_Collection_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
+GRANT DELETE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
+GO
+GRANT INSERT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
+GO
+GRANT SELECT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
+GO
+GRANT UPDATE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
+GO
+SET ANSI_PADDING ON
 
+GO
 /****** Object:  Index [IX_T_Protein_Collections_FileName] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Collections_FileName] ON [dbo].[T_Protein_Collections] 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Collections_FileName] ON [dbo].[T_Protein_Collections]
 (
 	[FileName] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_Type_ID]  DEFAULT ((1)) FOR [Collection_Type_ID]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_State_ID]  DEFAULT ((1)) FOR [Collection_State_ID]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateCreated]  DEFAULT (getdate()) FOR [DateCreated]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateModified]  DEFAULT (getdate()) FOR [DateModified]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Contents_Encrypted]  DEFAULT (0) FOR [Contents_Encrypted]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Uploaded_By]  DEFAULT (suser_sname()) FOR [Uploaded_By]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Annotation_Types] FOREIGN KEY([Primary_Annotation_Type_ID])
+REFERENCES [dbo].[T_Annotation_Types] ([Annotation_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Annotation_Types]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_States] FOREIGN KEY([Collection_State_ID])
+REFERENCES [dbo].[T_Protein_Collection_States] ([Collection_State_ID])
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_States]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_Types] FOREIGN KEY([Collection_Type_ID])
+REFERENCES [dbo].[T_Protein_Collection_Types] ([Collection_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_Types]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Protein_Collections] ******/
 SET ANSI_NULLS ON
@@ -89,39 +126,4 @@ AS
 		SELECT 1, inserted.Protein_Collection_ID, inserted.Collection_State_ID, deleted.Collection_State_ID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Protein_Collection_ID = inserted.Protein_Collection_ID
 
-GO
-GRANT DELETE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Annotation_Types] FOREIGN KEY([Primary_Annotation_Type_ID])
-REFERENCES [T_Annotation_Types] ([Annotation_Type_ID])
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Annotation_Types]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_States] FOREIGN KEY([Collection_State_ID])
-REFERENCES [T_Protein_Collection_States] ([Collection_State_ID])
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_States]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_Types] FOREIGN KEY([Collection_Type_ID])
-REFERENCES [T_Protein_Collection_Types] ([Collection_Type_ID])
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] CHECK CONSTRAINT [FK_T_Protein_Collections_T_Protein_Collection_Types]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_Type_ID]  DEFAULT ((1)) FOR [Collection_Type_ID]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_State_ID]  DEFAULT ((1)) FOR [Collection_State_ID]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateCreated]  DEFAULT (getdate()) FOR [DateCreated]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateModified]  DEFAULT (getdate()) FOR [DateModified]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Contents_Encrypted]  DEFAULT (0) FOR [Contents_Encrypted]
-GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Uploaded_By]  DEFAULT (suser_sname()) FOR [Uploaded_By]
 GO

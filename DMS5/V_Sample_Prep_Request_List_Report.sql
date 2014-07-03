@@ -26,7 +26,7 @@ SELECT SPR.ID ,
        SPR.[Comment],
        SPR.Work_Package_Number AS WP ,
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
-       SPR.Instrument_Name AS Instrument ,
+       SPR.Instrument_Group AS Instrument ,
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis] ,
        SPR.Separation_Type AS [Separation Group],
        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 8 Then 1 Else 0 End) AS Experiments_Last_7Days,
@@ -62,7 +62,7 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
          QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
          QP.U_Name, SPR.Requester_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
-         SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Name,
+         SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Group,
          SPR.Instrument_Analysis_Specifications, SPR.Separation_Type,
          CC.Activation_State, CC.Activation_State_Name
 

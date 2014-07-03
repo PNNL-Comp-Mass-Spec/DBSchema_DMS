@@ -12,12 +12,12 @@ CREATE TABLE [dbo].[T_Annotation_Types](
  CONSTRAINT [PK_T_Annotation_Types] PRIMARY KEY CLUSTERED 
 (
 	[Annotation_Type_ID] ASC
-)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 ALTER TABLE [dbo].[T_Annotation_Types]  WITH CHECK ADD  CONSTRAINT [FK_T_Annotation_Types_T_Naming_Authorities] FOREIGN KEY([Authority_ID])
-REFERENCES [T_Naming_Authorities] ([Authority_ID])
+REFERENCES [dbo].[T_Naming_Authorities] ([Authority_ID])
 GO
 ALTER TABLE [dbo].[T_Annotation_Types] CHECK CONSTRAINT [FK_T_Annotation_Types_T_Naming_Authorities]
 GO

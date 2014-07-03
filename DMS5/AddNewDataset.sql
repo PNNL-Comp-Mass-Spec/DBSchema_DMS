@@ -33,6 +33,7 @@ CREATE PROCEDURE dbo.AddNewDataset
 **			05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
 **			01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
 **			11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
+**			06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
 **    
 *****************************************************/
 (
@@ -212,13 +213,14 @@ AS
 	set @AddUpdateTimeStamp = GetDate()
 	
 	---------------------------------------------------
-	-- Check for the comment containing "Buzzard:" and nothing else
+	-- Check for the comment ending in "Buzzard:"
 	---------------------------------------------------
 	
 	Set @Comment = LTrim(RTrim(@Comment))
-	If @Comment = 'Buzzard:'
-		Set @Comment = ''
-
+	If @Comment Like '%Buzzard:'
+		Set @Comment = Substring(@Comment, 1, Len(@Comment) - 8)
+	
+	
 	---------------------------------------------------
 	-- Create new dataset
 	---------------------------------------------------

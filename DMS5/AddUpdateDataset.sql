@@ -670,6 +670,7 @@ As
 		-- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
 		If @datasetNum Like 'Blank%' And @eusProposalID = '' And @eusUsageType = ''
 			set @eusUsageType = 'MAINTENANCE'
+
 	End
 
 		

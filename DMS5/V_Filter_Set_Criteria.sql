@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Filter_Set_Criteria]
 AS
 SELECT FS.Filter_Set_ID,
@@ -22,6 +23,7 @@ FROM dbo.T_Filter_Sets AS FS
        ON FSCG.Filter_Criteria_Group_ID = FSC.Filter_Criteria_Group_ID
      INNER JOIN dbo.T_Filter_Set_Criteria_Names AS FSCN
        ON FSC.Criterion_ID = FSCN.Criterion_ID
+
 
 
 GO

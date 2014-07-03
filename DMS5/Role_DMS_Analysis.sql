@@ -1,3 +1,3 @@
 /****** Object:  DatabaseRole [DMS_Analysis] ******/
-CREATE ROLE [DMS_Analysis] AUTHORIZATION [dbo]
+CREATE ROLE [DMS_Analysis]
 GO

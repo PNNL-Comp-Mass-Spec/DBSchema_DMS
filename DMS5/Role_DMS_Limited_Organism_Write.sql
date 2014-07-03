@@ -1,3 +1,3 @@
 /****** Object:  DatabaseRole [DMS_Limited_Organism_Write] ******/
-CREATE ROLE [DMS_Limited_Organism_Write] AUTHORIZATION [dbo]
+CREATE ROLE [DMS_Limited_Organism_Write]
 GO

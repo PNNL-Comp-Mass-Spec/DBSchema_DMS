@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Pipeline_Jobs_Backfill]
 AS
 SELECT J.Job,
@@ -27,5 +26,6 @@ FROM T_Jobs J
      INNER JOIN V_Job_Processing_Time JPT
        ON J.Job = JPT.Job
 WHERE (S.Backfill_to_DMS = 1)
+
 
 GO

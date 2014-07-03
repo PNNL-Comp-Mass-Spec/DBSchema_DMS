@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Filter_Sets]
 AS
 SELECT FST.Filter_Type_ID,
@@ -25,6 +26,7 @@ FROM dbo.T_Filter_Set_Types FST
                 INNER JOIN dbo.T_Filter_Set_Criteria_Names FSCN
                   ON FSC.Criterion_ID = FSCN.Criterion_ID
        ON FSCG.Filter_Criteria_Group_ID = FSC.Filter_Criteria_Group_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets] TO [PNL\D3M578] AS [dbo]

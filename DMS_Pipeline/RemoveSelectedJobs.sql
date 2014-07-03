@@ -18,6 +18,7 @@ CREATE PROCEDURE RemoveSelectedJobs
 **          02/28/2009 grk - Added logic to preserve record of successful shared results
 **			08/20/2013 mem - Added support for @LogDeletions=2
 **						   - Now disabling trigger trig_ud_T_Jobs when deleting rows from T_Jobs (required because stored procedure RemoveOldJobs wraps the call to this procedure with a transaction)
+**			06/16/2014 mem - Now disabling trigger trig_ud_T_Job_Steps when deleting rows from T_Job_Steps
 **
 *****************************************************/
 (
@@ -128,8 +129,10 @@ As
 		End
  
  		If @LogDeletions = 2
-			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Parameters'
-
+			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Parameters';
+		
+		disable trigger trig_ud_T_Job_Steps on T_Job_Steps;
+		
    		---------------------------------------------------
 		-- delete job steps
 		---------------------------------------------------
@@ -146,8 +149,10 @@ As
 		End
 
  		If @LogDeletions = 2
-			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Steps'
-
+			print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Steps';
+		
+		enable trigger trig_ud_T_Job_Steps on T_Job_Steps;
+		
    		---------------------------------------------------
 		-- Delete entries in T_Jobs
 		---------------------------------------------------

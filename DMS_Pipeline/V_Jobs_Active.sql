@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Jobs_Active] 
 AS
 SELECT J.Job,
@@ -53,6 +54,7 @@ FROM V_DMS_PipelineJobs D
        ON D.Job = J.Job
 WHERE D.State IN (1, 8) AND
       J.Job IS NULL
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Jobs_Active] TO [PNL\D3M578] AS [dbo]

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Data_Package_Aggregation_List_Report]
 AS
 SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel.],
@@ -22,7 +23,8 @@ SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel.],
        TM.[Organism DB],
        TM.[Protein Collection List],
        TM.[Protein Options],
-       DS.Rating
+       DS.Rating,
+	   DS.Instrument
 FROM T_Data_Package_Datasets AS TD
      INNER JOIN S_V_Dataset_List_Report_2 AS DS
        ON TD.Dataset_ID = DS.ID
@@ -31,6 +33,8 @@ FROM T_Data_Package_Datasets AS TD
      LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TJ
        ON TJ.Job = TM.Job AND
           TJ.Data_Package_ID = TD.Data_Package_ID
+
+
 
 
 GO

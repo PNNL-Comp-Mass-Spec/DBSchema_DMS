@@ -19,6 +19,7 @@ FROM dbo.T_EUS_Proposals P
      INNER JOIN T_EUS_Proposal_State_Name S
        ON P.State_ID = S.ID
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_Detail_Report] TO [PNL\D3M578] AS [dbo]
 GO

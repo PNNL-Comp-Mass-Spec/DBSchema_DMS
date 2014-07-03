@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Protein_Collections_By_Organism]
 AS
 SELECT DISTINCT VPC.Protein_Collection_ID,
@@ -25,6 +26,7 @@ FROM T_Protein_Collections PC
        ON PC.Protein_Collection_ID = VPC.Protein_Collection_ID
      INNER JOIN V_Organism_Picker OrgPicker
        ON OrgXref.Organism_ID = OrgPicker.ID
+
 
 
 GO

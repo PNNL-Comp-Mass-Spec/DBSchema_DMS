@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Predefined_Analysis_Scheduling_Queue_List_Report] as
 SELECT SQ.Item,
        D.Dataset_Num AS Dataset,
@@ -22,6 +21,7 @@ SELECT SQ.Item,
 FROM T_Predefined_Analysis_Scheduling_Queue SQ
      INNER JOIN T_Dataset D
        ON SQ.Dataset_ID = D.Dataset_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Scheduling_Queue_List_Report] TO [PNL\D3M578] AS [dbo]
