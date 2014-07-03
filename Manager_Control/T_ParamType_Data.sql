@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 149 ******/
+/****** RowCount: 160 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -131,7 +131,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (14
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (144,'PHRPProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (145,'MSDeconvProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (146,'MSAlignProgLoc','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (147,'RProgLoc','','No longer used; the Cyclops plugin of the analysis manager auto-determines this using the registry')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (147,'RProgLoc','','Used by the Cyclops plugin')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (148,'CheckDataFolderCreateQueue','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (149,'SMAQCProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (150,'WorkDirMinFreeSpaceMB','','')
@@ -150,4 +150,15 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (16
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (164,'IonMobilityMsMsProgLoc','','Folder containing IonMobilityMsMsConsole.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (165,'QuameterProgLoc','','Folder containing Quameter.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (166,'PRIDEConverterProgLoc','','Folder containing pride-converter-2.0-SNAPSHOT.jar')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (167,'MSGFPlusIndexFilesFolderPath','','Folder containing MSGF+ index files for Fasta files created from the Protein_Sequences database')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (168,'MSAlignHistoneProgLoc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (169,'MSXMLCacheFolderPath','','Folder containing cached .mzXML files')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (170,'DMSWorkflowsFolderPath','','Folder with scripts and parameter files for MAC jobs')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (171,'LLRCRunnerProgLoc','','Folder containing LLRCRunner.exe, Models_paper.Rdata, and allData_v4.Rdata')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (172,'AgilentToUIMFProgLoc','','Folder containing AgilentToUimfConverter.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (173,'MSGFPlusIndexFilesFolderPathLegacyDB','','Folder containing MSGF+ index files for Fasta files not created from the Protein_Sequences database')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (174,'PICHPCUser','','Username to use when connecting to PIC HPC')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (175,'PICHPCPassword','','Password to use when connecting to PIC HPC')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (176,'MODaProgLoc','','Path to modA')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (177,'DeconPeakDetectorProgLoc','','Path to HammerOrDeconSimplePeakDetector.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF

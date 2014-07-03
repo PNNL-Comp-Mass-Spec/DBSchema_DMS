@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MgrType_ParamType_Map] ******/
-/****** RowCount: 419 ******/
+/****** RowCount: 436 ******/
 /****** Columns: MgrTypeID, ParamTypeID, DefaultValue, Last_Affected, Entered_By ******/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','','')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,9,'C:\DMS_Work','','')
@@ -326,6 +326,21 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,150,'750','12/22/2011 12:22:23 
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,151,'750','12/22/2011 12:23:46 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,152,'10','12/22/2011 12:24:43 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,157,'C:\DMS_Programs\MSFileInfoScanner','4/25/2012 10:13:58 AM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,158,'C:\Cluster\pvm\lib\WIN32\','7/17/2012 1:09:59 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,159,'C:\DMS_Programs\DMS5\IDPicker\','7/17/2012 1:10:13 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,160,'C:\DMS_Programs\PeptideListToXML\','7/17/2012 1:10:29 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,161,'C:\DMS_Programs\LipidTools\','7/17/2012 1:11:35 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,162,'','7/27/2012 4:49:23 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,163,'C:\DMS_Programs\DeconToolsWorkflows\','8/23/2012 4:40:01 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,164,'C:\DMS_Programs\IonMobilityMsMs\','8/23/2012 4:41:03 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,165,'C:\DMS_Programs\Quameter','9/13/2012 7:39:10 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,166,'C:\DMS_Programs\PRIDE_Converter','3/29/2013 6:19:14 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,167,'\\gigasax\MSGFPlus_Index_Files','3/29/2013 6:19:29 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,168,'C:\DMS_Programs\MSAlign_Histone','3/29/2013 6:19:38 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,169,'\\proto-6\MSXML_Cache','4/10/2013 4:33:20 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,170,'\\gigasax\DMS_Workflows','7/31/2013 11:22:15 AM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,171,'C:\DMS_Programs\LLRCRunner','7/31/2013 11:22:06 AM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,173,'\\proto-7\MSGFPlus_Index_Files','11/1/2013 6:08:19 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','7/9/2009 3:22:43 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,12,'5','7/9/2009 3:24:56 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,15,'client','7/9/2009 3:25:13 PM','PNL\D3J408')
@@ -347,6 +362,7 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,105,'tcp://proto-4.pnl.gov:6161
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,106,'Manager.FolderCreate','7/9/2009 3:36:50 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,116,'DMS.DataPackage.Command','7/9/2009 3:37:36 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,117,'DMS.DataPackage.Broadcast','7/9/2009 3:38:34 PM','PNL\D3J408')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,148,'True','8/26/2013 12:01:16 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (13,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','7/28/2009 10:35:26 AM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (13,9,'','7/28/2009 10:31:03 AM','DMSWebUser')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (13,12,'5','7/28/2009 10:36:26 AM','PNL\D3J408')
@@ -419,4 +435,5 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,120,'0','5/11/2011 12:08:41 PM'
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,138,'\\a1.emsl.pnl.gov\dmsmd5','1/20/2012 11:25:29 AM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,154,'PRISM','1/30/2012 6:12:44 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,157,'C:\DMS_Programs\MSFileInfoScanner','4/25/2012 10:13:54 AM','PNL\D3L243')
-INSERT INTO [T_MgrType_ParamType_Map] VALUES (19,148,'True','12/6/2011 9:33:29 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,165,'C:\DMS_Programs\Quameter','9/13/2012 7:39:10 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,172,'C:\DMS_Programs\AgilentToUimfConverter','8/26/2013 11:19:21 AM','PNL\D3L243')
