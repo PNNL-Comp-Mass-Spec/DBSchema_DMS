@@ -48,6 +48,7 @@ CREATE Procedure UnconsumeScheduledRun
 **		02/20/2013 mem - Added ability to lookup the original request from an auto-created recycled request
 **		02/21/2013 mem - Now validating that the RequestID extracted from "Automatically created by recycling request 12345" actually exists
 **		05/08/2013 mem - Removed parameters @wellplateNum and @wellNum since no longer used
+**		07/08/2014 mem - Now checking for empty requested run comment
 **    
 *****************************************************/
 (
@@ -340,7 +341,7 @@ As
 			RDS_Run_Start = NULL,
 			RDS_Run_Finish = NULL,
 			DatasetID = NULL,
-			RDS_comment = RDS_comment + @notation
+			RDS_comment = CASE WHEN IsNull(RDS_Comment, '') = '' THEN @notation ELSE RDS_comment + @notation END
 		WHERE 
 			ID = @requestIDOriginal
 		--
