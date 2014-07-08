@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Protein_Collections] ******/
-/****** RowCount: 1129 ******/
+/****** RowCount: 1132 ******/
 SET IDENTITY_INSERT [T_Protein_Collections] ON
 INSERT INTO [T_Protein_Collections] (Protein_Collection_ID, FileName, Description, Collection_Type_ID, Collection_State_ID, Primary_Annotation_Type_ID, NumProteins, NumResidues, DateCreated, DateModified, Authentication_Hash, Contents_Encrypted, Uploaded_By, Collection_RowVersion) VALUES (1001,'S_typhimurium_LT2_2004-09-19','Salmonella typhimurium LT2',1,3,1,4550,1423622,'5/30/2006 6:59:01 PM','5/30/2006 6:59:19 PM','96B47F81',0,'PNL\D3K857',0x01B47954)
 INSERT INTO [T_Protein_Collections] (Protein_Collection_ID, FileName, Description, Collection_Type_ID, Collection_State_ID, Primary_Annotation_Type_ID, NumProteins, NumResidues, DateCreated, DateModified, Authentication_Hash, Contents_Encrypted, Uploaded_By, Collection_RowVersion) VALUES (1002,'S_typhi_Ty2_2004-09-19','Salmonella typhi',1,3,1,4319,1310269,'5/30/2006 6:59:23 PM','5/30/2006 6:59:39 PM','59F34421',0,'PNL\D3K857',0x01B4794E)
