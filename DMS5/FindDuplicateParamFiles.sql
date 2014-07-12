@@ -12,12 +12,14 @@ CREATE Procedure dbo.FindDuplicateParamFiles
 **		T_Param_File_Mass_Mods to find parameter files that match
 **
 **	Auth:	mem
-**	Date:	05/15/2008 (Ticket:671)
+**	Date:	05/15/2008 mem - Initial version (Ticket:671)
+**			07/11/2014 mem - Optimized execution speed by adding #Tmp_MassModCounts
+**			               - Updated default value for @ParamFileTypeList
 **    
 *****************************************************/
 (
-	@ParamFileNameFilter varchar(256) = '',					-- One or more param file name specifiers (can contain % wildcards)
-	@ParamFileTypeList varchar(64) = 'Sequest,XTandem',
+	@ParamFileNameFilter varchar(256) = '',					-- One or more param file name specifiers, separated by commas (filters can contain % wildcards)
+	@ParamFileTypeList varchar(64) = 'MSGFDB',				-- Other options are Sequest or XTandem
 	@IgnoreParentMassType tinyint = 1,						-- Ignores 'ParentMassType' differences in T_Param_Entries
 	@ConsiderInsignificantParameters tinyint = 0,
 	@CheckValidOnly tinyint = 1,
@@ -133,6 +135,14 @@ AS
 		Param_File_ID_Dup int
 	)
 	
+	CREATE TABLE #Tmp_MassModCounts (
+		Param_File_ID int,
+		ModCount int
+	)
+	
+	CREATE CLUSTERED INDEX #IX_Tmp_MassModCounts_ModCount ON #Tmp_MassModCounts (ModCount)
+	CREATE UNIQUE INDEX #IX_Tmp_MassModCounts_ModCountParamFileID ON #Tmp_MassModCounts (ModCount, Param_File_ID)
+																	
 	-----------------------------------------
 	-- Populate #Tmp_ParamFileTypeFilter
 	-----------------------------------------
@@ -216,6 +226,23 @@ AS
 		SELECT *
 		FROM #Tmp_ParamFiles
 		ORDER BY Entry_ID
+
+
+	-----------------------------------------
+	-- Populate #Tmp_MassModCounts
+	-----------------------------------------
+	--
+	INSERT INTO #Tmp_MassModCounts( Param_File_ID,
+	                                ModCount )
+	SELECT P.Param_File_ID,
+	       SUM(CASE
+	               WHEN Mod_Entry_ID IS NULL THEN 0
+	               ELSE 1
+	           END) AS ModCount
+	FROM #Tmp_ParamFiles P
+	     LEFT OUTER JOIN T_Param_File_Mass_Mods MM
+	       ON P.Param_File_ID = MM.Param_File_ID
+	GROUP BY P.Param_File_ID
 
 
 	If @ParamFileTypeList LIKE '%Sequest%'
@@ -456,11 +483,11 @@ AS
 			-- Look for duplicates in T_Param_File_Mass_Mods
 			-----------------------------------------
 			--
-			-- First, Count the number of entries in the table for this parameter file
+			-- First, lookup the mod count for this parameter file
 			--
 			Set @ModCount= 0
-			SELECT @ModCount = COUNT(*)
-			FROM T_Param_File_Mass_Mods
+			SELECT @ModCount = ModCount
+			FROM #Tmp_MassModCounts
 			WHERE Param_File_ID = @ParamFileID
 			--
 			SELECT @myRowCount = @@rowcount, @myError = @@error
@@ -471,24 +498,16 @@ AS
 				-----------------------------------------
 				-- Parameter file doesn't have any mass modifications
 				-----------------------------------------
-				--
-				Set @S = ''
-				Set @S = @S + ' INSERT INTO #Tmp_MassModDuplicates (Param_File_ID)'
-				Set @S = @S + ' SELECT PF.Param_File_ID'
-				Set @S = @S + ' FROM T_Param_Files PF LEFT OUTER JOIN'
-				Set @S = @S +      ' T_Param_File_Mass_Mods PFMM ON '
-				Set @S = @S +      ' PF.Param_File_ID = PFMM.Param_File_ID'
-				Set @S = @S + ' WHERE (PFMM.Mod_Entry_ID IS NULL) AND '
-                Set @S = @S +       ' (PF.Param_File_ID <> ' + Convert(varchar(12), @ParamFileID) + ') AND'
-			    Set @S = @S +       ' (PF.Param_File_Type_ID = ' + Convert(varchar(12), @ParamFileTypeID) + ')'
-
-				If @CheckValidOnly <> 0
-						Set @S = @S + ' AND (PF.Valid <> 0)'
-						
-				If @previewSql <> 0
-					Print @S
-				Else
-					Exec (@S)
+				--				
+				INSERT INTO #Tmp_MassModDuplicates (Param_File_ID)
+				SELECT PF.Param_File_ID
+				FROM T_Param_Files PF
+				     INNER JOIN #Tmp_MassModCounts PFMM
+				       ON PF.Param_File_ID = PFMM.Param_File_ID
+				WHERE (PFMM.ModCount = 0) AND
+				      (PF.Param_File_ID <> @ParamFileID) AND
+				      (PF.Param_File_Type_ID = @ParamFileTypeID) AND
+				      (@CheckValidOnly = 0 OR PF.Valid <> 0)
 				--
 				SELECT @myRowCount = @@rowcount, @myError = @@error
 			End -- </c1>
@@ -519,9 +538,8 @@ AS
 								WHERE (PFMM.Param_File_ID <> @ParamFileID) AND
 									  (PF.Param_File_Type_ID = @ParamFileTypeID) AND
 									  (PFMM.Param_File_ID IN (  SELECT Param_File_ID
-																FROM T_Param_File_Mass_Mods
-																GROUP BY Param_File_ID
-																HAVING (COUNT(*) = @ModCount) ))
+																FROM #Tmp_MassModCounts
+																Where ModCount = @ModCount ))
 							) B
 					ON A.Residue_ID = B.Residue_ID AND
 					   A.Mass_Correction_ID = B.Mass_Correction_ID AND
