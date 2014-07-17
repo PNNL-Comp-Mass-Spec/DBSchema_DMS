@@ -161,5 +161,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (17
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (175,'PICHPCPassword','','Password to use when connecting to PIC HPC')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (176,'MODaProgLoc','','Path to modA')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (177,'DeconPeakDetectorProgLoc','','Path to HammerOrDeconSimplePeakDetector.exe')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'PopsicleProgLoc','','Path to POPSICLE (TopDownConsole.exe)')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'MSPathFinderProgLoc','','Path to MSPathFinder (MSPathFinder.exe)')
 SET IDENTITY_INSERT [T_ParamType] OFF
