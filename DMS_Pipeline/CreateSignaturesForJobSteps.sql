@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.CreateSignaturesForJobSteps
 **			02/08/2009 mem - Added parameter @DebugMode
 **			12/21/2009 mem - Added warning message if @DebugMode is non-zero and a signature cannot be computed for a step tool
 **			03/22/2011 mem - Now using varchar(1024) when extracting the @Value from the XML parameters
+**			07/16/2014 mem - Updated capitalization of keywords
 **    
 *****************************************************/
 (
@@ -26,21 +27,21 @@ CREATE PROCEDURE dbo.CreateSignaturesForJobSteps
 	@DebugMode tinyint = 0
 )
 As
-	set nocount on
+	Set nocount on
 	
-	declare @myError int
-	set @myError = 0
+	Declare @myError int
+	Set @myError = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+	Declare @myRowCount int
+	Set @myRowCount = 0
 	
-	set @message = ''
+	Set @message = ''
 
 	---------------------------------------------------
 	-- get job parameters into table format
 	---------------------------------------------------
 	--
-	declare @Job_Parameters table (
+	Declare @Job_Parameters table (
 		[Job] int,
 		[Step_Number] int,
 		[Section] varchar(64),
@@ -51,24 +52,24 @@ As
 	INSERT INTO @Job_Parameters
 		(Job, Step_Number, [Section], [Name], Value)
 	SELECT 
-		xmlNode.value('@Job', 'varchar(64)') as Job,
-		xmlNode.value('@Step_Number', 'varchar(64)') as Step_Number,
-		xmlNode.value('@Section', 'varchar(64)') as [Section],
-		xmlNode.value('@Name', 'varchar(64)') as [Name],
-		xmlNode.value('@Value', 'varchar(1024)') as [Value]
+		xmlNode.value('@Job', 'varchar(64)') As Job,
+		xmlNode.value('@Step_Number', 'varchar(64)') As Step_Number,
+		xmlNode.value('@Section', 'varchar(64)') As [Section],
+		xmlNode.value('@Name', 'varchar(64)') As [Name],
+		xmlNode.value('@Value', 'varchar(1024)') As [Value]
 	FROM
-		@pXML.nodes('//Param') AS R(xmlNode)
+		@pXML.nodes('//Param') As R(xmlNode)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Error getting job parameters'
+	If @myError <> 0
+	Begin
+		Set @message = 'Error getting job parameters'
 		goto Done
-	end
+	End
 	
-	if @DebugMode <> 0
-		SELECT '@Job_Parameters' as [Table], *
+	If @DebugMode <> 0
+		SELECT '@Job_Parameters' As [Table], *
 		FROM @Job_Parameters
 
 	---------------------------------------------------
@@ -76,40 +77,39 @@ As
 	-- for job steps that have tools that require signature
 	---------------------------------------------------
 	--
-	declare @signature int
-	declare @Shared int
-	declare @stepTool varchar(64)
-	declare @curStep int
+	Declare @signature int
+	Declare @Shared int
+	Declare @stepTool varchar(64)
+	Declare @curStep int
 	--
-	declare @prevStep int
-	set @prevStep = 0
+	Declare @prevStep int
+	Set @prevStep = 0
 	--
-	declare @done tinyint
-	set @done = 0
+	Declare @done tinyint
+	Set @done = 0
 	--
-	while @done = 0
-	begin --<a>
+	While @done = 0
+	Begin --<a>
 		-- get next step that requires signature 
 		--
-		set @curStep = 0
+		Set @curStep = 0
 		--
-		select top 1
-			@curStep = Step_Number,
-			@stepTool = Step_Tool,
-			@Shared = Shared_Result_Version
-		from #Job_Steps
-		where 
-			Job = @job and
-			(Shared_Result_Version + Filter_Version) > 0 and
-			Step_Number > @prevStep
-		order by Step_Number
+		SELECT TOP 1 @curStep = Step_Number,
+		             @stepTool = Step_Tool,
+		             @Shared = Shared_Result_Version
+		FROM #Job_Steps
+		WHERE Job = @job AND
+		      (Shared_Result_Version + Filter_Version) > 0 AND
+		      Step_Number > @prevStep
+		ORDER BY Step_Number
+
 		
-		-- if none found, done, otherwise process
-		if @curStep = 0
-			set @done = 1
-		else
-		begin --<b>
-			set @prevStep = @curStep			
+		-- If none found, done, otherwise process
+		If @curStep = 0
+			Set @done = 1
+		Else
+		Begin --<b>
+			Set @prevStep = @curStep			
 			---------------------------------------------------
 			-- get signature for step
 			-- rollup parameter names and values for sections
@@ -117,75 +117,77 @@ As
 			--
 			-- to allow for more than one instance of a tool
 			-- in a single script, look at parameters in sections 
-			-- that either are not locked to any setp 
+			-- that either are not locked to any step
 			-- (step number is null) or are locked to the current step
 			--
-			set @signature = 0
+			Set @signature = 0
 			--
-			declare @s varchar(max)
-			set @s = ''
+			Declare @s varchar(max)
+			Set @s = ''
 			--
-			SELECT   
-			  @s = @s + [Name] + '=' + [Value] + ';'
+			SELECT @s = @s + [Name] + '=' + [Value] + ';'
 			FROM @Job_Parameters
 			WHERE [Section] in (
 				SELECT xmlNode.value('@name', 'varchar(128)') SectionName
-				FROM   T_Step_Tools CROSS APPLY Parameter_Template.nodes('//section') AS R(xmlNode)
-				WHERE  [Name] = @stepTool
-				AND ((Step_Number is null) OR (Step_Number = @curStep))
+				FROM   T_Step_Tools CROSS APPLY 
+				       Parameter_Template.nodes('//section') As R(xmlNode)
+				WHERE  [Name] = @stepTool AND 
+				       ((Step_Number is null) OR (Step_Number = @curStep))
 			)
 			ORDER BY [Section], [Name]
 			-- 
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-			begin
-				set @message = 'Error forming global signature string'
+			If @myError <> 0
+			Begin
+				Set @message = 'Error forming global signature string'
 				goto Done
-			end
+			End
 			
-			if @myRowCount > 0
-			begin --<c>
+			If @myRowCount > 0
+			Begin --<c>
 				---------------------------------------------------
 				-- get signature for rolled-up parameter string
 				--
 				exec @signature = GetSignature @s           
 				--
-				if @signature = 0
-				begin
-					set @message = 'Error calculating signature'
+				If @signature = 0
+				Begin
+					Set @message = 'Error calculating signature'
 					goto Done
-				end
+				End
 				
-				if @DebugMode <> 0
-					Select @signature as Signature, @S as Settings
+				If @DebugMode <> 0
+					SELECT @signature As Signature, @S As Settings
 					
-			end --<c>
-			else
+			End --<c>
+			Else
 			Begin
-				if @DebugMode <> 0
-					SELECT 'Warning: Cannot compute signature since could not find a section named "' + @stepTool + '" in column Parameter_Template in table T_Step_Tools' as Message
+				If @DebugMode <> 0
+					SELECT 'Warning: Cannot compute signature since could not find a section named "' + @stepTool + '" in column Parameter_Template in table T_Step_Tools' As Message
 			End
 			
 			---------------------------------------------------
 			-- calculate shared folder name
 			--
-			declare @SharedResultsFolderName varchar(256)
-			set @SharedResultsFolderName = @stepTool + '_' + convert(varchar(12), @Shared) + '_' + convert(varchar(12), @Signature) + '_' + convert(varchar(12), @DatasetID)
+			Declare @SharedResultsFolderName varchar(256)
+			Set @SharedResultsFolderName = @stepTool + '_' + convert(varchar(12), @Shared) + '_' + convert(varchar(12), @Signature) + '_' + convert(varchar(12), @DatasetID)
 
 			---------------------------------------------------
-			-- set signature (and shared results folder name for shared results steps)
+			-- Set signature (and shared results folder name for shared results steps)
 			--
-			update #Job_Steps
-			set 
-				Signature = @signature,
-				Output_Folder_Name = CASE WHEN @Shared > 0 THEN @SharedResultsFolderName ELSE Output_Folder_Name END
-			where 
-				Job = @job and
-				Step_Number = @curStep
+			UPDATE #Job_Steps
+			SET Signature = @signature,
+			    Output_Folder_Name = CASE
+			                             WHEN @Shared > 0 THEN @SharedResultsFolderName
+			                             ELSE Output_Folder_Name
+			                         END
+			WHERE Job = @job AND
+			      Step_Number = @curStep
 
-		end --<b>
-	end --<a>
+
+		End --<b>
+	End --<a>
 
 	---------------------------------------------------
 	-- Exit
