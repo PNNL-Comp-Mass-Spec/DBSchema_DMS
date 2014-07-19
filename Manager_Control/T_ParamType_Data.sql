@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 161 ******/
+/****** RowCount: 162 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -161,5 +161,6 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (17
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (175,'PICHPCPassword','','Password to use when connecting to PIC HPC')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (176,'MODaProgLoc','','Path to modA')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (177,'DeconPeakDetectorProgLoc','','Path to HammerOrDeconSimplePeakDetector.exe')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'MSPathFinderProgLoc','','Path to MSPathFinder (MSPathFinder.exe)')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'MSPathFinderProgLoc','','Path to MSPathFinder')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (179,'PbfGenProgLoc','','Path to PbfGen')
 SET IDENTITY_INSERT [T_ParamType] OFF

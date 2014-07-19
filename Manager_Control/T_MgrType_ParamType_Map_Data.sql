@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MgrType_ParamType_Map] ******/
-/****** RowCount: 441 ******/
+/****** RowCount: 442 ******/
 /****** Columns: MgrTypeID, ParamTypeID, DefaultValue, Last_Affected, Entered_By ******/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','','')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,9,'C:\DMS_Work','','')
@@ -345,7 +345,8 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,174,'pnl\svc-dms','7/10/2014 5:
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,175,'@ns27qqpb','7/10/2014 5:45:58 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,176,'C:\DMS_Programs\MODa\','7/10/2014 5:46:01 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,177,'C:\DMS_Programs\DeconPeakDetector\','7/10/2014 5:46:03 PM','PNL\D3L243')
-INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,178,'C:\DMS_Programs\POPSICLE\','7/10/2014 5:46:10 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,178,'C:\DMS_Programs\MSPathFinder','7/17/2014 1:53:19 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,179,'C:\DMS_Programs\PbfGen','7/17/2014 1:53:18 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','7/9/2009 3:22:43 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,12,'5','7/9/2009 3:24:56 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,15,'client','7/9/2009 3:25:13 PM','PNL\D3J408')
