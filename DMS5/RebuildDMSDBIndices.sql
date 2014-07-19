@@ -15,11 +15,12 @@ CREATE PROCEDURE dbo.RebuildDMSDBIndices
 **
 **	Auth:	mem
 **	Date:	10/15/2012
+**			07/17/2014 mem - Updated call to RebuildFragmentedIndices
 **    
 *****************************************************/
 (
 	@DBNameMatchList varchar(2048) = 'DMS5,DMS_Capture,DMS_Data_Package,DMS_Pipeline',		-- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Use % to process every database on the server (skips DBs that don't have RebuildFragmentedIndices).  Leave blank to ignore this parameter
-	@MaxFragmentation int = 15,
+	@MaxFragmentation int = 25,
 	@TrivialPageCount int = 12,
 	@InfoOnly tinyint = 1,								-- Set to 1 to display the SQL that would be run
 	@message varchar(255) = '' OUTPUT
@@ -67,6 +68,8 @@ As
 	Declare @LogMsg varchar(512)
 	Declare @MatchCount int
 	Declare @LastLogTime datetime
+	
+	Declare @VerifyUpdateEnabled tinyint = 0
 	
 	---------------------------------------
 	-- Create a temporary table to hold the databases to process
@@ -208,11 +211,11 @@ As
 					Exec PostLogEntry 'Progress', @LogMsg, 'RebuildMTSDBIndices'
 				End
 					
-				Set @Sql = 'exec [' + @DBName + '].dbo.RebuildFragmentedIndices @MaxFragmentation, @TrivialPageCount, @infoOnly, @message output'
-				Set @SqlParams = '@MaxFragmentation int, @TrivialPageCount int, @infoOnly tinyint, @message varchar(1024) output'
+				Set @Sql = 'exec [' + @DBName + '].dbo.RebuildFragmentedIndices @MaxFragmentation, @TrivialPageCount, @VerifyUpdateEnabled, @infoOnly, @message output'
+				Set @SqlParams = '@MaxFragmentation int, @TrivialPageCount int, @VerifyUpdateEnabled tinyint, @infoOnly tinyint, @message varchar(1024) output'
 				Set @message = ''
 				
-				Exec @myError = sp_executesql @Sql, @SqlParams, @MaxFragmentation, @TrivialPageCount, @infoOnly, @message output
+				Exec @myError = sp_executesql @Sql, @SqlParams, @MaxFragmentation, @TrivialPageCount, @VerifyUpdateEnabled, @infoOnly, @message output
 				
 				If @myError <> 0
 				Begin

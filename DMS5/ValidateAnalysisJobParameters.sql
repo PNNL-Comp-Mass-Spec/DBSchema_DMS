@@ -47,6 +47,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			02/28/2014 mem - Now throwing an error if trying to search a large Fasta file with a parameter file that will result in a very slow search
 **			03/13/2014 mem - Added custom message to be displayed when trying to reset a MAC job
 **						   - Added optional parameter @Job
+**			07/18/2014 mem - Now validating that files over 400 MB in size are using MSGFPlus_SplitFasta
 **
 *****************************************************/
 (
@@ -425,15 +426,27 @@ As
 	---------------------------------------------------
 	If @toolName Like '%MSGFPlus%' And @organismDBName <> 'na' And @organismDBName <> ''
 	Begin
-		Declare @NumResidues bigint = 0
+		Declare @FileSizeKB real = 0
+		Declare @SizeDescription varchar(24) = ''
 		
-		SELECT @NumResidues = NumResidues
+		SELECT @FileSizeKB = File_Size_KB
 		FROM T_Organism_DB_File
 		WHERE FileName = @organismDBName
 		
+		If @FileSizeKB > 0
+		Begin
+			Declare @FileSizeMB real = @FileSizeKB/1024.0
+			Declare @FileSizeGB real = @FileSizeMB/1024.0
+			
+			If @FileSizeGB < 1
+				Set @SizeDescription = Cast(Cast(@FileSizeMB As int) As varchar(12)) + ' MB'
+			else
+				Set @SizeDescription = Cast(Cast(@FileSizeGB As decimal(9,1)) As varchar(12)) + ' GB'
+		End
 		
-		If IsNull(@NumResidues, 0) > 500000000 Or
-		   @organismDBName In (
+		-- Check for a file over 400 MB in size
+		If IsNull(@FileSizeKB, 0) > 400*1024 Or
+		   @organismDBName In (		   
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24.fasta',
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24_reversed.fasta',
 				'uniprot_2012_1_combined_bacterial_sprot_trembl_2012-02-20.fasta',
@@ -453,8 +466,20 @@ As
 			   )
 			Begin
 			
-				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large; you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
+				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
 				Set @result = 65350
+				
+				return @result
+			End
+		End
+		
+		-- If using MSGF and the file is over 400 MB, then you must use MSGFPlus_SplitFasta
+		If IsNull(@FileSizeKB, 0) > 400*1024
+		Begin
+			If @toolName Like '%MSGF%' And Not @toolName Like '%SplitFasta%'
+			Begin
+				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must use analysis tool MSGFPlus_SplitFasta'
+				Set @result = 65351
 				
 				return @result
 			End
