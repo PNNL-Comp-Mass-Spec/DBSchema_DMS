@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateMaterialContainer
+CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 /****************************************************
 **
 **  Desc: Adds new or edits an existing material container
@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateMaterialContainer
 **    07/18/2008 grk -- added checking for location's container limit
 **    11/25/2008 grk -- corrected udpdate not to check for room if location doesn't change
 **    07/28/2011 grk -- added owner field
+**    08/01/2011 grk -- always create new container if mode is "add"
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -54,7 +55,7 @@ As
 	-- optionally generate name
 	---------------------------------------------------
 
-	if @Container = '(generate name)'
+	if @Container = '(generate name)' OR @mode = 'add'
 	begin
 		declare @tmp int
 		--
@@ -283,7 +284,6 @@ As
 	end -- update mode
 
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateMaterialContainer] TO [DMS2_SP_User] AS [dbo]
