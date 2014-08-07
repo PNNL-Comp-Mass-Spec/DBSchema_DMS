@@ -38,32 +38,35 @@ SELECT DS.Dataset_ID AS ID,
        RRH.RDS_Oper_PRN AS Requester,
        DASN.DASN_StateName AS [Archive State],
        T_YesNo.Description AS [Inst. Data Purged],
+	   Org.OG_name AS Organism,
 	   DS.DateSortKey AS #DateSortKey
-FROM T_DatasetArchiveStateName DASN
-     INNER JOIN T_Dataset_Archive DA
-       ON DASN.DASN_StateID = DA.AS_state_ID
-     LEFT OUTER JOIN T_YesNo
-       ON DA.AS_instrument_data_purged = T_YesNo.Flag
-     RIGHT OUTER JOIN T_DatasetStateName DSN
-                      INNER JOIN T_Dataset DS
-                        ON DSN.Dataset_state_ID = DS.DS_state_ID
-                      INNER JOIN T_DatasetTypeName DTN
-                        ON DS.DS_type_ID = DTN.DST_Type_ID
-                      INNER JOIN T_Instrument_Name InstName
-                        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                      INNER JOIN T_DatasetRatingName DSRating
-                        ON DS.DS_rating = DSRating.DRN_state_ID
-                      INNER JOIN T_Experiments Exp
-                        ON DS.Exp_ID = Exp.Exp_ID
-                      INNER JOIN T_Campaign C
-                        ON Exp.EX_campaign_ID = C.Campaign_ID
-                      INNER JOIN V_Dataset_Folder_Paths DFP
-                        ON DS.Dataset_ID = DFP.Dataset_ID
-                      INNER JOIN T_LC_Column LC
-                        ON DS.DS_LC_column_ID = LC.ID
-       ON DA.AS_Dataset_ID = DS.Dataset_ID
+FROM T_DatasetStateName DSN
+     INNER JOIN T_Dataset DS
+       ON DSN.Dataset_state_ID = DS.DS_state_ID
+     INNER JOIN T_DatasetTypeName DTN
+       ON DS.DS_type_ID = DTN.DST_Type_ID
+     INNER JOIN T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN T_DatasetRatingName DSRating
+       ON DS.DS_rating = DSRating.DRN_state_ID
+     INNER JOIN T_Experiments Exp
+       ON DS.Exp_ID = Exp.Exp_ID
+     INNER JOIN T_Campaign C
+       ON Exp.EX_campaign_ID = C.Campaign_ID
+     INNER JOIN V_Dataset_Folder_Paths DFP
+       ON DS.Dataset_ID = DFP.Dataset_ID
+     INNER JOIN T_LC_Column LC
+       ON DS.DS_LC_column_ID = LC.ID
+     INNER JOIN T_Organisms Org
+       ON Org.Organism_ID = Exp.EX_organism_ID
      LEFT OUTER JOIN T_Requested_Run RRH
        ON DS.Dataset_ID = RRH.DatasetID
+     LEFT OUTER JOIN T_DatasetArchiveStateName DASN
+                     INNER JOIN T_Dataset_Archive DA
+                       ON DASN.DASN_StateID = DA.AS_state_ID
+                     INNER JOIN T_YesNo
+                       ON DA.AS_instrument_data_purged = T_YesNo.Flag
+       ON DS.Dataset_ID = DA.AS_Dataset_ID
 
 
 GO
