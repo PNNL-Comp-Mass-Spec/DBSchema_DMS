@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps_History]
 AS
 SELECT JS.Job,
@@ -15,6 +16,9 @@ SELECT JS.Job,
        JS.State,
        JS.Start,
        JS.Finish,
+	   Case When Not JS.Finish Is Null Then CONVERT(decimal(9, 1), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) / 60.0) 
+			Else Null 
+			End AS RunTime_Minutes,
        JS.Processor,
        JS.Input_Folder_Name AS Input_Folder,
        JS.Output_Folder_Name AS Output_Folder,
@@ -39,6 +43,7 @@ FROM T_Step_Tool_Versions STV
        ON JS.Job = J.Job AND
           JS.Saved = J.Saved
 WHERE J.Most_Recent_Entry = 1
+
 
 
 GO
