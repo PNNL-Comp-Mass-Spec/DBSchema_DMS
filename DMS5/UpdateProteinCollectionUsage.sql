@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 **	Auth:	mem
 **	Date:	09/11/2012 mem - Initial version
 **			11/20/2012 mem - Now updating Job_Usage_Count_Last12Months
+**			08/14/2014 mem - Fixed bug updating Job_Usage_Count_Last12Months (occurred when a protein collection had not been used in the last year)
 **
 *****************************************************/
 (
@@ -74,34 +75,18 @@ AS
 			execute PostLogEntry 'Error', @message, 'UpdateProteinCollectionUsage'
 		End
 
-		-- Update the usage counts in T_Protein_Collection_Usage for the last 12 months
+		-- Update the usage counts in T_Protein_Collection_Usage
 		--
 		UPDATE T_Protein_Collection_Usage
-		SET Job_Usage_Count_Last12Months = UsageQ.Job_Usage_Count
-		FROM T_Protein_Collection_Usage Target
-		     INNER JOIN ( SELECT ProteinCollectionName,
-		                         COUNT(DISTINCT Job) AS Job_Usage_Count
-		                  FROM ( SELECT AJ_JobID AS Job,
-		                                ProteinCollections.Item AS ProteinCollectionName
-		                         FROM T_Analysis_Job
-		                              CROSS APPLY dbo.MakeTableFromListDelim ( AJ_ProteinCollectionList, ',' ) ProteinCollections
-		                         WHERE COALESCE(AJ_created, AJ_Start, AJ_finish) >= DateAdd(month, -12, GetDate()) AND AJ_ProteinCollectionList <> 'na' 
-		                        ) SplitQ
-		                  GROUP BY ProteinCollectionName 
-		                 ) AS UsageQ
-		       ON Target.Name = UsageQ.ProteinCollectionName
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-
-		-- Update the usage counts in T_Protein_Collection_Usage for all years
-		--
-		UPDATE T_Protein_Collection_Usage
-		SET Job_Usage_Count = UsageQ.Job_Usage_Count,
+		SET Job_Usage_Count_Last12Months = UsageQ.Job_Usage_Count_Last12Months,
+		    Job_Usage_Count = UsageQ.Job_Usage_Count,		 
 		    Most_Recently_Used = UsageQ.Most_Recent_Date
 		FROM T_Protein_Collection_Usage Target
 		     INNER JOIN ( SELECT ProteinCollectionName,
 		                         COUNT(DISTINCT Job) AS Job_Usage_Count,
+								 SUM(CASE WHEN JobDate >= DateAdd(month, -12, GetDate()) THEN 1 
+								     ELSE 0 
+								     End) As Job_Usage_Count_Last12Months,
 		                         MAX(JobDate) AS Most_Recent_Date
 		                  FROM ( SELECT AJ_JobID AS Job,
 		                                ProteinCollections.Item AS ProteinCollectionName,
@@ -115,8 +100,6 @@ AS
 		       ON Target.Name = UsageQ.ProteinCollectionName
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		
 		
 	End Try
 	Begin Catch

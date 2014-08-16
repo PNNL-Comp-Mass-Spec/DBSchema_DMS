@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Analysis_Request_Jobs_List_Report]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -28,7 +26,8 @@ SELECT AJ.AJ_jobID AS Job,
        PG.Group_Name AS [Associated Processor Group],
        DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder,
        DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder_Archive,
-       Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime
+       Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime,
+	   DS.Dataset_ID
 FROM dbo.T_Analysis_Job_Processor_Group PG
      INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations PGA
        ON PG.ID = PGA.Group_ID
@@ -44,8 +43,6 @@ FROM dbo.T_Analysis_Job_Processor_Group PG
                       INNER JOIN V_Dataset_Folder_Paths DFP
                         ON AJ.AJ_datasetID = DFP.Dataset_ID
        ON PGA.Job_ID = AJ.AJ_jobID
-
-
 
 
 GO
