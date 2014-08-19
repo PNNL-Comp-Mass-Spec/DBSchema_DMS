@@ -25,10 +25,21 @@ SELECT DP.ID,
        DPP.Storage_Path_Relative,
        DPP.Share_Path,
        DPP.Archive_Path,
-       DPP.Local_Path
-FROM dbo.T_Data_Package DP
-     INNER JOIN dbo.V_Data_Package_Paths AS DPP
+       DPP.Local_Path,
+       IsNull(UploadQ.MyEmsl_Uploads, 0) As MyEMSL_Uploads
+FROM T_Data_Package DP
+     INNER JOIN V_Data_Package_Paths DPP
        ON DP.ID = DPP.ID
+     LEFT OUTER JOIN ( SELECT Data_Package_ID,
+                              COUNT(*) AS MyEMSL_Uploads
+                       FROM T_MyEMSL_Uploads
+                       WHERE (ErrorCode = 0) AND
+                             (StatusNum > 1) AND
+                             (FileCountNew > 0 OR
+                              FileCountUpdated > 0)
+                       GROUP BY Data_Package_ID 
+					 ) UploadQ
+       ON DP.ID = UploadQ.Data_Package_ID
 
 
 GO
