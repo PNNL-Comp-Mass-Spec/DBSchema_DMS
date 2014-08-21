@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MoveDatasetsToAutoDefinedStoragePath
+CREATE Procedure MoveDatasetsToAutoDefinedStoragePath
 /****************************************************
 **
 **	Desc:	Updates the storage and archive locations for one or more datasets to use the
@@ -296,6 +296,7 @@ AS
 	-----------------------------------------
 	--
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveDatasetsToAutoDefinedStoragePath] TO [PNL\D3M578] AS [dbo]

@@ -20,7 +20,8 @@ SELECT DS.Dataset_ID AS Dataset_ID,
                     ELSE DFP.Archive_Folder_Path
                 END
        END AS Folder,
-       DS.DS_comment AS [Comment]
+       DS.DS_comment AS [Comment],
+	   Org.OG_name AS Organism
 FROM T_Dataset DS
      INNER JOIN T_DatasetStateName DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID
@@ -32,6 +33,8 @@ FROM T_Dataset DS
        ON DS.Exp_ID = E.Exp_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
+	 INNER JOIN T_Organisms Org
+       ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
      LEFT OUTER JOIN T_Dataset_Archive DA

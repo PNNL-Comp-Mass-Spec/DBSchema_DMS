@@ -135,6 +135,7 @@ Done:
 
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [Limited_Table_Write] AS [dbo]
 GO

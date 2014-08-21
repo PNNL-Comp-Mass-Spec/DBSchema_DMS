@@ -65,4 +65,5 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, TA.Att
          CC.Activation_State, CC.Activation_State_Name
 
 
+
 GO

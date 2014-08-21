@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateSamplePrepRequest
+CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -57,6 +57,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 **			03/13/2014 grk - Added ability to edit closed SPR for staff with permissions (OMCDA-1071)
 **			05/19/2014 mem - Now populating Request_Type
 **			05/20/2014 mem - Now storing InstrumentGroup in column Instrument_Group instead of Instrument_Name
+**			03/13/2014 grk - Added material container field (OMCDA-1076)
 **    
 *****************************************************/
 (
@@ -64,6 +65,7 @@ CREATE PROCEDURE AddUpdateSamplePrepRequest
 	@RequesterPRN varchar(32),
 	@Reason varchar(512),
 	@CellCultureList varchar(1024),
+	@MaterialContainerList VARCHAR(2048),
 	@Organism varchar(128),
 	@BiohazardLevel varchar(12),
 	@Campaign varchar(128),
@@ -268,6 +270,49 @@ As
 	--
 	if @cnt <> 0 
 		RAISERROR ('One or more cell cultures was not in database', 11, 81)
+
+	---------------------------------------------------
+	-- Resolve material containers
+	---------------------------------------------------
+
+	-- create tempoary table to hold names of material containers as input
+	--
+	create table #MC (
+		name varchar(128) not null
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+		RAISERROR ('Could not create temporary table for material container list', 11, 50)
+
+	-- get names of material containers from list argument into table
+	--
+	INSERT INTO #MC (name) 
+	SELECT item FROM MakeTableFromList(@MaterialContainerList)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+		RAISERROR ('Could not populate temporary table for material container list', 11, 51)
+
+	-- verify that material containers exist
+	--
+	set @cnt = -1
+	SELECT @cnt = count(*) 
+	FROM #MC 
+	WHERE [name] not in (
+		SELECT Tag
+		FROM T_Material_Containers
+	)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+		RAISERROR ('Was not able to check for material containers in database', 11, 52)
+	--
+	if @cnt <> 0 
+		RAISERROR ('One or more material containers was not in database', 11, 53)
 
 	---------------------------------------------------
 	-- Resolve organism ID
@@ -483,7 +528,8 @@ As
 			IOPSPermitsCurrent,
 			Reason_For_High_Priority,
 			Number_Of_Biomaterial_Reps_Received,
-			Request_Type		
+			Request_Type,
+			Material_Container_List	
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
@@ -523,7 +569,8 @@ As
 			@IOPSPermitsCurrent,
 			@ReasonForHighPriority,
 			@NumberOfBiomaterialRepsReceived,
-			@RequestType
+			@RequestType,
+			@MaterialContainerList
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -566,6 +613,7 @@ As
 			Requester_PRN = @RequesterPRN, 
 			Reason = @Reason,
 			Cell_Culture_List = @CellCultureList, 
+			Material_Container_List = @MaterialContainerList,
 			Organism = @Organism, 
 			Biohazard_Level = @BiohazardLevel, 
 			Campaign = @Campaign, 
@@ -624,6 +672,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User] AS [dbo]

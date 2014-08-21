@@ -60,11 +60,12 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Dataset_Item_Count] [int] NULL,
 	[HPLC_Runs_Item_Count] [int] NULL,
 	[Total_Item_Count] [int] NULL,
+	[Material_Container_List] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 GRANT DELETE ON [dbo].[T_Sample_Prep_Request] TO [Limited_Table_Write] AS [dbo]

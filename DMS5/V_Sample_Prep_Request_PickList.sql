@@ -25,6 +25,7 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
          SPR.Requester_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_PickList] TO [PNL\D3M578] AS [dbo]
 GO

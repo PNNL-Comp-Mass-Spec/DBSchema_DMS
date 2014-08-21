@@ -43,13 +43,12 @@ AS
             SPR.Separation_Type AS SeparationGroup ,
             SPR.BlockAndRandomizeSamples ,
             SPR.BlockAndRandomizeRuns ,
-            SPR.IOPSPermitsCurrent,
-            Reason_For_High_Priority AS ReasonForHighPriority,
-            Number_Of_Biomaterial_Reps_Received AS NumberOfBiomaterialRepsReceived
+            SPR.IOPSPermitsCurrent ,
+            SPR.Reason_For_High_Priority AS ReasonForHighPriority ,
+            SPR.Number_Of_Biomaterial_Reps_Received AS NumberOfBiomaterialRepsReceived ,
+            SPR.Material_Container_List AS MaterialContainerList
     FROM    T_Sample_Prep_Request AS SPR
             INNER JOIN T_Sample_Prep_Request_State_Name ON SPR.State = T_Sample_Prep_Request_State_Name.State_ID
-
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Entry] TO [PNL\D3M578] AS [dbo]
 GO

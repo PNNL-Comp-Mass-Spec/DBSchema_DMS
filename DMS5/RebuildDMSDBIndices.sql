@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.RebuildDMSDBIndices
+CREATE Procedure dbo.RebuildDMSDBIndices
 /****************************************************
 **
 **	Desc:	Calls RebuildFragmentedIndices in a series of DMS databases
@@ -272,6 +272,7 @@ Done:
 	DROP TABLE #Tmp_DB_List
 
 	Return @myError
+
 
 
 GO

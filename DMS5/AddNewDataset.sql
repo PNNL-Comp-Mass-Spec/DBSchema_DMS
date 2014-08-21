@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddNewDataset
+CREATE Procedure dbo.AddNewDataset
 /****************************************************
 **
 **	Desc: 
@@ -371,6 +371,7 @@ AS
  	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry] AS [dbo]

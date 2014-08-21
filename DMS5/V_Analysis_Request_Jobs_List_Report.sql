@@ -45,6 +45,7 @@ FROM dbo.T_Analysis_Job_Processor_Group PG
        ON PGA.Job_ID = AJ.AJ_jobID
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Request_Jobs_List_Report] TO [PNL\D3M578] AS [dbo]
 GO

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateRequestedRun
+
+CREATE Procedure [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -63,6 +64,7 @@ CREATE Procedure AddUpdateRequestedRun
 **			06/06/2013 mem - Now showing warning if the work package is deactivated
 **			11/12/2013 mem - Added @requestIDForUpdate
 **						   - Now auto-capitalizing @instrumentGroup
+**			08/19/2014 mem - Now copying @InstrumentName to @InstrumentGroup during the initial validation
 **
 *****************************************************/
 (
@@ -70,7 +72,7 @@ CREATE Procedure AddUpdateRequestedRun
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
-	@workPackage varchar(50),					-- Instrument group; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
+	@workPackage varchar(50),					-- Work package; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
 	@wellplateNum varchar(64) = 'na',
@@ -129,22 +131,23 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	if LEN(@reqName) < 1
+	if IsNull(@reqName, '') = ''
 		RAISERROR ('Request name was blank', 11, 110)
 	--
-	if LEN(@experimentNum) < 1
+	if IsNull(@experimentNum, '') = ''
 		RAISERROR ('Experiment number was blank', 11, 111)
 	--
-	if LEN(@operPRN) < 1
+	if IsNull(@operPRN, '') = ''
 		RAISERROR ('Operator payroll number/HID was blank', 11, 113)
 	--
-	if LEN(@instrumentName) < 1
-		RAISERROR ('Instrument group was blank', 11, 114)
+	Declare @InstrumentGroup varchar(64) = @instrumentName	
+	if IsNull(@InstrumentGroup, '') = ''
+		RAISERROR ('Instrument group was blank', 11, 114)	
 	--
-	if LEN(@msType) < 1
+	if IsNull(@msType, '') = ''
 		RAISERROR ('Dataset type was blank', 11, 115)
 	--
-	if LEN(@workPackage) < 1
+	if IsNull(@workPackage, '') = ''
 		RAISERROR ('Work package was blank', 11, 116)
 	
 	Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
@@ -363,13 +366,12 @@ As
 	
 	---------------------------------------------------
 	-- Lookup instrument run info fields 
-	-- (only effective for experiments
-	-- that have associated sample prep requests)
+	-- (only effective for experiments that have associated sample prep requests)
 	---------------------------------------------------
 
 	exec @myError = LookupInstrumentRunInfoFromExperimentSamplePrep
 						@experimentNum,
-						@instrumentName output,
+						@instrumentGroup output,
 						@msType output,
 						@instrumentSettings output,
 						@secSep output,
@@ -382,17 +384,12 @@ As
 	-- Determine the Instrument Group
 	---------------------------------------------------
 	
-	Declare @InstrumentGroup varchar(64) = ''
-	
-	-- Set the instrument group to @instrumentName for now
-	set @InstrumentGroup = @instrumentName
-	
 	IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
 	Begin
 		-- Try to update instrument group using T_Instrument_Name
 		SELECT @InstrumentGroup = IN_Group
 		FROM T_Instrument_Name
-		WHERE IN_Name = @instrumentName
+		WHERE IN_Name = @InstrumentGroup
 	End
 	
 	---------------------------------------------------
@@ -695,6 +692,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]

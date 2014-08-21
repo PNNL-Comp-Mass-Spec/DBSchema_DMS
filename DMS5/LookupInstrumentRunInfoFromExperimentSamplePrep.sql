@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
+CREATE PROCEDURE dbo.LookupInstrumentRunInfoFromExperimentSamplePrep
 /****************************************************
 **
 **	Desc: 
@@ -20,11 +20,13 @@ CREATE PROCEDURE LookupInstrumentRunInfoFromExperimentSamplePrep
 **			01/09/2012 grk - added @secSep
 **			03/28/2013 mem - Now returning more explicit error messages when the experiment does not have an associated sample prep request
 **			06/10/2014 mem - Now using Instrument_Group in T_Sample_Prep_Request
+**			08/20/2014 mem - Switched from Instrument_Name to Instrument_Group
+**						   - Renamed parameter @instrumentName to @instrumentGroup
 **
 *****************************************************/
 (
 	@experimentNum varchar(64),
-	@instrumentName varchar(64) output,
+	@instrumentGroup varchar(64) output,
 	@DatasetType varchar(20) output,
 	@instrumentSettings varchar(512) output,
 	@secSep varchar(64) output,
@@ -43,8 +45,7 @@ As
 	
 	set @message = ''
 
-	declare @ovr varchar(10)
-	set @ovr = '(lookup)'
+	declare @ovr varchar(10) = '(lookup)'
 	
 	---------------------------------------------------
 	-- Find associated sample prep request for experiment
@@ -70,7 +71,7 @@ As
 	---------------------------------------------------
     if @samPrepID = 0
     begin
-		if (@instrumentName = @ovr)
+		if (@instrumentGroup = @ovr)
 		begin
 			set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentNum + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
 			return 50966
@@ -94,13 +95,13 @@ As
 	---------------------------------------------------
 
 	Declare
-		@irInstName varchar(64),
+		@irInstGroup varchar(64),
 		@irDSType varchar(20),
 		@irInstSettings varchar(512),
 		@irSecSep varchar(64)
 
 	SELECT
-		@irInstName = COALESCE(Instrument_Group, Instrument_Name, ''),
+		@irInstGroup = COALESCE(Instrument_Group, Instrument_Name, ''),
 		@irDSType = ISNULL(Dataset_Type, ''),
 		@irInstSettings = ISNULL(Instrument_Analysis_Specifications, ''),
 		@irSecSep = ISNULL(Separation_Type, '')
@@ -119,14 +120,16 @@ As
 
 	---------------------------------------------------
 	-- handle overrides
+	-- 
 	---------------------------------------------------
-	set @instrumentName = CASE WHEN @instrumentName = @ovr THEN @irInstName ELSE @instrumentName END
+	set @instrumentGroup = CASE WHEN @instrumentGroup = @ovr THEN @irInstGroup ELSE @instrumentGroup END
 	set @DatasetType = CASE WHEN @DatasetType = @ovr THEN @irDSType ELSE @DatasetType END
 	set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @irInstSettings ELSE @instrumentSettings END
 	set @secSep = CASE WHEN @secSep = @ovr THEN @irSecSep ELSE @secSep END
 
 	return 0
 	
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]

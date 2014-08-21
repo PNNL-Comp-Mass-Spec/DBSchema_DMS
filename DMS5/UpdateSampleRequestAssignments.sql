@@ -189,6 +189,7 @@ As
 
 	return 0
 
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS_Sample_Prep_Admin] AS [dbo]
 GO

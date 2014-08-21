@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddRequestedRuns
+CREATE Procedure AddRequestedRuns
 /****************************************************
 **
 **	Desc: 
@@ -283,6 +283,7 @@ As
 		EXEC FormatErrorMessage @message output, @myError output
 	END CATCH
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]

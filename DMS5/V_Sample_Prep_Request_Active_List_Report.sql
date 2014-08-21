@@ -50,6 +50,7 @@ FROM T_Sample_Prep_Request SPR
 	   ON SPR.Work_Package_Number = CC.Charge_Code
 WHERE (NOT (SPR.State IN (0, 4, 5))) And SPR.Request_Type = 'Default'
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
