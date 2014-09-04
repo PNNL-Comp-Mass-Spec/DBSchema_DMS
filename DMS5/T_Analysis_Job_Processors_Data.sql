@@ -785,7 +785,7 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (268,'E','SeqCluster1','SeqCluster1','','12/4/2008 12:21:54 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (269,'E','SeqCluster2','SeqCluster2','','12/4/2008 12:21:55 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (270,'E','SeqCluster3','SeqCluster3','','12/4/2008 12:21:56 AM','PNL\D3L243')
-INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (271,'E','SeqCluster4','SeqCluster4','','12/4/2008 12:21:58 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (271,'D','SeqCluster4','SeqCluster4','','9/3/2014 12:44:01 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (306,'E','SeqCluster5','SeqCluster5','','11/17/2008 9:57:47 AM','D3J408 (via DMSWebUser)')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (272,'D','WD37208','WD37208','Analysis Manager v2.0','9/24/2009 8:06:36 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (273,'D','WD37369','WD37369','','1/31/2009 4:17:03 PM','PNL\D3L243')

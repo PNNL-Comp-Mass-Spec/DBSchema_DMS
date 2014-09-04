@@ -24,6 +24,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **	Date:	05/16/2013 mem - Initial version
 **			06/04/2013 mem - Now replacing tab characters with spaces
 **			09/16/2013 mem - Now allowing mod Heme_615 to be stored (even though it is from PNNL and not UniMod)
+**			09/03/2014 mem - Now treating static N-term or C-term mods that specify a target residue (instead of *) as Dynamic mods (a requirement for PHRP)
 **    
 *****************************************************/
 (
@@ -396,6 +397,15 @@ AS
 								Set @message = 'Unrecognized residue symbol(s)s "' + @MsgAddon + '"; symbols not found in T_Residues; see row: ' + @Row
 								Set @myError = 53009
 								Goto Done
+							End
+							
+							-----------------------------------------
+							-- Check for N-terminal or C-terminal static mods that do not use *
+							-----------------------------------------
+							If @ModTypeSymbol = 'S' And Exists (Select * From #Tmp_Residues Where Residue_Symbol In ('<', '>'))
+							Begin
+								-- Auto-switch to tracking as a dynamic mod (required for PHRP)
+								Set @ModTypeSymbol = 'D'
 							End
 							
 							-----------------------------------------
