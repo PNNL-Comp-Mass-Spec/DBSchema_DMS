@@ -23,6 +23,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **          12/31/2009 mem - Added DISTINCT keyword to the INSERT INTO queries in case the source views include some duplicate rows (in particular, S_V_Experiment_Detail_Report_Ex)
 **          05/23/2010 grk - create this sproc from common function factored out of UpdateDataPackageItems and UpdateDataPackageItemsXML
 **			12/31/2013 mem - Added support for EUS Proposals
+**			09/02/2014 mem - Updated to remove non-numeric items when working with analysis jobs
 **
 *****************************************************/
 (
@@ -47,6 +48,14 @@ As
  	---------------------------------------------------
  	---------------------------------------------------
 	BEGIN TRY 
+
+		-- If working with analysis jobs, remove any entries from #TPI that are not numeric
+		If Exists ( SELECT * FROM #TPI WHERE TYPE = 'Job' )
+		Begin
+		    DELETE #TPI
+		    WHERE IsNumeric(Identifier) = 0
+		End
+		
 
 		-- add parent items and associated items to list
 		-- for items in the list - this process cascades
@@ -451,15 +460,15 @@ As
 		IF @mode = 'delete'
 		BEGIN --<delete analysis_jobs>
 
-			DELETE FROM  T_Data_Package_Analysis_Jobs
-			WHERE EXISTS (
-				SELECT * 
-				FROM #TPI
-				WHERE 
-				#TPI.Package = T_Data_Package_Analysis_Jobs.Data_Package_ID AND
-				#TPI.Identifier = T_Data_Package_Analysis_Jobs.Job AND
-				#TPI.Type = 'Job'
-			)
+			DELETE DPAJ
+			FROM T_Data_Package_Analysis_Jobs DPAJ
+			     INNER JOIN ( SELECT Package,
+			                         Identifier AS Job
+			                  FROM #TPI
+			                  WHERE #TPI.TYPE = 'Job' AND
+			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+			          DPAJ.Job = ItemsQ.Job
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
@@ -470,16 +479,16 @@ As
 		IF @mode = 'comment'
 		BEGIN --<comment analysis_jobs>
 
-			UPDATE T_Data_Package_Analysis_Jobs
+			UPDATE DPAJ
 			SET [Package Comment] = @comment
-			WHERE EXISTS (
-				SELECT * 
-				FROM #TPI
-				WHERE 
-				#TPI.Package = T_Data_Package_Analysis_Jobs.Data_Package_ID AND
-				#TPI.Identifier = T_Data_Package_Analysis_Jobs.Job AND
-				#TPI.Type = 'Job'
-			)
+			FROM T_Data_Package_Analysis_Jobs DPAJ
+			     INNER JOIN ( SELECT Package,
+			                         Identifier AS Job
+			                  FROM #TPI
+			                  WHERE #TPI.TYPE = 'Job' AND
+			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+			          DPAJ.Job = ItemsQ.Job		
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
@@ -490,15 +499,15 @@ As
 		BEGIN --<add analysis_jobs>
 
 			-- get rid of any jobs already in data package
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_Analysis_Jobs TX
-				WHERE 
-				#TPI.Package = TX.Data_Package_ID AND
-				#TPI.Identifier = TX.Job AND
-				#TPI.Type = 'Job'
-			)
+			DELETE #TPI
+			FROM T_Data_Package_Analysis_Jobs DPAJ
+			     INNER JOIN ( SELECT Package,
+			                         Identifier AS Job
+			                  FROM #TPI
+			                  WHERE #TPI.TYPE = 'Job' AND
+			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+			          DPAJ.Job = ItemsQ.Job		
 
 			-- add new items
 			INSERT INTO T_Data_Package_Analysis_Jobs(
@@ -510,17 +519,19 @@ As
 				Tool
 			)
 			SELECT DISTINCT
-				#TPI.Package,
+				ItemsQ.Package,
 				TX.Job,
 				@comment,
 				TX.Created,
 				TX.Dataset,
 				TX.Tool
-			FROM
-				#TPI
-				INNER JOIN S_V_Analysis_Job_List_Report_2 TX
-				ON #TPI.Identifier = TX.Job
-			WHERE #TPI.Type = 'Job'
+			FROM S_V_Analysis_Job_List_Report_2 TX
+			     INNER JOIN ( SELECT Package,
+			                         Identifier AS Job
+			                  FROM #TPI
+			                  WHERE #TPI.TYPE = 'Job' AND
+			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			       ON TX.Job = ItemsQ.Job		
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
