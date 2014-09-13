@@ -194,8 +194,14 @@ As
 			              posting_Time >= DateAdd(day, -1, GetDate()) 
 			      )
 		Begin
-			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + ' has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours; will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem'
-			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'			
+			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + ' has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours; will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem; this step is now in state "holding"'
+			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			
+			UPDATE T_Job_Steps
+			SET State = 7		-- Holding				
+			WHERE Job = @job AND
+			      Step_Number = @step
+			
 			Goto CommitTran
 		End
 
