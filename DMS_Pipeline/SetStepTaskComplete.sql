@@ -18,6 +18,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			10/05/2009 mem - Now allowing for CPU_Load to be null in T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
 **			09/25/2012 mem - Expanded @organismDBName to varchar(128)
+**			09/09/2014 mem - Added support for completion code 16 (CLOSEOUT_FILE_NOT_IN_CACHE)
+**			09/12/2014 mem - Added PBF_Gen as a valid tool for completion code 16
 **    
 *****************************************************/
 (
@@ -30,31 +32,31 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 	@organismDBName varchar(128) = ''
 )
 As
-	set nocount on
+	Set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
-	declare @message varchar(512)
-	set @message = ''
+	Declare @message varchar(512)
+	Set @message = ''
 	
 	---------------------------------------------------
 	-- get current state of this job step
 	---------------------------------------------------
 	--
-	declare @processor varchar(64)
-	declare @state tinyint
-	declare @cpuLoad smallint
-	declare @MemoryUsageMB int
-	declare @machine varchar(64)
+	Declare @processor varchar(64)
+	Declare @state tinyint
+	Declare @cpuLoad smallint
+	Declare @MemoryUsageMB int
+	Declare @machine varchar(64)
 	--
-	set @processor = ''
-	set @state = 0
-	set @cpuLoad = 0
-	set @MemoryUsageMB = 0
-	set @machine = ''
+	Set @processor = ''
+	Set @state = 0
+	Set @cpuLoad = 0
+	Set @MemoryUsageMB = 0
+	Set @machine = ''
 	--
 	SELECT	
 		@machine = Machine,
@@ -67,110 +69,182 @@ As
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Error getting machine name from T_Job_Steps'
-		goto Done
-	end
+	If @myError <> 0
+	Begin
+		Set @message = 'Error getting machine name from T_Job_Steps'
+		Goto Done
+	End
 	--
-	if IsNull(@machine, '') = ''
-	begin
-		set @myError = 66
-		set @message = 'Could not find machine name in T_Job_Steps'
-		goto Done
-	end
+	If IsNull(@machine, '') = ''
+	Begin
+		Set @myError = 66
+		Set @message = 'Could not find machine name in T_Job_Steps'
+		Goto Done
+	End
 	--
-	if @state <> 4
-	begin
-		set @myError = 67
-		set @message = 'Job step is not in correct state (4) to be completed'
-		goto Done
-	end
+	If @state <> 4
+	Begin
+		Set @myError = 67
+		Set @message = 'Job step is not in correct state (4) to be completed'
+		Goto Done
+	End
 
 	---------------------------------------------------
 	-- Determine completion state
 	---------------------------------------------------
 	--
-	declare @stepState int
-
-	if @completionCode = 0
-		set @stepState = 5 -- success
-	else
-		set @stepState = 6 -- fail
-
+	Declare @stepState int
+	Declare @resetSharedResultStep tinyint = 0
+	
+	
+	If @completionCode = 0
+	Begin
+		Set @stepState = 5 -- success
+	End
+	Else
+	Begin
+		If @completionCode = 16  -- CLOSEOUT_FILE_NOT_IN_CACHE
+		Begin
+			Set @stepState = 1 -- waiting
+			Set @resetSharedResultStep = 1
+		End
+		Else
+		Begin
+			Set @stepState = 6 -- fail
+		End
+	End
+	
 	---------------------------------------------------
-	-- set up transaction parameters
+	-- Set up transaction parameters
 	---------------------------------------------------
 	--
-	declare @transName varchar(32)
-	set @transName = 'SetStepTaskComplete'
+	Declare @transName varchar(32)
+	Set @transName = 'SetStepTaskComplete'
 		
 	-- Start transaction
-	begin transaction @transName
+	Begin transaction @transName
 
 	---------------------------------------------------
 	-- Update job step
 	---------------------------------------------------
 	--
 	UPDATE T_Job_Steps
-	SET    State = @stepState,
+	Set    State = @stepState,
 		   Finish = Getdate(),
 		   Completion_Code = @completionCode,
 		   Completion_Message = @completionMessage,
 		   Evaluation_Code = @evaluationCode,
 		   Evaluation_Message = @evaluationMessage
-	WHERE  (Job = @job)
-	AND (Step_Number = @step)
+	WHERE Job = @job AND 
+	      Step_Number = @step
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		rollback transaction @transName
-		set @message = 'Error updating step table'
-		goto Done
-	end
+		Set @message = 'Error updating step table'
+		Goto Done
+	End
 	
 	---------------------------------------------------
 	-- Update machine loading for this job step's processor's machine
 	---------------------------------------------------
 	--
 	UPDATE T_Machines
-	SET CPUs_Available = CPUs_Available + @cpuLoad,
+	Set CPUs_Available = CPUs_Available + @cpuLoad,
 	    Memory_Available = Memory_Available + @MemoryUsageMB
 	WHERE (Machine = @machine)
 
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		rollback transaction @transName
-		set @message = 'Error updating CPU loading'
-		goto Done
-	end
+		Set @message = 'Error updating CPU loading'
+		Goto Done
+	End
 
+	If @resetSharedResultStep <> 0
+	Begin
+		-- Reset the the Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step just upstream from this step
+		
+		Declare @SharedResultStep int = -1
+		
+		SELECT TOP 1 @SharedResultStep = Step_Number
+		FROM T_Job_Steps
+		WHERE Job = @job AND
+		      Step_Number < @step AND
+		      Step_Tool IN ('Mz_Refinery', 'MSXML_Gen', 'MSXML_Bruker', 'PBF_Gen')
+		ORDER BY Step_Number DESC
+
+		If IsNull(@SharedResultStep, -1) < 0
+		Begin
+			Set @message = 'Job ' + Convert(varchar(12), @job) + ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Convert(varchar(12), @step) + '; CompletionCode ' + Convert(varchar(12), @completionCode) + ' is invalid'
+			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			Goto CommitTran
+		End
+	
+		Set @message = 'Re-running step ' + Convert(varchar(12), @SharedResultStep) + ' for job ' + Convert(varchar(12), @job) + ' because step ' + Convert(varchar(12), @step) + ' reported completion code ' + Convert(varchar(12), @completionCode)
+		If Exists ( SELECT *
+			        FROM T_Log_Entries
+			        WHERE Message = @message And
+			              type = 'Normal' And
+			              posting_Time >= DateAdd(day, -1, GetDate()) 
+			      )
+		Begin
+			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + ' has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours; will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem'
+			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'			
+			Goto CommitTran
+		End
+
+		Exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
+
+		UPDATE T_Job_Steps
+		Set State = 2,					-- 2=Enabled
+			Tool_Version_ID = 1			-- 1=Unknown
+		WHERE Job = @job AND 
+			  Step_Number = @SharedResultStep And
+			  State <> 4                -- Do not reset the step if it is already running
+
+		UPDATE T_Job_Step_Dependencies
+		SET Evaluated = 0,
+			Triggered = 0
+		WHERE Job_ID = @job AND
+			  Step_Number = @step
+
+		UPDATE T_Job_Step_Dependencies
+		SET Evaluated = 0,
+			Triggered = 0
+		WHERE Job_ID = @job AND
+			  Target_Step_Number = @SharedResultStep
+			  
+	End
+
+CommitTran:
+	
 	-- update was successful
 	commit transaction @transName
 
 	---------------------------------------------------
-	-- Update fasta file name (if one passed in from tool manager)
+	-- Update fasta file name (If one passed in from the analysis tool manager)
 	---------------------------------------------------
 	--
-	if IsNull(@organismDBName,'') <> ''
-	begin
+	If IsNull(@organismDBName,'') <> ''
+	Begin
 		UPDATE T_Jobs
-		SET Organism_DB_Name = @organismDBName
+		Set Organism_DB_Name = @organismDBName
 		WHERE Job = @job	
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @message = 'Error updating organism DB name'
-			goto Done
-		end
-	end
+		If @myError <> 0
+		Begin
+			Set @message = 'Error updating organism DB name'
+			Goto Done
+		End
+	End
 		
 	---------------------------------------------------
 	-- Exit
