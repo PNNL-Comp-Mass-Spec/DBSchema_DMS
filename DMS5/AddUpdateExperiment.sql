@@ -35,6 +35,7 @@ CREATE Procedure AddUpdateExperiment
 **			11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
 **			04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
 **			05/09/2014 mem - Expanded @campaignNum from varchar(50) to varchar(64)
+**			09/09/2014 mem - Added @barcode
 **
 *****************************************************/
 (
@@ -58,6 +59,7 @@ CREATE Procedure AddUpdateExperiment
 	@mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
+	@barcode varchar(64) = '',
 	@callingUser varchar(128) = ''
 )
 As
@@ -418,7 +420,8 @@ As
 				EX_Container_ID,
 				EX_wellplate_num, 
 				EX_well_num,
-				EX_Alkylation
+				EX_Alkylation,
+				EX_Barcode
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
@@ -438,7 +441,8 @@ As
 				@contID,
 				@wellplateNum,
 				@wellNum,
-				@alkylation
+				@alkylation,
+				@barcode
 
 			)
 		--
@@ -515,7 +519,8 @@ As
 			EX_Container_ID = @contID,
 			EX_wellplate_num = @wellplateNum, 
 			EX_well_num = @wellNum,
-			EX_Alkylation = @alkylation
+			EX_Alkylation = @alkylation,
+			EX_Barcode = @barcode
 		WHERE 
 			(Experiment_Num = @experimentNum)
 		--

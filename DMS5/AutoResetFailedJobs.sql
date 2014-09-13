@@ -24,6 +24,8 @@ CREATE Procedure AutoResetFailedJobs
 **			07/31/2013 mem - Now auto-updating the settings file for MSGF+ jobs that contain the text "None of the spectra are centroided; unable to process with MSGF+" in the comment
 **						   - Now auto-resetting jobs that report "Exception generating OrgDb file"
 **			04/17/2014 mem - Updated check for "None of the spectra are centroided" to be more generic
+**			09/09/2014 mem - Changed DataExtractor and MSGF retries to 2
+**						   - Now auto-resetting MSAlign jobs that report "Not enough free memory"
 **
 *****************************************************/
 (
@@ -272,7 +274,7 @@ As
 						If @RetryJob = 0 And @StepTool = 'Decon2LS' And @RetryCount < 2
 							Set @RetryJob = 1
 							
-						If @RetryJob = 0 And @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 5
+						If @RetryJob = 0 And @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 2
 							Set @RetryJob = 1
 						
 						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
@@ -322,7 +324,7 @@ As
 							End
 						End
 						
-						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone') And @Comment Like '%Not enough free memory%' And @RetryCount < 5
+						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
 							Set @RetryJob = 1
 						
 						If @RetryJob = 0 And @RetryCount < 5

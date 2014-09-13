@@ -25,6 +25,7 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_wellplate_num] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_well_num] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Alkylation] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[EX_Barcode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY CLUSTERED 
 (
 	[Exp_ID] ASC
