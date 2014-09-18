@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateRequestedRun]
+CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -65,6 +65,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			11/12/2013 mem - Added @requestIDForUpdate
 **						   - Now auto-capitalizing @instrumentGroup
 **			08/19/2014 mem - Now copying @InstrumentName to @InstrumentGroup during the initial validation
+**			09/17/2014 mem - Now auto-updating @status to 'Active' if adding a request yet @status is null
 **
 *****************************************************/
 (
@@ -281,7 +282,9 @@ As
 	-- Confirm that the new status value is valid
 	---------------------------------------------------
 	--
-	IF @mode IN ('add', 'check_add') AND @status ='Completed'
+	Set @status = IsNull(@status, '')
+	
+	IF @mode IN ('add', 'check_add') AND (@status = 'Completed' OR @status = '')
 		SET @status = 'Active'
 	--
 	IF @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))

@@ -1,6 +1,6 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
 /****** RowCount: 69 ******/
-/****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
+/****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
 INSERT INTO [T_Analysis_Tool] VALUES (2,'ICR2LS','ICR2LS',1003,'\\gigasax\DMS_Parameter_Files\icr2ls\','C:\DMS_Parameter_Files\icr2ls\','FTICRDefSettings.txt','HMMA_Peak','yes',1,'(na)',0,'N','ICR2LS','',0)
@@ -69,4 +69,4 @@ INSERT INTO [T_Analysis_Tool] VALUES (64,'MODa','MODa',1023,'\\gigasax\dms_param
 INSERT INTO [T_Analysis_Tool] VALUES (65,'MODa_DTARefinery','MODa_DTARefinery',1023,'\\gigasax\dms_parameter_Files\MODa','C:\DMS_Parameter_Files\MODa\','IonTrapDefSettings_DeconMSN_DTARef_NoMods.xml','MODa_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MODa','Search MS/MS spectra with MODa',0)
 INSERT INTO [T_Analysis_Tool] VALUES (66,'GlyQ-IQ','GlyQ-IQ',1024,'\\gigasax\DMS_Parameter_Files\GlyQ-IQ','C:\DMS_Parameter_Files\GlyQ-IQ\','GlyQIQ_HPC.xml','Gly_ID','no ',1,'(na)',0,'N','GlyQ-IQ','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (67,'MSPathFinder','MSPathFinder',1025,'\\gigasax\DMS_Parameter_Files\MSPathFinder','C:\DMS_Parameter_Files\MSPathFinder\','MSPathFinderer.xml','MSP_Peptide_Hit','no ',1,'(na)',1,'Y','MSPathFinder','Search MS/MS spectra with MSPathFinder',0)
-INSERT INTO [T_Analysis_Tool] VALUES (68,'MSGFPlus_MzML','MSGFPlus',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzXML.xml','MSG_Peptide_Hit','no ',1,'mzML',1,'Y','MSGFDB','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (68,'MSGFPlus_MzML','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzXML.xml','MSG_Peptide_Hit','no ',1,'mzML',1,'Y','MSGFDB','',0)

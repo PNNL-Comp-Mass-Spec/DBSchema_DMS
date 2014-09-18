@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
 	[AJT_searchEngineInputFileFormats] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_orgDbReqd] [tinyint] NOT NULL,
 	[AJT_extractionRequired] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJT_toolTag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[x_Unused_AJT_toolTag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Use_SpecialProcWaiting] [tinyint] NOT NULL,
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
