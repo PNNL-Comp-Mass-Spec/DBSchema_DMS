@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Job_Step_Dependencies](
-	[Job_ID] [int] NOT NULL,
+	[Job] [int] NOT NULL,
 	[Step_Number] [int] NOT NULL,
 	[Target_Step_Number] [int] NOT NULL,
 	[Condition_Test] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -18,13 +18,13 @@ GO
 /****** Object:  Index [IX_T_Job_Step_Dependencies] ******/
 CREATE CLUSTERED INDEX [IX_T_Job_Step_Dependencies] ON [dbo].[T_Job_Step_Dependencies]
 (
-	[Job_ID] ASC
+	[Job] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Job_Step_Dependencies_JobID_Step_Evaluated_Triggered] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Dependencies_JobID_Step_Evaluated_Triggered] ON [dbo].[T_Job_Step_Dependencies]
 (
-	[Job_ID] ASC,
+	[Job] ASC,
 	[Step_Number] ASC
 )
 INCLUDE ( 	[Evaluated],
@@ -36,7 +36,7 @@ ALTER TABLE [dbo].[T_Job_Step_Dependencies] ADD  CONSTRAINT [DF_T_Job_Step_Depen
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies] ADD  CONSTRAINT [DF_T_Job_Step_Dependencies_Enable_Only]  DEFAULT ((0)) FOR [Enable_Only]
 GO
-ALTER TABLE [dbo].[T_Job_Step_Dependencies]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps] FOREIGN KEY([Job_ID], [Step_Number])
+ALTER TABLE [dbo].[T_Job_Step_Dependencies]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps] FOREIGN KEY([Job], [Step_Number])
 REFERENCES [dbo].[T_Job_Steps] ([Job], [Step_Number])
 ON DELETE CASCADE
 GO

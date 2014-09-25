@@ -21,6 +21,7 @@ CREATE PROCEDURE MoveJobsToMainTables
 **	Date:	02/06/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/720)
 **			01/14/2010 grk - removed path ID fields
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -114,7 +115,7 @@ goto Done
 	end
 
 	INSERT INTO T_Job_Step_Dependencies (
-		Job_ID,
+		Job,
 		Step_Number,
 		Target_Step_Number,
 		Condition_Test,
@@ -122,7 +123,7 @@ goto Done
 		Enable_Only
 	)
 	SELECT
-		Job_ID,
+		Job,
 		Step_Number,
 		Target_Step_Number,
 		Condition_Test,

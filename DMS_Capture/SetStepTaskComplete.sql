@@ -23,6 +23,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			09/18/2013 mem - Added support for @evaluationCode = 7
 **			09/19/2013 mem - Now skipping ArchiveStatusCheck when skipping ArchiveVerify
 **			10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
+**			09/24/2014 mem - No longer looking up machine
 **    
 *****************************************************/
 (
@@ -50,7 +51,6 @@ As
 	--
 	declare @processor varchar(64) = ''
 	declare @state tinyint = 0
-	declare @machine varchar(64) = ''
 	declare @retryCount smallint = 0
 	declare @HoldoffIntervalMinutes int = 30
 	declare @NextTry datetime = GetDate()
@@ -58,8 +58,7 @@ As
 	declare @outputFolderName varchar(255)
 	declare @datasetID int
 	--
-	SELECT @machine = JS.Machine,
-	       @state = JS.State,
+	SELECT @state = JS.State,
 	       @processor = JS.Processor,
 	       @retryCount = JS.Retry_Count,
 	       @HoldoffIntervalMinutes = JS.Holdoff_Interval_Minutes,
@@ -68,25 +67,18 @@ As
 	       @outputFolderName = JS.Output_Folder_Name,
 	       @datasetID = J.Dataset_ID
 	FROM T_Job_Steps JS
+	     INNER JOIN T_Local_Processors LP
+	       ON LP.Processor_Name = JS.Processor	
 	     INNER JOIN T_Jobs J
 	       ON JS.Job = J.Job
 	WHERE (JS.Job = @job) AND
-	      (JS.Step_Number = @step) 
-	
+	      (JS.Step_Number = @step) 	
 	--
-
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	If @myError <> 0
 	Begin
-		set @message = 'Error getting machine name'
-		goto Done
-	End
-	--
-	If @machine = ''
-	Begin
-		set @myError = 66
-		set @message = 'Could not find machine name'
+		set @message = 'Error getting state of current job'
 		goto Done
 	End
 	--
@@ -128,7 +120,7 @@ As
 					SET @HoldoffIntervalMinutes = CASE
 					                                  WHEN @HoldoffIntervalMinutes < 5 THEN 5
 					                                  WHEN @HoldoffIntervalMinutes < 10 THEN 10
-					                                  WHEN @HoldoffIntervalMinutes < 15 THEN 15
+					   WHEN @HoldoffIntervalMinutes < 15 THEN 15
 					                                  WHEN @HoldoffIntervalMinutes < 30 THEN 30
 					                                  ELSE @HoldoffIntervalMinutes
 					                              END

@@ -14,6 +14,7 @@ CREATE PROCEDURE RemoveSelectedJobs
 **
 **	Auth:	grk
 **	09/12/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ As
 		---------------------------------------------------
 		--
 		DELETE FROM T_Job_Step_Dependencies
-		WHERE (Job_ID IN (SELECT Job FROM #SJL))
+		WHERE (Job IN (SELECT Job FROM #SJL))
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		 --

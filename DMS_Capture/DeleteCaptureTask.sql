@@ -15,6 +15,7 @@ CREATE PROCEDURE DeleteCaptureTask
 **	Auth:	mem
 **			09/12/2009 mem - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			09/11/2012 mem - Renamed from DeleteJob to DeleteCaptureTask
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Step_Dependencies
-	WHERE (Job_ID = @jobNum)
+	WHERE (Job = @jobNum)
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

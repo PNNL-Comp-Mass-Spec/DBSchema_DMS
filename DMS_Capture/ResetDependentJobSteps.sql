@@ -14,6 +14,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			05/19/2011 mem - Initial version
 **			05/23/2011 mem - Now checking for target steps having state 0 or 1 in addition to 2 or 4
 **			03/12/2012 mem - Now updating Tool_Version_ID when resetting job steps
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -84,10 +85,10 @@ As
 		                JS.Step_Number
 		FROM T_Job_Steps JS
 		     INNER JOIN T_Job_Step_Dependencies
-		       ON JS.Job = T_Job_Step_Dependencies.Job_ID AND
+		       ON JS.Job = T_Job_Step_Dependencies.Job AND
 		          JS.Step_Number = T_Job_Step_Dependencies.Step_Number
 		     INNER JOIN T_Job_Steps JS_Target
-		       ON T_Job_Step_Dependencies.Job_ID = JS_Target.Job 
+		       ON T_Job_Step_Dependencies.Job = JS_Target.Job 
 		          AND
 		          T_Job_Step_Dependencies.Target_Step_Number = JS_Target.Step_Number
 		WHERE JS.State >= 2 AND
@@ -116,7 +117,7 @@ As
 			SET Evaluated = 0, Triggered = 0
 			FROM T_Job_Step_Dependencies JSD
 				INNER JOIN #Tmp_JobStepsToReset JR
-				ON JSD.Job_ID = JR.Job AND
+				ON JSD.Job = JR.Job AND
 					JSD.Step_Number = JR.Step
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount

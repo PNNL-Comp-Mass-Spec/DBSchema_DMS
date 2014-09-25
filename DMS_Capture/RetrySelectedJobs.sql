@@ -18,6 +18,7 @@ CREATE PROCEDURE RetrySelectedJobs
 **	Auth:	grk
 **	Date:	01/11/2010
 **			01/18/2010 grk - reset step retry count
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			
 **    
 *****************************************************/
@@ -72,7 +73,7 @@ As
 		Triggered = 0
 	FROM T_Job_Step_Dependencies JSD INNER JOIN
 		T_Job_Steps JS ON 
-		JSD.Job_ID = JS.Job AND 
+		JSD.Job = JS.Job AND 
 		JSD.Step_Number = JS.Step_Number
 	WHERE
 		JS.State = 1 AND			-- 1=Waiting

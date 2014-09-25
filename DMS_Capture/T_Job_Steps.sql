@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Input_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Output_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Processor] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Machine] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[x_Unused_Machine] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Completion_Code] [int] NOT NULL,
@@ -69,7 +69,7 @@ GO
 /****** Object:  Index [IX_T_Job_Steps_Machine_include_CPULoad_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Machine_include_CPULoad_State] ON [dbo].[T_Job_Steps]
 (
-	[Machine] ASC
+	[x_Unused_Machine] ASC
 )
 INCLUDE ( 	[CPU_Load],
 	[State]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]

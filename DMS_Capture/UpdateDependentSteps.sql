@@ -20,6 +20,7 @@ CREATE PROCEDURE UpdateDependentSteps
 **	Auth:	grk
 **	Date:	09/05/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			05/25/2011 mem - Now using the Priority column from T_Jobs
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -110,7 +111,7 @@ As
 	---------------------------------------------------
 	--
 	INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Output_Folder_Name)
-	SELECT JSD.Job_ID AS Job,
+	SELECT JSD.Job,
 	       JSD.Step_Number AS Step,
 	       JS.Step_Tool AS Tool,
 	       J.Priority,
@@ -120,12 +121,12 @@ As
 	       Output_Folder_Name
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Job_Step_Dependencies JSD
-	       ON JSD.Job_ID = JS.Job AND
+	       ON JSD.Job = JS.Job AND
 	          JSD.Step_Number = JS.Step_Number
 	     INNER JOIN T_Jobs J
 	       ON JS.Job = J.Job
 	WHERE (JS.State = 1)
-	GROUP BY JSD.Job_ID, JSD.Step_Number, JS.Dependencies, 
+	GROUP BY JSD.Job, JSD.Step_Number, JS.Dependencies, 
 	         J.Priority, JS.Step_Tool, JS.Output_Folder_Name
 	HAVING JS.Dependencies = SUM(JSD.Evaluated)
 	-- 

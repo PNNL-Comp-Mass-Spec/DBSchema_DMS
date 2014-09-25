@@ -38,6 +38,7 @@ CREATE PROCEDURE RequestStepTask
 **			07/26/2012 mem - Added parameter @serverPerspectiveEnabled
 **			09/17/2012 mem - Now returning metadata for step tool DatasetQuality instead of step tool DatasetInfo
 **			02/25/2013 mem - Now returning the Machine name when @infoOnly > 0
+**			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **
 *****************************************************/
   (
@@ -477,8 +478,7 @@ AS
       SET
         State = 4,
         Processor = @processorName,
-        Machine = @machine,
-  Start = GETDATE(),
+        Start = GETDATE(),
         Finish = NULL
       WHERE
         Job = @jobNumber

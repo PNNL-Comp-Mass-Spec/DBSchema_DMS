@@ -18,6 +18,7 @@ CREATE PROCEDURE FinishJobCreation
 **			03/06/2009 grk - added code for: Special="Job_Results"
 **			07/31/2009 mem - Now filtering by job in the subquery that looks for job steps with flag Special="Job_Results" (necessary when #Job_Steps contains more than one job)
 **			04/08/2011 mem - Now skipping the 'ImsDeMultiplex' step for datasets that end in '_inverse'
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ As
 			  COUNT(*) AS dependencies
 			FROM     
 			  #Job_Step_Dependencies
-			WHERE    (Job_ID = @job)
+			WHERE    (Job = @job)
 			GROUP BY Step_Number
 		) AS T
 		ON T.Step_Number = #Job_Steps.Step_Number

@@ -15,6 +15,7 @@ CREATE PROCEDURE DeleteMultipleTasks
 **	Auth:	grk
 **	Date:	06/03/2010 grk - Initial release 
 **			09/11/2012 mem - Renamed from DeleteMultipleJobs to DeleteMultipleTasks
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ As
 		---------------------------------------------------
 		--
 		DELETE FROM T_Job_Step_Dependencies
-		WHERE (Job_ID IN (SELECT Job FROM #JOBS))
+		WHERE (Job IN (SELECT Job FROM #JOBS))
 
    		---------------------------------------------------
 		-- delete job parameters

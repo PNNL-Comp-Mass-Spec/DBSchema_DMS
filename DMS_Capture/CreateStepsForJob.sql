@@ -18,6 +18,7 @@ CREATE PROCEDURE CreateStepsForJob
 **	Auth:	grk
 **	Date:	09/05/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			05/25/2011 mem - Removed @priority parameter and removed priority column from T_Job_Steps
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -94,7 +95,7 @@ As
 		Condition_Test, 
 		Test_Value, 
 		Enable_Only, 
-		Job_ID
+		Job
 	)
 	SELECT 
 		xmlNode.value('../@Number', 'nvarchar(24)') Step_Number,
@@ -102,7 +103,7 @@ As
 		xmlNode.value('@Test', 'nvarchar(128)') Condition_Test,
 		xmlNode.value('@Value', 'nvarchar(256)') Test_Value,
 		isnull(xmlNode.value('@Enable_Only', 'nvarchar(24)'), 0) Enable_Only,
-		@job AS Job_ID
+		@job AS Job
 	FROM
 		@scriptXML.nodes('//Depends_On') AS R(xmlNode)
 	--

@@ -15,6 +15,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **	Auth:	grk
 **			05/03/2010 grk - Initial release
 **			05/25/2011 mem - Updated call to CreateStepsForJob and removed Priority from #Job_Steps
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -83,7 +84,7 @@ AS
 --	CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step_Number)
 
 	CREATE TABLE #Job_Step_Dependencies (
-		[Job_ID] int NOT NULL,
+		[Job] int NOT NULL,
 		[Step_Number] int NOT NULL,
 		[Target_Step_Number] int NOT NULL,
 		[Condition_Test] varchar(50) NULL,
@@ -91,7 +92,7 @@ AS
 		[Enable_Only] tinyint NULL
 	)
 
---	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job_ID, Step_Number)
+--	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step_Number)
 
 	CREATE TABLE #Job_Parameters (
 		[Job] int NOT NULL,
@@ -218,7 +219,7 @@ AS
 		
 		UPDATE #Jobs  SET Job = @Job
 		UPDATE #Job_Steps  SET Job = @Job
-		UPDATE #Job_Step_Dependencies  SET Job_ID = @Job
+		UPDATE #Job_Step_Dependencies  SET Job = @Job
 		UPDATE #Job_Parameters  SET Job = @Job
 
 		exec @myError = MoveJobsToMainTables @message output

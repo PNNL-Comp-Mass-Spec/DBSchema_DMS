@@ -19,6 +19,7 @@ CREATE PROCEDURE CreateJobSteps
 **			01/14/2010 grk - Removed path ID fields
 **			05/25/2011 mem - Updated call to CreateStepsForJob
 **			04/09/2013 mem - Added additional comments
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -128,7 +129,7 @@ As
 	CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step_Number)
 
 	CREATE TABLE #Job_Step_Dependencies (
-		[Job_ID] int NOT NULL,
+		[Job] int NOT NULL,
 		[Step_Number] int NOT NULL,
 		[Target_Step_Number] int NOT NULL,
 		[Condition_Test] varchar(50) NULL,
@@ -136,7 +137,7 @@ As
 		[Enable_Only] tinyint NULL
 	)
 
-	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job_ID, Step_Number)
+	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step_Number)
 
 
 	CREATE TABLE #Job_Parameters (
