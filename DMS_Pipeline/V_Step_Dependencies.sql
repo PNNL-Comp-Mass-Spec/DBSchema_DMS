@@ -4,9 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Step_Dependencies]
 AS
-SELECT JSD.Job_ID,
+SELECT JSD.Job,
        JSD.Step_Number,
        JS.Step_Tool,
        JSD.Target_Step_Number,
@@ -18,9 +19,10 @@ SELECT JSD.Job_ID,
        JS.State
 FROM dbo.T_Job_Step_Dependencies JSD
      INNER JOIN dbo.T_Job_Steps JS
-       ON JSD.Job_ID = JS.Job AND
+       ON JSD.Job = JS.Job AND
           JSD.Step_Number = JS.Step_Number
           
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Step_Dependencies] TO [PNL\D3M578] AS [dbo]

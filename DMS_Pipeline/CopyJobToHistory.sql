@@ -23,6 +23,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			01/19/2012 mem - Added columns DataPkgID and Memory_Usage_MB
 **			03/26/2013 mem - Added column Comment
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -220,11 +221,11 @@ As
 	DELETE T_Job_Step_Dependencies_History
 	FROM T_Job_Step_Dependencies_History Target
 	     LEFT OUTER JOIN T_Job_Step_Dependencies Source
-	       ON Target.Job_ID = Source.Job_ID AND
+	       ON Target.Job = Source.Job AND
 	          Target.Step_Number = Source.Step_Number AND
 	          Target.Target_Step_Number = Source.Target_Step_Number
-	WHERE Target.Job_ID = @job AND
-	      Source.Job_ID IS NULL
+	WHERE Target.Job = @job AND
+	      Source.Job IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -238,12 +239,12 @@ As
 	-- Now add/update the job step dependencies
 	--
 	MERGE T_Job_Step_Dependencies_History AS target
-	USING ( SELECT Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+	USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 	               Evaluated, Triggered, Enable_Only
 	        FROM T_Job_Step_Dependencies
-	        WHERE Job_ID = @job	
-	      ) AS Source (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
-	       ON (target.Job_ID = source.Job_ID And 
+	        WHERE Job = @job	
+	      ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+	       ON (target.Job = source.Job And 
 	           target.Step_Number = source.Step_Number And
 	           target.Target_Step_Number = source.Target_Step_Number)
 	WHEN Matched THEN 
@@ -255,9 +256,9 @@ As
 			Enable_Only = source.Enable_Only,
 			Saved = @saveTime
 	WHEN Not Matched THEN
-		INSERT (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+		INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 		        Evaluated, Triggered, Enable_Only, Saved)
-		VALUES (source.Job_ID, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+		VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
 		        source.Evaluated, source.Triggered, source.Enable_Only, @saveTime)
 	;		
  	--

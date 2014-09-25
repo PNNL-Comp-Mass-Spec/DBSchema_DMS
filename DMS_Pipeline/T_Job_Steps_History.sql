@@ -14,7 +14,6 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Input_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Output_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Processor] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Machine] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Completion_Code] [int] NULL,

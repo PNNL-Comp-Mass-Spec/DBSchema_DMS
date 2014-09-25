@@ -20,6 +20,7 @@ CREATE PROCEDURE EvaluateStepDependencies
 **			06/03/2009 mem - Added parameter @LoopingUpdateInterval
 **			12/21/2009 mem - Added parameter @infoOnly
 **			12/20/2011 mem - Changed @message to an optional output parameter
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -100,9 +101,9 @@ As
 	FROM T_Job_Step_Dependencies JSD
 	     INNER JOIN T_Job_Steps JS
 	       ON JSD.Target_Step_Number = JS.Step_Number AND
-	          JSD.Job_ID = JS.Job
+	          JSD.Job = JS.Job
 	     INNER JOIN T_Job_Steps AS JS_B
-	       ON JSD.Job_ID = JS_B.Job AND
+	       ON JSD.Job = JS_B.Job AND
 	          JSD.Step_Number = JS_B.Step_Number
 	WHERE (JSD.Evaluated = 0) AND
 	      (JS.State IN (3, 5)) AND
@@ -339,7 +340,7 @@ As
 					Evaluated = 1, 
 					Triggered = @Triggered
 				WHERE
-					Job_ID = @job AND 
+					Job = @job AND 
 					Step_Number = @dependentStep AND
 					Target_Step_Number = @targetStep
   			-- 

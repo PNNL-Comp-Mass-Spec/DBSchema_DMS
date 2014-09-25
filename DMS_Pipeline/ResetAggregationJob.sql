@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.ResetAggregationJob
 **	Auth:	mem
 **			03/06/2013 mem - Initial version
 **			03/07/2013 mem - Now only updating failed job steps when not resetting the entire job
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -154,7 +155,7 @@ As
 						ELSE ''
 					END AS Message
 			FROM T_Job_Step_Dependencies
-			WHERE (Job_ID = @Job)
+			WHERE (Job = @Job)
 			ORDER BY Step_Number
 			
 		End
@@ -166,7 +167,7 @@ As
 			-- Reset dependencies
 			UPDATE T_Job_Step_Dependencies
 			SET Evaluated = 0, Triggered = 0
-			WHERE (Job_ID = @Job)
+			WHERE (Job = @Job)
 			
 			UPDATE T_Job_Steps
 			SET State = 1,					-- 1=waiting
@@ -216,8 +217,8 @@ As
 			FROM T_Job_Step_Dependencies JSD
 			     INNER JOIN T_Job_Steps JS
 			       ON JSD.Step_Number = JS.Step_Number AND
-			          JSD.Job_ID = JS.Job
-			WHERE JSD.Job_ID = @Job
+			          JSD.Job = JS.Job
+			WHERE JSD.Job = @Job
 			ORDER BY JSD.Step_Number
 			
 		End
@@ -232,9 +233,9 @@ As
 			    Triggered = 0
 			FROM T_Job_Step_Dependencies JSD
 			     INNER JOIN T_Job_Steps JS
-			       ON JSD.Job_ID = JS.Job AND
+			       ON JSD.Job = JS.Job AND
 			          JSD.Step_Number = JS.Step_Number
-			WHERE JSD.Job_ID = @Job AND
+			WHERE JSD.Job = @Job AND
 			      JS.State IN (6, 7)
 			
 			UPDATE T_Job_Steps

@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.ResetJobAndSharedResults
 **							 Added transaction
 **			07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **			04/13/2012 mem - Now querying T_Job_Steps_History when looking for shared result folders
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -242,7 +243,7 @@ As
 			           ELSE ''
 			       END AS Message
 			FROM T_Job_Step_Dependencies
-			WHERE (Job_ID = @Job)
+			WHERE (Job = @Job)
 			
 		End
 		Else
@@ -252,7 +253,7 @@ As
 			-- Reset dependencies
 			UPDATE T_Job_Step_Dependencies
 			SET Evaluated = 0, Triggered = 0
-			WHERE (Job_ID = @Job)
+			WHERE (Job = @Job)
 			
 			UPDATE T_Job_Steps
 			SET State = 1,					-- 1=waiting

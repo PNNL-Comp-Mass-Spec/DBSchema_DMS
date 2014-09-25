@@ -19,6 +19,7 @@ CREATE PROCEDURE RemoveSelectedJobs
 **			08/20/2013 mem - Added support for @LogDeletions=2
 **						   - Now disabling trigger trig_ud_T_Jobs when deleting rows from T_Jobs (required because stored procedure RemoveOldJobs wraps the call to this procedure with a transaction)
 **			06/16/2014 mem - Now disabling trigger trig_ud_T_Job_Steps when deleting rows from T_Job_Steps
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -78,8 +79,8 @@ As
 			TS.Output_Folder_Name
 		FROM   
 			T_Job_Steps AS DS INNER JOIN 
-			T_Job_Step_Dependencies AS JSD ON DS.Job = JSD.Job_ID AND DS.Step_Number = JSD.Step_Number INNER JOIN 
-			T_Job_Steps AS TS ON JSD.Job_ID = TS.Job AND JSD.Target_Step_Number = TS.Step_Number
+			T_Job_Step_Dependencies AS JSD ON DS.Job = JSD.Job AND DS.Step_Number = JSD.Step_Number INNER JOIN 
+			T_Job_Steps AS TS ON JSD.Job = TS.Job AND JSD.Target_Step_Number = TS.Step_Number
 		WHERE
 			DS.Step_Tool = 'Results_Transfer' AND
 			DS.State = 5 AND
@@ -100,7 +101,7 @@ As
 		---------------------------------------------------
 		--
 		DELETE FROM T_Job_Step_Dependencies
-		WHERE (Job_ID IN (SELECT Job FROM #SJL))
+		WHERE (Job IN (SELECT Job FROM #SJL))
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

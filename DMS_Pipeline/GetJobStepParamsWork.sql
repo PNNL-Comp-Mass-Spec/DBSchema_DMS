@@ -29,6 +29,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			10/11/2011 grk - Added step input and output folders
 **			01/19/2012 mem - Now adding DataPackageID
 **			07/09/2012 mem - Updated to support the "step" attribute of a "param" element containing Yes and a number, for example "Yes (3)"
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -145,10 +146,10 @@ AS
 	SELECT  @stepInputFolderName = 'Step_'
 			+ CONVERT(VARCHAR(6), TSD.Target_Step_Number) + '_' + TST.Tag
 	FROM  T_Job_Step_Dependencies AS TSD
-			INNER JOIN T_Job_Steps AS TJS ON TSD.Job_ID = TJS.Job
+			INNER JOIN T_Job_Steps AS TJS ON TSD.Job = TJS.Job
 											 AND TSD.Target_Step_Number = TJS.Step_Number
 			INNER JOIN T_Step_Tools AS TST ON TJS.Step_Tool = TST.Name
-	WHERE   ( TSD.Job_ID = @jobNumber )
+	WHERE   ( TSD.Job = @jobNumber )
 			AND ( TSD.Step_Number = @stepNumber )
 			AND TSD.Enable_Only = 0
 

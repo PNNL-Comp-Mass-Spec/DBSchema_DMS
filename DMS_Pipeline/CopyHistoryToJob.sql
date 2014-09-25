@@ -29,6 +29,7 @@ CREATE PROCEDURE CopyHistoryToJob
 **			12/10/2013 mem - Added support for failed jobs
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -270,11 +271,11 @@ As
 	DELETE T_Job_Step_Dependencies
 	FROM T_Job_Step_Dependencies Target
 	     LEFT OUTER JOIN T_Job_Step_Dependencies_History Source
-	       ON Target.Job_ID = Source.Job_ID AND
+	       ON Target.Job = Source.Job AND
 	          Target.Step_Number = Source.Step_Number AND
 	          Target.Target_Step_Number = Source.Target_Step_Number
-	WHERE Target.Job_ID = @job AND
-	      Source.Job_ID IS NULL
+	WHERE Target.Job = @job AND
+	      Source.Job IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -287,14 +288,14 @@ As
 	
 	-- Check whether this job has entries in T_Job_Step_Dependencies_History
 	--
-	If Not Exists (Select * From T_Job_Step_Dependencies_History Where Job_ID = @job)
+	If Not Exists (Select * From T_Job_Step_Dependencies_History Where Job = @job)
 	Begin
 		-- Job did not have cached dependencies
 		-- Look for a job that used the same script
 	
 		Declare @SimilarJob int = 0
 				
-		SELECT @SimilarJob = MIN(H.Job_ID)
+		SELECT @SimilarJob = MIN(H.Job)
 		FROM T_Job_Step_Dependencies_History H
 		     INNER JOIN ( SELECT Job
 		                  FROM T_Jobs_History
@@ -304,18 +305,18 @@ As
 		                                   WHERE Job = @job AND
 		                                         Most_Recent_Entry = 1 ) 
 		                 ) SimilarJobQ
-		       ON H.Job_ID = SimilarJobQ.Job
+		       ON H.Job = SimilarJobQ.Job
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 		If @myRowCount > 0
 		Begin
 			
-			INSERT INTO T_Job_Step_Dependencies(Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+			INSERT INTO T_Job_Step_Dependencies(Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 			                                    Evaluated, Triggered, Enable_Only)
-			SELECT @job As Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 0 AS Evaluated, 0 AS Triggered, Enable_Only
+			SELECT @job As Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 0 AS Evaluated, 0 AS Triggered, Enable_Only
 			FROM T_Job_Step_Dependencies_History H
-			WHERE Job_ID = @SimilarJob
+			WHERE Job = @SimilarJob
 
 		End
 		
@@ -326,12 +327,12 @@ As
 		-- Now add/update the job step dependencies
 		--	
 		MERGE T_Job_Step_Dependencies AS target
-		USING ( SELECT Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+		USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 				       Evaluated, Triggered, Enable_Only
 				FROM T_Job_Step_Dependencies_History
-				WHERE Job_ID = @job	
-			) AS Source (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
-			ON (target.Job_ID = source.Job_ID And 
+				WHERE Job = @job	
+			) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+			ON (target.Job = source.Job And 
 				target.Step_Number = source.Step_Number And
 				target.Target_Step_Number = source.Target_Step_Number)
 		WHEN Matched THEN 
@@ -342,9 +343,9 @@ As
 				Triggered = source.Triggered,
 				Enable_Only = source.Enable_Only
 		WHEN Not Matched THEN
-			INSERT (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+			INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 					Evaluated, Triggered, Enable_Only)
-			VALUES (source.Job_ID, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+			VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
 					source.Evaluated, source.Triggered, source.Enable_Only)
 		;		
  		--

@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.DeleteJob
 **	Auth:	mem
 **			12/31/2008 mem - initial release
 **			05/26/2009 mem - Now deleting from T_Job_Step_Dependencies and T_Job_Parameters
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Step_Dependencies
-	WHERE (Job_ID = @jobNum)
+	WHERE (Job = @jobNum)
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

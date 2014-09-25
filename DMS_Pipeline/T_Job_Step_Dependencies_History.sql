@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Job_Step_Dependencies_History](
-	[Job_ID] [int] NOT NULL,
+	[Job] [int] NOT NULL,
 	[Step_Number] [int] NOT NULL,
 	[Target_Step_Number] [int] NOT NULL,
 	[Condition_Test] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Job_Step_Dependencies_History](
 	[Initial_Save] [smalldatetime] NULL,
  CONSTRAINT [PK_T_Job_Step_Dependencies_History] PRIMARY KEY NONCLUSTERED 
 (
-	[Job_ID] ASC,
+	[Job] ASC,
 	[Step_Number] ASC,
 	[Target_Step_Number] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
@@ -26,13 +26,13 @@ GO
 /****** Object:  Index [IX_T_Job_Step_Dependencies_History] ******/
 CREATE CLUSTERED INDEX [IX_T_Job_Step_Dependencies_History] ON [dbo].[T_Job_Step_Dependencies_History]
 (
-	[Job_ID] ASC
+	[Job] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Job_Step_Dependencies_History_JobID_Step_Evaluated_Triggered] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Dependencies_History_JobID_Step_Evaluated_Triggered] ON [dbo].[T_Job_Step_Dependencies_History]
 (
-	[Job_ID] ASC,
+	[Job] ASC,
 	[Step_Number] ASC
 )
 INCLUDE ( 	[Evaluated],

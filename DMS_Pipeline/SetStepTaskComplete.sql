@@ -20,6 +20,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			09/25/2012 mem - Expanded @organismDBName to varchar(128)
 **			09/09/2014 mem - Added support for completion code 16 (CLOSEOUT_FILE_NOT_IN_CACHE)
 **			09/12/2014 mem - Added PBF_Gen as a valid tool for completion code 16
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			               - Now looking up machine using T_Local_Processors
 **    
 *****************************************************/
 (
@@ -58,27 +60,29 @@ As
 	Set @MemoryUsageMB = 0
 	Set @machine = ''
 	--
-	SELECT	
-		@machine = Machine,
-		@cpuLoad = IsNull(CPU_Load, 1),
-		@MemoryUsageMB = IsNull(Memory_Usage_MB, 0),
-		@state = State,
-		@processor = Processor
-	FROM T_Job_Steps
-	WHERE (Job = @job) AND (Step_Number = @step)
+	SELECT @machine = LP.Machine,
+	       @cpuLoad = IsNull(JS.CPU_Load, 1),
+	       @MemoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
+	       @state = JS.State,
+	       @processor = JS.Processor
+	FROM T_Job_Steps JS
+	     INNER JOIN T_Local_Processors LP
+	       ON LP.Processor_Name = JS.Processor
+	WHERE JS.Job = @job AND
+	      JS.Step_Number = @step
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	If @myError <> 0
 	Begin
-		Set @message = 'Error getting machine name from T_Job_Steps'
+		Set @message = 'Error getting machine name from T_Local_Processors using T_Job_Steps'
 		Goto Done
 	End
 	--
 	If IsNull(@machine, '') = ''
 	Begin
 		Set @myError = 66
-		Set @message = 'Could not find machine name in T_Job_Steps'
+		Set @message = 'Could not find machine name in T_Local_Processors using T_Job_Steps'
 		Goto Done
 	End
 	--
@@ -217,13 +221,13 @@ As
 		UPDATE T_Job_Step_Dependencies
 		SET Evaluated = 0,
 			Triggered = 0
-		WHERE Job_ID = @job AND
+		WHERE Job = @job AND
 			  Step_Number = @step
 
 		UPDATE T_Job_Step_Dependencies
 		SET Evaluated = 0,
 			Triggered = 0
-		WHERE Job_ID = @job AND
+		WHERE Job = @job AND
 			  Target_Step_Number = @SharedResultStep
 			  
 	End

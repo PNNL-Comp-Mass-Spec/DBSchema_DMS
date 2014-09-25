@@ -18,6 +18,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **			03/26/2013 mem - Added column Comment
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -317,12 +318,12 @@ As
 		DELETE T_Job_Step_Dependencies
 		FROM T_Job_Step_Dependencies Target
 		     LEFT OUTER JOIN T_Job_Step_Dependencies_History Source
-		       ON Target.Job_ID = Source.Job_ID AND
+		       ON Target.Job = Source.Job AND
 		          Target.Step_Number = Source.Step_Number AND
 		          Target.Target_Step_Number = Source.Target_Step_Number
-		WHERE Target.Job_ID IN ( SELECT Job
+		WHERE Target.Job IN ( SELECT Job
 		                         FROM #Tmp_JobsToCopy ) AND
-		      Source.Job_ID IS NULL
+		      Source.Job IS NULL
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -336,13 +337,13 @@ As
 		-- Now add/update the job step dependencies
 		--	
 		MERGE T_Job_Step_Dependencies AS target
-		USING ( SELECT Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+		USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 				       Evaluated, Triggered, Enable_Only
 				FROM T_Job_Step_Dependencies_History H
 				     INNER JOIN #Tmp_JobsToCopy Src
-				       ON H.Job_Id = Src.Job
-			) AS Source (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
-			ON (target.Job_ID = source.Job_ID And 
+				       ON H.Job = Src.Job
+			) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+			ON (target.Job = source.Job And 
 				target.Step_Number = source.Step_Number And
 				target.Target_Step_Number = source.Target_Step_Number)
 		WHEN Matched THEN 
@@ -353,9 +354,9 @@ As
 				Triggered = source.Triggered,
 				Enable_Only = source.Enable_Only
 		WHEN Not Matched THEN
-			INSERT (Job_ID, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+			INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
 					Evaluated, Triggered, Enable_Only)
-			VALUES (source.Job_ID, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+			VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
 					source.Evaluated, source.Triggered, source.Enable_Only)
 		;		
  		--
@@ -379,8 +380,8 @@ As
 		     INNER JOIN #Tmp_JobsToCopy Src
 		       ON J.Job = Src.Job
 		     LEFT OUTER JOIN T_Job_Step_Dependencies D
-		       ON J.Job = D.Job_ID
-		WHERE D.Job_ID IS NULL
+		       ON J.Job = D.Job
+		WHERE D.Job IS NULL
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -404,7 +405,7 @@ As
 			                         FROM #Tmp_JobsMissingDependencies MD
 			                              INNER JOIN ( SELECT JH.Job, JH.Script
 			                                           FROM T_Jobs_History JH INNER JOIN
-			                                                T_Job_Step_Dependencies_History JSD ON JH.Job = JSD.Job_ID
+			                                                T_Job_Step_Dependencies_History JSD ON JH.Job = JSD.Job
 			                                         ) AS JobsWithDependencies			                              
 			                                ON MD.Script = JobsWithDependencies.Script AND
 			                                   JobsWithDependencies.Job > MD.Job 
@@ -416,7 +417,7 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		
-			INSERT INTO T_Job_Step_Dependencies( Job_ID,
+			INSERT INTO T_Job_Step_Dependencies( Job,
 			                                     Step_Number,
 			                                     Target_Step_Number,
 			                                     Condition_Test,
@@ -424,7 +425,7 @@ As
 			                                     Evaluated,
 			                                     Triggered,
 			                                     Enable_Only )
-			SELECT MD.Job AS Job_ID,
+			SELECT MD.Job AS Job,
 			       Step_Number,
 			       Target_Step_Number,
 			       Condition_Test,
@@ -434,7 +435,7 @@ As
 			       Enable_Only
 			FROM T_Job_Step_Dependencies_History H
 			     INNER JOIN #Tmp_JobsMissingDependencies MD
-			       ON H.Job_ID = MD.SimilarJob
+			       ON H.Job = MD.SimilarJob
 	 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 

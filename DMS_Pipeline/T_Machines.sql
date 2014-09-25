@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Machines](
 	[Total_Memory_MB] [int] NOT NULL,
 	[Memory_Available] [int] NOT NULL,
 	[ProcTool_Group_ID] [int] NOT NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Machines] PRIMARY KEY CLUSTERED 
 (
 	[Machine] ASC

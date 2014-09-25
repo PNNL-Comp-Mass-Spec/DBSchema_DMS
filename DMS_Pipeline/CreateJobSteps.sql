@@ -41,6 +41,7 @@ CREATE PROCEDURE CreateJobSteps
 **			03/21/2011 mem - Now passing @DebugMode to FinishJobCreation
 **			05/25/2011 mem - Updated call to CreateStepsForJob
 **			10/17/2011 mem - Now populating column Memory_Usage_MB using UpdateJobStepMemoryUsage
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -116,7 +117,7 @@ As
 	CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step_Number)
 
 	CREATE TABLE #Job_Step_Dependencies (
-		[Job_ID] int NOT NULL,
+		[Job] int NOT NULL,
 		[Step_Number] int NOT NULL,
 		[Target_Step_Number] int NOT NULL,
 		[Condition_Test] varchar(50) NULL,
@@ -124,7 +125,7 @@ As
 		[Enable_Only] tinyint NULL
 	)
 
-	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job_ID, Step_Number)
+	CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step_Number)
 
 
 	CREATE TABLE #Job_Parameters (

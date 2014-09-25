@@ -20,6 +20,7 @@ CREATE PROCEDURE FinishJobCreation
 **			03/21/2011 mem - Added support for Special="ExtractSourceJobFromComment"
 **			03/22/2011 mem - Now calling AddUpdateJobParameterTempTable
 **			04/04/2011 mem - Removed SourceJob code since needs to occur after T_Job_Parameters has been updated for this job
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -47,7 +48,7 @@ As
 	     INNER JOIN ( SELECT Step_Number,
 	                         COUNT(*) AS dependencies
 	                  FROM #Job_Step_Dependencies
-	                  WHERE (Job_ID = @job)
+	                  WHERE (Job = @job)
 	                  GROUP BY Step_Number 
 	                ) AS T
 	       ON T.Step_Number = #Job_Steps.Step_Number

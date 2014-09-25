@@ -64,6 +64,7 @@ CREATE PROCEDURE AddNewJobs
 **			01/12/2012 mem - Now only auto-adding jobs for scripts with Backfill_to_DMS = 0
 **			01/19/2012 mem - Now populating DataPkgID in T_Jobs
 **			04/28/2014 mem - Bumped up @MaxJobsToAddResetOrResume from 1 million to 1 billion
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -685,7 +686,7 @@ As
 			Triggered = 0
 		FROM T_Job_Step_Dependencies JSD INNER JOIN
 			T_Job_Steps JS ON 
-			JSD.Job_ID = JS.Job AND 
+			JSD.Job = JS.Job AND 
 			JSD.Step_Number = JS.Step_Number
 		WHERE
 			JS.State = 1 AND			-- 1=Waiting

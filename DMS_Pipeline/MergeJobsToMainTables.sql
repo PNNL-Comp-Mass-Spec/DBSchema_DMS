@@ -18,6 +18,7 @@ CREATE PROCEDURE MergeJobsToMainTables
 **			03/21/2011 mem - Renamed @DebugMode to @InfoOnly
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -154,7 +155,7 @@ As
 	---------------------------------------------------
 
 	INSERT INTO T_Job_Step_Dependencies (
-		Job_ID,
+		Job,
 		Step_Number,
 		Target_Step_Number,
 		Condition_Test,
@@ -162,7 +163,7 @@ As
 		Enable_Only
 	)
 	SELECT
-		Job_ID,
+		Job,
 		Step_Number,
 		Target_Step_Number,
 		Condition_Test,
@@ -174,7 +175,7 @@ As
 		SELECT * 
 		FROM T_Job_Step_Dependencies
 		WHERE 
-			T_Job_Step_Dependencies.Job_ID = #Job_Step_Dependencies.Job_ID and
+			T_Job_Step_Dependencies.Job = #Job_Step_Dependencies.Job and
 			T_Job_Step_Dependencies.Step_Number = #Job_Step_Dependencies.Step_Number
 	)
 	--

@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.UpdateCPULoading
 **			06/03/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
 **			09/10/2010 mem - Now using READUNCOMMITTED when querying T_Job_Steps
 **			10/17/2011 mem - Now populating Memory_Available
+**			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **    
 *****************************************************/
 (
@@ -48,13 +49,15 @@ As
 	FROM   T_Machines
 	INNER JOIN 
 	(
-		SELECT
-			M.Machine, 
-			SUM(CASE WHEN JS.State = 4 THEN JS.CPU_Load ELSE 0 END) AS CPUs_used,
-			SUM(CASE WHEN JS.State = 4 THEN JS.Memory_Usage_MB ELSE 0 END) AS Memory_Used
-		FROM T_Job_Steps JS WITH (READUNCOMMITTED) RIGHT OUTER JOIN
-             T_Machines M ON JS.Machine = M.Machine   
-		GROUP BY M.Machine	
+		SELECT M.Machine, 
+			   SUM(CASE WHEN JS.State = 4 THEN JS.CPU_Load ELSE 0 END) AS CPUs_used,
+			   SUM(CASE WHEN JS.State = 4 THEN JS.Memory_Usage_MB ELSE 0 END) AS Memory_Used
+		FROM T_Machines M
+		     LEFT OUTER JOIN T_Local_Processors LP
+		       ON M.Machine = LP.Machine
+		     LEFT OUTER JOIN T_Job_Steps JS WITH ( READUNCOMMITTED )
+		       ON LP.Processor_Name = JS.Processor
+		GROUP BY M.Machine
 	) AS TX
 	ON TX.Machine = T_Machines.Machine
 	--

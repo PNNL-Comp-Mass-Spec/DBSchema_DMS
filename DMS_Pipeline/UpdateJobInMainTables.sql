@@ -19,6 +19,7 @@ CREATE PROCEDURE UpdateJobInMainTables
 **			03/21/2011 mem - Changed transaction name to match procedure name
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -91,7 +92,7 @@ As
 	DELETE T_Job_Step_Dependencies
 	FROM T_Job_Step_Dependencies JSD
 	     INNER JOIN T_Job_Steps JS
-	       ON JSD.Job_ID = JS.Job AND
+	       ON JSD.Job = JS.Job AND
 	          JSD.Step_Number = JS.Step_Number
 	     INNER JOIN #Job_Steps
 	       ON JS.Job = #Job_Steps.Job AND
@@ -176,7 +177,7 @@ As
 	---------------------------------------------------
 
 	INSERT INTO T_Job_Step_Dependencies (
-		Job_ID,
+		Job,
 		Step_Number,
 		Target_Step_Number,
 		Condition_Test,
@@ -184,7 +185,7 @@ As
 		Enable_Only
 	)
 	SELECT
-		Src.Job_ID,
+		Src.Job,
 		Src.Step_Number,
 		Src.Target_Step_Number,
 		Src.Condition_Test,
@@ -192,9 +193,9 @@ As
 		Src.Enable_Only 
 	FROM #Job_Step_Dependencies Src
 	     LEFT OUTER JOIN T_Job_Step_Dependencies JSD
-	       ON JSD.Job_ID = Src.Job_ID AND
+	       ON JSD.Job = Src.Job AND
 	          JSD.Step_Number = Src.Step_Number
-	WHERE JSD.Job_ID IS NULL
+	WHERE JSD.Job IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

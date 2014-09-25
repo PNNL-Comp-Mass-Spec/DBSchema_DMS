@@ -26,6 +26,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
 **			08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
 **			04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -89,7 +90,7 @@ AS
 	)
 
 	CREATE TABLE #Job_Step_Dependencies (
-		[Job_ID] int NOT NULL,
+		[Job] int NOT NULL,
 		[Step_Number] int NOT NULL,
 		[Target_Step_Number] int NOT NULL,
 		[Condition_Test] varchar(50) NULL,
@@ -270,7 +271,7 @@ AS
 			  COUNT(*) AS dependencies
 			FROM     
 			  #Job_Step_Dependencies
-			WHERE    (Job_ID = @job)
+			WHERE    (Job = @job)
 			GROUP BY Step_Number
 		) AS T
 		ON T.Step_Number = #Job_Steps.Step_Number

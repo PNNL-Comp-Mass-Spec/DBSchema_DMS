@@ -31,6 +31,7 @@ CREATE PROCEDURE UpdateDependentSteps
 **			05/25/2011 mem - Now using the Priority column from T_Jobs
 **			12/20/2011 mem - Now updating T_Job_Steps.Dependencies if the dependency count listed is lower than that defined in T_Job_Step_Dependencies 
 **			09/17/2014 mem - Updated output_folder_name logic to recognize tool Mz_Refinery
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -125,14 +126,14 @@ As
 	UPDATE T_Job_Steps
 	SET Dependencies = CompareQ.Actual_Dependencies
 	FROM T_Job_Steps JS
-	     INNER JOIN ( SELECT Job_ID,
+	     INNER JOIN ( SELECT Job,
 	                         Step_Number,
 	                         COUNT(*) AS Actual_Dependencies
 	                  FROM T_Job_Step_Dependencies
-	                  WHERE Job_ID IN ( SELECT Job FROM T_Job_Steps WHERE State = 1 )
-	                  GROUP BY Job_ID, Step_Number 
+	                  WHERE Job IN ( SELECT Job FROM T_Job_Steps WHERE State = 1 )
+	                  GROUP BY Job, Step_Number 
 	                ) CompareQ
-	       ON JS.Job = CompareQ.Job_ID AND
+	       ON JS.Job = CompareQ.Job AND
 	          JS.Step_Number = CompareQ.Step_Number AND
 	          JS.Dependencies < CompareQ.Actual_Dependencies
 	WHERE JS.State = 1
@@ -151,7 +152,7 @@ As
 	---------------------------------------------------
 	--
 	INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name)
-	SELECT JSD.Job_ID AS Job,
+	SELECT JSD.Job AS Job,
 	       JSD.Step_Number AS Step,
 	       JS.Step_Tool AS Tool,
 	       J.Priority,
@@ -163,12 +164,12 @@ As
 	       JS.Output_Folder_Name
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Job_Step_Dependencies JSD
-	       ON JSD.Job_ID = JS.Job AND
+	       ON JSD.Job = JS.Job AND
 	          JSD.Step_Number = JS.Step_Number
 	     INNER JOIN T_Jobs J
 	       ON JS.Job = J.Job
 	WHERE (JS.State = 1)
-	GROUP BY JSD.Job_ID, JSD.Step_Number, JS.Dependencies, 
+	GROUP BY JSD.Job, JSD.Step_Number, JS.Dependencies, 
 	         JS.Shared_Result_Version, JS.Signature, 
 	         J.Priority, JS.Step_Tool, JS.Output_Folder_Name
 	HAVING JS.Dependencies = SUM(JSD.Evaluated)

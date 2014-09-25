@@ -17,6 +17,7 @@ CREATE PROCEDURE CloneJobStep
 **			02/06/2009 grk - modified for extension jobs (http://prismtrac.pnl.gov/trac/ticket/720)
 **			05/25/2011 mem - Removed priority column from #Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
+**			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -129,7 +130,7 @@ As
 		---------------------------------------------------
 		--
 		INSERT INTO #Job_Step_Dependencies (
-			Job_ID,
+			Job,
 			Step_Number,
 			Target_Step_Number,
 			Condition_Test,
@@ -137,7 +138,7 @@ As
 			Enable_Only
 		)
 		SELECT
-			Job_ID,
+			Job,
 			@clone_step_number as Step_Number,
 			Target_Step_Number,
 			Condition_Test,
@@ -146,7 +147,7 @@ As
 		FROM 
 			#Job_Step_Dependencies
 		WHERE 
-			Job_ID = @job AND 
+			Job = @job AND 
 			Step_Number = @step_to_clone
 
 
@@ -155,7 +156,7 @@ As
 		---------------------------------------------------
 		--
 		INSERT INTO #Job_Step_Dependencies (
-			Job_ID,
+			Job,
 			Step_Number,
 			Target_Step_Number,
 			Condition_Test,
@@ -163,7 +164,7 @@ As
 			Enable_Only
 		)
 		SELECT
-			Job_ID,
+			Job,
 			Step_Number,
 			@clone_step_number as Target_Step_Number,
 			Condition_Test,
@@ -172,7 +173,7 @@ As
 		FROM 
 			#Job_Step_Dependencies
 		WHERE 
-			Job_ID = @job AND 
+			Job = @job AND 
 			Target_Step_Number= @step_to_clone
 
 		
@@ -185,7 +186,7 @@ As
 	--
 	DELETE FROM #Job_Step_Dependencies
 	WHERE 
-		Job_ID = @job AND 
+		Job = @job AND 
 		Target_Step_Number= @step_to_clone
 
 	---------------------------------------------------
@@ -194,7 +195,7 @@ As
 	--
 	DELETE FROM #Job_Step_Dependencies
 	WHERE 
-		Job_ID = @job AND 
+		Job = @job AND 
 		Step_Number = @step_to_clone
 
 	---------------------------------------------------
