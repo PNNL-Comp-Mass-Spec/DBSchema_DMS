@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Local_Processors](
 	[ID] [int] NOT NULL,
-	[Processor_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Processor_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[State] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[ProcTool_Mgr_ID] [smallint] NOT NULL,
 	[Groups] [int] NULL,
