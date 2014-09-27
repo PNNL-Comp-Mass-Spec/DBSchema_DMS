@@ -16,6 +16,8 @@ CREATE Procedure CloneDataset
 **
 **	Auth:	mem
 **	Date:	02/27/2014
+**			09/25/2014 mem - Updated T_Job_Step_Dependencies to use Job
+**			                 Removed the Machine column from T_Job_Steps
 **    
 *****************************************************/
 (
@@ -359,7 +361,6 @@ AS
 						                        Input_Folder_Name,
 						                        Output_Folder_Name,
 						                        Processor,
-						                        Machine,
 						                        Start,
 						                        Finish,
 						                        Tool_Version_ID,
@@ -377,7 +378,6 @@ AS
 						   Input_Folder_Name,
 						   Output_Folder_Name,
 						   'In-Silico' AS Processor,
-						   'DMS' AS Machine,
 						   Case When Start Is Null Then Null Else GetDate() End As Start,
 						   Case When Finish Is Null Then Null Else GetDate() End As Finish,
 						   1 As Tool_Version_ID,
@@ -438,7 +438,6 @@ AS
 					                                         Input_Folder_Name,
 					                                         Output_Folder_Name,
 					                                         Processor,
-					                                         Machine,
 					                                         Start,
 					                                         Finish,
 					                                         Tool_Version_ID,
@@ -458,7 +457,6 @@ AS
 					       Input_Folder_Name,
 					       Output_Folder_Name,
 					       'In-Silico' AS Processor,
-					       'DMS' AS Machine,
 					       Case When Start Is Null Then Null Else GetDate() End As Start,
 					       Case When Finish Is Null Then Null Else GetDate() End As Finish,
 					       1 AS Tool_Version_ID,
@@ -475,10 +473,10 @@ AS
 					Select @myRowCount = @@RowCount, @myError = @@Error
 
 
-					INSERT INTO DMS_Capture.dbo.T_Job_Step_Dependencies (Job_ID, Step_Number, Target_Step_Number, 
+					INSERT INTO DMS_Capture.dbo.T_Job_Step_Dependencies (Job, Step_Number, Target_Step_Number, 
 					                                                     Condition_Test, Test_Value, Evaluated, 
 					                                                     Triggered, Enable_Only)
-					SELECT @CaptureJobNew AS Job_ID,
+					SELECT @CaptureJobNew AS Job,
 					       Step_Number,
 					       Target_Step_Number,
 					       Condition_Test,
@@ -487,7 +485,7 @@ AS
 					       Triggered,
 					       Enable_Only
 					FROM DMS_Capture.dbo.T_Job_Step_Dependencies
-					WHERE Job_ID = @CaptureJob
+					WHERE Job = @CaptureJob
 					--
 					Select @myRowCount = @@RowCount, @myError = @@Error
 					
