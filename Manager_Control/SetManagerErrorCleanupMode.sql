@@ -12,11 +12,15 @@ CREATE PROCEDURE dbo.SetManagerErrorCleanupMode
 **
 **	Auth:	mem
 **	Date:	09/10/2009 mem - Initial version
+**			09/29/2014 mem - Expanded @ManagerList to varchar(max) and added parameters @showTable and @infoOnly
+**			               - Fixed where clause bug in final update query
 **
 *****************************************************/
 (
-	@ManagerList varchar(4000) = '',
+	@ManagerList varchar(max) = '',
 	@CleanupMode tinyint = 1,				-- 0 = No auto cleanup, 1 = Attempt auto cleanup once, 2 = Auto cleanup always
+	@showTable tinyint = 1,
+	@infoOnly tinyint = 0,
 	@message varchar(512) = '' output
 )
 AS
@@ -37,6 +41,8 @@ AS
 	
 	Set @ManagerList = IsNull(@ManagerList, '')
 	Set @CleanupMode = IsNull(@CleanupMode, 1)
+	Set @showTable = IsNull(@showTable, 1)
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
 	
 	If @CleanupMode < 0
@@ -51,11 +57,9 @@ AS
 	)
 
 	---------------------------------------------------
-	-- Confirm that the manager name is valid
+	-- Confirm that the manager names are valid
 	---------------------------------------------------
 
-	Set @ManagerList = IsNull(@ManagerList, '')
-	
 	If Len(@ManagerList) > 0
 		INSERT INTO #TmpManagerList (ManagerName)
 		SELECT Value
@@ -137,31 +141,58 @@ AS
 
 	Set @CleanupModeString = Convert(varchar(12), @CleanupMode)
 	
-	UPDATE T_ParamValue
-	SET Value = @CleanupModeString
-	FROM T_ParamValue
-	     INNER JOIN #TmpManagerList
-	       ON T_ParamValue.MgrID = #TmpManagerList.MgrID
-	WHERE (T_ParamValue.TypeID = @ParamID) AND
-	      T_ParamValue.Value <> 'True'
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-
-	If @myRowCount <> 0
+	If @infoOnly <> 0
 	Begin
-		Set @message = 'Set "ManagerErrorCleanupMode" to ' + @CleanupModeString + ' for ' + Convert(varchar(12), @myRowCount) + ' manager'
-		If @myRowCount > 1
-			Set @message = @message + 's'
+		SELECT MP.*, @CleanupMode As NewCleanupMode
+		FROM V_AnalysisMgrParams_ActiveAndDebugLevel MP
+			INNER JOIN #TmpManagerList
+			ON MP.MgrID = #TmpManagerList.MgrID
+		WHERE MP.ParamTypeID = 120
+		ORDER BY MP.Manager
+	End
+	Else
+	Begin
 			
-		Print @message
+		UPDATE T_ParamValue
+		SET Value = @CleanupModeString
+		FROM T_ParamValue
+			INNER JOIN #TmpManagerList
+			ON T_ParamValue.MgrID = #TmpManagerList.MgrID
+		WHERE T_ParamValue.TypeID = @ParamID AND
+			T_ParamValue.Value <> @CleanupModeString
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount <> 0
+		Begin
+			Set @message = 'Set "ManagerErrorCleanupMode" to ' + @CleanupModeString + ' for ' + Convert(varchar(12), @myRowCount) + ' manager'
+			If @myRowCount > 1
+				Set @message = @message + 's'
+				
+			Print @message
+		End
 	End
 
+	---------------------------------------------------
+	-- Show the new values
+	---------------------------------------------------
+	
+	If @infoOnly = 0 And @showTable <> 0
+	Begin
+		SELECT MP.*
+		FROM V_AnalysisMgrParams_ActiveAndDebugLevel MP
+			INNER JOIN #TmpManagerList
+			ON MP.MgrID = #TmpManagerList.MgrID
+		WHERE MP.ParamTypeID = 120
+		ORDER BY MP.Manager
+	End
+		
 	---------------------------------------------------
 	-- Exit the procedure
 	---------------------------------------------------
 Done:
 	return @myError
-	
+
 GO
 GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [Mgr_Config_Admin] AS [dbo]
 GO
