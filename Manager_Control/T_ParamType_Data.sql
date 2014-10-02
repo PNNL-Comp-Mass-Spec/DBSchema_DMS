@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 163 ******/
+/****** RowCount: 164 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -164,4 +164,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (17
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'MSPathFinderProgLoc','','Path to MSPathFinder')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (179,'PbfGenProgLoc','','Path to PbfGen')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (180,'MzRefineryProgLoc','','Path to MzRefinery')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (181,'UimfDemultiplexerProgLoc','','')
 SET IDENTITY_INSERT [T_ParamType] OFF
