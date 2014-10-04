@@ -25,6 +25,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			06/04/2013 mem - Now replacing tab characters with spaces
 **			09/16/2013 mem - Now allowing mod Heme_615 to be stored (even though it is from PNNL and not UniMod)
 **			09/03/2014 mem - Now treating static N-term or C-term mods that specify a target residue (instead of *) as Dynamic mods (a requirement for PHRP)
+**			10/02/2014 mem - Add exception for Dyn2DZ
 **    
 *****************************************************/
 (
@@ -311,7 +312,7 @@ AS
 							SELECT @MassCorrectionID = Mass_Correction_ID
 							FROM T_Mass_Correction_Factors
 							WHERE Original_Source_Name = @ModName AND
-							     (Original_Source = 'UniMod' OR @ModName = 'Heme_615')
+							     (Original_Source = 'UniMod' OR @ModName IN ('Heme_615','Dyn2DZ'))
 							--
 							SELECT @myRowCount = @@rowcount, @myError = @@error
 
