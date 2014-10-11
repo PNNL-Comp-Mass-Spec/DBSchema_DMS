@@ -16,5 +16,15 @@ CREATE TABLE [dbo].[T_Instrument_Operation_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Instrument_Operation_History_Instrument_Entered] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Instrument_Operation_History_Instrument_Entered] ON [dbo].[T_Instrument_Operation_History]
+(
+	[Instrument] ASC,
+	[Entered] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Instrument_Operation_History] ADD  CONSTRAINT [DF_T_Instrument_Operation_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
