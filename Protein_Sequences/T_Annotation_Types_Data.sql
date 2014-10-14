@@ -8,7 +8,7 @@ INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Exa
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (7,'UniParc ID','UniProt Archive ID','Q9RYE8_DEIRA',8)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (8,'UniProtKB/SwissProt','UniProt Knowledgebase/SwissProt','Q9RYE8_DEIRA',8)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (10,'Accession Number','GenBank Accession Number','AAF09595.1',2)
-INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (11,'RefSeq ID','GenBank RefSeq','NP_293727.1',2)
+INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (11,'RefSeq ID','GenBank RefSeq','ref|YP_463220.1',2)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (12,'PIR ID','Protein Information Resource ID','D75571',8)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (13,'IPI Number','International Protein Index Number','IPI00015171',4)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (14,'Other','Oddball things that don''t really fit a major category','',6)
