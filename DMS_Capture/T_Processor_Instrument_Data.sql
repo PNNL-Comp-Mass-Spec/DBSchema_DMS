@@ -1,6 +1,7 @@
 /****** Object:  Table [T_Processor_Instrument] ******/
-/****** RowCount: 13 ******/
+/****** RowCount: 14 ******/
 /****** Columns: Processor_Name, Instrument_Name, Enabled, Comment ******/
+INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','15T_FTICR',1,'Bruker')
 INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','IMS04_AgTOF05',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-10_CTM','IMS_TOF_1',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-10_CTM','IMS02_AgTOF06',1,'IMS Instrument')
