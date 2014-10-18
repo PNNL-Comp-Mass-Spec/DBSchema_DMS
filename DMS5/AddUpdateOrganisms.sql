@@ -29,6 +29,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			05/10/2013 mem - Added @NEWTIdentifier
 **			05/13/2013 mem - Now validating @NEWTIdentifier against S_V_CV_NEWT
 **			05/24/2013 mem - Added @NEWTIDList
+**			10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -36,7 +37,6 @@ CREATE PROCEDURE AddUpdateOrganisms
 (
 	@orgName varchar(128),
 	@orgShortName varchar(128),
-	@orgDBPath varchar(255),
 	@orgStorageLocation varchar(256),
 	@orgDBName varchar(128),				-- Default protein collection name (prior to 2012 was default fasta file)
 	@orgDescription varchar(256),
@@ -79,13 +79,23 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	set @orgDBPath = IsNull(@orgDBPath, '')
-	If @orgDBPath <> ''
+	Set @orgStorageLocation = IsNull(@orgStorageLocation, '')
+	If @orgStorageLocation <> ''
 	Begin
-		If Not @orgDBPath LIKE '\\%\'
-		begin
-			RAISERROR ('Org. DB File Storage Path must start with \\ and end with \', 11, 8)
-		end
+		If Not @orgStorageLocation LIKE '\\%'
+			RAISERROR ('Org. Storage Path must start with \\', 11, 8)
+		
+		-- Make sure @orgStorageLocation does not end in \FASTA or \FASTA\
+		-- That text gets auto-appended via computed column OG_organismDBPath
+		If @orgStorageLocation Like '%\FASTA'
+			Set @orgStorageLocation = Substring(@orgStorageLocation, 1, Len(@orgStorageLocation) - 6)
+
+		If @orgStorageLocation Like '%\FASTA\'
+			Set @orgStorageLocation = Substring(@orgStorageLocation, 1, Len(@orgStorageLocation) - 7)
+			
+		If Not @orgStorageLocation Like '%\'
+			Set @orgStorageLocation = @orgStorageLocation + '\'
+		
 	End
 
 	set @orgName = IsNull(@orgName, '')
@@ -310,8 +320,6 @@ As
 	begin
 		INSERT INTO T_Organisms (
 			OG_name, 
-			OG_organismDBPath, 
-			-- OG_organismDBLocalPath, -- Field no longer in table
 			OG_organismDBName, 
 			OG_created, 
 			OG_description, 
@@ -333,7 +341,6 @@ As
 			NEWT_ID_List
 		) VALUES (
 			@orgName, 
-			@orgDBPath, 
 			@orgDBName, 
 			getdate(), 
 			@orgDescription, 
@@ -382,7 +389,6 @@ As
 		UPDATE T_Organisms 
 		SET 
 			OG_name = @orgName, 
-			OG_organismDBPath = @orgDBPath, 
 			OG_organismDBName = @orgDBName, 
 			OG_description = @orgDescription, 
 			OG_Short_Name = @orgShortName, 

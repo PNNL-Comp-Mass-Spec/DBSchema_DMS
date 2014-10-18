@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Organisms](
 	[OG_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Organism_ID] [int] IDENTITY(40,1) NOT NULL,
-	[OG_organismDBPath] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[OG_organismDBPath]  AS (case when isnull([OG_Storage_Location],'')='' then NULL else [dbo].[udfCombinePaths]([OG_Storage_Location],'FASTA\') end),
 	[OG_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_created] [datetime] NULL,
 	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -62,7 +62,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms]
 GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()) FOR [OG_created]
 GO
-ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT (1) FOR [OG_Active]
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT ((1)) FOR [OG_Active]
 GO
 ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name_NoSpace] CHECK  ((NOT [OG_Name] like '% %'))
 GO
@@ -77,7 +77,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
 For Insert
 AS
@@ -97,16 +96,12 @@ AS
 			OG_Active, GetDate(), SYSTEM_USER
 	FROM inserted
 
-
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
 For Update
 AS
@@ -139,7 +134,5 @@ AS
 				inserted.NEWT_Identifier, inserted.NEWT_ID_List,
 				inserted.OG_Active, GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
-
-
 
 GO

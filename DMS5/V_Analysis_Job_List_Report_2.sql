@@ -29,7 +29,7 @@ SELECT  AJ.AJ_jobID AS Job ,
         CASE WHEN AJ.AJ_Purged = 0
         THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName 
         ELSE 'Purged'
-        END AS [Archive Folder Path],
+        END AS [Results Folder Path],
         AJ.AJ_Last_Affected AS Last_Affected,
         DR.DRN_name AS Rating
 FROM T_Analysis_Job AJ INNER JOIN
