@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Processor_Tool_Group_Detail_Stats]
 AS
 SELECT PTG.Group_ID,
@@ -22,8 +23,10 @@ FROM T_Machines M
      INNER JOIN T_Processor_Tool_Group_Details PTGD
        ON PTG.Group_ID = PTGD.Group_ID AND
           LP.ProcTool_Mgr_ID = PTGD.Mgr_ID
+WHERE PTG.Enabled > -10
 GROUP BY PTG.Group_ID
          , PTG.Group_Name, PTG.Enabled, PTG.Comment, PTGD.Tool_Name, PTGD.Priority, PTGD.Enabled
+
 
 
 
