@@ -12,7 +12,8 @@ CREATE PROCEDURE MakeNewArchiveJobsFromDMS
 **    already in table.
 **
 **	Auth:	grk
-**	01/08/2010 -- initial release 
+**	Date:	01/08/2010 grk - Initial release 
+**			10/24/2014 mem - Changed priority to 2
 **    
 *****************************************************/
 (
@@ -89,29 +90,23 @@ As
 			exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
 		End
 
-		INSERT  INTO T_Jobs
-		(
-			Script,
-			Comment,
-			Dataset,
-			Dataset_ID
-		)
-		SELECT
-			'DatasetArchive' AS Script,
-			'Created by import from DMS' AS Comment,
-			Dataset,
-			Dataset_ID
-		FROM
-			V_DMS_Get_New_Archive_Datasets
-		WHERE
-			( NOT EXISTS ( SELECT
-							Job
-						   FROM
-							T_Jobs
-						   WHERE
-							( Dataset_ID = V_DMS_Get_New_Archive_Datasets.Dataset_ID )
-							AND ( Script = 'DatasetArchive' ) )
-			)
+		INSERT INTO T_Jobs (Script,
+		                    [Comment],
+		                    Dataset,
+		                    Dataset_ID,
+		                    Priority )
+		SELECT 'DatasetArchive' AS Script,
+		       'Created by import from DMS' AS [Comment],
+		       Dataset,
+		       Dataset_ID,
+		       2 AS Priority
+		FROM V_DMS_Get_New_Archive_Datasets
+		WHERE (NOT EXISTS ( SELECT Job
+		                    FROM T_Jobs
+		                    WHERE (Dataset_ID = V_DMS_Get_New_Archive_Datasets.Dataset_ID) AND
+		                          (Script = 'DatasetArchive') 
+		      ) )
+
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

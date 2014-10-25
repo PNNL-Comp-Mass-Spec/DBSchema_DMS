@@ -16,6 +16,7 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 **			09/08/2010 mem - Added parameter @AllowBlankResultsFolder
 **			05/31/2013 mem - Added parameter @PushDatasetToMyEMSL
 **			07/11/2013 mem - Added parameter @PushDatasetRecursive
+**			10/24/2014 mem - Changed priority to 2 when @ResultsFolderName = ''
 **    
 *****************************************************/
 (
@@ -130,19 +131,27 @@ As
 	Else
 	Begin
 		
-		INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
-		SELECT
-			@Script AS Script,
-			@DatasetName AS Dataset,
-			@DatasetID AS Dataset_ID,
-			@ResultsFolderName AS Results_Folder_Name,
-			'Created manually using MakeNewArchiveUpdateJob' AS Comment
+		INSERT INTO T_Jobs( Script,
+		                    Dataset,
+		                    Dataset_ID,
+		                    Results_Folder_Name,
+		                    [Comment],
+		                    Priority )
+		SELECT @Script AS Script,
+		       @DatasetName AS Dataset,
+		       @DatasetID AS Dataset_ID,
+		       @ResultsFolderName AS Results_Folder_Name,
+		       'Created manually using MakeNewArchiveUpdateJob' AS [Comment],
+		       CASE
+		           WHEN @ResultsFolderName = '' THEN 2
+		           ELSE 3
+		       END AS Priority
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
-			set @message = 'Error trying to add new Archive Update step'
+			set @message = 'Error trying to add new Archive Update job'
 			goto Done
 		end	
 		
