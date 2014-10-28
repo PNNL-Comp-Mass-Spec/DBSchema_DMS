@@ -26,6 +26,7 @@ CREATE Procedure AutoResetFailedJobs
 **			04/17/2014 mem - Updated check for "None of the spectra are centroided" to be more generic
 **			09/09/2014 mem - Changed DataExtractor and MSGF retries to 2
 **						   - Now auto-resetting MSAlign jobs that report "Not enough free memory"
+**			10/27/2014 mem - Now watching for "None of hte spectra are centroided" from DTA_Refinery
 **
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
 		---------------------------------------------------
 		--
 		INSERT INTO #Tmp_FailedJobs (Job, Step_Number, Step_Tool, Job_State, Step_State, 
-		                            Processor, Comment, Job_Finish, Settings_File, AnalysisTool)
+		   Processor, Comment, Job_Finish, Settings_File, AnalysisTool)
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
@@ -266,7 +267,6 @@ As
 						End
 					End
 					
-
 					If @StepState = 6
 					Begin
 						-- Job step is failed and overall job is failed
@@ -280,7 +280,7 @@ As
 						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
 							Set @RetryJob = 1
 
-						If @RetryJob = 0 And @StepTool LIKE 'MSGFPlus%' And 
+						If @RetryJob = 0 And (@StepTool LIKE 'MSGFPlus%' OR @StepTool = 'DTA_Refinery') And 
 						   (@Comment Like '%None of the spectra are centroided; unable to process%' OR
 						    @Comment Like '%skipped % of the spectra because they did not appear centroided%' OR
 						    @Comment Like '%skip % of the spectra because they do not appear centroided%'
@@ -334,7 +334,7 @@ As
 							   @Comment Like '%File not found: \\a2%' Or
 							   @Comment Like '%Error copying %dta.zip%' Or
 							   @Comment Like '%Source dataset file file not found%'
-							  Set @RetryJob = 1
+							 Set @RetryJob = 1
 
 						End
 						

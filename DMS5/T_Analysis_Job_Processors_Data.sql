@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processors] ******/
-/****** RowCount: 790 ******/
+/****** RowCount: 792 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processors] ON
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (210,'D','Chemstation1326','Chemstation1326','Analysis Manager v2.0','9/15/2009 1:04:06 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (756,'E','Crowell_Analysis','WE17195','Kevin Crowell development machine','11/16/2009 11:14:10 AM','pnl\D3L243')
@@ -28,6 +28,8 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (361,'D','Peaks2-2','Peaks2','Analysis Manager v2.0','2/28/2014 10:15:05 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (315,'E','Proto-10_Analysis-1','Proto-10','','1/10/2014 1:13:27 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1038,'E','Proto-10_Analysis-2','Proto-10','','1/10/2014 1:13:53 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1040,'E','Proto-11_Analysis-1','Proto-11','','10/25/2014 11:57:34 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1041,'E','Proto-11_Analysis-2','Proto-11','','10/25/2014 11:57:43 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (308,'E','Proto-3_Analysis-1','Proto-3','','1/10/2014 1:13:26 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1031,'E','Proto-3_Analysis-2','Proto-3','','1/10/2014 1:13:11 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (309,'E','Proto-4_Analysis-1','Proto-4','','1/10/2014 1:13:25 PM','PNL\D3L243')
