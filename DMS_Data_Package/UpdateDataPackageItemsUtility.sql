@@ -24,6 +24,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **          05/23/2010 grk - create this sproc from common function factored out of UpdateDataPackageItems and UpdateDataPackageItemsXML
 **			12/31/2013 mem - Added support for EUS Proposals
 **			09/02/2014 mem - Updated to remove non-numeric items when working with analysis jobs
+**			10/28/2014 mem - Added support for adding datasets using dataset IDs; to delete datasets, you must use the dataset name (safety feature)
 **
 *****************************************************/
 (
@@ -45,6 +46,11 @@ As
 	declare @itemCountChanged int
 	set @itemCountChanged = 0
 
+	CREATE TABLE #Tmp_DatasetIDsToAdd (
+	    Package   varchar(50) NOT NULL,
+	    DatasetID int NOT NULL
+	)
+
  	---------------------------------------------------
  	---------------------------------------------------
 	BEGIN TRY 
@@ -57,14 +63,39 @@ As
 		End
 		
 
-		-- add parent items and associated items to list
-		-- for items in the list - this process cascades
-		-- up the DMS hierarchy of tracking entities, but
-		-- not down
+		-- Add parent items and associated items to list for items in the list
+		-- This process cascades up the DMS hierarchy of tracking entities, but not down
 		--
 		IF @mode = 'add'
 		BEGIN -- <add_associated_items>
-	 
+			 
+			-- Auto-convert dataset IDs to dataset names
+			-- First look for dataset IDs
+			INSERT INTO #Tmp_DatasetIDsToAdd( Package, DatasetID )
+			SELECT Package,
+			       Cast(Identifier AS int) AS DatasetID
+			FROM ( SELECT Package,
+			              Identifier
+			       FROM #TPI
+			       WHERE [Type] = 'Dataset' AND
+			             IsNumeric(Identifier) > 0 And
+			             Not Package Is Null) SourceQ
+
+			If Exists (select * from #Tmp_DatasetIDsToAdd)
+			Begin
+				-- Add the dataset names
+				INSERT INTO #TPI( Package,
+				                  [Type],
+				                  Identifier )
+				SELECT Source.Package,
+				       'Dataset' AS [Type],
+				       DL.Dataset
+				FROM #Tmp_DatasetIDsToAdd Source
+				     INNER JOIN S_V_Dataset_List_Report_2 DL
+				       ON Source.DatasetID = DL.ID
+
+			End
+			 
 			-- add datasets to list that are parents of jobs in list
 			-- (and are not already in list)
  			INSERT INTO #TPI (Package, Type, Identifier)
