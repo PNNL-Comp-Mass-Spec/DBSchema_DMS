@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Analysis_State_Name](
 	[AJS_stateID] [int] NOT NULL,
 	[AJS_name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_State_Name_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJS_stateID] ASC

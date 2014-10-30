@@ -6,7 +6,7 @@ INSERT INTO [T_DatasetArchiveStateName] VALUES (1,'new','Dataset needs to be arc
 INSERT INTO [T_DatasetArchiveStateName] VALUES (2,'Archive In Progress','Initial dataset archive is in progress')
 INSERT INTO [T_DatasetArchiveStateName] VALUES (3,'complete','Dataset folder exists; may or may not contain the instrument data')
 INSERT INTO [T_DatasetArchiveStateName] VALUES (4,'purged','Instrument data and all results are purged')
-INSERT INTO [T_DatasetArchiveStateName] VALUES (5,'deleted','Dataset has been deleted from the archive')
+INSERT INTO [T_DatasetArchiveStateName] VALUES (5,'deleted','No longer used: Dataset has been deleted from the archive')
 INSERT INTO [T_DatasetArchiveStateName] VALUES (6,'Operation Failed','Operation failed')
 INSERT INTO [T_DatasetArchiveStateName] VALUES (7,'Purge In Progress','Dataset purge is in progress')
 INSERT INTO [T_DatasetArchiveStateName] VALUES (8,'Purge Failed','Dataset purge failed')

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_GetPipelineJobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -30,12 +31,16 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
 WHERE (AJ.AJ_StateID IN (1, 8)) AND
       (
-		-- If a QC_Shew dataset has been dispositioned (DS_Rating >= 1), then allow an analysis job to run even if the dataset has not yet been archived (or archiving is in progress)
-		--   We do, however, prevent analysis if a purge is in progress
-		-- For all other datasets, we require that the dataset be archived (states 3 or 10) or purged (states 4, 9, 14, 15)
-        (Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7))
-        OR
-        (DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
+	    -- Ideally we only allow a job to start processing if the dataset is archived (states 3 or 10)
+		-- or purged (states 4, 9, 14, 15) or NonPurgeable (10)
+		(DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
+		Or
+		-- But if the dataset has been in state "Archive in progress" for over an hour, let the job start
+		(DA.AS_state_ID = 2 And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 60)
+		Or
+		-- Lastly, let QC_Shew datasets start if they have been dispositioned (DS_Rating >= 1),
+		-- but not if a purge is in progress
+		(Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 15)
       )
 
 

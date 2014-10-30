@@ -19,7 +19,8 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **	Parameters:
 **
 **	Auth:	mem
-**	Date:	04/28/2011
+**	Date:	04/28/2011 mem - Initial version
+**			10/29/2014 mem - Now alling @Comment to contain a single punctuation mark, which means the comment should not be updated
 **
 *****************************************************/
 (
@@ -52,7 +53,11 @@ As
 	
 	If @Comment = ''
 		Set @Comment = 'Bad dataset'
-		
+	
+	-- Treat the following characters as meaning "do not update the comment"
+	If @Comment in (' ', '.', ';', ',', '!', '^')
+		Set @Comment = ''
+	
 	If IsNumeric(@DatasetNameOrID) <> 0
 	Begin
 		----------------------------------------
@@ -107,9 +112,12 @@ As
 				
 			UPDATE T_Dataset
 			SET DS_comment = CASE
-			                     WHEN IsNull(DS_Comment, '') = '' THEN ''
-			                     ELSE DS_Comment + '; '
-			                 END + @Comment,
+			                     WHEN @Comment = '' THEN DS_Comment
+			                     ELSE CASE
+			                              WHEN IsNull(DS_Comment, '') = '' THEN ''
+			                              ELSE DS_Comment + '; '
+			                          END + @Comment
+			                 END,
 			    DS_state_ID = 4,
 			    DS_rating = - 1
 			WHERE Dataset_ID = @DatasetID
