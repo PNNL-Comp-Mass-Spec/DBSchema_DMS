@@ -35,13 +35,14 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
 		-- or purged (states 4, 9, 14, 15) or NonPurgeable (10)
 		(DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
 		Or
-		-- But if the dataset has been in state "Archive in progress" for over an hour, let the job start
+		-- But if the dataset has been in state "Archive in progress" for over 60 minutes, let the job start
 		(DA.AS_state_ID = 2 And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 60)
 		Or
 		-- Lastly, let QC_Shew datasets start if they have been dispositioned (DS_Rating >= 1),
 		-- but not if a purge is in progress
 		(Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 15)
       )
+
 
 
 GO
