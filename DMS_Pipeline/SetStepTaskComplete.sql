@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			09/12/2014 mem - Added PBF_Gen as a valid tool for completion code 16
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			               - Now looking up machine using T_Local_Processors
+**			10/30/2014 mem - Added support for completion code 17 (CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY)
 **    
 *****************************************************/
 (
@@ -99,20 +100,27 @@ As
 	--
 	Declare @stepState int
 	Declare @resetSharedResultStep tinyint = 0
-	
-	
+	Declare @handleSkippedStep tinyint = 0
+		
 	If @completionCode = 0
 	Begin
 		Set @stepState = 5 -- success
 	End
 	Else
-	Begin
+	Begin	
 		If @completionCode = 16  -- CLOSEOUT_FILE_NOT_IN_CACHE
 		Begin
 			Set @stepState = 1 -- waiting
 			Set @resetSharedResultStep = 1
 		End
-		Else
+		
+		If @completionCode = 17  -- CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY
+		Begin
+			Set @stepState = 3 -- skipped
+			Set @handleSkippedStep = 1
+		End
+		
+		If Not @completionCode in (16, 17)
 		Begin
 			Set @stepState = 6 -- fail
 		End
@@ -232,6 +240,38 @@ As
 			  
 	End
 
+	If @handleSkippedStep <> 0
+	Begin
+		-- This step was skipped
+		-- Update T_Job_Step_Dependencies and T_Job_Steps
+		
+		Declare @newTargetStep int = -1
+		Declare @nextStep int = -1
+		
+		SELECT @newTargetStep = Target_Step_Number
+		FROM T_Job_Step_Dependencies
+		WHERE Job = @job AND
+		      Step_Number = @step
+
+
+		SELECT @nextStep = Step_Number
+		FROM T_Job_Step_Dependencies
+		WHERE Job = @job AND
+		      Target_Step_Number = @step AND
+		      ISNULL(Condition_Test, '') <> 'Target_Skipped'
+
+		If @newTargetStep > -1 And @newTargetStep > -1
+		Begin
+			UPDATE T_Job_Step_Dependencies
+			SET Target_Step_Number = @newTargetStep
+			WHERE Job = @job AND Step_Number = @nextStep
+			
+			set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
+			exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
+		End
+		
+	End
+	
 CommitTran:
 	
 	-- update was successful

@@ -62,7 +62,11 @@ As
 	--  1=New, 2=Archive In Progress, 6=Operation Failed, 7=Purge In Progress, or 12=Verification In Progress
 	-- Jobs matching this criterion are deemed "busy" and thus will get Archive_Busy set to 1 in T_Jobs
 	--
-	-- However, for QC_Shew datasets, we only exclude jobs if the dataset archive state is 7=Purge In Progress	
+	-- However, if the dataset has been in state "Archive In Progress" for over 90 minutes, then we do not set Archive_Busy to true
+	-- This is required because MyEMSL can be quite slow at verifying that the uploaded data has been copied to tape
+	-- This logic is defined in view V_GetAnalysisJobsForArchiveBusy
+	--
+	-- For QC_Shew datasets, we only exclude jobs if the dataset archive state is 7=Purge In Progress	
 	--
 	-- Prior to May 2012 we also excluded datasets with archive update state: 3=Update In Progress
 	-- However, we now allow jobs to run if a dataset has an archive update job running
