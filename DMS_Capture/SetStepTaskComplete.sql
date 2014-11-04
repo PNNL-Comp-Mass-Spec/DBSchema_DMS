@@ -24,6 +24,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			09/19/2013 mem - Now skipping ArchiveStatusCheck when skipping ArchiveVerify
 **			10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
 **			09/24/2014 mem - No longer looking up machine
+**			11/03/2013 mem - Added support for @evaluationCode = 8
 **    
 *****************************************************/
 (
@@ -99,14 +100,23 @@ As
 		Set @stepState = 5
 	Else
 	Begin
+	
+		If @evaluationCode = 8  -- EVAL_CODE_FAILURE_DO_NOT_RETRY
+		Begin
+			Set @stepState = 6
+			Set @retryCount = 0
+		End
+		
 		If @retryCount > 0 Or @evaluationCode = 3
 		Begin
 			If @state = 4
 				Set @stepState = 2
 
 			If @retryCount > 0
-				SET @retryCount = @retryCount - 1 -- decrement retry count
-
+			Begin
+				Set @retryCount = @retryCount - 1 -- decrement retry count
+			End
+			
 			If @evaluationCode = 3
 			Begin
 				-- The captureTaskManager returns 3 (EVAL_CODE_NETWORK_ERROR_RETRY_CAPTURE) when a network error occurs during capture
@@ -120,7 +130,7 @@ As
 					SET @HoldoffIntervalMinutes = CASE
 					                                  WHEN @HoldoffIntervalMinutes < 5 THEN 5
 					                                  WHEN @HoldoffIntervalMinutes < 10 THEN 10
-					   WHEN @HoldoffIntervalMinutes < 15 THEN 15
+					                                  WHEN @HoldoffIntervalMinutes < 15 THEN 15
 					                                  WHEN @HoldoffIntervalMinutes < 30 THEN 30
 					                                  ELSE @HoldoffIntervalMinutes
 					                              END
