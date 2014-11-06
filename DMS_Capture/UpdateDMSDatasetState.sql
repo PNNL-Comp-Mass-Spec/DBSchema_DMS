@@ -14,7 +14,7 @@ CREATE PROCEDURE UpdateDMSDatasetState
 **  Parameters:
 **
 **  Auth:	grk
-**  Date:	01/05/2010 grk - Initial Veresion
+**  Date:	01/05/2010 grk - Initial Version
 **			01/14/2010 grk - removed path ID fields
 **			05/05/2010 grk - added handling for dataset info XML
 **			09/01/2010 mem - Now calling UpdateDMSFileInfoXML

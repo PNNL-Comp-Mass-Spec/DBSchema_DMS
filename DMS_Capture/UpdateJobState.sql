@@ -42,6 +42,7 @@ CREATE PROCEDURE UpdateJobState
 **			05/05/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Jobs
 **			11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
 **			01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
+**			11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
 **    
 *****************************************************/
 (
@@ -74,7 +75,7 @@ As
 	declare @done tinyint
 	declare @JobCountToProcess int
 	declare @JobsProcessed int
-	declare  @script varchar(64)
+	declare @script varchar(64)
 
 	
 	Declare @StartMin datetime
@@ -111,8 +112,8 @@ As
 		NewState int,
 		Results_Folder_Name varchar(128),
 		Dataset_Name varchar(128),
-		Dataset_ID INT,
-		Script VARCHAR(64),
+		Dataset_ID int,
+		Script varchar(64),
 		Storage_Server varchar(128)
 	)
 
@@ -142,25 +143,25 @@ As
 		Storage_Server
 	FROM
 	(
-		-- look at the state of steps for active jobs
+		-- look at the state of steps for active or failed jobs
 		-- and determine what the new state of each job should be
 		SELECT 
-		  TNJ.Job,
-		  TCJ.Dataset_ID,
-		  TCJ.State,
-		  TCJ.Results_Folder_Name,
-		  TCJ.Storage_Server,
+		  J.Job,
+		  J.Dataset_ID,
+		  J.State,
+		  J.Results_Folder_Name,
+		  J.Storage_Server,
 		  CASE 
-			WHEN TNJ.Failed > 0 THEN 5
-			WHEN TNJ.Finished = Total THEN 3
-			WHEN TNJ.StartedOrFinished > 0 THEN 2
-			Else TCJ.State
+			WHEN JS_Stats.Failed > 0 THEN 5                     -- Failed
+			WHEN JS_Stats.FinishedOrSkipped = Total THEN 3		-- Complete
+			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2	-- In Progress
+			Else J.State
 		  End AS NewState,
-		  TCJ.Dataset,
-		  TCJ.Script
+		  J.Dataset,
+		  J.Script
 		FROM   
 		  (
-			-- count the number of steps for each job 
+			-- Count the number of steps for each job 
 			-- that are in the busy, finished, or failed states
 			-- (for jobs that are in new, in progress, or resuming state)
 			SELECT   
@@ -169,7 +170,7 @@ As
 				SUM(CASE 
 					WHEN JS.State IN (3,4,5) THEN 1
 					Else 0
-					End) AS StartedOrFinished,
+					End) AS StartedFinishedOrSkipped,
 				SUM(CASE 
 					WHEN JS.State IN (6) THEN 1
 					Else 0
@@ -177,23 +178,23 @@ As
 				SUM(CASE 
 					WHEN JS.State IN (3,5) THEN 1
 					Else 0
-					End) AS Finished
+					End) AS FinishedOrSkipped
 			FROM T_Job_Steps JS
 			     INNER JOIN T_Jobs J
 			       ON JS.Job = J.Job
-			WHERE (J.State IN (1,2,20))
+			WHERE (J.State IN (1,2,5,20))	-- New, in progress, failed, or resuming state
 			GROUP BY JS.Job, J.State
-		   ) AS TNJ 
-		   INNER JOIN T_Jobs AS TCJ
-			 ON TNJ.Job = TCJ.Job
-	) TX
-	WHERE TX.State <> TX.NewState
+		   ) AS JS_Stats 
+		   INNER JOIN T_Jobs AS J
+			 ON JS_Stats.Job = J.Job
+	) UpdateQ
+	WHERE UpdateQ.State <> UpdateQ.NewState
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	Set @JobCountToProcess = @myRowCount
 
-
+/*
 	---------------------------------------------------
 	-- See if any failed jobs can now be set to complete
 	---------------------------------------------------
@@ -266,10 +267,10 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	Set @JobCountToProcess = @JobCountToProcess + @myRowCount
-
+*/
 
 	---------------------------------------------------
-	-- loop through jobs whose state has changed 
+	-- Loop through jobs whose state has changed 
 	-- and update local state and DMS state
 	---------------------------------------------------
 	--
@@ -449,7 +450,7 @@ As
 		If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
 		Begin
 			Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-			exec PostLogEntry 'Progress', @StatusMessage, 'UpdateDependentSteps'
+			exec PostLogEntry 'Progress', @StatusMessage, 'UpdateJobState'
 			Set @LastLogTime = GetDate()
 		End
 		
