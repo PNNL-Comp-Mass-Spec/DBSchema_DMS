@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
+
+CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
 /****************************************************
 **	Desc: 
 **  Outputs contents of EMSL instrument usage report table as rollup
@@ -22,74 +23,53 @@ CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
 )
 RETURNS @TX TABLE
 	(
-	  [EMSL_Inst_ID] [int] ,
-	  [Instrument] [varchar](64) ,
-	  [Start] [datetime] ,
-	  [Minutes] [int] ,
-	  [Proposal] [varchar](32) ,
-	  [Usage] [varchar](32) ,
-	  [Users] [varchar](1024) ,
-	  [Operator] [varchar](64) ,
-	  [Comment] [varchar](4096) 
+		[Month] INT,
+		[Day] INT,
+		[EMSL_Inst_ID] [int] ,
+		[DMS_Instrument] [varchar](64) ,
+		[Proposal] [varchar](32) ,
+		[Usage] [varchar](32) ,
+		[Minutes] [int] 
 	)
 AS 
 	BEGIN
-		DECLARE @date DATETIME = GETDATE()
-		
 		INSERT  INTO @TX ( 
 				EMSL_Inst_ID ,
-				Instrument ,
+				DMS_Instrument,
 				Proposal ,
 				Usage ,
-				Users ,
-				Operator ,
-				Comment ,
 				Minutes,
-				Start			 
+				[Month],
+				[Day]	 
 			)
 			SELECT  EMSL_Inst_ID ,
-					Instrument ,
+					DMS_Instrument ,
 					Proposal ,
 					Usage ,
-					Users ,
-					Operator ,
-					Comment ,
-					SUM(Minutes) AS [Minutes], --  COUNT(*) AS Num
-					@date AS [Start]			
+					SUM(Minutes) AS [Minutes],
+					[Month],
+					[Day]
 			FROM    ( SELECT    TEIUR.EMSL_Inst_ID ,
-								TEIUR.Instrument ,
+								TEIUR.Instrument AS DMS_Instrument,
 								TEIUR.Proposal ,
 								TEIUR.Usage ,
-								TEIUR.Users ,
-								TEIUR.Operator ,
-								CASE WHEN Usage = 'ONSITE' THEN ''
-									WHEN USAGE = 'MAINTENANCE'
-									AND Dataset_Num LIKE 'QC_%'
-									AND Type = 'dataset' THEN 'QC'
-									ELSE Comment
-								END AS Comment ,
-								TEIUR.Minutes
+								TEIUR.Minutes,
+								@Month AS [Month],
+								DATEPART(DAY, TEIUR.Start) AS [Day]
 						FROM      T_EMSL_Instrument_Usage_Report AS TEIUR
-								LEFT OUTER JOIN T_Dataset AS TDS ON TDS.Dataset_ID = TEIUR.ID
 						WHERE     ( TEIUR.Year = @Year )
 								AND ( TEIUR.Month = @Month )
 					) AS TX
 			GROUP BY EMSL_Inst_ID ,
-					Instrument ,
+					DMS_Instrument ,
 					Proposal ,
 					Usage ,
-					Users ,
-					Operator ,
-					Comment
-			ORDER BY Instrument ,
-					Proposal ,
-					Usage 
-		
-		DECLARE @start DATETIME = CONVERT(VARCHAR(12), @month) + '/1/' + CONVERT(VARCHAR(12), @year)
-		UPDATE @TX	
-		SET @start = Start	= DATEADD(MINUTE, minutes, @start)
+					[Month],
+					[Day]
+			ORDER BY EMSL_Inst_ID, DMS_Instrument, [Month], [Day], [Minutes] DESC
 							
 		RETURN
 	END
+
 
 GO
