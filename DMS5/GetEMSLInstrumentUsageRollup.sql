@@ -32,7 +32,7 @@ RETURNS @TX TABLE
 		[Minutes] [int] 
 	)
 AS 
-	BEGIN
+	BEGIN	
 		INSERT  INTO @TX ( 
 				EMSL_Inst_ID ,
 				DMS_Instrument,
