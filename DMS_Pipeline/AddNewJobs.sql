@@ -65,6 +65,7 @@ CREATE PROCEDURE AddNewJobs
 **			01/19/2012 mem - Now populating DataPkgID in T_Jobs
 **			04/28/2014 mem - Bumped up @MaxJobsToAddResetOrResume from 1 million to 1 billion
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			11/07/2014 mem - No longer performing a full job reset for ICR2LS or LTQ_FTPek jobs where the job state is failed but the DMS state is new
 **    
 *****************************************************/
 (
@@ -279,7 +280,8 @@ As
 	
 	-- Also look for jobs where the DMS state is "New", the broker state is 2, 5, or 8 (In Progress, Failed, or Holding), 
 	--  and none of the jobs Steps have completed or are running
-	-- It is safer to perform a full reset on these jobs (rather than a resume) in case an admin changed the settings file for the job
+	-- It is typically safer to perform a full reset on these jobs (rather than a resume) in case an admin changed the settings file for the job
+	-- Exception: LTQ_FTPek and ICR2LS jobs because ICR-2LS runs as the first step and we create checkpoint copies of the .PEK files to allow for a resume
 	-- 
 	INSERT INTO #Tmp_ResetJobs (Job)
 	SELECT T.Job
@@ -290,12 +292,13 @@ As
 	                       FROM T_Jobs J
 	                            INNER JOIN T_Job_Steps JS
 	                              ON J.Job = JS.Job
-	                       WHERE (J.State IN (2, 5, 8)) AND
-	                             (JS.State IN (4, 5)) 
+	                       WHERE (J.State IN (2, 5, 8)) AND   -- Jobs that are running, failed, or holding
+	                             (JS.State IN (4, 5))         -- Steps that are running or finished
 	                      ) LookupQ
 	 ON T_Jobs.Job = LookupQ.Job
 	WHERE (T_Jobs.State IN (2, 5, 8)) AND
-	      (LookupQ.Job IS NULL)
+	      (NOT T.Script IN ('LTQ_FTPek','ICR2LS')) AND
+	      (LookupQ.Job IS NULL)                       -- Assure there are no running or finished steps
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
