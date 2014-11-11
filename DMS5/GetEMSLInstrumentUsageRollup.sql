@@ -21,7 +21,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
 	@Year INT, 
 	@Month INT 
 )
-RETURNS @TX TABLE
+RETURNS @T_Report_Output TABLE
 	(
 		[Month] INT,
 		[Day] INT,
@@ -33,7 +33,170 @@ RETURNS @TX TABLE
 	)
 AS 
 	BEGIN	
-		INSERT  INTO @TX ( 
+		-- table for processing runs and intervals for reporting month
+		DECLARE @T_Working TABLE
+		(
+			[ID] INT NULL,
+			[EMSL_Inst_ID] INT NULL,
+			[DMS_Instrument] VARCHAR(64) NULL,
+			[Type] VARCHAR(128) NULL,
+			[Proposal] VARCHAR(32) NULL,
+			[Usage] VARCHAR(32) NULL,
+			[Start] DATETIME NULL,
+			[End] DATETIME NULL,
+			[EndOfDay] DATETIME NULL,
+			[Year] INT NULL,
+			[Month] INT NULL,
+			[Day] INT NULL,
+			[NextDay] INT NULL,
+			[NextMonth] INT NULL,			
+			[BeginningOfNextDay] DATETIME NULL,
+			[DurationSeconds] INT NULL,
+			[DurationSecondsInCurrentDay] INT NULL,
+			[RemainingDurationSeconds]  INT NULL
+		)
+
+		-- intermediate storage for report entries 
+		DECLARE @T_Report_Accumulation TABLE
+		(
+			[Start] DATETIME,
+			[DurationSeconds] INT,
+			[Month] INT,
+			[Day] INT,
+			[EMSL_Inst_ID] INT ,
+			[DMS_Instrument] VARCHAR(64) ,
+			[Proposal] VARCHAR(32) ,
+			[Usage] VARCHAR(32) 
+		)
+		
+		-- import entries from EMSL instrument usage table
+		-- for given month and year
+		-- into working table
+		INSERT INTO @T_Working (
+			ID,
+			EMSL_Inst_ID,
+			[DMS_Instrument],
+			Type,
+			Proposal,
+			Usage,
+			Start,
+			DurationSeconds,
+			Year,
+			Month
+		)
+		SELECT ID,
+			EMSL_Inst_ID,
+			Instrument AS [DMS_Instrument],
+			[Type],
+			Proposal,
+			Usage,
+			Start,
+			[Minutes] * 60 AS [DurationSeconds],
+			[Year],
+			[Month]
+		FROM T_EMSL_Instrument_Usage_Report AS TEIUR
+		WHERE ( TEIUR.Year = @Year )
+				AND ( TEIUR.Month = @Month )
+
+		-- repetive process to pull records out of working table
+		-- into accumulation table, allowing for durations that
+		-- cross daily boundaries
+		DECLARE @cnt INT = 1
+		DECLARE @done INT = 0
+		WHILE @done = 0
+		BEGIN --<loop>--
+
+			-- update working table with end times
+			UPDATE @T_Working
+			SET
+				[Day] = DATEPART(DAY, Start),
+				[End] = DATEADD(second, [DurationSeconds], Start),
+				[NextDay] = DATEPART(Day, DATEADD(second, [DurationSeconds], Start)),
+				[NextMonth] = DATEPART(Month, DATEADD(second, [DurationSeconds], Start)),
+				[EndOfDay] = DATEADD(ms, -2, DATEADD(dd, 1, DATEDIFF(dd, 0, Start))),
+				[BeginningOfNextDay] = DATEADD(day, 1, CAST(Start As Date))
+			-- 
+			UPDATE @T_Working
+			SET
+				[DurationSecondsInCurrentDay] = DATEDIFF(second, Start, EndOfDay),
+				[RemainingDurationSeconds] = [DurationSeconds] - DATEDIFF(second, Start, EndOfDay)
+
+--SELECT * FROM @T_Working ORDER BY EMSL_Inst_ID, DMS_Instrument, [Month], [Day], [DurationSeconds] DESC
+				
+			-- copy usage records that do not span more than one day
+			-- from working table to accumulation table, they are ready for report
+			INSERT INTO @T_Report_Accumulation ( 
+					EMSL_Inst_ID ,
+					DMS_Instrument,
+					Proposal ,
+					Usage ,
+					[Start],
+					--Minutes,
+					[DurationSeconds],
+					[Month],
+					[Day]	 
+				)
+			SELECT 
+					EMSL_Inst_ID ,
+					DMS_Instrument,
+					Proposal ,
+					Usage ,
+					[Start],
+					[DurationSeconds],
+					[Month],
+					[Day]
+			FROM @T_Working 
+			WHERE [Day] = [NextDay] AND [MONTH] = [NextMonth]
+
+			
+			-- remove report entries from working table 
+			-- whose duration does not cross daily boundary
+			DELETE FROM @T_Working WHERE RemainingDurationSeconds < 0 
+			
+			-- copy report entries into accumulation table for
+			-- remaining durations (cross daily boundaries) 
+			-- using only duration time contained inside daily boundary
+			INSERT INTO @T_Report_Accumulation ( 
+					EMSL_Inst_ID ,
+					DMS_Instrument,
+					Proposal ,
+					Usage ,
+					[Start],
+					[DurationSeconds],
+					[Month],
+					[Day]	 
+				)
+			SELECT 
+					EMSL_Inst_ID ,
+					DMS_Instrument,
+					Proposal ,
+					Usage ,
+					[Start],
+					[DurationSecondsInCurrentDay] AS [DurationSeconds],
+					[Month],
+					[Day]
+			FROM @T_Working 
+
+			-- update start time and duration of entries in working table
+			UPDATE @T_Working
+			SET
+				[Start] = BeginningOfNextDay,
+				[DurationSeconds] = RemainingDurationSeconds,
+				[Day] = null,
+				[End] = null,
+				[NextDay] = null,
+				[EndOfDay] = null,
+				[BeginningOfNextDay] = NULL,
+				[DurationSecondsInCurrentDay] = NULL,
+				[RemainingDurationSeconds] = NULL
+			
+			-- we are done when there is nothing left to process in working table
+			SELECT @cnt = COUNT(*) FROM @T_Working
+			IF @cnt = 0 SET @done = 1
+		END --<loop>					
+		
+		-- copy report entries from accumuation table to report output table
+		INSERT INTO @T_Report_Output ( 
 				EMSL_Inst_ID ,
 				DMS_Instrument,
 				Proposal ,
@@ -42,24 +205,15 @@ AS
 				[Month],
 				[Day]	 
 			)
-			SELECT  EMSL_Inst_ID ,
+			SELECT EMSL_Inst_ID ,
 					DMS_Instrument ,
 					Proposal ,
 					Usage ,
-					SUM(Minutes) AS [Minutes],
+					--ROUND(SUM([DurationSeconds])/60, 1) AS [Minutes],
+					CEILING(CONVERT(FLOAT, SUM([DurationSeconds]))/60)  AS [Minutes],
 					[Month],
 					[Day]
-			FROM    ( SELECT    TEIUR.EMSL_Inst_ID ,
-								TEIUR.Instrument AS DMS_Instrument,
-								TEIUR.Proposal ,
-								TEIUR.Usage ,
-								TEIUR.Minutes,
-								@Month AS [Month],
-								DATEPART(DAY, TEIUR.Start) AS [Day]
-						FROM      T_EMSL_Instrument_Usage_Report AS TEIUR
-						WHERE     ( TEIUR.Year = @Year )
-								AND ( TEIUR.Month = @Month )
-					) AS TX
+			FROM @T_Report_Accumulation
 			GROUP BY EMSL_Inst_ID ,
 					DMS_Instrument ,
 					Proposal ,
