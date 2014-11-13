@@ -43,6 +43,7 @@ CREATE PROCEDURE UpdateJobState
 **			11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
 **			01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
 **			11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
+**			11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
 **    
 *****************************************************/
 (
@@ -194,11 +195,12 @@ As
 	--
 	Set @JobCountToProcess = @myRowCount
 
-/*
 	---------------------------------------------------
-	-- See if any failed jobs can now be set to complete
+	-- Find DatasetArchive and ArchiveUpdate jobs that are 
+	-- in progress, but for which DMS thinks that 
+	-- the operation has failed
 	---------------------------------------------------
-	--
+
 	INSERT INTO #Tmp_ChangedJobs (
 		Job, 
 		NewState, 
@@ -208,66 +210,25 @@ As
 		Script,
 		Storage_Server
 	)
-	SELECT
-		Job,
-		NewState,
-		Results_Folder_Name,
-		Dataset,
-		Dataset_ID,
-		Script,
-		Storage_Server
-	FROM
-	(
-		-- The where clause for this query limits the results to only include
-		-- jobs that are failed, but should be finished
-		SELECT 
-		  TNJ.Job,
-		  TCJ.Dataset_ID,
-		  TCJ.State,
-		  TCJ.Results_Folder_Name,
-		  TCJ.Storage_Server,
-		  3 AS NewState,
-		  TCJ.Dataset,
-		  TCJ.Script
-		FROM   
-		  (
-			-- count the number of steps for each job 
-			-- that are in the busy, finished, or failed states
-			-- (for jobs that are in new, in progress, or resuming state)
-			SELECT   
-				JS.Job,
-				COUNT(*) AS Total,
-				SUM(CASE 
-					WHEN JS.State IN (3,4,5) THEN 1
-					Else 0
-					End) AS StartedOrFinished,
-				SUM(CASE 
-					WHEN JS.State IN (6) THEN 1
-					Else 0
-					End) AS Failed,
-				SUM(CASE 
-					WHEN JS.State IN (3,5) THEN 1
-					Else 0
-					End) AS Finished,
-				MAX(JS.Finish) AS MostRecentFinish
-			FROM T_Job_Steps JS
-			     INNER JOIN T_Jobs J
-			       ON JS.Job = J.Job
-			WHERE (J.State = 5)
-			GROUP BY JS.Job, J.State
-		   ) AS TNJ 
-		   INNER JOIN T_Jobs AS TCJ
-			 ON TNJ.Job = TCJ.Job
-		   WHERE TNJ.Failed = 0 AND 
-		         TNJ.Finished = Total AND 
-		         TNJ.MostRecentFinish >= IsNull(TCJ.Finish, '1/1/2000')
-	) TX
-	WHERE TX.State <> TX.NewState
+	SELECT J.Job,
+	       J.State,
+	       J.Results_Folder_Name,
+	       J.Dataset,
+	       J.Dataset_ID,
+	       J.Script,
+	       J.Storage_Server
+	FROM T_Jobs J
+	     INNER JOIN V_DMS_Dataset_Archive_Status DAS
+	       ON J.Dataset_ID = DAS.Dataset_ID 
+	     LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
+	       ON J.Job = TargetTable.Job
+	WHERE TargetTable.Job Is Null AND 
+	      ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.AS_state_ID = 6) OR
+	        (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.AS_update_state_ID = 5) )
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	Set @JobCountToProcess = @JobCountToProcess + @myRowCount
-*/
 
 	---------------------------------------------------
 	-- Loop through jobs whose state has changed 
