@@ -28,7 +28,10 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_requestID AS RequestID,
        DFP.Archive_Folder_Path,
        DFP.MyEMSL_Path_Flag,
-       DFP.Instrument_Data_Purged
+       DFP.Instrument_Data_Purged,
+	   E.Experiment_Num As Experiment,
+	   C.Campaign_Num As Campaign,
+	   AJ.AJ_jobID
 FROM T_Analysis_Job AJ
      INNER JOIN T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -40,6 +43,10 @@ FROM T_Analysis_Job AJ
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
+     INNER JOIN T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN T_Campaign C
+       ON E.EX_campaign_ID = C.Campaign_ID
 
 
 GO

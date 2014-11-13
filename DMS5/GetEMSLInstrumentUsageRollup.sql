@@ -23,10 +23,10 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
 )
 RETURNS @T_Report_Output TABLE
 	(
-		[Month] INT,
-		[Day] INT,
 		[EMSL_Inst_ID] [int] ,
 		[DMS_Instrument] [varchar](64) ,
+		[Month] INT,
+		[Day] INT,
 		[Proposal] [varchar](32) ,
 		[Usage] [varchar](32) ,
 		[Minutes] [int] 
