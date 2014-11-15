@@ -90,7 +90,7 @@ GO
 CREATE USER [pnl\D3Y513] FOR LOGIN [PNL\D3Y513] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [pnl\mtsproc] ******/
-CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\MTSProc] WITH DEFAULT_SCHEMA=[dbo]
+CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\mtsproc] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
