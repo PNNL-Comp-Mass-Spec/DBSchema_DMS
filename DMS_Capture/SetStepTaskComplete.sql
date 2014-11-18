@@ -128,7 +128,7 @@ As
 				If @StepTool = 'ArchiveVerify'
 				Begin
 					SET @HoldoffIntervalMinutes = CASE
-					                                  WHEN @HoldoffIntervalMinutes < 5 THEN 5
+					        WHEN @HoldoffIntervalMinutes < 5 THEN 5
 					                                  WHEN @HoldoffIntervalMinutes < 10 THEN 10
 					                                  WHEN @HoldoffIntervalMinutes < 15 THEN 15
 					                                  WHEN @HoldoffIntervalMinutes < 30 THEN 30
@@ -215,7 +215,10 @@ As
 	--
 	If @completionCode = 0
 	Begin
-			
+		
+		-- @evaluationCode = 4 means Submitted to MyEMSL
+		-- @evaluationCode = 5 means Verified in MyEMSL
+		
 		If @stepTool Like '%Archive%' And @evaluationCode IN (4, 5)
 		Begin
 			-- Update the MyEMSLState values			
