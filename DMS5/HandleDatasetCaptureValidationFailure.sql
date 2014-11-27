@@ -20,7 +20,8 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **
 **	Auth:	mem
 **	Date:	04/28/2011 mem - Initial version
-**			10/29/2014 mem - Now alling @Comment to contain a single punctuation mark, which means the comment should not be updated
+**			10/29/2014 mem - Now allowing @Comment to contain a single punctuation mark, which means the comment should not be updated
+**			11/25/2014 mem - Now using dbo.AppendToText() to avoid appending duplicate text
 **
 *****************************************************/
 (
@@ -111,15 +112,9 @@ As
 		Begin
 				
 			UPDATE T_Dataset
-			SET DS_comment = CASE
-			                     WHEN @Comment = '' THEN DS_Comment
-			                     ELSE CASE
-			                              WHEN IsNull(DS_Comment, '') = '' THEN ''
-			                              ELSE DS_Comment + '; '
-			                          END + @Comment
-			                 END,
+			SET DS_comment = dbo.AppendToText(DS_Comment, @Comment, 0, ';'),
 			    DS_state_ID = 4,
-			    DS_rating = - 1
+			    DS_rating = -1
 			WHERE Dataset_ID = @DatasetID
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
