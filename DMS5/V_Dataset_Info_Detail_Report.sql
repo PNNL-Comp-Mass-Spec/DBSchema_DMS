@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -36,7 +37,7 @@ SELECT DS.Dataset_Num AS Dataset,
        LC.SC_Column_Number AS [LC Column],
        DS.DS_wellplate_num AS [Wellplate Number],
        DS.DS_well_num AS [Well Number],
-       U.U_Name + ' (' + DS.DS_Oper_PRN + ')' AS Operator,
+       U.Name_with_PRN AS Operator,
        DS.Acq_Time_Start AS [Acquisition Start],
        DS.Acq_Time_End AS [Acquisition End],
        RR.RDS_Run_Start AS [Run Start],
@@ -87,6 +88,7 @@ FROM T_DatasetStateName DSN
        ON DSA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
+
 
 
 GO

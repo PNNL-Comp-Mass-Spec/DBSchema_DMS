@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Sample_Prep_Request_Active_List_Report
+
+CREATE VIEW [dbo].[V_Sample_Prep_Request_Active_List_Report]
 as
 SELECT SPR.ID,
        SPR.Request_Name AS RequestName,
@@ -18,7 +19,7 @@ SELECT SPR.ID,
        SPR.Prep_Method AS PrepMethod,
        SPR.Requested_Personnel AS RequestedPersonnel,
        SPR.Assigned_Personnel AS AssignedPersonnel,
-       QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester,
+       QP.Name_with_PRN AS Requester,
        SPR.Organism,
        SPR.Biohazard_Level AS BiohazardLevel,
        SPR.Campaign,
@@ -49,6 +50,7 @@ FROM T_Sample_Prep_Request SPR
 	 LEFT OUTER JOIN V_Charge_Code_Status CC 
 	   ON SPR.Work_Package_Number = CC.Charge_Code
 WHERE (NOT (SPR.State IN (0, 4, 5))) And SPR.Request_Type = 'Default'
+
 
 
 GO

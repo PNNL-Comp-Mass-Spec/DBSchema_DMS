@@ -3,13 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Instrument_Operation_History_Detail_Report
+
+CREATE VIEW [dbo].[V_Instrument_Operation_History_Detail_Report]
 AS
-SELECT     dbo.T_Instrument_Operation_History.ID, dbo.T_Instrument_Operation_History.Instrument, 
-                      dbo.T_Users.U_Name + ' (' + dbo.T_Users.U_PRN + ')' AS Posted_By, dbo.T_Instrument_Operation_History.Entered, 
-                      dbo.T_Instrument_Operation_History.Note
-FROM         dbo.T_Instrument_Operation_History LEFT OUTER JOIN
-                      dbo.T_Users ON dbo.T_Instrument_Operation_History.EnteredBy = dbo.T_Users.U_PRN
+SELECT H.ID,
+       H.Instrument,
+       U.Name_with_PRN AS Posted_By,
+       H.Entered,
+       H.Note
+FROM dbo.T_Instrument_Operation_History H
+     LEFT OUTER JOIN dbo.T_Users U
+       ON H.EnteredBy = U.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Operation_History_Detail_Report] TO [PNL\D3M578] AS [dbo]

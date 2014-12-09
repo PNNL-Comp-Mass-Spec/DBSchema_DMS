@@ -6,6 +6,7 @@ GO
 
 
 
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
 SELECT '' AS [Sel.],
@@ -14,7 +15,7 @@ SELECT '' AS [Sel.],
        SPR.Estimated_Completion AS [Est. Complete],
        SN.State_Name AS State,
        SPR.Request_Name AS Name,
-       QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester,
+       QP.Name_with_PRN AS Requester,
        SPR.Priority,
        QT.[Days In Queue],
        SPR.Requested_Personnel AS Requested,
@@ -43,6 +44,7 @@ FROM T_Sample_Prep_Request SPR
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
+
 
 
 

@@ -3,11 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_RNA_Prep_Request_Detail_Report
+
+CREATE VIEW [dbo].[V_RNA_Prep_Request_Detail_Report]
 AS
     SELECT  SPR.ID ,
             SPR.Request_Name AS [Request Name] ,
-            QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester ,
+            QP.Name_with_PRN AS Requester ,
             SPR.Campaign ,
             SPR.Reason ,
             SPR.Cell_Culture_List AS [Biomaterial List] ,
@@ -47,5 +48,6 @@ AS
                               GROUP BY  Request_ID
                             ) AS NU ON SPR.ID = NU.Request_ID
             LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
+
 
 GO

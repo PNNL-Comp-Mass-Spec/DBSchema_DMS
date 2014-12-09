@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -16,7 +17,7 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_wellplate_num AS [Wellplate Number],
        DS.DS_well_num AS [Well Number],
        DST.DST_Name AS [Type],
-       U.U_Name + ' (' + DS.DS_Oper_PRN + ')' AS Operator,
+       U.Name_with_PRN AS Operator,
        DS.DS_comment AS [Comment],
        TDRN.DRN_name AS Rating,
        TDSN.DSS_name AS State,
@@ -132,6 +133,7 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
+
 
 
 GO

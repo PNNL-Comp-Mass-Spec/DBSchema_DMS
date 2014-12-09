@@ -17,6 +17,7 @@ CREATE TABLE [dbo].[T_Users](
 	[U_created] [datetime] NULL,
 	[U_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Affected] [datetime] NULL,
+	[Name_with_PRN]  AS ((([U_Name]+' (')+[U_PRN])+')') PERSISTED NOT NULL,
  CONSTRAINT [PK_T_Users] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC
@@ -62,6 +63,10 @@ GO
 ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_User_Status] CHECK  (([U_Status]='Active' OR [U_Status]='Inactive'))
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_User_Status]
+GO
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_UserName_NotEmpty] CHECK  (([U_Name]<>''))
+GO
+ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_UserName_NotEmpty]
 GO
 ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_UserName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([U_Name],(1))=(0)))
 GO

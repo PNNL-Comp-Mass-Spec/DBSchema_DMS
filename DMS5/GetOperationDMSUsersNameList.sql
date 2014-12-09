@@ -17,6 +17,7 @@ CREATE FUNCTION dbo.GetOperationDMSUsersNameList
 **	Auth:	jds
 **	Date:	12/11/2006 jds - Initial version
 **			06/28/2010 ??? - Now limiting to active users
+**			12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and PRN
 **    
 *****************************************************/
 (
@@ -29,10 +30,9 @@ AS
 	declare @list varchar(8000)
 	set @list = ''
 
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN U.U_Name + ' (' + CAST(U.U_PRN AS Varchar(12)) + ')' 
-		ELSE '; ' + U.U_Name + ' (' + CAST(U.U_PRN AS Varchar(12)) + ')' END
+	SELECT @list = @list + CASE WHEN @list = '' THEN U.Name_with_PRN
+	                            ELSE '; ' + U.Name_with_PRN
+	                       END
 	FROM T_User_Operations_Permissions O
 	     INNER JOIN T_Users U
 	       ON O.U_ID = U.ID

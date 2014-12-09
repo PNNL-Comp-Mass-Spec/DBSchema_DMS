@@ -16,6 +16,7 @@ CREATE FUNCTION dbo.GetResearchTeamMembershipList
 **
 **	Auth:	grk
 **	Date:	02/03/2010
+**			12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and PRN
 **    
 *****************************************************/
 (
@@ -29,15 +30,15 @@ AS
 		SET @sep = '|'
 		set @list = ''
 
-		SELECT
-			@list = @list + CASE WHEN @list = '' THEN '' ELSE @sep END +  
-			T_Research_Team_Roles.Role + ':' + T_Users.U_Name + ' (' + T_Users.U_PRN + ')'
-		FROM
-			T_Research_Team_Roles
-			INNER JOIN T_Research_Team_Membership ON T_Research_Team_Roles.ID = T_Research_Team_Membership.Role_ID
-			INNER JOIN T_Users ON T_Research_Team_Membership.User_ID = T_Users.ID
-		WHERE
-			T_Research_Team_Membership.Team_ID = @researchTeamID
+		SELECT @list= @list + CASE WHEN @list = '' THEN ''
+		                           ELSE @sep
+		                      END + T_Research_Team_Roles.[Role] + ':' + T_Users.Name_with_PRN
+		FROM T_Research_Team_Roles
+		     INNER JOIN T_Research_Team_Membership
+		       ON T_Research_Team_Roles.ID = T_Research_Team_Membership.Role_ID
+		     INNER JOIN T_Users
+		       ON T_Research_Team_Membership.User_ID = T_Users.ID
+		WHERE T_Research_Team_Membership.Team_ID = @researchTeamID
 	
 		RETURN @list
 	END

@@ -3,27 +3,48 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Experiment_List_Report_2
+
+CREATE VIEW [dbo].[V_Experiment_List_Report_2]
 AS
-SELECT     dbo.T_Experiments.Exp_ID AS ID, dbo.T_Experiments.Experiment_Num AS Experiment, 
-                      dbo.T_Users.U_Name + ' (' + dbo.T_Experiments.EX_researcher_PRN + ')' AS Researcher, dbo.T_Organisms.OG_name AS Organism, 
-                      dbo.T_Experiments.EX_reason AS Reason, dbo.T_Experiments.EX_comment AS Comment, 
-                      dbo.T_Experiments.EX_sample_concentration AS Concentration, dbo.T_Experiments.EX_created AS Created, 
-                      dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Experiments.EX_cell_culture_list AS [Cell Cultures], 
-                      dbo.T_Enzymes.Enzyme_Name AS Enzyme, dbo.T_Experiments.EX_lab_notebook_ref AS Notebook, dbo.T_Experiments.EX_Labelling AS Labelling, 
-                      dbo.T_Internal_Standards.Name AS Predigest, T_Internal_Standards_1.Name AS Postdigest, 
-                      dbo.T_Experiments.EX_sample_prep_request_ID AS Request, dbo.T_Material_Containers.Tag AS Container, 
-                      dbo.T_Material_Locations.Tag AS Location, dbo.T_Experiments.EX_wellplate_num AS Wellplate, dbo.T_Experiments.EX_well_num AS Well
-FROM         dbo.T_Experiments INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
-                      dbo.T_Users ON dbo.T_Experiments.EX_researcher_PRN = dbo.T_Users.U_PRN INNER JOIN
-                      dbo.T_Enzymes ON dbo.T_Experiments.EX_enzyme_ID = dbo.T_Enzymes.Enzyme_ID INNER JOIN
-                      dbo.T_Internal_Standards ON dbo.T_Experiments.EX_internal_standard_ID = dbo.T_Internal_Standards.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Internal_Standards AS T_Internal_Standards_1 ON 
-                      dbo.T_Experiments.EX_postdigest_internal_std_ID = T_Internal_Standards_1.Internal_Std_Mix_ID INNER JOIN
-                      dbo.T_Organisms ON dbo.T_Experiments.EX_organism_ID = dbo.T_Organisms.Organism_ID INNER JOIN
-                      dbo.T_Material_Containers ON dbo.T_Experiments.EX_Container_ID = dbo.T_Material_Containers.ID INNER JOIN
-                      dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
+SELECT E.Exp_ID AS ID,
+       E.Experiment_Num AS Experiment,
+       U.Name_with_PRN AS Researcher,
+       dbo.T_Organisms.OG_name AS Organism,
+       E.EX_reason AS Reason,
+       E.EX_comment AS [Comment],
+       E.EX_sample_concentration AS Concentration,
+       E.EX_created AS Created,
+       C.Campaign_Num AS Campaign,
+       E.EX_cell_culture_list AS [Cell Cultures],
+       Enz.Enzyme_Name AS Enzyme,
+       E.EX_lab_notebook_ref AS Notebook,
+       E.EX_Labelling AS Labelling,
+       IntStd1.Name AS Predigest,
+       IntStd2.Name AS Postdigest,
+       E.EX_sample_prep_request_ID AS Request,
+       MC.Tag AS Container,
+       ML.Tag AS Location,
+       E.EX_wellplate_num AS Wellplate,
+       E.EX_well_num AS Well,
+       E.EX_Alkylation AS Alkylated
+FROM T_Experiments E
+     INNER JOIN dbo.T_Campaign C
+       ON E.EX_campaign_ID = C.Campaign_ID
+     INNER JOIN dbo.T_Users U
+       ON E.EX_researcher_PRN = U.U_PRN
+     INNER JOIN dbo.T_Enzymes Enz
+       ON E.EX_enzyme_ID = Enz.Enzyme_ID
+     INNER JOIN dbo.T_Internal_Standards IntStd1
+       ON E.EX_internal_standard_ID = IntStd1.Internal_Std_Mix_ID
+     INNER JOIN dbo.T_Internal_Standards AS IntStd2
+       ON E.EX_postdigest_internal_std_ID = IntStd2.Internal_Std_Mix_ID
+     INNER JOIN dbo.T_Organisms
+       ON E.EX_organism_ID = dbo.T_Organisms.Organism_ID
+     INNER JOIN dbo.T_Material_Containers MC
+       ON E.EX_Container_ID = MC.ID
+     INNER JOIN dbo.T_Material_Locations ML
+       ON MC.Location_ID = ML.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_List_Report_2] TO [PNL\D3M578] AS [dbo]

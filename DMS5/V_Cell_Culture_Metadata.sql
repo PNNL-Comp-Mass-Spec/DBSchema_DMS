@@ -11,9 +11,9 @@ SELECT U.CC_Name AS Name,
        U.CC_Source_Name AS Source,
        Case When U_Contact.U_Name Is Null 
             Then U.CC_Contact_PRN 
-            Else U_Contact.U_Name + ' (' + U.CC_Contact_PRN + ')' 
+            Else U_Contact.Name_with_PRN
        END AS [Source Contact],
-       U_PI.U_Name + ' (' + U.CC_PI_PRN + ')' AS PI,
+       U_PI.Name_with_PRN AS PI,
        CTN.Name AS [Type],
        U.CC_Reason AS Reason,
        U.CC_Comment AS [Comment],

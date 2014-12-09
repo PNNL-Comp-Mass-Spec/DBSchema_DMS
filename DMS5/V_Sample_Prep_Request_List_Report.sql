@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Sample_Prep_Request_List_Report
+
+CREATE VIEW [dbo].[V_Sample_Prep_Request_List_Report]
 AS
 SELECT SPR.ID ,
        SPR.Request_Name AS RequestName ,
@@ -19,7 +20,7 @@ SELECT SPR.ID ,
        SPR.Prep_Method AS PrepMethod ,
        SPR.Requested_Personnel AS RequestedPersonnel ,
        SPR.Assigned_Personnel AS AssignedPersonnel ,
-       QP.U_Name + ' (' + SPR.Requester_PRN + ')' AS Requester ,
+       QP.Name_with_PRN AS Requester ,
        SPR.Organism ,
        SPR.Biohazard_Level AS BiohazardLevel ,
        SPR.Campaign ,
@@ -61,7 +62,7 @@ WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
 GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Priority, TA.Attachments,
          SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
          QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
-         QP.U_Name, SPR.Requester_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
+         QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
          SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Group,
          SPR.Instrument_Analysis_Specifications, SPR.Separation_Type,
          CC.Activation_State, CC.Activation_State_Name

@@ -16,6 +16,7 @@ CREATE FUNCTION dbo.GetCampaignRolePersonList
 **
 **	Auth:	grk
 **	Date:	02/04/2010
+**			12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and PRN
 **    
 *****************************************************/
 (
@@ -31,17 +32,21 @@ AS
 
 		IF NOT (@campaignID IS NULL OR @role IS NULL)
 		BEGIN	
-			SELECT
-			@list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + 
-			CASE WHEN @mode = 'PRN' THEN T_Users.U_PRN else T_Users.U_Name + '(' + T_Users.U_PRN + ')' END 
-			FROM
-			T_Research_Team_Roles
-			INNER JOIN T_Research_Team_Membership ON T_Research_Team_Roles.ID = T_Research_Team_Membership.Role_ID
-			INNER JOIN T_Users ON T_Research_Team_Membership.User_ID = T_Users.ID
-			INNER JOIN T_Campaign ON T_Research_Team_Membership.Team_ID = T_Campaign.CM_Research_Team
-			WHERE
-			( T_Campaign.Campaign_ID = @campaignID )
-			AND ( T_Research_Team_Roles.Role = @role )	
+			SELECT @list = @list + CASE WHEN @list = '' THEN ''
+			                            ELSE ', ' 
+			                       END + 
+			                       CASE WHEN @mode = 'PRN' THEN T_Users.U_PRN
+			                            ELSE T_Users.Name_with_PRN
+			                       END
+			FROM T_Research_Team_Roles
+			     INNER JOIN T_Research_Team_Membership
+			       ON T_Research_Team_Roles.ID = T_Research_Team_Membership.Role_ID
+			     INNER JOIN T_Users
+			       ON T_Research_Team_Membership.User_ID = T_Users.ID
+			     INNER JOIN T_Campaign
+			       ON T_Research_Team_Membership.Team_ID = T_Campaign.CM_Research_Team
+			WHERE (T_Campaign.Campaign_ID = @campaignID) AND
+			      (T_Research_Team_Roles.ROLE = @role)
 		END
 
 		RETURN @list

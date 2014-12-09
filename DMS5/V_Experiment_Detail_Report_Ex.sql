@@ -4,10 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex] AS 
 SELECT  E.Experiment_Num AS Experiment ,
-        U.U_Name + ' (' + E.EX_researcher_PRN + ')' AS Researcher ,
+        U.Name_with_PRN AS Researcher ,
         Org.OG_name AS Organism ,
         E.EX_reason AS [Reason for Experiment] ,
         E.EX_comment AS Comment ,
@@ -20,7 +19,7 @@ SELECT  E.Experiment_Num AS Experiment ,
         E.EX_Labelling AS Labelling ,
         IntStdPre.Name AS [Predigest Int Std] ,
         IntStdPost.Name AS [Postdigest Int Std] ,
-        E.EX_Alkylation AS Alkylation ,
+        E.EX_Alkylation AS Alkylated ,
         E.EX_sample_prep_request_ID AS Request ,
         dbo.GetExperimentGroupList(E.Exp_ID) AS [Experiment Groups] ,
         ISNULL(DSCountQ.Datasets, 0) AS Datasets ,
@@ -72,6 +71,7 @@ FROM    T_Experiments AS E
                                                  GROUP BY Entity_ID
                                                ) AS FA ON EG.Group_ID = CONVERT(INT, FA.Entity_ID)
                         ) AS ExpGroupFileCount ON ExpGroupFileCount.Exp_ID = E.Exp_ID
+
 
 
 GO

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Requested_Run_Batch_Detail_Report]
 AS
 SELECT RRB.ID,
@@ -11,7 +12,7 @@ SELECT RRB.ID,
        RRB.Description,
        dbo.GetBatchRequestedRunList(RRB.ID) AS Requests,
        ISNULL(FC.Factor_Count, 0) AS Factors,
-       U.U_Name + ' (' + U.U_PRN + ')' AS [Owner],
+       U.Name_with_PRN AS [Owner],
        RRB.Created,
        RRB.Locked,
        RRB.Last_Ordered AS [Last Ordered],
@@ -26,6 +27,7 @@ FROM dbo.T_Requested_Run_Batches RRB
        ON RRB.Owner = U.ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Req_Run_Batch AS FC
        ON FC.Batch_ID = RRB.ID
+
 
 
 GO

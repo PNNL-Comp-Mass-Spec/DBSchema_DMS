@@ -4,11 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Experiment_List_Report
+CREATE VIEW [dbo].[V_Experiment_List_Report]
 AS
 SELECT dbo.T_Experiments.Experiment_Num AS Experiment, 
-    dbo.T_Users.U_Name + ' (' + dbo.T_Experiments.EX_researcher_PRN 
-     + ')' AS Researcher, 
+    dbo.T_Users.Name_with_PRN AS Researcher, 
     dbo.T_Organisms.OG_name AS Organism,
     dbo.T_Experiments.EX_reason AS Reason, 
     dbo.T_Experiments.EX_comment AS Comment,
@@ -24,6 +23,7 @@ FROM dbo.T_Experiments
       ON dbo.T_Experiments.EX_organism_ID = dbo.T_Organisms.Organism_ID
      INNER JOIN dbo.T_Users
       ON dbo.T_Experiments.EX_researcher_PRN = dbo.T_Users.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_List_Report] TO [PNL\D3M578] AS [dbo]

@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Export]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -17,7 +16,7 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_well_num AS [Well Number],
        DSIntStd.Name AS [Dataset Int Std],
        DTN.DST_name AS Type,
-       U.U_Name + ' (' + DS.DS_Oper_PRN + ')' AS Operator,
+       U.Name_with_PRN AS Operator,
        DS.DS_comment AS Comment,
        DRN.DRN_name AS Rating,
        RR.ID AS Request,
@@ -71,6 +70,7 @@ FROM T_Dataset DS
      LEFT OUTER JOIN dbo.T_Dataset_Archive DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
 WHERE Experiment_Num <> 'Tracking'
+
 
 
 GO

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_LC_Cart_Config_History_List_Report] as
 SELECT TIH.ID,
        TIH.Cart,
@@ -14,7 +15,7 @@ SELECT TIH.ID,
            ELSE SUBSTRING(TIH.Note, 1, 150) + ' (more...)'
        END AS Note,
        TIH.Entered,
-       TU.U_Name + ' (' + TIH.EnteredBy + ')' AS EnteredBy,
+       TU.Name_with_PRN AS EnteredBy,
        AttachmentStats.Files
 FROM T_LC_Cart_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
@@ -24,6 +25,7 @@ FROM T_LC_Cart_Config_History AS TIH
                        FROM [V_File_Attachment_Stats_by_ID]
                        WHERE Entity_Type = 'lc_cart_config_history' ) AttachmentStats
        ON TIH.ID = AttachmentStats.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_List_Report] TO [PNL\D3M578] AS [dbo]

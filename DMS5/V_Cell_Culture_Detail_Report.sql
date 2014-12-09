@@ -4,16 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Cell_Culture_Detail_Report]
 AS
 SELECT U.CC_Name AS [Name or Peptide],
        U.CC_Source_Name AS Supplier,
        Case When U_Contact.U_Name Is Null 
             Then U.CC_Contact_PRN 
-            Else U_Contact.U_Name + ' (' + U.CC_Contact_PRN + ')' 
+            Else U_Contact.Name_with_PRN 
        End AS [Contact (usually PNNL Staff)],
-       U_PI.U_Name + ' (' + U.CC_PI_PRN + ')' AS PI,
+       U_PI.Name_with_PRN AS PI,
        CTN.Name AS [Type],
        U.CC_Reason AS Reason,
        U.CC_Comment AS [Comment],
@@ -43,7 +42,6 @@ FROM T_Cell_Culture U
        ON U.CC_Contact_PRN = U_Contact.U_PRN
      LEFT OUTER JOIN T_Users U_PI
        ON U.CC_PI_PRN = U_PI.U_PRN
-
 
 
 GO

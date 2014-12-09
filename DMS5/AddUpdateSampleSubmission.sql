@@ -19,6 +19,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **          04/30/2010 grk - Added call to CallSendMessage
 **          09/23/2011 grk - Accomodate researcher field in AssureMaterialContainersExist
 **			02/06/2013 mem - Added logic to prevent duplicate entries
+**			12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -97,7 +98,7 @@ As
 	SET @ReceivedByUserID = 0
 	SELECT 
 		@ReceivedByUserID = ID,
-		@Researcher = U_Name + ' (' + U_PRN + ')'
+		@Researcher = Name_with_PRN
 	FROM T_Users 
 	WHERE U_PRN = @ReceivedBy
 	--
