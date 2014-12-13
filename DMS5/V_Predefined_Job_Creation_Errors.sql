@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Predefined_Job_Creation_Errors] as
 SELECT SQ.Item,
        D.Dataset_Num AS Dataset,
@@ -18,8 +17,9 @@ FROM T_Predefined_Analysis_Scheduling_Queue SQ
      INNER JOIN T_Dataset D
        ON SQ.Dataset_ID = D.Dataset_ID
 WHERE Result_Code <> 0 AND
-      SQ.State Not In ('Ignore') AND
+      SQ.State Not In ('ErrorIgnore') AND
       Last_Affected >= DATEADD(DAY, -14, GETDATE())	-- Report errors within the last 14 days
+
 
 
 
