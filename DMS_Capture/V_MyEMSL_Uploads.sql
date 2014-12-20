@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_MyEMSL_Uploads]
 AS
 SELECT MU.Entry_ID,
@@ -22,13 +20,13 @@ SELECT MU.Entry_ID,
        MU.ErrorCode,
        StatusU.URI_Path + CONVERT(varchar(12), MU.StatusNum) + '/xml' AS Status_URI,
        MU.Verified,
+	   MU.Ingest_Steps_Completed,
        MU.Entered
 FROM T_MyEMSL_Uploads MU
      LEFT OUTER JOIN T_URI_Paths StatusU
        ON MU.StatusURI_PathID = StatusU.URI_PathID
      LEFT OUTER JOIN S_DMS_T_Dataset DS
        ON MU.Dataset_ID = DS.Dataset_ID
-
 
 
 GO

@@ -15,11 +15,13 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **
 **	Auth:	mem
 **	Date:	09/20/2013 mem - Initial version
+**			12/19/2014 mem - Added parameter @IngestStepsCompleted
 **    
 *****************************************************/
 (
 	@DatasetID int,
 	@StatusNumList varchar(1024),			-- The status numbers in this list must match the specified DatasetID (this is a safety check)
+	@IngestStepsCompleted tinyint,			-- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
 	@message varchar(512)='' output
 )
 As
@@ -36,6 +38,7 @@ As
 	
 	Set @DatasetID = IsNull(@DatasetID, 0)
 	Set @StatusNumList = IsNull(@StatusNumList, '')
+	Set @IngestStepsCompleted = IsNull(@IngestStepsCompleted, 0)
 	
 	Set @message = ''
 	
@@ -100,11 +103,24 @@ As
 	---------------------------------------------------
 	-- Perform the update
 	---------------------------------------------------
-	
+
+	-- First update Ingest_Steps_Completed for steps that have already been verified
+	--
 	UPDATE T_MyEMSL_Uploads
-	SET Verified = 1	
-	WHERE Verified = 0 AND StatusNum In (SELECT StatusNum FROM @StatusNumListTable)
+	SET Ingest_Steps_Completed = @IngestStepsCompleted
+	WHERE Verified = 1 AND
+	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable ) AND
+	      (Ingest_Steps_Completed Is Null Or Ingest_Steps_Completed < @IngestStepsCompleted)
+
 	
+	-- Now update newly verified steps
+	--
+	UPDATE T_MyEMSL_Uploads
+	SET Verified = 1,
+	    Ingest_Steps_Completed = @IngestStepsCompleted
+	WHERE Verified = 0 AND
+	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable )
+	      	
 Done:
 
 	If @myError <> 0

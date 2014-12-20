@@ -17,11 +17,13 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadSupersededIfFailed
 **
 **	Auth:	mem
 **	Date:	12/16/2014 mem - Initial version
+**			12/18/2014 mem - Added parameter @IngestStepsCompleted
 **    
 *****************************************************/
 (
 	@DatasetID int,
 	@StatusNumList varchar(1024),			-- The status numbers in this list must match the specified DatasetID (this is a safety check)
+	@IngestStepsCompleted tinyint,			-- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
 	@message varchar(512)='' output
 )
 As
@@ -38,6 +40,7 @@ As
 	
 	Set @DatasetID = IsNull(@DatasetID, 0)
 	Set @StatusNumList = IsNull(@StatusNumList, '')
+	Set @IngestStepsCompleted = IsNull(@IngestStepsCompleted, 0)
 	
 	Set @message = ''
 	
