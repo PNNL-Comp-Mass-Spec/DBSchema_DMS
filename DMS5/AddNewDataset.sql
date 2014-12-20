@@ -34,6 +34,7 @@ CREATE Procedure dbo.AddNewDataset
 **			01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
 **			11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
 **			06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
+**			12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
 **    
 *****************************************************/
 (
@@ -190,7 +191,7 @@ AS
 		If @Dataset_Name Like 'Blank%'
 			Set @Experiment_Name = 'Blank'
 		Else
-		If @Dataset_Name Like 'QC_Shew_1[0-9]_[0-9][0-9]%'
+		If @Dataset_Name Like 'QC_Shew[_-][0-9][0-9][_-][0-9][0-9]%'
 			Set @Experiment_Name = Substring(@Dataset_Name, 1, 13)
 		
 	End
