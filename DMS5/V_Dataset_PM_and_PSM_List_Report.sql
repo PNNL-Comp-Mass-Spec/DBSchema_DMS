@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Dataset_PM_and_PSM_List_Report] as
 SELECT 
        PM.Dataset,
@@ -21,6 +22,8 @@ SELECT
        DTN.DST_name AS [Dataset Type],
        DS.DS_sec_sep AS [Separation Type], 
        DR.DRN_name AS DS_Rating,
+       PM.[Acq Length] AS DS_Acq_Length,
+       PM.Acq_Time_Start AS [Acq Start],      
        PSM.Job AS PSM_Job,
        PSM.Tool AS PSM_Tool,
        PSM.Campaign,
@@ -31,8 +34,6 @@ SELECT
        PSM.[Organism DB] AS PSM_Job_Org_DB,
        PSM.[Protein Collection List] AS PSM_Job_Protein_Collection,
        PSM.[Results Folder Path],
-       PM.[Acq Length] AS DS_Acq_Length,
-       PM.Acq_Time_Start AS [Acq Start],      
        PM.Task_ID AS PM_Task_ID,
        PM.Task_Server AS PM_Server,
        PM.Task_Database AS PM_Database,
@@ -50,6 +51,7 @@ FROM V_MTS_PM_Results_List_Report PM
        ON PM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_Analysis_Job_PSM_List_Report PSM
        ON PSM.Dataset_ID = PM.Dataset_ID AND PSM.StateID NOT IN (5, 14)
+
 
 
 GO

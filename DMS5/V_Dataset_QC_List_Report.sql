@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_QC_List_Report] As
 Select DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
@@ -16,13 +17,13 @@ Select DS.Dataset_ID AS ID,
        DS.DS_comment AS [Comment],
        DSN.DSS_name AS State,
        DSRating.DRN_name AS Rating,
+       DS.Acq_Length_Minutes AS [Acq Length],
+       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
        DTN.DST_name AS [Dataset Type],
        DS.DS_Oper_PRN AS Operator,
        LC.SC_Column_Number AS [LC Column],
        RRH.ID AS Request,
-       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
        ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq. End],
-       DS.Acq_Length_Minutes AS [Acq Length],
        DS.DS_sec_sep AS [Separation Type]
 FROM T_DatasetStateName AS DSN
      INNER JOIN T_Dataset AS DS
@@ -45,6 +46,7 @@ FROM T_DatasetStateName AS DSN
        ON DS.Dataset_ID = RRH.DatasetID
      LEFT OUTER Join T_Analysis_Job As J
 	   On DS.DeconTools_Job_for_QC = J.AJ_jobID
+
 
 
 GO
