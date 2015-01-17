@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Naming_Authorities] ******/
-/****** RowCount: 20 ******/
+/****** RowCount: 21 ******/
 SET IDENTITY_INSERT [T_Naming_Authorities] ON
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (1,'TIGR','The Institute for Genomic Research','http://www.tigr.org/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (2,'NCBI','National Center for Biotechnology Information','http://www.ncbi.nlm.nih.gov/')
@@ -21,4 +21,5 @@ INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (19,'SGD','Saccharomyces Genome Database','http://www.yeastgenome.org/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (20,'TAIR','The Arabidopsis Information Resource','http://www.arabidopsis.org/')
 INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (21,'MScDB','Mass Spectrometry Centric Protein Sequence Database for Proteomics','http://www.wzw.tum.de/proteomics/content/research/software/mscdb/')
+INSERT INTO [T_Naming_Authorities] (Authority_ID, Name, Description, Web_Address) VALUES (22,'BROAD','BROAD Institute','http://www.broadinstitute.org/')
 SET IDENTITY_INSERT [T_Naming_Authorities] OFF
