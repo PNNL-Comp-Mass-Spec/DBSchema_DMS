@@ -14,6 +14,7 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 **
 **	Auth:	mem
 **  Date:	01/24/2014 mem - Initial version
+**			01/15/2015 mem - Added parameter @FileSizeKB
 **    
 *****************************************************/
 (
@@ -21,6 +22,7 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 	@OrganismName varchar(128),
 	@NumProteins int,
 	@NumResidues bigint,
+	@FileSizeKB int=0,
 	@message varchar(512)='' output	
 )
 As
@@ -54,7 +56,7 @@ As
 
 	Set @NumProteins = IsNull(@NumProteins, 0)
 	Set @NumResidues = IsNull(@NumResidues, 0)
-	
+	Set @FileSizeKB = IsNull(@FileSizeKB, 0)
 	
 	---------------------------------------------------
 	-- Resolve @OrganismName to @OrganismID
@@ -91,8 +93,9 @@ As
 				0 AS Active,
 				@NumProteins AS NumProteins,
 				@NumResidues AS NumResidues,
+				@FileSizeKB AS FileSizeKB,
 				1 AS Valid
-		) AS Source (FileName, Organism_ID, Description, Active, NumProteins, NumResidues, Valid)
+		) AS Source (FileName, Organism_ID, Description, Active, NumProteins, NumResidues, FileSizeKB, Valid)
 		ON (target.Filename = source.Filename)
 	WHEN Matched THEN 
 		UPDATE Set 
@@ -101,10 +104,11 @@ As
 			Active = source.Active,
 			NumProteins = source.NumProteins,
 			NumResidues = source.NumResidues,
+			File_Size_KB = source.FileSizeKB,
 			Valid = source.Valid
 	WHEN Not Matched THEN
-		INSERT (FileName, Organism_ID, Description, Active, NumProteins, NumResidues, Valid)
-		VALUES (source.FileName, source.Organism_ID, source.Description, source.Active, source.NumProteins, source.NumResidues, source.Valid)
+		INSERT (FileName, Organism_ID, Description, Active, NumProteins, NumResidues, File_Size_KB, Valid)
+		VALUES (source.FileName, source.Organism_ID, source.Description, source.Active, source.NumProteins, source.NumResidues, source.FileSizeKB, source.Valid)
 	;
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
