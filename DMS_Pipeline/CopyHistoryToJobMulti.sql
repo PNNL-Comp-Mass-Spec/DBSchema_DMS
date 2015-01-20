@@ -19,6 +19,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			01/19/2015 mem - Fix ambiguous column reference
 **    
 *****************************************************/
 (
@@ -337,8 +338,8 @@ As
 		-- Now add/update the job step dependencies
 		--	
 		MERGE T_Job_Step_Dependencies AS target
-		USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
-				       Evaluated, Triggered, Enable_Only
+		USING ( SELECT H.Job, H.Step_Number, H.Target_Step_Number, H.Condition_Test, H.Test_Value, 
+				       H.Evaluated, H.Triggered, H.Enable_Only
 				FROM T_Job_Step_Dependencies_History H
 				     INNER JOIN #Tmp_JobsToCopy Src
 				       ON H.Job = Src.Job
@@ -411,7 +412,7 @@ As
 			                                   JobsWithDependencies.Job > MD.Job 
 			                       ) AS MatchQ
 			                  WHERE SimilarJobRank = 1 
-			                 ) AS source
+			           ) AS source
 			       ON Target.Job = Source.Job
  			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -506,6 +507,8 @@ As
 		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CopyHistoryToJobMulti')
 		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
 								@ErrorNum = @myError output, @message = @message output
+		If @@trancount > 0
+			Rollback
 	End Catch
 	
  	---------------------------------------------------
