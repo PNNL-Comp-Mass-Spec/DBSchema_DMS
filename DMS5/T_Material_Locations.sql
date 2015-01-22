@@ -53,6 +53,10 @@ ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Location
 GO
 ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Locations_Container_Limit]  DEFAULT ((1)) FOR [Container_Limit]
 GO
+ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Locations_Status] CHECK  (([Status]='Inactive' OR [Status]='Active'))
+GO
+ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [CK_T_Material_Locations_Status]
+GO
 ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Tag],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [CK_T_Material_Locations_Tag_WhiteSpace]
