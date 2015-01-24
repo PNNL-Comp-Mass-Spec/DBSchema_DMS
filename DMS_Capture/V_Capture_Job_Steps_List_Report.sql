@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Capture_Job_Steps_List_Report
+
+CREATE VIEW [dbo].[V_Capture_Job_Steps_List_Report]
 AS
 SELECT JS.Job,
        JS.Step_Number AS Step,
@@ -27,7 +28,8 @@ SELECT JS.Job,
        JS.Evaluation_Code,
        JS.Evaluation_Message,
        JS.Job_Plus_Step AS [#ID],
-       J.Storage_Server
+       J.Storage_Server,
+	   J.Instrument
 FROM dbo.T_Job_Steps AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
        ON JS.State = SSN.ID
@@ -37,5 +39,6 @@ FROM dbo.T_Job_Steps AS JS
        ON J.State = JSN.ID
      INNER JOIN dbo.T_Scripts AS S
        ON J.Script = S.Script
+
 
 GO
