@@ -26,7 +26,7 @@ CREATE Procedure dbo.PostLogEntry
 **    
 *****************************************************/
 (
-	@type varchar(128),
+	@type varchar(128),				-- Typically Normal, Warning, Error, or Progress, but can be any text value
 	@message varchar(4096),
 	@postedBy varchar(128)= 'na',
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours

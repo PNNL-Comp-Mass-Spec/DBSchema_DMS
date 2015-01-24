@@ -80,3 +80,41 @@ AS
 	End
 
 GO
+/****** Object:  Trigger [dbo].[trig_u_Storage_Path] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Trigger [dbo].[trig_u_Storage_Path] on [dbo].[T_Storage_Path]
+After Update
+/****************************************************
+**
+**	Desc: 
+**		Updates T_Cached_Dataset_Folder_Paths for existing datasets
+**
+**	Auth:	mem
+**	Date:	01/22/2015 mem
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(SP_path) OR 
+	   Update(SP_machine_name) OR 
+	   Update (SP_vol_name_client)
+	Begin
+		UPDATE T_Cached_Dataset_Folder_Paths
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Folder_Paths DFP
+		     INNER JOIN T_Dataset DS
+		       ON DFP.Dataset_ID = DS.Dataset_ID
+		     INNER JOIN inserted
+		       ON DS.DS_storage_path_ID = inserted.SP_path_ID
+
+	End
+
+
+GO
