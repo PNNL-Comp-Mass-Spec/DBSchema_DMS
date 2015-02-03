@@ -6,6 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Datasets_Stale_and_Failed]
 AS
+WITH JobStepStatus (Dataset_ID, ActiveSteps, ActiveArchiveStatusSteps)
+AS (
+	SELECT J.Dataset_ID, COUNT(*) AS ActiveSteps, SUM(CASE WHEN JS.Step_Tool IN ('ArchiveStatusCheck', 'ArchiveVerify') 
+	   THEN 1 ELSE 0 END) AS ActiveArchiveStatusSteps
+	FROM DMS_Capture.dbo.T_Job_Steps JS INNER JOIN
+	   DMS_Capture.dbo.T_Jobs J ON JS.Job = J.Job INNER JOIN
+	   T_Dataset_Archive DA ON J.Dataset_ID = DA.AS_Dataset_ID
+	WHERE (DA.AS_state_ID IN (2, 7, 12)) AND (JS.State NOT IN (3, 5))
+	GROUP BY J.Dataset_ID
+)
 SELECT *
 FROM (
 	SELECT JSF.Warning_Message,
@@ -62,7 +72,9 @@ FROM (
 	WHERE DS.DS_State_ID IN (1, 2, 5, 7, 8, 11, 12)
 	UNION
 	SELECT  CASE WHEN (DA.AS_state_ID IN (6, 8, 13) AND DA.AS_state_Last_Affected >= DATEADD(day, -14, GETDATE()) )  THEN 'Archive failed within the last 14 days'
-				 WHEN (DA.AS_state_ID IN (2, 7, 12) AND DATEDIFF(hour, DA.AS_state_Last_Affected, GetDate()) >= 12 ) THEN 'Archive in progress over 12 hours'
+				 WHEN (DA.AS_state_ID IN (2, 7, 12) AND DATEDIFF(hour, DA.AS_state_Last_Affected, GetDate()) >= 12 ) AND 
+				      JobStepStatus.ActiveSteps > JobStepStatus.ActiveArchiveStatusSteps THEN 'Archive in progress over 12 hours'
+				 WHEN (DA.AS_state_ID IN (2, 7, 12) AND DATEDIFF(day, DA.AS_state_Last_Affected, GetDate()) >= 5 )   THEN 'Archive verification in progress over 5 days'
 				 WHEN (DA.AS_state_ID IN (1, 11)    AND DATEDIFF(day, DA.AS_state_Last_Affected, GetDate()) >= 14 )  THEN 'Archive State New or Verification Required over 14 days'
 				 ELSE ''
 		   END AS Warning_Message,
@@ -91,6 +103,8 @@ FROM (
 		   ON DS.DS_instrument_name_ID = Instrument.Instrument_ID
 		 INNER JOIN dbo.t_storage_path Spath
 		   ON DS.DS_storage_path_ID = Spath.SP_path_ID
+	     LEFT OUTER JOIN JobStepStatus 
+		   ON DA.AS_Dataset_ID = JobStepStatus.Dataset_ID		    
 	WHERE DA.AS_state_ID IN (1, 2, 6, 7, 8, 11, 12, 13)
 ) UnionQ
 WHERE Warning_Message <> ''
