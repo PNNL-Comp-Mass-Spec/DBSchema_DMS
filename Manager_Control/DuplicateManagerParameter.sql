@@ -12,6 +12,8 @@ CREATE Procedure dbo.DuplicateManagerParameter
 **	Example usage:
 **	  exec DuplicateManagerParameter 157, 172, @ParamValueSearchText='msfileinfoscanner', @ParamValueReplaceText='AgilentToUimfConverter', @InfoOnly=1
 **
+**    exec DuplicateManagerParameter 179, 182, @ParamValueSearchText='PbfGen', @ParamValueReplaceText='ProMex', @InfoOnly=1
+**
 **	Auth:	mem
 **	Date:	08/26/2013 mem - Initial release
 **    
