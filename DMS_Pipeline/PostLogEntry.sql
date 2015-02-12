@@ -50,6 +50,8 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M578] AS [dbo]

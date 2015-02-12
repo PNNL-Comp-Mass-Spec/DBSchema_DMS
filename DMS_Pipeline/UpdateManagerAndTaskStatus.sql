@@ -161,6 +161,8 @@ Done:
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatus] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatus] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatus] TO [PNL\D3M578] AS [dbo]

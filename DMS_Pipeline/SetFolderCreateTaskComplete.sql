@@ -119,5 +119,7 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [svc-dms] AS [dbo]
 GO

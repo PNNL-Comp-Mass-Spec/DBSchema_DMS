@@ -1,6 +1,6 @@
 /****** Object:  Database [DMS_Pipeline] ******/
 CREATE DATABASE [DMS_Pipeline] ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 11825344KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 11713152KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
 ( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'G:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -74,6 +74,12 @@ GO
 /****** Object:  User [DMSWebUser] ******/
 CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [GIGASAX\ftms] ******/
+CREATE USER [GIGASAX\ftms] FOR LOGIN [GIGASAX\ftms] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [GIGASAX\msdadmin] ******/
+CREATE USER [GIGASAX\msdadmin] FOR LOGIN [GIGASAX\msdadmin] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [pnl\aldr699] ******/
 CREATE USER [pnl\aldr699] FOR LOGIN [PNL\aldr699] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -108,6 +114,10 @@ GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
+GO
+GRANT CONNECT TO [GIGASAX\ftms] AS [dbo]
+GO
+GRANT CONNECT TO [GIGASAX\msdadmin] AS [dbo]
 GO
 GRANT CONNECT TO [LOC-DMS_Ops_Admin] AS [dbo]
 GO
