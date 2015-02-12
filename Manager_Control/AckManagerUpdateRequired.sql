@@ -100,6 +100,8 @@ Done:
 	return @myError
 	
 GO
+GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [svc-dms] AS [dbo]

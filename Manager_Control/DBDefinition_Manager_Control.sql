@@ -2,7 +2,7 @@
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
 ( NAME = N'ManagerControl', FILENAME = N'I:\SQLServerData\Manager_Control.mdf' , SIZE = 29376KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'H:\SQLServerData\Manager_Control_log.ldf' , SIZE = 1280KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'ManagerControl_log', FILENAME = N'H:\SQLServerData\Manager_Control_log.ldf' , SIZE = 1792KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Manager_Control] SET COMPATIBILITY_LEVEL = 100
@@ -86,6 +86,12 @@ GO
 /****** Object:  User [MTUser] ******/
 CREATE USER [MTUser] FOR LOGIN [mtuser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [proteinseqs\ftms] ******/
+CREATE USER [proteinseqs\ftms] FOR LOGIN [PROTEINSEQS\ftms] WITH DEFAULT_SCHEMA=[proteinseqs\ftms]
+GO
+/****** Object:  User [Proteinseqs\msdadmin] ******/
+CREATE USER [Proteinseqs\msdadmin] FOR LOGIN [Proteinseqs\msdadmin] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [RBAC-MgrConfig_Admin] ******/
 CREATE USER [RBAC-MgrConfig_Admin] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_MgrConfig_Admin]
 GO
@@ -109,6 +115,10 @@ GO
 GRANT CONNECT TO [MTUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [MTUser] AS [dbo]
+GO
+GRANT CONNECT TO [proteinseqs\ftms] AS [dbo]
+GO
+GRANT CONNECT TO [Proteinseqs\msdadmin] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-MgrConfig_Admin] AS [dbo]
 GO
