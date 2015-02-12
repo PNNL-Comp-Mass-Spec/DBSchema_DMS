@@ -84,6 +84,8 @@ As
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[PreviewPurgeTaskCandidates] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[PreviewPurgeTaskCandidates] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PreviewPurgeTaskCandidates] TO [PNL\D3M578] AS [dbo]

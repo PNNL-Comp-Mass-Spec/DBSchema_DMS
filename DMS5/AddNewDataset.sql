@@ -375,6 +375,8 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [Limited_Table_Write] AS [dbo]

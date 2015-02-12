@@ -64,6 +64,8 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateMyEMSLState] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMyEMSLState] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMyEMSLState] TO [PNL\D3M578] AS [dbo]

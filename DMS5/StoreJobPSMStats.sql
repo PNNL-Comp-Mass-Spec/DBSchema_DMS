@@ -179,6 +179,8 @@ Done:
 	Return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[StoreJobPSMStats] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[StoreJobPSMStats] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreJobPSMStats] TO [PNL\D3M578] AS [dbo]

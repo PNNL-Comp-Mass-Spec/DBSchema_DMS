@@ -451,6 +451,8 @@ Done:
 	Return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[StoreQuameterResults] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[StoreQuameterResults] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreQuameterResults] TO [PNL\D3M578] AS [dbo]

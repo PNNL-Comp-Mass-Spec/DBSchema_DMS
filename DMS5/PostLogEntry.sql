@@ -67,6 +67,8 @@ As
 	return 0
 
 GO
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [Limited_Table_Write] AS [dbo]

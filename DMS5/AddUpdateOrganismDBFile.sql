@@ -124,6 +124,8 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[AddUpdateOrganismDBFile] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganismDBFile] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganismDBFile] TO [PNL\D3M578] AS [dbo]

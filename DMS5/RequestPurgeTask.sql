@@ -556,6 +556,8 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [D3L243] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [Limited_Table_Write] AS [dbo]

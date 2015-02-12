@@ -73,6 +73,8 @@ Done:
 	Return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_SP_User] AS [dbo]

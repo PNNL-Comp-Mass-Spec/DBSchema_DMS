@@ -90,6 +90,8 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Archive_Restore] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Ops_Admin] AS [dbo]
