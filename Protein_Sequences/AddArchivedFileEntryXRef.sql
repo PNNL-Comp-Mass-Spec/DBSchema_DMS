@@ -105,6 +105,8 @@ GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [BUILTIN\Administrators] AS
 GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [pnl\d3m480] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [proteinseqs\ftms] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [svc-dms] AS [dbo]

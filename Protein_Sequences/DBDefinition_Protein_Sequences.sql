@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 66719488KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 73374592KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 3523840KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 1988992KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -113,6 +113,12 @@ GO
 /****** Object:  User [PRISMSeqReader] ******/
 CREATE USER [PRISMSeqReader] FOR LOGIN [PRISMSeqReader] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [proteinseqs\ftms] ******/
+CREATE USER [proteinseqs\ftms] FOR LOGIN [PROTEINSEQS\ftms] WITH DEFAULT_SCHEMA=[proteinseqs\ftms]
+GO
+/****** Object:  User [Proteinseqs\msdadmin] ******/
+CREATE USER [Proteinseqs\msdadmin] FOR LOGIN [Proteinseqs\msdadmin] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -149,6 +155,10 @@ GO
 GRANT CONNECT TO [pnl\d3m480] AS [dbo]
 GO
 GRANT CONNECT TO [PRISMSeqReader] AS [dbo]
+GO
+GRANT CONNECT TO [proteinseqs\ftms] AS [dbo]
+GO
+GRANT CONNECT TO [Proteinseqs\msdadmin] AS [dbo]
 GO
 GRANT CONNECT TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

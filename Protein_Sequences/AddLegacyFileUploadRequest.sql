@@ -123,6 +123,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [BUILTIN\Administrators] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [proteinseqs\ftms] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [svc-dms] AS [dbo]

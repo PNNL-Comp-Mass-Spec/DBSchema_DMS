@@ -66,5 +66,7 @@ AS
 
 
 GO
+GRANT EXECUTE ON [dbo].[RefreshCachedOrganismDBInfo] TO [proteinseqs\ftms] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RefreshCachedOrganismDBInfo] TO [svc-dms] AS [dbo]
 GO
