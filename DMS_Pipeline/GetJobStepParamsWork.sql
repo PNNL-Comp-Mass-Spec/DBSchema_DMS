@@ -16,9 +16,9 @@ CREATE PROCEDURE GetJobStepParamsWork
 **	The calling procedure must create temporary table #Tmp_JobParamsTable 
 **	
 **	Create Table #Tmp_JobParamsTable (
-**		[Section] Varchar(128),
-**		[Name] Varchar(128),
-**		[Value] Varchar(max)
+**		[Section] varchar(128),
+**		[Name] varchar(128),
+**		[Value] varchar(max)
 **	)
 **	
 **	Return values: 0: success, otherwise, error code
@@ -30,6 +30,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			01/19/2012 mem - Now adding DataPackageID
 **			07/09/2012 mem - Updated to support the "step" attribute of a "param" element containing Yes and a number, for example "Yes (3)"
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			02/16/2015 mem - Now storing T_Step_Tools.Param_File_Storage_Path if defined
 **    
 *****************************************************/
 (
@@ -41,14 +42,14 @@ CREATE PROCEDURE GetJobStepParamsWork
 AS
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	set @myError = 0
 	
-	declare @stepTool varchar(64) = ''
-	declare @inputFolderName varchar(128) = ''
-	declare @outputFolderName varchar(128) = ''
-	declare @DataPackageID int = 0
+	Declare @stepTool varchar(64) = ''
+	Declare @inputFolderName varchar(128) = ''
+	Declare @outputFolderName varchar(128) = ''
+	Declare @DataPackageID int = 0
 
 	set @myRowCount = 0
 	
@@ -104,7 +105,7 @@ AS
 	-- Get shared results folder name list
 	-- Be sure to sort by increasing step number so that the newest shared result folder is last
 	---------------------------------------------------
-	declare @sharedFolderList varchar(1024)
+	Declare @sharedFolderList varchar(1024)
 	set @sharedFolderList = Null
 	--
 	SELECT @sharedFolderList = COALESCE(@sharedFolderList + ', ', 
@@ -130,35 +131,39 @@ AS
 	---------------------------------------------------
 	-- get input and output folder names for individual steps
 	-- (used by aggregation jobs created in broker)
+	-- Also lookup the parameter file storage path
 	---------------------------------------------------
 
-	DECLARE @stepOutputFolderName VARCHAR(128) = ''
-	DECLARE @stepInputFolderName VARCHAR(128) = ''
+	Declare @stepOutputFolderName varchar(128) = ''
+	Declare @stepInputFolderName varchar(128) = ''
+	Declare @paramFileStoragePath varchar(256) = ''
+	
+	SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step_Number) + '_' + ST.Tag,
+	       @paramFileStoragePath = ST.Param_File_Storage_Path
+	FROM T_Job_Steps JS
+	     INNER JOIN T_Step_Tools ST
+	       ON JS.Step_Tool = ST.Name
+	WHERE JS.Job = @jobNumber AND
+	      JS.Step_Number = @stepNumber
 
-	SELECT  @stepOutputFolderName = 'Step_' + CONVERT(VARCHAR(6), TJS.Step_Number)
-			+ '_' + TST.Tag
-	FROM    T_Job_Steps TJS
-			INNER JOIN T_Step_Tools TST ON TJS.Step_Tool = TST.Name
-	WHERE   TJS.Job = @jobNumber
-			AND TJS.Step_Number = @stepNumber
 
+	SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), TSD.Target_Step_Number) + '_' + ST.Tag
+	FROM T_Job_Step_Dependencies AS TSD
+	     INNER JOIN T_Job_Steps AS JS
+	       ON TSD.Job = JS.Job AND
+	          TSD.Target_Step_Number = JS.Step_Number
+	     INNER JOIN T_Step_Tools AS ST
+	       ON JS.Step_Tool = ST.Name
+	WHERE (TSD.Job = @jobNumber) AND
+	      (TSD.Step_Number = @stepNumber) AND
+	      TSD.Enable_Only = 0
 
-	SELECT  @stepInputFolderName = 'Step_'
-			+ CONVERT(VARCHAR(6), TSD.Target_Step_Number) + '_' + TST.Tag
-	FROM  T_Job_Step_Dependencies AS TSD
-			INNER JOIN T_Job_Steps AS TJS ON TSD.Job = TJS.Job
-											 AND TSD.Target_Step_Number = TJS.Step_Number
-			INNER JOIN T_Step_Tools AS TST ON TJS.Step_Tool = TST.Name
-	WHERE   ( TSD.Job = @jobNumber )
-			AND ( TSD.Step_Number = @stepNumber )
-			AND TSD.Enable_Only = 0
 
 	---------------------------------------------------
 	-- Get job step parameters
 	---------------------------------------------------
 	--
-	declare @stepParmSectionName varchar(32)
-	set @stepParmSectionName = 'StepParameters'
+	Declare @stepParmSectionName varchar(32) = 'StepParameters'
 	--
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Job', @jobNumber)
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Step', @stepNumber)
@@ -169,6 +174,9 @@ AS
 
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepOutputFolderName', @stepOutputFolderName)
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepInputFolderName', @stepInputFolderName)
+
+	If IsNull(@paramFileStoragePath, '') <> ''
+		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
 
 
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @DataPackageID)
@@ -207,11 +215,11 @@ AS
 	                  WHEN Step = '' THEN 0
 	                  WHEN IsNumeric(Step) = 1 THEN Convert(int, Step)
 	                  ELSE 0
-	              END AS StepNumber
+	            END AS StepNumber
 	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
 	                     xmlNode.value('@Name', 'nvarchar(256)') AS Name,
 	                     xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
-	                     REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
+	     REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
 	              FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
 	              WHERE T_Job_Parameters.Job = @jobNumber 
 	            ) LookupQ 
