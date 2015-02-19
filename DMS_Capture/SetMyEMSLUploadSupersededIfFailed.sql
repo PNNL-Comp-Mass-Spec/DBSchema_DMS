@@ -131,3 +131,5 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[SetMyEMSLUploadSupersededIfFailed] TO [svc-dms] AS [dbo]
+GO
