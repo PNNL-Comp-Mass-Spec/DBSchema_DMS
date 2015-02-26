@@ -18,6 +18,7 @@ CREATE PROCEDURE UpdateMissedDMSFileInfo
 **
 **  Auth:	mem
 **  Date:	12/19/2011 mem - Initial version
+**			02/24/2015 mem - Now skipping deleted datasets
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ As
 	)
 	
 	CREATE CLUSTERED INDEX #Ix_TmpDatasetsToProcess ON #TmpDatasetsToProcess (Dataset_ID)
-
+	
 	--------------------------------------------
 	-- Look for Datasets with entries in T_Dataset_Info_XML but null values for File_Info_Last_Modified in DMS
 	--------------------------------------------
@@ -66,7 +67,38 @@ As
 	WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL)
 	--
 	SELECT @myRowCount = @@RowCount
-	
+
+	--------------------------------------------
+	-- Delete any entries that don't exist in S_DMS_T_Dataset
+	--------------------------------------------
+	--
+	DELETE #TmpDatasetsToProcess
+	FROM #TmpDatasetsToProcess DP
+	     LEFT OUTER JOIN S_DMS_T_Dataset DS
+	       ON DP.Dataset_ID = DS.Dataset_ID
+	WHERE DS.Dataset_ID Is Null
+	--
+	SELECT @myRowCount = @@RowCount
+
+
+	If @myRowCount > 0
+	Begin
+		set @message = 'Ignoring ' + Cast(@myRowCount as varchar(12)) + ' dataset(s) in T_Dataset_Info_XML because they do not exist in DMS5.T_Dataset'
+		exec PostLogEntry 'Info', @message, 'UpdateMissedDMSFileInfo'
+		
+		--------------------------------------------
+		-- Delete any entries in T_Dataset_Info_XML that were cached over 7 days ago and do not exist in S_DMS_T_Dataset
+		--------------------------------------------
+		--
+		DELETE T_Dataset_Info_XML
+		FROM T_Dataset_Info_XML DI
+		     LEFT OUTER JOIN S_DMS_T_Dataset DS
+		       ON DI.Dataset_ID = DS.Dataset_ID
+		WHERE DI.Cache_Date < DATEADD(day, -7, GETDATE()) AND
+		      DS.Dataset_ID IS NULL
+
+	End
+
 	--------------------------------------------
 	-- Look for datasets with conflicting values for scan count or file size
 	-- Will only update if the Cache_Date in T_Dataset_Info_XML is newer than
@@ -90,7 +122,7 @@ As
 	                     S_DMS_T_Dataset.Scan_Count AS Scan_Count_Old,
 	                     S_DMS_T_Dataset.File_Size_Bytes AS File_Size_Bytes_Old
 	              FROM T_Dataset_Info_XML DI
-	                   INNER JOIN S_DMS_T_Dataset
+	              INNER JOIN S_DMS_T_Dataset
 	                     ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID 
 	                        AND
 	                        DI.Cache_Date > S_DMS_T_Dataset.File_Info_Last_Modified ) InnerQ ) FilterQ
