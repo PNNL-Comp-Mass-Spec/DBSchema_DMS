@@ -63,6 +63,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			08/21/2012 mem - Now including DatasetID in the error message
 **			04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
+**			02/24/2015 mem - Now validating that @DatasetID exists in T_Dataset
 **    
 *****************************************************/
 (
@@ -299,6 +300,31 @@ As
 	Begin
 	
 		-- @DatasetID was non-zero
+		
+		-- Validate that @DatasetID exists in T_Dataset
+		If Not Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @DatasetID)
+		Begin
+			Set @message = 'Warning: dataset ID "' + Cast(@DatasetID as varchar(12)) + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
+			Set @myError = 50002
+			Goto Done
+		End
+		
+		UPDATE @DSInfoTable
+		SET Dataset_ID = DS.Dataset_ID
+		FROM @DSInfoTable Target
+		     INNER JOIN T_Dataset DS
+		       ON Target.Dataset_Name = DS.Dataset_Num
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount = 0
+		Begin
+			Set @message = 'Warning: dataset "' + @DatasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
+			Set @myError = 50003
+			Goto Done
+		End
+		
+		
 		-- Validate the dataset name in @DSInfoTable against T_Dataset
 	
 		SELECT @DatasetIDCheck = DS.Dataset_ID
@@ -309,7 +335,7 @@ As
 		If @DatasetIDCheck <> @DatasetID
 		Begin
 			Set @message = 'Error: dataset ID values for ' + @DatasetName + ' do not match; expecting ' + Convert(varchar(12), @DatasetIDCheck) + ' but stored procedure param @DatasetID is ' + Convert(varchar(12), @DatasetID)
-			Set @myError = 50002
+			Set @myError = 50004
 			Goto Done
 		End
 	End
