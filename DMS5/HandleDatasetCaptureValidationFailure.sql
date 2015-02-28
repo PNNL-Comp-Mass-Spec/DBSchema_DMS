@@ -22,6 +22,7 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **	Date:	04/28/2011 mem - Initial version
 **			10/29/2014 mem - Now allowing @Comment to contain a single punctuation mark, which means the comment should not be updated
 **			11/25/2014 mem - Now using dbo.AppendToText() to avoid appending duplicate text
+**			02/27/2015 mem - Add space after semicolon when calling AppendToText
 **
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
 		Begin
 				
 			UPDATE T_Dataset
-			SET DS_comment = dbo.AppendToText(DS_Comment, @Comment, 0, ';'),
+			SET DS_comment = dbo.AppendToText(DS_Comment, @Comment, 0, '; '),
 			    DS_state_ID = 4,
 			    DS_rating = -1
 			WHERE Dataset_ID = @DatasetID
