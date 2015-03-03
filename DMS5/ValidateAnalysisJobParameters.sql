@@ -48,6 +48,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			03/13/2014 mem - Added custom message to be displayed when trying to reset a MAC job
 **						   - Added optional parameter @Job
 **			07/18/2014 mem - Now validating that files over 400 MB in size are using MSGFPlus_SplitFasta
+**			03/02/2015 mem - Now validating that files over 500 MB in size are using MSGFPlus_SplitFasta
 **
 *****************************************************/
 (
@@ -444,8 +445,8 @@ As
 				Set @SizeDescription = Cast(Cast(@FileSizeGB As decimal(9,1)) As varchar(12)) + ' GB'
 		End
 		
-		-- Check for a file over 400 MB in size
-		If IsNull(@FileSizeKB, 0) > 400*1024 Or
+		-- Check for a file over 500 MB in size
+		If IsNull(@FileSizeKB, 0) > 500*1024 Or
 		   @organismDBName In (		   
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24.fasta',
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24_reversed.fasta',
