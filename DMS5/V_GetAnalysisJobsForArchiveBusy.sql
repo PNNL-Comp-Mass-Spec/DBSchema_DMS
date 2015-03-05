@@ -4,10 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_GetAnalysisJobsForArchiveBusy]
 AS
-SELECT AJ.AJ_jobID
+SELECT AJ.AJ_jobID, DS.Dataset_ID, DS.Dataset_Num, DS.DS_created, DS.DS_state_ID
 FROM dbo.T_Analysis_Job AJ
      INNER JOIN dbo.T_Dataset_Archive DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID

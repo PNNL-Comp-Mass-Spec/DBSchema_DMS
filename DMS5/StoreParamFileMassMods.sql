@@ -312,7 +312,7 @@ AS
 							SELECT @MassCorrectionID = Mass_Correction_ID
 							FROM T_Mass_Correction_Factors
 							WHERE Original_Source_Name = @ModName AND
-							     (Original_Source = 'UniMod' OR @ModName IN ('Heme_615','Dyn2DZ'))
+							     (Original_Source = 'UniMod' OR @ModName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose'))
 							--
 							SELECT @myRowCount = @@rowcount, @myError = @@error
 
