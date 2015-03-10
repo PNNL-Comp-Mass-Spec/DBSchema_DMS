@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Processor_Step_Tools_List_Report]
 AS
 SELECT LP.Processor_Name,
@@ -29,6 +30,7 @@ FROM T_Machines M
           LP.ProcTool_Mgr_ID = PTGD.Mgr_ID
      INNER JOIN T_Step_Tools ST
        ON PTGD.Tool_Name = ST.Name
+WHERE M.Enabled > 0
 
 
 
