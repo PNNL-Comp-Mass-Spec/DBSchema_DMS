@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Machines](
 	[Total_CPUs] [tinyint] NOT NULL,
 	[CPUs_Available] [int] NOT NULL,
 	[Bionet_Available] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Enabled] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Machines] PRIMARY KEY CLUSTERED 
 (
 	[Machine] ASC
@@ -20,4 +21,6 @@ GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_CPUs_Available]  DEFAULT ((0)) FOR [CPUs_Available]
 GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Bionet_Available]  DEFAULT ('N') FOR [Bionet_Available]
+GO
+ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Enabled]  DEFAULT ((1)) FOR [Enabled]
 GO

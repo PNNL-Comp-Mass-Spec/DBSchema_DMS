@@ -7,12 +7,13 @@ GO
 
 
 
+
 CREATE VIEW [dbo].[V_Job_Steps2]
 AS
 SELECT Job, Dataset, Dataset_ID, Step, Script, 
        Tool, StateName, State, Start, Finish, RunTime_Minutes, 
        LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, 
-       Input_Folder, Output_Folder, Priority, CPU_Load, Tool_Version_ID, 
+       Input_Folder, Output_Folder, Priority, Dependencies, CPU_Load, Tool_Version_ID, 
        Tool_Version, Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, Holdoff_Interval_Minutes, Next_Try, Retry_Count, 
        Instrument, Storage_Server, Transfer_Folder_Path, 
@@ -40,6 +41,7 @@ FROM (
 		   JS.Input_Folder,
 		   JS.Output_Folder,
 		   JS.Priority,
+		   JS.Dependencies,
 		   JS.CPU_Load,
 		   JS.Tool_Version_ID,
 		   JS.Tool_Version,
@@ -68,6 +70,7 @@ FROM (
 		 LEFT OUTER JOIN T_Local_Processors LP
 		   ON JS.Processor = LP.Processor_Name
       ) LookupQ
+
 
 
 GO

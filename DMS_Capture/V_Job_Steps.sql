@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT JS.Job,
@@ -34,6 +35,7 @@ SELECT JS.Job,
        JS.Input_Folder,
        JS.Output_Folder,
        JS.Priority,
+	   JS.Dependencies,
        JS.CPU_Load,
        JS.Tool_Version_ID,
        JS.Tool_Version,
@@ -66,6 +68,7 @@ FROM ( SELECT JS.Job,
               JS.Input_Folder_Name AS Input_Folder,
               JS.Output_Folder_Name AS Output_Folder,
               J.Priority,
+			  JS.Dependencies,
               JS.CPU_Load,
               JS.Completion_Code,
               JS.Completion_Message,
@@ -96,6 +99,7 @@ FROM ( SELECT JS.Job,
        WHERE J.State <> 101 ) JS
      LEFT OUTER JOIN dbo.T_Processor_Status PS ( READUNCOMMITTED )
        ON JS.Processor = PS.Processor_Name
+
 
 
 GO
