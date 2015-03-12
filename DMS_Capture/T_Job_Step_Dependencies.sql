@@ -11,7 +11,13 @@ CREATE TABLE [dbo].[T_Job_Step_Dependencies](
 	[Test_Value] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluated] [tinyint] NOT NULL,
 	[Triggered] [tinyint] NOT NULL,
-	[Enable_Only] [tinyint] NOT NULL
+	[Enable_Only] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Job_Step_Dependencies] PRIMARY KEY NONCLUSTERED 
+(
+	[Job] ASC,
+	[Step_Number] ASC,
+	[Target_Step_Number] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -38,6 +44,7 @@ ALTER TABLE [dbo].[T_Job_Step_Dependencies] ADD  CONSTRAINT [DF_T_Job_Step_Depen
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps] FOREIGN KEY([Job], [Step_Number])
 REFERENCES [dbo].[T_Job_Steps] ([Job], [Step_Number])
+ON UPDATE CASCADE
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies] CHECK CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps]

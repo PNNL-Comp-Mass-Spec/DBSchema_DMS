@@ -21,6 +21,7 @@ CREATE PROCEDURE UpdateDependentSteps
 **	Date:	09/05/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			05/25/2011 mem - Now using the Priority column from T_Jobs
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			03/10/2015 mem - Now updating T_Job_Steps.Dependencies if the dependency count listed is lower than that defined in T_Job_Step_Dependencies 
 **    
 *****************************************************/
 (
@@ -104,7 +105,35 @@ As
 	)
 
 	CREATE INDEX [IX_StepList_ProcessingOrder] ON #T_Tmp_Steplist (ProcessingOrder, Job)
-	
+
+	---------------------------------------------------
+	-- Bump up the value for Dependencies in T_Job_Steps if it is too low
+	-- This will happen if new rows are manually added to T_Job_Step_Dependencies
+	---------------------------------------------------
+	--
+	UPDATE T_Job_Steps
+	SET Dependencies = CompareQ.Actual_Dependencies
+	FROM T_Job_Steps JS
+	     INNER JOIN ( SELECT Job,
+	                         Step_Number,
+	                         COUNT(*) AS Actual_Dependencies
+	                  FROM T_Job_Step_Dependencies
+	                  WHERE Job IN ( SELECT Job FROM T_Job_Steps WHERE State = 1 )
+	                  GROUP BY Job, Step_Number 
+	                ) CompareQ
+	       ON JS.Job = CompareQ.Job AND
+	          JS.Step_Number = CompareQ.Step_Number AND
+	          JS.Dependencies < CompareQ.Actual_Dependencies
+	WHERE JS.State = 1
+	-- 
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error updating T_Job_Steps.Dependencies'
+		goto Done
+	end
+		
 	---------------------------------------------------
 	-- get summary of dependencies for steps 
 	-- in "Waiting" state and add to scratch list
