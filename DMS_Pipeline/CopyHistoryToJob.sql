@@ -30,6 +30,8 @@ CREATE PROCEDURE CopyHistoryToJob
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			03/10/2015 mem - Now adding default dependencies if a similar job cannot be found
+**			03/10/2015 mem - Now updating T_Job_Steps.Dependencies if it doesn't match the dependent steps listed in T_Job_Step_Dependencies
 **    
 *****************************************************/
 (
@@ -83,7 +85,7 @@ As
 		goto Done
 	end
 		
-	If @myRowCount = 0
+	If @dateStamp Is Null
 	Begin
 		Print 'No successful jobs found in T_Jobs_History for job ' + Convert(varchar(12), @job) + '; will look for a failed job'
 		
@@ -319,7 +321,28 @@ As
 			WHERE Job = @SimilarJob
 
 		End
-		
+		Else
+		Begin
+			-- No similar jobs
+			-- Create default dependencenies
+			
+			INSERT INTO T_Job_Step_Dependencies( Job,
+			                                     Step_Number,
+			                                     Target_Step_Number,
+			                                     Evaluated,
+			                                     Triggered,
+			                                     Enable_Only )
+			SELECT Job,
+			       Step_Number,
+			       Step_Number - 1 AS Target_Step,
+			       0 AS Evaluated,
+			       0 AS Triggered,
+			       0 AS Enable_Only
+			FROM T_Job_Steps
+			WHERE (Job = @job) AND
+			      (Step_Number > 1)
+		End
+				
 	End
 	Else
 	Begin
@@ -361,13 +384,31 @@ As
 	--
 	exec @myError = UpdateJobParameters @job, @infoOnly=0
 
-
 	---------------------------------------------------
 	-- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
 	---------------------------------------------------
 	--
 	exec ValidateJobServerInfo @job, @UseJobParameters=1
-	
+
+	---------------------------------------------------
+	-- Make sure the Dependencies column is up-to-date in T_Job_Steps
+	---------------------------------------------------
+	--
+	UPDATE T_Job_Steps
+	SET Dependencies = T.dependencies
+	FROM T_Job_Steps JS
+	     INNER JOIN ( SELECT Step_Number,
+	                         COUNT(*) AS dependencies
+	                  FROM T_Job_Step_Dependencies
+	                  WHERE (Job = @job)
+	                  GROUP BY Step_Number 
+	                ) T
+	       ON T.Step_Number = JS.Step_Number
+	WHERE (JS.Job = @job) AND
+	      T.Dependencies > JS.Dependencies
+ 	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
  	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

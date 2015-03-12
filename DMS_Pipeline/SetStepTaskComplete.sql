@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			               - Now looking up machine using T_Local_Processors
 **			10/30/2014 mem - Added support for completion code 17 (CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY)
+**			03/11/2015 mem - Now updating Completion_Message when completion code 16 or 17 is encountered more than once in a 24 hour period
 **    
 *****************************************************/
 (
@@ -206,13 +207,16 @@ As
 			              posting_Time >= DateAdd(day, -1, GetDate()) 
 			      )
 		Begin
-			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + ' has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours; will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem; this step is now in state "holding"'
-			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			Set @message = 'has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours'
 			
 			UPDATE T_Job_Steps
-			SET State = 7		-- Holding				
+			SET State = 7,		-- Holding				
+			    Completion_Message = dbo.AppendToText(Completion_Message, @message, 0, '; ')
 			WHERE Job = @job AND
 			      Step_Number = @step
+			
+			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + @message + 'will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem; this step is now in state "holding"'
+			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			
 			Goto CommitTran
 		End
