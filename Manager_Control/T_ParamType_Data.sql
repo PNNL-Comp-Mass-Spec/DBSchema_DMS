@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 165 ******/
+/****** RowCount: 166 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -166,4 +166,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (17
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (180,'MzRefineryProgLoc','','Folder containing customized msconvert that supports MzRefinery')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (181,'UimfDemultiplexerProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (182,'ProMexProgLoc','','Folder containing ProMex.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (183,'GlyQIQProgLoc','','Folder containing IQGlyQ_Console.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
