@@ -5,6 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
+
 CREATE VIEW [dbo].[V_Analysis_Job]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -31,7 +33,15 @@ SELECT AJ.AJ_jobID AS Job,
        DFP.Instrument_Data_Purged,
 	   E.Experiment_Num As Experiment,
 	   C.Campaign_Num As Campaign,
-	   AJ.AJ_jobID
+	   InstName.IN_name AS Instrument,
+	   AJ.AJ_StateNameCached AS State,
+	   AJ.AJ_jobID,
+	   AJ.AJ_datasetID,
+	   DS.DS_rating AS Rating,
+       AJ.AJ_created AS Created,
+       AJ.AJ_start AS Started,
+       AJ.AJ_finish AS Finished,
+	   CONVERT(DECIMAL(9, 2), AJ.AJ_ProcessingTimeMinutes) AS Runtime
 FROM T_Analysis_Job AJ
      INNER JOIN T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -47,6 +57,7 @@ FROM T_Analysis_Job AJ
        ON DS.Exp_ID = E.Exp_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
+
 
 
 GO
