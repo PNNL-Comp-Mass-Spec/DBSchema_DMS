@@ -35,6 +35,7 @@ CREATE Procedure dbo.AddNewDataset
 **			11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
 **			06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
 **			12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
+**			03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
 **    
 *****************************************************/
 (
@@ -169,7 +170,9 @@ AS
 	-- check for QC or Blank datasets
  	---------------------------------------------------
 
-	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR (@Dataset_Name LIKE 'Blank%' AND Not @Dataset_Name LIKE '%-bad')
+	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR 
+	   dbo.DatasetPreference(@Experiment_Name) <> 0 OR
+	   (@Dataset_Name LIKE 'Blank%' AND Not @Dataset_Name LIKE '%-bad')
 	begin
 		-- Auto set interest rating to 5
 		-- Initially set @Interest_Rating to the text 'Released' but then query
