@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **          09/23/2011 grk - Accomodate researcher field in AssureMaterialContainersExist
 **			02/06/2013 mem - Added logic to prevent duplicate entries
 **			12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
+**			03/26/2015 mem - Update duplicate sample submission message
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -168,7 +169,7 @@ As
 		WHERE Campaign_ID = @CampaignID AND Received_By_User_ID = @ReceivedByUserID AND Description = @Description
 		
 		If @ID > 0
-			RAISERROR('New sample submission is duplicate of existing sample submission, ID %d', 11, 23, @ID)
+			RAISERROR('New sample submission is duplicate of existing sample submission, ID %d; both have identical Campaign, Received By User, and Description', 11, 23, @ID)
 		
 		---------------------------------------------------
 		-- Add the new data

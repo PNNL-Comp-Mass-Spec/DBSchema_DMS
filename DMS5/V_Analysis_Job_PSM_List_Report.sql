@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report] as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_StateNameCached AS State ,
@@ -56,9 +57,8 @@ FROM    dbo.V_Dataset_Archive_Path AS DAP
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats PSM ON AJ.AJ_JobID = PSM.Job
 WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
-                                WHERE (AJT_resultType LIKE '%peptide_hit'))
-                                
-
+                                WHERE AJT_resultType LIKE '%peptide_hit' OR 
+								      AJT_resultType = 'Gly_ID')
 
 
 

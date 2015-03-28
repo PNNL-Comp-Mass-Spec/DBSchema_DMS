@@ -26,12 +26,15 @@ CREATE Procedure AutoResetFailedJobs
 **			04/17/2014 mem - Updated check for "None of the spectra are centroided" to be more generic
 **			09/09/2014 mem - Changed DataExtractor and MSGF retries to 2
 **						   - Now auto-resetting MSAlign jobs that report "Not enough free memory"
-**			10/27/2014 mem - Now watching for "None of hte spectra are centroided" from DTA_Refinery
+**			10/27/2014 mem - Now watching for "None of the spectra are centroided" from DTA_Refinery
+**			03/27/2015 mem - Now auto-resetting ICR2LS jobs up to 15 times
+**						   - Added parameter @StepToolFilter
 **
 *****************************************************/
 (
 	@WindowHours int = 12,				-- Will look for jobs that failed within @WindowHours hours of the present time
     @infoOnly tinyint = 1,
+    @StepToolFilter varchar(32) = '',	-- Optional Step Tool to filter on (must be an exact match to a tool name in T_Job_Steps)
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = ''
 )
@@ -85,9 +88,12 @@ As
 		Set @WindowHours = IsNull(@WindowHours, 12)
 		If @WindowHours < 2
 			Set @WindowHours = 2
-			
+		
 		Set @infoOnly = IsNull(@infoOnly, 0)
-		set @message = ''
+
+		Set @StepToolFilter= IsNull(@StepToolFilter, '')
+
+		Set @message = ''
 
 		CREATE TABLE #Tmp_FailedJobs (
 			Job int NOT NULL,
@@ -117,7 +123,7 @@ As
 		SELECT J.AJ_jobID AS Job,
 		       JS.Step_Number,
 		       JS.Step_Tool,
-		   J.AJ_StateID AS Job_State,
+		       J.AJ_StateID AS Job_State,
 		       JS.State AS Step_State,
 		       IsNull(JS.Processor, '') AS Processor,
 		       IsNull(J.AJ_comment, '') AS Comment,
@@ -131,7 +137,8 @@ As
 		       ON J.AJ_analysisToolID = Tool.AJT_toolID
 		WHERE J.AJ_StateID = 5 AND
 		      IsNull(J.AJ_finish, J.AJ_Start) >= DATEADD(hour, -@WindowHours, GETDATE()) AND
-		      JS.State = 6
+		      JS.State = 6 AND
+		      (@StepToolFilter = '' OR JS.Step_Tool = @StepToolFilter)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -272,6 +279,9 @@ As
 						-- Job step is failed and overall job is failed
 						
 						If @RetryJob = 0 And @StepTool = 'Decon2LS' And @RetryCount < 2
+							Set @RetryJob = 1
+						
+						if @RetryJob = 0 and @StepTool = 'ICR2LS' And @RetryCount < 15
 							Set @RetryJob = 1
 							
 						If @RetryJob = 0 And @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 2
