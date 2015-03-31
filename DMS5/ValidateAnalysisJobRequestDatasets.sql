@@ -19,6 +19,7 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **			11/12/2012 mem - Initial version (extracted code from AddUpdateAnalysisJobRequest and ValidateAnalysisJobParameters)
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
 **			08/02/2013 mem - Tweaked message for "Not Released" datasets
+**			03/30/2015 mem - Tweak warning message grammar
 **
 *****************************************************/
 (
@@ -138,7 +139,7 @@ As
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following datasets from list were not in database: ' + @list
+		set @message = 'The following datasets were not in the database: ' + @list
 		return 51007
 	end	
 

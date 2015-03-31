@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateDatasets]
+CREATE Procedure dbo.UpdateDatasets
 /****************************************************
 **
 **	Desc:
@@ -19,6 +19,7 @@ CREATE Procedure [dbo].[UpdateDatasets]
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			03/30/2015 mem - Tweak warning message grammar
 **    
 *****************************************************/
 (
@@ -130,14 +131,14 @@ As
 	--
 	if @list <> ''
 	begin
-		set @msg = 'The following datasets from list were not in database:"' + @list + '"'
+		set @msg = 'The following datasets were not in the database: "' + @list + '"'
 		RAISERROR (@msg, 11, 20)
 	end
 	
 	SELECT @datasetCount = COUNT(*) 
 	FROM #TDS
 	
-	set @message = 'Number of affected datasets:' + cast(@datasetCount as varchar(12))
+	set @message = 'Number of affected datasets: ' + cast(@datasetCount as varchar(12))
 
 	---------------------------------------------------
 	-- Resolve state name

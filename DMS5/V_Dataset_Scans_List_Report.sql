@@ -20,6 +20,10 @@ SELECT DS.Dataset_ID AS ID,
               ELSE 1E6
          END) AS [Elution Time Max],
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
+	   DSInfo.ProfileScanCount_MS, 
+	   DSInfo.ProfileScanCount_MSn, 
+       DSInfo.CentroidScanCount_MS, 
+	   DSInfo.CentroidScanCount_MSn,
        DST.Entry_ID AS [ScanType Entry ID]
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_DatasetTypeName DTN

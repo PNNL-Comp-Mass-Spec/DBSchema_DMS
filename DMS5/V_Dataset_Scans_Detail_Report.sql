@@ -12,6 +12,10 @@ SELECT DS.Dataset_ID AS ID,
        DTN.DST_name AS [Dataset Type],
        DSInfo.Scan_Types as [Scan Types],
        DS.Scan_Count AS [Scan Count Total],
+	   DSInfo.ProfileScanCount_MS, 
+	   DSInfo.ProfileScanCount_MSn, 
+       DSInfo.CentroidScanCount_MS, 
+	   DSInfo.CentroidScanCount_MSn,
        SUM(CASE WHEN DST.ScanType = 'MS'          THEN DST.ScanCount ELSE 0 END) AS [ScanCount MS],
        SUM(CASE WHEN DST.ScanType = 'HMS'         THEN DST.ScanCount ELSE 0 END) AS [ScanCount HMS],
        SUM(CASE WHEN DST.ScanType = 'Zoom-MS'     THEN DST.ScanCount ELSE 0 END) AS [ScanCount Zoom-MS],
@@ -58,8 +62,9 @@ FROM dbo.T_Dataset DS
        ON DS.Dataset_ID = DST.Dataset_ID
 GROUP BY DS.Dataset_ID, DS.Dataset_Num, InstName.IN_name, DTN.DST_name, 
          DS.Scan_Count, DSInfo.Elution_Time_Max,DS.File_Size_Bytes,
-         DSInfo.Scan_Types
-
+         DSInfo.Scan_Types, 
+		 DSInfo.ProfileScanCount_MS, DSInfo.ProfileScanCount_MSn, 
+		 DSInfo.CentroidScanCount_MS, DSInfo.CentroidScanCount_MSn
 
 
 GO

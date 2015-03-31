@@ -43,6 +43,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **			09/16/2009 mem - Extracted code from UpdateAnalysisJobs
 **						   - Added parameter @DisableRaiseError
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			03/30/2015 mem - Tweak warning message grammar
 **
 *****************************************************/
 (
@@ -172,7 +173,7 @@ As
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following jobs from list were not in database:"' + @list + '"'
+		set @message = 'The following jobs were not in the database: "' + @list + '"'
 		return 51007
 	end
 	

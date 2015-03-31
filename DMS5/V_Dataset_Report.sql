@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -19,6 +20,7 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_Oper_PRN AS [Oper.],
        DTN.DST_Name AS [Type],
        E.Experiment_Num AS Experiment,
+	   C.Campaign_Num AS Campaign,
        RRH.ID AS Request,
        ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS [Dataset Folder Path],
        ISNULL(DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS [Archive Folder Path]
@@ -33,6 +35,8 @@ FROM dbo.T_DatasetStateName AS DSN
        ON DS.DS_rating = DSR.DRN_state_ID
      INNER JOIN dbo.T_Experiments AS E
        ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN dbo.T_Campaign AS C
+       ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN dbo.t_storage_path AS SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
      LEFT OUTER JOIN dbo.T_Requested_Run AS RRH

@@ -21,6 +21,8 @@ CREATE Procedure CreatePSMJobRequest
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
+**			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
+**						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **    
 *****************************************************/
 (
@@ -198,10 +200,11 @@ As
 			RAISERROR (@msg, 11, 10)
 		End
 		
+		Declare @QExactiveDSCount int = 0
+		Declare @ProfileModeMSnDatasets int = 0
+		
 		-- Count the number of QExactive datasets
 		--
-		Declare @QExactiveDSCount int = 0
-		
 		SELECT @QExactiveDSCount = COUNT(*)
 		FROM #TD
 		     INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
@@ -209,10 +212,18 @@ As
 		     INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
 		WHERE (InstGroup.IN_Group = 'QExactive')
 
-		If @QExactiveDSCount > 0
+		-- Count the number of datasets with profile mode MS/MS
+		--
+		SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
+		FROM #TD
+		     INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+		     INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
+		WHERE DI.ProfileScanCount_MSn > 0
+	
+		If @QExactiveDSCount > 0 Or @ProfileModeMSnDatasets > 0
 		Begin
-			-- Auto-update the settings file since we have one or more Q Exactive datasets
-			Set @SettingsFile = dbo.AutoUpdateQExactiveSettingsFile(@SettingsFile)
+			-- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
+			Set @SettingsFile = dbo.AutoUpdateSettingsFileToCentroid(@SettingsFile, @toolName)
 		End
 			
 		
@@ -221,7 +232,7 @@ As
 		SELECT @ParamFile = Parameter_File_Name
 		FROM T_Default_PSM_Job_Parameters
 		WHERE Job_Type_Name = @jobTypeName AND
-		      Tool_Name = @toolName AND
+		 Tool_Name = @toolName AND
 		      DynMetOx = @DynMetOxEnabled AND
 		      StatCysAlk = @StatCysAlkEnabled AND
 		      DynSTYPhos = @DynSTYPhosEnabled

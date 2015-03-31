@@ -12,10 +12,10 @@ SELECT ID,
        File_Name AS [File Name],
        Description,
        Active,
-       dbo.[XmlToHTML](contents) AS Contents,
-       HMS_AutoSupersede
+	   MSGFPlus_AutoCentroid,
+       HMS_AutoSupersede,
+       dbo.[XmlToHTML](contents) AS Contents
 FROM dbo.T_Settings_Files
-
 
 
 GO

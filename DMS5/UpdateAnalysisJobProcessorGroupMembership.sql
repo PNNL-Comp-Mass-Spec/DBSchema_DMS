@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupMembership]
+CREATE Procedure dbo.UpdateAnalysisJobProcessorGroupMembership
 /****************************************************
 **
 **	Desc:
@@ -21,6 +21,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobProcessorGroupMembership]
 **			02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			03/30/2015 mem - Tweak warning message grammar
 **    
 *****************************************************/
 (
@@ -143,7 +144,7 @@ AS
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following processors from list were not in database:"' + @list + '"'
+		set @message = 'The following processors were not in the database: "' + @list + '"'
 		return 51007
 	end
 	

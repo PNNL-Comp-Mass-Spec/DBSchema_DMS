@@ -21,7 +21,8 @@ CREATE Procedure dbo.UpdateAnalysisJobProcessorGroupAssociations
 **						   - 'add' mode now removes association with any other groups
 **			03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			09/02/2011 mem - Now calling PostUsageLogEntry
-**			01/24/2014 mem - Added default values to three of the parameters.
+**			01/24/2014 mem - Added default values to three of the parameters
+**			03/30/2015 mem - Tweak warning message grammar
 **    
 *****************************************************/
 (
@@ -145,7 +146,7 @@ AS
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following jobs from list were not in database:"' + @list + '"'
+		set @message = 'The following jobs were not in the database: "' + @list + '"'
 		return 51007
 	end
 	
@@ -155,7 +156,7 @@ AS
 	SELECT @jobCount = COUNT(*) 
 	FROM #TAJ
 	
-	set @message = 'Number of affected jobs:' + cast(@jobCount as varchar(12))
+	set @message = 'Number of affected jobs: ' + cast(@jobCount as varchar(12))
 
 	---------------------------------------------------
 	-- get rid of existing associations if we are

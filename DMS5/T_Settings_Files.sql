@@ -130,36 +130,59 @@ For Update
 **	Auth:	mem
 **	Date:	10/07/2008 mem
 **			11/05/2012 mem - Now validating HMS_AutoSupersede
+**			03/30/2015 mem - Now validating MSGFPlus_AutoCentroid
 **    
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
-	If Update(HMS_AutoSupersede)
+	If Update(HMS_AutoSupersede) OR Update(MSGFPlus_AutoCentroid)
 	Begin
-		-- Make sure a valid name was entered into the HMS_AutoSupersede field
+		-- Make sure a valid name was entered into the HMS_AutoSupersede and MSGFPlus_AutoCentroid fields
 		Declare @UpdatedSettingsFileName varchar(255) = ''
 		Declare @NewAutoSupersedeName varchar(255) = ''
-		
+		Declare @NewAutoCentroidName varchar(255) = ''
+		Declare @message varchar(512)
+
 		SELECT TOP 1 @UpdatedSettingsFileName = I.File_Name,
 		             @NewAutoSupersedeName = I.HMS_AutoSupersede
 		FROM inserted I
 		     LEFT OUTER JOIN T_Settings_Files SF
 		       ON I.HMS_AutoSupersede = SF.File_Name AND
 		          I.Analysis_Tool = SF.Analysis_Tool
-		WHERE I.HMS_AutoSupersede IS NOT NULL AND
-		      SF.File_Name IS NULL
+		WHERE NOT I.HMS_AutoSupersede IS NULL
+		      AND SF.File_Name IS NULL
 		
 		If ISNULL(@UpdatedSettingsFileName, '') <> ''
 		Begin
-			Declare @message varchar(512)
 			Set @message = 'HMS_AutoSupersede value of ' + ISNULL(@NewAutoSupersedeName, '??') + ' is not valid for ' + ISNULL(@UpdatedSettingsFileName, '???') + ' in T_Settings_Files (see trigger trig_u_T_Settings_Files)'
 			
 			RAISERROR(@message,16,1)
 	        ROLLBACK TRANSACTION
 		    RETURN
 		End
+
+		Set @UpdatedSettingsFileName = ''
+
+		SELECT TOP 1 @UpdatedSettingsFileName = I.File_Name,
+		             @NewAutoCentroidName = I.MSGFPlus_AutoCentroid
+		FROM inserted I
+		     LEFT OUTER JOIN T_Settings_Files SF
+		       ON I.MSGFPlus_AutoCentroid = SF.File_Name AND
+		          I.Analysis_Tool = SF.Analysis_Tool
+		WHERE NOT I.MSGFPlus_AutoCentroid IS NULL
+		      AND SF.File_Name IS NULL
+
+		If ISNULL(@UpdatedSettingsFileName, '') <> ''
+		Begin
+			Set @message = 'MSGFPlus_AutoCentroid value of ' + ISNULL(@NewAutoCentroidName, '??') + ' is not valid for ' + ISNULL(@UpdatedSettingsFileName, '???') + ' in T_Settings_Files (see trigger trig_u_T_Settings_Files)'
+			
+			RAISERROR(@message,16,1)
+	        ROLLBACK TRANSACTION
+		    RETURN
+		End
+
 	End
 
 	If Update(Analysis_Tool) Or 
@@ -176,7 +199,7 @@ AS
 			   Description, Contents,
 			   GetDate(), SYSTEM_USER
 		FROM inserted
-	End
-		
+	End		
+
 
 GO

@@ -63,8 +63,10 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/26/2013 mem - Added parameter @callingUser
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **			05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
-**			06/10/2013 mem - Now filtering on Analysis_Tool when checking whether an HMS_AutoSupersede file existing for the given settings file
+**			06/10/2013 mem - Now filtering on Analysis_Tool when checking whether an HMS_AutoSupersede file exists for the given settings file
 **			03/28/2014 mem - Auto-changing @protCollOptionsList to "seq_direction=decoy,filetype=fasta" if the tool is MODa and the options start with "seq_direction=forward"
+**			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
+**						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **
 *****************************************************/
 (
@@ -324,27 +326,43 @@ As
 		End
 	End
 
+	Declare @QExactiveDSCount int = 0
+	Declare @ProfileModeMSnDatasets int = 0
+	
 	-- Count the number of QExactive datasets
 	--
-	Declare @QExactiveDSCount int = 0
-	
 	SELECT @QExactiveDSCount = COUNT(*)
 	FROM #TD
 		    INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
 		    INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 		    INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
-	WHERE (InstGroup.IN_Group = 'QExactive')
+	WHERE InstGroup.IN_Group = 'QExactive'
 
-	If @QExactiveDSCount > 0
+	-- Count the number of datasets with profile mode MS/MS
+	--
+	SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
+	FROM #TD
+		    INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+		    INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
+	WHERE DI.ProfileScanCount_MSn > 0
+	
+	print @ProfileModeMSnDatasets
+	
+	If @QExactiveDSCount > 0 Or @ProfileModeMSnDatasets > 0
 	Begin
-		-- Auto-update the settings file since we have one or more Q Exactive datasets
-		Set @AutoSupersedeName = dbo.AutoUpdateQExactiveSettingsFile(@settingsFileName)
+		-- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
+		Set @AutoSupersedeName = dbo.AutoUpdateSettingsFileToCentroid(@settingsFileName, @toolName)
 		
 		If IsNull(@AutoSupersedeName, '') <> @settingsFileName
 		Begin
 			Set @settingsFileName = @AutoSupersedeName
+			Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName
 			
-			Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more QExactive datasets are included in this job request'			
+			If @ProfileModeMSnDatasets > 0
+				Set @MsgToAppend = @MsgToAppend + ' because one or more datasets in this job request has profile-mode MSn spectra'
+			Else
+				Set @MsgToAppend = @MsgToAppend + ' because one or more QExactive datasets are included in this job request'			
+				
 			Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
 		End
 	End

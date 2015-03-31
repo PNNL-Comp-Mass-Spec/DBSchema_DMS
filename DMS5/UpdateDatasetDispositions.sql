@@ -26,6 +26,7 @@ CREATE Procedure UpdateDatasetDispositions
 **			02/20/2013 mem - Expanded @message to varchar(1024)
 **			02/21/2013 mem - More informative error messages
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
+**			03/30/2015 mem - Tweak warning message grammar
 **
 *****************************************************/
 (
@@ -155,7 +156,7 @@ As
 		if @myRowCount = 1
 			set @message = 'Dataset "' + @list + '" was not found in the database'
 		else
-			set @message = 'The following datasets from list were not in database: "' + @list + '"'
+			set @message = 'The following datasets were not in the database: "' + @list + '"'
 
 		return 51007
 	end
