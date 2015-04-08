@@ -52,6 +52,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			03/26/2013 mem - Now calling AlterEventLogEntryUser after updating T_Analysis_Job_Request
 **			03/27/2013 mem - Now auto-updating @ownerPRN to @callingUser if @callingUser maps to a valid user
 **			06/06/2013 mem - Now setting job state to 19="Special Proc. Waiting" if analysis tool has Use_SpecialProcWaiting enabled
+**			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -304,27 +305,34 @@ As
 	declare @analysisToolID int
 	declare @organismID int
 	--
-	declare @result int
-	set @result = 0
+	declare @result int = 0
+	declare @Warning varchar(255) = ''
 	--
 	exec @result = ValidateAnalysisJobParameters
-							@toolName,
-							@parmFileName output,
-							@settingsFileName output,
-							@organismDBName output,
-							@organismName,
-							@protCollNameList output,
-							@protCollOptionsList output,
-							@ownerPRN output,
-							@mode, 
-							@userID output,
-							@analysisToolID output, 
-							@organismID output,
-							@msg output
+							@toolName = @toolName,
+							@parmFileName = @parmFileName output,
+							@settingsFileName = @settingsFileName output,
+							@organismDBName = @organismDBName output,
+							@organismName = @organismName,
+							@protCollNameList = @protCollNameList output,
+							@protCollOptionsList = @protCollOptionsList output,
+							@ownerPRN = @ownerPRN output,
+							@mode = @mode, 
+							@userID = @userID output,
+							@analysisToolID = @analysisToolID output, 
+							@organismID = @organismID output,
+							@message = @msg output,
+							@AutoRemoveNotReleasedDatasets = 0,
+							@AutoUpdateSettingsFileToCentroided = 1,
+							@Warning = @Warning output
 	--
 	if @result <> 0
 		RAISERROR ('ValidateAnalysisJobParameters:%s', 11, 8, @msg)
 	
+	If IsNull(@Warning, '') <> ''
+	Begin
+		Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ')
+	End
 	
 	---------------------------------------------------
 	-- New jobs typically have state 1

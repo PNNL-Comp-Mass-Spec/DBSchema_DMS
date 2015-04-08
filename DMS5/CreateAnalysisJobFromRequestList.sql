@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.CreateAnalysisJobFromRequestList
 **			08/01/2012 mem - Now sending @specialProcessing to AddAnalysisJobGroup
 **						   - Updated @datasetList to be varchar(max)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**			04/08/2015 mem - Now parsing the job request list using udfParseDelimitedIntegerList
 **
 *****************************************************/
 (
@@ -61,17 +62,17 @@ As
 		requestID int,
 		toolName varchar(64),
 		parmFileName varchar(255),
-		settingsFileName varchar(64),
+		settingsFileName varchar(255),
 		organismDBName varchar(128),
 		organismName varchar(128),
 		datasetList varchar(max),
-		comment varchar(255),
+		comment varchar(512),
 		specialProcessing varchar(512),
 		ownerPRN varchar(32),
-		protCollNameList varchar(512),
+		protCollNameList varchar(2000),
 		protCollOptionsList varchar(256),
 		stateName varchar(24)
-	)
+	)	
 	--	
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -110,7 +111,7 @@ As
 	  State
 	FROM   
 	  V_Analysis_Job_Request_Entry
-	WHERE AJR_requestID IN (SELECT Item FROM dbo.MakeTableFromList(@jobRequestList))
+	WHERE AJR_requestID IN (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@jobRequestList, ','))
 	--	
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

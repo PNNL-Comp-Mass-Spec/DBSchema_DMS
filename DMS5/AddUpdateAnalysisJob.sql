@@ -57,6 +57,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			01/04/2013 mem - Now ignoring @organismName, @protCollNameList, @protCollOptionsList, and @organismDBName for analysis tools that do not use protein collections (AJT_orgDbReqd = 0)
 **			04/02/2013 mem - Now updating @msg if it is blank yet @result is non-zero
 **			03/13/2014 mem - Now passing @Job to ValidateAnalysisJobParameters
+**			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **    
 *****************************************************/
 (
@@ -76,7 +77,7 @@ CREATE Procedure AddUpdateAnalysisJob
     @propagationMode varchar(24),
 	@stateName varchar(32),
     @jobNum varchar(32) = '0' output,
-	@mode varchar(12) = 'add', -- or 'update' or 'reset'
+	@mode varchar(12) = 'add', -- or 'update' or 'reset' or 'preview'
 	@message varchar(512) output,
 	@callingUser varchar(128) = '',
 	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
@@ -271,25 +272,28 @@ As
 	declare @analysisToolID int
 	declare @organismID int
 	--
-	declare @result int
-	set @result = 0
+	declare @result int = 0
+	declare @Warning varchar(255) = ''
 	set @msg = ''
 	--
 	exec @result = ValidateAnalysisJobParameters
-							@toolName,
-							@parmFileName output,
-							@settingsFileName output,
-							@organismDBName output,
-							@organismName,
-							@protCollNameList output,
-							@protCollOptionsList output,
-							@ownerPRN output,
-							@mode, 
-							@userID output,
-							@analysisToolID output, 
-							@organismID output,
-							@msg output,
-							@Job = @jobID
+							@toolName = @toolName,
+							@parmFileName = @parmFileName output,
+							@settingsFileName = @settingsFileName output,
+							@organismDBName = @organismDBName output,
+							@organismName = @organismName,
+							@protCollNameList = @protCollNameList output,
+							@protCollOptionsList = @protCollOptionsList output,
+							@ownerPRN = @ownerPRN output,
+							@mode = @mode, 
+							@userID = @userID output,
+							@analysisToolID = @analysisToolID output, 
+							@organismID = @organismID output,
+							@message = @msg output,
+							@AutoRemoveNotReleasedDatasets = 0,
+							@Job = @jobID,
+							@AutoUpdateSettingsFileToCentroided = 1,
+							@Warning = @Warning output
 	--
 	if @result <> 0
 	begin
@@ -298,6 +302,15 @@ As
 		RAISERROR (@msg, 11, 18)
 	end
 
+	If IsNull(@Warning, '') <> ''
+	Begin
+		Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ')
+		
+		If @mode Like 'preview%'
+			Set @message = @warning
+		
+	End
+	
 	---------------------------------------------------
 	-- Lookup the Dataset ID
 	---------------------------------------------------

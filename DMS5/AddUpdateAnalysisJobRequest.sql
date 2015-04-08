@@ -67,6 +67,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/28/2014 mem - Auto-changing @protCollOptionsList to "seq_direction=decoy,filetype=fasta" if the tool is MODa and the options start with "seq_direction=forward"
 **			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
+**			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided=0 to ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -252,20 +253,21 @@ As
 	set @result = 0
 	--
 	exec @result = ValidateAnalysisJobParameters
-							@toolName,
-							@parmFileName output,
-							@settingsFileName output,
-							@organismDBName output,
-							@organismName,
-							@protCollNameList output,
-							@protCollOptionsList output,
-							@requestorPRN output,
-							'', -- blank validation mode to suppress dataset state checking
-							@userID output,
-							@analysisToolID output, 
-							@organismID output,
-							@msg output,
-							@AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets
+							@toolName = @toolName,
+							@parmFileName = @parmFileName output,
+							@settingsFileName = @settingsFileName output,
+							@organismDBName = @organismDBName output,
+							@organismName = @organismName,
+							@protCollNameList = @protCollNameList output,
+							@protCollOptionsList = @protCollOptionsList output,
+							@ownerPRN = @requestorPRN output,
+							@mode = '', -- blank validation mode to suppress dataset state checking
+							@userID = @userID output,
+							@analysisToolID = @analysisToolID output, 
+							@organismID = @organismID output,
+							@message = @msg output,
+							@AutoRemoveNotReleasedDatasets = @AutoRemoveNotReleasedDatasets,
+							@AutoUpdateSettingsFileToCentroided = 0
 	--
 	if @result <> 0
 		RAISERROR (@msg, 11, 8)

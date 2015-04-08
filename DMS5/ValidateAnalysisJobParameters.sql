@@ -9,8 +9,23 @@ CREATE Procedure ValidateAnalysisJobParameters
 **	Desc: Validates analysis job parameters and returns internal
 **        values converted from external values (input arguments)
 **
-**			Note: This procedure depends upon the caller having created
-**			temporary table #TD and populating it with the dataset names
+**		Note: This procedure depends upon the caller having created
+**		temporary table #TD and populating it with the dataset names
+**
+**		This stored procedure will call ValidateAnalysisJobRequestDatasets to populate the remaining columns
+**
+**			CREATE TABLE #TD (
+**				Dataset_Num varchar(128),
+**				Dataset_ID int NULL,
+**				IN_class varchar(64) NULL, 
+**				DS_state_ID int NULL, 
+**				AS_state_ID int NULL,
+**				Dataset_Type varchar(64) NULL,
+**				DS_rating smallint NULL,
+**				Job int NULL,
+**				Dataset_Unreviewed tinyint NULL
+**			)
+**
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -49,6 +64,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 **						   - Added optional parameter @Job
 **			07/18/2014 mem - Now validating that files over 400 MB in size are using MSGFPlus_SplitFasta
 **			03/02/2015 mem - Now validating that files over 500 MB in size are using MSGFPlus_SplitFasta
+**			04/08/2015 mem - Now validating that profile mode high res MSn datasets are centroided if using MSGFPlus
+**						   - Added optional parameters @AutoUpdateSettingsFileToCentroided and @Warning
 **
 *****************************************************/
 (
@@ -66,7 +83,9 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@organismID int output,
 	@message varchar(512) output,
 	@AutoRemoveNotReleasedDatasets tinyint = 0,
-	@Job int = 0
+	@Job int = 0,
+	@AutoUpdateSettingsFileToCentroided tinyint = 1,
+	@Warning varchar(255) = '' output
 )
 As
 	set nocount on
@@ -77,6 +96,7 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
+	set @Warning = ''
 
 	declare @list varchar(1024)
 	declare @ParamFileTool varchar(128) = '??NoMatch??'
@@ -298,45 +318,92 @@ As
 	--  so we will simply check for an entry in that table
 	---------------------------------------------------
 
-	if @settingsFileName <> 'na'
-	begin
-		if Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active <> 0))
+	If @settingsFileName <> 'na'
+	Begin
+		If Not Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active <> 0))
 		Begin
-			-- The specified settings file is valid
-			-- Make sure the settings file tool corresponds to @toolName
+			-- Settings file either does not exist or is inactive
+			--
+			If Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active = 0))
+				set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
+			Else
+				set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+				
+			return 53108
+		end
+		
+		-- The specified settings file is valid
+		-- Make sure the settings file tool corresponds to @toolName
 
-			If Not Exists (
-				SELECT *
-				FROM V_Settings_File_Picklist SFP
-				WHERE (SFP.File_Name = @settingsFileName) AND
-				      (SFP.Analysis_Tool = @toolName)
-				)
+		If Not Exists (
+			SELECT *
+			FROM V_Settings_File_Picklist SFP
+			WHERE (SFP.File_Name = @settingsFileName) AND
+				    (SFP.Analysis_Tool = @toolName)
+			)
+		Begin
+
+			SELECT TOP 1 @SettingsFileTool = SFP.Analysis_Tool
+			FROM V_Settings_File_Picklist SFP
+				    INNER JOIN T_Analysis_Tool ToolList
+				    ON SFP.Analysis_Tool = ToolList.AJT_toolName
+			WHERE (SFP.File_Name = @settingsFileName)
+			ORDER BY ToolList.AJT_toolID
+
+			set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
+			return 53112
+			
+		End
+		
+		If IsNull(@AutoUpdateSettingsFileToCentroided, 1) <> 0
+		Begin
+			---------------------------------------------------
+			-- If the dataset has profile mode high res MS/MS spectra and the search tool is MSGFPlus, then we must centroid the spectra
+			---------------------------------------------------
+			
+			Declare @HighResMSn tinyint = 0
+			Declare @ProfileModeMSn tinyint = 0
+			
+			If Exists (SELECT * FROM #TD WHERE Dataset_Type LIKE 'HMS%HMSn%')
 			Begin
-
-				SELECT TOP 1 @SettingsFileTool = SFP.Analysis_Tool
-				FROM V_Settings_File_Picklist SFP
-				     INNER JOIN T_Analysis_Tool ToolList
-				       ON SFP.Analysis_Tool = ToolList.AJT_toolName
-				WHERE (SFP.File_Name = @settingsFileName)
-				ORDER BY ToolList.AJT_toolID
-
-				set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
-				return 53112
+				Set @HighResMSn = 1
 			End
 			
-			---------------------------------------------------
-			-- If the dataset has high res MS/MS spectra and the search tool is MSGFPlus, then we must centroid the spectra
-			-- The following could be used to check for this if DMS knew whether or not a dataset has centroided spectra
-			-- As of 11/28/2012, DMS only knows if the spectra are high res or not; it doesn't know if they're centroided
-			---------------------------------------------------
-			
-			/*
-			If Exists (SELECT *	FROM #TD WHERE Dataset_Type LIKE 'HMS%HMSn%') AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery')
+			If Exists (SELECT * 
+					FROM #TD INNER JOIN T_Dataset_Info DI ON DI.Dataset_ID = #TD.Dataset_ID 
+					WHERE DI.ProfileScanCount_MSn > 0)
 			Begin
-				-- The selected settings file must use MSConvert with Centroiding enabled, or DeconMSn in conjunction with MSConvert
+				Set @ProfileModeMSn = 1
+			End
+				        
+			If (@HighResMSn > 0 OR @ProfileModeMSn > 0) AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery', 'MSGFPlus_SplitFasta')
+			Begin
+				-- The selected settings file must use MSConvert with Centroiding enabled
+				-- DeconMSn potentially works, but it can cause more harm than good
+				
+				Declare @AutoSupersedeName varchar(255) = ''
+						
+				SELECT @AutoSupersedeName = SF.MSGFPlus_AutoCentroid
+				FROM T_Settings_Files SF
+					INNER JOIN T_Analysis_Tool AnTool
+					ON SF.Analysis_Tool = AnTool.AJT_toolName
+				WHERE SF.File_Name = @settingsFileName
+
+				If IsNull(@AutoSupersedeName, '') <> ''
+				Begin
+					Set @settingsFileName = @AutoSupersedeName
+					
+					Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName
+					
+					If @ProfileModeMSn > 0
+						Set @Warning = @Warning + ' because this job has a profile-mode MSn dataset'
+					Else
+						Set @Warning = @Warning + ' because this job has a QExactive dataset'
+					
+				End
 				
 				Declare @DtaGenerator varchar(512)
-				Declare @CentroidSetting varchar(512)
+				Declare @CentroidSetting varchar(512) = ''
 				
 				CREATE TABLE #Tmp_SettingsFile_Values (
 					KeyName varchar(512) NULL,
@@ -345,7 +412,7 @@ As
 				
 				INSERT INTO #Tmp_SettingsFile_Values (KeyName, Value)
 				SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
-				       xmlNode.value('@value', 'nvarchar(512)') AS Value
+					xmlNode.value('@value', 'nvarchar(512)') AS Value
 				FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
 				WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
 				
@@ -385,21 +452,9 @@ As
 						Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not appear to have centroiding enabled'
 				End
 			End
-			*/
-			
 		End
-		else
-		begin
-			-- Settings file either does not exist or is inactive
-			--
-			If Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active = 0))
-				set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
-			Else
-				set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
-				
-			return 53108
-		end
-	end
+			
+	End
 
 	---------------------------------------------------
 	-- Check protein parameters
