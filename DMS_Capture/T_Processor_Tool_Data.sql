@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool] ******/
-/****** RowCount: 276 ******/
+/****** RowCount: 279 ******/
 /****** Columns: Processor_Name, Tool_Name, Priority, Enabled, Comment, Last_Affected ******/
 INSERT INTO [T_Processor_Tool] VALUES ('Mash-01_CTM','DatasetInfo',4,1,'Runs MSFileInfoScanner','3/25/2015 3:23:22 PM')
 INSERT INTO [T_Processor_Tool] VALUES ('Mash-01_CTM','SourceFileRename',3,0,'Decommissioned','2/21/2014 9:46:31 AM')
@@ -48,9 +48,12 @@ INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM','ArchiveUpdate',4,1,'','3/1
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM','DatasetArchive',3,1,'','3/10/2015 9:59:12 AM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM','DatasetCapture',2,1,'Will only capture 9T_FTICR_Imaging datasets; see T_Processor_Instrument','3/19/2015 8:50:49 PM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM','SourceFileRename',4,1,'','2/21/2014 10:45:19 AM')
+INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM_2','DatasetCapture',2,1,'','4/8/2015 7:09:28 PM')
+INSERT INTO [T_Processor_Tool] VALUES ('Proto-4_CTM_2','SourceFileRename',4,1,'','4/8/2015 7:09:28 PM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-5_CTM','ArchiveUpdate',4,1,'','3/10/2015 9:59:12 AM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-5_CTM','DatasetArchive',3,1,'','3/10/2015 9:59:12 AM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-5_CTM','SourceFileRename',4,1,'','2/21/2014 10:45:19 AM')
+INSERT INTO [T_Processor_Tool] VALUES ('Proto-5_CTM_2','DatasetCapture',3,1,'','4/8/2015 7:10:11 PM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-5_CTM_2','SourceFileRename',4,1,'','2/21/2014 10:45:19 AM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-6_CTM','ArchiveUpdate',4,1,'','3/10/2015 9:59:12 AM')
 INSERT INTO [T_Processor_Tool] VALUES ('Proto-6_CTM','DatasetArchive',3,1,'','3/10/2015 9:59:12 AM')
