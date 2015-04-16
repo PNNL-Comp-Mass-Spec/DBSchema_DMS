@@ -34,6 +34,7 @@ SELECT C.Campaign_Num AS Campaign,
        CT.Dataset_Most_Recent AS [Most Recent Dataset],
        CT.Job_Count AS [Analysis Jobs],
        CT.Job_Most_Recent AS [Most Recent Analysis Job],
+	   CT.Data_Package_Count AS [Data Packages],
        dbo.GetMyEMSLUrlCampaign(C.Campaign_Num) [MyEMSL URL]
 FROM T_Campaign AS C
      LEFT OUTER JOIN T_Research_Team AS RT
@@ -42,6 +43,7 @@ FROM T_Campaign AS C
        ON CT.C_ID = C.Campaign_ID
      INNER JOIN T_Data_Release_Restrictions
        ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
+
 
 
 GO

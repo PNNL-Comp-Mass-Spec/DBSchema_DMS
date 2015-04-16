@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateCampaignTracking
 **			11/15/2007 mem - Switched to Truncate Table for improved performance (Ticket:576)
 **			01/18/2010 grk - added update for run requests and sample prep requests (http://prismtrac.pnl.gov/trac/ticket/753)
 **			01/25/2010 grk - added 'most recent activity' (http://prismtrac.pnl.gov/trac/ticket/753)
+**			04/15/2015 mem - Added Data_Package_Count
 **    
 *****************************************************/
 AS
@@ -26,9 +27,8 @@ AS
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -184,7 +184,20 @@ AS
 			T_Campaign.Campaign_ID
 	) AS S ON S.ID = T_Campaign_Tracking.C_ID
 
+	-- Update Data Package counts
+	--
+	UPDATE T_Campaign_Tracking
+	SET Data_Package_Count = S.cnt
+	FROM T_Campaign_Tracking
+	     INNER JOIN ( SELECT E.EX_campaign_ID ID,
+	                         Count(DISTINCT Data_Package_ID) AS cnt
+	                  FROM S_V_Data_Package_Experiments_Export DPE
+	                       INNER JOIN T_Experiments E
+	                         ON E.Exp_ID = DPE.Experiment_ID
+	                  GROUP BY E.EX_campaign_ID ) AS S
+	       ON S.ID = T_Campaign_Tracking.C_ID
 
+	
 	RETURN @myError
 
 

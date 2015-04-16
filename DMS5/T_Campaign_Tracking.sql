@@ -11,6 +11,7 @@ CREATE TABLE [dbo].[T_Campaign_Tracking](
 	[Job_Count] [int] NOT NULL,
 	[Run_Request_Count] [int] NOT NULL,
 	[Sample_Prep_Request_Count] [int] NOT NULL,
+	[Data_Package_Count] [int] NULL,
 	[Cell_Culture_Most_Recent] [datetime] NULL,
 	[Experiment_Most_Recent] [datetime] NULL,
 	[Dataset_Most_Recent] [datetime] NULL,
@@ -25,15 +26,17 @@ CREATE TABLE [dbo].[T_Campaign_Tracking](
 ) ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Cell_Culture_Count]  DEFAULT (0) FOR [Cell_Culture_Count]
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Cell_Culture_Count]  DEFAULT ((0)) FOR [Cell_Culture_Count]
 GO
-ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Experiment_Count]  DEFAULT (0) FOR [Experiment_Count]
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Experiment_Count]  DEFAULT ((0)) FOR [Experiment_Count]
 GO
-ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Dataset_Count]  DEFAULT (0) FOR [Dataset_Count]
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Dataset_Count]  DEFAULT ((0)) FOR [Dataset_Count]
 GO
-ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Job_Count]  DEFAULT (0) FOR [Job_Count]
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Job_Count]  DEFAULT ((0)) FOR [Job_Count]
 GO
 ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Run_Request_Count]  DEFAULT ((0)) FOR [Run_Request_Count]
 GO
 ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Sample_Prep_Request_Count]  DEFAULT ((0)) FOR [Sample_Prep_Request_Count]
+GO
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Data_Package_Count]  DEFAULT ((0)) FOR [Data_Package_Count]
 GO
