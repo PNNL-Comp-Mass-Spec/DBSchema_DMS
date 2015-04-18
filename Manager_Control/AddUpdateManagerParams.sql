@@ -14,6 +14,7 @@ CREATE Procedure dbo.AddUpdateManagerParams
 **	Auth:	jds
 **	Date:	08/20/2007
 **			04/16/2009 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**			04/17/2015 mem - Now ignoring parameters that are blank
 **
 *****************************************************/
 (
@@ -144,68 +145,71 @@ As
 			return 51001
 		end
 
+		If IsNull(@vFld, '') <> ''
+		Begin -- <b>
 
-		-- does entry exist in value table?
-		--
-		Set @EntryID = -1
-		SELECT @tVal = Value, @EntryID = Entry_ID
-		FROM T_ParamValue
-		WHERE (TypeID = @itemID) AND (MgrID = @mgrID)		
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
-			RAISERROR (@msg, 10, 1)
-			return 51001
-		end
-
-		-- if entry exists in value table, update it
-		-- otherwise insert it
-		--
-		if @myRowCount > 0 
-		begin
-			if IsNull(@tVal, '') <> @vFld
-			begin
-				UPDATE T_ParamValue
-				SET Value = @vFld
-				WHERE (TypeID = @itemID) AND (MgrID = @mgrID)
-			end
-		end
-		else
-		begin
-			INSERT INTO T_ParamValue (TypeID, MgrID, Value)
-			VALUES (@itemID, @mgrID, @vFld)
+			-- does entry exist in value table?
 			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount, @NewEntryID = @@Identity
+			Set @EntryID = -1
+			SELECT @tVal = Value, @EntryID = Entry_ID
+			FROM T_ParamValue
+			WHERE (TypeID = @itemID) AND (MgrID = @mgrID)		
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
+				RAISERROR (@msg, 10, 1)
+				return 51001
+			end
 
-			If @myRowCount > 0
-				Set @EntryID = @NewEntryID		
-		end
+			-- if entry exists in value table, update it
+			-- otherwise insert it
+			--
+			if @myRowCount > 0 
+			begin
+				if IsNull(@tVal, '') <> @vFld
+				begin
+					UPDATE T_ParamValue
+					SET Value = @vFld
+					WHERE (TypeID = @itemID) AND (MgrID = @mgrID)
+				end
+			end
+			else
+			begin
+				INSERT INTO T_ParamValue (TypeID, MgrID, Value)
+				VALUES (@itemID, @mgrID, @vFld)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount, @NewEntryID = @@Identity
 
-		If Len(@callingUser) > 0 And IsNull(@EntryID, -1) >= 0
-		Begin
-			-- @callingUser is defined
-			-- Items need to be updated in T_ParamValue and possibly in T_Event_Log
-			
-			-- Add @EntryID to #TmpIDUpdateList
-			INSERT INTO #TmpIDUpdateList (TargetID)
-			VALUES (@EntryID)
-			
-			If @inFld = 'mgractive' or @itemID = 17
-			Begin
-				-- MgrActive was changed to True or False
+				If @myRowCount > 0
+					Set @EntryID = @NewEntryID		
+			end
+
+			If Len(@callingUser) > 0 And IsNull(@EntryID, -1) >= 0
+			Begin -- <c>
+				-- @callingUser is defined
+				-- Items need to be updated in T_ParamValue and possibly in T_Event_Log
 				
-				Set @MgrActiveChanged = 1
+				-- Add @EntryID to #TmpIDUpdateList
+				INSERT INTO #TmpIDUpdateList (TargetID)
+				VALUES (@EntryID)
 				
-				If @vFld = 'True'
-					Set @MgrActiveTargetState = 1
-				else
-					Set @MgrActiveTargetState = 0
-			End
-		End
-
+				If @inFld = 'mgractive' or @itemID = 17
+				Begin
+					-- MgrActive was changed to True or False
+					
+					Set @MgrActiveChanged = 1
+					
+					If @vFld = 'True'
+						Set @MgrActiveTargetState = 1
+					else
+						Set @MgrActiveTargetState = 0
+				End
+			End -- </c>
+		
+		End -- </b>
 	End -- </a>
 
 	If Len(@callingUser) > 0
