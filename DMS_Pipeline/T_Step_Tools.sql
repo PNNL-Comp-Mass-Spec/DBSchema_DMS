@@ -11,6 +11,7 @@ CREATE TABLE [dbo].[T_Step_Tools](
 	[Shared_Result_Version] [smallint] NOT NULL,
 	[Filter_Version] [smallint] NOT NULL,
 	[CPU_Load] [smallint] NOT NULL,
+	[Uses_All_Cores] [tinyint] NOT NULL,
 	[Memory_Usage_MB] [int] NOT NULL,
 	[Parameter_Template] [xml] NULL,
 	[Available_For_General_Processing] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -29,6 +30,8 @@ GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Filter_Version]  DEFAULT ((0)) FOR [Filter_Version]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_CPU_Load]  DEFAULT ((1)) FOR [CPU_Load]
+GO
+ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Uses_All_Cores]  DEFAULT ((0)) FOR [Uses_All_Cores]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Memory_Usage_MB]  DEFAULT ((250)) FOR [Memory_Usage_MB]
 GO

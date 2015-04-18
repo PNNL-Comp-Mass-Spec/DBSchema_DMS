@@ -24,6 +24,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			               - Now looking up machine using T_Local_Processors
 **			10/30/2014 mem - Added support for completion code 17 (CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY)
 **			03/11/2015 mem - Now updating Completion_Message when completion code 16 or 17 is encountered more than once in a 24 hour period
+**			04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available 
 **    
 *****************************************************/
 (
@@ -63,13 +64,20 @@ As
 	Set @machine = ''
 	--
 	SELECT @machine = LP.Machine,
-	       @cpuLoad = IsNull(JS.CPU_Load, 1),
+	       @cpuLoad = CASE WHEN Tools.Uses_All_Cores > 0
+						   THEN IsNull(M.Total_CPUs, 1)
+						   ELSE IsNull(JS.CPU_Load, 1)
+					  END,
 	       @MemoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
 	       @state = JS.State,
 	       @processor = JS.Processor
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Local_Processors LP
 	       ON LP.Processor_Name = JS.Processor
+	     INNER JOIN T_Step_Tools Tools
+	       ON Tools.Name = JS.Step_Tool
+	     LEFT OUTER JOIN T_Machines M
+	       ON LP.Machine = M.Machine
 	WHERE JS.Job = @job AND
 	      JS.Step_Number = @step
  	--
