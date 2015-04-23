@@ -79,6 +79,8 @@ As
 	return 0
 
 GO
+GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [proteinseqs\ftms] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [svc-dms] AS [dbo]

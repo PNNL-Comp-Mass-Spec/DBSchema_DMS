@@ -473,6 +473,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [BUILTIN\Administrators] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [proteinseqs\ftms] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

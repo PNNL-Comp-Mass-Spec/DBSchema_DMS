@@ -66,6 +66,8 @@ AS
 
 
 GO
+GRANT EXECUTE ON [dbo].[RefreshCachedOrganismDBInfo] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RefreshCachedOrganismDBInfo] TO [proteinseqs\ftms] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[RefreshCachedOrganismDBInfo] TO [svc-dms] AS [dbo]

@@ -103,6 +103,8 @@ As
 GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [BUILTIN\Administrators] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [pnl\d3m480] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [proteinseqs\ftms] AS [dbo]
