@@ -298,6 +298,10 @@ ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DatasetN
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace]
 GO
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DS_folder_name_Not_Empty] CHECK  ((isnull([DS_folder_name],'')<>''))
+GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_DS_folder_name_Not_Empty]
+GO
 /****** Object:  Trigger [dbo].[trig_d_Dataset] ******/
 SET ANSI_NULLS ON
 GO
