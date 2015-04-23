@@ -19,3 +19,8 @@ CREATE TABLE [dbo].[T_Local_Processors](
 GO
 ALTER TABLE [dbo].[T_Local_Processors] ADD  CONSTRAINT [DF_T_Local_Processors_State]  DEFAULT ('E') FOR [State]
 GO
+ALTER TABLE [dbo].[T_Local_Processors]  WITH CHECK ADD  CONSTRAINT [FK_T_Local_Processors_T_Machines] FOREIGN KEY([Machine])
+REFERENCES [dbo].[T_Machines] ([Machine])
+GO
+ALTER TABLE [dbo].[T_Local_Processors] CHECK CONSTRAINT [FK_T_Local_Processors_T_Machines]
+GO
