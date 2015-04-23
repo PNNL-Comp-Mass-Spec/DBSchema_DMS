@@ -68,6 +68,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			01/10/2014 mem - Now only assigning Results_Transfer tasks to the storage server on which the dataset resides
 **						   - Changed @ThrottleByStartTime to 0
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
+**			04/21/2015 mem - Now using column Uses_All_Cores
 **
 *****************************************************/
 (
@@ -578,7 +579,7 @@ As
 		                         PTGD.Tool_Name,
 		                         PTGD.Priority AS Tool_Priority,
 		                         LP.GP_Groups AS Processor_GP,
-		                         ST.Available_For_General_Processing AS Tool_GP,
+		  ST.Available_For_General_Processing AS Tool_GP,
 		                         M.CPUs_Available,
 		                         ST.CPU_Load,
 		                         M.Memory_Available,
@@ -679,7 +680,7 @@ As
 			                       INNER JOIN T_Step_Tools ST
 			                         ON PTGD.Tool_Name = ST.Name
 			                  WHERE PTGD.Enabled > 0 AND
-			                        LP.Processor_Name = @processorName AND
+			    LP.Processor_Name = @processorName AND
 			    PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
@@ -770,7 +771,7 @@ As
 			                       INNER JOIN T_Step_Tools ST
 			                         ON PTGD.Tool_Name = ST.Name
 			                  WHERE PTGD.Enabled > 0 AND
-			           LP.Processor_Name = @processorName AND
+			   LP.Processor_Name = @processorName AND
 			                        PTGD.Tool_Name <> 'Results_Transfer'			-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
@@ -1020,18 +1021,25 @@ As
 		---------------------------------------------------
 		--
 		UPDATE T_Machines
-		SET CPUs_Available = Total_CPUs - T.CPUs_Busy
-		FROM T_Machines
+		SET CPUs_Available = Total_CPUs - CPUQ.CPUs_Busy
+		FROM T_Machines Target
 		     INNER JOIN ( SELECT LP.Machine,
-		                         SUM(JS.CPU_Load) AS CPUs_Busy
+		                         SUM(	CASE WHEN Tools.Uses_All_Cores > 0 
+											 THEN IsNull(M.Total_CPUs, JS.CPU_Load)
+											 ELSE JS.CPU_Load
+										END ) AS CPUs_Busy
 		                  FROM T_Job_Steps JS
 		                       INNER JOIN T_Local_Processors LP
 		                         ON JS.Processor = LP.Processor_Name
+		                       INNER JOIN T_Step_Tools Tools
+		                         ON Tools.Name = JS.Step_Tool
+		                       INNER JOIN T_Machines M
+		                         ON LP.Machine = M.Machine
 		                  WHERE LP.Machine = @machine AND
 		                        JS.State = 4
 		                  GROUP BY LP.Machine 
-		                 ) T
-		       ON T.Machine = T_Machines.Machine
+		                 ) CPUQ
+		       ON CPUQ.Machine = Target.Machine
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
