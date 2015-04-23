@@ -18,9 +18,9 @@ CREATE TABLE [dbo].[T_ParamValue](
 ) ON [PRIMARY]
 
 GO
-GRANT UPDATE ON [dbo].[T_ParamValue] ([Last_Affected]) TO [DMSWebUser] AS [dbo]
+GRANT SELECT ON [dbo].[T_ParamValue] TO [DMSWebUser] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_ParamValue] ([Entered_By]) TO [DMSWebUser] AS [dbo]
+GRANT UPDATE ON [dbo].[T_ParamValue] TO [DMSWebUser] AS [dbo]
 GO
 /****** Object:  Index [IX_T_ParamValue] ******/
 CREATE UNIQUE CLUSTERED INDEX [IX_T_ParamValue] ON [dbo].[T_ParamValue]

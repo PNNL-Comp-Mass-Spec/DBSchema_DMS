@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 949 ******/
+/****** RowCount: 950 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (302,'Proto-3_DIM',9,1,0)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (313,'Proto-3_DIM_Man',9,1,0)
@@ -950,4 +950,5 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1390,'Diorite-6',11,1,1)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1391,'Diorite-7',11,1,1)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1392,'Diorite-8',11,1,1)
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1393,'Default_AnalysisMgr_Params',11,0,0)
 SET IDENTITY_INSERT [T_Mgrs] OFF
