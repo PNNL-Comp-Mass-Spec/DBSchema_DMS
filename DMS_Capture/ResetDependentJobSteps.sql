@@ -16,6 +16,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			03/12/2012 mem - Now updating Tool_Version_ID when resetting job steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			11/18/2014 mem - Add a table alias for T_Job_Step_Dependencies
+**			04/24/2015 mem - Now updating State in T_Jobs
 **    
 *****************************************************/
 (
@@ -134,6 +135,13 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			
+			-- Update the job state from failed to running
+			UPDATE T_Jobs
+			SET State = 2
+			FROM T_Jobs J
+			     INNER JOIN #Tmp_JobStepsToReset JR
+			       ON J.Job = JR.Job
+			WHERE J.State = 5
 			
 			Commit Tran @JobResetTran
 		End	
