@@ -20,11 +20,13 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **			03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
 **			08/02/2013 mem - Tweaked message for "Not Released" datasets
 **			03/30/2015 mem - Tweak warning message grammar
+**			04/23/2015 mem - Added parameter @toolName
 **
 *****************************************************/
 (
 	@message varchar(512) output,
-	@AutoRemoveNotReleasedDatasets tinyint = 0			-- When 1, then automatically removes datasets from #TD if they have an invalid rating
+	@AutoRemoveNotReleasedDatasets tinyint = 0,			-- When 1, then automatically removes datasets from #TD if they have an invalid rating
+	@toolName varchar(64) = 'unknown'
 )
 As
 	set nocount on
@@ -204,6 +206,7 @@ As
 
 	---------------------------------------------------
 	-- Do not allow high res datasets to be mixed with low res datasets
+	-- (though this is OK if the tool is MSXML_Gen)
 	---------------------------------------------------
 	--
 	Declare @HMSCount int = 0
@@ -220,7 +223,7 @@ As
 	WHERE Dataset_Type LIKE 'MS%' OR
 	      Dataset_Type LIKE 'IMS-MS%'
 	
-	If @HMSCount > 0 And @MSCount > 0
+	If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen')
 	Begin		
 		Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests.  You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
 		return 51009

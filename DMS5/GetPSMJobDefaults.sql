@@ -19,6 +19,7 @@ CREATE Procedure GetPSMJobDefaults
 **			01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
 **			09/03/2013 mem - Added iTRAQ8
+**			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **    
 *****************************************************/
 (
@@ -140,7 +141,7 @@ As
 		-- Validate the datasets in #TD
 		---------------------------------------------------
 		
-		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1
+		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
 		
 		If @result <> 0
 			RAISERROR (@message, 11, 10)

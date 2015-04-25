@@ -66,6 +66,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			03/02/2015 mem - Now validating that files over 500 MB in size are using MSGFPlus_SplitFasta
 **			04/08/2015 mem - Now validating that profile mode high res MSn datasets are centroided if using MSGFPlus
 **						   - Added optional parameters @AutoUpdateSettingsFileToCentroided and @Warning
+**			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **
 *****************************************************/
 (
@@ -107,7 +108,7 @@ As
 	-- Validate the datasets in #TD
 	---------------------------------------------------
 	
-	exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets
+	exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets, @toolName=@toolName
 		
 	If @result <> 0
 	Begin

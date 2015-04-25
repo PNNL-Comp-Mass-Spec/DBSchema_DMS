@@ -23,6 +23,7 @@ CREATE Procedure CreatePSMJobRequest
 **			04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
+**			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **    
 *****************************************************/
 (
@@ -158,7 +159,7 @@ As
 		-- Validate the datasets in #TD
 		---------------------------------------------------
 		
-		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1
+		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
 		
 		If @result <> 0
 			RAISERROR (@message, 11, 10)
