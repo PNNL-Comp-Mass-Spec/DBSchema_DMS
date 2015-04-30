@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION [dbo].[MakeTableFromList]
+CREATE FUNCTION MakeTableFromList
 /****************************************************
 **
 **	Desc: 
@@ -16,17 +16,20 @@ create FUNCTION [dbo].[MakeTableFromList]
 **
 **		Auth: grk
 **		Date: 1/12/2006
+**      
+**		03/05/2008 jds - added the line to convert null list to empty string if value is null 
+**		09/16/2009 mem - Expanded @list to varchar(max) 
 **    
 *****************************************************/
 (
-@list varchar(8000)
+@list varchar(max)
 )
 RETURNS @theTable TABLE
    (
     Item varchar(128)
    )
 AS
-	BEGIN
+BEGIN
 		declare @delimiter char(1)
 		set @delimiter = ','
 
@@ -44,6 +47,9 @@ AS
 		declare @curPos int
 		set @curPos = 1
 		declare @field varchar(128)
+
+		--if @list is null set to empty string
+		Set @list = isnull(@list, '')
 
 		-- process lists into rows
 		-- and insert into DB table

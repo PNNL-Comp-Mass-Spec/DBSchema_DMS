@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 166 ******/
+/****** RowCount: 167 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -167,4 +167,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (18
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (181,'UimfDemultiplexerProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (182,'ProMexProgLoc','','Folder containing ProMex.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (183,'GlyQIQProgLoc','','Folder containing IQGlyQ_Console.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (184,'NOMSIProgLoc','','Folder containing NOMSI.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
