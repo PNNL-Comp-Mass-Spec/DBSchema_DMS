@@ -88,6 +88,7 @@ CREATE PROCEDURE UpdateJobState
 **			02/21/2013 mem - Now updating the state of failed jobs in DMS back to state 2 if they are now in-progress or finished
 **			03/13/2014 mem - Now updating @jobInDMS even if @DatasetID is 0
 **			09/16/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
+**			05/01/2015 mem - Now setting the state to 7 (No Intermediate Files Created) if all of the job's steps were skipped
 **    
 *****************************************************/
 (
@@ -138,6 +139,7 @@ As
 	---------------------------------------------------
 	-- Validate the inputs	
 	---------------------------------------------------
+	
 	Set @bypassDMS = IsNull(@bypassDMS, 0)
 	Set @message = ''
 	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
@@ -206,9 +208,10 @@ As
 		  J.Results_Folder_Name,
 		  J.Organism_DB_Name,
 		  CASE 
-			WHEN JS_Stats.Failed > 0 THEN 5						-- Failed
-			WHEN JS_Stats.FinishedOrSkipped = Total THEN 4		-- Complete
-			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2	-- In Progress
+			WHEN JS_Stats.Failed > 0 THEN 5								-- Failed
+			WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7	-- No Intermediate Files Created
+			WHEN JS_Stats.FinishedOrSkipped = Total THEN 4				-- Complete
+			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2			-- In Progress
 			Else J.State
 		  End AS NewState,
 		  J.Dataset,
@@ -222,16 +225,20 @@ As
 				COUNT(*) AS Total,
 				SUM(CASE 
 					WHEN JS.State IN (3,4,5) THEN 1
-					Else 0
-					End) AS StartedFinishedOrSkipped,
+					ELSE 0
+					END) AS StartedFinishedOrSkipped,
 				SUM(CASE 
 					WHEN JS.State IN (6) THEN 1
-					Else 0
-					End) AS Failed,
+					ELSE 0
+					END) AS Failed,
 				SUM(CASE 
 					WHEN JS.State IN (3,5) THEN 1
-					Else 0
-					End) AS FinishedOrSkipped
+					ELSE 0
+					END) AS FinishedOrSkipped,
+				SUM(CASE
+					WHEN JS.State = 3 Then 1
+					ELSE 0
+					END) AS Skipped
 			FROM T_Job_Steps JS
 			     INNER JOIN T_Jobs J
 			       ON JS.Job = J.Job
@@ -322,7 +329,7 @@ As
 			-- Roll up step completion comments
 			---------------------------------------------------
 			--
-			declare @comment varchar(255) -- FUTURE: 
+			declare @comment varchar(255)
 			Set @comment = ''
 			--
 			SELECT @comment = @comment + CASE 
@@ -373,12 +380,12 @@ As
 						End,
 					Finish = 
 						CASE 
-						WHEN @newJobStateInBroker IN (4, 5) THEN @FinishMax					-- 4=Complete, 5=Failed
+						WHEN @newJobStateInBroker IN (4, 5, 7) THEN @FinishMax					-- 4=Complete, 5=Failed, 7=No Intermediate Files Created
 						Else Finish
 						End,
 					Comment = 
 						CASE 
-						WHEN @newJobStateInBroker IN (4, 5) THEN @Comment					-- 4=Complete, 5=Failed
+						WHEN @newJobStateInBroker IN (4, 5, 7) THEN @Comment					-- 4=Complete, 5=Failed, 7=No Intermediate Files Created
 						Else Comment
 						End
 				WHERE Job = @job
@@ -398,7 +405,8 @@ As
 			Set @NewDMSJobState = CASE @newJobStateInBroker
 										WHEN 2 THEN 2
 										WHEN 4 THEN 4
-										WHEN 5 THEN 5 
+										WHEN 5 THEN 5
+										WHEN 7 THEN 7
 										Else 99
 									End								
 

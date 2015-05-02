@@ -24,6 +24,7 @@ CREATE PROCEDURE UpdateContext
 **			06/05/2009 mem - Added expanded support for T_Process_Step_Control
 **			03/21/2011 mem - Added parameter @DebugMode; now passing @infoOnly to AddNewJobs
 **			01/12/2012 mem - Now passing @infoOnly to UpdateJobState
+**			05/02/2015 mem - Now calling AutoFixFailedJobs
 **    
 *****************************************************/
 (
@@ -363,6 +364,38 @@ AS
 		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
 								@ErrorNum = @myError output, @message = @message output
 	End Catch
+
+	-- Part G: AutoFixFailedJobs
+	Begin Try		
+
+		-- Step 9
+		--
+		Set @result = 1
+		SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'AutoFixFailedJobs')
+		If @result = 0
+			set @Action = 'Skipping'
+		Else
+			set @Action = 'Calling'
+	
+		If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
+		Begin
+			Set @LoggingEnabled = 1
+			Set @StatusMessage = @Action + ' AutoFixFailedJobs'
+			exec PostLogEntry 'Progress', @StatusMessage, 'UpdateContext'
+		End
+		
+		Set @CurrentLocation = 'Call AutoFixFailedJobs'
+		if @result <> 0
+			exec AutoFixFailedJobs @message = @message output, @infoonly = @infoOnly
+
+	End Try
+	Begin Catch
+		-- Error caught; log the error, then continue at the next section
+		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateContext')
+		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+								@ErrorNum = @myError output, @message = @message output
+	End Catch
+
 
 	If @LoggingEnabled = 1
 	Begin
