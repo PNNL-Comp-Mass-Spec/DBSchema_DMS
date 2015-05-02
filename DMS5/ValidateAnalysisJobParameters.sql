@@ -67,6 +67,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			04/08/2015 mem - Now validating that profile mode high res MSn datasets are centroided if using MSGFPlus
 **						   - Added optional parameters @AutoUpdateSettingsFileToCentroided and @Warning
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**			05/01/2015 mem - Now preventing the use of parameter files with more than one dynamic mod when the fasta file is over 2 GB in size
 **
 *****************************************************/
 (
@@ -503,7 +504,7 @@ As
 		
 		-- Check for a file over 500 MB in size
 		If IsNull(@FileSizeKB, 0) > 500*1024 Or
-		   @organismDBName In (		   
+		   @organismDBName In (
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24.fasta',
 				'ORNL_Proteome_Study_Soil_1606Orgnsm2012-08-24_reversed.fasta',
 				'uniprot_2012_1_combined_bacterial_sprot_trembl_2012-02-20.fasta',
@@ -521,13 +522,38 @@ As
 			     @parmFileName Like '%PartTryp_StatCysAlk_[0-9]%ppm%' Or
 			     @parmFileName Like '%[_]Tryp[_]%'
 			   )
-			Begin
-			
+			Begin			
 				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
 				Set @result = 65350
 				
 				return @result
 			End
+		End
+		
+		-- Check for a file over 2 GB in size
+		If IsNull(@FileSizeKB, 0) > 2*1024*1024 Or
+		   @organismDBName In (			
+			'uniprot_2012_1_combined_bacterial_sprot_trembl_2012-02-20.fasta',
+			'uniprot2012_7_ArchaeaBacteriaFungiSprotTrembl_2012-07-11.fasta',
+			'uniref90_2013-02-14.fasta',
+			'Uniprot_ArchaeaBacteriaFungi_SprotTrembl_2014-4-16.fasta',
+			'Kansas_metagenome_12902_TrypPig_Bov_2014-11-25.fasta',
+			'HoplandAll_assembled_Tryp_Pig_Bov_2015-04-06.fasta')
+		Begin
+			Declare @DynModCount int = 0
+			SELECT @DynModCount = Count(*)
+			FROM V_Param_File_Mass_Mods
+			WHERE Param_File_Name = @parmFileName AND
+			      Mod_Type_Symbol = 'D'
+		
+			If IsNull(@DynModCount, 0) > 1
+			Begin
+				-- Parameter has more than one dynamic mod; this search will take too long
+				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you cannot use a parameter file with ' + Cast(@DynModCount as varchar(12)) + ' dynamic mods.  Preferably use a parameter file with no dynamic mods (though you _might_ get away with 1 dynamic mod).'
+				Set @result = 65351
+				
+				return @result
+			End			
 		End
 		
 		-- If using MSGF and the file is over 400 MB, then you must use MSGFPlus_SplitFasta
@@ -536,7 +562,7 @@ As
 			If @toolName Like '%MSGF%' And Not @toolName Like '%SplitFasta%'
 			Begin
 				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must use analysis tool MSGFPlus_SplitFasta'
-				Set @result = 65351
+				Set @result = 65352
 				
 				return @result
 			End

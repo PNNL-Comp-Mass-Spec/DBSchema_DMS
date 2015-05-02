@@ -5,6 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+
+
 CREATE VIEW [dbo].[V_Predefined_Analysis_List_Report]
 AS
 SELECT PA.AD_ID AS ID,
@@ -34,6 +36,8 @@ SELECT PA.AD_ID AS ID,
        PA.AD_experimentExclCriteria AS [Experiment Excl. Crit.],
        PA.AD_datasetExclCriteria AS [Dataset Excl. Crit.],
        PA.AD_datasetTypeCriteria AS [Dataset Type Crit.],
+	   PA.AD_scanCountMinCriteria AS [ScanCount Min],
+	   PA.AD_scanCountMaxCriteria AS [ScanCount Max],
        PA.AD_parmFileName AS [Parm File],
        PA.AD_settingsFileName AS [Settings File],
        Org.OG_name AS Organism,
@@ -48,7 +52,6 @@ FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
 WHERE (PA.AD_enabled > 0)
-
 
 
 GO

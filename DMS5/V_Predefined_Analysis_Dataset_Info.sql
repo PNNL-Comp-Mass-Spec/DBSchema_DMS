@@ -19,7 +19,8 @@ SELECT Cmpgn.Campaign_Num AS Campaign,
        DS.DS_rating AS Rating,
        DSTypeName.DST_Name AS Dataset_Type,
        SepType.SS_name AS Separation_Type,
-       ISNULL(DS.Acq_Time_Start, DS.DS_created) AS DS_Date
+       ISNULL(DS.Acq_Time_Start, DS.DS_created) AS DS_Date,
+	   DS.Scan_Count
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -33,6 +34,7 @@ FROM dbo.T_Dataset DS
        ON Exp.EX_organism_ID = dbo.T_Organisms.Organism_ID
      INNER JOIN dbo.T_Secondary_Sep SepType
        ON DS.DS_sec_sep = SepType.SS_name
+
 
 
 GO

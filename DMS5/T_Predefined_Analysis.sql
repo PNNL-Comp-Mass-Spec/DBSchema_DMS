@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_labellingInclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_labellingExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_separationTypeCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_scanCountMinCriteria] [int] NOT NULL,
+	[AD_scanCountMaxCriteria] [int] NOT NULL,
 	[AD_analysisToolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -70,6 +72,10 @@ GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingExclusion]  DEFAULT ('') FOR [AD_labellingExclCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_separationTypeCriteria]  DEFAULT ('') FOR [AD_separationTypeCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_scanCountMin]  DEFAULT ((0)) FOR [AD_scanCountMinCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_scanCountMax]  DEFAULT ((0)) FOR [AD_scanCountMaxCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organismDBName]  DEFAULT ('default') FOR [AD_organismDBName]
 GO

@@ -67,6 +67,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			05/03/2012 mem - Added support for the Special Processing field
 **			09/25/2012 mem - Expanded @organismName and @organismDBName to varchar(128)
 **			08/02/2013 mem - Added parameter @AnalysisToolNameFilter
+**			04/30/2015 mem - Added support for min and max ScanCount
 **
 *****************************************************/
 (
@@ -129,8 +130,9 @@ As
 	declare @InstrumentClass varchar(128) 
 	declare @DatasetComment varchar(128) 
 	declare @Rating smallint
-	declare @ID int 
-	set @ID = 0
+	declare @ScanCount int	
+	
+	declare @ID int  = 0
 	--
 	SELECT     
 		@Campaign = Campaign,
@@ -145,6 +147,7 @@ As
 		@InstrumentClass = InstrumentClass,
 		@DatasetComment = Dataset_Comment,
 		@Rating = Rating,
+		@ScanCount = Scan_Count,
 		@ID = ID
 	FROM V_Predefined_Analysis_Dataset_Info
 	WHERE
@@ -228,6 +231,8 @@ As
 		AD_labellingInclCriteria varchar (64)  NOT NULL ,
 		AD_labellingExclCriteria varchar (64)  NOT NULL ,
 		AD_separationTypeCriteria varchar (64)  NOT NULL ,
+		AD_scanCountMin int  NOT NULL ,
+		AD_scanCountMax int  NOT NULL ,
 		AD_analysisToolName varchar (64)  NOT NULL ,
 		AD_parmFileName varchar (255)  NOT NULL ,
 		AD_settingsFileName varchar (255)  NULL ,
@@ -280,6 +285,8 @@ As
 			[Labelling Incl.] varchar(64) NULL, 
 			[Labelling Excl.] varchar(64) NULL,
 			[Separation Type Crit.] varchar(64) NULL,
+			[ScanCount Min] int NULL, 
+			[ScanCount Max] int NULL,
 			[Parm File] varchar(255) NULL, 
 			[Settings File] varchar(255) NULL,
 			Organism varchar(128) NULL, 
@@ -315,6 +322,8 @@ As
 		AD_labellingInclCriteria,
 		AD_labellingExclCriteria,
 		AD_separationTypeCriteria, 
+		AD_scanCountMin,
+		AD_scanCountMax,
 		AD_analysisToolName,
 		AD_parmFileName,
 		AD_settingsFileName,
@@ -346,6 +355,8 @@ As
 		PA.AD_labellingInclCriteria,
 		PA.AD_labellingExclCriteria,
 		PA.AD_separationTypeCriteria, 
+		PA.AD_scanCountMinCriteria,
+		PA.AD_scanCountMaxCriteria,
 		PA.AD_analysisToolName,
 		PA.AD_parmFileName,
 		PA.AD_settingsFileName,
@@ -384,6 +395,8 @@ As
 		     (@outputType = 'Show Rules')
 		    )
 		AND (@AnalysisToolNameFilter = '' Or PA.AD_analysisToolName LIKE @AnalysisToolNameFilter)
+		AND ((PA.AD_scanCountMinCriteria <= 0 AND PA.AD_scanCountMaxCriteria <= 0) OR
+		     (@ScanCount Between PA.AD_scanCountMinCriteria and PA.AD_scanCountMaxCriteria))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -423,6 +436,7 @@ As
 			[Exp. Comment Crit.],
 			[Labelling Incl.], [Labelling Excl.],
 			[Separation Type Crit.],  
+			[ScanCount Min], [ScanCount Max],			
 			[Parm File], [Settings File],
 			Organism, [Organism DB], 
 			[Prot. Coll.], [Prot. Opts.],
@@ -447,6 +461,7 @@ As
 				AD_expCommentCriteria,
 				AD_labellingInclCriteria, AD_labellingExclCriteria,
 				AD_separationTypeCriteria, 
+				AD_scanCountMin, AD_scanCountMax,
 				AD_parmFileName, AD_settingsFileName,
 				AD_organismName, AD_organismDBName, 
 				AD_proteinCollectionList, AD_proteinOptionsList, 
@@ -578,7 +593,7 @@ As
 			@paRuleID = AD_ID,
 			@TriggerBeforeDisposition = Trigger_Before_Disposition,
 			@PropagationMode = Propagation_Mode,
-			@SpecialProcessing = Special_Processing
+			@SpecialProcessing = Special_Processing			
 		FROM #AD
 		WHERE AD_level >= @minLevel
 		ORDER BY AD_level, AD_Sequence, AD_ID
