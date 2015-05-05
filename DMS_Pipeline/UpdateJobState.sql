@@ -89,6 +89,7 @@ CREATE PROCEDURE UpdateJobState
 **			03/13/2014 mem - Now updating @jobInDMS even if @DatasetID is 0
 **			09/16/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
 **			05/01/2015 mem - Now setting the state to 7 (No Intermediate Files Created) if all of the job's steps were skipped
+**			05/04/2015 mem - Fix bug in logic that conditionally sets the job state to 7
 **    
 *****************************************************/
 (
@@ -208,10 +209,12 @@ As
 		  J.Results_Folder_Name,
 		  J.Organism_DB_Name,
 		  CASE 
-			WHEN JS_Stats.Failed > 0 THEN 5								-- Failed
-			WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7	-- No Intermediate Files Created
-			WHEN JS_Stats.FinishedOrSkipped = Total THEN 4				-- Complete
-			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2			-- In Progress
+			WHEN JS_Stats.Failed > 0 THEN 5										-- Failed
+			WHEN JS_Stats.FinishedOrSkipped = Total THEN 
+				CASE WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7	-- No Intermediate Files Created (all steps skipped)
+				Else 4															-- Complete
+				End			
+			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2					-- In Progress
 			Else J.State
 		  End AS NewState,
 		  J.Dataset,

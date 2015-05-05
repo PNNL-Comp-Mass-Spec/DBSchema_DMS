@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
 **			04/09/2009 grk - @message needs to be initialized to '' inside body of sproc
 **			06/26/2009 mem - Expanded to support the new status fields
 **			08/29/2009 mem - Commented out the update code to disable the functionality of this procedure (superseded by UpdateManagerAndTaskStatusXML, which is called by StatusMessageDBUpdater)
+**			05/04/2015 mem - Added Process_ID
 **
 *****************************************************/
 (
@@ -39,8 +40,9 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
     @LastStartTime datetime,
 	@CPUUtilization real,
 	@FreeMemoryMB real,
+	@ProcessID int = null,
 	@MostRecentErrorMessage varchar(1024) = '',
-
+	
 	-- Task	items
 	@StepTool varchar(128),
 	@TaskStatusCode int,					-- See T_Processor_Task_Status_Codes;
@@ -82,6 +84,7 @@ As
 	Set @LastStartTime = IsNull(@LastStartTime, Null)
 	Set @CPUUtilization = IsNull(@CPUUtilization, Null)
 	Set @FreeMemoryMB = IsNull(@FreeMemoryMB, Null)
+	Set @ProcessID = IsNull(@ProcessID, null)
 	Set @MostRecentErrorMessage = IsNull(@MostRecentErrorMessage, '')
 
 	Set @StepTool = IsNull(@StepTool, '')
@@ -124,6 +127,7 @@ As
 		Last_Start_Time = @LastStartTime,
 		CPU_Utilization = @CPUUtilization,
 		Free_Memory_MB = @FreeMemoryMB,
+		Process_ID = @ProcessID,
 		Most_Recent_Error_Message = CASE WHEN @MostRecentErrorMessage <> '' THEN @MostRecentErrorMessage ELSE Most_Recent_Error_Message END,
 
 		Step_Tool = @StepTool,
