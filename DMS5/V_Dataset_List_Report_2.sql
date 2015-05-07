@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Dataset_List_Report_2] as 
 
 SELECT DS.Dataset_ID AS ID,
@@ -27,6 +28,7 @@ SELECT DS.Dataset_ID AS ID,
        ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq. End],
        DS.Acq_Length_Minutes AS [Acq Length],
        DS.Scan_Count AS [Scan Count],
+	   Cast(DS.File_Size_Bytes / 1024.0 / 1024 AS decimal(9,2)) AS [File Size MB],
        LC.SC_Column_Number AS [LC Column],
        DS.DS_sec_sep AS [Separation Type],
        RRH.RDS_Blocking_Factor AS [Blocking Factor],
@@ -67,6 +69,7 @@ FROM T_DatasetStateName DSN
                      INNER JOIN T_YesNo
                        ON DA.AS_instrument_data_purged = T_YesNo.Flag
        ON DS.Dataset_ID = DA.AS_Dataset_ID
+
 
 
 GO
