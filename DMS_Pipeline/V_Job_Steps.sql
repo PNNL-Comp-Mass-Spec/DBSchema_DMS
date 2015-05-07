@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT	JS.Job,
@@ -27,6 +26,7 @@ SELECT	JS.Job,
 			 ELSE 0
 		END AS RunTime_Predicted_Hours,
 		JS.Processor,
+		CASE WHEN JS.State = 4 THEN PS.Process_ID ELSE NULL END AS Process_ID,
 		JS.Input_Folder,
 		JS.Output_Folder,
 		JS.Priority,
@@ -81,9 +81,6 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
-
-
-
 
 
 GO

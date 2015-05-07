@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, Dataset, Step, Script, Tool, ParamQ.Settings_File, ParamQ.Parameter_File, StateName, State, 
-       Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Input_Folder, 
-       Output_Folder, Priority, Signature, Dependencies, CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
+       Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID,
+	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
        Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, 
 	   Dataset_ID,
@@ -41,6 +40,7 @@ FROM ( SELECT JS.Job,
               JS.Job_Progress,
               JS.RunTime_Predicted_Hours,
               JS.Processor,
+			  JS.Process_ID,
               JS.Input_Folder,
               JS.Output_Folder,
               JS.Priority,
@@ -75,11 +75,6 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
-
-
-
-
-
 
 
 GO
