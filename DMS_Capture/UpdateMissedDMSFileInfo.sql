@@ -19,10 +19,12 @@ CREATE PROCEDURE UpdateMissedDMSFileInfo
 **  Auth:	mem
 **  Date:	12/19/2011 mem - Initial version
 **			02/24/2015 mem - Now skipping deleted datasets
+**			05/05/2015 mem - Added parameter @ReplaceExistingData
 **    
 *****************************************************/
 (
 	@DeleteFromTableOnSuccess tinyint = 1,
+	@ReplaceExistingData tinyint = 0,
 	@message varchar(512) = '' output,
 	@infoOnly tinyint = 0
 )
@@ -42,6 +44,7 @@ As
 	--------------------------------------------
 	--
 	set @DeleteFromTableOnSuccess = IsNull(@DeleteFromTableOnSuccess, 1)
+	set @ReplaceExistingData = IsNull(@ReplaceExistingData, 0)
 	set @message = ''
 	set @infoOnly = IsNull(@infoOnly, 0)
 	
@@ -64,7 +67,7 @@ As
 	FROM T_Dataset_Info_XML DI
 	     LEFT OUTER JOIN S_DMS_T_Dataset
 	       ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID
-	WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL)
+	WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL Or @ReplaceExistingData <> 0)
 	--
 	SELECT @myRowCount = @@RowCount
 
@@ -118,7 +121,7 @@ As
 	                     DI.Cache_Date,
 	                     S_DMS_T_Dataset.File_Info_Last_Modified,
 	                     Dataset_Num,
-	                     DI.DS_Info_XML,
+	        DI.DS_Info_XML,
 	                     S_DMS_T_Dataset.Scan_Count AS Scan_Count_Old,
 	                     S_DMS_T_Dataset.File_Size_Bytes AS File_Size_Bytes_Old
 	              FROM T_Dataset_Info_XML DI

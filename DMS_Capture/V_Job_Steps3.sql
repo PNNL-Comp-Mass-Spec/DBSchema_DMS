@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps3]
 AS
 SELECT JS.Job, Dataset, Dataset_ID, Step, Script, 
        Tool, StateName, State, Start, Finish, RunTime_Minutes, 
-       LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, 
+       LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID,
        Input_Folder, Output_Folder, Priority, CPU_Load, Tool_Version_ID, 
        Tool_Version, Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, Holdoff_Interval_Minutes, Next_Try, Retry_Count, 
@@ -26,7 +25,5 @@ FROM V_Job_Steps2 JS
        ON JS.Job = MyEMSLStatus.Job AND
           MyEMSLStatus.StatusRank = 1 AND
           JS.Tool IN ('ArchiveVerify', 'DatasetArchive', 'ArchiveUpdate')
-
-
 
 GO

@@ -4,15 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
-
 CREATE VIEW [dbo].[V_Job_Steps2]
 AS
 SELECT Job, Dataset, Dataset_ID, Step, Script, 
        Tool, StateName, State, Start, Finish, RunTime_Minutes, 
-       LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, 
+       LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID,
        Input_Folder, Output_Folder, Priority, Dependencies, CPU_Load, Tool_Version_ID, 
        Tool_Version, Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, Holdoff_Interval_Minutes, Next_Try, Retry_Count, 
@@ -38,6 +34,7 @@ FROM (
 		   JS.Job_Progress,
 		   JS.RunTime_Predicted_Hours,
 		   JS.Processor,
+		   JS.Process_ID,
 		   JS.Input_Folder,
 		   JS.Output_Folder,
 		   JS.Priority,
@@ -70,7 +67,6 @@ FROM (
 		 LEFT OUTER JOIN T_Local_Processors LP
 		   ON JS.Processor = LP.Processor_Name
       ) LookupQ
-
 
 
 GO
