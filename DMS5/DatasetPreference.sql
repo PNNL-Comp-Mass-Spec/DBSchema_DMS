@@ -7,8 +7,10 @@ CREATE FUNCTION dbo.DatasetPreference
 /****************************************************
 **
 **	Desc: 
-**		Determines if dataset name warrants  
-**		preferential processing priority
+**		Determines if dataset name warrants preferential processing priority
+**		This procedure is used by AddNewDataset to auto-release QC_Shew datasets
+**		(if either the dataset name or the experiment name matches one of the
+**		 filters below, the Interest_Rating is set to 5 (Released)
 **
 **	Return values: 1 if preferred, 0 if not
 **
@@ -22,6 +24,7 @@ CREATE FUNCTION dbo.DatasetPreference
 **			05/12/2011 mem - Now excluding datasets that end in -bad
 **			01/16/2014 mem - Added QC_ShewIntact datasets
 **			12/18/2014 mem - Replace [_] with [_-]
+**			05/07/2015 mem - Added QC_Shew_TEDDY
 **    
 *****************************************************/
 (
@@ -29,19 +32,20 @@ CREATE FUNCTION dbo.DatasetPreference
 )
 RETURNS tinyint
 AS
-	BEGIN
-		declare @result tinyint
+BEGIN
+	declare @result tinyint
+
+	IF (@datasetNum LIKE 'QC[_][0-9][0-9]%' OR
+	    @datasetNum LIKE 'QC[_-]Shew[_-][0-9][0-9]%' OR
+	    @datasetNum LIKE 'QC[_-]ShewIntact%' OR
+	    @datasetNum LIKE 'QC[_]Shew[_]TEDDY%') AND
+	    NOT @datasetNum LIKE '%-bad'
+	    SET @result = 1
+	ELSE
+	    SET @result = 0
 	
-		if  (@datasetNum LIKE 'QC[_][0-9][0-9]%' OR 
-		     @datasetNum LIKE 'QC[_-]Shew[_-][0-9][0-9]%' OR 
-		     @datasetNum LIKE 'QC[_-]ShewIntact%'
-		    ) AND Not @datasetNum LIKE '%-bad'
-			set @result = 1
-		else
-			set @result = 0
-		
 	RETURN @result
-	END
+END
 
 
 GO

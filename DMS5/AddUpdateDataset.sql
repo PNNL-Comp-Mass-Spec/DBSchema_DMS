@@ -62,6 +62,7 @@ CREATE Procedure AddUpdateDataset
 **			04/02/2013 mem - Now updating @LCCartName (if not blank) when updating an existing dataset
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
 **			02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
+**			05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
 **    
 *****************************************************/
 (
@@ -320,7 +321,7 @@ As
 		--
 		if @curDSRatingID = -10 And @rating <> 'Unreviewed'
 		begin
-			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/report" or SP UpdateDatasetDispositions)'
+			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/search" or SP UpdateDatasetDispositions)'
 			RAISERROR (@msg, 11, 6)
 		end		
 	end
