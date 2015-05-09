@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.AutoFixFailedJobs
 **
 **	Auth:	mem
 **	Date:	05/01/2015 mem - Initial version
+**			05/08/2015 mem - Added support for "Cannot run BuildSA since less than"
 **
 *****************************************************/
 (
@@ -149,6 +150,75 @@ As
 		End
 	End -- <a2>
 		
+	
+	
+	---------------------------------------------------
+	-- Look for MSGFPlus jobs where Completion_Message is similar to
+	-- "; Cannot run BuildSA since less than 12000 MB of free memory"
+	---------------------------------------------------
+	--
+	Truncate Table #Tmp_JobsToFix
+	
+	INSERT INTO #Tmp_JobsToFix (Job, Step)
+	SELECT Job, Step_Number
+	FROM T_Job_Steps
+	WHERE Step_Tool = 'MSGFPlus' AND State = 6 And 
+	      Completion_Message LIKE '%Cannot run BuildSA since less than % MB of free memory%'
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If @myRowCount > 0
+	Begin -- <a2>
+
+		If @InfoOnly <> 0
+		Begin
+			SELECT JS.*
+			FROM V_Job_Steps JS
+			     INNER JOIN #Tmp_JobsToFix F
+			       ON JS.Job = F.Job AND
+			          JS.Step = F.Step
+			ORDER BY Job
+
+		End
+		Else
+		Begin
+
+			-- Clear the completion_message and update the step state
+			--
+			UPDATE T_Job_Steps
+			SET State = 2, Completion_Message=''
+			FROM T_Job_Steps Target
+			     INNER JOIN #Tmp_JobsToFix F
+			       ON Target.Job = F.Job AND
+			          Target.Step_Number = F.Step
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+			-- Update the job to state 2 and remove the error message if not a predefined job
+			UPDATE S_DMS_T_Analysis_Job
+			SET AJ_StateID = 2,
+			    AJ_Comment = CASE
+			                     WHEN AJ_Comment LIKE 'Auto predefined%' THEN AJ_Comment
+			                     ELSE ''
+			                 END
+			FROM S_DMS_T_Analysis_Job Target
+			     INNER JOIN #Tmp_JobsToFix F
+			       ON Target.AJ_JobID = F.Job
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+			
+			-- Change the job state back to "In Progress"
+			--
+			UPDATE T_Jobs
+			SET State = 2
+			FROM T_Jobs Target
+			     INNER JOIN #Tmp_JobsToFix F
+			       ON Target.Job = F.Job
+
+		End
+	End -- <a2>
 
 Done:
 	Return @myError
