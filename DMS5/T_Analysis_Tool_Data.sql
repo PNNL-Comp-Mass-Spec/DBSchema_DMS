@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 73 ******/
+/****** RowCount: 74 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
@@ -65,8 +65,8 @@ INSERT INTO [T_Analysis_Tool] VALUES (60,'MSGFPlus_SplitFasta','MSGFPlus_SplitFa
 INSERT INTO [T_Analysis_Tool] VALUES (61,'Decon2LS_V2_MzXML','Decon2LS',1010,'\\gigasax\DMS_Parameter_Files\Decon2LS\','C:\DMS_Parameter_Files\Decon2LS\','??','HMMA_Peak','yes',1,'(na)',0,'N','DeconTools (Decon2LS_V2)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (62,'PeptideAtlas','Broker_Job',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (63,'MSGFPlus_HPC','MSGFPlus',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','M','MSG_Peptide_Hit','no ',0,'Concat_DTA',1,'Y','MSGFDB','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (64,'MODa','MODa',1023,'\\gigasax\dms_parameter_Files\MODa','C:\DMS_Parameter_Files\MODa\','IonTrapDefSettings_DeconMSN.xml','MODa_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MODa','Search MS/MS spectra with MODa',0)
-INSERT INTO [T_Analysis_Tool] VALUES (65,'MODa_DTARefinery','MODa_DTARefinery',1023,'\\gigasax\dms_parameter_Files\MODa','C:\DMS_Parameter_Files\MODa\','IonTrapDefSettings_DeconMSN_DTARef_NoMods.xml','MODa_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MODa','Search MS/MS spectra with MODa',0)
+INSERT INTO [T_Analysis_Tool] VALUES (64,'MODa','MODa',1023,'\\gigasax\dms_parameter_Files\MODa\','C:\DMS_Parameter_Files\MODa\','IonTrapDefSettings_DeconMSN.xml','MODa_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MODa','Search MS/MS spectra with MODa',0)
+INSERT INTO [T_Analysis_Tool] VALUES (65,'MODa_DTARefinery','MODa_DTARefinery',1023,'\\gigasax\dms_parameter_Files\MODa\','C:\DMS_Parameter_Files\MODa\','IonTrapDefSettings_DeconMSN_DTARef_NoMods.xml','MODa_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MODa','Search MS/MS spectra with MODa',0)
 INSERT INTO [T_Analysis_Tool] VALUES (66,'GlyQ-IQ','GlyQ-IQ',1024,'\\gigasax\DMS_Parameter_Files\GlyQ-IQ','C:\DMS_Parameter_Files\GlyQ-IQ\','GlyQIQ_HPC.xml','Gly_ID','no ',1,'(na)',0,'N','GlyQ-IQ','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (67,'MSPathFinder','MSPathFinder',1025,'\\gigasax\DMS_Parameter_Files\MSPathFinder','C:\DMS_Parameter_Files\MSPathFinder\','MSPF_TopDown_Standard.xml','MSP_Peptide_Hit','no ',1,'(na)',1,'Y','MSPathFinder','Search MS/MS spectra with MSPathFinder',0)
 INSERT INTO [T_Analysis_Tool] VALUES (68,'MSGFPlus_MzML','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzXML.xml','MSG_Peptide_Hit','no ',1,'mzML',1,'Y','MSGFDB','',0)
@@ -74,3 +74,4 @@ INSERT INTO [T_Analysis_Tool] VALUES (69,'MSGFPlus_MzML_NoRefine','MSGFPlus_MzML
 INSERT INTO [T_Analysis_Tool] VALUES (70,'ProMex','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (71,'ProMex_Bruker','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex\','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (72,'NOMSI','NOMSI',1027,'\\gigasax\DMS_Parameter_Files\NOMSI\','C:\DMS_Parameter_Files\NOMSI\','NOMSI_DI_Peaks_Diagnostics.param','NOM_Search','no ',1,'(na)',0,'N','','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (73,'MODPlus','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',1,'mzXML',1,'Y','MODPlus','Search MS/MS',0)
