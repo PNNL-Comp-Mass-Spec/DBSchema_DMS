@@ -21,6 +21,7 @@ CREATE PROCEDURE dbo.ParseManagerNameList
 **
 **	Auth:	mem
 **	Date:	05/09/2008
+**			05/14/2015 mem - Update Insert query to explicitly list field Manager_Name
 **    
 *****************************************************/
 (
@@ -75,7 +76,7 @@ As
 		
 		
 		-- Populate #TmpManagerList with the entries in #TmpMangerSpecList that do not contain a % wildcard
-		INSERT INTO #TmpManagerList
+		INSERT INTO #TmpManagerList (Manager_Name)
 		SELECT Manager_Name
 		FROM #TmpMangerSpecList
 		WHERE NOT Manager_Name LIKE '%[%]%'

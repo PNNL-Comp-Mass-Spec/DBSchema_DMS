@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_ParamValue_OldManagers](
 	[TypeID] [int] NOT NULL,
 	[Value] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[MgrID] [int] NOT NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Affected] [datetime] NULL,
 	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_ParamValue_OldManagers] PRIMARY KEY CLUSTERED 

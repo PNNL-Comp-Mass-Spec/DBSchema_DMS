@@ -163,7 +163,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (17
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (177,'DeconPeakDetectorProgLoc','','Folder containing HammerOrDeconSimplePeakDetector.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (178,'MSPathFinderProgLoc','','Folder containing MSPathFinderT.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (179,'PbfGenProgLoc','','Folder containing PbfGen.exe')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (180,'MzRefineryProgLoc','','Folder containing customized msconvert that supports MzRefinery')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (180,'MzRefineryProgLoc','','Folder containing customized msconvert that supports MzRefinery; also has PPMErrorCharter.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (181,'UimfDemultiplexerProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (182,'ProMexProgLoc','','Folder containing ProMex.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (183,'GlyQIQProgLoc','','Folder containing IQGlyQ_Console.exe')
