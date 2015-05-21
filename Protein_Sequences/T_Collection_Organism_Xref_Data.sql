@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Collection_Organism_Xref] ******/
-/****** RowCount: 1460 ******/
+/****** RowCount: 1466 ******/
 SET IDENTITY_INSERT [T_Collection_Organism_Xref] ON
 INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (42,1001,1003)
 INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (12,1002,1002)
@@ -1461,4 +1461,10 @@ INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID
 INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1519,2454,1393)
 INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1520,2455,16)
 INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1521,2456,16)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1522,2457,24)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1523,2458,24)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1524,2459,8)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1525,2460,8)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1526,2461,8)
+INSERT INTO [T_Collection_Organism_Xref] (ID, Protein_Collection_ID, Organism_ID) VALUES (1527,2462,24)
 SET IDENTITY_INSERT [T_Collection_Organism_Xref] OFF
