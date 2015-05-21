@@ -105,9 +105,9 @@ As
 		       PV.ParamName,
 		       PV.Entry_ID,
 		       PV.TypeID,
-		       PV.VALUE,
+		       PV.[Value],
 		       PV.MgrID,
-		       PV.COMMENT,
+		       PV.[Comment],
 		       PV.Last_Affected,
 		       PV.Entered_By
 		FROM #TmpManagerList Src
@@ -151,13 +151,14 @@ As
 		End
 		
 		
-		INSERT INTO T_ParamValue_OldManagers( Entry_ID,
+		INSERT INTO T_ParamValue_OldManagers(
+		         Entry_ID,
 		         TypeID,
-		                                      [Value],
-		                                      MgrID,
-		          [Comment],
-		                                      Last_Affected,
-		                                      Entered_By )
+		         [Value],
+		         MgrID,
+		         [Comment],
+		         Last_Affected,
+		         Entered_By )
 		SELECT PV.Entry_ID,
 		       PV.TypeID,
 		       PV.[Value],
