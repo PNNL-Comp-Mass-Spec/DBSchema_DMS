@@ -4,12 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_Status AS [Status],
-       RR.RDS_priority AS Priority,
+       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0)
+	   -- RR.RDS_priority AS Pri,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 74 ******/
+/****** RowCount: 75 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
@@ -74,4 +74,5 @@ INSERT INTO [T_Analysis_Tool] VALUES (69,'MSGFPlus_MzML_NoRefine','MSGFPlus_MzML
 INSERT INTO [T_Analysis_Tool] VALUES (70,'ProMex','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (71,'ProMex_Bruker','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex\','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (72,'NOMSI','NOMSI',1027,'\\gigasax\DMS_Parameter_Files\NOMSI\','C:\DMS_Parameter_Files\NOMSI\','NOMSI_DI_Peaks_Diagnostics.param','NOM_Search','no ',1,'(na)',0,'N','','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (73,'MODPlus','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',1,'mzXML',1,'Y','MODPlus','Search MS/MS',0)
+INSERT INTO [T_Analysis_Tool] VALUES (73,'MODPlus','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',1,'mzML',1,'Y','MODPlus','Search MS/MS',0)
+INSERT INTO [T_Analysis_Tool] VALUES (74,'MODPlus_NoRefine','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',1,'mzML',1,'Y','MODPlus','Search MS/MS',0)

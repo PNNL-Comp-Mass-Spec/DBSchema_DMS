@@ -3,13 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Requested_Run_List_Report_2 
+
+CREATE VIEW [dbo].[V_Requested_Run_List_Report_2] 
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_Status AS Status,
        RR.RDS_Origin AS Origin,
-       RR.RDS_priority AS Pri,
+       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0)
+	   -- RR.RDS_priority AS Pri,
        ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS Acq_Start,
        RR.RDS_BatchID AS Batch,
        C.Campaign_Num AS Campaign,
@@ -70,6 +72,7 @@ FROM T_Requested_Run AS RR
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_List_Report_2] TO [PNL\D3M578] AS [dbo]
