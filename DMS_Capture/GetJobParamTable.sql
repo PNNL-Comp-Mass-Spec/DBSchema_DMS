@@ -137,7 +137,20 @@ AS
 	SELECT @myError = @@error, @myRowCount = @@rowcount
                      
   	---------------------------------------------------
-	-- instrument class params
+	-- Instrument class params from V_DMS_Instrument_Class
+	--
+	-- This includes all of the DatasetQC parameters, typically including:
+	--
+	--   SaveTICAndBPIPlots, default True
+    --   SaveLCMS2DPlots, default True
+    --   ComputeOverallQualityScores, default True
+    --   CreateDatasetInfoFile, default True
+    --   LCMS2DPlotMZResolution, default 0.4
+    --   LCMS2DPlotMaxPointsToPlot, default 200000
+    --   LCMS2DPlotMinPointsPerSpectrum, default 2
+    --   LCMS2DPlotMinIntensity, default 0
+    --   LCMS2DOverviewPlotDivisor, default 10
+	--
 	---------------------------------------------------
 	--
 	DECLARE @paramXML XML
