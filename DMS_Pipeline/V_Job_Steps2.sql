@@ -8,6 +8,7 @@ CREATE VIEW [dbo].[V_Job_Steps2]
 AS
 SELECT DataQ.Job, Dataset, Step, Script, Tool, ParamQ.Settings_File, ParamQ.Parameter_File, StateName, State, 
        Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID,
+	   'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(Process_ID AS varchar(12)) AS Kill_Process,
 	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
        Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, 
