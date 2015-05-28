@@ -26,6 +26,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			09/16/2013 mem - Now allowing mod Heme_615 to be stored (even though it is from PNNL and not UniMod)
 **			09/03/2014 mem - Now treating static N-term or C-term mods that specify a target residue (instead of *) as Dynamic mods (a requirement for PHRP)
 **			10/02/2014 mem - Add exception for Dyn2DZ
+**			05/26/2015 mem - Add @ValidateUnimod
 **    
 *****************************************************/
 (
@@ -33,6 +34,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 	@Mods varchar(max),
 	@InfoOnly tinyint = 0,
 	@ReplaceExisting tinyint = 0,
+	@ValidateUnimod tinyint = 1,
 	@message varchar(512)='' OUTPUT
 )
 AS
@@ -52,6 +54,8 @@ AS
 	
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	Set @ReplaceExisting = IsNull(@ReplaceExisting, 0)
+	Set @ValidateUnimod = IsNull(@ValidateUnimod, 1)
+	
 	Set @message = ''
 	
 	If @ParamFileID Is Null 
@@ -312,7 +316,7 @@ AS
 							SELECT @MassCorrectionID = Mass_Correction_ID
 							FROM T_Mass_Correction_Factors
 							WHERE Original_Source_Name = @ModName AND
-							     (Original_Source = 'UniMod' OR @ModName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose'))
+							     (Original_Source = 'UniMod' OR @ModName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose') Or @ValidateUnimod = 0)
 							--
 							SELECT @myRowCount = @@rowcount, @myError = @@error
 
