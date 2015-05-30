@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE SyncJobInfo
 /****************************************************
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE SyncJobInfo
 **			09/17/2009 mem - Now using a MERGE statement to update T_Local_Job_Processors
 **			07/01/2010 mem - Removed old code that was replaced by the MERGE statement in 9/17/2009
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
+**			05/28/2015 mem - No longer updating T_Local_Job_Processors since we have deprecated processor groups
 **    
 *****************************************************/
 (
@@ -32,10 +34,6 @@ As
 	set @myRowCount = 0
 
 	Declare @JobUpdateCount int
-	
-	Declare @MergeUpdateCount int
-	Declare @MergeInsertCount int
-	Declare @MergeDeleteCount int
 	
 	Set @message = ''
 	
@@ -118,7 +116,10 @@ As
 		Set @message = ''
 	End
 
+
+	/*
 	---------------------------------------------------
+	-- Deprecated in May 2015: 
 	-- Update the processor groups that jobs belong to,
 	--  based on the group membership defined in DMS
 	---------------------------------------------------
@@ -154,10 +155,9 @@ As
 		goto Done
 	end
 
-
-	set @MergeUpdateCount = 0
-	set @MergeInsertCount = 0
-	set @MergeDeleteCount = 0
+	Declare @MergeUpdateCount int = 0
+	Declare @MergeInsertCount int = 0
+	Declare @MergeDeleteCount int = 0
 
 	SELECT @MergeInsertCount = COUNT(*)
 	FROM #Tmp_UpdateSummary
@@ -178,7 +178,7 @@ As
 --		execute PostLogEntry 'Normal', @message, 'SyncJobInfo'
 --		Set @message = ''
 --	End
-
+	*/
 
 	---------------------------------------------------
 	-- Exit

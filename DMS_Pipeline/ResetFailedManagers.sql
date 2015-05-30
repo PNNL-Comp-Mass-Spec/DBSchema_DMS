@@ -82,3 +82,5 @@ As
 
 
 GO
+GRANT EXECUTE ON [dbo].[ResetFailedManagers] TO [DMS_SP_User] AS [dbo]
+GO

@@ -64,3 +64,5 @@ Done:
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[SetUpdateRequiredForRunningManagers] TO [DMS_SP_User] AS [dbo]
+GO

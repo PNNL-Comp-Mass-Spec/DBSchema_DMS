@@ -1,6 +1,6 @@
 /****** Object:  Database [DMS_Pipeline] ******/
 CREATE DATABASE [DMS_Pipeline] ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 11713152KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 12283136KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
 ( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'G:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -95,6 +95,9 @@ GO
 /****** Object:  User [pnl\D3Y513] ******/
 CREATE USER [pnl\D3Y513] FOR LOGIN [PNL\D3Y513] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [pnl\gibb166] ******/
+CREATE USER [pnl\gibb166] FOR LOGIN [PNL\gibb166] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [pnl\mtsproc] ******/
 CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\mtsproc] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -136,6 +139,8 @@ GO
 GRANT CONNECT TO [pnl\D3X050] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\D3Y513] AS [dbo]
+GO
+GRANT CONNECT TO [pnl\gibb166] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\mtsproc] AS [dbo]
 GO

@@ -359,7 +359,7 @@ As
 		Step_Tool varchar(64),
 		Tool_Priority int,
 		Memory_Usage_MB int,
-		Association_Type tinyint NOT NULL,				-- Valid types are: 1=Exclusive Association, 2=Specific Association, 3=Non-associated, 4=Non-Associated Generic
+		Association_Type tinyint NOT NULL,				-- Valid types are: 1=Exclusive Association, 2=Specific Association, 3=Non-associated, 4=Non-Associated Generic, etc.
 		Machine varchar(64),
 		Alternate_Specific_Processor varchar(128),		-- This field is only used if @infoOnly is non-zero and if jobs exist with Association_Type 103
 		Storage_Server varchar(128)

@@ -25,6 +25,7 @@ CREATE PROCEDURE UpdateContext
 **			03/21/2011 mem - Added parameter @DebugMode; now passing @infoOnly to AddNewJobs
 **			01/12/2012 mem - Now passing @infoOnly to UpdateJobState
 **			05/02/2015 mem - Now calling AutoFixFailedJobs
+**			05/28/2015 mem - No longer calling ImportJobProcessors
 **    
 *****************************************************/
 (
@@ -179,6 +180,9 @@ AS
 			exec ImportProcessors @bypassDMS, @message output
 
 
+		/*
+		---------------------------------------------------
+		-- Deprecated in May 2015: 
 		-- Step 4
 		--
 		Set @result = 1
@@ -198,7 +202,7 @@ AS
 		Set @CurrentLocation = 'Call ImportJobProcessors'
 		if @result <> 0
 			exec ImportJobProcessors @bypassDMS, @message output
-
+		*/
 
 		-- Step 5
 		--
