@@ -16,6 +16,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			05/03/2010 grk - Initial release
 **			05/25/2011 mem - Updated call to CreateStepsForJob and removed Priority from #Job_Steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			05/29/2015 mem - Add support for column Capture_Subfolder
 **
 *****************************************************/
 (
@@ -59,7 +60,8 @@ AS
 		Storage_Server varchar(64) NULL,
 		Instrument varchar(24) NULL,
 		Instrument_Class VARCHAR(32) NULL,
-		Max_Simultaneous_Captures int NULL
+		Max_Simultaneous_Captures int NULL,
+		Capture_Subfolder varchar(255) NULL
 	)
 
 --	CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)

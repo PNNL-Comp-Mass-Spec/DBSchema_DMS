@@ -22,6 +22,7 @@ CREATE PROCEDURE MoveJobsToMainTables
 **			01/14/2010 grk - removed path ID fields
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			05/29/2015 mem - Add support for column Capture_Subfolder
 **    
 *****************************************************/
 (
@@ -60,14 +61,15 @@ goto Done
 
 	UPDATE T_Jobs 
 	SET
-		T_Jobs.State = #Jobs.State,
-		T_Jobs.Results_Folder_Name = #Jobs.Results_Folder_Name,
-		T_Jobs.Storage_Server = #Jobs.Storage_Server,
-		T_Jobs.Instrument = #Jobs.Instrument,
-		T_Jobs.Instrument_Class = #Jobs.Instrument_Class,
-		T_Jobs.Max_Simultaneous_Captures = #Jobs.Max_Simultaneous_Captures
-	FROM T_Jobs INNER JOIN #Jobs ON
-		T_Jobs.Job = #Jobs.Job
+		State = #Jobs.State,
+		Results_Folder_Name = #Jobs.Results_Folder_Name,
+		Storage_Server = #Jobs.Storage_Server,
+		Instrument = #Jobs.Instrument,
+		Instrument_Class = #Jobs.Instrument_Class,
+		Max_Simultaneous_Captures = #Jobs.Max_Simultaneous_Captures,
+		Capture_Subfolder = #Jobs.Capture_Subfolder
+	FROM T_Jobs Target INNER JOIN #Jobs ON
+		 Target.Job = #Jobs.Job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

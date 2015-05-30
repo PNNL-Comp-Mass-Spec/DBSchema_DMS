@@ -20,6 +20,7 @@ CREATE PROCEDURE CreateJobSteps
 **			05/25/2011 mem - Updated call to CreateStepsForJob
 **			04/09/2013 mem - Added additional comments
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			05/29/2015 mem - Add support for column Capture_Subfolder
 **    
 *****************************************************/
 (
@@ -57,6 +58,7 @@ As
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
+	--
 	Set @message = ''
 	Set @DebugMode = IsNull(@DebugMode, 0)
 	Set @existingJob = IsNull(@existingJob, 0)
@@ -92,7 +94,7 @@ As
 	-- job step dependencies, and job parameters for
 	-- jobs being created
 	---------------------------------------------------
-
+	--
 	CREATE TABLE #Jobs (
 		[Job] int NOT NULL,
 		[Priority] int NULL,
@@ -104,7 +106,8 @@ As
 		Storage_Server varchar(64) NULL,
 		Instrument varchar(24) NULL,
 		Instrument_Class VARCHAR(32),
-		Max_Simultaneous_Captures int NULL
+		Max_Simultaneous_Captures int NULL,
+		Capture_Subfolder varchar(255) NULL
 	)
 
 	CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)
@@ -172,7 +175,8 @@ As
 				Storage_Server,
 				Instrument,
 				Instrument_Class,
-				Max_Simultaneous_Captures
+				Max_Simultaneous_Captures,
+				Capture_Subfolder
 			)
 			SELECT TOP ( @MaxJobsToAdd )
 				TJ.Job,
@@ -185,7 +189,8 @@ As
 				VDD.Storage_Server_Name,
 				VDD.Instrument_Name,
 				VDD.Instrument_Class,
-				VDD.Max_Simultaneous_Captures
+				VDD.Max_Simultaneous_Captures,
+				VDD.Capture_Subfolder
 			FROM
 				T_Jobs TJ
 				INNER JOIN V_DMS_Get_Dataset_Definition AS VDD ON TJ.Dataset_ID = VDD.Dataset_ID
@@ -234,50 +239,12 @@ As
 				goto Done
 			end
 		End
-	End
-	
-	---------------------------------------------------
-	-- set up to process extension job
-	---------------------------------------------------
-	--
-	/*
-	** Code ported over from DMS_Pipeline but not implemented in DMS_Capture
-	**
-
-	if @mode = 'ExtendExistingJob'
-	begin
-		-- populate #jobs with info from existing job
-		-- if it only exists in history, restore it to main tables
-		exec @myError = SetUpToExtendExistingJob @existingJob, @message
-	end
-
-	if @mode = 'UpdateExistingJob'
-	begin
-		If Not Exists (SELECT Job FROM T_Jobs Where Job = @existingJob)
-		Begin
-			Set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Jobs; unable to update it'
-			set @myError = 50000
-			goto Done
-		End
-		
-		INSERT INTO #Jobs
-		SELECT Job, Priority,  Script,  State,  Dataset,  Dataset_ID, Results_Folder_Name
-		FROM T_Jobs
-		WHERE Job = @existingJob
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to get jobs for processing'
-			goto Done
-		end
-	end
-	*/
+	End	
 
 	---------------------------------------------------
 	-- loop through jobs and process them into temp tables
 	---------------------------------------------------
+	--
 	declare @job int
 	declare @prevJob int
 	declare @scriptName varchar(64)
@@ -326,6 +293,7 @@ As
 		-- if no job was found, we are done
 		-- otherwise, process the job
 		---------------------------------------------------
+		--
 		if @job = 0
 			set @done = 1
 		else
@@ -369,37 +337,6 @@ As
 			-- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
 			--  copying to the main database tables
 			exec @myError = FinishJobCreation @job, @message output
-			
-			/*
-			** Code ported over from DMS_Pipeline but not implemented in DMS_Capture
-			**
-			
-			-- Do current job parameters confilict with existing job?
-			if @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'
-			begin
-				exec @myError = CrossCheckJobParameters @job, @message output
-				if @myError <> 0
-				Begin
-					If @mode = 'UpdateExistingJob'
-					Begin
-						-- If None of the job steps has completed yet, then it's OK if there are parameter differences
-						If Exists (SELECT * FROM T_Job_Steps WHERE Job = @job AND State = 5)
-						Begin
-							Set @message = 'Conflicting parameters are not allowed when one or more job steps has completed: ' + @message
-							Goto Done
-						End
-						Else
-						Begin
-							Set @message = ''
-							Set @myError = 0
-						End
-						
-					End
-					Else
-						Goto Done
-				End
-			end
-			*/
 
 			Set @JobsProcessed = @JobsProcessed + 1
 		end --<b>
@@ -417,9 +354,9 @@ As
 	end --<a>
 
 	---------------------------------------------------
-	-- we've got new jobs in temp tables - what to do?
+	-- We've got new jobs in temp tables - what to do?
 	---------------------------------------------------
-
+	--
 	if @DebugMode = 0
 	Begin
 		if @mode = 'CreateFromImportedJobs'
@@ -431,23 +368,7 @@ As
 			--	 #Job_Parameters
 			exec MoveJobsToMainTables @message output
 		end
-
-		/*
-		** Code ported over from DMS_Pipeline but not implemented in DMS_Capture
-		**
-
-		if @mode = 'ExtendExistingJob'
-		begin
-			-- merge temp tables with existing job
-			exec MergeJobsToMainTables @message output
-		end
-		
-		if @mode = 'UpdateExistingJob'
-		begin
-			-- merge temp tables with existing job
-			exec UpdateJobInMainTables @message output
-		end
-		**/
+	
 	End
 
 	If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold

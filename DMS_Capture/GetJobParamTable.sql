@@ -23,7 +23,8 @@ CREATE PROCEDURE GetJobParamTable
 **			Storage_Server varchar(64) NULL,
 **			Instrument varchar(24) NULL,
 **			Instrument_Class VARCHAR(32),
-**			Max_Simultaneous_Captures int NULL
+**			Max_Simultaneous_Captures int NULL,
+**			Capture_Subfolder varchar(255) NULL
 **		)
 **	
 **
@@ -35,6 +36,7 @@ CREATE PROCEDURE GetJobParamTable
 **			04/09/2013 mem - Now looking up Perform_Calibration from S_DMS_T_Instrument_Name
 **			08/20/2013 mem - Now looking up EUS_Proposal_ID
 **			09/04/2013 mem - Now including TransferFolderPath
+**			05/29/2015 mem - Add support for column Capture_Subfolder
 **    
 *****************************************************/
   (
@@ -72,7 +74,8 @@ AS
 		@storage_server_name varchar(255),
 		@instrument_name varchar(255),
 		@instrument_class varchar(255),
-		@max_simultaneous_captures varchar(255)
+		@max_simultaneous_captures varchar(255),
+		@capture_subfolder varchar(255)
 	--
 
 	SELECT
@@ -80,7 +83,8 @@ AS
 		@storage_server_name = Storage_Server,
 		@instrument_name = Instrument,
 		@instrument_class = Instrument_Class,
-		@max_simultaneous_captures = Max_Simultaneous_Captures
+		@max_simultaneous_captures = Max_Simultaneous_Captures,
+		@capture_subfolder = Capture_Subfolder
 	FROM
 		#Jobs
 	WHERE
@@ -95,6 +99,7 @@ AS
 	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Instrument_Name', @instrument_name)
 	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Instrument_Class', @instrument_class)
 	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Max_Simultaneous_Captures', @max_simultaneous_captures)
+	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Capture_Subfolder', @capture_subfolder)
 
 /**/	
   	---------------------------------------------------
@@ -177,6 +182,7 @@ AS
 		( Step_Number, [Section], [Name], Value )
 	VALUES
 		(NULL, 'JobParameters', 'RawDataType', @rawDataType)
+
     
     ---------------------------------------------------
     -- Determine whether calibration should be performed 

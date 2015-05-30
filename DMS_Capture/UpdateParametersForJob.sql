@@ -21,6 +21,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			05/18/2011 mem - Updated @jobList to varchar(max)
 **			09/17/2012 mem - Now updating Storage_Server in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
 **			08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
+**			05/29/2015 mem - Add support for column Capture_Subfolder
 **    
 *****************************************************/
 (
@@ -45,7 +46,8 @@ As
 	SET Storage_Server = IsNull(J.Storage_Server, VDD.Storage_Server_Name),
 	    Instrument = IsNull(J.Instrument, VDD.Instrument_Name),
 	    Instrument_Class = IsNull(J.Instrument_Class, VDD.Instrument_Class),
-	    Max_Simultaneous_Captures = IsNull(J.Max_Simultaneous_Captures, VDD.Max_Simultaneous_Captures)
+	    Max_Simultaneous_Captures = IsNull(J.Max_Simultaneous_Captures, VDD.Max_Simultaneous_Captures),
+	    Capture_Subfolder = IsNull(J.Capture_Subfolder, VDD.Capture_Subfolder)
 	FROM T_Jobs J
 	     INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
 	       ON J.Dataset_ID = VDD.Dataset_ID
@@ -69,7 +71,8 @@ As
 		Storage_Server varchar(64) NULL,
 		Instrument varchar(24) NULL,
 		Instrument_Class VARCHAR(32),
-		Max_Simultaneous_Captures int NULL
+		Max_Simultaneous_Captures int NULL,
+		Capture_Subfolder varchar(255) NULL
 	)
 	--
 	INSERT INTO #Jobs ( 
@@ -83,7 +86,8 @@ As
 		Storage_Server,
 		Instrument,
 		Instrument_Class,
-		Max_Simultaneous_Captures
+		Max_Simultaneous_Captures,
+		Capture_Subfolder
 	)
 	SELECT
 		Job,
@@ -96,7 +100,8 @@ As
 		Storage_Server,
 		Instrument,
 		Instrument_Class,
-		Max_Simultaneous_Captures
+		Max_Simultaneous_Captures,
+		Capture_Subfolder
 	FROM
 		T_Jobs TJ
 	WHERE

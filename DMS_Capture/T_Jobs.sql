@@ -21,6 +21,7 @@ CREATE TABLE [dbo].[T_Jobs](
 	[Archive_Busy] [tinyint] NOT NULL,
 	[Transfer_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Capture_Subfolder] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Jobs] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC
