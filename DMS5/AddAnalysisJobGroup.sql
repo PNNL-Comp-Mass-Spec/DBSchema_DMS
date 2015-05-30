@@ -53,6 +53,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			03/27/2013 mem - Now auto-updating @ownerPRN to @callingUser if @callingUser maps to a valid user
 **			06/06/2013 mem - Now setting job state to 19="Special Proc. Waiting" if analysis tool has Use_SpecialProcWaiting enabled
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
+**			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **
 *****************************************************/
 (
@@ -69,7 +70,7 @@ CREATE Procedure AddAnalysisJobGroup
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @requestID int,									-- 0 if not associated with a request; otherwise, Request ID in T_Analysis_Job_Request
-	@associatedProcessorGroup varchar(64) = '',
+	@associatedProcessorGroup varchar(64) = '',		-- Processor group; deprecated in May 2015
     @propagationMode varchar(24) = 'Export',		-- 'Export', 'No Export'
     @removeDatasetsWithJobs VARCHAR(12) = 'Y',
 	@mode varchar(12),								-- 'add', 'update', 'preview'
@@ -107,8 +108,9 @@ As
 	if @datasetList = ''
 		RAISERROR ('Dataset list is empty', 11, 1)
 
+	/*
 	---------------------------------------------------
-	-- resolve processor group ID
+	-- Deprecated in May 2015: resolve processor group ID
 	---------------------------------------------------
 	--
 	declare @gid int
@@ -128,7 +130,8 @@ As
 		if @gid = 0
 			RAISERROR ('Processor group name not found', 11, 9)
 	end
-
+	*/
+	
 	---------------------------------------------------
 	-- Create temporary table to hold list of datasets
 	---------------------------------------------------
@@ -575,9 +578,10 @@ As
 			-- Added a single job; cache the jobID value
 			set @jobID = SCOPE_IDENTITY()				-- IDENT_CURRENT('T_Analysis_Job')
 		end
-			
+
+		/*
 		---------------------------------------------------
-		-- create associations with processor group for new
+		-- Deprecated in May 2015: create associations with processor group for new
 		-- jobs, if group ID is given
 		---------------------------------------------------
 
@@ -616,13 +620,14 @@ As
 			if @myError <> 0
 				RAISERROR ('Error Associating job with processor group', 11, 7)
 		end
+		*/
 
 		commit transaction @transName
 
 		If @requestID > 1
 		Begin
 			-------------------------------------------------
-			--Update the AJR_jobCount field for this job request
+			-- Update the AJR_jobCount field for this job request
 			-------------------------------------------------
 
 			UPDATE T_Analysis_Job_Request

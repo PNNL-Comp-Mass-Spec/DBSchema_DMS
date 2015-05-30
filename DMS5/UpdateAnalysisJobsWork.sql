@@ -44,6 +44,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **						   - Added parameter @DisableRaiseError
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			03/30/2015 mem - Tweak warning message grammar
+**			05/28/2015 mem - No longer updating processor group entries (thus @associatedProcessorGroup is ignored)
 **
 *****************************************************/
 (
@@ -53,7 +54,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
     @findText varchar(255) = '[no change]',					-- Text to find in the comment; ignored if '[no change]'
     @replaceText varchar(255) = '[no change]',				-- The replacement text when @findText is not '[no change]'
     @assignedProcessor varchar(64) = '[no change]',
-    @associatedProcessorGroup varchar(64) = '',
+    @associatedProcessorGroup varchar(64) = '',				-- Processor group; deprecated in May 2015
     @propagationMode varchar(24) = '[no change]',
 --
     @parmFileName varchar(255) = '[no change]',
@@ -777,11 +778,12 @@ As
 		Set @AlterEventLogRequired = 1
 	end -- </reset mode>
 	
- 	---------------------------------------------------
+ 	/*
+	---------------------------------------------------
+	-- Deprecated in May 2015: 
 	-- Handle associated processor Group
 	-- (though only if we're actually performing an update or reset)
-	---------------------------------------------------
- 	-----------------------------------------------
+	--
 	if @associatedProcessorGroup <> @NoChangeText and @transName <> ''
 	begin -- <associated processor group>
 	
@@ -902,7 +904,7 @@ As
 			Set @AlterEnteredByRequired = 1
 		end
 	end  -- </associated processor Group>
-
+	*/
 
  	If Len(@callingUser) > 0 AND (@AlterEventLogRequired <> 0 OR @AlterEnteredByRequired <> 0)
 	Begin

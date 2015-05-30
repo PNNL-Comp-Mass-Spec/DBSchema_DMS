@@ -50,9 +50,6 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_start AS [Started],
        AJ.AJ_finish AS Finished,
        AJ.AJ_requestID AS Request,
-       AJPGA.Group_ID AS [Processor Group ID],
-       AJPG.Group_Name AS [Processor Group Name],
-       AJPGA.Entered_By AS [Processor Group Assignee],
        AJ.AJ_priority AS Priority,
        AJ.AJ_assignedProcessorName AS [Assigned Processor],
        AJ.AJ_Analysis_Manager_Error AS [AM Code],
@@ -96,10 +93,6 @@ FROM dbo.T_Analysis_Job AS AJ
                        FROM dbo.T_MTS_Peak_Matching_Tasks_Cached AS PM
                        GROUP BY DMS_Job ) AS PMTaskCountQ
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
-     LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AS AJPG
-                     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA
-                       ON AJPG.ID = AJPGA.Group_ID
-       ON AJ.AJ_jobID = AJPGA.Job_ID
      LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats AS PSM 
        ON AJ.AJ_JobID = PSM.Job
 

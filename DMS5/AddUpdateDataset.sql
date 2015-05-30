@@ -63,6 +63,7 @@ CREATE Procedure AddUpdateDataset
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
 **			02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
 **			05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
+**			05/29/2015 mem - Added parameter @CaptureSubfolder (only used if @mode is 'add' or 'bad')
 **    
 *****************************************************/
 (
@@ -86,7 +87,8 @@ CREATE Procedure AddUpdateDataset
 	@mode varchar(12) = 'add',				-- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
 	@message varchar(512) output,
    	@callingUser varchar(128) = '',
-   	@AggregationJobDataset tinyint = 0			-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
+   	@AggregationJobDataset tinyint = 0,			-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
+   	@CaptureSubfolder varchar(255) = ''		-- Only used when @mode is 'add' or 'bad'
 )
 As
 	set nocount on
@@ -205,6 +207,8 @@ As
 	Set @eusUsersList = IsNull(@eusUsersList, '')
 	
 	Set @requestID = IsNull(@requestID, 0)
+	
+	Set @CaptureSubfolder= IsNull(@CaptureSubfolder, '')
 	
 	---------------------------------------------------
 	-- Determine if we are adding or check_adding a dataset
@@ -897,7 +901,8 @@ As
 				DS_rating,
 				DS_LC_column_ID, 
 				DS_wellplate_num, 
-				DS_internal_standard_ID
+				DS_internal_standard_ID,
+				Capture_Subfolder
 				) 
 			VALUES (
 				@datasetNum,
@@ -915,7 +920,8 @@ As
 				@ratingID,
 				@columnID,
 				@wellplateNum,
-				@intStdID
+				@intStdID,
+				@CaptureSubfolder
 				)
  
 		--

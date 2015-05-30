@@ -36,6 +36,7 @@ CREATE Procedure dbo.AddNewDataset
 **			06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
 **			12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
 **			03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
+**			05/29/2015 mem - Added support for "Capture Subfolder"
 **    
 *****************************************************/
 (
@@ -68,6 +69,7 @@ AS
 		@Dataset_Name		varchar(128) = '',
 		@Experiment_Name	varchar(64)  = '',
 		@Instrument_Name	varchar(64)  = '',
+		@CaptureSubfolder   varchar(255) = '',
 		@Separation_Type	varchar(64)  = '',
 		@LC_Cart_Name		varchar(128) = '',
 		@LC_Column			varchar(64)  = '',
@@ -148,6 +150,7 @@ AS
 	SELECT	@Dataset_Name		 = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
 	SELECT	@Experiment_Name	 = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
 	SELECT	@Instrument_Name	 = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
+	SELECT  @CaptureSubfolder    = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder' 
 	SELECT	@Separation_Type	 = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
 	SELECT	@LC_Cart_Name		 = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
 	SELECT	@LC_Column			 = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
@@ -247,7 +250,8 @@ AS
 						@EMSL_Users_List,
 						@Request,
 						@mode,
-						@message output
+						@message output,
+						@CaptureSubfolder=@CaptureSubfolder
 	if @myError <> 0
 	begin
 		RAISERROR (@message, 10, 1)

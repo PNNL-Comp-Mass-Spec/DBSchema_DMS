@@ -35,6 +35,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **	Auth:	mem
 **	Date:	02/24/2012 mem - Initial version
 **			02/28/2012 mem - Added @MaxItemsToProcess
+**			05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations, since deprecated
 **    
 *****************************************************/
 (
@@ -329,6 +330,9 @@ AS
 			Set @message = @message + 'T_Analysis_Job_Annotations, '
 			
 			
+			/*
+			---------------------------------------------------
+			-- Deprecated in May 2015: 
 			Set @CurrentLocation = 'DELETE T_Analysis_Job_Processor_Group_Associations'	
 			DELETE T_Analysis_Job_Processor_Group_Associations
 			FROM #Tmp_JobsToDelete
@@ -336,7 +340,7 @@ AS
 				ON #Tmp_JobsToDelete.Job = T_Analysis_Job_Processor_Group_Associations.Job_ID
 			--
 			Set @message = @message + 'T_Analysis_Job_Processor_Group_Associations, '
-			
+			*/
 			
 			Set @CurrentLocation = 'DELETE T_Analysis_Job_PSM_Stats'	
 			DELETE T_Analysis_Job_PSM_Stats

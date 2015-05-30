@@ -23,27 +23,21 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_finish AS Finished,
        AJ.AJ_batchID AS Batch,
        AJ.AJ_requestID AS [#ReqestID],
-       PG.Group_Name AS [Associated Processor Group],
        DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder,
        DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder_Archive,
        Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime,
 	   DS.Dataset_ID
-FROM dbo.T_Analysis_Job_Processor_Group PG
-     INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations PGA
-       ON PG.ID = PGA.Group_ID
-     RIGHT OUTER JOIN dbo.T_Analysis_Job AJ
-                      INNER JOIN dbo.T_Dataset DS
-                        ON AJ.AJ_datasetID = DS.Dataset_ID
-                      INNER JOIN dbo.T_Organisms Org
-                        ON AJ.AJ_organismID = Org.Organism_ID
-                      INNER JOIN dbo.T_Analysis_Tool Tool
-                        ON AJ.AJ_analysisToolID = Tool.AJT_toolID
-                      INNER JOIN dbo.T_Analysis_State_Name ASN
-                        ON AJ.AJ_StateID = ASN.AJS_stateID
-                      INNER JOIN V_Dataset_Folder_Paths DFP
-                        ON AJ.AJ_datasetID = DFP.Dataset_ID
-       ON PGA.Job_ID = AJ.AJ_jobID
-
+FROM dbo.T_Analysis_Job AJ
+     INNER JOIN dbo.T_Dataset DS
+       ON AJ.AJ_datasetID = DS.Dataset_ID
+     INNER JOIN dbo.T_Organisms Org
+       ON AJ.AJ_organismID = Org.Organism_ID
+     INNER JOIN dbo.T_Analysis_Tool Tool
+       ON AJ.AJ_analysisToolID = Tool.AJT_toolID
+     INNER JOIN dbo.T_Analysis_State_Name ASN
+       ON AJ.AJ_StateID = ASN.AJS_stateID
+     INNER JOIN V_Dataset_Folder_Paths DFP
+       ON AJ.AJ_datasetID = DFP.Dataset_ID
 
 
 GO

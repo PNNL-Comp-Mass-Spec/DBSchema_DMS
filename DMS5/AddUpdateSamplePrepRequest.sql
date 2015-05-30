@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
+CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -58,6 +58,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **			05/19/2014 mem - Now populating Request_Type
 **			05/20/2014 mem - Now storing InstrumentGroup in column Instrument_Group instead of Instrument_Name
 **			03/13/2014 grk - Added material container field (OMCDA-1076)
+**			05/29/2015 mem - Now validating that @EstimatedCompletionDate is today or later
 **    
 *****************************************************/
 (
@@ -466,7 +467,10 @@ As
 		--
 		if @myError <> 0 OR @myRowCount> 0
 			RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
-			
+
+		If @EstimatedCompletionDate < CONVERT(date, getdate())
+			RAISERROR ('Cannot add: Estimated completion must be today or later', 11, 8)
+		
 		-- Make sure the work package number is not inactive
 		--
 		Declare @ActivationState tinyint = 10

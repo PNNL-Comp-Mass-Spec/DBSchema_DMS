@@ -35,6 +35,7 @@ CREATE TABLE [dbo].[T_Dataset](
 	[DateSortKey] [datetime] NOT NULL,
 	[DS_RowVersion] [timestamp] NOT NULL,
 	[DeconTools_Job_for_QC] [int] NULL,
+	[Capture_Subfolder] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Dataset] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

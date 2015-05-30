@@ -24,6 +24,7 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			12/31/2008 mem - Now calling DMS_Pipeline.dbo.DeleteJob
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
+**			05/28/2015 mem - No longer deleting processor group entries
 **
 *****************************************************/
 (
@@ -47,6 +48,9 @@ As
 	set @transName = 'DeleteAnalysisJob'
 	begin transaction @transName
 
+	/*
+	---------------------------------------------------
+	-- Deprecated in May 2015: 
 	-- delete any job-to-group associations 
 	-- that exist for this job
 	--
@@ -61,6 +65,7 @@ As
 		RAISERROR ('Delete job associations operation failed', 10, 1)
 		return 54452
 	end
+	*/
 	
 	-- delete analysis job
 	--

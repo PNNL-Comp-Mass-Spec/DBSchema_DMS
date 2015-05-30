@@ -23,6 +23,7 @@ CREATE PROCEDURE ReindexDatabase
 **	Date:	05/21/2008
 **			08/05/2010 mem - Added 6 new tables to reindex
 **			11/21/2012 mem - Removed T_Analysis_Log
+**			05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations
 **    
 *****************************************************/
 (
@@ -74,9 +75,6 @@ As
 	Set @TableCount = @TableCount + 1
 	
 	DBCC DBREINDEX (T_Experiment_Cell_Cultures, '', 90)
-	Set @TableCount = @TableCount + 1
-	
-	DBCC DBREINDEX (T_Analysis_Job_Processor_Group_Associations, '', 90)
 	Set @TableCount = @TableCount + 1
 	
 	DBCC DBREINDEX (T_Experiment_Group_Members, '', 90)

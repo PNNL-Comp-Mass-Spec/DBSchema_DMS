@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report] as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_StateNameCached AS State ,
@@ -51,15 +50,12 @@ FROM    dbo.V_Dataset_Archive_Path AS DAP
         INNER JOIN dbo.T_Analysis_Tool AS AnalysisTool ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
         INNER JOIN dbo.T_Instrument_Name AS InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
         INNER JOIN dbo.T_Experiments AS E ON DS.Exp_ID = E.Exp_ID
-        INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID ON DAP.Dataset_ID = DS.Dataset_ID
-        LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AS AJPG
-        INNER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AS AJPGA ON AJPG.ID = AJPGA.Group_ID ON AJ.AJ_jobID = AJPGA.Job_ID
+        INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID ON DAP.Dataset_ID = DS.Dataset_ID        
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats PSM ON AJ.AJ_JobID = PSM.Job
 WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR 
 								      AJT_resultType = 'Gly_ID')
-
 
 
 GO

@@ -58,6 +58,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			04/02/2013 mem - Now updating @msg if it is blank yet @result is non-zero
 **			03/13/2014 mem - Now passing @Job to ValidateAnalysisJobParameters
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
+**			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **    
 *****************************************************/
 (
@@ -73,7 +74,7 @@ CREATE Procedure AddUpdateAnalysisJob
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
-	@associatedProcessorGroup varchar(64),
+	@associatedProcessorGroup varchar(64) = '',		-- Processor group; deprecated in May 2015
     @propagationMode varchar(24),
 	@stateName varchar(32),
     @jobNum varchar(32) = '0' output,
@@ -162,8 +163,9 @@ As
 		End
 	end
 	
+	/*
 	---------------------------------------------------
-	-- resolve processor group ID
+	-- Deprecated in May 2015: resolve processor group ID
 	---------------------------------------------------
 	--
 	declare @gid int
@@ -189,7 +191,8 @@ As
 			RAISERROR (@msg, 11, 9)
 		end
 	end
-
+	*/
+	
 	---------------------------------------------------
 	-- Create temporary table to hold the dataset details
 	-- This table will only have one row
@@ -468,8 +471,10 @@ As
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
-			
-		-- associate job with processor group
+
+		/*
+		---------------------------------------------------
+		-- Deprecated in May 2015: associate job with processor group
 		--
 		if @gid <> 0
 		begin
@@ -486,7 +491,8 @@ As
 				RAISERROR (@msg, 11, 14)
 			end
 		end
-
+		*/
+		
 		commit transaction @transName
 	end -- add mode
 
@@ -529,7 +535,10 @@ As
 			end
 		end		
 
+		/*
 		---------------------------------------------------
+		-- Deprecated in May 2015: associate job with processor group
+		--
 		-- is there an existing association between the job
 		-- and a processor group?
 		--
@@ -547,6 +556,7 @@ As
 			set @msg = 'Error looking up existing job association'
 			RAISERROR (@msg, 11, 16)
 		end
+		*/
 		
 		---------------------------------------------------
 		-- start transaction
@@ -588,8 +598,10 @@ As
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
 
+
+		/*
 		---------------------------------------------------
-		-- deal with job association with group, 
+		-- Deprecated in May 2015: deal with job association with group, 
 
 		-- if no group is given, but existing association
 		-- exists for job, delete it
@@ -635,7 +647,8 @@ As
 			
 			Set @AlterEnteredByRequired = 1
 		end
-	
+		*/
+		
 		-- report error, if one occurred
 		--
 		if @myError <> 0

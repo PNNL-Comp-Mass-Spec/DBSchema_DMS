@@ -27,7 +27,6 @@ SELECT AJ.AJ_jobID AS Job,
        ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder],
        AJ.AJ_batchID AS Batch,
        AJ.AJ_requestID AS Request,
-       AJPG.Group_Name AS [Associated Processor Group],
        Spath.SP_machine_name AS [Storage Server],
        DSR.DRN_name as [Dataset Rating]
 FROM T_DatasetRatingName DSR
@@ -43,12 +42,7 @@ FROM T_DatasetRatingName DSR
                 INNER JOIN T_Instrument_Name InstName
                   ON DS.DS_instrument_name_ID = InstName.Instrument_ID
        ON DSR.DRN_state_ID = DS.DS_rating
-     LEFT OUTER JOIN T_Analysis_Job_Processor_Group AJPG
-                     INNER JOIN T_Analysis_Job_Processor_Group_Associations AJPGA
-                       ON AJPG.ID = AJPGA.Group_ID
-       ON AJ.AJ_jobID = AJPGA.Job_ID
 
-  
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Report_Numeric] TO [PNL\D3M578] AS [dbo]
