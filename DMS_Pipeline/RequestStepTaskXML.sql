@@ -69,6 +69,8 @@ CREATE PROCEDURE RequestStepTaskXML
 **						   - Changed @ThrottleByStartTime to 0
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **			04/21/2015 mem - Now using column Uses_All_Cores
+**			06/01/2015 mem - No longer querying T_Local_Job_Processors since we have deprecated processor groups
+**						   - Also now ignoring GP_Groups and Available_For_General_Processing
 **
 *****************************************************/
 (
@@ -79,7 +81,7 @@ CREATE PROCEDURE RequestStepTaskXML
 	@infoOnly tinyint = 0,						-- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
 	@AnalysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
 	@JobCountToPreview int = 10,				-- The number of jobs to preview when @infoOnly >= 1
-	@UseBigBangQuery tinyint = 1,				-- When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs)
+	@UseBigBangQuery tinyint = 1,				-- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
 	@ThrottleByStartTime tinyint = 0,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
 	@MaxStepNumToThrottle int = 10,
 	@ThrottleAllStepTools tinyint = 0,			-- When 0, then will not throttle Sequest or Results_Transfer steps
@@ -96,13 +98,17 @@ As
 	declare @jobAssigned tinyint
 	set @jobAssigned = 0
 
-	declare @ProcessorGP int
 	Declare @CandidateJobStepsToRetrieve int
 	Set @CandidateJobStepsToRetrieve = 15
 
 	Declare @HoldoffWindowMinutes int
 	Declare @MaxSimultaneousJobCount int
 
+	---------------------------------------------------
+	-- These 3 hard-coded values give optimal performance 
+	-- (note that @UseBigBangQuery overrides the value passed into this procedure)
+	---------------------------------------------------
+	--
 	Set @HoldoffWindowMinutes = 3				-- Typically 3
 	Set @MaxSimultaneousJobCount = 75			-- Increased from 10 to 75 on 4/25/2013
 	Set @UseBigBangQuery = 1					-- Typically 1
@@ -158,7 +164,7 @@ As
 	set @processorDoesGP = -1
 	--
 	SELECT 
-		@processorDoesGP = GP_Groups,
+		@processorDoesGP = 1,		-- Prior to May 2015 used: @processorDoesGP = GP_Groups
 		@machine = Machine,
 		@processorName = Processor_Name,
 		@ProcessorState = State,
@@ -295,7 +301,7 @@ As
 		       ST.CPU_Load,
 		       ST.Memory_Usage_MB,
 		       PTGD.Priority,
-		       CASE WHEN ST.Available_For_General_Processing = 'N' THEN 0 ELSE 1 END AS GP,
+		       1 AS GP,			-- Prior to May 2015 used: CASE WHEN ST.Available_For_General_Processing = 'N' THEN 0 ELSE 1 END AS GP,
 		       CASE WHEN ST.CPU_Load > @availableCPUs THEN 1 ELSE 0 END AS Exceeds_Available_CPU_Load,
 		       CASE WHEN ST.Memory_Usage_MB > @availableMemoryMB THEN 1 ELSE 0 END AS Exceeds_Available_Memory
 		FROM T_Machines M
@@ -541,12 +547,16 @@ As
 				-- No processing load available on machine
 				WHEN (TP.CPUs_Available < TP.CPU_Load) 
 					THEN 101
-				-- transfer tool steps for jobs that are in the midst of an archive operation
+				-- Transfer tool steps for jobs that are in the midst of an archive operation
 				WHEN (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) 
 					THEN 102
 				-- Not enough memory available on machine
 				WHEN (TP.Memory_Available < JS.Memory_Usage_MB) 
 					THEN 105
+			/*
+				---------------------------------------------------
+				-- Deprecated in May 2015: 
+				--	
 				-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 				WHEN (Processor_GP > 0 AND Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 					THEN 2
@@ -564,6 +574,8 @@ As
 					THEN 1
 				-- not recognized assignment ('<Not recognized>')
 				ELSE 100
+			*/
+				ELSE 4
 			END AS Association_Type
 		FROM ( SELECT TJ.Job,
 		              TJ.Priority,		-- Job_Priority
@@ -578,9 +590,14 @@ As
 		                  SELECT LP.Processor_Name,
 		                         PTGD.Tool_Name,
 		                         PTGD.Priority AS Tool_Priority,
+		                         /*
+								 ---------------------------------------------------
+								 -- Deprecated in May 2015: 
+								 --
 		                         LP.GP_Groups AS Processor_GP,
-		  ST.Available_For_General_Processing AS Tool_GP,
-		                         M.CPUs_Available,
+		                         ST.Available_For_General_Processing AS Tool_GP,
+		                         */
+		                         M.CPUs_Available,		                         
 		                         ST.CPU_Load,
 		                         M.Memory_Available,
 		                         M.Machine
@@ -613,6 +630,13 @@ As
 	Else
 	Begin -- <UseMultiStep>
 		-- Not using the Big-bang query
+
+		/*	
+		declare @ProcessorGP int
+
+		---------------------------------------------------
+		-- Deprecated in May 2015: 
+		--
 		-- Lookup the GP_Groups count for this processor
 		
 		SELECT DISTINCT @ProcessorGP = LP.GP_Groups
@@ -630,7 +654,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		Set @ProcessorGP = IsNull(@ProcessorGP, 0)
-
+		
 		If @ProcessorGP = 0
 		Begin -- <LimitedProcessingMachine>
 			-- Processor does not do general processing
@@ -689,7 +713,7 @@ As
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
-			      (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
+			      -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
 			ORDER BY 
 				Association_Type,
 				Tool_Priority, 
@@ -705,6 +729,8 @@ As
 		End -- </LimitedProcessingMachine>
 		Else
 		Begin -- <GeneralProcessingMachine>
+		*/
+
 			-- Processor does do general processing
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
@@ -724,27 +750,29 @@ As
 				Tool_Priority,
 				TJ.Storage_Server,
 				TP.Machine,
-				
-				/*
-				** On Sql Server 2005, to minimize the risk of high lock request/sec rates (and thus improve query speed), 
-				** remove the following Case Statement and instead always store 1 in the Association_Type column
-				*/
+
+		        /*
+				---------------------------------------------------
+				-- Deprecated in May 2015: 
+				--
 				CASE
 					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
-					WHEN (Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
-						THEN 2
+					--WHEN (Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+					--	THEN 2
 					-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
 					WHEN (Tool_GP = 'Y') 
 						THEN 4
 					-- Directly associated steps ('Specific Association', aka Association_Type=2):
-					WHEN (Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
-						THEN 2
+					-- WHEN (Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+					--	THEN 2
 					-- Non-associated steps ('Non-associated', aka Association_Type=3):
-					WHEN (Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
-						THEN 3
+					-- WHEN (Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
+					--	THEN 3
 					-- not recognized assignment ('<Not recognized>')
 					ELSE 100
 				END AS Association_Type
+				*/
+				4 AS Association_Type
 			FROM ( SELECT TJ.Job,
 			              TJ.Priority,		-- Job_Priority
 			              TJ.Archive_Busy,
@@ -757,7 +785,12 @@ As
 			                  SELECT LP.Processor_Name,
 			                         PTGD.Tool_Name,
 			                         PTGD.Priority AS Tool_Priority,
+			                         /*
+									 ---------------------------------------------------
+									 -- Deprecated in May 2015: 
+									 --
 			                         ST.Available_For_General_Processing AS Tool_GP,
+			                         */
 			                         M.CPUs_Available,
 			                         ST.CPU_Load,
 		                             M.Memory_Available,
@@ -771,7 +804,7 @@ As
 			                       INNER JOIN T_Step_Tools ST
 			                         ON PTGD.Tool_Name = ST.Name
 			                  WHERE PTGD.Enabled > 0 AND
-			   LP.Processor_Name = @processorName AND
+			                        LP.Processor_Name = @processorName AND
 			                        PTGD.Tool_Name <> 'Results_Transfer'			-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
@@ -812,7 +845,8 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		End	 -- </GeneralProcessingMachine>
+		-- Comment this end statement out due to deprecating processor groups
+		-- End	 -- </GeneralProcessingMachine>
 	
 	End -- </UseMultiStep>
 
@@ -898,6 +932,11 @@ As
 			goto Done
 		end
 	End
+
+/*
+	---------------------------------------------------
+	-- Deprecated in May 2015: 
+	--	
 	Else
 	Begin
 		-- See if any jobs have Association_Type 100
@@ -932,6 +971,7 @@ As
 		End
 		
 	End
+*/
 	
 	---------------------------------------------------
 	-- if no tools available, bail
@@ -1122,7 +1162,7 @@ As
 		           WHEN 3 THEN 'Non-associated'
 		           WHEN 4 THEN 'Non-associated Generic'
 		           WHEN 5 THEN 'Results_Transfer task (specific to this processor''s server)'
-		       WHEN 6 THEN 'Results_Transfer task (null storage_server)'
+		           WHEN 6 THEN 'Results_Transfer task (null storage_server)'
 		           WHEN 100 THEN 'Invalid: Not recognized'
 		           WHEN 101 THEN 'Invalid: CPUs all busy'
 		           WHEN 102 THEN 'Invalid: Archive in progress'

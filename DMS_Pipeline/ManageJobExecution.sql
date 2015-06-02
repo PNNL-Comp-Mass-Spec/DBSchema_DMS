@@ -19,6 +19,7 @@ CREATE PROCEDURE ManageJobExecution
 **			09/16/2009 mem - Now updating priority and processor group directly in this DB
 **						   - Next, calls S_ManageJobExecution to update the primary DMS DB
 **			05/25/2011 mem - No longer updating priority in T_Job_Steps
+**			06/01/2015 mem - Removed support for option @action = 'group' because we have deprecated processor groups
 **
 *****************************************************/
 (
@@ -127,7 +128,11 @@ As
 			Set @message = ''
 		End
 	end
-	
+
+/*
+	---------------------------------------------------
+	-- Deprecated in May 2015: 
+	--	
 	if(@action = 'group')
 	begin
 		set @associatedProcessorGroup = @value
@@ -164,6 +169,7 @@ As
 			Set @myError = 0
 		End		            
 	end
+*/
 	
 	if(@action = 'state')
 	begin

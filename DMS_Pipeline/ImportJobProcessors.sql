@@ -18,7 +18,7 @@ CREATE PROCEDURE dbo.ImportJobProcessors
 **			01/17/2009 mem - Removed Insert operation for T_Local_Job_Processors, since SyncJobInfo now populates T_Local_Job_Processors (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
 **			06/27/2009 mem - Now removing entries from T_Local_Job_Processors only if the job is complete or not present in T_Jobs; if a job is failed but still in T_Jobs, then the entry is not removed from T_Local_Job_Processors
 **			07/01/2010 mem - No longer logging message "Updated T_Local_Job_Processors; DeleteCount=" each time T_Local_Job_Processors is updated
-**			
+**			06/01/2015 mem - No longer deleting rows in T_Local_Job_Processors since we have deprecated processor groups
 **    
 *****************************************************/
 (
@@ -33,15 +33,14 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 
-	Declare @DeleteCount int
-	
 	set @message = ''
-	Set @DeleteCount = 0
 	
 	if @bypassDMS <> 0
 		goto Done
 
+/*
 	---------------------------------------------------
+	-- Deprecated in May 2015: 
 	-- remove job-processor associations 
 	-- from jobs that are complete
 	---------------------------------------------------
@@ -57,7 +56,8 @@ As
 		set @message = 'Error removing job-processor associations'
 		goto Done
 	end
-	Set @DeleteCount = @myRowCount
+	Delcare @DeleteCount = @myRowCount
+*/
      	
 	---------------------------------------------------
 	-- Exit
