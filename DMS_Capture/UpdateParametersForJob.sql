@@ -22,6 +22,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			09/17/2012 mem - Now updating Storage_Server in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
 **			08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
 **			05/29/2015 mem - Add support for column Capture_Subfolder
+**			06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
 **    
 *****************************************************/
 (
@@ -42,12 +43,14 @@ As
 
 
 	-- Update Null values in T_Jobs
+	-- For all of the fields except Capture_Subfolder, the values in T_Jobs take precedent
+	-- But, for Capture_Subfolder we want to use VDD.Capture_Subfolder, unless it is null, then we'll use J.Capture_Subfolder
 	UPDATE T_Jobs
 	SET Storage_Server = IsNull(J.Storage_Server, VDD.Storage_Server_Name),
 	    Instrument = IsNull(J.Instrument, VDD.Instrument_Name),
 	    Instrument_Class = IsNull(J.Instrument_Class, VDD.Instrument_Class),
 	    Max_Simultaneous_Captures = IsNull(J.Max_Simultaneous_Captures, VDD.Max_Simultaneous_Captures),
-	    Capture_Subfolder = IsNull(J.Capture_Subfolder, VDD.Capture_Subfolder)
+	    Capture_Subfolder = IsNull(VDD.Capture_Subfolder, J.Capture_Subfolder)
 	FROM T_Jobs J
 	     INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
 	       ON J.Dataset_ID = VDD.Dataset_ID
