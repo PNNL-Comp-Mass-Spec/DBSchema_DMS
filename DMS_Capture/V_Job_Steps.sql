@@ -50,6 +50,7 @@ SELECT JS.Job,
        JS.Transfer_Folder_Path,
        JS.Dataset_Folder_Path,
        JS.Server_Folder_Path,
+	   JS.Capture_Subfolder,
        JS.Job_State
 FROM ( SELECT JS.Job,
               J.Dataset,
@@ -83,6 +84,7 @@ FROM ( SELECT JS.Job,
               STV.Tool_Version,
               DI.SP_vol_name_client + DI.SP_path + DI.DS_folder_name AS Dataset_Folder_Path,
               DI.SP_vol_name_server + DI.SP_path + DI.DS_folder_name AS Server_Folder_Path,
+			  J.Capture_Subfolder,
               J.State AS Job_State
        FROM dbo.T_Job_Steps JS
             INNER JOIN dbo.T_Job_Step_State_Name SSN
@@ -98,6 +100,7 @@ FROM ( SELECT JS.Job,
        WHERE J.State <> 101 ) JS
      LEFT OUTER JOIN dbo.T_Processor_Status PS ( READUNCOMMITTED )
        ON JS.Processor = PS.Processor_Name
+
 
 
 GO

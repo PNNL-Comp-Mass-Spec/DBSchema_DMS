@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps2]
 AS
 SELECT Job, Dataset, Dataset_ID, Step, Script, 
@@ -12,7 +13,7 @@ SELECT Job, Dataset, Dataset_ID, Step, Script,
        Input_Folder, Output_Folder, Priority, Dependencies, CPU_Load, Tool_Version_ID, 
        Tool_Version, Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, Holdoff_Interval_Minutes, Next_Try, Retry_Count, 
-       Instrument, Storage_Server, Transfer_Folder_Path, 
+       Instrument, Storage_Server, Transfer_Folder_Path, Capture_Subfolder,
        Dataset_Folder_Path, Server_Folder_Path, Job_State, 
        LogFilePath + CASE WHEN YEAR(GetDate()) <> YEAR(Start) THEN TheYear + '\' ELSE ''END 
                 + 'CapTaskMan_' + CASE WHEN LEN(TheMonth) = 1 THEN '0' + TheMonth ELSE TheMonth END 
@@ -54,6 +55,7 @@ FROM (
 		   JS.Transfer_Folder_Path,
 		   JS.Dataset_Folder_Path,
 		   JS.Server_Folder_Path,
+		   JS.Capture_Subfolder,
 		   JS.Job_State,
 		   '\\' + LP.Machine + '\DMS_Programs\CaptureTaskManager' + 
 			 CASE
@@ -67,6 +69,7 @@ FROM (
 		 LEFT OUTER JOIN T_Local_Processors LP
 		   ON JS.Processor = LP.Processor_Name
       ) LookupQ
+
 
 
 GO
