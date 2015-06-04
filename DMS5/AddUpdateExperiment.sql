@@ -36,6 +36,7 @@ CREATE Procedure AddUpdateExperiment
 **			04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
 **			05/09/2014 mem - Expanded @campaignNum from varchar(50) to varchar(64)
 **			09/09/2014 mem - Added @barcode
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **
 *****************************************************/
 (
@@ -451,7 +452,28 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
 
-		set @experimentID = IDENT_CURRENT('T_Experiments')
+		-- This method is more accurate than using IDENT_CURRENT
+		Set @experimentID = SCOPE_IDENTITY()		
+
+		-- As a precaution, query T_Experiments using Experiment name to make sure we have the correct Exp_ID
+		Declare @ExpIDConfirm int = 0
+		
+		SELECT @ExpIDConfirm = Exp_ID
+		FROM T_Experiments
+		WHERE Experiment_Num = @experimentNum
+		
+		If @experimentID <> IsNull(@ExpIDConfirm, @experimentID)
+		Begin
+			Declare @DebugMsg varchar(512)
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentNum + ': Found ID ' +
+			                Cast(@ExpIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@experimentID as varchar(12))
+			                
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateExperiment'
+			
+			Set @experimentID = @ExpIDConfirm
+		End
+
 
 		declare @StateID int
 		set @StateID = 1

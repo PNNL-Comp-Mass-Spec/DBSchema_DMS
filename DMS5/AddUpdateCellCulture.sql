@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateCellCulture]
+CREATE Procedure dbo.AddUpdateCellCulture
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -24,6 +24,7 @@ CREATE Procedure [dbo].[AddUpdateCellCulture]
 **			08/19/2010 grk - try-catch for error handling
 **			11/15/2012 mem - Renamed parameter @ownerPRN to @contactPRN; renamed column CC_Owner_PRN to CC_Contact_PRN
 **						   - Added new fields to support peptide standards
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -367,7 +368,26 @@ As
 			RAISERROR (@msg, 11, 18)
 		end
 
-		set @cellCultureID = IDENT_CURRENT('T_Cell_Culture')
+		set @cellCultureID = SCOPE_IDENTITY()
+		
+		-- As a precaution, query T_Cell_Culture using Cell Culture name to make sure we have the correct CC_ID
+		Declare @IDConfirm int = 0
+		
+		SELECT @IDConfirm = CC_ID
+		FROM T_Cell_Culture
+		WHERE CC_Name = @cellCultureName
+		
+		If @cellCultureID <> IsNull(@IDConfirm, @cellCultureID)
+		Begin
+			Declare @DebugMsg varchar(512)
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding cell culture ' + @cellCultureName + ': Found ID ' +
+			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@cellCultureID as varchar(12))
+			                
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateCellCulture'
+			
+			Set @cellCultureID = @IDConfirm
+		End		
 		
 		declare @StateID int
 		set @StateID = 1

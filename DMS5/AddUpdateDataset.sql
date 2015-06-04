@@ -64,6 +64,7 @@ CREATE Procedure AddUpdateDataset
 **			02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
 **			05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
 **			05/29/2015 mem - Added parameter @CaptureSubfolder (only used if @mode is 'add' or 'bad')
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -932,8 +933,29 @@ As
 			set @msg = 'Insert operation failed: "' + @datasetNum + '"'
 			RAISERROR (@msg, 11, 7)
 		end
-		set @datasetID = IDENT_CURRENT('T_Dataset')
+		
+		-- This method is more accurate than using IDENT_CURRENT
+		Set @datasetID = SCOPE_IDENTITY()		
 
+		-- As a precaution, query T_Dataset using Dataset name to make sure we have the correct Dataset_ID
+		Declare @DatasetIDConfirm int = 0
+		
+		SELECT @DatasetIDConfirm = Dataset_ID
+		FROM T_Dataset
+		WHERE Dataset_Num = @datasetNum
+		
+		If @datasetID <> IsNull(@DatasetIDConfirm, @datasetID)
+		Begin
+			Declare @DebugMsg varchar(512)
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
+			                Cast(@DatasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@datasetID as varchar(12))
+			                
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateDataset'
+			
+			Set @datasetID = @DatasetIDConfirm
+		End
+		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 		Begin

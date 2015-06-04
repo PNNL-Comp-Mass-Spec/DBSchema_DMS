@@ -19,6 +19,7 @@ CREATE Procedure AddUpdateArchivePath
 **	Date:	06/24/2004 jds - initial release
 **			12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
 **			05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @NetworkSharePath, and @ArchiveNote to larger varchar() variables
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -180,7 +181,7 @@ As
 
 		-- return Archive ID of newly created archive
 		--
-		set @ArchiveID = IDENT_CURRENT('T_Archive_Path')
+		set @ArchiveID = SCOPE_IDENTITY()
 
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

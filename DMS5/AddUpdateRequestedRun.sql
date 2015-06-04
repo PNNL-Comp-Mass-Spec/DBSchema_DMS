@@ -66,6 +66,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **						   - Now auto-capitalizing @instrumentGroup
 **			08/19/2014 mem - Now copying @InstrumentName to @InstrumentGroup during the initial validation
 **			09/17/2014 mem - Now auto-updating @status to 'Active' if adding a request yet @status is null
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **
 *****************************************************/
 (
@@ -110,8 +111,8 @@ As
 	declare @InstrumentMatch varchar(64)
 		
 	-- default priority at which new requests will be created
-	declare @defaultPriority int
-	set @defaultPriority = 0
+	declare @defaultPriority int = 0
+
 	
 	BEGIN TRY
 
@@ -119,8 +120,7 @@ As
 	-- Preliminary steps
 	---------------------------------------------------
 	--
-	DECLARE @requestOrigin CHAR(4)
-	SET @requestOrigin = 'user'
+	DECLARE @requestOrigin CHAR(4) = 'user'
 	--
 	IF @mode = 'add-auto'
 	BEGIN
@@ -547,6 +547,7 @@ As
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
+	
 		-- Start transaction
 		--
 		begin transaction @transName
@@ -605,7 +606,8 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
 		
-		set @request = IDENT_CURRENT('T_Requested_Run')
+		-- This method is more accurate than using IDENT_CURRENT
+		Set @Request = SCOPE_IDENTITY()
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0

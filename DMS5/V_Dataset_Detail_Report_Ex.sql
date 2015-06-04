@@ -6,6 +6,7 @@ GO
 
 
 
+
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -65,6 +66,7 @@ SELECT DS.Dataset_Num AS Dataset,
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
        DS.DS_folder_name AS [Folder Name],
+	   DS.Capture_Subfolder AS [Capture Subfolder],
        TDASN.DASN_StateName AS [Archive State],
        DA.AS_state_Last_Affected AS [Archive State Last Affected],
        AUSN.AUS_name AS [Archive Update State],
@@ -133,6 +135,7 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
+
 
 
 

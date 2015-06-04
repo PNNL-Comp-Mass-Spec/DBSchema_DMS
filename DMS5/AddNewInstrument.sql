@@ -35,6 +35,7 @@ CREATE Procedure AddNewInstrument
 **						   - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **			11/30/2011 mem - Added parameter @PercentEMSLOwned
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -329,7 +330,7 @@ As
 		
 		If @myError = 0
 		Begin
-			set @aID = IDENT_CURRENT('T_Archive_Path')
+			set @aID = SCOPE_IDENTITY()
 			--
 			SELECT @myRowCount = @@rowcount, @myError = @@error
 		End

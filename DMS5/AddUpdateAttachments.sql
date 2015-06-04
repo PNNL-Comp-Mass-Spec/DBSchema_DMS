@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateAttachments
 **    Auth: grk
 **    Date: 03/24/2009
 **    Date: 07/22/2010 grk -- allowed update mode
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -113,9 +114,9 @@ As
       return 51007
     end
     
-    -- return IDof newly created entry
+    -- return ID of newly created entry
     --
-    set @ID = IDENT_CURRENT('T_Attachments')
+    set @ID = SCOPE_IDENTITY()
 
   end -- add mode
 

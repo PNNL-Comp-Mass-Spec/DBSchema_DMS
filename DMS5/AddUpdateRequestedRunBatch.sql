@@ -26,6 +26,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			08/27/2010 mem - Now auto-switching @RequestedInstrument to be instrument group instead of instrument name
 **						   - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
 **			05/14/2013 mem - Expanded @RequestedCompletionDate to varchar(32) to support long dates of the form 'Jan 29 2010 12:00:00:000AM'
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **
 *****************************************************/
 (
@@ -308,7 +309,28 @@ As
 	    
 		-- return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Requested_Run_Batches')
+		Set @ID = SCOPE_IDENTITY()		
+
+		-- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Exp_ID
+		Declare @BatchIDConfirm int = 0
+		
+		SELECT @BatchIDConfirm = ID
+		FROM T_Requested_Run_Batches
+		WHERE Batch = @Name
+		
+		If @ID <> IsNull(@BatchIDConfirm, @ID)
+		Begin
+			Declare @DebugMsg varchar(512)
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding batch ' + @Name + ': Found ID ' +
+			                Cast(@BatchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@ID as varchar(12))
+			                
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateRequestedRunBatch'
+			
+			Set @ID = @BatchIDConfirm
+		End
+		
+		
   end -- add mode
 
 	---------------------------------------------------

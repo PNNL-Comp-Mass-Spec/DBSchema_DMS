@@ -32,6 +32,7 @@ CREATE Procedure AddUpdateCampaign
 **			12/01/2011 mem - Updated @FractionEMSLFunded to be a required value
 **			               - Now calling AlterEventLogEntryUser for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
 **			10/23/2012 mem - Now validating that @FractionEMSLFunded is a number between 0 and 1 using a real (since conversion of 100 to Decimal(3, 2) causes an overflow error)
+**			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -268,7 +269,28 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 12,@campaignNum )
 		
-		set @CampaignID = IDENT_CURRENT('T_Campaign')
+		-- This method is more accurate than using IDENT_CURRENT
+		Set @CampaignID = SCOPE_IDENTITY()		
+
+		-- As a precaution, query T_Campaign using Campaign name to make sure we have the correct Campaign_ID
+		Declare @IDConfirm int = 0
+		
+		SELECT @IDConfirm = Campaign_ID
+		FROM T_Campaign
+		WHERE Campaign_Num = @campaignNum
+		
+		If @CampaignID <> IsNull(@IDConfirm, @CampaignID)
+		Begin
+			Declare @DebugMsg varchar(512)
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding campaign ' + @campaignNum + ': Found ID ' +
+			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@CampaignID as varchar(12))
+			                
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateCampaign'
+			
+			Set @CampaignID = @IDConfirm
+		End
+		
 
 		commit transaction @transName
 		
