@@ -227,7 +227,15 @@ AS
 	If @Comment Like '%Buzzard:'
 		Set @Comment = Substring(@Comment, 1, Len(@Comment) - 8)
 	
-	
+	If @CaptureSubfolder = 'D:\Metabolomics_Data'
+	Begin
+	    -- !!!!!!!!!!!!!!!!
+		-- !!! HACK FIX !!!
+		-- !!!!!!!!!!!!!!!!
+		-- ToDo: Get Buzzard updated so that this doesn't appear in the XML trigger files
+        Set @CaptureSubfolder = ''
+	End
+ 
 	---------------------------------------------------
 	-- Create new dataset
 	---------------------------------------------------
