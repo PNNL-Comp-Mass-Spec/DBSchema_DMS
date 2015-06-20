@@ -65,6 +65,7 @@ CREATE Procedure AddUpdateDataset
 **			05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
 **			05/29/2015 mem - Added parameter @CaptureSubfolder (only used if @mode is 'add' or 'bad')
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			06/19/2015 mem - Now auto-fixing QC_Shew names, e.g. QC_Shew_15-01 to QC_Shew_15_01
 **    
 *****************************************************/
 (
@@ -419,11 +420,25 @@ As
 
 	declare @experimentID int
 	execute @experimentID = GetExperimentID @experimentNum
-	if @experimentID = 0
-	begin
+
+	If @experimentID = 0 And @experimentNum LIKE 'QC_Shew_[0-9][0-9]_[0-9][0-9]' And @experimentNum LIKE '%-%'
+	Begin
+		Declare @newExperiment varchar(64) = Replace(@experimentNum, '-', '_')
+		execute @experimentID = GetExperimentID @newExperiment
+		
+		If @experimentID > 0
+		Begin
+			SELECT @experimentNum = Experiment_Num
+			FROM T_Experiments
+			WHERE (Exp_ID = @experimentID)
+		End
+	End
+
+	If @experimentID = 0
+	Begin
 		set @msg = 'Could not find entry in database for experiment "' + @experimentNum + '"'
 		RAISERROR (@msg, 11, 12)
-	end
+	End
 
 
 	---------------------------------------------------

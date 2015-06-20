@@ -3,14 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-
-
-
-
 CREATE Procedure GetExperimentID
 /****************************************************
 **
@@ -30,7 +22,11 @@ CREATE Procedure GetExperimentID
 As
 	declare @experimentID int
 	set @experimentID = 0
-	SELECT @experimentID = Exp_ID FROM T_Experiments WHERE (Experiment_Num = @experimentNum)
+
+	SELECT @experimentID = Exp_ID
+	FROM T_Experiments
+	WHERE (Experiment_Num = @experimentNum)
+	
 	return(@experimentID)
 GO
 GRANT EXECUTE ON [dbo].[GetExperimentID] TO [DMS_SP_User] AS [dbo]
