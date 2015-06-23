@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Protein_Collection_List_Report
+
+CREATE VIEW [dbo].[V_Protein_Collection_List_Report]
 As
 SELECT LookupQ.ID, 
        LookupQ.Name,
@@ -15,6 +16,7 @@ SELECT LookupQ.ID,
        END AS Description,
        LookupQ.[Organism Name],
        LookupQ.Entries,
+	   LookupQ.Residues,
        CASE WHEN LookupQ.[Type] IN ('Internal_standard', 'contaminant', 'old_contaminant') THEN NULL
             ELSE PCU.Job_Usage_Count_Last12Months
        END AS [Usage Last 12 Months],
@@ -29,6 +31,7 @@ FROM ( SELECT Name,
               [Type],
               Description,
               Entries,
+			  Residues,
               CASE WHEN [Type] IN ('Internal_Standard', 'contaminant', 'old_contaminant') THEN ''
                   ELSE Organism_Name
               END AS [Organism Name],
@@ -40,9 +43,10 @@ FROM ( SELECT Name,
      LEFT OUTER JOIN T_Protein_Collection_Usage PCU
        ON LookupQ.ID = PCU.Protein_Collection_ID
 GROUP BY LookupQ.Name, LookupQ.[Type], LookupQ.Description, 
-         LookupQ.Entries, LookupQ.[Organism Name], LookupQ.ID,
+         LookupQ.Entries, LookupQ.Residues, LookupQ.[Organism Name], LookupQ.ID,
          PCU.Most_Recently_Used, PCU.Job_Usage_Count, 
 		 PCU.Job_Usage_Count_Last12Months, Org.OG_organismDBName
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_List_Report] TO [PNL\D3M578] AS [dbo]

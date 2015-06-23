@@ -37,6 +37,7 @@ CREATE Procedure dbo.AddNewDataset
 **			12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
 **			03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
 **			05/29/2015 mem - Added support for "Capture Subfolder"
+**			06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
 **    
 *****************************************************/
 (
@@ -227,12 +228,12 @@ AS
 	If @Comment Like '%Buzzard:'
 		Set @Comment = Substring(@Comment, 1, Len(@Comment) - 8)
 	
-	If @CaptureSubfolder = 'D:\Metabolomics_Data'
+	If @CaptureSubfolder LIKE '[C-Z]:\%'
 	Begin
-	    -- !!!!!!!!!!!!!!!!
-		-- !!! HACK FIX !!!
-		-- !!!!!!!!!!!!!!!!
-		-- ToDo: Get Buzzard updated so that this doesn't appear in the XML trigger files
+		set @message = 'Capture subfolder is not a relative path for dataset ' + @Dataset_Name + '; ignoring'
+		
+		exec PostLogEntry 'Error', @message, 'AddNewDataset'
+	   
         Set @CaptureSubfolder = ''
 	End
  
