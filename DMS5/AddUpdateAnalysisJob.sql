@@ -59,6 +59,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			03/13/2014 mem - Now passing @Job to ValidateAnalysisJobParameters
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
+**			06/24/2015 mem - Added parameter @infoOnly
 **    
 *****************************************************/
 (
@@ -83,15 +84,15 @@ CREATE Procedure AddUpdateAnalysisJob
 	@callingUser varchar(128) = '',
 	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
 	@PreventDuplicatesIgnoresNoExport tinyint = 1,
-	@SpecialProcessingWaitUntilReady tinyint = 0		-- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
+	@SpecialProcessingWaitUntilReady tinyint = 0,	-- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
+	@infoOnly tinyint = 0
 )
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	declare @AlterEnteredByRequired tinyint
@@ -107,6 +108,7 @@ As
 	set @callingUser = IsNull(@callingUser, '')
 	Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 0)
 	Set @PreventDuplicatesIgnoresNoExport = IsNull(@PreventDuplicatesIgnoresNoExport, 1)
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	
 	set @message = ''
 
@@ -139,6 +141,9 @@ As
 		if @jobID = 0
 		begin	
 			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in database '
+			If @infoOnly <> 0
+				print @msg
+
 			RAISERROR (@msg, 11, 4)
 		end
 	end
@@ -150,6 +155,9 @@ As
 		If Not @stateID IN (1,5,8,19)
 		begin
 			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
+			If @infoOnly <> 0
+				print @msg
+
 			RAISERROR (@msg, 11, 5)
 		end
 	end
@@ -213,6 +221,9 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary table'
+		If @infoOnly <> 0
+			print @msg
+
 		RAISERROR (@msg, 11, 7)
 	end
 
@@ -230,6 +241,9 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary table'
+		If @infoOnly <> 0
+			print @msg
+
 		RAISERROR (@msg, 11, 11)
 	end
 
@@ -253,6 +267,9 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error resolving default organism name'
+			If @infoOnly <> 0
+				print @msg
+
 			RAISERROR (@msg, 11, 12)
 		end
 	end
@@ -296,12 +313,17 @@ As
 							@AutoRemoveNotReleasedDatasets = 0,
 							@Job = @jobID,
 							@AutoUpdateSettingsFileToCentroided = 1,
-							@Warning = @Warning output
+							@Warning = @Warning output,
+							@showDebugMessages = @infoOnly
 	--
 	if @result <> 0
 	begin
 		If IsNull(@msg, '') = ''
 			Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobParameters'
+			
+		If @infoOnly <> 0
+			print @msg
+			
 		RAISERROR (@msg, 11, 18)
 	end
 
@@ -378,6 +400,9 @@ As
 			If @ExistingJobCount > 0
 			Begin
 				set @message = 'Job not created since duplicate job exists: ' + Convert(varchar(12), @ExistingMatchingJob)
+
+				If @infoOnly <> 0
+					print @message
 				
 				-- Do not change this error code since SP CreatePredefinedAnalysesJobs 
 				-- checks for error code 52500
@@ -396,13 +421,16 @@ As
 
 
 		---------------------------------------------------
-		-- get ID for new job (#744)
+		-- Get ID for new job
 		---------------------------------------------------
 		--
-		exec @jobID = GetNewJobID 'Job created in DMS'
+		exec @jobID = GetNewJobID 'Job created in DMS', @infoOnly
 		if @jobID = 0
 		begin
 			set @msg = 'Failed to get valid new job ID'
+			If @infoOnly <> 0
+				print @msg
+
 			RAISERROR (@msg, 11, 15)
 		end
 		set @jobNum = cast(@jobID as varchar(32))
@@ -412,88 +440,116 @@ As
 		
 		If IsNull(@SpecialProcessingWaitUntilReady, 0) > 0 And IsNull(@specialProcessing, '') <> ''
 			Set @stateID = 19
-			
-		---------------------------------------------------
-		-- start transaction
-		--
-		begin transaction @transName
+		
+		If @infoOnly <> 0
+		Begin
+			SELECT @jobID AS AJ_jobID,
+			       @priority AS AJ_priority,
+			       getdate() AS AJ_created,
+			       @analysisToolID AS AJ_analysisToolID,
+			       @parmFileName AS AJ_parmFileName,
+			       @settingsFileName AS AJ_settingsFileName,
+			       @organismDBName AS AJ_organismDBName,
+			       @protCollNameList AS AJ_proteinCollectionList,
+			       @protCollOptionsList AS AJ_proteinOptionsList,
+			       @organismID AS AJ_organismID,
+			       @datasetID AS AJ_datasetID,
+			       REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)) AS AJ_comment,
+			       @specialProcessing AS AJ_specialProcessing,
+			       @ownerPRN AS AJ_owner,
+			     @batchID AS AJ_batchID,
+			       @stateID AS AJ_StateID,
+			       @propMode AS AJ_propagationMode,
+			       @DatasetUnreviewed AS AJ_DatasetUnreviewed
 
-		---------------------------------------------------
-		--
-		INSERT INTO T_Analysis_Job (
-			AJ_jobID,
-			AJ_priority, 
-			AJ_created, 
-			AJ_analysisToolID, 
-			AJ_parmFileName, 
-			AJ_settingsFileName,
-			AJ_organismDBName, 
-			AJ_proteinCollectionList, 
-			AJ_proteinOptionsList,
-			AJ_organismID, 
-			AJ_datasetID, 
-			AJ_comment,
-			AJ_specialProcessing,
-			AJ_owner,
-			AJ_batchID,
-			AJ_StateID,
-			AJ_propagationMode,
-			AJ_DatasetUnreviewed
-		) VALUES (
-			@jobID,
-			@priority, 
-			getdate(), 
-			@analysisToolID, 
-			@parmFileName, 
-			@settingsFileName,
-			@organismDBName, 
-			@protCollNameList,
-			@protCollOptionsList,
-			@organismID, 
-			@datasetID, 
-			REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
-			@specialProcessing,
-			@ownerPRN,
-			@batchID,
-			@stateID,
-			@propMode,
-			@DatasetUnreviewed
-		)			
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Insert new job operation failed'
-			RAISERROR (@msg, 11, 13)
-		end
+		End
+		Else
+		Begin
+			---------------------------------------------------
+			-- start transaction
+			--
+			begin transaction @transName
 
-		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-		If Len(@callingUser) > 0
-			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
-
-		/*
-		---------------------------------------------------
-		-- Deprecated in May 2015: associate job with processor group
-		--
-		if @gid <> 0
-		begin
-			INSERT INTO T_Analysis_Job_Processor_Group_Associations
-				(Job_ID, Group_ID)
-			VALUES
-				(@jobID, @gid)
+			---------------------------------------------------
+			--
+			INSERT INTO T_Analysis_Job (
+				AJ_jobID,
+				AJ_priority, 
+				AJ_created, 
+				AJ_analysisToolID, 
+				AJ_parmFileName, 
+				AJ_settingsFileName,
+				AJ_organismDBName, 
+				AJ_proteinCollectionList, 
+				AJ_proteinOptionsList,
+				AJ_organismID, 
+				AJ_datasetID, 
+				AJ_comment,
+				AJ_specialProcessing,
+				AJ_owner,
+				AJ_batchID,
+				AJ_StateID,
+				AJ_propagationMode,
+				AJ_DatasetUnreviewed
+			) VALUES (
+				@jobID,
+				@priority, 
+				getdate(), 
+				@analysisToolID, 
+				@parmFileName, 
+				@settingsFileName,
+				@organismDBName, 
+				@protCollNameList,
+				@protCollOptionsList,
+				@organismID, 
+				@datasetID, 
+				REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
+				@specialProcessing,
+				@ownerPRN,
+				@batchID,
+				@stateID,
+				@propMode,
+				@DatasetUnreviewed
+			)			
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Insert new job association failed'
-				RAISERROR (@msg, 11, 14)
+				set @msg = 'Insert new job operation failed'
+				If @infoOnly <> 0
+					print @msg
+
+				RAISERROR (@msg, 11, 13)
 			end
-		end
-		*/
-		
-		commit transaction @transName
+
+			-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+			If Len(@callingUser) > 0
+				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+
+			/*
+			---------------------------------------------------
+			-- Deprecated in May 2015: associate job with processor group
+			--
+			if @gid <> 0
+			begin
+				INSERT INTO T_Analysis_Job_Processor_Group_Associations
+					(Job_ID, Group_ID)
+				VALUES
+					(@jobID, @gid)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				if @myError <> 0
+				begin
+					set @msg = 'Insert new job association failed'
+					RAISERROR (@msg, 11, 14)
+				end
+			end
+			*/
+			
+			commit transaction @transName
+		End
 	end -- add mode
 
 	---------------------------------------------------
@@ -525,12 +581,18 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Error looking up state name'
+				If @infoOnly <> 0
+					print @msg
+
 				RAISERROR (@msg, 11, 15)
 			end
 			
 			if @stateID = -1
 			begin
 				set @msg = 'State name not recognized: ' + @stateName
+				If @infoOnly <> 0
+					print @msg
+
 				RAISERROR (@msg, 11, 15)
 			end
 		end		
@@ -557,114 +619,143 @@ As
 			RAISERROR (@msg, 11, 16)
 		end
 		*/
-		
-		---------------------------------------------------
-		-- start transaction
-		--
-		begin transaction @transName
 
-		---------------------------------------------------
-		-- make changes to database
-		--
-		UPDATE T_Analysis_Job 
-		SET 
-			AJ_priority = @priority, 
-			AJ_analysisToolID = @analysisToolID, 
-			AJ_parmFileName = @parmFileName, 
-			AJ_settingsFileName = @settingsFileName, 
-			AJ_organismDBName = @organismDBName, 
-			AJ_proteinCollectionList = @protCollNameList, 
-			AJ_proteinOptionsList = @protCollOptionsList,
-			AJ_organismID = @organismID, 
-			AJ_datasetID = @datasetID, 
-			AJ_comment = @comment,
-			AJ_specialProcessing = @specialProcessing,
-			AJ_owner = @ownerPRN,
-			AJ_StateID = @stateID,
-			AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL END, 
-			AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL END,
-			AJ_propagationMode = @propMode
-		WHERE (AJ_jobID = @jobID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: "' + @jobNum + '"'
-			RAISERROR (@msg, 11, 17)
-		end
-
-		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-		If Len(@callingUser) > 0
-			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
-
-
-		/*
-		---------------------------------------------------
-		-- Deprecated in May 2015: deal with job association with group, 
-
-		-- if no group is given, but existing association
-		-- exists for job, delete it
-		--
-		if @gid = 0
-		begin
-			DELETE FROM T_Analysis_Job_Processor_Group_Associations
-			WHERE (Job_ID = @jobID)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-		end
-
-		-- if group is given, and no association for job exists
-		-- create one
-		--
-		if @gid <> 0 and @pgaAssocID = 0
-		begin
-			INSERT INTO T_Analysis_Job_Processor_Group_Associations
-				(Job_ID, Group_ID)
-			VALUES
-				(@jobID, @gid)				
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			
-			Set @AlterEnteredByRequired = 1
-		end
-
-		-- if group is given, and an association for job does exist
-		-- update it
-		--
-		if @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
-		begin
-			UPDATE T_Analysis_Job_Processor_Group_Associations
-				SET Group_ID = @gid,
-					Entered = GetDate(),
-					Entered_By = suser_sname()
-			WHERE
-				Job_ID = @jobID				
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			
-			Set @AlterEnteredByRequired = 1
-		end
-		*/
-		
-		-- report error, if one occurred
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Error deleting existing association for job'
-			RAISERROR (@msg, 11, 21)
-		end
-
-		commit transaction @transName
-		
-		If Len(@callingUser) > 0 AND @AlterEnteredByRequired <> 0
+		If @infoOnly <> 0
 		Begin
-			-- Call AlterEnteredByUser
-			-- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
-		
-			Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
+			SELECT @jobID AS AJ_jobID,
+			       @priority AS AJ_priority,
+			       AJ_created,
+			       @analysisToolID AS AJ_analysisToolID,
+			       @parmFileName AS AJ_parmFileName,
+			       @settingsFileName AS AJ_settingsFileName,
+			       @organismDBName AS AJ_organismDBName,
+			       @protCollNameList AS AJ_proteinCollectionList,
+			       @protCollOptionsList AS AJ_proteinOptionsList,
+			       @organismID AS AJ_organismID,
+			       @datasetID AS AJ_datasetID,
+			       @comment AJ_comment,
+			       @specialProcessing AS AJ_specialProcessing,
+			       @ownerPRN AS AJ_owner,
+			       AJ_batchID,
+			       @stateID AS AJ_StateID,
+			       CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL END AS AJ_start, 
+				   CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL END AS AJ_finish,
+			       @propMode AS AJ_propagationMode,
+			       AJ_DatasetUnreviewed
+			FROM T_Analysis_Job
+			WHERE (AJ_jobID = @jobID)
+			
+		End
+		Else
+		Begin		
+			---------------------------------------------------
+			-- start transaction
+			--
+			begin transaction @transName
+
+			---------------------------------------------------
+			-- make changes to database
+			--
+			UPDATE T_Analysis_Job 
+			SET 
+				AJ_priority = @priority, 
+				AJ_analysisToolID = @analysisToolID, 
+				AJ_parmFileName = @parmFileName, 
+				AJ_settingsFileName = @settingsFileName, 
+				AJ_organismDBName = @organismDBName, 
+				AJ_proteinCollectionList = @protCollNameList, 
+				AJ_proteinOptionsList = @protCollOptionsList,
+				AJ_organismID = @organismID, 
+				AJ_datasetID = @datasetID, 
+				AJ_comment = @comment,
+				AJ_specialProcessing = @specialProcessing,
+				AJ_owner = @ownerPRN,
+				AJ_StateID = @stateID,
+				AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL END, 
+				AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL END,
+				AJ_propagationMode = @propMode
+			WHERE (AJ_jobID = @jobID)
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Update operation failed: "' + @jobNum + '"'
+				RAISERROR (@msg, 11, 17)
+			end
+
+			-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+			If Len(@callingUser) > 0
+				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+
+
+			/*
+			---------------------------------------------------
+			-- Deprecated in May 2015: deal with job association with group, 
+
+			-- if no group is given, but existing association
+			-- exists for job, delete it
+			--
+			if @gid = 0
+			begin
+				DELETE FROM T_Analysis_Job_Processor_Group_Associations
+				WHERE (Job_ID = @jobID)
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			end
+
+			-- if group is given, and no association for job exists
+			-- create one
+			--
+			if @gid <> 0 and @pgaAssocID = 0
+			begin
+				INSERT INTO T_Analysis_Job_Processor_Group_Associations
+					(Job_ID, Group_ID)
+				VALUES
+					(@jobID, @gid)				
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				
+				Set @AlterEnteredByRequired = 1
+			end
+
+			-- if group is given, and an association for job does exist
+			-- update it
+			--
+			if @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
+			begin
+				UPDATE T_Analysis_Job_Processor_Group_Associations
+					SET Group_ID = @gid,
+						Entered = GetDate(),
+						Entered_By = suser_sname()
+				WHERE
+					Job_ID = @jobID				
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				
+				Set @AlterEnteredByRequired = 1
+			end
+			
+			-- report error, if one occurred
+			--
+			if @myError <> 0
+			begin
+				set @msg = 'Error deleting existing association for job'
+				RAISERROR (@msg, 11, 21)
+			end
+			*/
+
+			commit transaction @transName
+			
+			If Len(@callingUser) > 0 AND @AlterEnteredByRequired <> 0
+			Begin
+				-- Call AlterEnteredByUser
+				-- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
+			
+				Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
+			End
 		End
 		
 	end -- update mode

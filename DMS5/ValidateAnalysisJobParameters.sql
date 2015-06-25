@@ -68,6 +68,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **						   - Added optional parameters @AutoUpdateSettingsFileToCentroided and @Warning
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			05/01/2015 mem - Now preventing the use of parameter files with more than one dynamic mod when the fasta file is over 2 GB in size
+**			06/24/2015 mem - Added parameter @showDebugMessages
 **
 *****************************************************/
 (
@@ -87,7 +88,8 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@AutoRemoveNotReleasedDatasets tinyint = 0,
 	@Job int = 0,
 	@AutoUpdateSettingsFileToCentroided tinyint = 1,
-	@Warning varchar(255) = '' output
+	@Warning varchar(255) = '' output,
+	@showDebugMessages tinyint = 0
 )
 As
 	set nocount on
@@ -99,7 +101,9 @@ As
 	
 	set @message = ''
 	set @Warning = ''
-
+	
+	Set @showDebugMessages = IsNull(@showDebugMessages, 0)
+	
 	declare @list varchar(1024)
 	declare @ParamFileTool varchar(128) = '??NoMatch??'
 	declare @SettingsFileTool varchar(128)
@@ -109,12 +113,20 @@ As
 	-- Validate the datasets in #TD
 	---------------------------------------------------
 	
-	exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets, @toolName=@toolName
+	exec @result = ValidateAnalysisJobRequestDatasets 
+						@message output, 
+						@AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets, 
+						@toolName=@toolName, 
+						@showDebugMessages=@showDebugMessages
 		
 	If @result <> 0
 	Begin
 		If IsNull(@message, '') = ''
+		Begin
 			Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobRequestDatasets in ValidateAnalysisJobParameters'
+			If @showDebugMessages <> 0
+				print @message
+		End
 		return @result
 	End
 	
@@ -123,6 +135,7 @@ As
 	---------------------------------------------------
 
 	execute @userID = GetUserID @ownerPRN
+	
 	if @userID = 0
 	begin
 		---------------------------------------------------
@@ -143,6 +156,9 @@ As
 		Else
 		Begin
 			set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
+			If @showDebugMessages <> 0
+				print @message
+
 			return 51019
 		End
 	end
@@ -155,6 +171,9 @@ As
 	if @analysisToolID = 0
 	begin
 		set @message = 'Could not find entry in database for analysis tool "' + @toolName + '"'
+			If @showDebugMessages <> 0
+				print @message
+
 		return 53102
 	end
 
@@ -171,8 +190,14 @@ As
 			Else
 				set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
 		End
-		else
+		Else
+		Begin
 			set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
+		End
+		
+		If @showDebugMessages <> 0
+			print @message
+
 		return 53103
 	end
 	
@@ -184,6 +209,9 @@ As
 	if @organismID = 0
 	begin
 		set @message = 'Could not find entry in database for organismName "' + @organismName + '"'
+		If @showDebugMessages <> 0
+			print @message
+
 		return 53105
 	end
 
@@ -214,12 +242,18 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error checking dataset instrument classes against tool'
+		If @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end
 
 	if @list <> ''
 	begin
 		set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+		If @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end
 
@@ -248,12 +282,18 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error checking dataset types against tool'
+		If @showDebugMessages <> 0
+			print @message
+
 		return 51008
 	end
 
 	if @list <> ''
 	begin
 		set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+		If @showDebugMessages <> 0
+			print @message
+
 		return 51008
 	end
 	
@@ -297,6 +337,9 @@ As
 				ORDER BY ToolList.AJT_toolID
 
 				set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@ParamFileTool, '??') + '; not ' + IsNull(@toolName, '??')
+				If @showDebugMessages <> 0
+					print @message
+
 				return 53111
 			End
 		End
@@ -308,6 +351,9 @@ As
 				set @message = 'Parameter file is inactive and cannot be used' + ':"' + @parmFileName + '"'
 			Else
 				set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+
+			If @showDebugMessages <> 0
+				print @message
 				
 			return 53109
 		end
@@ -330,6 +376,9 @@ As
 				set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
 			Else
 				set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+
+			If @showDebugMessages <> 0
+				print @message
 				
 			return 53108
 		end
@@ -353,10 +402,15 @@ As
 			ORDER BY ToolList.AJT_toolID
 
 			set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
-			return 53112
-			
+			If @showDebugMessages <> 0
+				print @message
+
+			return 53112			
 		End
-		
+
+		If @showDebugMessages <> 0
+			print '  @AutoUpdateSettingsFileToCentroided=' + Cast(@AutoUpdateSettingsFileToCentroided as varchar(12))
+						
 		If IsNull(@AutoUpdateSettingsFileToCentroided, 1) <> 0
 		Begin
 			---------------------------------------------------
@@ -377,31 +431,48 @@ As
 			Begin
 				Set @ProfileModeMSn = 1
 			End
-				        
+
+			If @showDebugMessages <> 0
+			Begin
+				print '  @HighResMSn=' + Cast(@HighResMSn as varchar(12))
+				print '  @ProfileModeMSn=' + Cast(@ProfileModeMSn as varchar(12))
+				print '  @toolName=' + @toolName
+			End
+			
 			If (@HighResMSn > 0 OR @ProfileModeMSn > 0) AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery', 'MSGFPlus_SplitFasta')
 			Begin
 				-- The selected settings file must use MSConvert with Centroiding enabled
 				-- DeconMSn potentially works, but it can cause more harm than good
 				
-				Declare @AutoSupersedeName varchar(255) = ''
+				Declare @AutoCentroidName varchar(255) = ''
 						
-				SELECT @AutoSupersedeName = SF.MSGFPlus_AutoCentroid
+				SELECT @AutoCentroidName = SF.MSGFPlus_AutoCentroid
 				FROM T_Settings_Files SF
-					INNER JOIN T_Analysis_Tool AnTool
-					ON SF.Analysis_Tool = AnTool.AJT_toolName
-				WHERE SF.File_Name = @settingsFileName
+				     INNER JOIN T_Analysis_Tool AnTool
+				       ON SF.Analysis_Tool = AnTool.AJT_toolName
+				WHERE SF.File_Name = @settingsFileName AND
+				      SF.Analysis_Tool = @toolName
 
-				If IsNull(@AutoSupersedeName, '') <> ''
+				If @showDebugMessages <> 0
 				Begin
-					Set @settingsFileName = @AutoSupersedeName
+					print '  @settingsFileName=' + @settingsFileName
+					print '  @AutoCentroidName=' + IsNull(@AutoCentroidName, '<< Not Defined >>')
+				End
 					
-					Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName
+				If IsNull(@AutoCentroidName, '') <> ''
+				Begin
+					Set @settingsFileName = @AutoCentroidName
+					
+					Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoCentroidName
 					
 					If @ProfileModeMSn > 0
 						Set @Warning = @Warning + ' because this job has a profile-mode MSn dataset'
 					Else
 						Set @Warning = @Warning + ' because this job has a QExactive dataset'
-					
+
+					If @showDebugMessages <> 0
+						print @Warning
+
 				End
 				
 				Declare @DtaGenerator varchar(512)
@@ -425,6 +496,9 @@ As
 				If IsNull(@DtaGenerator, '') = ''
 				Begin
 					Set @message = 'Settings file "' + @settingsFileName + '" does not have DtaGenerator defined; unable to verify that centroiding is enabled'
+					If @showDebugMessages <> 0
+						print @message
+
 					return 53113
 				End
 				
@@ -452,6 +526,9 @@ As
 						Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not use MSConvert or DeconMSn for DTA Generation; unable to determine if centroiding is enabled'
 					Else
 						Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not appear to have centroiding enabled'
+						
+					If @showDebugMessages <> 0
+						print @message
 				End
 			End
 		End
@@ -470,12 +547,18 @@ As
 					@protCollOptionsList output,
 					@ownerPRN,
 					@message output,
-					@debugMode=0
+					@debugMode=@showDebugMessages
 
 	if @result <> 0
 	Begin
 		If IsNull(@message, '') = ''
+		Begin
 			Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateProteinCollectionParams in ValidateAnalysisJobParameters'
+		End
+
+		If @showDebugMessages <> 0
+			print @message
+
 		return @result
 	End
 	
@@ -525,6 +608,9 @@ As
 			Begin			
 				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
 				Set @result = 65350
+
+				If @showDebugMessages <> 0
+					print @message
 				
 				return @result
 			End
@@ -551,6 +637,9 @@ As
 				-- Parameter has more than one dynamic mod; this search will take too long
 				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you cannot use a parameter file with ' + Cast(@DynModCount as varchar(12)) + ' dynamic mods.  Preferably use a parameter file with no dynamic mods (though you _might_ get away with 1 dynamic mod).'
 				Set @result = 65351
+
+				If @showDebugMessages <> 0
+					print @message
 				
 				return @result
 			End			
@@ -563,12 +652,18 @@ As
 			Begin
 				Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must use analysis tool MSGFPlus_SplitFasta'
 				Set @result = 65352
+
+				If @showDebugMessages <> 0
+					print @message
 				
 				return @result
 			End
 		End
 		
 	End	
+
+	If @result <> 0 And @showDebugMessages <> 0 And IsNull(@message, '') <> ''
+		print @message
 	
 	return @result
 

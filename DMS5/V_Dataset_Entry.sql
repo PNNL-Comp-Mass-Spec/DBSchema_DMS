@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Dataset_Entry]
 AS
 SELECT  T_Experiments.Experiment_Num ,
@@ -22,7 +23,8 @@ SELECT  T_Experiments.Experiment_Num ,
         TEUT.Name AS DS_EUSUsageType ,
         TRR.RDS_EUS_Proposal_ID AS DS_EUSProposalID ,
         dbo.GetRequestedRunEUSUsersList(TRR.ID, 'I') AS DS_EUSUsers ,
-        TCRT.Cart_Name AS DS_LCCartName
+        TCRT.Cart_Name AS DS_LCCartName,
+		TDS.Capture_Subfolder AS Capture_Subfolder
 FROM    T_Dataset TDS
         INNER JOIN T_Experiments ON TDS.Exp_ID = T_Experiments.Exp_ID
         INNER JOIN T_DatasetTypeName TDTN ON TDS.DS_type_ID = TDTN.DST_Type_ID
@@ -33,6 +35,7 @@ FROM    T_Dataset TDS
 LEFT OUTER JOIN dbo.T_Requested_Run TRR ON TRR.DatasetID = TDS.Dataset_ID 
 LEFT outer JOIN dbo.T_LC_Cart TCRT ON TCRT.ID = TRR.RDS_Cart_ID
 LEFT OUTER JOIN dbo.T_EUS_UsageType TEUT ON TRR.RDS_EUS_UsageType = TEUT.ID
+
 
 
 GO

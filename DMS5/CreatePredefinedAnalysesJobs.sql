@@ -20,7 +20,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **						   - Replaced processor name with associated processor group (Ticket #388)
 **			02/29/2008 mem - Added optional parameter @callingUser; If provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
-**			05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @InfoOnly
+**			05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @infoOnly
 **			07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
 **			07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
 **			08/26/2010 grk - This was cloned from SchedulePredefinedAnalyses; added try-catch error handling 
@@ -30,6 +30,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to AddUpdateAnalysisJob
 **			05/03/2012 mem - Added support for the Special Processing field
 **			08/02/2013 mem - Removed extra semicolon in status message
+**			06/24/2015 mem - Now passing @infoOnly to AddUpdateAnalysisJob
 **    
 *****************************************************/
 (
@@ -38,7 +39,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
 	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
 	@PreventDuplicateJobs tinyint = 1,				-- When non-zero, then will not create new jobs that duplicate old jobs
-	@InfoOnly tinyint = 0,
+	@infoOnly tinyint = 0,
 	@message VARCHAR(max) output,
 	@JobsCreated int = 0 output
 )
@@ -62,7 +63,7 @@ As
 	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
 	Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 1)
-	Set @InfoOnly = IsNull(@InfoOnly, 0)
+	Set @infoOnly = IsNull(@infoOnly, 0)
 
 	BEGIN TRY
 	
@@ -204,65 +205,67 @@ As
 			If @CreateJob <> 0
 			Begin -- <c>
 			
-				If @InfoOnly <> 0
+				If @infoOnly <> 0
 				Begin
+					Print ''
 					Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@parmFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
 				End
-				Else
-				Begin -- <d>
-					---------------------------------------------------
-					-- create the job
-					---------------------------------------------------
-					execute @result = AddUpdateAnalysisJob
-								@datasetNum = @datasetNum,
-								@priority = @priority,
-								@toolName = @analysisToolName,
-								@parmFileName = @parmFileName,
-								@settingsFileName = @settingsFileName,
-								@organismName = @organismName,
-								@protCollNameList = @proteinCollectionList,
-								@protCollOptionsList = @proteinOptionsList,
-								@organismDBName = @organismDBName,
-								@ownerPRN = @ownerPRN,
-								@comment = @comment,
-								@associatedProcessorGroup = @associatedProcessorGroup,
-								@propagationMode = @propagationModeText,
-								@stateName = 'new',
-								@jobNum = @jobNum output,
-								@mode = 'add',				
-								@message = @NewMessage output,
-								@callingUser = @callingUser,
-								@PreventDuplicateJobs = @PreventDuplicateJobs,
-								@PreventDuplicatesIgnoresNoExport = 0,
-								@specialProcessing = @specialProcessing,
-								@SpecialProcessingWaitUntilReady = 1
 
-					-- If there was an error creating the job, remember it
-					-- otherwise bump the job count
-					--
-					If @result = 0 
-					BEGIN 
+				---------------------------------------------------
+				-- create the job
+				---------------------------------------------------
+				execute @result = AddUpdateAnalysisJob
+							@datasetNum = @datasetNum,
+							@priority = @priority,
+							@toolName = @analysisToolName,
+							@parmFileName = @parmFileName,
+							@settingsFileName = @settingsFileName,
+							@organismName = @organismName,
+							@protCollNameList = @proteinCollectionList,
+							@protCollOptionsList = @proteinOptionsList,
+							@organismDBName = @organismDBName,
+							@ownerPRN = @ownerPRN,
+							@comment = @comment,
+							@associatedProcessorGroup = @associatedProcessorGroup,
+							@propagationMode = @propagationModeText,
+							@stateName = 'new',
+							@jobNum = @jobNum output,
+							@mode = 'add',				
+							@message = @NewMessage output,
+							@callingUser = @callingUser,
+							@PreventDuplicateJobs = @PreventDuplicateJobs,
+							@PreventDuplicatesIgnoresNoExport = 0,
+							@specialProcessing = @specialProcessing,
+							@SpecialProcessingWaitUntilReady = 1,
+							@infoOnly = @infoOnly
+
+				-- If there was an error creating the job, remember it
+				-- otherwise bump the job count
+				--
+				If @result = 0 
+				BEGIN
+					If @infoOnly = 0
 						Set @jobsCreated = @jobsCreated + 1 
-					END 
-					ELSE 
-					BEGIN
-						If @message = ''
-							Set @message = @NewMessage
-						Else
-							Set @message = @message + '; ' + @NewMessage
-						
-						If @result <> 52500
-						Begin
-							-- Append the @result ID to @message
-							-- Increment @JobFailCount, but keep trying to create the other predefined jobs for this dataset
-							Set @JobFailCount = @JobFailCount + 1
-							If @JobFailErrorCode = 0
-								Set @JobFailErrorCode = @result
-								
-							Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
-						End
-					END 
-				End -- </d>
+				END 
+				ELSE 
+				BEGIN
+					If @message = ''
+						Set @message = @NewMessage
+					Else
+						Set @message = @message + '; ' + @NewMessage
+					
+					If @result <> 52500
+					Begin
+						-- Append the @result ID to @message
+						-- Increment @JobFailCount, but keep trying to create the other predefined jobs for this dataset
+						Set @JobFailCount = @JobFailCount + 1
+						If @JobFailErrorCode = 0
+							Set @JobFailErrorCode = @result
+							
+						Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
+					End
+				END 
+			
 			End -- </c>
 		End -- </b>
 		

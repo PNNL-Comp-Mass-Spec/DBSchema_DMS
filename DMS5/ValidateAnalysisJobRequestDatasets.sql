@@ -21,12 +21,14 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **			08/02/2013 mem - Tweaked message for "Not Released" datasets
 **			03/30/2015 mem - Tweak warning message grammar
 **			04/23/2015 mem - Added parameter @toolName
+**			06/24/2015 mem - Added parameter @showDebugMessages
 **
 *****************************************************/
 (
 	@message varchar(512) output,
 	@AutoRemoveNotReleasedDatasets tinyint = 0,			-- When 1, then automatically removes datasets from #TD if they have an invalid rating
-	@toolName varchar(64) = 'unknown'
+	@toolName varchar(64) = 'unknown',
+	@showDebugMessages tinyint = 0						-- 1 to print @message strings; 2 to also see the contents of #TD
 )
 As
 	set nocount on
@@ -39,6 +41,7 @@ As
 	set @message = ''
 	
 	Set @AutoRemoveNotReleasedDatasets = IsNull(@AutoRemoveNotReleasedDatasets, 0)
+	Set @showDebugMessages = IsNull(@showDebugMessages, 0)
 	
 	---------------------------------------------------
 	-- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
@@ -68,7 +71,14 @@ As
 		T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID	
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-		
+
+	If @showDebugMessages > 1
+	Begin
+		SELECT *
+		FROM #TD
+		ORDER BY Dataset_Num
+	End
+			
 	---------------------------------------------------
 	-- Make sure none of the datasets has a rating of -5 (Not Released)
 	---------------------------------------------------
@@ -103,11 +113,18 @@ As
 				set @message = 'dataset is "Not Released": ' + @list
 			else
 				set @message = Convert(varchar(12), @NotReleasedCount) + ' datasets are "Not Released": ' + @list
+				
+			if @showDebugMessages <> 0
+				print @message
+				
 			return 50101
 		End
 		Else
 		Begin
 			set @message = 'Skipped ' + Convert(varchar(12), @NotReleasedCount) + ' "Not Released" ' + dbo.CheckPlural(@NotReleasedCount, 'dataset', 'datasets') + ': ' + @list
+
+			if @showDebugMessages <> 0
+				print @message
 			
 			DELETE FROM #TD
 			WHERE DS_Rating = -5
@@ -128,20 +145,25 @@ As
 		END
 	FROM
 		#TD
-	WHERE 
-		Dataset_ID IS NULL
+	WHERE Dataset_ID IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
 		set @message = 'Error checking dataset Existence'
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end
 	--
 	if @list <> ''
 	begin
 		set @message = 'The following datasets were not in the database: ' + @list
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end	
 
@@ -158,20 +180,25 @@ As
 		END
 	FROM
 		#TD
-	WHERE 
-		(DS_state_ID <> 3)
+	WHERE (DS_state_ID <> 3)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
 		set @message = 'Error checking dataset state'
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end
 	--
 	if @list <> ''
 	begin
 		set @message = 'The following datasets were not in correct state: ' + @list
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end	
 
@@ -195,12 +222,18 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error checking dataset rating'
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end
 	--
 	if @list <> ''
 	begin
 		set @message = 'The following datasets have a rating of -1 (No Data) or -2 (Data Files Missing): ' + @list
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51007
 	end	
 
@@ -226,6 +259,9 @@ As
 	If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen')
 	Begin		
 		Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests.  You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
+		if @showDebugMessages <> 0
+			print @message
+
 		return 51009
 	End	
 		

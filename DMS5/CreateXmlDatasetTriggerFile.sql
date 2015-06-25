@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.CreateXmlDatasetTriggerFile
+CREATE Procedure CreateXmlDatasetTriggerFile
 /****************************************************
 **	File: 
 **	Name:	CreateXmlDatasetTriggerFile
@@ -19,6 +19,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 **			02/03/2011 mem - Now calling XMLQuoteCheck() to replace double quotes with &quot;
 **			07/31/2012 mem - Now using udfCombinePaths to build the output file path
 **			05/08/2013 mem - Removed IsNull() checks since XMLQuoteCheck() now changes Nulls to empty strings
+**			06/23/2015 mem - Added @Capture_Subfolder
 **    
 *****************************************************/
 	@Dataset_Name		varchar(128),  -- @datasetNum
@@ -40,6 +41,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 	@EMSL_Users_List	varchar(1024) = '', -- @eusUsersList
 	@Run_Start		    varchar(64),
 	@Run_Finish		    varchar(64),
+	@Capture_Subfolder  varchar(255),
 	@message varchar(512) output
 As
 set nocount on
@@ -66,7 +68,9 @@ set nocount on
 
 	declare @xmlLine varchar(50)
 	set @xmlLine = ''
-
+	
+	Set @Capture_Subfolder = IsNull(@Capture_Subfolder, '')
+	
 	set @message = ''
 
 	---------------------------------------------------
@@ -88,6 +92,8 @@ set nocount on
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Experiment Name" Value="' + dbo.XMLQuoteCheck(@Experiment_Name) + '"/>' + char(13) + char(10)
 	--Instrument Name
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Instrument Name" Value="' +dbo.XMLQuoteCheck( @Instrument_Name) + '"/>' + char(13) + char(10)
+	--Capture Subfolder
+	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Capture Subfolder" Value="' +dbo.XMLQuoteCheck( @Capture_Subfolder) + '"/>' + char(13) + char(10)
 	--Separation Type
 	set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Separation Type" Value="' + dbo.XMLQuoteCheck(@Separation_Type) + '"/>' + char(13) + char(10)
 	--LC Cart Name
@@ -213,7 +219,6 @@ DestroyFSO:
 Done:
 	
 	return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateXmlDatasetTriggerFile] TO [Limited_Table_Write] AS [dbo]

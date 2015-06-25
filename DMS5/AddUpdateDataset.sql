@@ -89,7 +89,7 @@ CREATE Procedure AddUpdateDataset
 	@mode varchar(12) = 'add',				-- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
 	@message varchar(512) output,
    	@callingUser varchar(128) = '',
-   	@AggregationJobDataset tinyint = 0,			-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
+   	@AggregationJobDataset tinyint = 0,		-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
    	@CaptureSubfolder varchar(255) = ''		-- Only used when @mode is 'add' or 'bad'
 )
 As
@@ -209,8 +209,8 @@ As
 	Set @eusUsersList = IsNull(@eusUsersList, '')
 	
 	Set @requestID = IsNull(@requestID, 0)
-	
-	Set @CaptureSubfolder= IsNull(@CaptureSubfolder, '')
+	Set @AggregationJobDataset = IsNull(@AggregationJobDataset, 0)	
+	Set @captureSubfolder = LTrim(RTrim(IsNull(@captureSubfolder, '')))
 	
 	---------------------------------------------------
 	-- Determine if we are adding or check_adding a dataset
@@ -852,6 +852,7 @@ As
 			@eusUsersList,
 			@Run_Start,
 			@Run_Finish,
+			@CaptureSubfolder,
 			@message output
 
 		if @rslt > 0 
@@ -1096,7 +1097,8 @@ As
 				DS_rating = @ratingID,
 				DS_LC_column_ID = @columnID, 
 				DS_wellplate_num = @wellplateNum, 
-				DS_internal_standard_ID = @intStdID
+				DS_internal_standard_ID = @intStdID,
+				Capture_Subfolder = @captureSubfolder
 		WHERE Dataset_ID = @datasetID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

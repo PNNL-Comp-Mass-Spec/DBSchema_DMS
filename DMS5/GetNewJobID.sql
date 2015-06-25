@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create PROCEDURE dbo.GetNewJobID
+CREATE PROCEDURE dbo.GetNewJobID
 /****************************************************
 **
 **  Desc: 
@@ -18,12 +18,14 @@ create PROCEDURE dbo.GetNewJobID
 **    Date: 08/04/2009
 **			08/05/2009 grk - initial release (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **			08/05/2009 mem - Now using SCOPE_IDENTITY() to determine the ID of the newly added row
+**			06/24/2015 mem - Added parameter @infoOnly
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@note varchar(266)
+	@note varchar(266),
+	@infoOnly tinyint = 0
 )
 As
 	set nocount on
@@ -33,26 +35,34 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 
-	declare @id int
-	set @id = 0
+	declare @id int = 0
 
-	-- insert new row in job ID table to create unique ID
-	--
-	INSERT INTO T_Analysis_Job_ID (
-		Note
-	) VALUES (
-		@Note
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError = 0
-	begin
-		-- get ID of newly created entry
+	If IsNull(@infoOnly, 0) <> 0
+	Begin
+		-- Preview the next job number
+		SELECT @id = MAX(ID) + 1
+		FROM T_Analysis_Job_ID
+	End
+	Else
+	Begin
+		-- Insert new row in job ID table to create unique ID
 		--
-		set @id = SCOPE_IDENTITY()
-	end
-
+		INSERT INTO T_Analysis_Job_ID (
+			Note
+		) VALUES (
+			@Note
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myError = 0
+		Begin
+			-- get ID of newly created entry
+			--
+			set @id = SCOPE_IDENTITY()
+		End
+	End
+	
 	return @id
 
 GO
