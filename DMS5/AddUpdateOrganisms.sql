@@ -30,6 +30,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			05/13/2013 mem - Now validating @NEWTIdentifier against S_V_CV_NEWT
 **			05/24/2013 mem - Added @NEWTIDList
 **			10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
+**			06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -313,6 +314,19 @@ As
 		end
 	End	
 
+	---------------------------------------------------
+	-- Validate the default protein collection
+	---------------------------------------------------
+	
+	If @orgDBName <> ''
+	Begin
+		If Not Exists (SELECT * FROM S_V_Protein_Collection_Picker WHERE Name = @orgDBName)
+		Begin
+			set @msg = 'Protein collection not found: ' + @orgDBName
+			RAISERROR (@msg, 11, 9)
+		End
+	End
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------

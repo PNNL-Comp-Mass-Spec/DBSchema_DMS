@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Organism_Detail_Report
+
+CREATE VIEW [dbo].[V_Organism_Detail_Report]
 AS
 SELECT O.Organism_ID AS ID,
        O.OG_name AS Name,
@@ -11,7 +12,7 @@ SELECT O.Organism_ID AS ID,
        O.OG_description AS Description,
        O.OG_Domain AS Domain,
        O.OG_Kingdom AS Kingdom,
-       O.OG_Phylum AS Phylum,
+       O.OG_Phylum AS [Phylum (Division)],
        O.OG_Class AS Class,
        O.OG_Order AS [Order],
        O.OG_Family AS Family,
@@ -38,6 +39,7 @@ GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_d
          O.OG_Family, O.NEWT_Identifier, O.NEWT_ID_List, NEWT.Term_Name, O.OG_created, O.OG_Active,
          O.OG_Storage_Location, O.OG_organismDBName, 
          O.OG_DNA_Translation_Table_ID, O.OG_Mito_DNA_Translation_Table_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_Detail_Report] TO [PNL\D3M578] AS [dbo]
