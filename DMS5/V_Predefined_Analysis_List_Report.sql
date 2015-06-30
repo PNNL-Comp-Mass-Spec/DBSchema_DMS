@@ -4,9 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE VIEW [dbo].[V_Predefined_Analysis_List_Report]
 AS
 SELECT PA.AD_ID AS ID,
@@ -14,6 +11,7 @@ SELECT PA.AD_ID AS ID,
        PA.AD_level AS [Level],
        PA.AD_sequence AS [Seq.],
        PA.AD_nextLevel AS [Next Lvl.],
+	   PA.AD_enabled AS Enabled,
        PA.AD_analysisToolName AS [Analysis Tool],
        CASE WHEN PA.Trigger_Before_Disposition = 1
             THEN 'Before Disposition' 
@@ -51,7 +49,6 @@ SELECT PA.AD_ID AS ID,
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
-WHERE (PA.AD_enabled > 0)
 
 
 GO
