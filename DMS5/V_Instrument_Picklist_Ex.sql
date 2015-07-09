@@ -6,9 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Picklist_Ex]
 AS
-SELECT     IN_name + ' ' + IN_usage AS val, IN_name AS ex
-FROM         dbo.T_Instrument_Name
-WHERE     (NOT (IN_name LIKE 'SW_%')) AND (IN_status IN ('active', 'offline')) AND (IN_operations_role <> 'QC')
+SELECT IN_name + ' ' + IN_usage AS val,
+       IN_name AS ex
+FROM dbo.T_Instrument_Name
+WHERE (NOT (IN_name LIKE 'SW_%')) AND
+      (IN_status IN ('active', 'offline')) AND
+      (IN_operations_role <> 'QC')
 
 
 GO
