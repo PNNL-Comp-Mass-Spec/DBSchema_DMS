@@ -17,7 +17,8 @@ CREATE PROCEDURE ProcessWaitingSpecialProcJobs
 **	Date:	05/04/2012 mem - Initial version
 **			01/23/2013 mem - Fixed bug that only checked the status of jobs with tag 'SourceJob'
 **			05/14/2013 mem - Now auto-deleting jobs for bad datasets
-**			07/02/2013 mem - Changed filter for "bad datasets" to include -1 and -2 (previous included -5 aka Not Released)
+**			07/02/2013 mem - Changed filter for "bad datasets" to include -1 and -2 (previously included -5 aka Not Released)
+**			07/10/2015 mem - Log message now mentions "Not released dataset" when applicable
 **    
 *****************************************************/
 (
@@ -155,8 +156,8 @@ As
 					Else
 						Set @JobMessage = 'Dataset rating is ' + Convert(varchar(4), @DatasetRating)
 
-					-- Mark the dataset as bad
-					-- However, if the job actually finished at some point in the past, then do not mark the dataset as bad
+					-- Mark the job as bad
+					-- However, if the job actually finished at some point in the past, then do not mark the job as bad
 					If IsNull(@ResultsFolderName, '') = ''
 					Begin
 						Set @DatasetIsBad = 1										
@@ -265,7 +266,10 @@ As
 								exec PostLogEntry 'Warning', @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = 0
 							End
 							Else
-							Begin							
+							Begin
+								if @DatasetRating = -5
+									Set @message = 'Not released dataset: ' + @message
+
 								exec PostLogEntry 'Error',   @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = @ErrorMessagePostingIntervalHours
 							End
 						End
