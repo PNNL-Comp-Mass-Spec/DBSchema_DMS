@@ -40,6 +40,7 @@ CREATE Procedure AddUpdateStorage
 **	Date:	04/15/2002
 **			05/01/2009 mem - Updated description field in t_storage_path to be named SP_description
 **			05/09/2011 mem - Now validating @instrumentName
+**			07/15/2015 mem - Now checking for an existing entry to prevent adding a duplicate
 **    
 *****************************************************/
 (
@@ -181,8 +182,28 @@ As
 	
 	if @Mode = 'add'
 	begin
-
-
+	
+		-- Check for an existing row to avoid adding a duplicate
+		Declare @existingID int = -1
+		
+		SELECT @existingID = SP_path_ID
+		FROM T_Storage_Path
+		WHERE SP_path = @path AND
+		      SP_vol_name_client = @volNameClient AND
+		      SP_vol_name_server = @volNameServer AND
+		      SP_function = @storFunction AND
+		      SP_machine_name = @machineName
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount > 0
+		Begin
+			-- Do not add a duplicate row; just return the matched ID
+			set @ID = @existingID
+			Set @message = 'Storage path already exists; ID ' + cast(@existingID as varchar(12))
+			Goto Done
+		End
+		
 		---------------------------------------------------
 		-- begin transaction
 		---------------------------------------------------
@@ -272,7 +293,7 @@ As
 		end
 
 		---------------------------------------------------
-		-- 
+		-- Add the new entry
 		---------------------------------------------------
 		declare @newID int
 		--
@@ -489,6 +510,8 @@ As
 		commit transaction @transName
 
 	end -- update mode
+
+Done:
 
 	return @myError
 
