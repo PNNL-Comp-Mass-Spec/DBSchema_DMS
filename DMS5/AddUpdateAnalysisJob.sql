@@ -60,6 +60,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **			06/24/2015 mem - Added parameter @infoOnly
+**			07/21/2015 mem - Now allowing job comment and Export Mode to be changed
 **    
 *****************************************************/
 (
@@ -148,12 +149,69 @@ As
 		end
 	end
 
+	---------------------------------------------------
+	-- Resolve propagation mode 
+	---------------------------------------------------
+	declare @propMode smallint
+	set @propMode = CASE @propagationMode 
+						WHEN 'Export' THEN 0 
+						WHEN 'No Export' THEN 1 
+						ELSE 0 
+					END 
+
 	if @mode = 'update'
 	begin
-		-- changes only allowed to jobs in 'new', 'failed', or 'holding' state
+		-- Changes are typically only allowed to jobs in 'new', 'failed', or 'holding' state
+		-- However, we do allow the job comment or export mode to be updated
 		--
 		If Not @stateID IN (1,5,8,19)
 		begin
+			-- Allow the job comment and Export Mode to be updated
+			
+			Declare @currentStateName varchar(32)
+			Declare @currentExportMode smallint
+			Declare @currentComment varchar(512)
+			
+			SELECT @currentStateName = ASN.AJS_name,
+			       @currentComment = IsNull(J.AJ_comment, ''),
+			       @currentExportMode = IsNull(J.AJ_propagationMode, 0)
+			FROM T_Analysis_Job J
+			     INNER JOIN T_Analysis_State_Name ASN
+			       ON J.AJ_StateID = ASN.AJS_stateID
+			WHERE J.AJ_jobID = @jobID
+			
+			If @comment <> @currentComment Or @propMode <> @currentExportMode
+			Begin
+				If @infoOnly = 0
+				Begin					
+					UPDATE T_Analysis_Job 
+					SET AJ_comment = @comment,
+						AJ_propagationMode = @propMode
+					WHERE AJ_jobID = @jobID
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+				End				
+				
+				If @comment <> @currentComment And @propMode <> @currentExportMode 
+					Set @message = 'Updated job comment and export mode'
+				
+				If @message = '' And @comment <> @currentComment
+					Set @message = 'Updated job comment'
+
+				If @message = '' And @propMode <> @currentExportMode 
+					Set @message = 'Updated export mode'
+			
+				If @stateName <> @currentStateName
+				Begin
+					Set @message = @message + '; job state cannot be changed from ' + @currentStateName + ' to ' + @stateName
+				End
+				
+				If @infoOnly <> 0
+					Set @message = 'Preview: ' + @message
+					
+				Goto Done
+			End
+						
 			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
 			If @infoOnly <> 0
 				print @msg
@@ -273,16 +331,6 @@ As
 			RAISERROR (@msg, 11, 12)
 		end
 	end
-
-	---------------------------------------------------
-	-- Resolve propagation mode 
-	---------------------------------------------------
-	declare @propMode smallint
-	set @propMode = CASE @propagationMode 
-						WHEN 'Export' THEN 0 
-						WHEN 'No Export' THEN 1 
-						ELSE 0 
-					END 
 
 	---------------------------------------------------
 	-- validate job parameters
@@ -572,7 +620,7 @@ As
 		else
 		begin
 			--
-			SELECT @stateID =  AJS_stateID
+			SELECT @stateID = AJS_stateID
 			FROM T_Analysis_State_Name
 			WHERE (AJS_name = @stateName)		
 			--
@@ -626,7 +674,7 @@ As
 			       @priority AS AJ_priority,
 			       AJ_created,
 			       @analysisToolID AS AJ_analysisToolID,
-			       @parmFileName AS AJ_parmFileName,
+			      @parmFileName AS AJ_parmFileName,
 			       @settingsFileName AS AJ_settingsFileName,
 			       @organismDBName AS AJ_organismDBName,
 			       @protCollNameList AS AJ_proteinCollectionList,
@@ -768,6 +816,8 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+Done:
 	
 	return @myError
 
