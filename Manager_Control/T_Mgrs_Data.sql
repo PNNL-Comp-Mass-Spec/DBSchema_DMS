@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 731 ******/
+/****** RowCount: 733 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (302,'Proto-3_DIM',9,1,0)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (313,'Proto-3_DIM_Man',9,1,0)
@@ -732,4 +732,6 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1393,'Default_AnalysisMgr_Params',11,0,0)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1394,'Peaks2-3',11,1,1)
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1395,'Peaks2-4',11,1,1)
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1396,'Pub-13-1',11,1,1)
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite) VALUES (1397,'Pub-13-2',11,1,1)
 SET IDENTITY_INSERT [T_Mgrs] OFF
