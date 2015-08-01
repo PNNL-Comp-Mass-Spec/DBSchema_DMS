@@ -37,6 +37,7 @@ CREATE Procedure AddUpdateExperiment
 **			05/09/2014 mem - Expanded @campaignNum from varchar(50) to varchar(64)
 **			09/09/2014 mem - Added @barcode
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			07/31/2015 mem - Now updating Last_Used when key fields are updated
 **
 *****************************************************/
 (
@@ -422,7 +423,8 @@ As
 				EX_wellplate_num, 
 				EX_well_num,
 				EX_Alkylation,
-				EX_Barcode
+				EX_Barcode,
+				Last_Used
 			) VALUES (
 				@experimentNum, 
 				@researcherPRN, 
@@ -443,7 +445,8 @@ As
 				@wellplateNum,
 				@wellNum,
 				@alkylation,
-				@barcode
+				@barcode,
+				Cast(GETDATE() as Date)
 
 			)
 		--
@@ -542,7 +545,19 @@ As
 			EX_wellplate_num = @wellplateNum, 
 			EX_well_num = @wellNum,
 			EX_Alkylation = @alkylation,
-			EX_Barcode = @barcode
+			EX_Barcode = @barcode,
+			Last_Used = Case When EX_organism_ID <> @organismID OR
+			                      EX_reason <> @reason OR
+			                      EX_comment <> @comment OR
+			                      EX_enzyme_ID <> @enzymeID OR
+			                      EX_Labelling <> @labelling OR
+			                      EX_campaign_ID <> @campaignID OR
+			                      EX_cell_culture_list <> @cellCultureList OR
+			                      EX_sample_prep_request_ID <> @samplePrepRequest OR
+			                      EX_Alkylation <> @alkylation
+			                 Then Cast(GetDate() as Date) 
+			                 Else Last_Used 
+			            End
 		WHERE 
 			(Experiment_Num = @experimentNum)
 		--

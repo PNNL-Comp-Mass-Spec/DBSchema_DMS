@@ -26,6 +26,7 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_well_num] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Alkylation] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[EX_Barcode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Last_Used] [date] NOT NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY CLUSTERED 
 (
 	[Exp_ID] ASC
@@ -140,6 +141,8 @@ GO
 ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_postdigest_internal_std_ID]  DEFAULT ((0)) FOR [EX_postdigest_internal_std_ID]
 GO
 ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_EX_Alkylation]  DEFAULT ('N') FOR [EX_Alkylation]
+GO
+ALTER TABLE [dbo].[T_Experiments] ADD  CONSTRAINT [DF_T_Experiments_Last_Used]  DEFAULT (getdate()) FOR [Last_Used]
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Campaign] FOREIGN KEY([EX_campaign_ID])
 REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
