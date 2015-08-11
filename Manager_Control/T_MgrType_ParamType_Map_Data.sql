@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MgrType_ParamType_Map] ******/
-/****** RowCount: 442 ******/
+/****** RowCount: 443 ******/
 /****** Columns: MgrTypeID, ParamTypeID, DefaultValue, Last_Affected, Entered_By ******/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','','')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,9,'C:\DMS_Work','','')
@@ -443,3 +443,4 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,154,'PRISM','1/30/2012 6:12:44 
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,157,'C:\DMS_Programs\MSFileInfoScanner','4/25/2012 10:13:54 AM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,165,'C:\DMS_Programs\Quameter','9/13/2012 7:39:10 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,172,'C:\DMS_Programs\AgilentToUimfConverter','8/26/2013 11:19:21 AM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,188,'C:\DMS_Programs\OpenChrom','8/10/2015 6:54:18 PM','PNL\D3L243')

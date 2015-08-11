@@ -14,11 +14,12 @@ CREATE PROCEDURE dbo.GetManagerParameters
 **
 **	Auth:	mem
 **	Date:	05/07/2015 mem - Initial version
+**			08/10/2015 mem - Added @SortMode=3
 **    
 *****************************************************/
 (
 	@ManagerNameList varchar(4000) = '',
-	@SortMode tinyint = 0,					-- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName
+	@SortMode tinyint = 0,					-- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
 	@MaxRecursion tinyint = 5,
 	@message varchar(512)='' output
 )
@@ -201,10 +202,16 @@ As
 		FROM #Tmp_Mgr_Params
 		ORDER BY ParamName, M_Name
 
-	If @SortMode Not In (0,1)
+	If @SortMode = 2
 		SELECT *
 		FROM #Tmp_Mgr_Params
 		ORDER BY M_Name, ParamName
+
+	If @SortMode Not In (0,1,2)
+		SELECT *
+		FROM #Tmp_Mgr_Params
+		ORDER BY Value, ParamName
+
 		
 Done:
 	Return @myError
