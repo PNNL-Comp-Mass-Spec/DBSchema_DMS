@@ -21,11 +21,13 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 **			06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
 **			12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
 **						   - Now populating Activation_State when inserting new rows via the merge
+**			08/13/2015 mem - Added field @ExplicitChargeCodeList
 **    
 *****************************************************/
 (
 	@infoOnly tinyint = 0,
-	@updateAll tinyint = 0,					-- Set to 1 to force an update of all rows in T_Charge_Code; by default, filters on charge codes based on Setup_Date and Auth_Amt
+	@updateAll tinyint = 0,						-- Set to 1 to force an update of all rows in T_Charge_Code; by default, filters on charge codes based on Setup_Date and Auth_Amt
+	@ExplicitChargeCodeList varchar(2000)='',	-- Comma separated list of Charge codes (work packages) to add to T_Charge_Code regardless of filters.  When used, other charge codes are ignored
 	@message varchar(512)='' output
 )
 AS
@@ -51,6 +53,7 @@ AS
 	
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @updateAll = IsNull(@updateAll, 0)
+	Set @ExplicitChargeCodeList = IsNull(@ExplicitChargeCodeList, '')
 	Set @message = ''
 	
 	---------------------------------------------------
@@ -74,8 +77,24 @@ AS
 	
 	CREATE CLUSTERED INDEX #IX_Tmp_WPsInUseLast3Years ON #Tmp_WPsInUseLast3Years (Charge_Code)
 
+	-- Create a temporary table to keep track of WPs in @ExplicitChargeCodeList
+	CREATE TABLE #Tmp_WPsExplicit (
+		Charge_Code varchar(64)
+	)
+	
+	CREATE CLUSTERED INDEX #IX_Tmp_WPsExplicit ON #Tmp_WPsExplicit (Charge_Code)
+	
 	BEGIN TRY 
 
+		If @ExplicitChargeCodeList <> ''
+		Begin
+			-- Populate #IX_Tmp_WPsExplicit
+			INSERT INTO #Tmp_WPsExplicit (Charge_Code)
+			SELECT Value
+			FROM dbo.udfParseDelimitedList(@ExplicitChargeCodeList, ',')			
+		End
+
+		
 		----------------------------------------------------------
 		-- Create a temporary table to track the charge code information
 		-- stored in the data warehouse
@@ -107,56 +126,100 @@ AS
 		--
 		Set @CurrentLocation = 'Query opwhse'
 
-		INSERT INTO #Tmp_ChargeCode( Charge_Code,
-		                             Resp_PRN,
-		                             Resp_HID,
-		                             WBS_Title,
-		                             Charge_Code_Title,
-		                             SubAccount,
-		                             SubAccount_Title,
-		                             Setup_Date,
-		               SubAccount_Effective_Date,
-		                             Inactive_Date,
-		                             SubAccount_Inactive_Date,
-		                             Deactivated,
-		                             Auth_Amt,
-		                             Auth_PRN,
-		                             Auth_HID)
-		SELECT CC.CHARGE_CD,
-		       CC.RESP_PAY_NO,
-		       CC.RESP_HID,
-		       CT.WBS_TITLE,
-		       CC.CHARGE_CD_TITLE,
-		       CC.SUBACCT,
-		       CT.SA_TITLE,
-		       CC.SETUP_DATE,
-		       CC.SUBACCT_EFF_DATE,
-		       CC.INACT_DATE,
-		       CC.SUBACCT_INACT_DATE,
-		       CC.DEACT_SW,
-		       CC.AUTH_AMT,
-		       CC.AUTH_PAY_NO,
-		       CC.AUTH_HID
-		FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
-		     LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
-		       ON CC.CHARGE_CD = CT.CHARGE_CD
-		WHERE (CC.SETUP_DATE >= DateAdd(year, -10, GetDate()) AND			-- Filter out charge codes created over 10 years ago
-		       CC.AUTH_AMT > 0 AND											-- Ignore charge codes with an authorization amount of $0
-		       CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
-		       CC.CHARGE_CD NOT LIKE '[RV]%'
-		      )
-		       OR
-		      (CC.SETUP_DATE >= DateAdd(year, -2, GetDate()) AND			-- Filter out charge codes created over 2 years ago
-		       CC.RESP_HID IN (												-- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
-		          SELECT SUBSTRING(U_HID, 2, 20)
-		          FROM T_Users 
-		          WHERE U_Status = 'Active' AND LEN(U_HID) > 1
-		          ) AND
-		       CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
-		       CC.CHARGE_CD NOT LIKE '[RV]%'
-		     )
-		      OR
-		     (@updateAll > 0 AND CC.CHARGE_CD IN (SELECT Charge_Code FROM T_Charge_Code))
+		If Exists (Select * from #Tmp_WPsExplicit)
+		Begin
+			INSERT INTO #Tmp_ChargeCode( Charge_Code,
+			                             Resp_PRN,
+			                             Resp_HID,
+			                             WBS_Title,
+			                             Charge_Code_Title,
+			                             SubAccount,
+			                             SubAccount_Title,
+			                             Setup_Date,
+			                             SubAccount_Effective_Date,
+			                             Inactive_Date,
+			                             SubAccount_Inactive_Date,
+			                             Deactivated,
+			                             Auth_Amt,
+			                             Auth_PRN,
+			                             Auth_HID )
+			SELECT CC.CHARGE_CD,
+			       CC.RESP_PAY_NO,
+			       CC.RESP_HID,
+			       CT.WBS_TITLE,
+			       CC.CHARGE_CD_TITLE,
+			       CC.SUBACCT,
+			       CT.SA_TITLE,
+			       CC.SETUP_DATE,
+			       CC.SUBACCT_EFF_DATE,
+			       CC.INACT_DATE,
+			       CC.SUBACCT_INACT_DATE,
+			       CC.DEACT_SW,
+			       CC.AUTH_AMT,
+			       CC.AUTH_PAY_NO,
+			       CC.AUTH_HID
+			FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
+			     INNER JOIN #Tmp_WPsExplicit
+			       ON CC.CHARGE_CD = #Tmp_WPsExplicit.Charge_Code
+			     LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
+			       ON CC.CHARGE_CD = CT.CHARGE_CD
+
+		End
+		Else
+		Begin
+			
+			INSERT INTO #Tmp_ChargeCode( Charge_Code,
+			                             Resp_PRN,
+			                             Resp_HID,
+			                             WBS_Title,
+			                             Charge_Code_Title,
+			                             SubAccount,
+			                             SubAccount_Title,
+			                             Setup_Date,
+			                             SubAccount_Effective_Date,
+			                             Inactive_Date,
+			                             SubAccount_Inactive_Date,
+			                             Deactivated,
+			                             Auth_Amt,
+			                             Auth_PRN,
+			                             Auth_HID )
+			SELECT CC.CHARGE_CD,
+			       CC.RESP_PAY_NO,
+			       CC.RESP_HID,
+			       CT.WBS_TITLE,
+			       CC.CHARGE_CD_TITLE,
+			       CC.SUBACCT,
+			       CT.SA_TITLE,
+			       CC.SETUP_DATE,
+			       CC.SUBACCT_EFF_DATE,
+			       CC.INACT_DATE,
+			       CC.SUBACCT_INACT_DATE,
+			       CC.DEACT_SW,
+			       CC.AUTH_AMT,
+			       CC.AUTH_PAY_NO,
+			       CC.AUTH_HID
+			FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
+			     LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
+			       ON CC.CHARGE_CD = CT.CHARGE_CD
+			WHERE	(CC.SETUP_DATE >= DateAdd(year, -10, GetDate()) AND			-- Filter out charge codes created over 10 years ago
+					 CC.AUTH_AMT > 0 AND											-- Ignore charge codes with an authorization amount of $0
+					 CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
+					 CC.CHARGE_CD NOT LIKE '[RV]%'
+					)
+					OR
+					(CC.SETUP_DATE >= DateAdd(year, -2, GetDate()) AND			-- Filter out charge codes created over 2 years ago
+					 CC.RESP_HID IN (												-- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
+						SELECT SUBSTRING(U_HID, 2, 20)
+						FROM T_Users 
+						WHERE U_Status = 'Active' AND LEN(U_HID) > 1
+						) AND
+					 CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
+					 CC.CHARGE_CD NOT LIKE '[RV]%'
+					)
+					OR
+					(@updateAll > 0 AND CC.CHARGE_CD IN (SELECT Charge_Code FROM T_Charge_Code))
+				
+		End		  
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -229,7 +292,7 @@ AS
 			          source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_PRN, source.Auth_HID,
 			          1,		-- Auto_Defined=1
 			          1,		-- Charge_Code_State = 1 (Interest Unknown)
-			          dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
+			   dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
 			          GetDate() 
 					)
 			OUTPUT $ACTION INTO #Tmp_UpdateSummary ;
@@ -283,7 +346,7 @@ AS
 			                                COALESCE(SubAccount_Inactive_Date, Inactive_Date, Inactive_Date_Most_Recent) AS Inactive2
 			                 FROM T_Charge_Code 
 			                        ) InnerQ 
-			               ) OuterQ
+			              ) OuterQ
 			       ON target.Charge_Code = OuterQ.Charge_Code AND
 			          NOT OuterQ.Inactive_Date_Most_Recent IS NULL
 			WHERE target.Inactive_Date_Most_Recent <> OuterQ.Inactive_Date_Most_Recent OR
@@ -358,9 +421,8 @@ AS
                                INNER JOIN T_Sample_Prep_Request SPR
                                  ON CC.Charge_Code = SPR.Work_Package_Number
                           GROUP BY CC.Charge_Code 
-                        ) A
-                        INNER JOIN
-                        ( SELECT CC.Charge_Code, 
+                  ) A INNER JOIN
+             ( SELECT CC.Charge_Code, 
                                  MAX(RR.RDS_created) AS Most_Recent_RR
                           FROM T_Requested_Run RR
                                INNER JOIN T_Charge_Code CC
@@ -435,7 +497,10 @@ AS
 			----------------------------------------------------------
 			--
 		
-			SELECT 'New CC' AS State,
+			SELECT CASE WHEN T_Charge_Code.Charge_Code IS NULL 
+			            THEN 'New CC'
+			            ELSE 'Existing CC'
+			       END AS State,
 			       #Tmp_ChargeCode.*
 			FROM #Tmp_ChargeCode
 			     LEFT OUTER JOIN T_Charge_Code

@@ -23,6 +23,7 @@ CREATE PROCEDURE ValidateEUSUsage
 **						   - Now auto-clearing @eusProposalID and @eusUsersList if @eusUsageType is not 'USER'
 **			12/12/2011 mem - Now auto-fixing @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
 **			11/20/2013 mem - Now automatically extracting the integers from @eusUsersList if it instead has user names and integers
+**			08/11/2015 mem - Now trimming spaces from the parameters
 **
 *****************************************************/
 (
@@ -51,7 +52,18 @@ As
 	Set @eusUsersList = IsNull(@eusUsersList, '')
 	Set @AutoPopulateUserListIfBlank = IsNull(@AutoPopulateUserListIfBlank, 0)
 
+	---------------------------------------------------
+	-- Remove leading and trailing spaces, and check for nulls
+	---------------------------------------------------
+	--
+	Set @eusUsageType  = LTrim(RTrim(IsNull(@eusUsageType, '')))
+	Set @eusProposalID = LTrim(RTrim(IsNull(@eusProposalID, '')))
+	Set @eusUsersList  = LTrim(RTrim(IsNull(@eusUsersList, '')))
+	
+	---------------------------------------------------
 	-- Auto-fix @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
+	---------------------------------------------------
+	--
 	If @eusUsageType Like 'Cap%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
 		Set @eusUsageType = 'CAP_DEV'
 
@@ -69,7 +81,7 @@ As
 	--
 	SELECT @eusUsageTypeID = ID
 	FROM T_EUS_UsageType
-	WHERE  (Name = @eusUsageType)	
+	WHERE (Name = @eusUsageType)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
