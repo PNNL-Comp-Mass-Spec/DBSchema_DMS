@@ -26,6 +26,7 @@ CREATE Procedure dbo.SetCaptureTaskComplete
 **  		12/16/2007 grk - add completion code '100' for use by capture broker
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			04/04/2012 mem - Added parameter @FailureMessage
+**			08/19/2015 mem - If @completionCode is 0, now looking for and removing messages of the form "Error while copying \\15TFTICR64\data\"
 **    
 *****************************************************/
 (
@@ -149,13 +150,29 @@ As
 	--
 	Set @Comment = IsNull(@Comment, '')
 	
-	/*
 	If @completionState = 3
 	Begin
-		-- Possibly remove failure messages from @Comment
-
-		Declare @CommentLengthCached int
-		Set @CommentLengthCached = Len(@Comment)
+		-- Dataset successfully captured
+		-- Remove error messages of the form Error while copying \\15TFTICR64\data\ ...
+		
+		Declare @CommentLengthCached int = Len(@Comment)
+		Declare @matchIndex int = CharIndex('; Error while copying \\', @Comment)
+		
+		If @matchIndex = 0
+		Begin
+			Set @matchIndex = CharIndex('Error while copying \\', @Comment)
+		End
+		
+		If @matchIndex = 1
+		Begin
+			Set @Comment = ''
+		End
+		
+		If @matchIndex > 1
+		Begin
+			-- Match found; remove the error message
+			Set @Comment = RTrim(Substring(@Comment, 1, @matchIndex - 1))
+		End
 						
 		If Len(@Comment) <> @CommentLengthCached
 		Begin
@@ -167,7 +184,6 @@ As
 		End
 		
 	End
-	*/
 	
 	If @completionState = 5 And @FailureMessage <> ''
 	Begin

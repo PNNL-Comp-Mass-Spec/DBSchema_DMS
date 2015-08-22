@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 40 ******/
+/****** RowCount: 41 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
@@ -26,6 +26,7 @@ INSERT INTO [T_DatasetTypeName] VALUES (17,'HMS-PQD-ETD-MSn','High res MS with l
 INSERT INTO [T_DatasetTypeName] VALUES (6,'IMS-HMS','Ion mobility sep then high res MS detection',1)
 INSERT INTO [T_DatasetTypeName] VALUES (30,'IMS-HMS-HMSn','Ion mobility sep with high res MS, fragmentation of all ions with high res MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (7,'IMS-HMS-MSn','Ion mobility sep, fragmentation of all ions, high res MS',1)
+INSERT INTO [T_DatasetTypeName] VALUES (40,'LAESI-HMS','LAESI source coupled to a high res MS detector (Orbitrap or 21T)',1)
 INSERT INTO [T_DatasetTypeName] VALUES (26,'MALDI-HMS','MALDI MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (38,'MP_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (9,'MRM','Multiple reaction monitoring-triple quad',1)
