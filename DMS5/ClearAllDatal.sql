@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.ClearAllData
+create PROCEDURE ClearAllData
 /****************************************************
 ** 
 **	Desc: 
