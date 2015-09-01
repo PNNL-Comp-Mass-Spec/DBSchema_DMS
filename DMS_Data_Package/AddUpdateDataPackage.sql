@@ -26,6 +26,7 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 **			10/23/2009 mem - Expanded @PRISMWikiLink to varchar(1024)
 **			03/17/2011 mem - Removed extra, unused parameter from MakeDataPackageStorageFolder
 **						   - Now only calling MakeDataPackageStorageFolder when @mode = 'add'
+**			08/31/2015 mem - Now replacing the symbol & with 'and' in the name when @mode = 'add'
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -149,8 +150,24 @@ As
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
+	If @Mode = 'add'
 	begin
+		
+		If @Name Like '%&%'
+		Begin
+			-- Replace & with 'and'
+			
+			If @Name Like '%[a-z0-9]&[a-z0-9]%'
+			Begin
+				If @Name Like '% %'
+					Set @Name = Replace(@Name, '&', ' and ')
+				Else
+					Set @Name = Replace(@Name, '&', '_and_')
+			End
+				
+			Set @Name = Replace(@Name, '&', 'and')
+		End
+		
 		-- Make sure the data package name doesn't already exist
 		If Exists (SELECT * FROM T_Data_Package WHERE Name = @Name)
 		Begin
