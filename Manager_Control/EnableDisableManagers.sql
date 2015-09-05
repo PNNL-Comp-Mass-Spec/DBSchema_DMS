@@ -20,7 +20,7 @@ CREATE PROCEDURE dbo.EnableDisableManagers
 *****************************************************/
 (
 	@Enable tinyint,						-- 0 to disable, 1 to enable
-	@ManagerTypeID int,						-- Defined in table T_MgrTypes.  8=Space, 9=DataImport, 11=Analysis Tool Manager, 15=CaptureTaskManager
+	@ManagerTypeID int=11,					-- Defined in table T_MgrTypes.  8=Space, 9=DataImport, 11=Analysis Tool Manager, 15=CaptureTaskManager
 	@ManagerNameList varchar(4000) = '',	-- Required when @Enable = 1.  Only managers specified here will be enabled, though you can use "All" to enable All managers.  When @Enable = 0, if this parameter is blank (or All) then all managers of the given type will be disabled; supports the % wildcard
 	@PreviewUpdates tinyint = 0,
 	@message varchar(512)='' output
