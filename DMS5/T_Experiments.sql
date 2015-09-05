@@ -47,11 +47,12 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiments_CampaignID_ExpID] ON [dbo].[T_Experi
 	[Exp_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_T_Experiments_Container_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID] ON [dbo].[T_Experiments]
+/****** Object:  Index [IX_T_Experiments_Container_ID_include_Campaign_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiments_Container_ID_include_Campaign_ID] ON [dbo].[T_Experiments]
 (
 	[EX_Container_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+)
+INCLUDE ( 	[EX_campaign_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 100) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Experiments_EX_campaign_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Experiments_EX_campaign_ID] ON [dbo].[T_Experiments]
