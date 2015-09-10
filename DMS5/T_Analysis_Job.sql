@@ -246,6 +246,11 @@ REFERENCES [dbo].[T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Organisms]
 GO
+ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Param_Files] FOREIGN KEY([AJ_parmFileName])
+REFERENCES [dbo].[T_Param_Files] ([Param_File_Name])
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Param_Files]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_YesNo] FOREIGN KEY([AJ_DatasetUnreviewed])
 REFERENCES [dbo].[T_YesNo] ([Flag])
 GO
