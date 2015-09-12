@@ -262,28 +262,27 @@ FOR UPDATE, DELETE AS
 **	Auth:	mem
 **	Date:	02/08/2011
 **			07/08/2012 mem - Added row counts to the error message
+**			09/11/2015 mem - Added support for the table being empty
 **
 *****************************************************/
 BEGIN
 
-    DECLARE @Count int = @@ROWCOUNT;
-	Declare @tableRowCount int = -1
+     DECLARE @Count int
+    SET @Count = @@ROWCOUNT;
 
-	SELECT @tableRowCount = i.rowcnt
-	FROM dbo.sysobjects o
-	     INNER JOIN dbo.sysindexes i
-	       ON o.id = i.id
-	WHERE o.name = 'T_Job_Steps' AND
-	      o.TYPE = 'u' AND
-	      i.indid < 2
+	DECLARE @ExistingRows int=0
+	SELECT @ExistingRows = i.rowcnt
+    FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id
+    WHERE o.name = 'T_Job_Steps' AND o.type = 'u' AND i.indid < 2
 	
-    IF @Count >= @tableRowCount
+    IF @Count > 0 AND @ExistingRows > 1 AND @Count >= @ExistingRows
     BEGIN
     
-		Declare @message varchar(512)                     
-		Set @message = 'Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Job_Steps).  Trying to update ' + convert(varchar(12), @Count) + ' rows while table has ' + CONVERT(varchar(12), @tableRowCount) + ' rows'
+		Declare @msg varchar(512)      
+		Set @msg = 'Cannot update or delete all ' + Convert(varchar(12), @Count) + ' rows ' + 
+		           '(@ExistingRows=' + CONVERT(varchar(12), @ExistingRows) + '). Use a WHERE clause (see trigger trig_ud_T_Job_Steps)'               
 		
-		RAISERROR(@message,16,1)
+		RAISERROR(@msg,16,1)
 		ROLLBACK TRANSACTION
 		RETURN;
 			
