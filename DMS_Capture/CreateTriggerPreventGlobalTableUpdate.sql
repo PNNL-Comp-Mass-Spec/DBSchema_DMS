@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.CreateTriggerPreventGlobalTableUpdate
+
+CREATE PROCEDURE CreateTriggerPreventGlobalTableUpdate
 /****************************************************
 **
 **	Desc: 
@@ -15,6 +16,7 @@ CREATE PROCEDURE dbo.CreateTriggerPreventGlobalTableUpdate
 **
 **	Auth:	mem
 **	Date:	02/08/2011
+**			09/11/2015 mem - Added support for the table being empty
 **    
 *****************************************************/
 (
@@ -107,6 +109,7 @@ Begin
 			Set @Sql = @Sql +  CHAR(13) + '**'
 			Set @Sql = @Sql +  CHAR(13) + '**	Auth:	mem'
 			Set @Sql = @Sql +  CHAR(13) + '**	Date:	02/08/2011'
+			Set @Sql = @Sql +  CHAR(13) + '**			09/11/2015 mem - Added support for the table being empty'
 			Set @Sql = @Sql +  CHAR(13) + '**'
 			Set @Sql = @Sql +  CHAR(13) + '*****************************************************/'
 			Set @Sql = @Sql +  CHAR(13) + 'BEGIN' 
@@ -116,17 +119,19 @@ Begin
 			-- Alternative to using @@RowCount is:  SELECT @Count = COUNT(*) FROM inserted'
 			Set @Sql = @Sql +  CHAR(13) + '    SET @Count = @@ROWCOUNT;'
 			Set @Sql = @Sql +  CHAR(13) + ''
-			Set @Sql = @Sql +  CHAR(13) + '    IF @Count >= (	SELECT i.rowcnt AS TableRowCount'
-			Set @Sql = @Sql +  CHAR(13) + '                     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id'
-			Set @Sql = @Sql +  CHAR(13) + '                     WHERE o.name = ''' + @TableName + ''' AND o.type = ''u'' AND i.indid < 2'
-			Set @Sql = @Sql +  CHAR(13) + '                 )'
-			
+			Set @Sql = @Sql +  CHAR(13) + '    DECLARE @ExistingRows int=0'
+			Set @Sql = @Sql +  CHAR(13) + '    SELECT @ExistingRows = i.rowcnt'
+			Set @Sql = @Sql +  CHAR(13) + '    FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id'
+			Set @Sql = @Sql +  CHAR(13) + '    WHERE o.name = ''' + @TableName + ''' AND o.type = ''u'' AND i.indid < 2'
+
 			-- The following works on small tables, but doesn't work on tables with lots of columns or lots of long, text columns
 			-- Set @Sql = @Sql +  CHAR(13) + '    IF @Count >= (	SELECT SUM(row_count)' 
 			-- Set @Sql = @Sql +  CHAR(13) + '                  FROM sys.dm_db_partition_stats'
 			-- Set @Sql = @Sql +  CHAR(13) + '                  WHERE OBJECT_ID = OBJECT_ID(''' + @TableName + ''')'
 			-- Set @Sql = @Sql +  CHAR(13) + '                 )'
 			
+			Set @Sql = @Sql +  CHAR(13) + ''
+			Set @Sql = @Sql +  CHAR(13) + '    IF @Count > 0 AND @ExistingRows > 0 AND @Count >= @ExistingRows '
 			Set @Sql = @Sql +  CHAR(13) + '    BEGIN'
 			Set @Sql = @Sql +  CHAR(13) + ''
 			Set @Sql = @Sql +  CHAR(13) + '        RAISERROR('''+ @errMsg + ''',' + @severity +',' + @state +')'
@@ -149,6 +154,5 @@ Begin
 	End
 
 end
-
 
 GO
