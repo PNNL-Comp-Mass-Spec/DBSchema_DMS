@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE AddUpdateOrganisms
 /****************************************************
 **
@@ -31,6 +32,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			05/24/2013 mem - Added @NEWTIDList
 **			10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
 **			06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
+**			09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -454,7 +456,7 @@ As
 		-- Note that the table is auto-updated once per hour by a Sql Server Agent job running on ProteinSeqs
 		-- This hourly update captures any changes manually made to table T_Organisms
 		
-		Exec ProteinSeqs.MT_Main.dbo.RefreshCachedOrganisms
+		Exec dbo.S_MT_Main_RefreshCachedOrganisms
 
 	END TRY
 	BEGIN CATCH 
@@ -466,7 +468,6 @@ As
 	END CATCH
 	
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin] AS [dbo]

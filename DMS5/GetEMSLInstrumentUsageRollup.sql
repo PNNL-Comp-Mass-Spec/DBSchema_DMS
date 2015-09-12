@@ -4,10 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
+CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
 /****************************************************
 **	Desc: 
 **  Outputs contents of EMSL instrument usage report table as rollup
+**
+**	This UDF is used by the CodeIgniter instance at http://prismsupport.pnl.gov/dms2ws/
+**	Example URL:
+**		http://prismsupport.pnl.gov/dms2ws/instrument_usage_report/ws/2015/07
+**
+**	See also /file1/www/html/prismsupport/dms2ws/application/controllers/instrument_usage_report.php
 **
 **	Return values: 
 **

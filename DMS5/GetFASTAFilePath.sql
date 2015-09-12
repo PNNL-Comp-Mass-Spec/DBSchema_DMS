@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[GetFASTAFilePath]
 **	Auth:	kja
 **	Date:	01/23/2007
 **			09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs (Ticket #531)
+**			09/11/2015 mem - Now using synonym S_ProteinSeqs_T_Archived_Output_Files
 **    
 *****************************************************/
 (
@@ -46,7 +47,7 @@ Begin
 	
 		
 		SELECT TOP 1 @filePath = Archived_File_Path
-		FROM ProteinSeqs.Protein_Sequences.dbo.T_Archived_Output_Files 
+		FROM S_ProteinSeqs_T_Archived_Output_Files
 		WHERE Archived_File_Path LIKE '%' + @fastaFileName + '%'
 		
 		If LEN(@filePath) = 0
@@ -64,6 +65,7 @@ Begin
 	
 	RETURN @filePath
 End
+
 
 GO
 GRANT EXECUTE ON [dbo].[GetFASTAFilePath] TO [public] AS [dbo]
