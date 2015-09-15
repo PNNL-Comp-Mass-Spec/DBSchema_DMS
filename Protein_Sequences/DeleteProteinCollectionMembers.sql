@@ -15,11 +15,13 @@ CREATE PROCEDURE DeleteProteinCollectionMembers
 **	Auth:	kja
 **	Date:	10/07/2004 kja - Initial version
 **			07/20/2015 mem - Now setting NumProteins and TotalResidues to 0 in T_Protein_Collections
+**			09/14/2015 mem - Added parameter @NumProteinsForReLoad
 **    
 *****************************************************/
 (
 	@Collection_ID int,
-	@message varchar(512) output	
+	@message varchar(512) output,
+	@NumProteinsForReLoad int = 0		-- Number of proteins that will be associated with this collection after they are added to the database following this delete
 )
 As
 	set nocount on
@@ -29,6 +31,7 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 	
+	set @NumProteinsForReLoad = IsNull(@NumProteinsForReLoad, 0)
 	set @message = ''	
 	
 	declare @msg varchar(256)	
@@ -94,7 +97,7 @@ As
 	end
 
 	UPDATE T_Protein_Collections
-	SET NumProteins = 0,
+	SET NumProteins = @NumProteinsForReLoad,
 		NumResidues = 0
 	WHERE Protein_Collection_ID = @Collection_ID
 
