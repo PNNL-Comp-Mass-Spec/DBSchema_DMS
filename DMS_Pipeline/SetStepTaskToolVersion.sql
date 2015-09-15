@@ -39,6 +39,8 @@ As
 	Set @step = IsNull(@step, 0)
 	Set @ToolVersionInfo = IsNull(@ToolVersionInfo, '')
 	
+	print @ToolVersionInfo
+	
 	If @ToolVersionInfo = ''
 		Set @ToolVersionInfo = 'Unknown'
 	

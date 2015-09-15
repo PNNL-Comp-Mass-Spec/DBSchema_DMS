@@ -22,21 +22,23 @@ CREATE PROCEDURE MoveJobsToMainTables
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			10/17/2011 mem - Added column Memory_Usage_MB
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			09/14/2015 mem - Added parameter @DebugMode
 **    
 *****************************************************/
 (
-	@message varchar(512) output
+	@message varchar(512) output,
+	@DebugMode tinyint = 0
 )
 As
 	set nocount on
 	
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
+	set @DebugMode = IsNull(@DebugMode, 0)
 
 	---------------------------------------------------
 	-- set up transaction parameters
@@ -48,13 +50,19 @@ As
 	---------------------------------------------------
 	-- populate actual tables from accumulated entries
 	---------------------------------------------------
-/*
-select * from #Jobs
-select * from #Job_Steps 
-select * from #Job_Step_Dependencies
-select * from #Job_Parameters 
-goto Done
-*/
+
+	If @DebugMode <> 0
+	Begin
+		If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobs') Drop table T_Tmp_NewJobs
+		If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobSteps') Drop table T_Tmp_NewJobSteps
+		If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobStepDependencies') Drop table T_Tmp_NewJobStepDependencies
+		If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobParameters') Drop table T_Tmp_NewJobParameters
+
+		select * INTO T_Tmp_NewJobs from #Jobs 
+		select * INTO T_Tmp_NewJobSteps from #Job_Steps  
+		select * INTO T_Tmp_NewJobStepDependencies from #Job_Step_Dependencies 
+		select * INTO T_Tmp_NewJobParameters from #Job_Parameters 
+	End
 
 	begin transaction @transName
 
@@ -101,7 +109,7 @@ goto Done
 		Input_Folder_Name,
 		Output_Folder_Name,
 		Processor
-	 FROM #Job_Steps
+	FROM #Job_Steps
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -127,7 +135,7 @@ goto Done
 		Condition_Test,
 		Test_Value,
 		Enable_Only
-	 FROM #Job_Step_Dependencies
+	FROM #Job_Step_Dependencies
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

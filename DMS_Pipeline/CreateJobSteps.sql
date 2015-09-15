@@ -42,6 +42,8 @@ CREATE PROCEDURE CreateJobSteps
 **			05/25/2011 mem - Updated call to CreateStepsForJob
 **			10/17/2011 mem - Now populating column Memory_Usage_MB using UpdateJobStepMemoryUsage
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			09/14/2015 mem - Now passing @DebugMode to MoveJobsToMainTables
+**						   - Verifying that T_Step_Tool_Versions has Tool_Version_ID 1 (unknown)
 **    
 *****************************************************/
 (
@@ -55,7 +57,7 @@ CREATE PROCEDURE CreateJobSteps
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
 	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
 	@infoOnly tinyint = 0,
-	@DebugMode tinyint = 0				-- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
+	@DebugMode tinyint = 0				-- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job.  Also, when this is non-zero, various debug tables will be shown
 )
 As
 	set nocount on
@@ -285,7 +287,21 @@ As
 			goto Done
 		end
 	end
-	
+
+	---------------------------------------------------
+	-- Make sure T_Step_Tool_Versions as the "Unknown" version (ID=1)
+	---------------------------------------------------
+	--	
+	If Not Exists (Select * from T_Step_Tool_Versions WHERE Tool_Version_ID = 1)
+	Begin
+		SET IDENTITY_INSERT T_Step_Tool_Versions ON
+
+		Insert Into T_Step_Tool_Versions (Tool_Version_ID, Tool_Version)
+		Values (1, 'Unknown')
+
+		SET IDENTITY_INSERT T_Step_Tool_Versions OFF
+	End
+
 	---------------------------------------------------
 	-- loop through jobs and process them into temp tables
 	---------------------------------------------------
@@ -488,7 +504,7 @@ As
 		if @mode = 'CreateFromImportedJobs'
 		begin
 			-- Move temp tables to main tables
-			exec MoveJobsToMainTables @message output
+			exec MoveJobsToMainTables @message output, @DebugMode
 
 			-- Possibly update the input folder using the 
 			-- Special_Processing param in the job parameters
