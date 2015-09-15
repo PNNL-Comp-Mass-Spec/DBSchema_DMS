@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Analysis_Job_Export_Ex]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -70,6 +69,7 @@ WHERE (AJ.AJ_StateID = 4) AND
       (DS.DS_rating >= 1 OR 
        -- Include datasets with rating "Rerun (Good Data)"
        DS.DS_rating = -6)
+
 
 
 GO
