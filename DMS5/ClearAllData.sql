@@ -19,6 +19,7 @@ create PROCEDURE ClearAllData
 **
 **	Auth:	mem
 **	Date:	08/21/2015 mem - Initial release
+**			09/16/2015 mem - Added exclusions for entries related to in-silico instrument 'DMS_Pipeline_Data'
 **    
 *****************************************************/
 (
@@ -354,24 +355,27 @@ As
 	    WHERE CC_Name <> '(none)' AND
 	          NOT CC_ID IN ( SELECT ECC.CC_ID
 	                         FROM T_Experiment_Cell_Cultures ECC
-	                              INNER JOIN T_Cell_Culture C
+	                   INNER JOIN T_Cell_Culture C
 	    ON ECC.CC_ID = C.CC_ID )
 
 		DELETE FROM T_Storage_Path
-		WHERE (SP_path <> '(none)') AND (NOT (SP_path_ID IN
+		WHERE (SP_path <> '(none)') AND 
+		      (SP_instrument_name <> 'DMS_Pipeline_Data') AND
+		      (NOT (SP_path_ID IN
 			   (SELECT T_Storage_Path.SP_path_ID
-			 FROM T_Storage_Path INNER JOIN
-				T_Instrument_Name ON T_Storage_Path.SP_path_ID = T_Instrument_Name.IN_storage_path_ID
-			 WHERE T_Instrument_Name.IN_name IN ('CBSS_Orb1', 'PrepHPLC1')
-			 UNION
-			 SELECT T_Storage_Path.SP_path_ID
-			 FROM T_Storage_Path INNER JOIN
-				T_Instrument_Name ON T_Storage_Path.SP_path_ID = T_Instrument_Name.IN_source_path_ID
-			 WHERE T_Instrument_Name.IN_name IN ('CBSS_Orb1', 'PrepHPLC1')
-			 UNION
-			 SELECT DISTINCT T_Storage_Path.SP_path_ID
-			FROM T_Dataset INNER JOIN
-			   T_Storage_Path ON T_Dataset.DS_storage_path_ID = T_Storage_Path.SP_path_ID)))
+			    FROM T_Storage_Path INNER JOIN
+				     T_Instrument_Name ON T_Storage_Path.SP_path_ID = T_Instrument_Name.IN_storage_path_ID
+			    WHERE T_Instrument_Name.IN_name IN ('CBSS_Orb1', 'PrepHPLC1')
+			    UNION
+			    SELECT T_Storage_Path.SP_path_ID
+			    FROM T_Storage_Path INNER JOIN
+				     T_Instrument_Name ON T_Storage_Path.SP_path_ID = T_Instrument_Name.IN_source_path_ID
+			    WHERE T_Instrument_Name.IN_name IN ('CBSS_Orb1', 'PrepHPLC1')
+			    UNION
+			    SELECT DISTINCT T_Storage_Path.SP_path_ID
+			    FROM T_Dataset INNER JOIN
+			         T_Storage_Path ON T_Dataset.DS_storage_path_ID = T_Storage_Path.SP_path_ID))
+			  )
 
 		DELETE T_EMSL_DMS_Instrument_Mapping
 		FROM T_EMSL_DMS_Instrument_Mapping
@@ -387,7 +391,7 @@ As
 		WHERE column_name <> 'IgY12_LC10_01'
 
 		DELETE FROM T_Instrument_Name
-		WHERE NOT IN_Name IN ('CBSS_Orb1', 'PrepHPLC1')
+		WHERE NOT IN_Name IN ('CBSS_Orb1', 'PrepHPLC1', 'DMS_Pipeline_Data')
 
 		UPDATE T_Instrument_Name
 		SET IN_status = 'Inactive'
