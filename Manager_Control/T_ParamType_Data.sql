@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 170 ******/
+/****** RowCount: 172 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -171,4 +171,6 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (18
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (185,'MSFileInfoScannerX86Dir','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (186,'MODPlusProgLoc','','Folder containing modp_pnnl.jar')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (188,'OpenChromProgLoc','','Folder containing OpenChrom.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (189,'AuroraAvailable','TrueFalsePickList','True if Aurora is supported (\\a2.emsl.pnl.gov)')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (190,'MyEmslAvailable','TrueFalsePickList','True if MyEmsl is supported')
 SET IDENTITY_INSERT [T_ParamType] OFF

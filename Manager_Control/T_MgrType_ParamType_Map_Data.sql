@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MgrType_ParamType_Map] ******/
-/****** RowCount: 443 ******/
+/****** RowCount: 447 ******/
 /****** Columns: MgrTypeID, ParamTypeID, DefaultValue, Last_Affected, Entered_By ******/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','','')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,9,'C:\DMS_Work','','')
@@ -347,6 +347,8 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,176,'C:\DMS_Programs\MODa\','7/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,177,'C:\DMS_Programs\DeconPeakDetector\','7/10/2014 5:46:03 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,178,'C:\DMS_Programs\MSPathFinder','7/17/2014 1:53:19 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,179,'C:\DMS_Programs\PbfGen','7/17/2014 1:53:18 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,189,'True','9/16/2015 2:32:48 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (11,190,'True','9/16/2015 2:32:51 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','7/9/2009 3:22:43 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,12,'5','7/9/2009 3:24:56 PM','PNL\D3J408')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (12,15,'client','7/9/2009 3:25:13 PM','PNL\D3J408')
@@ -444,3 +446,5 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,157,'C:\DMS_Programs\MSFileInfo
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,165,'C:\DMS_Programs\Quameter','9/13/2012 7:39:10 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,172,'C:\DMS_Programs\AgilentToUimfConverter','8/26/2013 11:19:21 AM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,188,'C:\DMS_Programs\OpenChrom','8/10/2015 6:54:18 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,189,'True','9/16/2015 2:33:13 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,190,'True','9/16/2015 2:33:15 PM','PNL\D3L243')
