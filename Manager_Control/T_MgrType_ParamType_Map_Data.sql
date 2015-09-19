@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MgrType_ParamType_Map] ******/
-/****** RowCount: 447 ******/
+/****** RowCount: 448 ******/
 /****** Columns: MgrTypeID, ParamTypeID, DefaultValue, Last_Affected, Entered_By ******/
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,1,'Data Source=gigasax;Initial Catalog=DMS5;Integrated Security=SSPI;','','')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (1,9,'C:\DMS_Work','','')
@@ -448,3 +448,4 @@ INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,172,'C:\DMS_Programs\AgilentToU
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,188,'C:\DMS_Programs\OpenChrom','8/10/2015 6:54:18 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,189,'True','9/16/2015 2:33:13 PM','PNL\D3L243')
 INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,190,'True','9/16/2015 2:33:15 PM','PNL\D3L243')
+INSERT INTO [T_MgrType_ParamType_Map] VALUES (15,191,'\\proto-5\BionetXfer\Run_Complete_Trigger\MethodFiles','9/17/2015 4:48:58 PM','PNL\D3L243')
