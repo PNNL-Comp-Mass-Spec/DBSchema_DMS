@@ -76,7 +76,7 @@ CREATE PROCEDURE AddNewJobs
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
 	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
 	@infoOnly tinyint = 0,				-- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
-	@DebugMode tinyint = 0				-- 0 for no debugging; 1 to preview jobs to update but don't make changes; 2 to preview jobs to update and make changes
+	@DebugMode tinyint = 0				-- 0 for no debugging; 1 to see debug messages
 )
 As
 
@@ -107,8 +107,9 @@ As
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
-	Set @bypassDMS = IsNull(@bypassDMS, 0)
+	--
 	Set @infoOnly = IsNull(@infoOnly, 0)
+	Set @bypassDMS = IsNull(@bypassDMS, 0)	
 	Set @DebugMode = IsNull(@DebugMode, 0)
 	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
 	
@@ -596,7 +597,7 @@ As
 				set @continue = 0
 			else
 			begin
-				exec @myError = UpdateJobParameters @currJob, @infoOnly = @DebugMode, @message = @message Output
+				exec @myError = UpdateJobParameters @currJob, @infoOnly = @infoOnly, @message = @message Output
 				if @myError <> 0
 				begin
 					set @message = 'Error updating parameters for job ' + Convert(varchar(12), @currJob)

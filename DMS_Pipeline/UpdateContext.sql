@@ -68,6 +68,7 @@ AS
 		--
 		Set @bypassDMS = IsNull(@bypassDMS, 0)
 		Set @infoOnly = IsNull(@infoOnly, 0)
+		Set @DebugMode = IsNull(@DebugMode, 0)
 		Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
 
 		Set @LoggingEnabled = IsNull(@LoggingEnabled, 0)
