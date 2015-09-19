@@ -11,19 +11,21 @@ CREATE PROCEDURE MakeNewJobsFromDMS
 **    already in table.  Choose script..
 **
 **	Auth:	grk
-**	09/02/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**  02/10/2010 -- (dac) Removed comment stating that jobs were created from test script
-**  03/09/2011 -- grk added logic to choose different capture script based on instrument group
+**	Date:	09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			02/10/2010 dac - Removed comment stating that jobs were created from test script
+**			03/09/2011 grk - Added logic to choose different capture script based on instrument group
+**			09/17/2015 mem - Added parameter @infoOnly
 **    
 *****************************************************/
 (
 	@bypassDMS tinyint = 0,
 	@message varchar(512) = '' output,
-	@DebugMode tinyint = 0,
 	@MaxJobsToProcess int = 0,
 	@LogIntervalThreshold int = 15,		-- If this procedure runs longer than this threshold, then status messages will be posted to the log
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-	@LoopingUpdateInterval int = 5		-- Seconds between detailed logging while looping through the dependencies
+	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
+	@infoOnly tinyint = 0,				-- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
+	@DebugMode tinyint = 0				-- 0 for no debugging; 1 to see debug messages
 )
 As
 	set nocount on
@@ -50,6 +52,8 @@ As
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
+	--
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @bypassDMS = IsNull(@bypassDMS, 0)
 	Set @DebugMode = IsNull(@DebugMode, 0)
 	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
@@ -79,48 +83,64 @@ As
 	End
 	
 	---------------------------------------------------
-	-- 
+	-- Add new jobs
 	---------------------------------------------------
 	--
 	IF @bypassDMS = 0
-	BEGIN
+	BEGIN -- <AddJobs>
+	
 		If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
 		Begin
 			Set @StatusMessage = 'Querying DMS'
 			exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
 		End
 
+		If @infoOnly = 0
+		Begin -- <InsertQuery>
+		
+			INSERT INTO T_Jobs( Script,
+								[Comment],
+								Dataset,
+								Dataset_ID )
+			SELECT CASE
+					WHEN Src.IN_Group = 'IMS' THEN 'IMSDatasetCapture'
+					ELSE 'DatasetCapture'
+				END AS Script,
+				'' AS [Comment],
+				Src.Dataset,
+				Src.Dataset_ID
+			FROM V_DMS_Get_New_Datasets Src LEFT OUTER JOIN
+			     T_Jobs Target ON Src.Dataset_ID = Target.Dataset_ID
+			WHERE Target.Dataset_ID Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error adding new DatasetCapture tasks'
+				goto Done
+			end
+			
+		End -- </InsertQuery>
+		Else
+		Begin -- <Preview>
 
-		INSERT INTO T_Jobs
-        ( Script,
-          Comment,
-          Dataset,
-          Dataset_ID
-        )
-		SELECT
-		  CASE WHEN IN_Group = 'IMS' THEN 'IMSDatasetCapture' ELSE 'DatasetCapture' END AS Script,
-		   '' AS Comment,
-		   Dataset,
-		   Dataset_ID
-		FROM 
-		 V_DMS_Get_New_Datasets
-		WHERE
-		  (NOT EXISTS ( SELECT
-                         Job
-                        FROM
-                         T_Jobs
-                        WHERE
-                         (Dataset_ID = V_DMS_Get_New_Datasets.Dataset_ID))
-           )
-        --
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error updating Resume jobs'
-			goto Done
-		end
-	END
+			SELECT CASE
+					WHEN Src.IN_Group = 'IMS' THEN 'IMSDatasetCapture'
+					ELSE 'DatasetCapture'
+				END AS Script,
+				'' AS [Comment],
+				Src.Dataset,
+				Src.Dataset_ID
+			FROM V_DMS_Get_New_Datasets Src LEFT OUTER JOIN
+			     T_Jobs Target ON Src.Dataset_ID = Target.Dataset_ID
+			WHERE Target.Dataset_ID Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+		End -- </Preview>
+		
+	END -- </AddJobs>
 
 	---------------------------------------------------
 	-- Exit
@@ -132,11 +152,6 @@ Done:
 		Set @StatusMessage = 'Exiting'
 		exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
 	End
-
-	If @DebugMode <> 0
-		SELECT *
-		FROM #Tmp_JobDebugMessages
-		ORDER BY EntryID
 
 	return @myError
 

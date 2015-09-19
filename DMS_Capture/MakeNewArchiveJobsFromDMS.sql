@@ -14,16 +14,18 @@ CREATE PROCEDURE MakeNewArchiveJobsFromDMS
 **	Auth:	grk
 **	Date:	01/08/2010 grk - Initial release 
 **			10/24/2014 mem - Changed priority to 2
+**			09/17/2015 mem - Added parameter @infoOnly
 **    
 *****************************************************/
 (
 	@bypassDMS tinyint = 0,
 	@message varchar(512) = '' output,
-	@DebugMode tinyint = 0,
 	@MaxJobsToProcess int = 0,
 	@LogIntervalThreshold int = 15,		-- If this procedure runs longer than this threshold, then status messages will be posted to the log
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-	@LoopingUpdateInterval int = 5		-- Seconds between detailed logging while looping through the dependencies
+	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
+	@infoOnly tinyint = 0,				-- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
+	@DebugMode tinyint = 0				-- 0 for no debugging; 1 to see debug messages
 )
 As
 	set nocount on
@@ -50,6 +52,8 @@ As
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
+	--
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @bypassDMS = IsNull(@bypassDMS, 0)
 	Set @DebugMode = IsNull(@DebugMode, 0)
 	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
@@ -79,43 +83,62 @@ As
 	End
 	
 	---------------------------------------------------
-	-- 
+	--  Add new jobs
 	---------------------------------------------------
 	--
 	IF @bypassDMS = 0
-	BEGIN
+	BEGIN -- <AddJobs>
+	
 		If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
 		Begin
 			Set @StatusMessage = 'Querying DMS'
 			exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
 		End
 
-		INSERT INTO T_Jobs (Script,
-		                    [Comment],
-		                    Dataset,
-		                    Dataset_ID,
-		                    Priority )
-		SELECT 'DatasetArchive' AS Script,
-		       'Created by import from DMS' AS [Comment],
-		       Dataset,
-		       Dataset_ID,
-		       2 AS Priority
-		FROM V_DMS_Get_New_Archive_Datasets
-		WHERE (NOT EXISTS ( SELECT Job
-		                    FROM T_Jobs
-		                    WHERE (Dataset_ID = V_DMS_Get_New_Archive_Datasets.Dataset_ID) AND
-		                          (Script = 'DatasetArchive') 
-		      ) )
+		If @infoOnly = 0
+		Begin -- <InsertQuery>
+			
+			INSERT INTO T_Jobs (Script,
+								[Comment],
+								Dataset,
+								Dataset_ID,
+								Priority )
+			SELECT 'DatasetArchive' AS Script,
+				'Created by import from DMS' AS [Comment],
+				Src.Dataset,
+				Src.Dataset_ID,
+				2 AS Priority
+			FROM V_DMS_Get_New_Archive_Datasets Src LEFT OUTER JOIN
+			     T_Jobs Target ON Src.Dataset_ID = Target.Dataset_ID AND Target.Script = 'DatasetArchive'
+			WHERE Target.Dataset_ID Is Null
+			
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error creating archive jobs'
+				goto Done
+			end
+			
+		End -- </InsertQuery>
+		Else
+		Begin -- <Preview>
 
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error creating archive jobs'
-			goto Done
-		end
-	END
+			SELECT 'DatasetArchive' AS Script,
+				'Created by import from DMS' AS [Comment],
+				Src.Dataset,
+				Src.Dataset_ID,
+				2 AS Priority
+			FROM V_DMS_Get_New_Archive_Datasets Src LEFT OUTER JOIN
+			     T_Jobs Target ON Src.Dataset_ID = Target.Dataset_ID AND Target.Script = 'DatasetArchive'
+			WHERE Target.Dataset_ID Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+		End -- </Preview>
+		
+	END -- </AddJobs>
 
 	---------------------------------------------------
 	-- Exit

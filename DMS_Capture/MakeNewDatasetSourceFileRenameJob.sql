@@ -89,7 +89,7 @@ As
 	-- create new SourceFileRename job for specified dataset
 	---------------------------------------------------
 	--
-	If @infoOnly = 1
+	If @infoOnly <> 0
 	Begin
 		SELECT
 			'SourceFileRename' AS Script,

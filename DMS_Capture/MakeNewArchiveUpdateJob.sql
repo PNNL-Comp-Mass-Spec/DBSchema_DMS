@@ -119,7 +119,7 @@ As
 	-- create new Archive Update job for specified dataset
 	---------------------------------------------------
 	--
-	If @infoOnly = 1
+	If @infoOnly <> 0
 	Begin
 		SELECT
 			@Script AS Script,

@@ -21,6 +21,7 @@ CREATE PROCEDURE CreateJobSteps
 **			04/09/2013 mem - Added additional comments
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			05/29/2015 mem - Add support for column Capture_Subfolder
+**			09/17/2015 mem - Added parameter @infoOnly
 **    
 *****************************************************/
 (
@@ -32,7 +33,8 @@ CREATE PROCEDURE CreateJobSteps
 	@MaxJobsToProcess int = 0,
 	@LogIntervalThreshold int = 15,		-- If this procedure runs longer than this threshold, then status messages will be posted to the log
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-	@LoopingUpdateInterval int = 5		-- Seconds between detailed logging while looping through the dependencies
+	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies,
+	@infoOnly tinyint = 0
 )
 As
 	set nocount on
@@ -60,6 +62,7 @@ As
 	---------------------------------------------------
 	--
 	Set @message = ''
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @DebugMode = IsNull(@DebugMode, 0)
 	Set @existingJob = IsNull(@existingJob, 0)
 	Set @mode = IsNull(@mode, '')
@@ -357,7 +360,7 @@ As
 	-- We've got new jobs in temp tables - what to do?
 	---------------------------------------------------
 	--
-	if @DebugMode = 0
+	if @infoOnly = 0
 	Begin
 		if @mode = 'CreateFromImportedJobs'
 		begin
@@ -366,7 +369,7 @@ As
 			--	 #Job_Steps
 			--	 #Job_Step_Dependencies
 			--	 #Job_Parameters
-			exec MoveJobsToMainTables @message output
+			exec MoveJobsToMainTables @message output, @DebugMode
 		end
 	
 	End

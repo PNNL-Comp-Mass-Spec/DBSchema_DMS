@@ -25,7 +25,8 @@ CREATE PROCEDURE UpdateContext
 	@MaxJobsToProcess int = 0,
 	@LogIntervalThreshold int = 15,		-- If this procedure runs longer than this threshold, then status messages will be posted to the log
 	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-	@LoopingUpdateInterval int = 5		-- Seconds between detailed logging while looping sets of jobs or steps to process
+	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping sets of jobs or steps to process
+	@DebugMode tinyint = 0
 )
 AS
 	set nocount on
@@ -58,6 +59,7 @@ AS
 		--
 		Set @bypassDMS = IsNull(@bypassDMS, 0)
 		Set @infoOnly = IsNull(@infoOnly, 0)
+		Set @DebugMode = IsNull(@DebugMode, 0)
 		Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
 
 		Set @LoggingEnabled = IsNull(@LoggingEnabled, 0)
@@ -150,7 +152,14 @@ AS
 		
 		Set @CurrentLocation = 'Call MakeNewJobsFromDMS'
 		if @result <> 0
-			exec MakeNewJobsFromDMS @bypassDMS, @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LogIntervalThreshold=@LogIntervalThreshold, @LoggingEnabled=@LoggingEnabled, @LoopingUpdateInterval=@LoopingUpdateInterval
+			exec MakeNewJobsFromDMS @bypassDMS, 
+			                        @message output, 
+			                        @MaxJobsToProcess = @MaxJobsToProcess, 
+			                        @LogIntervalThreshold=@LogIntervalThreshold, 
+			                        @LoggingEnabled=@LoggingEnabled, 
+			                        @LoopingUpdateInterval=@LoopingUpdateInterval, 
+			                        @infoOnly=@infoOnly,
+			                        @DebugMode=@DebugMode
 
 		-- MakeNewArchiveJobsFromDMS
 		--
@@ -170,7 +179,14 @@ AS
 		
 		Set @CurrentLocation = 'Call MakeNewArchiveJobsFromDMS'
 		if @result <> 0
-			exec MakeNewArchiveJobsFromDMS @bypassDMS, @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LogIntervalThreshold=@LogIntervalThreshold, @LoggingEnabled=@LoggingEnabled, @LoopingUpdateInterval=@LoopingUpdateInterval
+			exec MakeNewArchiveJobsFromDMS @bypassDMS, 
+			                               @message output, 
+			                               @MaxJobsToProcess = @MaxJobsToProcess, 
+			                               @LogIntervalThreshold=@LogIntervalThreshold, 
+			                               @LoggingEnabled=@LoggingEnabled, 
+			                               @LoopingUpdateInterval=@LoopingUpdateInterval, 
+			                               @infoOnly=@infoOnly,
+			                               @DebugMode=@DebugMode
 
 
 	End Try
@@ -201,7 +217,13 @@ AS
 		
 		Set @CurrentLocation = 'Call CreateJobSteps'
 		if @result <> 0
-			exec CreateJobSteps @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LogIntervalThreshold=@LogIntervalThreshold, @LoggingEnabled=@LoggingEnabled, @LoopingUpdateInterval=@LoopingUpdateInterval
+			exec CreateJobSteps @message output, 
+			                    @MaxJobsToProcess = @MaxJobsToProcess, 
+			                    @LogIntervalThreshold=@LogIntervalThreshold, 
+			                    @LoggingEnabled=@LoggingEnabled, 
+			                    @LoopingUpdateInterval=@LoopingUpdateInterval,
+			                    @infoOnly=@infoOnly,
+			                    @DebugMode=@DebugMode
 
 	End Try
 	Begin Catch
