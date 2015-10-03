@@ -66,6 +66,7 @@ CREATE Procedure AddUpdateDataset
 **			05/29/2015 mem - Added parameter @CaptureSubfolder (only used if @mode is 'add' or 'bad')
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			06/19/2015 mem - Now auto-fixing QC_Shew names, e.g. QC_Shew_15-01 to QC_Shew_15_01
+**			10/01/2015 mem - Add support for (ignore) for @eusProposalID, @eusUsageType, and @eusUsersList
 **    
 *****************************************************/
 (
@@ -647,15 +648,19 @@ As
 	-- Verify acceptable combination of EUS fields
 	---------------------------------------------------
 	
-	if @requestID <> 0 AND @AddingDataset = 1
-	begin	   
+	If @requestID <> 0 AND @AddingDataset = 1
+	Begin	   
 		If (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
 		Begin
-			If @eusUsageType = '(lookup)' and @eusProposalID = '(lookup)' and @eusUsersList = '(lookup)'
+			If (@eusUsageType = '(lookup)' AND @eusProposalID = '(lookup)' AND @eusUsersList = '(lookup)') OR (@eusUsageType = '(ignore)')
+			Begin
 				Set @Warning = ''
-			else
+			End
+			Else
+			Begin
 				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request "' + Convert(varchar(12), @requestID) + '" was specified'
-				
+			End
+			
 			-- When a request is specified, force @eusProposalID, @eusUsageType, and @eusUsersList to be blank
 			-- Previously, we would raise an error here
 			Set @eusProposalID = '' 
@@ -680,7 +685,7 @@ As
 			If @ExperimentCheck <> @ExperimentNum
 				Set @RequestID = 0
 		End
-	end
+	End
 
 
 	---------------------------------------------------
@@ -1112,7 +1117,6 @@ As
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
-
 
 		---------------------------------------------------
 		-- if a cart name is specified, update it for the 

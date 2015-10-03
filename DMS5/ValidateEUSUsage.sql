@@ -24,6 +24,7 @@ CREATE PROCEDURE ValidateEUSUsage
 **			12/12/2011 mem - Now auto-fixing @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
 **			11/20/2013 mem - Now automatically extracting the integers from @eusUsersList if it instead has user names and integers
 **			08/11/2015 mem - Now trimming spaces from the parameters
+**			10/01/2015 mem - When @eusUsageType is '(ignore)' we now auto-change it to 'CAP_DEV'
 **
 *****************************************************/
 (
@@ -59,6 +60,13 @@ As
 	Set @eusUsageType  = LTrim(RTrim(IsNull(@eusUsageType, '')))
 	Set @eusProposalID = LTrim(RTrim(IsNull(@eusProposalID, '')))
 	Set @eusUsersList  = LTrim(RTrim(IsNull(@eusUsersList, '')))
+	
+	If @eusUsageType = '(ignore)' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
+	Begin
+		Set @eusUsageType = 'CAP_DEV'
+		Set @eusProposalID = ''
+		Set @eusUsersList = ''
+	End
 	
 	---------------------------------------------------
 	-- Auto-fix @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
