@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **			08/19/2013 mem - Removed parameter @UpdateURIPathIDsForExistingJob
 **			09/06/2013 mem - No longer using @ContentURI
 **			09/11/2013 mem - No longer calling PostLogEntry if @StatusURI is invalid but @ErrorCode is non-zero
+**			10/01/2015 mem - Added parameter @UsedTestInstance
 **    
 *****************************************************/
 (
@@ -31,6 +32,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 	@StatusURI varchar(255),
 	@ContentURI varchar(255)='',			-- No longer used (deprecated)
 	@ErrorCode int,
+	@UsedTestInstance tinyint=0,
 	@message varchar(512)='' output,
 	@infoOnly tinyint = 0
 )
@@ -63,6 +65,7 @@ As
 	Set @DatasetID = IsNull(@DatasetID, 0)
 	Set @Subfolder = IsNull(@Subfolder, '')
 	Set @StatusURI = IsNull(@StatusURI, '')
+	Set @UsedTestInstance = IsNull(@UsedTestInstance, 0)
 	
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
@@ -201,40 +204,69 @@ As
 	Else
 	Begin -- <a3>
 		
-		-----------------------------------------------
-		-- Add a new row to T_MyEmsl_Uploads
-		-----------------------------------------------
-		--
-		INSERT INTO T_MyEmsl_Uploads( Job,
-			                            Dataset_ID,
-			                            Subfolder,
-			                            FileCountNew,
-			                            FileCountUpdated,
-			                            Bytes,
-			                            UploadTimeSeconds,
-			                            StatusURI_PathID,
-			                            StatusNum,
-			                            ErrorCode,
-			                            Entered )
-		SELECT @Job,
-			    @DatasetID,
-			    @Subfolder,
-			    @FileCountNew,
-			    @FileCountUpdated,
-			    @Bytes,
-			    @UploadTimeSeconds,
-			    @StatusURI_PathID,
-			    @StatusNum,
-			    @ErrorCode,
-			    GetDate()
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error adding new row to T_MyEmsl_Uploads for job ' + Convert(varchar(12), @job)
-		end	
-		
+		If @UsedTestInstance = 0
+		Begin
+				
+			-----------------------------------------------
+			-- Add a new row to T_MyEmsl_Uploads
+			-----------------------------------------------
+			--
+			INSERT INTO T_MyEmsl_Uploads (Job, Dataset_ID, Subfolder, 
+			                              FileCountNew, FileCountUpdated, 
+			                              Bytes, UploadTimeSeconds, 
+			                              StatusURI_PathID, StatusNum,
+			                              ErrorCode, Entered )
+			SELECT @Job,
+			       @DatasetID,
+			       @Subfolder,
+			       @FileCountNew,
+			       @FileCountUpdated,
+			       @Bytes,
+			       @UploadTimeSeconds,
+			       @StatusURI_PathID,
+			       @StatusNum,
+			       @ErrorCode,
+			       GetDate()
+
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error adding new row to T_MyEmsl_Uploads for job ' + Convert(varchar(12), @job)
+			end	
+
+		End
+		Else
+		Begin
+			-----------------------------------------------
+			-- Add a new row to T_MyEmsl_TestUploads
+			-----------------------------------------------
+			--
+			INSERT INTO T_MyEmsl_TestUploads (Job, Dataset_ID, Subfolder, 
+			                              FileCountNew, FileCountUpdated, 
+			                              Bytes, UploadTimeSeconds, 
+			                              StatusURI_PathID, StatusNum,
+			                              ErrorCode, Entered )
+			SELECT @Job,
+			       @DatasetID,
+			       @Subfolder,
+			       @FileCountNew,
+			       @FileCountUpdated,
+			       @Bytes,
+			       @UploadTimeSeconds,
+			       @StatusURI_PathID,
+			       @StatusNum,
+			       @ErrorCode,
+			       GetDate()
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			--
+			if @myError <> 0
+			begin
+				set @message = 'Error adding new row to T_MyEmsl_TestUploads for job ' + Convert(varchar(12), @job)
+			end	
+		End
 
 		
 	End -- </a3>
