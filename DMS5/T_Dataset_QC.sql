@@ -105,6 +105,10 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[AMTs_10pct_FDR] [int] NULL,
 	[Phos_2A] [real] NULL,
 	[Phos_2C] [real] NULL,
+	[Keratin_2A] [real] NULL,
+	[Keratin_2C] [real] NULL,
+	[P_4A] [real] NULL,
+	[P_4B] [real] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

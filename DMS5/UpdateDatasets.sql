@@ -20,6 +20,7 @@ CREATE Procedure dbo.UpdateDatasets
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			03/30/2015 mem - Tweak warning message grammar
+**			10/07/2015 mem - Added @mode "preview"
 **    
 *****************************************************/
 (
@@ -29,8 +30,8 @@ CREATE Procedure dbo.UpdateDatasets
     @comment varchar(255) = '',
     @findText varchar(255) = '',
     @replaceText varchar(255) = '',
-    @mode varchar(12) = 'update',
-    @message varchar(512) output,
+    @mode varchar(12) = 'update',		-- Can be update or preview
+    @message varchar(512) = '' output,
 	@callingUser varchar(128) = ''
 )
 As
@@ -53,6 +54,27 @@ As
 
 	declare @datasetCount int = 0
 
+	Set @state = IsNull(@state, '')	
+	If @state = ''
+		Set @state = '[no change]'
+
+	Set @rating = IsNull(@rating, '')	
+	If @rating = ''
+		Set @rating = '[no change]'
+
+	Set @comment = IsNull(@comment, '')	
+	If @comment = ''
+		Set @comment = '[no change]'
+
+	Set @findText = IsNull(@findText, '')	
+	If @findText = ''
+		Set @findText = '[no change]'
+
+	Set @replaceText = IsNull(@replaceText, '')	
+	If @replaceText = ''
+		Set @replaceText = '[no change]'
+
+
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -62,6 +84,7 @@ As
 	if @datasetList = ''
 	begin
 		set @msg = 'Dataset list is empty'
+		print @msg
 		RAISERROR (@msg, 11, 1)
 	end
 
@@ -69,15 +92,16 @@ As
 	if (@findText = '[no change]' and @replaceText <> '[no change]') OR (@findText <> '[no change]' and @replaceText = '[no change]')
 	begin
 		set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
+		print @msg
 		RAISERROR (@msg, 11, 2)
 	end
 
 	---------------------------------------------------
-	--  Create temporary table to hold list of datasets
+	--  Create temporary tables to hold the list of datasets
 	---------------------------------------------------
  
  	CREATE TABLE #TDS (
-		DatasetNum varchar(128)
+		DatasetNum varchar(128) NOT NULL
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -85,23 +109,29 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Failed to create temporary dataset table'
+		print @msg
 		RAISERROR (@msg, 11, 3)
 	end
 
+	CREATE TABLE #TmpDatasetSchedulePredefine (
+		Entry_ID int Identity(1,1),
+		DatasetNum varchar(128) NOT NULL
+	)
+	
  	---------------------------------------------------
 	-- Populate table from dataset list  
 	---------------------------------------------------
 
-	INSERT INTO #TDS
-	(DatasetNum)
-	SELECT DISTINCT Item
-	FROM MakeTableFromList(@datasetList)
+	INSERT INTO #TDS (DatasetNum)
+	SELECT DISTINCT Value
+	FROM udfParseDelimitedList(@datasetList, ',')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
 		set @msg = 'Error populating temporary dataset table'
+		print @msg
 		RAISERROR (@msg, 11, 4)
 	end
 
@@ -111,27 +141,26 @@ As
 	--
 	set @list = ''
 	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN cast(DatasetNum as varchar(12))
-		ELSE ', ' + cast(DatasetNum as varchar(12))
-		END
-	FROM
-		#TDS
-	WHERE 
-		NOT DatasetNum IN (SELECT Dataset_Num FROM T_Dataset)
+	SELECT @list = @list + CASE
+	                           WHEN @list = '' THEN DatasetNum
+	                           ELSE ', ' + DatasetNum
+	                       END
+	FROM #TDS
+	WHERE NOT DatasetNum IN ( SELECT Dataset_Num FROM T_Dataset )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
 		set @msg = 'Error checking dataset existence'
+		print @msg
 		RAISERROR (@msg, 11, 20)
 	end
 	--
 	if @list <> ''
 	begin
 		set @msg = 'The following datasets were not in the database: "' + @list + '"'
+		print @msg
 		RAISERROR (@msg, 11, 20)
 	end
 	
@@ -158,12 +187,14 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error looking up state name'
+			print @msg
 			RAISERROR (@msg, 11, 5)
 		end
 		--
 		if @stateID = 0
 		begin
 			set @msg = 'Could not find state'
+			print @msg
 			RAISERROR (@msg, 11, 6)
 		end
 	end -- if @state
@@ -187,16 +218,50 @@ As
 		if @myError <> 0
 		begin
 			set @msg = 'Error looking up rating name'
+			print @msg
 			RAISERROR (@msg, 11, 7)
 		end
 		--
 		if @ratingID = 0
 		begin
 			set @msg = 'Could not find rating'
+			print @msg
 			RAISERROR (@msg, 11, 8)
 		end
 	end -- if @rating
 
+	
+	If @Mode = 'preview'
+	Begin
+
+		SELECT Dataset_ID,
+		       Dataset_Num,
+		       DS_state_ID AS StateID,
+		       CASE
+		           WHEN @state <> '[no change]' THEN @stateID
+		           ELSE DS_state_ID
+		       END AS StateID_New,
+		       DS_rating AS RatingID,
+		       CASE
+		           WHEN @rating <> '[no change]' THEN @ratingID
+		           ELSE DS_rating
+		       END AS RatingID_New,
+		       DS_comment AS [Comment],
+		       CASE
+		           WHEN @comment <> '[no change]' THEN DS_comment + ' ' + @comment
+		           ELSE DS_comment
+		       END AS Comment_via_Append,
+		       CASE
+		           WHEN @findText <> '[no change]' AND
+		                @replaceText <> '[no change]' THEN Replace(DS_comment, @findText, @replaceText)
+		           ELSE DS_Comment
+		       END AS Comment_via_Replace
+		FROM T_Dataset
+		WHERE (Dataset_Num IN ( SELECT DatasetNum FROM #TDS ))
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+	End
 	
  	---------------------------------------------------
 	-- Update datasets from temporary table
@@ -224,6 +289,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
+				print @msg
 				RAISERROR (@msg, 11, 9)
 			end
 			
@@ -232,7 +298,21 @@ As
 
 		-----------------------------------------------
 		if @rating <> '[no change]'
-		begin
+		begin -- <UpdateRating>
+			-- Find the datasets that have an existing rating of -5, -6, or -7
+			INSERT INTO #TmpDatasetSchedulePredefine (DatasetNum)
+			SELECT DS.Dataset_Num
+			FROM T_Dataset DS
+			     LEFT OUTER JOIN T_Analysis_Job J
+			       ON DS.Dataset_ID = J.AJ_datasetID AND
+			          J.AJ_DatasetUnreviewed = 0
+			WHERE DS.Dataset_Num IN ( SELECT DatasetNum FROM #TDS ) AND
+			      DS.DS_Rating IN (-5, -6, -7) AND
+			      J.AJ_jobID IS NULL
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			
 			UPDATE T_Dataset
 			SET DS_rating = @ratingID
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
@@ -242,11 +322,37 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
+				print @msg
 				RAISERROR (@msg, 11, 10)
 			end
 			
 			Set @DatasetRatingUpdated = 1
-		end
+			
+			If Exists (Select * From #TmpDatasetSchedulePredefine) And @ratingID >= 2
+			Begin -- <SchedulePredefines>
+				Declare @EntryID int = 0
+				Declare @CurrentDataset varchar(128)
+				Declare @ContinueUpdate tinyint = 1
+				
+				While @ContinueUpdate > 0
+				Begin -- <ForEach>
+					SELECT TOP 1 @EntryID = Entry_ID, @CurrentDataset = DatasetNum
+					FROM #TmpDatasetSchedulePredefine
+					WHERE Entry_ID > @EntryID
+					ORDER BY Entry_ID
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+					
+					If @myRowCount = 0
+						Set @ContinueUpdate = 0
+					Else
+						Exec SchedulePredefinedAnalyses @CurrentDataset
+					
+				End -- </ForEach>
+				
+			End -- </SchedulePredefines>
+			
+		end -- </UpdateRating>
 
 		-----------------------------------------------
 		if @comment <> '[no change]'
@@ -260,6 +366,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
+				print @msg
 				RAISERROR (@msg, 11, 11)
 			end
 		end
@@ -268,7 +375,7 @@ As
 		if @findText <> '[no change]' and @replaceText <> '[no change]'
 		begin
 			UPDATE T_Dataset 
-			SET DS_comment = replace(DS_comment, @findText, @replaceText)
+			SET DS_comment = Replace(DS_comment, @findText, @replaceText)
 			WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -276,6 +383,7 @@ As
 			if @myError <> 0
 			begin
 				set @msg = 'Update operation failed'
+				print @msg
 				RAISERROR (@msg, 11, 12)
 			end
 		end
