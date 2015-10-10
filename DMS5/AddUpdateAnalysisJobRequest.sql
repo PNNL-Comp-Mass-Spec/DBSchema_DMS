@@ -68,6 +68,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided=0 to ValidateAnalysisJobParameters
+**			10/09/2015 mem - Now allowing the request name and comment to be updated even if a request has associated jobs
 **
 *****************************************************/
 (
@@ -105,15 +106,19 @@ As
 	BEGIN TRY 
 
 	---------------------------------------------------
-	-- Assure that the comment variable is not null
+	-- Validate the inputs
 	---------------------------------------------------
 	
+	Set @requestName = IsNull(@requestName, '')
 	set @comment = IsNull(@comment, '')
 	
 	set @message = ''
 
 	declare @msg varchar(512)
 
+	If @requestName = ''
+		RAISERROR ('Cannot add: request name cannot be blank', 11, 4)
+	
 	---------------------------------------------------
 	-- Validate @adminReviewReqd
 	---------------------------------------------------
@@ -138,7 +143,8 @@ As
 			RAISERROR ('Cannot add: request with same name already in database', 11, 4)
 	end
 
-	-- cannot update a non-existent entry
+	-- Cannot update a non-existent entry
+	-- If the entry already exists and has jobs associated with it, only allow for updating the comment field
 	--
 	if @mode = 'update'
 	begin
@@ -150,9 +156,44 @@ As
 		--
 		if @hit = 0
 			RAISERROR ('Cannot update: entry is not in database', 11, 5)
-		--
-		if EXISTS (Select * From T_Analysis_Job Where AJ_RequestID = @requestID)
-			RAISERROR ('Cannot update: entry has analysis jobs associated with it', 11, 24)
+		
+		If Exists (Select * From T_Analysis_Job Where AJ_RequestID = @requestID)
+		Begin
+			-- The request has jobs associated with it
+			
+			Declare @currentName varchar(128)
+			Declare @currentComment varchar(512)
+			
+			SELECT @currentName = AJR_requestName,
+			       @currentComment = AJR_comment
+			FROM T_Analysis_Job_Request
+			WHERE (AJR_requestID = @requestID)
+			
+			If @currentName <> @requestName OR @currentComment <> @comment
+			Begin
+				UPDATE T_Analysis_Job_Request
+				SET AJR_requestName = @requestName,				
+					AJR_comment = @comment
+				WHERE (AJR_requestID = @requestID)
+				
+				If @currentName <> @requestName AND @currentComment <> @comment
+					Set @message = 'Updated the request name and comment'
+				Else
+				Begin
+					If @currentName <> @requestName
+						Set @message = 'Updated the request name'
+				
+					If @currentComment <> @comment
+						Set @message = 'Updated the request comment'
+				End
+								
+				Goto Done
+			End
+			Else
+			Begin
+				RAISERROR ('Entry has analysis jobs associated with it; only the comment and name can be updated', 11, 24)
+			End
+		End
 	end
 
 	---------------------------------------------------
@@ -471,7 +512,7 @@ As
 	--
 	if @mode = 'update' 
 	begin
-		-- Lookup the current state of the request
+		-- Update the request
 		set @myError = 0
 		--
 		UPDATE T_Analysis_Job_Request
@@ -513,6 +554,9 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH
+
+Done:
+
 	return @myError
 
 GO

@@ -4,18 +4,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Dataset_PSM_And_PM_List_Report] as
 SELECT 
        PSM.Dataset,
        PSM.[Unique Peptides FDR] AS [Unique Peptides],
-       CONVERT(decimal(9,2), QCM.XIC_FWHM_Q3) AS XIC_FWHM_Q3,
+       CAST(QCM.XIC_FWHM_Q3 AS decimal(9,2)) AS XIC_FWHM_Q3,
        QCM.MassErrorPPM AS Mass_Error_PPM,
        ISNULL(QCM.MassErrorPPM_VIPER, -PM.PPM_Shift) AS Mass_Error_AMTs,
        ISNULL(QCM.AMTs_10pct_FDR, PM.[AMTs 10pct FDR]) AS AMTs_10pct_FDR,
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
        PM.Results_URL AS PM_Results_URL,
+	   CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
+	   CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
+	   QCM.P_2A AS TrypticPSMs,
+	   QCM.Keratin_2A AS KeratinPSMs,
 	   QCM.Phos_2C PhosphoPep,
        PSM.Instrument,
        PSM.Dataset_ID,
@@ -50,8 +52,6 @@ FROM V_Analysis_Job_PSM_List_Report PSM
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.StateID NOT IN (5, 14)
-
-
 
 
 GO
