@@ -6,12 +6,14 @@ GO
 
 CREATE  VIEW [dbo].[V_EUS_Proposals_Entry]
 AS
-SELECT P.PROPOSAL_ID AS ID,
+SELECT P.Proposal_ID AS ID,
        P.State_ID AS State,
        P.Title,
        P.Import_Date AS ImportDate,
+	   P.Proposal_Type,
        dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'I') AS EUSUsers
 FROM dbo.T_EUS_Proposals P
+
 
 
 GO

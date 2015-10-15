@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateEUSProposals
+CREATE Procedure dbo.AddUpdateEUSProposals
 /****************************************************
 **
 **	Desc: Adds new or updates existing EUS Proposals in database
@@ -17,20 +17,23 @@ CREATE Procedure AddUpdateEUSProposals
 **		@EUSPropTitle EUS Proposal Title
 **		@EUSPropImpDate EUS Proposal Import Date
 **		@EUSUsersList EUS User list
+**		@EUSProposalType  EUS Proposal Type
 **
 **	Auth:	jds
 **	Date:	08/15/2006
 **			11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)  
 **			04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
+**			10/13/2015 mem - Added @EUSProposalType
 **    
 *****************************************************/
 (
 	@EUSPropID varchar(10), 
 	@EUSPropState varchar(32),				-- 1=New, 2=Active, 3=Inactive, 4=No Interest
 	@EUSPropTitle varchar(2048), 
-	@EUSPropImpDate varchar(22),
-	@EUSUsersList varchar(4096), 
-	@mode varchar(12) = 'add', -- or 'update'
+	@EUSPropImpDate varchar(50),
+	@EUSUsersList varchar(4096),
+	@EUSProposalType varchar(100),
+	@mode varchar(12) = 'add',				-- Add or Update
 	@message varchar(512) output
 )
 As
@@ -75,8 +78,12 @@ As
 	if @myError <> 0
 		return @myError
 
+	Set @EUSPropImpDate = IsNull(@EUSPropImpDate, '')
+	If LEN(@EUSPropImpDate) < 1
+		Set @EUSPropImpDate = Convert(varchar(50), GetDate(), 120)
+		
 	set @myError = 0
-	if LEN(@EUSPropImpDate) < 1 and ISDATE(@EUSPropImpDate) = 1
+	if ISDATE(@EUSPropImpDate) <> 1
 	begin
 		set @myError = 51000
 		RAISERROR ('EUS Proposal Import Date was blank or an invalid date', 10, 1)
@@ -104,9 +111,9 @@ As
 	declare @TempEUSPropID varchar(10)
 	set @TempEUSPropID = '0'
 	--
-	SELECT @tempEUSPropID = PROPOSAL_ID 
+	SELECT @tempEUSPropID = Proposal_ID 
 	FROM T_EUS_Proposals 
-	WHERE (PROPOSAL_ID = @EUSPropID)
+	WHERE (Proposal_ID = @EUSPropID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -142,15 +149,17 @@ As
 	begin
 
 		INSERT INTO T_EUS_Proposals (
-			PROPOSAL_ID, 
-			TITLE, 
+			Proposal_ID, 
+			[Title], 
 			State_ID, 
-			Import_Date
+			Import_Date,
+			Proposal_Type
 		) VALUES (
 			@EUSPropID, 
 			@EUSPropTitle, 
 			@EUSPropStateID, 
-			@EUSPropImpDate
+			@EUSPropImpDate,
+			@EUSProposalType
 		)
 
 		--
@@ -177,10 +186,11 @@ As
 		--
 		UPDATE T_EUS_Proposals 
 		SET 
-			TITLE = @EUSPropTitle, 
+			[Title] = @EUSPropTitle, 
 			State_ID = @EUSPropStateID, 
-			Import_Date = @EUSPropImpDate 
-		WHERE (PROPOSAL_ID = @EUSPropID)
+			Import_Date = @EUSPropImpDate,
+			Proposal_Type = @EUSProposalType
+		WHERE (Proposal_ID = @EUSPropID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -195,6 +205,7 @@ As
 
 	---------------------------------------------------
 	-- Associate users in @eusUsersList with the proposal
+	-- by updating information in table T_EUS_Proposal_Users
 	---------------------------------------------------
 
 	CREATE TABLE #tempEUSUsers (
@@ -269,9 +280,9 @@ As
 		set @message = 'Error trying to add associations between users and proposal'
 		return 51083
 	end
-
 		
 	return 0
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS_EUS_Admin] AS [dbo]

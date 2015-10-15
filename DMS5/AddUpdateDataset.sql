@@ -67,6 +67,7 @@ CREATE Procedure AddUpdateDataset
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			06/19/2015 mem - Now auto-fixing QC_Shew names, e.g. QC_Shew_15-01 to QC_Shew_15_01
 **			10/01/2015 mem - Add support for (ignore) for @eusProposalID, @eusUsageType, and @eusUsersList
+**			10/14/2015 mem - Remove double quotes from error messages
 **    
 *****************************************************/
 (
@@ -232,7 +233,12 @@ As
 		If @badCh = '[space]'
 			set @msg = 'Dataset name may not contain spaces'
 		Else
-			set @msg = 'Dataset name may not contain the character(s) "' + @badCh + '"'
+		Begin
+			if Len(@badCh) = 1
+				set @msg = 'Dataset name may not contain the character ' + @badCh
+			else
+				set @msg = 'Dataset name may not contain the characters ' + @badCh
+		End
 
 		-- Declare @DebugMsg varchar(512)
 		-- Set @DebugMsg = 'Problem with dataset ' + @datasetnum + ': ' + @msg
@@ -243,7 +249,7 @@ As
 
 	if @AggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
 	begin
-		set @msg = 'Dataset name may not end in "raw" or "wiff"'
+		set @msg = 'Dataset name may not end in raw or wiff'
 		RAISERROR (@msg, 11, 2)
 	end
 
@@ -276,7 +282,7 @@ As
 		execute @ratingID = GetDatasetRatingID @rating
 		if @ratingID = 0
 		begin
-			set @msg = 'Could not find entry in database for rating "' + @rating + '"'
+			set @msg = 'Could not find entry in database for rating ' + @rating
 			RAISERROR (@msg, 11, 18)
 		end
 	end
@@ -310,7 +316,7 @@ As
 		--
 		if @mode IN ('update', 'check_update')
 		begin
-			set @msg = 'Cannot update: Dataset "' + @datasetNum + '" is not in database '
+			set @msg = 'Cannot update: Dataset ' + @datasetNum + ' is not in database'
 			RAISERROR (@msg, 11, 4)
 		end
 	end
@@ -320,7 +326,7 @@ As
 		--
 		if @AddingDataset = 1
 		begin
-			set @msg = 'Cannot add: Dataset "' + @datasetNum + '" since already in database '
+			set @msg = 'Cannot add dataset ' + @datasetNum + ' since already in database'
 			RAISERROR (@msg, 11, 5)
 		end
 
@@ -437,7 +443,7 @@ As
 
 	If @experimentID = 0
 	Begin
-		set @msg = 'Could not find entry in database for experiment "' + @experimentNum + '"'
+		set @msg = 'Could not find entry in database for experiment ' + @experimentNum
 		RAISERROR (@msg, 11, 12)
 	End
 
@@ -454,7 +460,7 @@ As
 	execute @instrumentID = GetinstrumentID @instrumentName
 	if @instrumentID = 0
 	begin
-		set @msg = 'Could not find entry in database for instrument "' + @instrumentName + '"'
+		set @msg = 'Could not find entry in database for instrument ' + @instrumentName
 		RAISERROR (@msg, 11, 14)
 	end
 
@@ -468,7 +474,7 @@ As
 
 	if @InstrumentGroup = ''
 	begin
-		set @msg = 'Instrument group not defined for instrument "' + @instrumentName + '"'
+		set @msg = 'Instrument group not defined for instrument ' + @instrumentName
 		RAISERROR (@msg, 11, 14)
 	end
 
@@ -560,7 +566,7 @@ As
 		                                                  FROM T_Instrument_Group ING INNER JOIN 
 		                                                       T_Instrument_Name InstName ON ING.IN_Group = InstName.IN_Group INNER JOIN
                                                                T_Instrument_Group_Allowed_DS_Type IGADST ON ING.IN_Group = IGADST.IN_Group
-                                                          WHERE InstName.IN_Name = @instrumentName AND IGADST.Dataset_Type = 'IMS-HMS-HMSn')
+                                          WHERE InstName.IN_Name = @instrumentName AND IGADST.Dataset_Type = 'IMS-HMS-HMSn')
         Begin
 			-- This is an IMS MS/MS dataset
 			Set @msType = 'IMS-HMS-HMSn'
@@ -639,7 +645,7 @@ As
 		End
 		Else
 		Begin
-			set @msg = 'Could not find entry in database for operator PRN "' + @operPRN + '"'
+			set @msg = 'Could not find entry in database for operator PRN ' + @operPRN
 			RAISERROR (@msg, 11, 19)
 		End
 	end
@@ -658,7 +664,7 @@ As
 			End
 			Else
 			Begin
-				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request "' + Convert(varchar(12), @requestID) + '" was specified'
+				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request ' + Convert(varchar(12), @requestID) + ' was specified'
 			End
 			
 			-- When a request is specified, force @eusProposalID, @eusUsageType, and @eusUsersList to be blank
@@ -951,7 +957,7 @@ As
 		--
 		if @myError <> 0 or @myRowCount <> 1
 		begin
-			set @msg = 'Insert operation failed: "' + @datasetNum + '"'
+			set @msg = 'Insert operation failed for dataset ' + @datasetNum
 			RAISERROR (@msg, 11, 7)
 		end
 		
@@ -1027,7 +1033,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Create AutoReq run request failed: "' + @datasetNum + '" with Proposal ID "' + @eusProposalID + '", Usage Type "' + @eusUsageType + '", and Users List "' + @eusUsersList + '" ->' + @message
+				set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
 				RAISERROR (@msg, 11, 24)
 			end
 		end -- </b3>
@@ -1052,7 +1058,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update LC cart name failed: "' + @datasetNum + '"->' + @message
+				set @msg = 'Update LC cart name failed: dataset ' + @datasetNum + ' -> ' + @message
 				RAISERROR (@msg, 11, 21)
 			end
 		end
@@ -1075,7 +1081,7 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Consume operation failed: "' + @datasetNum + '"->' + @message
+			set @msg = 'Consume operation failed: dataset ' + @datasetNum + ' -> ' + @message
 			RAISERROR (@msg, 11, 16)
 		end
 
@@ -1110,7 +1116,7 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Update operation failed: "' + @datasetNum + '"'
+			set @msg = 'Update operation failed: dataset ' + @datasetNum
 			RAISERROR (@msg, 11, 4)
 		end
 		
