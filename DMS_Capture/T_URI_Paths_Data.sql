@@ -1,5 +1,5 @@
 /****** Object:  Table [T_URI_Paths] ******/
-/****** RowCount: 164 ******/
+/****** RowCount: 165 ******/
 SET IDENTITY_INSERT [T_URI_Paths] ON
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (1,'Undefined','4/2/2012 6:11:26 PM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (100,'https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/','4/2/2012 6:42:50 PM')
@@ -165,4 +165,5 @@ INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (259,'https://a
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (260,'https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/12T_FTICR_Imaging/2013_2/','8/21/2013 1:28:40 PM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (261,'https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/VOrbiETD01/2013_1/','8/28/2013 4:23:47 PM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (262,'https://a3.my.emsl.pnl.gov/myemsl/query/group/omics.dms.instrument/-later-/group/omics.dms.date_code/-later-/group/omics.dms.dataset/-later-/data/LTQ_Orb_2/2013_1/','8/28/2013 4:24:57 PM')
+INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (263,'https://test3.my.emsl.pnl.gov/myemsl/cgi-bin/status/','10/19/2015 4:58:32 PM')
 SET IDENTITY_INSERT [T_URI_Paths] OFF
