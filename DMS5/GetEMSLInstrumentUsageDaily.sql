@@ -18,8 +18,9 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **
 **	Parameters:
 **	
-**	Auth:	grk   
-**	Date:	09/15/2015 grk - initial release
+**	Auth: grk   
+**	Date: 09/15/2015 grk - initial release
+**	      10/20/2015 grk - added users to output
 **    
 *****************************************************/ 
 ( 
@@ -55,6 +56,7 @@ AS
               [DMS_Instrument] VARCHAR(64) NULL ,
               [Type] VARCHAR(128) NULL ,
               [Proposal] VARCHAR(32) NULL ,
+              [Users] [varchar](1024) NULL ,
               [Usage] VARCHAR(32) NULL ,
               [Start] DATETIME NULL ,
               [End] DATETIME NULL ,
@@ -98,6 +100,7 @@ AS
                   Type ,
                   Proposal ,
                   Usage ,
+                  Users,
                   Start ,
                   DurationSeconds ,
                   Year ,
@@ -110,6 +113,7 @@ AS
                         [Type] ,
                         Proposal ,
                         Usage ,
+                        Users,
                         Start ,
                         [Minutes] * 60 AS [DurationSeconds] ,
                         [Year] ,
@@ -156,6 +160,7 @@ AS
                           DMS_Instrument ,
                           Proposal ,
                           Usage ,
+                          Users,
                           [Start] ,
 					--Minutes,
                           [DurationSeconds] ,
@@ -169,6 +174,7 @@ AS
                                 DMS_Instrument ,
                                 Proposal ,
                                 Usage ,
+                                Users,
                                 [Start] ,
                                 [DurationSeconds] ,
                                 [Year] ,
@@ -193,6 +199,7 @@ AS
                           DMS_Instrument ,
                           Proposal ,
                           Usage ,
+                          Users,
                           [Start] ,
                           [DurationSeconds] ,
                           [Year] ,
@@ -205,6 +212,7 @@ AS
                                 DMS_Instrument ,
                                 Proposal ,
                                 Usage ,
+                                Users,
                                 [Start] ,
                                 [DurationSecondsInCurrentDay] AS [DurationSeconds] ,
                                 [Year] ,
@@ -259,7 +267,7 @@ AS
                         CEILING(CONVERT(FLOAT, SUM([DurationSeconds])) / 60) AS [Minutes] ,
                         Proposal ,
                         Usage ,
-                        NULL AS Users ,
+                        Users ,
                         NULL AS Operator ,
                         NULL AS Comment ,
                         Year ,
@@ -274,6 +282,7 @@ AS
                         [Type] ,
                         Proposal ,
                         Usage ,
+                        Users,
                         [Year] ,
                         [Month] ,
                         [Day]
@@ -285,4 +294,5 @@ AS
 
         RETURN
     END
+
 GO
