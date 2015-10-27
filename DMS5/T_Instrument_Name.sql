@@ -4,9 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Instrument_Name](
-	[IN_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Instrument_ID] [int] NOT NULL,
-	[IN_class] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_class] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_source_path_ID] [int] NULL,
 	[IN_storage_path_ID] [int] NULL,
