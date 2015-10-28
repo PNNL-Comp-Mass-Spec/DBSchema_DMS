@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 /****************************************************
 **
@@ -10,7 +11,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **		Deletes old data, experiments, jobs, and log entries
 **		Intended to be used with the DMS5_Beta or DMS5_T3 databases to reduce file size
 **
-**		To avoid deleting production data, this procedure prevents itself from running against DMS5\
+**		To avoid deleting production data, this procedure prevents itself from running against DMS5
 **
 **		After deleting the data, you can reclaim database space using:
 **
@@ -41,7 +42,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 (
 	@infoOnly tinyint = 1,						-- Change to 0 to actually perform the deletion
 	@YearsToRetain int = 4,						-- Number of years of data to retain; setting to 4 will delete data more than 4 years old; minimum value is 1
-	@RecentJobOverrideYears float = 2,			-- Keeps datasets and experiments that have had an analysis job run within this mean years
+	@RecentJobOverrideYears float = 2,			-- Keeps datasets and experiments that have had an analysis job run within this many years
 	@LogEntryMonthsToRetain int = 3,			-- Number of months of logs to retain
 	@DatasetSkipList varchar(max) = '',			-- List of datasets to skip
 	@ExperimentSkipList varchar(max) = '',		-- List of experiments to skip
@@ -798,6 +799,7 @@ AS
 Done:
 
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteOldDataExperimentsJobsAndLogs] TO [PNL\D3M578] AS [dbo]
