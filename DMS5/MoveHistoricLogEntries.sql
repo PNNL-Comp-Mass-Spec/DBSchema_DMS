@@ -19,10 +19,11 @@ CREATE Procedure dbo.MoveHistoricLogEntries
 **			10/04/2011 mem - Removed @DBName parameter
 **			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **			10/15/2012 mem - Now excluding routine messages from BackupDMSDBs and RebuildFragmentedIndices
+**			10/29/2015 mem - Increase default value from 5 days to 14 days (336 hours)
 **    
 *****************************************************/
 (
-	@intervalHrs int = 120
+	@intervalHrs int = 336
 )
 As
 	set nocount on

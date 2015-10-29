@@ -20,6 +20,7 @@ create PROCEDURE ClearAllData
 **	Auth:	mem
 **	Date:	08/21/2015 mem - Initial release
 **			09/16/2015 mem - Added exclusions for entries related to in-silico instrument 'DMS_Pipeline_Data'
+**			10/29/2015 mem - Disabling functionality via a goto (for safety)
 **    
 *****************************************************/
 (
@@ -38,6 +39,14 @@ As
 
 	set @infoOnly = IsNull(@infoOnly, 1)
 	set @message = ''
+
+
+	-- Functionality disabled for safety
+	--
+	Set @message = 'This procedure is disabled; edit the code to re-enable'
+	Select @message
+	Goto Done
+
 
 	-------------------------------------------------
 	-- Verify that we truly should do this
