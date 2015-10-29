@@ -11,7 +11,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **		Deletes old data, experiments, jobs, and log entries
 **		Intended to be used with the DMS5_Beta or DMS5_T3 databases to reduce file size
 **
-**		To avoid deleting production data, this procedure prevents itself from running against DMS5
+**		To avoid deleting production data, this procedure prevents itself from running against DMS5\
 **
 **		After deleting the data, you can reclaim database space using:
 **
@@ -37,12 +37,13 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **	Date:	02/24/2012 mem - Initial version
 **			02/28/2012 mem - Added @MaxItemsToProcess
 **			05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations, since deprecated
+**			10/28/2015 mem - Added T_Prep_LC_Run_Dataset and removed T_Analysis_Job_Annotations and T_Dataset_Annotations
 **    
 *****************************************************/
 (
 	@infoOnly tinyint = 1,						-- Change to 0 to actually perform the deletion
 	@YearsToRetain int = 4,						-- Number of years of data to retain; setting to 4 will delete data more than 4 years old; minimum value is 1
-	@RecentJobOverrideYears float = 2,			-- Keeps datasets and experiments that have had an analysis job run within this many years
+	@RecentJobOverrideYears float = 2,			-- Keeps datasets and experiments that have had an analysis job run within this mean years
 	@LogEntryMonthsToRetain int = 3,			-- Number of months of logs to retain
 	@DatasetSkipList varchar(max) = '',			-- List of datasets to skip
 	@ExperimentSkipList varchar(max) = '',		-- List of experiments to skip
@@ -157,6 +158,7 @@ AS
 			DS_created
 		FROM T_Dataset
 		WHERE (DS_created < @DeleteThreshold) AND
+		    NOT Dataset_Num Like 'DataPackage_[0-9]%' AND
 			NOT Dataset_Num IN ( SELECT Value
 								FROM dbo.udfParseDelimitedList ( @DatasetSkipList, ',' ) 
 								) AND
@@ -164,7 +166,7 @@ AS
 								FROM T_Dataset DS INNER JOIN
 										T_Analysis_Job AJ ON DS.Dataset_ID = AJ.AJ_datasetID
 								WHERE AJ_Created >= @JobKeepThreshold
-								)	      
+								)
 		ORDER BY DS_created         
 		--
 		Select @myRowCount = @@RowCount, @myError = @@Error
@@ -181,7 +183,7 @@ AS
 				E.Experiment_Num,
 				E.EX_created
 		FROM T_Experiments E
-		WHERE E.Experiment_Num <> 'Placeholder' AND
+		WHERE E.Experiment_Num NOT IN ('Placeholder', 'DMS_Pipeline_Data') AND
 			E.EX_created < @DeleteThreshold AND
 			NOT Experiment_Num IN ( SELECT Value
 									FROM dbo.udfParseDelimitedList ( @ExperimentSkipList, ',' ) 
@@ -322,6 +324,10 @@ AS
 
 		BEGIN TRY 
 		
+			
+			/*
+			---------------------------------------------------
+			-- Deprecated in Summer 2015: 
 			Set @CurrentLocation = 'DELETE T_Analysis_Job_Annotations'	
 			DELETE T_Analysis_Job_Annotations
 			FROM #Tmp_JobsToDelete
@@ -329,7 +335,7 @@ AS
 				ON #Tmp_JobsToDelete.Job = T_Analysis_Job_Annotations.Job_ID
 			--
 			Set @message = @message + 'T_Analysis_Job_Annotations, '
-			
+			*/
 			
 			/*
 			---------------------------------------------------
@@ -351,6 +357,9 @@ AS
 			--
 			Set @message = @message + 'T_Analysis_Job_PSM_Stats, '
 			
+
+			-- Disable the trigger that prevents all rows from being deleted
+			ALTER TABLE T_Analysis_Job DISABLE TRIGGER trig_ud_T_Analysis_Job
 			
 			Set @CurrentLocation = 'DELETE T_Analysis_Job'	
 			DELETE T_Analysis_Job
@@ -361,6 +370,8 @@ AS
 			Set @message = @message + ' and T_Analysis_Job'
 		
 			Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+
+			ALTER TABLE T_Analysis_Job Enable TRIGGER trig_ud_T_Analysis_Job
 
 
 			-- Delete orphaned entries in T_Analysis_Job_Batches that are older than @DeleteThreshold
@@ -482,7 +493,9 @@ AS
 			--
 			Set @message = @message + 'T_Dataset_QC, '
 			
-			
+			/*
+			---------------------------------------------------
+			-- Deprecated in Summer 2015: 
 			Set @CurrentLocation = 'DELETE T_Dataset_Annotations'
 			DELETE T_Dataset_Annotations
 			FROM #Tmp_DatasetsToDelete
@@ -490,7 +503,7 @@ AS
 				ON #Tmp_DatasetsToDelete.Dataset_ID = T_Dataset_Annotations.Dataset_ID
 			--
 			Set @message = @message + 'T_Dataset_Annotations, '
-			
+			*/
 			
 			Set @CurrentLocation = 'DELETE T_Dataset_Archive'
 			DELETE T_Dataset_Archive
@@ -527,6 +540,17 @@ AS
 			--
 			Set @message = @message + 'T_Requested_Run, '
 		
+			Set @CurrentLocation = 'DELETE T_Prep_LC_Run_Dataset'
+			DELETE T_Prep_LC_Run_Dataset
+			FROM #Tmp_DatasetsToDelete
+				INNER JOIN T_Prep_LC_Run_Dataset
+				ON #Tmp_DatasetsToDelete.Dataset_ID = T_Prep_LC_Run_Dataset.Dataset_ID
+			--
+			Set @message = @message + 'T_Prep_LC_Run_Dataset, '
+			
+			
+			-- Disable the trigger that prevents all rows from being deleted
+			ALTER TABLE T_Dataset DISABLE TRIGGER trig_ud_T_Dataset
 			
 			Set @CurrentLocation = 'DELETE T_Dataset'
 			DELETE T_Dataset
@@ -538,6 +562,7 @@ AS
 			
 			Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
 			
+			ALTER TABLE T_Dataset ENABLE TRIGGER trig_ud_T_Dataset
 			
 			-- Delete orphaned entries in T_Requested_Run that are older than @DeleteThreshold
 			--
@@ -576,7 +601,7 @@ AS
 			--
 			DELETE T_Dataset_ScanTypes
 			FROM T_Dataset_ScanTypes ST
-			     LEFT OUTER JOIN T_Dataset DS
+			   LEFT OUTER JOIN T_Dataset DS
 			       ON ST.Dataset_ID = DS.Dataset_ID
 			WHERE (DS.Dataset_ID IS NULL)
 			--
@@ -799,7 +824,6 @@ AS
 Done:
 
 	Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteOldDataExperimentsJobsAndLogs] TO [PNL\D3M578] AS [dbo]
