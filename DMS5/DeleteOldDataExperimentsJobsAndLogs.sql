@@ -321,8 +321,7 @@ AS
 	Begin -- <a>
 		Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' jobs from: '
 
-		BEGIN TRY 
-		
+		BEGIN TRY 		
 			
 			/*
 			---------------------------------------------------
@@ -354,7 +353,7 @@ AS
 				INNER JOIN T_Analysis_Job_PSM_Stats
 				ON #Tmp_JobsToDelete.Job = T_Analysis_Job_PSM_Stats.Job
 			--
-			Set @message = @message + 'T_Analysis_Job_PSM_Stats, '
+			Set @message = @message + 'T_Analysis_Job_PSM_Stats'
 			
 
 			-- Disable the trigger that prevents all rows from being deleted
