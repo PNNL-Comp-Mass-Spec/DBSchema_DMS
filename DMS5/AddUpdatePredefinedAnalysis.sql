@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdatePredefinedAnalysis]
+CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 /****************************************************
 ** 
 **	Desc: Adds a new default analysis to DB 
@@ -33,6 +33,7 @@ CREATE Procedure [dbo].[AddUpdatePredefinedAnalysis]
 **			05/02/2012 mem - Added parameter @SpecialProcessing
 **			09/25/2012 mem - Expanded @organismNameCriteria and @organismName to varchar(128)
 **			04/18/2013 mem - Expanded @description to varchar(512)
+**			11/02/2015 mem - Population of #TmpMatchingInstruments now considers the DatasetType criterion
 **    
 *****************************************************/
 (
@@ -254,8 +255,11 @@ As
 		FROM T_Instrument_Name InstName
 		     INNER JOIN T_Instrument_Class InstClass
 		       ON InstName.IN_class = InstClass.IN_class
+		     INNER JOIN T_Instrument_Group_Allowed_DS_Type InstGroupDSType 
+		       ON InstName.IN_Group = InstGroupDSType.IN_Group AND 
+		          (InstGroupDSType.Dataset_Type LIKE @datasetTypeCriteria OR @datasetTypeCriteria = '')
 		WHERE (InstClass.IN_Class LIKE @instrumentClassCriteria OR @instrumentClassCriteria = '') AND
-		      (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '')
+		      (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '')		      
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
