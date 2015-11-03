@@ -3,8 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
+/*
+** This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
+**
+*/
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
 SELECT Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
@@ -53,8 +55,6 @@ GROUP BY Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStorageP
          ParameterFileName, SettingsFileName, OrganismDBName, ProteinCollectionList, ProteinOptions,
          ResultType, DS_created, PackageComment, RawDataType, Experiment, Experiment_Reason, Experiment_Comment,
          Experiment_NEWT_ID, Experiment_NEWT_Name
-
-
 
 
 GO
