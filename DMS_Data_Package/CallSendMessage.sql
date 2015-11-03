@@ -15,13 +15,15 @@ CREATE PROCEDURE CallSendMessage
 **  Parameters:
 **
 **	Auth:	grk
-**	Date:	11/05/2009
+**	Date:	11/05/2009 grk - Initial version
+**			11/02/2015 mem - Now calling PostLogEntry
+**			               - Changed @ID from varchar(128) to int
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID VARCHAR(256),
+	@ID int,
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
 )
@@ -36,7 +38,9 @@ As
 
 	set @message = ''
 
-	DECLARE @result INT
+	Declare @IDText varchar(12) = Cast(@ID as varchar(12))
+	Declare @result int
+	Declare @logMessage varchar(512)
 
 	---------------------------------------------------
 	-- Create a temporary table to hold any messages returned by the program
@@ -57,22 +61,40 @@ As
 
 		DECLARE @appPath NVARCHAR(256)
 		SET @appPath = 'C:\DMS_Programs\DBMessageSender\'
-		--
+		
 		DECLARE @appName NVARCHAR(64)
 		SET @appName = 'DBMessageSender.exe'
-		--
+		
 		DECLARE @args NVARCHAR(256)
-		SET @args = @ID + ' localhost ' +  DB_NAME() + ' ' + @mode
-		--
+		SET @args = @IDText + ' localhost ' +  DB_NAME() + ' ' + @mode
+		
 		Declare @cmd nvarchar(4000)
 		Set @cmd = @appPath + @appName + ' ' + @args
-		--
+		
 		insert into #exec_std_out
 		EXEC @result = master..xp_cmdshell @cmd 
-		--
-		if @result <> 0
+		
+		if @result = 0
+		Begin
+			Declare @folderName varchar(128)
+			
+			SELECT @folderName = Package_File_Folder
+			FROM T_Data_Package
+			WHERE ID = @ID
+
+			Set @logMessage = 'Created data package folder: ' + @folderName		
+			exec PostLogEntry 'Normal', @logMessage, 'CallSendMessage'
+		End
+		Else
 		Begin
 			SELECT @message = @message + ' ' + ISNULL(line_contents, '') FROM #exec_std_out
+			
+			Set @logMessage = 'Error creating folder for data package ' + @IDText + ': ' + @message			
+			exec PostLogEntry 'Error', @logMessage, 'CallSendMessage'
+			
+			Set @logMessage = 'Command used: ' + @cmd
+			exec PostLogEntry 'Debug', @logMessage, 'CallSendMessage'
+			 
 			set @myError = @result
 			goto Done
 		End
