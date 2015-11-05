@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Group_Details] ******/
-/****** RowCount: 1049 ******/
+/****** RowCount: 1050 ******/
 /****** Columns: Group_ID, Mgr_ID, Tool_Name, Priority, Enabled, Comment, Last_Affected ******/
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Cleanup',3,1,'','4/17/2013 8:57:15 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Transfer',3,1,'','4/28/2015 2:02:09 PM')
@@ -279,6 +279,7 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Phospho_FDR_Aggregato
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'PRIDE_Converter',2,0,'Monroe test','10/9/2015 3:06:55 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'ProMex',3,0,'Monroe test','7/31/2015 6:12:38 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'ProSight_Quant',3,-1,'Monroe test','8/23/2012 3:20:02 PM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'QC_ART',3,1,'Monroe test','11/4/2015 8:27:49 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'RepoPkgr',3,0,'Monroe test','10/3/2014 11:36:26 AM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Results_Cleanup',3,-1,'Monroe test','9/10/2013 6:12:26 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Results_Transfer',3,0,'Monroe test','4/28/2015 2:02:09 PM')
@@ -1000,4 +1001,3 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,5,'MSXML_Gen',3,1,'Only 
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,5,'MultiAlign',3,1,'','4/19/2013 1:16:50 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,5,'MultiAlign_Aggregator',3,1,'','4/19/2013 1:16:50 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,5,'Phospho_FDR_Aggregator',3,1,'','8/31/2015 6:41:11 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,5,'PRIDE_Converter',2,1,'','10/9/2015 3:06:55 PM')
