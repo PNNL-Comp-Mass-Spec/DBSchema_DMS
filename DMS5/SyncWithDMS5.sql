@@ -14,6 +14,7 @@ CREATE Procedure SyncWithDMS5
 **			10/27/2015 mem - Add tables for @usersAndCampaigns, @chargeCodesAndEUS
 **			10/28/2015 mem - Add tables for @experiments, @datasets, and @jobs
 **			10/29/2015 mem - Now passing @tableName to SyncWithDMSShowStats
+**			11/05/2015 mem - Remove IN_Max_Queued_Datasets and IN_Capture_Log_Level from T_Instrument_Name
 **    
 *****************************************************/
 (
@@ -358,9 +359,7 @@ As
 				t.[IN_Tracking] <> s.[IN_Tracking] OR
 				t.[Percent_EMSL_Owned] <> s.[Percent_EMSL_Owned] OR
 				t.[IN_max_simultaneous_captures] <> s.[IN_max_simultaneous_captures] OR
-				t.[IN_Max_Queued_Datasets] <> s.[IN_Max_Queued_Datasets] OR
 				t.[IN_Capture_Exclusion_Window] <> s.[IN_Capture_Exclusion_Window] OR
-				t.[IN_Capture_Log_Level] <> s.[IN_Capture_Log_Level] OR
 				t.[Auto_Define_Storage_Path] <> s.[Auto_Define_Storage_Path] OR
 				t.[Default_Purge_Policy] <> s.[Default_Purge_Policy] OR
 				t.[Perform_Calibration] <> s.[Perform_Calibration] OR
@@ -406,9 +405,7 @@ As
 				[IN_Tracking] = s.[IN_Tracking],
 				[Percent_EMSL_Owned] = s.[Percent_EMSL_Owned],
 				[IN_max_simultaneous_captures] = s.[IN_max_simultaneous_captures],
-				[IN_Max_Queued_Datasets] = s.[IN_Max_Queued_Datasets],
 				[IN_Capture_Exclusion_Window] = s.[IN_Capture_Exclusion_Window],
-				[IN_Capture_Log_Level] = s.[IN_Capture_Log_Level],
 				[IN_Created] = s.[IN_Created],
 				[Auto_Define_Storage_Path] = s.[Auto_Define_Storage_Path],
 				[Auto_SP_Vol_Name_Client] = s.[Auto_SP_Vol_Name_Client],
@@ -420,8 +417,8 @@ As
 				[Default_Purge_Policy] = s.[Default_Purge_Policy],
 				[Perform_Calibration] = s.[Perform_Calibration]
 			WHEN NOT MATCHED BY TARGET THEN
-				INSERT([IN_name], [Instrument_ID], [IN_class], [IN_Group], [IN_source_path_ID], [IN_storage_path_ID], [IN_capture_method], [IN_status], [IN_Room_Number], [IN_Description], [IN_usage], [IN_operations_role], [IN_Tracking], [Percent_EMSL_Owned], [IN_max_simultaneous_captures], [IN_Max_Queued_Datasets], [IN_Capture_Exclusion_Window], [IN_Capture_Log_Level], [IN_Created], [Auto_Define_Storage_Path], [Auto_SP_Vol_Name_Client], [Auto_SP_Vol_Name_Server], [Auto_SP_Path_Root], [Auto_SP_Archive_Server_Name], [Auto_SP_Archive_Path_Root], [Auto_SP_Archive_Share_Path_Root], [Default_Purge_Policy], [Perform_Calibration])
-				VALUES(s.[IN_name], s.[Instrument_ID], s.[IN_class], s.[IN_Group], s.[IN_source_path_ID], s.[IN_storage_path_ID], s.[IN_capture_method], s.[IN_status], s.[IN_Room_Number], s.[IN_Description], s.[IN_usage], s.[IN_operations_role], s.[IN_Tracking], s.[Percent_EMSL_Owned], s.[IN_max_simultaneous_captures], s.[IN_Max_Queued_Datasets], s.[IN_Capture_Exclusion_Window], s.[IN_Capture_Log_Level], s.[IN_Created], s.[Auto_Define_Storage_Path], s.[Auto_SP_Vol_Name_Client], s.[Auto_SP_Vol_Name_Server], s.[Auto_SP_Path_Root], s.[Auto_SP_Archive_Server_Name], s.[Auto_SP_Archive_Path_Root], s.[Auto_SP_Archive_Share_Path_Root], s.[Default_Purge_Policy], s.[Perform_Calibration])
+				INSERT([IN_name], [Instrument_ID], [IN_class], [IN_Group], [IN_source_path_ID], [IN_storage_path_ID], [IN_capture_method], [IN_status], [IN_Room_Number], [IN_Description], [IN_usage], [IN_operations_role], [IN_Tracking], [Percent_EMSL_Owned], [IN_max_simultaneous_captures], [IN_Capture_Exclusion_Window], [IN_Created], [Auto_Define_Storage_Path], [Auto_SP_Vol_Name_Client], [Auto_SP_Vol_Name_Server], [Auto_SP_Path_Root], [Auto_SP_Archive_Server_Name], [Auto_SP_Archive_Path_Root], [Auto_SP_Archive_Share_Path_Root], [Default_Purge_Policy], [Perform_Calibration])
+				VALUES(s.[IN_name], s.[Instrument_ID], s.[IN_class], s.[IN_Group], s.[IN_source_path_ID], s.[IN_storage_path_ID], s.[IN_capture_method], s.[IN_status], s.[IN_Room_Number], s.[IN_Description], s.[IN_usage], s.[IN_operations_role], s.[IN_Tracking], s.[Percent_EMSL_Owned], s.[IN_max_simultaneous_captures], s.[IN_Capture_Exclusion_Window], s.[IN_Created], s.[Auto_Define_Storage_Path], s.[Auto_SP_Vol_Name_Client], s.[Auto_SP_Vol_Name_Server], s.[Auto_SP_Path_Root], s.[Auto_SP_Archive_Server_Name], s.[Auto_SP_Archive_Path_Root], s.[Auto_SP_Archive_Share_Path_Root], s.[Default_Purge_Policy], s.[Perform_Calibration])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action, 
 			       Cast(Inserted.[Instrument_ID] as varchar(12)), 
@@ -1929,7 +1926,7 @@ As
 			    ISNULL( NULLIF(t.[Tag], s.[Tag]),
 			       NULLIF(s.[Tag], t.[Tag])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Barcode], s.[Barcode]),
-			            NULLIF(s.[Barcode], t.[Barcode])) IS NOT NULL OR
+			      NULLIF(s.[Barcode], t.[Barcode])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Comment], s.[Comment]),
 			            NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
 			    )
@@ -3126,7 +3123,7 @@ As
 			  [Note] = s.[Note],
 			    [AP_Function] = s.[AP_Function],
 			    [AP_Server_Name] = s.[AP_Server_Name],
-			    [AP_network_share_path] = s.[AP_network_share_path],
+			   [AP_network_share_path] = s.[AP_network_share_path],
 			    [AP_archive_URL] = s.[AP_archive_URL],
 			    [AP_created] = s.[AP_created]
 			WHEN NOT MATCHED BY TARGET THEN
@@ -3196,7 +3193,7 @@ As
 			            NULLIF(s.[AS_Last_Successful_Archive], t.[AS_Last_Successful_Archive])) IS NOT NULL
 			    )
 			THEN UPDATE SET 
-			    [AS_state_ID] = s.[AS_state_ID],
+			 [AS_state_ID] = s.[AS_state_ID],
 			    [AS_state_Last_Affected] = s.[AS_state_Last_Affected],
 			    [AS_storage_path_ID] = s.[AS_storage_path_ID],
 			    [AS_datetime] = s.[AS_datetime],
@@ -3952,7 +3949,7 @@ As
 			            NULLIF(s.[AJ_ToolNameCached], t.[AJ_ToolNameCached])) IS NOT NULL
 			    )
 			THEN UPDATE SET 
-			    [AJ_batchID] = s.[AJ_batchID],
+			 [AJ_batchID] = s.[AJ_batchID],
 			    [AJ_priority] = s.[AJ_priority],
 			    [AJ_created] = s.[AJ_created],
 			    [AJ_start] = s.[AJ_start],

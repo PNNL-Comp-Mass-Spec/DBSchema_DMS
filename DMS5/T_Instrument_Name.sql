@@ -19,9 +19,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_Tracking] [tinyint] NULL,
 	[Percent_EMSL_Owned] [int] NOT NULL,
 	[IN_max_simultaneous_captures] [smallint] NOT NULL,
-	[IN_Max_Queued_Datasets] [smallint] NOT NULL,
 	[IN_Capture_Exclusion_Window] [real] NOT NULL,
-	[IN_Capture_Log_Level] [tinyint] NOT NULL,
 	[IN_Created] [datetime] NULL,
 	[Auto_Define_Storage_Path] [tinyint] NOT NULL,
 	[Auto_SP_Vol_Name_Client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -73,11 +71,7 @@ ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Perc
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_count_max]  DEFAULT ((1)) FOR [IN_max_simultaneous_captures]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_max_queued_datasets]  DEFAULT ((1)) FOR [IN_Max_Queued_Datasets]
-GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_exclusion_window]  DEFAULT ((11)) FOR [IN_Capture_Exclusion_Window]
-GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_capture_log_level]  DEFAULT ((1)) FOR [IN_Capture_Log_Level]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO

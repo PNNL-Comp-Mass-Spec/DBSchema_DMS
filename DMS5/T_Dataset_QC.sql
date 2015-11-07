@@ -109,6 +109,7 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[Keratin_2C] [real] NULL,
 	[P_4A] [real] NULL,
 	[P_4B] [real] NULL,
+	[QCART] [real] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC
