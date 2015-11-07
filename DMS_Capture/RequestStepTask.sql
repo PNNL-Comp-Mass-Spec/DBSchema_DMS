@@ -39,9 +39,10 @@ CREATE PROCEDURE RequestStepTask
 **			09/17/2012 mem - Now returning metadata for step tool DatasetQuality instead of step tool DatasetInfo
 **			02/25/2013 mem - Now returning the Machine name when @infoOnly > 0
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
+**			11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
 **
 *****************************************************/
-  (
+(
     @processorName VARCHAR(128),
     @jobNumber INT = 0 OUTPUT,			-- Job number assigned; 0 if no job available
     @message VARCHAR(512) OUTPUT,
@@ -49,7 +50,7 @@ CREATE PROCEDURE RequestStepTask
     @ManagerVersion VARCHAR(128) = '',
     @JobCountToPreview INT = 10,
     @serverPerspectiveEnabled tinyint = 0
-  )
+)
 AS 
 	SET nocount ON
 
@@ -277,7 +278,7 @@ AS
 	FROM
 		T_Processor_Instrument
 	WHERE
-		Processor_Name = @processorName
+		Processor_Name = @processorName And Enabled > 0
 
 	---------------------------------------------------
 	-- Get list of instruments that have processor assignments

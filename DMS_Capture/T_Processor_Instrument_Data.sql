@@ -13,5 +13,5 @@ INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS04_AgTOF05',1,'IM
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS05_AgQTOF04',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS06_AgTOF07',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS07_AgQTOF02',1,'IMS Instrument')
-INSERT INTO [T_Processor_Instrument] VALUES ('Proto-4_CTM','9T_FTICR_Imaging',1,'Bruker Imaging')
+INSERT INTO [T_Processor_Instrument] VALUES ('Proto-4_CTM','9T_FTICR_Imaging',0,'Bruker Imaging; old instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-7_CTM_2','Maxis_01',1,'Maxis')
