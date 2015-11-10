@@ -44,33 +44,34 @@ CREATE PROCEDURE CreateJobSteps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			09/14/2015 mem - Now passing @DebugMode to MoveJobsToMainTables
 **						   - Verifying that T_Step_Tool_Versions has Tool_Version_ID 1 (unknown)
+**			11/09/2015 mem - Assuring that Dataset_ID is only if the dataset name is 'Aggregation'
 **    
 *****************************************************/
 (
 	@message varchar(512) output,
 	@mode varchar(32) = 'CreateFromImportedJobs',	-- Modes: CreateFromImportedJobs, ExtendExistingJob, UpdateExistingJob (rarely used)
-	@existingJob int = 0,							-- Used if @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'; when @DebugMode <> 1, then can also be used when @mode = 'CreateFromImportedJobs'
-	@extensionScriptName varchar(512) = '',						-- Only used if @mode = 'ExtendExistingJob'; name of the job script to apply when extending an existing job
-	@extensionScriptSettingsFileOverride varchar(256) = '',		-- Only used if @mode = 'ExtendExistingJob'; new settings file to use instead of the one defined in DMS
+	@existingJob int = 0,							-- Used If @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'; when @DebugMode <> 1, then can also be used when @mode = 'CreateFromImportedJobs'
+	@extensionScriptName varchar(512) = '',						-- Only used If @mode = 'ExtendExistingJob'; name of the job script to apply when extending an existing job
+	@extensionScriptSettingsFileOverride varchar(256) = '',		-- Only used If @mode = 'ExtendExistingJob'; new settings file to use instead of the one defined in DMS
 	@MaxJobsToProcess int = 0,
 	@LogIntervalThreshold int = 15,		-- If this procedure runs longer than this threshold, then status messages will be posted to the log
-	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
+	@LoggingEnabled tinyint = 0,		-- Set to 1 to immediately enable progress logging; If 0, then logging will auto-enable If @LogIntervalThreshold seconds elapse
 	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
 	@infoOnly tinyint = 0,
 	@DebugMode tinyint = 0				-- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job.  Also, when this is non-zero, various debug tables will be shown
 )
 As
-	set nocount on
+	Set nocount on
 	
 	declare @myError int
 	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Set @myError = 0
+	Set @myRowCount = 0
 	
 	declare @StepCount int
 	declare @StepCountNew int
-	set @StepCount= 0
-	set @StepCountNew = 0
+	Set @StepCount= 0
+	Set @StepCountNew = 0
 	
 	Declare @MaxJobsToAdd int
 
@@ -81,6 +82,8 @@ As
 	Declare @JobCountToProcess int
 	Declare @JobsProcessed int
 
+	Declare @errorMessage varchar(512)
+	
 	---------------------------------------------------
 	-- create temporary tables to accumulate job steps
 	-- job step dependencies, and job parameters for
@@ -211,14 +214,14 @@ As
 	-- Get recently imported jobs that need to be processed
 	---------------------------------------------------
 	--
-	if @mode = 'CreateFromImportedJobs'
+	If @mode = 'CreateFromImportedJobs'
 	Begin
 		If @MaxJobsToProcess > 0
 			Set @MaxJobsToAdd = @MaxJobsToProcess
 		Else
 			Set @MaxJobsToAdd = 1000000
 		
-		if @DebugMode = 0 OR (@DebugMode <> 0 And @existingJob = 0)
+		If @DebugMode = 0 OR (@DebugMode <> 0 And @existingJob = 0)
 		Begin
 			INSERT INTO #Jobs (Job, Priority,  Script,  State,  Dataset,  Dataset_ID, Results_Folder_Name)
 			SELECT TOP (@MaxJobsToAdd) Job, Priority,  Script,  State,  Dataset,  Dataset_ID, NULL
@@ -227,11 +230,11 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-			begin
-				set @message = 'Error trying to get jobs for processing'
+			If @myError <> 0
+			Begin
+				Set @message = 'Error trying to get jobs for processing'
 				goto Done
-			end
+			End
 		End
 
 		If @DebugMode <> 0 And @existingJob <> 0
@@ -244,33 +247,33 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
 			If @myRowCount = 0
-			begin
-				set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Jobs; unable to continue debugging'
-				set @myError = 50000
+			Begin
+				Set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Jobs; unable to continue debugging'
+				Set @myError = 50000
 				goto Done
-			end
+			End
 		End
 	End
 	
 	---------------------------------------------------
-	-- set up to process extension job
+	-- Set up to process extension job
 	---------------------------------------------------
 	--
-	if @mode = 'ExtendExistingJob'
-	begin
+	If @mode = 'ExtendExistingJob'
+	Begin
 		-- populate #jobs with info from existing job
-		-- if it only exists in history, restore it to main tables
+		-- If it only exists in history, restore it to main tables
 		exec @myError = SetUpToExtendExistingJob @existingJob, @message
-	end
+	End
 	
-	if @mode = 'UpdateExistingJob'
-	begin
+	If @mode = 'UpdateExistingJob'
+	Begin
 		-- Note: As of April 4, 2011, the 'UpdateExistingJob' mode is not used in the DMS_Pipeline database
 		--
 		If Not Exists (SELECT Job FROM T_Jobs Where Job = @existingJob)
 		Begin
 			Set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Jobs; unable to update it'
-			set @myError = 50000
+			Set @myError = 50000
 			goto Done
 		End
 		
@@ -281,12 +284,12 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to get jobs for processing'
+		If @myError <> 0
+		Begin
+			Set @message = 'Error trying to get jobs for processing'
 			goto Done
-		end
-	end
+		End
+	End
 
 	---------------------------------------------------
 	-- Make sure T_Step_Tool_Versions as the "Unknown" version (ID=1)
@@ -294,12 +297,12 @@ As
 	--	
 	If Not Exists (Select * from T_Step_Tool_Versions WHERE Tool_Version_ID = 1)
 	Begin
-		SET IDENTITY_INSERT T_Step_Tool_Versions ON
+		Set IDENTITY_INSERT T_Step_Tool_Versions ON
 
 		Insert Into T_Step_Tool_Versions (Tool_Version_ID, Tool_Version)
 		Values (1, 'Unknown')
 
-		SET IDENTITY_INSERT T_Step_Tool_Versions OFF
+		Set IDENTITY_INSERT T_Step_Tool_Versions OFF
 	End
 
 	---------------------------------------------------
@@ -309,6 +312,7 @@ As
 	declare @prevJob int
 	declare @scriptName varchar(64)
 	declare @resultsFolderName varchar(128)
+	declare @dataset varchar(128)
 	declare @datasetID int
 	declare @done tinyint
 	declare @JobList varchar(max)
@@ -325,17 +329,18 @@ As
 	Set @JobList = ''
 	--
 	while @done = 0
-	begin --<a>
+	Begin -- <a>
 		---------------------------------------------------
 		-- get next unprocessed job and 
 		-- build it into the temporary tables
 		---------------------------------------------------
 		-- 
-		set @job = 0
+		Set @job = 0
 		--
 		SELECT TOP 1 
 			@job = Job,
 			@scriptName = Script,
+			@dataset = Dataset,
 			@datasetID = Dataset_ID,
 			@resultsFolderName = ISNULL(Results_Folder_Name, '')
 		FROM 
@@ -345,143 +350,172 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to get next unitiated job'
+		If @myError <> 0
+		Begin
+			Set @message = 'Error trying to get next unitiated job'
 			goto Done
-		end
+		End
 
 		---------------------------------------------------
-		-- if no job was found, we are done
+		-- If no job was found, we are done
 		-- otherwise, process the job
 		---------------------------------------------------
-		if @job = 0
-			set @done = 1
-		else
-		begin --<b>
-			-- set up to get next job on next pass
-			set @prevJob = @job
-			
-			If @JobList = ''
-				Set @JobList = Convert(varchar(12), @job)
-			Else
-				Set @JobList = @JobList + ',' + Convert(varchar(12), @job)
-			
-			declare @pXML xml
-			declare @scriptXML xml
-			declare @tag varchar(8)
-			set @tag = 'unk'
-
-			-- get contents of script and tag for results folder name
-			SELECT @scriptXML = Contents, @tag = Results_Tag 
-			FROM T_Scripts 
-			WHERE Script = @scriptName
-
-			-- add additional script if extending an existing job
-			if @mode = 'ExtendExistingJob' and @extensionScriptName <> ''
-			begin
-				declare @scriptXML2 xml
-				
-				SELECT @scriptXML2 = Contents 
-				FROM T_Scripts 
-				WHERE Script = @extensionScriptName
-				
-				set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
-			end
-			
-			if @debugMode <> 0
-				SELECT @scriptXML AS Script_XML
+		If @job = 0
+			Set @done = 1
+		Else
+		Begin -- <b>
 		
-			-- get results folder name (and store in job)
-			if @mode = 'CreateFromImportedJobs' or @mode = 'UpdateExistingJob'
-			begin
-				exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
-			end
+			-- Set up to get next job on next pass
+			Set @prevJob = @job
+			
+			If @datasetID = 0 And @dataset <> 'Aggregation'
+			Begin
+				Set @errorMessage = 'Dataset_ID can be 0 only when the Dataset name is "Aggregation"'
+				Set @myError = 1
+			End
 
-			-- get parameters for job (and also store in job parameters)
-			-- Parameters are returned in @pXML
-			exec @myError = CreateParametersForJob
-									@job,
-									@pXML output,
-									@message output,
-									@SettingsFileOverride = @extensionScriptSettingsFileOverride, 
-									@DebugMode = @DebugMode
+			If @datasetID <> 0 And @dataset = 'Aggregation'
+			Begin
+				Set @errorMessage = 'Dataset_ID must be 0 when the Dataset name is "Aggregation"'
+				Set @myError = 1
+			End
+			
+			
+			If @myError <> 0
+			Begin
+				exec PostLogEntry 'Error', @errorMessage, 'CreateJobSteps'
 
-			if @debugMode <> 0
-				SELECT @job AS Job, @pXML as PXML
-
-			-- create the basic job structure (steps and dependencies)
-			-- Details are stored in #Job_Steps and #Job_Step_Dependencies
-			exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
+				UPDATE #Jobs
+				SET State = 5
+				WHERE Job = @job
+								
+			End
+			Else
+			Begin -- <c>
 				
-			-- Calculate signatures for steps that require them (and also handle shared results folders)
-			-- Details are stored in #Job_Steps
-			exec @myError = CreateSignaturesForJobSteps @job, @pXML, @datasetID, @message output, @DebugMode = @DebugMode
-
-			-- Update the memory usage for job steps that have JavaMemorySize entries defined in the parameters
-			-- This updates Memory_Usage_MB in #Job_Steps
-			exec @myError = UpdateJobStepMemoryUsage @job, @pXML, @message output
-
-			if @DebugMode <> 0
-			begin
-				SELECT @StepCount = COUNT(*) FROM #Job_Steps
-				SELECT '#Job_Steps' as [Table], * FROM #Job_Steps
-				SELECT '#Job_Step_Dependencies' as [Table], * FROM #Job_Step_Dependencies
-			end
-
-			-- handle any step cloning
-			exec @myError = CloneJobStep @job, @pXML, @message output
-
-			if @DebugMode <> 0
-			begin
-				SELECT @StepCountNew = COUNT(*) FROM #Job_Steps
+				If @JobList = ''
+					Set @JobList = Convert(varchar(12), @job)
+				Else
+					Set @JobList = @JobList + ',' + Convert(varchar(12), @job)
 				
-				IF @StepCountNew <> @StepCount
+				declare @pXML xml
+				declare @scriptXML xml
+				declare @tag varchar(8)
+				Set @tag = 'unk'
+
+				-- get contents of script and tag for results folder name
+				SELECT @scriptXML = Contents, @tag = Results_Tag 
+				FROM T_Scripts 
+				WHERE Script = @scriptName
+
+				-- add additional script If extending an existing job
+				If @mode = 'ExtendExistingJob' and @extensionScriptName <> ''
 				Begin
-					SELECT 'Data after Cloning' as Message, * FROM #Job_Steps
-					SELECT 'Data after Cloning' as Message, * FROM #Job_Step_Dependencies
+					declare @scriptXML2 xml
+					
+					SELECT @scriptXML2 = Contents 
+					FROM T_Scripts 
+					WHERE Script = @extensionScriptName
+					
+					Set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
 				End
-			end
+				
+				If @debugMode <> 0
+					SELECT @scriptXML AS Script_XML
 			
-			-- Handle external DTAs if any
-			-- This updates DTA_Gen steps in #Job_Steps for which the job parameters contain parameter 'ExternalDTAFolderName' with value 'DTA_Manual'
-			exec @myError = OverrideDTAGenForExternalDTA @job, @pXML, @message output
-
-			-- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
-			--  copying to the main database tables
-			exec @myError = FinishJobCreation @job, @message output, @DebugMode
-			
-			-- Do current job parameters conflict with existing job?
-			if @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'
-			begin
-				exec @myError = CrossCheckJobParameters @job, @message output, @IgnoreSignatureMismatch=1
-				if @myError <> 0
+				-- get results folder name (and store in job)
+				If @mode = 'CreateFromImportedJobs' or @mode = 'UpdateExistingJob'
 				Begin
-					If @mode = 'UpdateExistingJob'
+					exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
+				End
+
+				-- get parameters for job (and also store in job parameters)
+				-- Parameters are returned in @pXML
+				exec @myError = CreateParametersForJob
+										@job,
+										@pXML output,
+										@message output,
+										@SettingsFileOverride = @extensionScriptSettingsFileOverride, 
+										@DebugMode = @DebugMode
+
+				If @debugMode <> 0
+					SELECT @job AS Job, @pXML as PXML
+
+				-- create the basic job structure (steps and dependencies)
+				-- Details are stored in #Job_Steps and #Job_Step_Dependencies
+				exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
+					
+				-- Calculate signatures for steps that require them (and also handle shared results folders)
+				-- Details are stored in #Job_Steps
+				exec @myError = CreateSignaturesForJobSteps @job, @pXML, @datasetID, @message output, @DebugMode = @DebugMode
+
+				-- Update the memory usage for job steps that have JavaMemorySize entries defined in the parameters
+				-- This updates Memory_Usage_MB in #Job_Steps
+				exec @myError = UpdateJobStepMemoryUsage @job, @pXML, @message output
+
+				If @DebugMode <> 0
+				Begin
+					SELECT @StepCount = COUNT(*) FROM #Job_Steps
+					SELECT '#Job_Steps' as [Table], * FROM #Job_Steps
+					SELECT '#Job_Step_Dependencies' as [Table], * FROM #Job_Step_Dependencies
+				End
+
+				-- handle any step cloning
+				exec @myError = CloneJobStep @job, @pXML, @message output
+
+				If @DebugMode <> 0
+				Begin
+					SELECT @StepCountNew = COUNT(*) FROM #Job_Steps
+					
+					If @StepCountNew <> @StepCount
 					Begin
-						-- If None of the job steps has completed yet, then it's OK if there are parameter differences
-						If Exists (SELECT * FROM T_Job_Steps WHERE Job = @job AND State = 5)
+						SELECT 'Data after Cloning' as Message, * FROM #Job_Steps
+						SELECT 'Data after Cloning' as Message, * FROM #Job_Step_Dependencies
+					End
+				End
+				
+				-- Handle external DTAs If any
+				-- This updates DTA_Gen steps in #Job_Steps for which the job parameters contain parameter 'ExternalDTAFolderName' with value 'DTA_Manual'
+				exec @myError = OverrideDTAGenForExternalDTA @job, @pXML, @message output
+
+				-- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
+				--  copying to the main database tables
+				exec @myError = FinishJobCreation @job, @message output, @DebugMode
+				
+				-- Do current job parameters conflict with existing job?
+				If @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'
+				Begin -- <d>
+					exec @myError = CrossCheckJobParameters @job, @message output, @IgnoreSignatureMismatch=1
+					
+					If @myError <> 0
+					Begin -- <e>
+						If @mode = 'UpdateExistingJob'
 						Begin
-							Set @message = 'Conflicting parameters are not allowed when one or more job steps has completed: ' + @message
-							Goto Done
+							-- If None of the job steps has completed yet, then it's OK If there are parameter differences
+							If Exists (SELECT * FROM T_Job_Steps WHERE Job = @job AND State = 5)
+							Begin
+								Set @message = 'Conflicting parameters are not allowed when one or more job steps has completed: ' + @message
+								Goto Done
+							End
+							Else
+							Begin
+								Set @message = ''
+								Set @myError = 0
+							End
+							
 						End
 						Else
 						Begin
-							Set @message = ''
-							Set @myError = 0
+							-- Mode is 'ExtendExistingJob'; jump out of the loop
+							Goto Done
 						End
-						
-					End
-					Else
-					Begin
-						-- Mode is 'ExtendExistingJob'; jump out of the loop
-						Goto Done
-					End
-				End
-			end
-
+					End -- <e>
+				End -- </d>
+				
+			End -- </c>
+			
 			Set @JobsProcessed = @JobsProcessed + 1
-		end --<b>
+		End -- </b>
 		
 		If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
 		Begin
@@ -493,44 +527,44 @@ As
 			Set @LastLogTime = GetDate()
 		End
 
-	end --<a>
+	End -- </a>
 
 	---------------------------------------------------
 	-- we've got new jobs in temp tables - what to do?
 	---------------------------------------------------
 
-	if @infoOnly = 0
+	If @infoOnly = 0
 	Begin
-		if @mode = 'CreateFromImportedJobs'
-		begin
+		If @mode = 'CreateFromImportedJobs'
+		Begin
 			-- Move temp tables to main tables
 			exec MoveJobsToMainTables @message output, @DebugMode
 
 			-- Possibly update the input folder using the 
 			-- Special_Processing param in the job parameters
 			exec UpdateInputFolderUsingSpecialProcessingParam @JobList, @infoOnly=0, @ShowResults=0
-		end
+		End
 
-		if @mode = 'ExtendExistingJob'
-		begin
+		If @mode = 'ExtendExistingJob'
+		Begin
 			-- Merge temp tables with existing job
 			exec MergeJobsToMainTables @message output, @infoOnly = @infoOnly
-		end
+		End
 
-		if @mode = 'UpdateExistingJob'
-		begin
+		If @mode = 'UpdateExistingJob'
+		Begin
 			-- Merge temp tables with existing job
 			exec UpdateJobInMainTables @message output
-		end
+		End
 		
 	End
 	Else
 	Begin
-		if @mode = 'ExtendExistingJob'
-		begin
+		If @mode = 'ExtendExistingJob'
+		Begin
 			-- Preview changes that would be made
 			exec MergeJobsToMainTables @message output, @infoOnly = @infoOnly
-		end
+		End
 	End
 	
 	If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
@@ -549,7 +583,7 @@ Done:
 	If @DebugMode <> 0 and @mode <> 'ExtendExistingJob'
 	Begin
 		-- Display the data in #Jobs
-		--  (if @mode is 'ExtendExistingJob' then we will have
+		--  (If @mode is 'ExtendExistingJob' then we will have
 		--   already done this in MergeJobsToMainTables)
 		SELECT * FROM #Jobs
 	End
