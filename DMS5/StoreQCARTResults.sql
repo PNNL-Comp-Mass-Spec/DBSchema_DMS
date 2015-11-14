@@ -321,3 +321,13 @@ Done:
 	Return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[StoreQCARTResults] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[StoreQCARTResults] TO [PNL\D3M580] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [svc-dms] AS [dbo]
+GO

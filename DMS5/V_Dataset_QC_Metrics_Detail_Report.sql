@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Dataset_QC_Metrics_Detail_Report
+
+CREATE view [dbo].[V_Dataset_QC_Metrics_Detail_Report]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
        InstName.IN_name AS Instrument,
@@ -114,8 +115,8 @@ SELECT InstName.IN_Group AS [Instrument Group],
 		Cast(DQC.MassErrorPPM AS Decimal(9,2)) AS MassErrorPPM,  
 		Cast(DQC.MassErrorPPM_Refined AS Decimal(9,2)) AS MassErrorPPM_Refined,  
 		Cast(DQC.MassErrorPPM_VIPER AS Decimal(9,2)) AS MassErrorPPM_VIPER,  
-		DQC.AMTs_10pct_FDR
-
+		DQC.AMTs_10pct_FDR,
+		Cast(DQC.QCART AS Decimal(9,3)) AS QCART
 FROM T_Dataset_QC DQC
      INNER JOIN T_Dataset DS
        ON DQC.Dataset_ID = DS.Dataset_ID
@@ -123,6 +124,7 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN dbo.V_Dataset_Folder_Paths DFP
        ON DQC.Dataset_ID = DFP.Dataset_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Detail_Report] TO [PNL\D3M578] AS [dbo]

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE view [dbo].[V_Dataset_QC_Metrics_Export]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
@@ -115,7 +116,8 @@ SELECT InstName.IN_Group AS [Instrument Group],
 	   DQC.Last_Affected AS Smaqc_Last_Affected,
 	   DQC.PSM_Source_Job,
 	   DQC.QCDM,
-	   DQC.QCDM_Last_Affected
+	   DQC.QCDM_Last_Affected,
+	   DQC.QCART
 FROM T_Dataset_QC DQC
      INNER JOIN T_Dataset DS
        ON DQC.Dataset_ID = DS.Dataset_ID
@@ -123,6 +125,7 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_DatasetRatingName DRN
        ON DS.DS_rating = DRN.DRN_state_ID
+
 
 
 GO
