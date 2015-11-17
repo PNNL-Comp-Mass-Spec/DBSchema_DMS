@@ -37,6 +37,7 @@ CREATE PROCEDURE GetJobParamTable
 **			08/20/2013 mem - Now looking up EUS_Proposal_ID
 **			09/04/2013 mem - Now including TransferFolderPath
 **			05/29/2015 mem - Add support for column Capture_Subfolder
+**			11/16/2015 mem - Now including EUS_Operator_ID and Operator_PRN
 **    
 *****************************************************/
   (
@@ -101,9 +102,14 @@ AS
 	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Max_Simultaneous_Captures', @max_simultaneous_captures)
 	INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Capture_Subfolder', @capture_subfolder)
 
-/**/	
+
   	---------------------------------------------------
-	-- basic params
+	-- Dataset Parameters
+	--
+	-- Convert columns of data from V_DMS_Capture_Job_Parameters into rows added to @paramTab
+	--
+	-- Note that by using Unpivot, any columns from V_DMS_Capture_Job_Parameters that are null
+	-- will not be entered into@paramTab
 	---------------------------------------------------
 	--
 	INSERT INTO @paramTab
@@ -128,7 +134,10 @@ AS
 		  CONVERT(varchar(2000), Archive_Path) AS Archive_Path,
 		  CONVERT(varchar(2000), Archive_Network_Share_Path) AS Archive_Network_Share_Path,
 		  CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID,
-		  CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID
+		  CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID,
+		  CONVERT(varchar(2000), EUS_Operator_ID) AS EUS_Operator_ID,
+		  CONVERT(varchar(2000), Operator_PRN) AS Operator_PRN
+		  
 		FROM
 		  V_DMS_Capture_Job_Parameters
 		WHERE
@@ -136,7 +145,7 @@ AS
 	  ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Folder, Method, Capture_Exclusion_Window, Created , 
 											Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External, 
 											Archive_Server, Archive_Path, Archive_Network_Share_Path,
-											EUS_Instrument_ID, EUS_Proposal_ID
+											EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_PRN
                    ) ) as TP
 	--	
 	SELECT @myError = @@error, @myRowCount = @@rowcount

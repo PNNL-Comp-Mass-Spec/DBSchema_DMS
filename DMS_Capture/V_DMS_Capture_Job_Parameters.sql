@@ -15,8 +15,10 @@ SELECT DS.Dataset_Num AS Dataset,
        TIN.IN_capture_method AS Method,
        TIN.IN_Max_Simultaneous_Captures AS Max_Simultaneous_Captures,
        TIN.IN_Capture_Exclusion_Window AS Capture_Exclusion_Window,
-       EID.EUS_Instrument_ID,
+       EUSInst.EUS_Instrument_ID,
        RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
+	   DS.DS_Oper_PRN AS Operator_PRN,
+	   EUSUser.EUS_Person_ID AS EUS_Operator_ID,
        DS.DS_created AS Created,
        TSrc.SP_path AS sourcePath,
        TSrc.SP_vol_name_server AS sourceVol,
@@ -44,10 +46,12 @@ FROM S_DMS_T_Dataset AS DS
        ON DS.Dataset_ID = TDA.AS_Dataset_ID
      LEFT OUTER JOIN S_DMS_T_Archive_Path AS TAP
        ON TDA.AS_storage_path_ID = TAP.AP_path_ID
-     LEFT OUTER JOIN S_DMS_V_EUS_Instrument_ID_Lookup EID
-       ON TIN.Instrument_ID = EID.Instrument_ID
+     LEFT OUTER JOIN S_DMS_V_EUS_Instrument_ID_Lookup EUSInst
+       ON TIN.Instrument_ID = EUSInst.Instrument_ID
      LEFT OUTER JOIN S_DMS_T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
+	 LEFT OUTER JOIN S_DMS_V_EUS_User_ID_Lookup EUSUser
+	   ON DS.DS_Oper_PRN = EUSUser.Username
 
 
 GO
