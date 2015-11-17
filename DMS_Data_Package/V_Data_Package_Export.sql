@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Data_Package_Export]
 AS
 SELECT DP.ID,
@@ -26,10 +27,13 @@ SELECT DP.ID,
        DPP.Share_Path,
        DPP.Archive_Path,
        DPP.Local_Path,
+	   EUSUser.EUS_Person_ID,
        IsNull(UploadQ.MyEmsl_Uploads, 0) As MyEMSL_Uploads
 FROM T_Data_Package DP
      INNER JOIN V_Data_Package_Paths DPP
        ON DP.ID = DPP.ID
+	 LEFT OUTER JOIN S_DMS_V_EUS_User_ID_Lookup EUSUser
+	   ON DP.Owner = EUSUser.Username
      LEFT OUTER JOIN ( SELECT Data_Package_ID,
                               COUNT(*) AS MyEMSL_Uploads
                        FROM T_MyEMSL_Uploads
