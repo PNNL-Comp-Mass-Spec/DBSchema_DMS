@@ -42,10 +42,3 @@ ALTER TABLE [dbo].[T_Job_Step_Dependencies] ADD  CONSTRAINT [DF_T_Job_Step_Depen
 GO
 ALTER TABLE [dbo].[T_Job_Step_Dependencies] ADD  CONSTRAINT [DF_T_Job_Step_Dependencies_Enable_Only]  DEFAULT ((0)) FOR [Enable_Only]
 GO
-ALTER TABLE [dbo].[T_Job_Step_Dependencies]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps] FOREIGN KEY([Job], [Step_Number])
-REFERENCES [dbo].[T_Job_Steps] ([Job], [Step_Number])
-ON UPDATE CASCADE
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[T_Job_Step_Dependencies] CHECK CONSTRAINT [FK_T_Job_Step_Dependencies_T_Job_Steps]
-GO

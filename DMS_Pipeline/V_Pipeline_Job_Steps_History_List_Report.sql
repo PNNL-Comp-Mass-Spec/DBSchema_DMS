@@ -30,6 +30,7 @@ SELECT JS.Job,
        J.Priority,
        JS.Signature,
        0 AS CPU_Load,
+	   0 AS Actual_CPU_Load,
        Memory_Usage_MB,
        JS.Tool_Version_ID,
        JS.Completion_Code,
@@ -48,6 +49,7 @@ FROM dbo.T_Job_Steps_History AS JS
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID
 WHERE Most_Recent_Entry = 1
+
 
 
 GO

@@ -71,6 +71,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			04/21/2015 mem - Now using column Uses_All_Cores
 **			06/01/2015 mem - No longer querying T_Local_Job_Processors since we have deprecated processor groups
 **						   - Also now ignoring GP_Groups and Available_For_General_Processing
+**			11/18/2015 mem - Now using Actual_CPU_Load instead of CPU_Load
 **
 *****************************************************/
 (
@@ -1064,9 +1065,9 @@ As
 		SET CPUs_Available = Total_CPUs - CPUQ.CPUs_Busy
 		FROM T_Machines Target
 		     INNER JOIN ( SELECT LP.Machine,
-		                         SUM(	CASE WHEN Tools.Uses_All_Cores > 0 
+		                         SUM(	CASE WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
 											 THEN IsNull(M.Total_CPUs, JS.CPU_Load)
-											 ELSE JS.CPU_Load
+											 ELSE JS.Actual_CPU_Load
 										END ) AS CPUs_Busy
 		                  FROM T_Job_Steps JS
 		                       INNER JOIN T_Local_Processors LP

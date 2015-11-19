@@ -24,6 +24,7 @@ CREATE PROCEDURE dbo.UpdateCPULoading
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **			02/26/2015 mem - Split the Update query into two parts
 **			04/17/2015 mem - Now using column Uses_All_Cores
+**			11/18/2015 mem - Now using Actual_CPU_Load
 **    
 *****************************************************/
 (
@@ -58,9 +59,9 @@ As
 	SELECT M.Machine,
 		SUM(CASE WHEN JobStepsQ.State = 4 
 				 THEN 
-					CASE WHEN JobStepsQ.Uses_All_Cores > 0 
+					CASE WHEN JobStepsQ.Uses_All_Cores > 0 AND JobStepsQ.Actual_CPU_Load = JobStepsQ.CPU_Load
 						 THEN M.Total_CPUs
-						 ELSE JobStepsQ.CPU_Load
+						 ELSE IsNull(JobStepsQ.Actual_CPU_Load, 1)
 					END
 				 ELSE 0
 			END) AS CPUs_used,
@@ -75,6 +76,7 @@ As
 	                              JS.State,
 	                              Tools.Uses_All_Cores,
 	                              JS.CPU_Load,
+	                              JS.Actual_CPU_Load,
 	                              JS.Memory_Usage_MB
 	                       FROM T_Job_Steps JS WITH ( READUNCOMMITTED )
 	                            INNER JOIN T_Step_Tools Tools
@@ -88,6 +90,8 @@ As
 	FROM T_Machines M
 	     INNER JOIN #Tmp_MachineStats AS TX
 	       ON TX.Machine = M.Machine
+	WHERE CPUs_Available <> M.Total_CPUs - TX.CPUs_used OR
+	      Memory_Available <> M.Total_Memory_MB - TX.Memory_Used
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
      --

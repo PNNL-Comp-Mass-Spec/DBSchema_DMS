@@ -35,6 +35,7 @@ SELECT JS.Job,
        J.Priority,
        JS.Signature,
        JS.CPU_Load,
+	   JS.Actual_CPU_Load,
        JS.Memory_Usage_MB,
        JS.Tool_Version_ID,
        JS.Completion_Code,
@@ -51,6 +52,7 @@ FROM dbo.T_Job_Steps AS JS
        ON J.State = JSN.ID
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
       ON JS.Processor = PS.Processor_Name
+
 
 
 GO

@@ -32,6 +32,7 @@ CREATE PROCEDURE CopyHistoryToJob
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			03/10/2015 mem - Now adding default dependencies if a similar job cannot be found
 **			03/10/2015 mem - Now updating T_Job_Steps.Dependencies if it doesn't match the dependent steps listed in T_Job_Step_Dependencies
+**			11/18/2015 mem - Add Actual_CPU_Load
 **    
 *****************************************************/
 (
@@ -179,6 +180,7 @@ As
 		Step_Number,
 		Step_Tool,
 		CPU_Load,
+		Actual_CPU_Load,
 		Memory_Usage_MB,
 		Shared_Result_Version,
 		Signature,
@@ -197,6 +199,7 @@ As
 	SELECT H.Job,
 	       H.Step_Number,
 	       H.Step_Tool,
+	       ST.CPU_Load,
 	       ST.CPU_Load,
 	       H.Memory_Usage_MB,
 	       H.Shared_Result_Version,

@@ -20,6 +20,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **			01/21/2014 mem - Added support for jobs that don't have cached dependencies in T_Job_Step_Dependencies_History
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			01/19/2015 mem - Fix ambiguous column reference
+**			11/18/2015 mem - Add Actual_CPU_Load
 **    
 *****************************************************/
 (
@@ -233,6 +234,7 @@ As
 			Step_Number,
 			Step_Tool,
 			CPU_Load,
+			Actual_CPU_Load,
 			Memory_Usage_MB,
 			Shared_Result_Version,
 			Signature,
@@ -251,6 +253,7 @@ As
 		SELECT H.Job,
 			H.Step_Number,
 			H.Step_Tool,
+			ST.CPU_Load,
 			ST.CPU_Load,
 			H.Memory_Usage_MB,
 			H.Shared_Result_Version,
@@ -412,7 +415,7 @@ As
 			                                   JobsWithDependencies.Job > MD.Job 
 			                       ) AS MatchQ
 			                  WHERE SimilarJobRank = 1 
-			           ) AS source
+			     ) AS source
 			       ON Target.Job = Source.Job
  			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount

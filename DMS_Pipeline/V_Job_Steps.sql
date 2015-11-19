@@ -33,6 +33,7 @@ SELECT	JS.Job,
 		JS.Signature,
 		JS.Dependencies,
 		JS.CPU_Load,
+		JS.Actual_CPU_Load,
 		JS.Memory_Usage_MB,
 		JS.Tool_Version_ID,
 		JS.Tool_Version,
@@ -61,6 +62,7 @@ FROM (
 		   JS.Signature,
 		   JS.Dependencies,
 		   JS.CPU_Load,
+		   JS.Actual_CPU_Load,
 		   JS.Memory_Usage_MB,
 		   JS.Completion_Code,
 		   JS.Completion_Message,
@@ -81,6 +83,7 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
+
 
 
 GO

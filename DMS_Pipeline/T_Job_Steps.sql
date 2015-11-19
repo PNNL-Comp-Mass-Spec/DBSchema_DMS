@@ -7,7 +7,8 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Job] [int] NOT NULL,
 	[Step_Number] [int] NOT NULL,
 	[Step_Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[CPU_Load] [smallint] NULL,
+	[CPU_Load] [tinyint] NULL,
+	[Actual_CPU_Load] [tinyint] NULL,
 	[Dependencies] [tinyint] NOT NULL,
 	[Shared_Result_Version] [smallint] NULL,
 	[Signature] [int] NULL,
@@ -15,7 +16,6 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Input_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Output_Folder_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Processor] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[x_Unused_Machine] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Completion_Code] [int] NULL,
@@ -72,17 +72,6 @@ CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Dependencies_State_include_Job_Step] O
 )
 INCLUDE ( 	[Job],
 	[Step_Number]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-SET ANSI_PADDING ON
-
-GO
-/****** Object:  Index [IX_T_Job_Steps_Machine_include_CPULoad_State] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Machine_include_CPULoad_State] ON [dbo].[T_Job_Steps]
-(
-	[x_Unused_Machine] ASC
-)
-INCLUDE ( 	[CPU_Load],
-	[State]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
@@ -179,7 +168,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_d_Job_Steps] ON [dbo].[T_Job_Steps] 
 FOR DELETE
 AS
@@ -194,14 +182,12 @@ AS
 	FROM deleted
 	ORDER BY deleted.Job, deleted.Step_Number
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_i_Job_Steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_i_Job_Steps] ON [dbo].[T_Job_Steps] 
 FOR INSERT
 AS
@@ -216,14 +202,12 @@ AS
 	FROM inserted
 	ORDER BY inserted.Job, inserted.Step_Number
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_Job_Steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_u_Job_Steps] ON [dbo].[T_Job_Steps] 
 FOR UPDATE
 AS
@@ -250,7 +234,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_ud_T_Job_Steps]
 ON [dbo].[T_Job_Steps]
 FOR UPDATE, DELETE AS
@@ -289,6 +272,5 @@ BEGIN
     END
 
 END
-
 
 GO

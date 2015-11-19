@@ -7,7 +7,7 @@ CREATE PROCEDURE MoveJobsToMainTables
 /****************************************************
 **
 **	Desc: 
-**  Make move contents of temporary tables:
+**  Copy contents of four temporary tables:
 **      #Jobs
 **      #Job_Steps
 **      #Job_Step_Dependencies
@@ -23,6 +23,7 @@ CREATE PROCEDURE MoveJobsToMainTables
 **			10/17/2011 mem - Added column Memory_Usage_MB
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			09/14/2015 mem - Added parameter @DebugMode
+**			11/18/2015 mem - Add Actual_CPU_Load
 **    
 *****************************************************/
 (
@@ -87,6 +88,7 @@ As
 		Step_Number,
 		Step_Tool,
 		CPU_Load,
+		Actual_CPU_Load,
 		Memory_Usage_MB,
 		Dependencies,
 		Shared_Result_Version,
@@ -100,6 +102,7 @@ As
 		Job,
 		Step_Number,
 		Step_Tool,
+		CPU_Load,
 		CPU_Load,
 		Memory_Usage_MB,
 		Dependencies,

@@ -9,7 +9,7 @@ AS
 SELECT DataQ.Job, Dataset, Step, Script, Tool, ParamQ.Settings_File, ParamQ.Parameter_File, StateName, State, 
        Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID,
 	   'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(Process_ID AS varchar(12)) AS Kill_Process,
-	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
+	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Actual_CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
        Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, 
 	   Dataset_ID,
@@ -48,6 +48,7 @@ FROM ( SELECT JS.Job,
               JS.Signature,
 			  JS.Dependencies, 
               JS.CPU_Load,
+			  JS.Actual_CPU_Load,
               JS.Memory_Usage_MB,
               JS.Tool_Version_ID,
 		      JS.Tool_Version,
@@ -76,6 +77,7 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 GO

@@ -25,6 +25,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			10/30/2014 mem - Added support for completion code 17 (CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY)
 **			03/11/2015 mem - Now updating Completion_Message when completion code 16 or 17 is encountered more than once in a 24 hour period
 **			04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available 
+**			11/18/2015 mem - Add Actual_CPU_Load
 **    
 *****************************************************/
 (
@@ -64,9 +65,9 @@ As
 	Set @machine = ''
 	--
 	SELECT @machine = LP.Machine,
-	       @cpuLoad = CASE WHEN Tools.Uses_All_Cores > 0
+	       @cpuLoad = CASE WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
 						   THEN IsNull(M.Total_CPUs, 1)
-						   ELSE IsNull(JS.CPU_Load, 1)
+						   ELSE IsNull(JS.Actual_CPU_Load, 1)
 					  END,
 	       @MemoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
 	       @state = JS.State,

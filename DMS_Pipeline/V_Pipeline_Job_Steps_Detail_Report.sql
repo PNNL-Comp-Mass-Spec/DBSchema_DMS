@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Pipeline_Job_Steps_Detail_Report]
 AS
 SELECT JS.Job_Plus_Step AS ID,
@@ -33,6 +32,7 @@ SELECT JS.Job_Plus_Step AS ID,
        J.Priority,
        JS.Signature,
        JS.CPU_Load,
+	   JS.Actual_CPU_Load,
        JS.Memory_Usage_MB,
        JS.Tool_Version_ID,
        STV.Tool_Version,
@@ -57,6 +57,7 @@ FROM dbo.T_Job_Steps AS JS
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
+
 
 
 

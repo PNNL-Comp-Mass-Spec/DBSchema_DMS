@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Pipeline_Job_Steps_History_Detail_Report]
 AS
 SELECT JS.JobStepSavedCombo AS ID,
@@ -25,6 +24,7 @@ SELECT JS.JobStepSavedCombo AS ID,
        J.Priority,
        JS.Signature,
        0 AS CPU_Load,
+	   0 AS Actual_CPU_Load,
        Memory_Usage_MB,
        JS.Tool_Version_ID,
        STV.Tool_Version,
@@ -55,6 +55,7 @@ FROM dbo.T_Job_Steps_History AS JS
      LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV 
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
 WHERE Most_Recent_Entry = 1
+
 
 
 
