@@ -4,28 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Separation_Type_Usage]
 AS
-SELECT SUM(CASE
-               WHEN datediff(MONTH, ds_created, getdate()) <= 12 THEN 1
-               ELSE 0
-           END) AS [Usage Last 12 Months],
+
+SELECT U.Usage_Last12Months AS [Usage Last 12 Months],
        SS.SS_name AS [Separation Type],
-       SS.Sep_Group as [Separation Group],
+       SS.Sep_Group AS [Separation Group],
        SS.SS_comment AS [Separation Type Comment],
-       SUM(CASE
-               WHEN DS.Dataset_ID IS NULL THEN 0
-               ELSE 1
-           END) AS [Dataset Usage All Years],
-       MAX(DS.DS_created) AS [Most Recent Use]
-FROM T_Secondary_Sep SS
-     LEFT OUTER JOIN T_Dataset DS
-       ON DS.DS_sec_sep = SS.SS_name
+       U.Usage_AllYears AS [Dataset Usage All Years],
+       U.Most_Recent_Use AS [Most Recent Use]
+FROM T_Secondary_Sep_Usage U
+     INNER JOIN T_Secondary_Sep SS
+       ON U.SS_ID = SS.SS_ID
 WHERE (SS.SS_active <> 0)
-GROUP BY SS.SS_name, SS.SS_comment, SS.Sep_Group
-
-
 
 
 GO

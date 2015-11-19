@@ -6,8 +6,17 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Separation_Type_Usage_2]
 AS
-SELECT        'x' AS Sel, [Usage Last 12 Months], [Separation Type], [Separation Group], [Separation Type Comment], [Dataset Usage All Years], [Most Recent Use]
-FROM            dbo.V_Dataset_Separation_Type_Usage
+SELECT 'x' AS Sel, 
+       U.Usage_Last12Months AS [Usage Last 12 Months],
+       SS.SS_name AS [Separation Type],
+       SS.Sep_Group AS [Separation Group],
+       SS.SS_comment AS [Separation Type Comment],
+       U.Usage_AllYears AS [Dataset Usage All Years],
+       U.Most_Recent_Use AS [Most Recent Use]
+FROM T_Secondary_Sep_Usage U
+     INNER JOIN T_Secondary_Sep SS
+       ON U.SS_ID = SS.SS_ID
+WHERE (SS.SS_active <> 0)
 
 
 GO
