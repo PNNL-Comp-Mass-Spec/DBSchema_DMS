@@ -26,6 +26,7 @@ CREATE PROCEDURE UpdateContext
 **			01/12/2012 mem - Now passing @infoOnly to UpdateJobState
 **			05/02/2015 mem - Now calling AutoFixFailedJobs
 **			05/28/2015 mem - No longer calling ImportJobProcessors
+**			11/20/2015 mem - Now calling UpdateActualCPULoading
 **    
 *****************************************************/
 (
@@ -359,8 +360,14 @@ AS
 		End
 		
 		Set @CurrentLocation = 'Call UpdateCPULoading'
-		if @result <> 0
+		If @result <> 0
+		Begin
+			-- First update Actual_CPU_Load in T_Job_Steps
+			exec UpdateActualCPULoading @infoOnly = 0
+			
+			-- Now update CPUs_Available in T_Machines
 			exec UpdateCPULoading @message output
+		End
 
 	End Try
 	Begin Catch

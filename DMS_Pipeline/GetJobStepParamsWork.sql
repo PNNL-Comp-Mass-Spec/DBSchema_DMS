@@ -31,6 +31,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			07/09/2012 mem - Updated to support the "step" attribute of a "param" element containing Yes and a number, for example "Yes (3)"
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/16/2015 mem - Now storing T_Step_Tools.Param_File_Storage_Path if defined
+**			11/20/2015 mem - Now including CPU_Load
 **    
 *****************************************************/
 (
@@ -129,17 +130,19 @@ AS
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job step parameters'
 
 	---------------------------------------------------
-	-- get input and output folder names for individual steps
+	-- Get input and output folder names for individual steps
 	-- (used by aggregation jobs created in broker)
-	-- Also lookup the parameter file storage path
+	-- Also lookup the parameter file storage path and the CPU_Load
 	---------------------------------------------------
 
 	Declare @stepOutputFolderName varchar(128) = ''
 	Declare @stepInputFolderName varchar(128) = ''
 	Declare @paramFileStoragePath varchar(256) = ''
+	Declare @CpuLoad int = 1
 	
 	SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step_Number) + '_' + ST.Tag,
-	       @paramFileStoragePath = ST.Param_File_Storage_Path
+	       @paramFileStoragePath = ST.Param_File_Storage_Path,
+	       @CpuLoad = JS.CPU_Load
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Step_Tools ST
 	       ON JS.Step_Tool = ST.Name
@@ -178,9 +181,9 @@ AS
 	If IsNull(@paramFileStoragePath, '') <> ''
 		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
 
+	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'CPU_Load', @CpuLoad)
 
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @DataPackageID)
-
 
 	If @DebugMode <> 0
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job parameters using cross apply'

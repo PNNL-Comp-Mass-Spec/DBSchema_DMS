@@ -11,6 +11,8 @@ CREATE TABLE [dbo].[T_Processor_Status](
 	[CPU_Utilization] [real] NULL,
 	[Free_Memory_MB] [real] NULL,
 	[Process_ID] [int] NULL,
+	[ProgRunner_ProcessID] [int] NULL,
+	[ProgRunner_CoreUsage] [real] NULL,
 	[Most_Recent_Error_Message] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Step_Tool] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Task_Status] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

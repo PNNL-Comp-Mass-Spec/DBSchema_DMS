@@ -27,6 +27,8 @@ SELECT	JS.Job,
 		END AS RunTime_Predicted_Hours,
 		JS.Processor,
 		CASE WHEN JS.State = 4 THEN PS.Process_ID ELSE NULL END AS Process_ID,
+		CASE WHEN JS.State = 4 THEN PS.ProgRunner_ProcessID ELSE NULL END AS ProgRunner_ProcessID,
+		CASE WHEN JS.State = 4 THEN PS.ProgRunner_CoreUsage ELSE NULL END AS ProgRunner_CoreUsage,
 		JS.Input_Folder,
 		JS.Output_Folder,
 		JS.Priority,
@@ -83,6 +85,7 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
+
 
 
 

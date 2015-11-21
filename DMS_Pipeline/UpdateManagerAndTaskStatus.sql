@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
 **			06/26/2009 mem - Expanded to support the new status fields
 **			08/29/2009 mem - Commented out the update code to disable the functionality of this procedure (superseded by UpdateManagerAndTaskStatusXML, which is called by StatusMessageDBUpdater)
 **			05/04/2015 mem - Added Process_ID
+**			11/20/2015 mem - Added ProgRunner_ProcessID and ProgRunner_CoreUsage
 **
 *****************************************************/
 (
@@ -40,7 +41,11 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
     @LastStartTime datetime,
 	@CPUUtilization real,
 	@FreeMemoryMB real,
+	
 	@ProcessID int = null,
+	@ProgRunnerProcessID int = null,
+	@ProgRunnerCoreUsage real = null,
+	
 	@MostRecentErrorMessage varchar(1024) = '',
 	
 	-- Task	items
@@ -85,6 +90,8 @@ As
 	Set @CPUUtilization = IsNull(@CPUUtilization, Null)
 	Set @FreeMemoryMB = IsNull(@FreeMemoryMB, Null)
 	Set @ProcessID = IsNull(@ProcessID, null)
+	Set @ProgRunnerProcessID = IsNull(@ProgRunnerProcessID, null)
+	Set @ProgRunnerCoreUsage = IsNull(@ProgRunnerCoreUsage, null)
 	Set @MostRecentErrorMessage = IsNull(@MostRecentErrorMessage, '')
 
 	Set @StepTool = IsNull(@StepTool, '')
@@ -128,6 +135,9 @@ As
 		CPU_Utilization = @CPUUtilization,
 		Free_Memory_MB = @FreeMemoryMB,
 		Process_ID = @ProcessID,
+		ProgRunner_ProcessID = @ProgRunnerProcessID,
+		ProgRunner_CoreUsage = @ProgRunnerCoreUsage,
+		
 		Most_Recent_Error_Message = CASE WHEN @MostRecentErrorMessage <> '' THEN @MostRecentErrorMessage ELSE Most_Recent_Error_Message END,
 
 		Step_Tool = @StepTool,
