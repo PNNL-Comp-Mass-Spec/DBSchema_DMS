@@ -29,6 +29,7 @@ CREATE Procedure AutoResetFailedJobs
 **			10/27/2014 mem - Now watching for "None of the spectra are centroided" from DTA_Refinery
 **			03/27/2015 mem - Now auto-resetting ICR2LS jobs up to 15 times
 **						   - Added parameter @StepToolFilter
+**			11/19/2015 mem - Preventing retry of jobs with a failed DataExtractor job with a message like "7.7% of the peptides have a mass error over 6.0 Da"
 **
 *****************************************************/
 (
@@ -284,7 +285,10 @@ As
 						if @RetryJob = 0 and @StepTool = 'ICR2LS' And @RetryCount < 15
 							Set @RetryJob = 1
 							
-						If @RetryJob = 0 And @StepTool In ('DataExtractor', 'MSGF') And @RetryCount < 2
+						If @RetryJob = 0 And @StepTool = 'DataExtractor' And Not @Comment Like '%have a mass error over%' And @RetryCount < 2
+							Set @RetryJob = 1
+
+						If @RetryJob = 0 And @StepTool = 'MSGF' And @RetryCount < 2
 							Set @RetryJob = 1
 						
 						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
