@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 	[Protein_Collection_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[FileName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Source] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Collection_Type_ID] [tinyint] NULL,
 	[Collection_State_ID] [tinyint] NULL,
 	[Primary_Annotation_Type_ID] [int] NULL,
@@ -50,7 +51,7 @@ ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collecti
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateModified]  DEFAULT (getdate()) FOR [DateModified]
 GO
-ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Contents_Encrypted]  DEFAULT (0) FOR [Contents_Encrypted]
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Contents_Encrypted]  DEFAULT ((0)) FOR [Contents_Encrypted]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Uploaded_By]  DEFAULT (suser_sname()) FOR [Uploaded_By]
 GO
@@ -74,7 +75,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_d_Protein_Collections] on [dbo].[T_Protein_Collections]
 For Delete
 AS
@@ -97,7 +97,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_i_Protein_Collections] on [dbo].[T_Protein_Collections]
 For Insert
 AS
@@ -114,7 +113,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_u_Protein_Collections] on [dbo].[T_Protein_Collections]
 For Update
 AS
