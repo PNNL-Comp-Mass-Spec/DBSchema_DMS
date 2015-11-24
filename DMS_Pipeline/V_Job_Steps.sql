@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT	JS.Job,
@@ -29,6 +30,10 @@ SELECT	JS.Job,
 		CASE WHEN JS.State = 4 THEN PS.Process_ID ELSE NULL END AS Process_ID,
 		CASE WHEN JS.State = 4 THEN PS.ProgRunner_ProcessID ELSE NULL END AS ProgRunner_ProcessID,
 		CASE WHEN JS.State = 4 THEN PS.ProgRunner_CoreUsage ELSE NULL END AS ProgRunner_CoreUsage,
+		CASE WHEN JS.State = 4 AND NOT (PS.Job = JS.Job AND PS.Job_Step = JS.Step)
+		     THEN 'Error, running job ' + Cast(PS.Job as varchar(12)) + ', step ' + Cast(PS.Job_Step as varchar(9))
+		     ELSE ''
+		END AS Processor_Warning,
 		JS.Input_Folder,
 		JS.Output_Folder,
 		JS.Priority,
@@ -85,8 +90,6 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
-
-
 
 
 GO

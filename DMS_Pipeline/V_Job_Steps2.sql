@@ -8,8 +8,15 @@ CREATE VIEW [dbo].[V_Job_Steps2]
 AS
 SELECT DataQ.Job, Dataset, Step, Script, Tool, ParamQ.Settings_File, ParamQ.Parameter_File, StateName, State, 
        Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID, ProgRunner_ProcessID, ProgRunner_CoreUsage,
-	   'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(Process_ID AS varchar(12)) AS Kill_Process,
-	   'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(ProgRunner_ProcessID AS varchar(12)) AS Kill_ProgRunner,
+	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
+	        THEN 'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(Process_ID AS varchar(12)) 
+			ELSE 'Processor Warning'
+			END AS Kill_Process,
+	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
+	        THEN 'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(ProgRunner_ProcessID AS varchar(12)) 
+			ELSE 'Processor Warning'
+			END AS Kill_ProgRunner,
+	   Processor_Warning,
 	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Actual_CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
        Completion_Code, Completion_Message, Evaluation_Code, 
        Evaluation_Message, 
@@ -45,6 +52,8 @@ FROM ( SELECT JS.Job,
 			  JS.Process_ID,
 			  JS.ProgRunner_ProcessID,
 			  JS.ProgRunner_CoreUsage,
+			  JS.Processor_Warning,
+			  CASE WHEN Len(IsNull(JS.Processor_Warning, '')) = 0 Then 0 Else 1 End as ProcessorWarningFlag,
               JS.Input_Folder,
               JS.Output_Folder,
               JS.Priority,
@@ -80,6 +89,7 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 
