@@ -4,37 +4,39 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
-SELECT DataQ.Job, Dataset, Step, Script, Tool, ParamQ.Settings_File, ParamQ.Parameter_File, StateName, State, 
-       Start, Finish, RunTime_Minutes, LastCPUStatus_Minutes, Job_Progress, RunTime_Predicted_Hours, Processor, Process_ID, ProgRunner_ProcessID, ProgRunner_CoreUsage,
+SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
+       DataQ.Start, DataQ.Finish, DataQ.RunTime_Minutes, DataQ.LastCPUStatus_Minutes, DataQ.Job_Progress, DataQ.RunTime_Predicted_Hours, DataQ.Processor, DataQ.Process_ID, DataQ.ProgRunner_ProcessID, DataQ.ProgRunner_CoreUsage,
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(Process_ID AS varchar(12)) 
+	        THEN 'pskill \\' + SUBSTRING(DataQ.Processor, 1, 6) + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
 			ELSE 'Processor Warning'
 			END AS Kill_Process,
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + SUBSTRING(Processor, 1, 6) + ' ' + CAST(ProgRunner_ProcessID AS varchar(12)) 
+	        THEN 'pskill \\' + SUBSTRING(DataQ.Processor, 1, 6) + ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
 			ELSE 'Processor Warning'
 			END AS Kill_ProgRunner,
-	   Processor_Warning,
-	   Input_Folder, Output_Folder, Priority, Signature, Dependencies, CPU_Load, Actual_CPU_Load, Memory_Usage_MB, Tool_Version_ID, Tool_Version,
-       Completion_Code, Completion_Message, Evaluation_Code, 
-       Evaluation_Message, 
-	   Dataset_ID,
-	   Transfer_Folder_Path, 
-       ParamQ.Dataset_Storage_Path + Dataset AS Dataset_Folder_Path,
-       LogFilePath + 
-         CASE WHEN YEAR(GetDate()) <> YEAR(Start) THEN TheYear + '\'
+	   DataQ.Processor_Warning,
+	   DataQ.Input_Folder, DataQ.Output_Folder, DataQ.Priority, DataQ.Signature, DataQ.Dependencies, DataQ.CPU_Load, DataQ.Actual_CPU_Load, DataQ.Memory_Usage_MB, DataQ.Tool_Version_ID, DataQ.Tool_Version,
+       DataQ.Completion_Code, DataQ.Completion_Message, DataQ.Evaluation_Code, 
+       DataQ.Evaluation_Message, 
+	   DataQ.Dataset_ID,
+	   DataQ.Machine,
+	   DataQ.Transfer_Folder_Path, 
+       ParamQ.Dataset_Storage_Path + DataQ.Dataset AS Dataset_Folder_Path,
+       DataQ.LogFilePath + 
+         CASE WHEN YEAR(GetDate()) <> YEAR(DataQ.Start) THEN TheYear + '\'
          ELSE ''
          END + 
          'AnalysisMgr_' + 
-         CASE WHEN LEN(TheMonth) = 1 THEN '0' + TheMonth
-         ELSE TheMonth
+         CASE WHEN LEN(DataQ.TheMonth) = 1 THEN '0' + TheMonth
+         ELSE DataQ.TheMonth
          END + '-' + 
-         CASE WHEN LEN(TheDay) = 1 THEN '0' + TheDay
-         ELSE TheDay
+         CASE WHEN LEN(DataQ.TheDay) = 1 THEN '0' + TheDay
+         ELSE DataQ.TheDay
          END + '-' + 
-         TheYear + '.txt' AS LogFilePath
+         DataQ.TheYear + '.txt' AS LogFilePath
 FROM ( SELECT JS.Job,
               JS.Dataset,
               JS.Step,
@@ -69,6 +71,7 @@ FROM ( SELECT JS.Job,
               JS.Evaluation_Code,
               JS.Evaluation_Message,
 			  JS.Dataset_ID,
+			  LP.Machine,
               JS.Transfer_Folder_Path,
               '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
                 CASE WHEN JS.Processor LIKE '%-[1-9]' 
@@ -89,6 +92,7 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 
