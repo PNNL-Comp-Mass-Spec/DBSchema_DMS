@@ -18,11 +18,13 @@ CREATE PROCEDURE AddUpdateProteinCollection
 **			09/13/2007 mem - Now using GetProteinCollectionID instead of @@Identity to lookup the collection ID
 **			01/18/2010 mem - Now validating that @fileName does not contain a space
 **						   - Now returns 0 if an error occurs; returns the protein collection ID if no errors
+**			11/24/2015 mem - Added @collectionSource
 **    
 *****************************************************/
 (
 	@fileName varchar(128), 
 	@Description varchar(900),
+	@collectionSource varchar(900) = '',
 	@collection_type int = 1,
 	@collection_state int,
 	@primary_annotation_type_id int,
@@ -89,7 +91,11 @@ As
 		set @mode = 'add'
 	end
 	
-		
+	-- Uncomment to debug
+	--
+	-- set @message = 'mode ' + @mode + ', collection '+ @fileName
+	-- exec PostLogEntry 'Debug', @message, 'AddUpdateProteinCollection'
+	-- set @message=''
 	
 	---------------------------------------------------
 	-- Start transaction
@@ -105,30 +111,11 @@ As
 	---------------------------------------------------
 	if @mode = 'add'
 	begin
-
---		INSERT INTO T_Protein_Collections (
---			FileName,
---			Description,
---			Collection_Type_ID,
---			Collection_State_ID,
---			NumProteins,
---			NumResidues,
---			DateCreated,
---			DateModified
---		) VALUES (
---			@fileName, 
---			@Description,
---			@collection_type,
---			@collection_state,
---			@numProteins, 
---			@numResidues,
---			GETDATE(),
---			GETDATE()
---		)
-		
+	
 		INSERT INTO T_Protein_Collections (
 			FileName,
 			Description,
+			Source,
 			Collection_Type_ID,
 			Collection_State_ID,
 			Primary_Annotation_Type_ID,
@@ -140,6 +127,7 @@ As
 		) VALUES (
 			@fileName, 
 			@Description,
+			@collectionSource,
 			@collection_type,
 			@collection_state,
 			@primary_annotation_type_id,
@@ -180,12 +168,12 @@ As
 		UPDATE T_Protein_Collections
 		SET
 			Description = @Description,
+			Source = Case When IsNull(@collectionSource, '') = '' and IsNull(Source, '') <> '' Then Source Else @collectionSource End,
 			Collection_State_ID = @collection_state,
 			Collection_Type_ID = @collection_type,
 			NumProteins = @numProteins,
 			NumResidues = @numResidues,
-			DateModified = GETDATE()
-		
+			DateModified = GETDATE()		
 		WHERE (FileName = @fileName)
 		
 			

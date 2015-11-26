@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 	[Protein_Collection_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[FileName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Source] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Source] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Collection_Type_ID] [tinyint] NULL,
 	[Collection_State_ID] [tinyint] NULL,
 	[Primary_Annotation_Type_ID] [int] NULL,
