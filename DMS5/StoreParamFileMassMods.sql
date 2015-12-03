@@ -27,6 +27,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			09/03/2014 mem - Now treating static N-term or C-term mods that specify a target residue (instead of *) as Dynamic mods (a requirement for PHRP)
 **			10/02/2014 mem - Add exception for Dyn2DZ
 **			05/26/2015 mem - Add @ValidateUnimod
+**			12/01/2015 mem - Now showing column Residue_Desc
 **    
 *****************************************************/
 (
@@ -117,7 +118,8 @@ AS
 
 	CREATE TABLE #Tmp_Residues (
 		Residue_Symbol char NOT NULL,
-		Residue_ID int NULL
+		Residue_ID int NULL,
+		Residue_Desc varchar(64) NULL
 	)
 	
 	CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_Residues ON #Tmp_Residues (Residue_Symbol)
@@ -129,7 +131,8 @@ AS
 		Mod_Type_Symbol varchar(1) NULL,
 		Residue_Symbol varchar(12) NULL,
 		Residue_ID int NULL,
-		Local_Symbol_ID int NULL
+		Local_Symbol_ID int NULL,
+		Residue_Desc varchar(64) NULL
 	)
 	
 	CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_ModsToStore ON #Tmp_ModsToStore (Entry_ID)
@@ -385,7 +388,8 @@ AS
 							-----------------------------------------
 							--
 							UPDATE #Tmp_Residues
-							SET Residue_ID = R.Residue_ID
+							SET Residue_ID = R.Residue_ID,
+							    Residue_Desc = R.Description
 							FROM #Tmp_Residues
 							     INNER JOIN T_Residues R
 							       ON R.Residue_Symbol = #Tmp_Residues.Residue_Symbol
@@ -450,14 +454,16 @@ AS
 									Mod_Type_Symbol,
 									Residue_Symbol,
 									Residue_ID,
-									Local_Symbol_ID
+									Local_Symbol_ID,
+									Residue_Desc
 								)
 							SELECT @ModName AS Mod_Name,
 							       @MassCorrectionID AS MassCorrectionID,
 							       @ModTypeSymbol AS Mod_Type,
 							       Residue_Symbol,
 							       Residue_ID,
-							       @LocalSymbolIDToStore as Local_Symbol_ID
+							       @LocalSymbolIDToStore as Local_Symbol_ID,
+							       Residue_Desc
 							FROM #Tmp_Residues
 
 						End

@@ -4,9 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -49,6 +46,8 @@ SELECT DS.Dataset_Num AS Dataset,
        CASE
            WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + IN_Name + '/filterDS/QC_Shew'
+           WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN 
+		        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + IN_Name + '/filterDS/TEDD'
            ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
        END AS 'QC Metric Stats',
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,
@@ -135,8 +134,6 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-
-
 
 
 GO
