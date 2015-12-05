@@ -47,7 +47,7 @@ SELECT DS.Dataset_Num AS Dataset,
            WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + IN_Name + '/filterDS/QC_Shew'
            WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN 
-		        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + IN_Name + '/filterDS/TEDD'
+		        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + IN_Name + '/filterDS/TEDDY_DISCOVERY'
            ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
        END AS 'QC Metric Stats',
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,

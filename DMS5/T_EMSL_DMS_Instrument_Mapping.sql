@@ -14,6 +14,12 @@ CREATE TABLE [dbo].[T_EMSL_DMS_Instrument_Mapping](
 ) ON [PRIMARY]
 
 GO
+/****** Object:  Index [IX_T_EMSL_DMS_Instrument_Mapping_DMS_InstID] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_EMSL_DMS_Instrument_Mapping_DMS_InstID] ON [dbo].[T_EMSL_DMS_Instrument_Mapping]
+(
+	[DMS_Instrument_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_EMSL_DMS_Instrument_Mapping]  WITH CHECK ADD  CONSTRAINT [FK_T_EMSL_DMS_Instrument_Mapping_T_EMSL_Instruments] FOREIGN KEY([EUS_Instrument_ID])
 REFERENCES [dbo].[T_EMSL_Instruments] ([EUS_Instrument_ID])
 GO

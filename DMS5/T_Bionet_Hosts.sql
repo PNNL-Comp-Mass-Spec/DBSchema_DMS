@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Bionet_Hosts](
 	[Entered] [smalldatetime] NULL,
 	[Last_Online] [smalldatetime] NULL,
 	[Instruments] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Active] [tinyint] NULL,
  CONSTRAINT [PK_T_Bionet_Hosts] PRIMARY KEY CLUSTERED 
 (
 	[Host] ASC
@@ -18,4 +19,6 @@ CREATE TABLE [dbo].[T_Bionet_Hosts](
 
 GO
 ALTER TABLE [dbo].[T_Bionet_Hosts] ADD  CONSTRAINT [DF_T_Bionet_Hosts_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Bionet_Hosts] ADD  CONSTRAINT [DF_T_Bionet_Hosts_Active]  DEFAULT ((1)) FOR [Active]
 GO
