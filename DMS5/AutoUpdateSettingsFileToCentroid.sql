@@ -17,7 +17,7 @@ CREATE FUNCTION dbo.AutoUpdateSettingsFileToCentroid
 **
 **	Auth:	mem
 **	Date:	04/09/2013
-**			01/11/1024 mem - Updated MSGF+ settings files to use DeconMSn_Centroid versions
+**			01/11/2015 mem - Updated MSGF+ settings files to use DeconMSn_Centroid versions
 **			03/30/2015 mem - Added parameter @toolName
 **						   - Now retrieving MSGF+ auto-centroid values from column MSGFPlus_AutoCentroid
 **						   - Renamed the procedure from AutoUpdateQExactiveSettingsFile
