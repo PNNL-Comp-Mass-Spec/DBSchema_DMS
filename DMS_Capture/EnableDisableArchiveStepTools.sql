@@ -17,6 +17,7 @@ CREATE Procedure dbo.EnableDisableArchiveStepTools
 **	Date:	05/06/2011 mem - Initial version
 **			05/12/2011 mem - Added comment parameter
 **			12/16/2013 mem - Added step tools 'ArchiveVerify' and 'ArchiveStatusCheck'
+**			12/11/2015 mem - Clearing comments that start with 'Disabled' when @enable = 1
 **    
 *****************************************************/
 (
@@ -81,9 +82,9 @@ As
 			--
 			If @enable = 0
 				UPDATE T_Processor_Tool
-				SET Comment = CASE WHEN Comment = '' 
+				SET [Comment] = CASE WHEN [Comment] = '' 
 				                   THEN @DisableComment
-				                   ELSE Comment + '; ' + @DisableComment
+				                   ELSE [Comment] + '; ' + @DisableComment
 				              END
 				WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
 				      (Enabled = @NewState)
@@ -91,14 +92,25 @@ As
 			Else
 			
 				UPDATE T_Processor_Tool
-				SET Comment = CASE WHEN Comment = @DisableComment 
+				SET [Comment] = CASE WHEN [Comment] = @DisableComment 
 				                   THEN ''
-				                   ELSE Replace(Comment, '; ' + @DisableComment, '')
+				                   ELSE Replace([Comment], '; ' + @DisableComment, '')
 				              END
 				WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
 				      (Enabled = @NewState)
 			
 		End
+
+		If @DisableComment = '' AND @NewState = 1
+		Begin
+			UPDATE T_Processor_Tool
+			SET [Comment] = ''
+			WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
+			      (Enabled = 1) AND
+			      [Comment] LIKE 'Disabled%'
+
+		End
+		
 	End
 	
 	return @myError
