@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_GetPipelineJobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -35,14 +34,19 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
 		-- or purged (states 4, 9, 14, 15) or NonPurgeable (10)
 		(DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
 		Or
-		-- But if the dataset has been in state "Archive in progress" for over 60 minutes, let the job start
-		(DA.AS_state_ID = 2 And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 60)
+		-- But if the archive state is "New" for over 180 minutes, let the job start
+		(DA.AS_state_ID IN (1) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 180)
+		OR
+		-- and if the dataset has been in state "Archive in progress" or "Operation Failed" for over 60 minutes, let the job start
+		(DA.AS_state_ID IN (2, 6) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 60)
+		OR
+		-- If the archive state is "Purge in Progress" or "Purge failed" for over 180 minutes, let the job start
+		(DA.AS_state_ID IN (7, 8) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 120)
 		Or
 		-- Lastly, let QC_Shew datasets start if they have been dispositioned (DS_Rating >= 1),
 		-- but not if a purge is in progress
-		(Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (5,6,7) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 15)
+		(Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (6,7) And DATEDIFF(minute, DA.AS_state_Last_Affected, GETDATE()) > 15)
       )
-
 
 
 GO

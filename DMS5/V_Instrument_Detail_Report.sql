@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Instrument_Detail_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
@@ -28,7 +27,11 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path Root],
        InstName.Auto_SP_Vol_Name_Server + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path On Server],
        InstName.Auto_SP_Archive_Server_Name + InstName.Auto_SP_Archive_Path_Root AS [Auto Defined Archive Path Root],
-       InstName.Auto_SP_Archive_Share_Path_Root AS [Auto Defined Archive Share Path Root]
+       InstName.Auto_SP_Archive_Share_Path_Root AS [Auto Defined Archive Share Path Root],
+       EUSMapping.EUS_Instrument_ID,
+       EUSMapping.EUS_Display_Name,
+       EUSMapping.EUS_Instrument_Name,
+	   EUSMapping.Local_Instrument_Name
 FROM T_Instrument_Name InstName
      INNER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
@@ -41,7 +44,18 @@ FROM T_Instrument_Name InstName
      LEFT OUTER JOIN T_Archive_Path AP
        ON AP.AP_instrument_name_ID = InstName.Instrument_ID AND
           AP.AP_Function = 'active'
-
+     LEFT OUTER JOIN ( SELECT InstName.Instrument_ID,
+                              EMSLInst.EUS_Instrument_ID,
+                              EMSLInst.EUS_Display_Name,
+                              EMSLInst.EUS_Instrument_Name,
+							  EMSLInst.Local_Instrument_Name
+                       FROM T_EMSL_DMS_Instrument_Mapping InstMapping
+                            INNER JOIN T_EMSL_Instruments EMSLInst
+                              ON InstMapping.EUS_Instrument_ID = EMSLInst.EUS_Instrument_ID
+                            INNER JOIN T_Instrument_Name InstName
+                              ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID ) AS 
+                       EUSMapping
+       ON InstName.Instrument_ID = EUSMapping.Instrument_ID
 
 
 GO

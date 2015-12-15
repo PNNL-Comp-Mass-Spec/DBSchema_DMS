@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Instrument_List_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
@@ -26,8 +24,9 @@ SELECT InstName.Instrument_ID AS ID,
        dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID) AS [Allowed Dataset Types],
        InstName.IN_Created AS Created,
        EUSMapping.EUS_Instrument_ID,
+       EUSMapping.EUS_Display_Name,
        EUSMapping.EUS_Instrument_Name,
-       EUSMapping.EUS_Display_Name
+	   EUSMapping.Local_Instrument_Name
 FROM dbo.T_Instrument_Name InstName
      INNER JOIN T_YesNo
        ON InstName.Auto_Define_Storage_Path = T_YesNo.Flag
@@ -42,14 +41,15 @@ FROM dbo.T_Instrument_Name InstName
      LEFT OUTER JOIN ( SELECT InstName.Instrument_ID,
                               EMSLInst.EUS_Instrument_ID,
                               EMSLInst.EUS_Display_Name,
-                              EMSLInst.EUS_Instrument_Name
+                              EMSLInst.EUS_Instrument_Name,
+							  EMSLInst.Local_Instrument_Name
                        FROM T_EMSL_DMS_Instrument_Mapping InstMapping
                             INNER JOIN T_EMSL_Instruments EMSLInst
                               ON InstMapping.EUS_Instrument_ID = EMSLInst.EUS_Instrument_ID
                             INNER JOIN T_Instrument_Name InstName
                               ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID ) AS 
                        EUSMapping
-       ON InstName.Instrument_ID = EUSMapping.Instrument_ID
+       ON InstName.Instrument_ID = EUSMapping.Instrument_ID    
 
 
 GO
