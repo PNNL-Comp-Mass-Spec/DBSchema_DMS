@@ -69,6 +69,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			05/01/2015 mem - Now preventing the use of parameter files with more than one dynamic mod when the fasta file is over 2 GB in size
 **			06/24/2015 mem - Added parameter @showDebugMessages
+**			12/16/2015 mem - No longer auto-switching the settings file to a centroided one if high res MSn spectra; only switching if profile mode MSn spectra
 **
 *****************************************************/
 (
@@ -414,16 +415,10 @@ As
 		If IsNull(@AutoUpdateSettingsFileToCentroided, 1) <> 0
 		Begin
 			---------------------------------------------------
-			-- If the dataset has profile mode high res MS/MS spectra and the search tool is MSGFPlus, then we must centroid the spectra
+			-- If the dataset has profile mode MS/MS spectra and the search tool is MSGFPlus, we must centroid the spectra
 			---------------------------------------------------
 			
-			Declare @HighResMSn tinyint = 0
 			Declare @ProfileModeMSn tinyint = 0
-			
-			If Exists (SELECT * FROM #TD WHERE Dataset_Type LIKE 'HMS%HMSn%')
-			Begin
-				Set @HighResMSn = 1
-			End
 			
 			If Exists (SELECT * 
 					FROM #TD INNER JOIN T_Dataset_Info DI ON DI.Dataset_ID = #TD.Dataset_ID 
@@ -434,12 +429,11 @@ As
 
 			If @showDebugMessages <> 0
 			Begin
-				print '  @HighResMSn=' + Cast(@HighResMSn as varchar(12))
 				print '  @ProfileModeMSn=' + Cast(@ProfileModeMSn as varchar(12))
 				print '  @toolName=' + @toolName
 			End
 			
-			If (@HighResMSn > 0 OR @ProfileModeMSn > 0) AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery', 'MSGFPlus_SplitFasta')
+			If @ProfileModeMSn > 0 AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery', 'MSGFPlus_SplitFasta')
 			Begin
 				-- The selected settings file must use MSConvert with Centroiding enabled
 				-- DeconMSn potentially works, but it can cause more harm than good
@@ -463,12 +457,7 @@ As
 				Begin
 					Set @settingsFileName = @AutoCentroidName
 					
-					Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoCentroidName
-					
-					If @ProfileModeMSn > 0
-						Set @Warning = @Warning + ' because this job has a profile-mode MSn dataset'
-					Else
-						Set @Warning = @Warning + ' because this job has a QExactive dataset'
+					Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoCentroidName + ' because this job has a profile-mode MSn dataset'
 
 					If @showDebugMessages <> 0
 						print @Warning
