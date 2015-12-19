@@ -54,6 +54,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			06/06/2013 mem - Now setting job state to 19="Special Proc. Waiting" if analysis tool has Use_SpecialProcWaiting enabled
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
+**			12/17/2015 mem - Now considering @specialProcessing when looking for existing jobs
 **
 *****************************************************/
 (
@@ -254,7 +255,8 @@ As
 			  (
 				AJT.AJT_orgDbReqd = 0
 			  )
-			)
+			) AND
+			IsNull(AJ.AJ_specialProcessing, '') = IsNull(@SpecialProcessing, '')
 		GROUP BY DS.Dataset_Num
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
