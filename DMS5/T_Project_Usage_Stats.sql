@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Project_Usage_Stats](
 	[Instrument_Last] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[JobTool_First] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[JobTool_Last] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SortKey]  AS (CONVERT([float],[TheYear]*(10000)+[WeekOfYear],0)+([Datasets]+[Jobs])/(1000000.0)) PERSISTED,
+	[SortKey]  AS (CONVERT([float],[TheYear]*(10000)+[WeekOfYear],(0))+([Datasets]+[Jobs])/(1000000.0)) PERSISTED,
  CONSTRAINT [PK_T_Project_Usage_Stats] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
