@@ -26,7 +26,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			03/11/2015 mem - Now updating Completion_Message when completion code 16 or 17 is encountered more than once in a 24 hour period
 **			04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available 
 **			11/18/2015 mem - Add Actual_CPU_Load
-**    
+**			12/31/2015 mem - Added support for completion code 20 (CLOSEOUT_NO_DATA)
+**
 *****************************************************/
 (
     @job int,
@@ -57,6 +58,7 @@ As
 	Declare @cpuLoad smallint
 	Declare @MemoryUsageMB int
 	Declare @machine varchar(64)
+	Declare @stepTool varchar(64)
 	--
 	Set @processor = ''
 	Set @state = 0
@@ -71,7 +73,8 @@ As
 					  END,
 	       @MemoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
 	       @state = JS.State,
-	       @processor = JS.Processor
+	       @processor = JS.Processor,
+	       @stepTool = JS.Step_Tool
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Local_Processors LP
 	       ON LP.Processor_Name = JS.Processor
@@ -111,13 +114,16 @@ As
 	Declare @stepState int
 	Declare @resetSharedResultStep tinyint = 0
 	Declare @handleSkippedStep tinyint = 0
-		
+	Declare @skipLCMSFeatureFinder tinyint = 0
+	
 	If @completionCode = 0
 	Begin
 		Set @stepState = 5 -- success
 	End
 	Else
-	Begin	
+	Begin
+		Set @stepState = 0
+		
 		If @completionCode = 16  -- CLOSEOUT_FILE_NOT_IN_CACHE
 		Begin
 			Set @stepState = 1 -- waiting
@@ -129,8 +135,21 @@ As
 			Set @stepState = 3 -- skipped
 			Set @handleSkippedStep = 1
 		End
+
+		If @completionCode = 20  -- CLOSEOUT_NO_DATA
+		Begin
+			If @stepTool IN ('Decon2LS_V2')
+			Begin
+				-- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
+				Set @stepState = 5 -- Complete
+				Set @skipLCMSFeatureFinder = 1
+				
+				Set @message = 'Job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
+				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			End
+		End
 		
-		If Not @completionCode in (16, 17)
+		If @stepState = 0
 		Begin
 			Set @stepState = 6 -- fail
 		End
@@ -203,12 +222,12 @@ As
 
 		If IsNull(@SharedResultStep, -1) < 0
 		Begin
-			Set @message = 'Job ' + Convert(varchar(12), @job) + ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Convert(varchar(12), @step) + '; CompletionCode ' + Convert(varchar(12), @completionCode) + ' is invalid'
+			Set @message = 'Job ' + Cast(@job as varchar(12)) + ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Cast(@step as varchar(12)) + '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' is invalid'
 			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			Goto CommitTran
 		End
 	
-		Set @message = 'Re-running step ' + Convert(varchar(12), @SharedResultStep) + ' for job ' + Convert(varchar(12), @job) + ' because step ' + Convert(varchar(12), @step) + ' reported completion code ' + Convert(varchar(12), @completionCode)
+		Set @message = 'Re-running step ' + Cast(@SharedResultStep as varchar(12)) + ' for job ' + Cast(@job as varchar(12)) + ' because step ' + Cast(@step as varchar(12)) + ' reported completion code ' + Cast(@completionCode as varchar(12))
 		If Exists ( SELECT *
 			        FROM T_Log_Entries
 			        WHERE Message = @message And
@@ -216,7 +235,7 @@ As
 			              posting_Time >= DateAdd(day, -1, GetDate()) 
 			      )
 		Begin
-			Set @message = 'has already reported completion code ' + Convert(varchar(12), @completionCode) + ' within the last 24 hours'
+			Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' within the last 24 hours'
 			
 			UPDATE T_Job_Steps
 			SET State = 7,		-- Holding				
@@ -224,7 +243,7 @@ As
 			WHERE Job = @job AND
 			      Step_Number = @step
 			
-			Set @message = 'Step ' + Convert(varchar(12), @step) + ' in job ' + Convert(varchar(12), @job) + @message + 'will not reset step ' + Convert(varchar(12), @SharedResultStep) + ' again because this likely represents a problem; this step is now in state "holding"'
+			Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) + ' again because this likely represents a problem; this step is now in state "holding"'
 			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			
 			Goto CommitTran
@@ -266,7 +285,6 @@ As
 		WHERE Job = @job AND
 		      Step_Number = @step
 
-
 		SELECT @nextStep = Step_Number
 		FROM T_Job_Step_Dependencies
 		WHERE Job = @job AND
@@ -283,6 +301,16 @@ As
 			exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
 		End
 		
+	End
+	
+	If @skipLCMSFeatureFinder = 1
+	Begin
+		-- Skip any LCMSFeatureFinder for this job
+		UPDATE T_Job_Steps
+		SET State = 3
+		WHERE Job = @job AND
+		      Step_Tool = 'LCMSFeatureFinder'
+
 	End
 	
 CommitTran:

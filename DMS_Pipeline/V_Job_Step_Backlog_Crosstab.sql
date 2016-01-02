@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Step_Backlog_Crosstab]
 AS
 SELECT PivotData.Posting_Time,
@@ -18,6 +17,9 @@ SELECT PivotData.Posting_Time,
        IsNull([LTQ_FTPek], 0) AS [LTQ_FTPek],
        IsNull([MASIC_Finnigan], 0) AS [MASIC_Finnigan],
        IsNull([MSAlign], 0) AS [MSAlign],
+	   IsNull([ProMex], 0) AS [ProMex],
+	   IsNull([MSPathFinder], 0) AS [MSPathFinder],
+	   IsNull([MODa], 0) AS [MODa],	   
        IsNull([Results_Transfer], 0) AS [Results_Transfer],
        IsNull([DataExtractor], 0) AS [DataExtractor],      
        IsNull([MSXML_Gen], 0) AS [MSXML_Gen]
@@ -32,10 +34,12 @@ FROM ( SELECT Convert(smalldatetime, Posting_time) AS Posting_Time,
                   [Sequest], [XTandem], [MSGFPlus],
                   [DataExtractor],
                   [Decon2LS],[Decon2LS_V2], [LTQ_FTPek],
-                  [MASIC_Finnigan], [MSAlign],
+                  [MASIC_Finnigan], [MSAlign], 
+				  [ProMex], [MSPathFinder], [MODa],
                   [Results_Transfer], 
                   [MSXML_Gen] 
              ) ) AS PivotData
+
 
 
 

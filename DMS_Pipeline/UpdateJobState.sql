@@ -90,6 +90,7 @@ CREATE PROCEDURE UpdateJobState
 **			09/16/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
 **			05/01/2015 mem - Now setting the state to 7 (No Intermediate Files Created) if all of the job's steps were skipped
 **			05/04/2015 mem - Fix bug in logic that conditionally sets the job state to 7
+**			12/31/2015 mem - Setting job state in DMS to 14 if the job comment contains "No results in DeconTools Isos file"
 **    
 *****************************************************/
 (
@@ -423,12 +424,25 @@ As
 				If Exists ( SELECT Step_Number
 					        FROM T_Job_Steps
 					        WHERE Job = @job AND
-					                Completion_Message LIKE '%No results above threshold%' 
-					                AND
-					                Step_Tool = 'DataExtractor' )
+					              Completion_Message LIKE '%No results above threshold%' AND
+					              Step_Tool = 'DataExtractor' )
 					Set @NewDMSJobState = 14
-			End		
-							
+			End
+
+			---------------------------------------------------
+			-- If this job has a DeconTools step with message "No results in DeconTools Isos file",
+			--  then change the job state to 14=No Export
+			---------------------------------------------------
+			--
+			If @NewDMSJobState = 4
+			Begin
+				If Exists ( SELECT Step_Number
+					        FROM T_Job_Steps
+					        WHERE Job = @job AND
+					              Completion_Message LIKE '%No results in DeconTools Isos file%' AND
+					              Step_Tool LIKE 'Decon%' )
+					Set @NewDMSJobState = 14
+			End							
 			---------------------------------------------------
 			-- Decide on the fasta file name to save in job
 			-- In addition, check whether the job has a Propagation mode of 1
@@ -459,8 +473,11 @@ As
 				SET @jobInDMS = @myRowCount
 			End
 
+			---------------------------------------------------
 			-- If the DMS job state is 4=complete, but @JobPropagationMode is non-zero,
 			-- then change the DMS job state to 14=No Export
+			---------------------------------------------------
+			--
 			If @NewDMSJobState = 4 AND IsNull(@JobPropagationMode, 0) <> 0
 				Set @NewDMSJobState = 14
 
