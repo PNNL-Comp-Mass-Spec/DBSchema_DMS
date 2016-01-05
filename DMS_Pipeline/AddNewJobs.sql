@@ -10,6 +10,11 @@ CREATE PROCEDURE AddNewJobs
 **    Add jobs from DMS that are in “New” state that aren’t
 **    already in table.  Choose script for DMS analysis tool.
 **
+**	  Suspend running jobs that now have state "Holding" in DMS
+**
+**	  Finally, reset failed or holding jobs that are now state "New" in DMS
+**
+**
 ** DMS       Broker           Action by broker
 ** Job       Job
 ** State     State
@@ -66,6 +71,7 @@ CREATE PROCEDURE AddNewJobs
 **			04/28/2014 mem - Bumped up @MaxJobsToAddResetOrResume from 1 million to 1 billion
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			11/07/2014 mem - No longer performing a full job reset for ICR2LS or LTQ_FTPek jobs where the job state is failed but the DMS state is new
+**			01/04/2016 mem - Truncate the job comment at the first semicolon for failed jobs being reset
 **    
 *****************************************************/
 (
@@ -89,6 +95,7 @@ As
 
 	declare @currJob int
 	declare @Dataset varchar(128)
+	declare @FailedJob tinyint
 	declare @continue tinyint
 
 	declare @JobsProcessed int
@@ -160,12 +167,13 @@ As
 
 	CREATE INDEX #IX_Tmp_ResetJobs_Job ON #Tmp_ResetJobs (Job)
 
-	CREATE TABLE #Tmp_ResumedJobs (
+	CREATE TABLE #Tmp_JobsToResumeOrReset (
 		Job int,
-		Dataset varchar(128)
+		Dataset varchar(128),
+		FailedJob tinyint
 	)
 
-	CREATE INDEX #IX_Tmp_ResumedJobs_Job ON #Tmp_ResumedJobs (Job)
+	CREATE INDEX #IX_Tmp_ResumedJobs_Job ON #Tmp_JobsToResumeOrReset (Job)
 
 	CREATE TABLE #Tmp_JobDebugMessages (
 		Message varchar(256),
@@ -418,7 +426,7 @@ As
 	
 
 	---------------------------------------------------
-	-- Find jobs to Resume
+	-- Find jobs to Resume or Reset
 	--
 	-- Jobs that are reset in DMS will be in "new" state, but
 	-- there will be a entry for the job in the local
@@ -435,8 +443,11 @@ As
 		exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
 	End
 
-	INSERT INTO #Tmp_ResumedJobs (Job, Dataset)
-	SELECT TOP (@MaxJobsToAddResetOrResume) J.Job, J.Dataset
+	INSERT INTO #Tmp_JobsToResumeOrReset (Job, Dataset, FailedJob)
+	SELECT TOP ( @MaxJobsToAddResetOrResume ) 
+	       J.Job,
+	       J.Dataset,
+	       CASE WHEN J.State = 5 THEN 1 ELSE 0 END AS FailedJob
 	FROM T_Jobs J
 	WHERE (J.State IN (5,8)) AND					-- 5=Failed, 8=Holding
 		  (J.Job IN (SELECT Job FROM #Tmp_DMSJobs WHERE State = 1))
@@ -458,13 +469,13 @@ As
 			VALUES ('No Jobs to Resume', 0)
 	End
 	Else
-	begin --<Resume>
+	begin --<ResumeOrReset>
 		
 		If @DebugMode <> 0
 		Begin
 			INSERT INTO #Tmp_JobDebugMessages (Message, Job, Script, DMS_State, PipelineState)
 			SELECT 'Jobs to Resume', J.Job, J.Script, J.State, T.State
-			FROM #Tmp_ResumedJobs R
+			FROM #Tmp_JobsToResumeOrReset R
 			     INNER JOIN #Tmp_DMSJobs J
 			 ON R.Job = J.Job
 			     INNER JOIN T_Jobs T
@@ -476,7 +487,7 @@ As
 		
 			---------------------------------------------------
 			-- Note: 
-			--   In order to avoid cross-server distributed transactions, the updates for jobs in #Tmp_ResumedJobs
+			--   In order to avoid cross-server distributed transactions, the updates for jobs in #Tmp_JobsToResumeOrReset
 			--   will occur after the transaction is committed.  This is required because 
 			--   UpdateJobParameters calls CreateParametersForJob, which calls GetJobParamTable, and if a transaction
 			--   is in progress and GetJobParamTable accesses another server (via V_DMS_PipelineJobParameters), we may get these errors:
@@ -490,7 +501,7 @@ As
 			Set @ResumeUpdatesRequired = 1
 
 		End
-	end -- </Resume>
+	end -- </ResumeOrReset>
 
 	If @DebugMode <> 0
 	Begin
@@ -575,7 +586,7 @@ As
 			exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
 		End
 
-		-- update parameters for jobs being resumed (jobs in #Tmp_ResumedJobs)
+		-- Update parameters for jobs being resumed or reset (jobs in #Tmp_JobsToResumeOrReset)
 		--
 		set @continue = 1
 		set @currJob = 0
@@ -586,8 +597,9 @@ As
 		begin
 
 			SELECT TOP 1 @currJob = Job,
-			             @Dataset = Dataset
-			FROM #Tmp_ResumedJobs
+			             @Dataset = Dataset,
+			             @FailedJob = FailedJob
+			FROM #Tmp_JobsToResumeOrReset
 			WHERE Job > @currJob
 			ORDER BY Job
 			--
@@ -625,15 +637,32 @@ As
 			End
 		end
 
+		-- For failed jobs being reset, truncate the comment at the first semi-colon
+		--
+		UPDATE #Tmp_DMSJobs
+		SET [Comment] = RTrim(SubString(Target.[Comment], 1, FilterQ.Matchindex - 1))
+		FROM #Tmp_DMSJobs Target
+		     INNER JOIN ( SELECT DJ.Job,
+		                         CharIndex(';', DJ.[Comment]) AS MatchIndex
+		                  FROM #Tmp_DMSJobs DJ
+		                       INNER JOIN #Tmp_JobsToResumeOrReset RJ
+		                         ON DJ.Job = RJ.Job AND
+		                            RJ.FailedJob > 0 ) FilterQ
+		       ON Target.Job = FilterQ.Job
+		WHERE FilterQ.MatchIndex > 0
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
 		
 		-- Make sure the job Comment and Special_Processing fields are up-to-date in T_Jobs
+		--
 		UPDATE T_Jobs
 		SET Comment = DJ.Comment,
 		    Special_Processing = DJ.Special_Processing
 		FROM T_Jobs J
 		     INNER JOIN #Tmp_DMSJobs DJ
 		       ON J.Job = DJ.Job
-		     INNER JOIN #Tmp_ResumedJobs RJ
+		     INNER JOIN #Tmp_JobsToResumeOrReset RJ
 		       ON DJ.Job = RJ.Job
 		WHERE IsNull(J.Comment, '') <> IsNull(DJ.Comment,'') OR
 		      IsNull(J.Special_Processing, '') <> IsNull(DJ.Special_Processing, '')
@@ -648,7 +677,6 @@ As
 				
 			exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
 		End
-
 
 		If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
 		Begin
@@ -670,7 +698,7 @@ As
 			Tool_Version_ID = 1			-- 1=Unknown
 		WHERE
 			State IN (6,7) AND			-- 6=Failed, 7=Holding
-			Job IN (SELECT Job From #Tmp_ResumedJobs)
+			Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -694,7 +722,7 @@ As
 			JSD.Step_Number = JS.Step_Number
 		WHERE
 			JS.State = 1 AND			-- 1=Waiting
-			JS.Job IN (SELECT Job From #Tmp_ResumedJobs)
+			JS.Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -711,8 +739,7 @@ As
 		--
 		UPDATE T_Jobs
 		SET State = 20						-- 20=resuming
-		WHERE
-			Job IN (SELECT Job From #Tmp_ResumedJobs)
+		WHERE Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)
    		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
