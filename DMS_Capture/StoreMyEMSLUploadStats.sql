@@ -19,6 +19,8 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **			09/06/2013 mem - No longer using @ContentURI
 **			09/11/2013 mem - No longer calling PostLogEntry if @StatusURI is invalid but @ErrorCode is non-zero
 **			10/01/2015 mem - Added parameter @UsedTestInstance
+**			01/04/2016 mem - Added parameters @EUSUploaderID, @EUSInstrumentID, and @EUSProposalID
+**						   - Removed parameter @ContentURI
 **    
 *****************************************************/
 (
@@ -30,9 +32,11 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 	@Bytes bigint,
 	@UploadTimeSeconds real,
 	@StatusURI varchar(255),
-	@ContentURI varchar(255)='',			-- No longer used (deprecated)
 	@ErrorCode int,
 	@UsedTestInstance tinyint=0,
+	@EUSInstrumentID int=null,					-- EUS Instrument ID
+	@EUSProposalID varchar(10)=null,			-- EUS Proposal ID
+	@EUSUploaderID int=null,					-- The EUS ID of the instrument operator
 	@message varchar(512)='' output,
 	@infoOnly tinyint = 0
 )
@@ -66,7 +70,7 @@ As
 	Set @Subfolder = IsNull(@Subfolder, '')
 	Set @StatusURI = IsNull(@StatusURI, '')
 	Set @UsedTestInstance = IsNull(@UsedTestInstance, 0)
-	
+
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	
@@ -215,6 +219,7 @@ As
 			                              FileCountNew, FileCountUpdated, 
 			                              Bytes, UploadTimeSeconds, 
 			                              StatusURI_PathID, StatusNum,
+			                              EUS_InstrumentID, EUS_ProposalID, EUS_UploaderID,	
 			                              ErrorCode, Entered )
 			SELECT @Job,
 			       @DatasetID,
@@ -225,6 +230,9 @@ As
 			       @UploadTimeSeconds,
 			       @StatusURI_PathID,
 			       @StatusNum,
+			       @EUSInstrumentID,
+			       @EUSProposalID,
+			       @EUSUploaderID,
 			       @ErrorCode,
 			       GetDate()
 
@@ -247,6 +255,7 @@ As
 			                              FileCountNew, FileCountUpdated, 
 			                              Bytes, UploadTimeSeconds, 
 			                              StatusURI_PathID, StatusNum,
+			                              EUS_InstrumentID, EUS_ProposalID, EUS_UploaderID,	
 			                              ErrorCode, Entered )
 			SELECT @Job,
 			       @DatasetID,
@@ -257,6 +266,9 @@ As
 			       @UploadTimeSeconds,
 			       @StatusURI_PathID,
 			       @StatusNum,
+			       @EUSInstrumentID,
+			       @EUSProposalID,
+			       @EUSUploaderID,
 			       @ErrorCode,
 			       GetDate()
 			--

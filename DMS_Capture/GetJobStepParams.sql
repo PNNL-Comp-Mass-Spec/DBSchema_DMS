@@ -16,6 +16,7 @@ CREATE PROCEDURE GetJobStepParams
 **	Auth:	grk
 **	Date:	09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			08/30/2013 mem - Added MyEMSL_Status_URI
+**			01/04/2016 mem - Added EUS_InstrumentID, EUS_ProposalID, and EUS_UploaderID
 **    
 *****************************************************/
 (
@@ -38,12 +39,20 @@ AS
 	declare @resultsFolderName varchar(128)	
 	declare @MyEMSLStatusURI varchar(128)
 	
+	declare @EUSInstrumentID int
+	declare @EUSProposalID varchar(10)
+	declare @EUSUploaderID int
+	
 	set @stepTool = ''
 	set @inputFolderName = ''
 	set @outputFolderName = ''
 	set @resultsFolderName = ''
 	set @MyEMSLStatusURI = ''
 
+	set @EUSInstrumentID = 0
+	set @EUSProposalID = ''
+	set @EUSUploaderID = 0
+	
 	set @message = ''
 		
 	---------------------------------------------------
@@ -81,7 +90,10 @@ AS
 	-- Furthermore, we won't get a row until after the ArchiveUpdate or DatasetArchive step successfully completes
 	-- This URI will be used by the ArchiveVerify tool
 	--
-	SELECT TOP 1 @MyEMSLStatusURI = StatusU.URI_Path + CONVERT(varchar(16), MU.StatusNum) + '/xml'
+	SELECT TOP 1 @MyEMSLStatusURI = StatusU.URI_Path + CONVERT(varchar(16), MU.StatusNum) + '/xml',
+	             @EUSInstrumentID = EUS_InstrumentID,
+	             @EUSProposalID = EUS_ProposalID,
+	             @EUSUploaderID = EUS_UploaderID
 	FROM T_MyEMSL_Uploads MU
 	     INNER JOIN T_URI_Paths StatusU
 	       ON MU.StatusURI_PathID = StatusU.URI_PathID
@@ -103,6 +115,10 @@ AS
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'InputFolderName', @inputFolderName)
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'OutputFolderName', @outputFolderName)
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'MyEMSL_Status_URI', @MyEMSLStatusURI)
+	
+	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_InstrumentID', @EUSInstrumentID)
+	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_ProposalID', @EUSProposalID)
+	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_UploaderID', @EUSUploaderID)
 
 	---------------------------------------------------
 	-- Get job parameters

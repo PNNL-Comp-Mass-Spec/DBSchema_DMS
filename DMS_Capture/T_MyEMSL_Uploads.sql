@@ -19,6 +19,9 @@ CREATE TABLE [dbo].[T_MyEMSL_Uploads](
 	[Ingest_Steps_Completed] [tinyint] NULL,
 	[ErrorCode] [int] NULL,
 	[Entered] [datetime] NOT NULL,
+	[EUS_InstrumentID] [int] NULL,
+	[EUS_ProposalID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EUS_UploaderID] [int] NULL,
  CONSTRAINT [PK_T_MyEMSL_Uploads] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
