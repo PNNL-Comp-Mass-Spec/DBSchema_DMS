@@ -30,6 +30,7 @@ CREATE Procedure AutoResetFailedJobs
 **			03/27/2015 mem - Now auto-resetting ICR2LS jobs up to 15 times
 **						   - Added parameter @StepToolFilter
 **			11/19/2015 mem - Preventing retry of jobs with a failed DataExtractor job with a message like "7.7% of the peptides have a mass error over 6.0 Da"
+**			11/19/2015 mem - Now auto-resetting jobs with a DataExtractor step reporting "Not enough free memory"
 **
 *****************************************************/
 (
@@ -92,7 +93,7 @@ As
 		
 		Set @infoOnly = IsNull(@infoOnly, 0)
 
-		Set @StepToolFilter= IsNull(@StepToolFilter, '')
+		Set @StepToolFilter = IsNull(@StepToolFilter, '')
 
 		Set @message = ''
 
@@ -338,7 +339,7 @@ As
 							End
 						End
 						
-						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
+						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone', 'DataExtractor') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
 							Set @RetryJob = 1
 						
 						If @RetryJob = 0 And @RetryCount < 5
