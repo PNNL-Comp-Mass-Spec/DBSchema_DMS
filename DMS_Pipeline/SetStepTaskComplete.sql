@@ -27,6 +27,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available 
 **			11/18/2015 mem - Add Actual_CPU_Load
 **			12/31/2015 mem - Added support for completion code 20 (CLOSEOUT_NO_DATA)
+**			01/05/2016 mem - Tweak warning message for DeconTools results without data
 **
 *****************************************************/
 (
@@ -144,7 +145,7 @@ As
 				Set @stepState = 5 -- Complete
 				Set @skipLCMSFeatureFinder = 1
 				
-				Set @message = 'Job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
+				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			End
 		End

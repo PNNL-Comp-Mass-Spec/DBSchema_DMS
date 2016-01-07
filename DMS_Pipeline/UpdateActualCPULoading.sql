@@ -15,6 +15,7 @@ CREATE PROCEDURE UpdateActualCPULoading
 **
 **	Auth:	mem
 **	Date:	11/20/2015 mem - Initial release
+**			01/05/2016 mem - Check for load values over 255
 **    
 *****************************************************/
 (
@@ -63,9 +64,21 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
+	--
+	-- Make sure New_CPU_Load is <= 255
+	--
+	UPDATE @PendingUpdates
+	SET New_CPU_Load = 255
+	WHERE New_CPU_Load > 255
+	
+
 	If Exists (Select * From @PendingUpdates)
 	Begin -- <a>
-		
+
+		---------------------------------------------------
+		-- Preview the results or update T_Job_Steps
+		---------------------------------------------------
+
 		If @infoOnly <> 0
 		Begin
 			SELECT JS.Job,
