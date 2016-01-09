@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 42 ******/
+/****** RowCount: 47 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
@@ -11,8 +11,10 @@ INSERT INTO [T_DatasetTypeName] VALUES (19,'GC-SIM','SIM scan GC-MS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (1,'HMS','High resolution MS spectra only',1)
 INSERT INTO [T_DatasetTypeName] VALUES (21,'HMS-CID/ETD-HMSn','High res MS with high res ETD-based MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (12,'HMS-CID/ETD-MSn','High res MS with low res, alternating CID and ETD MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (46,'HMS-ETciD-MSn','High res MS with ETD fragmentation, then further fragmented by CID in the ion trap',1)
 INSERT INTO [T_DatasetTypeName] VALUES (25,'HMS-ETD-HMSn','High res MS with high res ETD-based MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (11,'HMS-ETD-MSn','High res MS with low res ETD-based MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (45,'HMS-EThcD-MSn','High res MS with ETD fragmentation, then further fragmented by HCD in the ion routing multipole',1)
 INSERT INTO [T_DatasetTypeName] VALUES (24,'HMS-HCD-CID-HMSn','High res MS with high res HCD MSn and high res CID MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (23,'HMS-HCD-CID-MSn','High res MS with high res HCD MSn and low res CID MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (20,'HMS-HCD-CID/ETD-HMSn','High res MS with high res HCD MSn and high res CID or ETD MSn (decision tree)',1)
@@ -43,3 +45,6 @@ INSERT INTO [T_DatasetTypeName] VALUES (33,'RNA_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (36,'Target_DNA_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (100,'Tracking','Instrument usage tracking only - no capture',1)
 INSERT INTO [T_DatasetTypeName] VALUES (31,'UV','UV detector',1)
+INSERT INTO [T_DatasetTypeName] VALUES (42,'x_CID-MSn','To be deleted:   Low res CID MSn (no MS1)',0)
+INSERT INTO [T_DatasetTypeName] VALUES (44,'x_ETD-MSn','To be deleted:   Low res ETD-based MSn (no MS1)',0)
+INSERT INTO [T_DatasetTypeName] VALUES (43,'x_HCD-MSn','To be deleted:   Low res HCD MSn (no MS1)',0)
