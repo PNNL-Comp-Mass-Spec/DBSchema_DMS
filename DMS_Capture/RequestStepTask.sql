@@ -40,6 +40,7 @@ CREATE PROCEDURE RequestStepTask
 **			02/25/2013 mem - Now returning the Machine name when @infoOnly > 0
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **			11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
+**			01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
 **
 *****************************************************/
 (
@@ -158,46 +159,46 @@ AS
 	-- (don't use tools that require bionet if processor machine doesn't have it)
 	---------------------------------------------------
 	--
-  CREATE TABLE #AvailableProcessorTools
+	CREATE TABLE #AvailableProcessorTools
     (
-      Tool_Name VARCHAR(64),
-      Tool_Priority TINYINT,
-      Only_On_Storage_Server CHAR(1),
-      Instrument_Capacity_Limited CHAR(1),
-      Bionet_OK CHAR(1),
-      Processor_Assignment_Applies CHAR(1)
+		Tool_Name VARCHAR(64),
+		Tool_Priority TINYINT,
+		Only_On_Storage_Server CHAR(1),
+		Instrument_Capacity_Limited CHAR(1),
+		Bionet_OK CHAR(1),
+		Processor_Assignment_Applies CHAR(1)
     )
 	--
-	INSERT INTO #AvailableProcessorTools
-          ( Tool_Name,
-            Tool_Priority,
-            Only_On_Storage_Server,
-            Instrument_Capacity_Limited,
-            Bionet_OK,
-            Processor_Assignment_Applies
-          )
-          SELECT
-            T_Processor_Tool.Tool_Name,
-            T_Processor_Tool.Priority,
-            T_Step_Tools.Only_On_Storage_Server,
-            T_Step_Tools.Instrument_Capacity_Limited,
-            CASE WHEN ( Bionet_Required = 'Y' )
-                      AND ( Bionet_Available <> 'Y' ) THEN 'N'
-                 ELSE 'Y'
-            END AS Bionet_OK,
-            T_Step_Tools.Processor_Assignment_Applies
-          FROM
-            T_Local_Processors
-            INNER JOIN T_Processor_Tool ON T_Local_Processors.Processor_Name = T_Processor_Tool.Processor_Name
-            INNER JOIN T_Step_Tools ON T_Processor_Tool.Tool_Name = T_Step_Tools.Name
-            INNER JOIN T_Machines ON T_Local_Processors.Machine = T_Machines.Machine
-          WHERE
-            ( T_Processor_Tool.Enabled > 0 )
-            AND ( T_Local_Processors.State = 'E' )
-            AND ( T_Local_Processors.Processor_Name = @processorName )
+	INSERT INTO #AvailableProcessorTools( Tool_Name,
+	                                      Tool_Priority,
+	                                      Only_On_Storage_Server,
+	                                      Instrument_Capacity_Limited,
+	                                      Bionet_OK,
+	                                      Processor_Assignment_Applies )
+	SELECT ProcTool.Tool_Name,
+	       ProcTool.Priority,
+	       Tools.Only_On_Storage_Server,
+	       Tools.Instrument_Capacity_Limited,
+	       CASE
+	           WHEN (Bionet_Required = 'Y') AND
+	                (Bionet_Available <> 'Y') THEN 'N'
+	           ELSE 'Y'
+	       END AS Bionet_OK,
+	       Tools.Processor_Assignment_Applies
+	FROM T_Local_Processors LP
+	     INNER JOIN T_Processor_Tool ProcTool
+	       ON LP.Processor_Name = ProcTool.Processor_Name
+	     INNER JOIN T_Step_Tools Tools
+	       ON ProcTool.Tool_Name = Tools.Name
+	     INNER JOIN T_Machines M
+	       ON LP.Machine = M.Machine
+	WHERE (ProcTool.Enabled > 0) AND
+	      (LP.State = 'E') AND
+	      (LP.Processor_Name = @processorName)
+
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-  	--
+	--
 	IF @myError <> 0 
     BEGIN
 		SET @message = 'Error getting processor tools'
@@ -210,10 +211,8 @@ AS
 	---------------------------------------------------
 	--
     DECLARE @num_tools INT
-	SELECT
-	  @num_tools = COUNT(*)
-	FROM
-	  #AvailableProcessorTools
+	SELECT @num_tools = COUNT(*)
+	FROM #AvailableProcessorTools
 	--
 	IF @infoOnly = 0 AND @num_tools = 0 
 	BEGIN
@@ -223,40 +222,40 @@ AS
 	END
 
 	---------------------------------------------------
-	-- Get list of instrument and their current loading
+	-- Get a list of instruments and their current loading
 	-- (steps in busy state that have step tools that are 
-	-- instrument capacity limited tools - summed by Instrument
+	-- instrument capacity limited tools, summed by Instrument)
+	--
+	-- Ignore job steps that started over 18 hours ago; they're probably stalled
+	--
+	-- In practice, the only step tool that is instrument-capacity limited is DatasetCapture
 	---------------------------------------------------
 	--
-  CREATE TABLE #InstrumentLoading
+	CREATE TABLE #InstrumentLoading
     (
-      Instrument VARCHAR(64),
-      Captures_In_Progress INT,
-      Max_Simultaneous_Captures INT,
-      Available_Capacity INT
+		Instrument VARCHAR(64),
+		Captures_In_Progress INT,
+		Max_Simultaneous_Captures INT,
+		Available_Capacity INT
     )
 	--
-	INSERT  INTO #InstrumentLoading
-          ( Instrument,
-            Captures_In_Progress,
-         Max_Simultaneous_Captures,
-            Available_Capacity
-          )
-          SELECT
-            T_Jobs.Instrument,
-            COUNT(*) AS Captures_In_Progress,
-            T_Jobs.Max_Simultaneous_Captures,
-            Available_Capacity = T_Jobs.Max_Simultaneous_Captures - COUNT(*)
-          FROM
-            T_Job_Steps
-            INNER JOIN T_Step_Tools ON T_Job_Steps.Step_Tool = T_Step_Tools.Name
-            INNER JOIN T_Jobs ON T_Job_Steps.Job = T_Jobs.Job
-          WHERE
-         ( T_Job_Steps.State = 4 )
-            AND ( T_Step_Tools.Instrument_Capacity_Limited = 'Y' )
-          GROUP BY
-            T_Jobs.Instrument,
-            T_Jobs.Max_Simultaneous_Captures
+	INSERT INTO #InstrumentLoading( Instrument,
+	                                Captures_In_Progress,
+	                                Max_Simultaneous_Captures,
+	                                Available_Capacity )
+	SELECT J.Instrument,
+	       COUNT(*) AS Captures_In_Progress,
+	       J.Max_Simultaneous_Captures,
+	       Available_Capacity = J.Max_Simultaneous_Captures - COUNT(*)
+	FROM T_Job_Steps JS
+	     INNER JOIN T_Step_Tools Tools
+	       ON JS.Step_Tool = Tools.Name
+	     INNER JOIN T_Jobs J
+	       ON JS.Job = J.Job
+	WHERE JS.State = 4 AND
+	      Tools.Instrument_Capacity_Limited = 'Y' AND
+	      JS.Start >= dateAdd(hour, -18, GetDate())
+	GROUP BY J.Instrument, J.Max_Simultaneous_Captures
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -273,12 +272,10 @@ AS
 	DECLARE @processorIsAssigned INT
 	SET @processorIsAssigned = 0
 	--
-	SELECT
-		@processorIsAssigned = COUNT(*)
-	FROM
-		T_Processor_Instrument
-	WHERE
-		Processor_Name = @processorName And Enabled > 0
+	SELECT @processorIsAssigned = COUNT(*)
+	FROM T_Processor_Instrument
+	WHERE Processor_Name = @processorName AND
+	      Enabled > 0
 
 	---------------------------------------------------
 	-- Get list of instruments that have processor assignments
@@ -290,28 +287,26 @@ AS
 		Assigned_To_This_Processor INT,
 		Assigned_To_Any_Processor INT
 	)
-	INSERT INTO #InstrumentProcessor (
-		Instrument,
-		Assigned_To_This_Processor,
-		Assigned_To_Any_Processor
-	)
-	SELECT
-	  Instrument_Name AS Instrument,
-	  SUM(CASE WHEN Processor_Name = @processorName THEN 1 ELSE 0 END) AS Assigned_To_This_Processor,
-	  SUM(1) AS Assigned_To_Any_Processor
-	FROM
-	  T_Processor_Instrument
-	WHERE
-	  Enabled = 1
-	GROUP BY
-	  Instrument_Name
+
+	INSERT INTO #InstrumentProcessor( Instrument,
+	                                  Assigned_To_This_Processor,
+	                                  Assigned_To_Any_Processor )
+	SELECT Instrument_Name AS Instrument,
+	       SUM(CASE
+	               WHEN Processor_Name = @processorName THEN 1
+	               ELSE 0
+	           END) AS Assigned_To_This_Processor,
+	       SUM(1) AS Assigned_To_Any_Processor
+	FROM T_Processor_Instrument
+	WHERE Enabled = 1
+	GROUP BY Instrument_Name
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	IF @myError <> 0 
     BEGIN
-      SET @message = 'Error populating #InstrumentProcessor temp table'
-      GOTO Done
+		SET @message = 'Error populating #InstrumentProcessor temp table'
+		GOTO Done
     END
 
 	If @processorIsAssigned = 0 And @serverPerspectiveEnabled <> 0
@@ -335,15 +330,14 @@ AS
 	-- for possible assignment
 	---------------------------------------------------
 	--
-  CREATE TABLE #Tmp_CandidateJobSteps
+	CREATE TABLE #Tmp_CandidateJobSteps
     (
-      Seq SMALLINT IDENTITY(1, 1)
-                   NOT NULL,
-      Job INT,
-      Step_Number INT,
-      Job_Priority INT,
-      Step_Tool VARCHAR(64),
-      Tool_Priority INT
+		Seq SMALLINT IDENTITY(1, 1) NOT NULL,
+		Job INT,
+		Step_Number INT,
+		Job_Priority INT,
+		Step_Tool VARCHAR(64),
+		Tool_Priority INT
     )
 
 	---------------------------------------------------
@@ -351,51 +345,40 @@ AS
 	-- by processor in order of assignment priority
 	---------------------------------------------------
 	--
-	INSERT INTO #Tmp_CandidateJobSteps
-          ( Job,
-   Step_Number,
-            Job_Priority,
-            Step_Tool,
-            Tool_Priority
-          )
-          SELECT TOP ( @CandidateJobStepsToRetrieve )
-            J.Job,
-            JS.Step_Number,
-            J.Priority,
-            JS.Step_Tool,
-            APT.Tool_Priority
-          FROM
-            T_Job_Steps JS
-            INNER JOIN dbo.T_Jobs J ON JS.Job = J.Job
-            INNER JOIN #AvailableProcessorTools APT ON JS.Step_Tool = APT.Tool_Name
-            LEFT OUTER JOIN #InstrumentProcessor IP ON IP.Instrument = J.Instrument
-            LEFT OUTER JOIN #InstrumentLoading IL ON IL.Instrument = J.Instrument
-          WHERE
-			GETDATE() > JS.Next_Try
-            AND ( JS.State = 2 )
-            AND APT.Bionet_OK = 'Y'
-            AND J.State < 100
-            AND NOT ( APT.Only_On_Storage_Server = 'Y' AND Storage_Server <> @machine )
-            AND NOT ( @excludeCaptureTasks = 1 AND JS.Step_Tool = 'DatasetCapture' )
-            AND ( APT.Instrument_Capacity_Limited = 'N' OR (NOT ISNULL(IL.Available_Capacity, 1) < 1) )
-            AND (
-				(APT.Processor_Assignment_Applies = 'N')
-				OR
-				( 
-					( @processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0 ) 
-					OR 
-					( @processorIsAssigned = 0 AND ISNULL(IP.Assigned_To_Any_Processor, 0) = 0 ) 
-				)
-			)
-          ORDER BY
-            APT.Tool_Priority,
-            J.Priority,
-            J.Job,
-            JS.Step_Number
+	INSERT INTO #Tmp_CandidateJobSteps( Job,
+	                                    Step_Number,
+	                                    Job_Priority,
+	                                    Step_Tool,
+	                                    Tool_Priority )
+	SELECT TOP ( @CandidateJobStepsToRetrieve ) J.Job,
+	                                            JS.Step_Number,
+	                                            J.Priority,
+	                                            JS.Step_Tool,
+	                                            APT.Tool_Priority
+	FROM T_Job_Steps JS
+	     INNER JOIN dbo.T_Jobs J
+	       ON JS.Job = J.Job
+	     INNER JOIN #AvailableProcessorTools APT
+	       ON JS.Step_Tool = APT.Tool_Name
+	     LEFT OUTER JOIN #InstrumentProcessor IP
+	       ON IP.Instrument = J.Instrument
+	     LEFT OUTER JOIN #InstrumentLoading IL
+	       ON IL.Instrument = J.Instrument
+	WHERE GETDATE() > JS.Next_Try AND
+	      (JS.State = 2) AND
+	      APT.Bionet_OK = 'Y' AND
+	      J.State < 100 AND
+	      NOT (APT.Only_On_Storage_Server = 'Y' AND Storage_Server <> @machine) AND
+	      NOT (@excludeCaptureTasks = 1 AND JS.Step_Tool = 'DatasetCapture') AND
+	      (APT.Instrument_Capacity_Limited = 'N'  OR (NOT ISNULL(IL.Available_Capacity, 1) < 1)) AND
+	      (APT.Processor_Assignment_Applies = 'N' OR (
+	         (@processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0) OR 
+	         (@processorIsAssigned = 0 AND ISNULL(IP.Assigned_To_Any_Processor,  0) = 0)))
+	ORDER BY APT.Tool_Priority, J.Priority, J.Job, JS.Step_Number
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
- DECLARE @num_candidates INT
+	DECLARE @num_candidates INT
     SET @num_candidates = @myRowCount
 
 	---------------------------------------------------
@@ -403,11 +386,11 @@ AS
 	-- in infoOnly mode
 	---------------------------------------------------
 	--
-  IF @infoOnly = 0 AND @num_candidates = 0 
+	IF @infoOnly = 0 AND @num_candidates = 0 
     BEGIN
-      SET @message = 'No candidates presently available'
-      SET @myError = @jobNotAvailableErrorCode
-      GOTO Done
+		SET @message = 'No candidates presently available'
+		SET @myError = @jobNotAvailableErrorCode
+		GOTO Done
     END
 
 	---------------------------------------------------
@@ -421,11 +404,11 @@ AS
 	-- set up transaction parameters
 	---------------------------------------------------
 	--
-  DECLARE @transName VARCHAR(32)
-  SET @transName = 'RequestStepTask'
+	DECLARE @transName VARCHAR(32)
+	SET @transName = 'RequestStepTask'
 		
 	-- Start transaction
-  BEGIN TRANSACTION @transName
+	BEGIN TRANSACTION @transName
 	
 	---------------------------------------------------
 	-- get best step candidate in order of preference:
@@ -436,34 +419,31 @@ AS
 	--   Job number
 	---------------------------------------------------
 	--
-  DECLARE @stepNumber INT
-  SET @stepNumber = 0
-  DECLARE @stepTool VARCHAR(64)
+	DECLARE @stepNumber INT
+	SET @stepNumber = 0
+	DECLARE @stepTool VARCHAR(64)
 	--
-  SELECT TOP 1
-    @jobNumber = TJS.Job,
-    @stepNumber = TJS.Step_Number,
-  	@stepTool =   TJS.Step_Tool
-  FROM
-    T_Job_Steps TJS WITH ( HOLDLOCK )
-    INNER JOIN #Tmp_CandidateJobSteps CJS ON CJS.Job = TJS.Job
-                                             AND CJS.Step_Number = TJS.Step_Number
-  WHERE
-    TJS.State = 2
-  ORDER BY
-    Seq
-  	--
+	SELECT TOP 1 @jobNumber = TJS.Job,
+	             @stepNumber = TJS.Step_Number,
+	             @stepTool = TJS.Step_Tool
+	FROM T_Job_Steps TJS WITH ( HOLDLOCK )
+	     INNER JOIN #Tmp_CandidateJobSteps CJS
+	       ON CJS.Job = TJS.Job AND
+	          CJS.Step_Number = TJS.Step_Number
+	WHERE TJS.State = 2
+	ORDER BY Seq
+	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-  IF @myError <> 0 
+	IF @myError <> 0 
     BEGIN
-      ROLLBACK TRANSACTION @transName
-      SET @message = 'Error searching for job step'
-      GOTO Done
+		ROLLBACK TRANSACTION @transName
+		SET @message = 'Error searching for job step'
+		GOTO Done
     END
 
-  IF @myRowCount > 0 
-    SET @jobAssigned = 1
+	IF @myRowCount > 0 
+		SET @jobAssigned = 1
 
 	---------------------------------------------------
 	-- If a job step was assigned and 
@@ -471,23 +451,19 @@ AS
 	-- then update the step state to Running
 	---------------------------------------------------
 	--
-  IF @jobAssigned = 1
-    AND @infoOnly = 0 
+	IF @jobAssigned = 1 AND @infoOnly = 0 
     BEGIN --<e>
-      UPDATE
-        T_Job_Steps
-      SET
-        State = 4,
-        Processor = @processorName,
-        Start = GETDATE(),
-        Finish = NULL
-      WHERE
-        Job = @jobNumber
-        AND Step_Number = @stepNumber
-  		--
+		UPDATE T_Job_Steps
+		SET State = 4,
+		    Processor = @processorName,
+		    Start = GETDATE(),
+		    Finish = NULL
+		WHERE Job = @jobNumber AND
+		      Step_Number = @stepNumber
+		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-      IF @myError <> 0 
+		IF @myError <> 0 
         BEGIN
           ROLLBACK TRANSACTION @transName
           SET @message = 'Error updating job step'
@@ -496,23 +472,23 @@ AS
     END --<e>
        
 	-- update was successful
-  COMMIT TRANSACTION @transName
+	COMMIT TRANSACTION @transName
 
 	---------------------------------------------------
 	-- temp table to hold job parameters
 	--
-  CREATE TABLE #ParamTab
+	CREATE TABLE #ParamTab
     (
-      [Section] VARCHAR(128),
-      [Name] VARCHAR(128),
-      [Value] VARCHAR(MAX)
+		[Section] VARCHAR(128),
+		[Name] VARCHAR(128),
+		[Value] VARCHAR(MAX)
     )
 
-  IF @jobAssigned = 1 
+	IF @jobAssigned = 1 
     BEGIN
     
-		if @infoOnly = 0
-		begin
+		If @infoOnly = 0
+		Begin
 			---------------------------------------------------
 			-- Add entry to T_Job_Step_Processing_Log
 			---------------------------------------------------
@@ -521,7 +497,7 @@ AS
 			VALUES (@jobNumber, @stepNumber, @processorName)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
-		end
+		End
 
 		If @infoOnly > 1
 			Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Call GetJobStepParams'
@@ -531,8 +507,7 @@ AS
 		---------------------------------------------------
 
 		-- get job step parametes into temp table
-		EXEC @myError = GetJobStepParams @jobNumber, @stepNumber,
-		@message OUTPUT, @DebugMode = @infoOnly
+		EXEC @myError = GetJobStepParams @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
 
 		-- get metadata for dataset if request is going to dataset info tool
 		IF @stepTool = 'DatasetQuality'
@@ -545,7 +520,7 @@ AS
 		IF @infoOnly <> 0 AND LEN(@message) = 0 
 		SET @message = 'Job ' + CONVERT(VARCHAR(12), @jobNumber) + ', Step '+ CONVERT(VARCHAR(12), @stepNumber) + ' would be assigned to ' + @processorName
 	END
-  ELSE 
+	ELSE 
     BEGIN
 		---------------------------------------------------
 		-- No job step found; update @myError and @message
@@ -605,10 +580,10 @@ AS
 	-- Exit
 	---------------------------------------------------
 	--
-  Done:
-  
+	Done:
 
-  RETURN @myError
+
+	RETURN @myError
 
 GO
 GRANT EXECUTE ON [dbo].[RequestStepTask] TO [DMS_SP_User] AS [dbo]
