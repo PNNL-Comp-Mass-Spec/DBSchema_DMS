@@ -4,17 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
        DataQ.Start, DataQ.Finish, DataQ.RunTime_Minutes, DataQ.LastCPUStatus_Minutes, DataQ.Job_Progress, DataQ.RunTime_Predicted_Hours, DataQ.Processor, DataQ.Process_ID, DataQ.ProgRunner_ProcessID, DataQ.ProgRunner_CoreUsage,
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + SUBSTRING(DataQ.Processor, 1, 6) + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
+	        THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
 			ELSE 'Processor Warning'
 			END AS Kill_Process,
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + SUBSTRING(DataQ.Processor, 1, 6) + ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
+	        THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
 			ELSE 'Processor Warning'
 			END AS Kill_ProgRunner,
 	   DataQ.Processor_Warning,
@@ -92,6 +91,7 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 
