@@ -15,6 +15,8 @@ CREATE Procedure SyncWithDMS5
 **			10/28/2015 mem - Add tables for @experiments, @datasets, and @jobs
 **			10/29/2015 mem - Now passing @tableName to SyncWithDMSShowStats
 **			11/05/2015 mem - Remove IN_Max_Queued_Datasets and IN_Capture_Log_Level from T_Instrument_Name
+**			02/03/2016 mem - Added QCART, Keratin_2A, and Keratin_2C
+**			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 **    
 *****************************************************/
 (
@@ -1927,7 +1929,7 @@ As
 			       NULLIF(s.[Tag], t.[Tag])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Barcode], s.[Barcode]),
 			      NULLIF(s.[Barcode], t.[Barcode])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Comment], s.[Comment]),
+			 ISNULL( NULLIF(t.[Comment], s.[Comment]),
 			            NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
 			    )
 			THEN UPDATE SET 
@@ -3066,14 +3068,23 @@ As
 			    [Keratin_2A] = s.[Keratin_2A],
 			    [Keratin_2C] = s.[Keratin_2C],
 			    [P_4A] = s.[P_4A],
-			    [P_4B] = s.[P_4B]
+			    [P_4B] = s.[P_4B],
+			    [QCART] = s.[QCART],
+			    [Trypsin_2A] = s.[Trypsin_2A],
+			    [Trypsin_2C] = s.[Trypsin_2C],
+			    [MS2_RepIon_All] = s.[MS2_RepIon_All],
+			    [MS2_RepIon_1Missing] = s.[MS2_RepIon_1Missing], 
+			    [MS2_RepIon_2Missing] = s.[MS2_RepIon_2Missing], 
+			    [MS2_RepIon_3Missing] = s.[MS2_RepIon_3Missing]
 			WHEN NOT MATCHED BY TARGET THEN
 			    INSERT([Dataset_ID], [SMAQC_Job], [PSM_Source_Job], [Last_Affected], [C_1A], [C_1B], [C_2A], [C_2B], [C_3A], [C_3B], [C_4A], [C_4B], [C_4C], [DS_1A], [DS_1B], [DS_2A], [DS_2B], [DS_3A], [DS_3B], [IS_1A], [IS_1B], [IS_2], [IS_3A], [IS_3B], [IS_3C], [MS1_1], [MS1_2A], [MS1_2B], [MS1_3A], [MS1_3B], [MS1_5A], [MS1_5B], [MS1_5C], [MS1_5D], [MS2_1], [MS2_2], [MS2_3], [MS2_4A], [MS2_4B], [MS2_4C], [MS2_4D], [P_1A], [P_1B], [P_2A], [P_2B], [P_2C], [P_3], [Quameter_Job], [Quameter_Last_Affected], 
 			           [XIC_WideFrac], [XIC_FWHM_Q1], [XIC_FWHM_Q2], [XIC_FWHM_Q3], [XIC_Height_Q2], [XIC_Height_Q3], [XIC_Height_Q4], [RT_Duration], [RT_TIC_Q1], [RT_TIC_Q2], [RT_TIC_Q3], [RT_TIC_Q4], [RT_MS_Q1], [RT_MS_Q2], [RT_MS_Q3], [RT_MS_Q4], [RT_MSMS_Q1], [RT_MSMS_Q2], [RT_MSMS_Q3], [RT_MSMS_Q4], [MS1_TIC_Change_Q2], [MS1_TIC_Change_Q3], [MS1_TIC_Change_Q4], [MS1_TIC_Q2], [MS1_TIC_Q3], [MS1_TIC_Q4], [MS1_Count], [MS1_Freq_Max], [MS1_Density_Q1], [MS1_Density_Q2], [MS1_Density_Q3], 
-			           [MS2_Count], [MS2_Freq_Max], [MS2_Density_Q1], [MS2_Density_Q2], [MS2_Density_Q3], [MS2_PrecZ_1], [MS2_PrecZ_2], [MS2_PrecZ_3], [MS2_PrecZ_4], [MS2_PrecZ_5], [MS2_PrecZ_more], [MS2_PrecZ_likely_1], [MS2_PrecZ_likely_multi], [QCDM_Last_Affected], [QCDM], [MassErrorPPM], [MassErrorPPM_Refined], [MassErrorPPM_VIPER], [AMTs_10pct_FDR], [Phos_2A], [Phos_2C], [Keratin_2A], [Keratin_2C], [P_4A], [P_4B])
+			           [MS2_Count], [MS2_Freq_Max], [MS2_Density_Q1], [MS2_Density_Q2], [MS2_Density_Q3], [MS2_PrecZ_1], [MS2_PrecZ_2], [MS2_PrecZ_3], [MS2_PrecZ_4], [MS2_PrecZ_5], [MS2_PrecZ_more], [MS2_PrecZ_likely_1], [MS2_PrecZ_likely_multi], [QCDM_Last_Affected], [QCDM], [MassErrorPPM], [MassErrorPPM_Refined], [MassErrorPPM_VIPER], [AMTs_10pct_FDR], [Phos_2A], [Phos_2C], [Keratin_2A], [Keratin_2C], [P_4A], [P_4B], [QCART], [Trypsin_2A], [Trypsin_2C],
+			           [MS2_RepIon_All], [MS2_RepIon_1Missing], [MS2_RepIon_2Missing], [MS2_RepIon_3Missing])
 			    VALUES(s.[Dataset_ID], s.[SMAQC_Job], s.[PSM_Source_Job], s.[Last_Affected], s.[C_1A], s.[C_1B], s.[C_2A], s.[C_2B], s.[C_3A], s.[C_3B], s.[C_4A], s.[C_4B], s.[C_4C], s.[DS_1A], s.[DS_1B], s.[DS_2A], s.[DS_2B], s.[DS_3A], s.[DS_3B], s.[IS_1A], s.[IS_1B], s.[IS_2], s.[IS_3A], s.[IS_3B], s.[IS_3C], s.[MS1_1], s.[MS1_2A], s.[MS1_2B], s.[MS1_3A], s.[MS1_3B], s.[MS1_5A], s.[MS1_5B], s.[MS1_5C], s.[MS1_5D], s.[MS2_1], s.[MS2_2], s.[MS2_3], s.[MS2_4A], s.[MS2_4B], s.[MS2_4C], s.[MS2_4D], s.[P_1A], s.[P_1B], s.[P_2A], s.[P_2B], s.[P_2C], s.[P_3], s.[Quameter_Job], s.[Quameter_Last_Affected], 
 			           s.[XIC_WideFrac], s.[XIC_FWHM_Q1], s.[XIC_FWHM_Q2], s.[XIC_FWHM_Q3], s.[XIC_Height_Q2], s.[XIC_Height_Q3], s.[XIC_Height_Q4], s.[RT_Duration], s.[RT_TIC_Q1], s.[RT_TIC_Q2], s.[RT_TIC_Q3], s.[RT_TIC_Q4], s.[RT_MS_Q1], s.[RT_MS_Q2], s.[RT_MS_Q3], s.[RT_MS_Q4], s.[RT_MSMS_Q1], s.[RT_MSMS_Q2], s.[RT_MSMS_Q3], s.[RT_MSMS_Q4], s.[MS1_TIC_Change_Q2], s.[MS1_TIC_Change_Q3], s.[MS1_TIC_Change_Q4], s.[MS1_TIC_Q2], s.[MS1_TIC_Q3], s.[MS1_TIC_Q4], s.[MS1_Count], s.[MS1_Freq_Max], s.[MS1_Density_Q1], s.[MS1_Density_Q2], s.[MS1_Density_Q3], 
-			           s.[MS2_Count], s.[MS2_Freq_Max], s.[MS2_Density_Q1], s.[MS2_Density_Q2], s.[MS2_Density_Q3], s.[MS2_PrecZ_1], s.[MS2_PrecZ_2], s.[MS2_PrecZ_3], s.[MS2_PrecZ_4], s.[MS2_PrecZ_5], s.[MS2_PrecZ_more], s.[MS2_PrecZ_likely_1], s.[MS2_PrecZ_likely_multi], s.[QCDM_Last_Affected], s.[QCDM], s.[MassErrorPPM], s.[MassErrorPPM_Refined], s.[MassErrorPPM_VIPER], s.[AMTs_10pct_FDR], s.[Phos_2A], s.[Phos_2C], s.[Keratin_2A], s.[Keratin_2C], s.[P_4A], s.[P_4B])
+			           s.[MS2_Count], s.[MS2_Freq_Max], s.[MS2_Density_Q1], s.[MS2_Density_Q2], s.[MS2_Density_Q3], s.[MS2_PrecZ_1], s.[MS2_PrecZ_2], s.[MS2_PrecZ_3], s.[MS2_PrecZ_4], s.[MS2_PrecZ_5], s.[MS2_PrecZ_more], s.[MS2_PrecZ_likely_1], s.[MS2_PrecZ_likely_multi], s.[QCDM_Last_Affected], s.[QCDM], s.[MassErrorPPM], s.[MassErrorPPM_Refined], s.[MassErrorPPM_VIPER], s.[AMTs_10pct_FDR], s.[Phos_2A], s.[Phos_2C], s.[Keratin_2A], s.[Keratin_2C], s.[P_4A], s.[P_4B], s.[QCART], s.[Trypsin_2A], s.[Trypsin_2C],
+			           s.[MS2_RepIon_All], s.[MS2_RepIon_1Missing], s.[MS2_RepIon_2Missing], s.[MS2_RepIon_3Missing])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 			       Cast(Inserted.[Dataset_ID] as varchar(12)),

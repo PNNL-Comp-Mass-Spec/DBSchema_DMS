@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats](
 	[Total_PSMs_FDR_Filter] [int] NULL,
 	[Unique_Peptides_FDR_Filter] [int] NULL,
 	[Unique_Proteins_FDR_Filter] [int] NULL,
+	[Percent_MSn_Scans_NoPSM] [float] NULL,
+	[Maximum_ScanGap_Adjacent_MSn] [int] NULL,
 	[Last_Affected] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Analysis_Job_PSM_Stats] PRIMARY KEY CLUSTERED 
 (

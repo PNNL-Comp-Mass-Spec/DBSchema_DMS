@@ -27,6 +27,7 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **			11/29/2011 mem - Now auto-determining OperPRN if @callingUser is empty
 **			12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
+**			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **    
 *****************************************************/
 (
@@ -155,6 +156,10 @@ AS
 		End
 		
 		Set @comment = @comment + ' using request ' + Convert(varchar(12), @templateRequestID)
+		
+		If IsNull(@workPackage, 'none') = 'none'			
+			EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+
 	END 
 
 	---------------------------------------------------

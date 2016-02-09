@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE view [dbo].[V_Dataset_QC_Metrics_Detail_Report]
+CREATE VIEW V_Dataset_QC_Metrics_Detail_Report
 AS
 SELECT DISTINCT
     [Instrument Group],
@@ -91,7 +90,7 @@ SELECT DISTINCT
     Cast(MS1_5B as varchar(12)) + ' Th; Median of absolute value of precursor mass error' AS MS1_5B,
     Cast(MS1_5C as varchar(12)) + ' ppm; Median of precursor mass error' AS MS1_5C,
     Cast(MS1_5D as varchar(12)) + ' ppm; Interquartile distance in ppm-based precursor mass error' AS MS1_5D,
-    Cast(MS2_1 as varchar(12)) + ' milliseconds; Median MS2 ion injection time' AS MS2_1,
+    Cast(MS2_1 as varchar(12)) + ' milliseconds; Median MS2 ion injection time for identified peptides' AS MS2_1,
     Cast(MS2_2 as varchar(12)) + '; Median S/N value for identified MS2 spectra' AS MS2_2,
     Cast(MS2_3 as varchar(12)) + '; Median number of peaks in all MS2 spectra' AS MS2_3,
     Cast(MS2_4A as varchar(12)) + '; Fraction of all MS2 spectra identified; low abundance quartile (determined using MS1 intensity of identified peptides)' AS MS2_4A,
@@ -110,6 +109,12 @@ SELECT DISTINCT
     Cast(Keratin_2C as varchar(12)) + '; Number of keratin peptides (full or partial trypsin); unique peptide count' AS Keratin_2C,
     Cast(P_4A as varchar(12)) + '; Ratio of unique fully tryptic peptides / total unique peptides' AS P_4A,
     Cast(P_4B as varchar(12)) + '; Ratio of total missed cleavages (among unique peptides) / total unique peptides' AS P_4B,
+    Cast(Trypsin_2A as varchar(12)) + '; Number of peptides from trypsin; total spectra count' AS Trypsin_2A,
+    Cast(Trypsin_2C as varchar(12)) + '; Number of peptides from trypsin; unique peptide count' AS Trypsin_2C,
+	Cast(MS2_RepIon_All as varchar(12)) + '; Number of peptides (PSMs) where all reporter ions were seen' AS MS2_RepIon_All,
+	Cast(MS2_RepIon_1Missing as varchar(12)) + '; Number of peptides (PSMs) where all but 1 of the reporter ions were seen' AS MS2_RepIon_1Missing,
+	Cast(MS2_RepIon_2Missing as varchar(12)) + '; Number of peptides (PSMs) where all but 2 of the reporter ions were seen' AS MS2_RepIon_2Missing,
+	Cast(MS2_RepIon_3Missing as varchar(12)) + '; Number of peptides (PSMs) where all but 3 of the reporter ions were seen' AS MS2_RepIon_3Missing,
     SMAQC_Last_Affected,
     Cast(QCDM as varchar(12)) + '; Overall confidence using model developed by Brett Amidan' AS QCDM,
     QCDM_Last_Affected,
@@ -123,8 +128,8 @@ SELECT DISTINCT
 		   DS.Acq_Time_Start,
 		   DQC.Dataset_ID,
 		   DS.Dataset_Num AS Dataset,
-		   DFP.Dataset_Folder_Path AS [Dataset Folder Path],       
-		   'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS 'QC Metric Stats',       
+		   DFP.Dataset_Folder_Path AS [Dataset Folder Path],
+		   'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS 'QC Metric Stats',
 		   DQC.Quameter_Job,
 			Cast(DQC.XIC_WideFrac AS Decimal(9,3)) AS XIC_WideFrac,  
 			Cast(DQC.XIC_FWHM_Q1 AS Decimal(9,3)) AS XIC_FWHM_Q1,  
@@ -198,13 +203,13 @@ SELECT DISTINCT
 			DQC.MS1_2B,    -- Do not cast because can be large
 			DQC.MS1_3A,    -- Do not cast because can be large
 			DQC.MS1_3B,    -- Do not cast because can be large
-			Cast(DQC.MS1_5A AS Decimal(9,3)) AS MS1_5A,  
-			Cast(DQC.MS1_5B AS Decimal(9,3)) AS MS1_5B,  
-			Cast(DQC.MS1_5C AS Decimal(9,3)) AS MS1_5C,  
-			Cast(DQC.MS1_5D AS Decimal(9,3)) AS MS1_5D,  
-			Cast(DQC.MS2_1 AS Decimal(9,3)) AS MS2_1,  
-			Cast(DQC.MS2_2 AS Decimal(9,3)) AS MS2_2,  
-			Cast(DQC.MS2_3 AS integer) AS MS2_3,  
+			Cast(DQC.MS1_5A AS Decimal(9,3)) AS MS1_5A,
+			Cast(DQC.MS1_5B AS Decimal(9,3)) AS MS1_5B,
+			Cast(DQC.MS1_5C AS Decimal(9,3)) AS MS1_5C,
+			Cast(DQC.MS1_5D AS Decimal(9,3)) AS MS1_5D,
+			Cast(DQC.MS2_1 AS Decimal(9,3)) AS MS2_1,
+			Cast(DQC.MS2_2 AS Decimal(9,3)) AS MS2_2,
+			Cast(DQC.MS2_3 AS integer) AS MS2_3,
 			Cast(DQC.MS2_4A AS Decimal(9,3)) AS MS2_4A,  
 			Cast(DQC.MS2_4B AS Decimal(9,3)) AS MS2_4B,  
 			Cast(DQC.MS2_4C AS Decimal(9,3)) AS MS2_4C,  
@@ -213,14 +218,20 @@ SELECT DISTINCT
 			Cast(DQC.P_1B AS Decimal(9,3)) AS P_1B,  
 			Cast(DQC.P_2A AS integer) AS P_2A,  
 			Cast(DQC.P_2B AS integer) AS P_2B,  
-			Cast(DQC.P_2C AS integer) AS P_2C,  
-			Cast(DQC.P_3 AS Decimal(9,3)) AS P_3,  
-			Cast(DQC.Phos_2A AS integer) AS Phos_2A,  
-			Cast(DQC.Phos_2C AS integer) AS Phos_2C,  
-			Cast(DQC.Keratin_2A AS integer) AS Keratin_2A,  
-			Cast(DQC.Keratin_2C AS integer) AS Keratin_2C,  
-			Cast(DQC.P_4A AS Decimal(9,3)) AS P_4A,  
-			Cast(DQC.P_4B AS Decimal(9,3)) AS P_4B,  
+			Cast(DQC.P_2C AS integer) AS P_2C,
+			Cast(DQC.P_3 AS Decimal(9,3)) AS P_3,
+			Cast(DQC.Phos_2A AS integer) AS Phos_2A,
+			Cast(DQC.Phos_2C AS integer) AS Phos_2C,
+			Cast(DQC.Keratin_2A AS integer) AS Keratin_2A,
+			Cast(DQC.Keratin_2C AS integer) AS Keratin_2C,
+			Cast(DQC.P_4A AS Decimal(9,3)) AS P_4A,
+			Cast(DQC.P_4B AS Decimal(9,3)) AS P_4B,
+			Cast(DQC.Trypsin_2A AS integer) AS Trypsin_2A,
+			Cast(DQC.Trypsin_2C AS integer) AS Trypsin_2C,
+			Cast(DQC.MS2_RepIon_All AS integer) AS MS2_RepIon_All,
+			Cast(DQC.MS2_RepIon_1Missing AS integer) AS MS2_RepIon_1Missing,
+			Cast(DQC.MS2_RepIon_2Missing AS integer) AS MS2_RepIon_2Missing,
+			Cast(DQC.MS2_RepIon_3Missing AS integer) AS MS2_RepIon_3Missing,
 			DQC.Last_Affected AS SMAQC_Last_Affected,
 			Cast(DQC.QCDM AS Decimal(9,3)) AS QCDM,  
 			DQC.QCDM_Last_Affected,
@@ -237,7 +248,6 @@ SELECT DISTINCT
 		 LEFT OUTER JOIN dbo.V_Dataset_Folder_Paths DFP
 		   ON DQC.Dataset_ID = DFP.Dataset_ID
 	) DataQ
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Detail_Report] TO [PNL\D3M578] AS [dbo]

@@ -3,9 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE view [dbo].[V_Dataset_QC_Metrics]
+CREATE VIEW V_Dataset_QC_Metrics
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
        InstName.IN_name AS Instrument,
@@ -110,8 +108,15 @@ SELECT InstName.IN_Group AS [Instrument Group],
 	   Cast(DQC.P_3 AS decimal(9,3)) AS P_3,
 	   CAST(DQC.Phos_2A as integer) AS Phos_2A,
 	   CAST(DQC.Keratin_2A as integer) AS Keratin_2A,
+	   CAST(DQC.Keratin_2C as integer) AS Keratin_2C,
 	   Cast(DQC.P_4A AS decimal(9,3)) AS P_4A,
 	   Cast(DQC.P_4B AS decimal(9,3)) AS P_4B,
+	   CAST(DQC.Trypsin_2A as integer) AS Trypsin_2A,
+	   CAST(DQC.Trypsin_2C as integer) AS Trypsin_2C,
+	   CAST(DQC.MS2_RepIon_All as integer) AS MS2_RepIon_All,
+	   CAST(DQC.MS2_RepIon_1Missing as integer) AS MS2_RepIon_1Missing,
+	   CAST(DQC.MS2_RepIon_2Missing as integer) AS MS2_RepIon_2Missing,
+	   CAST(DQC.MS2_RepIon_3Missing as integer) AS MS2_RepIon_3Missing,
 	   Cast(DQC.MassErrorPPM_Refined AS decimal(9,2)) AS MassErrorPPM_Refined,
 	   DQC.Last_Affected AS Smaqc_Last_Affected,
 	   DQC.PSM_Source_Job,
@@ -125,9 +130,6 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_DatasetRatingName DRN
        ON DS.DS_rating = DRN.DRN_state_ID
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [PNL\D3M578] AS [dbo]

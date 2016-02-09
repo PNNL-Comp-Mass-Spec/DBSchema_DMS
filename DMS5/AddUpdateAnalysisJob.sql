@@ -61,6 +61,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **			06/24/2015 mem - Added parameter @infoOnly
 **			07/21/2015 mem - Now allowing job comment and Export Mode to be changed
+**			01/20/2016 mem - Update comments
 **    
 *****************************************************/
 (
@@ -79,14 +80,14 @@ CREATE Procedure AddUpdateAnalysisJob
 	@associatedProcessorGroup varchar(64) = '',		-- Processor group; deprecated in May 2015
     @propagationMode varchar(24),
 	@stateName varchar(32),
-    @jobNum varchar(32) = '0' output,
-	@mode varchar(12) = 'add', -- or 'update' or 'reset' or 'preview'
+    @jobNum varchar(32) = '0' output,				-- New job number if adding a job; existing job number if updating or resetting a job
+	@mode varchar(12) = 'add', -- or 'update' or 'reset'; use 'previewadd' or 'previewupdate' to validate the parameters but not actually make the change (used by the Spreadsheet loader page)
 	@message varchar(512) output,
 	@callingUser varchar(128) = '',
 	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
 	@PreventDuplicatesIgnoresNoExport tinyint = 1,
 	@SpecialProcessingWaitUntilReady tinyint = 0,	-- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
-	@infoOnly tinyint = 0
+	@infoOnly tinyint = 0							-- When 1, preview the change even when @mode is 'add' or 'update'
 )
 As
 	set nocount on
@@ -147,6 +148,7 @@ As
 
 			RAISERROR (@msg, 11, 4)
 		end
+
 	end
 
 	---------------------------------------------------
@@ -208,11 +210,11 @@ As
 				
 				If @infoOnly <> 0
 					Set @message = 'Preview: ' + @message
-					
+
 				Goto Done
 			End
-						
-			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
+
+			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
 			If @infoOnly <> 0
 				print @msg
 
@@ -491,7 +493,8 @@ As
 		
 		If @infoOnly <> 0
 		Begin
-			SELECT @jobID AS AJ_jobID,
+			SELECT 'Preview ' + @mode as Mode,
+			       @jobID AS AJ_jobID,
 			       @priority AS AJ_priority,
 			       getdate() AS AJ_created,
 			       @analysisToolID AS AJ_analysisToolID,
@@ -505,7 +508,7 @@ As
 			       REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)) AS AJ_comment,
 			       @specialProcessing AS AJ_specialProcessing,
 			       @ownerPRN AS AJ_owner,
-			     @batchID AS AJ_batchID,
+			       @batchID AS AJ_batchID,
 			       @stateID AS AJ_StateID,
 			       @propMode AS AJ_propagationMode,
 			       @DatasetUnreviewed AS AJ_DatasetUnreviewed
@@ -670,11 +673,12 @@ As
 
 		If @infoOnly <> 0
 		Begin
-			SELECT @jobID AS AJ_jobID,
+			SELECT 'Preview ' + @mode as Mode,
+			       @jobID AS AJ_jobID,
 			       @priority AS AJ_priority,
 			       AJ_created,
 			       @analysisToolID AS AJ_analysisToolID,
-			      @parmFileName AS AJ_parmFileName,
+			       @parmFileName AS AJ_parmFileName,
 			       @settingsFileName AS AJ_settingsFileName,
 			       @organismDBName AS AJ_organismDBName,
 			       @protCollNameList AS AJ_proteinCollectionList,
@@ -818,7 +822,7 @@ As
 	END CATCH
 
 Done:
-	
+
 	return @myError
 
 GO

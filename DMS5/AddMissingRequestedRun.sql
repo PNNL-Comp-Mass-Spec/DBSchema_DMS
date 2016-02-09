@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddMissingRequestedRun
 **	Auth:	mem
 **	Date:	10/20/1010 mem - Initial version
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
+**			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **
 *****************************************************/
 (
@@ -121,6 +122,9 @@ As
 		declare @reqName varchar(128)
 		Set @reqName = 'AutoReq_' + @Dataset
 
+		Declare @workPackage varchar(50) = 'none'			
+		EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+
 		DECLARE @result int
 
 		EXEC @result = dbo.AddUpdateRequestedRun 
@@ -128,7 +132,7 @@ As
 								@experimentNum = @experimentNum,
 								@operPRN = @operPRN,
 								@instrumentName = @instrumentName,
-								@workPackage = 'none',
+								@workPackage = @workPackage,
 								@msType = @msType,
 								@instrumentSettings = 'na',
 								@wellplateNum = NULL,

@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report] as
+CREATE VIEW V_Analysis_Job_PSM_List_Report as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_StateNameCached AS State ,
         AnalysisTool.AJT_toolName AS Tool ,
@@ -19,6 +18,12 @@ SELECT  AJ.AJ_jobID AS Job ,
         PSM.Unique_Proteins_FDR_Filter AS [Unique Proteins FDR],
         PSM.MSGF_Threshold AS [MSGF Threshold], 
         Convert(decimal(9,2), PSM.FDR_Threshold * 100.0) AS [FDR Threshold (%)], 
+		CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
+	    CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
+	    QCM.P_2A AS TrypticPSMs,
+	    QCM.Keratin_2A AS KeratinPSMs,
+	    QCM.Phos_2C PhosphoPep,
+		QCM.Trypsin_2A AS TrypsinPSMs,
         C.Campaign_Num AS Campaign ,
         E.Experiment_Num AS Experiment ,
         AJ.AJ_parmFileName AS [Parm File] ,
@@ -52,11 +57,11 @@ FROM    dbo.V_Dataset_Archive_Path AS DAP
         INNER JOIN dbo.T_Experiments AS E ON DS.Exp_ID = E.Exp_ID
         INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID ON DAP.Dataset_ID = DS.Dataset_ID        
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats PSM ON AJ.AJ_JobID = PSM.Job
+		LEFT OUTER JOIN V_Dataset_QC_Metrics QCM ON DS.Dataset_ID = QCM.Dataset_ID
 WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR 
 								      AJT_resultType = 'Gly_ID')
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [PNL\D3M578] AS [dbo]

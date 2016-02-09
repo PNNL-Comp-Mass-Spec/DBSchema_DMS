@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Dataset_PSM_And_PM_List_Report] as
+CREATE VIEW V_Dataset_PSM_And_PM_List_Report as
 SELECT 
        PSM.Dataset,
        PSM.[Unique Peptides FDR] AS [Unique Peptides],
@@ -19,6 +18,7 @@ SELECT
 	   QCM.P_2A AS TrypticPSMs,
 	   QCM.Keratin_2A AS KeratinPSMs,
 	   QCM.Phos_2C PhosphoPep,
+	   QCM.Trypsin_2A AS TrypsinPSMs,
        PSM.Instrument,
        PSM.Dataset_ID,
        DTN.DST_name AS [Dataset Type],
@@ -52,6 +52,5 @@ FROM V_Analysis_Job_PSM_List_Report PSM
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.StateID NOT IN (5, 14)
-
 
 GO

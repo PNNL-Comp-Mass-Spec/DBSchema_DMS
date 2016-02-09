@@ -14,6 +14,7 @@ CREATE TABLE [dbo].[T_Settings_Files](
 	[Job_Usage_Count] [int] NULL,
 	[HMS_AutoSupersede] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[MSGFPlus_AutoCentroid] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

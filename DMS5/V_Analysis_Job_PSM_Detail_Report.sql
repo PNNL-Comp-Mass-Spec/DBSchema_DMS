@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Analysis_Job_PSM_Detail_Report]
+CREATE VIEW V_Analysis_Job_PSM_Detail_Report
 AS
 SELECT AJ.AJ_jobID AS Job,
        DS.Dataset_Num AS Dataset,
@@ -28,6 +27,12 @@ SELECT AJ.AJ_jobID AS Job,
        PSM.Unique_Proteins_FDR_Filter AS [Unique Proteins (FDR-filtered)],
        PSM.MSGF_Threshold AS [MSGF Threshold],
        CONVERT(varchar(12), CONVERT(decimal(5,2), PSM.FDR_Threshold * 100)) + '%' AS [FDR Threshold],
+	   CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
+	   CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
+	   QCM.P_2A AS TrypticPSMs,
+	   QCM.Keratin_2A AS KeratinPSMs,
+	   QCM.Phos_2C PhosphoPep,
+	   QCM.Trypsin_2A AS TrypsinPSMs,
        PSM.Last_Affected AS [PSM Stats Date],
        ISNULL(MTSPT.PT_DB_Count, 0) AS [MTS PT DB Count],
        ISNULL(MTSMT.MT_DB_Count, 0) AS [MTS MT DB Count],
@@ -95,7 +100,8 @@ FROM dbo.T_Analysis_Job AS AJ
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
      LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats AS PSM 
        ON AJ.AJ_JobID = PSM.Job
-
+	 LEFT OUTER JOIN V_Dataset_QC_Metrics QCM 
+	   ON DS.Dataset_ID = QCM.Dataset_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_Detail_Report] TO [PNL\D3M578] AS [dbo]

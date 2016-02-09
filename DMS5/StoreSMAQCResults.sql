@@ -43,7 +43,9 @@ CREATE Procedure dbo.StoreSMAQCResults
 **							   while MassErrorPPM_Refined will have the post-refinement error.  In that case, MS1_5C will have the 
 **							   post-refinement mass error (because that value comes from MSGF+ and MSGF+ uses the refined _dta.txt file)
 **			01/08/2014 mem - Added Phos_2A and Phos_2C
-**			10/07/2014 mem - Added Keratin_2A, Keratin_2C, P_4A, P_4B
+**			10/07/2015 mem - Added Keratin_2A, Keratin_2C, P_4A, P_4B
+**			02/03/2016 mem - Added Trypsin_2A and Trypsin_2C
+**			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 **    
 *****************************************************/
 (
@@ -131,7 +133,13 @@ As
 		Keratin_2A float NULL,
 		Keratin_2C float NULL,
 		P_4A float NULL,
-		P_4B float NULL
+		P_4B float NULL,
+		Trypsin_2A float NULL,
+		Trypsin_2C float NULL,
+		MS2_RepIon_All float NULL,
+		MS2_RepIon_1Missing float NULL,
+		MS2_RepIon_2Missing float NULL,
+		MS2_RepIon_3Missing float NULL
 	)
 	
 	---------------------------------------------------
@@ -295,7 +303,8 @@ As
                                     MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
                                     MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
                                     P_1A, P_1B, P_2A, P_2B, P_2C, P_3, Phos_2A, Phos_2C,
-                                    Keratin_2A, Keratin_2C, P_4A, P_4B
+                                    Keratin_2A, Keratin_2C, P_4A, P_4B, Trypsin_2A, Trypsin_2C,
+                                    MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
                                   )
 	SELECT @DatasetID,
 	       C_1A, C_1B, C_2A, C_2B, C_3A, C_3B, C_4A, C_4B, C_4C, 
@@ -304,7 +313,8 @@ As
            MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
            MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
            P_1A, P_1B, P_2A, P_2B, P_2C, P_3, Phos_2A, Phos_2C,
-           Keratin_2A, Keratin_2C, P_4A, P_4B
+           Keratin_2A, Keratin_2C, P_4A, P_4B, Trypsin_2A, Trypsin_2C,
+           MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 	FROM ( SELECT [Name],
 	              [Value]
 	       FROM @MeasurementsTable ) AS SourceTable
@@ -316,7 +326,8 @@ As
                       [MS1_1], [MS1_2A], [MS1_2B], [MS1_3A], [MS1_3B], [MS1_5A], [MS1_5B], [MS1_5C], [MS1_5D], 
                       [MS2_1], [MS2_2], [MS2_3], [MS2_4A], [MS2_4B], [MS2_4C], [MS2_4D], 
                       [P_1A], [P_1B], [P_2A], [P_2B], [P_2C], [P_3], [Phos_2A], [Phos_2C],
-                      [Keratin_2A], [Keratin_2C], [P_4A], [P_4B] ) ) AS PivotData
+                      [Keratin_2A], [Keratin_2C], [P_4A], [P_4B], [Trypsin_2A], [Trypsin_2C],
+                      [MS2_RepIon_All], [MS2_RepIon_1Missing], [MS2_RepIon_2Missing], [MS2_RepIon_3Missing] ) ) AS PivotData
 
 
 	If @infoOnly <> 0
@@ -354,7 +365,8 @@ As
                 MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
                 MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
                 P_1A, P_1B, P_2A, P_2B, P_2C, P_3, Phos_2A, Phos_2C,
-                Keratin_2A, Keratin_2C, P_4A, P_4B
+                Keratin_2A, Keratin_2C, P_4A, P_4B, Trypsin_2A, Trypsin_2C,
+                MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 		 FROM @KnownMetricsTable M INNER JOIN 
 		      @DatasetInfoTable DI ON M.Dataset_ID = DI.Dataset_ID
 		) AS Source (Dataset_ID, SMAQC_Job, PSM_Source_Job,
@@ -364,7 +376,8 @@ As
                      MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
                      MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
                      P_1A, P_1B, P_2A, P_2B, P_2C, P_3, Phos_2A, Phos_2C,
-                     Keratin_2A, Keratin_2C, P_4A, P_4B)
+                     Keratin_2A, Keratin_2C, P_4A, P_4B, Trypsin_2A, Trypsin_2C,
+                     MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing)
 	    ON (target.Dataset_ID = Source.Dataset_ID)
 	
 	WHEN Matched 
@@ -380,6 +393,9 @@ As
 			    Phos_2A = Source.Phos_2A, Phos_2C = Source.Phos_2C,
 			    Keratin_2A = Source.Keratin_2A, Keratin_2C = Source.Keratin_2C, 
 			    P_4A = Source.P_4A, P_4B = Source.P_4B,
+			    Trypsin_2A = Source.Trypsin_2A, Trypsin_2C = Source.Trypsin_2C,
+			    MS2_RepIon_All = Source.MS2_RepIon_All, MS2_RepIon_1Missing = Source.MS2_RepIon_1Missing, 
+			    MS2_RepIon_2Missing = Source.MS2_RepIon_2Missing, MS2_RepIon_3Missing = Source.MS2_RepIon_3Missing,
 			    MassErrorPPM = IsNull(Target.MassErrorPPM, Source.MS1_5C),
 				Last_Affected = GetDate()
 				
@@ -393,7 +409,8 @@ As
 		        MS1_1, MS1_2A, MS1_2B, MS1_3A, MS1_3B, MS1_5A, MS1_5B, MS1_5C, MS1_5D, 
 		        MS2_1, MS2_2, MS2_3, MS2_4A, MS2_4B, MS2_4C, MS2_4D,
 		        P_1A, P_1B, P_2A, P_2B, P_2C, P_3, Phos_2A, Phos_2C, 
-		        Keratin_2A, Keratin_2C, P_4A, P_4B,
+		        Keratin_2A, Keratin_2C, P_4A, P_4B, Trypsin_2A, Trypsin_2C,
+		        MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing,
 		        MassErrorPPM,
 				Last_Affected 
 			   )
@@ -409,6 +426,8 @@ As
 		         Source.Phos_2A, Source.Phos_2C,
 		         Source.Keratin_2A, Source.Keratin_2C, 
 		         Source.P_4A, Source.P_4B,
+		         Source.Trypsin_2A, Source.Trypsin_2C,
+		         Source.MS2_RepIon_All, Source.MS2_RepIon_1Missing, Source.MS2_RepIon_2Missing, Source.MS2_RepIon_3Missing,
 		         Source.MS1_5C,  -- Store MS1_5C in MassErrorPPM; if DTA_Refinery is run in the future, then MassErrorPPM will get auto-updated to the pre-refinement value computed by DTA_Refinery
 				 GetDate()
 			   )

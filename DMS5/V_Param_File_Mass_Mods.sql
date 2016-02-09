@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Param_File_Mass_Mods]
+CREATE VIEW V_Param_File_Mass_Mods
 AS
 (
 SELECT PFMM.*,
@@ -15,7 +14,7 @@ SELECT PFMM.*,
        R.Description AS Residue_Desc,
        PF.Param_File_Name,
        PF.Param_File_Description,
-       ' || Mod_Type || Residue || Mod Name || Mod Mass ||' AS TableCode_Header,
+       ' || Mod Type || Residue || Mod Name (DMS) || Mod Name (UniMod) || Mod Mass ||' AS TableCode_Header,
 	   ' | ' + CASE PFMM.Mod_Type_Symbol 
 	           WHEN 'S' THEN 'Static'
 	           WHEN 'D' THEN 'Dynamic'
@@ -23,6 +22,7 @@ SELECT PFMM.*,
 			   END +
 	   ' | ' + R.Description + 
 	   ' | ' + MCF.Mass_Correction_Tag + 
+	   ' | ' + CASE WHEN MCF.Original_Source LIKE '%UniMod%' Then MCF.Original_Source_Name ELSE '' End + 
 	   ' | ' + Cast(MCF.Monoisotopic_Mass_Correction as varchar(12)) + 
 	   ' | ' AS TableCode_Row
 FROM T_Param_File_Mass_Mods PFMM
@@ -36,7 +36,6 @@ FROM T_Param_File_Mass_Mods PFMM
        ON PFMM.Param_File_ID = PF.Param_File_ID
 
 )
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Mass_Mods] TO [PNL\D3M578] AS [dbo]

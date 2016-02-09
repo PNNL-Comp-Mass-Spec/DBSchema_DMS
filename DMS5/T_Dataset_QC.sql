@@ -110,6 +110,12 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 	[P_4A] [real] NULL,
 	[P_4B] [real] NULL,
 	[QCART] [real] NULL,
+	[Trypsin_2A] [real] NULL,
+	[Trypsin_2C] [real] NULL,
+	[MS2_RepIon_All] [float] NULL,
+	[MS2_RepIon_1Missing] [float] NULL,
+	[MS2_RepIon_2Missing] [float] NULL,
+	[MS2_RepIon_3Missing] [float] NULL,
  CONSTRAINT [PK_T_Dataset_QC_DatasetID] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC

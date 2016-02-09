@@ -38,8 +38,6 @@ AS
 	Set @myRowCount = 0
 	Set @myError = 0
 
-	Declare @ParamFileID int
-
 	Declare @S varchar(2048)
 						 
 	-----------------------------------------
@@ -184,6 +182,12 @@ AS
 			SELECT @myRowCount = @@rowcount, @myError = @@error
 			
 		End
+
+		SELECT *
+		FROM V_Param_File_Mass_Mods
+		WHERE Param_File_ID = @DestParamFileID
+
+
 	End
 	
 Done:

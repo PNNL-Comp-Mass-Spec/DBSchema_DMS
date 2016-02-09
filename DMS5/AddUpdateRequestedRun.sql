@@ -74,7 +74,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
-	@workPackage varchar(50),					-- Work package; could also contain "(lookup)".  Will contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
+	@workPackage varchar(50),					-- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
 	@msType varchar(20),
 	@instrumentSettings varchar(512) = 'na',
 	@wellplateNum varchar(64) = 'na',

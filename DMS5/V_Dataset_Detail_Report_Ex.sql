@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] as
+CREATE VIEW V_Dataset_Detail_Report_Ex as
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
        OG.OG_name AS Organism,
@@ -21,7 +20,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TDSN.DSS_name AS State,
        DS.Dataset_ID AS ID,
        DS.DS_created AS Created,
-       RRH.ID AS Request,
+       RR.ID AS Request,
        CASE
            WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
            ELSE CASE
@@ -56,12 +55,12 @@ SELECT DS.Dataset_Num AS Dataset,
        ISNULL(PredefinedJobQ.JobCount, 0) AS [Predefines Triggered],
        DS.Acq_Time_Start AS [Acquisition Start],
        DS.Acq_Time_End AS [Acquisition End],
-       RRH.RDS_Run_Start AS [Run Start],
-       RRH.RDS_Run_Finish AS [Run Finish],
+       RR.RDS_Run_Start AS [Run Start],
+       RR.RDS_Run_Finish AS [Run Finish],
        DS.Scan_Count AS [Scan Count],
        DSTypes.ScanTypeList AS [Scan Types],
        DS.Acq_Length_Minutes AS [Acq Length],
-       --DATEDIFF(minute, ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish)) AS [Acq Length],
+       --DATEDIFF(minute, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
        DS.DS_folder_name AS [Folder Name],
@@ -70,6 +69,13 @@ SELECT DS.Dataset_Num AS Dataset,
        DA.AS_state_Last_Affected AS [Archive State Last Affected],
        AUSN.AUS_name AS [Archive Update State],
        DA.AS_update_state_Last_Affected AS [Archive Update State Last Affected],
+       RR.RDS_WorkPackage [Work Package],
+       CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
+            ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
+            END AS [Work Package State],
+       EUT.Name AS [EUS Usage Type],
+       RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
+       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        TIS_1.Name AS [Predigest Int Std],
        TIS_2.Name AS [Postdigest Int Std],
        T_MyEMSLState.StateName AS [MyEMSL State]
@@ -101,9 +107,9 @@ FROM dbo.t_storage_path AS SPath
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path AS DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
      LEFT OUTER JOIN dbo.T_LC_Cart AS LCCart
-                     INNER JOIN dbo.T_Requested_Run AS RRH
-                       ON LCCart.ID = RRH.RDS_Cart_ID
-       ON DS.Dataset_ID = RRH.DatasetID
+                     INNER JOIN dbo.T_Requested_Run AS RR
+                       ON LCCart.ID = RR.RDS_Cart_ID
+       ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN ( SELECT AJ_datasetID AS DatasetID,
                               COUNT(*) AS Jobs
                        FROM dbo.T_Analysis_Job
@@ -113,6 +119,10 @@ FROM dbo.t_storage_path AS SPath
          INNER JOIN T_MyEMSLState
              ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState
        ON DA.AS_Dataset_ID = DS.Dataset_ID
+     INNER JOIN dbo.T_EUS_UsageType AS EUT
+       ON RR.RDS_EUS_UsageType = EUT.ID
+     LEFT OUTER JOIN V_Charge_Code_Status CC 
+       ON RR.RDS_WorkPackage = CC.Charge_Code
      LEFT OUTER JOIN dbo.T_DatasetArchiveStateName AS TDASN
        ON DA.AS_state_ID = TDASN.DASN_StateID
      LEFT OUTER JOIN dbo.T_Archive_Update_State_Name AS AUSN
@@ -134,7 +144,6 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]

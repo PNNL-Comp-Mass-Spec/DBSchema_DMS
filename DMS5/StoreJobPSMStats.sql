@@ -16,20 +16,23 @@ CREATE Procedure StoreJobPSMStats
 **	Date:	02/21/2012 mem - Initial version
 **			05/08/2012 mem - Added @FDRThreshold, @TotalPSMsFDRFilter, @UniquePeptidesFDRFilter, and @UniqueProteinsFDRFilter
 **			01/17/2014 mem - Added @MSGFThresholdIsEValue
+**			01/21/2016 mem - Added @PercentMSnScansNoPSM and @MaximumScanGapAdjacentMSn
 **    
 *****************************************************/
 (
 	@Job int = 0,
 	@MSGFThreshold float,
 	@FDRThreshold float = 1,
-	@SpectraSearched int,				-- Number of spectra that were searched
-	@TotalPSMs int,						-- Stats based on @MSGFThreshold (Number of identified spectra)
-	@UniquePeptides int,				-- Stats based on @MSGFThreshold
-	@UniqueProteins int,				-- Stats based on @MSGFThreshold
-	@TotalPSMsFDRFilter int = 0,		-- Stats based on @FDRThreshold  (Number of identified spectra)
-	@UniquePeptidesFDRFilter int = 0,	-- Stats based on @FDRThreshold
-	@UniqueProteinsFDRFilter int = 0,	-- Stats based on @FDRThreshold
-	@MSGFThresholdIsEValue tinyint = 0,	-- Set to 1 if @MSGFThreshold is actually an EValue
+	@SpectraSearched int,					-- Number of spectra that were searched
+	@TotalPSMs int,							-- Stats based on @MSGFThreshold (Number of identified spectra)
+	@UniquePeptides int,					-- Stats based on @MSGFThreshold
+	@UniqueProteins int,					-- Stats based on @MSGFThreshold
+	@TotalPSMsFDRFilter int = 0,			-- Stats based on @FDRThreshold  (Number of identified spectra)
+	@UniquePeptidesFDRFilter int = 0,		-- Stats based on @FDRThreshold
+	@UniqueProteinsFDRFilter int = 0,		-- Stats based on @FDRThreshold
+	@MSGFThresholdIsEValue tinyint = 0,		-- Set to 1 if @MSGFThreshold is actually an EValue
+	@PercentMSnScansNoPSM float = 0,		-- Percent (between 0 and 100) measuring the 
+	@MaximumScanGapAdjacentMSn int = 0,
 	@message varchar(255) = '' output,
 	@infoOnly tinyint = 0
 )
@@ -50,6 +53,9 @@ As
 	Set @infoOnly = IsNull(@infoOnly, 0)	
 	Set @FDRThreshold = IsNull(@FDRThreshold, 1)
 	Set @MSGFThresholdIsEValue = IsNull(@MSGFThresholdIsEValue, 0)
+	
+	Set @PercentMSnScansNoPSM = IsNull(@PercentMSnScansNoPSM, 0)
+	Set @MaximumScanGapAdjacentMSn = IsNull(@MaximumScanGapAdjacentMSn,0)
 	
 	---------------------------------------------------
 	-- Make sure @Job is defined in T_Analysis_Job
@@ -77,7 +83,9 @@ As
 		       @UniqueProteins AS Unique_Proteins_MSGF,
 		       @TotalPSMsFDRFilter AS Total_PSMs_FDR,
 		       @UniquePeptidesFDRFilter AS Unique_Peptides_FDR,
-		       @UniqueProteinsFDRFilter AS Unique_Proteins_FDR
+		       @UniqueProteinsFDRFilter AS Unique_Proteins_FDR,	       
+		       @PercentMSnScansNoPSM as Percent_MSn_Scans_NoPSM,
+		       @MaximumScanGapAdjacentMSn as Maximum_ScanGap_Adjacent_MSn		       
 		
 		Goto Done
 	End
@@ -87,6 +95,7 @@ As
 	-- Add/Update T_Analysis_Job_PSM_Stats using a MERGE statement
 	-----------------------------------------------
 	--
+	;
 	MERGE T_Analysis_Job_PSM_Stats AS target
 	USING 
 		(SELECT @Job AS Job,
@@ -99,10 +108,13 @@ As
                 @UniqueProteins AS Unique_Proteins_MSGF,
                 @TotalPSMsFDRFilter AS Total_PSMs_FDR,
 		        @UniquePeptidesFDRFilter AS Unique_Peptides_FDR,
-		        @UniqueProteinsFDRFilter AS Unique_Proteins_FDR
+		        @UniqueProteinsFDRFilter AS Unique_Proteins_FDR,
+		        @PercentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
+		        @MaximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn
 		) AS Source (Job, MSGF_Threshold, FDR_Threshold, MSGF_Threshold_Is_EValue, Spectra_Searched,
                      Total_PSMs_MSGF, Unique_Peptides_MSGF, Unique_Proteins_MSGF,
-                     Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR)
+                     Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR,
+                     Percent_MSn_Scans_NoPSM, Maximum_ScanGap_Adjacent_MSn)
 	    ON (target.Job = Source.Job)
 	
 	WHEN Matched 
@@ -115,8 +127,10 @@ As
                 Unique_Peptides = Source.Unique_Peptides_MSGF, 
                 Unique_Proteins = Source.Unique_Proteins_MSGF,
                 Total_PSMs_FDR_Filter = Source.Total_PSMs_FDR, 
-        Unique_Peptides_FDR_Filter = Source.Unique_Peptides_FDR, 
+                Unique_Peptides_FDR_Filter = Source.Unique_Peptides_FDR, 
                 Unique_Proteins_FDR_Filter = Source.Unique_Proteins_FDR,
+                Percent_MSn_Scans_NoPSM = Source.Percent_MSn_Scans_NoPSM,
+                Maximum_ScanGap_Adjacent_MSn = Source.Maximum_ScanGap_Adjacent_MSn,
                 Last_Affected = GetDate()
 				
 	WHEN Not Matched THEN
@@ -131,6 +145,8 @@ As
 		        Total_PSMs_FDR_Filter,
                 Unique_Peptides_FDR_Filter,
                 Unique_Proteins_FDR_Filter,
+                Percent_MSn_Scans_NoPSM,
+                Maximum_ScanGap_Adjacent_MSn,
 				Last_Affected 
 			   )
 		VALUES ( Source.Job,
@@ -144,6 +160,8 @@ As
                  Source.Total_PSMs_FDR,
                  Source.Unique_Peptides_FDR, 
                  Source.Unique_Proteins_FDR,
+                 Source.Percent_MSn_Scans_NoPSM,
+                 Source.Maximum_ScanGap_Adjacent_MSn,
 				 GetDate()
 			   )
 	;
