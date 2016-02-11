@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 /****************************************************
 **	Desc: 
@@ -21,9 +22,10 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **	Auth: grk   
 **	Date: 09/15/2015 grk - initial release
 **	      10/20/2015 grk - added users to output
+**	      02/10/2016 grk - added rollup of comments and operators
 **    
 *****************************************************/ 
-( 
+(
 	@Year INT, 
 	@Month INT 
 )
@@ -69,7 +71,9 @@ AS
               [BeginningOfNextDay] DATETIME NULL ,
               [DurationSeconds] INT NULL ,
               [DurationSecondsInCurrentDay] INT NULL ,
-              [RemainingDurationSeconds] INT NULL
+              [RemainingDurationSeconds] INT NULL ,
+              Comment VARCHAR(MAX) NULL ,
+              [Operator] [varchar](64) NULL
             )
 
 		-- intermediate storage for report entries 
@@ -100,12 +104,13 @@ AS
                   Type ,
                   Proposal ,
                   Usage ,
-                  Users,
+                  Users ,
                   Start ,
                   DurationSeconds ,
                   Year ,
-                  Month
-		
+                  Month ,
+                  Comment ,
+                  Operator
                 )
                 SELECT  ID ,
                         EMSL_Inst_ID ,
@@ -113,11 +118,13 @@ AS
                         [Type] ,
                         Proposal ,
                         Usage ,
-                        Users,
+                        Users ,
                         Start ,
                         [Minutes] * 60 AS [DurationSeconds] ,
                         [Year] ,
-                        [Month]
+                        [Month] ,
+                        Comment ,
+                        Operator
                 FROM    T_EMSL_Instrument_Usage_Report AS TEIUR
                 WHERE   ( TEIUR.Year = @Year )
                         AND ( TEIUR.Month = @Month )
@@ -160,27 +167,30 @@ AS
                           DMS_Instrument ,
                           Proposal ,
                           Usage ,
-                          Users,
+                          Users ,
                           [Start] ,
 					--Minutes,
                           [DurationSeconds] ,
                           [Year] ,
                           [Month] ,
                           [Day] ,
-                          [Type]
-				
+                          [Type] ,
+                          Comment ,
+                          Operator
                         )
                         SELECT  EMSL_Inst_ID ,
                                 DMS_Instrument ,
                                 Proposal ,
                                 Usage ,
-                                Users,
+                                Users ,
                                 [Start] ,
                                 [DurationSeconds] ,
                                 [Year] ,
                                 [Month] ,
                                 [Day] ,
-                                [Type]
+                                [Type] ,
+                                Comment ,
+                                Operator
                         FROM    @T_Working
                         WHERE   [Day] = [NextDay]
                                 AND [MONTH] = [NextMonth]
@@ -199,26 +209,29 @@ AS
                           DMS_Instrument ,
                           Proposal ,
                           Usage ,
-                          Users,
+                          Users ,
                           [Start] ,
                           [DurationSeconds] ,
                           [Year] ,
                           [Month] ,
                           [Day] ,
-                          [Type]
-				
+                          [Type] ,
+                          Comment ,
+                          Operator
                         )
                         SELECT  EMSL_Inst_ID ,
                                 DMS_Instrument ,
                                 Proposal ,
                                 Usage ,
-                                Users,
+                                Users ,
                                 [Start] ,
                                 [DurationSecondsInCurrentDay] AS [DurationSeconds] ,
                                 [Year] ,
                                 [Month] ,
                                 [Day] ,
-                                [Type]
+                                [Type] ,
+                                Comment ,
+                                Operator
                         FROM    @T_Working 
 
 			-- update start time and duration of entries in working table
@@ -240,6 +253,102 @@ AS
                     SET @done = 1
             END
  --<loop>
+
+-- rollup comments and add to the accumulation table
+        UPDATE  @T_Report_Accumulation
+        SET     Comment = TZ.Comment
+        FROM    @T_Report_Accumulation AS TA
+                INNER JOIN ( SELECT EMSL_Inst_ID ,
+                                    DMS_Instrument ,
+                                    [Type] ,
+                                    Proposal ,
+                                    Usage ,
+                                    Users ,
+                                    Year ,
+                                    Month ,
+                                    DAY ,
+                                    STUFF(( SELECT DISTINCT
+                                                    ',' + Comment AS [text()]
+                                            FROM    @T_Report_Accumulation TS
+                                            WHERE   TX.EMSL_Inst_ID = TS.EMSL_Inst_ID
+                                                    AND TX.DMS_Instrument = TS.DMS_Instrument
+                                                    AND TX.[Type] = TS.[Type]
+                                                    AND TX.Proposal = TS.Proposal
+                                                    AND TX.Usage = TS.Usage
+                                                    AND TX.Users = TS.Users
+                                                    AND TX.[Year] = TS.[Year]
+                                                    AND TX.[Month] = TS.[Month]
+                                                    AND TX.[Day] = TS.[Day]
+                                          FOR
+                                            XML PATH('')
+                                          ), 1, 1, '') AS [Comment]
+                             FROM   @T_Report_Accumulation TX
+                             GROUP BY EMSL_Inst_ID ,
+                                    DMS_Instrument ,
+                                    [Type] ,
+                                    Proposal ,
+                                    Usage ,
+                                    Users ,
+                                    [Year] ,
+                                    [Month] ,
+                                    [Day]
+                           ) AS TZ ON TA.EMSL_Inst_ID = TZ.EMSL_Inst_ID
+                                      AND TA.DMS_Instrument = TZ.DMS_Instrument
+                                      AND TA.[Type] = TZ.[Type]
+                                      AND TA.Proposal = TZ.Proposal
+                                      AND TA.Usage = TZ.Usage
+                                      AND TA.Users = TZ.Users
+                                      AND TA.[Year] = TZ.[Year]
+                                      AND TA.[Month] = TZ.[Month]
+                                      AND TA.[Day] = TZ.[Day]
+
+-- rollup operators and add to the accumulation table
+        UPDATE  TA
+        SET     Operator = TZ.Operator
+        FROM    @T_Report_Accumulation AS TA
+                INNER JOIN ( SELECT EMSL_Inst_ID ,
+                                    DMS_Instrument ,
+                                    [Type] ,
+                                    Proposal ,
+                                    Usage ,
+                                    Users ,
+                                    Year ,
+                                    Month ,
+                                    DAY ,
+                                    STUFF(( SELECT DISTINCT
+                                                    ',' + Operator AS [text()]
+                                            FROM    @T_Report_Accumulation TS
+                                            WHERE   TX.EMSL_Inst_ID = TS.EMSL_Inst_ID
+                                                    AND TX.DMS_Instrument = TS.DMS_Instrument
+                                                    AND TX.[Type] = TS.[Type]
+                                                    AND TX.Proposal = TS.Proposal
+                                                    AND TX.Usage = TS.Usage
+                                                    AND TX.Users = TS.Users
+                                                    AND TX.[Year] = TS.[Year]
+                                                    AND TX.[Month] = TS.[Month]
+                                                    AND TX.[Day] = TS.[Day]
+                                          FOR
+                                            XML PATH('')
+                                          ), 1, 1, '') AS Operator
+                             FROM   @T_Report_Accumulation TX
+                             GROUP BY EMSL_Inst_ID ,
+                                    DMS_Instrument ,
+                                    [Type] ,
+                                    Proposal ,
+                                    Usage ,
+                                    Users ,
+                                    [Year] ,
+                                    [Month] ,
+                                    [Day]
+                           ) AS TZ ON TA.EMSL_Inst_ID = TZ.EMSL_Inst_ID
+                                      AND TA.DMS_Instrument = TZ.DMS_Instrument
+                                      AND TA.[Type] = TZ.[Type]
+                                      AND TA.Proposal = TZ.Proposal
+                                      AND TA.Usage = TZ.Usage
+                                      AND TA.Users = TZ.Users
+                                      AND TA.[Year] = TZ.[Year]
+                                      AND TA.[Month] = TZ.[Month]
+                                      AND TA.[Day] = TZ.[Day]
 
 		-- copy report entries from accumuation table to report output table
         INSERT  INTO @T_Report_Output
@@ -268,8 +377,8 @@ AS
                         Proposal ,
                         Usage ,
                         Users ,
-                        NULL AS Operator ,
-                        NULL AS Comment ,
+                        Operator ,
+                        Comment ,
                         Year ,
                         Month ,
                         NULL AS ID ,
@@ -282,7 +391,9 @@ AS
                         [Type] ,
                         Proposal ,
                         Usage ,
-                        Users,
+                        Users ,
+                        Operator ,
+                        Comment ,
                         [Year] ,
                         [Month] ,
                         [Day]
@@ -294,5 +405,6 @@ AS
 
         RETURN
     END
+
 
 GO
