@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
@@ -11,7 +12,7 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
 	        THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
 			ELSE 'Processor Warning'
-			END AS Kill_Process,
+			END AS Kill_Manager,
 	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
 	        THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
 			ELSE 'Processor Warning'
@@ -91,10 +92,6 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
-
-
-
-
 
 
 GO
