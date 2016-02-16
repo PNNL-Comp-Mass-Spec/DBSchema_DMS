@@ -3,11 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Processor_Group_Detail_Report
+
+CREATE VIEW [dbo].[V_Analysis_Job_Processor_Group_Detail_Report]
 AS
 SELECT AJPG.ID, AJPG.Group_Name AS [Group Name], 
     AJPG.Group_Enabled AS [Group Enabled], 
-    AJPG.Available_For_General_Processing AS [General Processing],
+	'Y' AS [General Processing],
+    -- Deprecated in February 2015; now always "Y"
+	-- AJPG.Available_For_General_Processing AS [General Processing],
      AJPG.Group_Description AS [Group Description], 
     AJPG.Group_Created AS [Group Created], 
     ISNULL(CountQ.Processor_Count, 0) AS Members, 
@@ -22,6 +25,7 @@ FROM dbo.T_Analysis_Job_Processor_Group AJPG LEFT OUTER JOIN
       FROM dbo.T_Analysis_Job_Processor_Group_Membership AJPGM
       GROUP BY Group_ID) CountQ ON 
     AJPG.ID = CountQ.Group_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Detail_Report] TO [PNL\D3M578] AS [dbo]

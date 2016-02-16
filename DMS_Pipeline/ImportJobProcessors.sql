@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.ImportJobProcessors
 **			06/27/2009 mem - Now removing entries from T_Local_Job_Processors only if the job is complete or not present in T_Jobs; if a job is failed but still in T_Jobs, then the entry is not removed from T_Local_Job_Processors
 **			07/01/2010 mem - No longer logging message "Updated T_Local_Job_Processors; DeleteCount=" each time T_Local_Job_Processors is updated
 **			06/01/2015 mem - No longer deleting rows in T_Local_Job_Processors since we have deprecated processor groups
+**			02/15/2016 mem - Re-enabled support for processor groups, but altered logic to wait for 2 hours before deleting completed jobs
 **    
 *****************************************************/
 (
@@ -38,16 +39,16 @@ As
 	if @bypassDMS <> 0
 		goto Done
 
-/*
 	---------------------------------------------------
-	-- Deprecated in May 2015: 
-	-- remove job-processor associations 
-	-- from jobs that are complete
+	-- Remove job-processor associations 
+	-- from jobs that completed at least 2 hours ago
 	---------------------------------------------------
 
 	DELETE FROM T_Local_Job_Processors
-	WHERE
-		Job IN (SELECT Job FROM T_Jobs WHERE State = 4) 
+	WHERE Job IN ( SELECT Job
+	               FROM T_Jobs
+	               WHERE State = 4 AND
+	                     DATEDIFF(HOUR, Finish, GETDATE()) > 2 )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
      --
@@ -56,8 +57,6 @@ As
 		set @message = 'Error removing job-processor associations'
 		goto Done
 	end
-	Delcare @DeleteCount = @myRowCount
-*/
      	
 	---------------------------------------------------
 	-- Exit

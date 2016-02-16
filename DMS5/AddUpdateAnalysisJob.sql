@@ -62,6 +62,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			06/24/2015 mem - Added parameter @infoOnly
 **			07/21/2015 mem - Now allowing job comment and Export Mode to be changed
 **			01/20/2016 mem - Update comments
+**			02/15/2016 mem - Re-enabled handling of @associatedProcessorGroup
 **    
 *****************************************************/
 (
@@ -77,7 +78,7 @@ CREATE Procedure AddUpdateAnalysisJob
     @ownerPRN varchar(64),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
-	@associatedProcessorGroup varchar(64) = '',		-- Processor group; deprecated in May 2015
+	@associatedProcessorGroup varchar(64) = '',		-- Processor group
     @propagationMode varchar(24),
 	@stateName varchar(32),
     @jobNum varchar(32) = '0' output,				-- New job number if adding a job; existing job number if updating or resetting a job
@@ -231,9 +232,8 @@ As
 		End
 	end
 	
-	/*
 	---------------------------------------------------
-	-- Deprecated in May 2015: resolve processor group ID
+	-- Resolve processor group ID
 	---------------------------------------------------
 	--
 	declare @gid int
@@ -259,7 +259,6 @@ As
 			RAISERROR (@msg, 11, 9)
 		end
 	end
-	*/
 	
 	---------------------------------------------------
 	-- Create temporary table to hold the dataset details
@@ -578,9 +577,8 @@ As
 			If Len(@callingUser) > 0
 				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
 
-			/*
 			---------------------------------------------------
-			-- Deprecated in May 2015: associate job with processor group
+			-- Associate job with processor group
 			--
 			if @gid <> 0
 			begin
@@ -597,7 +595,6 @@ As
 					RAISERROR (@msg, 11, 14)
 				end
 			end
-			*/
 			
 			commit transaction @transName
 		End
@@ -648,11 +645,11 @@ As
 			end
 		end		
 
-		/*
 		---------------------------------------------------
-		-- Deprecated in May 2015: associate job with processor group
-		--
-		-- is there an existing association between the job
+		-- Associate job with processor group
+		---------------------------------------------------
+		--		
+		-- Is there an existing association between the job
 		-- and a processor group?
 		--
 		declare @pgaAssocID int
@@ -669,7 +666,6 @@ As
 			set @msg = 'Error looking up existing job association'
 			RAISERROR (@msg, 11, 16)
 		end
-		*/
 
 		If @infoOnly <> 0
 		Begin
@@ -740,12 +736,11 @@ As
 			If Len(@callingUser) > 0
 				Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
 
-
-			/*
 			---------------------------------------------------
-			-- Deprecated in May 2015: deal with job association with group, 
-
-			-- if no group is given, but existing association
+			-- Deal with job association with group, 
+			---------------------------------------------------
+			--
+			-- If no group is given, but existing association
 			-- exists for job, delete it
 			--
 			if @gid = 0
@@ -756,7 +751,7 @@ As
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 			end
 
-			-- if group is given, and no association for job exists
+			-- If group is given, and no association for job exists
 			-- create one
 			--
 			if @gid <> 0 and @pgaAssocID = 0
@@ -772,7 +767,7 @@ As
 				Set @AlterEnteredByRequired = 1
 			end
 
-			-- if group is given, and an association for job does exist
+			-- If group is given, and an association for job does exist
 			-- update it
 			--
 			if @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
@@ -790,14 +785,13 @@ As
 				Set @AlterEnteredByRequired = 1
 			end
 			
-			-- report error, if one occurred
+			-- Report error, if one occurred
 			--
 			if @myError <> 0
 			begin
 				set @msg = 'Error deleting existing association for job'
 				RAISERROR (@msg, 11, 21)
 			end
-			*/
 
 			commit transaction @transName
 			

@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group](
 	[Group_Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Group_Enabled] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Group_Created] [datetime] NOT NULL,
-	[Available_For_General_Processing] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[x_Available_For_General_Processing] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Last_Affected] [datetime] NULL,
 	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [T_Analysis_Job_Processor_Group_PK] PRIMARY KEY CLUSTERED 
@@ -29,7 +29,7 @@ ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysi
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Group_Created]  DEFAULT (getdate()) FOR [Group_Created]
 GO
-ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Available_For_General_Processing]  DEFAULT ('Y') FOR [Available_For_General_Processing]
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Available_For_General_Processing]  DEFAULT ('Y') FOR [x_Available_For_General_Processing]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
@@ -41,7 +41,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create TRIGGER [dbo].[trig_u_T_Analysis_Job_Processor_Group] ON [dbo].[T_Analysis_Job_Processor_Group] 
+
+CREATE TRIGGER [dbo].[trig_u_T_Analysis_Job_Processor_Group] ON [dbo].[T_Analysis_Job_Processor_Group] 
 FOR UPDATE
 AS
 /****************************************************
@@ -57,6 +58,7 @@ AS
 **
 **	Auth:	mem
 **	Date:	02/24/2007
+**			02/15/2016 - Removed column Available_For_General_Processing since deprecated
 **    
 *****************************************************/
 	
@@ -65,8 +67,7 @@ AS
 
 	-- Note: Column Processing_State is checked below
 	If	Update(Group_Name) OR
-		Update(Group_Enabled) OR
-		Update(Available_For_General_Processing)
+		Update(Group_Enabled)
 	Begin
 		UPDATE T_Analysis_Job_Processor_Group
 		SET Last_Affected = GetDate(),
@@ -74,5 +75,6 @@ AS
 		FROM T_Analysis_Job_Processor_Group INNER JOIN 
 			 inserted ON T_Analysis_Job_Processor_Group.ID = inserted.ID
 	End
+
 
 GO

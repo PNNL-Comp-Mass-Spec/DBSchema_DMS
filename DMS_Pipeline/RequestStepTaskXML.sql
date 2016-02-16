@@ -72,6 +72,8 @@ CREATE PROCEDURE RequestStepTaskXML
 **			06/01/2015 mem - No longer querying T_Local_Job_Processors since we have deprecated processor groups
 **						   - Also now ignoring GP_Groups and Available_For_General_Processing
 **			11/18/2015 mem - Now using Actual_CPU_Load instead of CPU_Load
+**			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors and processor groups
+**						   - Added job step exclusion using T_Local_Processor_Job_Step_Exclusion
 **
 *****************************************************/
 (
@@ -112,7 +114,7 @@ As
 	--
 	Set @HoldoffWindowMinutes = 3				-- Typically 3
 	Set @MaxSimultaneousJobCount = 75			-- Increased from 10 to 75 on 4/25/2013
-	Set @UseBigBangQuery = 1					-- Typically 1
+	Set @UseBigBangQuery = 1					-- Always forced by this procedure to be 1
 	
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
@@ -181,7 +183,7 @@ As
 		goto Done
 	end
 
-	-- check if no processor found?
+	-- Check if no processor found?
 	if @myRowCount = 0
 	begin
 		set @message = 'Processor not defined in T_Local_Processors: ' + @processorName
@@ -197,7 +199,7 @@ As
 	end
 	
 	---------------------------------------------------
-	-- update processor's request timestamp
+	-- Update processor's request timestamp
 	-- (to show when the processor was most recently active)
 	---------------------------------------------------
 	--
@@ -282,7 +284,7 @@ As
 	Begin -- <PreviewProcessorTools>
 				
 		---------------------------------------------------
-		-- get list of step tools currently assigned to processor
+		-- Get list of step tools currently assigned to processor
 		---------------------------------------------------
 		--
 		declare @availableProcessorTools TABLE (
@@ -346,7 +348,7 @@ As
 		                         M.Total_Memory_MB,
 		                         M.Memory_Available
 		                  FROM T_Local_Processors LP
-		                       INNER JOIN T_Machines M
+		                     INNER JOIN T_Machines M
 		            ON LP.Machine = M.Machine
 		                  WHERE LP.Processor_Name = @processorName ) MachineQ
 		ORDER BY PT.Tool_Name
@@ -354,7 +356,7 @@ As
 	End -- </PreviewProcessorTools>
 
 	---------------------------------------------------
-	-- table variable to hold job step candidates
+	-- Table variable to hold job step candidates
 	-- for possible assignment
 	---------------------------------------------------
 
@@ -509,7 +511,7 @@ As
 	End
 		
 	---------------------------------------------------
-	-- get list of viable job step assignments organized
+	-- Get list of viable job step assignments organized
 	-- by processor in order of assignment priority
 	---------------------------------------------------
 	--
@@ -545,38 +547,45 @@ As
 			TJ.Storage_Server,
 			TP.Machine,
 			CASE
-				-- No processing load available on machine
 				WHEN (TP.CPUs_Available < TP.CPU_Load) 
+					-- No processing load available on machine
 					THEN 101
-				-- Transfer tool steps for jobs that are in the midst of an archive operation
 				WHEN (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) 
+					-- Transfer tool steps for jobs that are in the midst of an archive operation
 					THEN 102
-				-- Not enough memory available on machine
 				WHEN (TP.Memory_Available < JS.Memory_Usage_MB) 
+					-- Not enough memory available on machine
 					THEN 105
+				WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
+					THEN 2
+				WHEN (NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+					-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
+					THEN 4
+				WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+					-- Job associated with an alternate, specific processor
+					THEN 99		
 			/*
 				---------------------------------------------------
 				-- Deprecated in May 2015: 
 				--	
-				-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 				WHEN (Processor_GP > 0 AND Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 					THEN 2
-				-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
 				WHEN (Processor_GP > 0 AND Tool_GP = 'Y') 
+					-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
 					THEN 4
-				-- Directly associated steps ('Specific Association', aka Association_Type=2):
 				WHEN (Processor_GP > 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+					-- Directly associated steps ('Specific Association', aka Association_Type=2):
 					THEN 2
-				-- Non-associated steps ('Non-associated', aka Association_Type=3):
 				WHEN (Processor_GP > 0 AND Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
+					-- Non-associated steps ('Non-associated', aka Association_Type=3):
 					THEN 3
-				-- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
 				WHEN (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0)) 
-					THEN 1
-				-- not recognized assignment ('<Not recognized>')
-				ELSE 100
-			*/
-				ELSE 4
+					-- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
+					THEN 1				
+			*/			
+				ELSE 100 -- not recognized assignment ('<Not recognized>')
 			END AS Association_Type
 		FROM ( SELECT TJ.Job,
 		              TJ.Priority,		-- Job_Priority
@@ -587,8 +596,9 @@ As
 		     ) TJ
 		     INNER JOIN T_Job_Steps JS
 		       ON TJ.Job = JS.Job
-		     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading, memory usage,and processor group information)
+		     INNER JOIN (	-- Viable processors/step tool combinations (with CPU loading, memory usage,and processor group information)
 		                  SELECT LP.Processor_Name,
+		                         LP.ID AS Processor_ID,
 		                         PTGD.Tool_Name,
 		                         PTGD.Priority AS Tool_Priority,
 		                         /*
@@ -601,7 +611,7 @@ As
 		                         M.CPUs_Available,		                         
 		                         ST.CPU_Load,
 		                         M.Memory_Available,
-		                         M.Machine
+		                         M.Machine		                         
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
@@ -615,7 +625,7 @@ As
 		                        PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
-		WHERE JS.State = 2
+		WHERE JS.State = 2 AND NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
 			Tool_Priority, 
@@ -688,6 +698,7 @@ As
 		           ON TJ.Job = JS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
+			                         LP.ID AS Processor_ID,
 			                         PTGD.Tool_Name,
 			                         PTGD.Priority AS Tool_Priority,
 			                         LP.GP_Groups AS Processor_GP,
@@ -713,8 +724,9 @@ As
 			      JS.State = 2 AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
+			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
 			      -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
-			      -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
+			      -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))			      
 			ORDER BY 
 				Association_Type,
 				Tool_Priority, 
@@ -752,28 +764,18 @@ As
 				TJ.Storage_Server,
 				TP.Machine,
 
-		        /*
-				---------------------------------------------------
-				-- Deprecated in May 2015: 
-				--
 				CASE
-					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
-					--WHEN (Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
-					--	THEN 2
-					-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
-					WHEN (Tool_GP = 'Y') 
+					WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
+						-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
+						THEN 2
+					WHEN (Not JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+						-- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
 						THEN 4
-					-- Directly associated steps ('Specific Association', aka Association_Type=2):
-					-- WHEN (Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
-					--	THEN 2
-					-- Non-associated steps ('Non-associated', aka Association_Type=3):
-					-- WHEN (Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
-					--	THEN 3
-					-- not recognized assignment ('<Not recognized>')
-					ELSE 100
-				END AS Association_Type
-				*/
-				4 AS Association_Type
+					WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+						-- Job associated with an alternate, specific processor
+						THEN 99
+					ELSE 100	-- not recognized assignment ('<Not recognized>')
+				END AS Association_Type				
 			FROM ( SELECT TJ.Job,
 			              TJ.Priority,		-- Job_Priority
 			              TJ.Archive_Busy,
@@ -784,6 +786,7 @@ As
 			       ON TJ.Job = JS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
+			                         LP.ID as Processor_ID,
 			                         PTGD.Tool_Name,
 			                         PTGD.Priority AS Tool_Priority,
 			                         /*
@@ -812,7 +815,8 @@ As
 			WHERE TP.CPUs_Available >= TP.CPU_Load AND
 			      JS.State = 2 AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
-			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1)
+			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
+			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 					/*
 					** To improve query speed remove the Case Statement above and uncomment the following series of tests
 					AND
@@ -933,35 +937,30 @@ As
 			goto Done
 		end
 	End
-
-/*
-	---------------------------------------------------
-	-- Deprecated in May 2015: 
-	--	
 	Else
 	Begin
-		-- See if any jobs have Association_Type 100
-		-- They likely are assigned to specific processors, but not to this processor
-		If Exists (SELECT * FROM #Tmp_CandidateJobSteps WHERE Association_Type = 100)
+		-- See if any jobs have Association_Type 99
+		-- They are assigned to specific processors, but not to this processor
+		If Exists (SELECT * FROM #Tmp_CandidateJobSteps WHERE Association_Type = 99)
 		Begin
 			-- Update the state to 103 for jobs associated with another processor, but not this processor 
  			UPDATE #Tmp_CandidateJobSteps
 			SET Association_Type = 103,
 				Alternate_Specific_Processor = LJP.Alternate_Processor + 
 				                               CASE WHEN Alternate_Processor_Count > 1
-				           THEN ' and others'
+				                               THEN ' and others'
 				                               ELSE ''
 				                               END
 			FROM #Tmp_CandidateJobSteps CJS
 			     INNER JOIN ( SELECT Job,
 			                         Min(Processor) AS Alternate_Processor,
 			                         COUNT(*) AS Alternate_Processor_Count
-			    FROM T_Local_Job_Processors
+			                  FROM T_Local_Job_Processors
 			                  WHERE Processor <> @processorName
 			                  GROUP BY Job 
 			                ) LJP
 			       ON CJS.Job = LJP.Job
-			WHERE CJS.Association_Type = 100 AND
+			WHERE CJS.Association_Type = 99 AND
 			      NOT EXISTS ( SELECT Job
 			                   FROM T_Local_Job_Processors
 			                   WHERE Processor = @processorName )
@@ -972,7 +971,6 @@ As
 		End
 		
 	End
-*/
 	
 	---------------------------------------------------
 	-- if no tools available, bail
@@ -1070,7 +1068,7 @@ As
 											 ELSE JS.Actual_CPU_Load
 										END ) AS CPUs_Busy
 		                  FROM T_Job_Steps JS
-		                       INNER JOIN T_Local_Processors LP
+		 INNER JOIN T_Local_Processors LP
 		                         ON JS.Processor = LP.Processor_Name
 		                       INNER JOIN T_Step_Tools Tools
 		                         ON Tools.Name = JS.Step_Tool
@@ -1164,6 +1162,7 @@ As
 		           WHEN 4 THEN 'Non-associated Generic'
 		           WHEN 5 THEN 'Results_Transfer task (specific to this processor''s server)'
 		           WHEN 6 THEN 'Results_Transfer task (null storage_server)'
+		           WHEN 99 THEN  'Logic error: this should have been updated to 103'
 		           WHEN 100 THEN 'Invalid: Not recognized'
 		           WHEN 101 THEN 'Invalid: CPUs all busy'
 		           WHEN 102 THEN 'Invalid: Archive in progress'

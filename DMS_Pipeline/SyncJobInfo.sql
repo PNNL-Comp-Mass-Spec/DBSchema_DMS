@@ -19,6 +19,7 @@ CREATE PROCEDURE SyncJobInfo
 **			07/01/2010 mem - Removed old code that was replaced by the MERGE statement in 9/17/2009
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			05/28/2015 mem - No longer updating T_Local_Job_Processors since we have deprecated processor groups
+**			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors
 **    
 *****************************************************/
 (
@@ -117,15 +118,14 @@ As
 	End
 
 
-	/*
 	---------------------------------------------------
-	-- Deprecated in May 2015: 
+	-- Deprecated in May 2015, then re-enabled in February 2016
 	-- Update the processor groups that jobs belong to,
 	--  based on the group membership defined in DMS
 	---------------------------------------------------
 	
-	-- Use a MERGE Statement (introduced in Sql Server 2008) to synchronize T_Local_Job_Processors with V_DMS_PipelineJobProcessors
-
+	-- Use a MERGE Statement to synchronize T_Local_Job_Processors with V_DMS_PipelineJobProcessors
+	--
 	MERGE T_Local_Job_Processors AS target
 	USING ( SELECT Job, Processor, General_Processing
 	        FROM V_DMS_PipelineJobProcessors AS VGP
@@ -178,7 +178,6 @@ As
 --		execute PostLogEntry 'Normal', @message, 'SyncJobInfo'
 --		Set @message = ''
 --	End
-	*/
 
 	---------------------------------------------------
 	-- Exit

@@ -3,12 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Processor_Group_List_Report
+
+CREATE VIEW [dbo].[V_Analysis_Job_Processor_Group_List_Report]
 AS
 SELECT AJPG.ID, AJPG.Group_Name AS [Group Name], 
     AJPG.Group_Description AS [Group Description], 
     AJPG.Group_Enabled AS [Group Enabled], 
-    AJPG.Available_For_General_Processing AS [General Processing],
+	'Y' AS [General Processing],
+    -- Deprecated in February 2015; now always "Y"
+	-- AJPG.Available_For_General_Processing AS [General Processing],    
      CountQ.Enabled_Procs_Count AS Enabled_Procs, 
     CountQ.Disabled_Procs_Count AS Disabled_Procs, 
     dbo.GetAJProcessorGroupAssociatedJobs(AJPG.ID, 1) 
@@ -25,6 +28,7 @@ FROM dbo.T_Analysis_Job_Processor_Group AJPG INNER JOIN
            dbo.T_Analysis_Job_Processor_Group_Membership AJPGM
             ON AJPG.ID = AJPGM.Group_ID
       GROUP BY AJPG.ID) CountQ ON AJPG.ID = CountQ.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_List_Report] TO [PNL\D3M578] AS [dbo]
