@@ -31,7 +31,7 @@ SELECT Processor_Name,
 FROM ( SELECT *,
               Row_Number() OVER ( PARTITION BY Processor_Name ORDER BY Start DESC ) AS StartRank
        FROM V_Processor_Status_Warnings PS
-            INNER JOIN V_Job_Steps JS
+            LEFT OUTER JOIN V_Job_Steps JS
               ON PS.Processor_Name = JS.Processor 
      ) LookupQ
 WHERE StartRank = 1
