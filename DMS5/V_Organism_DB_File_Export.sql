@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Organism_DB_File_Export]
 AS
 SELECT ODF.ID, 
@@ -16,13 +14,12 @@ SELECT ODF.ID,
     ODF.NumProteins, 
     ODF.NumResidues,
     ODF.Organism_ID,
-    ODF.OrgFile_RowVersion
+    ODF.OrgFile_RowVersion,
+	ODF.File_Size_KB
 FROM dbo.T_Organism_DB_File ODF INNER JOIN
     dbo.T_Organisms O ON 
     ODF.Organism_ID = O.Organism_ID
 WHERE Valid > 0
-
-
 
 
 GO
