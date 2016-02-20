@@ -27,6 +27,7 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 **			03/17/2011 mem - Removed extra, unused parameter from MakeDataPackageStorageFolder
 **						   - Now only calling MakeDataPackageStorageFolder when @mode = 'add'
 **			08/31/2015 mem - Now replacing the symbol & with 'and' in the name when @mode = 'add'
+**			02/19/2016 mem - Now replacing a semicolon with a comma when @mode = 'add'
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -166,6 +167,12 @@ As
 			End
 				
 			Set @Name = Replace(@Name, '&', 'and')
+		End
+		
+		If @Name Like '%;%'
+		Begin
+			-- Replace each semicolon with a comma
+			Set @Name = Replace(@Name, ';', ',')
 		End
 		
 		-- Make sure the data package name doesn't already exist
