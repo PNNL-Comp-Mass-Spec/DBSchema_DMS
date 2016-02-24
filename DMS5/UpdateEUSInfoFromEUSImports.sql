@@ -21,13 +21,14 @@ CREATE Procedure dbo.UpdateEUSInfoFromEUSImports
 **	Date:	03/25/2011 mem - Initial version
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			01/08/2013 mem - Now calling UpdateEUSInstrumentsFromEUSImports
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
 	@message varchar(512)='' output
 )
 As
-	Set Nocount On
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

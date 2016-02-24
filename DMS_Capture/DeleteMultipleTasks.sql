@@ -16,6 +16,7 @@ CREATE PROCEDURE DeleteMultipleTasks
 **	Date:	06/03/2010 grk - Initial release 
 **			09/11/2012 mem - Renamed from DeleteMultipleJobs to DeleteMultipleTasks
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -24,21 +25,17 @@ CREATE PROCEDURE DeleteMultipleTasks
 	@message varchar(512)='' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
-	
 
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY
 
 		---------------------------------------------------
-		--
+		-- Create and populate a temporary table
 		---------------------------------------------------
 		CREATE TABLE #JOBS (
 			Job INT
@@ -48,7 +45,7 @@ As
 		SELECT Item FROM dbo.MakeTableFromList(@jobList)
 
 		---------------------------------------------------
-		--
+		-- Start a transaction
 		---------------------------------------------------
 		--
 		declare @transName varchar(32)
@@ -56,7 +53,7 @@ As
 		begin transaction @transName
 
 		---------------------------------------------------
-		-- delete job dependencies
+		-- Delete job dependencies
 		---------------------------------------------------
 		--
 		DELETE FROM T_Job_Step_Dependencies
@@ -70,21 +67,21 @@ As
 		WHERE Job IN (SELECT Job FROM #JOBS)
 
 		---------------------------------------------------
-		-- delete job steps
+		-- Delete job steps
 		---------------------------------------------------
 		--
 		DELETE FROM T_Job_Steps
 		WHERE Job IN (SELECT Job FROM #JOBS)
 
    		---------------------------------------------------
-		-- delete jobs
+		-- Delete jobs
 		---------------------------------------------------
 		--
 		DELETE FROM T_Jobs
 		WHERE Job IN (SELECT Job FROM #JOBS)
 
 		---------------------------------------------------
-		--
+		-- Commit the transaction
 		---------------------------------------------------
 		--
  		commit transaction @transName

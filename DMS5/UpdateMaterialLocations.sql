@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[UpdateMaterialLocations]
+CREATE Procedure dbo.UpdateMaterialLocations
 /****************************************************
 **
 **	Desc: 
@@ -23,6 +23,7 @@ CREATE Procedure [dbo].[UpdateMaterialLocations]
 **	Date:	06/02/2013 grk - initial release
 **			06/03/2013 grk - added action attribute to XML
 **			06/06/2013 grk - added code to update status
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE Procedure [dbo].[UpdateMaterialLocations]
 	@infoOnly tinyint = 0				-- Set to 1 to preview the changes that would be made
 )
 As
-	SET NOCOUNT ON 
+	Set XACT_ABORT, nocount on
 
 	declare @myError int = 0
 	declare @myRowCount int = 0

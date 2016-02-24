@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoFileAttachmentOperation] 
+CREATE PROCEDURE dbo.DoFileAttachmentOperation 
 /****************************************************
 **
 **  Desc: 
@@ -14,23 +14,25 @@ CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 09/05/2012 
+**  Auth:	grk
+**  Date:	09/05/2012 
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int,
 	@mode varchar(12),
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

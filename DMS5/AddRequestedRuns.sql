@@ -36,6 +36,7 @@ CREATE Procedure AddRequestedRuns
 **		06/13/2013 mem - Added @VialingConc and @VialingVol
 					   - Now validating @WorkPackageNumber against T_Charge_Code
 **		06/18/2014 mem - Now passing default to udfParseDelimitedList
+**		02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -62,7 +63,7 @@ CREATE Procedure AddRequestedRuns
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

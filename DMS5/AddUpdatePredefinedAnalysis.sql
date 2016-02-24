@@ -34,6 +34,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			09/25/2012 mem - Expanded @organismNameCriteria and @organismName to varchar(128)
 **			04/18/2013 mem - Expanded @description to varchar(512)
 **			11/02/2015 mem - Population of #TmpMatchingInstruments now considers the DatasetType criterion
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -73,7 +74,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 	@SpecialProcessing varchar(512)=''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

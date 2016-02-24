@@ -22,6 +22,7 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 **			12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
 **						   - Now populating Activation_State when inserting new rows via the merge
 **			08/13/2015 mem - Added field @ExplicitChargeCodeList
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -31,17 +32,12 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 	@message varchar(512)='' output
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-	Declare @MergeUpdateCount int
-	Declare @MergeInsertCount int
-	
-	Set @MergeUpdateCount = 0
-	Set @MergeInsertCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
+	declare @MergeUpdateCount int = 0
+	declare @MergeInsertCount int = 0
 
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
@@ -291,7 +287,7 @@ AS
 			          source.SubAccount, source.SubAccount_Title, source.Setup_Date, source.SubAccount_Effective_Date,
 			          source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_PRN, source.Auth_HID,
 			          1,		-- Auto_Defined=1
-			          1,		-- Charge_Code_State = 1 (Interest Unknown)
+			  1,		-- Charge_Code_State = 1 (Interest Unknown)
 			   dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
 			          GetDate() 
 					)

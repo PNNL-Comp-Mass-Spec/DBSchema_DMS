@@ -38,6 +38,7 @@ CREATE Procedure AddUpdateExperiment
 **			09/09/2014 mem - Added @barcode
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			07/31/2015 mem - Now updating Last_Used when key fields are updated
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ CREATE Procedure AddUpdateExperiment
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

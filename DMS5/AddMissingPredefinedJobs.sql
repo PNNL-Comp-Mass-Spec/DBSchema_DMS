@@ -26,6 +26,7 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **						   - Added parameter @CampaignFilter
 **			01/08/2014 mem - Now returning additional debug information when @InfoOnly > 0
 **			06/18/2014 mem - Now passing default to udfParseDelimitedList
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 	@CampaignFilter varchar(128) = ''							-- Optional: if not blank, then filters on the given campaign name
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
@@ -174,7 +175,7 @@ As
 	                  FROM T_Analysis_Job AJ
 	                       INNER JOIN T_Analysis_Tool Tool
 	                         ON AJ.AJ_analysisToolID = Tool.AJT_toolID
-	                  WHERE (@AnalysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @AnalysisToolNameFilter) AND
+	    WHERE (@AnalysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @AnalysisToolNameFilter) AND
 	                        (@IgnoreJobsCreatedBeforeDisposition = 0 OR AJ.AJ_DatasetUnreviewed = 0 )
 	                 ) JL
 	       ON DS.Dataset_ID = JL.Dataset_ID

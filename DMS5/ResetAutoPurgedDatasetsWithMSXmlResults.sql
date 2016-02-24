@@ -16,6 +16,7 @@ CREATE PROCEDURE ResetAutoPurgedDatasetsWithMSXmlResults
 ** 
 **	Auth:	mem
 **	Date:	01/13/2014 mem - Initial version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -24,7 +25,7 @@ CREATE PROCEDURE ResetAutoPurgedDatasetsWithMSXmlResults
 	@message varchar(512)='' output
 )
 As
-	Set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

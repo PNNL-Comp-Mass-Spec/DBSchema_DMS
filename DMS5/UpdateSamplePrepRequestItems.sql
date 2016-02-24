@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
+CREATE PROCEDURE dbo.UpdateSamplePrepRequestItems
 /****************************************************
 **
 **	Desc:
@@ -14,9 +14,9 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
 **
 **	Parameters:
 **
-**    Auth: grk
-**    Date: 
-**          07/05/2013 grk - initial release
+**	Auth:	grk
+**	Date:	07/05/2013 grk - initial release
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

@@ -20,6 +20,7 @@ CREATE Procedure AutoAddChargeCodeUsers
 **	Auth:	mem
 **	Date:	06/05/2013 mem - Initial Version
 **			06/10/2013 mem - Now storing payroll number in U_Payroll and Network_ID in U_PRN
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -27,13 +28,12 @@ CREATE Procedure AutoAddChargeCodeUsers
 	@message varchar(512)='' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
-
      
 	---------------------------------------------------
 	-- Validate input fields

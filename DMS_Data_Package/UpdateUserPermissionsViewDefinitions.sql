@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateUserPermissionsViewDefinitions
 **	Auth:	mem
 **	Date:	11/04/2008
 **			12/28/2009 mem - Updated to also update views (and to include parameters @UpdateSPs and @UpdateViews)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE dbo.UpdateUserPermissionsViewDefinitions
 	@message varchar(512)='' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

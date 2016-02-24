@@ -63,6 +63,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			07/21/2015 mem - Now allowing job comment and Export Mode to be changed
 **			01/20/2016 mem - Update comments
 **			02/15/2016 mem - Re-enabled handling of @associatedProcessorGroup
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -91,7 +92,7 @@ CREATE Procedure AddUpdateAnalysisJob
 	@infoOnly tinyint = 0							-- When 1, preview the change even when @mode is 'add' or 'update'
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

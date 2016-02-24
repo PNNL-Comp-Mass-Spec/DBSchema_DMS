@@ -20,6 +20,7 @@ CREATE Procedure GetPSMJobDefaults
 **			03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
 **			09/03/2013 mem - Added iTRAQ8
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -37,7 +38,7 @@ CREATE Procedure GetPSMJobDefaults
     @message varchar(512) output
 )
 As
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myError int
 	Declare @myRowCount int

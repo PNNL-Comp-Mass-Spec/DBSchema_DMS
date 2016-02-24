@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOSMPackage] 
+CREATE PROCEDURE dbo.AddUpdateOSMPackage 
 /****************************************************
 **
 **  Desc: 
@@ -24,10 +24,12 @@ CREATE PROCEDURE [dbo].[AddUpdateOSMPackage]
 **          08/21/2013 grk - removed @NoteFilesLink
 **          08/21/2013 grk - added call to create onenote folder
 **          11/04/2013 grk - added @UserFolderPath
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID INT OUTPUT,
 	@Name varchar(128),
 	@PackageType varchar(128),
@@ -41,13 +43,13 @@ CREATE PROCEDURE [dbo].[AddUpdateOSMPackage]
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.PromoteProteinCollectionState
 **	Auth:	mem
 **	Date:	09/13/2007
 **			04/08/2008 mem - Added parameter @AddNewProteinHeaders
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE dbo.PromoteProteinCollectionState
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

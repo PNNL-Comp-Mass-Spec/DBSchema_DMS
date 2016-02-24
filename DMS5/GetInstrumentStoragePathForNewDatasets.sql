@@ -20,6 +20,7 @@ CREATE PROCEDURE GetInstrumentStoragePathForNewDatasets
 **	Auth:	mem
 **	Date:	05/11/2011 mem - Initial Version
 **			05/12/2011 mem - Added @RefDate and @AutoSwitchActiveStorage
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -29,7 +30,7 @@ CREATE PROCEDURE GetInstrumentStoragePathForNewDatasets
 	@infoOnly tinyint = 0
 )
 AS
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int	
 	Declare @myError int

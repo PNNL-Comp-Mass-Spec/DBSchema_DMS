@@ -21,6 +21,7 @@ CREATE Procedure dbo.UpdateDatasets
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			03/30/2015 mem - Tweak warning message grammar
 **			10/07/2015 mem - Added @mode "preview"
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -35,7 +36,7 @@ CREATE Procedure dbo.UpdateDatasets
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

@@ -27,6 +27,7 @@ CREATE PROCEDURE UpdateContext
 **			05/02/2015 mem - Now calling AutoFixFailedJobs
 **			05/28/2015 mem - No longer calling ImportJobProcessors
 **			11/20/2015 mem - Now calling UpdateActualCPULoading
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE PROCEDURE UpdateContext
 	@DebugMode tinyint = 0
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

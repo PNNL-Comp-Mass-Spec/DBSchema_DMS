@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 **			08/30/2010 mem - Added parameters @Usage and @Comment
 **			09/02/2010 mem - Added parameter @DefaultDatasetType
 **			10/18/2012 mem - Added parameter @AllocationTag
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -34,7 +35,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

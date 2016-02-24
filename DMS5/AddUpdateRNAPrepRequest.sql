@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateRNAPrepRequest
 **	Auth:	mem
 **	Date:	05/19/2014 mem - Initial version
 **			05/20/2014 mem - Switched from InstrumentGroup to InstrumentName
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -47,7 +48,7 @@ CREATE PROCEDURE AddUpdateRNAPrepRequest
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

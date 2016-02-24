@@ -59,6 +59,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			05/20/2014 mem - Now storing InstrumentGroup in column Instrument_Group instead of Instrument_Name
 **			03/13/2014 grk - Added material container field (OMCDA-1076)
 **			05/29/2015 mem - Now validating that @EstimatedCompletionDate is today or later
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -107,7 +108,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

@@ -18,6 +18,7 @@ CREATE Procedure CloneDataset
 **	Date:	02/27/2014
 **			09/25/2014 mem - Updated T_Job_Step_Dependencies to use Job
 **			                 Removed the Machine column from T_Job_Steps
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE Procedure CloneDataset
 	@message varchar(255) = '' OUTPUT
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myRowCount int	
 	declare @myError int

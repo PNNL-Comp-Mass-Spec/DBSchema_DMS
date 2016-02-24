@@ -28,6 +28,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			06/26/2013 mem - Added mode 'instrumentIgnoreType' (doesn't validate dataset type when changing the instrument group) 
 **					   mem - Added mode 'datasetType'
 **			07/24/2013 mem - Added mode 'separationGroup'
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

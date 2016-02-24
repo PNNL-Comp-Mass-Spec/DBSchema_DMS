@@ -19,6 +19,7 @@ CREATE Procedure AddUpdateAuxInfo
 **			08/21/2010 grk - try-catch for error handling
 **			02/20/2012 mem - Now using temporary tables to parse @itemNameList and @itemValueList
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE Procedure AddUpdateAuxInfo
 	@message varchar(512) = '' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

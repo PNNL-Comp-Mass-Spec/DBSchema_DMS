@@ -69,6 +69,7 @@ CREATE Procedure AddUpdateDataset
 **			10/01/2015 mem - Add support for (ignore) for @eusProposalID, @eusUsageType, and @eusUsersList
 **			10/14/2015 mem - Remove double quotes from error messages
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -96,7 +97,7 @@ CREATE Procedure AddUpdateDataset
    	@CaptureSubfolder varchar(255) = ''		-- Only used when @mode is 'add' or 'bad'
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
@@ -565,7 +566,7 @@ As
 		
 		If @msType IN ('HMS-MSn', 'HMS-HMSn') And Exists (SELECT IGADST.Dataset_Type 
 		                                                  FROM T_Instrument_Group ING INNER JOIN 
-		                                                       T_Instrument_Name InstName ON ING.IN_Group = InstName.IN_Group INNER JOIN
+		                 T_Instrument_Name InstName ON ING.IN_Group = InstName.IN_Group INNER JOIN
                        T_Instrument_Group_Allowed_DS_Type IGADST ON ING.IN_Group = IGADST.IN_Group
                                           WHERE InstName.IN_Name = @instrumentName AND IGADST.Dataset_Type = 'IMS-HMS-HMSn')
         Begin

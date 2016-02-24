@@ -15,8 +15,8 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **
 **	Parameters:
 **
-**    Auth: grk
-**    Date: 05/23/2010
+**	Auth:	grk
+**	Date:	05/23/2010
 **          06/10/2009 grk - changed size of item list to max
 **          06/10/2009 mem - Now calling UpdateDataPackageItemCounts to update the data package item counts
 **          10/01/2009 mem - Now populating Campaign in T_Data_Package_Biomaterial
@@ -25,6 +25,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **			12/31/2013 mem - Added support for EUS Proposals
 **			09/02/2014 mem - Updated to remove non-numeric items when working with analysis jobs
 **			10/28/2014 mem - Added support for adding datasets using dataset IDs; to delete datasets, you must use the dataset name (safety feature)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

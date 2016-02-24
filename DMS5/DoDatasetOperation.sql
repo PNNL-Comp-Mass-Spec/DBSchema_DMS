@@ -28,6 +28,7 @@ CREATE Procedure DoDatasetOperation
 **						   - Removed 'restore' mode
 **			01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_ActiveOrComplete
 **			11/14/2013 mem - Now preventing reset if the first step of dataset capture succeeded
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -37,12 +38,11 @@ CREATE Procedure DoDatasetOperation
 	@callingUser varchar (128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

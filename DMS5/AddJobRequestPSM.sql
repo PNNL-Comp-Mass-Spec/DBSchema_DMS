@@ -18,6 +18,7 @@ CREATE PROCEDURE AddJobRequestPSM
 **			11/20/2012 grk - Added @organismName
 **			11/21/2012 mem - Now calling CreatePSMJobRequest
 **			12/13/2012 mem - Added support for @mode='preview'
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE PROCEDURE AddJobRequestPSM
 	@callingUser VARCHAR(128) = ''
 )
 AS
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 	
 	DECLARE @myError int = 0
 	DECLARE @myRowCount int = 0

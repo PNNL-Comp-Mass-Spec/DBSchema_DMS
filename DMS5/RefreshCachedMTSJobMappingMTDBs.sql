@@ -14,6 +14,7 @@ CREATE PROCEDURE RefreshCachedMTSJobMappingMTDBs
 **	Auth:	mem
 **	Date:	04/21/2010 mem - Initial Version
 **			10/21/2011 mem - Now checking for duplicate rows in T_MTS_MT_DB_Jobs_Cached
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -23,7 +24,7 @@ CREATE PROCEDURE RefreshCachedMTSJobMappingMTDBs
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

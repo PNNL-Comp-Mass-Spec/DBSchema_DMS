@@ -33,6 +33,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
 **			06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
 **			09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -63,7 +64,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

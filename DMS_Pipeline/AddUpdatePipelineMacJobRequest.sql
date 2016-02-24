@@ -17,10 +17,12 @@ CREATE PROCEDURE  AddUpdatePipelineMacJobRequest
 **    Auth: grk
 **    Date: 03/19/2012 
 **          03/26/2012 grk - added @ScheduledJob and @SchedulingNotes
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID INT output,
 	@Description varchar(128),
 	@RequestType varchar(128),
@@ -34,13 +36,13 @@ CREATE PROCEDURE  AddUpdatePipelineMacJobRequest
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

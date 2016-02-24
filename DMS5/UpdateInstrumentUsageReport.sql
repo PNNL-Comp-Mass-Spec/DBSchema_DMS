@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport] 
+CREATE PROCEDURE dbo.UpdateInstrumentUsageReport 
 /****************************************************
 **
 **  Desc: 
@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **			01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 10 days
 **			04/03/2013 grk - Made Usage editable
 **			04/04/2013 grk - Clearing Usage on reload
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -42,7 +43,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount INT

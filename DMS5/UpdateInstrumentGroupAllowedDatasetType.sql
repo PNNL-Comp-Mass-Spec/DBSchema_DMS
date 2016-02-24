@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateInstrumentGroupAllowedDatasetType]
+CREATE Procedure dbo.UpdateInstrumentGroupAllowedDatasetType
 /****************************************************
 **
 **	Desc:
@@ -19,6 +19,7 @@ CREATE Procedure [dbo].[UpdateInstrumentGroupAllowedDatasetType]
 **			02/12/2010 mem - Now making sure @DatasetType is properly capitalized
 **			08/28/2010 mem - Updated to work with instrument groups
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -30,7 +31,7 @@ CREATE Procedure [dbo].[UpdateInstrumentGroupAllowedDatasetType]
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

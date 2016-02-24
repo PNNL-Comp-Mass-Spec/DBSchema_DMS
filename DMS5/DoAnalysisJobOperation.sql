@@ -21,6 +21,7 @@ CREATE Procedure DoAnalysisJobOperation
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			08/19/2010 grk - try-catch for error handling
 **			11/18/2010 mem - Now returning 0 after successful call to DeleteNewAnalysisJob
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -30,12 +31,11 @@ CREATE Procedure DoAnalysisJobOperation
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

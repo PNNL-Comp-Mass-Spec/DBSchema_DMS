@@ -12,7 +12,8 @@ CREATE PROCEDURE RetryMyEMSLUpload
 **			Useful for jobs with Completion message error submitting ingest job
 **
 **	Auth:	mem
-**			11/17/2014 mem - Initial version
+**	Date:	11/17/2014 mem - Initial version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -22,7 +23,7 @@ CREATE PROCEDURE RetryMyEMSLUpload
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

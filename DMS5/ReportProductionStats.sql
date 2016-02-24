@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **			               - Added column "% EMSL Owned"
 **			               - Added new columns, including "% EMSL Owned", "EMSL-Funded Study Specific Datasets", and "EF Study Specific Datasets per day"
 **			03/15/2012 mem - Added parameter @EUSUsageFilterList
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -42,7 +43,7 @@ CREATE PROCEDURE dbo.ReportProductionStats
 	@message varchar(256) = '' output	
 )
 AS
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 
 	declare @myRowCount int = 0
 	declare @myError int = 0

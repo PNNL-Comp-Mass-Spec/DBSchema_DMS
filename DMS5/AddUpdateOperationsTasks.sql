@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks] 
+CREATE PROCEDURE dbo.AddUpdateOperationsTasks 
 /****************************************************
 **
 **  Desc: 
@@ -16,13 +16,14 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **
 **    Auth: grk
 **    Date: 09/01/2012 
-**    11/19/2012 grk - added work package and closed date
-**    11/04/2013 grk - added @HoursSpent
+**			11/19/2012 grk - added work package and closed date
+**			11/04/2013 grk - added @HoursSpent
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
-	
+(
 	@ID int output,
 	@Tab varchar(64),
 	@Requestor varchar(64),
@@ -37,13 +38,13 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 
 	DECLARE @myError INT
-	set @myError = 0
-
 	DECLARE @myRowCount INT
+	SET @myError = 0
 	SET @myRowCount = 0
 
 	SET @message = ''

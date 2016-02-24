@@ -19,6 +19,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 **			03/16/2012 mem - Added columns Ini_File_Name, Comparison_Mass_Tag_Count, and MD_State
 **			05/24/2013 mem - Added column Refine_Mass_Cal_PPMShift
 **			08/09/2013 mem - Now populating MassErrorPPM_VIPER and AMTs_10pct_FDR in T_Dataset_QC using Refine_Mass_Cal_PPMShift
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

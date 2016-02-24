@@ -27,6 +27,7 @@ CREATE Procedure UpdateDatasetDispositions
 **			02/21/2013 mem - More informative error messages
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
 **			03/30/2015 mem - Tweak warning message grammar
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE Procedure UpdateDatasetDispositions
    	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

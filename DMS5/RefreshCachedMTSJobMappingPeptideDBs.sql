@@ -13,6 +13,7 @@ CREATE PROCEDURE RefreshCachedMTSJobMappingPeptideDBs
 **
 **	Auth:	mem
 **	Date:	04/21/2010 mem - Initial Version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -22,7 +23,7 @@ CREATE PROCEDURE RefreshCachedMTSJobMappingPeptideDBs
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

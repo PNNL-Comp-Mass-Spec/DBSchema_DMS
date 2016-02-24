@@ -14,17 +14,20 @@ CREATE PROCEDURE GetMonthlyEMSLInstrumentUsageReport
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 03/16/2012 
+**  Auth:	grk
+**  Date:	03/16/2012 
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@year VARCHAR(12),
 	@month VARCHAR(12),
 	@message varchar(512) output
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
@@ -137,7 +140,7 @@ As
 		Print @message
 		
 	RETURN @myError
- 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMonthlyEMSLInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
 GO

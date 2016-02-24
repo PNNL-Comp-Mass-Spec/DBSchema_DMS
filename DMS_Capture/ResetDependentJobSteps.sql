@@ -17,6 +17,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			11/18/2014 mem - Add a table alias for T_Job_Step_Dependencies
 **			04/24/2015 mem - Now updating State in T_Jobs
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

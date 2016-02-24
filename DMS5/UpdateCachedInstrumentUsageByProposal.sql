@@ -13,6 +13,7 @@ CREATE PROCEDURE UpdateCachedInstrumentUsageByProposal
 **
 **	Auth:	mem
 **	Date:	12/02/2013 mem - Initial Version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -20,7 +21,7 @@ CREATE PROCEDURE UpdateCachedInstrumentUsageByProposal
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

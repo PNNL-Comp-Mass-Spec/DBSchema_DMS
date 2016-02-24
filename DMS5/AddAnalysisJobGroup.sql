@@ -55,6 +55,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **			12/17/2015 mem - Now considering @specialProcessing when looking for existing jobs
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -79,7 +80,7 @@ CREATE Procedure AddAnalysisJobGroup
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

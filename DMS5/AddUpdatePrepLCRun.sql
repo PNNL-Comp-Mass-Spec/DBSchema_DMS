@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
+CREATE PROCEDURE dbo.AddUpdatePrepLCRun
 /****************************************************
 **
 **  Desc: 
@@ -21,10 +21,12 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 **			05/06/2010 grk - added storage path
 **			08/25/2011 grk - added QC field
 **			09/30/2011 grk - added datasets field
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int output,
 	@Tab varchar(128),
 	@Instrument varchar(128),
@@ -44,13 +46,13 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

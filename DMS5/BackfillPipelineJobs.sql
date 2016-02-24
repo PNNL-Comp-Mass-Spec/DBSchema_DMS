@@ -18,6 +18,7 @@ CREATE Procedure dbo.BackfillPipelineJobs
 **			04/10/2013 mem - Now looking up the Data Package ID using S_V_Pipeline_Jobs_Backfill
 **			01/02/2014 mem - Added support for PeptideAtlas staging jobs
 **			02/27/2014 mem - Now truncating dataset name to 90 characters if too long
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE Procedure dbo.BackfillPipelineJobs
 )
 AS
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myRowCount int	
 	declare @myError int
@@ -498,7 +499,7 @@ AS
 						       @Start,                  -- start
 						       @Finish,                 -- finish
 						       @AnalysisToolID,         -- analysisToolID
-						       'na',                    -- parmFileName
+						       'na',                -- parmFileName
 						       'na',                    -- settingsFileName
 						       'na',                    -- organismDBName
 						       @OrganismID,             -- organismID

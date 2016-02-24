@@ -18,6 +18,7 @@ CREATE PROCEDURE AddMACJob
 **			12/11/2012 jds - added DataPackageID to MapMACJobParameters
 **			01/11/2013 mem - Now aborting if MapMACJobParameters returns an error code
 **			04/10/2013 mem - Now passing @callingUser to MakeLocalJobInBroker
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE PROCEDURE AddMACJob
 	@callingUser VARCHAR(128) = ''
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int = 0
 	declare @myRowCount int = 0

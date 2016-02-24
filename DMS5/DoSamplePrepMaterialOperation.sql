@@ -14,9 +14,11 @@ CREATE Procedure DoSamplePrepMaterialOperation
 **
 **	Auth:	grk
 **	Date:	08/08/2008 grk - Initial version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 **
-** // GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
+**	Note:
+**		GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -28,7 +30,7 @@ CREATE Procedure DoSamplePrepMaterialOperation
 	@callingUser varchar (128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int	
 	declare @myRowCount int

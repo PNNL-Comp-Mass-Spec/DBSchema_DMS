@@ -21,6 +21,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			01/19/2015 mem - Fix ambiguous column reference
 **			11/18/2015 mem - Add Actual_CPU_Load
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -29,7 +30,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 	@message varchar(512)='' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int
@@ -413,7 +414,7 @@ As
 			                                         ) AS JobsWithDependencies			                              
 			                                ON MD.Script = JobsWithDependencies.Script AND
 			                                   JobsWithDependencies.Job > MD.Job 
-			                       ) AS MatchQ
+			           ) AS MatchQ
 			                  WHERE SimilarJobRank = 1 
 			     ) AS source
 			       ON Target.Job = Source.Job

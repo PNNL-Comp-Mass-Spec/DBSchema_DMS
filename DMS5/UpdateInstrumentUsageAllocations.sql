@@ -19,6 +19,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocations
 **			03/30/2012 mem - Added support for x="Comment" in the XML
 **						   - Now calling UpdateInstrumentUsageAllocationsWork to apply the updates
 **			03/31/2012 mem - Added @FiscalYear, @ProposalID, and @mode
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocations
 	@infoOnly tinyint = 0					-- Set to 1 to preview the changes that would be made
 )
 As
-	SET NOCOUNT ON 
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

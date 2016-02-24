@@ -28,6 +28,7 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **			12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
    	@callingUser varchar(128) = ''
 )
 AS
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

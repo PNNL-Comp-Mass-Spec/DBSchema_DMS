@@ -26,6 +26,7 @@ CREATE PROCEDURE dbo.UpdateDatasetInterval
 **			06/08/2012 grk - added lookup for @maxNormalInterval
 **			08/30/2012 grk - extended dataset update to include beginning of next month
 **			11/19/2013 mem - Now updating Interval_to_Next_DS in T_Dataset only if the newly computed interval differs from the stored interval
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE dbo.UpdateDatasetInterval
 	@infoOnly tinyint = 0
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

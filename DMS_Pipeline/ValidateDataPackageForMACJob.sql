@@ -24,6 +24,7 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 **			08/13/2013 mem - Now validating required analysis tools for the MAC_iTRAQ script
 **			08/14/2013 mem - Now validating datasets and jobs for script Global_Label-Free_AMT_Tag
 **			04/20/2014 mem - Now mentioning ReporterTol param file when MASIC counts are not correct for an Isobaric_Labeling or MAC_iTRAQ script
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 	@message VARCHAR(512) output
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int = 0
 	declare @myRowCount int = 0

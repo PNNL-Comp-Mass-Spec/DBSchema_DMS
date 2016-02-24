@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **			02/06/2013 mem - Added logic to prevent duplicate entries
 **			12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
 **			03/26/2015 mem - Update duplicate sample submission message
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -37,12 +38,11 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

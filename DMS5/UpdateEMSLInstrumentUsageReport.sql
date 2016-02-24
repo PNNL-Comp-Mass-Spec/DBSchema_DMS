@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
+CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 /****************************************************
 **
 **  Desc: 
@@ -24,20 +24,22 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          10/06/2012 grk - adding "updated by" date and user
 **			01/31/2013 mem - Now using IsNull(@message, '') when copying @message to @debug
 **			03/12/2014 grk - Allowed null [EMSL_Inst_ID] in #STAGING (OMCDA-1058)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@instrument VARCHAR(64),
 	@endDate DATETIME,
 	@message varchar(512) output
+)
 AS
-	SET NOCOUNT ON 
+	SET XACT_ABORT, NOCOUNT ON
 
 	DECLARE @myError int
-	SET @myError = 0
-
 	DECLARE @myRowCount int
+	SET @myError = 0
 	SET @myRowCount = 0
 	 
 	DECLARE @debug VARCHAR(12) = ''

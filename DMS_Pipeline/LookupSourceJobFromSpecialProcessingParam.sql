@@ -34,6 +34,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 **			07/12/2012 mem - Now looking up details for Job2 (if defined in the Special_Processing text)
 **			07/13/2012 mem - Now storing SourceJob2Dataset in #Tmp_Source_Job_Folders
 **			03/11/2013 mem - Now overriding @SourceJobResultsFolder if there is a problem determining the details for Job2
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -41,7 +42,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 	@PreviewSql tinyint = 0
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

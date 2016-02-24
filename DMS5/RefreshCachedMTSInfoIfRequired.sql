@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.RefreshCachedMTSInfoIfRequired
 **	Date:	02/02/2010 mem - Initial Version
 **			04/21/2010 mem - Now calling RefreshCachedMTSJobMappingPeptideDB' and RefreshCachedMTSJobMappingMTDBs
 **			11/21/2012 mem - Now updating job stats in T_MTS_PT_DBs_Cached and T_MTS_MT_DBs_Cached
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE dbo.RefreshCachedMTSInfoIfRequired
  	@message varchar(255) = '' output
 )
 As
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int
@@ -77,8 +78,7 @@ As
 		Set @MaxKnownDMSJob = 0
 		
 		SELECT @MaxKnownDMSJob = MAX(ID)
-		FROM T_Analysis_Job_ID
-		
+		FROM T_Analysis_Job_ID		
 							 
 		Set @Iteration = 1
 		While @Iteration <= 5

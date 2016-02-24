@@ -13,25 +13,27 @@ CREATE PROCEDURE dbo.ParseUsageText
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 03/02/2012 
-**    03/11/2012 grk - added OtherNotAvailable
-**    03/11/2012 grk - return commment without usage text
-**    09/18/2012 grk - added 'Operator' and 'PropUser' keywords
+**	Auth:	grk
+**	Date:	03/02/2012 
+**			03/11/2012 grk - added OtherNotAvailable
+**			03/11/2012 grk - return commment without usage text
+**			09/18/2012 grk - added 'Operator' and 'PropUser' keywords
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@comment VARCHAR(4096) output,
 	@usageXML XML output,
 	@message varchar(512) output
+)
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

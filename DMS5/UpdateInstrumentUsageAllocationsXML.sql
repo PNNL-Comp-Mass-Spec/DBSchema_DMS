@@ -32,6 +32,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocationsXML
 **          03/30/2012 grk - Added change command capability
 **			03/30/2012 mem - Added support for x="Comment" in the XML
 **						   - Now calling UpdateInstrumentUsageAllocationsWork to apply the updates
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -41,7 +42,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocationsXML
 	@infoOnly tinyint = 0					-- Set to 1 to preview the changes that would be made
 )
 As
-	SET NOCOUNT ON 
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

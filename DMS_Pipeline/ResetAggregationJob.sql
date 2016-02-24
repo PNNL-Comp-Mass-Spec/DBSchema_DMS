@@ -15,9 +15,10 @@ CREATE PROCEDURE dbo.ResetAggregationJob
 **			If the job has one or more failed steps, then leaves the Output Folder name unchanged but resets the failed steps 
 **
 **	Auth:	mem
-**			03/06/2013 mem - Initial version
+**	Date:	03/06/2013 mem - Initial version
 **			03/07/2013 mem - Now only updating failed job steps when not resetting the entire job
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE dbo.ResetAggregationJob
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

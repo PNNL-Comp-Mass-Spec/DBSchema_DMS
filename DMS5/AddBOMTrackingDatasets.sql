@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
+CREATE PROCEDURE dbo.AddBOMTrackingDatasets
 /****************************************************
 **
 **  Desc: 
@@ -18,7 +18,8 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
 **
 **    Auth: grk
 **    Date: 12/16/2012 
-**    12/16/2012 grk - initial release
+**			12/16/2012 grk - initial release
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -30,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
    	@callingUser VARCHAR(128)  = 'D3E154' -- Ron Moore
 )
 As
-	SET NOCOUNT ON 
+	Set XACT_ABORT, nocount on
 
 	DECLARE   	               
 		@myError INT = 0,

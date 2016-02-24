@@ -69,6 +69,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided=0 to ValidateAnalysisJobParameters
 **			10/09/2015 mem - Now allowing the request name and comment to be updated even if a request has associated jobs
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -93,7 +94,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
     @callingUser varchar(128)=''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

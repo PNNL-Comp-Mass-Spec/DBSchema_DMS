@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
+CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 /****************************************************
 **
 **  Desc: 
@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **          09/18/2012 grk - only do EMSL instrumet updates for EMLS instruments 
 **          10/06/2012 grk - removed update of EMSL usage report for previous month
 **			03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -37,7 +38,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 	@message varchar(512) = '' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

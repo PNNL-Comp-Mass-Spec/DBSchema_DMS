@@ -26,6 +26,7 @@ CREATE Procedure AddUpdateUser
 **			06/01/2012 mem - Added Try/Catch block
 **			06/05/2013 mem - Now calling AddUpdateUserOperations
 **			06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @Username)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -42,12 +43,11 @@ CREATE Procedure AddUpdateUser
 	@message varchar(512) output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

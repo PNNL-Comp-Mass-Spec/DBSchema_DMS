@@ -67,6 +67,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			08/19/2014 mem - Now copying @InstrumentName to @InstrumentGroup during the initial validation
 **			09/17/2014 mem - Now auto-updating @status to 'Active' if adding a request yet @status is null
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@requestIDForUpdate int = Null				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

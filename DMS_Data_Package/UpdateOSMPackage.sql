@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateOSMPackage]
+CREATE PROCEDURE dbo.UpdateOSMPackage
 /****************************************************
 **
 **  Desc: 
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateOSMPackage]
 **
 **  Auth:	grk
 **  Date:	07/08/2013 grk - Initial release
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -23,7 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateOSMPackage]
 	@callingUser VARCHAR(128) = ''
 )
 AS
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 	
 	DECLARE @myError int = 0
 	DECLARE @myRowCount int = 0

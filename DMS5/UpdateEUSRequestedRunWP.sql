@@ -17,6 +17,7 @@ CREATE Procedure dbo.UpdateEUSRequestedRunWP
 **
 **	Auth: 	mem
 **	Date: 	12/18/2015 mem - Initial version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -24,7 +25,7 @@ CREATE Procedure dbo.UpdateEUSRequestedRunWP
 	@InfoOnly tinyint = 0
 )
 AS
-	Set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

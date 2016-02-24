@@ -13,8 +13,9 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **
 **
 **  Auth: grk
-**  11/16/2010 grk - Initial release
-**	03/15/2011 dac - Modified to allow updating in HOLD mode
+**	Date:	11/16/2010 grk - Initial release
+**			03/15/2011 dac - Modified to allow updating in HOLD mode
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -29,7 +30,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 	@callingUser varchar(128) = ''
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

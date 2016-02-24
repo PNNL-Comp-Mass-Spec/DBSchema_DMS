@@ -22,6 +22,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			05/04/2015 mem - Added Process_ID
 **			11/20/2015 mem - Added ProgRunner_ProcessID and ProgRunner_CoreUsage
 **						   - Added parameter @debugMode
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -30,7 +31,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
     @debugMode tinyint = 0
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

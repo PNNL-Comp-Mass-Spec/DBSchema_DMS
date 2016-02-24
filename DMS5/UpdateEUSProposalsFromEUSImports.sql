@@ -20,14 +20,15 @@ CREATE Procedure dbo.UpdateEUSProposalsFromEUSImports
 **			05/02/2011 mem - Now changing proposal state_ID to 2=Active if the proposal is present in V_EUS_Import_Proposals but the proposal's state in T_EUS_Proposals is not 2=Active or 4=No Interest
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			01/27/2012 mem - Added support for state 5=Permanently Active
-**			03/20/2013 mem - Changed from Call_Type to Proposal_Type
+**			03/20/2013 mem - Changed from Call_Type to Proposal_Type\
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
 	@message varchar(512)='' output
 )
 As
-	Set Nocount On
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

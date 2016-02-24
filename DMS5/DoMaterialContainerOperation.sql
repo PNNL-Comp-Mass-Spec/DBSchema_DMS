@@ -16,6 +16,7 @@ CREATE Procedure DoMaterialContainerOperation
 **	Date:	07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **			10/01/2009 mem - Expanded error message
 **			08/19/2010 grk - try-catch for error handling
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -27,12 +28,11 @@ CREATE Procedure DoMaterialContainerOperation
 	@callingUser varchar (128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

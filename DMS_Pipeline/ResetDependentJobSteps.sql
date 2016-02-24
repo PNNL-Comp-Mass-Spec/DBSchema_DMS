@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 **			05/23/2011 mem - Now checking for target steps having state 0 or 1 in addition to 2 or 4
 **			07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -24,7 +25,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

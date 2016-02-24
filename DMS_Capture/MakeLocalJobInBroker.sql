@@ -17,6 +17,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			05/25/2011 mem - Updated call to CreateStepsForJob and removed Priority from #Job_Steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			05/29/2015 mem - Add support for column Capture_Subfolder
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -30,7 +31,7 @@ CREATE PROCEDURE MakeLocalJobInBroker
 	@message varchar(512) output
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

@@ -13,9 +13,10 @@ CREATE PROCEDURE UpdateDataPackageItemsXML
 **
 **	Parameters:
 **
-**    Auth: grk
-**          06/10/2009 grk - initial release
+**  Auth:	grk
+**  Date:	06/10/2009 grk - initial release
 **          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE UpdateDataPackageItemsXML
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

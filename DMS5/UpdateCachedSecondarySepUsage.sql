@@ -13,6 +13,7 @@ CREATE PROCEDURE UpdateCachedSecondarySepUsage
 **
 **	Auth:	mem
 **	Date:	11/18/2015 mem - Initial Version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -20,7 +21,7 @@ CREATE PROCEDURE UpdateCachedSecondarySepUsage
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

@@ -14,7 +14,8 @@ CREATE PROCEDURE ReportDatasetInstrumentRunTime
 **
 **	Auth:	grk
 **	Date:	05/26/2011 grk - initial release
-**			01/31/2012 grk - Added Interval column to output and made separaate interval rows an option
+**			01/31/2012 grk - Added Interval column to output and made separate interval rows an option
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -25,7 +26,7 @@ CREATE PROCEDURE ReportDatasetInstrumentRunTime
 	@message varchar(256) output
 )
 AS
-	SET NOCOUNT ON
+	Set XACT_ABORT, nocount on
 
 	declare @myError int = 0
 	
@@ -115,7 +116,7 @@ AS
 	END CATCH
 	
 	RETURN @myError
- 
+
 GO
 GRANT EXECUTE ON [dbo].[ReportDatasetInstrumentRunTime] TO [DMS_SP_User] AS [dbo]
 GO

@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 **	Date:	07/03/2012 
 **			07/19/2012 grk - Extended interval update range around dataset date
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null instead of 'na'
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -37,7 +38,7 @@ CREATE PROCEDURE AddUpdateTrackingDataset
    	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

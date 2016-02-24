@@ -14,35 +14,37 @@ CREATE PROCEDURE dbo.GetMonthlyInstrumentUsageReport
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 03/06/2012 
-**    03/06/2012 grk - changed @mode to @outputFormat
-**    03/06/2012 grk - added long interval comment to 'detail' output format
-**    03/10/2012 grk - added '@OtherNotAvailable'
-**    03/15/2012 grk - added 'report' @outputFormat
-**    03/20/2012 grk - added users to 'report' @outputFormat
-**    03/21/2012 grk - added operator ID for ONSITE interval to 'report' @outputFormat
-**    08/21/2012 grk - added code to pull comment from dataset
-**    08/28/2012 grk - added code to clear comment from ONSITE capability type
-**    08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
-**    09/11/2012 grk - added percent column to 'rollup' mode
-**    09/18/2012 grk - handling "Operator" and "PropUser" prorata comment fields
+**	Auth:	grk
+**	Date:	03/06/2012 
+**			03/06/2012 grk - changed @mode to @outputFormat
+**			03/06/2012 grk - added long interval comment to 'detail' output format
+**			03/10/2012 grk - added '@OtherNotAvailable'
+**			03/15/2012 grk - added 'report' @outputFormat
+**			03/20/2012 grk - added users to 'report' @outputFormat
+**			03/21/2012 grk - added operator ID for ONSITE interval to 'report' @outputFormat
+**			08/21/2012 grk - added code to pull comment from dataset
+**			08/28/2012 grk - added code to clear comment from ONSITE capability type
+**			08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
+**			09/11/2012 grk - added percent column to 'rollup' mode
+**			09/18/2012 grk - handling "Operator" and "PropUser" prorata comment fields
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@instrument VARCHAR(64),
 	@year VARCHAR(12),
 	@month VARCHAR(12),
 	@outputFormat varchar(12) = 'details', -- 'details', 'rollup', 'check', 'report' 
 	@message varchar(512) output
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

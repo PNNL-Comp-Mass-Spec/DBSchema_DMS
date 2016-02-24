@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE PROCEDURE [dbo].[LocalErrorHandler]
+CREATE PROCEDURE dbo.LocalErrorHandler
 /****************************************************
 ** 
 **	Desc:	This procedure should be called from within a Try...Catch block
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
 **	Auth:	mem
 **	Date:	11/30/2006
 **			01/03/2008 mem - Added parameter @duplicateEntryHoldoffHours
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -31,7 +32,7 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 )
 As
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 	
 	declare @myRowCount int
 	declare @myError int

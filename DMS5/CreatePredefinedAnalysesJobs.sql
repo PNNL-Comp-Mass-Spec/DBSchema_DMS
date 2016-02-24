@@ -31,6 +31,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			05/03/2012 mem - Added support for the Special Processing field
 **			08/02/2013 mem - Removed extra semicolon in status message
 **			06/24/2015 mem - Now passing @infoOnly to AddUpdateAnalysisJob
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 	@JobsCreated int = 0 output
 )
 As
-	Set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

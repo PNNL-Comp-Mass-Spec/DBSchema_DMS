@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[UpdateMTSCachedDataStatus]
+CREATE PROCEDURE dbo.UpdateMTSCachedDataStatus
 /****************************************************
 **
 **	Desc:	Updates the data in T_MTS_Cached_Data_Status using MTS
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[UpdateMTSCachedDataStatus]
 **
 **	Auth:	mem
 **	Date:	02/05/2010 mem - Initial Version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateMTSCachedDataStatus]
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

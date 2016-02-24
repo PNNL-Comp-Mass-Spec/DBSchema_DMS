@@ -27,6 +27,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **						   - No longer changing job state to 20; ResetAggregationJob will update the job state
 **			04/10/2013 mem - Now passing @CallingUser to MakeLocalJobInBroker
 **			07/23/2013 mem - Now calling PostLogEntry only once in the Catch block
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -45,11 +46,10 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 	@DebugMode tinyint = 0
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int
-
 	set @myError = 0
 	set @myRowCount = 0
 	

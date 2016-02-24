@@ -12,6 +12,7 @@ CREATE PROCEDURE dbo.MasterUpdateProteinDatabase
 **
 **	Auth:	mem
 **	Date:	09/13/2007
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -19,7 +20,7 @@ CREATE PROCEDURE dbo.MasterUpdateProteinDatabase
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

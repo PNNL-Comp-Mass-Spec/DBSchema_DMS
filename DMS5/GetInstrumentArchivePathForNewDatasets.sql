@@ -26,6 +26,7 @@ CREATE PROCEDURE GetInstrumentArchivePathForNewDatasets
 **	Date:	05/11/2011 mem - Initial Version
 **			05/12/2011 mem - Added @DatasetID and @AutoSwitchActiveArchive
 **			05/16/2011 mem - Now filtering T_Archive_Path using only AP_Function IN ('Active', 'Old') when auto-defining the archive path
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -35,7 +36,7 @@ CREATE PROCEDURE GetInstrumentArchivePathForNewDatasets
 	@infoOnly tinyint = 0
 )
 AS
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int	
 	Declare @myError int

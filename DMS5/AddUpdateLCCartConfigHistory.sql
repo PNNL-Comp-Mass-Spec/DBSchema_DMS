@@ -16,7 +16,8 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 **
 **    Auth: grk
 **    Date: 03/09/2011 
-**          03/26/2012 grk - added "PostedBy"
+**          03/26/2012 grk - added @PostedBy
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -31,7 +32,7 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

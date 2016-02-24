@@ -20,6 +20,7 @@ CREATE Procedure dbo.UpdateUsersFromWarehouse
 **	Date: 	03/25/2013 mem - Initial version
 **			06/07/2013 mem - Removed U_NetID since U_Prn tracks the username
 **						   - Added column U_Payroll to track the Payroll number
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE Procedure dbo.UpdateUsersFromWarehouse
 	@message varchar(512)='' output
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

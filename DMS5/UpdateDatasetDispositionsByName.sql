@@ -20,6 +20,7 @@ CREATE Procedure UpdateDatasetDispositionsByName
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			02/20/2013 mem - Expanded @message to varchar(1024)
 **			02/21/2013 mem - Now requiring @recycleRequest to be yes or no
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE Procedure UpdateDatasetDispositionsByName
    	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

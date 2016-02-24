@@ -13,12 +13,13 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **
 **	Parameters:
 **
-**    Auth: grk
-**    Date: 05/21/2009
+**	Auth:	grk
+**	Date:	05/21/2009
 **          06/10/2009 grk - changed size of item list to max
 **          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
 **          03/07/2012 grk - changed data type of @itemList from varchar(max) to text
 **			12/31/2013 mem - Added support for EUS Proposals
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -31,7 +32,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

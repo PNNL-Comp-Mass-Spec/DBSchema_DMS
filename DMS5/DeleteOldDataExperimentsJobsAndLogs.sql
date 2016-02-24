@@ -37,6 +37,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **			02/28/2012 mem - Added @MaxItemsToProcess
 **			05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations, since deprecated
 **			10/28/2015 mem - Added T_Prep_LC_Run_Dataset and removed T_Analysis_Job_Annotations and T_Dataset_Annotations
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 	@message varchar(255) = '' OUTPUT
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myRowCount int	
 	declare @myError int

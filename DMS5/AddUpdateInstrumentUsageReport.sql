@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport] 
+CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport 
 /****************************************************
 **
 **  Desc: 
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 **    Auth: grk
 **    Date: 03/27/2012 
 **          09/11/2012 grk - changed type of @Start
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -39,7 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

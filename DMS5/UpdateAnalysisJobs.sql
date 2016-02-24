@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateAnalysisJobs]
+CREATE Procedure dbo.UpdateAnalysisJobs
 /****************************************************
 **
 **	Desc:
@@ -41,6 +41,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobs]
 **						   - Now calls UpdateAnalysisJobsWork to do the work
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobs]
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

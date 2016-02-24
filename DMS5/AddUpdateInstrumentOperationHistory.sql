@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **
 **    Auth: grk
 **    Date: 05/20/2010
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -28,12 +29,11 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

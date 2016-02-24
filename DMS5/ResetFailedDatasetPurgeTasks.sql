@@ -17,6 +17,7 @@ CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 **	Auth:	mem
 **	Date:	07/12/2010 mem - Initial version
 **			12/13/2010 mem - Changed @ResetHoldoffHours from tinyint to real
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 	@ResetCount int = 0 output				-- Number of tasks reset
 )
 As
-	Set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

@@ -20,6 +20,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **	Date:	10/04/2011 mem - Initial version
 **			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **			11/21/2012 mem - Removed call to MoveAnalysisLogEntries
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 	@EventLogRetentionIntervalDays int = 365
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

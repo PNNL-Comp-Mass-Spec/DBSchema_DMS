@@ -12,11 +12,13 @@ CREATE Procedure AddUpdateLCColumn
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 12/9/2003
-**		08/19/2010 grk - try-catch for error handling
+**	Auth:	grk
+**	Date:	12/09/2003
+**			08/19/2010 grk - try-catch for error handling
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
+(
 	@columnNumber varchar (128),
 	@packingMfg varchar (64),
 	@packingType varchar (64),
@@ -31,13 +33,13 @@ CREATE Procedure AddUpdateLCColumn
 	--
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output
+)
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

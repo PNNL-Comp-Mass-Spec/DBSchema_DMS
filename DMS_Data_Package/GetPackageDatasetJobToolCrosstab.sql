@@ -15,6 +15,7 @@ CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
 **
 **	Auth:	grk
 **	Date:	05/26/2010 grk - Initial release
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -25,7 +26,7 @@ CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	set @myError = 0

@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.ResetJobAndSharedResults
 **			07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **			04/13/2012 mem - Now querying T_Job_Steps_History when looking for shared result folders
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE dbo.ResetJobAndSharedResults
 )
 As
 
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

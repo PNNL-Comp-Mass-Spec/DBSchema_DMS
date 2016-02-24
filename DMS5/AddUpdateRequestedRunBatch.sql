@@ -27,6 +27,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **						   - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
 **			05/14/2013 mem - Expanded @RequestedCompletionDate to varchar(32) to support long dates of the form 'Jan 29 2010 12:00:00:000AM'
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -44,12 +45,11 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 	@message varchar(512) output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''

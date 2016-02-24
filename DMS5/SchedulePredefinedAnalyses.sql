@@ -27,6 +27,7 @@ CREATE PROCEDURE SchedulePredefinedAnalyses
 **			08/26/2010 grk - Gutted original and moved guts to CreatePredefinedAnalysesJobs - now just entering dataset into work queue
 **			05/24/2011 mem - Added back support for @infoOnly
 **			03/27/2013 mem - No longer storing dataset name in T_Predefined_Analysis_Scheduling_Queue
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -38,7 +39,7 @@ CREATE PROCEDURE SchedulePredefinedAnalyses
 	@InfoOnly tinyint = 0
 )
 As
-	Set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

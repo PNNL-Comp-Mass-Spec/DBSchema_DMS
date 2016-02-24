@@ -35,6 +35,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			10/03/2011 grk - added try-catch error handling
 **			11/10/2011 grk - Added Tab field
 **			11/15/2011 grk - added handling for experiment alkylation field
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -57,10 +58,10 @@ CREATE PROCEDURE dbo.AddExperimentFractions
    	@callingUser varchar(128) = ''
 )
 AS
-	SET NOCOUNT ON
-	declare @myError int
-	set @myError = 0
-	declare @myRowCount int
+	Set XACT_ABORT, nocount on
+	
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	declare @fractionCount int
 	set @fractionCount = 0

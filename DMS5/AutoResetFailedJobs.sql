@@ -31,6 +31,7 @@ CREATE Procedure AutoResetFailedJobs
 **						   - Added parameter @StepToolFilter
 **			11/19/2015 mem - Preventing retry of jobs with a failed DataExtractor job with a message like "7.7% of the peptides have a mass error over 6.0 Da"
 **			11/19/2015 mem - Now auto-resetting jobs with a DataExtractor step reporting "Not enough free memory"
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -41,7 +42,8 @@ CREATE Procedure AutoResetFailedJobs
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

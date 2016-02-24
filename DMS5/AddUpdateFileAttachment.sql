@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **  Date:	03/30/2011 
 **			03/30/2011 grk - don't allow duplicate entries
 **			12/16/2011 mem - Convert null descriptions to empty strings
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

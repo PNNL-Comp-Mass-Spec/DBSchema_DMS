@@ -14,6 +14,7 @@ CREATE PROCEDURE RefreshCachedMTDBs
 **	Auth:	mem
 **	Date:	02/05/2010 mem - Initial Version
 **			10/15/2012 mem - Now updating Peptide_DB and Peptide_DB_Count
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -21,7 +22,7 @@ CREATE PROCEDURE RefreshCachedMTDBs
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int
 	Declare @myError int

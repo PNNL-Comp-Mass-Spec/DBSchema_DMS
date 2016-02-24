@@ -23,14 +23,15 @@ CREATE Procedure dbo.UpdateEUSUsersFromEUSImports
 **			04/01/2011 mem - No longer removing entries from T_EUS_Proposal_Users; now changing to state 5="No longer associated with proposal"
 **						   - Added support for state 4="Permanently associated with proposal"
 **			09/02/2011 mem - Now calling PostUsageLogEntry
-**			03/19/2012 mem - Now populating HID
+**			03/19/2012 mem - Now populating T_EUS_Users.HID
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
 	@message varchar(512)='' output
 )
 As
-	Set Nocount On
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

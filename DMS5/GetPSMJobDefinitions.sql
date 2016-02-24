@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetPSMJobDefinitions]
+CREATE PROCEDURE dbo.GetPSMJobDefinitions
 /****************************************************
 **
 **	Desc: Returns sets of parameters for setting up
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[GetPSMJobDefinitions]
 **	Date:	11/15/2012 grk - Initial version
 **			11/20/2012 mem - Now returning organism name, protein collection list, and protein options list
 **			11/20/2012 grk - removed extra RETURN that was blocking error return
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE [dbo].[GetPSMJobDefinitions]
     @message varchar(512) output
 )
 AS
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myError int = 0
 	Declare @myRowCount int = 0

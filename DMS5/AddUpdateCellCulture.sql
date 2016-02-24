@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			11/15/2012 mem - Renamed parameter @ownerPRN to @contactPRN; renamed column CC_Owner_PRN to CC_Contact_PRN
 **						   - Added new fields to support peptide standards
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int

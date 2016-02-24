@@ -17,6 +17,7 @@ CREATE PROCEDURE UpdateContext
 **			01/08/2010 grk - Added call to MakeNewArchiveJobsFromDMS
 **			05/25/2011 mem - Changed default value for @bypassDMS to 0
 **						   - Added call to RetryCaptureForDMSResetJobs
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -29,7 +30,7 @@ CREATE PROCEDURE UpdateContext
 	@DebugMode tinyint = 0
 )
 AS
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

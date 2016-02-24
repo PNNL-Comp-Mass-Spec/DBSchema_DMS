@@ -18,6 +18,7 @@ CREATE Procedure MoveDatasetsToAutoDefinedStoragePath
 **	Date:	05/12/2011 mem - Initial version
 **			05/14/2011 mem - Updated the content of MoveCmd
 **			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE Procedure MoveDatasetsToAutoDefinedStoragePath
 	@message varchar(256) = ''
 )
 AS
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 
 	Declare @myRowCount int	
 	Declare @myError int

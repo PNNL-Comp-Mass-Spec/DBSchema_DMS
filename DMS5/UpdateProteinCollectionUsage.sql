@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 **	Date:	09/11/2012 mem - Initial version
 **			11/20/2012 mem - Now updating Job_Usage_Count_Last12Months
 **			08/14/2014 mem - Fixed bug updating Job_Usage_Count_Last12Months (occurred when a protein collection had not been used in the last year)
+**			02/23/2016 mem - Add set XACT_ABORT on
 **
 *****************************************************/
 (
@@ -22,7 +23,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 )
 AS
 
-	Set NoCount On
+	Set XACT_ABORT, nocount on
 	
 	Declare @myRowCount int
 	Declare @myError int

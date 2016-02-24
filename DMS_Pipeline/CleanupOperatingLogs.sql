@@ -15,6 +15,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **
 **	Auth:	mem
 **	Date:	10/04/2011 mem - Initial version
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -22,7 +23,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 	@LogRetentionIntervalDays int = 365	
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 	
 	declare @myError int
 	declare @myRowCount int

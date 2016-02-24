@@ -14,6 +14,7 @@ CREATE PROCEDURE DeleteProteinCollection
 **
 **	Auth:	mem
 **	Date:	06/24/2008
+**			02/23/2016 mem - Add set XACT_ABORT on
 **    
 *****************************************************/
 (
@@ -21,7 +22,7 @@ CREATE PROCEDURE DeleteProteinCollection
 	@message varchar(512)='' output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
