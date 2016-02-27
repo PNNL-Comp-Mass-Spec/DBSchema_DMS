@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE AddUpdateOrganisms
 /****************************************************
 **
@@ -34,6 +33,7 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
 **			09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			02/26/2016 mem - Check for @orgName containing a space
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -106,6 +106,11 @@ As
 	if Len(@orgName) < 1
 	begin
 		RAISERROR ('Organism Name cannot be blank', 11, 0)
+	end
+
+	if @orgName Like '% %'
+	begin
+		RAISERROR ('Organism Name cannot contain spaces', 11, 0)
 	end
 
 	Set @orgDBName = IsNull(@orgDBName, '')

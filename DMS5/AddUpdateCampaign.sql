@@ -33,7 +33,8 @@ CREATE Procedure AddUpdateCampaign
 **			               - Now calling AlterEventLogEntryUser for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
 **			10/23/2012 mem - Now validating that @FractionEMSLFunded is a number between 0 and 1 using a real (since conversion of 100 to Decimal(3, 2) causes an overflow error)
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add set XACT_ABORT on\
+**			02/26/2016 mem - Define a default for @FractionEMSLFunded
 **    
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE Procedure AddUpdateCampaign
 	@Organisms varchar(256),
 	@ExperimentPrefixes varchar(256),
 	@DataReleaseRestrictions varchar(128),
-	@FractionEMSLFunded varchar(24),
+	@FractionEMSLFunded varchar(24) = '0',
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
    	@callingUser varchar(128) = ''
@@ -382,7 +383,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User] AS [dbo]
