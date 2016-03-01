@@ -8,6 +8,8 @@ CREATE PROCEDURE dbo.AddDataFolderCreateTask
 **
 **	Desc: 
 **		Adds a new entry to T_Data_Folder_Create_Queue
+**		The Package Folder Create Manager (aka PkgFolderCreateManager)
+**		examines this table to look for folders that need to be created
 **
 **	Return values: 0:  success, otherwise, error code
 **
