@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.AddUpdateRequestedRun
+CREATE Procedure [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -68,6 +67,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			09/17/2014 mem - Now auto-updating @status to 'Active' if adding a request yet @status is null
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			02/29/2016 mem - Now looking up setting for 'RequestedRunRequireWorkpackage' using T_MiscOptions
 **
 *****************************************************/
 (
@@ -517,6 +517,16 @@ As
 	---------------------------------------------------
 
 	Declare @allowNoneWP tinyint = @AutoPopulateUserListIfBlank
+	Declare @requireWP tinyint = 1
+	
+	SELECT @requireWP = Value 
+	FROM T_MiscOptions 
+	WHERE Name = 'RequestedRunRequireWorkpackage'
+	
+	If @requireWP = 0
+	Begin
+		Set @allowNoneWP = 1
+	End
 	
 	exec @myError = ValidateWP
 						@workPackage,
@@ -698,7 +708,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]

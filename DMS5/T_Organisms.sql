@@ -27,6 +27,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_RowVersion] [timestamp] NOT NULL,
 	[NEWT_Identifier] [int] NULL,
 	[NEWT_ID_List] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[NCBI_Taxonomy_ID] [int] NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY CLUSTERED 
 (
 	[Organism_ID] ASC
