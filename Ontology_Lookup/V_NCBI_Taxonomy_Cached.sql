@@ -1,0 +1,16 @@
+/****** Object:  View [dbo].[V_NCBI_Taxonomy_Cached] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [V_NCBI_Taxonomy_Cached]
+AS
+SELECT [Tax_ID]
+      ,[Name]
+      ,[Rank]
+      ,[Parent_Tax_ID]
+      ,[Synonyms]
+      ,[Synonym_List]
+  FROM [dbo].[T_NCBI_Taxonomy_Cached]
+
+GO

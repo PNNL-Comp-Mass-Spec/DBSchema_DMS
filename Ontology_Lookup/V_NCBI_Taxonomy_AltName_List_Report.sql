@@ -4,14 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_NCBI_Taxonomy_AltName_List_Report]
 AS
 SELECT PrimaryName.Tax_ID,
        PrimaryName.Name AS Scientific_Name,
-       NameList.Name_Class,
-       NameList.Name,
-       NODES.Rank,
-       NODES.Parent_Tax_ID,
+       NameList.Name_Class AS Synonym_Type,
+       NameList.Name AS [Synonym],
+       [Nodes].[Rank],
+       [Nodes].Parent_Tax_ID,
        ParentNodeName.Name AS Parent_Name,
        Division.Division_Name AS Division
 FROM T_NCBI_Taxonomy_Names NameList
@@ -20,13 +21,13 @@ FROM T_NCBI_Taxonomy_Names NameList
           PrimaryName.Name_Class = 'scientific name'
      INNER JOIN T_NCBI_Taxonomy_Name_Class NameClass
        ON NameList.Name_Class = NameClass.Name_Class
-     INNER JOIN T_NCBI_Taxonomy_Nodes NODES
-       ON PrimaryName.Tax_ID = NODES.Tax_ID
+     INNER JOIN T_NCBI_Taxonomy_Nodes [Nodes]
+       ON PrimaryName.Tax_ID = [Nodes].Tax_ID
      INNER JOIN T_NCBI_Taxonomy_Names ParentNodeName
-       ON NODES.Parent_Tax_ID = ParentNodeName.Tax_ID AND
+       ON [Nodes].Parent_Tax_ID = ParentNodeName.Tax_ID AND
           ParentNodeName.Name_Class = 'scientific name'
      INNER JOIN T_NCBI_Taxonomy_Division Division
-       ON NODES.Division_ID = Division.Division_ID
+       ON [Nodes].Division_ID = Division.Division_ID
 WHERE (NameClass.Sort_Weight BETWEEN 2 AND 19)
 
 

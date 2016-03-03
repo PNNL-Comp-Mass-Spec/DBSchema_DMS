@@ -4,24 +4,26 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
--- List Report
 CREATE VIEW [dbo].[V_NCBI_Taxonomy_Detail_Report]
 AS
 SELECT [Nodes].Tax_ID,
        NodeNames.Name,
 	   NodeNames.Unique_Name, 
-       Nodes.Comments,
-       [Nodes].[Rank],
+	   SynonymStats.Synonyms,
+	   SynonymStats.Synonym_List,
+       [Nodes].Comments,
        [Nodes].Parent_Tax_ID,
        ParentNodeName.Name AS Parent_Name,
+	   dbo.GetTaxIDChildCount([Nodes].Tax_ID) AS Children,
        [Nodes].EMBL_Code,
        Division.Division_Name AS Division,
+	   dbo.GetTaxIDTaxonomyList([Nodes].Tax_ID) AS Taxonomy_List, 
        [Nodes].Genetic_Code_ID,
        GenCode.Genetic_Code_Name,
        [Nodes].Mito_Genetic_Code_ID,
-       GenCodeMit.Genetic_Code_Name AS Mito_GenCodeName,
-       [Nodes].GenBank_Hidden
+       GenCodeMit.Genetic_Code_Name AS Mito_GenCodeName,	   
+       [Nodes].GenBank_Hidden,
+	   [Nodes].[Rank]
 FROM T_NCBI_Taxonomy_Names NodeNames
      INNER JOIN T_NCBI_Taxonomy_Nodes [Nodes]
        ON NodeNames.Tax_ID = [Nodes].Tax_ID
@@ -36,8 +38,9 @@ FROM T_NCBI_Taxonomy_Names NodeNames
           ParentNodeName.Name_Class = 'scientific name'
      INNER JOIN T_NCBI_Taxonomy_GenCode GenCodeMit
        ON [Nodes].Mito_Genetic_Code_ID = GenCodeMit.Genetic_Code_ID
+	 LEFT OUTER JOIN T_NCBI_Taxonomy_Cached AS SynonymStats
+       ON [Nodes].Tax_ID = SynonymStats.Tax_ID
 WHERE (NodeNames.Name_Class = 'scientific name')
-
 
 
 GO
