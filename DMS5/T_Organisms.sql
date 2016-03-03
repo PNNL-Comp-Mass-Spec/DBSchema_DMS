@@ -25,7 +25,6 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_Mito_DNA_Translation_Table_ID] [int] NULL,
 	[OG_Active] [tinyint] NULL,
 	[OG_RowVersion] [timestamp] NOT NULL,
-	[NEWT_Identifier] [int] NULL,
 	[NEWT_ID_List] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[NCBI_Taxonomy_ID] [int] NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY CLUSTERED 
@@ -78,6 +77,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
 For Insert
 AS
@@ -88,14 +88,16 @@ AS
 				Organism_ID, OG_name, OG_description, OG_Short_Name, 
 				OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
 				OG_Family, OG_Genus, OG_Species, OG_Strain, 
-				NEWT_Identifier, NEWT_ID_List,
+				NEWT_ID_List, NCBI_Taxonomy_ID,
 				OG_Active, Entered, Entered_By)
 	SELECT 	Organism_ID, OG_name, OG_description, OG_Short_Name, 
 			OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
 			OG_Family, OG_Genus, OG_Species, OG_Strain, 
-			NEWT_Identifier, NEWT_ID_List,
+			NEWT_ID_List, NCBI_Taxonomy_ID,
 			OG_Active, GetDate(), SYSTEM_USER
 	FROM inserted
+
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
@@ -103,6 +105,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
 For Update
 AS
@@ -120,20 +123,21 @@ AS
 		update(OG_Genus) or
 		update(OG_Species) or
 		update(OG_Strain) or
-		update(NEWT_Identifier) or
-		update(NEWT_ID_List) or
+		update(NEWT_ID_List) OR
+		update(NCBI_Taxonomy_ID) or
 		update(OG_Active)
 		INSERT INTO T_Organisms_Change_History (
 					Organism_ID, OG_name, OG_description, OG_Short_Name, 
 					OG_Domain, OG_Kingdom, OG_Phylum, OG_Class, OG_Order, 
 					OG_Family, OG_Genus, OG_Species, OG_Strain, 
-					NEWT_Identifier, NEWT_ID_List,
+					NEWT_ID_List, NCBI_Taxonomy_ID,
 					OG_Active, Entered, Entered_By)
 		SELECT 	inserted.Organism_ID, inserted.OG_name, inserted.OG_description, inserted.OG_Short_Name, 
 				inserted.OG_Domain, inserted.OG_Kingdom, inserted.OG_Phylum, inserted.OG_Class, inserted.OG_Order, 
 				inserted.OG_Family, inserted.OG_Genus, inserted.OG_Species, inserted.OG_Strain, 
-				inserted.NEWT_Identifier, inserted.NEWT_ID_List,
+				inserted.NEWT_ID_List, inserted.NCBI_Taxonomy_ID,
 				inserted.OG_Active, GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
+
 
 GO

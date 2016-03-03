@@ -21,6 +21,7 @@ CREATE TABLE [dbo].[T_Organisms_Change_History](
 	[OG_Active] [tinyint] NULL,
 	[NEWT_Identifier] [int] NULL,
 	[NEWT_ID_List] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[NCBI_Taxonomy_ID] [int] NULL,
 	[Entered] [datetime] NOT NULL,
 	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Organisms_Change_History] PRIMARY KEY CLUSTERED 

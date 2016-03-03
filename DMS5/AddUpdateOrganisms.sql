@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateOrganisms
+CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 /****************************************************
 **
 **  Desc: Adds new or edits existing Organisms
@@ -34,6 +34,9 @@ CREATE PROCEDURE AddUpdateOrganisms
 **			09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			02/26/2016 mem - Check for @orgName containing a space
+**			03/01/2016 mem - Added @NCBITaxonomyID
+**			03/02/2016 mem - Added @AutoDefineTaxonomy
+**						   - Removed parameter @NEWTIdentifier since superseded by @NCBITaxonomyID
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -56,10 +59,11 @@ CREATE PROCEDURE AddUpdateOrganisms
 	@orgDNATransTabID varchar(6), 
 	@orgMitoDNATransTabID varchar(6),
 	@orgActive varchar(3),
-	@NEWTIdentifier int,
 	@NEWTIDList varchar(255),
+	@NCBITaxonomyID int,
+	@AutoDefineTaxonomy varchar(12),	-- 'Yes', or 'No'
 	@ID int output,
-	@mode varchar(12) = 'add', -- or 'update'
+	@mode varchar(12) = 'add',			-- 'add' or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -141,29 +145,21 @@ As
 	Set @orgSpecies = IsNull(@orgSpecies, '')
 	Set @orgStrain = IsNull(@orgStrain, '')
 	
-	Set @ID = IsNull(@ID, 0)
+	Set @AutoDefineTaxonomy = IsNull(@AutoDefineTaxonomy, 'No')
 	
-	If IsNull(@NEWTIdentifier, 0) = 0
-		Set @NEWTIdentifier = null
-	Else
-	Begin
-		If Not Exists (Select * From S_V_CV_NEWT Where identifier = Convert(varchar(32), @NEWTIdentifier))
-		Begin
-			Set @msg = 'Invalid NEWT ID "' + Convert(varchar(32), @NEWTIdentifier) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
-			RAISERROR (@msg, 11, 3)
-		End
-	End
+	-- Organism ID
+	Set @ID = IsNull(@ID, 0)
 	
 	Set @NEWTIDList = ISNULL(@NEWTIDList, '')
 	If LEN(@NEWTIDList) > 0
 	Begin
 		CREATE TABLE #NEWTIDs (
-			NEWT_ID_Text varchar(64),
+			NEWT_ID_Text varchar(24),
 			NEWT_ID int NULL
 		)
 		
 		INSERT INTO #NEWTIDs (NEWT_ID_Text)
-		SELECT Value
+		SELECT Cast(Value as varchar(24))
 		FROM dbo.udfParseDelimitedList(@NEWTIDList, ',')
 		WHERE IsNull(Value, '') <> ''
 		
@@ -193,6 +189,40 @@ As
 			RAISERROR (@msg, 11, 3)
 		End
 		
+	End
+
+	If IsNull(@NCBITaxonomyID, 0) = 0
+		Set @NCBITaxonomyID = null
+	Else
+	Begin
+		If Not Exists (Select * From [S_V_NCBI_Taxonomy_Cached] Where Tax_ID = @NCBITaxonomyID)
+		Begin
+			Set @msg = 'Invalid NCBI Taxonomy ID "' + Convert(varchar(24), @NCBITaxonomyID) + '"; see http://dms2.pnl.gov/ncbi_taxonomy/report'
+			RAISERROR (@msg, 11, 3)
+		End
+	End
+	
+	If @AutoDefineTaxonomy Like 'Y%' And IsNull(@NCBITaxonomyID, 0) > 0
+	Begin
+	
+		---------------------------------------------------
+		-- Try to auto-update the taxonomy information
+		-- Existing values are preserved if matches are not found
+		---------------------------------------------------
+		
+		EXEC GetTaxonomyValueByTaxonomyID 
+				@NCBITaxonomyID,
+				@orgDomain=@orgDomain output,
+				@orgKingdom=@orgKingdom output,
+				@orgPhylum=@orgPhylum output,
+				@orgClass=@orgClass output,
+				@orgOrder=@orgOrder output,
+				@orgFamily=@orgFamily output,
+				@orgGenus=@orgGenus output,
+				@orgSpecies=@orgSpecies output,
+				@orgStrain=@orgStrain output,
+				@previewResults = 0
+			
 	End
 	
 	---------------------------------------------------
@@ -359,8 +389,8 @@ As
 			OG_DNA_Translation_Table_ID, 
 			OG_Mito_DNA_Translation_Table_ID,
 			OG_Active,
-			NEWT_Identifier,
-			NEWT_ID_List
+			NEWT_ID_List,
+			NCBI_Taxonomy_ID
 		) VALUES (
 			@orgName, 
 			@orgDBName, 
@@ -380,8 +410,8 @@ As
 			@iOrgDNATransTabID, 
 			@iOrgMitoDNATransTabID,
 			@orgActive,
-			@NEWTIdentifier,
-			@NEWTIDList
+			@NEWTIDList,
+			@NCBITaxonomyID
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -427,8 +457,8 @@ As
 			OG_DNA_Translation_Table_ID = @iOrgDNATransTabID, 
 			OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,			
 			OG_Active = @orgActive,
-			NEWT_Identifier = @NEWTIdentifier,
-			NEWT_ID_List = @NEWTIDList
+			NEWT_ID_List = @NEWTIDList,
+			NCBI_Taxonomy_ID = @NCBITaxonomyID
 		WHERE (Organism_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
