@@ -10,6 +10,7 @@ CREATE PROCEDURE GetTaxonomyValueByTaxonomyID
 **
 **	Auth:	mem
 **	Date:	03/02/2016 mem - Initial version
+**			03/03/2016 mem - Auto define Phylum as Community when @NCBITaxonomyID is 48479
 **    
 *****************************************************/
 (
@@ -115,7 +116,7 @@ As
 	---------------------------------------------------
 	
 	INSERT INTO #Tmp_TaxonomyInfo( Entry_ID,
-		                            [Rank],
+		               [Rank],
 		                            [Name] )
 	SELECT Entry_ID,
 		    [Rank],
@@ -189,6 +190,24 @@ As
 
 	End
 
+	---------------------------------------------------
+	-- Auto-define some values when the Taxonomy ID is 48479 (environmental samples)
+	---------------------------------------------------
+	--
+	If @NCBITaxonomyID = 48479
+	Begin
+		-- Auto-define Phylum as Community if Phlyum is empty
+		If IsNull(@newPhylum, '') In ('na', '')
+			Set @newPhylum = 'Community'
+
+		If Len(IsNull(@newClass,   '')) = 0 Set @newClass = 'na'
+		If Len(IsNull(@newOrder,   '')) = 0 Set @newOrder = 'na'
+		If Len(IsNull(@newFamily,  '')) = 0 Set @newFamily = 'na'
+		If Len(IsNull(@newGenus,   '')) = 0 Set @newGenus = 'na'
+		If Len(IsNull(@newSpecies, '')) = 0 Set @newSpecies = 'na'
+					
+	End
+	
 	---------------------------------------------------
 	-- Possibly preview the old / new values
 	---------------------------------------------------

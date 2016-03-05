@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
+CREATE PROCEDURE dbo.AddUpdateOrganisms
 /****************************************************
 **
 **  Desc: Adds new or edits existing Organisms
@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **			03/01/2016 mem - Added @NCBITaxonomyID
 **			03/02/2016 mem - Added @AutoDefineTaxonomy
 **						   - Removed parameter @NEWTIdentifier since superseded by @NCBITaxonomyID
+**			03/03/2016 mem - Now storing @AutoDefineTaxonomy in column Auto_Define_Taxonomy
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -145,7 +146,7 @@ As
 	Set @orgSpecies = IsNull(@orgSpecies, '')
 	Set @orgStrain = IsNull(@orgStrain, '')
 	
-	Set @AutoDefineTaxonomy = IsNull(@AutoDefineTaxonomy, 'No')
+	Set @AutoDefineTaxonomy = IsNull(@AutoDefineTaxonomy, 'Yes')
 	
 	-- Organism ID
 	Set @ID = IsNull(@ID, 0)
@@ -202,7 +203,14 @@ As
 		End
 	End
 	
-	If @AutoDefineTaxonomy Like 'Y%' And IsNull(@NCBITaxonomyID, 0) > 0
+	Declare @AutoDefineTaxonomyFlag tinyint
+	
+	If @AutoDefineTaxonomy Like 'Y%'
+		Set @AutoDefineTaxonomyFlag = 1
+	Else
+		Set @AutoDefineTaxonomyFlag = 0
+	
+	If @AutoDefineTaxonomyFlag = 1 And IsNull(@NCBITaxonomyID, 0) > 0
 	Begin
 	
 		---------------------------------------------------
@@ -222,7 +230,7 @@ As
 				@orgSpecies=@orgSpecies output,
 				@orgStrain=@orgStrain output,
 				@previewResults = 0
-			
+
 	End
 	
 	---------------------------------------------------
@@ -390,7 +398,8 @@ As
 			OG_Mito_DNA_Translation_Table_ID,
 			OG_Active,
 			NEWT_ID_List,
-			NCBI_Taxonomy_ID
+			NCBI_Taxonomy_ID,
+			Auto_Define_Taxonomy
 		) VALUES (
 			@orgName, 
 			@orgDBName, 
@@ -411,7 +420,8 @@ As
 			@iOrgMitoDNATransTabID,
 			@orgActive,
 			@NEWTIDList,
-			@NCBITaxonomyID
+			@NCBITaxonomyID,
+			@AutoDefineTaxonomyFlag
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -458,7 +468,8 @@ As
 			OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,			
 			OG_Active = @orgActive,
 			NEWT_ID_List = @NEWTIDList,
-			NCBI_Taxonomy_ID = @NCBITaxonomyID
+			NCBI_Taxonomy_ID = @NCBITaxonomyID,
+			Auto_Define_Taxonomy = @AutoDefineTaxonomyFlag
 		WHERE (Organism_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -504,6 +515,7 @@ As
 	END CATCH
 	
 	return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin] AS [dbo]

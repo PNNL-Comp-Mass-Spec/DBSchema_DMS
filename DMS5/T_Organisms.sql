@@ -27,6 +27,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_RowVersion] [timestamp] NOT NULL,
 	[NEWT_ID_List] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[NCBI_Taxonomy_ID] [int] NULL,
+	[Auto_Define_Taxonomy] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Organisms] PRIMARY KEY CLUSTERED 
 (
 	[Organism_ID] ASC
@@ -63,6 +64,13 @@ GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()) FOR [OG_created]
 GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT ((1)) FOR [OG_Active]
+GO
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_Auto_Define_Taxonomy]  DEFAULT ((1)) FOR [Auto_Define_Taxonomy]
+GO
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [FK_T_Organisms_T_YesNo] FOREIGN KEY([Auto_Define_Taxonomy])
+REFERENCES [dbo].[T_YesNo] ([Flag])
+GO
+ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [FK_T_Organisms_T_YesNo]
 GO
 ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name_NoSpace] CHECK  ((NOT [OG_Name] like '% %'))
 GO
