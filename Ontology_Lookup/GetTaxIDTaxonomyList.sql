@@ -15,10 +15,12 @@ CREATE FUNCTION dbo.GetTaxIDTaxonomyList
 **
 **	Auth:	mem
 **	Date:	03/02/2016 mem - Initial version
+**			03/03/2016 mem - Added @ExtendedInfo
 **    
 *****************************************************/
 (
-	@TaxonomyID int
+	@TaxonomyID int,
+	@ExtendedInfo tinyint
 )
 RETURNS varchar(4000)
 AS
@@ -30,7 +32,8 @@ BEGIN
 	               [Name]
 	FROM dbo.GetTaxIDTaxonomyTable ( @TaxonomyID )
 	WHERE Entry_ID = 1 OR
-	      [Rank] <> 'no rank'
+	      [Rank] <> 'no rank' OR
+	      @ExtendedInfo > 0
 	ORDER BY Entry_ID Desc
 	
 	Return Substring(@list, 2, 4000)

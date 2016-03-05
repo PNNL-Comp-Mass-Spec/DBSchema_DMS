@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Unimod_AminoAcids] ******/
-/****** RowCount: 23 ******/
+/****** RowCount: 24 ******/
 /****** Columns: Name, Full_Name, MonoMass, AvgMass, Composition, Three_Letter ******/
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('-','',0,0,'','')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('A','Alanine',71.03712,71.0779,'H(5) C(3) N O','Ala')
@@ -21,6 +21,7 @@ INSERT INTO [T_Unimod_AminoAcids] VALUES ('Q','Glutamine',128.0586,128.1292,'H(8
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('R','Arginine',156.1011,156.1857,'H(12) C(6) N(4) O','Arg')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('S','Serine',87.03203,87.0773,'H(5) C(3) N O(2)','Ser')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('T','Threonine',101.0477,101.1039,'H(7) C(4) N O(2)','Thr')
+INSERT INTO [T_Unimod_AminoAcids] VALUES ('U','Selenocysteine',150.9536,150.0379,'H(5) C(3) N O Se','Sec')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('V','Valine',99.06841,99.1311,'H(9) C(5) N O','Val')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('W','Tryptophan',186.0793,186.2099,'H(10) C(11) N(2) O','Trp')
 INSERT INTO [T_Unimod_AminoAcids] VALUES ('Y','Tyrosine',163.0633,163.1733,'H(9) C(9) N O(2)','Tyr')

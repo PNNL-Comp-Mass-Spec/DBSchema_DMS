@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Unimod_Bricks] ******/
-/****** RowCount: 51 ******/
+/****** RowCount: 52 ******/
 /****** Columns: Name, Full_Name, MonoMass, AvgMass, Composition ******/
 INSERT INTO [T_Unimod_Bricks] VALUES ('-','',0,0,'')
 INSERT INTO [T_Unimod_Bricks] VALUES ('13C','Carbon 13',13.00336,13.00336,'13C')
@@ -25,7 +25,8 @@ INSERT INTO [T_Unimod_Bricks] VALUES ('Fe','Iron',55.93494,55.845,'Fe')
 INSERT INTO [T_Unimod_Bricks] VALUES ('H','Hydrogen',1.007825,1.00794,'H')
 INSERT INTO [T_Unimod_Bricks] VALUES ('Hep','Heptose',192.0634,192.1666,'C(7) H(12) O(6)')
 INSERT INTO [T_Unimod_Bricks] VALUES ('Hex','Hexose',162.0528,162.1406,'H(10) C(6) O(5)')
-INSERT INTO [T_Unimod_Bricks] VALUES ('HexA','Hexosamine',176.0321,176.1241,'C(6) H(8) O(6)')
+INSERT INTO [T_Unimod_Bricks] VALUES ('HexA','Hexuronic acid',176.0321,176.1241,'C(6) H(8) O(6)')
+INSERT INTO [T_Unimod_Bricks] VALUES ('HexN','Hexosamine',161.0688,161.1558,'H(11) C(6) O(4) N')
 INSERT INTO [T_Unimod_Bricks] VALUES ('HexNAc','N-Acetyl Hexosamine',203.0794,203.1925,'C(8) H(13) N O(5)')
 INSERT INTO [T_Unimod_Bricks] VALUES ('Hg','Mercury',201.9706,200.59,'Hg')
 INSERT INTO [T_Unimod_Bricks] VALUES ('I','Iodine',126.9045,126.9045,'I')

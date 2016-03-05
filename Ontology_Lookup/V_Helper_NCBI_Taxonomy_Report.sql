@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Helper_NCBI_Taxonomy_Report]
 AS
 SELECT [Nodes].Tax_ID,
        NodeNames.Name,
        [Nodes].[Rank],
        [Nodes].Parent_Tax_ID,
+	   dbo.GetTaxIDChildCount([Nodes].Tax_ID) AS Children,
        ParentNodeName.Name AS Parent_Name,
        Division.Division_Name AS Division
 FROM T_NCBI_Taxonomy_Names NodeNames
