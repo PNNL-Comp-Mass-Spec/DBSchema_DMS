@@ -22,5 +22,3 @@ WHERE     (T_Event_Log.Target_Type = 5) AND (DATEDIFF(Day, T_Event_Log.Entered, 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Analysis_Job_List] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Analysis_Job_List] TO [PNL\D3M580] AS [dbo]
-GO

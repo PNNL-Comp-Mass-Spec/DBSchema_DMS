@@ -99,7 +99,5 @@ As
 	return @Protein_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddProteinSequence] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddProteinSequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

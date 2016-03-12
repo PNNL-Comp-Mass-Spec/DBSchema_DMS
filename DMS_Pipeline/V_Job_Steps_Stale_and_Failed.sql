@@ -84,5 +84,3 @@ WHERE Warning_Message <> ''
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Stale_and_Failed] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Stale_and_Failed] TO [PNL\D3M580] AS [dbo]
-GO

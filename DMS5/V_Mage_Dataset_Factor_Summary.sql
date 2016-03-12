@@ -14,5 +14,3 @@ GROUP BY T_Dataset.Dataset_ID, T_Dataset.Dataset_Num, T_Requested_Run.ID, T_Requ
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_Factor_Summary] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_Factor_Summary] TO [PNL\D3M580] AS [dbo]
-GO

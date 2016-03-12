@@ -68,5 +68,3 @@ GRANT VIEW DEFINITION ON [dbo].[SetArchiveTaskBusy] TO [Limited_Table_Write] AS 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveTaskBusy] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveTaskBusy] TO [PNL\D3M580] AS [dbo]
-GO

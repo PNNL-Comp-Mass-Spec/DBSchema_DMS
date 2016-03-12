@@ -22,5 +22,3 @@ GROUP BY YEAR(T_Analysis_Job.AJ_start), MONTH(T_Analysis_Job.AJ_start), DAY(T_An
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Analysis_Jobs_by_Day] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Analysis_Jobs_by_Day] TO [PNL\D3M580] AS [dbo]
-GO

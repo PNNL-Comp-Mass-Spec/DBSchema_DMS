@@ -34,5 +34,3 @@ ORDER BY S.Space_Used_MB DESC
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Table_Size_Summary] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Table_Size_Summary] TO [PNL\D3M580] AS [dbo]
-GO

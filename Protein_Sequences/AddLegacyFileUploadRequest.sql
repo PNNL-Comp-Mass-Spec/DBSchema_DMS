@@ -121,8 +121,6 @@ As
 	return @request_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [proteinseqs\ftms] AS [dbo]

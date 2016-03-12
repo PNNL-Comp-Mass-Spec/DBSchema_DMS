@@ -163,5 +163,3 @@ GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [Limited_Table
 GO
 GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [PNL\D3M580] AS [dbo]
-GO

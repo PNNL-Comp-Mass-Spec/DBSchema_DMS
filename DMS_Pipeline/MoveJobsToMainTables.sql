@@ -181,5 +181,3 @@ GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [Limited_Table_Write] A
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [PNL\D3M580] AS [dbo]
-GO

@@ -66,5 +66,3 @@ GROUP BY StepToolQ.Job, J.Script, J.Dataset, J.Start, J.Finish, J.State, JSN.Nam
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Stats] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Stats] TO [PNL\D3M580] AS [dbo]
-GO

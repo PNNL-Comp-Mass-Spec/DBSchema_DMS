@@ -139,5 +139,5 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[SetMyEMSLUploadVerified] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[SetMyEMSLUploadVerified] TO [DMS_SP_User] AS [dbo]
 GO

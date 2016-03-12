@@ -11,5 +11,3 @@ SELECT 'Closed (containers and material)' AS val, 'Closed (containers and materi
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_State_Picklist] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_State_Picklist] TO [PNL\D3M580] AS [dbo]
-GO

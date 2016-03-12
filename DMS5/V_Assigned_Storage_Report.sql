@@ -31,5 +31,3 @@ FROM T_Instrument_Name
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Storage_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Storage_Report] TO [PNL\D3M580] AS [dbo]
-GO

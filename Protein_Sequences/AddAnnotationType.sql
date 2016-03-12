@@ -86,7 +86,5 @@ As
 	return @annType_id
 
 GO
-GRANT EXECUTE ON [dbo].[AddAnnotationType] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddAnnotationType] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

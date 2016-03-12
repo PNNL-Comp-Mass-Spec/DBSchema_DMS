@@ -49,5 +49,3 @@ WHERE NOT ExecRequests.sql_handle IS NULL
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Tuning_ExecRequests] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Tuning_ExecRequests] TO [PNL\D3M580] AS [dbo]
-GO

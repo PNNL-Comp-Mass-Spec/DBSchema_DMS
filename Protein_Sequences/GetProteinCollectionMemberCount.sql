@@ -38,7 +38,5 @@ SELECT @Collection_Member_Count = COUNT(*)
 	return(@Collection_Member_Count)
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionMemberCount] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[GetProteinCollectionMemberCount] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

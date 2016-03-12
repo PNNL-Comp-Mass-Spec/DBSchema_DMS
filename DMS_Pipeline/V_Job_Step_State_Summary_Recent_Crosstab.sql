@@ -38,5 +38,3 @@ FROM ( SELECT Step_Tool,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_State_Summary_Recent_Crosstab] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_State_Summary_Recent_Crosstab] TO [PNL\D3M580] AS [dbo]
-GO

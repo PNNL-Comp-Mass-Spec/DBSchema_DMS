@@ -31,5 +31,3 @@ FROM T_Analysis_Job_Request AS AR
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Request_Entry] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Request_Entry] TO [PNL\D3M580] AS [dbo]
-GO

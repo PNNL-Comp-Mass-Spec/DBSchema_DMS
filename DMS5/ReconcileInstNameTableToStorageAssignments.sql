@@ -75,5 +75,3 @@ GRANT VIEW DEFINITION ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [PNL\D3M580] AS [dbo]
-GO

@@ -31,5 +31,3 @@ FROM dbo.T_AuxInfo_Category INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Definition_wID] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Definition_wID] TO [PNL\D3M580] AS [dbo]
-GO

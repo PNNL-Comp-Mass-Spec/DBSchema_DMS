@@ -105,7 +105,5 @@ As
 	return @member_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateProteinCollectionMember_New] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddUpdateProteinCollectionMember_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

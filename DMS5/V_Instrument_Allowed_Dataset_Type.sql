@@ -26,5 +26,3 @@ GROUP BY IAGDT.Dataset_Type, DTN.DST_Description, IAGDT.Comment, T_Instrument_Na
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type] TO [PNL\D3M580] AS [dbo]
-GO

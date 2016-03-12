@@ -57,5 +57,3 @@ WHERE (DA.AS_update_state_Last_Affected >= DATEADD(day, -14, GETDATE())) AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Activity] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Activity] TO [PNL\D3M580] AS [dbo]
-GO

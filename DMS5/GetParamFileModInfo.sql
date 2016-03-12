@@ -159,5 +159,3 @@ GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [MTS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [PNL\D3M580] AS [dbo]
-GO

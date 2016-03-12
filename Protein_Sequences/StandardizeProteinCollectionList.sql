@@ -124,8 +124,6 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_User] AS [dbo]

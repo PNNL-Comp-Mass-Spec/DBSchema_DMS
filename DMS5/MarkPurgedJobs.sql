@@ -83,7 +83,5 @@ GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [Limited_Table_Write] AS [dbo
 GO
 GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [PNL\D3M580] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [svc-dms] AS [dbo]
 GO

@@ -22,5 +22,3 @@ FROM         (SELECT     y, m, d, SUM(Request) AS Request, SUM(History) AS Histo
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Request_count_by_day] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Request_count_by_day] TO [PNL\D3M580] AS [dbo]
-GO

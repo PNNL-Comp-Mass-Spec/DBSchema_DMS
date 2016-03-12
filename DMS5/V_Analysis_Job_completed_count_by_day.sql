@@ -17,5 +17,3 @@ GROUP BY y, m, d
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Completed_Count_by_Day] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Completed_Count_by_Day] TO [PNL\D3M580] AS [dbo]
-GO

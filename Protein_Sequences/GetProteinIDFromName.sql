@@ -27,7 +27,5 @@ As
 	return @protein_ID
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinIDFromName] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[GetProteinIDFromName] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -85,7 +85,5 @@ As
 	return @auth_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddNamingAuthority] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddNamingAuthority] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -18,5 +18,3 @@ FROM         dbo.T_Requested_Run AS RR INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Loading] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Loading] TO [PNL\D3M580] AS [dbo]
-GO

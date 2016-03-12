@@ -85,7 +85,5 @@ As
 	return @member_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddCollectionOrganismXRef] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddCollectionOrganismXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

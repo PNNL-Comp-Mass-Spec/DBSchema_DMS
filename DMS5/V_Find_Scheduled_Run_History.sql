@@ -20,5 +20,3 @@ FROM         dbo.T_Requested_Run INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [PNL\D3M580] AS [dbo]
-GO

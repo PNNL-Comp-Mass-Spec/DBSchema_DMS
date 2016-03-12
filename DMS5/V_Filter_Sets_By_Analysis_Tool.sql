@@ -27,5 +27,3 @@ GROUP BY FSCM.Analysis_Tool_ID, FS.Filter_Set_ID, Tool.AJT_toolName
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets_By_Analysis_Tool] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets_By_Analysis_Tool] TO [PNL\D3M580] AS [dbo]
-GO

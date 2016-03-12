@@ -18,8 +18,6 @@ CREATE TABLE [dbo].[T_Scripts_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
-GRANT DELETE ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]
-GO
 GRANT INSERT ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Scripts_History] TO [DMS_SP_User] AS [dbo]

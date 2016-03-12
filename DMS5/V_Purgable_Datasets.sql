@@ -54,5 +54,3 @@ GROUP BY DS.Dataset_ID, SPath.SP_machine_name, SPath.SP_vol_name_server,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets] TO [PNL\D3M580] AS [dbo]
-GO

@@ -18,8 +18,6 @@ CREATE TABLE [dbo].[T_Job_Step_Events](
 ) ON [PRIMARY]
 
 GO
-GRANT INSERT ON [dbo].[T_Job_Step_Events] TO [pnl\aldr699] AS [dbo]
-GO
 /****** Object:  Index [IX_T_Job_Step_Events_Current_State_Job] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Events_Current_State_Job] ON [dbo].[T_Job_Step_Events]
 (

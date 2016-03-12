@@ -16,5 +16,3 @@ FROM dbo.T_Scripts
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_List_Report] TO [PNL\D3M580] AS [dbo]
-GO

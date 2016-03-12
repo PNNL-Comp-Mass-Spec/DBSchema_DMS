@@ -588,5 +588,3 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[RequestStepTask] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestStepTask] TO [svc-dms] AS [dbo]
-GO

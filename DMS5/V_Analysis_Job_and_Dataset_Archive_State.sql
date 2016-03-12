@@ -33,5 +33,3 @@ FROM dbo.T_DatasetArchiveStateName AS DASN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_and_Dataset_Archive_State] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_and_Dataset_Archive_State] TO [PNL\D3M580] AS [dbo]
-GO

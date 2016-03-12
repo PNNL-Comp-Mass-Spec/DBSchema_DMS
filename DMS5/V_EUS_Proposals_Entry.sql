@@ -19,5 +19,3 @@ FROM dbo.T_EUS_Proposals P
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_Entry] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_Entry] TO [PNL\D3M580] AS [dbo]
-GO

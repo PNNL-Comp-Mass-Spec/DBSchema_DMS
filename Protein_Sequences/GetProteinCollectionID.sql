@@ -29,7 +29,5 @@ As
 	return @Collection_ID
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionID] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[GetProteinCollectionID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

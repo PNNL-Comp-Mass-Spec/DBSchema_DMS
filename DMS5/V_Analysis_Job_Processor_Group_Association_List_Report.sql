@@ -31,5 +31,3 @@ WHERE (dbo.T_Analysis_Job.AJ_StateID IN (1, 2, 3, 8, 9, 10, 11, 16,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Association_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Association_List_Report] TO [PNL\D3M580] AS [dbo]
-GO

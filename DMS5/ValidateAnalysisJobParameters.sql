@@ -662,5 +662,3 @@ GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [Limited_Table
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [PNL\D3M580] AS [dbo]
-GO

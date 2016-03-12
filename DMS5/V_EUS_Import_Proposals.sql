@@ -19,5 +19,3 @@ FROM openquery ( EUS, 'SELECT * FROM VW_PROPOSALS' )
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Import_Proposals] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Import_Proposals] TO [PNL\D3M580] AS [dbo]
-GO

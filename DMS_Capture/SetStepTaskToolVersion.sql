@@ -114,5 +114,5 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [DMS_SP_User] AS [dbo]
 GO

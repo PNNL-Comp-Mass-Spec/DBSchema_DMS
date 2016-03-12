@@ -354,7 +354,5 @@ GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [Limited_Table_Write] AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [PNL\D3M580] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[SetStepTaskComplete] TO [svc-dms] AS [dbo]
 GO

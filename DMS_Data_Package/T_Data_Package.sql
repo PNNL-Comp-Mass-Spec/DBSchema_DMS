@@ -37,10 +37,6 @@ GRANT SELECT ON [dbo].[T_Data_Package] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Data_Package] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Data_Package] TO [Limited_Table_Write] AS [dbo]
-GO
 SET ANSI_PADDING ON
 
 GO

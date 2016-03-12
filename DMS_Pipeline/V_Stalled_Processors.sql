@@ -21,5 +21,3 @@ WHERE (Latest_Request >= '12/1/2008') AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Stalled_Processors] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Stalled_Processors] TO [PNL\D3M580] AS [dbo]
-GO

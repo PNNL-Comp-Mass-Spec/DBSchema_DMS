@@ -20,5 +20,3 @@ FROM S_ProteinSeqs_V_Archived_Output_Files
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_Archived_Output_Files] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_Archived_Output_Files] TO [PNL\D3M580] AS [dbo]
-GO

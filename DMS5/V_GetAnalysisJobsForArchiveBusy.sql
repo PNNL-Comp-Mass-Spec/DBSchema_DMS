@@ -28,5 +28,3 @@ WHERE AJ.AJ_stateid IN (1,2,3,8) AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetAnalysisJobsForArchiveBusy] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetAnalysisJobsForArchiveBusy] TO [PNL\D3M580] AS [dbo]
-GO

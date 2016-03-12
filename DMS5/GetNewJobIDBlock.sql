@@ -101,5 +101,3 @@ GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [Limited_Table_Write] AS [d
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [PNL\D3M580] AS [dbo]
-GO

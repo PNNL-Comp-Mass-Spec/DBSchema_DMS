@@ -24,5 +24,3 @@ FROM V_Mage_Dataset_List AS VMD
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Data_Package_Datasets] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_Data_Package_Datasets] TO [PNL\D3M580] AS [dbo]
-GO

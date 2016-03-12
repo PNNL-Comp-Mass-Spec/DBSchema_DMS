@@ -26,14 +26,6 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 ) ON [PRIMARY]
 
 GO
-GRANT DELETE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Protein_Collections] TO [d3p214] AS [dbo]
-GO
 SET ANSI_PADDING ON
 
 GO

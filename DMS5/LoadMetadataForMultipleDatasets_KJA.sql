@@ -205,5 +205,3 @@ GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets_KJA] TO [Limited
 GO
 GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets_KJA] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets_KJA] TO [PNL\D3M580] AS [dbo]
-GO

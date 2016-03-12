@@ -124,7 +124,5 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinSequenceInfo] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[UpdateProteinSequenceInfo] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

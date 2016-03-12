@@ -107,7 +107,5 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[DeleteProteinCollectionMembers] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[DeleteProteinCollectionMembers] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

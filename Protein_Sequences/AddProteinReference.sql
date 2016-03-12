@@ -121,7 +121,5 @@ As
 	return @Reference_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddProteinReference] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddProteinReference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -101,5 +101,3 @@ GRANT VIEW DEFINITION ON [dbo].[DoSampleSubmissonOperation] TO [Limited_Table_Wr
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoSampleSubmissonOperation] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoSampleSubmissonOperation] TO [PNL\D3M580] AS [dbo]
-GO

@@ -109,5 +109,3 @@ GRANT EXECUTE ON [dbo].[UpdateDataPackageItems] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItems] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItems] TO [PNL\D3M580] AS [dbo]
-GO

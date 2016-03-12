@@ -471,8 +471,6 @@ As
 	return @Archive_Entry_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [proteinseqs\ftms] AS [dbo]

@@ -38,5 +38,3 @@ GRANT SELECT ON [dbo].[V_Data_Package_Analysis_Jobs_List_Report] TO [DMS_SP_User
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs_List_Report] TO [PNL\D3M580] AS [dbo]
-GO

@@ -192,5 +192,3 @@ GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets] TO [Limited_Tab
 GO
 GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets] TO [PNL\D3M580] AS [dbo]
-GO

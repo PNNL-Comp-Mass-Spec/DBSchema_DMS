@@ -14,16 +14,6 @@ CREATE TABLE [dbo].[T_Encrypted_Collection_Passphrases](
 ) ON [PRIMARY]
 
 GO
-GRANT DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [BUILTIN\Administrators] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [BUILTIN\Administrators] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[T_Encrypted_Collection_Passphrases] TO [BUILTIN\Administrators] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [BUILTIN\Administrators] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [BUILTIN\Administrators] AS [dbo]
-GO
 DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [DMSReader] AS [dbo]
 GO
 DENY INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [DMSReader] AS [dbo]
@@ -63,16 +53,6 @@ GO
 DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_User] AS [dbo]
 GO
 DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [EMSL-Prism.Users.DMS_User] AS [dbo]
-GO
-DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\D3E383] AS [dbo]
-GO
-DENY INSERT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\D3E383] AS [dbo]
-GO
-DENY REFERENCES ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\D3E383] AS [dbo]
-GO
-DENY SELECT ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\D3E383] AS [dbo]
-GO
-DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\D3E383] AS [dbo]
 GO
 DENY DELETE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\d3l243] AS [dbo]
 GO

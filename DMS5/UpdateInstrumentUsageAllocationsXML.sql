@@ -148,5 +148,3 @@ GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageAllocationsXML] TO [DMS2_SP_User] A
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocationsXML] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocationsXML] TO [PNL\D3M580] AS [dbo]
-GO

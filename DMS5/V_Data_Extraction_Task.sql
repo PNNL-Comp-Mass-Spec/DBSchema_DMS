@@ -27,5 +27,3 @@ FROM         T_Analysis_Job A
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Extraction_Task] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Extraction_Task] TO [PNL\D3M580] AS [dbo]
-GO

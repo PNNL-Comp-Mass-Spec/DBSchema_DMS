@@ -23,5 +23,3 @@ ORDER BY UsageRank
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] TO [PNL\D3M580] AS [dbo]
-GO

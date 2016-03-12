@@ -88,7 +88,5 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinCollectionState] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[UpdateProteinCollectionState] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

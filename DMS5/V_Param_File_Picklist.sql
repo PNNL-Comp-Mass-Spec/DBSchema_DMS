@@ -20,5 +20,3 @@ WHERE (PF.Valid = 1)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Picklist] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Picklist] TO [PNL\D3M580] AS [dbo]
-GO

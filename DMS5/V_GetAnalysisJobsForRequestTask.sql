@@ -33,5 +33,3 @@ WHERE (AJ.AJ_StateID = 1) AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetAnalysisJobsForRequestTask] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetAnalysisJobsForRequestTask] TO [PNL\D3M580] AS [dbo]
-GO

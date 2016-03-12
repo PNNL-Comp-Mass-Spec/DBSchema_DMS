@@ -233,5 +233,3 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetInterval] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetInterval] TO [PNL\D3M580] AS [dbo]
-GO

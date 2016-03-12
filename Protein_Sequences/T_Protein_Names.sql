@@ -18,12 +18,6 @@ CREATE TABLE [dbo].[T_Protein_Names](
 ) ON [PRIMARY]
 
 GO
-GRANT REFERENCES ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Protein_Names] TO [d3m580] AS [dbo]
-GO
 /****** Object:  Index [IX_T_Protein_Names_Protein_ID_Reference_ID] ******/
 CREATE UNIQUE CLUSTERED INDEX [IX_T_Protein_Names_Protein_ID_Reference_ID] ON [dbo].[T_Protein_Names]
 (

@@ -47,5 +47,3 @@ FROM
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Script_Dot_Format] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Script_Dot_Format] TO [PNL\D3M580] AS [dbo]
-GO

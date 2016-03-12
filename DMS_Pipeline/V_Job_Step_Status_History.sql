@@ -28,5 +28,3 @@ FROM ( SELECT CONVERT(smalldatetime, JSH.Posting_Time) AS Posting_time,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Status_History] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Status_History] TO [PNL\D3M580] AS [dbo]
-GO

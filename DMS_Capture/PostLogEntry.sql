@@ -48,5 +48,5 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
 GO

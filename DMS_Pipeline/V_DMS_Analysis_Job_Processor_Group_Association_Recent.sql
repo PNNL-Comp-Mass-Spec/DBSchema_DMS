@@ -17,5 +17,3 @@ FROM S_DMS_V_Analysis_Job_Processor_Group_Association_Recent
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Analysis_Job_Processor_Group_Association_Recent] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_Analysis_Job_Processor_Group_Association_Recent] TO [PNL\D3M580] AS [dbo]
-GO

@@ -227,7 +227,5 @@ As
 	return @Collection_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateProteinCollection] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddUpdateProteinCollection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

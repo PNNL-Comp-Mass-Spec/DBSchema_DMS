@@ -19,5 +19,3 @@ FROM S_DMS_V_Dataset_Stats_Recent_Crosstab
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Stats_Recent_Crosstab] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Stats_Recent_Crosstab] TO [PNL\D3M580] AS [dbo]
-GO

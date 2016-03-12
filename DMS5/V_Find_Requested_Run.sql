@@ -42,5 +42,3 @@ FROM T_DatasetTypeName DTN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Requested_Run] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Requested_Run] TO [PNL\D3M580] AS [dbo]
-GO

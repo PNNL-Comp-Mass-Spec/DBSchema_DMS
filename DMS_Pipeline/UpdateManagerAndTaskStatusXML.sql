@@ -325,14 +325,6 @@ GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [pnl\D3X050] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [pnl\D3X050] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [svc-dms] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [svc-dms] AS [dbo]

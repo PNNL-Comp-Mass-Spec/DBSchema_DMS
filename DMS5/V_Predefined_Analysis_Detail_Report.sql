@@ -56,5 +56,3 @@ FROM T_Predefined_Analysis PA INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Detail_Report] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Detail_Report] TO [PNL\D3M580] AS [dbo]
-GO

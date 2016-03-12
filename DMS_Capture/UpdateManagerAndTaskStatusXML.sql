@@ -295,5 +295,5 @@ Done:
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DMS_SP_User] AS [dbo]
 GO

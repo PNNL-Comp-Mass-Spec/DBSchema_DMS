@@ -173,5 +173,3 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[MakeNewArchiveUpdateJob] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MakeNewArchiveUpdateJob] TO [svc-dms] AS [dbo]
-GO

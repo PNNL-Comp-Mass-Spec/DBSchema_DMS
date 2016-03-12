@@ -10,5 +10,3 @@ FROM         OPENQUERY(EUS, 'SELECT * FROM VW_REQUESTED_ALLOCATED_HOURS') AS TX
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Import_Requested_Allocated_Hours] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Import_Requested_Allocated_Hours] TO [PNL\D3M580] AS [dbo]
-GO

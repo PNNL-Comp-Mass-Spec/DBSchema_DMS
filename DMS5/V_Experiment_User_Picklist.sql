@@ -13,5 +13,3 @@ WHERE     (DATEDIFF(Month, dbo.T_Experiments.EX_created, GETDATE()) <= 12) AND (
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_User_Picklist] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Experiment_User_Picklist] TO [PNL\D3M580] AS [dbo]
-GO

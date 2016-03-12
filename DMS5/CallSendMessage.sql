@@ -92,5 +92,3 @@ GRANT VIEW DEFINITION ON [dbo].[CallSendMessage] TO [Limited_Table_Write] AS [db
 GO
 GRANT VIEW DEFINITION ON [dbo].[CallSendMessage] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CallSendMessage] TO [PNL\D3M580] AS [dbo]
-GO

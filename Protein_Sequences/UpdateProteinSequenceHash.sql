@@ -75,7 +75,5 @@ As
 	return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinSequenceHash] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[UpdateProteinSequenceHash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

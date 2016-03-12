@@ -458,8 +458,6 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_User] AS [dbo]

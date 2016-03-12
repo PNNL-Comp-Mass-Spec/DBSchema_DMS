@@ -250,8 +250,6 @@ Done:
 	Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [MTS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

@@ -39,10 +39,6 @@ GRANT SELECT ON [dbo].[T_Job_Steps] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Job_Steps] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_Job_Steps] TO [pnl\aldr699] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[T_Job_Steps] TO [pnl\aldr699] AS [dbo]
-GO
 SET ARITHABORT ON
 SET CONCAT_NULL_YIELDS_NULL ON
 SET QUOTED_IDENTIFIER ON

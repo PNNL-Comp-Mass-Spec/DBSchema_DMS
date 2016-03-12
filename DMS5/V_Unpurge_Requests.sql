@@ -20,5 +20,3 @@ ORDER BY dbo.T_Analysis_Job.AJ_priority
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Unpurge_Requests] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Unpurge_Requests] TO [PNL\D3M580] AS [dbo]
-GO

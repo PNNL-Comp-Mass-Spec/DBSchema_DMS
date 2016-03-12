@@ -52,19 +52,3 @@ FROM dbo.T_Analysis_Job_Processor_Group_Associations AJPGA INNER
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT ALTER ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT CONTROL ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT INSERT ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT TAKE OWNERSHIP ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT UPDATE ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Activity] TO [PNL\D3M580] AS [dbo]
-GO

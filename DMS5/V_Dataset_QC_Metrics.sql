@@ -134,5 +134,3 @@ FROM T_Dataset_QC DQC
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [PNL\D3M580] AS [dbo]
-GO

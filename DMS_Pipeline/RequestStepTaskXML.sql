@@ -1200,7 +1200,5 @@ GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [Limited_Table_Write] AS 
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [PNL\D3M580] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[RequestStepTaskXML] TO [svc-dms] AS [dbo]
 GO

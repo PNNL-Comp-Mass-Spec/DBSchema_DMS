@@ -21,5 +21,3 @@ FROM    dbo.T_File_Attachment
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_File_Attachment_Display] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_File_Attachment_Display] TO [PNL\D3M580] AS [dbo]
-GO

@@ -25,5 +25,3 @@ WHERE Valid > 0
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_DB_File_Export] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Organism_DB_File_Export] TO [PNL\D3M580] AS [dbo]
-GO

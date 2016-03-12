@@ -113,5 +113,3 @@ WHERE Warning_Message <> ''
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Datasets_Stale_and_Failed] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Datasets_Stale_and_Failed] TO [PNL\D3M580] AS [dbo]
-GO

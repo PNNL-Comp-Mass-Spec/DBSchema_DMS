@@ -14,5 +14,3 @@ GROUP BY TX.Category, TIA.Proposal_ID, TIA.FY
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Allocated_Usage_By_Category] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Allocated_Usage_By_Category] TO [PNL\D3M580] AS [dbo]
-GO

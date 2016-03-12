@@ -148,7 +148,5 @@ AS
 	RETURN @passPhraseID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEncryptionMetadata] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddUpdateEncryptionMetadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

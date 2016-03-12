@@ -228,5 +228,3 @@ GRANT VIEW DEFINITION ON [dbo].[ConsumeScheduledRun] TO [Limited_Table_Write] AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[ConsumeScheduledRun] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ConsumeScheduledRun] TO [PNL\D3M580] AS [dbo]
-GO

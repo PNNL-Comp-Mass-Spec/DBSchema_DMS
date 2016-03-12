@@ -95,5 +95,3 @@ FROM (SELECT YEAR(AJ_start) AS [Year],
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Entities_By_Year] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Entities_By_Year] TO [PNL\D3M580] AS [dbo]
-GO

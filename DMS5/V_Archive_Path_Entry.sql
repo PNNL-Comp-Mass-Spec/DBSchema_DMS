@@ -13,5 +13,3 @@ FROM         dbo.T_Archive_Path AS TAP INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_Entry] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_Entry] TO [PNL\D3M580] AS [dbo]
-GO

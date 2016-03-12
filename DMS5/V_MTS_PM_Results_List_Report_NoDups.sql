@@ -76,5 +76,3 @@ WHERE FinishRank = 1
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_MTS_PM_Results_List_Report_NoDups] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_MTS_PM_Results_List_Report_NoDups] TO [PNL\D3M580] AS [dbo]
-GO

@@ -52,5 +52,3 @@ WHERE (migs.group_handle IN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Tuning_MissingIndices] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Tuning_MissingIndices] TO [PNL\D3M580] AS [dbo]
-GO

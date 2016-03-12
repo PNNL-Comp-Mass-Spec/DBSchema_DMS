@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 73374592KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'I:\SQLServerData\Protein_Sequences.mdf' , SIZE = 94635136KB , MAXSIZE = UNLIMITED, FILEGROWTH = 80KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 1988992KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'Protein_Sequences_Log', FILENAME = N'H:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 52407744KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -68,12 +68,6 @@ ALTER DATABASE [Protein_Sequences] SET DB_CHAINING OFF
 GO
 USE [Protein_Sequences]
 GO
-/****** Object:  User [BUILTIN\Administrators] ******/
-CREATE USER [BUILTIN\Administrators] FOR LOGIN [BUILTIN\Administrators]
-GO
-/****** Object:  User [d3m580] ******/
-CREATE USER [d3m580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[d3m580]
-GO
 /****** Object:  User [DMSReader] ******/
 CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -104,9 +98,6 @@ GO
 /****** Object:  User [MTUser] ******/
 CREATE USER [MTUser] FOR LOGIN [mtuser] WITH DEFAULT_SCHEMA=[dbo]
 GO
-/****** Object:  User [pnl\D3E383] ******/
-CREATE USER [pnl\D3E383] FOR LOGIN [PNL\D3E383] WITH DEFAULT_SCHEMA=[pnl\D3E383]
-GO
 /****** Object:  User [pnl\d3l243] ******/
 CREATE USER [pnl\d3l243] FOR LOGIN [PNL\D3L243] WITH DEFAULT_SCHEMA=[pnl\d3l243]
 GO
@@ -121,12 +112,6 @@ CREATE USER [Proteinseqs\msdadmin] FOR LOGIN [Proteinseqs\msdadmin] WITH DEFAULT
 GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
-GO
-GRANT CONNECT TO [BUILTIN\Administrators] AS [dbo]
-GO
-GRANT CONNECT TO [d3m580] AS [dbo]
-GO
-GRANT CONNECT TO [d3p214] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
@@ -148,11 +133,7 @@ GRANT CONNECT TO [MTS_DB_Reader] AS [dbo]
 GO
 GRANT CONNECT TO [MTUser] AS [dbo]
 GO
-GRANT CONNECT TO [pnl\D3E383] AS [dbo]
-GO
 GRANT CONNECT TO [pnl\d3l243] AS [dbo]
-GO
-GRANT CONNECT TO [pnl\d3m480] AS [dbo]
 GO
 GRANT CONNECT TO [PRISMSeqReader] AS [dbo]
 GO

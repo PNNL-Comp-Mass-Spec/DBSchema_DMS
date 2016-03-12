@@ -1,8 +1,8 @@
 /****** Object:  Database [DMS_Capture] ******/
 CREATE DATABASE [DMS_Capture] ON  PRIMARY 
-( NAME = N'DMS_Capture', FILENAME = N'H:\SQLServerData\DMS_Capture.mdf' , SIZE = 4086400KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+( NAME = N'DMS_Capture', FILENAME = N'H:\SQLServerData\DMS_Capture.mdf' , SIZE = 4414144KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'DMS_Capture_log', FILENAME = N'G:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 64960KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'DMS_Capture_log', FILENAME = N'G:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 44224KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMS_Capture] SET COMPATIBILITY_LEVEL = 100
@@ -77,12 +77,6 @@ GO
 /****** Object:  User [pnl\d3m578] ******/
 CREATE USER [pnl\d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
 GO
-/****** Object:  User [PNL\D3M580] ******/
-CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[PNL\D3M580]
-GO
-/****** Object:  User [pnl\D3Y513] ******/
-CREATE USER [pnl\D3Y513] FOR LOGIN [PNL\D3Y513] WITH DEFAULT_SCHEMA=[dbo]
-GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
 GO
@@ -98,8 +92,6 @@ GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3m578] AS [dbo]
-GO
-GRANT CONNECT TO [pnl\D3Y513] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_User] AS [dbo]
 GO

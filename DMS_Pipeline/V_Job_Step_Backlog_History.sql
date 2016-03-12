@@ -17,5 +17,3 @@ GROUP BY Step_Tool, Posting_Time
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Backlog_History] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Backlog_History] TO [PNL\D3M580] AS [dbo]
-GO

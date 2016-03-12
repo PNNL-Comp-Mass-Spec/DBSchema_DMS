@@ -14,5 +14,3 @@ FROM         dbo.T_Campaign INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Export_Campaign_Cell_Culture] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Export_Campaign_Cell_Culture] TO [PNL\D3M580] AS [dbo]
-GO

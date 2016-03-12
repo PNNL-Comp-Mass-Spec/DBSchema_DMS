@@ -30,5 +30,3 @@ GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [Limited_Table_Write] AS [d
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [PNL\D3M580] AS [dbo]
-GO

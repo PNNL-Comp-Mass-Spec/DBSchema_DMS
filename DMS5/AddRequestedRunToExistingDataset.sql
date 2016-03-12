@@ -235,5 +235,3 @@ GRANT EXECUTE ON [dbo].[AddRequestedRunToExistingDataset] TO [DMS2_SP_User] AS [
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunToExistingDataset] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunToExistingDataset] TO [PNL\D3M580] AS [dbo]
-GO

@@ -17,5 +17,3 @@ WHERE     (OG_name <> '(default)')
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_PDB_Organism_List_For_Tree] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_PDB_Organism_List_For_Tree] TO [PNL\D3M580] AS [dbo]
-GO

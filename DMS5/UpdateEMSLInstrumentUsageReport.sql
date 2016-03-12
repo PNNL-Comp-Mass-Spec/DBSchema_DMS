@@ -382,5 +382,3 @@ GRANT EXECUTE ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DMS2_SP_User] AS [d
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
-GO

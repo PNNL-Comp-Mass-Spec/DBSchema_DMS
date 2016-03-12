@@ -131,5 +131,3 @@ GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [Limited_Table_Write
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [PNL\D3M580] AS [dbo]
-GO

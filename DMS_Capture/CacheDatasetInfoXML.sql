@@ -59,5 +59,5 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[CacheDatasetInfoXML] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[CacheDatasetInfoXML] TO [DMS_SP_User] AS [dbo]
 GO

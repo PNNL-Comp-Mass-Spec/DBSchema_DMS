@@ -158,5 +158,3 @@ GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentOperationHistory] TO [Limited
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentOperationHistory] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentOperationHistory] TO [PNL\D3M580] AS [dbo]
-GO

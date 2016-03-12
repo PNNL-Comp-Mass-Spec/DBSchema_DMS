@@ -76,7 +76,5 @@ As
 	return 0 
 
 GO
-GRANT EXECUTE ON [dbo].[AddSHA1FileAuthentication] TO [BUILTIN\Administrators] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[AddSHA1FileAuthentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
