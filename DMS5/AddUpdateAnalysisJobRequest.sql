@@ -70,6 +70,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided=0 to ValidateAnalysisJobParameters
 **			10/09/2015 mem - Now allowing the request name and comment to be updated even if a request has associated jobs
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/11/2016 mem - Disabled forcing use of MSConvert for QExactive datasets
 **
 *****************************************************/
 (
@@ -347,6 +348,9 @@ As
 			Set @message = 'Note: changed protein options to decoy since MODa requires decoy proteins to perform FDR-based filtering'
 	End
 
+	/*
+	 * Disabled in March 2016 because not always required
+	 *
 	---------------------------------------------------
 	-- Auto-update the settings file if one or more HMS datasets are present
 	-- but the user chose a settings file that is not appropriate for HMS datasets
@@ -369,10 +373,14 @@ As
 			Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
 		End
 	End
-
-	Declare @QExactiveDSCount int = 0
+	*/
+	
+	-- Declare @QExactiveDSCount int = 0
 	Declare @ProfileModeMSnDatasets int = 0
 	
+	/*
+	 * Disabled in March 2016 because not always required
+	 *	
 	-- Count the number of QExactive datasets
 	--
 	SELECT @QExactiveDSCount = COUNT(*)
@@ -381,7 +389,8 @@ As
 		    INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 		    INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
 	WHERE InstGroup.IN_Group = 'QExactive'
-
+	*/
+	
 	-- Count the number of datasets with profile mode MS/MS
 	--
 	SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
@@ -390,9 +399,7 @@ As
 		    INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
 	WHERE DI.ProfileScanCount_MSn > 0
 	
-	print @ProfileModeMSnDatasets
-	
-	If @QExactiveDSCount > 0 Or @ProfileModeMSnDatasets > 0
+	If @ProfileModeMSnDatasets > 0
 	Begin
 		-- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
 		Set @AutoSupersedeName = dbo.AutoUpdateSettingsFileToCentroid(@settingsFileName, @toolName)
@@ -570,6 +577,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M580] AS [dbo]
 GO
