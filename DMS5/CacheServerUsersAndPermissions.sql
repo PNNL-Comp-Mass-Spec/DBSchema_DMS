@@ -123,7 +123,7 @@ AS
 			
 			End
 			
-			If Not Exists (Select * From sys.Tables where Name = 'T_Auth_Database_LoginsAndRoles')
+			If Not Exists (Select * From sys.Tables where Name = 'T_Auth_Database_Permissions')
 			Begin
 				
 				CREATE TABLE [dbo].[T_Auth_Database_Permissions](
@@ -151,7 +151,7 @@ AS
 				ALTER TABLE [dbo].[T_Auth_Database_Permissions] ADD  CONSTRAINT [DF_T_Auth_Database_Permissions_Enabled]  DEFAULT ((1)) FOR [Enabled]
 			End
 			
-			If Not Exists (Select * From sys.Tables where Name = 'T_Auth_Database_LoginsAndRoles')
+			If Not Exists (Select * From sys.Tables where Name = 'T_Auth_Server_Logins')
 			Begin
 				CREATE TABLE [dbo].[T_Auth_Server_Logins](
 					[LoginName] [nvarchar](128) NOT NULL,
@@ -363,6 +363,9 @@ AS
 			Set @message = Substring(@message, 1, Len(@message) - 2)
 			Print @message
 			
+			If @infoOnly <> 0
+				SELECT @message as Warning
+				
 			Delete From #Tmp_DatabaseNames Where IsValid = 0
 		End
 		
@@ -372,6 +375,10 @@ AS
 			Begin
 				Set @message = 'Database list was empty'
 				Print @message
+
+				If @infoOnly <> 0
+					SELECT @message as Warning
+				
 			End
 			
 			Goto Done
@@ -727,6 +734,13 @@ AS
 			End -- </b2>
 		End -- </a2>
 
+		If @infoOnly = 0
+		Begin
+			Print 'View the cached data with:'
+			Print 'SELECT * FROM T_Auth_Server_Logins ORDER BY User_Type_Desc, LoginName'
+			Print 'SELECT * FROM T_Auth_Database_LoginsAndRoles ORDER BY Database_Name, UserName'
+			Print 'SELECT * FROM T_Auth_Database_Permissions ORDER BY Database_Name, Role_Or_User, Sort_Order'
+		End
 		
 	END TRY
 	BEGIN CATCH 
