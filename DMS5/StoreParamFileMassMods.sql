@@ -28,6 +28,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			10/02/2014 mem - Add exception for Dyn2DZ
 **			05/26/2015 mem - Add @ValidateUnimod
 **			12/01/2015 mem - Now showing column Residue_Desc
+**			03/14/2016 mem - Look for an entry in column Mass_Correction_Tag of T_Mass_Correction_Factors if no match is found in Original_Source_Name and @ValidateUnimod = 0
 **    
 *****************************************************/
 (
@@ -323,9 +324,22 @@ AS
 							--
 							SELECT @myRowCount = @@rowcount, @myError = @@error
 
+							If (@myRowCount = 0 Or @MassCorrectionID = 0) And @ValidateUnimod = 0
+							Begin
+								SELECT @MassCorrectionID = Mass_Correction_ID
+								FROM T_Mass_Correction_Factors
+								WHERE Mass_Correction_Tag = @ModName
+								--
+								SELECT @myRowCount = @@rowcount, @myError = @@error
+							End
+							
 							If @myRowCount = 0 Or @MassCorrectionID = 0
 							Begin
-								Set @message = 'UniMod modification not found in T_Mass_Correction_Factors for mod "' + @ModName + '"; see row: ' + @Row
+								If @ValidateUnimod > 0
+									Set @message = 'UniMod modification not found in T_Mass_Correction_Factors.Original_Source_Name for mod "' + @ModName + '"; see row: ' + @Row
+								else
+									Set @message = 'Modification name not found in T_Mass_Correction_Factors.Original_Source_Name or T_Mass_Correction_Factors.Mass_Correction_Tag for mod "' + @ModName + '"; see row: ' + @Row
+									
 								Set @myError = 53007
 								Goto Done
 							End
