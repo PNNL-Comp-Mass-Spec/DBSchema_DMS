@@ -19,8 +19,6 @@ CREATE TABLE [dbo].[T_Log_Entries](
 GO
 GRANT UPDATE ON [dbo].[T_Log_Entries] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Log_Entries] ([Entered_By]) TO [DMSWebUser] AS [dbo]
-GO
 SET ANSI_PADDING ON
 
 GO

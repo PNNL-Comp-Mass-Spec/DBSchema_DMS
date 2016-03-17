@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateUserPermissions
 **	Auth:	mem
 **	Date:	07/31/2012 mem - Initial Version
 **			08/22/2012 mem - Now updating T_Log_Entries
+**			03/16/2016 mem - Add Select and Update permissions for DMSWebUser on S_File_Attachment
 **    
 *****************************************************/
 AS
@@ -27,17 +28,22 @@ AS
 	if exists (select * from sys.sysusers where name = 'DMSReader')
 		drop user DMSReader
 	create user DMSReader for login DMSReader
-	exec sp_addrolemember 'db_datareader', 'DMSReader'
-		
+
+	ALTER Role db_datareader              Add Member [DMSReader]
+
 		
 	if exists (select * from sys.schemas where name = 'DMSWebUser')
 		drop schema DMSWebUser
 	if exists (select * from sys.sysusers where name = 'DMSWebUser')
 		drop user DMSWebUser
 	create user DMSWebUser for login DMSWebUser
-	exec sp_addrolemember 'db_datareader', 'DMSWebUser'
-	exec sp_addrolemember 'DMS_SP_User', 'DMSWebUser'
 
+	ALTER Role db_datareader              Add Member [DMSWebUser]
+	ALTER Role DMS_SP_User                Add Member [DMSWebUser]
+
+
+	GRANT SELECT ON [dbo].[S_File_Attachment] to [DMSWebUser]
+	GRANT UPDATE ON [dbo].[S_File_Attachment] to [DMSWebUser]
 	GRANT UPDATE ON [dbo].[T_Log_Entries] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 
 	grant showplan to DMSReader
