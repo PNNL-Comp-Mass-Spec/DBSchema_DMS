@@ -42,7 +42,7 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMSWebUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMSReader] AS [dbo]
 GO

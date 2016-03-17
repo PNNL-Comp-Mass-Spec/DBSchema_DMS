@@ -56,7 +56,7 @@ END
 
 
 GO
-GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMSReader] AS [dbo]
+GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMSWebUser] AS [dbo]
+GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMSReader] AS [dbo]
 GO

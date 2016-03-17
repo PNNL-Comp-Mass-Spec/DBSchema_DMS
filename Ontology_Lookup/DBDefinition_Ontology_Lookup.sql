@@ -1,8 +1,10 @@
 /****** Object:  Database [Ontology_Lookup] ******/
-CREATE DATABASE [Ontology_Lookup] ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 2333632KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+CREATE DATABASE [Ontology_Lookup]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 4086208KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'G:\SqlServerData\Ontology_Lookup_log.ldf' , SIZE = 256832KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 3064128KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 100
@@ -66,6 +68,10 @@ ALTER DATABASE [Ontology_Lookup] SET PAGE_VERIFY CHECKSUM
 GO
 ALTER DATABASE [Ontology_Lookup] SET DB_CHAINING OFF 
 GO
+ALTER DATABASE [Ontology_Lookup] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [Ontology_Lookup] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
 USE [Ontology_Lookup]
 GO
 /****** Object:  User [d3m578] ******/
@@ -84,7 +90,11 @@ GRANT CONNECT TO [d3m578] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
+GRANT SHOWPLAN TO [DMSReader] AS [dbo]
+GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
+GO
+GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
 GO
