@@ -31,3 +31,5 @@ FROM dbo.T_Filter_Set_Types FST
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Filter_Sets] TO [PNL\D3M580] AS [dbo]
+GO

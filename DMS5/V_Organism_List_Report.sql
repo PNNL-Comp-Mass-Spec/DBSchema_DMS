@@ -39,3 +39,5 @@ GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_d
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Organism_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -23,3 +23,5 @@ WHERE (SS.SS_active <> 0)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Separation_Type_Usage] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Separation_Type_Usage] TO [PNL\D3M580] AS [dbo]
+GO

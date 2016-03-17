@@ -341,5 +341,7 @@ GRANT EXECUTE ON [dbo].[StoreDTARefMassErrorStats] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreDTARefMassErrorStats] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[StoreDTARefMassErrorStats] TO [PNL\D3M580] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[StoreDTARefMassErrorStats] TO [svc-dms] AS [dbo]
 GO

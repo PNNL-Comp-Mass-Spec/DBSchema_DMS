@@ -19,3 +19,5 @@ FROM         dbo.T_Acceptable_Param_Entries INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Acceptable_Param_Entries] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Acceptable_Param_Entries] TO [PNL\D3M580] AS [dbo]
+GO

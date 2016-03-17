@@ -25,3 +25,7 @@ FROM    T_LC_Cart
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Unified_List_Ex] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Unified_List_Ex] TO [PNL\D3M580] AS [dbo]
+GO

@@ -275,3 +275,5 @@ GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [Limited_Table_Writ
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [PNL\D3M580] AS [dbo]
+GO

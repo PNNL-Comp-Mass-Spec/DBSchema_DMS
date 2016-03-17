@@ -28,3 +28,5 @@ WHERE (ISNULL([Most Recent Sample Prep Request], '1/1/2000') <= DATEADD(MONTH, -
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_List_Stale] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Campaign_List_Stale] TO [PNL\D3M580] AS [dbo]
+GO

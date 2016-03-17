@@ -173,3 +173,5 @@ GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingPeptideDBs] TO [Limite
 GO
 GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingPeptideDBs] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingPeptideDBs] TO [PNL\D3M580] AS [dbo]
+GO

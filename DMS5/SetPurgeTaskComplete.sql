@@ -308,5 +308,7 @@ GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [Limited_Table_Write] A
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [PNL\D3M580] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [svc-dms] AS [dbo]
 GO

@@ -14,3 +14,5 @@ ORDER BY dbo.T_Param_Files.Param_File_Name, dbo.T_Param_Entries.Entry_Sequence_O
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sequest_Params_By_File] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sequest_Params_By_File] TO [PNL\D3M580] AS [dbo]
+GO

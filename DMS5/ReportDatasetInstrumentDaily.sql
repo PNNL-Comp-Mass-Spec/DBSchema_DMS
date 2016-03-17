@@ -261,3 +261,5 @@ GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentDaily] TO [Limited_Table_
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentDaily] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentDaily] TO [PNL\D3M580] AS [dbo]
+GO

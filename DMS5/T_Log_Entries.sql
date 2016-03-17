@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Log_Entries](
 ) ON [PRIMARY]
 
 GO
+GRANT UPDATE ON [dbo].[T_Log_Entries] TO [DMSWebUser] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

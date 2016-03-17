@@ -209,3 +209,5 @@ GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [Limited_Ta
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [PNL\D3M580] AS [dbo]
+GO

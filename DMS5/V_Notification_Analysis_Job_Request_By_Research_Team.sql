@@ -49,3 +49,5 @@ WHERE
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Notification_Analysis_Job_Request_By_Research_Team] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Analysis_Job_Request_By_Research_Team] TO [PNL\D3M580] AS [dbo]
+GO

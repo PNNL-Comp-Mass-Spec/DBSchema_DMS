@@ -201,3 +201,5 @@ GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Tabl
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [PNL\D3M580] AS [dbo]
+GO

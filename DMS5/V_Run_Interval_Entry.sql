@@ -18,3 +18,5 @@ FROM dbo.T_Run_Interval
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Interval_Entry] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Run_Interval_Entry] TO [PNL\D3M580] AS [dbo]
+GO

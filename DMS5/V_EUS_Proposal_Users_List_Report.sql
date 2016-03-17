@@ -22,3 +22,5 @@ WHERE PU.State_ID <> 5
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposal_Users_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposal_Users_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

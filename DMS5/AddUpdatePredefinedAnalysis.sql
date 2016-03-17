@@ -617,3 +617,5 @@ GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [Limited_Table_W
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [PNL\D3M580] AS [dbo]
+GO

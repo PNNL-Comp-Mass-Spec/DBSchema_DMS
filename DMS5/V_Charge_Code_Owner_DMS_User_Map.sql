@@ -20,3 +20,7 @@ FROM T_Charge_Code CC
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Charge_Code_Owner_DMS_User_Map] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Charge_Code_Owner_DMS_User_Map] TO [PNL\D3M580] AS [dbo]
+GO

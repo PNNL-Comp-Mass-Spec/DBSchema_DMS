@@ -29,3 +29,5 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_PickList] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_PickList] TO [PNL\D3M580] AS [dbo]
+GO

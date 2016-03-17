@@ -13,3 +13,5 @@ WHERE (Internal_Std_Mix_ID > 0)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Picklist] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Picklist] TO [PNL\D3M580] AS [dbo]
+GO

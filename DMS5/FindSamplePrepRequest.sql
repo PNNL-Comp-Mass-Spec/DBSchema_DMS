@@ -195,3 +195,5 @@ GRANT VIEW DEFINITION ON [dbo].[FindSamplePrepRequest] TO [Limited_Table_Write] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[FindSamplePrepRequest] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindSamplePrepRequest] TO [PNL\D3M580] AS [dbo]
+GO

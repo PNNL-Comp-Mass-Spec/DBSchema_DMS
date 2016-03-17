@@ -204,3 +204,5 @@ GRANT VIEW DEFINITION ON [dbo].[MakeNotificationAnalysisJobRequestEvents] TO [Li
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeNotificationAnalysisJobRequestEvents] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationAnalysisJobRequestEvents] TO [PNL\D3M580] AS [dbo]
+GO

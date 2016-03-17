@@ -17,3 +17,5 @@ FROM dbo.T_DatasetTypeName D
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Helper_Dataset_Type] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Dataset_Type] TO [PNL\D3M580] AS [dbo]
+GO

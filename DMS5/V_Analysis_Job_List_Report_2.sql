@@ -45,3 +45,5 @@ FROM T_Analysis_Job AJ INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_List_Report_2] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GO

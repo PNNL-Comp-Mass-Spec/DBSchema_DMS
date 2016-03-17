@@ -578,3 +578,5 @@ GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [Limited_Table_W
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M580] AS [dbo]
+GO

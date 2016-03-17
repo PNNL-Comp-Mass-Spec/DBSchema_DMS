@@ -31,3 +31,5 @@ FROM  dbo.T_Analysis_Job INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_For_Delete] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_For_Delete] TO [PNL\D3M580] AS [dbo]
+GO

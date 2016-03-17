@@ -293,3 +293,7 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[StoreBionetHosts] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[StoreBionetHosts] TO [PNL\D3M580] AS [dbo]
+GO

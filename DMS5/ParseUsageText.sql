@@ -236,3 +236,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [PNL\D3M580] AS [dbo]
+GO

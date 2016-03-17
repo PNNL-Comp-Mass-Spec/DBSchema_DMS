@@ -16,3 +16,5 @@ WHERE (U_active = 'Y') AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Users_NWFs_Samba] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Users_NWFs_Samba] TO [PNL\D3M580] AS [dbo]
+GO

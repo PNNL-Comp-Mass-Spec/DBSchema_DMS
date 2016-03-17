@@ -11,3 +11,5 @@ FROM         dbo.T_Wellplates
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Wellplate_Picklist] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Wellplate_Picklist] TO [PNL\D3M580] AS [dbo]
+GO

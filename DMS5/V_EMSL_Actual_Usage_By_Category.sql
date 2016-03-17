@@ -21,3 +21,5 @@ GROUP BY dbo.GetFiscalYearFromDate(RunDate), Proposal_ID, Category
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Actual_Usage_By_Category] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Actual_Usage_By_Category] TO [PNL\D3M580] AS [dbo]
+GO

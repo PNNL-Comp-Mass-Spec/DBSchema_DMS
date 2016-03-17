@@ -76,3 +76,7 @@ GRANT EXECUTE ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [DMS_SP_User] A
 GO
 GRANT EXECUTE ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [PNL\D3M580] AS [dbo]
+GO

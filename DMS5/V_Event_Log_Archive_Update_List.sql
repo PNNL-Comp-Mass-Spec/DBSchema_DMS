@@ -18,3 +18,5 @@ ORDER BY dbo.T_Dataset.Dataset_Num, dbo.T_Event_Log.Entered DESC
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Archive_Update_List] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Archive_Update_List] TO [PNL\D3M580] AS [dbo]
+GO

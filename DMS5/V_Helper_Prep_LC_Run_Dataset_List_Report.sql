@@ -15,3 +15,7 @@ WHERE     (NOT (dbo.T_Dataset.Dataset_ID IN
                             FROM          dbo.T_Prep_LC_Run_Dataset))) AND (dbo.T_Dataset.DS_type_ID = 31)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_Dataset_List_Report] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_Dataset_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

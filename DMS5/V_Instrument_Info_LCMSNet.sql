@@ -20,3 +20,7 @@ WHERE (NOT (TIN.IN_name LIKE 'SW_%')) AND (TIN.IN_status = 'active') AND (TIN.IN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Info_LCMSNet] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Info_LCMSNet] TO [PNL\D3M580] AS [dbo]
+GO

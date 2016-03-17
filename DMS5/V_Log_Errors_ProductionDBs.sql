@@ -23,3 +23,5 @@ FROM DMS_Data_Package.dbo.V_Log_Errors
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_ProductionDBs] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_ProductionDBs] TO [PNL\D3M580] AS [dbo]
+GO

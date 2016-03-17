@@ -77,3 +77,7 @@ GRANT EXECUTE ON [dbo].[DoFileAttachmentOperation] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DoFileAttachmentOperation] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoFileAttachmentOperation] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[DoFileAttachmentOperation] TO [PNL\D3M580] AS [dbo]
+GO

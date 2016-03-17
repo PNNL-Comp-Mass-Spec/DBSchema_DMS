@@ -117,3 +117,7 @@ AS
 	RETURN
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[EditEMSLInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[EditEMSLInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
+GO

@@ -41,5 +41,7 @@ GRANT VIEW DEFINITION ON [dbo].[sp_helpdiagrams] TO [Limited_Table_Write] AS [db
 GO
 GRANT VIEW DEFINITION ON [dbo].[sp_helpdiagrams] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_helpdiagrams] TO [PNL\D3M580] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[sp_helpdiagrams] TO [public] AS [dbo]
 GO

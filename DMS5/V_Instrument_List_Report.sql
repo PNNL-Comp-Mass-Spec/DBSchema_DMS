@@ -55,3 +55,5 @@ FROM dbo.T_Instrument_Name InstName
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -55,3 +55,7 @@ FROM T_DatasetStateName DSN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset] TO [PNL\D3M580] AS [dbo]
+GO

@@ -15,3 +15,5 @@ SELECT     T_Cell_Culture.CC_Name AS CellCulture, T_Experiments.Experiment_Num A
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Experiments] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Experiments] TO [PNL\D3M580] AS [dbo]
+GO

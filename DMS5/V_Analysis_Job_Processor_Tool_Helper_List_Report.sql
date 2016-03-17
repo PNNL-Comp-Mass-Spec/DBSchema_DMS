@@ -22,3 +22,5 @@ WHERE (Tool.AJT_toolID > 0) AND
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Tool_Helper_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Tool_Helper_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

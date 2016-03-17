@@ -206,3 +206,5 @@ GRANT EXECUTE ON [dbo].[DuplicateParamFileMassMods] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DuplicateParamFileMassMods] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[DuplicateParamFileMassMods] TO [PNL\D3M580] AS [dbo]
+GO

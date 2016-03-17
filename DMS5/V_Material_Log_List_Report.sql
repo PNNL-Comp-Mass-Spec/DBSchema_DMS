@@ -24,3 +24,5 @@ FROM    dbo.T_Material_Log TML
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Log_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Log_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

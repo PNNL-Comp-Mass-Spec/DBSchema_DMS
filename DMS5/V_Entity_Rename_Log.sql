@@ -22,3 +22,7 @@ FROM dbo.T_Entity_Rename_Log AS ERL
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Entity_Rename_Log] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_Entity_Rename_Log] TO [PNL\D3M580] AS [dbo]
+GO

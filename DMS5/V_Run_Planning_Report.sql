@@ -134,3 +134,5 @@ FROM    ( SELECT    [Inst. Group] ,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Planning_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Run_Planning_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -275,3 +275,5 @@ GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [Limited_T
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [PNL\D3M580] AS [dbo]
+GO

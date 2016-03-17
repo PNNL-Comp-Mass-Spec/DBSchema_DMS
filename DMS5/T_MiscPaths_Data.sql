@@ -7,6 +7,6 @@ INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (4,'','http:
 INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (5,'E:\DIM_Trigger\','','DIMTriggerFileDir               ')
 INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (6,'\\proto-1\DB_Backups\Gigasax_Backup\','\\proto-1\DB_Backups\Gigasax_Backup\','Database Backup Path            ')
 INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (8,'G:\SqlServerBackup\','G:\SqlServerBackup\','Database Backup Log Path        ')
-INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (9,'G:\Redgate_Backup_Xfer\','G:\Redgate_Backup_Xfer\','Redgate Backup Transfer Folder  ')
-INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (10,'\\gigasax\DMS_Organism_Files\','E:\DMS_Organism_Files\','DMSOrganismFiles                ')
+INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (9,'','','Redgate Backup Transfer Folder  ')
+INSERT INTO [T_MiscPaths] (TMP_ID, Server, Client, Function) VALUES (10,'\\gigasax\DMS_Organism_Files\','F:\DMS_Organism_Files\','DMSOrganismFiles                ')
 SET IDENTITY_INSERT [T_MiscPaths] OFF

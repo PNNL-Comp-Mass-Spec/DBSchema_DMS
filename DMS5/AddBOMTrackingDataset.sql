@@ -176,3 +176,7 @@ GRANT EXECUTE ON [dbo].[AddBOMTrackingDataset] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddBOMTrackingDataset] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDataset] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDataset] TO [PNL\D3M580] AS [dbo]
+GO

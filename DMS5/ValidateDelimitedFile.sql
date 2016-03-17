@@ -177,3 +177,5 @@ GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [Limited_Table_Write] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [PNL\D3M580] AS [dbo]
+GO

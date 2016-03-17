@@ -18,3 +18,5 @@ WHERE     (dbo.T_AuxInfo_Description.Active = 'Y')
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Definition] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Definition] TO [PNL\D3M580] AS [dbo]
+GO

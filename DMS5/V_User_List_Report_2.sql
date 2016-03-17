@@ -33,3 +33,5 @@ FROM T_EUS_Site_Status ESS
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_User_List_Report_2] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_User_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GO

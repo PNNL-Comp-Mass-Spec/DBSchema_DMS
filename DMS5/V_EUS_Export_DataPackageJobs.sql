@@ -51,3 +51,5 @@ WHERE (AJ.AJ_StateID = 4)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_DataPackageJobs] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_DataPackageJobs] TO [PNL\D3M580] AS [dbo]
+GO

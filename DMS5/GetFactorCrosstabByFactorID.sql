@@ -106,3 +106,5 @@ GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByFactorID] TO [Limited_Table_W
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByFactorID] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByFactorID] TO [PNL\D3M580] AS [dbo]
+GO

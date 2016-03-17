@@ -114,3 +114,7 @@ GRANT EXECUTE ON [dbo].[GetRequestedRunParametersAndFactors] TO [DMS_SP_User] AS
 GO
 GRANT EXECUTE ON [dbo].[GetRequestedRunParametersAndFactors] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunParametersAndFactors] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunParametersAndFactors] TO [PNL\D3M580] AS [dbo]
+GO

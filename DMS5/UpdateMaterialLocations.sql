@@ -147,3 +147,7 @@ GRANT EXECUTE ON [dbo].[UpdateMaterialLocations] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateMaterialLocations] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocations] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocations] TO [PNL\D3M580] AS [dbo]
+GO

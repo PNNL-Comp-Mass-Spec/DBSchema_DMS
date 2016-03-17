@@ -17,3 +17,5 @@ FROM         dbo.T_Filter_Set_Criteria INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_PDE_Filter_Criteria_Tmp] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_Filter_Criteria_Tmp] TO [PNL\D3M580] AS [dbo]
+GO

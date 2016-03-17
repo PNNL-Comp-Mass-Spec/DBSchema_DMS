@@ -19,3 +19,5 @@ WHERE     (dbo.T_Dataset.DS_state_ID = 3)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Utilization_Report_Ex] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Utilization_Report_Ex] TO [PNL\D3M580] AS [dbo]
+GO

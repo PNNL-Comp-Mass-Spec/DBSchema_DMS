@@ -25,3 +25,5 @@ FROM         dbo.T_LC_Cart_Settings_History INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Settings_History_Detail_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Settings_History_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

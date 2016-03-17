@@ -32,3 +32,5 @@ FROM dbo.T_Internal_Std_Parent_Mixes INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Export] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Internal_Standards_Export] TO [PNL\D3M580] AS [dbo]
+GO

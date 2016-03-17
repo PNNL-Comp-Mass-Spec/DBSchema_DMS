@@ -383,3 +383,5 @@ GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [Limited_Table_Wri
 GO
 GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [PNL\D3M580] AS [dbo]
+GO

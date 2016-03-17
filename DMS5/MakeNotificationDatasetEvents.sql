@@ -165,3 +165,5 @@ GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [Limited_Table
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [PNL\D3M580] AS [dbo]
+GO

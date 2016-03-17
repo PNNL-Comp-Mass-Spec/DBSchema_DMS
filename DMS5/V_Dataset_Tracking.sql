@@ -25,3 +25,5 @@ FROM dbo.T_Dataset INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Tracking] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Tracking] TO [PNL\D3M580] AS [dbo]
+GO

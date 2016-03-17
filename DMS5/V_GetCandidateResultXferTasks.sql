@@ -14,3 +14,5 @@ WHERE     (AJ.AJ_StateID = 3)
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetCandidateResultXferTasks] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_GetCandidateResultXferTasks] TO [PNL\D3M580] AS [dbo]
+GO

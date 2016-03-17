@@ -19,3 +19,5 @@ GROUP BY dbo.T_Campaign.Campaign_Num, dbo.T_Experiments.Experiment_Num, dbo.T_Ex
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Experiment_Tracking] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Experiment_Tracking] TO [PNL\D3M580] AS [dbo]
+GO

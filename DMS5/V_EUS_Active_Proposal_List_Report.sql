@@ -15,3 +15,5 @@ WHERE (State_ID IN (2, 5))
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Active_Proposal_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Active_Proposal_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

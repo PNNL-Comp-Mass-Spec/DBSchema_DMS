@@ -108,3 +108,5 @@ GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [Limited_Table_Write] A
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [PNL\D3M580] AS [dbo]
+GO

@@ -15,3 +15,5 @@ WHERE     (dbo.T_Archive_Path.AP_Function = 'Active')
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Archive_Storage] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Assigned_Archive_Storage] TO [PNL\D3M580] AS [dbo]
+GO

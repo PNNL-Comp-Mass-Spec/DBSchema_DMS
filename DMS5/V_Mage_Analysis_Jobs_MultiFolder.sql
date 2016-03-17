@@ -35,3 +35,5 @@ FROM V_Mage_Analysis_Jobs J
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Analysis_Jobs_MultiFolder] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Analysis_Jobs_MultiFolder] TO [PNL\D3M580] AS [dbo]
+GO

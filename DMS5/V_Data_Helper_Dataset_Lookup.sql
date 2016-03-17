@@ -15,3 +15,5 @@ FROM         dbo.T_Dataset_Archive AS DA INNER JOIN
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Helper_Dataset_Lookup] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Helper_Dataset_Lookup] TO [PNL\D3M580] AS [dbo]
+GO

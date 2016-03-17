@@ -66,3 +66,5 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

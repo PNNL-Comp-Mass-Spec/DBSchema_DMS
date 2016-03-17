@@ -28,3 +28,5 @@ FROM T_Cell_Culture U
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Cell_Culture_Report] TO [PNL\D3M580] AS [dbo]
+GO

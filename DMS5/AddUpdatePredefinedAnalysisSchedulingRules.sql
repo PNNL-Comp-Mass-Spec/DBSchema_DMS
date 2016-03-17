@@ -181,3 +181,5 @@ GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] TO [
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysisSchedulingRules] TO [PNL\D3M580] AS [dbo]
+GO

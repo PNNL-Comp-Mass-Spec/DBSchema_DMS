@@ -10,3 +10,5 @@ WHERE        (Attachment_Type = 'MRM Transition List')
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_MRM_List_Attachment_Detail_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MRM_List_Attachment_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GO

@@ -11,3 +11,5 @@ FROM         dbo.T_User_Operations
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Operations_User_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Operations_User_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

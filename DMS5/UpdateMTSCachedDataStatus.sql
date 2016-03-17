@@ -119,3 +119,5 @@ GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [Limited_Table_Wri
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [PNL\D3M580] AS [dbo]
+GO

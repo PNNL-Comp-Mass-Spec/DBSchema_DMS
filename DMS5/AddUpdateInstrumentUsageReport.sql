@@ -129,3 +129,5 @@ GRANT EXECUTE ON [dbo].[AddUpdateInstrumentUsageReport] TO [DMS2_SP_User] AS [db
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
+GO

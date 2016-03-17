@@ -125,3 +125,5 @@ GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [PNL\D3M580] AS [dbo]
+GO

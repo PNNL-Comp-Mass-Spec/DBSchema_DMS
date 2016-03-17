@@ -222,3 +222,7 @@ GRANT EXECUTE ON [dbo].[UpdateRunOpLog] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateRunOpLog] TO [DMS2_SP_User] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRunOpLog] TO [PNL\D3M578] AS [dbo]
+GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRunOpLog] TO [PNL\D3M580] AS [dbo]
+GO

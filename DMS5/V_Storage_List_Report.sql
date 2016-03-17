@@ -26,3 +26,5 @@ GROUP BY SPath.SP_path_ID, SPath.SP_path, SPath.SP_vol_name_client,
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Storage_List_Report] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Storage_List_Report] TO [PNL\D3M580] AS [dbo]
+GO

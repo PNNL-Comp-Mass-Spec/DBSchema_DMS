@@ -41,3 +41,5 @@ GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [Limited_Table_Write] AS [db
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [PNL\D3M580] AS [dbo]
+GO

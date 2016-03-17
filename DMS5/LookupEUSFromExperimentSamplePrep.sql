@@ -105,3 +105,5 @@ GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [Limited_T
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [PNL\D3M578] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [PNL\D3M580] AS [dbo]
+GO
