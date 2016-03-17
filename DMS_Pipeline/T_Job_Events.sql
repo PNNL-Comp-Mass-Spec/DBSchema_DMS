@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_Job_Events](
 ) ON [PRIMARY]
 
 GO
-GRANT UPDATE ON [dbo].[T_Job_Events] ([Entered_By]) TO [DMSWebUser] AS [dbo]
+GRANT UPDATE ON [dbo].[T_Job_Events] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 GO
 /****** Object:  Index [IX_T_Job_Events_Current_State_Job] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Events_Current_State_Job] ON [dbo].[T_Job_Events]

@@ -1,8 +1,10 @@
 /****** Object:  Database [DMS_Pipeline] ******/
-CREATE DATABASE [DMS_Pipeline] ON  PRIMARY 
+CREATE DATABASE [DMS_Pipeline]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
 ( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 13156928KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'G:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'H:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [DMS_Pipeline] SET COMPATIBILITY_LEVEL = 100
@@ -66,6 +68,10 @@ ALTER DATABASE [DMS_Pipeline] SET PAGE_VERIFY CHECKSUM
 GO
 ALTER DATABASE [DMS_Pipeline] SET DB_CHAINING OFF 
 GO
+ALTER DATABASE [DMS_Pipeline] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [DMS_Pipeline] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
 USE [DMS_Pipeline]
 GO
 /****** Object:  User [DMSReader] ******/
@@ -90,7 +96,7 @@ GO
 CREATE USER [pnl\gibb166] FOR LOGIN [PNL\gibb166] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [pnl\mtsproc] ******/
-CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\mtsproc] WITH DEFAULT_SCHEMA=[dbo]
+CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\MTSProc] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
