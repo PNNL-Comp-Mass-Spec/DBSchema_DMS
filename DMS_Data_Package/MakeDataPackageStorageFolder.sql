@@ -21,6 +21,7 @@ CREATE PROCEDURE MakeDataPackageStorageFolder
 **			03/17/2011 mem - Now calling AddDataFolderCreateTask in the DMS_Pipeline database
 **			04/07/2011 mem - Fixed bug constructing @PathFolder (year was in the wrong place)
 **			07/30/2012 mem - Now updating @message prior to calling PostLogEntry
+**			03/17/2016 mem - Remove call to CallSendMessage
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -71,15 +72,18 @@ As
 
 	---------------------------------------------------
 	-- Execute CallSendMessage, which will use xp_cmdshell to run C:\DMS_Programs\DBMessageSender\DBMessageSender.exe
+	-- We stopped doing this in February 2016 because login DMSWebUser no longer has execute privileges on xp_cmdshell
 	---------------------------------------------------
 	--
+	/*
 	EXEC @myError = CallSendMessage @ID, @mode, @message output
 
 	If IsNull(@message, '') = ''
 		Set @message = 'Called SendMessage for Data Package ID ' + Convert(varchar(12), @PackageID) + ': ' + @PathFolder
 		
 	exec PostLogEntry 'Normal', @message, 'MakeDataPackageStorageFolder', @callingUser=@CallingUser
-
+	*/
+	
 
 /*
 ** The following was the original method for doing this, using .NET function SendMessage

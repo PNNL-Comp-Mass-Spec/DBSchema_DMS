@@ -18,9 +18,8 @@ CREATE PROCEDURE CallSendMessage
 **	Date:	11/05/2009 grk - Initial version
 **			11/02/2015 mem - Now calling PostLogEntry
 **			               - Changed @ID from varchar(128) to int
+**			03/17/2016 mem - Add comment about deprecating the use of this procedure because we don't want to grant Execute permission on [sys].[xp_cmdshell] to [DMSWebUser]
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
 	@ID int,
@@ -71,6 +70,11 @@ As
 		Declare @cmd nvarchar(4000)
 		Set @cmd = @appPath + @appName + ' ' + @args
 		
+		-- Note: for this to work with the DMSWebUser user we need to use:
+		-- GRANT EXECUTE ON [sys].[xp_cmdshell] TO [DMSWebUser]
+		-- However, when migrating to a new server in February 2016 it was decided not to grant this permission
+		-- and to instead stop using this stored procedure
+		--
 		insert into #exec_std_out
 		EXEC @result = master..xp_cmdshell @cmd 
 		
