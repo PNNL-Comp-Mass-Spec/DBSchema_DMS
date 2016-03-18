@@ -30,6 +30,7 @@ CREATE PROCEDURE BackupDMSDBs
 **						   - Changed the default compression level to 4
 **			06/28/2013 mem - Now performing a log backup of the Model DB after the full backup to prevent the model DB's log file from growing over time (it grows because the Model DB's recovery model is "Full", and a database backup is a logged operation)
 **			09/15/2015 mem - Added parameter @UseRedgateBackup
+**			03/17/2016 mem - Now calling xp_delete_file to delete old backup files when @UseRedgateBackup = 0
 **    
 *****************************************************/
 (
@@ -37,16 +38,17 @@ CREATE PROCEDURE BackupDMSDBs
 	@DBNameMatchList varchar(2048) = 'DMS%',		-- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
 	@TransactionLogBackup tinyint = 0,				-- Set to 0 for a full backup, 1 for a transaction log backup
 	@IncludeSystemDBs tinyint = 0,					-- Set to 1 to include master, model and MSDB databases; these always get full DB backups since transaction log backups are not allowed
-	@FileCount tinyint = 1,							-- Set to 2 or 3 to create multiple backup files (will automatically use one thread per file); If @FileCount is > 1, then @ThreadCount is ignored
+	@FileCount tinyint = 1,							-- Set to 2 or 3 to create multiple backup files (will automatically use one thread per file); If @FileCount is > 1, then @ThreadCount is ignored; ignored when @UseRedgateBackup=0
 	@ThreadCount tinyint = 3,						-- Set to 2 or higher (up to the number of cores on the server) to use multiple compression threads but create just a single output file; @FileCount must be 1 if @ThreadCount is > 1; ignored when @UseRedgateBackup=0
-	@DaysToKeepOldBackups smallint = 20,			-- Defines the number of days worth of backup files to retain; files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3
+	@DaysToKeepOldBackups smallint = 20,			-- Defines the number of days to retain full or transaction log backups; files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3
+	@DaysToKeepOldLogBackups smallint = 20,			-- Defines the number of days to retain transaction log backups (takes precedence over @DaysToKeepOldBackups if non-zero); transaction log files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3
 	@Verify tinyint = 1,							-- Set to 1 to verify each backup
 	@InfoOnly tinyint = 1,							-- Set to 1 to display the backup SQL that would be run
-	@BackupBatchSize tinyint = 32,					-- If greater than 1, then sends Sql Backup a comma separated list of databases to backup (up to 32 DBs at a time); this is much more efficient than calling Sql Backup with one database at a time, but has a downside of inability to explicitly define the log file names; ignored when @UseRedgateBackup=0
-	@UseLocalTransferFolder tinyint = 0,			-- Set to 1 to backup to the local "Redgate Backup Transfer Folder" then copy the file to @BackupFolderRoot; only used if @BackupFolderRoot starts with "\\"
-	@DiskRetryIntervalSec smallint = 30,			-- Set to non-zero value to specify that the backup should be re-tried if a network error occurs; this is the delay time before the retry occurs
-	@DiskRetryCount smallint = 10,					-- When @DiskRetryIntervalSec is non-zero, this specifies the maximum number of times to retry the backup
-	@CompressionLevel tinyint = 4,					-- 1 is the fastest backup, but the largest file size; 4 is the slowest backup, but the smallest file size; when @UseRedgateBackup = 0, @CompressionLevel=0 means no compression while @CompressionLevel>0 means use compression
+	@BackupBatchSize tinyint = 32,					-- If greater than 1, sends Sql Backup a comma separated list of databases to backup (up to 32 DBs at a time); this is much more efficient than calling Sql Backup with one database at a time, but has a downside of inability to explicitly define the log file names; ignored when @UseRedgateBackup=0
+	@UseLocalTransferFolder tinyint = 0,			-- Set to 1 to backup to the local "Redgate Backup Transfer Folder" then copy the file to @BackupFolderRoot; only used if @BackupFolderRoot starts with "\\"; ignored when @UseRedgateBackup=0
+	@DiskRetryIntervalSec smallint = 30,			-- Set to non-zero value to specify that the backup should be re-tried if a network error occurs; this is the delay time before the retry occurs; ignored when @UseRedgateBackup=0
+	@DiskRetryCount smallint = 10,					-- When @DiskRetryIntervalSec is non-zero, this specifies the maximum number of times to retry the backup; ignored when @UseRedgateBackup=0
+	@CompressionLevel tinyint = 4,					-- When @UseRedgateBackup>1, 1 is the fastest backup, but the largest file size, while 4 is the slowest backup, but the smallest file size; When @UseRedgateBackup=0, @CompressionLevel=0 means no compression while @CompressionLevel>0 means use compression
 	@UseRedgateBackup tinyint = 0,					-- 0 to use Sql Server backup; 1 to use Redgate's SQL Backup Pro
 	@message varchar(2048) = '' OUTPUT
 )
@@ -92,13 +94,17 @@ As
 	Set @Verify = IsNull(@Verify, 0)
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	Set @UseLocalTransferFolder = IsNull(@UseLocalTransferFolder, 0)
-	If @UseLocalTransferFolder <> 0
-		Set @UseLocalTransferFolder = 1
 
 	Set @DaysToKeepOldBackups = IsNull(@DaysToKeepOldBackups, 20)
 	If @DaysToKeepOldBackups < 3
 		Set @DaysToKeepOldBackups = 3
 
+	Set @DaysToKeepOldLogBackups = IsNull(@DaysToKeepOldLogBackups, 0)
+	If @DaysToKeepOldLogBackups <= 0
+		Set @DaysToKeepOldLogBackups = @DaysToKeepOldBackups		
+	If @DaysToKeepOldLogBackups < 3
+		Set @DaysToKeepOldLogBackups = 3
+	
 	Set @DiskRetryIntervalSec = IsNull(@DiskRetryIntervalSec, 0)
 	If @DiskRetryIntervalSec < 0
 		Set @DiskRetryIntervalSec = 0
@@ -112,12 +118,23 @@ As
 		Set @DiskRetryCount = 50
 
 	Set @CompressionLevel = IsNull(@CompressionLevel, 4)
-	If @CompressionLevel < 1 Or @CompressionLevel > 4
-		Set @CompressionLevel = 4
 
-	Set @UseRedgateBackup = IsNull(@UseRedgateBackup, 0)		
-	If @UseRedgateBackup = 0
+	Set @UseRedgateBackup = IsNull(@UseRedgateBackup, 0)
+	If @UseRedgateBackup > 0
+	Begin
+		Set @UseRedgateBackup = 1
+		If @CompressionLevel < 1 Or @CompressionLevel > 4
+			Set @CompressionLevel = 4
+	End
+	Else
+	Begin
+		Set @UseRedgateBackup = 0
 		Set @BackupBatchSize = 1
+		If @CompressionLevel < 1
+			Set @CompressionLevel = 0
+		Else
+			Set @CompressionLevel = 1
+	End
 
 
 	Set @message = ''
@@ -145,7 +162,8 @@ As
 	Declare @BackupFileBaseName varchar(512)
 	Declare @BackupFileBasePath varchar(1024)
 	Declare @LocalTransferFolderRoot varchar(512)
-
+	Declare @FileExtension varchar(6)
+	
 	Declare @BackupFileList varchar(2048)
 	Declare @Periods varchar(6)
 	
@@ -158,6 +176,9 @@ As
 	Declare @DBBackupTransCount int = 0
 	Declare @DBCountInBatch int = 0
 
+	Declare @FailedBackupCount int = 0
+	Declare @FailedVerifyCount int = 0
+	
 	---------------------------------------
 	-- Validate @BackupFolderRoot
 	---------------------------------------
@@ -165,9 +186,9 @@ As
 	Set @BackupFolderRoot = LTrim(RTrim(@BackupFolderRoot))
 	If Len(@BackupFolderRoot) = 0
 	Begin
-		SELECT @BackupFolderRoot = "Server"
+		SELECT @BackupFolderRoot = [Server]
 		FROM T_MiscPaths
-		WHERE ("Function" = 'Database Backup Path')
+		WHERE ([Function] = 'Database Backup Path')
 	End
 	
 	Set @BackupFolderRoot = LTrim(RTrim(@BackupFolderRoot))
@@ -194,9 +215,9 @@ As
 	Declare @DBBackupStatusLogFileName varchar(512)
 	
 	Set @DBBackupStatusLogPathBase = ''
-	SELECT @DBBackupStatusLogPathBase = "Server"
+	SELECT @DBBackupStatusLogPathBase = [Server]
 	FROM T_MiscPaths
-	WHERE ("Function" = 'Database Backup Log Path')
+	WHERE ([Function] = 'Database Backup Log Path')
 	
 	If Len(@DBBackupStatusLogPathBase) = 0
 	Begin
@@ -217,9 +238,9 @@ As
 		---------------------------------------
 		--
 		Set @LocalTransferFolderRoot = ''
-		SELECT @LocalTransferFolderRoot = "Server"
+		SELECT @LocalTransferFolderRoot = [Server]
 		FROM T_MiscPaths
-		WHERE ("Function" = 'Redgate Backup Transfer Folder')
+		WHERE ([Function] = 'Redgate Backup Transfer Folder')
 		
 		If Len(@LocalTransferFolderRoot) = 0
 		Begin
@@ -280,7 +301,7 @@ As
 	-- Note that system DBs are forced to perform a full backup, even if @TransactionLogBackup = 1
 	---------------------------------------
 	--
-	If @IncludeSystemDBs <> 0
+	If @IncludeSystemDBs > 0
 	Begin
 		INSERT INTO #Tmp_DB_Backup_List (DatabaseName, Perform_Full_DB_Backup) VALUES ('Master', 1)
 		INSERT INTO #Tmp_DB_Backup_List (DatabaseName, Perform_Full_DB_Backup) VALUES ('Model', 1)
@@ -356,7 +377,7 @@ As
 	If @myRowCount > 0
 	Begin
 		Set @message = 'Deleted ' + Convert(varchar(9), @myRowCount) + ' non-existent databases'
-		If @InfoOnly = 1
+		If @InfoOnly > 0
 			SELECT @message AS Warning_Message
 	End
 	
@@ -383,7 +404,7 @@ As
 
 	
 	---------------------------------------
-	-- If @TransactionLogBackup = 0, then update Perform_Full_DB_Backup to 1 for all DBs
+	-- If @TransactionLogBackup = 0, update Perform_Full_DB_Backup to 1 for all DBs
 	-- Otherwise, update Perform_Full_DB_Backup to 1 for databases with a Simple recovery model
 	---------------------------------------
 	--
@@ -405,7 +426,7 @@ As
 	End		
 
 
-	If @InfoOnly = 1
+	If @InfoOnly > 0
 		SELECT *
 		FROM #Tmp_DB_Backup_List
 		ORDER BY DatabaseName
@@ -424,10 +445,13 @@ As
 		exec PostLogEntry 'Warning', @message, 'BackupDMSDBs'
 		Goto Done
 	End
-		
+
 	If @BackupBatchSize > 1
 	Begin -- <Batched>
+	
 		---------------------------------------
+		-- Backup the databases using Redgate's SQL Backup Pro
+		--
 		-- Loop through the databases in #Tmp_DB_Backup_List
 		-- First process DBs with Perform_Full_DB_Backup = 1
 		-- Then process the remaining DBs
@@ -609,12 +633,16 @@ As
 					If (@ExitCode <> 0) OR (@SqlErrorCode <> 0)
 					Begin
 						---------------------------------------
-						-- Error occurred; post a log entry
+						-- Error occurred
+						-- Post a log entry but continue backing up other databases
 						---------------------------------------
 						
 						Set @message = 'SQL Backup of DB batch failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
 						Set @message = @message + '; DB List: ' + @DBList
 						exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+						
+						-- Failed to backup (or verify) one or more database in the batch
+						Set @FailedBackupCount = @FailedBackupCount + 1
 					End
 				End -- </c3>
 				Else
@@ -659,9 +687,15 @@ As
 			End -- </b>
 		End -- </a>
 	End -- </Batched>
+
 	Else
 	Begin -- <NonBatched>
+	
 		---------------------------------------
+		-- Either use Redgate's SQL Backup Pro
+		--  or
+		-- Use SQL Server's built-in backup command
+		--
 		-- Loop through the databases in #Tmp_DB_Backup_List
 		-- First process DBs with Perform_Full_DB_Backup = 1
 		-- Then process the remaining DBs
@@ -685,13 +719,14 @@ As
 				Else
 					Set @continue = 0
 			End
+
 			Else
 			Begin -- <e>
 				DELETE FROM #Tmp_DB_Backup_List
 				WHERE @DBName = DatabaseName AND
 				      Perform_Full_DB_Backup = @FullDBBackupMatchMode
 
-				Declare @FileExtension varchar(6) = '.sqb'
+				Set @FileExtension = '.sqb'
 				
 				---------------------------------------
 				-- Construct the backup and restore commands for database @DBName
@@ -754,7 +789,11 @@ As
 				If @UseRedgateBackup = 0
 				Begin
 					-- Note: Use of checksum slows the backup down a little, but it is best practice to enable this option
-					Set @Sql = @Sql + ' WITH NOFORMAT, NOINIT,  NAME = ''' + @DBName + '-' + @BackupType + ''', SKIP, NOREWIND, NOUNLOAD, COMPRESSION, STATS = 10, CHECKSUM'
+					Set @Sql = @Sql + ' WITH NOFORMAT, NOINIT,  NAME = ''' + @DBName + '-' + @BackupType + ''', SKIP, NOREWIND, NOUNLOAD, STATS = 10, CHECKSUM'
+					
+					If @CompressionLevel > 0
+						Set @Sql = @Sql + ', COMPRESSION'
+					
 				End
 				Else
 				Begin
@@ -765,7 +804,7 @@ As
 
 				Set @DBBackupStatusLogFileName = @DBBackupStatusLogPathBase + @BackupFileBaseName + '.log'
 
-				If @UseRedgateBackup <> 0
+				If @UseRedgateBackup > 0
 				Begin
 					If @FileCount > 1
 						Set @Sql = @Sql + ' FILECOUNT=' + Convert(varchar(6), @FileCount) + ','
@@ -805,11 +844,14 @@ As
 					If (@ExitCode <> 0) OR (@SqlErrorCode <> 0)
 					Begin
 						---------------------------------------
-						-- Error occurred; post a log entry
+						-- Error occurred
+						-- Post a log entry but continue backing up other databases
 						---------------------------------------
 						
 						Set @message = 'SQL Backup of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
 						exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+						
+						Set @FailedBackupCount = @FailedBackupCount + 1
 					End
 					Else
 					Begin
@@ -833,11 +875,14 @@ As
 							If (@ExitCode <> 0) OR (@SqlErrorCode <> 0)
 							Begin
 								---------------------------------------
-								-- Error occurred; post a log entry
+								-- Error occurred
+								-- Post a log entry but continue backing up other databases
 								---------------------------------------
 								
 								Set @message = 'SQL Backup Verify of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
 								exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+								
+								Set @FailedVerifyCount = @FailedVerifyCount + 1							
 							End
 						End
 					End
@@ -898,7 +943,64 @@ As
 				End
 
 			End -- </e>
+						
 		End -- </d>
+		
+				
+		If @UseRedgateBackup = 0 And @FailedBackupCount = 0
+		Begin
+			---------------------------------------
+			-- Use xp_delete_file to delete old full and/or transaction log files
+			--
+			-- Parameters for xp_delete_file:
+			--   FileType:        0 for backup files or 1 for report files
+			--   FolderPath:      The folder to delete files.  Must end in a \ if a local folder; not true for network shares
+			--   FileExtension    Typically 'BAK' or 'TRN'
+			--   Date             Files backed up before this date will be deleted
+			--   Subfolder        0 to ignore subfolders, 1 to delete files in subfolders
+			--
+			-- xp_delete_file only deletes true BAK or TRN files from SQL Server; it ignores text files with a .bak extension
+			---------------------------------------
+			
+			Declare @dateThreshold DateTime
+			
+			If @TransactionLogBackup > 0
+			Begin
+				Set @dateThreshold = DATEADD(day, -@DaysToKeepOldLogBackups, GETDATE())
+				Set @fileExtension = 'TRN'
+			End
+			Else
+			Begin
+				Set @dateThreshold = DATEADD(day, -@DaysToKeepOldBackups, GETDATE())
+				Set @fileExtension = 'BAK'
+			End
+			
+			-- Construct text of the form
+			--                 master.dbo.xp_delete_file 0,N'\\proto-7\DMS_Backup\Production_DBs',N'BAK',N'2015-09-16T20:05:54',1
+			Set @UnicodeSql = 'master.dbo.xp_delete_file 0,''' + Cast(@BackupFolderRoot as nvarchar(256)) + ''',''' + Cast(@fileExtension as nvarchar(12)) + ''',''' + Convert(nvarchar(64), @dateThreshold, 126) + ''',1'
+			
+			If @infoOnly = 1
+			Begin
+				Print @UnicodeSql
+			End
+			Else
+			Begin
+				Set @ExitCode = 0
+				-- To be tested: exec @ExitCode = sp_executesql @UnicodeSql
+				
+				If (@ExitCode <> 0)
+				Begin
+					---------------------------------------
+					-- Error occurred
+					---------------------------------------
+					
+					Set @message = 'Error deleting old ' + @fileExtension + ' files at ' + @BackupFolderRoot
+					exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+										
+				End
+			End
+		End
+
 	End -- </NonBatched>
 
 	If @DBBackupFullCount + @DBBackupTransCount = 0
@@ -907,15 +1009,21 @@ As
 	Begin
 		Set @Message = 'DB Backup Complete ('
 		if @DBBackupFullCount > 0
-			Set @Message = @Message + 'FullBU=' + Convert(varchar(9), @DBBackupFullCount) 
+			Set @Message = @Message + 'FullBU=' + Cast(@DBBackupFullCount as varchar(9))
+			
 		if @DBBackupTransCount > 0
 		Begin
 			If Right(@Message,1) <> '('
 				Set @Message = @Message + '; '
-			Set @Message = @Message + 'LogBU=' + Convert(varchar(9), @DBBackupTransCount) 
+			Set @Message = @Message + 'LogBU=' + Cast(@DBBackupTransCount as varchar(9))
 		End
 
 		Set @Message = @Message + '): ' + @DBsProcessed
+		
+		If @FailedBackupCount > 0
+		Begin
+			Set @Message = @Message + '; FailureCount=' + Cast(@FailedBackupCount as varchar(9))
+		End
 	End
 	
 	---------------------------------------
@@ -926,7 +1034,10 @@ As
 	Begin
 		If @DBBackupFullCount + @DBBackupTransCount > 0
 		Begin
-			exec PostLogEntry 'Normal', @message, 'BackupDMSDBs'
+			If @FailedBackupCount > 0
+				exec PostLogEntry 'Error',  @message, 'BackupDMSDBs'
+			Else
+				exec PostLogEntry 'Normal', @message, 'BackupDMSDBs'
 		End
 	End
 	Else
