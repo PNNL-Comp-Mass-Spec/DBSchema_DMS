@@ -16,13 +16,14 @@ CREATE PROCEDURE dbo.ReportSequestWarnings
 **			12/10/2009 mem - Initial Version
 **			12/11/2009 mem - Now returning the SQL Query in the e-mail
 **			12/14/2009 mem - Now displaying Job and Finish as the first two columns
+**			03/18/2016 mem - Update e-mail address for parameter EmailAddressList
 **    
 *****************************************************/
 (
 	@IncludeWarningsInReport tinyint = 0,	-- When 0, then will only report jobs / send an e-mail if the Evaluation_Code column has an error bit set.  When 1, will show stats for all jobs in T_Job_Steps that have a non-zero Evaluation_Code value
 	@JobFinishThresholdHours int = 24,		-- Will include jobs that have finished within this many hours of the present time
 	@SendEmail tinyint = 0,					-- When 1, then will send an e-mail to the addesses specified by @EmailAddressList if any jobs have a warning
-	@EmailAddressList varchar(4000) = 'matthew.monroe@pnl.gov',
+	@EmailAddressList varchar(4000) = 'EMSL-Prism.Users.DB_Operators@pnnl.gov',
 	@message varchar(512) = '' output
 )
 As

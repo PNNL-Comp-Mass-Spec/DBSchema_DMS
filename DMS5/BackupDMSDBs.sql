@@ -31,6 +31,7 @@ CREATE PROCEDURE BackupDMSDBs
 **			06/28/2013 mem - Now performing a log backup of the Model DB after the full backup to prevent the model DB's log file from growing over time (it grows because the Model DB's recovery model is "Full", and a database backup is a logged operation)
 **			09/15/2015 mem - Added parameter @UseRedgateBackup
 **			03/17/2016 mem - Now calling xp_delete_file to delete old backup files when @UseRedgateBackup = 0
+**			03/18/2016 mem - Update e-mail address for the MAILTO_ONERROR parameter
 **    
 *****************************************************/
 (
@@ -620,7 +621,7 @@ As
 				If @Verify <> 0
 					Set @Sql = @Sql + ' VERIFY,'
 					
-				Set @Sql = @Sql + ' LOGTO=''' + @DBBackupStatusLogPathBase + ''', MAILTO_ONERROR = ''matthew.monroe@pnl.gov''"'
+				Set @Sql = @Sql + ' LOGTO=''' + @DBBackupStatusLogPathBase + ''', MAILTO_ONERROR = ''EMSL-Prism.Users.DB_Operators@pnnl.gov''"'
 
 				If @InfoOnly = 0
 				Begin -- <c3>
@@ -814,7 +815,7 @@ As
 							Set @Sql = @Sql + ' THREADCOUNT=' + Convert(varchar(4), @ThreadCount) + ','
 					End
 			
-					Set @Sql = @Sql + ' LOGTO=''' + @DBBackupStatusLogFileName + ''', MAILTO_ONERROR = ''matthew.monroe@pnl.gov''"'
+					Set @Sql = @Sql + ' LOGTO=''' + @DBBackupStatusLogFileName + ''', MAILTO_ONERROR = ''EMSL-Prism.Users.DB_Operators@pnnl.gov''"'
 				End
 				
 				If @UseRedgateBackup = 0
