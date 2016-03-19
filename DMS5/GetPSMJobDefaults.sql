@@ -21,6 +21,7 @@ CREATE Procedure GetPSMJobDefaults
 **			09/03/2013 mem - Added iTRAQ8
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/18/2016 mem - Added TMT6 and TMT10
 **    
 *****************************************************/
 (
@@ -311,6 +312,11 @@ As
 		If @jobTypeName = '' And @TopLabeling Like '%itraq%' And @TopDatasetType Like '%HCD%'
 		Begin
 			Set @jobTypeName = 'iTRAQ 4-plex'
+		End
+
+		If @jobTypeName = '' And (@TopLabeling Like '%TMT6%' OR @TopLabeling Like '%TMT10%') And @TopDatasetType Like '%HCD%'
+		Begin
+			Set @jobTypeName = 'TMT 6-plex'
 		End
 		
 		If @jobTypeName = '' And @TopDatasetType Like 'MS-%MSn'
