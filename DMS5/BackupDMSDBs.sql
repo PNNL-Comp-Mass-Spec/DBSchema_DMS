@@ -32,6 +32,7 @@ CREATE PROCEDURE BackupDMSDBs
 **			09/15/2015 mem - Added parameter @UseRedgateBackup
 **			03/17/2016 mem - Now calling xp_delete_file to delete old backup files when @UseRedgateBackup = 0
 **			03/18/2016 mem - Update e-mail address for the MAILTO_ONERROR parameter
+**			03/22/2016 mem - Now calling VerifyDirectoryExists to create the output directory if missing
 **    
 *****************************************************/
 (
@@ -201,6 +202,7 @@ As
 		Goto Done
 	End
 	
+	-- Make sure that @BackupFolderRoot ends in a backslash
 	If Right(@BackupFolderRoot, 1) <> '\'
 		Set @BackupFolderRoot = @BackupFolderRoot + '\'
 	
@@ -780,9 +782,33 @@ As
 					Set @BackupTime = Replace(Replace(Replace(@BackupTime, ' ', '_'), ':', ''), '-', '')
 					Set @BackupFileBaseName = @DBName + '_' + @BackupType + '_' + @BackupTime
 				End
-					
-				Set @BackupFileBasePath = @BackupFolderRoot + @DBName + '\' + @BackupFileBaseName
+				
+				-- Append the database name to the base path	
+				Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFolderRoot, @DBName)
 
+				-- Verify that the output directory exists; create if missing
+				
+				EXEC @ExitCode = VerifyDirectoryExists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
+
+				If @ExitCode <> 0
+				Begin
+					Set @myError = @ExitCode
+					Set @message = 'Error verifying the backup folder with VerifyDirectoryExists, path=' + @BackupFileBasePath + ', errorCode=' + Cast(@ExitCode as varchar(12))
+					
+					If @InfoOnly = 0
+						exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+					else
+						Print @message
+						
+					Goto Done
+				End
+						
+				-- Append the file name to the base path
+				Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFileBasePath, @BackupFileBaseName)
+
+				-- Example command:
+				-- TO DISK = '\\server\share\directory\DatabaseName\DatabaseName_backup_2016_03_22_103334.bak' 
+				
 				Set @BackupFileList = 'DISK = ''' + @BackupFileBasePath + @FileExtension + ''''
 				
 				Set @Sql = @Sql + @BackupFileList
@@ -914,18 +940,24 @@ As
 					--					
 					If @UseRedgateBackup = 0
 					Begin
-						print @Sql
-						print @SqlRestore
+						Print @Sql
+						
+						If @Verify <> 0
+							Print @SqlRestore
 					End
 					Else
 					Begin
 						Set @Sql = Replace(@Sql, '''', '''' + '''')
 						Set @SqlRestore = Replace(@SqlRestore, '''', '''' + '''')
 					
-						print 'exec master..sqlbackup ''' + @Sql + ''''
-						Print 'exec master..sqlbackup ''' + @SqlRestore + ''''
+						Print 'exec master..sqlbackup ''' + @Sql + ''''
+						
+						If @Verify <> 0
+							Print 'exec master..sqlbackup ''' + @SqlRestore + ''''
 					End
-										
+
+					Print ''
+					
 				End -- </f2>
 				
 				---------------------------------------

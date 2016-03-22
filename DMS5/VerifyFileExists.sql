@@ -3,83 +3,122 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure VerifyFileExists
+CREATE Procedure VerifyFileExists
 /****************************************************
 **
 **	Desc: 
-**		Verifies that given file exisits
+**		Verifies that the given file exisits
 **
-**	Parameters:
+**		If the file exists, @myError will be 0 and @message will be ''
 **
-**		Auth: grk
-**		Date: 06/07/2004
+**		If the file does not exist, @myError will be 60 and @message will be 'File does not exist'
+**
+**	Auth:	grk
+**	Date:	06/07/2004 grk - Initial version
+**			03/22/2016 mem - Updated formatting to match VerifyDirectoryExists
 **    
 *****************************************************/
+(
 	@filePath varchar(255),
-	@message varchar(255) out
+	@message varchar(255)='' output,
+	@showDebugMessages tinyint = 0
+)
 AS
-	set nocount on
-	declare @myError int
-	set @myError = 0
+	Set nocount on
 	
-	set @message = ''
-	
-	declare @result int
-	
-	DECLARE @FSOObject int
-	DECLARE @TxSObject int
-	DECLARE @hr int
-	
-	-----------------------------------------------
-	-- Deal with existing files
-	-----------------------------------------------
-	-- Create a FileSystemObject object.
-	--
-	EXEC @hr = sp_OACreate 'Scripting.FileSystemObject', @FSOObject OUT
-	IF @hr <> 0
-	BEGIN
-	    EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
-		set @myError = 60
-		goto Done
-	END
-	-- verify that file exists
-	--
-	EXEC @hr = sp_OAMethod  @FSOObject, 'FileExists', @result OUT, @filePath
-	IF @hr <> 0
-	BEGIN
-	    EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
-		set @myError = 60
-	    goto DestroyFSO
-	END
-	--
-	If @result = 0
-	begin
-		set @message = 'file does not exist'
-		set @myError = 60
-	    goto DestroyFSO
-	end
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
+	Declare @result int
+	
+	Declare @FSOObject int
+	Declare @TxSObject int
+	Declare @hr int
 
 	-----------------------------------------------
-	-- clean up file system object
+	-- Validate the inputs
 	-----------------------------------------------
+	--
+	Set @filePath = IsNull(@filePath, '')
+	Set @message = ''
+	Set @showDebugMessages = IsNull(@showDebugMessages, 0)
+	
+	If @filePath = ''
+	Begin
+		Set @message = '@filePath cannot be empty'
+		Set @myError = 60
+		If @showDebugMessages > 0 Print @message
+		Goto Done
+	End
+			
+	-----------------------------------------------
+	-- Create a FileSystemObject object
+	-----------------------------------------------
+	--
+	If @showDebugMessages > 0
+		Print 'Instantiate Scripting.FileSystemObject'
+
+	Exec @hr = sp_OACreate 'Scripting.FileSystemObject', @FSOObject OUT
+	If @hr <> 0
+	Begin
+	    Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+		Set @message = IsNull(@message, 'Unknown error instantiating the FileSystemObject')
+		Set @myError = 60
+		If @showDebugMessages > 0 Print @message
+		Goto Done
+	End
+
+	-----------------------------------------------
+	-- Look for the file
+	-- FileExists returns 0 if the file does not exist
+	-----------------------------------------------
+	--
+	If @showDebugMessages > 0
+		Print 'Look for ' + @filePath
+
+	Exec @hr = sp_OAMethod  @FSOObject, 'FileExists', @result OUT, @filePath
+	If @hr <> 0
+	Begin
+	    Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+		Set @message = IsNull(@message, 'Unknown error calling FileExists, first time')
+		Set @myError = 60
+		If @showDebugMessages > 0 Print @message
+	    Goto DestroyFSO
+	End
+
+	If @result > 0
+	Begin
+		If @showDebugMessages > 0
+			Print 'File found'
+	End
+	Else
+	Begin
+		Set @message = 'File does not exist'
+		Set @myError = 60
+		If @showDebugMessages > 0 Print @message
+	End
   
 DestroyFSO:
-	-- Destroy the FileSystemObject object.
+	-----------------------------------------------
+	-- Clean up the file system object
+	-----------------------------------------------
 	--
-	EXEC @hr = sp_OADestroy @FSOObject
-	IF @hr <> 0
-	BEGIN
-	    EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
-		set @myError = 60
-		goto done
-	END
+	Exec @hr = sp_OADestroy @FSOObject
+	If @hr <> 0
+	Begin
+	    Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+		Set @message = IsNull(@message, 'Unknown error calling sp_OADestroy')
+		Set @myError = 60
+		If @showDebugMessages > 0 Print @message
+	End
 
 	-----------------------------------------------
 	-- Exit
 	-----------------------------------------------
-Done:
 	
+Done:	
 	return @myError
 
 GO
