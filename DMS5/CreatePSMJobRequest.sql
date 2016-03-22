@@ -24,6 +24,7 @@ CREATE Procedure CreatePSMJobRequest
 **			03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**			03/21/2016 mem - Add support for column Enabled
 **    
 *****************************************************/
 (
@@ -107,7 +108,7 @@ As
 		If Not Exists (SELECT * FROM T_Default_PSM_Job_Types WHERE Job_Type_Name = @jobTypeName)
 			RAISERROR ('Invalid job type name: %s', 11, 10, @jobTypeName)
 		
-		If Not Exists (SELECT * FROM T_Default_PSM_Job_Settings Where Tool_Name = @toolName)
+		If Not Exists (SELECT * FROM T_Default_PSM_Job_Settings WHERE Tool_Name = @toolName AND Enabled > 0)
 			RAISERROR ('Invalid analysis tool for creating a defaults-based PSM job: %s', 11, 10, @toolName)
 			
 		If Exists (SELECT * FROM T_Analysis_Job_Request WHERE AJR_requestName = @requestName)
@@ -190,7 +191,8 @@ As
 		WHERE Tool_Name = @toolName AND
 		      Job_Type_Name = @jobTypeName AND
 		      StatCysAlk = @StatCysAlkEnabled AND
-		      DynSTYPhos = @DynSTYPhosEnabled
+		      DynSTYPhos = @DynSTYPhosEnabled AND
+		      Enabled > 0
 
 		If IsNull(@SettingsFile, '') = ''
 		Begin
@@ -233,10 +235,11 @@ As
 		SELECT @ParamFile = Parameter_File_Name
 		FROM T_Default_PSM_Job_Parameters
 		WHERE Job_Type_Name = @jobTypeName AND
-		 Tool_Name = @toolName AND
+		      Tool_Name = @toolName AND
 		      DynMetOx = @DynMetOxEnabled AND
 		      StatCysAlk = @StatCysAlkEnabled AND
-		      DynSTYPhos = @DynSTYPhosEnabled
+		      DynSTYPhos = @DynSTYPhosEnabled AND
+		      Enabled > 0
 
 		If IsNull(@ParamFile, '') = '' And @toolName Like '%_DTARefinery'
 		Begin
@@ -248,7 +251,23 @@ As
 				Tool_Name = Replace(@toolName, '_DTARefinery', '') AND
 				DynMetOx = @DynMetOxEnabled AND
 				StatCysAlk = @StatCysAlkEnabled AND
-				DynSTYPhos = @DynSTYPhosEnabled
+				DynSTYPhos = @DynSTYPhosEnabled AND
+				Enabled > 0
+
+		End
+
+		If IsNull(@ParamFile, '') = '' And @toolName Like '%_MzML'
+		Begin
+			-- Remove '_MzML' from the end of @toolName and re-query T_Default_PSM_Job_Parameters
+			
+			SELECT @ParamFile = Parameter_File_Name
+			FROM T_Default_PSM_Job_Parameters
+			WHERE Job_Type_Name = @jobTypeName AND
+				Tool_Name = Replace(@toolName, '_MzML', '') AND
+				DynMetOx = @DynMetOxEnabled AND
+				StatCysAlk = @StatCysAlkEnabled AND
+				DynSTYPhos = @DynSTYPhosEnabled AND
+				Enabled > 0
 
 		End
 		

@@ -11,6 +11,7 @@ SELECT DISTINCT T_Default_PSM_Job_Settings.Tool_Name,
 FROM T_Default_PSM_Job_Settings
      INNER JOIN T_Analysis_Tool
        ON T_Default_PSM_Job_Settings.Tool_Name = T_Analysis_Tool.AJT_toolName
+WHERE T_Default_PSM_Job_Settings.Enabled > 0
 
 
 GO

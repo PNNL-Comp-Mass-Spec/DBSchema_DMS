@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Default_PSM_Job_Settings](
 	[StatCysAlk] [tinyint] NOT NULL,
 	[DynSTYPhos] [tinyint] NOT NULL,
 	[Settings_File_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Enabled] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Default_PSM_Job_Settings] PRIMARY KEY CLUSTERED 
 (
 	[Tool_Name] ASC,
@@ -19,6 +20,8 @@ CREATE TABLE [dbo].[T_Default_PSM_Job_Settings](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Settings] ADD  CONSTRAINT [DF_T_Default_PSM_Job_Settings_Enabled]  DEFAULT ((1)) FOR [Enabled]
 GO
 ALTER TABLE [dbo].[T_Default_PSM_Job_Settings]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Settings_T_Analysis_Tool] FOREIGN KEY([Tool_Name])
 REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolName])

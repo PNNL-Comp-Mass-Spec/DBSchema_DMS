@@ -9,12 +9,13 @@ CREATE TABLE [dbo].[T_Settings_Files](
 	[File_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active] [tinyint] NULL,
-	[Last_Updated] [datetime] NULL,
 	[Contents] [xml] NULL,
 	[Job_Usage_Count] [int] NULL,
 	[HMS_AutoSupersede] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[MSGFPlus_AutoCentroid] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Created] [datetime] NULL,
+	[Last_Updated] [datetime] NULL,
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -53,9 +54,11 @@ ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Descri
 GO
 ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Active]  DEFAULT ((1)) FOR [Active]
 GO
-ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
-GO
 ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Created]  DEFAULT (getdate()) FOR [Created]
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ADD  CONSTRAINT [DF_T_Settings_Files_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
 GO
 ALTER TABLE [dbo].[T_Settings_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Settings_Files_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool])
 REFERENCES [dbo].[T_Analysis_Tool] ([AJT_toolName])
@@ -71,7 +74,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Delete
 AS
@@ -95,7 +97,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Insert
 AS
@@ -113,14 +114,12 @@ AS
 	       GetDate(), SYSTEM_USER
 	FROM inserted
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Settings_Files] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_T_Settings_Files] on [dbo].[T_Settings_Files]
 For Update
 /****************************************************
@@ -200,7 +199,6 @@ AS
 			   Description, Contents,
 			   GetDate(), SYSTEM_USER
 		FROM inserted
-	End		
-
+	End
 
 GO

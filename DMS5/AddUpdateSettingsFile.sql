@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateSettingsFile
 **  Auth:	grk
 **  Date:	08/22/2008
 **			03/30/2015 mem - Added parameters @HMSAutoSupersede and @MSGFPlusAutoCentroid
+**			03/21/2016 mem - Update column Last_Updated
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -215,7 +216,8 @@ As
 		    Active = @Active,
 		    Contents = @xmlContents,
 		    HMS_AutoSupersede = @HMSAutoSupersede,
-		    MSGFPlus_AutoCentroid = @MSGFPlusAutoCentroid
+		    MSGFPlus_AutoCentroid = @MSGFPlusAutoCentroid,
+		    Last_Updated = GetDate()
 		WHERE (ID = @ID)
 
 		--
