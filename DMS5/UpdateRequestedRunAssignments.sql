@@ -14,8 +14,8 @@ CREATE Procedure UpdateRequestedRunAssignments
 **
 **	Parameters: 
 **
-**	Auth	grk
-**	Date	01/26/2003
+**	Auth:	grk
+**	Date:	01/26/2003
 **			12/11/2003 grk - removed LCMS cart modes
 **			07/27/2007 mem - When @mode = 'instrument, then checking dataset type (@datasetTypeName) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #503)
 **						   - Added output parameter @message to report the number of items updated
@@ -29,6 +29,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 **					   mem - Added mode 'datasetType'
 **			07/24/2013 mem - Added mode 'separationGroup'
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
 **    
 *****************************************************/
 (
@@ -369,9 +370,10 @@ As
 			Else
 			Begin -- <c>
 				exec @myError = DeleteRequestedRun
-										@RequestID,
-										@message output,
-										@callingUser
+									@RequestID,
+									@skipDatasetCheck=0,
+									@message=@message OUTPUT,
+									@callingUser=@callingUser
 
 				if @myError <> 0
 				begin -- <d>

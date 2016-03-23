@@ -17,6 +17,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			03/12/2012 mem - Now copying column Tool_Version_ID
 **			03/10/2015 mem - Added T_Job_Step_Dependencies_History
+**			03/22/2016 mem - Update @message when cannot copy a job
 **    
 *****************************************************/
 (
@@ -41,16 +42,22 @@ As
 	-- Bail if no candidates found
  	---------------------------------------------------
 	--
- 	if IsNull(@job, 0) = 0
+ 	If IsNull(@job, 0) = 0
+ 	Begin
+ 		Set @message = 'Job cannot be 0'
 		goto Done
-
+	End
+	
  	---------------------------------------------------
 	-- Bail if not a state we save for
  	---------------------------------------------------
  	--
-  	if not @JobState in (3,5)
+  	If not @JobState in (3,5)
+  	Begin
+  		Set @message = 'Job state must be 3 or 5 to be copied to T_Jobs_History'
 		goto Done
-
+	End
+	
  	---------------------------------------------------
  	-- Define a common timestamp for all history entries
  	---------------------------------------------------

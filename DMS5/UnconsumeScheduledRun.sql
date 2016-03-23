@@ -49,6 +49,7 @@ CREATE Procedure UnconsumeScheduledRun
 **		02/21/2013 mem - Now validating that the RequestID extracted from "Automatically created by recycling request 12345" actually exists
 **		05/08/2013 mem - Removed parameters @wellplateNum and @wellNum since no longer used
 **		07/08/2014 mem - Now checking for empty requested run comment
+**		03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
 **    
 *****************************************************/
 (
@@ -58,12 +59,11 @@ CREATE Procedure UnconsumeScheduledRun
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = IsNull(@message, '')
@@ -181,8 +181,10 @@ As
 		BEGIN -- <b2>
 			EXEC @myError = DeleteRequestedRun
 								 @requestID,
-								 @message OUTPUT,
-								 @callingUser 
+								 @skipDatasetCheck=1,
+								 @message=@message OUTPUT,
+								 @callingUser=@callingUser
+								 
 			--
 			if @myError <> 0
 			begin

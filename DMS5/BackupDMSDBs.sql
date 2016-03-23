@@ -787,7 +787,7 @@ As
 				Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFolderRoot, @DBName)
 
 				-- Verify that the output directory exists; create if missing
-				
+				--				
 				EXEC @ExitCode = VerifyDirectoryExists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
 
 				If @ExitCode <> 0
