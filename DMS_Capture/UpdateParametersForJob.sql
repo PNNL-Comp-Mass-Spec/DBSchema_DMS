@@ -23,6 +23,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
 **			05/29/2015 mem - Add support for column Capture_Subfolder
 **			06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
+**			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
 **    
 *****************************************************/
 (
@@ -34,12 +35,26 @@ As
 	set nocount on
 	
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
+
+	-----------------------------------------------------------
+	-- Parse the job list
+	-----------------------------------------------------------
+
+	CREATE TABLE #Tmp_Jobs (
+		Job int
+	)
+
+	INSERT INTO #Tmp_Jobs (Job)
+	SELECT Value
+	FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+	ORDER BY Value
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
 	-- Update Null values in T_Jobs
@@ -54,8 +69,9 @@ As
 	FROM T_Jobs J
 	     INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
 	       ON J.Dataset_ID = VDD.Dataset_ID
-	WHERE J.Job IN ( SELECT CONVERT(int, Item) AS Job
-	                 FROM dbo.MakeTableFromList ( @jobList ) )
+	     INNER JOIN #Tmp_Jobs
+	       ON J.Job = #Tmp_Jobs.Job
+
 		
 	---------------------------------------------------
 	-- create temp table for jobs that are being updated
@@ -92,23 +108,22 @@ As
 		Max_Simultaneous_Captures,
 		Capture_Subfolder
 	)
-	SELECT
-		Job,
-		Priority,
-		Script,
-		State,
-		Dataset,
-		Dataset_ID,
-		Results_Folder_Name,
-		Storage_Server,
-		Instrument,
-		Instrument_Class,
-		Max_Simultaneous_Captures,
-		Capture_Subfolder
-	FROM
-		T_Jobs TJ
-	WHERE
-		Job IN (select CONVERT(INT, Item) AS Job FROM dbo.MakeTableFromList(@jobList))
+	SELECT J.Job,
+	       J.Priority,
+	       J.Script,
+	       J.State,
+	       J.Dataset,
+	       J.Dataset_ID,
+	       J.Results_Folder_Name,
+	       J.Storage_Server,
+	       J.Instrument,
+	       J.Instrument_Class,
+	       J.Max_Simultaneous_Captures,
+	       J.Capture_Subfolder
+	FROM T_Jobs J
+	     INNER JOIN #Tmp_Jobs
+	       ON J.Job = #Tmp_Jobs.Job
+
 
 	---------------------------------------------------
 	-- temp table to accumulate XML parameters for

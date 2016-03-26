@@ -17,6 +17,7 @@ CREATE PROCEDURE DeleteMultipleTasks
 **			09/11/2012 mem - Renamed from DeleteMultipleJobs to DeleteMultipleTasks
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
 **
 *****************************************************/
 (
@@ -41,8 +42,10 @@ As
 			Job INT
 		)
 		--
-		INSERT INTO #JOBS (Job) 
-		SELECT Item FROM dbo.MakeTableFromList(@jobList)
+		INSERT INTO #JOBS (Job)
+		SELECT Value
+		FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+		ORDER BY Value
 
 		---------------------------------------------------
 		-- Start a transaction

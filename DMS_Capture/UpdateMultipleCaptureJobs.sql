@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.UpdateMultipleCaptureJobs
 **			01/28/2010 grk - added UpdateParameters action
 **			10/25/2010 mem - Now raising an error if @mode is empty or invalid
 **			04/28/2011 mem - Set defaults for @action and @mode
+**			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
 **
 *****************************************************/
 (
@@ -115,13 +116,13 @@ As
 	-- Populate table from job list  
 	---------------------------------------------------
 
-	INSERT INTO #SJL
-	(Job)
-	SELECT DISTINCT Convert(int, Item)
-	FROM MakeTableFromList(@JobList)
+	INSERT INTO #SJL (Job)
+	SELECT Distinct Value
+	FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+	ORDER BY Value
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
+	
 	if @myError <> 0
 	begin
 		set @message = 'Error populating temporary job table'
