@@ -11,6 +11,7 @@ AS
 	       M.Full_Name,
 	       M.Alternate_Names,
 	       M.Notes,
+		   MCF.Mass_Correction_Tag AS DMS_Name,
 	       CONVERT(Decimal(15,6), M.MonoMass) as Monoisotopic_Mass,
 	       CONVERT(Decimal(15,6), M.AvgMass) as Average_Mass,
 	       M.Composition,
@@ -25,6 +26,8 @@ AS
 	FROM T_Unimod_Mods M
 	     CROSS APPLY dbo.GetModificationSiteList ( M.Unimod_ID, 0 ) CommonSites
 	     CROSS APPLY dbo.GetModificationSiteList ( M.Unimod_ID, 1 ) HiddenSites
+		 LEFT OUTER JOIN DMS5.dbo.V_Mass_Correction_Factors MCF
+	         ON M.Name = MCF.Original_Source_Name
 
 
 GO
