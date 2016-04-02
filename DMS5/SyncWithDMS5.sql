@@ -17,6 +17,7 @@ CREATE Procedure SyncWithDMS5
 **			11/05/2015 mem - Remove IN_Max_Queued_Datasets and IN_Capture_Log_Level from T_Instrument_Name
 **			02/03/2016 mem - Added QCART, Keratin_2A, and Keratin_2C
 **			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
+**			03/31/2016 mem - Add T_Material_Freezers and update columns for T_Material_Locations
 **    
 *****************************************************/
 (
@@ -1806,7 +1807,6 @@ As
 
 
 	End -- </ChargeCodesAndEUS>
-
 	If @experiments <> 0
 	Begin -- <Experiments>
 
@@ -1907,6 +1907,51 @@ As
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
 
+		ALTER TABLE T_Material_Locations NOCHECK CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers]
+
+		Set @tableName = 'T_Material_Freezers'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			SET IDENTITY_INSERT [dbo].[T_Material_Freezers] ON;
+			 
+			MERGE [dbo].[T_Material_Freezers] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Material_Freezers]) as s
+			ON ( t.[Freezer_ID] = s.[Freezer_ID])
+			WHEN MATCHED AND (
+				t.[Freezer] <> s.[Freezer] OR
+				t.[Freezer_Tag] <> s.[Freezer_Tag] OR
+				ISNULL( NULLIF(t.[Comment], s.[Comment]),
+						NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
+				)
+			THEN UPDATE SET 
+				[Freezer] = s.[Freezer],
+				[Freezer_Tag] = s.[Freezer_Tag],
+				[Comment] = s.[Comment]
+			WHEN NOT MATCHED BY TARGET THEN
+				INSERT([Freezer_ID], [Freezer], [Freezer_Tag], [Comment])
+				VALUES(s.[Freezer_ID], s.[Freezer], s.[Freezer_Tag], s.[Comment])
+			WHEN NOT MATCHED BY SOURCE THEN DELETE
+			OUTPUT @tableName, $action,
+			       Cast(Inserted.[Freezer_ID] as varchar(12)),
+			       Cast(Deleted.[Freezer_ID] as varchar(12))
+			       INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			SET IDENTITY_INSERT [dbo].[T_Material_Freezers] OFF;
+
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
+
 		Set @tableName = 'T_Material_Locations'
 		Print 'Updating ' + @tableName
 		If @infoOnly = 0
@@ -1918,23 +1963,20 @@ As
 			USING (SELECT * FROM [DMS5].[dbo].[T_Material_Locations]) as s
 			ON ( t.[ID] = s.[ID])
 			WHEN MATCHED AND (
-			    t.[Freezer] <> s.[Freezer] OR
+			    t.[Freezer_Tag] <> s.[Freezer_Tag] OR
 			    t.[Shelf] <> s.[Shelf] OR
 			    t.[Rack] <> s.[Rack] OR
 			    t.[Row] <> s.[Row] OR
 			    t.[Col] <> s.[Col] OR
 			    t.[Status] <> s.[Status] OR
 			    t.[Container_Limit] <> s.[Container_Limit] OR
-			    ISNULL( NULLIF(t.[Tag], s.[Tag]),
-			       NULLIF(s.[Tag], t.[Tag])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Barcode], s.[Barcode]),
 			      NULLIF(s.[Barcode], t.[Barcode])) IS NOT NULL OR
-			 ISNULL( NULLIF(t.[Comment], s.[Comment]),
+			    ISNULL( NULLIF(t.[Comment], s.[Comment]),
 			            NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
 			    )
 			THEN UPDATE SET 
-			    [Tag] = s.[Tag],
-			    [Freezer] = s.[Freezer],
+			    [Freezer_Tag] = s.[Freezer_Tag],
 			    [Shelf] = s.[Shelf],
 			    [Rack] = s.[Rack],
 			    [Row] = s.[Row],
@@ -1944,8 +1986,8 @@ As
 			    [Comment] = s.[Comment],
 			    [Container_Limit] = s.[Container_Limit]
 			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([ID], [Tag], [Freezer], [Shelf], [Rack], [Row], [Col], [Status], [Barcode], [Comment], [Container_Limit])
-			    VALUES(s.[ID], s.[Tag], s.[Freezer], s.[Shelf], s.[Rack], s.[Row], s.[Col], s.[Status], s.[Barcode], s.[Comment], s.[Container_Limit])
+			    INSERT(  [ID],   [Freezer_Tag],   [Shelf],   [Rack],   [Row],   [Col],   [Status],   [Barcode],   [Comment],   [Container_Limit])
+			    VALUES(s.[ID], s.[Freezer_Tag], s.[Shelf], s.[Rack], s.[Row], s.[Col], s.[Status], s.[Barcode], s.[Comment], s.[Container_Limit])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 			       Cast(Inserted.[ID] as varchar(12)),
@@ -1965,6 +2007,8 @@ As
 			If @myRowCount > 0
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
+
+		ALTER TABLE T_Material_Locations WITH CHECK CHECK CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers]
 
 		Set @tableName = 'T_Material_Containers'
 		Print 'Updating ' + @tableName
@@ -1990,7 +2034,7 @@ As
 			            NULLIF(s.[Researcher], t.[Researcher])) IS NOT NULL
 			    )
 			THEN UPDATE SET 
-			    [Tag] = s.[Tag],
+			  [Tag] = s.[Tag],
 			    [Type] = s.[Type],
 			    [Comment] = s.[Comment],
 			    [Barcode] = s.[Barcode],
@@ -2187,7 +2231,7 @@ As
 			    [Biomaterial_Item_Count] = s.[Biomaterial_Item_Count],
 			    [Experiment_Item_Count] = s.[Experiment_Item_Count],
 			    [Experiment_Group_Item_Count] = s.[Experiment_Group_Item_Count],
-			    [Material_Containers_Item_Count] = s.[Material_Containers_Item_Count],
+			  [Material_Containers_Item_Count] = s.[Material_Containers_Item_Count],
 			    [Requested_Run_Item_Count] = s.[Requested_Run_Item_Count],
 			    [Dataset_Item_Count] = s.[Dataset_Item_Count],
 			    [HPLC_Runs_Item_Count] = s.[HPLC_Runs_Item_Count],
@@ -2229,7 +2273,7 @@ As
 			WHEN MATCHED AND (
 			    t.[Campaign_ID] <> s.[Campaign_ID] OR
 			    t.[Received_By_User_ID] <> s.[Received_By_User_ID] OR
-			    t.[Created] <> s.[Created] OR
+			 t.[Created] <> s.[Created] OR
 			    ISNULL( NULLIF(t.[Container_List], s.[Container_List]),
 			            NULLIF(s.[Container_List], t.[Container_List])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Description], s.[Description]),
@@ -2403,8 +2447,6 @@ As
 						NULLIF(s.[OG_Mito_DNA_Translation_Table_ID], t.[OG_Mito_DNA_Translation_Table_ID])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[OG_Active], s.[OG_Active]),
 						NULLIF(s.[OG_Active], t.[OG_Active])) IS NOT NULL OR
-				ISNULL( NULLIF(t.[NEWT_Identifier], s.[NEWT_Identifier]),
-						NULLIF(s.[NEWT_Identifier], t.[NEWT_Identifier])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[NEWT_ID_List], s.[NEWT_ID_List]),
 						NULLIF(s.[NEWT_ID_List], t.[NEWT_ID_List])) IS NOT NULL
 				)
@@ -2427,11 +2469,10 @@ As
 				[OG_DNA_Translation_Table_ID] = s.[OG_DNA_Translation_Table_ID],
 				[OG_Mito_DNA_Translation_Table_ID] = s.[OG_Mito_DNA_Translation_Table_ID],
 				[OG_Active] = s.[OG_Active],
-				[NEWT_Identifier] = s.[NEWT_Identifier],
 				[NEWT_ID_List] = s.[NEWT_ID_List]
 			WHEN NOT MATCHED BY TARGET THEN
-				INSERT([OG_name], [Organism_ID], [OG_organismDBName], [OG_created], [OG_description], [OG_Short_Name], [OG_Storage_Location], [OG_Domain], [OG_Kingdom], [OG_Phylum], [OG_Class], [OG_Order], [OG_Family], [OG_Genus], [OG_Species], [OG_Strain], [OG_DNA_Translation_Table_ID], [OG_Mito_DNA_Translation_Table_ID], [OG_Active], [NEWT_Identifier], [NEWT_ID_List])
-				VALUES(s.[OG_name], s.[Organism_ID], s.[OG_organismDBName], s.[OG_created], s.[OG_description], s.[OG_Short_Name], s.[OG_Storage_Location], s.[OG_Domain], s.[OG_Kingdom], s.[OG_Phylum], s.[OG_Class], s.[OG_Order], s.[OG_Family], s.[OG_Genus], s.[OG_Species], s.[OG_Strain], s.[OG_DNA_Translation_Table_ID], s.[OG_Mito_DNA_Translation_Table_ID], s.[OG_Active], s.[NEWT_Identifier], s.[NEWT_ID_List])
+				INSERT([OG_name], [Organism_ID], [OG_organismDBName], [OG_created], [OG_description], [OG_Short_Name], [OG_Storage_Location], [OG_Domain], [OG_Kingdom], [OG_Phylum], [OG_Class], [OG_Order], [OG_Family], [OG_Genus], [OG_Species], [OG_Strain], [OG_DNA_Translation_Table_ID], [OG_Mito_DNA_Translation_Table_ID], [OG_Active], [NEWT_ID_List])
+				VALUES(s.[OG_name], s.[Organism_ID], s.[OG_organismDBName], s.[OG_created], s.[OG_description], s.[OG_Short_Name], s.[OG_Storage_Location], s.[OG_Domain], s.[OG_Kingdom], s.[OG_Phylum], s.[OG_Class], s.[OG_Order], s.[OG_Family], s.[OG_Genus], s.[OG_Species], s.[OG_Strain], s.[OG_DNA_Translation_Table_ID], s.[OG_Mito_DNA_Translation_Table_ID], s.[OG_Active], s.[NEWT_ID_List])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 				Cast(Inserted.[Organism_ID] as varchar(12)),
@@ -2753,7 +2794,7 @@ As
 			             DSSource.Dataset_Num Like 'DataPackage_[0-9]%') as s
 			ON ( t.[Dataset_ID] = s.[Dataset_ID])
 			WHEN MATCHED AND (
-			    t.[Dataset_Num] <> s.[Dataset_Num] OR
+			 t.[Dataset_Num] <> s.[Dataset_Num] OR
 			    t.[DS_Oper_PRN] <> s.[DS_Oper_PRN] OR
 			    t.[DS_created] <> s.[DS_created] OR
 			    t.[DS_state_ID] <> s.[DS_state_ID] OR
@@ -2884,7 +2925,7 @@ As
 			    ISNULL( NULLIF(t.[TIC_Median_MSn], s.[TIC_Median_MSn]),
 			            NULLIF(s.[TIC_Median_MSn], t.[TIC_Median_MSn])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[BPI_Median_MS], s.[BPI_Median_MS]),
-			            NULLIF(s.[BPI_Median_MS], t.[BPI_Median_MS])) IS NOT NULL OR
+			     NULLIF(s.[BPI_Median_MS], t.[BPI_Median_MS])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[BPI_Median_MSn], s.[BPI_Median_MSn]),
 			            NULLIF(s.[BPI_Median_MSn], t.[BPI_Median_MSn])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Elution_Time_Max], s.[Elution_Time_Max]),
@@ -2956,7 +2997,7 @@ As
 			    ISNULL( NULLIF(t.[PSM_Source_Job], s.[PSM_Source_Job]),
 			            NULLIF(s.[PSM_Source_Job], t.[PSM_Source_Job])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Last_Affected], s.[Last_Affected]),
-			            NULLIF(s.[Last_Affected], t.[Last_Affected])) IS NOT NULL OR
+			         NULLIF(s.[Last_Affected], t.[Last_Affected])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Quameter_Job], s.[Quameter_Job]),
 			            NULLIF(s.[Quameter_Job], t.[Quameter_Job])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Quameter_Last_Affected], s.[Quameter_Last_Affected]),
@@ -3059,7 +3100,7 @@ As
 			    [MS2_PrecZ_likely_multi] = s.[MS2_PrecZ_likely_multi],
 			    [QCDM_Last_Affected] = s.[QCDM_Last_Affected],
 			    [QCDM] = s.[QCDM],
-			    [MassErrorPPM] = s.[MassErrorPPM],
+			   [MassErrorPPM] = s.[MassErrorPPM],
 			    [MassErrorPPM_Refined] = s.[MassErrorPPM_Refined],
 			    [MassErrorPPM_VIPER] = s.[MassErrorPPM_VIPER],
 			    [AMTs_10pct_FDR] = s.[AMTs_10pct_FDR],
@@ -3537,7 +3578,7 @@ As
 			            NULLIF(s.[QueueTime_0Days], t.[QueueTime_0Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_1to6Days], s.[QueueTime_1to6Days]),
 			            NULLIF(s.[QueueTime_1to6Days], t.[QueueTime_1to6Days])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[QueueTime_7to44Days], s.[QueueTime_7to44Days]),
+			   ISNULL( NULLIF(t.[QueueTime_7to44Days], s.[QueueTime_7to44Days]),
 			            NULLIF(s.[QueueTime_7to44Days], t.[QueueTime_7to44Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_45to89Days], s.[QueueTime_45to89Days]),
 			            NULLIF(s.[QueueTime_45to89Days], t.[QueueTime_45to89Days])) IS NOT NULL OR
@@ -3933,7 +3974,7 @@ As
 			    ISNULL( NULLIF(t.[AJ_finish], s.[AJ_finish]),
 			            NULLIF(s.[AJ_finish], t.[AJ_finish])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_settingsFileName], s.[AJ_settingsFileName]),
-			            NULLIF(s.[AJ_settingsFileName], t.[AJ_settingsFileName])) IS NOT NULL OR
+			     NULLIF(s.[AJ_settingsFileName], t.[AJ_settingsFileName])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_organismDBName], s.[AJ_organismDBName]),
 			            NULLIF(s.[AJ_organismDBName], t.[AJ_organismDBName])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_comment], s.[AJ_comment]),
@@ -4013,7 +4054,7 @@ As
 			If @myRowCount > 0
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
-	
+
 	End -- </Jobs>
 
 
