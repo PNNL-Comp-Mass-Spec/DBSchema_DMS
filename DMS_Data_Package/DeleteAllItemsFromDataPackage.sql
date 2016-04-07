@@ -16,6 +16,7 @@ CREATE PROCEDURE DeleteAllItemsFromDataPackage
 **	Auth:	grk
 **	Date:	06/10/2009 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/05/2016 mem - Add T_Data_Package_EUS_Proposals
 **
 *****************************************************/
 (
@@ -43,16 +44,19 @@ As
 		set @transName = 'DeleteAllItemsFromDataPackage'
 		begin transaction @transName
 
-		DELETE FROM  T_Data_Package_Analysis_Jobs
+		DELETE FROM T_Data_Package_Analysis_Jobs
 		WHERE Data_Package_ID  = @packageID
 		
-		DELETE FROM  T_Data_Package_Datasets
+		DELETE FROM T_Data_Package_Datasets
 		WHERE Data_Package_ID  = @packageID
 
-		DELETE FROM  T_Data_Package_Experiments
+		DELETE FROM T_Data_Package_Experiments
 		WHERE Data_Package_ID  = @packageID
 		
-		DELETE FROM  T_Data_Package_Biomaterial 
+		DELETE FROM T_Data_Package_Biomaterial 
+		WHERE Data_Package_ID = @packageID
+
+		DELETE FROM T_Data_Package_EUS_Proposals 
 		WHERE Data_Package_ID = @packageID
 
 		---------------------------------------------------

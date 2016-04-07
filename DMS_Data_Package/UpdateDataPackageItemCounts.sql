@@ -81,7 +81,7 @@ As
         EUS_Proposal_Item_Count = @ProposalCount,
         Experiment_Item_Count = @ExperimentCount,
         Biomaterial_Item_Count = @BiomaterialCount,
-        Total_Item_Count = @JobCount + @DatasetCount + @ExperimentCount + @BiomaterialCount
+        Total_Item_Count = @JobCount + @DatasetCount + @ExperimentCount + @BiomaterialCount		-- Exclude EUS proposals from this total
 	WHERE ID = @packageID
 
 	---------------------------------------------------
