@@ -26,6 +26,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **						   - Added new fields to support peptide standards
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -120,9 +121,8 @@ As
 		Set @modCountValue = 0
 	Else
 	Begin
-		If ISNUMERIC(@modCount) = 1
-			Set @modCountValue = CONVERT(smallint, @modCount)
-		Else
+		Set @modCountValue = Try_Convert(smallint, @modCount)
+		If @modCountValue Is Null
 			RAISERROR ('Error, non-numeric modification count: %s', 11, 9, @modCount)
 	End	
 	
@@ -131,9 +131,8 @@ As
 		Set @massValue = 0
 	Else
 	Begin
-		If ISNUMERIC(@mass) = 1
-			Set @massValue = CONVERT(float, @mass)
-		Else
+		Set @massValue = Try_Convert(smallint, @mass)
+		If @modCountValue Is Null
 			RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
 	End
 	

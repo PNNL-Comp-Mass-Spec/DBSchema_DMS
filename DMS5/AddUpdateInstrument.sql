@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateInstrument
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **			11/30/2011 mem - Added parameter @PercentEMSLOwned
 **			04/01/2013 mem - Expanded @Description to varchar(255)
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -66,13 +67,8 @@ As
 	if @Usage is null
 		set @Usage = ''
 
-	if IsNumeric(@PercentEMSLOwned) = 0
-		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
-
-	Declare @PercentEMSLOwnedVal int
-	set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
-
-	if @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
+	Declare @PercentEMSLOwnedVal int = Try_Convert(Int, @PercentEMSLOwned)
+	if @PercentEMSLOwnedVal Is Null Or @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
 		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
 		
 	---------------------------------------------------

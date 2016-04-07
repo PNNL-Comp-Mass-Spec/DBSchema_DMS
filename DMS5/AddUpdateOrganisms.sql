@@ -38,6 +38,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			03/02/2016 mem - Added @AutoDefineTaxonomy
 **						   - Removed parameter @NEWTIdentifier since superseded by @NCBITaxonomyID
 **			03/03/2016 mem - Now storing @AutoDefineTaxonomy in column Auto_Define_Taxonomy
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -125,19 +126,19 @@ As
 	End
 		
 	set @orgActive = IsNull(@orgActive, '')
-	if Len(@orgActive) = 0 Or Not IsNumeric(@orgActive) = 1
+	if Len(@orgActive) = 0 Or Try_Convert(Int, @orgActive) Is Null
 	begin
 		RAISERROR ('Organism active state must be 0 or 1', 11, 1)
 	end
 
 	Set @orgDNATransTabID = IsNull(@orgDNATransTabID, '0')
-	if Len(@orgDNATransTabID) = 0 Or Not IsNumeric(@orgDNATransTabID) = 1
+	if Len(@orgDNATransTabID) = 0 Or Try_Convert(Int, @orgDNATransTabID) Is Null
 	begin
 		RAISERROR ('DNA Translation Table ID must be an integer', 11, 2)
 	end
 
 	Set @orgMitoDNATransTabID = IsNull(@orgMitoDNATransTabID, '0')
-	if Len(@orgMitoDNATransTabID) = 0 Or Not IsNumeric(@orgMitoDNATransTabID) = 1
+	if Len(@orgMitoDNATransTabID) = 0 Or Try_Convert(Int, @orgMitoDNATransTabID) Is Null
 	begin
 		RAISERROR ('Mito DNA Translation Table ID must be an integer', 11, 3)
 	end
@@ -165,7 +166,7 @@ As
 		WHERE IsNull(Value, '') <> ''
 		
 		-- Look for non-numeric values
-		IF Exists (Select * from #NEWTIDs Where ISNUMERIC(NEWT_ID_Text) = 0)
+		IF Exists (Select * from #NEWTIDs Where Try_Convert(int, NEWT_ID_Text) IS NULL)
 		BEGIN
 			Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @NEWTIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
 			RAISERROR (@msg, 11, 3)
@@ -173,8 +174,7 @@ As
 		
 		-- Make sure all of the NEWT IDs are Valid
 		UPDATE #NEWTIDs
-		SET NEWT_ID = CONVERT(int, NEWT_ID_Text)
-		WHERE ISNUMERIC(NEWT_ID_Text) = 1
+		SET NEWT_ID = Try_Convert(int, NEWT_ID_Text)
 		
 		Declare @InvalidNEWTIDs varchar(255) = null
 		

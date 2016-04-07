@@ -35,6 +35,7 @@ CREATE Procedure AddUpdateCampaign
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on\
 **			02/26/2016 mem - Define a default for @FractionEMSLFunded
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -157,18 +158,19 @@ As
 	Set @FractionEMSLFunded = IsNull(@FractionEMSLFunded, '')
 	If Len(@FractionEMSLFunded) > 0
 	Begin
-		If Isnumeric(@FractionEMSLFunded) = 0
+		Set @FractionEMSLFundedValue = Try_Convert(real, @FractionEMSLFunded)
+		If @FractionEMSLFundedValue Is Null
 		Begin
 			RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
 		End
 	
-		If Convert(real, @FractionEMSLFunded) > 1
+		If @FractionEMSLFundedValue > 1
 		Begin
 			Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @FractionEMSLFunded + ' is greater than 1)'
 			RAISERROR (@msg, 11, 4)
 		End
 
-		If Convert(real, @FractionEMSLFunded) < 0
+		If @FractionEMSLFundedValue < 0
 		Begin
 			Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @FractionEMSLFunded + ' is less than 0)'
 			RAISERROR (@msg, 11, 4)

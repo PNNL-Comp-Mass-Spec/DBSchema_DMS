@@ -37,6 +37,7 @@ CREATE Procedure AddRequestedRuns
 					   - Now validating @WorkPackageNumber against T_Charge_Code
 **		06/18/2014 mem - Now passing default to udfParseDelimitedList
 **		02/23/2016 mem - Add set XACT_ABORT on
+**		04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -97,9 +98,12 @@ As
 		RAISERROR (@message,11, 21)
 	end
 	--
+	
+	Declare @experimentGroupIDVal int
 	If Len(@experimentGroupID) > 0
 	Begin
-		if IsNumeric(@experimentGroupID) = 0
+		Set @experimentGroupIDVal = Try_Convert(Int, @experimentGroupID)
+		If @experimentGroupIDVal Is Null
 		Begin
 			set @myError = 51132
 			set @message = 'Experiment Group ID must be a number: ' + @experimentGroupID
@@ -178,7 +182,7 @@ As
 		       ON T_Experiments.Exp_ID <> T_Experiment_Groups.Parent_Exp_ID 
 		          AND
 		          T_Experiment_Group_Members.Group_ID = T_Experiment_Groups.Group_ID
-		WHERE (T_Experiment_Groups.Group_ID = CONVERT(int, @experimentGroupID))
+		WHERE (T_Experiment_Groups.Group_ID = @experimentGroupIDVal)
 		ORDER BY T_Experiments.Experiment_Num
 	End
 	Else

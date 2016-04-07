@@ -60,6 +60,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			03/13/2014 grk - Added material container field (OMCDA-1076)
 **			05/29/2015 mem - Now validating that @EstimatedCompletionDate is today or later
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -172,7 +173,7 @@ As
 		If @InstrumentGroup IN ('none', 'na')
 			RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @InstrumentGroup)
 		
-		If ISNUMERIC(@EstimatedMSRuns) = 0
+		If Try_Convert(int, @EstimatedMSRuns) Is Null
 			RAISERROR ('Estimated runs must be an integer or "none"', 11, 116)
 		
 		If IsNull(@InstrumentGroup, '') = ''

@@ -36,6 +36,7 @@ CREATE Procedure AddNewInstrument
 **			05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **			11/30/2011 mem - Added parameter @PercentEMSLOwned
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -83,7 +84,8 @@ As
 	---------------------------------------------------
 	Set @AutoDefineStoragePath = IsNull(@AutoDefineStoragePath, 'No')
 
-	if IsNumeric(@PercentEMSLOwned) = 0
+	Declare @Value int = Try_Convert(Int, @PercentEMSLOwned)
+	If @Value Is Null
 		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
 
 	Declare @PercentEMSLOwnedVal int

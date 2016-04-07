@@ -20,6 +20,7 @@ CREATE Procedure AddUpdateAuxInfo
 **			02/20/2012 mem - Now using temporary tables to parse @itemNameList and @itemValueList
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -70,11 +71,8 @@ As
 	declare @targetID int
 	set @targetID = 0
 
-	if ISNUMERIC(@targetEntityName) > 0
-	begin
-		set @targetID = cast(@targetEntityName as int)
-	end
-	else
+	set @targetID = Try_Convert(Int, @targetEntityName)
+	If @targetID IS NULL
 	begin --<1>
 		---------------------------------------------------
 		-- Resolve target name to target table criteria
