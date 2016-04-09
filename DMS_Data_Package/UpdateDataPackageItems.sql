@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **          03/07/2012 grk - changed data type of @itemList from varchar(max) to text
 **			12/31/2013 mem - Added support for EUS Proposals
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/07/2016 mem - Switch to udfParseDelimitedList
 **
 *****************************************************/
 (
@@ -76,7 +77,8 @@ As
 			Identifier varchar(256) null
 		)
 		INSERT INTO #TPI(Identifier, Type, Package) 
-		SELECT Item, @typ, @packageID FROM MakeTableFromText(@itemList)
+		SELECT Value, @typ, @packageID 
+		FROM dbo.udfParseDelimitedList(@itemList, ',')
 		
 		---------------------------------------------------
 		exec @myError = UpdateDataPackageItemsUtility

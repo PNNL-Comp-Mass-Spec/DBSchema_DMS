@@ -13,6 +13,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **
 **	Auth:	mem
 **	Date:	09/25/2013 mem - Initial version
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -111,9 +112,9 @@ As
 			
 			If @CharLoc <= 0
 			Begin
-				If ISNUMERIC(@SubString) <> 0
+				Set @StatusNum = Try_Convert(int, @SubString)
+				If IsNull(@SubString, '') <> '' And Not @StatusNum Is Null
 				Begin
-					Set @StatusNum = CONVERT(int, @SubString)			
 					Set @InvalidFormat = 0
 				End
 				Else

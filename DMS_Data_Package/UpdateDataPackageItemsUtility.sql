@@ -11,6 +11,12 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **
 **	Expects list of items to be in temp table #TPI
 **
+**		CREATE TABLE #TPI(
+**				Package varchar(50) null,
+**				Type varchar(50) null,
+**				Identifier varchar(256) null
+**			)
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters:
@@ -26,6 +32,7 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **			09/02/2014 mem - Updated to remove non-numeric items when working with analysis jobs
 **			10/28/2014 mem - Added support for adding datasets using dataset IDs; to delete datasets, you must use the dataset name (safety feature)
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -60,7 +67,7 @@ As
 		If Exists ( SELECT * FROM #TPI WHERE TYPE = 'Job' )
 		Begin
 		    DELETE #TPI
-		    WHERE IsNumeric(Identifier) = 0
+		    WHERE IsNull(Identifier, '') = '' OR Try_Convert(int, Identifier) Is Null
 		End
 		
 
@@ -74,14 +81,14 @@ As
 			-- First look for dataset IDs
 			INSERT INTO #Tmp_DatasetIDsToAdd( Package, DatasetID )
 			SELECT Package,
-			       Cast(Identifier AS int) AS DatasetID
+			       DatasetID
 			FROM ( SELECT Package,
-			              Identifier
+			              Try_Convert(int, Identifier) as DatasetID
 			       FROM #TPI
-			       WHERE [Type] = 'Dataset' AND
-			             IsNumeric(Identifier) > 0 And
+			       WHERE [Type] = 'Dataset' AND			             
 			             Not Package Is Null) SourceQ
-
+			WHERE Not DatasetID Is Null
+			
 			If Exists (select * from #Tmp_DatasetIDsToAdd)
 			Begin
 				-- Add the dataset names
@@ -495,10 +502,9 @@ As
 			DELETE DPAJ
 			FROM T_Data_Package_Analysis_Jobs DPAJ
 			     INNER JOIN ( SELECT Package,
-			                         Identifier AS Job
+			                         Try_Convert(int, Identifier) as Job
 			                  FROM #TPI
-			                  WHERE #TPI.TYPE = 'Job' AND
-			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			                  WHERE #TPI.TYPE = 'Job') ItemsQ
 			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
 			          DPAJ.Job = ItemsQ.Job
 			--
@@ -507,7 +513,6 @@ As
 			set @itemCountChanged = @itemCountChanged + @myRowCount
 		END --<delete analysis_jobs>
 
-
 		IF @mode = 'comment'
 		BEGIN --<comment analysis_jobs>
 
@@ -515,10 +520,9 @@ As
 			SET [Package Comment] = @comment
 			FROM T_Data_Package_Analysis_Jobs DPAJ
 			     INNER JOIN ( SELECT Package,
-			                         Identifier AS Job
+			                         Try_Convert(int, Identifier) as Job
 			                  FROM #TPI
-			                  WHERE #TPI.TYPE = 'Job' AND
-			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			                  WHERE #TPI.TYPE = 'Job') ItemsQ
 			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
 			          DPAJ.Job = ItemsQ.Job		
 			--
@@ -534,10 +538,9 @@ As
 			DELETE #TPI
 			FROM T_Data_Package_Analysis_Jobs DPAJ
 			     INNER JOIN ( SELECT Package,
-			                         Identifier AS Job
+			                         Try_Convert(int, Identifier) as Job
 			                  FROM #TPI
-			                  WHERE #TPI.TYPE = 'Job' AND
-			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			                  WHERE #TPI.TYPE = 'Job') ItemsQ
 			       ON DPAJ.Data_Package_ID = ItemsQ.Package AND
 			          DPAJ.Job = ItemsQ.Job		
 
@@ -559,10 +562,9 @@ As
 				TX.Tool
 			FROM S_V_Analysis_Job_List_Report_2 TX
 			     INNER JOIN ( SELECT Package,
-			                         Identifier AS Job
+			                         Try_Convert(int, Identifier) as Job
 			                  FROM #TPI
-			                  WHERE #TPI.TYPE = 'Job' AND
-			                        IsNumeric(Identifier) = 1 ) ItemsQ
+			                  WHERE #TPI.TYPE = 'Job') ItemsQ
 			       ON TX.Job = ItemsQ.Job		
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
