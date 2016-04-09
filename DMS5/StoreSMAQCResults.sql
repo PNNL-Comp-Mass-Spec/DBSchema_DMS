@@ -46,6 +46,7 @@ CREATE Procedure dbo.StoreSMAQCResults
 **			10/07/2015 mem - Added Keratin_2A, Keratin_2C, P_4A, P_4B
 **			02/03/2016 mem - Added Trypsin_2A and Trypsin_2C
 **			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -276,7 +277,7 @@ As
 	     INNER JOIN ( SELECT Name,
 	                         ValueText
 	                  FROM @MeasurementsTable
-	                  WHERE IsNumeric(ValueText) = 1 
+	                  WHERE Not Try_Convert(float, ValueText) Is Null
 	                ) FilterQ
 	       ON Target.Name = FilterQ.Name
 

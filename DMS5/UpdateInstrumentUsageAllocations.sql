@@ -20,6 +20,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocations
 **						   - Now calling UpdateInstrumentUsageAllocationsWork to apply the updates
 **			03/31/2012 mem - Added @FiscalYear, @ProposalID, and @mode
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -182,94 +183,100 @@ As
 			Operation CHAR(1) NULL -- 'i' -> increment, 'd' -> decrement, anything else -> set
 		)
 		
-							
-		If IsNumeric(@FiscalYear) = 0
+
+		Set @fy = Try_Convert(int, @FiscalYear)
+		If @fy Is Null Or @fy = 0
 		Begin
 			Set @Msg2 = 'Fiscal year is not numeric: ' + @FiscalYear
 			RAISERROR (@Msg2, 11, 1)
 		End
-		Else
-			Set @fy = Convert(int, @FiscalYear)
 
 		If @FT <> ''
 		Begin
-			If IsNumeric(@FT) = 0
+			Declare @FThours float = Try_Convert(float, @FT)
+			If @FThours Is Null
 			Begin
 				Set @Msg2 = 'FT hours is not numeric: ' + @FT
 				RAISERROR (@Msg2, 11, 1)
 			End
 			Else
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'FT', Convert(float, @FT), @FTComment, @FY)
+				VALUES ('',  @ProposalID, 'FT', @FThours, @FTComment, @FY)
 		End
 		
 		If @IMS <> ''
 		Begin
-			If IsNumeric(@IMS) = 0
+			Declare @IMShours float = Try_Convert(float, @IMS)
+			If @IMShours Is Null
 			Begin
 				Set @Msg2 = 'IMS hours is not numeric: ' + @IMS
 				RAISERROR (@Msg2, 11, 1)
 			End
 			Else
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'IMS', Convert(float, @IMS), @IMSComment, @FY)
+				VALUES ('',  @ProposalID, 'IMS', @IMShours, @IMSComment, @FY)
 		End
 			
 		If @ORB <> ''
 		Begin
-			If IsNumeric(@ORB) = 0
+			Declare @ORBhours float = Try_Convert(float, @ORB)
+			If @ORBhours Is Null
 			Begin
 				Set @Msg2 = 'Orbitrap hours is not numeric: ' + @ORB
 				RAISERROR (@Msg2, 11, 1)
 			End
 			Else
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'ORB', Convert(float, @ORB), @ORBComment, @FY)
+				VALUES ('',  @ProposalID, 'ORB', @ORBhours, @ORBComment, @FY)
 		End
 				
 		If @EXA <> ''
 		Begin
-			If IsNumeric(@EXA) = 0
+			Declare @EXAhours float = Try_Convert(float, @EXA)
+			If @EXAhours Is Null
 			Begin
 				Set @Msg2 = 'Exactive hours is not numeric: ' + @EXA
 				RAISERROR (@Msg2, 11, 1)
 			End
 			Else
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'EXA', Convert(float, @EXA), @EXAComment, @FY)
+				VALUES ('',  @ProposalID, 'EXA', @EXAhours, @EXAComment, @FY)
 		End
 			
 		If @LTQ <> ''
 		Begin
-			If IsNumeric(@LTQ) = 0
+			Declare @LTQhours float = Try_Convert(float, @LTQ)
+			If @LTQhours Is Null
 			Begin
 				Set @Msg2 = 'LTQ hours is not numeric: ' + @LTQ
 				RAISERROR (@Msg2, 11, 1)
 			End
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'LTQ', Convert(float, @LTQ), @LTQComment, @FY)
+				VALUES ('',  @ProposalID, 'LTQ', @LTQhours, @LTQComment, @FY)
 		End
 			
 		If @GC <> '' 
 		Begin
-			If IsNumeric(@GC) = 0
+			Declare @GChours float = Try_Convert(float, @GC)
+			If @GChours Is Null
 			Begin
 				Set @Msg2 = 'GC hours is not numeric: ' + @GC
 				RAISERROR (@Msg2, 11, 1)
 			End
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'GC', Convert(float, @GC), @GCComment, @FY)
+				VALUES ('',  @ProposalID, 'GC', @GChours, @GCComment, @FY)
 		End
 			
 		If @QQQ <> ''
 		Begin
-			If IsNumeric(@QQQ) = 0
+			Declare @QQQhours float = Try_Convert(float, @QQQ)
+			If @QQQhours Is Null
 			Begin
 				Set @Msg2 = 'QQQ hours is not numeric: ' + @QQQ
 				RAISERROR (@Msg2, 11, 1)
 			End
 				INSERT INTO #T_OPS (Operation, Proposal, InstGroup, Allocation, Comment, FY)
-				VALUES ('',  @ProposalID, 'QQQ', Convert(float, @QQQ), @QQQComment, @FY)
+				VALUES ('',  @ProposalID, 'QQQ', @QQQhours, @QQQComment, @FY)
 		End
 		
 		-----------------------------------------------------------

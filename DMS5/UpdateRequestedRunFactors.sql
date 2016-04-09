@@ -58,6 +58,7 @@ CREATE Procedure UpdateRequestedRunFactors
 **			12/09/2011 mem - Now checking for invalid Requested Run IDs
 **			12/15/2011 mem - Added support for the "type" attribute in the <id> tag
 **			09/12/2012 mem - Now auto-removing columns Dataset_ID, Dataset, or Experiment if they are present as factor names
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -231,7 +232,7 @@ As
 		
 		SELECT @Msg2 = @Msg2 + Identifier + ','
 		FROM #Tmp
-		WHERE IsNumeric(Identifier) = 0
+		WHERE Try_Convert(int, Identifier) Is Null
 		--
 		If IsNull(@Msg2, '') <> ''
 		Begin

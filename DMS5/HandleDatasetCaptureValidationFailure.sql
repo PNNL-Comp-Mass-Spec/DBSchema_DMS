@@ -23,6 +23,7 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **			10/29/2014 mem - Now allowing @Comment to contain a single punctuation mark, which means the comment should not be updated
 **			11/25/2014 mem - Now using dbo.AppendToText() to avoid appending duplicate text
 **			02/27/2015 mem - Add space after semicolon when calling AppendToText
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -60,7 +61,8 @@ As
 	If @Comment in (' ', '.', ';', ',', '!', '^')
 		Set @Comment = ''
 	
-	If IsNumeric(@DatasetNameOrID) <> 0
+	Set @DatasetID = IsNull(Try_Convert(int, @DatasetNameOrID), 0)
+	If @DatasetID <> 0
 	Begin
 		----------------------------------------
 		-- Lookup the Dataset Name

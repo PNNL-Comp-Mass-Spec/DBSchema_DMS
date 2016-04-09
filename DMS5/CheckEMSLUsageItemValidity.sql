@@ -18,6 +18,7 @@ CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 **          08/31/2012 grk - fixed spelling error in message
 **          10/03/2012 grk - Maintenance usage no longer requires comment
 **			03/20/2013 mem - Changed from Call_Type to Proposal_Type
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -77,8 +78,8 @@ AS
 		IF @Usage = 'OFFSITE' AND @Proposal = '' 
 			SET @Message = @Message + 'Missing Proposal' + ', ' 
 
-		/**/
-		IF @Usage = 'ONSITE' AND ISNUMERIC(SUBSTRING(@Proposal, 1, 1)) = 0 
+
+		IF @Usage = 'ONSITE' AND Try_Convert(int, SUBSTRING(@Proposal, 1, 1)) Is Null
 			SET @Message = @Message + 'Preliminary Proposal number' + ', '
 
 		SELECT  @ProposalId = Proposal_ID ,

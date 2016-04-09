@@ -28,6 +28,7 @@ CREATE Procedure dbo.StoreDTARefMassErrorStats
 **
 **	Auth:	mem
 **	Date:	08/08/2013 mem - Initial version (modelled after StoreSMAQCResults)
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -201,7 +202,7 @@ As
 	     INNER JOIN ( SELECT Name,
 	                         ValueText
 	                  FROM @MeasurementsTable
-	                  WHERE IsNumeric(ValueText) = 1 
+	                  WHERE Not Try_Convert(float, ValueText) Is Null
 	                ) FilterQ
 	       ON Target.Name = FilterQ.Name
 

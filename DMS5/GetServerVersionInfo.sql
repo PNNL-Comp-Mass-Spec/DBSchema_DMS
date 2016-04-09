@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create PROCEDURE dbo.GetServerVersionInfo
+CREATE PROCEDURE dbo.GetServerVersionInfo
 /****************************************************
 ** 
 **	Desc: Returns the version numbers of the current instance of Sql Server
@@ -12,7 +12,8 @@ create PROCEDURE dbo.GetServerVersionInfo
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	mem
-**	Date:	07/15/2006
+**	Date:	07/15/2006 mem - Initial version
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -83,17 +84,13 @@ As
 			
 		End
 		Else
+		Begin
 			Set @VersionMajorText = @VersionText
+		End
 
-
-		If IsNumeric(@VersionMajorText) = 1
-			Set @VersionMajor = Convert(float, @VersionMajorText)
-
-		If IsNumeric(@VersionMinorText) = 1
-			Set @VersionMinor = Convert(float, @VersionMinorText)
-
-		If IsNumeric(@VersionBuildText) = 1
-			Set @VersionBuild = Convert(float, @VersionBuildText)
+		Set @VersionMajor = IsNull(Try_Convert(float, @VersionMajorText), 0)
+		Set @VersionMinor = IsNull(Try_Convert(float, @VersionMinorText), 0)
+		Set @VersionBuild = IsNull(Try_Convert(float, @VersionBuildText), 0)
 
 		Set @ServicePack = Convert(varchar(24), SERVERPROPERTY('ProductLevel'))
 	

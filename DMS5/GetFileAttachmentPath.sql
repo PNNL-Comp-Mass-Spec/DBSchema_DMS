@@ -19,6 +19,7 @@ CREATE FUNCTION dbo.GetFileAttachmentPath
 **          04/26/2011 grk - added sample prep request
 **          08/23/2011 grk - added experiment_group
 **          11/15/2011 grk - added sample_submission
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -34,84 +35,92 @@ AS
 	-------------------------------------------------------
 	IF @entityType = 'campaign' 
 	BEGIN
-		IF ISNUMERIC(@entityID) = 0
+		Declare @campaignID int = Try_Convert(int, @entityID)
+		
+		IF @campaignID Is Null
 		BEGIN 
-			SELECT 
-			@entityID = CONVERT(VARCHAR(24), Campaign_ID),
-			@created = CM_created
-			FROM dbo.T_Campaign 
+			SELECT @entityID = CONVERT(varchar(24), Campaign_ID),
+			       @created = CM_created
+			FROM dbo.T_Campaign
 			WHERE Campaign_Num = @entityID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 		ELSE 
 		BEGIN
-			SELECT 
-			@created = CM_created
-			FROM dbo.T_Campaign 
-			WHERE Campaign_ID = @entityID
+			SELECT @created = CM_created
+			FROM dbo.T_Campaign
+			WHERE Campaign_ID = @campaignID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 	END
 	-------------------------------------------------------
 	ELSE IF @entityType = 'experiment' 
 	BEGIN
-		IF ISNUMERIC(@entityID) = 0
+		Declare @experimentID int = Try_Convert(int, @entityID)
+	
+		IF @experimentID Is Null
 		BEGIN 
-			SELECT
-			@entityID = CONVERT(VARCHAR(24), Exp_ID), 
-			@created = EX_created
+			SELECT @entityID = CONVERT(varchar(24), Exp_ID),
+			       @created = EX_created
 			FROM T_Experiments
 			WHERE Experiment_Num = @entityID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 		ELSE
 		BEGIN
-			SELECT 
-			@created = EX_created
+			SELECT @created = EX_created
 			FROM T_Experiments
-			WHERE Exp_ID = @entityID
+			WHERE Exp_ID = @experimentID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))	
 		END 
 	END
 	-------------------------------------------------------
 	ELSE IF @entityType = 'dataset' 
 	BEGIN
-		IF ISNUMERIC(@entityID) = 0
+		Declare @datasetID int = Try_Convert(int, @entityID)
+	
+		IF @datasetID Is Null
 		BEGIN 
-			SELECT 		
-			@entityID = CONVERT(VARCHAR(24), Dataset_ID),
-			@created = DS_created
+			SELECT @entityID = CONVERT(varchar(24), Dataset_ID),
+			       @created = DS_created
 			FROM T_Dataset
 			WHERE Dataset_Num = @entityID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 		ELSE
 		BEGIN 
-			SELECT 		
-			@created = DS_created
+			SELECT @created = DS_created
 			FROM T_Dataset
-			WHERE Dataset_ID = @entityID
+			WHERE Dataset_ID = @datasetID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))	
 		END 
 	END 
 	-------------------------------------------------------
 	IF @entityType = 'sample_prep_request' 
 	BEGIN
-		IF ISNUMERIC(@entityID) = 0
+		Declare @samplePrepID int = Try_Convert(int, @entityID)
+	
+		IF @samplePrepID Is Null
 		BEGIN 
-			SELECT 
-			@entityID = CONVERT(VARCHAR(24), ID),
-			@created = Created
-			FROM dbo.T_Sample_Prep_Request 
+			SELECT @entityID = CONVERT(varchar(24), ID),
+			       @created = Created
+			FROM dbo.T_Sample_Prep_Request
 			WHERE Request_Name = @entityID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 		ELSE 
 		BEGIN
-			SELECT 
-			@created = Created
-			FROM dbo.T_Sample_Prep_Request 
-			WHERE ID = @entityID
+			SELECT @created = Created
+			FROM dbo.T_Sample_Prep_Request
+			WHERE ID = @samplePrepID
+
 			SET @spreadFolder = CONVERT(VARCHAR(12), DATEPART(year, @created)) + '_' + CONVERT(VARCHAR(12), DATEPART(month, @created))
 		END 
 	END

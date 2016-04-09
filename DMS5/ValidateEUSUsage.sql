@@ -25,6 +25,7 @@ CREATE PROCEDURE ValidateEUSUsage
 **			11/20/2013 mem - Now automatically extracting the integers from @eusUsersList if it instead has user names and integers
 **			08/11/2015 mem - Now trimming spaces from the parameters
 **			10/01/2015 mem - When @eusUsageType is '(ignore)' we now auto-change it to 'CAP_DEV'
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -190,7 +191,7 @@ As
 				Begin
 					Declare @CurrentChar char = Substring(@eusUsersList, @CharNum, 1)
 					
-					If @CurrentChar = ',' Or IsNumeric(@CurrentChar) = 1
+					If @CurrentChar = ',' Or Not Try_Convert(int, @CurrentChar) Is Null
 					Begin
 						Set @IntegerList = @IntegerList + @CurrentChar
 					End
@@ -212,31 +213,28 @@ As
 			INSERT INTO @tmpUsers (Item)
 			SELECT Item
 			FROM MakeTableFromList(@eusUsersList)
-			
 
 			-- Look for entries that are not integers
 			--
-			set @n = 0
-			SELECT @n = @n + (1 - IsNumeric(item))
+			set @n = 0			
+			SELECT @n = Count(*)
 			FROM @tmpUsers
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error trying to verify that all user ID are numeric'
-				return 51076
-			end
+			WHERE Try_Convert(INT, item) IS NULL
 
-			if @n <> 0
+			If @n > 0
 			begin
-				set @message = 'EMSL User IDs must be numeric'
+				If @n = 1
+					set @message = 'EMSL User ID is not numeric'
+				else
+					set @message = Cast(@n as varchar(12)) + ' EMSL User IDs are not numeric'
 				return 51077
 			end
 			
+			-- Look for entries that are not in T_EUS_Proposal_Users
+			--
 			set @n = 0
 			SELECT @n = count(*)
-			FROM  @tmpUsers
+			FROM @tmpUsers
 			WHERE 
 				CAST(Item as int) NOT IN
 				(

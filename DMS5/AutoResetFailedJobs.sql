@@ -32,6 +32,7 @@ CREATE Procedure AutoResetFailedJobs
 **			11/19/2015 mem - Preventing retry of jobs with a failed DataExtractor job with a message like "7.7% of the peptides have a mass error over 6.0 Da"
 **			11/19/2015 mem - Now auto-resetting jobs with a DataExtractor step reporting "Not enough free memory"
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -269,10 +270,8 @@ As
 							Begin
 								If @MatchIndex - @PoundIndex - 1 > 0
 								Begin
-									Set @RetryCountText = SubString(@RetryText, @PoundIndex+1, @MatchIndex - @PoundIndex - 1)
-
-									If IsNumeric(@RetryCountText) <> 0
-										Set @RetryCount = Convert(int, @RetryCountText)
+									Set @RetryCountText = SubString(@RetryText, @PoundIndex+1, @MatchIndex - @PoundIndex - 1)									
+									Set @RetryCount = IsNull(Try_Convert(Int, @RetryCountText), @retryCount)									
 								End									
 							End							
 						End

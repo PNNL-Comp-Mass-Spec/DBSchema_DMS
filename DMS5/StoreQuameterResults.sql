@@ -32,6 +32,7 @@ CREATE Procedure dbo.StoreQuameterResults
 **
 **	Auth:	mem
 **	Date:	09/17/2012 mem - Initial version (modelled after StoreSMAQCResults)
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -247,7 +248,7 @@ As
 	     INNER JOIN ( SELECT Name,
 	                         ValueText
 	                  FROM @MeasurementsTable
-	                  WHERE IsNumeric(ValueText) = 1 
+	                  WHERE Not Try_Convert(float, ValueText) Is Null
 	                ) FilterQ
 	       ON Target.Name = FilterQ.Name
 
@@ -392,7 +393,7 @@ MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
 			   )
 		VALUES ( Source.Dataset_ID, 
 		         Source.Quameter_Job,
-		         XIC_WideFrac, XIC_FWHM_Q1, XIC_FWHM_Q2, XIC_FWHM_Q3, XIC_Height_Q2, XIC_Height_Q3, XIC_Height_Q4,
+		    XIC_WideFrac, XIC_FWHM_Q1, XIC_FWHM_Q2, XIC_FWHM_Q3, XIC_Height_Q2, XIC_Height_Q3, XIC_Height_Q4,
                  RT_Duration, RT_TIC_Q1, RT_TIC_Q2, RT_TIC_Q3, RT_TIC_Q4,
                  RT_MS_Q1, RT_MS_Q2, RT_MS_Q3, RT_MS_Q4,
                  RT_MSMS_Q1, RT_MSMS_Q2, RT_MSMS_Q3, RT_MSMS_Q4,

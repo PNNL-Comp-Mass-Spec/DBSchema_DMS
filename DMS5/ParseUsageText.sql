@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **			03/11/2012 grk - return commment without usage text
 **			09/18/2012 grk - added 'Operator' and 'PropUser' keywords
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -153,7 +154,7 @@ AS
 					SET @val = REPLACE(@val, '%', '')
 					SET @val = REPLACE(@val, ',', '')
 
-					IF ISNUMERIC(@val) = 0
+					If Try_Convert(int, @val) Is Null
 						RAISERROR ('Percentage value for usage "%s" is not a valid integer', 11, 5, @kw)
 
 					UPDATE #TU

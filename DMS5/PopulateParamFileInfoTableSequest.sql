@@ -14,6 +14,7 @@ CREATE Procedure dbo.PopulateParamFileInfoTableSequest
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Date:	12/08/2006 mem - Initial version (Ticket #342)
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -129,17 +130,17 @@ As
 	-----------------------------------------------------------
 	-- Convert Enzyme from a number to a name
 	-----------------------------------------------------------
-	Set @S = ''
-	Set @S = @S + ' UPDATE #TmpParamFileInfo'
-	Set @S = @S + ' SET Enzyme = IsNull(Enz.Enzyme_Name, PFI.Enzyme)'
-	Set @S = @S + ' FROM #TmpParamFileInfo PFI INNER JOIN'
-	Set @S = @S +      ' (SELECT Param_File_ID'
-	Set @S = @S +       ' FROM #TmpParamFileInfo'
-	Set @S = @S +       ' WHERE IsNumeric(IsNull(Enzyme,'''')) > 0'
-	Set @S = @S +      ') UpdateListQ ON PFI.Param_File_ID = UpdateListQ.Param_File_ID LEFT OUTER JOIN'
-	Set @S = @S +      ' T_Enzymes Enz ON Convert(int, PFI.Enzyme) = Enz.Sequest_Enzyme_Index'
-
-	Exec (@S)
+	--
+	UPDATE #TmpParamFileInfo
+	SET Enzyme = IsNull(Enz.Enzyme_Name, PFI.Enzyme)
+	FROM #TmpParamFileInfo PFI
+	     INNER JOIN ( SELECT Param_File_ID
+	                  FROM #TmpParamFileInfo
+	                  WHERE NOT Try_Convert(int, IsNull(Enzyme, '')) IS NULL 
+	                ) UpdateListQ
+	       ON PFI.Param_File_ID = UpdateListQ.Param_File_ID
+	     LEFT OUTER JOIN T_Enzymes Enz
+	       ON Convert(int, PFI.Enzyme) = Enz.Sequest_Enzyme_Index
 	--	  
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -152,12 +153,10 @@ As
 	-----------------------------------------------------------
 	-- Display the enzyme name as "none" if the enzyme is 0 or null
 	-----------------------------------------------------------
-	Set @S = ''
-	Set @S = @S + ' UPDATE #TmpParamFileInfo'
-	Set @S = @S + ' SET Enzyme = ''none'''
-	Set @S = @S + ' WHERE Len(Isnull(Enzyme, '''')) = 0 OR Enzyme = ''0'''
-	
-	Exec (@S)
+	--
+	UPDATE #TmpParamFileInfo
+	SET Enzyme = 'none'
+	WHERE Len(Isnull(Enzyme, '')) = 0 OR Enzyme = '0'
 	--	  
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
