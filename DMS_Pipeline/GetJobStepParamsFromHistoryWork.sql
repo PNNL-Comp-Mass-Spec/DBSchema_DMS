@@ -25,6 +25,7 @@ CREATE PROCEDURE GetJobStepParamsFromHistoryWork
 **
 **	Auth:	mem
 **			07/31/2013 mem - Ported from GetJobStepParamsWork
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -200,11 +201,7 @@ AS
 	FROM ( SELECT Section,
 	              Name,
 	              [Value],
-	              CASE
-	                  WHEN Step = '' THEN 0
-	                  WHEN IsNumeric(Step) = 1 THEN Convert(int, Step)
-	                  ELSE 0
-	              END AS StepNumber
+	              IsNull(Try_Convert(int, Step), 0) AS StepNumber
 	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
 	                     xmlNode.value('@Name', 'nvarchar(256)') AS Name,
 	                     xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],

@@ -4,11 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.RebuildFragmentedIndices
+CREATE PROCEDURE [dbo].[RebuildFragmentedIndices]
 /****************************************************
 **
 **	Desc: 
 **		Reindexes fragmented indices in the database
+**
+**		Note that procedure dba_indexDefrag_sp in the dba database is more sophisticated than this procedure
 **
 **	Return values: 0:  success, otherwise, error code
 **
@@ -21,11 +23,13 @@ CREATE PROCEDURE dbo.RebuildFragmentedIndices
 **			07/16/2014 mem - Now showing table with detailed index info when @infoOnly = 1
 **						   - Changed default value for @MaxFragmentation from 15 to 25
 **						   - Changed default value for @TrivialPageCount from 12 to 22
+**			03/17/2016 mem - New parameter, @PercentFreeSpace; ignored if 0 or 100 (note that FillFactor is 100 - @PercentFreeSpace so when @PercentFreeSpace is 10, FillFactor is 90)
 **    
 *****************************************************/
 (
 	@MaxFragmentation int = 25,
 	@TrivialPageCount int = 22,
+	@PercentFreeSpace int = 10,				-- Used to define FillFactor; @PercentFreeSpace=10 means FillFactor = 90; ignored if 0 or 100
 	@VerifyUpdateEnabled tinyint = 1,		-- When non-zero, then calls VerifyUpdateEnabled to assure that database updating is enabled
 	@infoOnly tinyint = 1,
 	@message varchar(1024) = '' output
@@ -65,6 +69,13 @@ As
 	--
 	Set @MaxFragmentation = IsNull(@MaxFragmentation, 25)
 	Set @TrivialPageCount = IsNull(@TrivialPageCount, 22)
+	
+	Set @PercentFreeSpace = IsNull(@PercentFreeSpace, 10)
+	If @PercentFreeSpace < 0
+		Set @PercentFreeSpace = 0
+	If @PercentFreeSpace > 100
+		Set @PercentFreeSpace = 100
+		
 	Set @VerifyUpdateEnabled = IsNull(@VerifyUpdateEnabled, 1)
 	Set @infoOnly = IsNull(@infoOnly, 1)
 	Set @message = ''
@@ -195,7 +206,7 @@ As
 			      index_id = @indexid
 	
 	        -- Check for BLOB columns 
-	        If @indexid = 1 -- only check here for clustered indexes ANY blob column on the table counts 
+	        If @indexid = 1 -- only check here for clustered indexes since ANY blob column on the table counts 
 			Begin
 	            SELECT @HasBlobColumn = CASE
 	                                        WHEN max(so.object_ID) IS NULL THEN 0
@@ -233,22 +244,27 @@ As
 	
 	        SET @command = N'ALTER INDEX ' + @indexname + N' ON ' + @schemaname + N'.' + @objectname + N' REBUILD'
 	 
-	        if @HasBlobColumn = 1 
-	            Set @command = @command + N' WITH( SORT_IN_TEMPDB = ON) ' 
-	        else 
-	            Set @command = @command + N' WITH( ONLINE = OFF, SORT_IN_TEMPDB = ON) ' 
-	
 			IF @partitioncount > 1 
-				SET @command = @command + N' PARTITION=' + CAST(@partitionnum AS nvarchar(10)) 
+				SET @command = @command + N' PARTITION=ALL'
 			
+	        if @HasBlobColumn = 1 
+	            Set @command = @command + N' WITH( SORT_IN_TEMPDB = ON'
+	        else 
+	            Set @command = @command + N' WITH( ONLINE = OFF, SORT_IN_TEMPDB = ON'
+	
+			If @PercentFreeSpace > 0 And @PercentFreeSpace < 100
+				Set @command = @command + ', FILLFACTOR = ' + Cast((100 - @PercentFreeSpace) as nvarchar(9)) + ') '
+			Else
+				Set @command = @command + ') '
+
 			Set @message = 'Fragmentation = ' + Convert(varchar(12), convert(decimal(9,1), @frag)) + '%; '
-			Set @message = @message + 'Executing: ' + @command + ' Has Blob = ' + convert(nvarchar(2),@HasBlobColumn) 
+			Set @message = @message + 'Executing: ' + @command + ' Has Blob = ' + Cast(@HasBlobColumn as nvarchar(2))
 			
 			if @InfoOnly <> 0
 				Print '  ' + @message
 			Else
 			Begin
-				EXEC (@command) 
+				exec sp_executesql @command
 
 				Set @message = 'Reindexed ' + @indexname + ' due to Fragmentation = ' + Convert(varchar(12), Convert(decimal(9,1), @frag)) + '%; '
 				Exec PostLogEntry 'Normal', @message, 'RebuildFragmentedIndices'

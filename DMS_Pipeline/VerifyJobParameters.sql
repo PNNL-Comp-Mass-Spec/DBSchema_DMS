@@ -16,6 +16,7 @@ CREATE PROCEDURE VerifyJobParameters
 **  Date:	10/06/2010 grk - Initial release
 **			11/25/2010 mem - Now validating that the script exists in T_Scripts
 **			12/10/2013 grk - problem inserting null values into #TPD
+**			04/08/2016 mem - Clear @message if null
 **
 *****************************************************/
 (
@@ -31,7 +32,9 @@ AS
 
 	set @myError = 0
 	set @myRowCount = 0
-
+	
+	Set @message = IsNull(@message, '')
+	
 	---------------------------------------------------
 	-- Get parameter definition
 	-- This is null for most scripts

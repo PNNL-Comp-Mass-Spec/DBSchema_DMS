@@ -15,6 +15,7 @@ CREATE PROCEDURE UpdateJobStepMemoryUsage
 **
 **	Auth:	mem
 **	Date:	10/17/2011 mem - Initial release
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -103,10 +104,10 @@ As
 				Set @Continue = 0
 			Else
 			Begin -- <c>
-				If IsNumeric(@MemoryRequiredMB) <> 0
+				Set @ValMemoryRequiredMB = Try_Convert(int, @MemoryRequiredMB)
+			
+				If IsNull(@MemoryRequiredMB, '') <> '' And Not @ValMemoryRequiredMB Is Null
 				Begin -- <d>
-					Set @ValMemoryRequiredMB = Convert(int, @MemoryRequiredMB)
-					
 					UPDATE #Job_Steps
 					SET Memory_Usage_MB = @ValMemoryRequiredMB
 					WHERE Step_Tool = @StepTool AND

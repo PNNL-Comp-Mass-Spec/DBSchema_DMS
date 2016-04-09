@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION udfParseDelimitedList
+CREATE FUNCTION [dbo].[udfParseDelimitedList]
 /****************************************************	
 **	Parses the text in @DelimitedList and returns a table
 **	containing the values
@@ -20,6 +20,7 @@ CREATE FUNCTION udfParseDelimitedList
 **			03/14/2007 mem - Changed @DelimitedList parameter from varchar(8000) to varchar(max)
 **			04/02/2012 mem - Now removing Tab characters
 **			03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @Delimiter
+**			01/20/2016 mem - Add numbers table example
 **  
 ****************************************************/
 (
@@ -80,6 +81,44 @@ BEGIN
 
 			Set @StartPosition = @DelimiterPos + 1
 		End -- </b>
+		
+		/*
+		 * The following is an alternative method, using a Numbers table
+		 * This method is faster than the above Loop-based method, but it
+		 * does require that the Numbers table be pre-generated
+		 * prior to using the query
+		 *
+		 *
+		 * Numbers table creation:
+			-- DECLARE @UpperLimit INT = 1000000;
+			-- 
+			-- WITH n(rn) AS (
+			--   SELECT ROW_NUMBER() OVER (ORDER BY s1.[object_id])
+			--   FROM sys.all_columns AS s1
+			--   CROSS JOIN sys.all_columns AS s2
+			-- )
+			-- SELECT [Number] = rn
+			-- INTO dbo.T_Numbers
+			-- FROM n
+			-- WHERE rn <= @UpperLimit;
+			-- 
+			-- CREATE UNIQUE CLUSTERED INDEX IX_Numbers_Number ON dbo.T_Numbers([Number])
+			-- -- WITH (DATA_COMPRESSION = PAGE);
+		 *
+		 *
+			SELECT rn,
+		       vn = ROW_NUMBER() OVER ( PARTITION BY [Value] ORDER BY rn ),
+		       [Value]
+			FROM ( SELECT rn = ROW_NUMBER() OVER ( ORDER BY CHARINDEX(@Delim, @List + @Delim) ),
+		              [Value] = LTRIM(RTRIM(SUBSTRING(@List, [Number], 
+		                                      CHARINDEX(@Delim, @List + @Delim, [Number]) - [Number])))
+		       FROM dbo.T_Numbers
+		       WHERE [Number] <= LEN(@List) AND
+		             SUBSTRING(@Delim + @List, [Number], LEN(@Delim)) = @Delim ) AS x
+		 *
+		 *
+		 */
+
 	End -- </a>
 	
 	RETURN

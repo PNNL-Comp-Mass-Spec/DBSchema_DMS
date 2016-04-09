@@ -32,6 +32,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/16/2015 mem - Now storing T_Step_Tools.Param_File_Storage_Path if defined
 **			11/20/2015 mem - Now including CPU_Load
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -212,13 +213,9 @@ AS
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], [Value])	
 	SELECT Section, Name, [Value]	
 	FROM ( SELECT Section,
-	              Name,
+	             Name,
 	              [Value],
-	              CASE
-	                  WHEN Step = '' THEN 0
-	                  WHEN IsNumeric(Step) = 1 THEN Convert(int, Step)
-	                  ELSE 0
-	            END AS StepNumber
+	              IsNull(Try_Convert(int, Step), 0) AS StepNumber
 	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
 	                     xmlNode.value('@Name', 'nvarchar(256)') AS Name,
 	                     xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],

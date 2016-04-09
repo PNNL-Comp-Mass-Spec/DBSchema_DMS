@@ -21,6 +21,7 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingText
 **			01/14/2012 mem - Added support for $ThisDatasetTrimAfter(x) in an Auto-query Where Clause
 **			03/11/2013 mem - Added output parameter @AutoQuerySql
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **    
 *****************************************************/
 (
@@ -86,9 +87,10 @@ As
 		------------------------------------------------
 		Set @SourceJobText = dbo.ExtractTaggedName(@TagName, @SpecialProcessingText)
 
-		If IsNumeric(@SourceJobText) > 0
-			Set @SourceJob = Convert(int, @SourceJobText)
-		Else
+		If IsNull(@SourceJobText, '') <> ''
+			Set @SourceJob = Try_Convert(int, @SourceJobText)
+			
+		If @SourceJob Is Null
 		Begin -- <d>
 			-- @SourceJobText is non-numeric
 			

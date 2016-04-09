@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION udfParseDelimitedIntegerList
+CREATE FUNCTION [dbo].[udfParseDelimitedIntegerList]
 /****************************************************	
 **	Parses the text in @DelimitedList and returns a table
 **	containing the values
@@ -19,6 +19,7 @@ CREATE FUNCTION udfParseDelimitedIntegerList
 **			03/14/2007 mem - Changed @DelimitedList parameter from varchar(8000) to varchar(max)
 **			04/02/2012 mem - Now removing Tab characters
 **			03/27/2013 mem - Now replacing carriage return and line feed characters with @Delimiter
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **  
 ****************************************************/
 (
@@ -33,7 +34,8 @@ BEGIN
 	Declare @StartPosition int
 	Declare @DelimiterPos int
 	
-	Declare @Value varchar(2048)
+	Declare @valueAsText varchar(2048)
+	Declare @value int
 	
 	Set @DelimitedList = IsNull(@DelimitedList, '')
 	
@@ -67,12 +69,16 @@ BEGIN
 
 			If @DelimiterPos > @StartPosition
 			Begin -- <c>
-				Set @Value = LTrim(RTrim(SubString(@DelimitedList, @StartPosition, @DelimiterPos - @StartPosition)))			
+				Set @valueAsText = LTrim(RTrim(SubString(@DelimitedList, @StartPosition, @DelimiterPos - @StartPosition)))			
 			
-				If Len(@Value) > 0 And IsNumeric(@Value) = 1
+				If Len(@valueAsText) > 0
 				Begin
-					INSERT INTO @tmpValues (Value)
-					VALUES (Convert(int, @Value))
+					Set @Value = Try_Convert(Int, @ValueAsText)
+					If @Value IS NOT NULL
+					Begin
+						INSERT INTO @tmpValues (Value)
+						VALUES (@Value)
+					End
 				End
 				
 			End -- </c>

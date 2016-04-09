@@ -28,6 +28,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			04/10/2013 mem - Now passing @CallingUser to MakeLocalJobInBroker
 **			07/23/2013 mem - Now calling PostLogEntry only once in the Catch block
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/08/2016 mem - Include job number in errors raised by RAISERROR
 **
 *****************************************************/
 (
@@ -79,28 +80,31 @@ AS
 		WHERE Job = @job
 		
 		IF @mode = 'update' AND @id = 0
-			RAISERROR ('Cannot update nonexistent job', 11, 2)
+			RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
 		IF @mode = 'update' AND NOT @state IN (1, 4, 5) -- new, complete, failed
-			RAISERROR ('Cannot update job in state %d', 11, 3, @state)
+			RAISERROR ('Cannot update job %d in state %d; must be 1, 4, or 5', 11, 3, @job, @state)
 
 		IF @mode = 'update' AND @datasetNum <> 'Aggregation'
-			RAISERROR ('Currently only aggregation jobs can be updated', 11, 4)
+			RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
 			
 		---------------------------------------------------
 		-- verify parameters
 		---------------------------------------------------
 
 		If @jobParam Is Null
-			RAISERROR('Web page bug: @jobParam is null', 11, 30)
+			RAISERROR('Web page bug: @jobParam is null for job %d', 11, 30, @job)
 
 		If @jobParam = ''
-			RAISERROR('Web page bug: @jobParam is empty', 11, 30)
+			RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
 		
 		exec @myError = VerifyJobParameters @jobParam, @scriptName, @message output
 		IF @myError > 0
+		Begin
+			Set @message = 'Error message for job ' + Cast(@job as varchar(9)) + ' from VerifyJobParameters: ' + @message
 			RAISERROR(@message, 11, @myError)
-
+		End
+		
 		---------------------------------------------------
 		-- update mode 
 		-- restricted to certain job states and limited to certain fields
