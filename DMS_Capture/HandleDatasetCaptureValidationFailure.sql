@@ -21,6 +21,7 @@ CREATE Procedure dbo.HandleDatasetCaptureValidationFailure
 **	Date:	04/28/2011
 **			09/13/2011 mem - Updated to support script 'IMSDatasetCapture' in addition to 'DatasetCapture'
 **			11/05/2012 mem - Added additional Print statement
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **
 *****************************************************/
 (
@@ -54,7 +55,8 @@ As
 	If @Comment = ''
 		Set @Comment = 'Bad dataset'
 		
-	If IsNumeric(@DatasetNameOrID) <> 0
+	Set @DatasetID = IsNull(Try_Convert(int, @DatasetNameOrID), 0)
+	If @DatasetID <> 0
 	Begin
 		----------------------------------------
 		-- Lookup the Dataset Name

@@ -148,3 +148,5 @@ AS
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[MakePrepLCCaptureJob] TO [DMS_SP_User] AS [dbo]
+GO

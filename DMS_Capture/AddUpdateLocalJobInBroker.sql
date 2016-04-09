@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **	Date:	11/16/2010 grk - Initial release
 **			03/15/2011 dac - Modified to allow updating in HOLD mode
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/08/2016 mem - Include job number in errors raised by RAISERROR
 **
 *****************************************************/
 (
@@ -64,10 +65,10 @@ AS
 		WHERE Job = @job
 		
 		IF @mode = 'update' AND @id = 0
-			RAISERROR ('Cannot update nonexistent job', 11, 2)
+			RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
 		IF @mode = 'update' AND NOT @state IN (1, 4, 5, 100) -- new, complete, failed, hold
-			RAISERROR ('Cannot update job in state %d', 11, 3, @state)
+			RAISERROR ('Cannot update job %d in state %d; must be 1, 4, 5, or 100', 11, 3, @job, @state)
 
 		---------------------------------------------------
 		-- verify parameters
@@ -106,7 +107,8 @@ AS
 		IF @mode = 'add'
 		BEGIN --<add>
 
-			set @message = 'Add mode is not implemented' + CONVERT(VARCHAR(12), @state)
+			set @message = 'Add mode is not implemented; cannot add job ' + 
+			               Cast(@job as varchar(9)) + ' with state ' + Cast(@state as varchar(9))
 			RAISERROR (@message, 11, 1)
 
 			DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
