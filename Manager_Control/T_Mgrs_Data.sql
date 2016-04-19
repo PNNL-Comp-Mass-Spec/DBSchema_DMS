@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 800 ******/
+/****** RowCount: 788 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (340,'SeqCluster1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (341,'SeqCluster2',11,1,1,'')
@@ -700,18 +700,6 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1369,'Pub-17-6',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1370,'Pub-17-7',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1371,'Pub-17-8',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1372,'Pub-18-3',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1373,'Pub-18-4',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1374,'Pub-18-5',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1375,'Pub-18-6',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1376,'Pub-18-7',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1377,'Pub-18-8',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1378,'Pub-19-3',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1379,'Pub-19-4',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1380,'Pub-19-5',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1381,'Pub-19-6',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1382,'Pub-19-7',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1383,'Pub-19-8',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1384,'Pub-Params_R630A',11,0,0,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1385,'Diorite-1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1386,'Diorite-2',11,1,1,'')
