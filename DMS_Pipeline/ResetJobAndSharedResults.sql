@@ -211,7 +211,7 @@ As
 				
 				If @myRowCount > 0	
 				Begin -- <d>
-					SELECT Job, 'This job likely need to have it''s Output_Folder field renamed to not be ' + @OutputFolder as Message
+					SELECT Job, 'This job likely needs to have it''s Output_Folder field renamed to not be ' + @OutputFolder as Message
 					FROM V_Job_Steps
 					WHERE (Output_Folder = @OutputFolder) AND 
 						(State = 5)
@@ -222,7 +222,7 @@ As
 						FROM V_Job_Steps
 						WHERE (Output_Folder = @OutputFolder) AND (State = 5)
 						
-						Set @message = @message + '; Job ' + Convert(varchar(12), @Job) + ' in T_Job_Steps likely need to have it''s Output_Folder field renamed to not be ' + @OutputFolder
+						Set @message = @message + '; Job ' + Convert(varchar(12), @Job) + ' in T_Job_Steps likely needs to have it''s Output_Folder field renamed to not be ' + @OutputFolder
 					End
 					Else
 						Set @message = @message + '; ' + Convert(varchar(12), @myRowCount) + ' jobs in T_Job_Steps likely need to have their Output_Folder field renamed to not be ' + @OutputFolder
