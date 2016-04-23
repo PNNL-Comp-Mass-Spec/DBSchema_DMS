@@ -15,6 +15,7 @@ CREATE PROCEDURE UnarchiveOldManagersAndParams
 **
 **	Auth:	mem
 **	Date:	02/25/2016 mem - Initial version
+**			04/22/2016 mem - Now updating M_Comment in T_Mgrs
 **    
 *****************************************************/
 (
@@ -147,12 +148,14 @@ As
 		                     M_Name,
 		                     M_TypeID,
 		                     M_ParmValueChanged,
-		                     M_ControlFromWebsite )
+		                     M_ControlFromWebsite,
+		                     M_Comment )
 		SELECT M.M_ID,
 		       M.M_Name,
 		       M.M_TypeID,
 		       M.M_ParmValueChanged,
-		       @EnableControlFromWebsite
+		       @EnableControlFromWebsite,
+		       M.M_Comment
 		FROM T_OldManagers M
 		     INNER JOIN #TmpManagerList Src
 		       ON M.M_ID = Src.M_ID

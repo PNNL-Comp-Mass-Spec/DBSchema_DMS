@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_OldManagers](
 	[M_TypeID] [int] NOT NULL,
 	[M_ParmValueChanged] [tinyint] NOT NULL,
 	[M_ControlFromWebsite] [tinyint] NOT NULL,
+	[M_Comment] [varchar](250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_OldManagers] PRIMARY KEY CLUSTERED 
 (
 	[M_ID] ASC

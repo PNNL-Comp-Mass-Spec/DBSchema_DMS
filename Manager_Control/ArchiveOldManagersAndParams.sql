@@ -16,6 +16,7 @@ CREATE PROCEDURE ArchiveOldManagersAndParams
 **	Auth:	mem
 **	Date:	05/14/2015 mem - Initial version
 **			02/25/2016 mem - Add Set XACT_ABORT On
+**			04/22/2016 mem - Now updating M_Comment in T_OldManagers
 **    
 *****************************************************/
 (
@@ -131,12 +132,14 @@ As
 		                           M_Name,
 		                           M_TypeID,
 		                           M_ParmValueChanged,
-		                           M_ControlFromWebsite )
+		                           M_ControlFromWebsite,
+		                           M_Comment )
 		SELECT M.M_ID,
 		       M.M_Name,
 		       M.M_TypeID,
 		       M.M_ParmValueChanged,
-		       M.M_ControlFromWebsite
+		       M.M_ControlFromWebsite,
+		       M.M_Comment
 		FROM T_Mgrs M
 		     INNER JOIN #TmpManagerList Src
 		       ON M.M_ID = Src.M_ID
