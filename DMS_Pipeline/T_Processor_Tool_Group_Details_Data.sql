@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Group_Details] ******/
-/****** RowCount: 1284 ******/
+/****** RowCount: 1286 ******/
 /****** Columns: Group_ID, Mgr_ID, Tool_Name, Priority, Enabled, Comment, Last_Affected ******/
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Cleanup',3,1,'','4/17/2013 8:57:15 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Transfer',3,1,'','11/13/2015 6:26:31 PM')
@@ -69,6 +69,7 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'DTA_Split',3,1,'','10/
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'ICR2LS',1,1,'Brought online 4/14/2016','4/14/2016 4:10:47 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'Inspect',4,0,'Disabling since not fast enough to handle param file Inspect_Unrestrictive_FTHybrid_ParTol10ppm_FragTol20ppm.txt','12/20/2011 2:07:51 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'InspectResultsAssembly',3,1,'','10/22/2013 2:53:24 PM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'LTQ_FTPEK',1,1,'Brought online 4/14/2016','4/26/2016 12:32:20 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'TIC_D2L',3,1,'','')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'TIC_D2L_Agilent',3,1,'','')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,1,'XTandem',5,1,'','11/7/2011 5:55:31 PM')
@@ -76,6 +77,7 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'Decon2LS_Agilent',1,0,
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'DTA_Split',3,0,'','')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'ICR2LS',1,1,'Brought online 4/14/2016','4/14/2016 4:10:58 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'InspectResultsAssembly',3,0,'','')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'LTQ_FTPEK',1,1,'Brought online 4/14/2016','4/26/2016 12:32:24 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'MSXML_Gen',3,0,'Disabled since old, slow box','')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'OMSSA',3,1,'','')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (8,2,'TIC_D2L',3,1,'','')
@@ -999,5 +1001,3 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'DataExtractor',3,1,''
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'DataImport',3,1,'','4/19/2013 1:16:50 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'Decon2LS_V2',2,0,'DeconTools crashes on .Raw files on PIC (as of 4/19/2013)','4/19/2013 1:54:23 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'IDPicker',3,1,'','11/13/2015 6:26:31 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'InspectResultsAssembly',3,1,'','10/22/2013 2:53:24 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (24,6,'LCMSFeatureFinder',2,1,'','4/19/2013 1:16:50 PM')
