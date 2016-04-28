@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 -- 
 CREATE view [dbo].[V_Requested_Run_Batch_List_Report] as
 SELECT RRB.ID,
@@ -29,6 +30,7 @@ SELECT RRB.ID,
             THEN H.MaxDaysInQueue    -- No active requested runs for this batch
             ELSE DATEDIFF(DAY, ISNULL(F.Oldest_Request_Created, H.Oldest_Request_Created), GETDATE())
        END AS [Days In Queue],
+	   Cast(RRB.Requested_Completion_Date as date) AS [Complete By],
        SPQ.[Days in Prep Queue],
        RRB.Justification_for_High_Priority,
        RRB.[Comment],
@@ -117,7 +119,6 @@ FROM T_Requested_Run_Batches AS RRB
                      ) AS SPQ
        ON SPQ.BatchID = RRB.ID
 WHERE (RRB.ID > 0)
-
 
 
 GO

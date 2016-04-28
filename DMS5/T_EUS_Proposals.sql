@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_EUS_Proposals](
 	[Proposal_Start_Date] [datetime] NULL,
 	[Proposal_End_Date] [datetime] NULL,
 	[Last_Affected] [datetime] NULL,
+	[Numeric_ID]  AS ([dbo].[ExtractInteger]([Proposal_ID])) PERSISTED,
  CONSTRAINT [PK_T_EUS_Proposals] PRIMARY KEY CLUSTERED 
 (
 	[Proposal_ID] ASC

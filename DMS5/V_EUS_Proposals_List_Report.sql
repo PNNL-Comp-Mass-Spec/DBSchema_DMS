@@ -11,10 +11,12 @@ SELECT DISTINCT P.Proposal_ID AS ID,
                 dbo.GetProposalEUSUsersList(P.Proposal_ID, 'N') AS Users,
                 P.Title,
                 P.Import_Date AS [Import Date],
-                P.Proposal_Type
+                P.Proposal_Type,
+				P.Numeric_ID
 FROM T_EUS_Proposals P
      INNER JOIN T_EUS_Proposal_State_Name S
        ON P.State_ID = S.ID
+
 
 
 GO

@@ -16,8 +16,12 @@ CREATE FUNCTION dbo.ExtractNumberFromText
 **	Parameters:	@SearchText - the text to search for a number
 **				@StartLoc - the position to start searching at
 **
-**	Auth: mem
-**	Date: 07/31/2007
+**	See also UDF ExtractInteger
+**	That UDF does not have a @StartLoc parameter, and it returns null if a number is not found
+**
+**	Auth:	mem
+**	Date:	07/31/2007
+**			04/26/2016 mem - Check for negative numbers
 **    
 *****************************************************/
 (
@@ -52,6 +56,10 @@ BEGIN
 		Declare @ValueText varchar(4000)
 		Set @ValueText = Substring(@SearchText, @loc, 1)
 		
+		-- Check for negative numbers
+		If @loc > 1 And SubString(@SearchText, @loc-1, 1) = '-'
+			Set @ValueText = '-' + @ValueText
+			
 		While @Loc > 0 And @Loc < @TextLength
 		Begin
 			Set @NextChar = Substring(@SearchText, @Loc+1, 1)
