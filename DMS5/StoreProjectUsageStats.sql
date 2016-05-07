@@ -17,6 +17,7 @@ CREATE Procedure dbo.StoreProjectUsageStats
 **		
 **	Auth:	mem
 **	Date:	12/18/2015 mem - Initial version
+**			05/06/2016 mem - Now tracking experiments
 **    
 *****************************************************/
 (	
@@ -66,6 +67,7 @@ AS
 		RDS_WorkPackage varchar(50) NULL,
 		Proposal_Active int NOT NULL,
 		Project_Type_ID tinyint NOT NULL,
+		Samples int not NULL,
 		Datasets int not NULL,
 		Jobs int not NULL,
 		EUS_UsageType smallint NOT NULL,
@@ -78,7 +80,7 @@ AS
 	)
 
 	-----------------------------------------
-	-- Find datasets run with the date range
+	-- Find datasets run within the date range
 	-----------------------------------------
 	--
 	INSERT INTO #Tmp_Project_Usage_Stats( StartDate,
@@ -89,6 +91,7 @@ AS
 	                                      RDS_WorkPackage,
 	                                      Proposal_Active,
 	                                      Project_Type_ID,
+	                                      Samples,
 	                                      Datasets,
 	                                      Jobs,
 	                                      EUS_UsageType,
@@ -112,9 +115,10 @@ AS
 	  CASE
 	      WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER') THEN 1                                            -- Resource_Owner
 	      WHEN EUSPro.Proposal_Type IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC') THEN 2                         -- Proprietary
-	      WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
+	  WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
 	      ELSE 0                                                                                   -- Unknown
 	  END AS Project_Type_ID,
+	       0 AS Samples,
 	       COUNT(*) AS Datasets,
 	       0 AS Jobs,
 	       RR.RDS_EUS_UsageType AS EUS_UsageType,
@@ -141,7 +145,7 @@ AS
 	ORDER BY Count(*) DESC
 
 	-----------------------------------------
-	-- Find user-initiated analysis jobs within the date range
+	-- Find user-initiated analysis jobs started within the date range
 	-- Store in T_Project_Usage_Stats via a merge
 	-----------------------------------------
 	--
@@ -164,6 +168,7 @@ AS
 		      WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
 		      ELSE 0                                                                                            -- Unknown
 		  END AS Project_Type_ID,
+		       0 AS Samples,		      
 		       0 AS Datasets,
 		       Count(*) AS Jobs,
 		       RR.RDS_EUS_UsageType AS EUS_UsageType,
@@ -211,14 +216,98 @@ AS
 	WHEN NOT MATCHED BY TARGET THEN
 		INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID, 
 		      RDS_WorkPackage, Proposal_Active, Project_Type_ID, 
-		      Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User, 
+		      Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User, 
 		      Instrument_First, Instrument_Last, 
 		      JobTool_First, JobTool_Last)
 		VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID, 
 		       s.RDS_WorkPackage, s.Proposal_Active, s.Project_Type_ID, 
-		       s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User, 
+		       s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User, 
 		       s.Instrument_First, s.Instrument_Last, 
 		       s.JobTool_First, s.JobTool_Last) ;
+
+
+	-----------------------------------------
+	-- Find experiments (samples) prepared within the date range
+	-- Store in T_Project_Usage_Stats via a merge
+	-----------------------------------------
+	--
+	MERGE #Tmp_Project_Usage_Stats AS t
+	USING (
+		SELECT @Startdate AS StartDate,
+		       @EndDate AS EndDate,
+		       @EndDateYear AS TheYear,
+		       @EndDateWeek AS WeekOfYear,
+		       EUSPro.Proposal_ID,
+		       SPR.Work_Package_Number,
+		       CASE
+		           WHEN GetDate() >= EUSPro.Proposal_Start_Date AND
+		                GetDate() <= EUSPro.Proposal_End_Date THEN 1
+		           ELSE 0
+		       END AS Proposal_Active,
+		       CASE
+		           WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER') THEN 1                                            -- Resource_Owner
+		           WHEN EUSPro.Proposal_Type IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC') THEN 2                         -- Proprietary
+		           WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
+		           ELSE 0                                                                                            -- Unknown
+		       END AS Project_Type_ID,
+		       COUNT(DISTINCT Exp_ID) AS Samples,
+		       0 AS Datasets,
+		       0 AS Jobs,
+		       UsageType.ID AS EUS_UsageType,
+		       EUSPro.Proposal_Type,
+		       Min(EUSUsers.NAME_FM) AS Proposal_User,
+		       '' AS Instrument_First,
+		       '' AS Instrument_Last,
+		       '' AS JobTool_First,
+		       '' AS JobTool_Last
+		FROM T_Sample_Prep_Request SPR
+		     INNER JOIN T_EUS_Proposals EUSPro
+		       ON SPR.EUS_Proposal_ID = EUSPro.Proposal_ID
+		     INNER JOIN T_EUS_UsageType UsageType
+			   ON SPR.EUS_UsageType = UsageType.Name
+		     LEFT OUTER JOIN T_Experiments
+		       ON SPR.ID = T_Experiments.EX_sample_prep_request_ID
+		     LEFT OUTER JOIN ( SELECT ID,
+		                              CASE
+		                                  WHEN SearchQ.CommaLoc > 0 THEN 
+		                                    Substring(EUS_User_List, 1, SearchQ.CommaLoc - 1)
+		                                  ELSE EUS_User_List
+		                              END AS EUS_User_ID
+		                       FROM ( SELECT ID,
+		                                     EUS_User_List,
+		                                     CharIndex(',', EUS_User_List) AS CommaLoc
+		                              FROM T_Sample_Prep_Request ) SearchQ ) AS EUSUserFirst
+		       ON SPR.ID = EUSUserFirst.ID
+		     LEFT OUTER JOIN T_EUS_Users AS EUSUsers 
+		       ON EUSUserFirst.EUS_User_ID = EUSUsers.Person_ID
+		WHERE T_Experiments.EX_created BETWEEN @StartDate and @EndDate
+		GROUP BY EUSPro.Proposal_ID, SPR.Work_Package_Number, EUSPro.Proposal_Start_Date, EUSPro.Proposal_End_Date,
+		         EUSPro.Proposal_Type, SPR.EUS_User_List, UsageType.ID, EUSUserFirst.EUS_User_ID
+	) AS s
+	ON ( t.TheYear = s.TheYear AND 
+		 t.WeekOfYear = s.WeekOfYear AND
+		 IsNull(t.Proposal_ID, 0) = IsNull(s.Proposal_ID, 0) AND
+		 t.RDS_WorkPackage = s.Work_Package_Number AND
+		 t.EUS_UsageType = s.EUS_UsageType)
+	WHEN MATCHED AND (
+		ISNULL( NULLIF(t.Samples, s.Samples),
+				NULLIF(s.Samples, t.Samples)) IS NOT NULL
+		)
+	THEN UPDATE Set 
+		Samples = s.Samples
+	WHEN NOT MATCHED BY TARGET THEN
+		INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID, 
+		      RDS_WorkPackage, Proposal_Active, Project_Type_ID, 
+		      Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User, 
+		      Instrument_First, Instrument_Last, 
+		      JobTool_First, JobTool_Last)
+		VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID, 
+		       s.Work_Package_Number, s.Proposal_Active, s.Project_Type_ID, 
+		       s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User, 
+		       s.Instrument_First, s.Instrument_Last, 
+		       s.JobTool_First, s.JobTool_Last) ;
+
+
 
 	If @infoOnly <> 0
 	Begin
@@ -231,6 +320,7 @@ AS
 		       Stats.RDS_WorkPackage,
 		       Stats.Proposal_Active,
 		       ProjectTypes.Project_Type_Name,
+		       Stats.Samples,
 		       Stats.Datasets,
 		       Stats.Jobs,
 		       EUSUsage.Name AS UsageType,
@@ -250,7 +340,7 @@ AS
 		       ON Stats.EUS_UsageType = EUSUsage.ID
 		     LEFT OUTER JOIN T_EUS_Proposals Proposals
 		       ON Stats.Proposal_ID = Proposals.Proposal_ID
-		ORDER BY Datasets DESC, Jobs DESC
+		ORDER BY Datasets DESC, Jobs DESC, Samples Desc
 
 	End
 	Else
@@ -269,6 +359,7 @@ AS
 		                                   RDS_WorkPackage,
 		                                   Proposal_Active,
 		                                   Project_Type_ID,
+		                                   Samples,
 		                                   Datasets,
 		                                   Jobs,
 		                                   EUS_UsageType,
@@ -286,6 +377,7 @@ AS
 		       RDS_WorkPackage,
 		       Proposal_Active,
 		       Project_Type_ID,
+		       Samples,
 		       Datasets,
 		       Jobs,
 		       EUS_UsageType,

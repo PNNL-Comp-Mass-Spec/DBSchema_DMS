@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Project_Usage_Stats](
 	[RDS_WorkPackage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Proposal_Active] [int] NOT NULL,
 	[Project_Type_ID] [tinyint] NOT NULL,
+	[Samples] [int] NULL,
 	[Datasets] [int] NULL,
 	[Jobs] [int] NULL,
 	[EUS_UsageType] [smallint] NOT NULL,

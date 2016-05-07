@@ -112,6 +112,12 @@ REFERENCES [dbo].[T_EUS_Proposals] ([Proposal_ID])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Proposals]
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_UsageType] FOREIGN KEY([EUS_UsageType])
+REFERENCES [dbo].[T_EUS_UsageType] ([Name])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_UsageType]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
 GO

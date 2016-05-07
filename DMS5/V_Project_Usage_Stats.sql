@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Project_Usage_Stats]
 AS
 SELECT Stats.Entry_ID,
@@ -15,6 +16,7 @@ SELECT Stats.Entry_ID,
        Stats.RDS_WorkPackage as Work_Package,
        Stats.Proposal_Active,
        ProjectTypes.Project_Type_Name as Project_Type,
+	   Stats.Samples,
        Stats.Datasets,
        Stats.Jobs,
        EUSUsage.Name AS Usage_Type,
@@ -35,6 +37,7 @@ FROM T_Project_Usage_Stats Stats
        ON Stats.EUS_UsageType = EUSUsage.ID
      LEFT OUTER JOIN T_EUS_Proposals Proposals
        ON Stats.Proposal_ID = Proposals.Proposal_ID
+
 
 
 
