@@ -502,7 +502,7 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at assigned processor name udpate'
+				set @msg = 'Update operation failed at assigned processor name update'
 				rollback transaction @transName
 				if @DisableRaiseError = 0
 					RAISERROR (@msg, 10, 1)

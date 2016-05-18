@@ -21,6 +21,7 @@ CREATE Procedure dbo.UpdateUsersFromWarehouse
 **			06/07/2013 mem - Removed U_NetID since U_Prn tracks the username
 **						   - Added column U_Payroll to track the Payroll number
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/14/2016 mem - Add check for duplicate names
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ AS
 		--
 		CREATE TABLE #Tmp_UserInfo (
 			ID int not null,
-			[Name] varchar(128) NULL,
+			U_Name varchar(128) NULL,
 			Email varchar(128) NULL,
 			Domain varchar(64) NULL,
 			NetworkLogin varchar(64) NULL,
@@ -61,7 +62,7 @@ AS
 		----------------------------------------------------------
 		--
 		INSERT INTO #Tmp_UserInfo( ID,
-		                           [Name],
+		                           U_Name,
 		                           Email,
 		                           Domain,
 		                           NetworkLogin,
@@ -89,7 +90,7 @@ AS
 		----------------------------------------------------------
 		--
 		INSERT INTO #Tmp_UserInfo( ID,
-		                           [Name],
+		                           U_Name,
 		                           Email,
 		                           Domain,
 		                           NetworkLogin,
@@ -117,7 +118,7 @@ AS
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 		----------------------------------------------------------
-		-- Look for users that need to be udpated
+		-- Look for users that need to be updated
 		----------------------------------------------------------
 		--
 		UPDATE #Tmp_UserInfo
@@ -125,7 +126,7 @@ AS
 		FROM T_Users U
 		     INNER JOIN #Tmp_UserInfo Src
 		       ON U.ID = Src.ID
-		WHERE IsNull(U.U_Name, '') <> IsNull(Src.Name, IsNull(U.U_Name, '')) OR
+		WHERE IsNull(U.U_Name, '') <> IsNull(Src.U_Name, IsNull(U.U_Name, '')) OR
 		      IsNull(U.U_email, '') <> IsNull(Src.Email, IsNull(U.U_email, '')) OR
 		      IsNull(U.U_domain, '') <> IsNull(Src.Domain, IsNull(U.U_domain, '')) OR
 		      IsNull(U.U_Payroll, '') <> IsNull(Src.PNNL_Payroll, IsNull(U.U_Payroll, '')) OR
@@ -133,16 +134,90 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
+		----------------------------------------------------------
+		-- Look for updates that would result in a name conflict
+		----------------------------------------------------------
+		--
+		CREATE TABLE #Tmp_NamesAfterUpdate (
+			ID int not null,
+			OldName varchar(128) NULL,
+			NewName varchar(128) NULL,
+			Conflict tinyint not null Default 0
+		)
+		
+		CREATE CLUSTERED INDEX IX_Tmp_NamesAfterUpdate_ID ON #Tmp_NamesAfterUpdate (ID)
+		CREATE INDEX IX_Tmp_NamesAfterUpdate_Name ON #Tmp_NamesAfterUpdate (NewName)
+		
+
+		-- Store the names of the users that will be updated
+		--		
+		INSERT INTO #Tmp_NamesAfterUpdate (ID, OldName, NewName)
+		SELECT U.ID, U.U_Name, IsNull(Src.U_Name, U.U_Name) AS NewName
+		FROM T_Users U
+				INNER JOIN #Tmp_UserInfo Src
+				ON U.ID = Src.ID
+		WHERE Src.UpdateRequired = 1
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		-- Append the remaining users
+		--
+		INSERT INTO #Tmp_NamesAfterUpdate (ID, OldName, NewName)
+		SELECT ID, U_Name, U_Name
+		FROM T_Users
+		WHERE NOT ID IN (SELECT ID FROM #Tmp_NamesAfterUpdate)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+		-- Look for conflicts
+		--
+		UPDATE #Tmp_NamesAfterUpdate
+		SET Conflict = 1
+		WHERE NewName IN ( SELECT NewName
+		                   FROM #Tmp_NamesAfterUpdate
+		                   GROUP BY NewName
+		                   HAVING COUNT(*) > 1 )
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		Select @myRowCount = COUNT(*)
+		FROM #Tmp_NamesAfterUpdate 
+		WHERE Conflict = 1
+
+		If @myRowCount > 0
+		Begin
+		
+			Set @message ='User update would result in ' + dbo.CheckPlural(@myRowCount, 'a duplicate name: ', 'duplicate names: ')
+			
+			SELECT @message = @message + IsNull(OldName, '??? Undefined ???')  + ' --> ' + IsNull(NewName, '??? Undefined ???') + ', '
+			FROM #Tmp_NamesAfterUpdate
+			WHERE Conflict = 1
+			ORDER BY NewName, OldName
+			
+			-- Remove the trailing comma
+			Set @message = RTrim(@message)
+			Set @message = Left(@message, Len(@message)-1)
+
+			If @infoOnly = 0
+				Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
+			Else
+				SELECT @message as Warning
+				
+		End
+
 		If @infoOnly = 0
 		Begin
 			BEGIN TRANSACTION
 
 				----------------------------------------------------------
-				-- Perform the update
+				-- Perform the update, skip entries with a potential name conflict
 				----------------------------------------------------------
 				--
 				UPDATE T_Users
-				SET U_Name = IsNull(Src.Name, U.U_Name),
+				SET U_Name = CASE WHEN ISNULL(NameConflicts.Conflict, 0) = 1 
+				                  THEN U.U_Name 
+				                  ELSE IsNull(Src.U_Name, U.U_Name) End,
 				    U_email = IsNull(Src.Email, U.U_email),
 				    U_domain = IsNull(Src.Domain, U.U_domain),
 				    U_Payroll = IsNull(Src.PNNL_Payroll, U.U_Payroll),
@@ -151,6 +226,8 @@ AS
 				FROM T_Users U
 				     INNER JOIN #Tmp_UserInfo Src
 				       ON U.ID = Src.ID
+				     LEFT OUTER JOIN #Tmp_NamesAfterUpdate NameConflicts
+				       ON U.ID = NameConflicts.ID
 				WHERE UpdateRequired = 1
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -158,6 +235,7 @@ AS
 				If @myRowCount > 0
 				Begin
 					Set @message = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'user', 'users') + ' using the PNNL Data Warehouse'
+					print @message
 					
 					Exec PostLogEntry 'Normal', @message, 'UpdateUsersFromWarehouse'
 				End
@@ -171,9 +249,9 @@ AS
 			-- Preview the updates
 			----------------------------------------------------------
 			--
-			SELECT U.U_Name,    Src.Name AS Name_New,
-			       U.U_email,   Src.Email AS EMail_New,
-			       U.U_domain,  Src.Domain AS Domain_New,
+			SELECT U.U_Name,    Src.U_Name AS Name_New,
+			      U.U_email,   Src.Email AS EMail_New,
+			    U.U_domain,  Src.Domain AS Domain_New,
 			       U.U_Payroll, Src.PNNL_Payroll AS Payroll_New,
 			       U.U_PRN,     Src.NetworkLogin AS NetworkLogin_New,
 			       U.U_active,  Src.Active AS Active_New
@@ -231,7 +309,7 @@ AS
 		--
 		INSERT INTO @tblUserProblems (ID, Warning, NetworkLogin)
 		SELECT U.ID,
-		       'Mismatch between U_PRN in DMS and NetworkLogin in Warehouse',
+		 'Mismatch between U_PRN in DMS and NetworkLogin in Warehouse',
 		       Src.NetworkLogin
 		FROM T_Users U INNER JOIN #Tmp_UserInfo Src
 		       ON U.ID = Src.ID
@@ -284,12 +362,19 @@ AS
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'UpdateUsersFromWarehouse'
+
 	END CATCH
-	
+
+Done:
 	return @myError
 
 GO
