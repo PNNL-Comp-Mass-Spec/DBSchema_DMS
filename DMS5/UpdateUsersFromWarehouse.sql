@@ -368,7 +368,6 @@ AS
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-
 		
 		Exec PostLogEntry 'Error', @msgForLog, 'UpdateUsersFromWarehouse'
 

@@ -56,6 +56,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **			12/17/2015 mem - Now considering @specialProcessing when looking for existing jobs
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -709,10 +710,15 @@ Explain:
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
 	END CATCH
+
 	return @myError
 
 
