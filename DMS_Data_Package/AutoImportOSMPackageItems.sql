@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.AutoImportOSMPackageItems
 **	Auth:	grk
 **	Date:	03/20/2013 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **
 *****************************************************/
 As
@@ -101,9 +102,15 @@ As
 	END TRY     
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'AutoImportOSMPackageItems'
+		
 	END CATCH
 	
  	---------------------------------------------------

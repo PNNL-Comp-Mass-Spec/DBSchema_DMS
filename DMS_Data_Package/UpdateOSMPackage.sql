@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.UpdateOSMPackage
 **  Auth:	grk
 **  Date:	07/08/2013 grk - Initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -79,10 +80,14 @@ AS
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'UpdateOSMPackage'
+		
 	END CATCH
 	RETURN @myError
 

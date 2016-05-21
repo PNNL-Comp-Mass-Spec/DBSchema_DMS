@@ -16,9 +16,8 @@ CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
 **	Auth:	grk
 **	Date:	05/26/2010 grk - Initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
 (
 	@DataPackageID INT,
@@ -146,6 +145,10 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		Exec PostLogEntry 'Error', @msgForLog, 'GetPackageDatasetJobToolCrosstab'
+		
 	END CATCH
 
 	RETURN @myError

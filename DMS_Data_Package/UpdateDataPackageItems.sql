@@ -21,16 +21,18 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **			12/31/2013 mem - Added support for EUS Proposals
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/07/2016 mem - Switch to udfParseDelimitedList
+**			05/18/2016 mem - Add parameter @infoOnly
 **
 *****************************************************/
 (
 	@packageID int,
-	@itemType varchar(128),
-	@itemList text,
+	@itemType varchar(128),				-- analysis_jobs, datasets, experiments, biomaterial, or proposals
+	@itemList text,						-- Comma separated list of items
 	@comment varchar(512),
-	@mode varchar(12) = 'update',
+	@mode varchar(12) = 'update',		-- 'add', 'comment', 'delete'
 	@message varchar(512) = '' output,
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@infoOnly tinyint = 0
 )
 As
 	Set XACT_ABORT, nocount on
@@ -59,13 +61,15 @@ As
 	BEGIN TRY 
 		---------------------------------------------------
 		DECLARE @typ VARCHAR(32)
-		select @typ = CASE WHEN @itemType = 'analysis_jobs' THEN 'Job'
-					 WHEN @itemType = 'datasets' THEN 'Dataset'
-					 WHEN @itemType = 'experiments' THEN 'Experiment'
-					 WHEN @itemType = 'biomaterial' THEN 'Biomaterial'
-					 WHEN @itemType = 'proposals' THEN 'EUSProposal'
-					 ELSE ''
-				END 
+		select @typ = 
+			CASE 
+				WHEN @itemType in ('analysis_jobs', 'job', 'jobs')	THEN 'Job'
+				WHEN @itemType in ('datasets', 'dataset')			THEN 'Dataset'
+				WHEN @itemType in ('experiments', 'experiment')		THEN 'Experiment'
+				WHEN @itemType = 'biomaterial'						THEN 'Biomaterial'
+				WHEN @itemType = 'proposals'						THEN 'EUSProposal'
+			ELSE ''
+			END 
 		--
 		IF @typ = ''
 			RAISERROR('Item type "%s" unrecognized', 11, 14, @itemType)		
@@ -85,7 +89,8 @@ As
 									@comment,
 									@mode,
 									@message output,
-									@callingUser
+									@callingUser,
+									@infoOnly = @infoOnly
 		if @myError <> 0
 			RAISERROR(@message, 11, 14)
 		
@@ -95,9 +100,14 @@ As
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'UpdateDataPackageItems'
+		
 	END CATCH
 	
  	---------------------------------------------------

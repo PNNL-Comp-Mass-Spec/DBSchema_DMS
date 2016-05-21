@@ -17,6 +17,7 @@ CREATE PROCEDURE DeleteAllItemsFromDataPackage
 **	Date:	06/10/2009 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/05/2016 mem - Add T_Data_Package_EUS_Proposals
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -78,9 +79,13 @@ As
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'DeleteAllItemsFromDataPackage'
 	END CATCH
 	
  	---------------------------------------------------

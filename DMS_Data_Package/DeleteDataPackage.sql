@@ -18,6 +18,7 @@ CREATE PROCEDURE DeleteDataPackage
 **
 **	Auth:	mem
 **	Date:	04/08/2016 mem - Initial release
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -134,9 +135,13 @@ As
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'DeleteDataPackage'
 	END CATCH
 	
  	---------------------------------------------------

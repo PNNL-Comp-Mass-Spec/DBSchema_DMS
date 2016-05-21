@@ -25,9 +25,8 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 **          08/21/2013 grk - added call to create onenote folder
 **          11/04/2013 grk - added @UserFolderPath
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/18/2016 mem - Log errors to T_Log_Entries
 **    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
 	@ID INT OUTPUT,
@@ -227,10 +226,14 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateOSMPackage'
+				
 	END CATCH
 	return @myError
 
