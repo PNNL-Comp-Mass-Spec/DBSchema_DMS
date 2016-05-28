@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Dataset_Detail_Report_Ex as
+
+CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
        OG.OG_name AS Organism,
@@ -60,7 +61,6 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Scan_Count AS [Scan Count],
        DSTypes.ScanTypeList AS [Scan Types],
        DS.Acq_Length_Minutes AS [Acq Length],
-       --DATEDIFF(minute, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
        DS.DS_folder_name AS [Folder Name],
@@ -79,7 +79,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TIS_1.Name AS [Predigest Int Std],
        TIS_2.Name AS [Postdigest Int Std],
        T_MyEMSLState.StateName AS [MyEMSL State]
-FROM dbo.t_storage_path AS SPath
+FROM dbo.T_Storage_Path AS SPath
      RIGHT OUTER JOIN dbo.T_Dataset AS DS
                       INNER JOIN dbo.T_DatasetStateName AS TDSN
                         ON DS.DS_state_ID = TDSN.Dataset_state_ID
@@ -119,7 +119,7 @@ FROM dbo.t_storage_path AS SPath
          INNER JOIN T_MyEMSLState
              ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState
        ON DA.AS_Dataset_ID = DS.Dataset_ID
-     INNER JOIN dbo.T_EUS_UsageType AS EUT
+     LEFT OUTER JOIN dbo.T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
@@ -144,6 +144,7 @@ FROM dbo.t_storage_path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]

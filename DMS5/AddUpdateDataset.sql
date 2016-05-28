@@ -70,6 +70,7 @@ CREATE Procedure AddUpdateDataset
 **			10/14/2015 mem - Remove double quotes from error messages
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/23/2016 mem - Disallow certain dataset names
 **    
 *****************************************************/
 (
@@ -266,7 +267,16 @@ As
 		set @msg = 'Dataset name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
 		RAISERROR (@msg, 11, 3)
 	end
-	
+
+	If @datasetNum in (
+	   'Archive', 'Dispositioned', 'Processed', 'Reprocessed', 'Not-Dispositioned', 
+	   'High-pH', 'NotDispositioned', 'Yufeng', 'Uploaded', 'Sequence', 'Sequences', 
+	   'Peptide', 'BadData')
+	begin
+		set @msg = 'Dataset name is too generic; be more specific'
+		RAISERROR (@msg, 11, 3)
+	end	
+		
 	---------------------------------------------------
 	-- Resolve id for rating
 	---------------------------------------------------

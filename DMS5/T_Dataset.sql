@@ -159,14 +159,6 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_AcqTimeStart_include_Da
 INCLUDE ( 	[Dataset_ID],
 	[DS_rating]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_LastAffected_include_State] ON [dbo].[T_Dataset]
-(
-	[DS_instrument_name_ID] ASC,
-	[DS_Last_Affected] ASC
-)
-INCLUDE ( 	[DS_state_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
 /****** Object:  Index [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_TypeID_include_DatasetID] ON [dbo].[T_Dataset]
 (
@@ -204,16 +196,6 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_State_ID] ON [dbo].[T_Dataset]
 (
 	[DS_state_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-/****** Object:  Index [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNameID_DatasetID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Dataset_StoragePathID_Created_ExpID_InstrumentNameID_DatasetID] ON [dbo].[T_Dataset]
-(
-	[DS_storage_path_ID] ASC,
-	[DS_created] ASC,
-	[Exp_ID] ASC,
-	[DS_instrument_name_ID] ASC,
-	[Dataset_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Dataset_StoragePathID_Created_InstrumentNameID_Rating_DatasetID] ******/
