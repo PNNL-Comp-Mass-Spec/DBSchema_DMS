@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeOSMPackageStorageFolder]
+CREATE PROCEDURE dbo.MakeOSMPackageStorageFolder
 /****************************************************
 **
 **  Desc: Requests creation of data storage folder for OSM Package
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[MakeOSMPackageStorageFolder]
 **
 **	Auth:	grk
 **  Date:	08/21/2013
+**			05/27/2016 mem - Remove call to CallSendMessage
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -64,15 +65,17 @@ As
 
 	---------------------------------------------------
 	-- Execute CallSendMessage, which will use xp_cmdshell to run C:\DMS_Programs\DBMessageSender\DBMessageSender.exe
+	-- We stopped doing this in May 2016 because login DMSWebUser no longer has execute privileges on xp_cmdshell
 	---------------------------------------------------
 	--
+	/*
 	EXEC @myError = CallSendMessage @ID, @mode, @message output
 
 	If IsNull(@message, '') = ''
 		Set @message = 'Called SendMessage for OSM Package ID ' + Convert(varchar(12), @PackageID) + ': ' + @PathFolder
 		
 	exec PostLogEntry 'Normal', @message, 'MakeODMPackageStorageFolder', @callingUser=@CallingUser
-
+	*/
 
 	---------------------------------------------------
 	-- Done
