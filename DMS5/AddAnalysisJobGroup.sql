@@ -57,6 +57,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			12/17/2015 mem - Now considering @specialProcessing when looking for existing jobs
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
+**			05/18/2016 mem - Include the Request ID in error messages
 **
 *****************************************************/
 (
@@ -83,56 +84,54 @@ CREATE Procedure AddAnalysisJobGroup
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
-	set @message = ''
+	Set @message = ''
 
-	declare @msg varchar(512)
-	declare @list varchar(1024)
-	declare @jobID int
-	declare @JobIDStart int
-	declare @JobIDEnd int
+	Declare @msg varchar(512)
+	Declare @list varchar(1024)
+	Declare @jobID int
+	Declare @JobIDStart int
+	Declare @JobIDEnd int
 		
-	declare @jobStateID int
-	declare @requestStateID int = 0
+	Declare @jobStateID int
+	Declare @requestStateID int = 0
 	
-	DECLARE @jobsCreated INT
-	SET @jobsCreated = 0
+	Declare @jobsCreated INT
+	Set @jobsCreated = 0
 
-	BEGIN TRY 
-
+	Begin Try
 	---------------------------------------------------
 	-- list shouldn't be empty
 	---------------------------------------------------
-	if @datasetList = ''
-		RAISERROR ('Dataset list is empty', 11, 1)
+	If @datasetList = ''
+		RAISERROR ('Dataset list is empty for request %d', 11, 1, @requestID)
 
 	/*
 	---------------------------------------------------
 	-- Deprecated in May 2015: resolve processor group ID
 	---------------------------------------------------
 	--
-	declare @gid int
-	set @gid = 0
+	Declare @gid int
+	Set @gid = 0
 	--
-	if @associatedProcessorGroup <> ''
-	begin
+	If @associatedProcessorGroup <> ''
+	Begin
 		SELECT @gid = ID
 		FROM T_Analysis_Job_Processor_Group
 		WHERE (Group_Name = @associatedProcessorGroup)	
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-			RAISERROR ('Error trying to resolve processor group name', 11, 8)
+		If @myError <> 0
+			RAISERROR ('Error trying to resolve processor group name for request %d', 11, 8, @requestID)
 		--
-		if @gid = 0
-			RAISERROR ('Processor group name not found', 11, 9)
-	end
+		If @gid = 0
+			RAISERROR ('Processor group name not found for request %d', 11, 9, @requestID)
+	End
 	*/
 	
 	---------------------------------------------------
@@ -153,8 +152,8 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-		RAISERROR ('Failed to create temporary table', 11, 7)
+	If @myError <> 0
+		RAISERROR ('Failed to create temporary table for request %d', 11, 7, @requestID)
 
 	---------------------------------------------------
 	-- Populate table from dataset list  
@@ -170,10 +169,10 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-		RAISERROR ('Error populating temporary table', 11, 7)
+	If @myError <> 0
+		RAISERROR ('Error populating temporary table for request %d', 11, 7, @requestID)
 	--
-	SET @jobsCreated = @myRowCount
+	Set @jobsCreated = @myRowCount
 
 	-- Make sure the Dataset names do not have carriage returns or line feeds
 		
@@ -196,8 +195,6 @@ As
 		If IsNull(@message, '') = ''
 			Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter file should have tda=1'
 	End
-
-
 	---------------------------------------------------
 	-- Auto-update @ownerPRN to @callingUser if possible
 	---------------------------------------------------
@@ -212,7 +209,6 @@ As
 		If Exists (SELECT * FROM T_Users Where U_PRN = @newPRN)
 			Set @ownerPRN = @newPRN
 	End
-	
 	---------------------------------------------------
 	-- If @removeDatasetsWithJobs is not "N" then
 	--  find datasets from temp table that have existing
@@ -220,15 +216,15 @@ As
 	-- If AJT_orgDbReqd = 0, then we ignore organism, protein collection, and organism DB
 	---------------------------------------------------
 	--
-	DECLARE @numMatchingDatasets INT
-	SET @numMatchingDatasets = 0
+	Declare @numMatchingDatasets INT
+	Set @numMatchingDatasets = 0
 	
-	DECLARE @removedDatasets VARCHAR(4096)
-	SET @removedDatasets = ''
+	Declare @removedDatasets VARCHAR(4096)
+	Set @removedDatasets = ''
 	--
-	IF @removeDatasetsWithJobs <> 'N'
-	BEGIN --<remove>
-		declare @matchingJobDatasets Table (
+	If @removeDatasetsWithJobs <> 'N'
+	Begin --<remove>
+		Declare @matchingJobDatasets Table (
 			Dataset varchar(128)
 		)
 		--
@@ -263,13 +259,13 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-			RAISERROR ('Error trying to find datasets with existing jobs', 11, 97)
+		If @myError <> 0
+			RAISERROR ('Error trying to find datasets with existing jobs for request %d', 11, 97, @requestID)
 		
-		SET @numMatchingDatasets = @myRowCount
+		Set @numMatchingDatasets = @myRowCount
 		
-		IF @numMatchingDatasets > 0
-		BEGIN --<remove-a>
+		If @numMatchingDatasets > 0
+		Begin --<remove-a>
 			-- remove datasets from list that have existing jobs
 			--
 			DELETE FROM #TD
@@ -277,43 +273,41 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			SET @jobsCreated = @jobsCreated - @myRowCount
+			Set @jobsCreated = @jobsCreated - @myRowCount
 			
 			-- make list of removed datasets
 			--
-			DECLARE @threshold SMALLINT
-			SET @threshold = 5
-			SET @removedDatasets = CONVERT(varchar(12), @numMatchingDatasets) + ' skipped datasets that had existing jobs:'
+			Declare @threshold SMALLINT
+			Set @threshold = 5
+			Set @removedDatasets = CONVERT(varchar(12), @numMatchingDatasets) + ' skipped datasets that had existing jobs:'
 			SELECT TOP(@threshold) @removedDatasets =  @removedDatasets + Dataset + ', ' FROM @matchingJobDatasets
-			IF @numMatchingDatasets > @threshold
-			begin
-				SET @removedDatasets = @removedDatasets + ' (more datasets not shown)'
-			end
-
-		END --<remove-a>
-	END --<remove>
+			If @numMatchingDatasets > @threshold
+			Begin
+				Set @removedDatasets = @removedDatasets + ' (more datasets not shown)'
+			End
+		End --<remove-a>
+	End --<remove>
 
 	
 	---------------------------------------------------
 	-- Resolve propagation mode 
 	---------------------------------------------------
-	declare @propMode smallint
-	set @propMode = CASE @propagationMode 
+	Declare @propMode smallint
+	Set @propMode = CASE @propagationMode 
 						WHEN 'Export' THEN 0 
 						WHEN 'No Export' THEN 1 
 						ELSE 0 
-					END 
-	
+					End
 	---------------------------------------------------
 	-- validate job parameters
 	---------------------------------------------------
 	--
-	declare @userID int
-	declare @analysisToolID int
-	declare @organismID int
+	Declare @userID int
+	Declare @analysisToolID int
+	Declare @organismID int
 	--
-	declare @result int = 0
-	declare @Warning varchar(255) = ''
+	Declare @result int = 0
+	Declare @Warning varchar(255) = ''
 	--
 	exec @result = ValidateAnalysisJobParameters
 							@toolName = @toolName,
@@ -333,14 +327,13 @@ As
 							@AutoUpdateSettingsFileToCentroided = 1,
 							@Warning = @Warning output
 	--
-	if @result <> 0
-		RAISERROR ('ValidateAnalysisJobParameters:%s', 11, 8, @msg)
+	If @result <> 0
+		RAISERROR ('ValidateAnalysisJobParameters: %s for request %d', 11, 8, @msg, @requestID)
 	
 	If IsNull(@Warning, '') <> ''
 	Begin
 		Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ')
 	End
-	
 	---------------------------------------------------
 	-- New jobs typically have state 1
 	-- Update @jobStateID to 19="Special Proc. Waiting" if necessary
@@ -353,7 +346,6 @@ As
 	Begin
 		Set @jobStateID = 19
 	End
-	
 	---------------------------------------------------
 	-- Populate the Dataset_Unreviewed column in #TD
 	---------------------------------------------------
@@ -367,59 +359,57 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	
-	if @mode = 'add'
-	begin
-		IF @jobsCreated = 0 AND @numMatchingDatasets > 0
-			RAISERROR ('No jobs were made because there were existing jobs for all datasets in the list', 11, 94)
+	If @mode = 'add'
+	Begin
+		If @jobsCreated = 0 AND @numMatchingDatasets > 0
+			RAISERROR ('No jobs were made for request %d because there were existing jobs for all datasets in the list', 11, 94, @requestID)
 
 		---------------------------------------------------
 		-- start transaction
 		---------------------------------------------------
 		--
-		declare @transName varchar(32)
-		set @transName = 'AddAnalysisJobGroup'
-		begin transaction @transName
+		Declare @transName varchar(32)
+		Set @transName = 'AddAnalysisJobGroup'
+		Begin transaction @transName
 
 		---------------------------------------------------
 		-- create a new batch if multiple jobs being created
 		---------------------------------------------------
-		declare @batchID int
-		set @batchID = 0
+		Declare @batchID int
+		Set @batchID = 0
 		--
-		declare @numDatasets int
-		set @numDatasets = 0
+		Declare @numDatasets int
+		Set @numDatasets = 0
 		SELECT @numDatasets = count(*) FROM #TD
 		--
-		if @numDatasets = 0
-			RAISERROR ('No datasets in list to create jobs for.', 11, 17)
+		If @numDatasets = 0
+			RAISERROR ('No datasets in list to create jobs for request %d', 11, 17, @requestID)
 		--
-		if @numDatasets > 1
-		begin
+		If @numDatasets > 1
+		Begin
 			INSERT INTO T_Analysis_Job_Batches
 				(Batch_Description)
 			VALUES ('Auto')	
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-				RAISERROR ('Error trying to create new batch', 11, 7)
+			If @myError <> 0
+				RAISERROR ('Error trying to create new batch when making jobs for request %d', 11, 7, @requestID)
 			
 			-- return ID of newly created batch
 			--
-			set @batchID = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Batches')
-		end
-
+			Set @batchID = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Batches')
+		End
 		---------------------------------------------------
 		-- Deal with request
 		---------------------------------------------------
 		
-		if @requestID = 0
-		begin
-			set @requestID = 1 -- for the default request
-		end
-		else
-		begin
-
+		If @requestID = 0
+		Begin
+			Set @requestID = 1 -- for the default request
+		End
+		Else
+		Begin
 			-- make sure @requestID is in state 1=new or state 5=new (Review Required)
 					
 			SELECT	@requestStateID = AJR_State
@@ -428,15 +418,15 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-				RAISERROR ('Error looking up request state in T_Analysis_Job_Request', 11, 7)
+			If @myError <> 0
+				RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
 			
-			set @requestStateID = IsNull(@requestStateID, 0)
+			Set @requestStateID = IsNull(@requestStateID, 0)
 			
-			if @requestStateID IN (1, 5)
-			begin
-				if @mode in ('add', 'update')
-				begin
+			If @requestStateID IN (1, 5)
+			Begin
+				If @mode in ('add', 'update')
+				Begin
 					-- mark request as used
 					--
 					Set @requestStateID = 2
@@ -447,8 +437,8 @@ As
 					--
 					SELECT @myError = @@error, @myRowCount = @@rowcount
 					--
-					if @myError <> 0
-						RAISERROR ('Update operation failed', 11, 8)
+					If @myError <> 0
+						RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
 						
 					If Len(@callingUser) > 0
 					Begin
@@ -457,14 +447,16 @@ As
 						--
 						Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
 					End
-				end
-			end
-			else
-				RAISERROR ('Request is not in state New; cannot create jobs', 11, 9) -- Request ID is non-zero and request is not in state 1 or state 5
-		end
-
+				End
+			End
+			Else
+			Begin
+				-- Request ID is non-zero and request is not in state 1 or state 5
+				RAISERROR ('Request is not in state New; cannot create jobs for request %d', 11, 9, @requestID)
+			End
+		End
 		---------------------------------------------------
-		-- get new job number for every dataset 
+		-- Get new job number for every dataset 
 		-- in temporary table
 		---------------------------------------------------
 
@@ -472,7 +464,7 @@ As
 		CREATE TABLE #TmpNewJobIDs (ID int)
 
 		exec @myError = GetNewJobIDBlock @numDatasets, 'Job created in DMS'
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Error obtaining block of Job IDs', 11, 10)
 
 		-- Use the job number information in #TmpNewJobIDs to update #TD
@@ -551,11 +543,11 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			-- set request status to 'incomplete'
-			if @requestID > 1
-			begin
+			If @requestID > 1
+			Begin
 				Set @requestStateID = 4
 				
 				UPDATE	T_Analysis_Job_Request
@@ -569,46 +561,43 @@ As
 					--
 					Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
 				End
-							
-			end
+			End
 			--
 			RAISERROR ('Insert new job operation failed', 11, 7)
-		end
+		End
 		--
-		SET @jobsCreated = @myRowCount
+		Set @jobsCreated = @myRowCount
 
-		if @batchID = 0 AND @myRowCount = 1
-		begin
+		If @batchID = 0 AND @myRowCount = 1
+		Begin
 			-- Added a single job; cache the jobID value
-			set @jobID = SCOPE_IDENTITY()				-- IDENT_CURRENT('T_Analysis_Job')
-		end
-
+			Set @jobID = SCOPE_IDENTITY()				-- IDENT_CURRENT('T_Analysis_Job')
+		End
 		/*
 		---------------------------------------------------
 		-- Deprecated in May 2015: create associations with processor group for new
 		-- jobs, if group ID is given
 		---------------------------------------------------
 
-		if @gid <> 0
-		begin
+		If @gid <> 0
+		Begin
 			-- if single job was created, get its identity directly
 			--
-			if @batchID = 0 AND @myRowCount = 1
-			begin
+			If @batchID = 0 AND @myRowCount = 1
+			Begin
 				INSERT INTO T_Analysis_Job_Processor_Group_Associations
 					(Job_ID, Group_ID)
 				VALUES
 					(@jobID, @gid)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
-			end
-			
+			End
 			--
 			-- if multiple jobs were created, get job identities
 			-- from all jobs using new batch ID
 			--
-			if @batchID <> 0 AND @myRowCount >= 1
-			begin
+			If @batchID <> 0 AND @myRowCount >= 1
+			Begin
 				INSERT INTO T_Analysis_Job_Processor_Group_Associations
 					(Job_ID, Group_ID)
 				SELECT
@@ -619,11 +608,11 @@ As
 					(AJ_batchID = @batchID)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
-			end
+			End
 			--
-			if @myError <> 0
+			If @myError <> 0
 				RAISERROR ('Error Associating job with processor group', 11, 7)
-		end
+		End
 		*/
 
 		commit transaction @transName
@@ -659,7 +648,6 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
 		End
-		
 		If Len(@callingUser) > 0
 		Begin
 			-- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -684,41 +672,38 @@ As
 				Exec AlterEventLogEntryUserMultiID 5, @jobStateID, @callingUser, @EntryTimeWindowSeconds=45
 			End
 		End
-
-	END -- mode 'add'
+	End -- mode 'add'
 
 	---------------------------------------------------
 	-- build message
 	---------------------------------------------------
 Explain:
-	IF @mode = 'add'
-		SET @message = ' There were '
-	ELSE
-		SET @message = ' There would be '
-	SET @message = @message + CONVERT(varchar(12), @jobsCreated) + ' jobs created. '
+	If @mode = 'add'
+		Set @message = ' There were '
+	Else
+		Set @message = ' There would be '
+	Set @message = @message + CONVERT(varchar(12), @jobsCreated) + ' jobs created. '
 	--
-	IF @numMatchingDatasets > 0
-	begin
-		IF @mode = 'add'
-			SET @removedDatasets = ' Jobs were not made for ' + @removedDatasets
-		ELSE
-			SET @removedDatasets = ' Jobs would not be made for ' + @removedDatasets
-		set @message = @message + @removedDatasets
-	end
-
-	END TRY
-	BEGIN CATCH 
+	If @numMatchingDatasets > 0
+	Begin
+		If @mode = 'add'
+			Set @removedDatasets = ' Jobs were not made for ' + @removedDatasets
+		Else
+			Set @removedDatasets = ' Jobs would not be made for ' + @removedDatasets
+		Set @message = @message + @removedDatasets
+	End
+	End Try
+	Begin Catch
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		
 		Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
-	END CATCH
-
+	End Catch
 	return @myError
 
 
