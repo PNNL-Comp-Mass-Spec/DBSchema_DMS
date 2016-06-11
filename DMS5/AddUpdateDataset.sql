@@ -8,6 +8,9 @@ CREATE Procedure AddUpdateDataset
 **
 **	Desc:	Adds new dataset entry to DMS database
 **
+**			This is called from the Dataset Entry page (http://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
+**			It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
+**
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	grk
@@ -23,7 +26,7 @@ CREATE Procedure AddUpdateDataset
 **			09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **			10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
 **			12/07/2007 mem - Now disallowing updates for datasets with a rating of -10 = Unreviewed (use UpdateDatasetDispositions instead)
-**			01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @Mode = 'add' and @requestID is 0
+**			01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @mode = 'add' and @requestID is 0
 **			02/13/2008 mem - Now sending @datasetNum to function ValidateChars and checking for @badCh = '[space]' (Ticket #602)
 **			02/15/2008 mem - Increased size of @folderName to varchar(128) (Ticket #645)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
@@ -71,10 +74,11 @@ CREATE Procedure AddUpdateDataset
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/23/2016 mem - Disallow certain dataset names
+**			06/10/2016 mem - Try to auto-associate new datasets with an active requested run (only associate if only one active requested run matches the dataset name)
 **    
 *****************************************************/
 (
-	@datasetNum varchar(128),
+	@datasetNum varchar(128),				-- Dataset name
 	@experimentNum varchar(64),
 	@operPRN varchar(64),
 	@instrumentName varchar(64),
@@ -95,7 +99,8 @@ CREATE Procedure AddUpdateDataset
 	@message varchar(512) output,
    	@callingUser varchar(128) = '',
    	@AggregationJobDataset tinyint = 0,		-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
-   	@CaptureSubfolder varchar(255) = ''		-- Only used when @mode is 'add' or 'bad'
+   	@CaptureSubfolder varchar(255) = '',	-- Only used when @mode is 'add' or 'bad'
+   	@logDebugMessages tinyint = 0
 )
 As
 	Set XACT_ABORT, nocount on
@@ -110,12 +115,13 @@ As
 	declare @AddingDataset tinyint = 0
 	
 	declare @result int
-	declare @Warning varchar(256)
-	declare @WarningAddon varchar(128)
+	declare @warning varchar(256)
+	declare @warningAddon varchar(128)
 	declare @ExperimentCheck varchar(128)
+	declare @debugMsg varchar(512)
 	
 	set @message = ''
-	set @Warning = ''
+	set @warning = ''
 
 	BEGIN TRY 
 
@@ -215,7 +221,9 @@ As
 	
 	Set @requestID = IsNull(@requestID, 0)
 	Set @AggregationJobDataset = IsNull(@AggregationJobDataset, 0)	
-	Set @captureSubfolder = LTrim(RTrim(IsNull(@captureSubfolder, '')))
+	Set @CaptureSubfolder = LTrim(RTrim(IsNull(@CaptureSubfolder, '')))
+	
+	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 	
 	---------------------------------------------------
 	-- Determine if we are adding or check_adding a dataset
@@ -223,7 +231,18 @@ As
 	If @mode IN ('add', 'check_add', 'add_trigger')
 		Set @AddingDataset = 1
 	Else
-		SEt @AddingDataset = 0
+		Set @AddingDataset = 0
+
+
+	---------------------------------------------------
+	-- Determine if we are adding or check_adding a dataset
+	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = '@mode=' + @mode + ', @dataset=' + @datasetNum + ', @requestID=' + Cast(@requestID	as varchar(9)) + ', @callingUser=' + @callingUser		
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+	End
 	
 	---------------------------------------------------
 	-- validate dataset name
@@ -283,10 +302,10 @@ As
 
 	declare @ratingID int
 
-	if @Mode = 'bad'
+	if @mode = 'bad'
 	begin
 		set @ratingID = -1 -- "No Data"
-		set @Mode = 'add'
+		set @mode = 'add'
 		set @AddingDataset = 1
 	end
 	else
@@ -672,11 +691,11 @@ As
 		Begin
 			If (@eusUsageType = '(lookup)' AND @eusProposalID = '(lookup)' AND @eusUsersList = '(lookup)') OR (@eusUsageType = '(ignore)')
 			Begin
-				Set @Warning = ''
+				Set @warning = ''
 			End
 			Else
 			Begin
-				Set @Warning = 'Warning: ignoring proposal ID, usage type, and user list since request ' + Convert(varchar(12), @requestID) + ' was specified'
+				Set @warning = 'Warning: ignoring proposal ID, usage type, and user list since request ' + Convert(varchar(12), @requestID) + ' was specified'
 			End
 			
 			-- When a request is specified, force @eusProposalID, @eusUsageType, and @eusUsersList to be blank
@@ -705,10 +724,10 @@ As
 		End
 	End
 
-
 	---------------------------------------------------
 	-- If the dataset starts with "blank" and @requestID is zero, perform some additional checks
 	---------------------------------------------------
+	--
 	If @requestID = 0 AND @AddingDataset = 1
 	Begin
 		-- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
@@ -717,11 +736,33 @@ As
 
 	End
 
+	---------------------------------------------------
+	-- Possibly look for an active requested run that we can auto-associate with this dataset
+	---------------------------------------------------
+	--
+	If @requestID = 0 AND @AddingDataset = 1
+	Begin
+		DECLARE @requestInstGroup varchar(128)
+		
+		EXEC FindActiveRequestedRunForDataset @datasetNum, @experimentID, @requestID out, @requestInstGroup OUT, @showDebugMessages=0
+		
+		If @requestID > 0
+		Begin
+			-- Match found; check for an instrument group mismatch
+			If @requestInstGroup <> @InstrumentGroup
+			Begin
+				Set @warning = dbo.AppendToText(@warning, 
+					'Instrument group for requested run (' + @requestInstGroup + ') ' + 
+					'does not match instrument group for ' + @instrumentName + ' (' + @InstrumentGroup + ')', 0, '; ')
+			End
+			
+		End
+	End
 		
 	---------------------------------------------------
 	-- action for add trigger mode
 	---------------------------------------------------
-	if @Mode = 'add_trigger'
+	if @mode = 'add_trigger'
 	begin -- <AddTrigger>
 
 		If @requestID <> 0
@@ -755,7 +796,7 @@ As
 			--
 			if @experimentID <> @reqExperimentID
 			begin
-				set @message = 'Experiment in dataset (' + @experimentNum + ') does not match with one in scheduled run (Request ' + Convert(varchar(12), @requestID) + ')'
+				set @message = 'Experiment for dataset (' + @experimentNum + ') does not match with the requested run''s experiment (Request ' + Convert(varchar(12), @requestID) + ')'
 				RAISERROR (@message, 11, 72)
 			end
 		End
@@ -889,7 +930,7 @@ As
 	-- action for add mode
 	---------------------------------------------------
 	
-	if @Mode = 'add' 
+	if @mode = 'add' 
 	begin -- <AddMode>
 	
 		---------------------------------------------------
@@ -985,12 +1026,11 @@ As
 		
 		If @datasetID <> IsNull(@DatasetIDConfirm, @datasetID)
 		Begin
-			Declare @DebugMsg varchar(512)
 			Set @DebugMsg = 'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
 			                Cast(@DatasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
 			                Cast(@datasetID as varchar(12))
 			                
-			exec postlogentry 'Error', @DebugMsg, 'AddUpdateDataset'
+			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateDataset'
 			
 			Set @datasetID = @DatasetIDConfirm
 		End
@@ -1107,7 +1147,7 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin -- <UpdateMode>
 		set @myError = 0
 		--
@@ -1155,23 +1195,23 @@ As
 
 			If IsNull(@requestID, 0) = 0
 			Begin
-				set @WarningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
-				set @warning = dbo.AppendToText(@warning, @WarningAddon, 0, '; ')
+				set @warningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
+				set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
 			End
 			Begin
-				Set @WarningAddon = ''
+				Set @warningAddon = ''
 				exec @result = UpdateCartParameters
 									'CartName',
 									@requestID,
 									@LCCartName output,
-									@WarningAddon output
+									@warningAddon output
 				--
 				set @myError = @result
 				--
 				if @myError <> 0
 				begin
-					set @WarningAddon = 'Update LC cart name failed: ' + @WarningAddon
-					set @warning = dbo.AppendToText(@warning, @WarningAddon, 0, '; ')
+					set @warningAddon = 'Update LC cart name failed: ' + @warningAddon
+					set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
 					set @myError = 0
 				end
 			End	
@@ -1214,13 +1254,24 @@ As
 
 
 	-- Update @message if @warning is not empty	
-	If IsNull(@Warning, '') <> ''
+	If IsNull(@warning, '') <> ''
 	Begin
-		If IsNull(@message, '') = ''
-			Set @message = 'Warning: ' + @Warning
+		Declare @warningWithPrefix varchar(256)
+		
+		If @warning like 'Warning:'
+			Set @warningWithPrefix = @warning
 		Else
-			If @message <> @warning
-				Set @message = 'Warning: ' + @warning + '; ' + @message
+			Set @warningWithPrefix = 'Warning: ' + @warning
+			
+		If IsNull(@message, '') = ''
+			Set @message = @warningWithPrefix
+		Else
+		Begin
+			If @message = @warning
+				Set @message = @warningWithPrefix
+			Else
+				Set @message = @warningWithPrefix + '; ' + @message
+		End
 	End
 
 
