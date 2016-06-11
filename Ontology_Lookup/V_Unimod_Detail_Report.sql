@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Unimod_Detail_Report]
 AS
 	SELECT M.Unimod_ID,
@@ -12,6 +13,7 @@ AS
 	       M.Alternate_Names,
 	       M.Notes,
 		   MCF.Mass_Correction_Tag AS DMS_Name,
+		   MCF.Mass_Correction_ID AS Mass_Correction_ID,		   
 	       CONVERT(Decimal(15,6), M.MonoMass) as Monoisotopic_Mass,
 	       CONVERT(Decimal(15,6), M.AvgMass) as Average_Mass,
 	       M.Composition,
@@ -28,6 +30,5 @@ AS
 	     CROSS APPLY dbo.GetModificationSiteList ( M.Unimod_ID, 1 ) HiddenSites
 		 LEFT OUTER JOIN DMS5.dbo.V_Mass_Correction_Factors MCF
 	         ON M.Name = MCF.Original_Source_Name
-
 
 GO
