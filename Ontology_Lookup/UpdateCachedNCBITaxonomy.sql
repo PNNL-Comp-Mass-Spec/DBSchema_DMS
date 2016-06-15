@@ -7,7 +7,7 @@ GO
 CREATE Procedure dbo.UpdateCachedNCBITaxonomy
 /****************************************************
 **
-**	Desc: Updates dataset in T_NCBI_Taxonomy_Cached
+**	Desc: Updates data in T_NCBI_Taxonomy_Cached
 **
 **	Auth:	mem
 **	Date:	03/01/2016 mem - Initial version
