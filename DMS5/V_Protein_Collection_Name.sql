@@ -27,25 +27,28 @@ SELECT LookupQ.Name,
        LookupQ.Entries,
        LookupQ.[Organism Name],
        LookupQ.ID
-FROM ( SELECT Name,
-              [Type],
-              Description,
-              Entries,
+FROM ( SELECT PC.Name,
+              PC.[Type],
+              PC.Description,
+              PC.Entries,
               CASE
-                  WHEN [Type] In ('Internal_Standard', 'contaminant', 'old_contaminant') THEN ''
-                  ELSE Organism_Name
+                  WHEN PC.[Type] In ('Internal_Standard', 'contaminant', 'old_contaminant') THEN ''
+                  ELSE Org.OG_name
               END AS [Organism Name],
-              ID,
+              PC.ID,
               Case
-                  WHEN [Type] = 'Internal_Standard' THEN 1
-                  WHEN [Type] In ('contaminant','old_contaminant') THEN 2
+                  WHEN PC.[Type] = 'Internal_Standard' THEN 1
+                  WHEN PC.[Type] In ('contaminant','old_contaminant') THEN 2
                   ELSE 0
               END AS TypeSortOrder
-       FROM S_V_Protein_Collection_Picker CP ) LookupQ
+       FROM T_Cached_Protein_Collections PC INNER JOIN 
+	        T_Organisms Org ON PC.Organism_ID = Org.Organism_ID 
+       ) LookupQ
        LEFT JOIN dbo.T_Organisms Org ON LookupQ.[Organism Name] = Org.OG_Name
        LEFT OUTER JOIN T_Protein_Collection_Usage PCU ON LookupQ.ID = PCU.Protein_Collection_ID
 GROUP BY LookupQ.Name, LookupQ.[Type], LookupQ.Description, LookupQ.Entries, LookupQ.[Organism Name], 
          LookupQ.ID, LookupQ.TypeSortOrder, PCU.Most_Recently_Used, PCU.Job_Usage_Count, PCU.Job_Usage_Count_Last12Months, Org.OG_organismDBName
+
 
 
 
