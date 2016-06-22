@@ -75,6 +75,7 @@ CREATE Procedure AddUpdateDataset
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/23/2016 mem - Disallow certain dataset names
 **			06/10/2016 mem - Try to auto-associate new datasets with an active requested run (only associate if only one active requested run matches the dataset name)
+**			06/21/2016 mem - Add additional debug messages
 **    
 *****************************************************/
 (
@@ -895,6 +896,12 @@ As
 
 		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 			Set @warning = @message
+
+		If @logDebugMessages > 0
+		Begin
+			Set @debugMsg = 'Create trigger for dataset ' + @datasetNum + ', instrument ' + @instrumentName + ', request ' + Cast(@requestID as varchar(9))
+			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+		End
 			
 		exec @rslt = CreateXmlDatasetTriggerFile
 			@datasetNum,
@@ -951,7 +958,12 @@ As
 			set @msg = 'Valid storage path could not be found'
 			RAISERROR (@msg, 11, 43)
 		end
-		
+
+		If @logDebugMessages > 0
+		Begin
+			Set @debugMsg = 'Add dataset ' + @datasetNum + ', instrument ID ' + Cast(@instrumentID as varchar(9)) + ', storage path ID ' + Cast(@storagePathID as varchar(9))
+			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+		End
 		
 		-- Start transaction
 		--
@@ -1149,6 +1161,13 @@ As
 	--
 	if @mode = 'update' 
 	begin -- <UpdateMode>
+	
+		If @logDebugMessages > 0
+		Begin
+			Set @debugMsg = 'Update dataset ' + @datasetNum + ' (Dataset ID ' + Cast(@datasetID as varchar(9)) + ')'
+			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+		End
+
 		set @myError = 0
 		--
 		UPDATE T_Dataset 
