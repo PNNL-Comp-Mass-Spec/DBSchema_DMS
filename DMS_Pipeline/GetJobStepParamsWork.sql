@@ -33,6 +33,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			02/16/2015 mem - Now storing T_Step_Tools.Param_File_Storage_Path if defined
 **			11/20/2015 mem - Now including CPU_Load
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			06/20/2016 mem - Update procedure name shown when using @DebugMode
 **    
 *****************************************************/
 (
@@ -60,7 +61,7 @@ AS
 	set @DebugMode = IsNull(@DebugMode, 0)
 	
 	If @DebugMode <> 0
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get basic job step parameters'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get basic job step parameters'
 		
 	---------------------------------------------------
 	-- Get basic job step parameters
@@ -91,7 +92,7 @@ AS
 	end
 
 	If @DebugMode > 1
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get shared results folder name list'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get shared results folder name list'
 
 	---------------------------------------------------
 	-- Lookup data package ID in T_Jobs
@@ -128,7 +129,7 @@ AS
 	end
 
 	If @DebugMode > 1
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job step parameters'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job step parameters'
 
 	---------------------------------------------------
 	-- Get input and output folder names for individual steps
@@ -187,7 +188,7 @@ AS
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @DataPackageID)
 
 	If @DebugMode <> 0
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job parameters using cross apply'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job parameters using cross apply'
 
 	---------------------------------------------------
 	-- Get job parameters

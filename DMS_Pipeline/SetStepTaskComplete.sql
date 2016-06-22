@@ -28,6 +28,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			11/18/2015 mem - Add Actual_CPU_Load
 **			12/31/2015 mem - Added support for completion code 20 (CLOSEOUT_NO_DATA)
 **			01/05/2016 mem - Tweak warning message for DeconTools results without data
+**			06/17/2016 mem - Add missing space in log message
+**			06/20/2016 mem - Include the completion code description in logged messages
 **
 *****************************************************/
 (
@@ -116,10 +118,12 @@ As
 	Declare @resetSharedResultStep tinyint = 0
 	Declare @handleSkippedStep tinyint = 0
 	Declare @skipLCMSFeatureFinder tinyint = 0
+	Declare @completionCodeDescription varchar(64) = 'Unknown completion reason'
 	
 	If @completionCode = 0
 	Begin
 		Set @stepState = 5 -- success
+		Set @completionCodeDescription = 'Success'
 	End
 	Else
 	Begin
@@ -129,16 +133,19 @@ As
 		Begin
 			Set @stepState = 1 -- waiting
 			Set @resetSharedResultStep = 1
+			Set @completionCodeDescription = 'File not in cache'
 		End
 		
 		If @completionCode = 17  -- CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY
 		Begin
 			Set @stepState = 3 -- skipped
 			Set @handleSkippedStep = 1
+			Set @completionCodeDescription = 'Unable to use MZ_Refinery'
 		End
 
 		If @completionCode = 20  -- CLOSEOUT_NO_DATA
 		Begin
+			Set @completionCodeDescription = 'No Data'
 			If @stepTool IN ('Decon2LS_V2')
 			Begin
 				-- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
@@ -153,6 +160,7 @@ As
 		If @stepState = 0
 		Begin
 			Set @stepState = 6 -- fail
+			Set @completionCodeDescription = 'General error'
 		End
 	End
 	
@@ -223,12 +231,18 @@ As
 
 		If IsNull(@SharedResultStep, -1) < 0
 		Begin
-			Set @message = 'Job ' + Cast(@job as varchar(12)) + ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Cast(@step as varchar(12)) + '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' is invalid'
+			Set @message = 'Job ' + Cast(@job as varchar(12)) + 
+			               ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Cast(@step as varchar(12)) + 
+			               '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ') is invalid'
+
 			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			Goto CommitTran
 		End
 	
-		Set @message = 'Re-running step ' + Cast(@SharedResultStep as varchar(12)) + ' for job ' + Cast(@job as varchar(12)) + ' because step ' + Cast(@step as varchar(12)) + ' reported completion code ' + Cast(@completionCode as varchar(12))
+		Set @message = 'Re-running step ' + Cast(@SharedResultStep as varchar(12)) + ' for job ' + Cast(@job as varchar(12)) + 
+		               ' because step ' + Cast(@step as varchar(12)) + 
+		               ' reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')'
+		               
 		If Exists ( SELECT *
 			        FROM T_Log_Entries
 			        WHERE Message = @message And
@@ -236,7 +250,8 @@ As
 			              posting_Time >= DateAdd(day, -1, GetDate()) 
 			      )
 		Begin
-			Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' within the last 24 hours'
+			Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')' + 
+			               ' within the last 24 hours'
 			
 			UPDATE T_Job_Steps
 			SET State = 7,		-- Holding				
@@ -244,7 +259,10 @@ As
 			WHERE Job = @job AND
 			      Step_Number = @step
 			
-			Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) + ' again because this likely represents a problem; this step is now in state "holding"'
+			Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + ' ' + 
+			               @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) + 
+			               ' again because this likely represents a problem; this step is now in state "holding"'
+
 			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			
 			Goto CommitTran

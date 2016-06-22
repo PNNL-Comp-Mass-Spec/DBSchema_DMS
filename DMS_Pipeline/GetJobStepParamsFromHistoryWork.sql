@@ -26,6 +26,7 @@ CREATE PROCEDURE GetJobStepParamsFromHistoryWork
 **	Auth:	mem
 **			07/31/2013 mem - Ported from GetJobStepParamsWork
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			06/20/2016 mem - Update procedure name shown when using @DebugMode
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ AS
 	set @DebugMode = IsNull(@DebugMode, 0)
 	
 	If @DebugMode <> 0
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get basic job step parameters'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get basic job step parameters'
 		
 	---------------------------------------------------
 	-- Get basic job step parameters
@@ -85,7 +86,7 @@ AS
 	end
 
 	If @DebugMode > 1
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get shared results folder name list'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get shared results folder name list'
 
 	---------------------------------------------------
 	-- Lookup data package ID in T_Jobs
@@ -124,7 +125,7 @@ AS
 	end
 
 	If @DebugMode > 1
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job step parameters'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get job step parameters'
 
 	---------------------------------------------------
 	-- get input and output folder names for individual steps
@@ -173,7 +174,7 @@ AS
 
 
 	If @DebugMode <> 0
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: Get job parameters using cross apply'
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get job parameters using cross apply'
 
 	---------------------------------------------------
 	-- Get job parameters

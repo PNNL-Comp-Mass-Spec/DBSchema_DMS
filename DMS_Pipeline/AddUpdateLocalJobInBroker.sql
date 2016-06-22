@@ -20,7 +20,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			11/25/2010 mem - Added parameter @DebugMode
 **			07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **			01/09/2012 mem - Added parameter @ownerPRN
-**			01/19/2012 mem - Added parameter @DataPackageID
+**			01/19/2012 mem - Added parameter @dataPackageID
 **			02/07/2012 mem - Now updating Transfer_Folder_Path after updating T_Job_Parameters
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
 **			03/07/2013 mem - Now calling ResetAggregationJob to reset jobs; supports resetting a job that succeeded
@@ -29,6 +29,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			07/23/2013 mem - Now calling PostLogEntry only once in the Catch block
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/08/2016 mem - Include job number in errors raised by RAISERROR
+**			06/16/2016 mem - Add call to AddUpdateTransferPathsInParamsUsingDataPkg
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 	@jobParam varchar(8000),
 	@comment varchar(512),
 	@ownerPRN varchar(64),
-	@DataPackageID int,
+	@dataPackageID int,
 	@resultsFolderName varchar(128) OUTPUT,
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'
 	@message varchar(512) output,
@@ -54,7 +55,9 @@ AS
 	set @myError = 0
 	set @myRowCount = 0
 	
-	Set @DataPackageID = IsNull(@DataPackageID, 0)
+	DECLARE @jobParamXML XML
+	
+	Set @dataPackageID = IsNull(@dataPackageID, 0)
 	
 	DECLARE @reset CHAR(1) = 'N'
 	IF @mode = 'reset'
@@ -115,20 +118,57 @@ AS
 		BEGIN --<update>
 			BEGIN TRANSACTION
 			
+			Set @jobParamXML = CONVERT(XML, @jobParam)
+			
 			-- Update job and params
 			--
 			UPDATE   dbo.T_Jobs
 			SET      Priority = @priority ,
 					 Comment = @comment ,
 					 Owner = @ownerPRN ,
-					 DataPkgID = @DataPackageID
+					 DataPkgID = @dataPackageID
 			WHERE    Job = @job
-			
+
+
+			If @dataPackageID > 0
+			Begin
+				CREATE TABLE #PARAMS (
+					[Section] varchar(128),
+					[Name] varchar(128),
+					[Value] varchar(max)
+				)
+
+				INSERT INTO #PARAMS
+						(Name, Value, Section)
+				select
+						xmlNode.value('@Name', 'nvarchar(256)') [Name],
+						xmlNode.value('@Value', 'nvarchar(256)') VALUE,
+						xmlNode.value('@Section', 'nvarchar(256)') [Section]
+				FROM @jobParamXML.nodes('//Param') AS R(xmlNode)
+
+				Declare @paramsUpdated tinyint = 0
+
+				---------------------------------------------------
+				-- If this job has a 'DataPackageID' defined, update parameters
+				--	 'CacheFolderPath'
+				--   'transferFolderPath'
+				---------------------------------------------------
+								
+				exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
+				
+				IF @paramsUpdated <> 0
+				BEGIN 
+					SET @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
+				END
+				
+			End
+
+			-- Store the job parameters (as XML) in T_Job_Parameters
+			--
 			UPDATE   dbo.T_Job_Parameters
-			SET      Parameters = CONVERT(XML, @jobParam)
+			SET      Parameters = @jobParamXML
 			WHERE    job = @job
-
-
+			
 			---------------------------------------------------
 			-- Lookup the transfer folder path from the job parameters
 			---------------------------------------------------
@@ -146,13 +186,13 @@ AS
 
 			
 			---------------------------------------------------
-			-- If a data package is defined, then update entries for 
+			-- If a data package is defined, update entries for 
 			-- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
 			---------------------------------------------------
 			--
-			If @DataPackageID > 0
+			If @dataPackageID > 0
 			Begin
-				Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @DataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+				Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
 			End
 			
 			
@@ -165,7 +205,7 @@ AS
 
 			COMMIT
 
-		END --<update>
+		END --</update>
 		
 
 		---------------------------------------------------
@@ -175,7 +215,7 @@ AS
 		IF @mode = 'add'
 		BEGIN --<add>
 
-			DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
+			Set @jobParamXML = CONVERT(XML, @jobParam)
 			
 			if @DebugMode <> 0
 				Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
@@ -187,14 +227,14 @@ AS
 					@jobParamXML,
 					@comment,
 					@ownerPRN,
-					@DataPackageID,
+					@dataPackageID,
 					@DebugMode,
 					@job OUTPUT,
 					@resultsFolderName OUTPUT,
 					@message output,
 					@callingUser
 
-		END --<add>
+		END --</add>
 
 	END TRY
 	BEGIN CATCH 

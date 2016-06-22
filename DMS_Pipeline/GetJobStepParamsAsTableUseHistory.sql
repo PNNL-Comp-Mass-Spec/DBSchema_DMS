@@ -72,3 +72,7 @@ Done:
 	return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [svc-dms] AS [dbo]
+GO

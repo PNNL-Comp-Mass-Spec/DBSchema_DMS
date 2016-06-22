@@ -7,7 +7,8 @@ CREATE PROCEDURE dbo.AdjustParamsForLocalJob
 /****************************************************
 **
 **	Desc: 
-**    Create analysis job directly in broker database 
+**		Adjust the job parameters for special cases, for example
+**		local jobs that target other jobs (typically as defined by a data package)
 **	
 **	Return values: 0: success, otherwise, error code
 **
@@ -17,25 +18,26 @@ CREATE PROCEDURE dbo.AdjustParamsForLocalJob
 **			01/19/2012 mem - Added parameter @DataPackageID
 **			01/03/2014 grk - Added logic for CacheFolderRootPath
 **			03/14/2014 mem - Added job parameter InstrumentDataPurged
+**			06/16/2016 mem - Move data package transfer folder path logic to AddUpdateTransferPathsInParamsUsingDataPkg
 **
 *****************************************************/
 (
 	@scriptName varchar(64),
     @datasetNum varchar(128) = 'na',
 	@DataPackageID int,
-	@jobParamXML xml output, 
+	@jobParamXML xml output,			-- Input / Output parameter
 	@message varchar(512) OUTPUT 
 )
 AS
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 
 	set @myError = 0
 	set @myRowCount = 0
 	
-	DECLARE @changed TINYINT = 0
+	Declare @paramsUpdated tinyint = 0
 	
 	Set @DataPackageID = IsNull(@DataPackageID, 0)
 
@@ -43,9 +45,9 @@ AS
 	-- convert job params from XML to temp table
 	---------------------------------------------------
 	CREATE TABLE #PARAMS (
-		[Section] Varchar(128),
-		[Name] Varchar(128),
-		[Value] Varchar(max)
+		[Section] varchar(128),
+		[Name] varchar(128),
+		[Value] varchar(max)
 	)
 
 	INSERT INTO #PARAMS
@@ -56,95 +58,45 @@ AS
 			xmlNode.value('@Section', 'nvarchar(256)') [Section]
 	FROM @jobParamXML.nodes('//Param') AS R(xmlNode)
 	
-	
-	---------------------------------------------------
-	-- do processing for certain parameters
-	---------------------------------------------------
-	DECLARE @id int
-	DECLARE @archiveFolderPath VARCHAR(260) = ''
-	DECLARE @dataPkgName VARCHAR(128) = ''
-	DECLARE @dataPkgSharePath VARCHAR(260) = ''
-	DECLARE @xferPath VARCHAR(260) = ''
-	DECLARE @instrumentDataPurged tinyint = 0
 
 	---------------------------------------------------
-	-- get data package info (if one is specified)
-	---------------------------------------------------
-	IF @DataPackageID <> 0 
-	BEGIN 
-		SELECT 
-			@dataPkgSharePath = [Share Path],
-			@dataPkgName = Name
-		FROM S_Data_Package_Details 
-		WHERE ID = @DataPackageID
-	END 
-		
-	---------------------------------------------------
-	-- is there a repo cache root folder path defined for job?
+	-- If this job has a 'DataPackageID' defined, update parameters
+	--	 'CacheFolderPath'
+	--   'transferFolderPath'
 	---------------------------------------------------
 	
-	DECLARE @cacheFolderPath VARCHAR(260) = ''
-	--
-	DECLARE @cacheRootFolderPath VARCHAR(260) = ''
-	SELECT @cacheRootFolderPath = Value
-	FROM #PARAMS
-	WHERE Name = 'CacheFolderRootPath'
-	--
-	
-	---------------------------------------------------
-	-- adjust path parameter if @DataPackageID > 0
-	---------------------------------------------------
-	--
-	--
-	IF @DataPackageID <> 0
-	BEGIN 
-		IF IsNull(@cacheRootFolderPath, '') = '' 
-		BEGIN
-			SET @xferPath = @dataPkgSharePath
-		END
-		ELSE
-		BEGIN
-			SET @cacheFolderPath = @cacheRootFolderPath + '\' + CONVERT(VARCHAR(12), @DataPackageID) + '_' + REPLACE(@dataPkgName, ' ', '_')
-			SET @xferPath = @cacheRootFolderPath
-			--
-			DELETE FROM #PARAMS
-			WHERE Name = 'CacheFolderPath'
-			--
-			INSERT INTO #PARAMS
-				( Section, Name, Value )
-			VALUES    
-				( 'JobParameters', 'CacheFolderPath', @cacheFolderPath )
-		END
-		--
-		DELETE FROM #PARAMS
-		WHERE Name = 'transferFolderPath'
-		--
-		INSERT INTO #PARAMS
-			( Section, Name, Value )
-		VALUES    
-			( 'JobParameters', 'transferFolderPath', @xferPath )
-		--
-		SET @changed = 1
-	END 
-	
-	
-	---------------------------------------------------
-	-- add path to source job
-	---------------------------------------------------
-	Set @id = 0
-	--
-	SELECT @id = Value FROM #PARAMS WHERE Name = 'sourceJob'
-	--
-	IF @id <> 0
-	BEGIN 
-		-- PRINT 'sourceJob:' + CONVERT(VARCHAR(12), @id)
-		-- look up path to results folder for job given by @id and add it to temp parameters table
-		DECLARE @dataset VARCHAR(128) = ''
-		DECLARE @rawDataType VARCHAR(128) = ''
-		DECLARE @sourceResultsFolder VARCHAR(128) = ''
-		DECLARE @datasetStoragePath VARCHAR(260) = ''
-		DECLARE @transferFolderPath VARCHAR(260) = ''
+	exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
 
+	
+	---------------------------------------------------
+	-- If this job has a 'SourceJob' parameter, update parameters
+	--	 'DatasetArchivePath'
+	--	 'DatasetNum'
+	--	 'RawDataType'
+	--	 'DatasetStoragePath'
+	--	 'transferFolderPath'
+	--	 'DatasetFolderName'
+	--	 'InstrumentDataPurged'
+	--
+	-- Also update Input_Folder_Name in #Job_Steps for steps that are not 'Results_Transfer' steps
+	---------------------------------------------------
+	--
+	Declare @sourceJob int = 0
+	--
+	SELECT @sourceJob = Value FROM #PARAMS WHERE Name = 'sourceJob'
+	--
+	IF @sourceJob <> 0
+	BEGIN 
+		-- PRINT 'sourceJob:' + CONVERT(varchar(12), @sourceJob)
+		-- look up path to results folder for job given by @sourceJob and add it to temp parameters table
+
+		Declare @archiveFolderPath varchar(260) = ''
+		Declare @dataset varchar(128) = ''
+		Declare @rawDataType varchar(128) = ''
+		Declare @sourceResultsFolder varchar(128) = ''
+		Declare @datasetStoragePath varchar(260) = ''
+		Declare @transferFolderPath varchar(260) = ''
+		Declare @instrumentDataPurged tinyint = 0
 		--
 		SELECT @archiveFolderPath = [Archive Folder Path],
 		       @dataset = Dataset,
@@ -154,9 +106,8 @@ AS
 		       @transferFolderPath = transferFolderPath,
 		       @instrumentDataPurged = InstrumentDataPurged
 		FROM S_DMS_V_Analysis_Job_Info
-		WHERE Job = @id
-		
-		
+		WHERE Job = @sourceJob
+
 		IF @dataset <> ''
 		BEGIN		
 			-- UPDATE Input_Folder_Name for job steps
@@ -193,16 +144,15 @@ AS
 			UNION
 			SELECT 'JobParameters', 'InstrumentDataPurged', @instrumentDataPurged
 			
-			SET @changed = 1
+			SET @paramsUpdated = 1
 		END 
 	END 
-		
 
 	---------------------------------------------------
-	-- convert job params from temp table to XML, 
-	-- if there were changes made
+	-- Update @jobParamXML if changes were made
 	---------------------------------------------------
-	IF @changed <> 0
+	--
+	IF @paramsUpdated <> 0
 	BEGIN 
 		SET @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
 	END
