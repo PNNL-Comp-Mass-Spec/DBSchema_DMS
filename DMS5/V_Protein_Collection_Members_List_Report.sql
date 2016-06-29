@@ -4,16 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Protein_Collection_Members_List_Report
+
+CREATE VIEW [dbo].[V_Protein_Collection_Members_List_Report]
 AS
 SELECT Protein_Collection_ID,
 		Protein_Collection,
 		Protein_Name,
 		Description,
+		Reference_ID,
 		Residue_Count,
 		Monoisotopic_Mass,
-		Protein_ID,
-		Reference_ID
+		Protein_ID
 FROM S_V_Protein_Collection_Member_Names
+
 
 GO
