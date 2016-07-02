@@ -133,11 +133,6 @@ ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Jobs]
 GO
-ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Local_Processors] FOREIGN KEY([Processor])
-REFERENCES [dbo].[T_Local_Processors] ([Processor_Name])
-GO
-ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Local_Processors]
-GO
 ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Signatures] FOREIGN KEY([Signature])
 REFERENCES [dbo].[T_Signatures] ([Reference])
 GO
