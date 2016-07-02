@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Settings_Files_Detail_Report]
 AS
 SELECT ID,
@@ -12,10 +11,12 @@ SELECT ID,
        File_Name AS [File Name],
        Description,
        Active,
+	   Job_Usage_Count,
 	   MSGFPlus_AutoCentroid,
        HMS_AutoSupersede,
        dbo.[XmlToHTML](contents) AS Contents
 FROM dbo.T_Settings_Files
+
 
 
 GO

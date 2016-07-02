@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Settings_Files_List_Report]
 AS
 SELECT 
@@ -12,9 +13,12 @@ SELECT
     [File_Name] AS [File Name], 
     Description AS [Description], 
     Active AS [Active],
+	Job_Usage_Count AS Jobs,
 	MSGFPlus_AutoCentroid,
     HMS_AutoSupersede
 FROM T_Settings_Files
+
+
 
 
 
