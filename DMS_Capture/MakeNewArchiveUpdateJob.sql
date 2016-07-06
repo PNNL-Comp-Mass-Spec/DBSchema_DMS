@@ -23,7 +23,7 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 	@DatasetName varchar(128),
 	@ResultsFolderName varchar(128) = '',
 	@AllowBlankResultsFolder tinyint = 0,			-- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset folder and all subfolders
-	@PushDatasetToMyEMSL tinyint = 0,				-- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\a2.emsl.pnl.gov\dmsarch
+	@PushDatasetToMyEMSL tinyint = 0,				-- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\aurora.emsl.pnl.gov\archive\dmsarch
 	@PushDatasetRecursive tinyint = 0,				-- Set to 1 to recursively push a folder and all subfolders into MyEMSL
 	@infoOnly tinyint = 0,							-- 0 To perform the update, 1 preview job that would be created
 	@message varchar(512)='' output
