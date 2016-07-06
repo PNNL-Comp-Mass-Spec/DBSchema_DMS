@@ -12,6 +12,7 @@ CREATE PROCEDURE ValidateAutoStoragePathParams
 **
 **	Auth:	mem
 **	Date:	05/13/2011 mem - Initial version
+**			07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
 **    
 *****************************************************/
 (
@@ -73,7 +74,7 @@ AS
 	If IsNull(@AutoSPArchiveSharePathRoot, '') <> ''
 	Begin
 		If @AutoSPArchiveSharePathRoot Not Like '\\%'
-			RAISERROR ('Auto Storage Archive Share Path Root should be a network share, for example: \\a2.emsl.pnl.gov\dmsarch\VOrbiETD01', 11, 4)
+			RAISERROR ('Auto Storage Archive Share Path Root should be a network share, for example: \\aurora.emsl.pnl.gov\archive\dmsarch\VOrbiETD01', 11, 4)
 	End	
 
 

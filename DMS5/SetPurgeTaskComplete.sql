@@ -31,11 +31,13 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			08/15/2013 mem - Added support for @completionCode = 7 (dataset folder missing in archive)
 **			08/26/2013 mem - Now mentioning "permissions error" when @completionCode = 7
 **			03/21/2014 mem - Tweaked log message for @completionCode = 7
+**			07/05/2016 mem - Added support for @completionCode = 8 (Aurora is offline)
+**						   - Archive path is now aurora.emsl.pnl.gov
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Aurora offline
 	@message varchar(512) output
 )
 As
@@ -196,10 +198,21 @@ Code 6 (Purged all data except QC folder)
 		goto SetStates
 	end
 
-	-- (Dataset folder missing in archive, either in MyEMSL or at \\a2.emsl.pnl.gov\dmsarch)
+	-- (Dataset folder missing in archive, either in MyEMSL or at \\aurora.emsl.pnl.gov\archive\dmsarch)
 	if @completionCode = 7
 	begin
 		set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetNum
+		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		set @message = ''
+		
+		set @completionState = 3    -- complete
+		goto SetStates
+	end
+	
+	-- (Aurora is offline / Archive is offline: \\aurora.emsl.pnl.gov\archive\dmsarch)
+	if @completionCode = 8
+	begin
+		set @message = 'Aurora is offline; cannot purge dataset ' + @datasetNum
 		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
 		set @message = ''
 		
@@ -224,7 +237,7 @@ SetStates:
 		                        END, 
 		AS_StageMD5_Required = CASE WHEN @completionCode = 3         THEN 1
 		                            ELSE AS_StageMD5_Required
-		                        END
+		  END
 	WHERE  (AS_Dataset_ID = @datasetID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
