@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.RenameDataset
 ** 
 **	Auth:	mem
 **			01/25/2013 mem - Initial version
+**			07/08/2016 mem - Now show old/new names and jobs even when @infoOnly is 0
 **    
 *****************************************************/
 (
@@ -96,6 +97,13 @@ AS
 		--
 		If Not Exists (Select * from T_Dataset WHERE Dataset_Num = @DatasetNameNew)
 		Begin
+			SELECT Dataset_Num AS DatasetNameOld,
+			       @DatasetNameNew AS DatasetNameNew,
+			       Dataset_ID,
+			       DS_Created
+			FROM T_Dataset
+			WHERE Dataset_Num IN (@DatasetNameOld, @DatasetNameNew)
+			
 			UPDATE T_Dataset
 			SET Dataset_Num = @DatasetNameNew,
 			    DS_folder_name = @DatasetNameNew
@@ -109,7 +117,7 @@ AS
 	End
 	Else
 	Begin
-		-- Preview the dataset
+		-- Preview the changes
 		
 		If Exists (Select * from T_Dataset WHERE Dataset_Num = @DatasetNameNew)
 			SELECT @DatasetNameOld AS DatasetNameOld,
@@ -139,7 +147,11 @@ AS
 	FROM DMS_Capture.dbo.T_Jobs 
 	WHERE dataset = @DatasetNameOld
 	ORDER BY Job
-	
+
+	SELECT Job AS Capture_Job, Script, State, Dataset, @DatasetNameNew as Dataset_Name_New, Dataset_ID, Imported
+	FROM DMS_Capture.dbo.T_Jobs 
+	WHERE Job In (Select Job from @JobsToUpdate)
+		
 	If @InfoOnly = 0
 	Begin
 		Set @Continue = 1
@@ -148,9 +160,6 @@ AS
 	Else
 	Begin
 		Set @Continue = 0
-		SELECT Job AS Capture_Job, Script, State, Dataset, @DatasetNameNew as Dataset_Name_New, Dataset_ID, Imported
-		FROM DMS_Capture.dbo.T_Jobs 
-		WHERE Job In (Select Job from @JobsToUpdate)
 	End
 		
 	While @Continue = 1
@@ -187,6 +196,10 @@ AS
 	WHERE Dataset = @DatasetNameOld
 	ORDER BY Job
 
+	SELECT Job AS Pipeline_Job, Script, State, Dataset, @DatasetNameNew as Dataset_Name_New, Dataset_ID, Imported
+	FROM DMS_Pipeline.dbo.T_Jobs 
+	WHERE Job In (Select Job from @JobsToUpdate)
+
 	If @InfoOnly = 0
 	Begin
 		Set @Continue = 1
@@ -195,9 +208,6 @@ AS
 	Else
 	Begin
 		Set @Continue = 0
-		SELECT Job AS Pipeline_Job, Script, State, Dataset, @DatasetNameNew as Dataset_Name_New, Dataset_ID, Imported
-		FROM DMS_Pipeline.dbo.T_Jobs 
-		WHERE Job In (Select Job from @JobsToUpdate)
 	End
 	
 	While @Continue = 1
@@ -228,7 +238,9 @@ AS
 Done:
 
 	If @message <> ''
-		print @message
+	Begin
+		Select @message as Message
+	End
 	
 	return @myError
 
