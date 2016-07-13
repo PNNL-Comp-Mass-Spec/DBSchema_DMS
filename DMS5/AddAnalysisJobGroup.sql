@@ -58,6 +58,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **			05/18/2016 mem - Include the Request ID in error messages
+**          07/12/2016 mem - Pass @priority to ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -325,7 +326,8 @@ As
 							@message = @msg output,
 							@AutoRemoveNotReleasedDatasets = 0,
 							@AutoUpdateSettingsFileToCentroided = 1,
-							@Warning = @Warning output
+							@Warning = @Warning output,
+							@priority = @priority output
 	--
 	If @result <> 0
 		RAISERROR ('ValidateAnalysisJobParameters: %s for request %d', 11, 8, @msg, @requestID)

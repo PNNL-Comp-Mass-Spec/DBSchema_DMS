@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AutoResetFailedJobs
+CREATE Procedure dbo.AutoResetFailedJobs
 /****************************************************
 **
 **	Desc:	Looks for recently failed jobs
@@ -33,6 +33,7 @@ CREATE Procedure AutoResetFailedJobs
 **			11/19/2015 mem - Now auto-resetting jobs with a DataExtractor step reporting "Not enough free memory"
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			07/12/2016 mem - Now using a synonym when calling S_SetManagerErrorCleanupMode in the Manager_Control database
 **
 *****************************************************/
 (
@@ -467,10 +468,11 @@ As
 								Set @LogMessage = @Processor + ' reports "Stopped Error"; setting ManagerErrorCleanupMode to 1 in the Manager_Control DB'
 								Exec PostLogEntry 'Warning', @LogMessage, 'AutoResetFailedJobs'
 
-								Exec ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1				
+								-- Call ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode
+								Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1				
 							End
 							Else
-								print 'Exec ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1'
+								print 'Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1'
 						End
 
 					End				
@@ -497,6 +499,7 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AutoResetFailedJobs] TO [Limited_Table_Write] AS [dbo]

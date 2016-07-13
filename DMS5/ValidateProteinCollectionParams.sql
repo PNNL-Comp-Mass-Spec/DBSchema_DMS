@@ -17,6 +17,7 @@ CREATE Procedure ValidateProteinCollectionParams
 **			05/15/2012 mem - Now verifying that @organismDBName is 'na' if @protCollNameList is defined, or vice versa
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
+**			07/12/2016 mem - Now using a synonym when calling ValidateAnalysisJobProteinParameters in the Protein_Sequences database
 **    
 *****************************************************/
 (
@@ -196,7 +197,7 @@ As
 		
 		if @debugMode <> 0
 		begin
-			Set @message =  'Calling ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters: ' +
+			Set @message =  'Calling S_ValidateAnalysisJobProteinParameters: ' +
 								IsNull(@organismName, '??') + '; ' +
 								IsNull(@ownerPRN, '??') + '; ' +
 								IsNull(@organismDBName, '??') + '; ' +
@@ -208,7 +209,8 @@ As
 			Set @message = ''
 		end
 							
-		exec @result = ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+		-- Call ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+		exec @result = S_ValidateAnalysisJobProteinParameters
 							@organismName,
 							@ownerPRN,
 							@organismDBName,
@@ -225,6 +227,7 @@ As
 	
 			
 	return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionParams] TO [Limited_Table_Write] AS [dbo]
