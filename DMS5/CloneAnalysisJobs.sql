@@ -23,6 +23,7 @@ CREATE PROCEDURE dbo.CloneAnalysisJobs
 **
 **    Auth: mem
 **    Date: 07/12/2016 - Initial Release
+**          07/19/2016 - Add parameter @allowDuplicateJob
 **    
 *****************************************************/
 (
@@ -32,6 +33,7 @@ CREATE PROCEDURE dbo.CloneAnalysisJobs
     @newProteinCollectionList varchar(2000) = '',
     @supersedeOldJob tinyint = 0,                    -- When 1, change the state of old jobs to 14
     @updateOldJobComment tinyint = 1,                -- When 1, add the new job number to the old job comment
+    @allowDuplicateJob tinyint = 0,                  -- When 1, allow the new jobs to be duplicates of the old jobs (useful for testing a new version of a tool or updated .UIMF)
     @infoOnly tinyint = 1,
     @message varchar(256) = '' output
 )
@@ -213,12 +215,12 @@ As
                    J.AJ_parmFileName,
                    J.AJ_settingsFileName,
                    CASE
-                       WHEN J.AJ_parmFileName = @mostCommonParamFile THEN ''
+       WHEN J.AJ_parmFileName = @mostCommonParamFile THEN ''
                        ELSE 'Mismatched param file'
                    END AS Warning
             FROM #Tmp_SourceJobs
                  INNER JOIN T_Analysis_Job J
-                   ON #Tmp_SourceJobs.JobID = J.AJ_JobID
+           ON #Tmp_SourceJobs.JobID = J.AJ_JobID
             ORDER BY CASE WHEN J.AJ_parmFileName = @mostCommonParamFile THEN 1 ELSE 0 END, J.AJ_JobID
             
             Goto Done
@@ -289,17 +291,20 @@ As
         End
         Else
         Begin
-            If @newParamFileName <> '' And @mostCommonParamFile = @newParamFileName
+            If @allowDuplicateJob = 0
             Begin
-                Set @message = 'The new parameter file name matches the old name; not cloning the jobs: ' + @newParamFileName
-                Goto Done
+                If @newParamFileName <> '' And @mostCommonParamFile = @newParamFileName
+                Begin
+                    Set @message = 'The new parameter file name matches the old name; not cloning the jobs: ' + @newParamFileName
+                    Goto Done
+                End
+            
+                If @newSettingsFileName <> '' And @mostCommonSettingsFile = @newSettingsFileName
+                Begin
+                    Set @message = 'The new settings file name matches the old name; not cloning the jobs: ' + @newSettingsFileName
+                    Goto Done
+                End
             End
-        
-            If @newSettingsFileName <> '' And @mostCommonSettingsFile = @newSettingsFileName
-            Begin
-                Set @message = 'The new settings file name matches the old name; not cloning the jobs: ' + @newSettingsFileName
-                Goto Done
-            End        
         End
 
         -----------------------------------------
@@ -400,7 +405,7 @@ As
             INSERT INTO T_Analysis_Job (
                 AJ_JobId, AJ_batchID, AJ_priority, AJ_Created, AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName, 
                 AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList, 
-                AJ_requestID, AJ_propagationMode)
+   AJ_requestID, AJ_propagationMode)
             SELECT 
                 JobId_New, AJ_batchID, AJ_priority, GetDate(), AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName, 
                 AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, 1 AS AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList, 
@@ -422,11 +427,11 @@ As
 
                 UPDATE T_Analysis_Job
                 SET AJ_Comment = CASE
-                                     WHEN @updateOldJobComment = 0 THEN AJ_Comment
-                                     ELSE dbo.AppendToText(AJ_Comment, @action + Cast(Src.JobId_New AS varchar(9)), 0, '; ')
+                                     WHEN @updateOldJobComment = 0 THEN Target.AJ_Comment
+                                     ELSE dbo.AppendToText(Target.AJ_Comment, @action + ' ' + Cast(Src.JobId_New AS varchar(9)), 0, '; ')
                                  END,
                     AJ_StateID = CASE
-                                     WHEN @supersedeOldJob = 0 THEN AJ_StateID
+                                     WHEN @supersedeOldJob = 0 THEN Target.AJ_StateID
                                      ELSE 14
                                  END
                 FROM T_Analysis_Job Target

@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **			12/21/2009 mem - Added parameter @UpdateJobRequestStatistics
 **			10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
 **			09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling UpdateProteinCollectionUsage
+**          07/18/2016 mem - Now updating Job_Usage_Last_Year in T_Param_Files and T_Settings_Files
 **    
 *****************************************************/
 (
@@ -66,19 +67,25 @@ As
 		-- Update Usage Counts for Parameter Files
 		------------------------------------------------
 		--
+		Declare @thresholdOneYear datetime = DateAdd(month, -12, GetDate())
+
 		UPDATE T_Param_Files
-		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0)
+		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0),
+		    Job_Usage_Last_Year = IsNull(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
 		FROM T_Param_Files PF
 		     LEFT OUTER JOIN ( SELECT AJ.AJ_parmFileName AS Param_File_Name,
 		                              PFT.Param_File_Type_ID,
-		                              COUNT(*) AS JobCount
+		                              COUNT(*) AS JobCount,
+		                              SUM(CASE
+		                                      WHEN AJ_Created >= @thresholdOneYear THEN 1
+		                                      ELSE 0
+		                                  END) AS JobCountLastYear
 		                       FROM T_Analysis_Job AJ
 		                            INNER JOIN T_Analysis_Tool AnTool
 		                              ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
 		                            INNER JOIN T_Param_File_Types PFT
 		                              ON AnTool.AJT_paramFileType = PFT.Param_File_Type_ID
-		                       GROUP BY AJ.AJ_parmFileName, PFT.Param_File_Type_ID 
-		                     ) StatsQ
+		                       GROUP BY AJ.AJ_parmFileName, PFT.Param_File_Type_ID ) StatsQ
 		       ON PF.Param_File_Name = StatsQ.Param_File_Name AND
 		          PF.Param_File_Type_ID = StatsQ.Param_File_Type_ID
 		--
@@ -90,11 +97,16 @@ As
 		------------------------------------------------
 		--
 		UPDATE T_Settings_Files
-		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0)
+		SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0),
+		    Job_Usage_Last_Year = IsNull(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
 		FROM T_Settings_Files SF
 		     LEFT OUTER JOIN ( SELECT AJ.AJ_settingsFileName AS Settings_File_Name,
 		                              AnTool.AJT_toolName,
-		                              COUNT(*) AS JobCount
+		                              COUNT(*) AS JobCount,
+		                              SUM(CASE
+		                                      WHEN AJ_Created >= @thresholdOneYear THEN 1
+		                                      ELSE 0
+		                                  END) AS JobCountLastYear
 		                       FROM T_Analysis_Job AJ
 		                            INNER JOIN T_Analysis_Tool AnTool
 		                              ON AJ.AJ_analysisToolID = AnTool.AJT_toolID

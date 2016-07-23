@@ -32,6 +32,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			08/02/2013 mem - Removed extra semicolon in status message
 **			06/24/2015 mem - Now passing @infoOnly to AddUpdateAnalysisJob
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          07/21/2016 mem - Log errors in PostLogEntry
 **    
 *****************************************************/
 (
@@ -47,19 +48,20 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 As
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	Set @myError = 0
 	Set @myRowCount = 0
 
 	Set @message = ''
 
-	declare @ErrorMessage varchar(512)
-	declare @NewMessage varchar(512)
-	
-	declare @CreateJob tinyint = 1
-	declare @JobFailCount int = 0
-	declare @JobFailErrorCode int = 0
+	Declare @ErrorMessage varchar(512)
+	Declare @NewMessage varchar(512)
+    Declare @logMessage varchar(512)
+    	
+	Declare @CreateJob tinyint = 1
+	Declare @JobFailCount int = 0
+	Declare @JobFailErrorCode int = 0
 	
 	Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 	Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
@@ -103,7 +105,7 @@ As
 	---------------------------------------------------
 	-- Populate the job holding table (#JX)
 	---------------------------------------------------
-	declare @result int
+	Declare @result int
 
 	exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
 	--
@@ -123,34 +125,34 @@ As
 	-- make jobs for each entry
 	---------------------------------------------------
 
-	declare @instrumentClass varchar(32)
-	declare @priority int
-	declare @analysisToolName varchar(64)
-	declare @parmFileName varchar(255)
-	declare @settingsFileName varchar(255)
-	declare @organismName varchar(64)
-	declare @organismDBName varchar(64)
-	declare @proteinCollectionList varchar(4000)
-	declare @proteinOptionsList varchar(256)
-	declare @comment varchar(128)
-	declare @propagationMode tinyint
-	declare @propagationModeText varchar(24)
-	declare @specialProcessing varchar(512)
+	Declare @instrumentClass varchar(32)
+	Declare @priority int
+	Declare @analysisToolName varchar(64)
+	Declare @parmFileName varchar(255)
+	Declare @settingsFileName varchar(255)
+	Declare @organismName varchar(64)
+	Declare @organismDBName varchar(64)
+	Declare @proteinCollectionList varchar(4000)
+	Declare @proteinOptionsList varchar(256)
+	Declare @comment varchar(128)
+	Declare @propagationMode tinyint
+	Declare @propagationModeText varchar(24)
+	Declare @specialProcessing varchar(512)
 		
-	declare @jobNum varchar(32)
-	declare @ownerPRN varchar(32)
+	Declare @jobNum varchar(32)
+	Declare @ownerPRN varchar(32)
 	
-	declare @associatedProcessorGroup varchar(64)
+	Declare @associatedProcessorGroup varchar(64)
 	Set @associatedProcessorGroup = ''
 
 	-- keep track of how many jobs have been scheduled
 	--
 	Set @jobsCreated = 0
 	
-	declare @done tinyint
+	Declare @done tinyint
 	Set @done = 0
 	
-	declare @currID int
+	Declare @currID int
 	Set @currID = 0
 
 	While @done = 0 and @myError = 0
@@ -244,19 +246,20 @@ As
 				-- otherwise bump the job count
 				--
 				If @result = 0 
-				BEGIN
+				Begin
 					If @infoOnly = 0
 						Set @jobsCreated = @jobsCreated + 1 
-				END 
-				ELSE 
-				BEGIN
+				End
+				Else 
+				Begin -- <d>
 					If @message = ''
 						Set @message = @NewMessage
 					Else
 						Set @message = @message + '; ' + @NewMessage
 					
+					-- ResultCode 52500 means a duplicate job exists; that error can be ignored					
 					If @result <> 52500
-					Begin
+					Begin -- <e>
 						-- Append the @result ID to @message
 						-- Increment @JobFailCount, but keep trying to create the other predefined jobs for this dataset
 						Set @JobFailCount = @JobFailCount + 1
@@ -264,8 +267,12 @@ As
 							Set @JobFailErrorCode = @result
 							
 						Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
-					End
-				END 
+						
+						Set @logMessage = @NewMessage + '; Dataset ' + @datasetNum + ', Tool ' + @analysisToolName
+						exec PostLogEntry 'Error', @logMessage
+					End -- </e>
+					
+				End -- </d>
 			
 			End -- </c>
 		End -- </b>

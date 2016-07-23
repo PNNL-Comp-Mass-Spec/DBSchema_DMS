@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateRequestedRun]
+CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -68,6 +68,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			02/29/2016 mem - Now looking up setting for 'RequestedRunRequireWorkpackage' using T_MiscOptions
+**          07/20/2016 mem - Tweak error message
 **
 *****************************************************/
 (
@@ -338,7 +339,7 @@ As
 		RAISERROR ('Error looking up experiment', 11, 17)
 	--
 	if @experimentID = 0
-		RAISERROR ('Could not find entry in database for experimentNum "%s"', 11, 18, @experimentNum)
+		RAISERROR ('Could not find entry in database for experiment "%s"', 11, 18, @experimentNum)
 
 	---------------------------------------------------
 	-- verify user ID for operator PRN

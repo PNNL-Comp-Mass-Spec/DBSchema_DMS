@@ -16,6 +16,7 @@ CREATE TABLE [dbo].[T_Settings_Files](
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NULL,
 	[Last_Updated] [datetime] NULL,
+	[Job_Usage_Last_Year] [int] NULL,
  CONSTRAINT [PK_T_Settings_Files] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

@@ -39,6 +39,7 @@ CREATE Procedure AddUpdateExperiment
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			07/31/2015 mem - Now updating Last_Used when key fields are updated
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
 **
 *****************************************************/
 (
@@ -87,17 +88,16 @@ As
 	---------------------------------------------------
 
 	if LEN(@experimentNum) < 1
-		RAISERROR ('experimentNum was blank', 11, 30)
+		RAISERROR ('experiment name was blank', 11, 30)
 	--
 	if LEN(@campaignNum) < 1
-		RAISERROR ('campaignNum was blank', 11, 31)
-
+		RAISERROR ('campaign name was blank', 11, 31)
 	--
 	if LEN(@researcherPRN) < 1
-		RAISERROR ('researcherPRN was blank', 11, 32)
+		RAISERROR ('researcher PRN was blank', 11, 32)
 	--
 	if LEN(@organismName) < 1
-		RAISERROR ('organismName was blank', 11, 33)
+		RAISERROR ('organism name was blank', 11, 33)
 	--
 	if LEN(@reason) < 1
 		RAISERROR ('reason was blank', 11, 34)
@@ -168,7 +168,7 @@ As
 	declare @campaignID int
 	execute @campaignID = GetCampaignID @campaignNum
 	if @campaignID = 0
-		RAISERROR ('Could not find entry in database for campaignNum "%s"', 11, 41, @campaignNum)
+		RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignNum)
 
 	---------------------------------------------------
 	-- Resolve researcher PRN
@@ -206,7 +206,7 @@ As
 	declare @organismID int
 	execute @organismID = GetOrganismID @organismName
 	if @organismID = 0
-		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 43, @organismName)
+		RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
 
 
 	---------------------------------------------------
@@ -224,7 +224,7 @@ As
 						@wellIndex output,
 						@msg  output
 	if @myError <> 0
-		RAISERROR ('ValidateWellplateLoading:%s', 11, 44, @msg)
+		RAISERROR ('ValidateWellplateLoading: %s', 11, 44, @msg)
 
 	-- make sure we do not put two experiments in the same place
 	--
@@ -241,7 +241,7 @@ As
 	declare @enzymeID int
 	execute @enzymeID = GetEnzymeID @enzymeName
 	if @enzymeID = 0
-		RAISERROR ('Could not find entry in database for enzymeName "%s"', 11, 47, @enzymeName)
+		RAISERROR ('Could not find entry in database for enzyme "%s"', 11, 47, @enzymeName)
 
 	---------------------------------------------------
 	-- Resolve labelling ID

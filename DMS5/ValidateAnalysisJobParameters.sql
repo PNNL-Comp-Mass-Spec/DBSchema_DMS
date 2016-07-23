@@ -71,6 +71,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			06/24/2015 mem - Added parameter @showDebugMessages
 **			12/16/2015 mem - No longer auto-switching the settings file to a centroided one if high res MSn spectra; only switching if profile mode MSn spectra
 **          07/12/2016 mem - Force priority to 4 if using @organismDBName and it has a size over 400 MB
+**          07/20/2016 mem - Tweak error messages
 **
 *****************************************************/
 (
@@ -211,7 +212,7 @@ As
 	execute @organismID = GetOrganismID @organismName
 	if @organismID = 0
 	begin
-		set @message = 'Could not find entry in database for organismName "' + @organismName + '"'
+		set @message = 'Could not find entry in database for organism "' + @organismName + '"'
 		If @showDebugMessages <> 0
 			print @message
 

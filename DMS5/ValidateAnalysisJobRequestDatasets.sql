@@ -22,6 +22,7 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **			03/30/2015 mem - Tweak warning message grammar
 **			04/23/2015 mem - Added parameter @toolName
 **			06/24/2015 mem - Added parameter @showDebugMessages
+**			07/20/2016 mem - Tweak error messages
 **
 *****************************************************/
 (
@@ -151,7 +152,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error checking dataset Existence'
+		set @message = 'Error checking dataset existence'
 		if @showDebugMessages <> 0
 			print @message
 
@@ -258,7 +259,7 @@ As
 	
 	If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen')
 	Begin		
-		Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests.  You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
+		Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests. You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
 		if @showDebugMessages <> 0
 			print @message
 

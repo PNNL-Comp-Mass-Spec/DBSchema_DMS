@@ -27,6 +27,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          07/20/2016 mem - Fix spelling in error messages
 **    
 *****************************************************/
 (
@@ -109,7 +110,7 @@ As
 	--
 	if LEN(@campaignNum) < 1
 	begin
-		RAISERROR ('Campaign Num was blank', 11, 8)
+		RAISERROR ('Campaign Name was blank', 11, 8)
 	end
 
 	Declare @modCountValue smallint
@@ -217,7 +218,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Could not resove type name "' + @cultureType + '" to ID'
+		set @msg = 'Could not resolve type name "' + @cultureType + '" to ID'
 		RAISERROR (@msg, 11, 14)
 	end
 
@@ -239,7 +240,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Could not resove container name "' + @container + '" to ID'
+		set @msg = 'Could not resolve container name "' + @container + '" to ID'
 		RAISERROR (@msg, 11, 15)
 	end
 

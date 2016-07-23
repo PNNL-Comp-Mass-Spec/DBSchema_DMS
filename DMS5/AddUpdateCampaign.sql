@@ -36,6 +36,7 @@ CREATE Procedure AddUpdateCampaign
 **			02/23/2016 mem - Add set XACT_ABORT on\
 **			02/26/2016 mem - Define a default for @FractionEMSLFunded
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          07/20/2016 mem - Tweak error messages
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ As
 
 	set @myError = 0
 	if LEN(@campaignNum) < 1
-		RAISERROR ('campaign Number was blank', 11, 1)
+		RAISERROR ('campaign name was blank', 11, 1)
 	--
 	if LEN(@projectNum) < 1
 		RAISERROR ('Project Number was blank', 11, 1)
@@ -271,7 +272,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Insert operation failed: "%s"', 11, 12,@campaignNum )
+			RAISERROR ('Insert operation failed: "%s"', 11, 12, @campaignNum )
 		
 		-- This method is more accurate than using IDENT_CURRENT
 		Set @CampaignID = SCOPE_IDENTITY()		

@@ -64,6 +64,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			01/20/2016 mem - Update comments
 **			02/15/2016 mem - Re-enabled handling of @associatedProcessorGroup
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          07/20/2016 mem - Expand error messages
 **    
 *****************************************************/
 (
@@ -144,7 +145,7 @@ As
 
 		if @jobID = 0
 		begin	
-			set @msg = 'Cannot update:  Analysis Job "' + @jobNum + '" is not in database '
+			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in database '
 			If @infoOnly <> 0
 				print @msg
 
@@ -280,7 +281,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Failed to create temporary table'
+		set @msg = 'Failed to create temporary table #TD'
 		If @infoOnly <> 0
 			print @msg
 
@@ -300,7 +301,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Error populating temporary table'
+		set @msg = 'Error populating temporary table with dataset name'
 		If @infoOnly <> 0
 			print @msg
 

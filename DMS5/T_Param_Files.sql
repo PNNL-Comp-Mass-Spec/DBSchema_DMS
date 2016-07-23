@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Param_Files](
 	[Date_Modified] [datetime] NULL,
 	[Valid] [smallint] NOT NULL,
 	[Job_Usage_Count] [int] NULL,
+	[Job_Usage_Last_Year] [int] NULL,
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_ID] ASC

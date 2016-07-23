@@ -277,6 +277,10 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Users]
 GO
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_Dataset_name_Not_Empty] CHECK  ((isnull([Dataset_Num],'')<>''))
+GO
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_Dataset_name_Not_Empty]
+GO
 ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Dataset_Num],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace]

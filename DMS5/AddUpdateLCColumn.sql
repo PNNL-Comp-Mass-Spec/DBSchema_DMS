@@ -16,6 +16,7 @@ CREATE Procedure AddUpdateLCColumn
 **	Date:	12/09/2003
 **			08/19/2010 grk - try-catch for error handling
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          07/20/2016 mem - Fix error message entity name
 **    
 *****************************************************/
 (
@@ -55,7 +56,7 @@ As
 	if LEN(@columnNumber) < 1
 	begin
 		set @myError = 51110
-		RAISERROR ('Dataset number was blank', 11, 1)
+		RAISERROR ('Column name was blank', 11, 1)
 	end
 	
 	---------------------------------------------------

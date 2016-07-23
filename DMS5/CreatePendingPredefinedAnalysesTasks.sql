@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.CreatePendingPredefinedAnalysesTasks
 **			08/26/2010 mem - Added @MaxDatasetsToProcess and @InfoOnly
 **						   - Now passing @PreventDuplicateJobs to CreatePredefinedAnalysesJobs
 **			03/27/2013 mem - Now obtaining Dataset name from T_Dataset
+**          07/21/2016 mem - Fix logic error examining @myError
 **    
 *****************************************************/
 (
@@ -119,7 +120,7 @@ AS
 				UPDATE  dbo.T_Predefined_Analysis_Scheduling_Queue
 				SET     Message = @message ,
 						Result_Code = @myError,
-						State = CASE WHEN @myError > 1 THEN 'Error' ELSE 'Complete' End,
+						State = CASE WHEN @myError > 0 THEN 'Error' ELSE 'Complete' End,
 						Jobs_Created = ISNULL(@JobsCreated, 0),
 						Last_Affected = GetDate()
 				WHERE   Item = @currentItemID
