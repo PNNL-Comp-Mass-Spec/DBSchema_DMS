@@ -19,6 +19,7 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **			09/04/2009 mem - Added DatasetType filter
 **						   - Added parameters @InfoOnly and @previewSql
 **			05/03/2012 mem - Added parameter @PopulateTempTable
+**          07/26/2016 mem - Now include Dataset Rating
 **    
 *****************************************************/
 	@ruleID int,
@@ -159,8 +160,10 @@ As
 		Set @S = @S + ' SELECT Dataset, ID,'
 		Set @S = @S +        ' InstrumentClass, Instrument,'
 		Set @S = @S +        ' Campaign, Experiment, Organism,'
-		Set @S = @S +        ' Experiment_Labelling, Experiment_Comment,'
-		Set @S = @S +        ' Dataset_Comment, Dataset_Type, Separation_Type'
+		Set @S = @S +        ' Experiment_Labelling As [Exp Labelling], Experiment_Comment As [Exp Comment],'
+		Set @S = @S +        ' Dataset_Comment As [DS Comment], Dataset_Type As [DS Type],'
+		Set @S = @S +        ' Dataset_Rating As [DS Rating], Rating_Name AS Rating,'
+		Set @S = @S +        ' Separation_Type As [Sep Type]'
 		If @PopulateTempTable <> 0
 			Set @S = @S + ' INTO T_Tmp_PredefinedAnalysisDatasets'
 		Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'
