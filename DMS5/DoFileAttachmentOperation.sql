@@ -23,7 +23,7 @@ CREATE PROCEDURE dbo.DoFileAttachmentOperation
 *****************************************************/
 (
 	@ID int,
-	@mode varchar(12),
+	@mode varchar(12),                  -- Delete
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )

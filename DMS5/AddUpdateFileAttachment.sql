@@ -27,7 +27,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 	@Description varchar(1024),
 	@EntityType varchar(64),
 	@EntityID VARCHAR(256),			-- Must be text because Experiment and Campaign file attachments are tracked via Experiment Name or Campaign Name
-	@FileSizeBytes varchar(12),
+	@FileSizeBytes varchar(12),     -- This file size is actually in KB
 	@ArchiveFolderPath varchar(256),
 	@FileMimeType varchar(256),
 	@mode varchar(12) = 'add', -- or 'update'
