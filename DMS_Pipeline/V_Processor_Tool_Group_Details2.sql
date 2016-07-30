@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Processor_Tool_Group_Details2]
 AS
 SELECT PTGD.*,
        M.Machine,
-       LP.Processor_Name
+       LP.Processor_Name AS Processor
 FROM T_Local_Processors LP
      INNER JOIN T_Machines M
        ON LP.Machine = M.Machine
