@@ -30,3 +30,5 @@ AS
 
 
 GO
+GRANT EXECUTE ON [dbo].[GetFYFromDate] TO [public] AS [dbo]
+GO

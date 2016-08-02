@@ -30,3 +30,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[GetFiscalYearStart] TO [public] AS [dbo]
+GO

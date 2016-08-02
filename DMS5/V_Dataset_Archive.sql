@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Archive]
 AS
 SELECT DA.AS_Dataset_ID,
@@ -23,6 +22,7 @@ SELECT DA.AS_Dataset_ID,
        DA.AS_archive_processor,
        DA.AS_update_processor,
        DA.AS_verification_processor,
+       InstName.IN_name AS Instrument,
        DA.AS_instrument_data_purged,
        DA.AS_Last_Successful_Archive,
        DA.AS_StageMD5_Required,
@@ -48,7 +48,8 @@ FROM T_Dataset_Archive DA
        ON DA.AS_storage_path_ID = AP.AP_path_ID
      INNER JOIN dbo.T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-
+     INNER JOIN T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 
 
 GO

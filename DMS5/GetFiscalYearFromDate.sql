@@ -28,3 +28,5 @@ AS
 	END
 
 GO
+GRANT EXECUTE ON [dbo].[GetFiscalYearFromDate] TO [public] AS [dbo]
+GO
