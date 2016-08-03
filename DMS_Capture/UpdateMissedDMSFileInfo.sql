@@ -20,7 +20,8 @@ CREATE PROCEDURE UpdateMissedDMSFileInfo
 **  Date:	12/19/2011 mem - Initial version
 **			02/24/2015 mem - Now skipping deleted datasets
 **			05/05/2015 mem - Added parameter @ReplaceExistingData
-**    
+**		  	08/02/2016 mem - Continue processing on errors (but log the error)
+**
 *****************************************************/
 (
 	@DeleteFromTableOnSuccess tinyint = 1,
@@ -38,6 +39,7 @@ As
 		
 	Declare @continue tinyint
 	Declare @DatasetID int
+	Declare @logMsg varchar(512)
 	
 	--------------------------------------------
 	-- Validate the inputs
@@ -117,7 +119,7 @@ As
 	              File_Size_Bytes_Old,
 	              DS_Info_Xml.query('/DatasetInfo/AcquisitionInfo/ScanCount').value('(/ScanCount)[1]', 'int') AS ScanCountNew,
 	              DS_Info_Xml.query('/DatasetInfo/AcquisitionInfo/FileSizeBytes').value('(/FileSizeBytes)[1]', 'bigint') AS FileSizeBytesNew
-	       FROM ( SELECT DI.Dataset_ID,
+	 FROM ( SELECT DI.Dataset_ID,
 	                     DI.Cache_Date,
 	                     S_DMS_T_Dataset.File_Info_Last_Modified,
 	                     Dataset_Num,
@@ -157,9 +159,19 @@ As
 		Begin
 			Exec @myError = UpdateDMSFileInfoXML @DatasetID, @DeleteFromTableOnSuccess, @message output, @infoOnly
 			
-			if @myError <> 0
-				set @continue = 0
-			
+			If @myError <> 0
+			Begin
+
+				If IsNull(@message, '') = ''
+					Set @logMsg = 'UpdateDMSFileInfoXML returned error code ' + Cast(@myError as varchar(9)) + ' for DatasetID ' + Cast(@DatasetID as varchar(9))
+				Else
+					Set @logMsg = 'UpdateDMSFileInfoXML error: ' + @message
+				
+				If @infoOnly = 0
+					Exec PostLogEntry 'Error', @logMsg, 'UpdateMissedDMSFileInfo', 22
+				Else
+					Print @logMsg
+			End
 		End
 		
 	End

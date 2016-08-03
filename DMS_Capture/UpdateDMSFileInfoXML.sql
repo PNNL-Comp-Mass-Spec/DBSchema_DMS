@@ -47,6 +47,9 @@ As
 	
 	IF NOT @DatasetInfoXML IS null
 	BEGIN 
+	    if @infoOnly > 0
+	        Print 'Call S_UpdateDatasetFileInfoXML for DatasetID ' + cast(@DatasetID as varchar(12))
+	        
 		EXEC @myError = S_UpdateDatasetFileInfoXML @DatasetID, @DatasetInfoXML, @message output, @infoOnly=@infoOnly
 		
 		If @myError = 0 And @infoOnly = 0 And @DeleteFromTableOnSuccess <> 0
