@@ -10,6 +10,7 @@ SELECT JS.Job,
        JS.Step_Number AS Step,
        J.Script,
        JS.Step_Tool AS Tool,
+	   ParamQ.Parameter_File,
 	   SSN.Name AS Step_State,
        JSN.Name as Job_State_B,
        J.Dataset,
@@ -42,6 +43,8 @@ SELECT JS.Job,
        JS.Completion_Message,
        JS.Evaluation_Code,
        JS.Evaluation_Message,
+	   ParamQ.Settings_File,
+	   ParamQ.Dataset_Storage_Path + J.Dataset AS Dataset_Folder_Path,
        JS.Job_Plus_Step AS [#ID]
 FROM dbo.T_Job_Steps AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
@@ -52,7 +55,13 @@ FROM dbo.T_Job_Steps AS JS
        ON J.State = JSN.ID
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
       ON JS.Processor = PS.Processor_Name
-
+	 LEFT OUTER JOIN ( 
+          SELECT Job,
+                 Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
+                 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
+                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
+          FROM [T_Job_Parameters] 
+     ) ParamQ ON ParamQ.Job = JS.Job
 
 
 GO
