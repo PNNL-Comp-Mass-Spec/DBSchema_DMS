@@ -19,6 +19,7 @@ CREATE Procedure MoveDatasetsToAutoDefinedStoragePath
 **			05/14/2011 mem - Updated the content of MoveCmd
 **			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			08/19/2016 mem - CallUpdateCachedDatasetFolderPaths
 **    
 *****************************************************/
 (
@@ -280,7 +281,18 @@ AS
 			End -- </b>
 			
 		End -- </a>
-				
+			
+		If @infoOnly = 0
+		Begin
+			Update T_Cached_Dataset_Folder_Paths 
+			Set UpdateRequired = 1
+			FROM T_Cached_Dataset_Folder_Paths Target Inner Join #TmpDatasets Src
+			On Target.Dataset_ID = Src.DatasetID
+
+			Exec UpdateCachedDatasetFolderPaths @ProcessingMode = 0
+
+		End
+			
 	End Try
 	Begin Catch					
 		-- Error caught; log the error and set @StoragePathID to 0
