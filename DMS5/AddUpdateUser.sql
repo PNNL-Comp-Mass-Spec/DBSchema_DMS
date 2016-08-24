@@ -27,6 +27,7 @@ CREATE Procedure AddUpdateUser
 **			06/05/2013 mem - Now calling AddUpdateUserOperations
 **			06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @Username)
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @HanfordIDNum starts with a number
 **
 *****************************************************/
 (
@@ -124,7 +125,11 @@ As
 		---------------------------------------------------
 		if @Mode = 'add'
 		begin
-
+			If @HanfordIDNum Like '[0-9]%'
+			Begin
+				Set @HanfordIDNum = 'H' + @HanfordIDNum
+			End
+			
 			INSERT INTO T_Users (
 				U_PRN, 
 				U_Name, 
