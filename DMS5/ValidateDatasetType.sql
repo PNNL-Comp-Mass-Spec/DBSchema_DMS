@@ -26,6 +26,8 @@ CREATE Procedure dbo.ValidateDatasetType
 **			02/28/2013 mem - No longer overriding dataset type C60-SIMS-HMS
 **			05/08/2014 mem - No longer updating the dataset comment with "Auto-switched dataset type from HMS-HMSn to HMS-HCD-HMSn"
 **			01/13/2016 mem - Add support for ETciD and EThcD spectra
+**			08/25/2016 mem - Do not change the dataset type from EI-HMS to HMS
+**						   - Do not update the dataset comment when auto-changing an HMS dataset
 **    
 *****************************************************/
 (
@@ -517,7 +519,7 @@ AutoDefineDSType:
 	Begin
 		Set @AutoDefineDSType = 1	
 		If @InfoOnly = 1
-			Print 'Set @AutoDefineDSType=1 because @DSTypeAutoGen <> '''' AND @AutoDefineOnAllMismatches <> 0'
+			Print 'Set @AutoDefineDSType=1 because @DSTypeAutoGen <> '''' (it is ' + @DSTypeAutoGen + ') AND @AutoDefineOnAllMismatches <> 0'
 	End
 	
 	If @AutoDefineDSType <> 0
@@ -575,18 +577,38 @@ FixDSType:
 	
 		If @NewDSTypeID <> 0
 		Begin
+		
+			If @NewDatasetType = 'HMS' And @CurrentDatasetType = 'EI-HMS'
+			Begin
+				-- Leave the dataset type as 'EI-HMS'
+				If @infoOnly <> 0
+				Begin
+					Select 'Leaving dataset type unchanged as ' + @CurrentDatasetType AS Comment
+				End
+				Goto Done				
+			End
+			
 			-- Append a message to the dataset comment
 			-- However, do not append "Auto-switched dataset type from HMS-HMSn to HMS-HCD-HMSn" since this happens for nearly every Q-Exactive dataset
 			-- Also, do not append any change that includes ETciD or EThcD because those are commonly auto-added
+			-- Additionally, do not update the comment when changing from HMS to HMS-HMSn (happens quite often, and is a fairly harmless change)
 			--
 			Set @message = 'Auto-switched dataset type from ' + @CurrentDatasetType + ' to ' + @NewDatasetType
 			
-			If Not (@CurrentDatasetType = 'HMS-HMSn' And @NewDatasetType = 'HMS-HCD-HMSn') AND 
-			   Not @NewDatasetType LIKE '%ETciD%' AND
-			   Not @NewDatasetType LIKE '%EThcD%'
+			Declare @messageAppend varchar(128)
+			
+			If @CurrentDatasetType Like 'HMS%' And @NewDatasetType Like 'HMS%MSn' Or			
+			   @NewDatasetType LIKE '%ETciD%' Or
+			   @NewDatasetType LIKE '%EThcD%'			   
 			Begin
-				Declare @messageAppend varchar(128) = @message + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
+				-- Switching from HMS, HMS-MSn, HMS-HCD-HMSn, or similar to a more specific HMS-xxx-MSn type; do not update the dataset comment
+				Set @messageAppend = @message
+			End
+			Else
+			Begin
+				Set @messageAppend = @message + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
 				Exec @DSComment = AppendToText @DSComment, @messageAppend, @AddDuplicateText = 0, @Delimiter = '; '
+				Set @messageAppend = ''
 			End
 			
 			If @infoOnly = 0
@@ -600,7 +622,12 @@ FixDSType:
 			End
 			Else
 			Begin
-				Select @NewDatasetType as NewDatasetType, @NewDSTypeID AS NewDSTypeID, @DSComment as Comment				
+				SELECT @NewDatasetType AS NewDatasetType,
+				       @NewDSTypeID AS NewDSTypeID,
+				       CASE
+				           WHEN @messageAppend = '' THEN @DSComment
+				           ELSE @messageAppend
+				       END AS [Comment]
 			End
 
 		End		

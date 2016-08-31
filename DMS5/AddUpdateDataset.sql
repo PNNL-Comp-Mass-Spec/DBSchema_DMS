@@ -76,6 +76,7 @@ CREATE Procedure AddUpdateDataset
 **			05/23/2016 mem - Disallow certain dataset names
 **			06/10/2016 mem - Try to auto-associate new datasets with an active requested run (only associate if only one active requested run matches the dataset name)
 **			06/21/2016 mem - Add additional debug messages
+**			08/25/2016 mem - Do not update the dataset comment if the dataset type is changed from 'GC-MS' to 'EI-HMS'
 **    
 *****************************************************/
 (
@@ -591,20 +592,21 @@ As
 		If @comment = 'na'
 			Set @comment = ''
 		
-		If @comment <> ''
-			Set @comment = @comment + '; '
-		
-		If @msType IN ('HMS-MSn', 'HMS-HMSn') And Exists (SELECT IGADST.Dataset_Type 
-		                                                  FROM T_Instrument_Group ING INNER JOIN 
-		                 T_Instrument_Name InstName ON ING.IN_Group = InstName.IN_Group INNER JOIN
-                       T_Instrument_Group_Allowed_DS_Type IGADST ON ING.IN_Group = IGADST.IN_Group
-                                          WHERE InstName.IN_Name = @instrumentName AND IGADST.Dataset_Type = 'IMS-HMS-HMSn')
+		If @msType IN ('HMS-MSn', 'HMS-HMSn') And Exists (
+			SELECT IGADST.Dataset_Type
+			FROM T_Instrument_Group ING
+			     INNER JOIN T_Instrument_Name InstName
+			       ON ING.IN_Group = InstName.IN_Group
+			     INNER JOIN T_Instrument_Group_Allowed_DS_Type IGADST
+			       ON ING.IN_Group = IGADST.IN_Group
+			WHERE InstName.IN_Name = @instrumentName AND
+			      IGADST.Dataset_Type = 'IMS-HMS-HMSn' )
         Begin
 			-- This is an IMS MS/MS dataset
 			Set @msType = 'IMS-HMS-HMSn'
 			execute @datasetTypeID = GetDatasetTypeID @msType
 			
-			Set @comment = @comment + 'Auto-switched dataset type from HMS-HMSn to ' + @msType
+			Set @comment = dbo.AppendToText(@comment, 'Auto-switched dataset type from HMS-HMSn to ' + @msType, 0, '; ')
         End
         Else
         Begin
@@ -623,7 +625,15 @@ As
 			FROM T_DatasetTypeName
 			WHERE (DST_Type_ID = @datasetTypeID)
 			
-			Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
+			If @msTypeOld = 'GC-MS' And @msType = 'EI-HMS'
+			Begin
+				-- This happens for most datasets from instrument GCQE01; do not update the comment
+				Set @result = 0
+			End
+			Else
+			Begin
+				Set @comment = dbo.AppendToText(@comment, 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType, 0, '; ')
+			End
 		End
 		
 		-- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group, which would indicate invalid data in table T_Instrument_Group)
@@ -631,7 +641,7 @@ As
 		
 		If @result <> 0
 		Begin
-			Set @comment = @comment + ' - Error: Default dataset type defined in T_Instrument_Group is invalid'
+			Set @comment = dbo.AppendToText(@comment, 'Error: Default dataset type defined in T_Instrument_Group is invalid', 0, ' - ')
 		End
 	End
 	

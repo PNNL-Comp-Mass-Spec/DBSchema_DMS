@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS Request,
@@ -20,7 +19,7 @@ SELECT RR.ID AS Request,
        RR.RDS_instrument_name AS [Instrument Group],
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
-       U.U_Name AS Requester,
+       U.Name_with_PRN AS Requester,
        RR.RDS_Oper_PRN AS [Username],
        RR.RDS_created AS Created,
        QT.[Days In Queue],
@@ -77,6 +76,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
+
 
 
 GO

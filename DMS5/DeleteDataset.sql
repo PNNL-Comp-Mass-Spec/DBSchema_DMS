@@ -28,6 +28,7 @@ CREATE Procedure dbo.DeleteDataset
 **			02/19/2013 mem - No longer allowing deletion if analysis jobs exist
 **			02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
+**			08/24/2061 mem - Delete failed capture jobs for the dataset
 **    
 *****************************************************/
 (
@@ -54,7 +55,7 @@ As
 	declare @result int
 
 	---------------------------------------------------
-	-- get datasetID and current state
+	-- Get the datasetID and current state
 	---------------------------------------------------
 	set @datasetID = 0
 	--
@@ -75,7 +76,7 @@ As
 	--
 	if @datasetID = 0
 	begin
-		set @msg = 'Dataset does not exist"' + @datasetNum + '"'
+		set @msg = 'Dataset does not exist "' + @datasetNum + '"'
 		RAISERROR (@msg, 10, 1)
 		return 51141
 	end
@@ -88,7 +89,7 @@ As
 	End
 	
 	---------------------------------------------------
-	-- Start transaction
+	-- Start a transaction
 	---------------------------------------------------
 
 	declare @transName varchar(32)
@@ -96,12 +97,13 @@ As
 	begin transaction @transName
 
 	---------------------------------------------------
-	-- delete any entries for the dataset from the archive table
+	-- Delete any entries for the dataset from the archive table
 	---------------------------------------------------
-
+	--
 	DELETE FROM T_Dataset_Archive 
-	WHERE (AS_Dataset_ID = @datasetID)
-	if @@error <> 0
+	WHERE AS_Dataset_ID = @datasetID
+
+	If @@error <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from archive table was unsuccessful for dataset', 10, 1)
@@ -109,9 +111,9 @@ As
 	end
 	
 	---------------------------------------------------
-	-- delete any auxiliary info associated with dataset
+	-- Delete any auxiliary info associated with dataset
 	---------------------------------------------------
-		
+	--	
 	exec @result = DeleteAuxInfo 'Dataset', @datasetNum, @message output
 
 	if @result <> 0
@@ -123,9 +125,9 @@ As
 	end
 
 	---------------------------------------------------
-	-- restore any consumed requested runs
+	-- Restore any consumed requested runs
 	---------------------------------------------------
-
+	--
 	exec @result = UnconsumeScheduledRun @datasetNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
 	if @result <> 0
 	begin
@@ -138,9 +140,11 @@ As
 	---------------------------------------------------
 	-- Delete any entries in T_Dataset_Info
 	---------------------------------------------------
+	--
 	DELETE FROM T_Dataset_Info
 	WHERE Dataset_ID = @datasetID
-	if @@error <> 0
+
+	If @@error <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset Info table was unsuccessful for dataset', 10, 1)
@@ -150,9 +154,11 @@ As
 	---------------------------------------------------
 	-- Delete any entries in T_Dataset_QC
 	---------------------------------------------------
+	--
 	DELETE FROM T_Dataset_QC
 	WHERE Dataset_ID = @datasetID
-	if @@error <> 0
+
+	If @@error <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset QC table was unsuccessful for dataset', 10, 1)
@@ -162,19 +168,35 @@ As
 	---------------------------------------------------
 	-- Delete any entries in T_Dataset_ScanTypes
 	---------------------------------------------------
+	--
 	DELETE FROM T_Dataset_ScanTypes
 	WHERE Dataset_ID = @datasetID
-	if @@error <> 0
+
+	If @@error <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset ScanTypes table was unsuccessful for dataset', 10, 1)
 		return 51134
 	end
-	
-	---------------------------------------------------
-	-- delete entry from dataset table
-	---------------------------------------------------
 
+	---------------------------------------------------
+	-- Delete any failed jobs in the DMS_Capture database
+	---------------------------------------------------
+	--
+	DELETE FROM DMS_Capture.dbo.T_Jobs
+	WHERE Dataset = 'Rui-07-10-blank_after-10-ng-QC' AND State = 5
+	
+	If @@error <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
+		return 51135
+	end
+
+	---------------------------------------------------
+	-- Delete entry from dataset table
+	---------------------------------------------------
+	--
     DELETE FROM T_Dataset
     WHERE Dataset_ID = @datasetID
 
@@ -183,10 +205,10 @@ As
 		rollback transaction @transName
 		RAISERROR ('Delete from dataset table was unsuccessful for dataset',
 			10, 1)
-		return 51136
+		return 51137
 	end
-
-	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	
+	-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 	If Len(@callingUser) > 0
 	Begin
 		Declare @stateID int

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Analysis_Job_Request_Detail_Report
+
+CREATE VIEW [dbo].[V_Analysis_Job_Request_Detail_Report]
 AS
 SELECT AR.AJR_requestID AS Request,
        AR.AJR_requestName AS Name,
@@ -49,9 +50,11 @@ GROUP BY
     AR.AJR_datasets, 
     AR.AJR_comment, 
     AR.AJR_specialProcessing,
-    U.U_Name, U.U_PRN, 
+    U.U_Name,
+	U.U_PRN,
     AR.AJR_workPackage, 
     ARS.StateName
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Request_Detail_Report] TO [PNL\D3M578] AS [dbo]
