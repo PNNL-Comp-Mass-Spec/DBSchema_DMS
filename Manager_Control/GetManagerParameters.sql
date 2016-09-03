@@ -15,12 +15,13 @@ CREATE PROCEDURE dbo.GetManagerParameters
 **	Auth:	mem
 **	Date:	05/07/2015 mem - Initial version
 **			08/10/2015 mem - Added @SortMode=3
+**			09/02/2016 MEM - Increase the default for parameter @MaxRecursion from 5 to 50
 **    
 *****************************************************/
 (
 	@ManagerNameList varchar(4000) = '',
 	@SortMode tinyint = 0,					-- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
-	@MaxRecursion tinyint = 5,
+	@MaxRecursion tinyint = 50,
 	@message varchar(512)='' output
 )
 As
@@ -140,7 +141,7 @@ As
 
 		INSERT INTO #Tmp_Mgr_Params( M_Name,
 		                              ParamName,
-		                              Entry_ID,
+		                        Entry_ID,
 		                              TypeID,
 		                              Value,
 		                              MgrID,
