@@ -39,6 +39,8 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_MyEMSLState] [tinyint] NOT NULL,
 	[AJ_RowVersion] [timestamp] NOT NULL,
 	[AJ_ToolNameCached] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Progress] [real] NULL,
+	[ETA_Minutes] [real] NULL,
  CONSTRAINT [T_Analysis_Job_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJ_jobID] ASC
@@ -444,6 +446,7 @@ For Update
 **			11/01/2007 mem - Added Set NoCount statement (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
 **			04/03/2014 mem - Now updating AJ_ToolNameCached
+**			09/01/2016 mem - Now updating Progress and ETA_Minutes
 **    
 *****************************************************/
 AS
@@ -460,12 +463,26 @@ AS
 		ORDER BY inserted.AJ_jobID
 
 		UPDATE T_Analysis_Job
-		SET AJ_Last_Affected = GetDate(), 
-			AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
-		FROM T_Analysis_Job AJ INNER JOIN
-			 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
-			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+		SET AJ_Last_Affected = GetDate(),
+		    AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
+		    Progress = CASE
+		                   WHEN inserted.AJ_StateID = 5 THEN - 1
+		                   WHEN inserted.AJ_StateID IN (1, 8, 19) THEN 0
+		                   WHEN inserted.AJ_StateID IN (4, 7, 17) THEN 100
+		                   ELSE inserted.Progress
+		               END,
+		    ETA_Minutes = CASE
+		                      WHEN inserted.AJ_StateID IN (1, 5, 8, 19) THEN NULL
+		                      WHEN inserted.AJ_StateID IN (4, 7, 17) THEN 0
+		                      ELSE inserted.ETA_Minutes
+		                  END
+		FROM T_Analysis_Job AJ
+		     INNER JOIN inserted
+		       ON AJ.AJ_jobID = inserted.AJ_jobID
+		     INNER JOIN V_Analysis_Job_and_Dataset_Archive_State AJDAS
+		       ON AJ.AJ_jobID = AJDAS.Job
 
+		
 	End
 
 	If Update(AJ_analysisToolID)

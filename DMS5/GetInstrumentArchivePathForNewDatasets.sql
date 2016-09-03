@@ -28,6 +28,7 @@ CREATE PROCEDURE GetInstrumentArchivePathForNewDatasets
 **			05/16/2011 mem - Now filtering T_Archive_Path using only AP_Function IN ('Active', 'Old') when auto-defining the archive path
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
+**			09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **    
 *****************************************************/
 (
@@ -116,7 +117,7 @@ AS
 				-----------------------------------------
 				-- Define the ArchivePath and NetworkSharePath
 				-- Archive path will look like /archive/dmsarch/VOrbiETD02/2011_2
-				-- NetworkSharePath will look like \\aurora.emsl.pnl.gov\archive\dmsarch\VOrbiETD02\2011_2
+				-- NetworkSharePath will look like \\adms.emsl.pnl.gov\dmsarch\VOrbiETD02\2011_2
 				-----------------------------------------
 				Declare @RefDate datetime
 				

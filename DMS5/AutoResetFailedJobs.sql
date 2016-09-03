@@ -34,6 +34,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			07/12/2016 mem - Now using a synonym when calling S_SetManagerErrorCleanupMode in the Manager_Control database
+**			09/02/2016 mem - Switch the archive server path from \\a2 to \\adms
 **
 *****************************************************/
 (
@@ -346,9 +347,9 @@ As
 						
 						If @RetryJob = 0 And @RetryCount < 5
 						Begin
-							-- Check for file copy errors from Aurora
-							If @Comment Like '%Error copying file \\a2%' Or
-							   @Comment Like '%File not found: \\a2%' Or
+							-- Check for file copy errors from the Archive
+							If @Comment Like '%Error copying file \\adms%' Or
+							   @Comment Like '%File not found: \\adms%' Or
 							   @Comment Like '%Error copying %dta.zip%' Or
 							   @Comment Like '%Source dataset file file not found%'
 							 Set @RetryJob = 1

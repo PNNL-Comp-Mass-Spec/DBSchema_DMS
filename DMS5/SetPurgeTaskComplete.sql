@@ -33,11 +33,12 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			03/21/2014 mem - Tweaked log message for @completionCode = 7
 **			07/05/2016 mem - Added support for @completionCode = 8 (Aurora is offline)
 **						   - Archive path is now aurora.emsl.pnl.gov
+**			09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Aurora offline
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Archive offline
 	@message varchar(512) output
 )
 As
@@ -198,7 +199,7 @@ Code 6 (Purged all data except QC folder)
 		goto SetStates
 	end
 
-	-- (Dataset folder missing in archive, either in MyEMSL or at \\aurora.emsl.pnl.gov\archive\dmsarch)
+	-- (Dataset folder missing in archive, either in MyEMSL or at \\adms.emsl.pnl.gov\dmsarch)
 	if @completionCode = 7
 	begin
 		set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetNum
@@ -209,10 +210,10 @@ Code 6 (Purged all data except QC folder)
 		goto SetStates
 	end
 	
-	-- (Aurora is offline / Archive is offline: \\aurora.emsl.pnl.gov\archive\dmsarch)
+	-- (Archive is offline (Aurora is offline): \\adms.emsl.pnl.gov\dmsarch)
 	if @completionCode = 8
 	begin
-		set @message = 'Aurora is offline; cannot purge dataset ' + @datasetNum
+		set @message = 'Archive is offline; cannot purge dataset ' + @datasetNum
 		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
 		set @message = ''
 		

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Analysis_Job_List_Report_2] as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_priority AS Pri ,
@@ -23,7 +24,9 @@ SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_created AS Created ,
         AJ.AJ_start AS Started ,
         AJ.AJ_finish AS Finished ,
-        CONVERT(DECIMAL(9, 2), AJ.AJ_ProcessingTimeMinutes) AS Runtime ,
+        CAST(AJ.AJ_ProcessingTimeMinutes AS DECIMAL(9, 2)) AS Runtime ,
+		CAST(AJ.Progress AS DECIMAL(9,2)) AS Progress,
+	    CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS ETA_Minutes,
         AJ.AJ_requestID AS [Job Request] ,
         ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder] ,
         CASE WHEN AJ.AJ_Purged = 0
@@ -40,6 +43,8 @@ FROM T_Analysis_Job AJ INNER JOIN
    T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID INNER JOIN
    T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
    T_Campaign C ON E.EX_campaign_ID = C.Campaign_ID
+
+
 
 
 GO

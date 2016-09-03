@@ -25,7 +25,11 @@ SELECT AJ.AJ_jobID AS JobNum,
        dbo.GetFASTAFilePath(AJ.AJ_organismDBName, Org.OG_name) AS [Organism DB Storage Path],
        AJ.AJ_proteinCollectionList AS [Protein Collection List],
        AJ.AJ_proteinOptionsList AS [Protein Options List],
-       ASN.AJS_name AS State,
+	   CASE WHEN AJ.AJ_StateID = 2 THEN ASN.AJS_name + ': ' + 
+	      CAST(CAST(AJ.Progress AS DECIMAL(9,2)) AS VARCHAR(12)) + '%, ETA ' + 
+	      CAST(CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS VARCHAR(12)) + ' minutes' ELSE 
+			ASN.AJS_name End
+			AS State,
        CONVERT(decimal(9, 2), AJ.AJ_ProcessingTimeMinutes) AS [Runtime Minutes],
        AJ.AJ_owner AS Owner,
        AJ.AJ_comment AS [Comment],
@@ -107,6 +111,7 @@ FROM T_Analysis_Job_Processor_Group AJPG
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
      LEFT OUTER JOIN T_Dataset_Archive DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
+
 
 
 GO

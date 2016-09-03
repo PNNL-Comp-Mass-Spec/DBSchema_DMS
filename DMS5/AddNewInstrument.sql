@@ -38,6 +38,7 @@ CREATE Procedure AddNewInstrument
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
+**			09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **    
 *****************************************************/
 (
@@ -127,7 +128,7 @@ As
 	---------------------------------------------------
 	--
 	declare @archiveNetworkSharePath varchar(128)
-	set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'aurora.emsl.pnl.gov'), '/', '\')
+	set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'adms.emsl.pnl.gov'), '/', '\')
 
 	---------------------------------------------------
 	-- Resolve Yes/No parameters to 0 or 1

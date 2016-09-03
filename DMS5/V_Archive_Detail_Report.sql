@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Archive_Detail_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -20,7 +21,7 @@ SELECT DS.Dataset_Num AS Dataset,
        DA.AS_instrument_data_purged AS [Instrument Data Purged],
        CASE
            WHEN DA.MyEMSLState > 0 THEN 
-             REPLACE(TAP.AP_network_share_path, '\\aurora.emsl.pnl.gov\archive\dmsarch\', '\\MyEMSL\svc-dms\')
+             REPLACE(TAP.AP_network_share_path, '\\adms.emsl.pnl.gov\dmsarch\', '\\MyEMSL\svc-dms\')
            ELSE TAP.AP_network_share_path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
        END AS [Network Share Path],
         CASE
@@ -38,6 +39,7 @@ FROM dbo.T_Dataset_Archive DA
        ON DS.DS_instrument_name_ID = TIN.Instrument_ID
      INNER JOIN dbo.T_Archive_Update_State_Name AUS
        ON DA.AS_update_state_ID = AUS.AUS_stateID
+
 
 
 GO

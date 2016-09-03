@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Dataset_PSM_And_PM_List_Report as
+
+CREATE VIEW [dbo].[V_Dataset_PSM_And_PM_List_Report] as
 SELECT 
        PSM.Dataset,
        PSM.[Unique Peptides FDR] AS [Unique Peptides],
@@ -28,6 +29,8 @@ SELECT
        PSM.Acq_Time_Start AS [Acq Start],
        PSM.Job AS PSM_Job,
        PSM.Tool AS PSM_Tool,
+	   PSM.Job_Progress,
+	   PSM.Job_ETA_Minutes,
        PSM.Campaign,
        PSM.Experiment,
        PSM.[Parm File] AS PSM_Job_Param_File,
@@ -52,6 +55,7 @@ FROM V_Analysis_Job_PSM_List_Report PSM
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.StateID NOT IN (5, 14)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PSM_And_PM_List_Report] TO [PNL\D3M578] AS [dbo]

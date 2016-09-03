@@ -29,6 +29,8 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			05/26/2015 mem - Add @ValidateUnimod
 **			12/01/2015 mem - Now showing column Residue_Desc
 **			03/14/2016 mem - Look for an entry in column Mass_Correction_Tag of T_Mass_Correction_Factors if no match is found in Original_Source_Name and @ValidateUnimod = 0
+**			08/31/2016 mem - Fix logic parsing N- or C-terminal static mods that use * for the affected residue
+**						   - Store static N- or C-terminal mods as type 'T' instead of 'S'
 **    
 *****************************************************/
 (
@@ -120,7 +122,8 @@ AS
 	CREATE TABLE #Tmp_Residues (
 		Residue_Symbol char NOT NULL,
 		Residue_ID int NULL,
-		Residue_Desc varchar(64) NULL
+		Residue_Desc varchar(64) NULL,
+		Terminal_AnyAA tinyint NULL		-- Set to 1 when making any residue at a a peptide or protein N- or C-terminus; 0 if matching specific residues at terminii
 	)
 	
 	CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_Residues ON #Tmp_Residues (Residue_Symbol)
@@ -183,6 +186,9 @@ AS
 	
 	Declare @LocalSymbolID int = 0
 	Declare @LocalSymbolIDToStore int
+	
+	Declare @terminalMod tinyint
+	Declare @residueSymbol varchar(1)
 	
 	SELECT @EntryIDEnd = MAX(EntryID)
 	FROM #Tmp_Mods
@@ -362,41 +368,68 @@ AS
 							End
 							
 							TRUNCATE TABLE #Tmp_Residues
+							Set @terminalMod = 0
 							
 							If @Location = 'Prot-N-term'
-								INSERT INTO #Tmp_Residues (Residue_Symbol) Values ('[')
-																
-							If @Location = 'Prot-C-term'
-								INSERT INTO #Tmp_Residues (Residue_Symbol) Values (']')
-							
-							If @Location = 'N-term'
-								INSERT INTO #Tmp_Residues (Residue_Symbol) Values ('<')
-								
-							If @Location = 'C-term'
-								INSERT INTO #Tmp_Residues (Residue_Symbol) Values ('>')
-							
-							If @Location = 'any'
 							Begin
-								-- Not matching an N or C-Terminus
-								-- Parse out the affected residue (or residues)
-							
-								SELECT @Field = LTrim(RTrim(Value))
-								FROM #Tmp_ModDef
-								WHERE EntryID = 2
-								
-								-- Parse each character in @Field
-								Set @CharIndex = 0
-								While @CharIndex < Len(@Field)
-								Begin
-									Set @CharIndex = @CharIndex + 1
-								
-									INSERT INTO #Tmp_Residues (Residue_Symbol) 
-									SELECT SubString(@Field, @CharIndex, 1)
-									
-								End
-
+								Set @terminalMod = 1
+								INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('[', 1)
+							End
+															
+							If @Location = 'Prot-C-term'
+							Begin
+								Set @terminalMod = 1
+								INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (']', 1)
 							End
 							
+							If @Location = 'N-term'
+							Begin
+								Set @terminalMod = 1
+								INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('<', 1)
+							End
+								
+							If @Location = 'C-term'
+							Begin
+								Set @terminalMod = 1
+								INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('>', 1)
+							End
+							
+							-- Parse out the affected residue (or residues)
+							-- N- or C-terminal mods use * for any residue at a terminus
+							--						
+							SELECT @Field = LTrim(RTrim(Value))
+							FROM #Tmp_ModDef
+							WHERE EntryID = 2
+							
+							-- Parse each character in @Field
+							Set @CharIndex = 0
+							While @CharIndex < Len(@Field)
+							Begin
+								Set @CharIndex = @CharIndex + 1
+
+								Set @residueSymbol = SubString(@Field, @CharIndex, 1)
+								
+								If @terminalMod = 1
+								Begin
+									If @residueSymbol <> '*'
+									Begin
+										-- Terminal mod that targets specific residues
+										-- Store this as a dynamic terminal mod
+										UPDATE #Tmp_Residues 
+										SET Terminal_AnyAA = 0
+										
+										Set @CharIndex = Len(@Field)
+									End
+								End
+								Else
+								Begin
+									-- Not matching an N or C-Terminus
+									INSERT INTO #Tmp_Residues (Residue_Symbol) 
+									Values (@residueSymbol)
+								End
+								
+							End
+
 							-----------------------------------------
 							-- Determine the residue IDs for the entries in #Tmp_Residues
 							-----------------------------------------
@@ -425,7 +458,7 @@ AS
 							-----------------------------------------
 							-- Check for N-terminal or C-terminal static mods that do not use *
 							-----------------------------------------
-							If @ModTypeSymbol = 'S' And Exists (Select * From #Tmp_Residues Where Residue_Symbol In ('<', '>'))
+							If @ModTypeSymbol = 'S' And Exists (Select * From #Tmp_Residues Where Residue_Symbol In ('<', '>') AND Terminal_AnyAA = 0)
 							Begin
 								-- Auto-switch to tracking as a dynamic mod (required for PHRP)
 								Set @ModTypeSymbol = 'D'
@@ -473,7 +506,7 @@ AS
 								)
 							SELECT @ModName AS Mod_Name,
 							       @MassCorrectionID AS MassCorrectionID,
-							       @ModTypeSymbol AS Mod_Type,
+							       CASE WHEN @ModTypeSymbol = 'S' And Residue_Symbol IN ('<', '>') Then 'T' Else @ModTypeSymbol End AS Mod_Type,
 							       Residue_Symbol,
 							       Residue_ID,
 							       @LocalSymbolIDToStore as Local_Symbol_ID,

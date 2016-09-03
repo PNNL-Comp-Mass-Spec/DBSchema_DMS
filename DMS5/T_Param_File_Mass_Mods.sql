@@ -64,7 +64,7 @@ ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [CK_T_Par
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [CK_T_Param_File_Mass_Mods_DynMod_LocalSymbolID]
 GO
-ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_File_Mass_Mods_StatMod_LocalSymbolID] CHECK  ((case when [Mod_Type_Symbol]='S' then [Local_Symbol_ID] else (0) end=(0)))
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [CK_T_Param_File_Mass_Mods_StatMod_LocalSymbolID] CHECK  ((case when [Mod_Type_Symbol]='T' OR [Mod_Type_Symbol]='S' then [Local_Symbol_ID] else (0) end=(0)))
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [CK_T_Param_File_Mass_Mods_StatMod_LocalSymbolID]
 GO

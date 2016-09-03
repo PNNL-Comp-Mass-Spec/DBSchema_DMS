@@ -20,6 +20,7 @@ CREATE Procedure MoveDatasetsToAutoDefinedStoragePath
 **			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			08/19/2016 mem - CallUpdateCachedDatasetFolderPaths
+**			09/02/2016 mem - Replace archive\dmsarch with simply dmsarch due to switch from \\aurora.emsl.pnl.gov\archive\dmsarch\ to \\adms.emsl.pnl.gov\dmsarch\
 **    
 *****************************************************/
 (
@@ -244,12 +245,12 @@ AS
 					Begin -- <d2>
 
 						SELECT @MoveCmd = OldArchive.Path + ' ' + NewArchive.Path
-						FROM ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\archive\dmsarch\') AS Path
+						FROM ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\dmsarch\') AS Path
 						       FROM T_Archive_Path
 						       WHERE (AP_path_ID = @ArchivePathID) 
 						     ) OldArchive
 						     CROSS JOIN 
-						     ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\archive\dmsarch\') AS Path
+						     ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\dmsarch\') AS Path
 						       FROM T_Archive_Path
 						       WHERE (AP_path_ID = @ArchivePathIDNew) 
 						     ) NewArchive

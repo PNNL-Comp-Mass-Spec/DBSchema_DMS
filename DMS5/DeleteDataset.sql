@@ -28,7 +28,7 @@ CREATE Procedure dbo.DeleteDataset
 **			02/19/2013 mem - No longer allowing deletion if analysis jobs exist
 **			02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
-**			08/24/2061 mem - Delete failed capture jobs for the dataset
+**			08/31/2016 mem - Delete failed capture jobs for the dataset
 **    
 *****************************************************/
 (
@@ -184,7 +184,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM DMS_Capture.dbo.T_Jobs
-	WHERE Dataset = 'Rui-07-10-blank_after-10-ng-QC' AND State = 5
+	WHERE Dataset = @datasetNum AND State = 5
 	
 	If @@error <> 0
 	begin
