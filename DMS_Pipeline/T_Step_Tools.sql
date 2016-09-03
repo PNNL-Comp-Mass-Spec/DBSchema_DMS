@@ -18,6 +18,7 @@ CREATE TABLE [dbo].[T_Step_Tools](
 	[Param_File_Storage_Path] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Tag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AvgRuntime_Minutes] [real] NULL,
  CONSTRAINT [PK_T_Step_Tools_1] PRIMARY KEY CLUSTERED 
 (
 	[Name] ASC

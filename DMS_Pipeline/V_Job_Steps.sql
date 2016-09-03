@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT	JS.Job,
@@ -19,7 +18,7 @@ SELECT	JS.Job,
 		JS.RunTime_Minutes,
         DATEDIFF(minute, PS.Status_Date, GetDate()) AS LastCPUStatus_Minutes,
 		CASE WHEN JS.State = 4 THEN PS.Progress 
-		     WHEN JS.State = 5 THEN 100
+		     WHEN JS.State IN (3, 5) THEN 100
 		     ELSE 0 END AS Job_Progress,
 		CASE WHEN JS.State = 4 AND JS.Tool = 'XTandem' THEN 0						-- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
 		     WHEN JS.State = 4 AND PS.Progress > 0     THEN CONVERT(DECIMAL(9,2), JS.RunTime_Minutes / (PS.Progress / 100.0) / 60.0)
