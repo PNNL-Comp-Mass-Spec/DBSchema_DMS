@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Param_File_Mass_Mods
+
+CREATE VIEW [dbo].[V_Param_File_Mass_Mods]
 AS
 (
 SELECT PFMM.*,
@@ -18,6 +19,9 @@ SELECT PFMM.*,
 	   ' | ' + CASE PFMM.Mod_Type_Symbol 
 	           WHEN 'S' THEN 'Static'
 	           WHEN 'D' THEN 'Dynamic'
+			   WHEN 'T' THEN 'Static Terminal Peptide'
+			   WHEN 'P' THEN 'Static Terminal Protein'
+			   WHEN 'I' THEN 'Isotopic'
 	           ELSE PFMM.Mod_Type_Symbol 
 			   END +
 	   ' | ' + R.Description + 
@@ -34,8 +38,8 @@ FROM T_Param_File_Mass_Mods PFMM
        ON PFMM.Local_Symbol_ID = SLS.Local_Symbol_ID
      INNER JOIN dbo.T_Param_Files PF
        ON PFMM.Param_File_ID = PF.Param_File_ID
-
 )
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Mass_Mods] TO [PNL\D3M578] AS [dbo]
