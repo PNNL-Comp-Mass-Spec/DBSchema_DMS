@@ -10,7 +10,8 @@ CREATE TABLE [dbo].[T_Bionet_Hosts](
 	[Entered] [smalldatetime] NULL,
 	[Last_Online] [smalldatetime] NULL,
 	[Instruments] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Active] [tinyint] NULL,
+	[Active] [tinyint] NOT NULL,
+	[Tag] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Bionet_Hosts] PRIMARY KEY CLUSTERED 
 (
 	[Host] ASC

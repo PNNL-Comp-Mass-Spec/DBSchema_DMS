@@ -6,16 +6,20 @@ GO
 
 CREATE VIEW [dbo].[V_Bionet_List_Report] 
 AS 
-SELECT Host,
-       IP,
-       Alias,
-       Entered,
-       Last_Online,
+SELECT H.Host,
+       H.IP,
+       H.Alias,
+	   H.Tag,
+       H.Entered,
+       H.Last_Online,
        CASE
-           WHEN Len(Instruments) > 70 THEN Cast(Instruments AS varchar(66)) + ' ...'
-           ELSE Instruments
-       END AS Instruments
-FROM T_Bionet_Hosts
+           WHEN Len(H.Instruments) > 70 THEN Cast(H.Instruments AS varchar(66)) + ' ...'
+           ELSE H.Instruments
+       END AS Instruments,
+       T_YesNo.Description AS Active
+FROM T_Bionet_Hosts H
+     INNER JOIN T_YesNo
+       ON H.Active = T_YesNo.Flag
 
 
 GO
