@@ -19,10 +19,12 @@ CREATE PROCEDURE dbo.PromoteProteinCollectionState
 **	Date:	09/13/2007
 **			04/08/2008 mem - Added parameter @AddNewProteinHeaders
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			09/12/2016 mem - Add parameter @mostRecentMonths
 **
 *****************************************************/
 (
 	@AddNewProteinHeaders tinyint = 1,
+	@mostRecentMonths int = 12,			-- Used to filter protein collections that we will examine
 	@InfoOnly tinyint = 0,
 	@message varchar(255) = '' output 
 )
@@ -50,16 +52,31 @@ AS
 	
 	Set @message = ''
 
+	--------------------------------------------------------------
+	-- Validate the inputs
+	--------------------------------------------------------------
+	
+	Set @AddNewProteinHeaders = IsNull(@AddNewProteinHeaders, 1)
+
+	Set @mostRecentMonths = IsNull(@mostRecentMonths, 12)
+	If @mostRecentMonths <= 0
+		Set @mostRecentMonths = 12
+
+	If @mostRecentMonths > 2000
+		Set @mostRecentMonths = 2000
+
+	Set @InfoOnly = IsNull(@InfoOnly, 0)
+
+	--------------------------------------------------------------
+	-- Loop through the protein collections with a state of 1
+	-- Limit to protein collections created within the last @mostRecentMonths months
+	--------------------------------------------------------------
+	--
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
 	Set @CurrentLocation = 'Start'
 
 	Begin Try
-		
-		--------------------------------------------------------------
-		-- Loop through the protein collections with a state of 1
-		--------------------------------------------------------------
-		--
 		
 		Set @ProteinCollectionID = 0
 		Set @Continue = 1
@@ -72,7 +89,8 @@ AS
 						 @ProteinCollectionName = FileName
 			FROM T_Protein_Collections
 			WHERE Collection_State_ID = 1 AND
-				Protein_Collection_ID > @ProteinCollectionID 
+			      Protein_Collection_ID > @ProteinCollectionID AND
+			      DateCreated >= DATEADD(month, -@mostRecentMonths, GETDATE())
 			ORDER BY Protein_Collection_ID
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -82,6 +100,9 @@ AS
 			Else
 			Begin
 				Set @CurrentLocation = 'Look for jobs in V_DMS_Analysis_Job_Info that used ' + @ProteinCollectionName
+
+				If @infoOnly > 0
+					Print @CurrentLocation
 
 				Set @NameFilter = '%' + @ProteinCollectionName + '%'
 				
@@ -121,15 +142,20 @@ AS
 		Set @CurrentLocation = 'Done iterating'
 
 		If @ProteinCollectionCountUpdated = 0
+		Begin
 			Set @message = 'No protein collections were found with state 1 and jobs defined in DMS'
+		End
 		Else
 		Begin
-			-- If more than one collection was affected, then update update @message with the overall stats
+			-- If more than one collection was affected, update update @message with the overall stats
 			If @ProteinCollectionCountUpdated > 1
 				Set @message = 'Updated the state for ' + Convert(varchar(12), @ProteinCollectionCountUpdated) + ' protein collections from 1 to 3 since existing jobs were found: ' + @ProteinCollectionsUpdated
 
 		End
 		
+		If @infoOnly > 0
+			Print @message
+			
 		If @AddNewProteinHeaders <> 0
 			Exec AddNewProteinHeaders @InfoOnly = @InfoOnly
 
