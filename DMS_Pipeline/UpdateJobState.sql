@@ -91,6 +91,7 @@ CREATE PROCEDURE UpdateJobState
 **			05/01/2015 mem - Now setting the state to 7 (No Intermediate Files Created) if all of the job's steps were skipped
 **			05/04/2015 mem - Fix bug in logic that conditionally sets the job state to 7
 **			12/31/2015 mem - Setting job state in DMS to 14 if the job comment contains "No results in DeconTools Isos file"
+**			09/15/2016 mem - Update jobs in DMS5 that are in state 1=New, but are actually in progress
 **    
 *****************************************************/
 (
@@ -560,16 +561,18 @@ As
 	
 	---------------------------------------------------
 	-- Look for jobs in DMS that are failed, yet are not failed in T_Jobs
+	-- Also look for jobs listed as new that are actually in progress
 	---------------------------------------------------
 	--	
 	If @BypassDMS = 0
 	Begin -- <a2>
-		Declare @FailedJobsToReset AS Table (
+		Declare @JobsToReset AS Table (
 			Job int not null, 
 			NewState int not null)
 
-		INSERT INTO @FailedJobsToReset (Job,
-		                                NewState )
+		-- Look for jobs that are listed as Failed in DMS, but are in-progress here
+		--
+		INSERT INTO @JobsToReset (Job, NewState )
 		SELECT DMSJobs.AJ_JobID AS Job,
 		       J.State AS NewState
 		FROM S_DMS_T_Analysis_Job AS DMSJobs
@@ -580,21 +583,37 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @myRowCount > 0
+
+		-- Also look for jobs that are in state New in DMS, but are in-progress here
+		--
+		INSERT INTO @JobsToReset (Job, NewState )
+		SELECT DMSJobs.AJ_JobID AS Job,
+		       J.State AS NewState
+		FROM S_DMS_T_Analysis_Job AS DMSJobs
+		     INNER JOIN T_Jobs AS J
+		       ON J.Job = DMSJobs.AJ_JobiD
+		WHERE DMSJobs.AJ_StateID = 1 AND
+		      J.State IN (2)
+		--
+		SELECT @myError = @@error, @myRowCount = @myRowCount
+
+		
+		If Exists (Select * From @JobsToReset)
 		Begin -- <b2>
-			-- We might have a large number of failed jobs
+			-- We might have a large number of jobs to update
 			-- Thus, for safety, we'll create a physical temporary table with an index
-			-- then populate that table using @FailedJobsToReset
-			CREATE TABLE #Tmp_FailedJobsToReset ( 
+			-- then populate that table using @JobsToReset
+			CREATE TABLE #Tmp_JobsToReset ( 
 				Job int not null,
 				NewState int not null
 			)
 			
-			CREATE CLUSTERED INDEX #IX_Tmp_FailedJobsToReset ON #Tmp_FailedJobsToReset (Job)
+			CREATE CLUSTERED INDEX #IX_Tmp_JobsToReset ON #Tmp_JobsToReset (Job)
 
-			INSERT INTO #Tmp_FailedJobsToReset (Job, NewState )
-			SELECT Job, NewState
-			FROM @FailedJobsToReset
+			INSERT INTO #Tmp_JobsToReset (Job, NewState )
+			SELECT Job, Max(NewState)
+			FROM @JobsToReset
+			GROUP BY Job
 			
 			Set @done = 0
 			While @done = 0
@@ -606,7 +625,7 @@ As
 					@curJob = Job,
 					@newJobStateInBroker = NewState			
 				FROM   
-					#Tmp_FailedJobsToReset
+					#Tmp_JobsToReset
 				WHERE
 					Job > @curJob
 				ORDER BY Job
