@@ -8,6 +8,9 @@ CREATE Procedure AddUpdateExperiment
 **
 **	Desc:	Adds a new experiment to DB
 **
+**			Note that the Experiment Detail Report web page 
+**			uses DoMaterialItemOperation to retire an experiment
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	grk
@@ -40,6 +43,7 @@ CREATE Procedure AddUpdateExperiment
 **			07/31/2015 mem - Now updating Last_Used when key fields are updated
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
+**			09/14/2016 mem - Validate inputs
 **
 *****************************************************/
 (
@@ -59,7 +63,7 @@ CREATE Procedure AddUpdateExperiment
 	@postdigestIntStd varchar(50),
 	@wellplateNum varchar(64),
 	@wellNum varchar(8),
-	@alkylation VARCHAR(1),
+	@alkylation varchar(1),
 	@mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
@@ -87,31 +91,42 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
+	Set @experimentNum = IsNull(@experimentNum, '')
+	Set @campaignNum = IsNull(@campaignNum, '')
+	Set @researcherPRN = IsNull(@researcherPRN, '')
+	Set @organismName = IsNull(@organismName, '')
+	Set @reason = IsNull(@reason, '')
+	Set @labelling = IsNull(@labelling, '')
+	Set @alkylation = IsNull(@alkylation, '')
+	Set @comment = IsNull(@comment, '')
+
 	if LEN(@experimentNum) < 1
-		RAISERROR ('experiment name was blank', 11, 30)
+		RAISERROR ('experiment name must be defined', 11, 30)
 	--
 	if LEN(@campaignNum) < 1
-		RAISERROR ('campaign name was blank', 11, 31)
+		RAISERROR ('Campaign name must be defined', 11, 31)
 	--
 	if LEN(@researcherPRN) < 1
-		RAISERROR ('researcher PRN was blank', 11, 32)
+		RAISERROR ('Researcher PRN must be defined', 11, 32)
 	--
 	if LEN(@organismName) < 1
-		RAISERROR ('organism name was blank', 11, 33)
+		RAISERROR ('Organism name must be defined', 11, 33)
 	--
 	if LEN(@reason) < 1
-		RAISERROR ('reason was blank', 11, 34)
+		RAISERROR ('Reason cannot be blank', 11, 34)
 	--
 	if LEN(@labelling) < 1
-		RAISERROR ('Labelling was blank', 11, 35)
+		RAISERROR ('Labelling cannot be blank', 11, 35)
 
+	If Not @alkylation IN ('Y', 'N')
+		RAISERROR ('Alkylation must be Y or N', 11, 35)
+		
 	-- Assure that @comment is not null and assure that it doesn't have &quot;
-	set @comment = IsNull(@comment, '')
 	If @comment LIKE '%&quot;%'
 		Set @comment = Replace(@comment, '&quot;', '"')
 
 	---------------------------------------------------
-	-- validate name
+	-- Validate experimentname
 	---------------------------------------------------
 
 	declare @badCh varchar(128)
@@ -255,7 +270,7 @@ As
 	WHERE (Label = @labelling)
 	--
 	if @labelID < 0
-		RAISERROR ('Could not find entry in database for labelling "%s"', 11, 48, @labelling)
+		RAISERROR ('Could not find entry in database for labelling "%s"; use "none" if unlabeled', 11, 48, @labelling)
 	
 	---------------------------------------------------
 	-- Resolve predigestion internal standard ID

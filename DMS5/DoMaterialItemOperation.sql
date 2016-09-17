@@ -6,7 +6,7 @@ GO
 CREATE Procedure DoMaterialItemOperation
 /****************************************************
 **
-**  Desc: 
+**  Desc: Do an operation on an item, using the item name
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,7 +22,7 @@ CREATE Procedure DoMaterialItemOperation
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
 (
-	@name varchar(128),
+	@name varchar(128),					-- Item name (either biomaterial or an experiment)
 	@mode varchar(32),					-- 'retire_biomaterial', 'retire_experiment'
     @message varchar(512) output,
 	@callingUser varchar (128) = ''
@@ -81,9 +81,9 @@ As
 	else
 	begin
 		declare 
-			@iMode varchar(32), -- 'move_material', 'retire_items'
+			@iMode varchar(32),
 			@itemList varchar(4096),
-			@itemType varchar(128), -- 'mixed_material', 'containers'
+			@itemType varchar(128),
 			@newValue varchar(128),
 			@comment varchar(512)
 
@@ -94,9 +94,9 @@ As
 			set @comment  = ''
 
 		exec @myError = UpdateMaterialItems
-				@iMode, -- 'move_material', 'retire_items'
+				@iMode,			-- 'retire_item'
 				@itemList,
-				@itemType, -- 'mixed', 'containers'
+				@itemType,		-- 'mixed_material'
 				@newValue,
 				@comment,
 				@msg output,

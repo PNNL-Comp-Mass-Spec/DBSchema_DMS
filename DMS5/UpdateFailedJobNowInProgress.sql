@@ -7,7 +7,9 @@ GO
 CREATE Procedure dbo.UpdateFailedJobNowInProgress
 /****************************************************
 **
-**	Desc: Updates job state to 2 for a failed analysis job that is now in-progress in the DMS_Pipeline database
+**	Desc:	Updates job state to 2 for an analysis job that is now in-progress in the DMS_Pipeline database
+**			Typically used to update jobs listed as Failed in DMS5, but
+**			occasionally updates jobs listed as New
 **
 **	Return values: 0: success, otherwise, error code
 **

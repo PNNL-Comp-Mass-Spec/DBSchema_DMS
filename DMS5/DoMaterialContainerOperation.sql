@@ -6,7 +6,7 @@ GO
 CREATE Procedure DoMaterialContainerOperation
 /****************************************************
 **
-**  Desc: 
+**  Desc: Do an operation on a container, using the container name
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,8 +22,8 @@ CREATE Procedure DoMaterialContainerOperation
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
 (
-	@name varchar(128),
-	@mode varchar(32),					-- 'retire_container'
+	@name varchar(128),					-- Container name
+	@mode varchar(32),					-- 'move_container', 'retire_container', 'retire_container_and_contents'
     @message varchar(512) output,
 	@callingUser varchar (128) = ''
 )
@@ -41,7 +41,7 @@ As
 	BEGIN TRY 
 
 	---------------------------------------------------
-	-- convert name to ID
+	-- Validate the name
 	---------------------------------------------------
 	declare @tmpID int
 	set @tmpID = 0
@@ -49,10 +49,6 @@ As
 	SELECT @tmpID = ID
 	FROM T_Material_Containers
 	WHERE Tag = @name
-	
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
 	--
 	if @tmpID = 0
 	begin

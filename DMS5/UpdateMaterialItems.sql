@@ -13,11 +13,13 @@ CREATE PROCEDURE UpdateMaterialItems
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 03/27/2008  grk - Initial release (ticket http://prismtrac.pnl.gov/trac/ticket/603)
-**		Date: 07/24/2008  grk - Added retirement mode
+**	Auth:	grk
+**	Date:	03/27/2008 grk - Initial release (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**			07/24/2008 grk - Added retirement mode
+**			09/14/2016 mem - When retiring a single experiment, will abort and update @message if the experiment is already retired
 **    
 *****************************************************/
+(
 	@mode varchar(32), -- 'move_material', 'retire_items'
 	@itemList varchar(4096), -- either list of material IDs with type tag prefixes, or list of containers
 	@itemType varchar(128), -- 'mixed_material', 'containers'
@@ -25,6 +27,7 @@ CREATE PROCEDURE UpdateMaterialItems
 	@comment varchar(512),
     @message varchar(512) output,
    	@callingUser varchar(128) = ''
+)
 As
 	declare @myError int
 	set @myError = 0
@@ -39,8 +42,7 @@ As
 	declare @container varchar(128)
 	set @container = 'na'
 	--
-	declare @contID int
-	set @contID = 1  -- the null container
+	declare @contID int = 1		-- the null container
 	
 	---------------------------------------------------
 	-- Resolve container name to actual ID (if applicable)
@@ -131,49 +133,77 @@ As
 			return 51009
 		end
 
+		-- Cache the count of items in temporary table @material_items
+		Declare @mixedMaterialCount int = @myRowCount
+		
 		---------------------------------------------------
-		-- update temporary table with information from
+		-- Update temporary table with information from
 		-- biomaterial entities (if any)
+		-- They have iType = 'B'
 		---------------------------------------------------
 		--
-		update @material_items
-		set
-			iName = V.Name,
-			iContainer = V.Container
-		from
-			@material_items M inner join V_Cell_Culture_List_Report_2 V
-			on V.ID = M.ID
-			where M.iType = 'B'
-       		--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error updating material item table with biomaterial information'
-				return 51010
-			end
+		UPDATE @material_items
+		SET iName = V.Name,
+		    iContainer = V.Container
+		FROM @material_items M
+		     INNER JOIN V_Cell_Culture_List_Report_2 V
+		       ON V.ID = M.ID
+		WHERE M.iType = 'B'
+       	--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error updating material item table with biomaterial information'
+			return 51010
+		end
 
 		---------------------------------------------------
-		-- update temporary table with information from
+		-- Update temporary table with information from
 		-- experiment entities (if any)
+		-- They have iType = 'E'
 		---------------------------------------------------
 		--
-		update @material_items
-		set
-			iName = V.Experiment,
-			iContainer = V.Container
-		from
-			@material_items M inner join V_Experiment_List_Report_2 V
-			on V.ID = M.ID
-			where M.iType = 'E'
-       		--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error updating material item table with experiment information'
-				return 51011
-			end
+		UPDATE @material_items
+		SET iName = V.Experiment,
+		    iContainer = V.Container
+		FROM @material_items M
+		     INNER JOIN V_Experiment_List_Report_2 V
+		       ON V.ID = M.ID
+		WHERE M.iType = 'E'
+       	--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error updating material item table with experiment information'
+			return 51011
+		end
+		
+		If @mode = 'retire_items' AND @mixedMaterialCount = 1 AND @myRowCount = 1
+		Begin
+			-- Retiring a single experiment
+			-- Check whether the item being updated is already retired
+			
+			Declare @retiredExperiment varchar(128) = ''
+			
+			SELECT @retiredExperiment = Experiment_Num
+			FROM T_Experiments
+			WHERE Exp_ID IN ( SELECT ID
+			                  FROM @material_items
+			                  WHERE iType = 'E' ) AND
+			      EX_Container_ID = @contID AND
+			      Ex_Material_Active = 'Inactive'
+
+			If IsNull(@retiredExperiment, '') <> ''
+			Begin
+				-- Yes, the experiment is already retired
+				
+				set @message = 'Experiment is already retired (inactive and no container): ' + @retiredExperiment
+				return 51012
+			End
+		End
+	
 	end --<mm>
 
 	---------------------------------------------------

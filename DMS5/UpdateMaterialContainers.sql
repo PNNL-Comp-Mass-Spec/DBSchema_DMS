@@ -17,12 +17,14 @@ CREATE Procedure UpdateMaterialContainers
 **		Date: 03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **    
 *****************************************************/
+(
 	@mode varchar(32), -- 'move_container', 'retire_container', 'retire_container_and_contents'
-	@containerList varchar(4096),
+	@containerList varchar(4096),		-- Container ID list
 	@newValue varchar(128),
 	@comment varchar(512),
     @message varchar(512) output,
    	@callingUser varchar(128) = ''
+)
 As
 	declare @myError int
 	set @myError = 0
