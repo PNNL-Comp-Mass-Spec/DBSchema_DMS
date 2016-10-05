@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Dataset_PM_and_PSM_List_Report] as
 SELECT 
        PM.Dataset,
@@ -16,7 +14,8 @@ SELECT
        ISNULL(QCM.AMTs_10pct_FDR, PM.[AMTs 10pct FDR]) AS AMTs_10pct_FDR,
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
        PM.Results_URL AS PM_Results_URL,
-	   QCM.Phos_2C PhosphoPep,
+	   -- QCM.Phos_2C PhosphoPep,
+	   PSM.PhosphoPep,
        PM.Instrument,
        PM.Dataset_ID,
        DTN.DST_name AS [Dataset Type],
@@ -51,6 +50,7 @@ FROM V_MTS_PM_Results_List_Report PM
        ON PM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_Analysis_Job_PSM_List_Report PSM
        ON PSM.Dataset_ID = PM.Dataset_ID AND PSM.StateID NOT IN (5, 14)
+
 
 
 

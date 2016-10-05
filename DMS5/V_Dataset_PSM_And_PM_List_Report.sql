@@ -14,12 +14,17 @@ SELECT
        ISNULL(QCM.AMTs_10pct_FDR, PM.[AMTs 10pct FDR]) AS AMTs_10pct_FDR,
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
        PM.Results_URL AS PM_Results_URL,
-	   CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
-	   CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
-	   QCM.P_2A AS TrypticPSMs,
-	   QCM.Keratin_2A AS KeratinPSMs,
-	   QCM.Phos_2C PhosphoPep,
-	   QCM.Trypsin_2A AS TrypsinPSMs,
+	   -- CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
+	   -- CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
+	   -- QCM.Keratin_2A AS KeratinPSMs,
+	   -- QCM.Phos_2C PhosphoPep,
+	   -- QCM.Trypsin_2A AS TrypsinPSMs,
+	   PSM.PctTryptic AS PctTryptic,
+	   PSM.PctMissedClvg,
+	   PSM.[Total PSMs FDR] AS PSMs,
+	   PSM.KeratinPep,
+	   PSM.PhosphoPep,
+	   PSM.TrypsinPep,
        PSM.Instrument,
        PSM.Dataset_ID,
        DTN.DST_name AS [Dataset Type],
@@ -55,6 +60,7 @@ FROM V_Analysis_Job_PSM_List_Report PSM
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.StateID NOT IN (5, 14)
+
 
 
 GO
