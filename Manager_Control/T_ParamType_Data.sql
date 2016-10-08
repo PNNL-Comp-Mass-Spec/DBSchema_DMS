@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 172 ******/
+/****** RowCount: 173 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -173,4 +173,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (18
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (190,'MyEmslAvailable','TrueFalsePickList','True if MyEmsl is supported')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (191,'LCMethodFilesDir','','Folder with LC method files from LCMSNet')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (192,'QCARTRScriptName','','Filename of the QC-ART script')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (193,'MzidToTsvConverterProgLoc','','Folder containing MzidToTsvConverter.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
