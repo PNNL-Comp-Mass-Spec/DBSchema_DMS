@@ -30,6 +30,7 @@ SELECT O.Organism_ID AS ID,
        COUNT(PC.Name) AS [Protein Collections],
        O.OG_Storage_Location AS [Org. Storage Path],
        O.OG_organismDBName AS [Default Protein Collection],
+	   FASTALookupQ.Legacy_FASTA_Files AS [Legacy FASTA Files],
        O.OG_DNA_Translation_Table_ID AS [DNA Trans Table],
        O.OG_Mito_DNA_Translation_Table_ID AS [Mito DNA Trans Table],
        O.OG_Active AS Active,
@@ -43,10 +44,14 @@ FROM dbo.T_Organisms O
        ON O.OG_Name = PC.[Organism Name]
 	 LEFT OUTER JOIN S_V_NCBI_Taxonomy_Cached NCBI 
 	   ON O.NCBI_Taxonomy_ID = NCBI.Tax_ID
+	 LEFT OUTER JOIN (SELECT Organism_ID, COUNT(*) AS Legacy_FASTA_Files
+		FROM T_Organism_DB_File ODF
+		WHERE (Active > 0) AND (Valid > 0)
+		GROUP BY Organism_ID) AS FASTALookupQ ON O.Organism_ID = FASTALookupQ.Organism_ID
 GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description,
          O.OG_Short_Name, O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, 
          O.OG_Family, O.NEWT_ID_List, NEWT.Term_Name, O.OG_created, O.OG_Active,
-         O.OG_Storage_Location, O.OG_organismDBName, 
+         O.OG_Storage_Location, O.OG_organismDBName, FASTALookupQ.Legacy_FASTA_Files,
          O.OG_DNA_Translation_Table_ID, O.OG_Mito_DNA_Translation_Table_ID,
 		 O.NCBI_Taxonomy_ID, NCBI.Name, NCBI.Synonyms, NCBI.Synonym_List,
 		 T_YesNo.Description

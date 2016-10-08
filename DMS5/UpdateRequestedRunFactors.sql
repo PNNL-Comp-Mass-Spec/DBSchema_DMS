@@ -59,6 +59,8 @@ CREATE Procedure UpdateRequestedRunFactors
 **			12/15/2011 mem - Added support for the "type" attribute in the <id> tag
 **			09/12/2012 mem - Now auto-removing columns Dataset_ID, Dataset, or Experiment if they are present as factor names
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			10/06/2016 mem - Populate column Last_Updated in T_Factor
+**						   - Expand the warning message for unrecognized @IDType
 **    
 *****************************************************/
 (
@@ -129,11 +131,13 @@ As
 		Set @IDType = 'RequestID'
 	End
 	
+	Declare @IDTypeOriginal varchar(256) = @IDType
+	
 	-- Auto-update @IDType if needed
 	If @IDType = 'Request'
 		Set @IDType = 'RequestID'
 
-	If @IDType = 'DatasetName' OR @IDType Like 'Dataset_Name'
+	If @IDType = 'DatasetName' OR @IDType Like 'Dataset_Name' OR @IDType Like 'Dataset_Num'
 		Set @IDType = 'Dataset'
 	
 	
@@ -216,7 +220,7 @@ As
 
 	If Not @IDType IN ('RequestID', 'DatasetID', 'Job', 'Dataset')
 	Begin
-		set @message = 'Identifier type "' + @IDType + '" was not recognized; should be RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
+		set @message = 'Identifier type "' + @IDTypeOriginal + '" was not recognized in the header row; should be Request, RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
 		IF @infoOnly <> 0
 			SELECT * FROM #Tmp
 		return 51018
@@ -237,11 +241,11 @@ As
 		If IsNull(@Msg2, '') <> ''
 		Begin
 			-- One or more entries is non-numeric
-			set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDType + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
+			set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDTypeOriginal + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
 			IF @infoOnly <> 0
 				SELECT * FROM #Tmp
 			return 51019
-		End             
+		End 
 	End
 	
 	-----------------------------------------------------------
@@ -495,12 +499,13 @@ As
 		-----------------------------------------------------------
 		--
 		UPDATE T_Factor
-		SET Value = #TMP.Value
+		SET Value = #TMP.Value, 
+		    Last_Updated = GetDate()
 		FROM T_Factor AS TF
 		     INNER JOIN #TMP
 		       ON #TMP.RequestID = TF.TargetID AND
 		          #TMP.Factor = TF.Name AND
-		          TF.Type = 'Run_Request'
+		      TF.Type = 'Run_Request'
 		WHERE UpdateSkipCode = 0 AND
 		      #tmp.Value <> TF.Value
 		--
@@ -516,19 +521,21 @@ As
 		-- add new factors
 		-----------------------------------------------------------
 		--
-		INSERT INTO dbo.T_Factor( Type,
+		INSERT INTO dbo.T_Factor( [Type],
 		                          TargetID,
 		                          Name,
-		                          Value )
-		SELECT 'Run_Request' AS TYPE,
+		                          Value,
+		                          Last_Updated )
+		SELECT 'Run_Request' AS [Type],
 		       RequestID AS TargetID,
-		       Factor AS Name,
-		       Value
+		       Factor AS FactorName,
+		       Value,
+		       GetDate()
 		FROM #TMP
 		WHERE UpdateSkipCode = 0 AND
 		      #tmp.Value <> '' AND
 		      NOT EXISTS ( SELECT *
-		                FROM T_Factor
+		                   FROM T_Factor
 		                   WHERE #tmp.RequestID = T_Factor.TargetID AND
 		                         #tmp.Factor = T_Factor.Name AND
 		                         T_Factor.Type = 'Run_Request' )

@@ -22,6 +22,7 @@ CREATE Procedure dbo.UpdateEUSProposalsFromEUSImports
 **			01/27/2012 mem - Added support for state 5=Permanently Active
 **			03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			10/05/2016 mem - Update logic to allow for V_EUS_Import_Proposals to include inactive proposals
 **    
 *****************************************************/
 (
@@ -65,7 +66,7 @@ As
 		
 		---------------------------------------------------
 		-- Use a MERGE Statement to synchronize 
-		-- T_EUS_User with V_EUS_Import_Proposals
+		-- T_EUS_Proposals with V_EUS_Import_Proposals
 		---------------------------------------------------
 
 		MERGE T_EUS_Proposals AS target
@@ -75,23 +76,32 @@ As
 			          TITLE,
 			          PROPOSAL_TYPE,
 			          ACTUAL_START_DATE AS Proposal_Start_Date,
-			          ACTUAL_END_DATE AS Proposal_End_Date
+			          ACTUAL_END_DATE AS Proposal_End_Date,
+			          CASE WHEN GetDate() BETWEEN Source.ACTUAL_START_DATE AND 
+			                                      DateAdd(Day, 1, Source.ACTUAL_END_DATE) 
+			               THEN 1 
+			               ELSE 0 
+			          END AS Active
 			   FROM dbo.V_EUS_Import_Proposals Source
-			) AS Source (	Proposal_ID, Title, Proposal_Type, Proposal_Start_Date, Proposal_End_Date)
+			) AS Source (	Proposal_ID, Title, Proposal_Type, Proposal_Start_Date, Proposal_End_Date, Active)
 		ON (target.Proposal_ID = source.Proposal_ID)
 		WHEN Matched AND 
 					(	target.Title <> convert(varchar(2048), source.Title) OR
 						target.Proposal_Type <> source.Proposal_Type OR
 						IsNull(target.Proposal_Start_Date, '1/1/2000') <> source.Proposal_Start_Date OR
 						IsNull(target.Proposal_End_Date, '1/1/2000') <> source.Proposal_End_Date OR
-						target.State_ID NOT IN (2, 4)
+						source.Active = 1 And target.State_ID NOT IN (2, 4) OR
+						source.Active = 0 And target.State_ID IN (1, 2)
 					)
 			THEN UPDATE 
 				Set	Title = source.Title, 
 					Proposal_Type = source.Proposal_Type,
 					Proposal_Start_Date = source.Proposal_Start_Date,
 					Proposal_End_Date = source.Proposal_End_Date,
-					State_ID = CASE WHEN State_ID IN (4, 5) THEN target.State_ID ELSE 2 END,
+					State_ID = CASE WHEN State_ID IN (4, 5) 
+					                THEN target.State_ID 
+					                ELSE CASE WHEN Active = 1 THEN 2 ELSE 3 END
+					           END,
 					Last_Affected = GetDate()
 		WHEN Not Matched THEN
 			INSERT (Proposal_ID, Title, State_ID, Import_Date, 

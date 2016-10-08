@@ -19,6 +19,7 @@ CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 **          10/03/2012 grk - Maintenance usage no longer requires comment
 **			03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			10/05/2016 mem - Add one day to the proposal end date
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ AS
 				@ImportDate = Import_Date ,
 				@ProposalType = Proposal_Type ,
 				@ProposalStartDate = Proposal_Start_Date ,
-				@ProposalEndDate = Proposal_End_Date ,
+				@ProposalEndDate = DateAdd(day, 1, Proposal_End_Date) ,
 				@LastAffected = Last_Affected
 		FROM    T_EUS_Proposals
 		WHERE   Proposal_ID = @Proposal 
