@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
@@ -23,6 +22,7 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
        DataQ.Evaluation_Message, 
 	   DataQ.Dataset_ID,
 	   DataQ.Machine,
+	   DataQ.WorkDirPath,
 	   DataQ.Transfer_Folder_Path, 
        ParamQ.Dataset_Storage_Path + DataQ.Dataset AS Dataset_Folder_Path,
        DataQ.LogFilePath + 
@@ -72,6 +72,7 @@ FROM ( SELECT JS.Job,
               JS.Evaluation_Message,
 			  JS.Dataset_ID,
 			  LP.Machine,
+			  LP.WorkDir_AdminShare AS WorkDirPath,
               JS.Transfer_Folder_Path,
               '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
                 CASE WHEN JS.Processor LIKE '%-[1-9]' 
@@ -92,6 +93,7 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 GO

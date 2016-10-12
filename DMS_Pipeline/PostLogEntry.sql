@@ -16,10 +16,12 @@ CREATE Procedure dbo.PostLogEntry
 **			05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
 **    
 *****************************************************/
-	@type varchar(128),
+(
+	@type varchar(128),							-- Typically Normal, Warning, Error, or Progress, but can be any text value
 	@message varchar(4096),
 	@postedBy varchar(128)= 'na',
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
+)
 As
 
 	Declare @duplicateRowCount int
@@ -34,8 +36,7 @@ As
 
 	If @duplicateRowCount = 0
 	Begin
-		INSERT INTO T_Log_Entries
-			(posted_by, posting_time, type, message) 
+		INSERT INTO T_Log_Entries (posted_by, posting_time, type, message) 
 		VALUES ( @postedBy, GETDATE(), @type, @message)
 		--
 		if @@rowcount <> 1
@@ -46,8 +47,6 @@ As
 	End
 	
 	return 0
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]

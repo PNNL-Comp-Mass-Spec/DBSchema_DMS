@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Local_Processors](
 	[Machine] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Latest_Request] [datetime] NULL,
 	[Manager_Version] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[WorkDir_AdminShare] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Local_Processors] PRIMARY KEY CLUSTERED 
 (
 	[Processor_Name] ASC
