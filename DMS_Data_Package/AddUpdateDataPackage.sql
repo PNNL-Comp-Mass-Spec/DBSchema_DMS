@@ -28,12 +28,13 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 **						   - Now only calling MakeDataPackageStorageFolder when @mode = 'add'
 **			08/31/2015 mem - Now replacing the symbol & with 'and' in the name when @mode = 'add'
 **			02/19/2016 mem - Now replacing a semicolon with a comma when @mode = 'add'
+**			10/18/2016 mem - Call UpdateDataPackageEUSInfo
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int output,
+	@ID int output,				-- Data Package ID
 	@Name varchar(128),
 	@PackageType varchar(128),
 	@Description varchar(2048),
@@ -300,6 +301,12 @@ As
 		Set @message = @message + @TeamChangeWarning
 	End
 
+	---------------------------------------------------
+	-- Update EUS_Person_ID and EUS_Proposal_ID
+	---------------------------------------------------
+	--
+	Exec UpdateDataPackageEUSInfo @ID
+	
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
