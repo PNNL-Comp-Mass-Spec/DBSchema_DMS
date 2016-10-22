@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDataPackageItemsUtility
+CREATE PROCEDURE dbo.UpdateDataPackageItemsUtility
 /****************************************************
 **
 **	Desc:
@@ -12,9 +12,9 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **	Expects list of items to be in temp table #TPI
 **
 **		CREATE TABLE #TPI(
-**				Package varchar(50) null,
-**				Type varchar(50) null,
-**				Identifier varchar(256) null
+**				DataPackageID int not null,			-- Data package ID
+**				Type varchar(50) null,				-- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
+**				Identifier varchar(256) null		-- Job ID, Dataset ID, Experiment Id, Cell_Culture ID, or EUSProposal ID
 **			)
 **
 **	Return values: 0: success, otherwise, error code
@@ -35,11 +35,14 @@ CREATE PROCEDURE UpdateDataPackageItemsUtility
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			05/18/2016 mem - Fix bug removing duplicate analysis jobs
 **						   - Add parameter @infoOnly
+**			10/19/2016 mem - Update #TPI to use an integer field for data package ID
+**						   - Call UpdateDataPackageEUSInfo
+**						   - Prevent addition of Biomaterial '(none)'
 **
 *****************************************************/
 (
 	@comment varchar(512),
-	@mode varchar(12) = 'update',	-- 'add', 'comment', 'delete'
+	@mode varchar(12) = 'update',			-- 'add', 'update', 'comment', 'delete'
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = '',
 	@infoOnly tinyint = 0
@@ -54,16 +57,14 @@ As
 
 	set @message = ''
 	
-	declare @itemCountChanged int
-	set @itemCountChanged = 0
-
+	Declare @itemCountChanged int = 0
+	Declare @actionMsg varchar(128)
+	
 	CREATE TABLE #Tmp_DatasetIDsToAdd (
-	    Package   varchar(50) NOT NULL,
+	    DataPackageID int NOT NULL,
 	    DatasetID int NOT NULL
 	)
 
- 	---------------------------------------------------
- 	---------------------------------------------------
 	BEGIN TRY 
 
 		-- If working with analysis jobs, remove any entries from #TPI that are not numeric
@@ -71,8 +72,8 @@ As
 		Begin
 		    DELETE #TPI
 		    WHERE IsNull(Identifier, '') = '' OR Try_Convert(int, Identifier) Is Null
-		    
-		    Set @myRowCount= @@RowCount
+		    --
+			SELECT @myError = @@error, @myRowCount = @@rowcount	
 		    
 		    If @infoOnly > 0 And @myRowCount > 0
 		    Begin
@@ -89,36 +90,36 @@ As
 			 
 			-- Auto-convert dataset IDs to dataset names
 			-- First look for dataset IDs
-			INSERT INTO #Tmp_DatasetIDsToAdd( Package, DatasetID )
-			SELECT Package,
+			INSERT INTO #Tmp_DatasetIDsToAdd( DataPackageID, DatasetID )
+			SELECT DataPackageID,
 			       DatasetID
-			FROM ( SELECT Package,
+			FROM ( SELECT DataPackageID,
 			              Try_Convert(int, Identifier) as DatasetID
 			       FROM #TPI
 			       WHERE [Type] = 'Dataset' AND			             
-			             Not Package Is Null) SourceQ
+			             Not DataPackageID Is Null) SourceQ
 			WHERE Not DatasetID Is Null
 			
 			If Exists (select * from #Tmp_DatasetIDsToAdd)
 			Begin
 				-- Add the dataset names
-				INSERT INTO #TPI( Package,
+				INSERT INTO #TPI( DataPackageID,
 				                  [Type],
 				                  Identifier )
-				SELECT Source.Package,
+				SELECT Source.DataPackageID,
 				       'Dataset' AS [Type],
 				       DL.Dataset
 				FROM #Tmp_DatasetIDsToAdd Source
-				     INNER JOIN S_V_Dataset_List_Report_2 DL
+				 INNER JOIN S_V_Dataset_List_Report_2 DL
 				       ON Source.DatasetID = DL.ID
 
 			End
 			 
-			-- add datasets to list that are parents of jobs in list
-			-- (and are not already in list)
- 			INSERT INTO #TPI (Package, Type, Identifier)
+			-- Add datasets to list that are parents of jobs in the list
+			-- (and are not already in the list)
+ 			INSERT INTO #TPI (DataPackageID, Type, Identifier)
 			SELECT DISTINCT
-				TP.Package, 
+				TP.DataPackageID, 
 				'Dataset', 
 				TX.Dataset
 			FROM   
@@ -130,14 +131,14 @@ As
 				AND NOT EXISTS (
 					SELECT * 
 					FROM #TPI 
-					WHERE #TPI.Type = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.Package = TP.Package
+					WHERE #TPI.Type = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.DataPackageID = TP.DataPackageID
 				)
 
-			-- add experiments to list that are parents of datasets in list
-			-- (and are not already in list)
- 			INSERT INTO #TPI (Package, Type, Identifier)
+			-- Add experiments to list that are parents of datasets in the list
+			-- (and are not already in the list)
+ 			INSERT INTO #TPI (DataPackageID, Type, Identifier)
 			SELECT DISTINCT
-				TP.Package, 
+				TP.DataPackageID, 
 				'Experiment',
 				TX.Experiment
 			FROM
@@ -149,14 +150,14 @@ As
 				AND NOT EXISTS (
 					SELECT * 
 					FROM #TPI 
-					WHERE #TPI.Type = 'Experiment' AND #TPI.Identifier = TX.Experiment AND #TPI.Package = TP.Package
+					WHERE #TPI.Type = 'Experiment' AND #TPI.Identifier = TX.Experiment AND #TPI.DataPackageID = TP.DataPackageID
 				)
 
-			-- add EUS Proposals to list that are parents of datasets in list
-			-- (and are not already in list)
- 			INSERT INTO #TPI (Package, Type, Identifier)
+			-- Add EUS Proposals to list that are parents of datasets in the list
+			-- (and are not already in the list)
+ 			INSERT INTO #TPI (DataPackageID, Type, Identifier)
 			SELECT DISTINCT
-				TP.Package, 
+				TP.DataPackageID, 
 				'EUSProposal',
 				TX.[EMSL Proposal]
 			FROM
@@ -168,15 +169,15 @@ As
 				AND NOT EXISTS (
 					SELECT * 
 					FROM #TPI 
-					WHERE #TPI.Type = 'EUSProposal' AND #TPI.Identifier = TX.[EMSL Proposal] AND #TPI.Package = TP.Package
+					WHERE #TPI.Type = 'EUSProposal' AND #TPI.Identifier = TX.[EMSL Proposal] AND #TPI.DataPackageID = TP.DataPackageID
 				)
 
 
-			-- add biomaterial items to list that are associated with experiments in list
-			-- (and are not already in list)
- 			INSERT INTO #TPI (Package, Type, Identifier)
+			-- Add biomaterial items to list that are associated with experiments in the list
+			-- (and are not already in the list)
+ 			INSERT INTO #TPI (DataPackageID, Type, Identifier)
 			SELECT DISTINCT
-				TP.Package, 
+				TP.DataPackageID, 
 				'Biomaterial',
 				TX.Cell_Culture_Name
 			FROM
@@ -184,11 +185,12 @@ As
 				INNER JOIN S_V_Experiment_Cell_Culture TX
 				ON TP.Identifier = TX.Experiment_Num 
 			WHERE
-				TP.Type = 'Experiment' 
+				TP.Type = 'Experiment' AND
+				TX.Cell_Culture_Name NOT IN ('(none)')
 				AND NOT EXISTS (
 					SELECT * 
 					FROM #TPI 
-					WHERE #TPI.Type = 'Biomaterial' AND #TPI.Identifier = TX.Cell_Culture_Name AND #TPI.Package = TP.Package
+					WHERE #TPI.Type = 'Biomaterial' AND #TPI.Identifier = TX.Cell_Culture_Name AND #TPI.DataPackageID = TP.DataPackageID
 				)
 		END -- </add_associated_items>
 
@@ -201,15 +203,15 @@ As
 		Begin
 			SELECT * 
 			FROM #TPI
-			ORDER BY Package, Type, Identifier
+			ORDER BY DataPackageID, Type, Identifier
 		End
 
 		---------------------------------------------------
-		-- biomaterial operations
+		-- Biomaterial operations
 		---------------------------------------------------
 		
 		IF @mode = 'delete'
-		BEGIN --<delete biomaterial>
+		BEGIN -- <delete biomaterial>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Biomaterial to delete' As Item_Type, *
@@ -218,7 +220,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Biomaterial.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
 					#TPI.Type = 'Biomaterial'
 				)
@@ -231,19 +233,24 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Biomaterial.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
 					#TPI.Type = 'Biomaterial'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<delete biomaterial>
+		END -- </delete biomaterial>
 
 		IF @mode = 'comment'
-		BEGIN --<comment biomaterial>
+		BEGIN -- <comment biomaterial>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Update Biomaterial comment' as Item_Type,
@@ -253,7 +260,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Biomaterial.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
 					#TPI.Type = 'Biomaterial'
 				)
@@ -266,33 +273,38 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Biomaterial.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
 					#TPI.Type = 'Biomaterial'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<comment biomaterial>
+		END -- </comment biomaterial>
 		
  		IF @mode = 'add'
-		BEGIN --<add biomaterial>
+		BEGIN -- <add biomaterial>
 
 			-- Delete extras
 			DELETE FROM #TPI
 			WHERE EXISTS (
 				SELECT * 
 				FROM T_Data_Package_Biomaterial TX
-				WHERE #TPI.Package = TX.Data_Package_ID AND 
+				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
 				      #TPI.Identifier = TX.Name AND #TPI.Type = 'Biomaterial'
 			)
 
 			If @infoOnly > 0
 			Begin
 				SELECT DISTINCT 
-					#TPI.Package,
+					#TPI.DataPackageID,
 					'New Biomaterial' as Item_Type,
 					TX.ID,
 					@comment AS Comment,
@@ -320,7 +332,7 @@ As
 					Type
 				)
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					TX.ID,
 					@comment,
 					TX.Name,
@@ -335,17 +347,21 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<add biomaterial>
-
+		END -- </add biomaterial>
 
 		---------------------------------------------------
 		-- EUS Proposal operations
 		---------------------------------------------------
 
 		IF @mode = 'delete'
-		BEGIN --<delete EUS Proposals>
+		BEGIN -- <delete EUS Proposals>
 			If @infoOnly > 0
 			Begin
 				SELECT 'EUS Proposal to delete' As Item_Type, *
@@ -354,7 +370,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
 					#TPI.Type = 'EUSProposal'
 				)
@@ -366,19 +382,24 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
 					#TPI.Type = 'EUSProposal'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<delete EUS Proposal>
+		END -- </delete EUS Proposal>
 
 		IF @mode = 'comment'
-		BEGIN --<comment EUS Proposals>
+		BEGIN -- <comment EUS Proposals>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Update EUS Proposal comment' as Item_Type,
@@ -388,7 +409,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
 					#TPI.Type = 'EUSProposal'
 				)
@@ -401,33 +422,38 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_EUS_Proposals.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
 					#TPI.Type = 'EUSProposal'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<comment EUS Proposals>
+		END -- </comment EUS Proposals>
 		
 		IF @mode = 'add'
-		BEGIN --<add EUS Proposals>
+		BEGIN -- <add EUS Proposals>
 		
 			-- Delete extras 
 			DELETE FROM #TPI
 			WHERE EXISTS (
 				SELECT * 
 				FROM T_Data_Package_EUS_Proposals TX
-				WHERE #TPI.Package = TX.Data_Package_ID AND 
+				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
 				      #TPI.Identifier = TX.Proposal_ID AND #TPI.Type = 'EUSProposal'
 			)
 			
 			If @infoOnly > 0
 			Begin
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					'New EUS Proposal' as Item_Type,
 					TX.ID,
 					@comment AS Comment
@@ -446,7 +472,7 @@ As
 					[Package Comment]
 				)
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					TX.ID,
 					@comment
 				FROM   
@@ -457,17 +483,21 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<add EUS Proposals>
-		
+		END -- </add EUS Proposals>		
 		
 		---------------------------------------------------
-		-- experiment operations
+		-- Experiment operations
 		---------------------------------------------------
 
 		IF @mode = 'delete'
-		BEGIN --<delete experiments>
+		BEGIN -- <delete experiments>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Experiment to delete' As Item_Type, *
@@ -476,7 +506,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Experiments.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
 					#TPI.Type = 'Experiment'
 				)
@@ -488,19 +518,24 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Experiments.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
 					#TPI.Type = 'Experiment'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<delete experiments>
+		END -- </delete experiments>
 
 		IF @mode = 'comment'
-		BEGIN --<comment experiments>
+		BEGIN -- <comment experiments>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Update Experiment comment' as Item_Type,
@@ -510,7 +545,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Experiments.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
 					#TPI.Type = 'Experiment'
 				)
@@ -523,33 +558,38 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Experiments.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
 					#TPI.Type = 'Experiment'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<comment experiments>
+		END -- </comment experiments>
 		
 		IF @mode = 'add'
-		BEGIN --<add experiments>
+		BEGIN -- <add experiments>
 		
 			-- Delete extras
 			DELETE FROM #TPI
 			WHERE EXISTS (
 				SELECT * 
 				FROM T_Data_Package_Experiments TX
-				WHERE #TPI.Package = TX.Data_Package_ID AND 
+				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
 				      #TPI.Identifier = TX.Experiment AND #TPI.Type = 'Experiment'
 			)
 			
 			If @infoOnly > 0
 			Begin
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					'New Experiment ID' as Item_Type,
 					TX.ID,
 					@comment AS Comment,
@@ -572,7 +612,7 @@ As
 					Created
 				)
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					TX.ID,
 					@comment,
 					TX.Experiment,
@@ -585,16 +625,21 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<add experiments>
+		END -- </add experiments>
 		
 		---------------------------------------------------
-		-- dataset operations
+		-- Dataset operations
 		---------------------------------------------------
 
 		IF @mode = 'delete'
-		BEGIN --<delete datasets>
+		BEGIN -- <delete datasets>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Dataset to delete' As Item_Type, *
@@ -603,7 +648,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Datasets.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
 					#TPI.Type = 'Dataset'
 				)
@@ -615,19 +660,24 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Datasets.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
 					#TPI.Type = 'Dataset'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<delete datasets>
+		END -- </delete datasets>
 
 		IF @mode = 'comment'
-		BEGIN --<comment datasets>
+		BEGIN -- <comment datasets>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Update Dataset comment' as Item_Type,
@@ -637,7 +687,7 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Datasets.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
 					#TPI.Type = 'Dataset'
 				)
@@ -650,33 +700,38 @@ As
 					SELECT * 
 					FROM #TPI
 					WHERE 
-					#TPI.Package = T_Data_Package_Datasets.Data_Package_ID AND
+					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
 					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
 					#TPI.Type = 'Dataset'
 				)
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<comment datasets>
+		END -- </comment datasets>
 
 		IF @mode = 'add'
-		BEGIN --<add datasets>
+		BEGIN -- <add datasets>
 		
 			-- Delete extras
 			DELETE FROM #TPI
 			WHERE EXISTS (
 				SELECT * 
 				FROM T_Data_Package_Datasets TX
-				WHERE #TPI.Package = TX.Data_Package_ID AND 
+				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
 				      #TPI.Identifier = TX.Dataset AND #TPI.Type = 'Dataset'
 			)
 
 			If @infoOnly > 0
 			Begin
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					'New Dataset ID' as Item_Type,
 					TX.ID,
 					@comment AS Comment,
@@ -703,7 +758,7 @@ As
 					Instrument
 				)
 				SELECT DISTINCT
-					#TPI.Package,
+					#TPI.DataPackageID,
 					TX.ID,
 					@comment,
 					TX.Dataset,
@@ -718,56 +773,66 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<add datasets>
+		END -- </add datasets>
 
 		---------------------------------------------------
-		-- analysis_job operations
+		-- Analysis_job operations
 		---------------------------------------------------
 
 		IF @mode = 'delete'
-		BEGIN --<delete analysis_jobs>
+		BEGIN -- <delete analysis_jobs>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Job to delete' As Item_Type, *
 				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
 						DPAJ.Job = ItemsQ.Job
 			End
 			Else
 			Begin			
 				DELETE DPAJ
 				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
 						DPAJ.Job = ItemsQ.Job
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<delete analysis_jobs>
+		END -- </delete analysis_jobs>
 
 		IF @mode = 'comment'
-		BEGIN --<comment analysis_jobs>
+		BEGIN -- <comment analysis_jobs>
 			If @infoOnly > 0
 			Begin
 				SELECT 'Update Job comment' as Item_Type,
 						@comment As New_Comment, *
 				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
 						DPAJ.Job = ItemsQ.Job
 			End
 			Else
@@ -775,35 +840,40 @@ As
 				UPDATE DPAJ
 				SET [Package Comment] = @comment
 				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.Package AND
+					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
 						DPAJ.Job = ItemsQ.Job
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<comment analysis_jobs>
+		END -- </comment analysis_jobs>
 
 		IF @mode = 'add'
-		BEGIN --<add analysis_jobs>
+		BEGIN -- <add analysis_jobs>
 
 			-- Delete extras
 			DELETE FROM #TPI
 			WHERE EXISTS (
 				SELECT * 
 				FROM T_Data_Package_Analysis_Jobs TX
-				WHERE #TPI.Package = TX.Data_Package_ID AND 
+				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
 				      #TPI.Identifier = TX.Job AND #TPI.Type = 'Job'
 			)
 
 			If @infoOnly > 0
 			Begin
 				SELECT DISTINCT
-					ItemsQ.Package,
+					ItemsQ.DataPackageID,
 					'New Job' as Item_Type,
 					TX.Job,
 					@comment AS Comment,
@@ -811,7 +881,7 @@ As
 					TX.Dataset,
 					TX.Tool
 				FROM S_V_Analysis_Job_List_Report_2 TX
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
@@ -829,14 +899,14 @@ As
 					Tool
 				)
 				SELECT DISTINCT
-					ItemsQ.Package,
+					ItemsQ.DataPackageID,
 					TX.Job,
 					@comment,
 					TX.Created,
 					TX.Dataset,
 					TX.Tool
 				FROM S_V_Analysis_Job_List_Report_2 TX
-					INNER JOIN ( SELECT Package,
+					INNER JOIN ( SELECT DataPackageID,
 										Try_Convert(int, Identifier) as Job
 								FROM #TPI
 								WHERE #TPI.TYPE = 'Job') ItemsQ
@@ -844,47 +914,77 @@ As
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
-				set @itemCountChanged = @itemCountChanged + @myRowCount
+				If @myRowCount > 0
+				Begin
+					Set @itemCountChanged = @itemCountChanged + @myRowCount
+					Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
+					Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+				End
 			End
-		END --<add analysis_jobs>
+		END -- </add analysis_jobs>
 
  		---------------------------------------------------
-		-- update item counts for all data packages in list
+		-- Update item counts for all data packages in the list
 		---------------------------------------------------
 
-		if @itemCountChanged <> 0
-		begin
+		If @itemCountChanged > 0
+		Begin -- <UpdateDataPackageItemCounts>
 			CREATE TABLE #TK (ID int)
 
-			INSERT INTO #TK (ID) SELECT DISTINCT Package FROM #TPI
+			INSERT INTO #TK (ID) 
+			SELECT DISTINCT DataPackageID 
+			FROM #TPI
 
-			DECLARE @indx int
-			DECLARE @done tinyint
-			SET @done = 0
-			WHILE @done = 0
-			BEGIN
-				SET @indx = 0
-				SELECT TOP 1 @indx = ID FROM #TK ORDER BY ID
+			Declare @packageID int = -10000
+			Declare @continue tinyint = 1
+
+			While @continue = 1
+			Begin
+				SELECT TOP 1 @packageID = ID 
+				FROM #TK
+				WHERE ID > @packageID
+				ORDER BY ID
 				--
-				IF @indx = 0
-					SET @done = 1
-				ELSE
-					BEGIN
-					exec UpdateDataPackageItemCounts @indx, @message output, @callingUser
-					DELETE FROM #TK WHERE ID = @indx
-					END
-			END
-		end
+				SELECT @myError = @@error, @myRowCount = @@rowcount	
+
+				If @myRowCount = 0
+				Begin
+					Set @continue = 0
+				End
+				Else
+				Begin
+					exec UpdateDataPackageItemCounts @packageID, '', @callingUser
+				End
+			End
+
+		End -- </UpdateDataPackageItemCounts>
+
+		---------------------------------------------------
+		-- Update EUS Info for all data packages in the list
+		---------------------------------------------------
+		--
+		If @itemCountChanged > 0
+		Begin -- <UpdateEUSInfo>
+
+			Declare @DataPackageList varchar(max) = ''
+			
+			SELECT @DataPackageList = @DataPackageList + Cast(DataPackageID AS varchar(12)) + ','
+			FROM ( SELECT DISTINCT DataPackageID
+			       FROM #TPI ) AS ListQ
+			
+			Exec UpdateDataPackageEUSInfo @DataPackageList
+		End -- </UpdateEUSInfo>
 
  		---------------------------------------------------
-		-- change last modified date
+		-- Update the last modified date for affected data packages
 		---------------------------------------------------
+		--
 		if @itemCountChanged > 0
 		begin
 			UPDATE T_Data_Package
 			SET Last_Modified = GETDATE()
 			WHERE ID IN (
-				SELECT DISTINCT Package FROM #TPI
+				SELECT DISTINCT DataPackageID FROM #TPI
 			)
 		end
 
@@ -907,5 +1007,6 @@ As
 	-- Exit
 	---------------------------------------------------
 	return @myError
+
 
 GO

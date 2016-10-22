@@ -13,10 +13,11 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 **
 **	Auth:	mem
 **	Date:	10/18/2016 mem - Initial version
+**			10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
 **    
 *****************************************************/
 (
-	@DataPackageID int,				-- 0 to update all data packages, otherwise a specific data package ID to update
+	@DataPackageList varchar(max),		-- '' or 0 to update all data packages, otherwise a comma separated list of data package IDs to update
 	@message varchar(512)='' output
 )
 As
@@ -26,13 +27,14 @@ As
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
-		
+	
+	Declare @DataPackageCount int = 0
+	
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
 	
-	Set @DataPackageID = IsNull(@DataPackageID, 0);
-	
+	Set @DataPackageList = IsNull(@DataPackageList, '');	
 	Set @message = ''
 	
 	---------------------------------------------------
@@ -49,10 +51,51 @@ As
 		ID ASC
 	)
 
-	INSERT INTO #TmpDataPackagesToUpdate (ID)
-	SELECT ID
-	FROM T_Data_Package
-	WHERE ID = @DataPackageID OR @DataPackageID <= 0
+	If @DataPackageList = '' Or @DataPackageList = '0' or @DataPackageList = ','
+	Begin
+		INSERT INTO #TmpDataPackagesToUpdate (ID)
+		SELECT ID
+		FROM T_Data_Package
+	End
+	Else
+	Begin
+		INSERT INTO #TmpDataPackagesToUpdate (ID)
+		SELECT ID
+		FROM T_Data_Package
+		WHERE ID IN ( SELECT [Value]
+		              FROM dbo.udfParseDelimitedIntegerList ( @DataPackageList, ',' ) )
+	End
+
+	Set @myRowCount = 0
+	SELECT @myRowCount = COUNT(*)
+	FROM #TmpDataPackagesToUpdate
+	
+	Set @DataPackageCount = IsNull(@myRowCount, 0)
+
+	If @DataPackageCount = 0
+	Begin
+		Set @message = 'No valid data packages were found in the list: ' + @DataPackageList
+		Print @message
+		Goto Done
+	End
+	Else
+	Begin
+		If @DataPackageCount > 1
+		Begin
+			Set @message = 'Updating ' + Cast(@DataPackageCount as varchar(12)) + ' data packages'
+		End
+		Else
+		Begin
+			Declare @firstID int
+			
+			SELECT @firstID = ID
+			FROM #TmpDataPackagesToUpdate
+			
+			Set @message = 'Updating data package ' + Cast(@firstID as varchar(12))
+		End
+		
+		-- Print @message
+	End
 
 	---------------------------------------------------
 	-- Update the EUS Person ID of the data package owner
@@ -69,7 +112,7 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	If @myRowCount > 0 And @DataPackageID <= 0
+	If @myRowCount > 0 And @DataPackageCount > 1
 	Begin
 		Set @message = 'Updated EUS_Person_ID for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
 		Exec PostLogEntry 'Normal', @message, 'UpdateDataPackageEUSInfo'
@@ -79,14 +122,14 @@ As
 	---------------------------------------------------
 	-- Find the most common EUS proposal used by the datasets associated with each data package
 	---------------------------------------------------
-
+	--
 	UPDATE #TmpDataPackagesToUpdate
 	SET Best_EUS_Proposal_ID = FilterQ.EUS_Proposal_ID
 	FROM #TmpDataPackagesToUpdate Target
 	     INNER JOIN ( SELECT RankQ.Data_Package_ID,
 	                         RankQ.EUS_Proposal_ID
 	                  FROM ( SELECT Data_Package_ID,
-	                                EUS_Proposal_ID,
+	        EUS_Proposal_ID,
 	                                ProposalCount,
 	                                Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
 	                         FROM ( SELECT DPD.Data_Package_ID,
@@ -107,11 +150,12 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+
 	---------------------------------------------------
 	-- Look for any data packages that have a null Best_EUS_Proposal_ID in #TmpDataPackagesToUpdate
 	-- yet have entries defined in T_Data_Package_EUS_Proposals
 	---------------------------------------------------
-	
+	--
 	UPDATE #TmpDataPackagesToUpdate
 	SET Best_EUS_Proposal_ID = FilterQ.Proposal_ID
 	FROM #TmpDataPackagesToUpdate Target
@@ -132,10 +176,11 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+
 	---------------------------------------------------
 	-- Update EUS Proposal ID as necessary
 	---------------------------------------------------
-	
+	--
 	UPDATE T_Data_Package
 	SET EUS_Proposal_ID = Best_EUS_Proposal_ID
 	FROM T_Data_Package DP
@@ -145,14 +190,13 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	If @myRowCount > 0 And @DataPackageID <= 0
+	If @myRowCount > 0 And @DataPackageCount > 1
 	Begin
 		Set @message = 'Updated EUS_Proposal_ID for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
 		Exec PostLogEntry 'Normal', @message, 'UpdateDataPackageEUSInfo'
 	End
 
 Done:
-
 
 	Return @myError
 

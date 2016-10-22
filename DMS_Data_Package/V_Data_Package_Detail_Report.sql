@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Data_Package_Detail_Report
+
+CREATE VIEW [dbo].[V_Data_Package_Detail_Report]
 AS
 SELECT DP.ID,
        DP.Name,
@@ -28,7 +29,9 @@ SELECT DP.ID,
        DP.Analysis_Job_Item_Count AS [Analysis Job Item Count],
        CampaignStats.Campaigns AS [Campaign Count],
        DP.Total_Item_Count AS [Total Item Count],
-       DP.Wiki_Page_Link AS [PRISM Wiki]
+       DP.Wiki_Page_Link AS [PRISM Wiki],
+	   DP.EUS_Person_ID AS [EUS User ID],
+	   DP.EUS_Proposal_ID AS [EUS Proposal ID]
 FROM dbo.T_Data_Package AS DP
      INNER JOIN dbo.V_Data_Package_Paths AS DPP
        ON DP.ID = DPP.ID
@@ -41,6 +44,7 @@ FROM dbo.T_Data_Package AS DP
                        FROM V_Data_Package_Campaigns_List_Report
                        GROUP BY ID ) AS CampaignStats
        ON DP.ID = CampaignStats.ID
+
 
 GO
 GRANT SELECT ON [dbo].[V_Data_Package_Detail_Report] TO [DMS_SP_User] AS [dbo]

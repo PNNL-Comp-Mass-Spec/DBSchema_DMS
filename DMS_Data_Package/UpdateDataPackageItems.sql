@@ -8,6 +8,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **
 **	Desc:
 **      Updates data package items in list according to command mode
+**		This procedure is used by web page "DMS Data Package Detail Report" (data_package/show)
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -22,14 +23,15 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/07/2016 mem - Switch to udfParseDelimitedList
 **			05/18/2016 mem - Add parameter @infoOnly
+**			10/19/2016 mem - Update #TPI to use an integer field for data package ID
 **
 *****************************************************/
 (
-	@packageID int,
+	@packageID int,						-- Data package ID
 	@itemType varchar(128),				-- analysis_jobs, datasets, experiments, biomaterial, or proposals
 	@itemList text,						-- Comma separated list of items
 	@comment varchar(512),
-	@mode varchar(12) = 'update',		-- 'add', 'comment', 'delete'
+	@mode varchar(12) = 'update',		-- 'add', 'update', 'comment', 'delete'
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = '',
 	@infoOnly tinyint = 0
@@ -47,44 +49,48 @@ As
 	declare @wasModified tinyint
 	set @wasModified = 0
 
-	---------------------------------------------------
-	-- Test mode for debugging
-	---------------------------------------------------
-	if @mode = 'Test'
-	begin
-		set @message = 'Test Mode'
-		return 1
-	end
 
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY 
 		---------------------------------------------------
-		DECLARE @typ VARCHAR(32)
-		select @typ = 
+		DECLARE @entityName VARCHAR(32)
+		SELECT @entityName = 
 			CASE 
-				WHEN @itemType in ('analysis_jobs', 'job', 'jobs')	THEN 'Job'
-				WHEN @itemType in ('datasets', 'dataset')			THEN 'Dataset'
-				WHEN @itemType in ('experiments', 'experiment')		THEN 'Experiment'
+				WHEN @itemType IN ('analysis_jobs', 'job', 'jobs')	THEN 'Job'
+				WHEN @itemType IN ('datasets', 'dataset')			THEN 'Dataset'
+				WHEN @itemType IN ('experiments', 'experiment')		THEN 'Experiment'
 				WHEN @itemType = 'biomaterial'						THEN 'Biomaterial'
 				WHEN @itemType = 'proposals'						THEN 'EUSProposal'
 			ELSE ''
 			END 
 		--
-		IF @typ = ''
-			RAISERROR('Item type "%s" unrecognized', 11, 14, @itemType)		
+		IF IsNull(@entityName, '') = ''
+			RAISERROR('Item type "%s" is unrecognized', 11, 14, @itemType)		
 		
+		Declare @logUsage tinyint = 0
+		
+		If @logUsage > 0
+		Begin
+			Declare @usageMessage varchar(255) = 'Updating ' + @entityName + 's for data package ' + Cast(@packageID as varchar(12))
+			Exec PostLogEntry 'Debug', @usageMessage, 'UpdateDataPackageItems'
+		End
+
 		---------------------------------------------------
+		-- Create and populate a temporary table using the XML in @paramListXML
+		---------------------------------------------------
+		--
 		CREATE TABLE #TPI(
-			Package varchar(50) null,
-			Type varchar(50) null,
-			Identifier varchar(256) null
+			DataPackageID int not null,				-- Data package ID
+			Type varchar(50) null,					-- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
+			Identifier varchar(256) null			-- Job ID, Dataset ID, Experiment Id, Cell_Culture ID, or EUSProposal ID
 		)
-		INSERT INTO #TPI(Identifier, Type, Package) 
-		SELECT Value, @typ, @packageID 
+		INSERT INTO #TPI(DataPackageID, Type, Identifier) 
+		SELECT @packageID, @entityName, Value
 		FROM dbo.udfParseDelimitedList(@itemList, ',')
 		
 		---------------------------------------------------
+		-- Apply the changes
+		---------------------------------------------------
+		--
 		exec @myError = UpdateDataPackageItemsUtility
 									@comment,
 									@mode,
@@ -94,15 +100,13 @@ As
 		if @myError <> 0
 			RAISERROR(@message, 11, 14)
 		
- 	---------------------------------------------------
- 	---------------------------------------------------
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 		
-		-- rollback any open transactions
+		-- Rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		

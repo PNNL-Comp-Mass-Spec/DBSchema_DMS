@@ -3,11 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDataPackageItemsXML
+CREATE PROCEDURE dbo.UpdateDataPackageItemsXML
 /****************************************************
 **
 **	Desc:
 **      Updates data package items in list according to command mode
+**		This procedure is used by web page "Data Package Items List Report page" (data_package_items/report)
+**
+**		Example contents of @paramListXML
+**		<item pkg="194" type="Job" id="913603"></item><item pkg="194" type="Job" id="913604"></item>
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -18,12 +22,13 @@ CREATE PROCEDURE UpdateDataPackageItemsXML
 **          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
+**			10/19/2016 mem - Update #TPI to use an integer field for data package ID
 **
 *****************************************************/
 (
 	@paramListXML varchar(max),
 	@comment varchar(512),
-	@mode varchar(12) = 'update',
+	@mode varchar(12) = 'update',			-- 'add', 'update', 'comment', 'delete'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -51,35 +56,31 @@ As
 	SET ANSI_PADDING ON
 	SET ANSI_WARNINGS ON
 
-	---------------------------------------------------
-	-- Test mode for debugging
-	---------------------------------------------------
-	if @mode = 'test'
-	begin
-		declare @s varchar(8000)
-		set @s = 'Test Monkey:'
-		select @s = @s + ', ' + Identifier from #TPI
-
-		set @message = @s
-		return 1
-	end
-
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY 
+	
+		Declare @logUsage tinyint = 0
+		
+		If @logUsage > 0
+		Begin
+			Exec PostLogEntry 'Debug', @paramListXML, 'UpdateDataPackageItemsXML'
+		End
+		
 		---------------------------------------------------
+		-- Create and populate a temporary table using the XML in @paramListXML
+		---------------------------------------------------
+		--
 		CREATE TABLE #TPI(
-			Package varchar(50) null,
-			Type varchar(50) null,
-			Identifier varchar(256) null
+			DataPackageID int not null,				-- Data package ID
+			Type varchar(50) null,					-- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
+			Identifier varchar(256) null			-- Job ID, Dataset ID, Experiment Id, Cell_Culture ID, or EUSProposal ID
 		)
 
 		declare @xml xml
 		set @xml = @paramListXML
 
-		INSERT INTO #TPI (Package, Type, Identifier)
+		INSERT INTO #TPI (DataPackageID, Type, Identifier)
 		SELECT 
-			xmlNode.value('@pkg', 'varchar(50)') [Package],
+			xmlNode.value('@pkg', 'int') [Package],
 			xmlNode.value('@type', 'varchar(50)') [Type],
 			xmlNode.value('@id', 'varchar(256)') [Identifier]
 		FROM   @xml.nodes('//item') AS R(xmlNode)

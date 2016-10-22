@@ -16,7 +16,6 @@ CREATE PROCEDURE dbo.RefreshDataPackageItemsUsingDMS
 **    Auth: grk
 **    Date: 05/21/2009
 **          06/10/2009 grk - changed size of item list to max
-**          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
 **          03/07/2012 grk - changed data type of @itemList from varchar(max) to text
 **
 *****************************************************/
