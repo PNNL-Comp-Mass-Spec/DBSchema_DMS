@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 173 ******/
+/****** RowCount: 174 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -174,4 +174,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (19
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (191,'LCMethodFilesDir','','Folder with LC method files from LCMSNet')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (192,'QCARTRScriptName','','Filename of the QC-ART script')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (193,'MzidToTsvConverterProgLoc','','Folder containing MzidToTsvConverter.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (194,'RawConverterProgLoc','','Folder containing RawConverter.exe (He and Yates. Anal Chem. 2015 Nov 17; 87 (22): 11361-11367)')
 SET IDENTITY_INSERT [T_ParamType] OFF
