@@ -35,6 +35,8 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			04/18/2013 mem - Expanded @description to varchar(512)
 **			11/02/2015 mem - Population of #TmpMatchingInstruments now considers the DatasetType criterion
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			10/27/2016 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**						   - Explicitly update Last_Affected
 **    
 *****************************************************/
 (
@@ -446,7 +448,7 @@ As
 	set @tmp = 0
 	--
 	SELECT @tmp = AD_ID
-		FROM  T_Predefined_Analysis
+	FROM  T_Predefined_Analysis
 	WHERE (AD_ID = @ID)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -495,7 +497,8 @@ As
 			AD_creator,
 			AD_nextLevel,
 			Trigger_Before_Disposition,
-			Propagation_Mode
+			Propagation_Mode,
+			Last_Affected
 		) VALUES (
 			@level, 
 			@seqVal, 
@@ -527,7 +530,8 @@ As
 			@creator,
 			@nextLevelVal,
 			IsNull(@TriggerBeforeDisposition, 0),
-			@propMode
+			@propMode,
+			GetDate()
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -538,9 +542,9 @@ As
 			RAISERROR (@msg, 11, 13)
 		end
 
-		-- return IDof newly created entry
+		-- return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Predefined_Analysis')
+		set @ID = SCOPE_IDENTITY()
 
 	end -- add mode
 
@@ -584,7 +588,8 @@ As
 			AD_creator = @creator,
 			AD_nextLevel = @nextLevelVal,
 			Trigger_Before_Disposition = IsNull(@TriggerBeforeDisposition, 0),
-			Propagation_Mode = @propMode
+			Propagation_Mode = @propMode,
+			Last_Affected = GetDate()
 		WHERE (AD_ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

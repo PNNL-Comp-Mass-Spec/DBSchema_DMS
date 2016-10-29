@@ -17,6 +17,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 ** 
 **	Auth:	mem
 **	Date:	10/25/2016 mem - Initial version
+**			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **    
 *****************************************************/
 (
@@ -24,7 +25,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 	@maxDatasetsToReset int = 0,			-- If greater than 0, then will limit the number of datasets to reset
 	@infoOnly tinyint = 0,					-- 1 to preview the datasets that would be reset
 	@message varchar(512) = '' output,		-- Status message
-	@resetCount int = 0 output				-- Number of datasets reset
+	@resetCount int = 0 output				-- Number of datasets that were reset
 )
 As
 	Set XACT_ABORT, nocount on
@@ -47,69 +48,132 @@ As
 	
 	If @maxDatasetsToReset <= 0
 		Set @maxDatasetsToReset = 1000000
-		
+
+	
 	BEGIN TRY
 
-		If @infoOnly <> 0
+		------------------------------------------------
+		-- Create a temporary table
+		------------------------------------------------
+		--
+		CREATE TABLE #Tmp_Datasets (
+			Dataset_ID int not null,
+			Dataset varchar(128) not null
+		)
+		
+		------------------------------------------------
+		-- Populate a temporary table with datasets
+		-- that have Dataset State 5=Capture Failed
+		-- and a comment containing Exception validating constant
+		------------------------------------------------
+		--
+		INSERT INTO #Tmp_Datasets( Dataset_ID,
+		                           Dataset )
+		SELECT TOP ( @maxDatasetsToReset ) Dataset_ID,
+		       Dataset_Num AS Dataset
+		FROM T_Dataset
+		WHERE DS_state_ID = 5 AND
+		      DS_comment LIKE '%Exception validating constant%' AND
+		      DATEDIFF(MINUTE, DS_Last_Affected, GETDATE()) >= @resetHoldoffHours * 60
+		ORDER BY Dataset_ID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount = 0
 		Begin
-			------------------------------------------------
-			-- Preview all datasets with a Dataset State of 5=Capture Failed
-			-- and a comment containing Exception validating constan
-			------------------------------------------------
-
-			SELECT DS.Dataset_Num AS Dataset,
-			       DS.Dataset_ID AS Dataset_ID,
-			       Inst.IN_name AS Instrument,
-			       DS.DS_state_ID AS State,
-			       DS.DS_Last_Affected AS Last_Affected,
-			       DS.DS_comment AS COMMENT
-			FROM T_Dataset DS
-			     INNER JOIN T_Instrument_Name Inst
-			       ON DS.DS_instrument_name_ID = Inst.Instrument_ID
-			WHERE DS.DS_state_ID = 5 AND
-			      DS.DS_comment LIKE '%Exception validating constant%' AND
-			      DATEDIFF(MINUTE, DS.DS_Last_Affected, GETDATE()) >= @resetHoldoffHours * 60
-			ORDER BY Inst.IN_name, DS.Dataset_Num
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+			Set @message = 'No candidate datasets were found to reset'
+			If @infoOnly <> 0
+				SELECT @message AS Message
 
 		End
 		Else
-		Begin
-			------------------------------------------------
-			-- Reset up to @maxDatasetsToReset datasets
-			-- that currently have a state of 5
-			------------------------------------------------
+		Begin -- <a>
+			If @infoOnly <> 0
+			Begin -- <b1>
+				------------------------------------------------
+				-- Preview the datasets to reset
+				------------------------------------------------
+				--
+				SELECT DS.Dataset_Num AS Dataset,
+					DS.Dataset_ID AS Dataset_ID,
+					Inst.IN_name AS Instrument,
+					DS.DS_state_ID AS State,
+					DS.DS_Last_Affected AS Last_Affected,
+					DS.DS_comment AS [Comment]
+				FROM #Tmp_Datasets Src
+					INNER JOIN T_Dataset DS
+					ON Src.Dataset_ID = DS.Dataset_ID
+					INNER JOIN T_Instrument_Name Inst
+					ON DS.DS_instrument_name_ID = Inst.Instrument_ID
+				ORDER BY Inst.IN_name, DS.Dataset_Num
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
 
-			UPDATE T_Dataset
-			SET DS_state_ID = 1,
-			    DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(DS_Comment, 
-			                   'Dataset not ready: Exception validating constant file size'), 
-			                   'Dataset not ready: Exception validating constant folder size')
-			FROM T_Dataset DS
-			     INNER JOIN ( SELECT TOP ( @maxDatasetsToReset ) Dataset_ID
-			                  FROM T_Dataset DS
-			                  WHERE DS.DS_state_ID = 5 AND
-			                        DS.DS_comment LIKE '%Exception validating constant%' AND
-			                        DATEDIFF(MINUTE, DS.DS_Last_Affected, GETDATE()) >= @resetHoldoffHours * 60 
-			                  ) LookupQ
-			       ON DS.Dataset_ID = LookupQ.Dataset_ID
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-
-			Set @resetCount = @myRowCount
-			
-			If @resetCount > 0
-			Begin
-				Set @message = 'Reset dataset state from "Capture Failed" to "New" for ' + Convert(varchar(12), @myRowCount) + ' Datasets'
-				Exec PostLogEntry 'Normal', @message, 'ResetFailedDatasetCaptureTasks'
-			End
+			End -- </b1>
 			Else
-			Begin
-				Set @message = 'No candidate datasets were found to reset'
-			End
-		End
+			Begin -- <b2>
+				------------------------------------------------
+				-- Reset the datasets
+				------------------------------------------------
+				--
+				UPDATE T_Dataset
+				SET DS_state_ID = 1,
+					DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(DS_Comment, 
+								'Dataset not ready: Exception validating constant file size'), 
+								'Dataset not ready: Exception validating constant folder size')
+				FROM #Tmp_Datasets Src
+					INNER JOIN T_Dataset DS
+					ON Src.Dataset_ID = DS.Dataset_ID
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
 
+				Set @resetCount = @myRowCount
+				
+				Set @message = 'Reset dataset state from "Capture Failed" to "New" for ' + Cast(@resetCount as varchar(9)) + 
+				               dbo.CheckPlural(@resetCount, ' Dataset', ' Datasets')
+				Exec PostLogEntry 'Normal', @message, 'ResetFailedDatasetCaptureTasks'
+				
+				------------------------------------------------
+				-- Look for log entries in DMS_Capture to auto-update
+				------------------------------------------------
+				--
+				
+				Declare @DatasetID int = -1
+				Declare @DatasetName varchar(128)				
+				Declare @continue tinyint = 1
+				
+				While @continue = 1
+				Begin -- <cc>
+				
+					SELECT TOP 1 @DatasetID = Dataset_ID,
+					             @DatasetName = Dataset
+					FROM #Tmp_Datasets
+					WHERE Dataset_ID > @DatasetID
+					ORDER BY Dataset_ID
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+
+					If @myRowCount = 0
+					Begin
+						Set @continue = 0
+					End
+					Else
+					Begin -- <d>
+						UPDATE DMS_Capture.dbo.T_Log_Entries
+						SET [Type] = 'ErrorAutoFixed'
+						WHERE ([Type] = 'error') AND
+						      (message LIKE '%' + @DatasetName + '%') AND
+						      (message LIKE '%exception%') AND
+						      (posting_time < GetDate())
+						--
+						SELECT @myError = @@error, @myRowCount = @@rowcount
+
+					End -- </d>
+				End -- </c>
+								
+			End -- </b2>
+		End -- </a>
+		
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output

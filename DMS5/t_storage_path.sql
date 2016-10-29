@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_instrument_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_code] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SP_URL] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[SP_URL]  AS (case when [sp_function]='inbox' then NULL else (('http://'+[SP_machine_name])+'/')+replace([SP_path],'\','/') end) PERSISTED,
 	[SP_created] [datetime] NULL,
 	[SPath_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
@@ -40,45 +40,6 @@ REFERENCES [dbo].[T_Instrument_Name] ([IN_name])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
-GO
-/****** Object:  Trigger [dbo].[trig_iu_Storage_Path] ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE Trigger [dbo].[trig_iu_Storage_Path] on [dbo].[T_Storage_Path]
-After Insert, Update
-/****************************************************
-**
-**	Desc: 
-**		Updates column SP_URL for new or updated storage path entries
-**
-**	Auth:	mem
-**	Date:	08/19/2010
-**    
-*****************************************************/
-AS
-	If @@RowCount = 0
-		Return
-
-	Set NoCount On
-
-	If Update(sp_function) OR
-	   Update(SP_machine_name) OR
-	   Update(SP_path) OR
-	   Update(SP_URL)
-	Begin
-		UPDATE T_Storage_Path
-		SET SP_URL = CASE
-		                 WHEN SP.sp_function = 'inbox' THEN NULL
-		                 ELSE (('http://' + SP.SP_machine_name) + '/') + replace(SP.SP_path, '\', '/')
-		             END
-		FROM T_Storage_Path SP
-		     INNER JOIN inserted
-		       ON SP.SP_path_ID = inserted.SP_path_ID
-
-	End
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_Storage_Path] ******/
 SET ANSI_NULLS ON
@@ -115,6 +76,5 @@ AS
 		       ON DS.DS_storage_path_ID = inserted.SP_path_ID
 
 	End
-
 
 GO

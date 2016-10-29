@@ -29,6 +29,7 @@ CREATE Procedure dbo.DeleteDataset
 **			02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
 **			08/31/2016 mem - Delete failed capture jobs for the dataset
+**			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **    
 *****************************************************/
 (
@@ -37,15 +38,12 @@ CREATE Procedure dbo.DeleteDataset
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
-	set @myRowCount = 0
-	
-	set @message = ''
+	Set @myError = 0
+	Set @myRowCount = 0
 	
 	declare @msg varchar(256)
 
@@ -54,9 +52,24 @@ As
 	
 	declare @result int
 
+	------------------------------------------------
+	-- Validate the inputs
+	------------------------------------------------
+
+	Set @datasetNum = IsNull(@datasetNum, '')
+	Set @message = ''
+
+	If @datasetNum = ''
+	Begin
+		set @msg = '@datasetNum parameter is blank; nothing to delete'
+		RAISERROR (@msg, 10, 1)
+		return 51139
+	End
+	
 	---------------------------------------------------
 	-- Get the datasetID and current state
 	---------------------------------------------------
+	--
 	set @datasetID = 0
 	--
 	SELECT  
@@ -66,8 +79,8 @@ As
 	WHERE (Dataset_Num = @datasetNum)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
+
+	If @myError <> 0
 	begin
 		set @msg = 'Could not get Id or state for dataset "' + @datasetNum + '"'
 		RAISERROR (@msg, 10, 1)
@@ -102,8 +115,10 @@ As
 	--
 	DELETE FROM T_Dataset_Archive 
 	WHERE AS_Dataset_ID = @datasetID
-
-	If @@error <> 0
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from archive table was unsuccessful for dataset', 10, 1)
@@ -143,8 +158,10 @@ As
 	--
 	DELETE FROM T_Dataset_Info
 	WHERE Dataset_ID = @datasetID
-
-	If @@error <> 0
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset Info table was unsuccessful for dataset', 10, 1)
@@ -157,8 +174,10 @@ As
 	--
 	DELETE FROM T_Dataset_QC
 	WHERE Dataset_ID = @datasetID
-
-	If @@error <> 0
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset QC table was unsuccessful for dataset', 10, 1)
@@ -171,8 +190,10 @@ As
 	--
 	DELETE FROM T_Dataset_ScanTypes
 	WHERE Dataset_ID = @datasetID
-
-	If @@error <> 0
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from Dataset ScanTypes table was unsuccessful for dataset', 10, 1)
@@ -185,8 +206,10 @@ As
 	--
 	DELETE FROM DMS_Capture.dbo.T_Jobs
 	WHERE Dataset = @datasetNum AND State = 5
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	If @@error <> 0
+	If @myError <> 0
 	begin
 		rollback transaction @transName
 		RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
@@ -194,16 +217,37 @@ As
 	end
 
 	---------------------------------------------------
+	-- Update log entries in the DMS_Capture database
+	---------------------------------------------------
+	--
+	UPDATE DMS_Capture.dbo.T_Log_Entries
+	SET [Type] = 'ErrorAutoFixed'
+	WHERE ([Type] = 'error') AND
+	      message LIKE '%' + @datasetNum + '%'
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myError <> 0
+	begin
+		rollback transaction @transName
+		RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
+		return 51136
+	end
+
+
+	---------------------------------------------------
 	-- Delete entry from dataset table
 	---------------------------------------------------
 	--
     DELETE FROM T_Dataset
     WHERE Dataset_ID = @datasetID
-
-	if @@rowcount <> 1
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @myRowCount <> 1
 	begin
 		rollback transaction @transName
-		RAISERROR ('Delete from dataset table was unsuccessful for dataset',
+		RAISERROR ('Delete from dataset table was unsuccessful for dataset (RowCount != 1)',
 			10, 1)
 		return 51137
 	end
