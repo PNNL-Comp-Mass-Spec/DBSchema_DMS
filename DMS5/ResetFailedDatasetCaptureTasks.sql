@@ -18,6 +18,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 **	Auth:	mem
 **	Date:	10/25/2016 mem - Initial version
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
+**			11/02/2016 mem - Check for Folder size changed and File size changed
 **    
 *****************************************************/
 (
@@ -73,7 +74,10 @@ As
 		       Dataset_Num AS Dataset
 		FROM T_Dataset
 		WHERE DS_state_ID = 5 AND
-		      DS_comment LIKE '%Exception validating constant%' AND
+		      (DS_comment LIKE '%Exception validating constant%' OR
+		       DS_comment LIKE '%File size changed%' OR
+		       DS_comment LIKE '%Folder size changed%')
+		      AND
 		      DATEDIFF(MINUTE, DS_Last_Affected, GETDATE()) >= @resetHoldoffHours * 60
 		ORDER BY Dataset_ID
 		--
@@ -118,9 +122,12 @@ As
 				--
 				UPDATE T_Dataset
 				SET DS_state_ID = 1,
-					DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(DS_Comment, 
+					DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
+					            DS_Comment, 
 								'Dataset not ready: Exception validating constant file size'), 
-								'Dataset not ready: Exception validating constant folder size')
+								'Dataset not ready: Exception validating constant folder size'), 
+								'Dataset not ready: Folder size changed'), 
+								'Dataset not ready: File size changed')
 				FROM #Tmp_Datasets Src
 					INNER JOIN T_Dataset DS
 					ON Src.Dataset_ID = DS.Dataset_ID
