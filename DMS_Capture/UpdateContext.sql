@@ -224,7 +224,7 @@ AS
 			                    @LoggingEnabled=@LoggingEnabled, 
 			                    @LoopingUpdateInterval=@LoopingUpdateInterval,
 			                    @infoOnly=@infoOnly,
-			                    @DebugMode=@DebugMode
+			   @DebugMode=@DebugMode
 
 	End Try
 	Begin Catch
@@ -282,7 +282,7 @@ AS
 		
 		Set @CurrentLocation = 'Call UpdateJobState'
 		if @result <> 0
-			exec UpdateJobState @bypassDMS, @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
+			exec UpdateJobState @bypassDMS, @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval, @infoOnly=@infoOnly
 	End Try
 	Begin Catch
 		-- Error caught; log the error, then continue at the next section

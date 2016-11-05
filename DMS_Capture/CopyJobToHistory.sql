@@ -18,6 +18,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			03/12/2012 mem - Now copying column Tool_Version_ID
 **			03/10/2015 mem - Added T_Job_Step_Dependencies_History
 **			03/22/2016 mem - Update @message when cannot copy a job
+**			11/04/2016 mem - Return a more detailed error message in @message
 **    
 *****************************************************/
 (
@@ -54,7 +55,7 @@ As
  	--
   	If not @JobState in (3,5)
   	Begin
-  		Set @message = 'Job state must be 3 or 5 to be copied to T_Jobs_History'
+  		Set @message = 'Job state must be 3 or 5 to be copied to T_Jobs_History (this is not an error)'
 		goto Done
 	End
 	
@@ -115,7 +116,7 @@ As
 	if @myError <> 0
 	begin
 		rollback transaction @transName
-		set @message = 'Error '
+		set @message = 'Error inserting into T_Jobs_History'
 		goto Done
 	end
 
@@ -165,7 +166,7 @@ As
 	if @myError <> 0
 	begin
 		rollback transaction @transName
-		set @message = 'Error '
+		set @message = 'Error inserting into T_Job_Steps_History'
 		goto Done
 	end
 
@@ -192,7 +193,7 @@ As
 	if @myError <> 0
 	begin
 		rollback transaction @transName
-		set @message = 'Error '
+		set @message = 'Error inserting into T_Job_Parameters_History'
 		goto Done
 	end
 
@@ -215,7 +216,7 @@ As
 	if @myError <> 0
 	begin
 		rollback transaction @transName
-		set @message = 'Error '
+		set @message = 'Error deleting extra steps from T_Job_Step_Dependencies_History'
 		goto Done
 	end
 		
@@ -250,7 +251,7 @@ As
 	if @myError <> 0
 	begin
 		rollback transaction @transName
-		set @message = 'Error '
+		set @message = 'Error inserting into T_Job_Step_Dependencies_History'
 		goto Done
 	end
 	
