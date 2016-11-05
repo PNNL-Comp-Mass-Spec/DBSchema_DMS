@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 **	Auth:	mem
 **	Date:	10/18/2016 mem - Initial version
 **			10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
+**			11/04/2016 mem - Exclude proposals that start with EPR
 **    
 *****************************************************/
 (
@@ -121,6 +122,7 @@ As
 
 	---------------------------------------------------
 	-- Find the most common EUS proposal used by the datasets associated with each data package
+	-- Exclude proposals that start with EPR since those are not official EUS proposals
 	---------------------------------------------------
 	--
 	UPDATE #TmpDataPackagesToUpdate
@@ -129,7 +131,7 @@ As
 	     INNER JOIN ( SELECT RankQ.Data_Package_ID,
 	                         RankQ.EUS_Proposal_ID
 	                  FROM ( SELECT Data_Package_ID,
-	        EUS_Proposal_ID,
+	                                EUS_Proposal_ID,
 	                                ProposalCount,
 	                                Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
 	                         FROM ( SELECT DPD.Data_Package_ID,
@@ -140,7 +142,7 @@ As
 	                                       ON DPD.Data_Package_ID = Src.ID
 	                                     INNER JOIN S_V_Dataset_List_Report_2 DR
 	                                       ON DPD.Dataset_ID = DR.ID
-	                                WHERE NOT DR.[EMSL Proposal] IS NULL
+	                                WHERE NOT DR.[EMSL Proposal] IS NULL AND NOT DR.[EMSL Proposal] LIKE 'EPR%'
 	                                GROUP BY DPD.Data_Package_ID, DR.[EMSL Proposal] 
 	                              ) SourceQ 
 	                       ) RankQ
