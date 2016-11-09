@@ -18,6 +18,7 @@ CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
 **	Auth: 	grk
 **	Date: 	02/21/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			11/07/2016 mem - Add optional logging via PostLogEntry
 **    
 *****************************************************/
 (
@@ -30,19 +31,41 @@ As
 	SET NOCOUNT ON 
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
 
-	SET @message = ''
+	Set @message = ''
 
+	Declare @debugEnabled tinyint = 0
+	
+	If @debugEnabled > 0
+	Begin
+		Declare @logMessage varchar(4096)
+		
+		Set @logMessage = Cast(@blockingList as varchar(4000))
+		If IsNull(@logMessage, '') = ''
+			Set @logMessage = '@blockingList is empty'
+		Else
+			Set @logMessage = '@blockingList: ' + @logMessage
+		
+		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+			
+		Set @logMessage = Cast(@factorList as varchar(4000))
+		If IsNull(@logMessage, '') = ''
+			Set @logMessage = '@factorList is empty'
+		Else
+			Set @logMessage = '@factorList: ' + @logMessage
+		
+		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+	End
+		
 	-----------------------------------------------------------
-	-- 
+	-- Update the blocking and run order
 	-----------------------------------------------------------
 	--
 	IF DATALENGTH(@blockingList) > 0
@@ -60,7 +83,7 @@ As
 
 
 	-----------------------------------------------------------
-	-- 
+	-- Update the factors
 	-----------------------------------------------------------
 	--
 

@@ -4,12 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateLCCartBlockAssignments]
+CREATE Procedure dbo.UpdateLCCartBlockAssignments
 /****************************************************
 **
 **	Desc: 
-**	Set LC cart and col assignments for 
-**  requested run blocks
+**	Set LC cart and col assignments for requested run blocks
+**
+**	This procedure was last used in 2012
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -18,6 +19,7 @@ CREATE Procedure [dbo].[UpdateLCCartBlockAssignments]
 **	Auth: 	grk
 **	Date: 	02/15/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			11/07/2016 mem - Add optional logging via PostLogEntry
 **    
 *****************************************************/
 (
@@ -40,6 +42,9 @@ As
 
 	SET @message = ''
 
+	-- Uncomment to log the XML for debugging purposes
+	-- exec PostLogEntry 'Debug', @cartAssignmentList, 'UpdateLCCartBlockAssignments'
+	
 	-----------------------------------------------------------
 	-- create and populate temp table with block assignments
 	-----------------------------------------------------------

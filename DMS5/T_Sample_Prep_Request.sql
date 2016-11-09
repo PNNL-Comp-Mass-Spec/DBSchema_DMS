@@ -147,7 +147,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
+
+CREATE Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Delete
 /****************************************************
 **
@@ -156,6 +157,7 @@ For Delete
 **
 **	Auth:	mem
 **	Date:	05/16/2008
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 AS
@@ -168,11 +170,12 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	deleted.ID, 
-		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ) + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
+		   	dbo.GetUserLoginWithoutDomain() + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
 			deleted.state,
 			0 AS End_State_ID
 	FROM deleted
 	ORDER BY deleted.ID
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
@@ -180,7 +183,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
+
+CREATE Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Insert
 /****************************************************
 **
@@ -189,6 +193,7 @@ For Insert
 **
 **	Auth:	mem
 **	Date:	05/16/2008
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 AS
@@ -203,11 +208,12 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ),
+		   	dbo.GetUserLoginWithoutDomain(),
 			0,
 			inserted.state
 	FROM inserted
 	ORDER BY inserted.ID
+
 
 GO
 /****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
@@ -215,6 +221,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
 /****************************************************
@@ -226,6 +233,7 @@ For Update
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			05/16/2008 mem - Fixed bug that was inserting the Beginning_State_ID and End_State_ID values backward
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 AS
@@ -238,10 +246,11 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	REPLACE (SUSER_SNAME() , 'pnl\' , '' ),
+		   	dbo.GetUserLoginWithoutDomain(),
 			deleted.state,
 			inserted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
+
 
 GO

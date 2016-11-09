@@ -61,10 +61,11 @@ CREATE Procedure UpdateRequestedRunFactors
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			10/06/2016 mem - Populate column Last_Updated in T_Factor
 **						   - Expand the warning message for unrecognized @IDType
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 (
-	@factorList text,
+	@factorList text,					-- XML (see above)
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = '',
 	@infoOnly tinyint = 0				-- Set to 1 to preview the changes that would be made
@@ -91,9 +92,12 @@ As
 	SET @message = ''
 
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		SET @callingUser = dbo.GetUserLoginWithoutDomain()
 	
 	Set @infoOnly = IsNull(@infoOnly, 0)
+
+	-- Uncomment to log the XML for debugging purposes
+	-- exec PostLogEntry 'Debug', Cast(@factorList As varchar(4096)), 'UpdateRequestedRunFactors'
 		
 	-----------------------------------------------------------
 	-- temp table to hold factors

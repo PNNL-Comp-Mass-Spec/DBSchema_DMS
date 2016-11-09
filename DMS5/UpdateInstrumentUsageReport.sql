@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **			04/03/2013 grk - Made Usage editable
 **			04/04/2013 grk - Clearing Usage on reload
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -68,7 +69,7 @@ As
 	---------------------------------------------------
 	
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		SET @callingUser = dbo.GetUserLoginWithoutDomain()
 		
 	-----------------------------------------------------------
 	-- Copy @factorList text variable into the XML variable

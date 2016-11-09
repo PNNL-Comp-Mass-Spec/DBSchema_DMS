@@ -4,12 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
+CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 /****************************************************
 **
 **	Desc: 
-**	Change run blocking parameters 
-**	given by lists
+**	Change run blocking parameters given by lists
+**
+**	Example XML for @blockingList
+**		<r i="481295" t="Run_Order" v="1" />
+**		<r i="481295" t="Block" v="2" />
+**		<r i="481296" t="Run_Order" v="1" />
+**		<r i="481296" t="Block" v="1" />
+**		<r i="481297" t="Run_Order" v="2" />
+**		<r i="481297" t="Block" v="1" />
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -21,10 +28,12 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			12/15/2011 mem - Now updating @callingUser to SUSER_SNAME() if empty
 **			03/28/2013 grk - added handling for cart, instrument
+**			11/07/2016 mem - Add optional logging via PostLogEntry
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 (
-	@blockingList text,
+	@blockingList text,			-- XML (see above)
 	@mode varchar(32),			-- 'update'
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
@@ -33,9 +42,8 @@ As
 	SET NOCOUNT ON 
 
 	DECLARE @myError INT
-	SET @myError = 0
-
 	DECLARE @myRowCount INT
+	SET @myError = 0
 	SET @myRowCount = 0
 
 	DECLARE @xml AS XML
@@ -49,10 +57,13 @@ As
 	SET @message = ''
 
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		SET @callingUser = dbo.GetUserLoginWithoutDomain()
 		
 	DECLARE @batchID int = 0
 
+	-- Uncomment to log the XML for debugging purposes
+	-- exec PostLogEntry 'Debug', Cast(@blockingList as varchar(4096)), 'UpdateRequestedRunBatchParameters'
+	
 	-----------------------------------------------------------
 	-----------------------------------------------------------
 	BEGIN TRY 
@@ -169,11 +180,7 @@ As
 		END
 
 		-----------------------------------------------------------
-		--
-		-----------------------------------------------------------
-
-		-----------------------------------------------------------
-		-- actually do update
+		-- Actually do the update
 		-----------------------------------------------------------
 		--
 		IF @mode = 'update'
@@ -265,8 +272,6 @@ As
 			ROLLBACK TRANSACTION;
 	END CATCH
 	RETURN @myError
-                
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunBatchParameters] TO [DMS2_SP_User] AS [dbo]

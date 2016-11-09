@@ -27,6 +27,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocationsWork
 **	Auth: 	grk
 **	Date:	03/30/2012 mem - Factored out of UpdateInstrumentAllocations
 **			03/31/2012 mem - Updated Merge statement to not enter new rows if the allocation hours are 0 and comment is empty
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ As
 	SET @message = ''
 
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		SET @callingUser = dbo.GetUserLoginWithoutDomain()
 	
 	Set @infoOnly = IsNull(@infoOnly, 0)
 		

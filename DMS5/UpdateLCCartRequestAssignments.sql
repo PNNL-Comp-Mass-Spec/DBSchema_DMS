@@ -4,11 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateLCCartRequestAssignments]
+CREATE Procedure dbo.UpdateLCCartRequestAssignments
 /****************************************************
 **
 **	Desc: 
 **	Set LC cart and col assignments for requested runs
+**
+**	Example XML for @cartAssignmentList
+**		<r rq="543451" ct="Andromeda" co="1" />
+**		<r rq="543450" ct="Andromeda" co="2" />
+**		<r rq="543449" ct="Andromeda" co="1" />
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -17,20 +22,20 @@ CREATE Procedure [dbo].[UpdateLCCartRequestAssignments]
 **	Auth: 	grk
 **	Date: 	03/10/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			11/07/2016 mem - Add optional logging via PostLogEntry
 **    
 *****************************************************/
 (
-	@cartAssignmentList text,
-	@mode varchar(32), -- 
+	@cartAssignmentList text,		-- XML (see above)
+	@mode varchar(32),				-- Unused
 	@message varchar(512) output
 )
 As
 	SET NOCOUNT ON 
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	DECLARE @xml AS xml
@@ -39,6 +44,9 @@ As
 	SET @xml = @cartAssignmentList
 
 	SET @message = ''
+
+	-- Uncomment to log the XML for debugging purposes
+	-- exec PostLogEntry 'Debug', Cast(@cartAssignmentList As varchar(4096)), 'UpdateLCCartRequestAssignments'
 
 	-----------------------------------------------------------
 	-- create and populate temp table with block assignments

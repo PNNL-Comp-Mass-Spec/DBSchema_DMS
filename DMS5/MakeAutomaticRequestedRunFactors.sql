@@ -13,21 +13,23 @@ CREATE PROCEDURE MakeAutomaticRequestedRunFactors
 **
 **	Parameters: 
 **
-**	Auth: grk
-**	03/23/2010 grk - initial release
+**	Auth:	grk
+**	Date:	03/23/2010 grk - initial release
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **    
 *****************************************************/
+(
 	@batchID INT,
 	@mode VARCHAR(32) = 'all', -- 'all', 'actual_run_order'
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
+)
 As
 	SET NOCOUNT ON 
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	SET @message = ''
@@ -83,7 +85,7 @@ As
 	--
 	IF @callingUser = ''
 	BEGIN 
-		SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+		SET @callingUser = dbo.GetUserLoginWithoutDomain()
 	END
 	--
 	EXEC @myError = UpdateRequestedRunFactors

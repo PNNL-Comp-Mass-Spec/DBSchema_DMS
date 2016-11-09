@@ -54,7 +54,7 @@ As
 
 
 		If IsNull(@callingUser, '') = ''
-			SET @callingUser = REPLACE(SUSER_SNAME(), 'PNL\', '')
+			SET @callingUser = dbo.GetUserLoginWithoutDomain()
 
 		Set @infoOnly = IsNull(@infoOnly, 0)
 
