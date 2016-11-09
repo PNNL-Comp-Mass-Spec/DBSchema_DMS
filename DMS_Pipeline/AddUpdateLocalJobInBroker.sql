@@ -30,6 +30,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/08/2016 mem - Include job number in errors raised by RAISERROR
 **			06/16/2016 mem - Add call to AddUpdateTransferPathsInParamsUsingDataPkg
+**			11/08/2016 mem - Auto-define @ownerPRN if it is empty
 **
 *****************************************************/
 (
@@ -106,6 +107,12 @@ AS
 		Begin
 			Set @message = 'Error message for job ' + Cast(@job as varchar(9)) + ' from VerifyJobParameters: ' + @message
 			RAISERROR(@message, 11, @myError)
+		End
+		
+		If IsNull(@ownerPRN, '') = ''
+		Begin
+			-- Auto-define the owner
+			Set @ownerPRN = dbo.GetUserLoginWithoutDomain()
 		End
 		
 		---------------------------------------------------
