@@ -31,6 +31,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			04/08/2016 mem - Include job number in errors raised by RAISERROR
 **			06/16/2016 mem - Add call to AddUpdateTransferPathsInParamsUsingDataPkg
 **			11/08/2016 mem - Auto-define @ownerPRN if it is empty
+**			11/10/2016 mem - Pass @callingUser to GetUserLoginWithoutDomain
 **
 *****************************************************/
 (
@@ -112,7 +113,7 @@ AS
 		If IsNull(@ownerPRN, '') = ''
 		Begin
 			-- Auto-define the owner
-			Set @ownerPRN = dbo.GetUserLoginWithoutDomain()
+			Set @ownerPRN = dbo.GetUserLoginWithoutDomain(@callingUser)
 		End
 		
 		---------------------------------------------------
