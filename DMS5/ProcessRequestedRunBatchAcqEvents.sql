@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.ProcessRequestedRunBatchAcqEvents
 **	Auth:	grk
 **	Dte:	03/29/2010 grk - Initial release
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 (
@@ -27,7 +28,7 @@ As
 	declare @myError int
 	set @myError = 0
 
-	DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain()
+	DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain('')
 
 	DECLARE @message varchar(512)
 	SET @message = ''

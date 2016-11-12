@@ -62,6 +62,7 @@ CREATE Procedure UpdateRequestedRunFactors
 **			10/06/2016 mem - Populate column Last_Updated in T_Factor
 **						   - Expand the warning message for unrecognized @IDType
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 (
@@ -92,7 +93,7 @@ As
 	SET @message = ''
 
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = dbo.GetUserLoginWithoutDomain()
+		SET @callingUser = dbo.GetUserLoginWithoutDomain('')
 	
 	Set @infoOnly = IsNull(@infoOnly, 0)
 

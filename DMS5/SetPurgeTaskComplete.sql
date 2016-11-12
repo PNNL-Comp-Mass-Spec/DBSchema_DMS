@@ -34,6 +34,7 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **			07/05/2016 mem - Added support for @completionCode = 8 (Aurora is offline)
 **						   - Archive path is now aurora.emsl.pnl.gov
 **			09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
+**			11/09/2016 mem - Include the storage server name when calling PostLogEntry
 **    
 *****************************************************/
 (
@@ -45,26 +46,30 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
 	declare @datasetID int
+	declare @storageServerName varchar(64)
 	declare @datasetState int
 	declare @completionState int
  	declare @result int
 	declare @instrumentClass varchar(32)
 		
 	---------------------------------------------------
-	-- resolve dataset into ID
+	-- Resolve dataset into ID
+	-- Also determine the storage server name
 	---------------------------------------------------
 	--
-	SELECT @datasetID = T_Dataset.Dataset_ID
-	FROM T_Dataset
-	WHERE (Dataset_Num = @datasetNum)
+	SELECT @datasetID = DS.Dataset_ID,
+	       @storageServerName = SPath.SP_machine_name
+	FROM T_Dataset DS
+	     LEFT OUTER JOIN T_Storage_Path SPath
+	       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+	WHERE (DS.Dataset_Num = @datasetNum)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -174,11 +179,16 @@ Code 6 (Purged all data except QC folder)
 		goto SetStates
 	end
 
+	If IsNull(@storageServerName, '') = ''
+		Set @storageServerName = '??'
+
+	Declare @postedBy varchar(128) = 'SetPurgeTaskComplete: ' + @storageServerName
+	
 	-- (Drive Missing)
 	if @completionCode = 4
 	begin
 		set @message = 'Drive not found for dataset ' + @datasetNum
-		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		Exec PostLogEntry 'Error', @message, @postedBy
 		set @message = ''
 		
 		set @completionState = 3    -- complete
@@ -203,7 +213,7 @@ Code 6 (Purged all data except QC folder)
 	if @completionCode = 7
 	begin
 		set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetNum
-		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		Exec PostLogEntry 'Error', @message, @postedBy
 		set @message = ''
 		
 		set @completionState = 3    -- complete
@@ -214,7 +224,7 @@ Code 6 (Purged all data except QC folder)
 	if @completionCode = 8
 	begin
 		set @message = 'Archive is offline; cannot purge dataset ' + @datasetNum
-		Exec PostLogEntry 'Error', @message, 'SetPurgeTaskComplete'
+		Exec PostLogEntry 'Error', @message, @postedBy
 		set @message = ''
 		
 		set @completionState = 3    -- complete
@@ -237,7 +247,7 @@ SetStates:
 		                             ELSE AS_purge_holdoff_date 
 		                        END, 
 		AS_StageMD5_Required = CASE WHEN @completionCode = 3         THEN 1
-		                            ELSE AS_StageMD5_Required
+		        ELSE AS_StageMD5_Required
 		  END
 	WHERE  (AS_Dataset_ID = @datasetID)
 	--

@@ -24,6 +24,8 @@ CREATE Procedure dbo.UpdateMaterialLocations
 **			06/03/2013 grk - added action attribute to XML
 **			06/06/2013 grk - added code to update status
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 (
@@ -54,7 +56,7 @@ As
 
 
 		If IsNull(@callingUser, '') = ''
-			SET @callingUser = dbo.GetUserLoginWithoutDomain()
+			SET @callingUser = dbo.GetUserLoginWithoutDomain('')
 
 		Set @infoOnly = IsNull(@infoOnly, 0)
 

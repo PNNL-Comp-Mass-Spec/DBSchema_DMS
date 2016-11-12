@@ -26,6 +26,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			03/12/2014 grk - Allowed null [EMSL_Inst_ID] in #STAGING (OMCDA-1058)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -55,7 +56,7 @@ AS
 	BEGIN TRY 
 		DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
 		
-		DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain()
+		DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain('')
 
 		---------------------------------------------------
 		-- figure out our time context

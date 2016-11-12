@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 **			03/28/2013 grk - added handling for cart, instrument
 **			11/07/2016 mem - Add optional logging via PostLogEntry
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 (
@@ -57,7 +58,7 @@ As
 	SET @message = ''
 
 	If IsNull(@callingUser, '') = ''
-		SET @callingUser = dbo.GetUserLoginWithoutDomain()
+		SET @callingUser = dbo.GetUserLoginWithoutDomain('')
 		
 	DECLARE @batchID int = 0
 

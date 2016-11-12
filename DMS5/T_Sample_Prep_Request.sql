@@ -158,6 +158,7 @@ For Delete
 **	Auth:	mem
 **	Date:	05/16/2008
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 AS
@@ -170,11 +171,12 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	deleted.ID, 
-		   	dbo.GetUserLoginWithoutDomain() + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
+		   	dbo.GetUserLoginWithoutDomain('') + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
 			deleted.state,
 			0 AS End_State_ID
 	FROM deleted
 	ORDER BY deleted.ID
+
 
 
 GO
@@ -194,6 +196,7 @@ For Insert
 **	Auth:	mem
 **	Date:	05/16/2008
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 AS
@@ -208,11 +211,12 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	dbo.GetUserLoginWithoutDomain(),
+		   	dbo.GetUserLoginWithoutDomain(''),
 			0,
 			inserted.state
 	FROM inserted
 	ORDER BY inserted.ID
+
 
 
 GO
@@ -234,6 +238,7 @@ For Update
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			05/16/2008 mem - Fixed bug that was inserting the Beginning_State_ID and End_State_ID values backward
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 AS
@@ -246,11 +251,12 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	dbo.GetUserLoginWithoutDomain(),
+		   	dbo.GetUserLoginWithoutDomain(''),
 			deleted.state,
 			inserted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
+
 
 
 GO

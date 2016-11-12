@@ -16,6 +16,7 @@ CREATE PROCEDURE MakeAutomaticRequestedRunFactors
 **	Auth:	grk
 **	Date:	03/23/2010 grk - initial release
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **    
 *****************************************************/
 (
@@ -85,7 +86,7 @@ As
 	--
 	IF @callingUser = ''
 	BEGIN 
-		SET @callingUser = dbo.GetUserLoginWithoutDomain()
+		SET @callingUser = dbo.GetUserLoginWithoutDomain('')
 	END
 	--
 	EXEC @myError = UpdateRequestedRunFactors
