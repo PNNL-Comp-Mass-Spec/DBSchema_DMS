@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDataPackageItemsUtility
+
+CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 /****************************************************
 **
 **	Desc:
@@ -14,7 +15,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageItemsUtility
 **		CREATE TABLE #TPI(
 **				DataPackageID int not null,			-- Data package ID
 **				Type varchar(50) null,				-- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
-**				Identifier varchar(256) null		-- Job ID, Dataset ID, Experiment Id, Cell_Culture ID, or EUSProposal ID
+**				Identifier varchar(256) null		-- Job ID, Dataset ID, Experiment ID, Cell_Culture ID, or EUSProposal ID
 **			)
 **
 **	Return values: 0: success, otherwise, error code
@@ -38,11 +39,13 @@ CREATE PROCEDURE dbo.UpdateDataPackageItemsUtility
 **			10/19/2016 mem - Update #TPI to use an integer field for data package ID
 **						   - Call UpdateDataPackageEUSInfo
 **						   - Prevent addition of Biomaterial '(none)'
+**			11/14/2016 mem - Add parameter @removeParents
 **
 *****************************************************/
 (
 	@comment varchar(512),
 	@mode varchar(12) = 'update',			-- 'add', 'update', 'comment', 'delete'
+	@removeParents tinyint = 0,				-- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = '',
 	@infoOnly tinyint = 0
@@ -59,16 +62,24 @@ As
 	
 	Declare @itemCountChanged int = 0
 	Declare @actionMsg varchar(128)
-	
+
 	CREATE TABLE #Tmp_DatasetIDsToAdd (
 	    DataPackageID int NOT NULL,
 	    DatasetID int NOT NULL
 	)
 
+	CREATE TABLE #Tmp_JobsToAddOrDelete (
+		DataPackageID int not null,			-- Data package ID
+		Job int not null
+	)
+	
+	CREATE INDEX #IX_Tmp_JobsToAddOrDelete ON #Tmp_JobsToAddOrDelete (Job, DataPackageID)
+
 	BEGIN TRY 
 
-		-- If working with analysis jobs, remove any entries from #TPI that are not numeric
-		If Exists ( SELECT * FROM #TPI WHERE TYPE = 'Job' )
+		-- If working with analysis jobs, populate #Tmp_JobsToAddOrDelete with all numeric job entries
+		--
+		If Exists ( SELECT * FROM #TPI WHERE Type = 'Job' )
 		Begin
 		    DELETE #TPI
 		    WHERE IsNull(Identifier, '') = '' OR Try_Convert(int, Identifier) Is Null
@@ -79,6 +90,16 @@ As
 		    Begin
 				Print 'Warning: deleted ' + Cast(@myRowCount as varchar(12)) + ' job(s) that were not numeric'
 		    End
+		    
+		    INSERT INTO #Tmp_JobsToAddOrDelete( DataPackageID, Job )
+			SELECT DataPackageID,
+			       Job
+			FROM ( SELECT DataPackageID,
+			              Try_Convert(int, Identifier) as Job
+			       FROM #TPI
+			       WHERE [Type] = 'Job' AND			             
+			             Not DataPackageID Is Null) SourceQ
+			WHERE Not Job Is Null
 		End
 		
 
@@ -114,24 +135,23 @@ As
 				       ON Source.DatasetID = DL.ID
 
 			End
-			 
+
 			-- Add datasets to list that are parents of jobs in the list
 			-- (and are not already in the list)
  			INSERT INTO #TPI (DataPackageID, Type, Identifier)
 			SELECT DISTINCT
-				TP.DataPackageID, 
+				J.DataPackageID, 
 				'Dataset', 
 				TX.Dataset
 			FROM   
-				#TPI TP
+				#Tmp_JobsToAddOrDelete J
 				INNER JOIN S_V_Analysis_Job_List_Report_2 TX
-				ON TP.Identifier = TX.Job 
+				  ON J.Job = TX.Job 
 			WHERE
-				TP.Type = 'Job' 
-				AND NOT EXISTS (
+				NOT EXISTS (
 					SELECT * 
 					FROM #TPI 
-					WHERE #TPI.Type = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.DataPackageID = TP.DataPackageID
+					WHERE #TPI.Type = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.DataPackageID = J.DataPackageID
 				)
 
 			-- Add experiments to list that are parents of datasets in the list
@@ -172,7 +192,6 @@ As
 					WHERE #TPI.Type = 'EUSProposal' AND #TPI.Identifier = TX.[EMSL Proposal] AND #TPI.DataPackageID = TP.DataPackageID
 				)
 
-
 			-- Add biomaterial items to list that are associated with experiments in the list
 			-- (and are not already in the list)
  			INSERT INTO #TPI (DataPackageID, Type, Identifier)
@@ -192,8 +211,156 @@ As
 					FROM #TPI 
 					WHERE #TPI.Type = 'Biomaterial' AND #TPI.Identifier = TX.Cell_Culture_Name AND #TPI.DataPackageID = TP.DataPackageID
 				)
+				
 		END -- </add_associated_items>
 
+
+		If @mode = 'Delete' And @removeParents > 0
+		Begin
+			-- Find Datasets, Experiments, Biomaterial, and Cell Culture items that we can safely delete
+			-- after deleting the jobs and/or datasets in #TPI
+
+			-- Find parent datasets that will have no jobs remaining once we remove the jobs in #TPI
+			--
+			INSERT INTO #TPI (DataPackageID, Type, Identifier)
+			SELECT ToDelete.DataPackageID, ToDelete.ItemType, ToDelete.Dataset
+			FROM (
+			       -- Datasets associated with jobs that we are removing
+			       SELECT DISTINCT J.DataPackageID,
+			                       'Dataset' AS ItemType,
+			                       TX.Dataset AS Dataset
+			       FROM #Tmp_JobsToAddOrDelete J
+			            INNER JOIN S_V_Analysis_Job_List_Report_2 TX
+			              ON J.Job = TX.Job
+			     ) ToDelete
+			     LEFT OUTER JOIN (
+				        -- Datasets associated with the data package; skipping the jobs that we're deleting
+			            SELECT Datasets.Dataset,
+			                   Datasets.Data_Package_ID
+			            FROM T_Data_Package_Analysis_Jobs Jobs
+			                 INNER JOIN T_Data_Package_Datasets Datasets
+			                   ON Jobs.Data_Package_ID = Datasets.Data_Package_ID AND
+			                      Jobs.Dataset = Datasets.Dataset
+			                 LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+			                   ON Jobs.Data_Package_ID = ItemsQ.DataPackageID AND 
+			                       Jobs.Job = ItemsQ.Job
+			            WHERE Jobs.Data_Package_ID IN (SELECT DISTINCT DataPackageID FROM #Tmp_JobsToAddOrDelete) AND
+			                  ItemsQ.Job IS NULL 
+			     ) AS ToKeep
+			       ON ToDelete.DataPackageID = ToKeep.Data_Package_ID AND
+			          ToDelete.Dataset = ToKeep.Dataset
+			WHERE ToKeep.Data_Package_ID IS NULL
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+			-- Find parent experiments that will have no jobs or datasets remaining once we remove the jobs in #TPI
+			--
+			INSERT INTO #TPI (DataPackageID, Type, Identifier)
+			SELECT ToDelete.DataPackageID, ToDelete.ItemType, ToDelete.Experiment
+			FROM (
+			       -- Experiments associated with jobs or datasets that we are removing
+			       SELECT DISTINCT J.DataPackageID,
+			                       'Experiment' AS ItemType,
+			                       TX.Experiment AS Experiment
+			       FROM #Tmp_JobsToAddOrDelete J
+			            INNER JOIN S_V_Analysis_Job_List_Report_2 TX
+			              ON J.Job = TX.Job
+			       UNION
+			       SELECT DISTINCT TP.DataPackageID,
+			                       'Experiment',
+			                       TX.Experiment
+			       FROM #TPI TP
+			            INNER JOIN S_V_Dataset_List_Report_2 TX
+			              ON TP.Identifier = TX.Dataset
+			       WHERE TP.TYPE = 'Dataset'							       
+			     ) ToDelete
+			     LEFT OUTER JOIN (
+				        -- Experiments associated with the data package; skipping any jobs that we're deleting
+				        SELECT Experiments.Experiment,
+				               Datasets.Data_Package_ID
+				        FROM T_Data_Package_Analysis_Jobs Jobs
+				             INNER JOIN T_Data_Package_Datasets Datasets
+				               ON Jobs.Data_Package_ID = Datasets.Data_Package_ID AND
+				                  Jobs.Dataset = Datasets.Dataset
+				             INNER JOIN T_Data_Package_Experiments Experiments
+				               ON Datasets.Experiment = Experiments.Experiment AND
+				                  Datasets.Data_Package_ID = Experiments.Data_Package_ID
+				             LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+			                   ON Jobs.Data_Package_ID = ItemsQ.DataPackageID AND 
+			                       Jobs.Job = ItemsQ.Job
+			            WHERE Jobs.Data_Package_ID IN (SELECT DISTINCT DataPackageID FROM #Tmp_JobsToAddOrDelete) AND
+			                  ItemsQ.Job IS NULL 
+			     ) AS ToKeep1
+			       ON ToDelete.DataPackageID = ToKeep1.Data_Package_ID AND
+			          ToDelete.Experiment = ToKeep1.Experiment
+			     LEFT OUTER JOIN (
+				        -- Experiments associated with the data package; skipping any datasets that we're deleting
+				        SELECT Experiments.Experiment,
+				               Datasets.Data_Package_ID
+				        FROM T_Data_Package_Datasets Datasets
+				             INNER JOIN T_Data_Package_Experiments Experiments
+				               ON Datasets.Experiment = Experiments.Experiment AND
+				                  Datasets.Data_Package_ID = Experiments.Data_Package_ID
+				             LEFT OUTER JOIN #TPI ItemsQ
+			                   ON Datasets.Data_Package_ID = ItemsQ.DataPackageID AND 
+			                       ItemsQ.Type = 'Dataset' AND
+			                       ItemsQ.Identifier = Datasets.Dataset
+			            WHERE Datasets.Data_Package_ID IN (SELECT DISTINCT DataPackageID FROM #TPI) AND
+			                  ItemsQ.Identifier IS NULL 
+			     ) AS ToKeep2
+			       ON ToDelete.DataPackageID = ToKeep2.Data_Package_ID AND
+			          ToDelete.Experiment = ToKeep2.Experiment
+			WHERE ToKeep1.Data_Package_ID IS NULL AND 
+			      ToKeep2.Data_Package_ID IS NULL
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+			-- Find parent biomaterial that will have no jobs or datasets remaining once we remove the jobs in #TPI
+			--
+			INSERT INTO #TPI (DataPackageID, Type, Identifier)
+			SELECT ToDelete.DataPackageID, ToDelete.ItemType, ToDelete.Cell_Culture_Name
+			FROM (
+			       -- Biomaterial associated with jobs that we are removing
+			       SELECT DISTINCT J.DataPackageID,
+			                       'Biomaterial' AS ItemType,
+			                       Biomaterial.Cell_Culture_Name
+			       FROM #Tmp_JobsToAddOrDelete J
+			            INNER JOIN S_V_Analysis_Job_List_Report_2 TX
+			              ON J.Job = TX.Job
+			            INNER JOIN S_V_Experiment_Cell_Culture Biomaterial
+			              ON Biomaterial.Experiment_Num = TX.Experiment
+			     ) ToDelete
+			     LEFT OUTER JOIN (
+				        -- Biomaterial associated with the data package; skipping the jobs that we're deleting
+						SELECT DISTINCT Biomaterial.Name AS Cell_Culture_Name,
+						                Datasets.Data_Package_ID
+						FROM T_Data_Package_Analysis_Jobs Jobs
+						     INNER JOIN T_Data_Package_Datasets Datasets
+						       ON Jobs.Data_Package_ID = Datasets.Data_Package_ID AND
+						          Jobs.Dataset = Datasets.Dataset
+						     INNER JOIN T_Data_Package_Experiments Experiments
+						       ON Datasets.Experiment = Experiments.Experiment AND
+						          Datasets.Data_Package_ID = Experiments.Data_Package_ID
+						     INNER JOIN T_Data_Package_Biomaterial Biomaterial
+						       ON Experiments.Data_Package_ID = Biomaterial.Data_Package_ID
+						     INNER JOIN S_V_Experiment_Cell_Culture Exp_CC_Map
+						       ON Experiments.Experiment = Exp_CC_Map.Experiment_Num AND
+						          Exp_CC_Map.Cell_Culture_Name = Biomaterial.Name
+				             LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+			                   ON Jobs.Data_Package_ID = ItemsQ.DataPackageID AND 
+						          Jobs.Job = ItemsQ.Job
+			            WHERE Jobs.Data_Package_ID IN (SELECT DISTINCT DataPackageID FROM #Tmp_JobsToAddOrDelete) AND
+			                  ItemsQ.Job IS NULL 
+			     ) AS ToKeep
+			       ON ToDelete.DataPackageID = ToKeep.Data_Package_ID AND
+			          ToDelete.Cell_Culture_Name = ToKeep.Cell_Culture_Name
+			WHERE ToKeep.Data_Package_ID IS NULL
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		End
 
 		---------------------------------------------------
 		-- Possibly preview the items
@@ -214,29 +381,21 @@ As
 		BEGIN -- <delete biomaterial>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Biomaterial to delete' As Item_Type, *
-				FROM T_Data_Package_Biomaterial 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
-					#TPI.Type = 'Biomaterial'
-				)
+				SELECT 'Biomaterial to delete' AS Biomaterial_Msg, Target.*
+				FROM T_Data_Package_Biomaterial Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Name AND
+				          #TPI.TYPE = 'Biomaterial'
 			End
 			Else
 			Begin
-				DELETE 
-				FROM  T_Data_Package_Biomaterial 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
-					#TPI.Type = 'Biomaterial'
-				)
+				DELETE Target
+				FROM T_Data_Package_Biomaterial Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Name AND
+				          #TPI.TYPE = 'Biomaterial'				
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -253,30 +412,23 @@ As
 		BEGIN -- <comment biomaterial>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Update Biomaterial comment' as Item_Type,
-						@comment As New_Comment, *
-				FROM  T_Data_Package_Biomaterial 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
-					#TPI.Type = 'Biomaterial'
-				)
+				SELECT 'Update Biomaterial comment' AS Item_Type,
+				       @comment AS New_Comment, *
+				FROM T_Data_Package_Biomaterial Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Name AND
+				          #TPI.TYPE = 'Biomaterial'
 			End
 			Else
 			Begin
 				UPDATE T_Data_Package_Biomaterial
 				SET [Package Comment] = @comment
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Biomaterial.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Biomaterial.Name AND
-					#TPI.Type = 'Biomaterial'
-				)
+				FROM T_Data_Package_Biomaterial Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Name AND
+				          #TPI.TYPE = 'Biomaterial'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -293,29 +445,27 @@ As
 		BEGIN -- <add biomaterial>
 
 			-- Delete extras
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_Biomaterial TX
-				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
-				      #TPI.Identifier = TX.Name AND #TPI.Type = 'Biomaterial'
-			)
+			DELETE #TPI
+			FROM #TPI
+			     INNER JOIN T_Data_Package_Biomaterial TX
+			       ON #TPI.DataPackageID = TX.Data_Package_ID AND
+			          #TPI.Identifier = TX.Name AND
+			          #TPI.TYPE = 'Biomaterial'
 
 			If @infoOnly > 0
 			Begin
-				SELECT DISTINCT 
-					#TPI.DataPackageID,
-					'New Biomaterial' as Item_Type,
-					TX.ID,
-					@comment AS Comment,
-					TX.Name,
-					TX.Campaign,
-					TX.Created,
-					TX.Type
-				FROM   
-					#TPI
-					INNER JOIN S_V_Cell_Culture_List_Report_2 TX
-					ON #TPI.Identifier = Name
+				SELECT DISTINCT #TPI.DataPackageID,
+				                'New Biomaterial' AS Item_Type,
+				                TX.ID,
+				                @comment AS [Comment],
+				                TX.Name,
+				                TX.Campaign,
+				                TX.Created,
+				                TX.TYPE
+				FROM #TPI
+				     INNER JOIN S_V_Cell_Culture_List_Report_2 TX
+				       ON #TPI.Identifier = Name
+
 				WHERE #TPI.Type = 'Biomaterial'
 			End
 			Else
@@ -364,28 +514,21 @@ As
 		BEGIN -- <delete EUS Proposals>
 			If @infoOnly > 0
 			Begin
-				SELECT 'EUS Proposal to delete' As Item_Type, *
-				FROM T_Data_Package_EUS_Proposals
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
-					#TPI.Type = 'EUSProposal'
-				)
+				SELECT 'EUS Proposal to delete' AS EUS_Proposal_Msg, Target.*
+				FROM T_Data_Package_EUS_Proposals Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Proposal_ID AND
+				          #TPI.TYPE = 'EUSProposal'
 			End
 			Else
 			Begin
-				DELETE FROM  T_Data_Package_EUS_Proposals
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
-					#TPI.Type = 'EUSProposal'
-				)
+				DELETE Target
+				FROM T_Data_Package_EUS_Proposals Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Proposal_ID AND
+				          #TPI.TYPE = 'EUSProposal'			
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -402,30 +545,24 @@ As
 		BEGIN -- <comment EUS Proposals>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Update EUS Proposal comment' as Item_Type,
-						@comment As New_Comment, *
-				FROM  T_Data_Package_EUS_Proposal 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
-					#TPI.Type = 'EUSProposal'
-				)
+				SELECT 'Update EUS Proposal comment' AS Item_Type,
+				       @comment AS New_Comment,
+				       Target.*
+				FROM T_Data_Package_EUS_Proposal Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Proposal_ID AND
+				          #TPI.TYPE = 'EUSProposal'
 			End
 			Else
 			Begin
 				UPDATE T_Data_Package_EUS_Proposals
 				SET [Package Comment] = @comment
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_EUS_Proposals.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_EUS_Proposals.Proposal_ID AND
-					#TPI.Type = 'EUSProposal'
-				)
+				FROM T_Data_Package_EUS_Proposals Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Proposal_ID AND
+				          #TPI.TYPE = 'EUSProposal'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -442,44 +579,39 @@ As
 		BEGIN -- <add EUS Proposals>
 		
 			-- Delete extras 
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_EUS_Proposals TX
-				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
-				      #TPI.Identifier = TX.Proposal_ID AND #TPI.Type = 'EUSProposal'
-			)
+			DELETE #TPI
+			FROM #TPI
+			     INNER JOIN T_Data_Package_EUS_Proposals TX
+			       ON #TPI.DataPackageID = TX.Data_Package_ID AND
+			          #TPI.Identifier = TX.Proposal_ID AND
+			          #TPI.TYPE = 'EUSProposal'
 			
 			If @infoOnly > 0
 			Begin
-				SELECT DISTINCT
-					#TPI.DataPackageID,
-					'New EUS Proposal' as Item_Type,
-					TX.ID,
-					@comment AS Comment
-				FROM   
-					#TPI
-					INNER JOIN S_V_EUS_Proposals_List_Report TX
-					ON #TPI.Identifier = TX.ID
-				WHERE #TPI.Type = 'EUSProposal'
+				SELECT DISTINCT #TPI.DataPackageID,
+				                'New EUS Proposal' AS Item_Type,
+				                TX.ID,
+				                @comment AS [Comment]
+				FROM #TPI
+				     INNER JOIN S_V_EUS_Proposals_List_Report TX
+				       ON #TPI.Identifier = TX.ID
+				WHERE #TPI.TYPE = 'EUSProposal'
+
 			End
 			Else
 			Begin
 				-- add new items
-				INSERT INTO T_Data_Package_EUS_Proposals(
-					Data_Package_ID,
-					Proposal_ID,
-					[Package Comment]
-				)
-				SELECT DISTINCT
-					#TPI.DataPackageID,
-					TX.ID,
-					@comment
-				FROM   
-					#TPI
-					INNER JOIN S_V_EUS_Proposals_List_Report TX
-					ON #TPI.Identifier = TX.ID
-				WHERE #TPI.Type = 'EUSProposal'
+				INSERT INTO T_Data_Package_EUS_Proposals( Data_Package_ID,
+				                                          Proposal_ID,
+				                                          [Package Comment] )
+				SELECT DISTINCT #TPI.DataPackageID,
+				                TX.ID,
+				                @comment
+				FROM #TPI
+				     INNER JOIN S_V_EUS_Proposals_List_Report TX
+				       ON #TPI.Identifier = TX.ID
+				WHERE #TPI.TYPE = 'EUSProposal'
+
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -500,28 +632,22 @@ As
 		BEGIN -- <delete experiments>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Experiment to delete' As Item_Type, *
-				FROM T_Data_Package_Experiments
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
-					#TPI.Type = 'Experiment'
-				)
+				SELECT 'Experiment to delete' AS Experiment_Msg, Target.*
+				FROM T_Data_Package_Experiments Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Experiment AND
+				          #TPI.TYPE = 'Experiment'
+
 			End
 			Else
 			Begin
-				DELETE FROM  T_Data_Package_Experiments
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
-					#TPI.Type = 'Experiment'
-				)
+				DELETE Target
+				FROM T_Data_Package_Experiments Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				  #TPI.Identifier = Target.Experiment AND
+				          #TPI.TYPE = 'Experiment'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -538,30 +664,25 @@ As
 		BEGIN -- <comment experiments>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Update Experiment comment' as Item_Type,
-						@comment As New_Comment, *
-				FROM  T_Data_Package_Experiments 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
-					#TPI.Type = 'Experiment'
-				)
+				SELECT 'Update Experiment comment' AS Item_Type,
+				       @comment AS New_Comment,
+				       Target.*
+				FROM T_Data_Package_Experiments Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Experiment AND
+				          #TPI.TYPE = 'Experiment'
+
 			End
 			Else
 			Begin
 				UPDATE T_Data_Package_Experiments
 				SET [Package Comment] = @comment
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Experiments.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Experiments.Experiment AND
-					#TPI.Type = 'Experiment'
-				)
+				FROM T_Data_Package_Experiments Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Experiment AND
+				          #TPI.TYPE = 'Experiment'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -578,13 +699,13 @@ As
 		BEGIN -- <add experiments>
 		
 			-- Delete extras
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_Experiments TX
-				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
-				      #TPI.Identifier = TX.Experiment AND #TPI.Type = 'Experiment'
-			)
+			DELETE #TPI
+			FROM #TPI
+			     INNER JOIN T_Data_Package_Experiments TX
+			       ON #TPI.DataPackageID = TX.Data_Package_ID AND
+			          #TPI.Identifier = TX.Experiment AND
+			          #TPI.TYPE = 'Experiment'
+
 			
 			If @infoOnly > 0
 			Begin
@@ -592,7 +713,7 @@ As
 					#TPI.DataPackageID,
 					'New Experiment ID' as Item_Type,
 					TX.ID,
-					@comment AS Comment,
+					@comment AS [Comment],
 					TX.Experiment,
 					TX.Created
 				FROM   
@@ -642,28 +763,22 @@ As
 		BEGIN -- <delete datasets>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Dataset to delete' As Item_Type, *
-				FROM T_Data_Package_Datasets
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
-					#TPI.Type = 'Dataset'
-				)
+				SELECT 'Dataset to delete' AS Dataset_Msg, Target.*
+				FROM T_Data_Package_Datasets Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Dataset AND
+				          #TPI.TYPE = 'Dataset'
+
 			End
 			Else
 			Begin			
-				DELETE FROM  T_Data_Package_Datasets
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
-					#TPI.Type = 'Dataset'
-				)
+				DELETE Target
+				FROM T_Data_Package_Datasets Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Dataset AND
+				          #TPI.TYPE = 'Dataset'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -680,30 +795,25 @@ As
 		BEGIN -- <comment datasets>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Update Dataset comment' as Item_Type,
-						@comment As New_Comment, *
-				FROM  T_Data_Package_Datasets 
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
-					#TPI.Type = 'Dataset'
-				)
+				SELECT 'Update Dataset comment' AS Item_Type,
+				       @comment AS New_Comment,
+				       Target.*
+				FROM T_Data_Package_Datasets Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Dataset AND
+				          #TPI.TYPE = 'Dataset'
+
 			End
 			Else
 			Begin
 				UPDATE T_Data_Package_Datasets
 				SET [Package Comment] = @comment
-				WHERE EXISTS (
-					SELECT * 
-					FROM #TPI
-					WHERE 
-					#TPI.DataPackageID = T_Data_Package_Datasets.Data_Package_ID AND
-					#TPI.Identifier = T_Data_Package_Datasets.Dataset AND
-					#TPI.Type = 'Dataset'
-				)
+				FROM T_Data_Package_Datasets Target
+				     INNER JOIN #TPI
+				       ON #TPI.DataPackageID = Target.Data_Package_ID AND
+				          #TPI.Identifier = Target.Dataset AND
+				          #TPI.TYPE = 'Dataset'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -720,56 +830,50 @@ As
 		BEGIN -- <add datasets>
 		
 			-- Delete extras
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_Datasets TX
-				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
-				      #TPI.Identifier = TX.Dataset AND #TPI.Type = 'Dataset'
-			)
+			DELETE #TPI
+			FROM #TPI
+			     INNER JOIN T_Data_Package_Datasets TX
+			       ON #TPI.DataPackageID = TX.Data_Package_ID AND
+			          #TPI.Identifier = TX.Dataset AND
+			          #TPI.TYPE = 'Dataset'
 
 			If @infoOnly > 0
 			Begin
-				SELECT DISTINCT
-					#TPI.DataPackageID,
-					'New Dataset ID' as Item_Type,
-					TX.ID,
-					@comment AS Comment,
-					TX.Dataset,
-					TX.Created,
-					TX.Experiment,
-					TX.Instrument
-				FROM   
-					#TPI
-					INNER JOIN S_V_Dataset_List_Report_2 TX
-					ON #TPI.Identifier = TX.Dataset
-				WHERE #TPI.Type = 'Dataset'
+				SELECT DISTINCT #TPI.DataPackageID,
+				                'New Dataset ID' AS Item_Type,
+				                TX.ID,
+				                @comment AS [Comment],
+				                TX.Dataset,
+				                TX.Created,
+				                TX.Experiment,
+				                TX.Instrument
+				FROM #TPI
+				     INNER JOIN S_V_Dataset_List_Report_2 TX
+				       ON #TPI.Identifier = TX.Dataset
+				WHERE #TPI.TYPE = 'Dataset'
+
 			End
 			Else
 			Begin
 				-- add new items
-				INSERT INTO T_Data_Package_Datasets(
-					Data_Package_ID,
-					Dataset_ID,
-					[Package Comment],
-					Dataset,
-					Created,
-					Experiment,
-					Instrument
-				)
-				SELECT DISTINCT
-					#TPI.DataPackageID,
-					TX.ID,
-					@comment,
-					TX.Dataset,
-					TX.Created,
-					TX.Experiment,
-					TX.Instrument
-				FROM   
-					#TPI
-					INNER JOIN S_V_Dataset_List_Report_2 TX
-					ON #TPI.Identifier = TX.Dataset
-				WHERE #TPI.Type = 'Dataset'
+				INSERT INTO T_Data_Package_Datasets( Data_Package_ID,
+				                                     Dataset_ID,
+				                                     [Package Comment],
+				                                     Dataset,
+				                                     Created,
+				                                     Experiment,
+				                                     Instrument )
+				SELECT DISTINCT #TPI.DataPackageID,
+				                TX.ID,
+				                @comment,
+				                TX.Dataset,
+				                TX.Created,
+				                TX.Experiment,
+				                TX.Instrument
+				FROM #TPI
+				     INNER JOIN S_V_Dataset_List_Report_2 TX
+				       ON #TPI.Identifier = TX.Dataset
+				WHERE #TPI.TYPE = 'Dataset'
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -790,25 +894,19 @@ As
 		BEGIN -- <delete analysis_jobs>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Job to delete' As Item_Type, *
-				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
-						DPAJ.Job = ItemsQ.Job
+				SELECT 'Job to delete' AS Job_Msg, *
+				FROM T_Data_Package_Analysis_Jobs Target
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON Target.Data_Package_ID = ItemsQ.DataPackageID AND
+				          Target.Job = ItemsQ.Job
 			End
 			Else
 			Begin			
-				DELETE DPAJ
-				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
-						DPAJ.Job = ItemsQ.Job
+				DELETE Target
+				FROM T_Data_Package_Analysis_Jobs Target
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON Target.Data_Package_ID = ItemsQ.DataPackageID AND
+				          Target.Job = ItemsQ.Job
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -825,27 +923,22 @@ As
 		BEGIN -- <comment analysis_jobs>
 			If @infoOnly > 0
 			Begin
-				SELECT 'Update Job comment' as Item_Type,
-						@comment As New_Comment, *
-				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
-						DPAJ.Job = ItemsQ.Job
+				SELECT 'Update Job comment' AS Item_Type,
+				       @comment AS New_Comment,
+				       Target.*
+				FROM T_Data_Package_Analysis_Jobs Target
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON Target.Data_Package_ID = ItemsQ.DataPackageID AND
+				          Target.Job = ItemsQ.Job
 			End
 			Else
 			Begin
-				UPDATE DPAJ
+				UPDATE Target
 				SET [Package Comment] = @comment
-				FROM T_Data_Package_Analysis_Jobs DPAJ
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON DPAJ.Data_Package_ID = ItemsQ.DataPackageID AND
-						DPAJ.Job = ItemsQ.Job
+				FROM T_Data_Package_Analysis_Jobs Target
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON Target.Data_Package_ID = ItemsQ.DataPackageID AND
+				          Target.Job = ItemsQ.Job
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -862,55 +955,44 @@ As
 		BEGIN -- <add analysis_jobs>
 
 			-- Delete extras
-			DELETE FROM #TPI
-			WHERE EXISTS (
-				SELECT * 
-				FROM T_Data_Package_Analysis_Jobs TX
-				WHERE #TPI.DataPackageID = TX.Data_Package_ID AND 
-				      #TPI.Identifier = TX.Job AND #TPI.Type = 'Job'
-			)
+			DELETE #Tmp_JobsToAddOrDelete
+			FROM #Tmp_JobsToAddOrDelete Target
+			     INNER JOIN T_Data_Package_Analysis_Jobs TX
+			       ON Target.DataPackageID = TX.Data_Package_ID AND
+			          Target.Job = TX.Job
 
 			If @infoOnly > 0
 			Begin
-				SELECT DISTINCT
-					ItemsQ.DataPackageID,
-					'New Job' as Item_Type,
-					TX.Job,
-					@comment AS Comment,
-					TX.Created,
-					TX.Dataset,
-					TX.Tool
+				SELECT DISTINCT ItemsQ.DataPackageID,
+				                'New Job' AS Item_Type,
+				                TX.Job,
+				                @comment AS [Comment],
+				                TX.Created,
+				                TX.Dataset,
+				                TX.Tool
 				FROM S_V_Analysis_Job_List_Report_2 TX
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON TX.Job = ItemsQ.Job		
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON TX.Job = ItemsQ.Job
+				       	
 			End
 			Else
 			Begin
 				-- add new items
-				INSERT INTO T_Data_Package_Analysis_Jobs(
-					Data_Package_ID,
-					Job,
-					[Package Comment],
-					Created,
-					Dataset,
-					Tool
-				)
-				SELECT DISTINCT
-					ItemsQ.DataPackageID,
-					TX.Job,
-					@comment,
-					TX.Created,
-					TX.Dataset,
-					TX.Tool
+				INSERT INTO T_Data_Package_Analysis_Jobs( Data_Package_ID,
+				                                          Job,
+				                                          [Package Comment],
+				                                          Created,
+				                                          Dataset,
+				                                          Tool )
+				SELECT DISTINCT ItemsQ.DataPackageID,
+				                TX.Job,
+				                @comment,
+				                TX.Created,
+				                TX.Dataset,
+				                TX.Tool
 				FROM S_V_Analysis_Job_List_Report_2 TX
-					INNER JOIN ( SELECT DataPackageID,
-										Try_Convert(int, Identifier) as Job
-								FROM #TPI
-								WHERE #TPI.TYPE = 'Job') ItemsQ
-					ON TX.Job = ItemsQ.Job		
+				     INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
+				       ON TX.Job = ItemsQ.Job	
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 				--
@@ -988,6 +1070,17 @@ As
 			)
 		end
 
+		If @message = ''
+		Begin
+			Set @message = 'No items were updated'
+		
+			If @mode = 'add'
+				Set @message = 'No items were added'
+			
+			If @mode = 'delete'
+				Set @message = 'No items were removed'			
+		End
+		
  	---------------------------------------------------
  	---------------------------------------------------
 	END TRY

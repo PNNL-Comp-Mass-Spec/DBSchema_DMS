@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDataPackageItems
+
+CREATE PROCEDURE [dbo].[UpdateDataPackageItems]
 /****************************************************
 **
 **	Desc:
@@ -24,6 +25,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 **			04/07/2016 mem - Switch to udfParseDelimitedList
 **			05/18/2016 mem - Add parameter @infoOnly
 **			10/19/2016 mem - Update #TPI to use an integer field for data package ID
+**			11/14/2016 mem - Add parameter @removeParents
 **
 *****************************************************/
 (
@@ -31,7 +33,8 @@ CREATE PROCEDURE dbo.UpdateDataPackageItems
 	@itemType varchar(128),				-- analysis_jobs, datasets, experiments, biomaterial, or proposals
 	@itemList text,						-- Comma separated list of items
 	@comment varchar(512),
-	@mode varchar(12) = 'update',		-- 'add', 'update', 'comment', 'delete'
+	@mode varchar(12) = 'update',		-- 'add', 'update', 'comment', 'delete'	
+	@removeParents tinyint = 0,			-- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = '',
 	@infoOnly tinyint = 0
@@ -46,8 +49,7 @@ As
 
 	set @message = ''
 	
-	declare @wasModified tinyint
-	set @wasModified = 0
+	declare @wasModified tinyint = 0
 
 
 	BEGIN TRY 
@@ -94,6 +96,7 @@ As
 		exec @myError = UpdateDataPackageItemsUtility
 									@comment,
 									@mode,
+									@removeParents,
 									@message output,
 									@callingUser,
 									@infoOnly = @infoOnly
@@ -118,7 +121,6 @@ As
 	-- Exit
 	---------------------------------------------------
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDataPackageItems] TO [DMS_SP_User] AS [dbo]

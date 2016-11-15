@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDataPackageItemsXML
+
+CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
 /****************************************************
 **
 **	Desc:
@@ -23,12 +24,14 @@ CREATE PROCEDURE dbo.UpdateDataPackageItemsXML
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **			10/19/2016 mem - Update #TPI to use an integer field for data package ID
+**			11/11/2016 mem - Add parameter @removeParents
 **
 *****************************************************/
 (
 	@paramListXML varchar(max),
 	@comment varchar(512),
 	@mode varchar(12) = 'update',			-- 'add', 'update', 'comment', 'delete'
+	@removeParents tinyint = 0,				-- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
@@ -62,7 +65,9 @@ As
 		
 		If @logUsage > 0
 		Begin
-			Exec PostLogEntry 'Debug', @paramListXML, 'UpdateDataPackageItemsXML'
+			Declare @logMessage varchar(4000)
+			Set @logMessage = 'Mode: ' + @mode + '; RemoveParents: ' + Cast(@removeParents as varchar(2)) + '; ' + @paramListXML
+			Exec PostLogEntry 'Debug', @logMessage, 'UpdateDataPackageItemsXML'
 		End
 		
 		---------------------------------------------------
@@ -89,6 +94,7 @@ As
 		exec @myError = UpdateDataPackageItemsUtility
 								@comment,
 								@mode,
+								@removeParents,
 								@message output,
 								@callingUser
 		if @myError <> 0
@@ -113,7 +119,6 @@ As
 	-- Exit
 	---------------------------------------------------
 	return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateDataPackageItemsXML] TO [DMS_SP_User] AS [dbo]
