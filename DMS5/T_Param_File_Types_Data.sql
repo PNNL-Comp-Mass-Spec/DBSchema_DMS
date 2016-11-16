@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Param_File_Types] ******/
-/****** RowCount: 23 ******/
+/****** RowCount: 30 ******/
 /****** Columns: Param_File_Type_ID, Param_File_Type ******/
 INSERT INTO [T_Param_File_Types] VALUES (1,'(none)')
 INSERT INTO [T_Param_File_Types] VALUES (1000,'Sequest')
@@ -24,3 +24,10 @@ INSERT INTO [T_Param_File_Types] VALUES (1019,'MSAlign')
 INSERT INTO [T_Param_File_Types] VALUES (1020,'SMAQC')
 INSERT INTO [T_Param_File_Types] VALUES (1021,'LipidMapSearch')
 INSERT INTO [T_Param_File_Types] VALUES (1022,'MSAlign_Histone')
+INSERT INTO [T_Param_File_Types] VALUES (1023,'MODa')
+INSERT INTO [T_Param_File_Types] VALUES (1024,'GlyQ-IQ')
+INSERT INTO [T_Param_File_Types] VALUES (1025,'MSPathFinder')
+INSERT INTO [T_Param_File_Types] VALUES (1026,'ProMex')
+INSERT INTO [T_Param_File_Types] VALUES (1027,'NOMSI')
+INSERT INTO [T_Param_File_Types] VALUES (1028,'MODPlus')
+INSERT INTO [T_Param_File_Types] VALUES (1029,'QC-ART')
