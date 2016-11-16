@@ -110,3 +110,52 @@ REFERENCES [dbo].[T_Organisms] ([Organism_ID])
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] CHECK CONSTRAINT [FK_T_Predefined_Analysis_T_Organisms]
 GO
+/****** Object:  Trigger [dbo].[trig_u_T_Predefined_Analysis] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [trig_u_T_Predefined_Analysis] on [dbo].[T_Predefined_Analysis]
+For Update
+AS
+	If @@RowCount = 0
+		Return
+
+	If Update(AD_level) OR 
+		Update(AD_sequence) OR 
+		Update(AD_instrumentClassCriteria) OR 
+		Update(AD_campaignNameCriteria) OR 
+		Update(AD_campaignExclCriteria) OR 
+		Update(AD_experimentNameCriteria) OR 
+		Update(AD_experimentExclCriteria) OR 
+		Update(AD_instrumentNameCriteria) OR 
+		Update(AD_organismNameCriteria) OR 
+		Update(AD_datasetNameCriteria) OR 
+		Update(AD_datasetExclCriteria) OR 
+		Update(AD_datasetTypeCriteria) OR 
+		Update(AD_expCommentCriteria) OR 
+		Update(AD_labellingInclCriteria) OR 
+		Update(AD_labellingExclCriteria) OR 
+		Update(AD_separationTypeCriteria) OR 
+		Update(AD_analysisToolName) OR 
+		Update(AD_parmFileName) OR 
+		Update(AD_settingsFileName) OR 
+		Update(AD_organism_ID) OR 
+		Update(AD_organismDBName) OR 
+		Update(AD_proteinCollectionList) OR 
+		Update(AD_proteinOptionsList) OR 
+		Update(AD_priority) OR 
+		Update(AD_enabled) OR 
+		Update(AD_description) OR 
+		Update(AD_created) OR 
+		Update(AD_creator) OR 
+		Update(AD_nextLevel) OR 
+		Update(Trigger_Before_Disposition)
+	Begin
+		UPDATE T_Predefined_Analysis
+		SET Last_Affected = GetDate()
+		FROM T_Predefined_Analysis PA INNER JOIN 
+			 inserted ON PA.AD_ID = inserted.AD_ID
+	End
+GO
