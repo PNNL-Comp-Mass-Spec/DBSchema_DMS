@@ -283,7 +283,7 @@ CREATE PROCEDURE dbo.sp_SearchForString
 	@DBName varchar(255) = '',
 	@IncludeContext tinyint=1,			-- If 1, then calls spWhereIsItUsed to do the work
 	@BackSpan INT=10,					--when you find a string, how many characters back you show
-	@ForwardSpan INT=25,				--when you find a string, how many characters forward you show
+	@ForwardSpan INT=25					--when you find a string, how many characters forward you show
 )
 AS
 	set nocount on
@@ -320,7 +320,7 @@ AS
 	End
 
 	If @IncludeContext <> 0
-		exec sp_WhereIsItUsed @SearchText, @DBName = @DBName
+		exec sp_WhereIsItUsed @SearchText, @DBName = @DBName, @BackSpan = @BackSpan, @ForwardSpan = @ForwardSpan 
 	Else
 	Begin
 		Set @S = ''
@@ -356,6 +356,7 @@ AS
 
 Done:		
 	Return @myError
+
 
 GO
 SET QUOTED_IDENTIFIER OFF 
