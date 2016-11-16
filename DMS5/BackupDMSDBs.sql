@@ -33,6 +33,7 @@ CREATE PROCEDURE BackupDMSDBs
 **			03/17/2016 mem - Now calling xp_delete_file to delete old backup files when @UseRedgateBackup = 0
 **			03/18/2016 mem - Update e-mail address for the MAILTO_ONERROR parameter
 **			03/22/2016 mem - Now calling VerifyDirectoryExists to create the output directory if missing
+**			11/16/2016 mem - Mention Powershell script DeleteOldBackups.ps1
 **    
 *****************************************************/
 (
@@ -983,7 +984,12 @@ As
 		If @UseRedgateBackup = 0 And @FailedBackupCount = 0
 		Begin
 			---------------------------------------
-			-- Use xp_delete_file to delete old full and/or transaction log files
+			-- Could use xp_delete_file to delete old full and/or transaction log files
+			-- However, online posts point out that this is an undocumented system procedure 
+			-- and that we should instead use Powershell
+			--
+			-- See https://github.com/PNNL-Comp-Mass-Spec/DBSchema_DMS/blob/master/Powershell/DeleteOldBackups.ps1
+			-- That script is run via a SQL Server agent job
 			--
 			-- Parameters for xp_delete_file:
 			--   FileType:        0 for backup files or 1 for report files
@@ -1019,7 +1025,9 @@ As
 			Else
 			Begin
 				Set @ExitCode = 0
-				-- To be tested: exec @ExitCode = sp_executesql @UnicodeSql
+				-- Execution of xp_delete_file is disabled
+				-- See the above comment about Powershell
+				-- exec @ExitCode = sp_executesql @UnicodeSql
 				
 				If (@ExitCode <> 0)
 				Begin
