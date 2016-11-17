@@ -15,23 +15,23 @@ CREATE Procedure AssignEUSUsersToRequestedRun
 **
 **	Return values: 0: success, otherwise, error code
 **
-**		Auth: grk
-**		Date: 2/21/2006
-**      11/09/2006 grk -- Added numeric test for eus user ID (Ticket #318)
-**      07/11/2007 grk -- factored out EUS proposal validation (Ticket #499)
+**	Auth:	grk
+**	Date:	02/21/2006
+**			11/09/2006 grk - Added numeric test for eus user ID (Ticket #318)
+**			07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
+**			11/16/2016 mem - Use udfParseDelimitedIntegerList to parse @eusUsersList
 **
 *****************************************************/
 	@request int,
 	@eusProposalID varchar(10) = '',
-	@eusUsersList varchar(1024) = '',
+	@eusUsersList varchar(1024) = '',			-- Comma separated list of EUS user IDs (integers)
 	@message varchar(512) output
 As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -57,23 +57,31 @@ As
 	end
 
 	---------------------------------------------------
+	-- Populate a temporary table with the user IDs in @eusUsersList
+	---------------------------------------------------
+	--
+	DECLARE @tmpUserIDs TABLE (ID int)
+	
+	INSERT INTO @tmpUserIDs (ID)
+	SELECT Value
+	FROM dbo.udfParseDelimitedIntegerList(@eusUsersList, ',')
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+	---------------------------------------------------
 	-- add associations between request and users 
 	-- who are in list, but not in association table
 	---------------------------------------------------
 	--
-	INSERT INTO T_Requested_Run_EUS_Users
-		(EUS_Person_ID, Request_ID)
-	SELECT 
-		CAST(Item as int) as EUS_Person_ID, @request as Request_ID 
-	FROM 
-		MakeTableFromList(@eusUsersList)
-	WHERE 
-		CAST(Item as int) NOT IN
-		(
-			SELECT EUS_Person_ID
-			FROM  T_Requested_Run_EUS_Users 
-			WHERE Request_ID = @request
-		)
+	INSERT INTO T_Requested_Run_EUS_Users( EUS_Person_ID,
+	                                       Request_ID )
+	SELECT ID AS EUS_Person_ID,
+	       @request AS Request_ID
+	FROM @tmpUserIDs
+	WHERE ID NOT IN ( SELECT EUS_Person_ID
+	                  FROM T_Requested_Run_EUS_Users
+	                  WHERE Request_ID = @request )
+
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -88,13 +96,10 @@ As
 	-- who are in association table but not in list
 	---------------------------------------------------
 	--
-	DELETE FROM  T_Requested_Run_EUS_Users
-	WHERE 
-	Request_ID = @request AND
-	EUS_Person_ID NOT IN
-	(
-	SELECT CAST(Item as int) as eu FROM MakeTableFromList(@eusUsersList)
-	)
+	DELETE FROM T_Requested_Run_EUS_Users
+	WHERE Request_ID = @request AND
+	      EUS_Person_ID NOT IN ( SELECT ID
+	                             FROM @tmpUserIDs )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
