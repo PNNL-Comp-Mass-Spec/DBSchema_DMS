@@ -7,7 +7,11 @@ CREATE Procedure UpdateRequestedRunAdmin
 /****************************************************
 **
 **	Desc: 
-**	Requested run admin operations 
+**		Requested run admin operations 
+**
+**		Example contents of @requestList
+**
+**		<r i="545499" /><r i="545498" /><r i="545497" /><r i="545496" /><r i="545495" />
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -17,10 +21,11 @@ CREATE Procedure UpdateRequestedRunAdmin
 **	Date: 	03/09/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			12/12/2011 mem - Now calling AlterEventLogEntryUserMultiID
+**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
 **    
 *****************************************************/
 (
-	@requestList text,
+	@requestList text,				-- XML describing list of Requested Run IDs
 	@mode varchar(32),				-- 'Active', 'Inactive', or 'delete'
 	@message varchar(512) OUTPUT,
 	@callingUser varchar(128) = ''
@@ -29,9 +34,8 @@ As
 	SET NOCOUNT ON 
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	DECLARE @xml AS xml
@@ -43,6 +47,18 @@ As
 	Declare @UsageMessage varchar(512) = ''
 	Declare @stateID int = 0
 
+
+	-- Set to 1 to log the contents of @requestList
+	Declare @debugEnabled tinyint = 0
+	
+	If @debugEnabled > 0
+	Begin
+		Declare @logMessage varchar(4096)		
+		Set @logMessage = Cast(@requestList as varchar(4000))
+		
+		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
+	End
+	
 	-----------------------------------------------------------
 	-- temp table to hold list of requests
 	-----------------------------------------------------------
@@ -117,7 +133,7 @@ As
 	-----------------------------------------------------------
 	--
 	UPDATE #TMP
-	SET ItemID = CONVERT(INT, Item) 
+	SET ItemID = Try_Convert(int, Item)
 	
 	-----------------------------------------------------------
 	-- Populate a temporary table with the list of Requested Run IDs to be updated or deleted
@@ -132,6 +148,7 @@ As
 	INSERT INTO #TmpIDUpdateList (TargetID)
 	SELECT DISTINCT ItemID
 	FROM #TMP
+	WHERE Not ItemID Is Null
 	ORDER BY ItemID
 
 	-----------------------------------------------------------
@@ -140,12 +157,10 @@ As
 	--
 	IF @mode = 'Active' OR @mode = 'Inactive'
 	BEGIN
-		UPDATE 
-			T_Requested_Run
-		SET 
-			RDS_Status = @mode
-		WHERE 
-			ID IN (SELECT ItemID FROM #TMP)
+		UPDATE T_Requested_Run
+		SET RDS_Status = @mode
+		WHERE ID IN ( SELECT ItemID
+		              FROM #TMP )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -171,6 +186,31 @@ As
 
 		End
 		
+		-- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
+		--
+		Declare @continue tinyint = 1
+		Declare @requestId int = -100000
+		
+		While @continue = 1
+		Begin
+			SELECT TOP 1 @requestId = ItemID
+			FROM #TMP
+			WHERE ItemID > @requestId
+			ORDER BY ItemID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount = 0
+			Begin
+				Set @continue = 0
+			End
+			Else
+			Begin
+				Exec UpdateCachedRequestedRunEUSUsers @requestId
+			End
+			
+		End
+		
 		GOTO Done
 	END
 
@@ -180,10 +220,9 @@ As
 	--
 	IF @mode = 'delete'
 	BEGIN
-		DELETE FROM  
-			T_Requested_Run
-		WHERE 
-			ID IN (SELECT ItemID FROM #TMP)		
+		DELETE FROM T_Requested_Run
+		WHERE ID IN ( SELECT ItemID
+		              FROM #TMP )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -207,6 +246,13 @@ As
 
 		End
 		
+		-- Remove any cached EUS user lists
+		DELETE FROM T_Active_Requested_Run_Cached_EUS_Users
+		WHERE Request_ID IN ( SELECT ItemID
+		                      FROM #TMP )
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
 		GOTO Done
 	END
 	

@@ -27,6 +27,7 @@ CREATE Procedure ConsumeScheduledRun
 **						   - Now copying batch and blocking info from the existing request to the new auto-request created by AddRequestedRunToExistingDataset
 **			12/12/2011 mem - Updated log message when re-using an existing request
 **			12/14/2011 mem - Added parameter @callingUser, which is passed to AddRequestedRunToExistingDataset and AlterEventLogEntryUser
+**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **    
 *****************************************************/
 (
@@ -116,7 +117,10 @@ As
 	
 	If @ExistingDatasetID <> 0 And @ExistingDatasetID <> @datasetID
 	Begin -- <a>
+		---------------------------------------------------
 		-- Create new auto-request, but only if the dataset doesn't already have one
+		---------------------------------------------------
+		
 		Declare @ExistingDatasetName varchar(255) = ''
 		
 		SELECT @ExistingDatasetName = Dataset_Num
@@ -213,8 +217,16 @@ As
 	End
 	
 	---------------------------------------------------
+	-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
+	-- This procedure will delete the cached EUS user list from T_Active_Requested_Run_Cached_EUS_Users for this request ID
+	---------------------------------------------------
+	--
+	exec UpdateCachedRequestedRunEUSUsers @requestID
+	
+	---------------------------------------------------
 	-- Finalize the changes
 	---------------------------------------------------
+	--
 	commit transaction @transName
 	
 	return 0

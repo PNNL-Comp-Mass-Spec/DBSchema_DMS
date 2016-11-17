@@ -11,6 +11,16 @@ CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
 **		Update requested run factors and blocking from input XML lists 
 **		Called from http://dmsdev.pnl.gov/requested_run_batch_blocking/param
 **
+**		Example contents of @blockingList:
+**		<r i="545496" t="Run_Order" v="2" /><r i="545496" t="Block" v="2" />
+**		<r i="545497" t="Run_Order" v="1" /><r i="545497" t="Block" v="1" />
+**
+**		Example contents of @factorList: 
+**		<id type="Request" /><r i="545496" f="TempFactor" v="a" /><r i="545497" f="TempFactor" v="b" />
+**
+**		@blockingList can be empty if @factorList is defined
+**		Conversely, @factorList may be simply '<id type="Request" />' if updating run order and blocking
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters: 

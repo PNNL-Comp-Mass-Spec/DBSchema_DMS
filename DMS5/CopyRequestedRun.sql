@@ -19,6 +19,7 @@ CREATE PROCEDURE CopyRequestedRun
 **			04/25/2012 mem - Fixed @callingUser bug when updating @callingUserUnconsume
 **			02/21/2013 mem - Now verifying that a new row was added to T_Requested_Run
 **			05/08/2013 mem - Now copying Vialing_Conc and Vialing_Vol
+**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **
 *****************************************************/
 (
@@ -221,7 +222,13 @@ As
 		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
 		goto Done
 	end
-
+	
+	---------------------------------------------------
+	-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
+	---------------------------------------------------
+	--
+	exec UpdateCachedRequestedRunEUSUsers @newReqID
+	
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------

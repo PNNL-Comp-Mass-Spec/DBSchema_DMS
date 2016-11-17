@@ -18,6 +18,9 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 **		<r i="481297" t="Run_Order" v="2" />
 **		<r i="481297" t="Block" v="1" />
 **
+**	Valid values for type (t) are:
+**		'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters: 
@@ -31,6 +34,7 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 **			11/07/2016 mem - Add optional logging via PostLogEntry
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
 **    
 *****************************************************/
 (
@@ -62,8 +66,17 @@ As
 		
 	DECLARE @batchID int = 0
 
-	-- Uncomment to log the XML for debugging purposes
-	-- exec PostLogEntry 'Debug', Cast(@blockingList as varchar(4096)), 'UpdateRequestedRunBatchParameters'
+	-- Set to 1 to log the contents of @blockingList
+	Declare @debugEnabled tinyint = 0
+	
+	If @debugEnabled > 0
+	Begin
+		Declare @logMessage varchar(4096)		
+		Set @logMessage = Cast(@blockingList as varchar(4000))
+		
+		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBatchParameters'
+	End
+	
 	
 	-----------------------------------------------------------
 	-----------------------------------------------------------
@@ -90,7 +103,7 @@ As
 			INSERT INTO #TMP
 				( Parameter, Request, Value )
 			SELECT
-				xmlNode.value('@t', 'nvarchar(256)') Parameter,		-- may be 'BK', or 'RO'
+				xmlNode.value('@t', 'nvarchar(256)') Parameter,		-- Valid values are 'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
 				xmlNode.value('@i', 'nvarchar(256)') Request,		-- Request ID
 				xmlNode.value('@v', 'nvarchar(256)') Value
 			FROM @xml.nodes('//r') AS R(xmlNode)
@@ -116,13 +129,13 @@ As
 			SET ExistingValue = CASE 
 								WHEN #tmp.Parameter = 'Block' THEN CONVERT(VARCHAR(128), RDS_Block)
 								WHEN #tmp.Parameter = 'Run Order' THEN CONVERT(VARCHAR(128), RDS_Run_Order)
-								WHEN #tmp.Parameter = 'Block' THEN CONVERT(VARCHAR(128), RDS_Block)
-								WHEN #tmp.Parameter = 'Run Order' THEN CONVERT(VARCHAR(128), RDS_Run_Order)
 								WHEN #tmp.Parameter = 'Status' THEN CONVERT(VARCHAR(128), RDS_Status)
 								WHEN #tmp.Parameter = 'Instrument' THEN RDS_instrument_name
 								ELSE ''
 								END 
-			FROM #TMP INNER JOIN T_Requested_Run ON #TMP.Request = dbo.T_Requested_Run.ID
+			FROM #TMP
+			     INNER JOIN T_Requested_Run
+			       ON #TMP.Request = dbo.T_Requested_Run.ID
 
 			-- LC cart (requires a join)
 			UPDATE #TMP
@@ -233,6 +246,34 @@ As
 
 			COMMIT TRANSACTION @transName
 
+			If Exists (SELECT * FROM #TMP WHERE Parameter = 'Status')
+			Begin
+				-- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
+				--
+				Declare @continue tinyint = 1
+				Declare @requestId int = -100000
+				
+				While @continue = 1
+				Begin
+					SELECT TOP 1 @requestId = Request
+					FROM #TMP
+					WHERE Request > @requestId AND Parameter = 'Status'
+					ORDER BY Request
+					--
+					SELECT @myError = @@error, @myRowCount = @@rowcount
+					
+					If @myRowCount = 0
+					Begin
+						Set @continue = 0
+					End
+					Else
+					Begin
+						Exec UpdateCachedRequestedRunEUSUsers @requestId
+					End
+					
+				End
+			End
+			
 			-----------------------------------------------------------
 			-- convert changed items to XML for logging
 			-----------------------------------------------------------

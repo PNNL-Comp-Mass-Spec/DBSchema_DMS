@@ -26,7 +26,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Run_Start AS [Run Start],
        RR.RDS_Run_Finish AS [Run Finish],
        EUT.Name AS [Usage Type],
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS Users],
+       RRCU.User_List AS [EUS Users],
        RR.RDS_EUS_Proposal_ID AS [Proposal ID],
        RR.RDS_MRM_Attachment AS MRMFileID,
        RR.RDS_Block AS [Block],
@@ -45,6 +45,8 @@ FROM T_DatasetTypeName DTN
        ON RR.RDS_Cart_ID = LC.ID
      INNER JOIN T_EUS_UsageType EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
+	 LEFT OUTER JOIN T_Active_Requested_Run_Cached_EUS_Users RRCU
+	   ON RR.ID = RRCU.Request_ID
 WHERE (RR.RDS_Status = 'Active')
 
 

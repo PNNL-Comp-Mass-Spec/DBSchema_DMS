@@ -7,7 +7,7 @@ CREATE PROCEDURE UpdateRequestedRunStatusHistory
 /****************************************************
 **
 **	Desc: 
-**		Appends new entries to Updates stats in T_Requested_Run_Status_History,
+**		Updates stats in T_Requested_Run_Status_History,
 **		summarizing the number of requested runs in each state
 **      in T_Requested_Run
 **

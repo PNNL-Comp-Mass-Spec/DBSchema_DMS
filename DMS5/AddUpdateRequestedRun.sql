@@ -69,6 +69,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			02/29/2016 mem - Now looking up setting for 'RequestedRunRequireWorkpackage' using T_MiscOptions
 **          07/20/2016 mem - Tweak error message
+**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **
 *****************************************************/
 (
@@ -558,7 +559,7 @@ As
 	-- action for add mode
 	---------------------------------------------------
 	if @Mode = 'add'
-	begin
+	begin -- <add>
 	
 		-- Start transaction
 		--
@@ -637,17 +638,23 @@ As
 		--
 		if @myError <> 0
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
-
-		commit transaction @transName
 		
-	end -- add mode
+		commit transaction @transName
+
+		If @status = 'Active'
+		Begin
+			-- Add a new row to T_Active_Requested_Run_Cached_EUS_Users
+			exec UpdateCachedRequestedRunEUSUsers @request
+		End
+		
+	end -- </add>
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
 	if @Mode = 'update' 
-	begin	
+	begin -- <update>
 		begin transaction @transName
 
 		set @myError = 0
@@ -698,7 +705,11 @@ As
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
 
 		commit transaction @transName
-	end -- update mode
+		
+		-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
+		exec UpdateCachedRequestedRunEUSUsers @request
+		
+	end -- </update>
 
 	END TRY
 	BEGIN CATCH 

@@ -50,6 +50,7 @@ CREATE Procedure UnconsumeScheduledRun
 **		05/08/2013 mem - Removed parameters @wellplateNum and @wellNum since no longer used
 **		07/08/2014 mem - Now checking for empty requested run comment
 **		03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
+**		11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **    
 *****************************************************/
 (
@@ -366,6 +367,12 @@ As
 
 			Exec AlterEventLogEntryUser 11, @requestIDOriginal, @stateID, @callingUser
 		End
+
+		---------------------------------------------------
+		-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
+		---------------------------------------------------
+		--
+		exec UpdateCachedRequestedRunEUSUsers @requestIDOriginal
 
 
 	End -- </a4>
