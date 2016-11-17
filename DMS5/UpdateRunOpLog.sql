@@ -7,12 +7,13 @@ CREATE PROCEDURE dbo.UpdateRunOpLog
 /****************************************************
 **
 **  Desc: 
-**  Update selected items from instrument run 
-**  tracking-related entities
+**		Update selected items from instrument run 
+**		tracking-related entities
 **
-** @changes - description of updates requested run and long interval updates in XML format:
-**  <run request="206498" usage="USER" proposal="123456" user="1001" />
-**	<interval id="268646" note="On hold pending scheduling,Broken[50%],CapDev[25%],StaffNotAvailable[25%],Operator[40677]" />
+**		@changes tracks the updates to be applied, in XML format
+**		Example contents of @changes
+**		<run request="206498" usage="USER" proposal="123456" user="1001" />
+**		<interval id="268646" note="On hold pending scheduling,Broken[50%],CapDev[25%],StaffNotAvailable[25%],Operator[40677]" />
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -72,8 +73,10 @@ AS
 		UPDATE #RRCHG
 		SET statusID = TRSN.State_ID
 		FROM #RRCHG
-		INNER JOIN T_Requested_Run TRR ON #RRCHG.request = TRR.ID
-		INNER JOIN T_Requested_Run_State_Name TRSN ON TRR.RDS_Status = TRSN.State_Name
+		     INNER JOIN T_Requested_Run TRR
+		       ON #RRCHG.request = TRR.ID
+		     INNER JOIN T_Requested_Run_State_Name TRSN
+		       ON TRR.RDS_Status = TRSN.State_Name
 
 		---------------------------------------------------
 		-- create temp table to hold interval changes
