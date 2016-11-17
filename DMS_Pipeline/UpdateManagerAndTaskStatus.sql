@@ -174,6 +174,7 @@ Done:
 	--
 	return @myError
 
+
 GO
 GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatus] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
