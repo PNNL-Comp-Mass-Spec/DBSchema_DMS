@@ -28,6 +28,7 @@ CREATE Procedure AddUpdateUser
 **			06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @Username)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @HanfordIDNum starts with a number
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **
 *****************************************************/
 (
@@ -235,6 +236,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateUser'
 	END CATCH
 	
 	return 0

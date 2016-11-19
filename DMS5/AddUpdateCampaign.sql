@@ -37,6 +37,7 @@ CREATE Procedure AddUpdateCampaign
 **			02/26/2016 mem - Define a default for @FractionEMSLFunded
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Tweak error messages
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -384,6 +385,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateCampaign'
 	END CATCH
 	return @myError
 

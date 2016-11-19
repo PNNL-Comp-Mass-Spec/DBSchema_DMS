@@ -217,18 +217,18 @@ As
 	End
 	
 	---------------------------------------------------
+	-- Finalize the changes
+	---------------------------------------------------
+	--
+	commit transaction @transName
+
+	---------------------------------------------------
 	-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
 	-- This procedure will delete the cached EUS user list from T_Active_Requested_Run_Cached_EUS_Users for this request ID
 	---------------------------------------------------
 	--
 	exec UpdateCachedRequestedRunEUSUsers @requestID
-	
-	---------------------------------------------------
-	-- Finalize the changes
-	---------------------------------------------------
-	--
-	commit transaction @transName
-	
+		
 	return 0
 
 GO

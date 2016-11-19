@@ -28,6 +28,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Fix spelling in error messages
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -470,6 +471,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateCellCulture'
 	END CATCH
 	return @myError
 

@@ -61,6 +61,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			05/29/2015 mem - Now validating that @EstimatedCompletionDate is today or later
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -676,6 +677,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+		
+		exec PostLogEntry 'Error', @message, 'AddUpdateSamplePrepRequest'
 	END CATCH
 	return @myError
 

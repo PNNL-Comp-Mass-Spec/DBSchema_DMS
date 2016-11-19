@@ -8,8 +8,8 @@ CREATE Procedure dbo.UpdateCartParameters
 /****************************************************
 **
 **	Desc: 
-**	Changes cart parameters 
-**	for given requested run
+**		Changes cart parameters for given requested run
+**		This procedure is used by AddUpdateDataset
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -39,9 +39,8 @@ As
 	set nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''

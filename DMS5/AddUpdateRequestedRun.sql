@@ -70,6 +70,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			02/29/2016 mem - Now looking up setting for 'RequestedRunRequireWorkpackage' using T_MiscOptions
 **          07/20/2016 mem - Tweak error message
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **
 *****************************************************/
 (
@@ -718,6 +719,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRun'
 	END CATCH
 	return @myError
 

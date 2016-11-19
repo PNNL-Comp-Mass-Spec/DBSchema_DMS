@@ -65,6 +65,7 @@ CREATE Procedure AddUpdateAnalysisJob
 **			02/15/2016 mem - Re-enabled handling of @associatedProcessorGroup
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/20/2016 mem - Expand error messages
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -815,6 +816,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateAnalysisJob'		
 	END CATCH
 
 Done:

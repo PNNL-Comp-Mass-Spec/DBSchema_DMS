@@ -44,6 +44,7 @@ CREATE Procedure AddUpdateExperiment
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
 **			09/14/2016 mem - Validate inputs
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **
 *****************************************************/
 (
@@ -618,6 +619,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateExperiment'
 	END CATCH
 	return @myError
 

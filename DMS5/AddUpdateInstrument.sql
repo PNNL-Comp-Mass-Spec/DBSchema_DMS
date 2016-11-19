@@ -22,6 +22,7 @@ CREATE PROCEDURE AddUpdateInstrument
 **			11/30/2011 mem - Added parameter @PercentEMSLOwned
 **			04/01/2013 mem - Expanded @Description to varchar(255)
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -164,6 +165,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateInstrument'
 	END CATCH
 	
 	return @myError

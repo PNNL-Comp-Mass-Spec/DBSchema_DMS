@@ -77,6 +77,7 @@ CREATE Procedure AddUpdateDataset
 **			06/10/2016 mem - Try to auto-associate new datasets with an active requested run (only associate if only one active requested run matches the dataset name)
 **			06/21/2016 mem - Add additional debug messages
 **			08/25/2016 mem - Do not update the dataset comment if the dataset type is changed from 'GC-MS' to 'EI-HMS'
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **    
 *****************************************************/
 (
@@ -1116,9 +1117,10 @@ As
 		end -- </b3>
 
 		---------------------------------------------------
-		-- if a cart name is specified, update it for the 
+		-- If a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
+		--
 		if @LCCartName NOT IN ('', 'no update')
 		begin
 		
@@ -1163,6 +1165,7 @@ As
 		end
 
 		commit transaction @transName
+		
 	end -- </AddMode>
 
 	---------------------------------------------------
@@ -1212,6 +1215,7 @@ As
 		-- if a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
+		--
 		if @LCCartName NOT IN ('', 'no update')
 		begin
 
@@ -1311,6 +1315,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		exec PostLogEntry 'Error', @message, 'AddUpdateDataset'
 	END CATCH
 	return @myError
 

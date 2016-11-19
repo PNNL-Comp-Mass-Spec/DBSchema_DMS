@@ -18,6 +18,7 @@ CREATE PROCEDURE UpdateCachedRequestedRunEUSUsers
 **
 **	Auth:	mem
 **	Date:	11/16/2016 mem - Initial Version
+**			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **
 *****************************************************/
 (
@@ -98,6 +99,9 @@ AS
 		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedRequestedRunEUSUsers')
 		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
 								@ErrorNum = @myError output, @message = @message output
+		
+		exec PostLogEntry 'Error', @message, 'UpdateCachedRequestedRunEUSUsers'
+		
 		Goto Done		
 	End Catch
 			
