@@ -19,6 +19,7 @@ CREATE PROCEDURE UpdateCachedRequestedRunEUSUsers
 **	Auth:	mem
 **	Date:	11/16/2016 mem - Initial Version
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/21/2016 mem - Do not use a Merge statement when @RequestID is non-zero
 **
 *****************************************************/
 (
@@ -46,7 +47,22 @@ AS
 		If @RequestID <> 0
 		Begin
 			-- Updating a specific requested run
-			If Not Exists (SELECT * FROM T_Requested_Run WHERE RDS_Status = 'Active' AND ID = @RequestID)
+			If Exists (SELECT * FROM T_Requested_Run WHERE RDS_Status = 'Active' AND ID = @RequestID)
+			Begin
+				-- Updating a single requested run; to avoid commit conflicts, do not use a merge statement
+				If Exists (SELECT * FROM T_Active_Requested_Run_Cached_EUS_Users WHERE Request_ID = @RequestID)
+				Begin
+					UPDATE T_Active_Requested_Run_Cached_EUS_Users
+					Set User_List = dbo.GetRequestedRunEUSUsersList(@RequestID, 'V')
+					WHERE Request_ID = @RequestID
+				End
+				Else
+				Begin
+					INSERT INTO T_Active_Requested_Run_Cached_EUS_Users (Request_ID, User_List)
+					Values (@RequestID, dbo.GetRequestedRunEUSUsersList(@RequestID, 'V'))
+				End
+			End
+			Else
 			Begin
 				-- The request is not active; assure there is no cached entry
 				If Exists (SELECT * FROM T_Active_Requested_Run_Cached_EUS_Users WHERE Request_ID = @RequestID)
@@ -55,8 +71,9 @@ AS
 					WHERE Request_ID = @RequestID
 				End
 				
-				Goto Done
 			End
+
+			Goto Done			
 		End
 	
 		-- Updating all active requested runs

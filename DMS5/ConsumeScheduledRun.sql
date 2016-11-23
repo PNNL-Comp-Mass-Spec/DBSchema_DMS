@@ -28,13 +28,15 @@ CREATE Procedure ConsumeScheduledRun
 **			12/12/2011 mem - Updated log message when re-using an existing request
 **			12/14/2011 mem - Added parameter @callingUser, which is passed to AddRequestedRunToExistingDataset and AlterEventLogEntryUser
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**			11/21/2016 mem - Add parameter @logDebugMessages
 **    
 *****************************************************/
 (
 	@datasetID int,
 	@requestID int,
 	@message varchar(255) output,
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@logDebugMessages tinyint = 0
 )
 As
 	set nocount on
@@ -48,7 +50,6 @@ As
 	Declare @LogMessage varchar(512)
 	
 	set @message = ''
-
 
 	---------------------------------------------------
 	-- Validate that experiments match
@@ -106,6 +107,12 @@ As
 	declare @transName varchar(128)
 	set @transName = 'ConsumeScheduledRun_' + convert(varchar(12), @datasetID) + '_' + convert(varchar(12), @requestID)
 	
+	If @logDebugMessages = 1
+	Begin
+		Set @LogMessage = 'Start transaction ' + @transName
+		exec PostLogEntry 'Debug', @LogMessage, 'ConsumeScheduledRun'
+	End
+
 	begin transaction @transName
 
 	-- If request already has a dataset associated with it, then we need to create a new auto-request for that dataset
@@ -222,6 +229,12 @@ As
 	--
 	commit transaction @transName
 
+	If @logDebugMessages = 1
+	Begin
+		Set @LogMessage = 'Call UpdateCachedRequestedRunEUSUsers for ' + Cast(@requestID as varchar(12))
+		exec PostLogEntry 'Debug', @LogMessage, 'ConsumeScheduledRun'
+	End
+	
 	---------------------------------------------------
 	-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
 	-- This procedure will delete the cached EUS user list from T_Active_Requested_Run_Cached_EUS_Users for this request ID

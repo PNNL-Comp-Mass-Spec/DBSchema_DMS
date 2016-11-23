@@ -38,35 +38,38 @@ CREATE Procedure dbo.AddNewDataset
 **			03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
 **			05/29/2015 mem - Added support for "Capture Subfolder"
 **			06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
+**			11/21/2016 mem - Added parameter @logDebugMessages
 **    
 *****************************************************/
 (
 	@xmlDoc varchar(4000),
 	@mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
-    @message varchar(512) output
+    @message varchar(512) output,
+    @logDebugMessages tinyint = 1
 )
 AS
-	set nocount on
+	Set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	DECLARE @hDoc int
-	declare @dsid int
+	Declare @hDoc int
+	Declare @dsid int
 
-	declare @tmp int
+	Declare @tmp int
 
-	declare @internalStandards varchar(64)
-	declare @AddUpdateTimeStamp datetime
+	Declare @internalStandards varchar(64)
+	Declare @AddUpdateTimeStamp datetime
 	
-	declare @RunStartDate datetime
-	declare @RunFinishDate datetime
+	Declare @RunStartDate datetime
+	Declare @RunFinishDate datetime
 	
-	set @message = ''
-
-	DECLARE
+	Set @message = ''
+	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
+	
+	Declare
 		@Dataset_Name		varchar(128) = '',
 		@Experiment_Name	varchar(64)  = '',
 		@Instrument_Name	varchar(64)  = '',
@@ -102,11 +105,11 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to create temporary parameter table'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed to create temporary parameter table'
 		goto DONE
-	end
+	End
 
 	---------------------------------------------------
 	-- Convert @xmlDoc to XML
@@ -128,21 +131,21 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Error populating temporary parameter table'
+	If @myError <> 0
+	Begin
+		Set @message = 'Error populating temporary parameter table'
 		goto DONE
-	end
+	End
 
 	---------------------------------------------------
 	-- Trap 'parse_only' mode here
 	---------------------------------------------------
-	if @mode = 'parse_only'
-	begin
+	If @mode = 'parse_only'
+	Begin
 		--
 		SELECT CONVERT(char(24), paramName) AS Name, paramValue FROM #TPAR
 		goto DONE
-	end
+	End
 
  	---------------------------------------------------
 	-- Get agruments from parsed parameters
@@ -174,26 +177,26 @@ AS
 	-- check for QC or Blank datasets
  	---------------------------------------------------
 
-	if dbo.DatasetPreference(@Dataset_Name) <> 0 OR 
+	If dbo.DatasetPreference(@Dataset_Name) <> 0 OR 
 	   dbo.DatasetPreference(@Experiment_Name) <> 0 OR
 	   (@Dataset_Name LIKE 'Blank%' AND Not @Dataset_Name LIKE '%-bad')
-	begin
+	Begin
 		-- Auto set interest rating to 5
 		-- Initially set @Interest_Rating to the text 'Released' but then query
 		--  T_DatasetRatingName for rating 5 in case the rating name has changed
 		
-		set @Interest_Rating = 'Released'
+		Set @Interest_Rating = 'Released'
 
 		SELECT @Interest_Rating = DRN_name
 		FROM T_DatasetRatingName
 		WHERE (DRN_state_ID = 5)
-	end
+	End
 
  	---------------------------------------------------
 	-- Possibly auto-define the experiment
  	---------------------------------------------------
  	--
-	if @Experiment_Name = ''
+	If @Experiment_Name = ''
 	Begin
 		If @Dataset_Name Like 'Blank%'
 			Set @Experiment_Name = 'Blank'
@@ -207,7 +210,7 @@ AS
 	-- Possibly auto-define the @EMSL_Usage_Type
  	---------------------------------------------------
  	--
-	if @EMSL_Usage_Type = ''
+	If @EMSL_Usage_Type = ''
 	Begin
 		If @Dataset_Name Like 'Blank%' OR @Dataset_Name Like 'QC_Shew%'
 			Set @EMSL_Usage_Type = 'MAINTENANCE'
@@ -217,8 +220,8 @@ AS
 	-- establish default parameters
  	---------------------------------------------------
 
-	set @internalStandards  = 'none'
-	set @AddUpdateTimeStamp = GetDate()
+	Set @internalStandards  = 'none'
+	Set @AddUpdateTimeStamp = GetDate()
 	
 	---------------------------------------------------
 	-- Check for the comment ending in "Buzzard:"
@@ -230,7 +233,7 @@ AS
 	
 	If @CaptureSubfolder LIKE '[C-Z]:\%'
 	Begin
-		set @message = 'Capture subfolder is not a relative path for dataset ' + @Dataset_Name + '; ignoring'
+		Set @message = 'Capture subfolder is not a relative path for dataset ' + @Dataset_Name + '; ignoring'
 		
 		exec PostLogEntry 'Error', @message, 'AddNewDataset'
 	   
@@ -260,17 +263,18 @@ AS
 						@Request,
 						@mode,
 						@message output,
-						@CaptureSubfolder=@CaptureSubfolder
-	if @myError <> 0
-	begin
+						@CaptureSubfolder=@CaptureSubfolder,
+						@logDebugMessages=@logDebugMessages
+	If @myError <> 0
+	Begin
 		RAISERROR (@message, 10, 1)
 		return 51032
-	end
+	End
 
 	---------------------------------------------------
 	-- Trap 'check' modes here
 	---------------------------------------------------
-	if @mode = 'check_add' OR @mode = 'check_update'
+	If @mode = 'check_add' OR @mode = 'check_update'
 		goto DONE
 
 
@@ -281,7 +285,7 @@ AS
 	
 	-- First use Dataset Name to lookup the Dataset ID
 	--		
-	set @dsid = 0
+	Set @dsid = 0
 	--
 	SELECT @dsid = Dataset_ID
 	FROM T_Dataset
@@ -289,24 +293,24 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Error trying to resolve dataset ID'
+	If @myError <> 0
+	Begin
+		Set @message = 'Error trying to resolve dataset ID'
 		RAISERROR (@message, 10, 1)
 		return 51034
-	end
-	if @dsid = 0
-	begin
-		set @message = 'Could not resolve dataset ID'
+	End
+	If @dsid = 0
+	Begin
+		Set @message = 'Could not resolve dataset ID'
 		RAISERROR (@message, 10, 1)
 		return 51035
-	end
+	End
 	
 	---------------------------------------------------
 	-- Find request associated with dataset
 	---------------------------------------------------
 	
-	set @tmp = 0
+	Set @tmp = 0
 	--
 	SELECT @tmp = ID
 	FROM T_Requested_Run
@@ -314,15 +318,15 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Error trying to resolve request ID'
+	If @myError <> 0
+	Begin
+		Set @message = 'Error trying to resolve request ID'
 		RAISERROR (@message, 10, 1)
 		return 51036
-	end
+	End
 	
-	if @tmp <> 0
-		set @Request = @tmp
+	If @tmp <> 0
+		Set @Request = @tmp
 	
 	
 	If Len(@DatasetCreatorPRN) > 0
@@ -375,12 +379,12 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			set @message = 'Error trying to update run times'
 			RAISERROR (@message, 10, 1)
 			return 51033
-		end
+		End
 	End
 
  	---------------------------------------------------

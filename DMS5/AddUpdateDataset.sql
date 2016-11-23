@@ -78,6 +78,7 @@ CREATE Procedure AddUpdateDataset
 **			06/21/2016 mem - Add additional debug messages
 **			08/25/2016 mem - Do not update the dataset comment if the dataset type is changed from 'GC-MS' to 'EI-HMS'
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/21/2016 mem - Pass @logDebugMessages to ConsumeScheduledRun
 **    
 *****************************************************/
 (
@@ -1154,7 +1155,7 @@ As
 		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 				Set @warning = @message
 				
-		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser
+		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser, @logDebugMessages
 		--
 		set @myError = @result
 		--
