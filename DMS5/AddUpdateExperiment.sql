@@ -45,6 +45,8 @@ CREATE Procedure AddUpdateExperiment
 **          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
 **			09/14/2016 mem - Validate inputs
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/23/2016 mem - Include the experiment name when calling PostLogEntry from within the catch block
+**						   - Trim trailing and leading spaces from input parameters
 **
 *****************************************************/
 (
@@ -75,9 +77,8 @@ As
 	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -92,14 +93,14 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	Set @experimentNum = IsNull(@experimentNum, '')
-	Set @campaignNum = IsNull(@campaignNum, '')
-	Set @researcherPRN = IsNull(@researcherPRN, '')
-	Set @organismName = IsNull(@organismName, '')
-	Set @reason = IsNull(@reason, '')
-	Set @labelling = IsNull(@labelling, '')
-	Set @alkylation = IsNull(@alkylation, '')
-	Set @comment = IsNull(@comment, '')
+	Set @experimentNum = LTrim(RTrim(IsNull(@experimentNum, '')))
+	Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
+	Set @researcherPRN = LTrim(RTrim(IsNull(@researcherPRN, '')))
+	Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
+	Set @reason = LTrim(RTrim(IsNull(@reason, '')))
+	Set @labelling = LTrim(RTrim(IsNull(@labelling, '')))
+	Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
+	Set @comment = LTrim(RTrim(IsNull(@comment, '')))
 
 	if LEN(@experimentNum) < 1
 		RAISERROR ('experiment name must be defined', 11, 30)
@@ -619,9 +620,12 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateExperiment'
+		
+		Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum		
+		exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
+		
 	END CATCH
+	
 	return @myError
 
 GO

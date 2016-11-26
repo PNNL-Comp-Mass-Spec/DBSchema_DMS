@@ -38,6 +38,8 @@ CREATE Procedure AddUpdateCampaign
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Tweak error messages
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/23/2016 mem - Include the campaign name when calling PostLogEntry from within the catch block
+**						   - Trim trailing and leading spaces from input parameters
 **    
 *****************************************************/
 (
@@ -88,6 +90,11 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
+	Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
+	Set @projectNum = LTrim(RTrim(IsNull(@projectNum, '')))
+	Set @progmgrPRN = LTrim(RTrim(IsNull(@progmgrPRN, '')))
+	Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
+
 	set @myError = 0
 	if LEN(@campaignNum) < 1
 		RAISERROR ('campaign name was blank', 11, 1)
@@ -105,11 +112,8 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @campaignID int
-	set @campaignID = 0
-	--
-	DECLARE @researchTeamID INT
-	SET @researchTeamID = 0
+	Declare @campaignID int = 0
+	Declare @researchTeamID INT = 0
 	--
 	SELECT
 		@campaignID = Campaign_ID, 
@@ -133,8 +137,7 @@ As
 	-- resolve data release restriction name to ID
 	---------------------------------------------------
 	--
-	DECLARE @DataReleaseRestrictionsID INT
-	SET @DataReleaseRestrictionsID = -1
+	Declare @DataReleaseRestrictionsID int = -1
 	-- 
 	SELECT
 		@DataReleaseRestrictionsID = ID
@@ -189,8 +192,7 @@ As
 	-- transaction name
 	---------------------------------------------------
 	--
-	declare @transName varchar(32)
-	set @transName = 'AddUpdateCampaign'
+	declare @transName varchar(32) = 'AddUpdateCampaign'
 
 	---------------------------------------------------
 	-- action for add mode
@@ -385,9 +387,12 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateCampaign'
+
+		Declare @logMessage varchar(1024) = @message + '; Campaign ' + @campaignNum		
+		exec PostLogEntry 'Error', @logMessage, 'AddUpdateCampaign'
+
 	END CATCH
+	
 	return @myError
 
 GO

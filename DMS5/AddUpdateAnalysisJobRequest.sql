@@ -72,6 +72,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/11/2016 mem - Disabled forcing use of MSConvert for QExactive datasets
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/23/2016 mem - Include the request name when calling PostLogEntry from within the catch block
 **
 *****************************************************/
 (
@@ -562,8 +563,10 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateAnalysisJobRequest'
+
+		Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName		
+		exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'
+
 	END CATCH
 
 Done:

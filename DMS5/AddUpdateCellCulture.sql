@@ -29,10 +29,12 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Fix spelling in error messages
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			11/23/2016 mem - Include the cell culture name when calling PostLogEntry from within the catch block
+**						   - Trim trailing and leading spaces from input parameters
 **    
 *****************************************************/
 (
-	@cellCultureName varchar(64),	-- Name of biomaterial or peptide sequence if tracking an MRM peptide
+	@cellCultureName varchar(64),	-- Name of biomaterial (or peptide sequence if tracking an MRM peptide)
 	@sourceName varchar(64), 		-- Source that the material came from; can be a person (onsite or offsite) or a company
 	@contactPRN varchar(64),	    -- Contact for the Source; typically PNNL staff, but can be offsite person
 	@piPRN varchar(32), 			-- Project lead
@@ -71,6 +73,17 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
+	Set @cellCultureName = LTrim(RTrim(IsNull(@cellCultureName, '')))
+	Set @sourceName = LTrim(RTrim(IsNull(@sourceName, '')))
+	Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
+	Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))	
+	Set @cultureType = LTrim(RTrim(IsNull(@cultureType, '')))
+	Set @reason = LTrim(RTrim(IsNull(@reason, '')))
+	Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
+	Set @modCount = LTrim(RTrim(IsNull(@modCount, '')))
+	Set @mass = LTrim(RTrim(IsNull(@mass, '')))
+	Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
+	
 	Set @callingUser = IsNull(@callingUser, '')
 
 	set @myError = 0
@@ -117,8 +130,7 @@ As
 	Declare @modCountValue smallint
 	Declare @massValue float
 	Declare @purchaseDateValue datetime
-			
-	Set @modCount = ISNULL(@modCount, '')
+
 	If @modCount = ''
 		Set @modCountValue = 0
 	Else
@@ -127,8 +139,7 @@ As
 		If @modCountValue Is Null
 			RAISERROR ('Error, non-numeric modification count: %s', 11, 9, @modCount)
 	End	
-	
-	Set @mass = ISNULL(@mass, '')
+
 	If @mass = ''
 		Set @massValue = 0
 	Else
@@ -137,8 +148,7 @@ As
 		If @modCountValue Is Null
 			RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
 	End
-	
-	Set @purchaseDate = ISNULL(@purchaseDate, '')
+
 	If @purchaseDate = ''
 		Set @purchaseDateValue = null
 	Else
@@ -153,11 +163,8 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @cellCultureID int
-	set @cellCultureID = 0
-	--
-	declare @curContainerID int
-	set @curContainerID = 0
+	declare @cellCultureID int = 0
+	declare @curContainerID int = 0
 	--
 	SELECT 
 		@cellCultureID = CC_ID, 
@@ -471,8 +478,10 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateCellCulture'
+
+		Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName		
+		exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'
+
 	END CATCH
 	return @myError
 

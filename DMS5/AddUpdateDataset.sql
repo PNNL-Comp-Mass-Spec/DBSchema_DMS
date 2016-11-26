@@ -79,6 +79,8 @@ CREATE Procedure AddUpdateDataset
 **			08/25/2016 mem - Do not update the dataset comment if the dataset type is changed from 'GC-MS' to 'EI-HMS'
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/21/2016 mem - Pass @logDebugMessages to ConsumeScheduledRun
+**			11/23/2016 mem - Include the dataset name when calling PostLogEntry from within the catch block
+**						   - Trim trailing and leading spaces from input parameters
 **    
 *****************************************************/
 (
@@ -132,6 +134,17 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+
+	Set @mode = LTrim(RTrim(IsNull(@mode, '')))
+	Set @secSep = LTrim(RTrim(IsNull(@secSep, '')))
+	Set @LCColumnNum = LTrim(RTrim(IsNull(@LCColumnNum, '')))
+	Set @datasetNum = LTrim(RTrim(IsNull(@datasetNum, '')))
+
+	Set @experimentNum = LTrim(RTrim(IsNull(@experimentNum, '')))
+	Set @operPRN = LTrim(RTrim(IsNull(@operPRN, '')))
+	Set @instrumentName = LTrim(RTrim(IsNull(@instrumentName, '')))
+	Set @rating = LTrim(RTrim(IsNull(@rating, '')))
+
 	Set @internalStandards = IsNull(@internalStandards, '')
 	if @internalStandards = '' Or @internalStandards = 'na'
 		set @internalStandards = 'none'
@@ -1316,8 +1329,10 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateDataset'
+
+		Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum		
+		exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataset'
+
 	END CATCH
 	return @myError
 
