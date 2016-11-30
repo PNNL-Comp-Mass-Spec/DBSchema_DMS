@@ -26,7 +26,7 @@ CREATE Procedure dbo.DuplicateParamFileMassMods
 (
 	@SourceParamFileID int,
 	@DestParamFileID int,
-	@UpdateParamEntries tinyint = 1,		-- Whe non-zero, then updates T_Param_Entries in addition to T_Param_File_Mass_Mods
+	@UpdateParamEntries tinyint = 1,		-- When non-zero, updates T_Param_Entries in addition to T_Param_File_Mass_Mods
 	@InfoOnly tinyint = 0,
 	@message varchar(512)='' OUTPUT
 )
