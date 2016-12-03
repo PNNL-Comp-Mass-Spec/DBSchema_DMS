@@ -39,6 +39,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **						   - Removed parameter @NEWTIdentifier since superseded by @NCBITaxonomyID
 **			03/03/2016 mem - Now storing @AutoDefineTaxonomy in column Auto_Define_Taxonomy
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -108,7 +109,7 @@ As
 		
 	End
 
-	set @orgName = IsNull(@orgName, '')
+	set @orgName = LTrim(RTrim(IsNull(@orgName, '')))
 	if Len(@orgName) < 1
 	begin
 		RAISERROR ('Organism Name cannot be blank', 11, 0)
@@ -119,6 +120,26 @@ As
 		RAISERROR ('Organism Name cannot contain spaces', 11, 0)
 	end
 
+	if @orgName Like '%,%'
+	begin
+		RAISERROR ('Organism Name cannot contain commas', 11, 0)
+	end
+
+	if Len(IsNull(@orgShortName, '')) > 0
+	begin
+		Set @orgShortName = LTrim(RTrim(IsNull(@orgShortName, '')))
+		
+		if @orgShortName Like '% %'
+		begin
+			RAISERROR ('Organism Short Name cannot contain spaces', 11, 0)
+		end
+
+		if @orgShortName Like '%,%'
+		begin
+			RAISERROR ('Organism Short Name cannot contain commas', 11, 0)
+		end
+	end
+	
 	Set @orgDBName = IsNull(@orgDBName, '')
 	If @orgDBName Like '%.fasta'
 	Begin

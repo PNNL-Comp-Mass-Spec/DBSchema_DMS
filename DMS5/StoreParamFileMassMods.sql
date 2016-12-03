@@ -31,6 +31,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			03/14/2016 mem - Look for an entry in column Mass_Correction_Tag of T_Mass_Correction_Factors if no match is found in Original_Source_Name and @ValidateUnimod = 0
 **			08/31/2016 mem - Fix logic parsing N- or C-terminal static mods that use * for the affected residue
 **						   - Store static N- or C-terminal mods as type 'T' instead of 'S'
+**			11/30/2016 mem - Check for a residue specification of any instead of *
 **    
 *****************************************************/
 (
@@ -400,6 +401,13 @@ AS
 							SELECT @Field = LTrim(RTrim(Value))
 							FROM #Tmp_ModDef
 							WHERE EntryID = 2
+							
+							If @Field = 'any'
+							Begin
+								Set @message = 'Use * to match all residues, not the word "any"; see row: ' + @Row
+								Set @myError = 53010
+								Goto Done
+							End
 							
 							-- Parse each character in @Field
 							Set @CharIndex = 0

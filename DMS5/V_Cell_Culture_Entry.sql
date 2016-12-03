@@ -16,6 +16,7 @@ SELECT U.CC_Name AS Name_or_Peptide,
        U.CC_Comment,
        C.Campaign_Num,
        MC.Tag AS Container,
+	   dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
        U.Gene_Name,
        U.Gene_Location,
        U.Mod_Count,
@@ -31,7 +32,6 @@ FROM T_Cell_Culture U
        ON U.CC_Campaign_ID = C.Campaign_ID
      INNER JOIN T_Material_Containers MC
        ON U.CC_Container_ID = MC.ID
-
 
 
 GO

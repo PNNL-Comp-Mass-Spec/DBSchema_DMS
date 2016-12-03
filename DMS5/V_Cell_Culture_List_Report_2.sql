@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Cell_Culture_List_Report_2]
 AS
 SELECT U.CC_ID AS ID,
@@ -20,6 +18,7 @@ SELECT U.CC_ID AS ID,
        C.Campaign_Num AS Campaign,
        MC.Tag AS Container,
        ML.Tag AS Location,
+	   Cached_Organism_List AS Organisms,
        U.CC_Material_Active AS [Material Status],
        U.Gene_Name AS [Gene Name],
        U.Gene_Location AS [Gene Location],
@@ -42,8 +41,6 @@ FROM dbo.T_Cell_Culture U
        ON U.CC_Contact_PRN = U_Contact.U_PRN
      LEFT OUTER JOIN T_Users U_PI
        ON U.CC_PI_PRN = U_PI.U_PRN
-
-
 
 
 GO

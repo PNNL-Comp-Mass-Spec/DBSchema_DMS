@@ -11,10 +11,6 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	grk
 **	Date:	03/12/2002
 **			01/12/2007 grk - added verification mode
@@ -25,12 +21,13 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			11/15/2012 mem - Renamed parameter @ownerPRN to @contactPRN; renamed column CC_Owner_PRN to CC_Contact_PRN
 **						   - Added new fields to support peptide standards
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Fix spelling in error messages
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/23/2016 mem - Include the cell culture name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
+**			12/02/2016 mem - Add @organismList, call UpdateOrganismListForBiomaterial, and populate Cached_Organism_List
 **    
 *****************************************************/
 (
@@ -42,32 +39,33 @@ CREATE Procedure dbo.AddUpdateCellCulture
 	@reason varchar(500),
 	@comment varchar(500),
 	@campaignNum varchar(64), 
-	@mode varchar(12) = 'add', -- or 'update'
+	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
 	@geneName varchar(128),
 	@geneLocation varchar(128),
-	@modCount varchar(20)	,		-- Will be converted to a Smallint
+	@modCount varchar(20),			-- Will be converted to a Smallint
 	@modifications varchar(500),
 	@mass          varchar(30),		-- Will be converted to a float
 	@purchaseDate  varchar(30),		-- Will be converted to a date
 	@peptidePurity varchar(64),
 	@purchaseQuantity varchar(128),
-	@callingUser varchar(128) = ''
+	@organismList varchar(max),		-- List of one or more organisms to associate with this biomaterial; stored in T_Biomaterial_Organisms
+	@callingUser varchar(128) = ''		
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
-	set @message = ''
+	Set @message = ''
 
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
 
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -84,48 +82,49 @@ As
 	Set @mass = LTrim(RTrim(IsNull(@mass, '')))
 	Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
 	
+	Set @organismList = LTrim(RTrim(IsNull(@organismList, '')))
 	Set @callingUser = IsNull(@callingUser, '')
 
-	set @myError = 0
-	if LEN(@campaignNum) < 1
-	begin
+	Set @myError = 0
+	If LEN(@campaignNum) < 1
+	Begin
 		RAISERROR ('Campaign Name was blank', 11, 1)
-	end	
-	if LEN(@contactPRN) < 1
-	begin
+	End	
+	If LEN(@contactPRN) < 1
+	Begin
 		RAISERROR ('Contact Name was blank', 11, 3)
-	end
+	End
 	--
-	if LEN(@piPRN) < 1
-	begin
+	If LEN(@piPRN) < 1
+	Begin
 		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
-	end
+	End
 	--
-	if LEN(@cellCultureName) < 1
-	begin
-		RAISERROR ('Cell Culture Name was blank', 11, 4)
-	end
+	If LEN(@cellCultureName) < 1
+	Begin
+		RAISERROR ('Biomaterial Name was blank', 11, 4)
+	End
 	--
-	if LEN(@sourceName) < 1
-	begin
+	If LEN(@sourceName) < 1
+	Begin
 		RAISERROR ('Source Name was blank', 11, 5)
-	end
+	End
 	--
-	if LEN(@cultureType) < 1
-	begin
-		set @myError = 51001
+	If LEN(@cultureType) < 1
+	Begin
+		Set @myError = 51001
 		RAISERROR ('Culture Type was blank', 11, 6)
-	end
+	End
 	--
-	if LEN(@reason) < 1
-	begin
+	If LEN(@reason) < 1
+	Begin
 		RAISERROR ('Reason was blank', 11, 7)
-	end
+	End
 	--
-	if LEN(@campaignNum) < 1
-	begin
+	If LEN(@campaignNum) < 1
+	Begin
 		RAISERROR ('Campaign Name was blank', 11, 8)
-	end
+	End
 
 	Declare @modCountValue smallint
 	Declare @massValue float
@@ -163,8 +162,8 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @cellCultureID int = 0
-	declare @curContainerID int = 0
+	Declare @cellCultureID int = 0
+	Declare @curContainerID int = 0
 	--
 	SELECT 
 		@cellCultureID = CC_ID, 
@@ -174,49 +173,49 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Error trying to resolve cell culture ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Error trying to resolve biomaterial ID (cell culture ID)'
 		RAISERROR (@msg, 11, 10)
-	end
+	End
 
 	-- cannot create an entry that already exists
 	--
-	if @cellCultureID <> 0 and (@mode = 'add' or @mode = 'check_add')
-	begin
-		set @msg = 'Cannot add: Cell Culture "' + @cellCultureName + '" already in database '
+	If @cellCultureID <> 0 and (@mode = 'add' or @mode = 'check_add')
+	Begin
+		Set @msg = 'Cannot add: Biomaterial "' + @cellCultureName + '" already in database '
 		RAISERROR (@msg, 11, 11)
-	end
+	End
 
 	-- cannot update a non-existent entry
 	--
-	if @cellCultureID = 0 and (@mode = 'update' or @mode = 'check_update')
-	begin
-		set @msg = 'Cannot update: Cell Culture "' + @cellCultureName + '" is not in database '
+	If @cellCultureID = 0 and (@mode = 'update' or @mode = 'check_update')
+	Begin
+		Set @msg = 'Cannot update: Biomaterial "' + @cellCultureName + '" is not in database '
 		RAISERROR (@msg, 11, 12)
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve campaign number to ID
 	---------------------------------------------------
 
-	declare @campaignID int
-	set @campaignID = 0
+	Declare @campaignID int
+	Set @campaignID = 0
 	--
 	execute @campaignID = GetCampaignID @campaignNum
 	--
-	if @campaignID = 0
-	begin
-		set @msg = 'Could not resolve campaign name "' + @campaignNum + '" to ID"'
+	If @campaignID = 0
+	Begin
+		Set @msg = 'Could not resolve campaign name "' + @campaignNum + '" to ID"'
 		RAISERROR (@msg, 11, 13)
-	end
+	End
 	
 	---------------------------------------------------
 	-- Resolve type name to ID
 	---------------------------------------------------
 
-	declare @typeID int
-	set @typeID = 0
+	Declare @typeID int
+	Set @typeID = 0
 	--
 	SELECT @typeID = ID
 	FROM T_Cell_Culture_Type_Name
@@ -224,18 +223,18 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Could not resolve type name "' + @cultureType + '" to ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Could not resolve type name "' + @cultureType + '" to ID'
 		RAISERROR (@msg, 11, 14)
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve container name to ID
 	---------------------------------------------------
 
-	declare @contID int
-	set @contID = 0
+	Declare @contID int
+	Set @contID = 0
 	--
 	If ISNULL(@container, '') = ''
 		Set @container = 'na'
@@ -246,17 +245,17 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Could not resolve container name "' + @container + '" to ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Could not resolve container name "' + @container + '" to ID'
 		RAISERROR (@msg, 11, 15)
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve current container id to name
 	---------------------------------------------------
-	declare @curContainerName varchar(125)
-	set @curContainerName = ''
+	Declare @curContainerName varchar(125)
+	Set @curContainerName = ''
 	--
 	SELECT @curContainerName = Tag 
 	FROM T_Material_Containers 
@@ -264,27 +263,27 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Error resolving name of current container'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Error resolving name of current container'
 		RAISERROR (@msg, 11, 16)
-	end
+	End
 
 	---------------------------------------------------
-	-- Resolve DPRNs to user number
+	-- Resolve PRNs to user number
 	---------------------------------------------------
 
 	-- verify that Owner PRN  is valid 
 	-- and get its id number
 	--
-	declare @userID int
+	Declare @userID int
 
 	Declare @MatchCount int
 	Declare @NewPRN varchar(64)
 
 	execute @userID = GetUserID @contactPRN
-	if @userID = 0
-	begin
+	If @userID = 0
+	Begin
 		-- Could not find entry in database for PRN @contactPRN
 		-- Try to auto-resolve the name
 		
@@ -296,14 +295,14 @@ As
 			Set @contactPRN = @NewPRN
 		End
 		
-	end
+	End
 
 	-- verify that principle investigator PRN is valid 
 	-- and get its id number
 	--
 	execute @userID = GetUserID @piPRN
-	if @userID = 0
-	begin
+	If @userID = 0
+	Begin
 		---------------------------------------------------
 		-- @piPRN did not resolve to a User_ID
 		-- In case a name was entered (instead of a PRN),
@@ -319,16 +318,16 @@ As
 		End
 		Else
 		Begin
-			set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
+			Set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
 			RAISERROR (@msg, 11, 17)
 		End
-	end
+	End
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+	If @Mode = 'add'
+	Begin -- <add>
 		INSERT INTO T_Cell_Culture (
 			CC_Name, 
 			CC_Source_Name, 
@@ -371,15 +370,15 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @msg = 'Insert operation failed: "' + @cellCultureName + '"'
+		If @myError <> 0
+		Begin
+			Set @msg = 'Insert operation failed: "' + @cellCultureName + '"'
 			RAISERROR (@msg, 11, 18)
-		end
+		End
 
-		set @cellCultureID = SCOPE_IDENTITY()
+		Set @cellCultureID = SCOPE_IDENTITY()
 		
-		-- As a precaution, query T_Cell_Culture using Cell Culture name to make sure we have the correct CC_ID
+		-- As a precaution, query T_Cell_Culture using Biomaterial name to make sure we have the correct CC_ID
 		Declare @IDConfirm int = 0
 		
 		SELECT @IDConfirm = CC_ID
@@ -389,26 +388,25 @@ As
 		If @cellCultureID <> IsNull(@IDConfirm, @cellCultureID)
 		Begin
 			Declare @DebugMsg varchar(512)
-			Set @DebugMsg = 'Warning: Inconsistent identity values when adding cell culture ' + @cellCultureName + ': Found ID ' +
+			Set @DebugMsg = 'Warning: Inconsistent identity values when adding biomaterial ' + @cellCultureName + ': Found ID ' +
 			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
 			                Cast(@cellCultureID as varchar(12))
 			                
-			exec postlogentry 'Error', @DebugMsg, 'AddUpdateCellCulture'
+			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateCellCulture'
 			
 			Set @cellCultureID = @IDConfirm
 		End		
 		
-		declare @StateID int
-		set @StateID = 1
+		Declare @StateID int = 1
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 2, @cellCultureID, @StateID, @callingUser
 
-		-- material movement logging
+		-- Material movement logging
 		-- 		
-		if @curContainerID != @contID
-		begin
+		If @curContainerID != @contID
+		Begin
 			exec PostMaterialLogEntry
 				'Biomaterial Move',
 				@cellCultureName,
@@ -416,20 +414,28 @@ As
 				@container,
 				@callingUser,
 				'Biomaterial (Cell Culture) added'
-		end
+		End
 
-	end -- add mode
+		-- Store the associated organism(s)
+		exec @myError = UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @msg output
+		
+		If @myError <> 0
+		Begin
+			RAISERROR (@msg, 11, 19)
+		End
+		
+	End -- </add>
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
+	If @Mode = 'update' 
+	Begin -- <update>
+		Set @myError = 0
 		--
 		UPDATE T_Cell_Culture
-		SET 
+		Set 
 			CC_Source_Name    = @sourceName, 
 			CC_Contact_PRN    = @contactPRN, 
 			CC_PI_PRN         = @piPRN, 
@@ -450,16 +456,16 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 or @myRowCount <> 1
-		begin
-			set @msg = 'Update operation failed: "' + @cellCultureName + '"'
+		If @myError <> 0 or @myRowCount <> 1
+		Begin
+			Set @msg = 'Update operation failed: "' + @cellCultureName + '"'
 			RAISERROR (@msg, 11, 19)
-		end
+		End
 
-		-- material movement logging
+		-- Material movement logging
 		-- 		
-		if @curContainerID != @contID
-		begin
+		If @curContainerID != @contID
+		Begin
 			exec PostMaterialLogEntry
 				'Biomaterial Move',
 				@cellCultureName,
@@ -467,22 +473,30 @@ As
 				@container,
 				@callingUser,
 				'Biomaterial (Cell Culture) updated'
-		end
+		End
 
-	end -- update mode
+		-- Update the associated organism(s)
+		exec @myError = UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @msg output
+		
+		If @myError <> 0
+		Begin
+			RAISERROR (@msg, 11, 19)
+		End
+		
+	End -- </update>
 
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
 		Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName		
 		exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'
 
-	END CATCH
+	End CATCH
 	return @myError
 
 

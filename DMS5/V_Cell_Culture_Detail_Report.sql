@@ -20,6 +20,7 @@ SELECT U.CC_Name AS [Name or Peptide],
        U.CC_ID AS ID,
        MC.Tag AS Container,
        L.Tag AS Location,
+	   dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
        U.Gene_Name AS [Gene Name],
        U.Gene_Location AS [Gene Location],
        U.Mod_Count AS [Mod Count],
@@ -42,6 +43,7 @@ FROM T_Cell_Culture U
        ON U.CC_Contact_PRN = U_Contact.U_PRN
      LEFT OUTER JOIN T_Users U_PI
        ON U.CC_PI_PRN = U_PI.U_PRN
+
 
 
 GO

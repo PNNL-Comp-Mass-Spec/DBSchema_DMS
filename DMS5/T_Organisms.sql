@@ -72,13 +72,17 @@ REFERENCES [dbo].[T_YesNo] ([Flag])
 GO
 ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [FK_T_Organisms_T_YesNo]
 GO
-ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name_NoSpace] CHECK  ((NOT [OG_Name] like '% %'))
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name_NoSpaceOrComma] CHECK  ((NOT [OG_Name] like '% %' AND NOT [OG_Name] like '%,%'))
 GO
-ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Name_NoSpace]
+ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Name_NoSpaceOrComma]
 GO
 ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([OG_Name],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace]
+GO
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Short_Name_NoSpaceOrComma] CHECK  ((NOT [OG_Short_Name] like '% %' AND NOT [OG_Short_Name] like '%,%'))
+GO
+ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Short_Name_NoSpaceOrComma]
 GO
 /****** Object:  Trigger [dbo].[trig_i_T_Organisms] ******/
 SET ANSI_NULLS ON

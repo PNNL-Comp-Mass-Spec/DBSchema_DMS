@@ -31,3 +31,7 @@ REFERENCES [dbo].[T_AuxInfo_Subcategory] ([ID])
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Description] CHECK CONSTRAINT [FK_T_AuxInfo_Description_T_AuxInfo_Subcategory]
 GO
+ALTER TABLE [dbo].[T_AuxInfo_Description]  WITH CHECK ADD  CONSTRAINT [CK_T_AuxInfo_Description_Active] CHECK  (([Active]='N' OR [Active]='Y'))
+GO
+ALTER TABLE [dbo].[T_AuxInfo_Description] CHECK CONSTRAINT [CK_T_AuxInfo_Description_Active]
+GO

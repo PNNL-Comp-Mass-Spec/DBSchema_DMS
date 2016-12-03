@@ -3,17 +3,28 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_AuxInfo_Definition
+
+CREATE VIEW [dbo].[V_AuxInfo_Definition]
 AS
-SELECT     dbo.T_AuxInfo_Target.Name AS Target, dbo.T_AuxInfo_Category.Name AS Category, dbo.T_AuxInfo_Subcategory.Name AS Subcategory, 
-                      dbo.T_AuxInfo_Description.Name AS Item, dbo.T_AuxInfo_Description.ID AS Item_ID, dbo.T_AuxInfo_Category.Sequence AS SC, 
-                      dbo.T_AuxInfo_Subcategory.Sequence AS SS, dbo.T_AuxInfo_Description.Sequence AS SI, dbo.T_AuxInfo_Description.DataSize, 
-                      dbo.T_AuxInfo_Description.HelperAppend
-FROM         dbo.T_AuxInfo_Category INNER JOIN
-                      dbo.T_AuxInfo_Subcategory ON dbo.T_AuxInfo_Category.ID = dbo.T_AuxInfo_Subcategory.Parent_ID INNER JOIN
-                      dbo.T_AuxInfo_Description ON dbo.T_AuxInfo_Subcategory.ID = dbo.T_AuxInfo_Description.Parent_ID INNER JOIN
-                      dbo.T_AuxInfo_Target ON dbo.T_AuxInfo_Category.Target_Type_ID = dbo.T_AuxInfo_Target.ID
-WHERE     (dbo.T_AuxInfo_Description.Active = 'Y')
+SELECT Category_Target.[Name] AS Target,
+       Category.[Name] AS Category,
+       Subcategory.[Name] AS Subcategory,
+       Item.[Name] AS Item,
+       Item.ID AS Item_ID,
+       Category.[Sequence] AS SC,
+       Subcategory.[Sequence] AS SS,
+       Item.[Sequence] AS SI,
+       Item.DataSize,
+       Item.HelperAppend
+FROM T_AuxInfo_Category Category
+     INNER JOIN T_AuxInfo_Subcategory Subcategory
+       ON Category.ID = Subcategory.Parent_ID
+     INNER JOIN T_AuxInfo_Description Item
+       ON Subcategory.ID = Item.Parent_ID
+     INNER JOIN T_AuxInfo_Target Category_Target
+       ON Category.Target_Type_ID = Category_Target.ID
+WHERE (Item.Active = 'Y')
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Definition] TO [PNL\D3M578] AS [dbo]
