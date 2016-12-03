@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			01/05/2016 mem - Tweak warning message for DeconTools results without data
 **			06/17/2016 mem - Add missing space in log message
 **			06/20/2016 mem - Include the completion code description in logged messages
+**			12/02/2016 mem - Lookup step tools with shared results in T_Step_Tools when initializing @SharedResultStep
 **
 *****************************************************/
 (
@@ -218,7 +219,7 @@ As
 
 	If @resetSharedResultStep <> 0
 	Begin
-		-- Reset the the Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step just upstream from this step
+		-- Reset the the DTA_Gen, DTA_Refinery, Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen, ProMex step just upstream from this step
 		
 		Declare @SharedResultStep int = -1
 		
@@ -226,13 +227,13 @@ As
 		FROM T_Job_Steps
 		WHERE Job = @job AND
 		      Step_Number < @step AND
-		      Step_Tool IN ('Mz_Refinery', 'MSXML_Gen', 'MSXML_Bruker', 'PBF_Gen')
+		      Step_Tool IN (SELECT [Name] FROM T_Step_Tools WHERE Shared_Result_Version > 0)
 		ORDER BY Step_Number DESC
 
 		If IsNull(@SharedResultStep, -1) < 0
 		Begin
 			Set @message = 'Job ' + Cast(@job as varchar(12)) + 
-			               ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen step prior to step ' + Cast(@step as varchar(12)) + 
+			               ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step prior to step ' + Cast(@step as varchar(12)) + 
 			               '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ') is invalid'
 
 			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'

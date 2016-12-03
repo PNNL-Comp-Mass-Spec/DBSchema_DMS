@@ -32,6 +32,7 @@ CREATE PROCEDURE UpdateDependentSteps
 **			12/20/2011 mem - Now updating T_Job_Steps.Dependencies if the dependency count listed is lower than that defined in T_Job_Step_Dependencies 
 **			09/17/2014 mem - Updated output_folder_name logic to recognize tool Mz_Refinery
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			12/01/2016 mem - Use Disable_Output_Folder_Name_Override_on_Skip when finding shared result step tools for which we should not override Output_Folder_Name when the step is skipped
 **    
 *****************************************************/
 (
@@ -421,7 +422,7 @@ As
 					---------------------------------------------------
 					-- update step state and output folder name
 					-- (input folder name is passed through if step is skipped, 
-					--  unless the tool is DTA_Refinery or Mz_Refinery, then the folder name is
+					--  unless the tool is DTA_Refinery or Mz_Refinery or ProMex, then the folder name is
 					--  NOT passed through if the tool is skipped)
 					---------------------------------------------------
 					--
@@ -433,7 +434,7 @@ As
 						-- It may also update Output_Folder_Name; here's the logic:
 							-- If the new state is not 3 (skipped), then will leave Output_Folder_Name unchanged
 							-- If the new state is 3, then change Output_Folder_Name to be Input_Folder_Name, but only if:
-							--  a. the step tool is not DTA_Refinery or Mz_Refinery and 
+							--  a. the step tool is not DTA_Refinery or Mz_Refinery or ProMex and 
 							--  b. the Input_Folder_Name is not blank (this check is needed when the first step of a job 
 							--     is skipped; that step will always have a blank Input_Folder_Name, and we don't want
 							--     the Output_Folder_Name to get blank'd out)
@@ -443,7 +444,11 @@ As
 						    Output_Folder_Name = CASE
 						                             WHEN (@newState = 3 AND
 						                                   ISNULL(Input_Folder_Name, '') <> '' AND
-						                                   Step_Tool Not In ('Mz_Refinery', 'DTA_Refinery')) THEN Input_Folder_Name
+						                                   Step_Tool Not In (SELECT [Name] FROM T_Step_Tools 
+						                                                     WHERE Shared_Result_Version > 0 AND 
+						                                                           Disable_Output_Folder_Name_Override_on_Skip > 0)
+						                                                    ) 
+						                             THEN Input_Folder_Name
 						                             ELSE Output_Folder_Name
 						                         END
 						WHERE Job = @Job AND

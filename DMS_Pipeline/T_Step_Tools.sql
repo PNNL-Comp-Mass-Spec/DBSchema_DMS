@@ -19,12 +19,24 @@ CREATE TABLE [dbo].[T_Step_Tools](
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Tag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AvgRuntime_Minutes] [real] NULL,
+	[Disable_Output_Folder_Name_Override_on_Skip] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Step_Tools_1] PRIMARY KEY CLUSTERED 
 (
 	[Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Step_Tools_Shared_Result_Version] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Step_Tools_Shared_Result_Version] ON [dbo].[T_Step_Tools]
+(
+	[Shared_Result_Version] ASC
+)
+INCLUDE ( 	[Name],
+	[Disable_Output_Folder_Name_Override_on_Skip]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Shared_Result]  DEFAULT ((0)) FOR [Shared_Result_Version]
 GO
@@ -41,4 +53,6 @@ GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Param_File_Storage_Path]  DEFAULT ('') FOR [Param_File_Storage_Path]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Disable_Output_Folder_Name_Override_on_Skip]  DEFAULT ((0)) FOR [Disable_Output_Folder_Name_Override_on_Skip]
 GO
