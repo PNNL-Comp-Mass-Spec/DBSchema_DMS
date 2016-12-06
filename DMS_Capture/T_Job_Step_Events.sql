@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Job_Step_Events](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Step_Events] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Job_Step_Events_Current_State_Job] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Events_Current_State_Job] ON [dbo].[T_Job_Step_Events]
 (

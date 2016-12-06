@@ -326,3 +326,5 @@ Done:
 	End
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewJobsFromAnalysisBroker] TO [DDL_Viewer] AS [dbo]
+GO

@@ -35,3 +35,5 @@ GROUP BY J.Job, J.Priority, J.Script, J.[State], JSN.Name,
          J.Start, J.Finish
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Jobs_ActiveOrComplete] TO [DDL_Viewer] AS [dbo]
+GO

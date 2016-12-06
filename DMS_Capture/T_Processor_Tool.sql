@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Processor_Tool](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Processor_Tool] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Priority]  DEFAULT ((3)) FOR [Priority]
 GO
 ALTER TABLE [dbo].[T_Processor_Tool] ADD  CONSTRAINT [DF_T_Processor_Tool_Enabled]  DEFAULT ((1)) FOR [Enabled]

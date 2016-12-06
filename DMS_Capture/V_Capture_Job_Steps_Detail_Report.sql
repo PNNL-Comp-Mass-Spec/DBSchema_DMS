@@ -40,3 +40,5 @@ FROM dbo.T_Job_Steps AS JS
        ON J.Script = S.Script
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Job_Steps_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

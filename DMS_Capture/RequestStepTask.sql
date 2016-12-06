@@ -586,5 +586,7 @@ AS
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestStepTask] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RequestStepTask] TO [DMS_SP_User] AS [dbo]
 GO

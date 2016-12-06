@@ -14,3 +14,5 @@ FROM S_DMS_V_DatasetFullDetails
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Get_Dataset_Info] TO [DDL_Viewer] AS [dbo]
+GO

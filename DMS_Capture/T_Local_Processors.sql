@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Local_Processors](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Local_Processors] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Local_Processors] ADD  CONSTRAINT [DF_T_Local_Processors_State]  DEFAULT ('E') FOR [State]
 GO
 ALTER TABLE [dbo].[T_Local_Processors]  WITH CHECK ADD  CONSTRAINT [FK_T_Local_Processors_T_Machines] FOREIGN KEY([Machine])

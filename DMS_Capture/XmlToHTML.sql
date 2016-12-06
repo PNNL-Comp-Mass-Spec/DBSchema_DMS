@@ -44,3 +44,5 @@ End
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[XmlToHTML] TO [DDL_Viewer] AS [dbo]
+GO

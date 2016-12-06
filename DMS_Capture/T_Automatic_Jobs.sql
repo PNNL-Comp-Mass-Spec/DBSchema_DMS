@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Automatic_Jobs](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Automatic_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Automatic_Jobs]  WITH CHECK ADD  CONSTRAINT [FK_T_Automatic_Jobs_T_Scripts] FOREIGN KEY([Script_For_Completed_Job])
 REFERENCES [dbo].[T_Scripts] ([Script])
 GO

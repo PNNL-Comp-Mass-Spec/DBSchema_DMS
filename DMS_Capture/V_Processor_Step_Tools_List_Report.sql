@@ -15,3 +15,5 @@ FROM         dbo.T_Machines AS M RIGHT OUTER JOIN
 WHERE M.Enabled > 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Step_Tools_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Dataset_Info_XML](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_Info_XML] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Dataset_Info_XML] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Info_XML] ON [dbo].[T_Dataset_Info_XML]
 (

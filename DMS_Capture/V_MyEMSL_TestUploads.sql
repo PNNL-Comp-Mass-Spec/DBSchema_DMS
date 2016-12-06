@@ -32,3 +32,5 @@ FROM T_MyEMSL_TestUploads MU
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_TestUploads] TO [DDL_Viewer] AS [dbo]
+GO

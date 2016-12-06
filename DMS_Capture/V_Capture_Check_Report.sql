@@ -22,3 +22,5 @@ FROM         dbo.T_Jobs AS J INNER JOIN
                       dbo.T_Job_Step_State_Name AS TSSNX ON TJSX.State = TSSNX.ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Check_Report] TO [DDL_Viewer] AS [dbo]
+GO

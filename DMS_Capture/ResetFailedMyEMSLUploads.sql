@@ -112,3 +112,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetFailedMyEMSLUploads] TO [DDL_Viewer] AS [dbo]
+GO

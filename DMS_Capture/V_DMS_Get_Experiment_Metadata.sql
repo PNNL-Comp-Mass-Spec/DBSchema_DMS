@@ -18,3 +18,5 @@ FROM S_DMS_T_Experiments AS T
 WHERE (AI.Target = 'Experiment')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Get_Experiment_Metadata] TO [DDL_Viewer] AS [dbo]
+GO

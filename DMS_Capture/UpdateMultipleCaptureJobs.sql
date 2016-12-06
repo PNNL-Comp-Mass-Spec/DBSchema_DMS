@@ -250,5 +250,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMultipleCaptureJobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateMultipleCaptureJobs] TO [DMS_SP_User] AS [dbo]
 GO

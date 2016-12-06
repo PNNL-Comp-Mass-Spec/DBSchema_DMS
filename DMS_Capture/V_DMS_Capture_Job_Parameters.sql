@@ -55,3 +55,5 @@ FROM S_DMS_T_Dataset AS DS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Capture_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GO

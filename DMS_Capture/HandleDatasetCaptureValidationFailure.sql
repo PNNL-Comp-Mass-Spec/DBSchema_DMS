@@ -153,3 +153,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[HandleDatasetCaptureValidationFailure] TO [DDL_Viewer] AS [dbo]
+GO

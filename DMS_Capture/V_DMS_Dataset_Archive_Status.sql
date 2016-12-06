@@ -21,3 +21,5 @@ FROM S_DMS_T_Dataset_Archive DA
        ON DA.AS_Dataset_ID = DS.Dataset_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Archive_Status] TO [DDL_Viewer] AS [dbo]
+GO

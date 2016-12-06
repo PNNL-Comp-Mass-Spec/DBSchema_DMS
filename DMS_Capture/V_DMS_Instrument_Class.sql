@@ -11,3 +11,5 @@ SELECT IN_class AS InstrumentClass,
 FROM S_DMS_T_Instrument_Class
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Instrument_Class] TO [DDL_Viewer] AS [dbo]
+GO

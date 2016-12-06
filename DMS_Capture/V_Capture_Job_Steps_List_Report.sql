@@ -42,3 +42,5 @@ FROM dbo.T_Job_Steps AS JS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Job_Steps_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

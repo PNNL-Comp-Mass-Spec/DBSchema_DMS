@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_Jobs](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Jobs_Dataset_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Jobs_Dataset_ID] ON [dbo].[T_Jobs]
 (

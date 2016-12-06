@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_MyEMSL_TestUploads](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MyEMSL_TestUploads] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_MyEMSL_TestUploads_Dataset_ID_include_StatusNum] ******/
 CREATE NONCLUSTERED INDEX [IX_T_MyEMSL_TestUploads_Dataset_ID_include_StatusNum] ON [dbo].[T_MyEMSL_TestUploads]
 (

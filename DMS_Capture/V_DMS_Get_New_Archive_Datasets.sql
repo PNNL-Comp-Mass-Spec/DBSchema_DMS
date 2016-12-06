@@ -13,3 +13,5 @@ FROM S_DMS_T_Dataset_Archive DA
 WHERE (DA.AS_state_ID = 1)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Get_New_Archive_Datasets] TO [DDL_Viewer] AS [dbo]
+GO

@@ -182,3 +182,5 @@ AS
 		LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Step_Tool
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskExplanation] TO [DDL_Viewer] AS [dbo]
+GO

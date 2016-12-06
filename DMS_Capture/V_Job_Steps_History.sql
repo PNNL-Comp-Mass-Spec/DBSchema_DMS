@@ -48,3 +48,5 @@ FROM T_Job_Steps_History JS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_History] TO [DDL_Viewer] AS [dbo]
+GO

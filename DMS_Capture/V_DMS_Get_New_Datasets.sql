@@ -17,3 +17,5 @@ WHERE (DS_state_ID = 1)
  
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Get_New_Datasets] TO [DDL_Viewer] AS [dbo]
+GO

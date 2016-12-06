@@ -187,3 +187,5 @@ As
 	return @myError
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMissedMyEMSLStateValues] TO [DDL_Viewer] AS [dbo]
+GO

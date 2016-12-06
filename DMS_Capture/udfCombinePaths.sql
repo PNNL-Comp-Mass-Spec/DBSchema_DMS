@@ -52,3 +52,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[udfCombinePaths] TO [DDL_Viewer] AS [dbo]
+GO

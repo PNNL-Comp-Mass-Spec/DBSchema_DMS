@@ -121,3 +121,5 @@ CREATE PROCEDURE GetMetadataForDataset
 
 	return
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMetadataForDataset] TO [DDL_Viewer] AS [dbo]
+GO

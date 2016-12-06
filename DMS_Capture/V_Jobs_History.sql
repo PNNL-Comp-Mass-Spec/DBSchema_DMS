@@ -29,3 +29,5 @@ FROM T_Jobs_History J
        ON DS.DS_Instrument_Name_ID = Inst.Instrument_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Jobs_History] TO [DDL_Viewer] AS [dbo]
+GO

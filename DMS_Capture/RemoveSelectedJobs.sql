@@ -182,3 +182,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RemoveSelectedJobs] TO [DDL_Viewer] AS [dbo]
+GO

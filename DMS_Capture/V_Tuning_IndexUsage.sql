@@ -30,3 +30,5 @@ FROM sys.dm_db_index_usage_stats S
 WHERE S.[database_id] = DB_ID()
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_IndexUsage] TO [DDL_Viewer] AS [dbo]
+GO

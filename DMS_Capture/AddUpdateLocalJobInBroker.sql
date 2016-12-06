@@ -140,5 +140,7 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateLocalJobInBroker] TO [DMS_SP_User] AS [dbo]
 GO

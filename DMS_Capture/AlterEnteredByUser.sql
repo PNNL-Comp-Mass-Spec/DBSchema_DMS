@@ -216,3 +216,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUser] TO [DDL_Viewer] AS [dbo]
+GO

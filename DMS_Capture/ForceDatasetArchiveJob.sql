@@ -141,3 +141,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ForceDatasetArchiveJob] TO [DDL_Viewer] AS [dbo]
+GO

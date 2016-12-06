@@ -34,5 +34,7 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[StoreQuameterResults] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[StoreQuameterResults] TO [DMS_SP_User] AS [dbo]
 GO

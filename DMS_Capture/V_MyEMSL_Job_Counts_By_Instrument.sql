@@ -15,3 +15,5 @@ WHERE T_MyEMSL_Uploads.ErrorCode = 0
 GROUP BY T_Jobs.Instrument
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Job_Counts_By_Instrument] TO [DDL_Viewer] AS [dbo]
+GO

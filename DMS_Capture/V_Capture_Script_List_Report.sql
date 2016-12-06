@@ -9,3 +9,5 @@ SELECT     Script, Description, Enabled, Results_Tag, ID
 FROM         dbo.T_Scripts
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Script_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

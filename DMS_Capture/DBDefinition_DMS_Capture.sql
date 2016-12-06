@@ -2,9 +2,9 @@
 CREATE DATABASE [DMS_Capture]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'DMS_Capture', FILENAME = N'I:\SQLServerData\DMS_Capture.mdf' , SIZE = 4344512KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'DMS_Capture', FILENAME = N'I:\SQLServerData\DMS_Capture.mdf' , SIZE = 5130560KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'DMS_Capture_log', FILENAME = N'H:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 29440KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
+( NAME = N'DMS_Capture_log', FILENAME = N'H:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 296192KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -81,11 +81,19 @@ GO
 /****** Object:  User [pnl\d3m578] ******/
 CREATE USER [pnl\d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [PNL\D3M580] ******/
+CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[PNL\D3M580]
+GO
+/****** Object:  User [RBAC-DMS_Developer] ******/
+CREATE USER [RBAC-DMS_Developer] FOR LOGIN [PNL\EMSL-Prism.Users.Developers]
+GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
 GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
+GO
+GRANT SHOWPLAN TO [DDL_Viewer] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
@@ -96,6 +104,8 @@ GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3m578] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_Developer] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_User] AS [dbo]
 GO

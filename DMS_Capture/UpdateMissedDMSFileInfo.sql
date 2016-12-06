@@ -178,3 +178,5 @@ As
 	
 	return @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMissedDMSFileInfo] TO [DDL_Viewer] AS [dbo]
+GO

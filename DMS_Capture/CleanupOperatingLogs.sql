@@ -93,3 +93,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CleanupOperatingLogs] TO [DDL_Viewer] AS [dbo]
+GO

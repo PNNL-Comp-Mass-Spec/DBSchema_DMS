@@ -74,3 +74,5 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDMSPrepState] TO [DDL_Viewer] AS [dbo]
+GO

@@ -39,3 +39,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetProcessorAssignedInstrumentList] TO [DDL_Viewer] AS [dbo]
+GO

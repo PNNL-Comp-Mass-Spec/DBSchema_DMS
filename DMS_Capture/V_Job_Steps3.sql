@@ -29,3 +29,5 @@ FROM V_Job_Steps2 JS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps3] TO [DDL_Viewer] AS [dbo]
+GO

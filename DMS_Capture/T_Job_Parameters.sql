@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Job_Parameters](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Job_Parameters]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Parameters_T_Jobs] FOREIGN KEY([Job])
 REFERENCES [dbo].[T_Jobs] ([Job])
 ON DELETE CASCADE

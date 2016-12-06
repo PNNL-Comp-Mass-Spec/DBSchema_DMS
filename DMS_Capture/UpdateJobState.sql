@@ -526,3 +526,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [DDL_Viewer] AS [dbo]
+GO

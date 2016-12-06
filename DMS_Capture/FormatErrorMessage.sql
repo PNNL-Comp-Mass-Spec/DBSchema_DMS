@@ -29,3 +29,5 @@ AS
 	SET @message = ERROR_MESSAGE() + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[FormatErrorMessage] TO [DDL_Viewer] AS [dbo]
+GO

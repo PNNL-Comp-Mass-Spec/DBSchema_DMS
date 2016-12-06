@@ -19,3 +19,5 @@ WHERE (JS.State = 5) AND
       (JS.Step_Tool = 'Results_Transfer')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Pipeline_Get_Completed_Results_Transfer] TO [DDL_Viewer] AS [dbo]
+GO

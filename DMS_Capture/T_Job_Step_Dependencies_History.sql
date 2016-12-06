@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_Job_Step_Dependencies_History](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Step_Dependencies_History] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Job_Step_Dependencies_History] ******/
 CREATE CLUSTERED INDEX [IX_T_Job_Step_Dependencies_History] ON [dbo].[T_Job_Step_Dependencies_History]
 (

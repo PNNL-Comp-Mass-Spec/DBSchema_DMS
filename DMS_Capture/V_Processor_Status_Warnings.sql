@@ -32,3 +32,5 @@ WHERE PS.Monitor_Processor <> 0 AND
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status_Warnings] TO [DDL_Viewer] AS [dbo]
+GO

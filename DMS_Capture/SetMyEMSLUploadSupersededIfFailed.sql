@@ -131,5 +131,7 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadSupersededIfFailed] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetMyEMSLUploadSupersededIfFailed] TO [DMS_SP_User] AS [dbo]
 GO

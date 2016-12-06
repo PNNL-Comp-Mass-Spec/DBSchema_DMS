@@ -58,3 +58,5 @@ As
 
 	return @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDMSFileInfoXML] TO [DDL_Viewer] AS [dbo]
+GO

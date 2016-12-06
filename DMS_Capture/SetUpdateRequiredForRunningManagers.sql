@@ -66,3 +66,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetUpdateRequiredForRunningManagers] TO [DDL_Viewer] AS [dbo]
+GO

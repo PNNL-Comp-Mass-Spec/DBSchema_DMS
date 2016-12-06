@@ -121,5 +121,7 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMyEMSLUploadIngestStats] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateMyEMSLUploadIngestStats] TO [DMS_SP_User] AS [dbo]
 GO

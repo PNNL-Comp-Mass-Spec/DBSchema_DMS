@@ -135,3 +135,5 @@ As
 
 	return @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDMSDatasetState] TO [DDL_Viewer] AS [dbo]
+GO

@@ -13,3 +13,5 @@ SELECT  dbo.T_Jobs.job ,
 FROM    dbo.T_Jobs
         INNER JOIN dbo.T_Job_Parameters ON dbo.T_Jobs.Job = dbo.T_Job_Parameters.Job       
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Jobs_Entry] TO [DDL_Viewer] AS [dbo]
+GO

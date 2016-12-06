@@ -16,3 +16,5 @@ CREATE TABLE [dbo].[T_Processor_Instrument](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Processor_Instrument] TO [DDL_Viewer] AS [dbo]
+GO

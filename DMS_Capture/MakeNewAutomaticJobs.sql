@@ -57,3 +57,5 @@ As
 					AND Dataset = T_Jobs_1.Dataset )
 	  AND ( State = 3 )
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewAutomaticJobs] TO [DDL_Viewer] AS [dbo]
+GO

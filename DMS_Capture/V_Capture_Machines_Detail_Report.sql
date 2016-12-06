@@ -9,3 +9,5 @@ SELECT     Machine, Bionet_Available
 FROM         T_Machines
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Machines_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

@@ -135,3 +135,5 @@ As
 Done:
 	return @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[RetryCaptureForDMSResetJobs] TO [DDL_Viewer] AS [dbo]
+GO

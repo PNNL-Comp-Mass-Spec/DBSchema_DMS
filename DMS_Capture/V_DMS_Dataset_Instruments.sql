@@ -14,3 +14,5 @@ FROM S_DMS_T_Instrument_Name I
        ON D.DS_instrument_name_ID = I.Instrument_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Instruments] TO [DDL_Viewer] AS [dbo]
+GO

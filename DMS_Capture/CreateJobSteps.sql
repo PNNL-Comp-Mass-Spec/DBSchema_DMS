@@ -398,5 +398,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CreateJobSteps] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[CreateJobSteps] TO [DMS_SP_User] AS [dbo]
 GO

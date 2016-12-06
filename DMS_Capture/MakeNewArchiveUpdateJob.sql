@@ -171,5 +171,7 @@ Done:
 		Print @message
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewArchiveUpdateJob] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MakeNewArchiveUpdateJob] TO [DMS_SP_User] AS [dbo]
 GO

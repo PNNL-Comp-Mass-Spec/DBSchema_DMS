@@ -57,3 +57,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetJobParamTableLocal] TO [DDL_Viewer] AS [dbo]
+GO

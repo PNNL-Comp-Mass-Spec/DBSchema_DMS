@@ -73,3 +73,5 @@ FROM (
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps2] TO [DDL_Viewer] AS [dbo]
+GO

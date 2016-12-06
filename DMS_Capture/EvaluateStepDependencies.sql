@@ -351,3 +351,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluateStepDependencies] TO [DDL_Viewer] AS [dbo]
+GO

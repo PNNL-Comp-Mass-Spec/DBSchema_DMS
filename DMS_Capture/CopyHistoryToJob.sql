@@ -460,3 +460,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJob] TO [DDL_Viewer] AS [dbo]
+GO

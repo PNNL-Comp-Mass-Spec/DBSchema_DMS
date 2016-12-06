@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Process_Step_Control](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Process_Step_Control] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Process_Step_Control] ADD  CONSTRAINT [DF_T_Process_Step_Control_enabled]  DEFAULT ((0)) FOR [enabled]
 GO
 ALTER TABLE [dbo].[T_Process_Step_Control] ADD  CONSTRAINT [DF_T_Process_Step_Control_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]

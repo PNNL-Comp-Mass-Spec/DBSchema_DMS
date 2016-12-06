@@ -147,5 +147,7 @@ CREATE PROCEDURE AddUpdateStepTools
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateStepTools] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateStepTools] TO [DMS_SP_User] AS [dbo]
 GO

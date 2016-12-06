@@ -131,3 +131,5 @@ Done:
 		Print @message
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewIMSDemuxJob] TO [DDL_Viewer] AS [dbo]
+GO

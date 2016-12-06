@@ -10,3 +10,5 @@ SELECT     Name, Description, Bionet_Required, Only_On_Storage_Server, Instrumen
 FROM         dbo.T_Step_Tools
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Step_Tools_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

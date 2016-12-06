@@ -17,3 +17,5 @@ GROUP BY Step_Tool, Posting_Time
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Backlog_History] TO [DDL_Viewer] AS [dbo]
+GO

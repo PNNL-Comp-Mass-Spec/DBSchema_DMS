@@ -258,3 +258,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GO

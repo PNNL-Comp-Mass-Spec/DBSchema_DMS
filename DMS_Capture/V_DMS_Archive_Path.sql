@@ -13,3 +13,5 @@ SELECT AP_Server_Name AS Archive_Server,
 FROM S_DMS_T_Archive_Path AS TAP
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Archive_Path] TO [DDL_Viewer] AS [dbo]
+GO

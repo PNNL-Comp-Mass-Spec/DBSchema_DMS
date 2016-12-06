@@ -31,3 +31,5 @@ FROM S_DMS_T_Prep_LC_Run AS TPR
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_PrepLC_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GO

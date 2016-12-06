@@ -130,3 +130,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckForMyEMSLErrors] TO [DDL_Viewer] AS [dbo]
+GO

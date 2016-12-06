@@ -117,5 +117,7 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[EnableDisableArchiveStepTools] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[EnableDisableArchiveStepTools] TO [DMSReader] AS [dbo]
 GO

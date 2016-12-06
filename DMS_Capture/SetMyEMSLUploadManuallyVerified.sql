@@ -173,3 +173,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadManuallyVerified] TO [DDL_Viewer] AS [dbo]
+GO

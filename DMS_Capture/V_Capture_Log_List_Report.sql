@@ -9,3 +9,5 @@ SELECT     Entry_ID AS ID, posted_by AS Posted_By, posting_time AS Time, type AS
 FROM         dbo.T_Log_Entries
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Log_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

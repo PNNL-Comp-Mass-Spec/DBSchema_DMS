@@ -132,3 +132,5 @@ Done:
 		Print @message
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewDatasetSourceFileRenameJob] TO [DDL_Viewer] AS [dbo]
+GO

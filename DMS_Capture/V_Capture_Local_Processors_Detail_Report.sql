@@ -12,3 +12,5 @@ FROM         dbo.T_Local_Processors
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Local_Processors_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

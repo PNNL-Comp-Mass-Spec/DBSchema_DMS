@@ -18,3 +18,5 @@ GROUP BY CAST(CONVERT(char(11), Entered, 113) AS date)
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Upload_Stats] TO [DDL_Viewer] AS [dbo]
+GO

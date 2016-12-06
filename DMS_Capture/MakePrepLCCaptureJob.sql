@@ -148,5 +148,7 @@ AS
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakePrepLCCaptureJob] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MakePrepLCCaptureJob] TO [DMS_SP_User] AS [dbo]
 GO

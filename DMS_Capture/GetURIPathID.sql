@@ -78,3 +78,5 @@ As
 	return @URI_PathID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetURIPathID] TO [DDL_Viewer] AS [dbo]
+GO

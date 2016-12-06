@@ -10,3 +10,5 @@ SELECT     ID, Name, Description, Bionet_Required AS BionetRequired, Only_On_Sto
 FROM         dbo.T_Step_Tools
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Step_Tools_Entry] TO [DDL_Viewer] AS [dbo]
+GO

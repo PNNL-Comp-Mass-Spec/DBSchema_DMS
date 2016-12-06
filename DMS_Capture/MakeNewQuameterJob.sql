@@ -130,3 +130,5 @@ Done:
 		Print @message
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewQuameterJob] TO [DDL_Viewer] AS [dbo]
+GO

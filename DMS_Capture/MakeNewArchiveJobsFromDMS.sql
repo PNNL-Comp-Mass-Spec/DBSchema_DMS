@@ -159,3 +159,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNewArchiveJobsFromDMS] TO [DDL_Viewer] AS [dbo]
+GO

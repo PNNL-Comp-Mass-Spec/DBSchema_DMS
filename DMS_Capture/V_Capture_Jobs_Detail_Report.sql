@@ -29,3 +29,5 @@ FROM dbo.T_Jobs AS J
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Jobs_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

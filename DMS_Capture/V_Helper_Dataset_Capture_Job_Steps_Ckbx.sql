@@ -11,3 +11,5 @@ FROM         T_Jobs AS J INNER JOIN
                       T_Job_State_Name AS JSN ON J.State = JSN.ID INNER JOIN
                       T_Scripts AS S ON J.Script = S.Script
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Dataset_Capture_Job_Steps_Ckbx] TO [DDL_Viewer] AS [dbo]
+GO

@@ -119,3 +119,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CreateParametersForJob] TO [DDL_Viewer] AS [dbo]
+GO

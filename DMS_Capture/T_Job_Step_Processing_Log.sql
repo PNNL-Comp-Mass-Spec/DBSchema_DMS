@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Job_Step_Processing_Log](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Step_Processing_Log] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Job_Step_Processing_Log_JobStep] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Processing_Log_JobStep] ON [dbo].[T_Job_Step_Processing_Log]
 (

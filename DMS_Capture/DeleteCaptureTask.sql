@@ -112,3 +112,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteCaptureTask] TO [DDL_Viewer] AS [dbo]
+GO

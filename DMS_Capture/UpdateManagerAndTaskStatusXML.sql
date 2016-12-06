@@ -295,5 +295,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DMS_SP_User] AS [dbo]
 GO

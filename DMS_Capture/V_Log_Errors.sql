@@ -9,3 +9,5 @@ SELECT Entry_ID, posted_by, posting_time, type, message, Entered_By
 FROM T_Log_Entries
 WHERE (type = 'error')
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors] TO [DDL_Viewer] AS [dbo]
+GO

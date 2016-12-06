@@ -18,3 +18,5 @@ GROUP BY Year(Entered), Month(Entered)
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Upload_Stats_Monthly] TO [DDL_Viewer] AS [dbo]
+GO

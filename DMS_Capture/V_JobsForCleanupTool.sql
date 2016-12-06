@@ -16,3 +16,5 @@ FROM dbo.T_Jobs AS TJD
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_JobsForCleanupTool] TO [DDL_Viewer] AS [dbo]
+GO
