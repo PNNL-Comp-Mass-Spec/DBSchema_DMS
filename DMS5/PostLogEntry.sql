@@ -67,15 +67,13 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostLogEntry] TO [svc-dms] AS [dbo]
 GO

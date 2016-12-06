@@ -14,3 +14,5 @@ CREATE TABLE [dbo].[T_Filter_Set_Criteria_Names](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Filter_Set_Criteria_Names] TO [DDL_Viewer] AS [dbo]
+GO

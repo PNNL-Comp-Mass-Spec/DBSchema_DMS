@@ -37,3 +37,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ExperimentsFromRequestMostRecentNDays] TO [DDL_Viewer] AS [dbo]
+GO

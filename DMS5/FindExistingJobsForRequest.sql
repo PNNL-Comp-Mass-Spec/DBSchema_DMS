@@ -60,6 +60,8 @@ Done:
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_Guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_User] AS [dbo]
@@ -67,8 +69,4 @@ GO
 GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [PNL\D3M580] AS [dbo]
 GO

@@ -30,7 +30,5 @@ GROUP BY ML.ID, T_Material_Freezers.Freezer, ML.Shelf, ML.Rack, ML.Row, ML.Barco
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

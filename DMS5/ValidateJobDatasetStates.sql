@@ -194,3 +194,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateJobDatasetStates] TO [DDL_Viewer] AS [dbo]
+GO

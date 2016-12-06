@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_DatasetRatingName](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_DatasetRatingName] TO [DDL_Viewer] AS [dbo]
+GO

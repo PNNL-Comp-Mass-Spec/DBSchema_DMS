@@ -14,3 +14,5 @@ CREATE TABLE [dbo].[T_Seq_Local_Symbols_List](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Seq_Local_Symbols_List] TO [DDL_Viewer] AS [dbo]
+GO

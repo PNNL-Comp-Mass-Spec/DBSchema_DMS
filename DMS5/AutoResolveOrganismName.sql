@@ -78,3 +78,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AutoResolveOrganismName] TO [DDL_Viewer] AS [dbo]
+GO

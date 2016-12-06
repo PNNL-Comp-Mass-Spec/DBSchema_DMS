@@ -49,7 +49,5 @@ WHERE TET.Target_Entity_Type = 4 AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Datasets_By_Research_Team] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Datasets_By_Research_Team] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Datasets_By_Research_Team] TO [DDL_Viewer] AS [dbo]
 GO

@@ -17,5 +17,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats_Phospho](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_PSM_Stats_Phospho] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats_Phospho] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_Phospho_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

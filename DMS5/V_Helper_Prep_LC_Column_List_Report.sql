@@ -15,7 +15,5 @@ FROM T_Prep_LC_Column
 WHERE State = 'Active'
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Column_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Column_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Column_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

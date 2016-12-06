@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Instrument_Allocation_Updates](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Allocation_Updates] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Instrument_Allocation_Updates_Entered] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Instrument_Allocation_Updates_Entered] ON [dbo].[T_Instrument_Allocation_Updates]
 (

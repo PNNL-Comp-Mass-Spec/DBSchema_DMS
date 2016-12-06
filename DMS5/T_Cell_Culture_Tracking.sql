@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Cell_Culture_Tracking](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Cell_Culture_Tracking] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Cell_Culture_Tracking] ADD  CONSTRAINT [DF_T_Cell_Culture_Tracking_Experiment_Count]  DEFAULT (0) FOR [Experiment_Count]
 GO
 ALTER TABLE [dbo].[T_Cell_Culture_Tracking] ADD  CONSTRAINT [DF_T_Cell_Culture_Tracking_Dataset_Count]  DEFAULT (0) FOR [Dataset_Count]

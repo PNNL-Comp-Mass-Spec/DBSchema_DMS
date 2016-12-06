@@ -22,7 +22,5 @@ GROUP BY dbo.T_Prep_LC_Column.Column_Name, dbo.T_Prep_LC_Column.Mfg_Name, dbo.T_
                       dbo.T_Prep_LC_Column.Comment, dbo.T_Prep_LC_Column.Created, dbo.T_Prep_LC_Column.ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Column_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Column_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Column_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

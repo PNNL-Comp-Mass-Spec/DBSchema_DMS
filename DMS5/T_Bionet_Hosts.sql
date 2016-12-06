@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Bionet_Hosts](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Bionet_Hosts] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Bionet_Hosts] ADD  CONSTRAINT [DF_T_Bionet_Hosts_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Bionet_Hosts] ADD  CONSTRAINT [DF_T_Bionet_Hosts_Active]  DEFAULT ((1)) FOR [Active]

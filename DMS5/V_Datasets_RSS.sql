@@ -17,7 +17,5 @@ FROM         (SELECT     TD.Dataset_ID AS ID, TD.Dataset_Num AS Dataset, TE.Expe
                        WHERE      (TD.DS_created > DATEADD(DAY, - 30, GETDATE()))) AS TM
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Datasets_RSS] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Datasets_RSS] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Datasets_RSS] TO [DDL_Viewer] AS [dbo]
 GO

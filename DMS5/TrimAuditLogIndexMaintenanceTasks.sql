@@ -398,3 +398,5 @@ End
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[TrimAuditLogIndexMaintenanceTasks] TO [DDL_Viewer] AS [dbo]
+GO

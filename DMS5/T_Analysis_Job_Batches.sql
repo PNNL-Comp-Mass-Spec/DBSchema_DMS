@@ -14,5 +14,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Batches](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Batches] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Batches] ADD  CONSTRAINT [DF_T_Analysis_Job_Batches_Batch_Created]  DEFAULT (getdate()) FOR [Batch_Created]
 GO

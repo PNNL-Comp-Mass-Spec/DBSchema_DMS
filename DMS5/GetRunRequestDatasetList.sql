@@ -117,3 +117,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRunRequestDatasetList] TO [DDL_Viewer] AS [dbo]
+GO

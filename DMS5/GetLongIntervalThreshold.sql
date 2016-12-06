@@ -26,5 +26,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetLongIntervalThreshold] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetLongIntervalThreshold] TO [DMS2_SP_User] AS [dbo]
 GO

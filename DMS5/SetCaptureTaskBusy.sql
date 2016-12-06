@@ -61,9 +61,7 @@ As
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskBusy] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskBusy] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskBusy] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskBusy] TO [PNL\D3M580] AS [dbo]
 GO

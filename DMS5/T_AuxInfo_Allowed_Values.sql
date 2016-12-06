@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_AuxInfo_Allowed_Values](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_AuxInfo_Allowed_Values] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_AuxInfo_Allowed_Values]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description] FOREIGN KEY([AuxInfoID])
 REFERENCES [dbo].[T_AuxInfo_Description] ([ID])
 GO

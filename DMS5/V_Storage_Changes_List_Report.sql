@@ -75,7 +75,5 @@ WHERE SP_path_ID NOT IN ( SELECT SP_path_ID
                           FROM t_storage_path )
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Changes_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Changes_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Storage_Changes_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

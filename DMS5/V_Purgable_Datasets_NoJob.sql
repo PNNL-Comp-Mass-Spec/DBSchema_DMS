@@ -44,7 +44,5 @@ WHERE (InstClass.is_purgable > 0) AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoJob] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoJob] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoJob] TO [DDL_Viewer] AS [dbo]
 GO

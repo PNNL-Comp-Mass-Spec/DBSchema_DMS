@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Usage_Log](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Usage_Log] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

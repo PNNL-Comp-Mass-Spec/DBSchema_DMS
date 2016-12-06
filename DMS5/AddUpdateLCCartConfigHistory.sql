@@ -147,9 +147,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfigHistory] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfigHistory] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfigHistory] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfigHistory] TO [PNL\D3M580] AS [dbo]
 GO

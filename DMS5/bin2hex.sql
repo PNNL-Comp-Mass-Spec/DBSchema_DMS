@@ -65,3 +65,5 @@ BEGIN
 	return @charvalue
 END
 GO
+GRANT VIEW DEFINITION ON [dbo].[bin2hex] TO [DDL_Viewer] AS [dbo]
+GO

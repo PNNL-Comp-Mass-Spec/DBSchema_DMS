@@ -33,3 +33,5 @@ Begin
 End
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[TinyintToEnabledDisabled] TO [DDL_Viewer] AS [dbo]
+GO

@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Active_Requested_Run_Cached_EUS_Users](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Active_Requested_Run_Cached_EUS_Users] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Active_Requested_Run_Cached_EUS_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_Active_Requested_Run_Cached_EUS_Users_T_Requested_Run] FOREIGN KEY([Request_ID])
 REFERENCES [dbo].[T_Requested_Run] ([ID])
 ON DELETE CASCADE

@@ -27,3 +27,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMyEMSLUrlDatasetName] TO [DDL_Viewer] AS [dbo]
+GO

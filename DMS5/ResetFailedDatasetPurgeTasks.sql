@@ -111,9 +111,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [PNL\D3M580] AS [dbo]
 GO

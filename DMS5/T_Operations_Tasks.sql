@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_Operations_Tasks](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Operations_Tasks] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Operations_Tasks] ADD  DEFAULT ('Normal') FOR [Status]
 GO
 ALTER TABLE [dbo].[T_Operations_Tasks] ADD  DEFAULT (getdate()) FOR [Created]

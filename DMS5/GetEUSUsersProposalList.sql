@@ -42,3 +42,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetEUSUsersProposalList] TO [DDL_Viewer] AS [dbo]
+GO

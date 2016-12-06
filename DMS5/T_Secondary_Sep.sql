@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Secondary_Sep](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Secondary_Sep] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_Secondary_Sep] TO [DMS_LCMSNet_User] AS [dbo]
 GO
 GRANT ALTER ON [dbo].[T_Secondary_Sep] TO [Limited_Table_Write] AS [dbo]

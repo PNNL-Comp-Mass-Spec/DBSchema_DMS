@@ -9,7 +9,5 @@ SELECT        dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Contain
 FROM            dbo.T_Material_Containers INNER JOIN
                          dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Entry] TO [DDL_Viewer] AS [dbo]
 GO

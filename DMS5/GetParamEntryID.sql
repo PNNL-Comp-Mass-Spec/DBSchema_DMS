@@ -35,11 +35,9 @@ As
 	return(@ParamEntryID)
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetParamEntryID] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [PNL\D3M580] AS [dbo]
 GO

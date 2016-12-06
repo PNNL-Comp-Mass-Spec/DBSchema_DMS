@@ -27,3 +27,5 @@ GROUP BY AJ.AJ_datasetID
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_Summary_Export] TO [DDL_Viewer] AS [dbo]
+GO

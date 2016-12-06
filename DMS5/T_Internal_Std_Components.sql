@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Internal_Std_Components](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Internal_Std_Components] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT ALTER ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT DELETE ON [dbo].[T_Internal_Std_Components] TO [Limited_Table_Write] AS [dbo]

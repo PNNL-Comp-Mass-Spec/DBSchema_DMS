@@ -47,7 +47,5 @@ FROM T_Campaign AS C
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Detail_Report_Ex] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Detail_Report_Ex] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]
 GO

@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Instrument_Class](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Class] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Instrument_Class] ADD  CONSTRAINT [DF_T_Instrument_Class_is_purgable]  DEFAULT (0) FOR [is_purgable]
 GO
 ALTER TABLE [dbo].[T_Instrument_Class] ADD  CONSTRAINT [DF_T_Instrument_Class_raw_data_type]  DEFAULT ('na') FOR [raw_data_type]

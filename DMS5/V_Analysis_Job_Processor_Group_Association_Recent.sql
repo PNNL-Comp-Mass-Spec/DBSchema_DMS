@@ -33,7 +33,5 @@ GROUP BY AJPGA.Job_ID, ASN.AJS_name, DS.Dataset_Num, Tool.AJT_toolName, AJ.AJ_pa
          AJ.AJ_settingsFileName, AJPGA.Group_ID, AJPG.Group_Name
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Association_Recent] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Association_Recent] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Group_Association_Recent] TO [DDL_Viewer] AS [dbo]
 GO

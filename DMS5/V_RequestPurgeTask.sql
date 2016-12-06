@@ -15,7 +15,5 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Archive_Path ON dbo.T_Dataset_Archive.AS_storage_path_ID = dbo.T_Archive_Path.AP_path_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_RequestPurgeTask] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_RequestPurgeTask] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_RequestPurgeTask] TO [DDL_Viewer] AS [dbo]
 GO

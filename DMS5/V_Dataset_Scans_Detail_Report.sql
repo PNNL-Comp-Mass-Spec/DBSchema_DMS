@@ -68,7 +68,5 @@ GROUP BY DS.Dataset_ID, DS.Dataset_Num, InstName.IN_name, DTN.DST_name,
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scans_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scans_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scans_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

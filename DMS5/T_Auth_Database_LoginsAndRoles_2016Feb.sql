@@ -23,3 +23,5 @@ CREATE TABLE [dbo].[T_Auth_Database_LoginsAndRoles_2016Feb](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Auth_Database_LoginsAndRoles_2016Feb] TO [DDL_Viewer] AS [dbo]
+GO

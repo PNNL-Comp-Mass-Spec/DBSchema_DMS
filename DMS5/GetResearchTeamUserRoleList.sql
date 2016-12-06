@@ -43,3 +43,5 @@ AS
 		RETURN @list
 	END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetResearchTeamUserRoleList] TO [DDL_Viewer] AS [dbo]
+GO

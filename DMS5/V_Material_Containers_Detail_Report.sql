@@ -42,7 +42,5 @@ GROUP BY MC.Tag ,
         MC.Researcher,
         TFA.Files
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

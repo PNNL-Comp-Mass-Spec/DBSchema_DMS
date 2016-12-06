@@ -94,11 +94,9 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DoMaterialContainerOperation] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [PNL\D3M580] AS [dbo]
 GO

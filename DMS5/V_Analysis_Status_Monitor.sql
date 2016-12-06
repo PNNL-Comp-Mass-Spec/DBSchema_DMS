@@ -15,7 +15,5 @@ FROM         dbo.T_Analysis_Job_Processors INNER JOIN
                       dbo.T_Analysis_Status_Monitor_Params ON dbo.T_Analysis_Job_Processors.ID = dbo.T_Analysis_Status_Monitor_Params.ProcessorID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [DDL_Viewer] AS [dbo]
 GO

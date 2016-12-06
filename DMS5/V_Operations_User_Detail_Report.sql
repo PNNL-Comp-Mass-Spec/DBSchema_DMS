@@ -13,3 +13,5 @@ FROM dbo.T_User_Operations
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Operations_User_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

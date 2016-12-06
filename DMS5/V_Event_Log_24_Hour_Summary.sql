@@ -139,7 +139,5 @@ FROM         T_Log_Entries
 WHERE     (DATEDIFF(Hour, posting_time, GETDATE()) < 24) AND (type = 'Warning')
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_24_Hour_Summary] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_24_Hour_Summary] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_24_Hour_Summary] TO [DDL_Viewer] AS [dbo]
 GO

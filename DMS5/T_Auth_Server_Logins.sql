@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Auth_Server_Logins](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Auth_Server_Logins] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Auth_Server_Logins] ADD  CONSTRAINT [DF_T_Auth_Server_Logins_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Auth_Server_Logins] ADD  CONSTRAINT [DF_T_Auth_Server_Logins_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]

@@ -253,13 +253,11 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [PNL\D3M580] AS [dbo]
 GO

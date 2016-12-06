@@ -14,7 +14,5 @@ FROM         T_LC_Column INNER JOIN
                       T_Requested_Run_Batches INNER JOIN
                       T_Requested_Run ON T_Requested_Run_Batches.ID = T_Requested_Run.RDS_BatchID ON T_Dataset.Dataset_ID = T_Requested_Run.DatasetID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Batch_Tracking_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Batch_Tracking_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Batch_Tracking_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

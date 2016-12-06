@@ -18,7 +18,5 @@ FROM         (SELECT     TB.ID, TB.Batch, MAX(TD.DS_created) AS post_date, COUNT
                        HAVING      (MAX(TD.DS_created) > DATEADD(DAY, - 30, GETDATE()))) AS TS INNER JOIN
                       T_Users AS TU ON TS.Owner = TU.ID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_RSS] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_RSS] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_RSS] TO [DDL_Viewer] AS [dbo]
 GO

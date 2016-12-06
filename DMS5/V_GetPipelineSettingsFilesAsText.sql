@@ -17,7 +17,5 @@ FROM dbo.T_Settings_Files
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineSettingsFilesAsText] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineSettingsFilesAsText] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineSettingsFilesAsText] TO [DDL_Viewer] AS [dbo]
 GO

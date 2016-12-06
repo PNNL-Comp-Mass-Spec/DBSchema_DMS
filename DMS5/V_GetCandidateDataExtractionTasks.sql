@@ -13,7 +13,5 @@ FROM         dbo.T_Analysis_Job AS AJ INNER JOIN
 WHERE     (AJ.AJ_StateID = 16)
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetCandidateDataExtractionTasks] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetCandidateDataExtractionTasks] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_GetCandidateDataExtractionTasks] TO [DDL_Viewer] AS [dbo]
 GO

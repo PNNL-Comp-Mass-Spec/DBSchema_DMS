@@ -12,3 +12,5 @@ CREATE TABLE [dbo].[T_User_PDF_Methods](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_User_PDF_Methods] TO [DDL_Viewer] AS [dbo]
+GO

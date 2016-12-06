@@ -34,6 +34,8 @@ CREATE TABLE [dbo].[T_Experiments](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Experiments] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Experiments] TO [Limited_Table_Write] AS [dbo]

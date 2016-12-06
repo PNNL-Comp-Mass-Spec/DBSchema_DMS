@@ -9,7 +9,5 @@ SELECT Entry_ID, posted_by, posting_time, type, message, '' AS Entered_By
 FROM T_Log_Entries
 WHERE (type = 'Error')
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors] TO [DDL_Viewer] AS [dbo]
 GO

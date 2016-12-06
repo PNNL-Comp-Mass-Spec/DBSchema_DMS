@@ -32,6 +32,8 @@ CREATE TABLE [dbo].[T_LC_Cart_Settings_History](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_LC_Cart_Settings_History] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_LC_Cart_Settings_History] ADD  CONSTRAINT [DF_T_LC_Cart_Settings_Created]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Settings_History]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Settings_History_T_LC_Cart] FOREIGN KEY([Cart_ID])

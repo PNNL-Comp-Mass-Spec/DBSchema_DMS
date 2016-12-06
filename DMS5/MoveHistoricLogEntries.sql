@@ -107,11 +107,9 @@ GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [PNL\D3M580] AS [dbo]
 GO

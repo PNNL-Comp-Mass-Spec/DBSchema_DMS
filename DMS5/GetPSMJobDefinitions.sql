@@ -81,11 +81,9 @@ AS
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetPSMJobDefinitions] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetPSMJobDefinitions] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetPSMJobDefinitions] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetPSMJobDefinitions] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetPSMJobDefinitions] TO [PNL\D3M580] AS [dbo]
 GO

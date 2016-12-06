@@ -173,9 +173,7 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [PNL\D3M580] AS [dbo]
 GO

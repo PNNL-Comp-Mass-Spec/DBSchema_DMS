@@ -283,11 +283,9 @@ ReportResults:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[CreateAnalysisJobFromRequestList] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [PNL\D3M580] AS [dbo]
 GO

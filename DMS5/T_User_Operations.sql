@@ -14,3 +14,5 @@ CREATE TABLE [dbo].[T_User_Operations](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_User_Operations] TO [DDL_Viewer] AS [dbo]
+GO

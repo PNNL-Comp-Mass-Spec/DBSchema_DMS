@@ -28,3 +28,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMyEMSLUrlExperiment] TO [DDL_Viewer] AS [dbo]
+GO

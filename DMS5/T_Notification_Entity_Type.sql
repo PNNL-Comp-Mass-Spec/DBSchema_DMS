@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Notification_Entity_Type](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Notification_Entity_Type] TO [DDL_Viewer] AS [dbo]
+GO

@@ -61,3 +61,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateChars] TO [DDL_Viewer] AS [dbo]
+GO

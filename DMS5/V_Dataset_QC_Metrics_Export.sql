@@ -132,7 +132,5 @@ FROM T_Dataset_QC DQC
        ON DS.DS_rating = DRN.DRN_state_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Export] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Export] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Export] TO [DDL_Viewer] AS [dbo]
 GO

@@ -45,5 +45,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MergeTextThreeItems] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MergeTextThreeItems] TO [public] AS [dbo]
 GO

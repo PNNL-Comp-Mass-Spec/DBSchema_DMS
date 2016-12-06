@@ -40,6 +40,8 @@ AS
         RETURN @list
     END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFactorList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetFactorList] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetFactorList] TO [DMS2_SP_User] AS [dbo]

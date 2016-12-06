@@ -13,7 +13,5 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_User_Proposal_Dataset] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_User_Proposal_Dataset] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Find_User_Proposal_Dataset] TO [DDL_Viewer] AS [dbo]
 GO

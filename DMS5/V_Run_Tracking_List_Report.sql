@@ -37,7 +37,5 @@ FROM    dbo.T_Dataset AS DS
         INNER JOIN dbo.T_EUS_UsageType AS EUT ON RR.RDS_EUS_UsageType = EUT.ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Run_Tracking_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Run_Tracking_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Run_Tracking_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

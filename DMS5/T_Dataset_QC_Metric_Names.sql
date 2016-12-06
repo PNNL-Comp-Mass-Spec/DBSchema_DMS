@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_Dataset_QC_Metric_Names](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_QC_Metric_Names] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Dataset_QC_Metric_Names_SortKey] ******/
 CREATE CLUSTERED INDEX [IX_T_Dataset_QC_Metric_Names_SortKey] ON [dbo].[T_Dataset_QC_Metric_Names]
 (

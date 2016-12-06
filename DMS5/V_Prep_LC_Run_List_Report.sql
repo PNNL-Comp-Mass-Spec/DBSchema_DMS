@@ -10,7 +10,5 @@ SELECT        ID, Tab, Instrument, Type, LC_Column AS [LC Column], Comment, Guar
 FROM            T_Prep_LC_Run
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

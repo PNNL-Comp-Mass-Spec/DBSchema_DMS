@@ -122,11 +122,9 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRunInterval] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateRunInterval] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRunInterval] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRunInterval] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRunInterval] TO [PNL\D3M580] AS [dbo]
 GO

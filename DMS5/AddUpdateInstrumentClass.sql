@@ -181,11 +181,9 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrumentClass] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [PNL\D3M580] AS [dbo]
 GO

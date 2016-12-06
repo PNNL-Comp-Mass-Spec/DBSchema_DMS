@@ -32,11 +32,9 @@ As
 	
 	return(@datasetRatingID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetRatingID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetDatasetRatingID] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetRatingID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetRatingID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetRatingID] TO [PNL\D3M580] AS [dbo]
 GO

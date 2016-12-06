@@ -90,6 +90,8 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Archive_Restore] AS [dbo]
@@ -99,10 +101,6 @@ GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [svc-dms] AS [dbo]
 GO

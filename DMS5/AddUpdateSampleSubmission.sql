@@ -265,11 +265,9 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateSampleSubmission] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateSampleSubmission] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSampleSubmission] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSampleSubmission] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSampleSubmission] TO [PNL\D3M580] AS [dbo]
 GO

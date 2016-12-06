@@ -40,3 +40,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetBiomaterialOrganismList] TO [DDL_Viewer] AS [dbo]
+GO

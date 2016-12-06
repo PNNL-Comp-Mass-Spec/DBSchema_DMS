@@ -207,13 +207,11 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [PNL\D3M580] AS [dbo]
 GO

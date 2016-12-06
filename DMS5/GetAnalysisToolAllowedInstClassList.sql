@@ -55,3 +55,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolAllowedInstClassList] TO [DDL_Viewer] AS [dbo]
+GO

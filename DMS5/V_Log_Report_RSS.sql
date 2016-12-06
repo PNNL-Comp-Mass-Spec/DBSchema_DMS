@@ -11,7 +11,5 @@ FROM         dbo.V_Log_Report
 WHERE     (Type = 'Error') AND (NOT (Message LIKE '%Error posting xml%'))
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Log_Report_RSS] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Log_Report_RSS] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Report_RSS] TO [DDL_Viewer] AS [dbo]
 GO

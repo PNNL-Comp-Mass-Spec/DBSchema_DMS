@@ -13,7 +13,5 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_FolderRestoreData] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_FolderRestoreData] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_FolderRestoreData] TO [DDL_Viewer] AS [dbo]
 GO

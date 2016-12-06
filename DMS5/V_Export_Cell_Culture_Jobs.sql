@@ -14,7 +14,5 @@ FROM         T_Cell_Culture INNER JOIN
                       T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID INNER JOIN
                       T_Analysis_Job ON T_Dataset.Dataset_ID = T_Analysis_Job.AJ_datasetID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Jobs] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Jobs] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Export_Cell_Culture_Jobs] TO [DDL_Viewer] AS [dbo]
 GO

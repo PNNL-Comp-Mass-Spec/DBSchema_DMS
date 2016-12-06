@@ -37,3 +37,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[EncodeBase64] TO [DDL_Viewer] AS [dbo]
+GO

@@ -358,7 +358,5 @@ as
 	return (0) -- sp_dboption
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[sp_dboption] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[sp_dboption] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sp_dboption] TO [DDL_Viewer] AS [dbo]
 GO

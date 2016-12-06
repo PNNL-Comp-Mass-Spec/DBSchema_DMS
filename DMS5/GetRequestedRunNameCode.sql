@@ -63,3 +63,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunNameCode] TO [DDL_Viewer] AS [dbo]
+GO

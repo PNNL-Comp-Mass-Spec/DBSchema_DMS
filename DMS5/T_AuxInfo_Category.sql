@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_AuxInfo_Category](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_AuxInfo_Category] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_AuxInfo_Category] ADD  CONSTRAINT [DF_T_AuxInfo_Category_Sequence]  DEFAULT (0) FOR [Sequence]
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Category]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Category_T_AuxInfo_Target] FOREIGN KEY([Target_Type_ID])

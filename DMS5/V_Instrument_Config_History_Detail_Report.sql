@@ -20,7 +20,5 @@ FROM T_Instrument_Config_History AS TIH
        ON TIH.EnteredBy = TU.U_PRN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Config_History_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Config_History_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Config_History_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

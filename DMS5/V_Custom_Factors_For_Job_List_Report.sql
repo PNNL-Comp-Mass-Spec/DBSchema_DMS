@@ -29,7 +29,5 @@ FROM    ( SELECT    TargetID AS RequestID ,
         INNER JOIN T_Analysis_Tool AS TTOOL ON TAJ.AJ_analysisToolID = TTOOL.AJT_toolID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Custom_Factors_For_Job_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Custom_Factors_For_Job_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Custom_Factors_For_Job_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

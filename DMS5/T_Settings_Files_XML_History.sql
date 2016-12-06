@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Settings_Files_XML_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Settings_Files_XML_History] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

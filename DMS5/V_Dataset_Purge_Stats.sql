@@ -29,7 +29,5 @@ FROM ( SELECT YEAR(DS.DS_created) AS TheYear,
                                     YEAR(DS.DS_created), MONTH(DS.DS_created) ) LookupQ
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Purge_Stats] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Purge_Stats] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Purge_Stats] TO [DDL_Viewer] AS [dbo]
 GO

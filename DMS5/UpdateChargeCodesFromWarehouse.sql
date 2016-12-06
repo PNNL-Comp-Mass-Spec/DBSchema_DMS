@@ -521,7 +521,7 @@ AS
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodesFromWarehouse] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodesFromWarehouse] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodesFromWarehouse] TO [PNL\D3M580] AS [dbo]
+GRANT EXECUTE ON [dbo].[UpdateChargeCodesFromWarehouse] TO [PNL\D3M578] AS [dbo]
 GO

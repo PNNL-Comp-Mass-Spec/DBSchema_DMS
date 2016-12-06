@@ -121,7 +121,5 @@ As
 	return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateExperimentUsage] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateExperimentUsage] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateExperimentUsage] TO [DDL_Viewer] AS [dbo]
 GO

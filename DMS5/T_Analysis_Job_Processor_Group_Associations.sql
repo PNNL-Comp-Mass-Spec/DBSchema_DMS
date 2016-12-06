@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Associations](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Processor_Group_Associations] TO [RBAC-Web_Analysis] AS [dbo]

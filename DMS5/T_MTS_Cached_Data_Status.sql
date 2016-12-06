@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_MTS_Cached_Data_Status](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MTS_Cached_Data_Status] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_MTS_Cached_Data_Status] ADD  CONSTRAINT [DF_T_MTS_Cached_Data_Status_Refresh_Count]  DEFAULT ((0)) FOR [Refresh_Count]
 GO
 ALTER TABLE [dbo].[T_MTS_Cached_Data_Status] ADD  CONSTRAINT [DF_T_MTS_Cached_Data_Status_Insert_Count]  DEFAULT ((0)) FOR [Insert_Count]

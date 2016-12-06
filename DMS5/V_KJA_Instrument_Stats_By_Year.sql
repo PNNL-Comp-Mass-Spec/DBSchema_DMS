@@ -15,7 +15,5 @@ FROM         (SELECT     DS_created, DS_instrument_name_ID, File_Size_Bytes
 GROUP BY dbo.T_Instrument_Class.IN_class, dbo.T_Instrument_Name.IN_name
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_KJA_Instrument_Stats_By_Year] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_KJA_Instrument_Stats_By_Year] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_KJA_Instrument_Stats_By_Year] TO [DDL_Viewer] AS [dbo]
 GO

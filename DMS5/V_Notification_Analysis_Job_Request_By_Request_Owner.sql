@@ -40,3 +40,5 @@ WHERE TET.Target_Entity_Type = 2 AND
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Analysis_Job_Request_By_Request_Owner] TO [DDL_Viewer] AS [dbo]
+GO

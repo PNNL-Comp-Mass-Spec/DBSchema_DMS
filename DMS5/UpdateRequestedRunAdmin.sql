@@ -267,11 +267,9 @@ DoneNoLog:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateRequestedRunAdmin] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [PNL\D3M580] AS [dbo]
 GO

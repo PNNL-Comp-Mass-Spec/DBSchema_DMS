@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Predefined_Analysis_Scheduling_Queue] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Predefined_Analysis_Scheduling_Queue_Dataset_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Predefined_Analysis_Scheduling_Queue_Dataset_ID] ON [dbo].[T_Predefined_Analysis_Scheduling_Queue]
 (

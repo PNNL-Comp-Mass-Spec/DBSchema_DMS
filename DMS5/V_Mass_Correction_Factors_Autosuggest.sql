@@ -18,7 +18,5 @@ FROM dbo.T_Mass_Correction_Factors
 WHERE ABS(Monoisotopic_Mass_Correction) > 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mass_Correction_Factors_Autosuggest] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mass_Correction_Factors_Autosuggest] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Mass_Correction_Factors_Autosuggest] TO [DDL_Viewer] AS [dbo]
 GO

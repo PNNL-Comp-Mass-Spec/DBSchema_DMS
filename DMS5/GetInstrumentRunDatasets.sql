@@ -157,3 +157,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentRunDatasets] TO [DDL_Viewer] AS [dbo]
+GO

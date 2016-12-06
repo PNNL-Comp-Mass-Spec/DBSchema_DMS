@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Biomaterial_Organisms](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Biomaterial_Organisms] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Biomaterial_Organisms]  WITH CHECK ADD  CONSTRAINT [FK_T_Biomaterial_Organisms_T_Cell_Culture] FOREIGN KEY([Biomaterial_ID])
 REFERENCES [dbo].[T_Cell_Culture] ([CC_ID])
 GO

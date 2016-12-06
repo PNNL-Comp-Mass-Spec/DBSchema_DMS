@@ -46,3 +46,5 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[GetAJProcessorAnalysisToolList] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorAnalysisToolList] TO [DDL_Viewer] AS [dbo]
+GO

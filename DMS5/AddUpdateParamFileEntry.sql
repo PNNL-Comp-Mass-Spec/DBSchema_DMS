@@ -400,11 +400,9 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateParamFileEntry] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [PNL\D3M580] AS [dbo]
 GO

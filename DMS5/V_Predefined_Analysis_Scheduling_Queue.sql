@@ -16,3 +16,5 @@ GROUP BY SQ.Item, SQ.Dataset_ID, DS.Dataset_Num, SQ.CallingUser, SQ.AnalysisTool
    SQ.ExcludeDatasetsNotReleased, SQ.PreventDuplicateJobs, SQ.State, SQ.Result_Code, SQ.Message, SQ.Jobs_Created, 
    SQ.Entered, SQ.Last_Affected
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Scheduling_Queue] TO [DDL_Viewer] AS [dbo]
+GO

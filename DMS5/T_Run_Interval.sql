@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Run_Interval](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Run_Interval] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Run_Interval] ADD  CONSTRAINT [DF_T_Run_Interval_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Run_Interval] ADD  CONSTRAINT [DF_T_Run_Interval_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]

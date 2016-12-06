@@ -123,3 +123,5 @@ CREATE TABLE [dbo].[T_Dataset_QC](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_QC] TO [DDL_Viewer] AS [dbo]
+GO

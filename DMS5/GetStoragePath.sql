@@ -64,11 +64,9 @@ As
 
 	return 0
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetStoragePath] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetStoragePath] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetStoragePath] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetStoragePath] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetStoragePath] TO [PNL\D3M580] AS [dbo]
 GO

@@ -47,6 +47,8 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Predefined_Analysis] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaign_Name]  DEFAULT ('') FOR [AD_campaignNameCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaignExclCriteria]  DEFAULT ('') FOR [AD_campaignExclCriteria]

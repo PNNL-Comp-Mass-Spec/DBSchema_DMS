@@ -42,3 +42,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[JobBacklogOnDateByResultType] TO [DDL_Viewer] AS [dbo]
+GO

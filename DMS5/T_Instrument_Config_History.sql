@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Instrument_Config_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Config_History] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

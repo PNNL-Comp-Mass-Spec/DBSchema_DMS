@@ -20,7 +20,5 @@ ORDER BY dbo.T_Analysis_Tool.AJT_toolName,
     dbo.T_Analysis_Job_Status_History.Posting_Time
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Backlog_History] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Backlog_History] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Backlog_History] TO [DDL_Viewer] AS [dbo]
 GO

@@ -43,3 +43,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentDatasetTypeList] TO [DDL_Viewer] AS [dbo]
+GO

@@ -21,3 +21,5 @@ CREATE TABLE [dbo].[T_Dataset_QC_Curation](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_QC_Curation] TO [DDL_Viewer] AS [dbo]
+GO

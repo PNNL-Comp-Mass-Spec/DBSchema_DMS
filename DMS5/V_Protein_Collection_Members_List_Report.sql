@@ -19,3 +19,5 @@ FROM S_V_Protein_Collection_Member_Names
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_Members_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

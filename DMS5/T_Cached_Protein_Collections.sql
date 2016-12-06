@@ -22,6 +22,8 @@ CREATE TABLE [dbo].[T_Cached_Protein_Collections](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Cached_Protein_Collections] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Cached_Protein_Collections_Organism] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cached_Protein_Collections_Organism] ON [dbo].[T_Cached_Protein_Collections]
 (

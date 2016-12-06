@@ -198,11 +198,9 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DoSamplePrepMaterialOperation] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [PNL\D3M580] AS [dbo]
 GO

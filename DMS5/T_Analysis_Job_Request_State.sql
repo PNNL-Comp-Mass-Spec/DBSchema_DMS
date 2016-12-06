@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request_State](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Request_State] TO [DDL_Viewer] AS [dbo]
+GO

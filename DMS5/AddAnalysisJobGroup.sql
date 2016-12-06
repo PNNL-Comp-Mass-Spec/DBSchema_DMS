@@ -710,13 +710,11 @@ Explain:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [PNL\D3M580] AS [dbo]
 GO

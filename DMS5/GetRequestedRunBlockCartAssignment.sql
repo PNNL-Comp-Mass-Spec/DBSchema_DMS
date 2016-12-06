@@ -68,5 +68,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunBlockCartAssignment] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetRequestedRunBlockCartAssignment] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -34,7 +34,5 @@ FROM dbo.T_Dataset_Archive AS DA
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Archive_List_Report_2] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Archive_List_Report_2] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_List_Report_2] TO [DDL_Viewer] AS [dbo]
 GO

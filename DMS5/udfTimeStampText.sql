@@ -52,5 +52,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[udfTimeStampText] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[udfTimeStampText] TO [public] AS [dbo]
 GO

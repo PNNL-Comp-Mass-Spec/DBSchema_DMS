@@ -95,5 +95,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetSamplePrepRequestEUSUsersList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetSamplePrepRequestEUSUsersList] TO [public] AS [dbo]
 GO

@@ -20,7 +20,5 @@ FROM    T_Dataset
         INNER JOIN T_Requested_Run ON T_Requested_Run.DatasetID = T_Dataset.Dataset_ID
         INNER JOIN T_EUS_UsageType ON T_Requested_Run.RDS_EUS_UsageType = T_EUS_UsageType.ID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Tracking_Dataset_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Tracking_Dataset_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Tracking_Dataset_Entry] TO [DDL_Viewer] AS [dbo]
 GO

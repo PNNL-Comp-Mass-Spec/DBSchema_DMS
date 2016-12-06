@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Tools](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Processor_Tools] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Tools] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Tools] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Tools_Entered]  DEFAULT (getdate()) FOR [Entered]

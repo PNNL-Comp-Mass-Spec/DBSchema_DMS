@@ -49,7 +49,5 @@ FROM (
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Crosstab_Dataset_Count] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Crosstab_Dataset_Count] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Storage_Crosstab_Dataset_Count] TO [DDL_Viewer] AS [dbo]
 GO

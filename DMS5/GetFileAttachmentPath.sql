@@ -173,5 +173,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFileAttachmentPath] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetFileAttachmentPath] TO [DMS2_SP_User] AS [dbo]
 GO

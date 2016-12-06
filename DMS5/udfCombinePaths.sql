@@ -49,5 +49,7 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[udfCombinePaths] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[udfCombinePaths] TO [public] AS [dbo]
 GO

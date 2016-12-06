@@ -40,3 +40,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetExpCellCultureList] TO [DDL_Viewer] AS [dbo]
+GO

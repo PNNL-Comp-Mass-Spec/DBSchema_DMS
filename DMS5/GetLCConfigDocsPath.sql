@@ -44,3 +44,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetLCConfigDocsPath] TO [DDL_Viewer] AS [dbo]
+GO

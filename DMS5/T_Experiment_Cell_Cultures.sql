@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Experiment_Cell_Cultures](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Experiment_Cell_Cultures] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Experiment_Cell_Cultures]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Cell_Cultures_T_Cell_Culture] FOREIGN KEY([CC_ID])
 REFERENCES [dbo].[T_Cell_Culture] ([CC_ID])
 GO

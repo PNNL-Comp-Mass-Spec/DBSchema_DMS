@@ -283,6 +283,8 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
@@ -292,8 +294,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M580] AS [dbo]
 GO

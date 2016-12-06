@@ -47,7 +47,5 @@ FROM dbo.T_Predefined_Analysis AS PA
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Entry] TO [DDL_Viewer] AS [dbo]
 GO

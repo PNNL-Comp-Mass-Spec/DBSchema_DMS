@@ -34,3 +34,5 @@ End
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[XMLQuoteCheck] TO [DDL_Viewer] AS [dbo]
+GO

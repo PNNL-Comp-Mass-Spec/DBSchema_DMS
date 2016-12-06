@@ -23,7 +23,5 @@ FROM T_AuxInfo_Category Category
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Allowed_Values] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Allowed_Values] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Allowed_Values] TO [DDL_Viewer] AS [dbo]
 GO

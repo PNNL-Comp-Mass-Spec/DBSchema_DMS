@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_Prep_LC_Run](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Prep_LC_Run] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Prep_LC_Run] ADD  CONSTRAINT [DF_T_Prep_LC_Run_Guard_Column]  DEFAULT ('No') FOR [Guard_Column]
 GO
 ALTER TABLE [dbo].[T_Prep_LC_Run] ADD  CONSTRAINT [DF_T_Prep_LC_Run_Created]  DEFAULT (getdate()) FOR [Created]

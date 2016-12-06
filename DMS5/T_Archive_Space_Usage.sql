@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Archive_Space_Usage](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Archive_Space_Usage] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Archive_Space_Usage] ADD  CONSTRAINT [DF_T_Archive_Space_Usage_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Archive_Space_Usage] ADD  CONSTRAINT [DF_T_Archive_Space_Usage_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]

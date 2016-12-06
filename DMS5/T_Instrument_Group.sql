@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Instrument_Group](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Group] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Usage]  DEFAULT ('') FOR [Usage]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Comment]  DEFAULT ('') FOR [Comment]

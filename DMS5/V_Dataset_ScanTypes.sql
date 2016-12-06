@@ -21,3 +21,5 @@ FROM T_Dataset_ScanTypes DST
        ON DST.Dataset_ID = DS.Dataset_ID
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_ScanTypes] TO [DDL_Viewer] AS [dbo]
+GO

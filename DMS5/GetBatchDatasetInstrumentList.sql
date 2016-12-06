@@ -46,3 +46,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetBatchDatasetInstrumentList] TO [DDL_Viewer] AS [dbo]
+GO

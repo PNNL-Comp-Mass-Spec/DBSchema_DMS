@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_Instrument_Allocation](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Allocation] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Instrument_Allocation] ADD  CONSTRAINT [DF_T_Instrument_Allocation_Entered]  DEFAULT (getdate()) FOR [Entered]

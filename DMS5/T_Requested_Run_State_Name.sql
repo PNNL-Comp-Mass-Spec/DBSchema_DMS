@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Requested_Run_State_Name](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Requested_Run_State_Name] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Requested_Run_State_Name] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Requested_Run_State_Name] ON [dbo].[T_Requested_Run_State_Name]
 (

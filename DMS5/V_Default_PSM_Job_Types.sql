@@ -13,7 +13,5 @@ FROM dbo.T_Default_PSM_Job_Types
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Types] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Types] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Types] TO [DDL_Viewer] AS [dbo]
 GO

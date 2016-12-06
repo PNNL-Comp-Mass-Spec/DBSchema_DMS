@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Processor_Group_Membership] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group_Membership] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 SET ANSI_PADDING ON

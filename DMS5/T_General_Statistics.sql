@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_General_Statistics](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_General_Statistics] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

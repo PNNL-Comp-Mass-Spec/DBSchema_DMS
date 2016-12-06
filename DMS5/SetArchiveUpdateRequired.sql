@@ -118,11 +118,9 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetArchiveUpdateRequired] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [PNL\D3M580] AS [dbo]
 GO

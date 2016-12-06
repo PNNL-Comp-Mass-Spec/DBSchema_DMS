@@ -91,5 +91,7 @@ CREATE FUNCTION [dbo].[GetOSMItemChooserList]
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetOSMItemChooserList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetOSMItemChooserList] TO [DMS2_SP_User] AS [dbo]
 GO

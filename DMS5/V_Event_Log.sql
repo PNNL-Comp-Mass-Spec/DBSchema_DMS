@@ -82,7 +82,5 @@ FROM dbo.T_Event_Log EL
           EL.Target_Type = 12
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Event_Log] TO [DDL_Viewer] AS [dbo]
 GO

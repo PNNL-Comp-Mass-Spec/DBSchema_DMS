@@ -65,3 +65,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AutoUpdateSettingsFileToCentroid] TO [DDL_Viewer] AS [dbo]
+GO

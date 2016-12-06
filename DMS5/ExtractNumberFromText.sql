@@ -80,5 +80,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ExtractNumberFromText] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[ExtractNumberFromText] TO [public] AS [dbo]
 GO

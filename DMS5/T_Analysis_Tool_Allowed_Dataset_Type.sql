@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Dataset_Type_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool_ID])

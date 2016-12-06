@@ -39,6 +39,8 @@ CREATE TABLE [dbo].[T_Organisms](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Organisms] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Organisms] TO [DMS_Limited_Organism_Write] AS [dbo]

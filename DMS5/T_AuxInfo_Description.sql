@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_AuxInfo_Description](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_AuxInfo_Description] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_AuxInfo_Description] ADD  CONSTRAINT [DF_T_AuxInfo_Description_Sequence]  DEFAULT (0) FOR [Sequence]
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Description] ADD  CONSTRAINT [DF_T_AuxInfo_Description_Size]  DEFAULT (64) FOR [DataSize]

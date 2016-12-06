@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Prep_LC_Run_Dataset](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Prep_LC_Run_Dataset] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Prep_LC_Run_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Prep_LC_Run_Dataset_T_Dataset] FOREIGN KEY([Dataset_ID])
 REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO

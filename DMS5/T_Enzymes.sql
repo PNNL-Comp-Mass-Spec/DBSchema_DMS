@@ -22,6 +22,8 @@ CREATE TABLE [dbo].[T_Enzymes](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Enzymes] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Enzymes] ADD  CONSTRAINT [DF_T_Enzymes_Cleavage_Method]  DEFAULT ('Standard') FOR [Cleavage_Method]
 GO
 ALTER TABLE [dbo].[T_Enzymes] ADD  CONSTRAINT [DF_T_Enzymes_Cleavage_Offset]  DEFAULT (1) FOR [Cleavage_Offset]

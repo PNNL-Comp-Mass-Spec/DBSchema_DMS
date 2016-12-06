@@ -569,7 +569,5 @@ Done:
 	Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreParamFileMassMods] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[StoreParamFileMassMods] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[StoreParamFileMassMods] TO [DDL_Viewer] AS [dbo]
 GO

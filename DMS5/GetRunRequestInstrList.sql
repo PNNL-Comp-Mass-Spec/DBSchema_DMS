@@ -49,3 +49,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRunRequestInstrList] TO [DDL_Viewer] AS [dbo]
+GO

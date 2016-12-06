@@ -121,3 +121,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckEMSLUsageItemValidity] TO [DDL_Viewer] AS [dbo]
+GO

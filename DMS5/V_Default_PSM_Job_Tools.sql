@@ -15,7 +15,5 @@ WHERE T_Default_PSM_Job_Settings.Enabled > 0
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Tools] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Tools] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Default_PSM_Job_Tools] TO [DDL_Viewer] AS [dbo]
 GO

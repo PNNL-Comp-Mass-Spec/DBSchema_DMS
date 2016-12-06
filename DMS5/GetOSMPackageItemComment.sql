@@ -41,6 +41,8 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetOSMPackageItemComment] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetOSMPackageItemComment] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetOSMPackageItemComment] TO [DMS_User] AS [dbo]

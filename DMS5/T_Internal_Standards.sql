@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Internal_Standards](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Internal_Standards] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT ALTER ON [dbo].[T_Internal_Standards] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT DELETE ON [dbo].[T_Internal_Standards] TO [Limited_Table_Write] AS [dbo]

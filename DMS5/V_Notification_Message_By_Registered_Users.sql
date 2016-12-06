@@ -24,7 +24,5 @@ FROM
   INNER JOIN V_Notification_Message_By_Research_Team AS VNMRT ON TU.U_PRN = VNMRT.[#PRN]
                                                               AND TNER.Entity_Type_ID = VNMRT.#EntityType
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Registered_Users] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Registered_Users] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Registered_Users] TO [DDL_Viewer] AS [dbo]
 GO

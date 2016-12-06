@@ -41,3 +41,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDMSFileStoragePaths] TO [DDL_Viewer] AS [dbo]
+GO

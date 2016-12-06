@@ -49,7 +49,5 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_RequestAnalysisJobEx5] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_RequestAnalysisJobEx5] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_RequestAnalysisJobEx5] TO [DDL_Viewer] AS [dbo]
 GO

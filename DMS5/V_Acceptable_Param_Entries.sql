@@ -17,7 +17,5 @@ FROM         dbo.T_Acceptable_Param_Entries INNER JOIN
                       dbo.T_Analysis_Tool ON dbo.T_Acceptable_Param_Entries.Analysis_Tool_ID = dbo.T_Analysis_Tool.AJT_toolID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Acceptable_Param_Entries] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Acceptable_Param_Entries] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Acceptable_Param_Entries] TO [DDL_Viewer] AS [dbo]
 GO

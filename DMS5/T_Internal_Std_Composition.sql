@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Internal_Std_Composition](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Internal_Std_Composition] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT ALTER ON [dbo].[T_Internal_Std_Composition] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT DELETE ON [dbo].[T_Internal_Std_Composition] TO [Limited_Table_Write] AS [dbo]

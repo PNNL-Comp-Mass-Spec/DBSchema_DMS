@@ -23,7 +23,5 @@ FROM         dbo.T_LC_Cart_Settings_History INNER JOIN
                       dbo.T_LC_Cart ON dbo.T_LC_Cart_Settings_History.Cart_ID = dbo.T_LC_Cart.ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Settings_History_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Settings_History_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Settings_History_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

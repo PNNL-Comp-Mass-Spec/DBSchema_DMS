@@ -29,11 +29,9 @@ As
 	
 	return(@experimentID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetExperimentID] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetExperimentID] TO [PNL\D3M580] AS [dbo]
 GO

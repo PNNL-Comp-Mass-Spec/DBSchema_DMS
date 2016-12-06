@@ -27,7 +27,5 @@ GROUP BY IADT.Dataset_Type, DTN.DST_Description, IADT.[Comment], IADT.IN_Group
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Group_Allowed_Dataset_Type] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Group_Allowed_Dataset_Type] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Group_Allowed_Dataset_Type] TO [DDL_Viewer] AS [dbo]
 GO

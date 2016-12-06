@@ -23,7 +23,5 @@ FROM dbo.T_Analysis_Job J
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs] TO [DDL_Viewer] AS [dbo]
 GO

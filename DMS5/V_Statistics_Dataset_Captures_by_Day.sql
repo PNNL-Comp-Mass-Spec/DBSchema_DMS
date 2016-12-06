@@ -21,7 +21,5 @@ GROUP BY YEAR(T_Dataset.DS_created), MONTH(T_Dataset.DS_created), DAY(T_Dataset.
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Dataset_Captures_by_Day] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Dataset_Captures_by_Day] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Dataset_Captures_by_Day] TO [DDL_Viewer] AS [dbo]
 GO

@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_EMSL_DMS_Instrument_Mapping](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_EMSL_DMS_Instrument_Mapping] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_EMSL_DMS_Instrument_Mapping_DMS_InstID] ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_T_EMSL_DMS_Instrument_Mapping_DMS_InstID] ON [dbo].[T_EMSL_DMS_Instrument_Mapping]
 (

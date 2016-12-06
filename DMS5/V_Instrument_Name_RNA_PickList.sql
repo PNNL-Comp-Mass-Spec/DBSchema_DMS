@@ -17,7 +17,5 @@ WHERE (InstName.IN_operations_role = 'Transcriptomics') AND
       (InstName.IN_status <> 'Inactive')
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Name_RNA_PickList] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Name_RNA_PickList] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Name_RNA_PickList] TO [DDL_Viewer] AS [dbo]
 GO

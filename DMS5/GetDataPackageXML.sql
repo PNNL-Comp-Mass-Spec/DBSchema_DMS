@@ -241,5 +241,7 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDataPackageXML] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetDataPackageXML] TO [DMS2_SP_User] AS [dbo]
 GO

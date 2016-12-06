@@ -104,7 +104,5 @@ AS
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
 GO

@@ -37,6 +37,8 @@ AS
 		RETURN @result
 	END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetNextInstrumentDataset] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetNextInstrumentDataset] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetNextInstrumentDataset] TO [DMS2_SP_User] AS [dbo]

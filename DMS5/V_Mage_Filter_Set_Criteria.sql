@@ -22,7 +22,5 @@ FROM T_Filter_Sets AS TF
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_Filter_Set_Criteria] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_Filter_Set_Criteria] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_Filter_Set_Criteria] TO [DDL_Viewer] AS [dbo]
 GO

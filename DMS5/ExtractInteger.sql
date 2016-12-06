@@ -69,3 +69,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ExtractInteger] TO [DDL_Viewer] AS [dbo]
+GO

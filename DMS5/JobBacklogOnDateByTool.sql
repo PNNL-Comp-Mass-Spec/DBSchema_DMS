@@ -37,3 +37,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[JobBacklogOnDateByTool] TO [DDL_Viewer] AS [dbo]
+GO

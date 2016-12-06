@@ -55,3 +55,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolAllowedDSTypeList] TO [DDL_Viewer] AS [dbo]
+GO

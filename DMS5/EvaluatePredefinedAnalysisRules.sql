@@ -929,13 +929,11 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [PNL\D3M580] AS [dbo]
 GO

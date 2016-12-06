@@ -30,5 +30,7 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFYFromDate] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetFYFromDate] TO [public] AS [dbo]
 GO

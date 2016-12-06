@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_EUS_Proposal_State_Name](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_EUS_Proposal_State_Name] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_EUS_Proposal_State_Name] TO [DMS_EUS_Admin] AS [dbo]

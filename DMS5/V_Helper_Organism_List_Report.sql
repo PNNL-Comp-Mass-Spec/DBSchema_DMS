@@ -12,7 +12,5 @@ FROM         T_Organisms
 WHERE     (OG_name <> '(default)')
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Organism_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Organism_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Organism_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

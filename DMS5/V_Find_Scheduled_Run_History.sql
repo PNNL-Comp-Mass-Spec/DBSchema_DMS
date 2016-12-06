@@ -18,7 +18,5 @@ FROM         dbo.T_Requested_Run INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [DDL_Viewer] AS [dbo]
 GO

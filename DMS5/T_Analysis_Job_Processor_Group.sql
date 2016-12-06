@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_Processor_Group](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Processor_Group] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Processor_Group] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group] ADD  CONSTRAINT [DF_T_Analysis_Job_Processor_Group_Group_Enabled]  DEFAULT ('Y') FOR [Group_Enabled]

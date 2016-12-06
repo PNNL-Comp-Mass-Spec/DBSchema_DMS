@@ -168,13 +168,11 @@ As
 	return 51222
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS_Archive_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [PNL\D3M580] AS [dbo]
 GO

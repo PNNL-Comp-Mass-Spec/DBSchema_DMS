@@ -27,7 +27,5 @@ FROM         dbo.T_Analysis_Job INNER JOIN
 WHERE     (dbo.T_Analysis_Job.AJ_StateID = 4) AND (dbo.T_Analysis_Tool.AJT_toolName LIKE '%xtandem%') AND (dbo.T_Dataset.DS_rating > 1)
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_PDE_XT_Analysis_Jobs_Ext] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_PDE_XT_Analysis_Jobs_Ext] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_XT_Analysis_Jobs_Ext] TO [DDL_Viewer] AS [dbo]
 GO

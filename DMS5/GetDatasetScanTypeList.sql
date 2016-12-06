@@ -62,3 +62,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetScanTypeList] TO [DDL_Viewer] AS [dbo]
+GO

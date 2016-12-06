@@ -57,3 +57,5 @@ End
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RemoveFromString] TO [DDL_Viewer] AS [dbo]
+GO

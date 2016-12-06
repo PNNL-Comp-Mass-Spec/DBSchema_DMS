@@ -11,7 +11,5 @@ FROM         dbo.T_Organism_DB_File INNER JOIN
                       dbo.T_Organisms ON dbo.T_Organism_DB_File.Organism_ID = dbo.T_Organisms.Organism_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Legacy_FASTA_File_Paths] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Legacy_FASTA_File_Paths] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Legacy_FASTA_File_Paths] TO [DDL_Viewer] AS [dbo]
 GO

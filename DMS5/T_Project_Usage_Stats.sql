@@ -31,6 +31,8 @@ CREATE TABLE [dbo].[T_Project_Usage_Stats](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Project_Usage_Stats] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Project_Usage_Stats_YearAndWeek] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Project_Usage_Stats_YearAndWeek] ON [dbo].[T_Project_Usage_Stats]
 (

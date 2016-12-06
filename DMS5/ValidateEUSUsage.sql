@@ -325,9 +325,7 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [PNL\D3M580] AS [dbo]
 GO

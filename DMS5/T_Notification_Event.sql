@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Notification_Event](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Notification_Event] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Notification_Event] ADD  CONSTRAINT [DF_T_Notification_Event_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Notification_Event]  WITH CHECK ADD  CONSTRAINT [FK_T_Notification_Event_T_Notification_Event_Type] FOREIGN KEY([Event_Type])

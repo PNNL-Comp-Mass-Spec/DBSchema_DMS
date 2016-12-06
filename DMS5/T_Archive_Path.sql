@@ -22,6 +22,8 @@ CREATE TABLE [dbo].[T_Archive_Path](
 GO
 GRANT ALTER ON [dbo].[T_Archive_Path] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Archive_Path] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

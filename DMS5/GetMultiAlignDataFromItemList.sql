@@ -83,3 +83,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMultiAlignDataFromItemList] TO [DDL_Viewer] AS [dbo]
+GO

@@ -15,7 +15,5 @@ UNION
 SELECT 'LCQ' AS val, '' AS ex
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Req_Run_Instrument_Picklist_Ex] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Req_Run_Instrument_Picklist_Ex] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Req_Run_Instrument_Picklist_Ex] TO [DDL_Viewer] AS [dbo]
 GO

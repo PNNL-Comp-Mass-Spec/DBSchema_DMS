@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Predefined_Analysis_Scheduling_Rules] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Rules_SR_instrumentClass]  DEFAULT ('') FOR [SR_instrumentClass]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Rules] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Rules_SR_instrument_Name]  DEFAULT ('') FOR [SR_instrument_Name]

@@ -94,3 +94,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetNearestPrecedingLogEntry] TO [DDL_Viewer] AS [dbo]
+GO

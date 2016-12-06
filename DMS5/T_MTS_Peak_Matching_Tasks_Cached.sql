@@ -38,6 +38,8 @@ CREATE TABLE [dbo].[T_MTS_Peak_Matching_Tasks_Cached](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MTS_Peak_Matching_Tasks_Cached] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_MTS_Peak_Matching_Tasks_Cached_MTSJob_DMSJob] ******/
 CREATE CLUSTERED INDEX [IX_T_MTS_Peak_Matching_Tasks_Cached_MTSJob_DMSJob] ON [dbo].[T_MTS_Peak_Matching_Tasks_Cached]
 (

@@ -228,3 +228,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[PopulateFactorLastUpdated] TO [DDL_Viewer] AS [dbo]
+GO

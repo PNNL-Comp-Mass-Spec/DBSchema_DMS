@@ -108,6 +108,8 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
@@ -115,8 +117,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateEUSInfoFromEUSImports] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [PNL\D3M580] AS [dbo]
 GO

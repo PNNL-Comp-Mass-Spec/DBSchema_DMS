@@ -31,3 +31,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[JobsInBatch] TO [DDL_Viewer] AS [dbo]
+GO

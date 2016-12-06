@@ -61,13 +61,11 @@ FROM T_Analysis_Job AJ
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[V_Analysis_Job] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job] TO [PNL\D3M580] AS [dbo]
 GO

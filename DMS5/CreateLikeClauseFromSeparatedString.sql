@@ -59,5 +59,7 @@ begin
 end
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CreateLikeClauseFromSeparatedString] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[CreateLikeClauseFromSeparatedString] TO [public] AS [dbo]
 GO

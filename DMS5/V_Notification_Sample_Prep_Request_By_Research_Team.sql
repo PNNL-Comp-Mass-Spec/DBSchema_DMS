@@ -47,7 +47,5 @@ WHERE TET.Target_Entity_Type = 3 AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Sample_Prep_Request_By_Research_Team] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Notification_Sample_Prep_Request_By_Research_Team] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Notification_Sample_Prep_Request_By_Research_Team] TO [DDL_Viewer] AS [dbo]
 GO

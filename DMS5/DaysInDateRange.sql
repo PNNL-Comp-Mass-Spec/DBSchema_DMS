@@ -40,5 +40,7 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DaysInDateRange] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[DaysInDateRange] TO [public] AS [dbo]
 GO

@@ -52,3 +52,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetJobPSMStats] TO [DDL_Viewer] AS [dbo]
+GO

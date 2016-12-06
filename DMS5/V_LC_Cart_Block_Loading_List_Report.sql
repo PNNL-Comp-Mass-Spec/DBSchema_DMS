@@ -15,7 +15,5 @@ GROUP BY R.RDS_BatchID, R.RDS_Block, B.Batch, R.RDS_Status
 HAVING      (R.RDS_BatchID <> 0)
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Block_Loading_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Block_Loading_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Block_Loading_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

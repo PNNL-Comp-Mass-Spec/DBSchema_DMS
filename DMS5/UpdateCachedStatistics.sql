@@ -269,9 +269,7 @@ Done:
 GO
 GRANT EXECUTE ON [dbo].[UpdateCachedStatistics] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [PNL\D3M580] AS [dbo]
 GO

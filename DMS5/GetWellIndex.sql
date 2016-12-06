@@ -48,3 +48,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetWellIndex] TO [DDL_Viewer] AS [dbo]
+GO

@@ -15,5 +15,7 @@ CREATE TABLE [dbo].[T_Factor_Log](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Factor_Log] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Factor_Log] ADD  CONSTRAINT [DF_T_Factor_Log_changed_on]  DEFAULT (getdate()) FOR [changed_on]
 GO

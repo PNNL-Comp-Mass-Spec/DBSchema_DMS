@@ -28,5 +28,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFiscalYearFromDate] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetFiscalYearFromDate] TO [public] AS [dbo]
 GO

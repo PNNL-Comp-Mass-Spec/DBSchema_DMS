@@ -25,6 +25,8 @@ CREATE TABLE [dbo].[T_Auth_Database_Permissions](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Auth_Database_Permissions] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Auth_Database_Permissions] ADD  CONSTRAINT [DF_T_Auth_Database_Permissions_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Auth_Database_Permissions] ADD  CONSTRAINT [DF_T_Auth_Database_Permissions_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]

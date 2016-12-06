@@ -31,6 +31,8 @@ CREATE TABLE [dbo].[T_Dataset_Archive](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_Archive] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_Dataset_Archive_DatasetID_StateID] ******/
 CREATE NONCLUSTERED INDEX [IX_Dataset_Archive_DatasetID_StateID] ON [dbo].[T_Dataset_Archive]
 (

@@ -14,5 +14,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_ID](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_ID] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_ID] ADD  CONSTRAINT [DF_T_Analysis_Job_ID_Created]  DEFAULT (getdate()) FOR [Created]
 GO

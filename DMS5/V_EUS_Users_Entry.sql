@@ -17,7 +17,5 @@ FROM T_EUS_Users
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Users_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Users_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Users_Entry] TO [DDL_Viewer] AS [dbo]
 GO

@@ -85,7 +85,5 @@ As
 	return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncWithDMSShowStats] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[SyncWithDMSShowStats] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[SyncWithDMSShowStats] TO [DDL_Viewer] AS [dbo]
 GO

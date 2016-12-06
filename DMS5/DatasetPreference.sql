@@ -49,5 +49,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DatasetPreference] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public] AS [dbo]
 GO

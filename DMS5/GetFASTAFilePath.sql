@@ -68,5 +68,7 @@ End
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetFASTAFilePath] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetFASTAFilePath] TO [public] AS [dbo]
 GO

@@ -164,13 +164,11 @@ As
   return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [PNL\D3M580] AS [dbo]
 GO

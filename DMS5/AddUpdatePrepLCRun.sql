@@ -225,13 +225,11 @@ As
 	END CATCH
 	return @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [PNL\D3M580] AS [dbo]
 GO

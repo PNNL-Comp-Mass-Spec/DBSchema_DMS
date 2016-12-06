@@ -226,3 +226,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRunTrackingMonthlyInfo] TO [DDL_Viewer] AS [dbo]
+GO

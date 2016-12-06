@@ -219,7 +219,5 @@ AS
 	return @ArchivePathID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentArchivePathForNewDatasets] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentArchivePathForNewDatasets] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentArchivePathForNewDatasets] TO [DDL_Viewer] AS [dbo]
 GO

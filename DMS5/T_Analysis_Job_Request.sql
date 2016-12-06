@@ -28,6 +28,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_Request] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Analysis_Job_Request] TO [Limited_Table_Write] AS [dbo]

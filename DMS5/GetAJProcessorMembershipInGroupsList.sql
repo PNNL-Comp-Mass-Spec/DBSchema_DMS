@@ -80,3 +80,5 @@ AS
 GO
 GRANT EXECUTE ON [dbo].[GetAJProcessorMembershipInGroupsList] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorMembershipInGroupsList] TO [DDL_Viewer] AS [dbo]
+GO

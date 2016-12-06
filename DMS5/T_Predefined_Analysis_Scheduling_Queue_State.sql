@@ -12,3 +12,5 @@ CREATE TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue_State](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Predefined_Analysis_Scheduling_Queue_State] TO [DDL_Viewer] AS [dbo]
+GO

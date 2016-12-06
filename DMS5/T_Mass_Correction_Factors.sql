@@ -26,6 +26,8 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Mass_Correction_Factors] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]
 GO
 GRANT REFERENCES ON [dbo].[T_Mass_Correction_Factors] TO [DMSMassCorrectionAdder] AS [dbo]

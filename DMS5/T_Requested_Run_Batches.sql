@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Requested_Run_Batches] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_Batches] TO [Limited_Table_Write] AS [dbo]

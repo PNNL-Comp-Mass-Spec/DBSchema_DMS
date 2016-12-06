@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_DatasetStateName](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_DatasetStateName] TO [DDL_Viewer] AS [dbo]
+GO

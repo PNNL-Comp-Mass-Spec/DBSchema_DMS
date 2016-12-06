@@ -53,7 +53,5 @@ FROM    T_File_Attachment AS TFA
                                AND TFA.Entity_Type = TPK.Item_Type
 WHERE   ( TFA.Active > 0 )
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_OSM_Package_All_File_Attachments] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Mage_OSM_Package_All_File_Attachments] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Mage_OSM_Package_All_File_Attachments] TO [DDL_Viewer] AS [dbo]
 GO

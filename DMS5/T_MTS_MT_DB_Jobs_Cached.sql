@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_MTS_MT_DB_Jobs_Cached](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MTS_MT_DB_Jobs_Cached] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_MTS_MT_DB_Jobs_Cached_SortKey] ******/
 CREATE CLUSTERED INDEX [IX_T_MTS_MT_DB_Jobs_Cached_SortKey] ON [dbo].[T_MTS_MT_DB_Jobs_Cached]
 (

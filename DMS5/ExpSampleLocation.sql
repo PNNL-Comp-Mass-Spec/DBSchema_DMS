@@ -43,5 +43,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ExpSampleLocation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[ExpSampleLocation] TO [public] AS [dbo]
 GO

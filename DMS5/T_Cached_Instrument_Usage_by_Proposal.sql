@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Cached_Instrument_Usage_by_Proposal](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Cached_Instrument_Usage_by_Proposal] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Usage_by_Proposal]  WITH CHECK ADD  CONSTRAINT [FK_T_Cached_Instrument_Usage_by_Proposal_T_EUS_Proposals] FOREIGN KEY([EUS_Proposal_ID])
 REFERENCES [dbo].[T_EUS_Proposals] ([Proposal_ID])
 GO

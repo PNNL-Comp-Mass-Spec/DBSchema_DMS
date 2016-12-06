@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Group_Allowed_DS_Type] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type] FOREIGN KEY([Dataset_Type])

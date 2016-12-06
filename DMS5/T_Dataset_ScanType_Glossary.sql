@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Dataset_ScanType_Glossary](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_ScanType_Glossary] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Dataset_ScanType_Glossary] ADD  CONSTRAINT [DF_T_Dataset_ScanType_Glossary_SortKey]  DEFAULT ((0)) FOR [SortKey]
 GO
 ALTER TABLE [dbo].[T_Dataset_ScanType_Glossary] ADD  CONSTRAINT [DF_T_Dataset_ScanType_Glossary_Comment]  DEFAULT ('') FOR [Comment]

@@ -233,3 +233,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageRollup] TO [DDL_Viewer] AS [dbo]
+GO

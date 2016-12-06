@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Notification_Entity_User](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Notification_Entity_User] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Notification_Entity_User]  WITH CHECK ADD  CONSTRAINT [FK_T_Notification_Entity_User_T_Notification_Entity_Type] FOREIGN KEY([Entity_Type_ID])
 REFERENCES [dbo].[T_Notification_Entity_Type] ([ID])
 GO

@@ -389,13 +389,11 @@ As
 GO
 GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [D3L243] AS [dbo]
 GO
+GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [PNL\D3M580] AS [dbo]
 GO

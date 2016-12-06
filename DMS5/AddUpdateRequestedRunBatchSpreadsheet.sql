@@ -95,13 +95,11 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatchSpreadsheet] TO [PNL\D3M580] AS [dbo]
 GO

@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_AuxInfo_Subcategory](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_AuxInfo_Subcategory] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_AuxInfo_Subcategory] ADD  CONSTRAINT [DF_T_AuxInfo_Subcategory_Sequence]  DEFAULT (0) FOR [Sequence]
 GO
 ALTER TABLE [dbo].[T_AuxInfo_Subcategory]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Subcategory_T_AuxInfo_Category] FOREIGN KEY([Parent_ID])

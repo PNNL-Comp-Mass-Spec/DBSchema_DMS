@@ -19,7 +19,5 @@ FROM    dbo.T_File_Attachment
         INNER JOIN dbo.T_Users ON dbo.T_File_Attachment.Owner_PRN = dbo.T_Users.U_PRN
         WHERE T_File_Attachment.Active > 0
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_File_Attachment_Display] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_File_Attachment_Display] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_File_Attachment_Display] TO [DDL_Viewer] AS [dbo]
 GO

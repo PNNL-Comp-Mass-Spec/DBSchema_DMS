@@ -69,13 +69,11 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_alterdiagram] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[sp_alterdiagram] TO [guest] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[sp_alterdiagram] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[sp_alterdiagram] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[sp_alterdiagram] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[sp_alterdiagram] TO [public] AS [dbo]
 GO

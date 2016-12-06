@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Material_Freezers](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Material_Freezers] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

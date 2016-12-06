@@ -46,3 +46,5 @@ AS
 		RETURN @result
 	END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetCampaignRolePerson] TO [DDL_Viewer] AS [dbo]
+GO

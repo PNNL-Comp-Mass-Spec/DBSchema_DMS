@@ -37,5 +37,7 @@ End
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDMSFileStoragePath] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetDMSFileStoragePath] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -18,3 +18,5 @@ CREATE TABLE [dbo].[T_Auth_Server_Logins_2016Feb](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Auth_Server_Logins_2016Feb] TO [DDL_Viewer] AS [dbo]
+GO

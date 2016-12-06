@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Archive_Update_State_Name](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Archive_Update_State_Name] TO [DDL_Viewer] AS [dbo]
+GO

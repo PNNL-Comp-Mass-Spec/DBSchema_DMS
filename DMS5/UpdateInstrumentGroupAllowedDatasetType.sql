@@ -165,13 +165,11 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [PNL\D3M580] AS [dbo]
 GO

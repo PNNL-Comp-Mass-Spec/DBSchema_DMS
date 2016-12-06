@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Dataset_Storage_Move_Log](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_Storage_Move_Log] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Dataset_Storage_Move_Log_DatasetID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_Storage_Move_Log_DatasetID] ON [dbo].[T_Dataset_Storage_Move_Log]
 (

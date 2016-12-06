@@ -90,6 +90,8 @@ AS
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetProposalEUSUsersList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]
 GO
 GRANT REFERENCES ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]

@@ -36,5 +36,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetInstrumentGroupMembershipList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetInstrumentGroupMembershipList] TO [DMS2_SP_User] AS [dbo]
 GO

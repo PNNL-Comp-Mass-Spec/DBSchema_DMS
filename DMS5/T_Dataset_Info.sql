@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_Dataset_Info](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_Info] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Dataset_Info]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Info_T_Dataset] FOREIGN KEY([Dataset_ID])
 REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO

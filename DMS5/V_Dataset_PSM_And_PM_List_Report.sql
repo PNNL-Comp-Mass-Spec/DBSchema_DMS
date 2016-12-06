@@ -64,7 +64,5 @@ WHERE PSM.StateID NOT IN (5, 14)
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PSM_And_PM_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PSM_And_PM_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PSM_And_PM_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

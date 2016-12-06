@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Usage_Stats](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Usage_Stats] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Usage_Stats] ADD  CONSTRAINT [DF_T_Usage_Stats_Last_Posting_Time]  DEFAULT (getdate()) FOR [Last_Posting_Time]
 GO
 ALTER TABLE [dbo].[T_Usage_Stats] ADD  CONSTRAINT [DF_T_Usage_Stats_Usage_Count]  DEFAULT ((1)) FOR [Usage_Count]

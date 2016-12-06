@@ -26,7 +26,5 @@ WHERE (SLP.[Function] <> 'inbox') AND
 GROUP BY SLP.[Vol Client], InstGroup.IN_Group, SLP.Datasets, SLP.PATH, SLP.[Vol Server], InstName.IN_name
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Summary] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Storage_Summary] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Storage_Summary] TO [DDL_Viewer] AS [dbo]
 GO

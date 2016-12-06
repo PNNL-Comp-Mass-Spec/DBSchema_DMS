@@ -147,5 +147,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateBionetHost] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateBionetHost] TO [DMS2_SP_User] AS [dbo]
 GO

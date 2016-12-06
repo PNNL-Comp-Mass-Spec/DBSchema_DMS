@@ -37,5 +37,7 @@ AS
 		RETURN @list
 	END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAuxInfoAllowedValues] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetAuxInfoAllowedValues] TO [DMS2_SP_User] AS [dbo]
 GO

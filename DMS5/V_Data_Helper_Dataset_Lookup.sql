@@ -13,7 +13,5 @@ FROM         dbo.T_Dataset_Archive AS DA INNER JOIN
                       dbo.T_Archive_Path AS APath ON DA.AS_storage_path_ID = APath.AP_path_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Helper_Dataset_Lookup] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Helper_Dataset_Lookup] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Helper_Dataset_Lookup] TO [DDL_Viewer] AS [dbo]
 GO

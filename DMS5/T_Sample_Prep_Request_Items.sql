@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Items](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Sample_Prep_Request_Items] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Items] ADD  DEFAULT (getdate()) FOR [Item_Added]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request_Items]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_Items_T_Sample_Prep_Request] FOREIGN KEY([ID])

@@ -263,13 +263,11 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [PNL\D3M580] AS [dbo]
 GO

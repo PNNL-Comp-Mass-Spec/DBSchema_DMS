@@ -23,7 +23,5 @@ WHERE     (T_Event_Log.Target_Type = 4) AND (DATEDIFF(Day, T_Event_Log.Entered, 
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Dataset_List] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Dataset_List] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Dataset_List] TO [DDL_Viewer] AS [dbo]
 GO

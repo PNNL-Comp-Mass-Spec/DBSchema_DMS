@@ -32,6 +32,8 @@ CREATE TABLE [dbo].[T_Cell_Culture](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Cell_Culture] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]

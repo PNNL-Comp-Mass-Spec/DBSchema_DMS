@@ -14,5 +14,7 @@ CREATE TABLE [dbo].[T_Dataset_QC_Instruments](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_QC_Instruments] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Dataset_QC_Instruments] ADD  DEFAULT (getdate()) FOR [Last_Updated]
 GO

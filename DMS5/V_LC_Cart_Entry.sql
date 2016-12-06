@@ -12,7 +12,5 @@ FROM         T_LC_Cart INNER JOIN
                       T_LC_Cart_State_Name ON T_LC_Cart.Cart_State_ID = T_LC_Cart_State_Name.ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Entry] TO [DDL_Viewer] AS [dbo]
 GO

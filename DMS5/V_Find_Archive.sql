@@ -18,7 +18,5 @@ FROM         dbo.T_Dataset_Archive INNER JOIN
                       dbo.T_Archive_Update_State_Name ON dbo.T_Dataset_Archive.AS_update_state_ID = dbo.T_Archive_Update_State_Name.AUS_stateID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Archive] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Archive] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Find_Archive] TO [DDL_Viewer] AS [dbo]
 GO

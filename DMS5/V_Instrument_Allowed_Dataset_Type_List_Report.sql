@@ -17,7 +17,5 @@ FROM T_Instrument_Group_Allowed_DS_Type IGADT
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

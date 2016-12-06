@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_DatasetTypeName](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_DatasetTypeName] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_DatasetTypeName] TO [DMS_LCMSNet_User] AS [dbo]
 GO
 SET ANSI_PADDING ON

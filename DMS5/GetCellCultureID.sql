@@ -26,9 +26,7 @@ As
 	SELECT @ccID = CC_ID FROM T_Cell_Culture WHERE (CC_Name = @cellCultureName)
 	return(@ccID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [PNL\D3M580] AS [dbo]
 GO

@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] ADD  CONSTRAINT [DF_T_Analysis_Tool_Allowed_Instrument_Class_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Instrument_Class_T_Analysis_Tool] FOREIGN KEY([Analysis_Tool_ID])

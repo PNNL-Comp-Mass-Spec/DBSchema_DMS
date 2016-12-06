@@ -181,11 +181,9 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateCartParameters] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [PNL\D3M580] AS [dbo]
 GO

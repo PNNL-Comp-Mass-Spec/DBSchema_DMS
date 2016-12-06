@@ -20,5 +20,7 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Allocation](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_EMSL_Instrument_Allocation] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_EMSL_Instrument_Allocation] ADD  CONSTRAINT [DF_T_EMSL_Instrument_Allocation_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

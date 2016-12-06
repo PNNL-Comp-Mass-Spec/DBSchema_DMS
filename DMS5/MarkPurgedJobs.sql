@@ -73,6 +73,8 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Ops_Admin] AS [dbo]
@@ -80,10 +82,6 @@ GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [svc-dms] AS [dbo]
 GO

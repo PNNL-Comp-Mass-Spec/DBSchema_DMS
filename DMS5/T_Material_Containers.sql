@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Material_Containers](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Material_Containers] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

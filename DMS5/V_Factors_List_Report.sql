@@ -48,7 +48,5 @@ FROM (SELECT TargetID AS RequestID,
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Factors_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Factors_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Factors_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

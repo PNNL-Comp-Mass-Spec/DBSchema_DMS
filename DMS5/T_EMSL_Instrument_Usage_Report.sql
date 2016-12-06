@@ -27,6 +27,8 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_EMSL_Instrument_Usage_Report] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

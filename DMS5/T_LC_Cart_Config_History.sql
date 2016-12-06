@@ -18,5 +18,7 @@ CREATE TABLE [dbo].[T_LC_Cart_Config_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_LC_Cart_Config_History] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_LC_Cart_Config_History] ADD  CONSTRAINT [DF_T_LC_Cart_Config_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

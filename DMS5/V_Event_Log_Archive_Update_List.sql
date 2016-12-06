@@ -16,7 +16,5 @@ WHERE     (dbo.T_Event_Log.Target_Type = 7) AND (DATEDIFF(Day, dbo.T_Event_Log.E
 ORDER BY dbo.T_Dataset.Dataset_Num, dbo.T_Event_Log.Entered DESC
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Archive_Update_List] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Archive_Update_List] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Archive_Update_List] TO [DDL_Viewer] AS [dbo]
 GO

@@ -28,11 +28,9 @@ As
 	SELECT @toolID = AJT_toolID FROM T_Analysis_Tool WHERE (AJT_toolName = @toolName)
 	return(@toolID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetAnalysisToolID] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolID] TO [PNL\D3M580] AS [dbo]
 GO

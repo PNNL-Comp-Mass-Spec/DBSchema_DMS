@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[T_Analysis_Status_Monitor_Params](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Status_Monitor_Params] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] ADD  CONSTRAINT [DF_T_Analysis_Status_Monitor_Params_CheckBoxState]  DEFAULT (0) FOR [CheckBoxState]
 GO
 ALTER TABLE [dbo].[T_Analysis_Status_Monitor_Params] ADD  CONSTRAINT [DF_T_Analysis_Status_Monitor_Params_UseForStatusCheck]  DEFAULT (1) FOR [UseForStatusCheck]

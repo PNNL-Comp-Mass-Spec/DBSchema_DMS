@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Experiment_Group_Members](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Experiment_Group_Members] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Experiment_Group_Members] TO [PNL\D3M578] AS [dbo]

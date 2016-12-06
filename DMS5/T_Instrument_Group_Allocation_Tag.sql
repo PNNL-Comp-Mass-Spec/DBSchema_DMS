@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Instrument_Group_Allocation_Tag](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Group_Allocation_Tag] TO [DDL_Viewer] AS [dbo]
+GO

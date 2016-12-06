@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Requested_Run_EUS_Users](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Requested_Run_EUS_Users] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Requested_Run_EUS_Users] TO [Limited_Table_Write] AS [dbo]

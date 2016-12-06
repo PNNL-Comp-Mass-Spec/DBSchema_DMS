@@ -115,9 +115,7 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [PNL\D3M580] AS [dbo]
 GO

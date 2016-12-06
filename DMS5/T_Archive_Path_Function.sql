@@ -12,5 +12,7 @@ CREATE TABLE [dbo].[T_Archive_Path_Function](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Archive_Path_Function] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_Archive_Path_Function] TO [DMS_SP_User] AS [dbo]
 GO

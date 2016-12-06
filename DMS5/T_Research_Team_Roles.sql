@@ -14,3 +14,5 @@ CREATE TABLE [dbo].[T_Research_Team_Roles](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Research_Team_Roles] TO [DDL_Viewer] AS [dbo]
+GO

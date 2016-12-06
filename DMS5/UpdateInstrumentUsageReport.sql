@@ -277,11 +277,9 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
 GO

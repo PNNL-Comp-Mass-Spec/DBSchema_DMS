@@ -20,7 +20,5 @@ FROM dbo.T_EMSL_DMS_Instrument_Mapping EDM
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Instrument_ID_Lookup] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Instrument_ID_Lookup] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Instrument_ID_Lookup] TO [DDL_Viewer] AS [dbo]
 GO

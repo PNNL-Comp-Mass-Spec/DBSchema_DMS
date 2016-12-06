@@ -437,7 +437,5 @@ Done:
 	return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GenerateMergeStatement] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GenerateMergeStatement] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GenerateMergeStatement] TO [DDL_Viewer] AS [dbo]
 GO

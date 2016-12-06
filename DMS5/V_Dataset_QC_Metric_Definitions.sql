@@ -24,7 +24,5 @@ WHERE Ignored = 0
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metric_Definitions] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metric_Definitions] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metric_Definitions] TO [DDL_Viewer] AS [dbo]
 GO

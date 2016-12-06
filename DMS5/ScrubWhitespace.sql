@@ -71,3 +71,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ScrubWhitespace] TO [DDL_Viewer] AS [dbo]
+GO

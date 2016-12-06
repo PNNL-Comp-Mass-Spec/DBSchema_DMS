@@ -27,9 +27,7 @@ GROUP BY TAP.AP_path_ID, TIN.IN_name, TAP.AP_archive_path,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_List_Report] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[V_Archive_Path_List_Report] TO [DMS_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Archive_Path_List_Report] TO [PNL\D3M580] AS [dbo]
 GO

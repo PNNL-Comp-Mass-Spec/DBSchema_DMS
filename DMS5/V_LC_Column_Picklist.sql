@@ -13,9 +13,7 @@ WHERE     (SC_State = 2)
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Column_Picklist] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[V_LC_Column_Picklist] TO [DMS_LCMSNet_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Column_Picklist] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Column_Picklist] TO [PNL\D3M580] AS [dbo]
 GO

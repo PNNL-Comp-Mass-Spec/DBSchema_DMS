@@ -19,7 +19,5 @@ FROM dbo.T_Experiments INNER JOIN
     dbo.T_Experiments.EX_organism_ID = dbo.T_Organisms.Organism_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_CCE_Experiment_Summary] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_CCE_Experiment_Summary] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_CCE_Experiment_Summary] TO [DDL_Viewer] AS [dbo]
 GO

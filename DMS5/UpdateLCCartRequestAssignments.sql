@@ -167,11 +167,9 @@ Done:
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateLCCartRequestAssignments] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [PNL\D3M580] AS [dbo]
 GO

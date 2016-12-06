@@ -289,13 +289,11 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAuxInfo] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [PNL\D3M580] AS [dbo]
 GO

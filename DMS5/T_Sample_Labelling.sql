@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Sample_Labelling](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Sample_Labelling] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

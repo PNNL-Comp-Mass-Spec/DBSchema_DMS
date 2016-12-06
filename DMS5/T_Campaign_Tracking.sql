@@ -26,6 +26,8 @@ CREATE TABLE [dbo].[T_Campaign_Tracking](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Campaign_Tracking] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Cell_Culture_Count]  DEFAULT ((0)) FOR [Cell_Culture_Count]
 GO
 ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Experiment_Count]  DEFAULT ((0)) FOR [Experiment_Count]

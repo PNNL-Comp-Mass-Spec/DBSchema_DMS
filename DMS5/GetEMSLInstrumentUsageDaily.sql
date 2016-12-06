@@ -408,3 +408,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDaily] TO [DDL_Viewer] AS [dbo]
+GO

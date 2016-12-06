@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Instrument_Ops_Role](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Ops_Role] TO [DDL_Viewer] AS [dbo]
+GO

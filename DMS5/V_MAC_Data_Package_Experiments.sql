@@ -16,7 +16,5 @@ FROM S_V_Data_Package_Experiments_Export
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_MAC_Data_Package_Experiments] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_MAC_Data_Package_Experiments] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_MAC_Data_Package_Experiments] TO [DDL_Viewer] AS [dbo]
 GO

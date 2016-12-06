@@ -291,6 +291,8 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User] AS [dbo]
@@ -298,8 +300,4 @@ GO
 GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [PNL\D3M580] AS [dbo]
 GO

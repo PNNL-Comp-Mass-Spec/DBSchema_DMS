@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Wellplates](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Wellplates] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Wellplates] ADD  CONSTRAINT [DF_T_Wellplates_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Wellplates]  WITH CHECK ADD  CONSTRAINT [CK_T_Wellplates_WellPlateName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([WP_Well_Plate_Num],(1))=(0)))

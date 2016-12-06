@@ -12,7 +12,5 @@ FROM         dbo.T_Filter_Set_Criteria INNER JOIN
                       dbo.T_Filter_Set_Criteria_Names ON dbo.T_Filter_Set_Criteria.Criterion_ID = dbo.T_Filter_Set_Criteria_Names.Criterion_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_PDE_Filter_Criteria] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_PDE_Filter_Criteria] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_PDE_Filter_Criteria] TO [DDL_Viewer] AS [dbo]
 GO

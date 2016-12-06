@@ -15,9 +15,7 @@ WHERE (NOT (IN_name LIKE 'SW_%')) AND
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Picklist] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[V_Instrument_Picklist] TO [DMS_LCMSNet_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Picklist] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Picklist] TO [PNL\D3M580] AS [dbo]
 GO

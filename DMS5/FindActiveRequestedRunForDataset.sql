@@ -152,3 +152,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindActiveRequestedRunForDataset] TO [DDL_Viewer] AS [dbo]
+GO

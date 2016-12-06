@@ -10,9 +10,7 @@ FROM         dbo.T_Users
 WHERE     (U_Status = 'Active')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Active_Users] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[V_Active_Users] TO [DMS_LCMSNet_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Active_Users] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Active_Users] TO [PNL\D3M580] AS [dbo]
 GO

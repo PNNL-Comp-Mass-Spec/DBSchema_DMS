@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Secondary_Sep_SampleType](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Secondary_Sep_SampleType] TO [DDL_Viewer] AS [dbo]
+GO

@@ -10,7 +10,5 @@ SELECT     Param_File_Name AS param_file_name, Param_File_Description AS descrip
 FROM         dbo.T_Param_Files AS PF
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Report] TO [DDL_Viewer] AS [dbo]
 GO

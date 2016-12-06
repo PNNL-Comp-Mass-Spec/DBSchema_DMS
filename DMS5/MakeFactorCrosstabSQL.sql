@@ -110,11 +110,9 @@ AS
 		Set @Sql = @Sql + ' LEFT OUTER JOIN (' + @CrossTabSql + ') CrosstabQ ON UQ.Request = CrossTabQ.TargetID'
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MakeFactorCrosstabSQL] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [PNL\D3M580] AS [dbo]
 GO

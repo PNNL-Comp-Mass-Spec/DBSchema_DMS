@@ -15,3 +15,5 @@ CREATE TABLE [dbo].[T_Secondary_Sep_Usage](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Secondary_Sep_Usage] TO [DDL_Viewer] AS [dbo]
+GO

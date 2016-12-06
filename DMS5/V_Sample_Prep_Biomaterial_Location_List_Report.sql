@@ -30,7 +30,5 @@ FROM    ( SELECT    Request_Name ,
         INNER JOIN T_Material_Containers ON T_Cell_Culture.CC_Container_ID = T_Material_Containers.ID
         INNER JOIN T_Material_Locations ON T_Material_Containers.Location_ID = T_Material_Locations.ID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Biomaterial_Location_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Biomaterial_Location_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Biomaterial_Location_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

@@ -49,3 +49,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ChargeCodeActivationState] TO [DDL_Viewer] AS [dbo]
+GO

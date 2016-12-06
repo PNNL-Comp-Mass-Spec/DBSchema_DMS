@@ -9,7 +9,5 @@ SELECT        ID, Cart, Date_Of_Change AS [Date Of Change], Description, Note, E
 FROM            dbo.T_LC_Cart_Config_History
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_Detail_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_Detail_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

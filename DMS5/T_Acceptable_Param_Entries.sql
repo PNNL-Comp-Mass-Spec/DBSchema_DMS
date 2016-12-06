@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_Acceptable_Param_Entries](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Acceptable_Param_Entries] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Acceptable_Param_Entries_EntryTypeID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Acceptable_Param_Entries_EntryTypeID] ON [dbo].[T_Acceptable_Param_Entries]
 (

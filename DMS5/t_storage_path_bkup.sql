@@ -19,3 +19,5 @@ CREATE TABLE [dbo].[T_Storage_Path_Bkup](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Storage_Path_Bkup] TO [DDL_Viewer] AS [dbo]
+GO

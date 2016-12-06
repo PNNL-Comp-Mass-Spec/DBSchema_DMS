@@ -38,7 +38,5 @@ FROM T_DatasetStateName INNER JOIN
    T_Instrument_Name ON 
    T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetDetails] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetDetails] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DatasetDetails] TO [DDL_Viewer] AS [dbo]
 GO

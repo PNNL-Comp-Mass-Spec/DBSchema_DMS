@@ -91,5 +91,7 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedIntegerList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[udfParseDelimitedIntegerList] TO [public] AS [dbo]
 GO

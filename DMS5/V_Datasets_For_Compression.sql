@@ -34,7 +34,5 @@ WHERE (dbo.T_DatasetStateName.DSS_name = 'complete') AND
    (dbo.T_DatasetArchiveStateName.DASN_StateName = 'complete')
     AND (dbo.T_Instrument_Name.IN_name LIKE '%FTICR%')
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Datasets_For_Compression] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Datasets_For_Compression] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Datasets_For_Compression] TO [DDL_Viewer] AS [dbo]
 GO

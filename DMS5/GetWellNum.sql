@@ -64,3 +64,5 @@ AS
 		RETURN @wellNum
 	END
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetWellNum] TO [DDL_Viewer] AS [dbo]
+GO

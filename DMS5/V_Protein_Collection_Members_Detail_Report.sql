@@ -12,3 +12,5 @@ SELECT 'Use V_Protein_Collection_Members_List_Report or use stored procedure Get
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_Members_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

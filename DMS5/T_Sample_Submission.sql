@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Sample_Submission](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Sample_Submission] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Sample_Submission] ADD  CONSTRAINT [DF_T_Sample_Submission_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Sample_Submission]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Submission_T_Campaign] FOREIGN KEY([Campaign_ID])

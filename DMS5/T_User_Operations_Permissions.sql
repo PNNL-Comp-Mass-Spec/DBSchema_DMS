@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_User_Operations_Permissions](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_User_Operations_Permissions] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_User_Operations_Permissions]  WITH CHECK ADD  CONSTRAINT [FK_T_User_Operations_Permissions_T_User_Operations] FOREIGN KEY([Op_ID])
 REFERENCES [dbo].[T_User_Operations] ([ID])
 GO

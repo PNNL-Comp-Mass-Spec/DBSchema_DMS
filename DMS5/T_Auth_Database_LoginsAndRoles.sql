@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_Auth_Database_LoginsAndRoles](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Auth_Database_LoginsAndRoles] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Auth_Database_LoginsAndRoles] ADD  CONSTRAINT [DF_T_Auth_Database_LoginsAndRoles_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Auth_Database_LoginsAndRoles] ADD  CONSTRAINT [DF_T_Auth_Database_LoginsAndRoles_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]

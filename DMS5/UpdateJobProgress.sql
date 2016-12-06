@@ -272,3 +272,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobProgress] TO [DDL_Viewer] AS [dbo]
+GO

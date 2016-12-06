@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Separation_Group](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Separation_Group] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Active]  DEFAULT ((1)) FOR [Active]

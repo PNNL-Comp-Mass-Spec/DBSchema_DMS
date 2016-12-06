@@ -46,3 +46,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[FindRequestedRunsForFileName] TO [DDL_Viewer] AS [dbo]
+GO

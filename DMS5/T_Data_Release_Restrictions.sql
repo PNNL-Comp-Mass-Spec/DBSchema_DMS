@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Data_Release_Restrictions](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Data_Release_Restrictions] TO [DDL_Viewer] AS [dbo]
+GO

@@ -42,3 +42,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetBatchRequestedRunList] TO [DDL_Viewer] AS [dbo]
+GO

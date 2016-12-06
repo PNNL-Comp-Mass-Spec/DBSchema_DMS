@@ -380,9 +380,7 @@ AS
 	END CATCH
 	RETURN @myError
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [PNL\D3M580] AS [dbo]
 GO

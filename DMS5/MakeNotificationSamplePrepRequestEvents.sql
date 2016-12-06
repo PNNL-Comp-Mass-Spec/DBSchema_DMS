@@ -122,9 +122,7 @@ As
 	
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [PNL\D3M580] AS [dbo]
 GO

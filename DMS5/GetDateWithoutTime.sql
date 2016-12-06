@@ -28,3 +28,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDateWithoutTime] TO [DDL_Viewer] AS [dbo]
+GO

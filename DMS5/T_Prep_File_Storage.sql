@@ -19,3 +19,5 @@ CREATE TABLE [dbo].[T_Prep_File_Storage](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Prep_File_Storage] TO [DDL_Viewer] AS [dbo]
+GO

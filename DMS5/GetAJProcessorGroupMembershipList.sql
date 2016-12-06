@@ -79,3 +79,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorGroupMembershipList] TO [DDL_Viewer] AS [dbo]
+GO

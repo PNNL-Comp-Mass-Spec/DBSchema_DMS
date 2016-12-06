@@ -53,3 +53,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetHPLCRunDatasetList] TO [DDL_Viewer] AS [dbo]
+GO

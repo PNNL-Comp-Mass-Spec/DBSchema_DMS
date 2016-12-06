@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_DIM_Error_Solution](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_DIM_Error_Solution] TO [DDL_Viewer] AS [dbo]
+GO

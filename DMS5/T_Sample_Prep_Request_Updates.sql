@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_Updates](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Sample_Prep_Request_Updates] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS_Sample_Prep_Admin] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS_SP_User] AS [dbo]

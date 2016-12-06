@@ -34,7 +34,5 @@ AS
             OR ( TI.EUS_Primary_Instrument = 'Y' )
             AND ( TI.EUS_Active_Sw = 'Y' )
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Tracked] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Tracked] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Tracked] TO [DDL_Viewer] AS [dbo]
 GO

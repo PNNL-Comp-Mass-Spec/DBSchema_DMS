@@ -42,3 +42,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetExpGroupExperimentList] TO [DDL_Viewer] AS [dbo]
+GO

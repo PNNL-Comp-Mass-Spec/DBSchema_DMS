@@ -21,5 +21,7 @@ CREATE TABLE [dbo].[T_Instrument_Name_Bkup](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Name_Bkup] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Instrument_Name_Bkup] ADD  CONSTRAINT [DF_T_Instrument_Name_Bkup_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO

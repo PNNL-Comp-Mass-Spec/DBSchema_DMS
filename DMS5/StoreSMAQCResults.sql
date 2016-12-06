@@ -477,13 +477,11 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[StoreSMAQCResults] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[StoreSMAQCResults] TO [DMS_SP_User] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [PNL\D3M580] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[StoreSMAQCResults] TO [svc-dms] AS [dbo]
 GO

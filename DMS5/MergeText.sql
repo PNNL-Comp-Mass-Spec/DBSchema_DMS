@@ -41,5 +41,7 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MergeText] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[MergeText] TO [public] AS [dbo]
 GO

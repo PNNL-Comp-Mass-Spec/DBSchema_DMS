@@ -30,7 +30,5 @@ FROM dbo.T_Sample_Prep_Request SPR
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Sample_Prep_Request] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Find_Sample_Prep_Request] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Find_Sample_Prep_Request] TO [DDL_Viewer] AS [dbo]
 GO

@@ -41,3 +41,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeTableFromListDelim] TO [DDL_Viewer] AS [dbo]
+GO

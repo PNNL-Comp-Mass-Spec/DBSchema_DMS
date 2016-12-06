@@ -16,3 +16,5 @@ CREATE TABLE [dbo].[T_Event_Target](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Event_Target] TO [DDL_Viewer] AS [dbo]
+GO

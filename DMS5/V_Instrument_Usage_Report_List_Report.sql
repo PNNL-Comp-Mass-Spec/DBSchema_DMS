@@ -11,7 +11,5 @@ SELECT        Seq, EMSL_Inst_ID AS [EMSL Inst ID], Instrument, Type, Start, Minu
 FROM            dbo.T_EMSL_Instrument_Usage_Report
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_List_Report] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_List_Report] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Usage_Report_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

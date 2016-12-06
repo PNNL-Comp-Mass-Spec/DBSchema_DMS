@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_Default_PSM_Job_Settings](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Default_PSM_Job_Settings] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Default_PSM_Job_Settings] ADD  CONSTRAINT [DF_T_Default_PSM_Job_Settings_Enabled]  DEFAULT ((1)) FOR [Enabled]
 GO
 ALTER TABLE [dbo].[T_Default_PSM_Job_Settings]  WITH CHECK ADD  CONSTRAINT [FK_T_Default_PSM_Job_Settings_T_Analysis_Tool] FOREIGN KEY([Tool_Name])

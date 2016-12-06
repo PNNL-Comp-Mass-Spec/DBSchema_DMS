@@ -100,13 +100,11 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DoAnalysisJobOperation] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DoAnalysisJobOperation] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [PNL\D3M580] AS [dbo]
 GO

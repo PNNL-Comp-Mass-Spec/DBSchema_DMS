@@ -38,5 +38,7 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDEMCodeString] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetDEMCodeString] TO [public] AS [dbo]
 GO

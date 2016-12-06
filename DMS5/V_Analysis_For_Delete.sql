@@ -29,7 +29,5 @@ FROM  dbo.T_Analysis_Job INNER JOIN
                dbo.T_Experiments ON dbo.T_Dataset.Exp_ID = dbo.T_Experiments.Exp_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_For_Delete] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_For_Delete] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_For_Delete] TO [DDL_Viewer] AS [dbo]
 GO

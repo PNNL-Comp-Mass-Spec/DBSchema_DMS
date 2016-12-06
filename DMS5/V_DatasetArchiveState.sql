@@ -20,7 +20,5 @@ FROM dbo.V_DatasetArchive INNER JOIN
    dbo.V_DatasetArchive.Archive_State = dbo.T_DatasetArchiveStateName.DASN_StateID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveState] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveState] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveState] TO [DDL_Viewer] AS [dbo]
 GO

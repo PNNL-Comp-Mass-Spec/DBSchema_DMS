@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Dataset_ScanTypes](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Dataset_ScanTypes] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

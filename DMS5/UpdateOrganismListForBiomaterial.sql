@@ -246,3 +246,5 @@ Done:
 	RETURN @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateOrganismListForBiomaterial] TO [DDL_Viewer] AS [dbo]
+GO

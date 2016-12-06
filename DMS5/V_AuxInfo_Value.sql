@@ -30,7 +30,5 @@ WHERE Item.Active = 'Y'
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Value] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Value] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_AuxInfo_Value] TO [DDL_Viewer] AS [dbo]
 GO

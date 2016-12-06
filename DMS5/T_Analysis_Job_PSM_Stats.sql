@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Analysis_Job_PSM_Stats] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_FDR_Threshold]  DEFAULT ((1)) FOR [FDR_Threshold]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_PSM_Stats] ADD  CONSTRAINT [DF_T_Analysis_Job_PSM_Stats_MSGF_Threshold_Is_EValue]  DEFAULT ((0)) FOR [MSGF_Threshold_Is_EValue]

@@ -12,7 +12,5 @@ FROM         dbo.T_Requested_Run_Batches R INNER JOIN
                       dbo.T_Users U ON R.Owner = U.ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_Entry] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_Entry] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_Entry] TO [DDL_Viewer] AS [dbo]
 GO

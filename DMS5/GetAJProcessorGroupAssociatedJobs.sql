@@ -70,3 +70,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorGroupAssociatedJobs] TO [DDL_Viewer] AS [dbo]
+GO

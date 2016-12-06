@@ -476,3 +476,5 @@ Done:
     return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CloneAnalysisJobs] TO [DDL_Viewer] AS [dbo]
+GO

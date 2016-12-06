@@ -14,7 +14,5 @@ FROM         dbo.T_Filter_Set_Criteria_Names INNER JOIN
                       dbo.T_Analysis_Tool ON dbo.T_Filter_Set_Criteria_Name_Tool_Map.Analysis_Tool_ID = dbo.T_Analysis_Tool.AJT_toolID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Filter_Set_Criteria_Name_Owners] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Filter_Set_Criteria_Name_Owners] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Filter_Set_Criteria_Name_Owners] TO [DDL_Viewer] AS [dbo]
 GO

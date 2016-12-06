@@ -516,13 +516,11 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [PNL\D3M580] AS [dbo]
 GO

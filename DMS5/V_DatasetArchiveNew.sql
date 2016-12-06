@@ -23,7 +23,5 @@ SELECT Dataset_Number, Folder_Name, Server_Vol, Client_Vol,
 FROM V_DatasetArchive
 WHERE (Archive_State = 1)
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveNew] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveNew] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchiveNew] TO [DDL_Viewer] AS [dbo]
 GO

@@ -18,6 +18,8 @@ CREATE TABLE [dbo].[T_Event_Log](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Event_Log] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Event_Log_Entered] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Event_Log_Entered] ON [dbo].[T_Event_Log]
 (

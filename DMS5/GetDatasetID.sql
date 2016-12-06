@@ -33,11 +33,9 @@ As
 	SELECT @datasetID = Dataset_ID FROM T_Dataset WHERE (Dataset_Num = @datasetNum)
 	return(@datasetID)
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetDatasetID] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [PNL\D3M580] AS [dbo]
 GO

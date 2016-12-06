@@ -23,6 +23,8 @@ CREATE TABLE [dbo].[T_File_Attachment](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_File_Attachment] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_File_Attachment] TO [DMSWebUser] AS [dbo]
 GO
 SET ANSI_PADDING ON

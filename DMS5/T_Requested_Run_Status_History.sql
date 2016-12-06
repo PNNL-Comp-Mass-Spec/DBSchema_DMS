@@ -22,6 +22,8 @@ CREATE TABLE [dbo].[T_Requested_Run_Status_History](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Requested_Run_Status_History] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Requested_Run_Status_History_State_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Status_History_State_ID] ON [dbo].[T_Requested_Run_Status_History]
 (

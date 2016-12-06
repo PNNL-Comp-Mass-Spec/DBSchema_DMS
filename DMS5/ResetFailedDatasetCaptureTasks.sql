@@ -189,3 +189,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetCaptureTasks] TO [DDL_Viewer] AS [dbo]
+GO

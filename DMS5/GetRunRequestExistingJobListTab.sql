@@ -131,3 +131,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetRunRequestExistingJobListTab] TO [DDL_Viewer] AS [dbo]
+GO

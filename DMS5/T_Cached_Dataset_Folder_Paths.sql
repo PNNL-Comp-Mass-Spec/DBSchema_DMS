@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Cached_Dataset_Folder_Paths](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Cached_Dataset_Folder_Paths] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Cached_Dataset_Folder_Paths_UpdateRequired] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cached_Dataset_Folder_Paths_UpdateRequired] ON [dbo].[T_Cached_Dataset_Folder_Paths]
 (

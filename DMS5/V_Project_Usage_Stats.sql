@@ -42,7 +42,5 @@ FROM T_Project_Usage_Stats Stats
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Project_Usage_Stats] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Project_Usage_Stats] TO [PNL\D3M580] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Project_Usage_Stats] TO [DDL_Viewer] AS [dbo]
 GO

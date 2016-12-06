@@ -15,3 +15,5 @@ CREATE TABLE [dbo].[T_MiscOptions](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MiscOptions] TO [DDL_Viewer] AS [dbo]
+GO

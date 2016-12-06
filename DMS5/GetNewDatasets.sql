@@ -35,11 +35,9 @@ As
 	WHERE (DS_state_ID = 1)
 	return 0
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetNewDatasets] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetNewDatasets] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNewDatasets] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewDatasets] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewDatasets] TO [PNL\D3M580] AS [dbo]
 GO

@@ -62,3 +62,5 @@ AS
 	END
         
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMaterialContainerCampaignList] TO [DDL_Viewer] AS [dbo]
+GO
