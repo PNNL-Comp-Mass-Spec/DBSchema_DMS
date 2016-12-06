@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_LC_Cart](
 	[Cart_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Cart_State_ID] [int] NOT NULL,
 	[Cart_Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Created] [smalldatetime] NULL,
  CONSTRAINT [PK_T_LC_Cart] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -19,7 +20,11 @@ CREATE TABLE [dbo].[T_LC_Cart](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_LC_Cart] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_LC_Cart] ADD  CONSTRAINT [DF_T_LC_Cart_Cart_State_ID]  DEFAULT (2) FOR [Cart_State_ID]
+GO
+ALTER TABLE [dbo].[T_LC_Cart] ADD  CONSTRAINT [DF_T_LC_Cart_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_LC_Cart]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_T_LC_Cart_State] FOREIGN KEY([Cart_State_ID])
 REFERENCES [dbo].[T_LC_Cart_State_Name] ([ID])
