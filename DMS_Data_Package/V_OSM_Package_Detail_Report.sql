@@ -25,3 +25,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_OSM_Package_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

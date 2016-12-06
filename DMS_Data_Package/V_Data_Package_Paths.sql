@@ -22,7 +22,7 @@ FROM dbo.T_Data_Package AS DP
 
 
 GO
-GRANT SELECT ON [dbo].[V_Data_Package_Paths] TO [DMS_SP_User] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Paths] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Paths] TO [PNL\D3M578] AS [dbo]
+GRANT SELECT ON [dbo].[V_Data_Package_Paths] TO [DMS_SP_User] AS [dbo]
 GO

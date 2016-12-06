@@ -36,3 +36,5 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckPlural] TO [DDL_Viewer] AS [dbo]
+GO

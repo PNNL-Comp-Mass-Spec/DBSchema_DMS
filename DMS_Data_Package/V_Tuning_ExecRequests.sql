@@ -46,3 +46,5 @@ FROM ExecRequests
 WHERE NOT ExecRequests.sql_handle IS NULL
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_ExecRequests] TO [DDL_Viewer] AS [dbo]
+GO

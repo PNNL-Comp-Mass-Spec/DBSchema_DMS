@@ -95,5 +95,7 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteAllItemsFromDataPackage] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DeleteAllItemsFromDataPackage] TO [DMS_SP_User] AS [dbo]
 GO

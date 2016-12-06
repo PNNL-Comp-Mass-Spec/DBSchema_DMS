@@ -64,3 +64,5 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_upgraddiagrams] TO [DDL_Viewer] AS [dbo]
+GO

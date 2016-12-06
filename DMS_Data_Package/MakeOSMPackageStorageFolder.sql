@@ -86,3 +86,5 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeOSMPackageStorageFolder] TO [DDL_Viewer] AS [dbo]
+GO

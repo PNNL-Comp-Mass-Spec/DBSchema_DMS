@@ -30,3 +30,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetMyEMSLUrlDataPackageID] TO [DDL_Viewer] AS [dbo]
+GO

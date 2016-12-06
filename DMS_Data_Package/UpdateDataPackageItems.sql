@@ -123,7 +123,7 @@ As
 	return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateDataPackageItems] TO [DMS_SP_User] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItems] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItems] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[UpdateDataPackageItems] TO [DMS_SP_User] AS [dbo]
 GO

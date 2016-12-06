@@ -46,3 +46,5 @@ FROM T_Data_Package_Datasets TPD
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Data_Package_Aggregation_Datasets] TO [DDL_Viewer] AS [dbo]
+GO

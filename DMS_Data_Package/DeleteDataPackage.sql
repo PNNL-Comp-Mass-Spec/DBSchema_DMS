@@ -152,3 +152,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteDataPackage] TO [DDL_Viewer] AS [dbo]
+GO

@@ -17,3 +17,5 @@ CREATE VIEW [dbo].[V_OSM_Package_Entry] AS
 	User_Folder_Path AS UserFolderPath
 FROM T_OSM_Package
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_OSM_Package_Entry] TO [DDL_Viewer] AS [dbo]
+GO

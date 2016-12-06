@@ -26,3 +26,5 @@ FROM dbo.T_OSM_Package AS DP
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_OSM_Package_Paths] TO [DDL_Viewer] AS [dbo]
+GO

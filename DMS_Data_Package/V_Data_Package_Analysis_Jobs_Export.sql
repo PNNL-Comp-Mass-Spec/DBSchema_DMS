@@ -16,3 +16,5 @@ FROM dbo.T_Data_Package_Analysis_Jobs
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs_Export] TO [DDL_Viewer] AS [dbo]
+GO

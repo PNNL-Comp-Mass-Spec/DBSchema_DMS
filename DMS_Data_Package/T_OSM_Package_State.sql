@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_OSM_Package_State](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_OSM_Package_State] TO [DDL_Viewer] AS [dbo]
+GO

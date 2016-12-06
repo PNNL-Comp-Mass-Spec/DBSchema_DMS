@@ -22,7 +22,7 @@ SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Pack
 FROM         dbo.T_Data_Package_Biomaterial
 
 GO
-GRANT SELECT ON [dbo].[V_Data_Package_AllItems_List_Report] TO [DMS_SP_User] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_AllItems_List_Report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_AllItems_List_Report] TO [PNL\D3M578] AS [dbo]
+GRANT SELECT ON [dbo].[V_Data_Package_AllItems_List_Report] TO [DMS_SP_User] AS [dbo]
 GO

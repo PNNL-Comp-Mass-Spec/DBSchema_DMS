@@ -13,3 +13,5 @@ CREATE TABLE [dbo].[T_Properties](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Properties] TO [DDL_Viewer] AS [dbo]
+GO

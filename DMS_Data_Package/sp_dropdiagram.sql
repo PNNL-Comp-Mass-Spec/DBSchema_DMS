@@ -45,6 +45,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_dropdiagram] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[sp_dropdiagram] TO [guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[sp_dropdiagram] TO [public] AS [dbo]

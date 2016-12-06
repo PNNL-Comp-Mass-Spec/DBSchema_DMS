@@ -99,3 +99,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckDataPackageDatasetJobCoverage] TO [DDL_Viewer] AS [dbo]
+GO

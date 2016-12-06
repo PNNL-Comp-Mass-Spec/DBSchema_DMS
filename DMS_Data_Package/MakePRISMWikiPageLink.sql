@@ -57,3 +57,5 @@ BEGIN
 	RETURN @result
 END
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakePRISMWikiPageLink] TO [DDL_Viewer] AS [dbo]
+GO

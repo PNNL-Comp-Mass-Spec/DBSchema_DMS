@@ -30,3 +30,5 @@ WHERE NOT EXISTS ( SELECT *
       OBJECTPROPERTY(i.[object_id], 'IsUserTable') = 1
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_UnusedIndices] TO [DDL_Viewer] AS [dbo]
+GO

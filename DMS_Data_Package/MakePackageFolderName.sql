@@ -55,3 +55,5 @@ BEGIN
 	RETURN @result
 END
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakePackageFolderName] TO [DDL_Viewer] AS [dbo]
+GO

@@ -101,3 +101,5 @@ BEGIN
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeTableFromText] TO [DDL_Viewer] AS [dbo]
+GO

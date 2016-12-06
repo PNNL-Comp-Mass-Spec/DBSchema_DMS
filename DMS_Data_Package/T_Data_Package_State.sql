@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Data_Package_State](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Data_Package_State] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_Data_Package_State] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_State] TO [DMS_SP_User] AS [dbo]

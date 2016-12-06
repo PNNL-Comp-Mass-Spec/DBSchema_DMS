@@ -155,5 +155,7 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetPackageDatasetJobToolCrosstab] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetPackageDatasetJobToolCrosstab] TO [DMS_SP_User] AS [dbo]
 GO

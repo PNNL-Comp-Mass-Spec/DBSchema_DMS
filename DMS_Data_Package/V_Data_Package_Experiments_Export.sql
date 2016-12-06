@@ -15,3 +15,5 @@ SELECT Data_Package_ID,
 FROM T_Data_Package_Experiments
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Experiments_Export] TO [DDL_Viewer] AS [dbo]
+GO

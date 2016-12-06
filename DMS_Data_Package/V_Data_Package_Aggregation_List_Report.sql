@@ -38,3 +38,5 @@ FROM T_Data_Package_Datasets AS TD
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Aggregation_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

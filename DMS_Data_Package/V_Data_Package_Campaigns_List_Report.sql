@@ -29,3 +29,5 @@ FROM T_Data_Package_Datasets DPD
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Campaigns_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

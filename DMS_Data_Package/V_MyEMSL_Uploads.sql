@@ -25,3 +25,5 @@ FROM T_MyEMSL_Uploads MU
        ON MU.StatusURI_PathID = StatusU.URI_PathID     
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Uploads] TO [DDL_Viewer] AS [dbo]
+GO

@@ -190,3 +190,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetIdentityFieldSeed] TO [DDL_Viewer] AS [dbo]
+GO

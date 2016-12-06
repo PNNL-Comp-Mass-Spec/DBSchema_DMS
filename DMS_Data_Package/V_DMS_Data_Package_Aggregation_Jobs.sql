@@ -40,3 +40,5 @@ FROM S_V_Analysis_Job_Export_DataPkg JobInfo
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Data_Package_Aggregation_Jobs] TO [DDL_Viewer] AS [dbo]
+GO

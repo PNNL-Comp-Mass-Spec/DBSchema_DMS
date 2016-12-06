@@ -19,3 +19,5 @@ FROM T_Data_Package_EUS_Proposals DPP
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_EUS_Proposals_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

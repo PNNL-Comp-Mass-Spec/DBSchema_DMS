@@ -16,5 +16,7 @@ CREATE TABLE [dbo].[T_OSM_Package_Storage](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_OSM_Package_Storage] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_OSM_Package_Storage] ADD  CONSTRAINT [DF_T_OSM_Package_Storage_State]  DEFAULT ('Active') FOR [State]
 GO

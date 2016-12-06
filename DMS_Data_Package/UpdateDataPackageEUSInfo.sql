@@ -204,3 +204,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageEUSInfo] TO [DDL_Viewer] AS [dbo]
+GO

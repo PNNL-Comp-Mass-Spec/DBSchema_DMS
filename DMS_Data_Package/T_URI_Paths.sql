@@ -14,5 +14,7 @@ CREATE TABLE [dbo].[T_URI_Paths](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_URI_Paths] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_URI_Paths] ADD  CONSTRAINT [DF_T_URI_Paths_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

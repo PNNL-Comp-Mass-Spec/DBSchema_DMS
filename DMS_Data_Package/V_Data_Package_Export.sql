@@ -47,3 +47,5 @@ FROM T_Data_Package DP
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Export] TO [DDL_Viewer] AS [dbo]
+GO

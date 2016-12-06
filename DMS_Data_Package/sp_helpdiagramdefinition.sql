@@ -44,6 +44,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_helpdiagramdefinition] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[sp_helpdiagramdefinition] TO [guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[sp_helpdiagramdefinition] TO [public] AS [dbo]

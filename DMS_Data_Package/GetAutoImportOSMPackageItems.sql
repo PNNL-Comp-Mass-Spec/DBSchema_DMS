@@ -106,3 +106,5 @@ As
 	return @myError
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetAutoImportOSMPackageItems] TO [DDL_Viewer] AS [dbo]
+GO

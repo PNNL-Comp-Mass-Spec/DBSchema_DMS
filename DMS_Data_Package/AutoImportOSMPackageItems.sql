@@ -120,3 +120,5 @@ As
 
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[AutoImportOSMPackageItems] TO [DDL_Viewer] AS [dbo]
+GO

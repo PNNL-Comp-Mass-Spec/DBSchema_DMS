@@ -66,6 +66,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_renamediagram] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[sp_renamediagram] TO [guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[sp_renamediagram] TO [public] AS [dbo]

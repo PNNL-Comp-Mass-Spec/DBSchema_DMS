@@ -25,6 +25,8 @@ CREATE TABLE [dbo].[T_OSM_Package](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_OSM_Package] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Package_Type]  DEFAULT ('General') FOR [Package_Type]
 GO
 ALTER TABLE [dbo].[T_OSM_Package] ADD  CONSTRAINT [DF_T_OSM_Package_Description]  DEFAULT ('') FOR [Description]

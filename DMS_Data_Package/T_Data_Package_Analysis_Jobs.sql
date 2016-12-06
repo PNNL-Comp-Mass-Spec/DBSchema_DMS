@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Data_Package_Analysis_Jobs](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Data_Package_Analysis_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[T_Data_Package_Analysis_Jobs] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_Analysis_Jobs] TO [DMS_SP_User] AS [dbo]

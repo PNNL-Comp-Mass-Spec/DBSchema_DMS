@@ -96,5 +96,7 @@ GRANT EXECUTE ON UpdateOSMPackage TO DMS2_SP_User
 GRANT EXECUTE ON UpdateOSMPackage TO DMS_SP_User
 */ 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateOSMPackage] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateOSMPackage] TO [DMS_SP_User] AS [dbo]
 GO

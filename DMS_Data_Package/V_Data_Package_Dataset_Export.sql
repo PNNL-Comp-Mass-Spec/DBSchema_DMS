@@ -7,3 +7,5 @@ CREATE VIEW V_Data_Package_Dataset_Export AS
 SELECT     Data_Package_ID, Dataset_ID, Dataset, Experiment, Instrument, Created, [Item Added], [Package Comment]
 FROM         T_Data_Package_Datasets
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Dataset_Export] TO [DDL_Viewer] AS [dbo]
+GO

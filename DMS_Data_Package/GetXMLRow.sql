@@ -16,3 +16,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetXMLRow] TO [DDL_Viewer] AS [dbo]
+GO

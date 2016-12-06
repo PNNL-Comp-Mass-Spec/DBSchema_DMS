@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Data_Package_Teams](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Data_Package_Teams] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT DELETE ON [dbo].[T_Data_Package_Teams] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT INSERT ON [dbo].[T_Data_Package_Teams] TO [DMS_SP_User] AS [dbo]

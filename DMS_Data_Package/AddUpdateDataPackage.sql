@@ -316,7 +316,7 @@ As
 
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataPackage] TO [DMS_SP_User] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataPackage] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataPackage] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddUpdateDataPackage] TO [DMS_SP_User] AS [dbo]
 GO

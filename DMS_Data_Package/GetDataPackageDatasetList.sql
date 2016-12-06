@@ -41,3 +41,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetDataPackageDatasetList] TO [DDL_Viewer] AS [dbo]
+GO

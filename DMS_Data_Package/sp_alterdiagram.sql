@@ -69,6 +69,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[sp_alterdiagram] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[sp_alterdiagram] TO [guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[sp_alterdiagram] TO [public] AS [dbo]
