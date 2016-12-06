@@ -56,6 +56,8 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetTaxIDTaxonomyTable] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMSReader] AS [dbo]

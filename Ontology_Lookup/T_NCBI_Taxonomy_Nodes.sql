@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Nodes](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Nodes] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_NCBI_Taxonomy_Nodes_Parent_Tax_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_NCBI_Taxonomy_Nodes_Parent_Tax_ID] ON [dbo].[T_NCBI_Taxonomy_Nodes]
 (

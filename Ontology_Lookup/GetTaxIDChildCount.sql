@@ -34,3 +34,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetTaxIDChildCount] TO [DDL_Viewer] AS [dbo]
+GO

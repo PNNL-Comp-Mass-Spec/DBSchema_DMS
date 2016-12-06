@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[annotation](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[annotation] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[annotation]  WITH CHECK ADD  CONSTRAINT [FK_annotation_term] FOREIGN KEY([term_pk])
 REFERENCES [dbo].[term] ([term_pk])
 GO

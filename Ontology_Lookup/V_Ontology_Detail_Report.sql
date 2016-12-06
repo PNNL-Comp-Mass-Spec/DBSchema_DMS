@@ -31,3 +31,5 @@ FROM V_Term T
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Ontology_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

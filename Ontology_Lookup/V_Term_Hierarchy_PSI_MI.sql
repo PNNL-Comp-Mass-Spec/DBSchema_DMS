@@ -50,3 +50,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Term_Hierarchy_PSI_MI] TO [DDL_Viewer] AS [dbo]
+GO

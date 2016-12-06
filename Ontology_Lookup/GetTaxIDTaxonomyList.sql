@@ -42,6 +42,8 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetTaxIDTaxonomyList] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMSReader] AS [dbo]

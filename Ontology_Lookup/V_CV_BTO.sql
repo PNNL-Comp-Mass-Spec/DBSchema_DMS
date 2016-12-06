@@ -18,3 +18,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_CV_BTO] TO [DDL_Viewer] AS [dbo]
+GO

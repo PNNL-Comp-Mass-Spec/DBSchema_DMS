@@ -11,3 +11,5 @@ CREATE TABLE [dbo].[T_NCBI_Import](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Import] TO [DDL_Viewer] AS [dbo]
+GO

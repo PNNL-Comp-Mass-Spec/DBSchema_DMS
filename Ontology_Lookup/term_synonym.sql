@@ -15,6 +15,8 @@ CREATE TABLE [dbo].[term_synonym](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[term_synonym] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[term_synonym]  WITH CHECK ADD  CONSTRAINT [FK_term_synonym_term] FOREIGN KEY([term_pk])
 REFERENCES [dbo].[term] ([term_pk])
 GO

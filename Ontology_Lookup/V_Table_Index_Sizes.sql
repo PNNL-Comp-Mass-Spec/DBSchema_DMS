@@ -36,3 +36,5 @@ AS (
  ORDER BY t.Schema_Name, t.Table_Name, t.Index_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Index_Sizes] TO [DDL_Viewer] AS [dbo]
+GO

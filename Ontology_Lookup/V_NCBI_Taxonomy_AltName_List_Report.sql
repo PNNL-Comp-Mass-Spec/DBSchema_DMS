@@ -32,3 +32,5 @@ WHERE (NameClass.Sort_Weight BETWEEN 2 AND 19)
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_AltName_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

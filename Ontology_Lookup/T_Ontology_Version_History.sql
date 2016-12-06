@@ -18,5 +18,7 @@ CREATE TABLE [dbo].[T_Ontology_Version_History](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Ontology_Version_History] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Ontology_Version_History] ADD  CONSTRAINT [DF_T_Ontology_Version_History_Entered_in_DMS]  DEFAULT (getdate()) FOR [Entered_in_DMS]
 GO

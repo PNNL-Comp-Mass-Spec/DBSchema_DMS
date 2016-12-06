@@ -13,5 +13,7 @@ CREATE TABLE [dbo].[relationship_type](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[relationship_type] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[relationship_type] ADD  CONSTRAINT [DF_relationship_type_relationship_type]  DEFAULT ('') FOR [relationship_type]
 GO

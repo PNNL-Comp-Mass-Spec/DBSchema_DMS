@@ -2,9 +2,9 @@
 CREATE DATABASE [Ontology_Lookup]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 4086208KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'I:\SqlServerData\Ontology_Lookup.mdf' , SIZE = 4086016KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 3064128KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
+( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 256832KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -72,19 +72,25 @@ ALTER DATABASE [Ontology_Lookup] SET TARGET_RECOVERY_TIME = 0 SECONDS
 GO
 USE [Ontology_Lookup]
 GO
-/****** Object:  User [d3m578] ******/
-CREATE USER [d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
-GO
 /****** Object:  User [DMSReader] ******/
 CREATE USER [DMSReader] FOR LOGIN [DMSReader] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [DMSWebUser] ******/
 CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [PNL\D3M578] ******/
+CREATE USER [PNL\D3M578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [PNL\D3M580] ******/
+CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[PNL\D3M580]
+GO
+/****** Object:  User [RBAC-DMS_Developer] ******/
+CREATE USER [RBAC-DMS_Developer] FOR LOGIN [PNL\EMSL-Prism.Users.Developers]
+GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
-GRANT CONNECT TO [d3m578] AS [dbo]
+GRANT SHOWPLAN TO [DDL_Viewer] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
@@ -93,6 +99,10 @@ GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
+GO
+GRANT CONNECT TO [PNL\D3M578] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_Developer] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
 GO

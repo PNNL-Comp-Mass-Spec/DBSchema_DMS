@@ -20,3 +20,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_CV_DOID] TO [DDL_Viewer] AS [dbo]
+GO

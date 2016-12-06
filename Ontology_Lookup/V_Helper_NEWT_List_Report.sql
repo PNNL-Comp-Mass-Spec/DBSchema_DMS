@@ -15,3 +15,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_NEWT_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

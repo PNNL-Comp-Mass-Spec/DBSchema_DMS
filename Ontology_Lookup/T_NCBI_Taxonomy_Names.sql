@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Names](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Names] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_NCBI_Taxonomy_Names_Tax_ID] ******/
 CREATE CLUSTERED INDEX [IX_T_NCBI_Taxonomy_Names_Tax_ID] ON [dbo].[T_NCBI_Taxonomy_Names]
 (

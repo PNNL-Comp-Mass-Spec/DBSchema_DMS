@@ -35,3 +35,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetTaxIDSynonymList] TO [DDL_Viewer] AS [dbo]
+GO

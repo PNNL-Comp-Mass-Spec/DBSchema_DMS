@@ -439,3 +439,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GenerateMergeStatement] TO [DDL_Viewer] AS [dbo]
+GO

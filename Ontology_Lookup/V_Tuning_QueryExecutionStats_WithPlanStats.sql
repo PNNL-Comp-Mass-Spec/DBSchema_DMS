@@ -17,3 +17,5 @@ FROM V_Tuning_QueryExecutionStats QES
      CROSS APPLY sys.dm_exec_query_plan ( QES.plan_handle ) QP
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_QueryExecutionStats_WithPlanStats] TO [DDL_Viewer] AS [dbo]
+GO

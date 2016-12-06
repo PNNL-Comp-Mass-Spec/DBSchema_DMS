@@ -118,3 +118,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCachedNCBITaxonomy] TO [DDL_Viewer] AS [dbo]
+GO

@@ -15,3 +15,5 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Division](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Division] TO [DDL_Viewer] AS [dbo]
+GO

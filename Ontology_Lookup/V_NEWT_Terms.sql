@@ -21,3 +21,5 @@ WHERE Ontology = 'NEWT' AND
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_NEWT_Terms] TO [DDL_Viewer] AS [dbo]
+GO

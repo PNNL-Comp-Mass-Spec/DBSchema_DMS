@@ -35,3 +35,5 @@ FROM sys.dm_exec_query_stats AS QS
 WHERE NOT IsNull(SD.Name, '') IN ('master', 'msdb')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_QueryExecutionStats] TO [DDL_Viewer] AS [dbo]
+GO

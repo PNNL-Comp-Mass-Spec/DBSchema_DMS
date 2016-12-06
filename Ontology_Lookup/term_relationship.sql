@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[term_relationship](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[term_relationship] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

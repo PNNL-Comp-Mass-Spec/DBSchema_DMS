@@ -25,3 +25,5 @@ CREATE TABLE [dbo].[T_Unimod_Mods](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Unimod_Mods] TO [DDL_Viewer] AS [dbo]
+GO

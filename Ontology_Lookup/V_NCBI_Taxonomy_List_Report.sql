@@ -42,3 +42,5 @@ WHERE (NodeNames.Name_Class = 'scientific name')
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

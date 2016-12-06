@@ -14,3 +14,5 @@ SELECT [Tax_ID]
   FROM [dbo].[T_NCBI_Taxonomy_Cached]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_Cached] TO [DDL_Viewer] AS [dbo]
+GO

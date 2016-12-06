@@ -22,3 +22,5 @@ FROM dbo.ontology
 WHERE is_leaf=0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Term_Categories] TO [DDL_Viewer] AS [dbo]
+GO

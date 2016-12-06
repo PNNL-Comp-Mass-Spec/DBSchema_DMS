@@ -49,3 +49,5 @@ END
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetModificationSiteList] TO [DDL_Viewer] AS [dbo]
+GO

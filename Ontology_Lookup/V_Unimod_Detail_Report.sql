@@ -32,3 +32,5 @@ AS
 	         ON M.Name = MCF.Original_Source_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Unimod_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

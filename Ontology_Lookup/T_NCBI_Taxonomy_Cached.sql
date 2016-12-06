@@ -17,5 +17,7 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Cached](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Cached] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_NCBI_Taxonomy_Cached] ADD  DEFAULT ((0)) FOR [Synonyms]
 GO

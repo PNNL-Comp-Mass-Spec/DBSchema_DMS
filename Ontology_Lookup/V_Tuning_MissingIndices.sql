@@ -50,3 +50,5 @@ WHERE (migs.group_handle IN
 --ORDER BY [Impact] DESC, [CreateIndexStatement] DESC
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tuning_MissingIndices] TO [DDL_Viewer] AS [dbo]
+GO

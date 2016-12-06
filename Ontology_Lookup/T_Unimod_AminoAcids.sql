@@ -17,3 +17,5 @@ CREATE TABLE [dbo].[T_Unimod_AminoAcids](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Unimod_AminoAcids] TO [DDL_Viewer] AS [dbo]
+GO

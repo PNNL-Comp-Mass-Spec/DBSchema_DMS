@@ -52,3 +52,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
+GO

@@ -21,3 +21,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Ontology_List_Report] TO [DDL_Viewer] AS [dbo]
+GO

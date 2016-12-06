@@ -16,3 +16,5 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_GenCode](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_GenCode] TO [DDL_Viewer] AS [dbo]
+GO

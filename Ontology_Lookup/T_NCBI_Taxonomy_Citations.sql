@@ -18,3 +18,5 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Citations](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Citations] TO [DDL_Viewer] AS [dbo]
+GO

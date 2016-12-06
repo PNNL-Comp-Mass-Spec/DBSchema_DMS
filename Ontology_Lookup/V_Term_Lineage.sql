@@ -36,3 +36,5 @@ FROM ontology
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Term_Lineage] TO [DDL_Viewer] AS [dbo]
+GO
