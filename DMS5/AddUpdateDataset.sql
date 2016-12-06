@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateDataset
+CREATE Procedure [dbo].[AddUpdateDataset]
 /****************************************************
 **
 **	Desc:	Adds new dataset entry to DMS database
@@ -81,6 +81,7 @@ CREATE Procedure AddUpdateDataset
 **			11/21/2016 mem - Pass @logDebugMessages to ConsumeScheduledRun
 **			11/23/2016 mem - Include the dataset name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -1065,7 +1066,7 @@ As
 		Begin
 			Set @DebugMsg = 'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
 			                Cast(@DatasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
-			                Cast(@datasetID as varchar(12))
+			    Cast(@datasetID as varchar(12))
 			                
 			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateDataset'
 			
@@ -1321,7 +1322,6 @@ As
 		End
 	End
 
-
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
@@ -1330,12 +1330,24 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum		
-		exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataset'
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%Could not find entry in database%' And
+		   Not @message Like '%was blank%' And
+		   Not @message Like '%is invalid for instrument group%' And
+		   Not @message Like '%Cannot change dataset rating from Unreviewed%' And
+		   Not @message Like 'ValidateEUSUsage%'		   
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataset'
+		End
 
 	END CATCH
+	
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [DMS_DS_Entry] AS [dbo]
 GO
@@ -1346,8 +1358,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateDataset] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [PNL\D3M580] AS [dbo]
 GO

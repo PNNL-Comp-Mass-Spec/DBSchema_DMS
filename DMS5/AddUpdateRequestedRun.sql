@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateRequestedRun
+CREATE Procedure [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -71,6 +71,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **          07/20/2016 mem - Tweak error message
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **
 *****************************************************/
 (
@@ -719,19 +720,28 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRun'
+
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%Could not find entry in database%' And
+		   Not @message Like '%was blank%' And
+		   Not @message Like '%is not active%' And
+		   Not @message Like '%name may not contain%' And
+		   Not @message Like '%already exists%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Req Name ' + @reqName		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateRequestedRun'
+		End
+
 	END CATCH
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [PNL\D3M580] AS [dbo]
 GO

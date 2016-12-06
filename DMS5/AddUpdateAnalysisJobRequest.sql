@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateAnalysisJobRequest
+CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
 /****************************************************
 **
 **	Desc: Adds new analysis job request to request queue
@@ -73,6 +73,7 @@ CREATE Procedure AddUpdateAnalysisJobRequest
 **			03/11/2016 mem - Disabled forcing use of MSConvert for QExactive datasets
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/23/2016 mem - Include the request name when calling PostLogEntry from within the catch block
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **
 *****************************************************/
 (
@@ -564,8 +565,15 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName		
-		exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%was blank%' And
+		   Not @message Like '%cannot be blank%' And
+		   Not @message Like '%list is empty%'		   
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'
+		End
 
 	END CATCH
 
@@ -574,6 +582,8 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User] AS [dbo]
@@ -581,8 +591,4 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [PNL\D3M580] AS [dbo]
 GO

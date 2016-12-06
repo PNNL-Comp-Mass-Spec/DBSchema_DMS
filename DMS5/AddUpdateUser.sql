@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateUser
+CREATE Procedure [dbo].[AddUpdateUser]
 /****************************************************
 **
 **	Desc: Adds new or updates existing User in database
@@ -29,6 +29,7 @@ CREATE Procedure AddUpdateUser
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @HanfordIDNum starts with a number
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **
 *****************************************************/
 (
@@ -236,20 +237,25 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateUser'
+
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%was blank%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Username ' + @Username		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateUser'
+		End
+
 	END CATCH
 	
 	return 0
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [PNL\D3M580] AS [dbo]
 GO

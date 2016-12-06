@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateAnalysisJob
+CREATE Procedure [dbo].[AddUpdateAnalysisJob]
 /****************************************************
 **
 **	Desc: Adds new analysis job to job table
@@ -66,7 +66,8 @@ CREATE Procedure AddUpdateAnalysisJob
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/20/2016 mem - Expand error messages
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
-**    
+**			12/05/2016 mem - Exclude logging some try/catch errors
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
@@ -146,7 +147,7 @@ As
 
 		if @jobID = 0
 		begin	
-			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in database '
+			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in database'
 			If @infoOnly <> 0
 				print @msg
 
@@ -218,7 +219,7 @@ As
 				Goto Done
 			End
 
-			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state '
+			set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state'
 			If @infoOnly <> 0
 				print @msg
 
@@ -816,14 +817,24 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+
+
+		If Not @message Like '%is not in database%' And
+		   Not @message Like '%not in "new", "holding", or "failed" state%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'
+		End
 			
-		exec PostLogEntry 'Error', @message, 'AddUpdateAnalysisJob'		
+		
 	END CATCH
 
 Done:
 
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis] AS [dbo]
 GO
@@ -832,8 +843,4 @@ GO
 GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [PNL\D3M580] AS [dbo]
 GO

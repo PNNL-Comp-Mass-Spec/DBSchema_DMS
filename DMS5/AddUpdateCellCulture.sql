@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.AddUpdateCellCulture
+CREATE Procedure [dbo].[AddUpdateCellCulture]
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -27,7 +27,8 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/23/2016 mem - Include the cell culture name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
-**			12/02/2016 mem - Add @organismList, call UpdateOrganismListForBiomaterial, and populate Cached_Organism_List
+**			12/02/2016 mem - Add @organismList
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 	@purchaseDate  varchar(30),		-- Will be converted to a date
 	@peptidePurity varchar(64),
 	@purchaseQuantity varchar(128),
-	@organismList varchar(max),		-- List of one or more organisms to associate with this biomaterial; stored in T_Biomaterial_Organisms
+	@organismList varchar(max),		-- List of one or more organisms to associate with this biomaterial; stored in T_Biomaterial_Organisms; if null, T_Biomaterial_Organisms is unchanged
 	@callingUser varchar(128) = ''		
 )
 As
@@ -82,8 +83,10 @@ As
 	Set @mass = LTrim(RTrim(IsNull(@mass, '')))
 	Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
 	
-	Set @organismList = LTrim(RTrim(IsNull(@organismList, '')))
 	Set @callingUser = IsNull(@callingUser, '')
+
+	-- Note: leave @organismList null
+	-- Procedure UpdateOrganismListForBiomaterial will leave T_Biomaterial_Organisms unchanged if @organismList is null
 
 	Set @myError = 0
 	If LEN(@campaignNum) < 1
@@ -392,7 +395,7 @@ As
 			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
 			                Cast(@cellCultureID as varchar(12))
 			                
-			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateCellCulture'
+			exec postlogentry 'Error', @DebugMsg, 'AddUpdateCellCulture'
 			
 			Set @cellCultureID = @IDConfirm
 		End		
@@ -416,13 +419,8 @@ As
 				'Biomaterial (Cell Culture) added'
 		End
 
-		-- Store the associated organism(s)
-		exec @myError = UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @msg output
-		
-		If @myError <> 0
-		Begin
-			RAISERROR (@msg, 11, 19)
-		End
+		-- Update the associated organism(s)
+		exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
 		
 	End -- </add>
 
@@ -476,12 +474,7 @@ As
 		End
 
 		-- Update the associated organism(s)
-		exec @myError = UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @msg output
-		
-		If @myError <> 0
-		Begin
-			RAISERROR (@msg, 11, 19)
-		End
+		exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
 		
 	End -- </update>
 
@@ -493,21 +486,26 @@ As
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName		
-		exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%Could not find entry in database%' And
+		   Not @message Like '%was blank%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'
+		End
 
 	End CATCH
+
 	return @myError
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [PNL\D3M580] AS [dbo]
 GO

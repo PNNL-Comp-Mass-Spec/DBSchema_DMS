@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
+CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -62,6 +62,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -677,20 +678,31 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-		
-		exec PostLogEntry 'Error', @message, 'AddUpdateSamplePrepRequest'
+
+		If Not @message Like '%cannot be empty%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%Could not find entry in database%' And
+		   Not @message Like '%was blank%' And
+		   Not @message Like '%should be Yes%' And
+		   Not @message Like '%requires justification reason%' And
+		   Not @message Like 'ValidateEUSUsage%' And
+		   Not @message Like 'ValidateWP%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Request ' + @RequestName
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateSamplePrepRequest'
+		End
+
 	END CATCH
+	
 	return @myError
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [PNL\D3M580] AS [dbo]
 GO

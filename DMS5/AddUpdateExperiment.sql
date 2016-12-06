@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateExperiment
+CREATE Procedure [dbo].[AddUpdateExperiment]
 /****************************************************
 **
 **	Desc:	Adds a new experiment to DB
@@ -47,6 +47,7 @@ CREATE Procedure AddUpdateExperiment
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/23/2016 mem - Include the experiment name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **
 *****************************************************/
 (
@@ -621,21 +622,25 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		
-		Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum		
-		exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
+		If Not @message Like '%is not in database%' And 
+		   Not @message Like '%already in database%' And 
+		   Not @message Like '%Could not find entry in database%' And
+		   Not @message Like '%may not contain%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
+		End
 		
 	END CATCH
 	
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [PNL\D3M580] AS [dbo]
 GO

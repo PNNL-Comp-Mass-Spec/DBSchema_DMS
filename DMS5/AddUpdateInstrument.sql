@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateInstrument
+CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 /****************************************************
 **
 **	Desc: Edits existing Instrument
@@ -23,6 +23,7 @@ CREATE PROCEDURE AddUpdateInstrument
 **			04/01/2013 mem - Expanded @Description to varchar(255)
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
+**			12/05/2016 mem - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -165,20 +166,25 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		exec PostLogEntry 'Error', @message, 'AddUpdateInstrument'
+
+		If Not @message Like '%should be a number%' And 
+		   Not @message Like '%disabled for this page%' And 
+		   Not @message Like '%No entry could be found%'
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Instrument ' + @InstrumentName		
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrument'
+		End
+
 	END CATCH
 	
 	return @myError
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS_Instrument_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [PNL\D3M578] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [PNL\D3M580] AS [dbo]
 GO
