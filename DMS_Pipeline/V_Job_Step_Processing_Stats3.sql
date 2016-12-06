@@ -87,3 +87,5 @@ FROM ( SELECT JSPS.Entered,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Processing_Stats3] TO [DDL_Viewer] AS [dbo]
+GO

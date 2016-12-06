@@ -32,3 +32,5 @@ FROM S_Data_Package_Aggregation_Datasets
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Data_Package_Datasets] TO [DDL_Viewer] AS [dbo]
+GO

@@ -134,5 +134,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithDMS] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithDMS] TO [Limited_Table_Write] AS [dbo]
 GO

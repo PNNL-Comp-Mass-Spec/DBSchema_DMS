@@ -24,3 +24,5 @@ WHERE PTG.Enabled > -10
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Tool_Group_Details] TO [DDL_Viewer] AS [dbo]
+GO

@@ -32,6 +32,8 @@ FROM T_Job_State_Name JSN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[V_Jobs] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[V_Jobs] TO [Limited_Table_Write] AS [dbo]

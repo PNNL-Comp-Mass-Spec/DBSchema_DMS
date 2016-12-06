@@ -39,3 +39,5 @@ FROM T_Job_Step_Processing_Stats JSPS
        ON JSPS.Processor = LP.Processor_Name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Processing_Stats] TO [DDL_Viewer] AS [dbo]
+GO

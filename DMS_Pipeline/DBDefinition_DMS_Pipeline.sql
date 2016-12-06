@@ -2,7 +2,7 @@
 CREATE DATABASE [DMS_Pipeline]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 13156928KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'I:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 13117504KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
 ( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'H:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 453760KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -90,11 +90,17 @@ GO
 /****** Object:  User [PNL\D3M578] ******/
 CREATE USER [PNL\D3M578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [PNL\D3M580] ******/
+CREATE USER [PNL\D3M580] FOR LOGIN [PNL\D3M580] WITH DEFAULT_SCHEMA=[PNL\D3M580]
+GO
 /****** Object:  User [pnl\gibb166] ******/
 CREATE USER [pnl\gibb166] FOR LOGIN [PNL\gibb166] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [pnl\mtsproc] ******/
 CREATE USER [pnl\mtsproc] FOR LOGIN [PNL\MTSProc] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [RBAC-DMS_Developer] ******/
+CREATE USER [RBAC-DMS_Developer] FOR LOGIN [PNL\EMSL-Prism.Users.Developers]
 GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
@@ -104,6 +110,8 @@ CREATE USER [RBAC-Web_Analysis] FOR LOGIN [PNL\EMSL-Prism.Users.Web_Analysis]
 GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
+GO
+GRANT SHOWPLAN TO [DDL_Viewer] AS [dbo]
 GO
 GRANT CONNECT TO [DMSReader] AS [dbo]
 GO
@@ -123,11 +131,11 @@ GRANT CONNECT TO [PNL\D3L243] AS [dbo]
 GO
 GRANT CONNECT TO [PNL\D3M578] AS [dbo]
 GO
-GRANT SHOWPLAN TO [PNL\D3M578] AS [dbo]
-GO
 GRANT CONNECT TO [pnl\gibb166] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\mtsproc] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_Developer] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_User] AS [dbo]
 GO

@@ -23,3 +23,5 @@ CREATE TABLE [dbo].[T_Job_Step_Processing_Stats](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Step_Processing_Stats] TO [DDL_Viewer] AS [dbo]
+GO

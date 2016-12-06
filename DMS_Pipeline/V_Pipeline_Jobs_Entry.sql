@@ -18,3 +18,5 @@ FROM T_Jobs J
        ON J.Job = JP.Job
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_Entry] TO [DDL_Viewer] AS [dbo]
+GO

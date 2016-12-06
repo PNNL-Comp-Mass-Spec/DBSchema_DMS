@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Job_Events](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Events] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Job_Events] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 GO
 /****** Object:  Index [IX_T_Job_Events_Current_State_Job] ******/

@@ -47,5 +47,5 @@ AS
 	WHERE SelectionQ.RowRank = 1
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Atlas_Job_Parameters] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Peptide_Atlas_Job_Parameters] TO [DDL_Viewer] AS [dbo]
 GO

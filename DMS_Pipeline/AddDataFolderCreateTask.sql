@@ -86,5 +86,7 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddDataFolderCreateTask] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddDataFolderCreateTask] TO [DMS_SP_User] AS [dbo]
 GO

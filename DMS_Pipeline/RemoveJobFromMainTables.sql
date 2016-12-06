@@ -114,5 +114,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RemoveJobFromMainTables] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[RemoveJobFromMainTables] TO [Limited_Table_Write] AS [dbo]
 GO

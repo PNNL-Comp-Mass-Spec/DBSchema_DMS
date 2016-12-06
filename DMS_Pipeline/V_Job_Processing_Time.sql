@@ -25,3 +25,5 @@ GROUP BY Job
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Processing_Time] TO [DDL_Viewer] AS [dbo]
+GO

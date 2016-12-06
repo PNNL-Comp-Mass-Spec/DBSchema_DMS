@@ -230,3 +230,5 @@ As
 	return 0
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MoveEntriesToHistory] TO [DDL_Viewer] AS [dbo]
+GO

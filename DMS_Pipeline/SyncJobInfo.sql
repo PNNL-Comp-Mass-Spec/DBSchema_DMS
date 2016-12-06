@@ -187,7 +187,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [Limited_Table_Write] AS [dbo]
 GO

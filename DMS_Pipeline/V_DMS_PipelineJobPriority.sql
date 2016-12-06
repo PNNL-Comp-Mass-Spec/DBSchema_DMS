@@ -10,5 +10,5 @@ SELECT Job,
 FROM S_DMS_V_GetPipelineJobPriority
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobPriority] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobPriority] TO [DDL_Viewer] AS [dbo]
 GO

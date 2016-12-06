@@ -112,11 +112,11 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[DeleteJob] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[DeleteJob] TO [DMS_Ops_Admin] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[DeleteJob] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteJob] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteJob] TO [PNL\D3M578] AS [dbo]
 GO

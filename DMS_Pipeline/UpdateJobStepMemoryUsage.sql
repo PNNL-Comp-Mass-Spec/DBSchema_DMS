@@ -127,3 +127,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobStepMemoryUsage] TO [DDL_Viewer] AS [dbo]
+GO

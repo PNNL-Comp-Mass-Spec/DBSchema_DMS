@@ -156,3 +156,5 @@ Begin
 end
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CreateTriggerPreventGlobalTableUpdate] TO [DDL_Viewer] AS [dbo]
+GO

@@ -240,3 +240,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MapMACJobParameters] TO [DDL_Viewer] AS [dbo]
+GO

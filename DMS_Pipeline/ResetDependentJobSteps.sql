@@ -151,3 +151,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetDependentJobSteps] TO [DDL_Viewer] AS [dbo]
+GO

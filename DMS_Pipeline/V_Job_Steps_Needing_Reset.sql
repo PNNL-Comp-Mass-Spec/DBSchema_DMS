@@ -36,3 +36,5 @@ WHERE JS.State >= 2 AND
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Needing_Reset] TO [DDL_Viewer] AS [dbo]
+GO

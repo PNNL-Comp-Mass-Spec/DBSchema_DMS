@@ -41,5 +41,5 @@ FROM dbo.T_Local_Processors AS LP
 WHERE (ISNULL(ASM.UseForStatusCheck, 1) > 0)
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [DDL_Viewer] AS [dbo]
 GO

@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Job_Parameters_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Parameters_History] TO [DDL_Viewer] AS [dbo]
+GO
 /****** Object:  Index [IX_T_Job_Parameters_History_MostRecentEntry] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Parameters_History_MostRecentEntry] ON [dbo].[T_Job_Parameters_History]
 (

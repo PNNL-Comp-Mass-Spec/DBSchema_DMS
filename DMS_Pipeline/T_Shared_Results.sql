@@ -13,5 +13,7 @@ CREATE TABLE [dbo].[T_Shared_Results](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Shared_Results] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Shared_Results] ADD  CONSTRAINT [DF_T_Shared_Results_Created]  DEFAULT (getdate()) FOR [Created]
 GO

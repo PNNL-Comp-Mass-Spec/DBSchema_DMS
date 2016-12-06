@@ -94,5 +94,7 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateMachineStatusHistory] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMachineStatusHistory] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -110,7 +110,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [Limited_Table_Write] AS [dbo]
 GO

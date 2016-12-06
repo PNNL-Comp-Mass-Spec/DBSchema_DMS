@@ -31,3 +31,5 @@ GROUP BY PTG.Group_ID
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Tool_Group_Detail_Stats] TO [DDL_Viewer] AS [dbo]
+GO

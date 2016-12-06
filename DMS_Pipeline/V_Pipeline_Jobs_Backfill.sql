@@ -29,3 +29,5 @@ WHERE (S.Backfill_to_DMS = 1)
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_Backfill] TO [DDL_Viewer] AS [dbo]
+GO

@@ -251,3 +251,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RebuildSparseIndices] TO [DDL_Viewer] AS [dbo]
+GO

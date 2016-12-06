@@ -92,6 +92,8 @@ FROM (
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[V_Job_Steps] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[V_Job_Steps] TO [Limited_Table_Write] AS [dbo]
@@ -99,6 +101,4 @@ GO
 GRANT UPDATE ON [dbo].[V_Job_Steps] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps] TO [PNL\D3M578] AS [dbo]
 GO

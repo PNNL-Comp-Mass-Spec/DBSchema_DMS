@@ -145,3 +145,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameterXML] TO [DDL_Viewer] AS [dbo]
+GO

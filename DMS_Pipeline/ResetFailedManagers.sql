@@ -82,5 +82,7 @@ As
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetFailedManagers] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[ResetFailedManagers] TO [DMS_SP_User] AS [dbo]
 GO

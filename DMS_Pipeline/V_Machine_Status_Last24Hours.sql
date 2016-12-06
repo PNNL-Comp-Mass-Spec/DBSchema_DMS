@@ -37,3 +37,5 @@ FROM ( SELECT PTG.Group_Name,
        ON StatusQ.Machine = ActiveToolQ.Machine
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Machine_Status_Last24Hours] TO [DDL_Viewer] AS [dbo]
+GO

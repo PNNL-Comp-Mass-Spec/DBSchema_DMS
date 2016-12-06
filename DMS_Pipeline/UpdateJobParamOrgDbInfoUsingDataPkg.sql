@@ -205,3 +205,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg] TO [DDL_Viewer] AS [dbo]
+GO

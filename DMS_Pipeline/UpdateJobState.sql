@@ -676,7 +676,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [Limited_Table_Write] AS [dbo]
 GO

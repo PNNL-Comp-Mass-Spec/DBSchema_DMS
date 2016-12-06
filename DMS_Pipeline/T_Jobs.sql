@@ -29,6 +29,8 @@ CREATE TABLE [dbo].[T_Jobs](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[T_Jobs] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Jobs] TO [Limited_Table_Write] AS [dbo]

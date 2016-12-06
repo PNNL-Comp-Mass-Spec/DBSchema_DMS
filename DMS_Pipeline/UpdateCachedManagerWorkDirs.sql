@@ -117,3 +117,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateCachedManagerWorkDirs] TO [DDL_Viewer] AS [dbo]
+GO

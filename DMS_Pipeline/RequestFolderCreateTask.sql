@@ -195,6 +195,8 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestFolderCreateTask] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RequestFolderCreateTask] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[RequestFolderCreateTask] TO [svc-dms] AS [dbo]

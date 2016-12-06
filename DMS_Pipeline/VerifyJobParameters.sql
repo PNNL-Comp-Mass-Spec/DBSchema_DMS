@@ -124,5 +124,7 @@ AS
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[VerifyJobParameters] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[VerifyJobParameters] TO [Limited_Table_Write] AS [dbo]
 GO

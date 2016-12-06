@@ -16,5 +16,5 @@ SELECT ID,
 FROM S_DMS_V_GetPipelineSettingsFiles
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_SettingsFiles] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_SettingsFiles] TO [DDL_Viewer] AS [dbo]
 GO

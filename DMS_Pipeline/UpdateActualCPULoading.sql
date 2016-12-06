@@ -127,3 +127,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateActualCPULoading] TO [DDL_Viewer] AS [dbo]
+GO

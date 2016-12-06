@@ -19,6 +19,8 @@ CREATE TABLE [dbo].[T_Machines](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Machines] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Total_CPUs]  DEFAULT ((2)) FOR [Total_CPUs]
 GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_CPUs_Available]  DEFAULT ((0)) FOR [CPUs_Available]

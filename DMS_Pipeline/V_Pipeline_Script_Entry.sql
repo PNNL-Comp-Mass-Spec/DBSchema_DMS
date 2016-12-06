@@ -18,5 +18,5 @@ FROM dbo.T_Scripts
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_Entry] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_Entry] TO [DDL_Viewer] AS [dbo]
 GO

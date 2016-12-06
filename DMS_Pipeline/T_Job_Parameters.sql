@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Job_Parameters](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT INSERT ON [dbo].[T_Job_Parameters] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_Job_Parameters] TO [Limited_Table_Write] AS [dbo]

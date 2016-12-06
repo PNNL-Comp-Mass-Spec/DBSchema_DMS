@@ -285,5 +285,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetJobAndSharedResults] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ResetJobAndSharedResults] TO [Limited_Table_Write] AS [dbo]
 GO

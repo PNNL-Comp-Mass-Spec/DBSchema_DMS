@@ -352,3 +352,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[LookupSourceJobFromSpecialProcessingParam] TO [DDL_Viewer] AS [dbo]
+GO

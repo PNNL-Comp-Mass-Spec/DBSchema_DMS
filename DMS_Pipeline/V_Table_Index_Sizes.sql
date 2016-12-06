@@ -39,5 +39,5 @@ AS (
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Table_Index_Sizes] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Index_Sizes] TO [DDL_Viewer] AS [dbo]
 GO

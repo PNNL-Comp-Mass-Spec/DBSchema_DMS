@@ -20,5 +20,5 @@ FROM dbo.T_Job_Steps JS
 WHERE (ISNULL(JS.Processor, '') <> '')
 GROUP BY JS.Processor, DATEPART(YEAR, JS.Start), DATEPART(MONTH, JS.Start), DateQ.Start_Max
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Processor_Step_Stats] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Step_Stats] TO [DDL_Viewer] AS [dbo]
 GO

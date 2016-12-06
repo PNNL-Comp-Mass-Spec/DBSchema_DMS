@@ -63,9 +63,9 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[PreviewRequestStepTask] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[PreviewRequestStepTask] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[PreviewRequestStepTask] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[PreviewRequestStepTask] TO [PNL\D3M578] AS [dbo]
 GO

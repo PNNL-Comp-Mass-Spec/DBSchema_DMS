@@ -33,3 +33,5 @@ GROUP BY J.Job, J.Priority, J.Script, J.[State], JSN.Name,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_ActiveOrComplete] TO [DDL_Viewer] AS [dbo]
+GO

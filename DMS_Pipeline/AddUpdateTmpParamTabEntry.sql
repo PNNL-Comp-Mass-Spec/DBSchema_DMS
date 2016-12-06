@@ -68,3 +68,5 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateTmpParamTabEntry] TO [DDL_Viewer] AS [dbo]
+GO

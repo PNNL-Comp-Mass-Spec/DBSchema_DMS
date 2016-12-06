@@ -213,5 +213,7 @@ AS
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddMACJob] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddMACJob] TO [DMS_SP_User] AS [dbo]
 GO

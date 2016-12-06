@@ -224,3 +224,5 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AutoFixFailedJobs] TO [DDL_Viewer] AS [dbo]
+GO

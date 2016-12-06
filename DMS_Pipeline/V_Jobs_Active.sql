@@ -57,5 +57,5 @@ WHERE D.State IN (1, 8) AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Jobs_Active] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Jobs_Active] TO [DDL_Viewer] AS [dbo]
 GO

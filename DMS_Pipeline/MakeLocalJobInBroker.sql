@@ -358,5 +358,7 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[MakeLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[MakeLocalJobInBroker] TO [Limited_Table_Write] AS [dbo]
 GO

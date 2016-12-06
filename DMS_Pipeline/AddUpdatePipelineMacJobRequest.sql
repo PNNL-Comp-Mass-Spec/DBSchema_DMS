@@ -157,5 +157,7 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdatePipelineMacJobRequest] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[AddUpdatePipelineMacJobRequest] TO [DMS_SP_User] AS [dbo]
 GO

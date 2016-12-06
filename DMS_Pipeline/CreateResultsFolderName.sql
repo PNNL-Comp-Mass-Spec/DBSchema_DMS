@@ -62,7 +62,7 @@ As
 	end
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [Limited_Table_Write] AS [dbo]
 GO

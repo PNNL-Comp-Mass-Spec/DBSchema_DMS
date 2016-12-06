@@ -92,7 +92,7 @@ Done:
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [Limited_Table_Write] AS [dbo]
 GO

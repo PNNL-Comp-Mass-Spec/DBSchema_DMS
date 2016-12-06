@@ -31,3 +31,5 @@ FROM T_Job_State_Name JSN
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Jobs_History] TO [DDL_Viewer] AS [dbo]
+GO

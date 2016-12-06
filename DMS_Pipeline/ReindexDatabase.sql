@@ -84,7 +84,7 @@ Done:
 	Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -165,5 +165,7 @@ BEGIN
 END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CheckDataPackageJobs] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT SELECT ON [dbo].[CheckDataPackageJobs] TO [DMS_SP_User] AS [dbo]
 GO

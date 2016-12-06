@@ -18,3 +18,5 @@ FROM T_Local_Processors LP
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Tool_Group_Details2] TO [DDL_Viewer] AS [dbo]
+GO

@@ -26,5 +26,5 @@ GROUP BY JS.Processor, JS.Step_Tool, DATEPART(YEAR, JS.Start), DATEPART(MONTH, J
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Processor_StepTool_Stats] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_StepTool_Stats] TO [DDL_Viewer] AS [dbo]
 GO

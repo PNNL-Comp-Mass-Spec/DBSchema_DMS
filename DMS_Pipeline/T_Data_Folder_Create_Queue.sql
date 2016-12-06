@@ -26,6 +26,8 @@ CREATE TABLE [dbo].[T_Data_Folder_Create_Queue](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Data_Folder_Create_Queue] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_Data_Folder_Create_Queue] ADD  CONSTRAINT [DF_T_Data_Folder_Create_Queue_State_ID]  DEFAULT ((1)) FOR [State]
 GO
 ALTER TABLE [dbo].[T_Data_Folder_Create_Queue] ADD  CONSTRAINT [DF_Data_Folder_Create_Queue_Command]  DEFAULT ('add') FOR [Command]

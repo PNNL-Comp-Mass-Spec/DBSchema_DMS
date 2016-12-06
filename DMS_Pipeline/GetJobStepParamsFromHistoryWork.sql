@@ -229,3 +229,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsFromHistoryWork] TO [DDL_Viewer] AS [dbo]
+GO

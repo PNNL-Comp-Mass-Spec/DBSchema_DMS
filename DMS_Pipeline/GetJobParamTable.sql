@@ -459,7 +459,7 @@ AS
 	RETURN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [Limited_Table_Write] AS [dbo]
 GO

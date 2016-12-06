@@ -266,3 +266,5 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ResetAggregationJob] TO [DDL_Viewer] AS [dbo]
+GO

@@ -116,6 +116,8 @@ As
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetStepTaskToolVersion] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [svc-dms] AS [dbo]

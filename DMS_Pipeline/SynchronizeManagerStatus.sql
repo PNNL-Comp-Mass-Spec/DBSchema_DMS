@@ -164,7 +164,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeManagerStatus] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[SynchronizeManagerStatus] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeManagerStatus] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[SynchronizeManagerStatus] TO [Limited_Table_Write] AS [dbo]
 GO

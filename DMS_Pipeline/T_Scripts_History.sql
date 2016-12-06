@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_Scripts_History](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Scripts_History] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT UPDATE ON [dbo].[T_Scripts_History] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered]  DEFAULT (getdate()) FOR [Entered]

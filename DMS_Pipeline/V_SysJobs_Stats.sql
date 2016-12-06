@@ -51,3 +51,5 @@ FROM ( SELECT Category,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_SysJobs_Stats] TO [DDL_Viewer] AS [dbo]
+GO

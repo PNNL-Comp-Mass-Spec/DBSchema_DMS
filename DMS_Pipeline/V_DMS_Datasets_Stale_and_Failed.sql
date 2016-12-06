@@ -15,5 +15,5 @@ SELECT Dataset,
 FROM S_DMS_V_Datasets_Stale_and_Failed
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_Datasets_Stale_and_Failed] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Datasets_Stale_and_Failed] TO [DDL_Viewer] AS [dbo]
 GO

@@ -16,6 +16,8 @@ CREATE TABLE [dbo].[T_Machine_Status_History](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_Machine_Status_History] TO [DDL_Viewer] AS [dbo]
+GO
 SET ANSI_PADDING ON
 
 GO

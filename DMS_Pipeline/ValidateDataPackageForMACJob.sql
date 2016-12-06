@@ -172,3 +172,5 @@ AS
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[ValidateDataPackageForMACJob] TO [DDL_Viewer] AS [dbo]
+GO

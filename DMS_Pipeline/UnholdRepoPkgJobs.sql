@@ -64,3 +64,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UnholdRepoPkgJobs] TO [DDL_Viewer] AS [dbo]
+GO

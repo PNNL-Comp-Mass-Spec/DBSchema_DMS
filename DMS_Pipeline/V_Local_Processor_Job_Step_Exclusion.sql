@@ -9,3 +9,5 @@ SELECT LP.Processor_Name, LP.ID, JSE.Step
 FROM T_Local_Processor_Job_Step_Exclusion JSE INNER JOIN
    T_Local_Processors LP ON JSE.ID = LP.ID
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Local_Processor_Job_Step_Exclusion] TO [DDL_Viewer] AS [dbo]
+GO

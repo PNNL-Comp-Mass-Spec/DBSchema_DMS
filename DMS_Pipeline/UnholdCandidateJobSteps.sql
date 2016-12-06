@@ -100,3 +100,5 @@ As
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UnholdCandidateJobSteps] TO [DDL_Viewer] AS [dbo]
+GO

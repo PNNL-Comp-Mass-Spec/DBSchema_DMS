@@ -119,6 +119,8 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[SetFolderCreateTaskComplete] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [svc-dms] AS [dbo]

@@ -159,3 +159,5 @@ Done:
 	Return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg] TO [DDL_Viewer] AS [dbo]
+GO

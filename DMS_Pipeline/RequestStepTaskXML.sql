@@ -1194,11 +1194,11 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[RequestStepTaskXML] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [PNL\D3M578] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[RequestStepTaskXML] TO [svc-dms] AS [dbo]
 GO

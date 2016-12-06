@@ -22,5 +22,7 @@ CREATE TABLE [dbo].[T_MAC_Job_Request](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_MAC_Job_Request] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_MAC_Job_Request] ADD  CONSTRAINT [DF_T_MAC_Job_Request_Created]  DEFAULT (getdate()) FOR [Created]
 GO

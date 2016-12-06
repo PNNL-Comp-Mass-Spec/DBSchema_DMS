@@ -11,5 +11,5 @@ SELECT MP.ManagerID, MP.ManagerName, MP.ManagerType,
 FROM ProteinSeqs.Manager_Control.dbo.V_MgrParams MP
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_ManagerControl_ProcessorParams] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_ManagerControl_ProcessorParams] TO [DDL_Viewer] AS [dbo]
 GO

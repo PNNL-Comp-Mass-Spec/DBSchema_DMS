@@ -10,3 +10,5 @@ FROM            dbo.T_Scripts
 WHERE        (Enabled = 'Y') AND (NOT (Fields IS NULL))
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_MAC_With_Fields] TO [DDL_Viewer] AS [dbo]
+GO

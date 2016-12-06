@@ -15,5 +15,5 @@ WHERE (Tool LIKE '%sequest%') AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Sequest_Cluster_Warnings] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Sequest_Cluster_Warnings] TO [DDL_Viewer] AS [dbo]
 GO

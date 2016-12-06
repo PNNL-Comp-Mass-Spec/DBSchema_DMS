@@ -21,5 +21,5 @@ FROM T_Step_Tools
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Step_Tools_Detail_Report] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Step_Tools_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

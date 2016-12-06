@@ -48,3 +48,5 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetProcessorStepToolList] TO [DDL_Viewer] AS [dbo]
+GO

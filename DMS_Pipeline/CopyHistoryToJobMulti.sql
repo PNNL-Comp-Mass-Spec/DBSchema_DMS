@@ -523,3 +523,5 @@ Done:
 	return @myError
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJobMulti] TO [DDL_Viewer] AS [dbo]
+GO

@@ -40,3 +40,5 @@ WHERE JSE.Entered < IsNull(NextJSPL.JobStart, GETDATE()) AND JSE.Target_State NO
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Processing_Log] TO [DDL_Viewer] AS [dbo]
+GO

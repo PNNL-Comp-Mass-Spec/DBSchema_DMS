@@ -86,7 +86,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -40,3 +40,5 @@ GROUP BY ST.Processor_Name, ST.Tool_Name, ST.Priority, ST.Enabled, ST.[Comment],
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Processors_On_Machines_With_ActiveTools] TO [DDL_Viewer] AS [dbo]
+GO

@@ -134,9 +134,9 @@ Done:
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[UpdateJobParameters] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT EXECUTE ON [dbo].[UpdateJobParameters] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateJobParameters] TO [Limited_Table_Write] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobParameters] TO [PNL\D3M578] AS [dbo]
 GO

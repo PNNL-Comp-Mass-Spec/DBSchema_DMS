@@ -10,3 +10,5 @@ SELECT        ID, Description, Request_Type AS [Request Type], Requestor, Data_P
 FROM            dbo.T_MAC_Job_Request
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Mac_Job_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]
+GO

@@ -51,6 +51,8 @@ GO
 	END
 	
 GO
+GRANT VIEW DEFINITION ON [dbo].[fn_diagramobjects] TO [DDL_Viewer] AS [dbo]
+GO
 DENY EXECUTE ON [dbo].[fn_diagramobjects] TO [guest] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[fn_diagramobjects] TO [public] AS [dbo]

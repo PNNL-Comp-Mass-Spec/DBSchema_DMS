@@ -159,5 +159,7 @@ AS
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[AdjustParamsForLocalJob] TO [DDL_Viewer] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[AdjustParamsForLocalJob] TO [Limited_Table_Write] AS [dbo]
 GO

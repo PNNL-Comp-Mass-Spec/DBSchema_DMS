@@ -129,7 +129,7 @@ Done:
 	return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [PNL\D3M578] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [Limited_Table_Write] AS [dbo]
 GO

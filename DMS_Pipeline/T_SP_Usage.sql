@@ -16,5 +16,7 @@ CREATE TABLE [dbo].[T_SP_Usage](
 ) ON [PRIMARY]
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[T_SP_Usage] TO [DDL_Viewer] AS [dbo]
+GO
 ALTER TABLE [dbo].[T_SP_Usage] ADD  CONSTRAINT [DF_T_SP_Usage_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
