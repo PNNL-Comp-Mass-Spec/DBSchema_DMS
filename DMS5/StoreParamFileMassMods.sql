@@ -32,6 +32,8 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			08/31/2016 mem - Fix logic parsing N- or C-terminal static mods that use * for the affected residue
 **						   - Store static N- or C-terminal mods as type 'T' instead of 'S'
 **			11/30/2016 mem - Check for a residue specification of any instead of *
+**			12/12/2016 mem - Check for tabs in the comma-separated mod definition rows
+**			12/13/2016 mem - Silently skip rows StaticMod=None and DynamicMod=None
 **    
 *****************************************************/
 (
@@ -278,7 +280,29 @@ AS
 				
 						If @ColCount < 5
 						Begin
-							Print 'Skipping row since it does not have 5 comma-separated columns: ' + @Row
+							If CharIndex(Char(9), @Row) > 0
+							Begin
+								If CharIndex(',', @Row) > 0
+									Set @message = 'Row has a mix of tabs and commas; should only be comma-separated: ' + @Row
+								Else
+									Set @message = 'Row appears to be tab separated insetad of comma-separated: ' + @Row
+									
+								Set @myError = 53011
+								If @infoOnly = 0
+									Goto Done
+							End
+							Else
+							Begin
+								If Not @Field in ('StaticMod=None', 'DynamicMod=None')
+								Begin
+									Set @message = 'Skipping row since it has ' + Cast(@ColCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @Row
+									Set @myError = 53012
+									
+									If @infoOnly = 0
+										Goto Done
+								End
+							End
+							
 						End
 						Else
 						Begin							
@@ -562,9 +586,13 @@ AS
 
 	
 Done:
-	If Len(@message) > 0
+
+	If @infoOnly <> 0 And Len(@message) > 0
 		SELECT @message As Message
-	
+
+	If @infoOnly = 0 And @myError > 0
+		Print @message
+			
 	--
 	Return @myError
 

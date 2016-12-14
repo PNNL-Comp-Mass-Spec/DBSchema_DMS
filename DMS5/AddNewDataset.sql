@@ -45,7 +45,7 @@ CREATE Procedure dbo.AddNewDataset
 	@xmlDoc varchar(4000),
 	@mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
     @message varchar(512) output,
-    @logDebugMessages tinyint = 1
+    @logDebugMessages tinyint = 0
 )
 AS
 	Set nocount on

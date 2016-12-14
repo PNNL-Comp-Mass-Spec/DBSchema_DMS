@@ -251,7 +251,7 @@ As
 						
 			If @myError <> 0
 			Begin
-				Set @msg = 'Error calling StoreParamFileMassMods: "' + @message + '"'
+				Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
 				RAISERROR (@msg, 11, 1)
 			End
 		End		
