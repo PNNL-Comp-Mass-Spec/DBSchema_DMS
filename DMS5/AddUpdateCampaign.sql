@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateCampaign]
+CREATE Procedure dbo.AddUpdateCampaign
 /****************************************************
 **
 **	Desc: Adds new or updates existing campaign in database
@@ -41,6 +41,7 @@ CREATE Procedure [dbo].[AddUpdateCampaign]
 **			11/23/2016 mem - Include the campaign name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -84,6 +85,8 @@ As
 
 	-- Leave this as Null for now
 	declare @FractionEMSLFundedValue decimal(3, 2) = 0
+	
+	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
 
@@ -188,6 +191,7 @@ As
 	Else
 		RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
 	
+	Set @logErrors = 1
 	
 	---------------------------------------------------
 	-- transaction name
@@ -390,9 +394,7 @@ As
 			ROLLBACK TRANSACTION;
 
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%was blank%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Campaign ' + @campaignNum		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateCampaign'

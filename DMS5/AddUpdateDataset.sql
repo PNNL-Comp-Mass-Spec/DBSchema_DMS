@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateDataset]
+CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **
 **	Desc:	Adds new dataset entry to DMS database
@@ -82,6 +82,7 @@ CREATE Procedure [dbo].[AddUpdateDataset]
 **			11/23/2016 mem - Include the dataset name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -126,6 +127,7 @@ As
 	declare @warningAddon varchar(128)
 	declare @ExperimentCheck varchar(128)
 	declare @debugMsg varchar(512)
+	Declare @logErrors tinyint = 0
 	
 	set @message = ''
 	set @warning = ''
@@ -785,10 +787,13 @@ As
 			
 		End
 	End
-		
+	
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add trigger mode
 	---------------------------------------------------
+	
 	if @mode = 'add_trigger'
 	begin -- <AddTrigger>
 
@@ -1330,12 +1335,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%Could not find entry in database%' And
-		   Not @message Like '%was blank%' And
-		   Not @message Like '%is invalid for instrument group%' And
-		   Not @message Like '%Cannot change dataset rating from Unreviewed%' And
+		If @logErrors > 0 And
 		   Not @message Like 'ValidateEUSUsage%'		   
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum		

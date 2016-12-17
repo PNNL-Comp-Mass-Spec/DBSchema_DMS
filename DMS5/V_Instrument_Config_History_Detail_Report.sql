@@ -7,7 +7,7 @@ GO
 CREATE view [dbo].[V_Instrument_Config_History_Detail_Report] as
 SELECT TIH.ID,
        TIH.Instrument,
-       TIH.Date_Of_Change AS [Date of Change],
+       Cast(TIH.Date_Of_Change AS date) AS [Date of Change],
        CASE
            WHEN TU.U_PRN IS NULL THEN TIH.EnteredBy
            ELSE TU.Name_with_PRN
@@ -18,6 +18,7 @@ SELECT TIH.ID,
 FROM T_Instrument_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
        ON TIH.EnteredBy = TU.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Config_History_Detail_Report] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
+CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 /****************************************************
 **
 **	Desc: Adds new analysis job request to request queue
@@ -74,6 +74,7 @@ CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			11/23/2016 mem - Include the request name when calling PostLogEntry from within the catch block
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -107,7 +108,8 @@ As
 
 	Declare @AutoSupersedeName varchar(255) = ''
 	Declare @MsgToAppend varchar(255)
-
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -458,9 +460,12 @@ As
 	if @stateID = -1
 		RAISERROR ('Could not resolve state name to ID', 11, 221)
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
+	
 	if @mode = 'add'
 	begin
 		declare @newRequestNum int
@@ -565,11 +570,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%was blank%' And
-		   Not @message Like '%cannot be blank%' And
-		   Not @message Like '%list is empty%'		   
+		If @logErrors > 0   
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'

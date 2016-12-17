@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateRequestedRun]
+CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
 **	Desc:	Adds a new entry to the requested dataset table
@@ -72,6 +72,7 @@ CREATE Procedure [dbo].[AddUpdateRequestedRun]
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -117,7 +118,8 @@ As
 		
 	-- default priority at which new requests will be created
 	declare @defaultPriority int = 0
-
+	
+	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY
 
@@ -179,7 +181,7 @@ As
 		Else
 			RAISERROR ('Requested run name may not contain the character(s) "%s"', 11, 1, @badCh)
 	end
-		
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	-- Note that if a request is recycled, the old and new requests
@@ -326,8 +328,7 @@ As
 	-- if called for
 	---------------------------------------------------
 
-	declare @experimentID int
-	SET @experimentID = 0
+	declare @experimentID int = 0
 
 	SELECT 
 		@experimentID = Exp_ID, 
@@ -550,12 +551,13 @@ As
 				Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ')
 		End
 	End
-			
+	
+	Set @logErrors = 1
+
 	---------------------------------------------------
 	-- Start a transaction
 	---------------------------------------------------
-	declare @transName varchar(256)
-	set @transName = 'AddUpdateRequestedRun_' + @reqName
+	declare @transName varchar(256) = 'AddUpdateRequestedRun_' + @reqName
 
 	---------------------------------------------------
 	-- action for add mode
@@ -721,13 +723,7 @@ As
 		IF (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%Could not find entry in database%' And
-		   Not @message Like '%was blank%' And
-		   Not @message Like '%is not active%' And
-		   Not @message Like '%name may not contain%' And
-		   Not @message Like '%already exists%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Req Name ' + @reqName		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateRequestedRun'

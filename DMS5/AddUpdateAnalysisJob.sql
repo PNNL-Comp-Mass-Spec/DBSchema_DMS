@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateAnalysisJob]
+CREATE Procedure dbo.AddUpdateAnalysisJob
 /****************************************************
 **
 **	Desc: Adds new analysis job to job table
@@ -67,6 +67,7 @@ CREATE Procedure [dbo].[AddUpdateAnalysisJob]
 **          07/20/2016 mem - Expand error messages
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -121,8 +122,8 @@ As
 
 	declare @msg varchar(256)
 
-    declare @batchID int
-	set @batchID = 0
+    declare @batchID int = 0
+    Declare @logErrors tinyint = 0
 
 	BEGIN TRY 
 
@@ -388,6 +389,8 @@ As
 			Set @message = @warning
 		
 	End
+	
+	Set @logErrors = 1
 	
 	---------------------------------------------------
 	-- Lookup the Dataset ID
@@ -819,8 +822,7 @@ As
 			ROLLBACK TRANSACTION;
 
 
-		If Not @message Like '%is not in database%' And
-		   Not @message Like '%not in "new", "holding", or "failed" state%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'

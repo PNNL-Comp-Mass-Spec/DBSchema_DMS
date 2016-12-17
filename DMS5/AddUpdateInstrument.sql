@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrument]
+CREATE PROCEDURE dbo.AddUpdateInstrument
 /****************************************************
 **
 **	Desc: Edits existing Instrument
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -59,7 +60,9 @@ As
 	set @myRowCount = 0
 	
 	set @message = ''
-
+	
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY
 	
 	---------------------------------------------------
@@ -95,6 +98,8 @@ As
 	
 	end
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- Resolve Yes/No parameters to 0 or 1
 	---------------------------------------------------
@@ -167,9 +172,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%should be a number%' And 
-		   Not @message Like '%disabled for this page%' And 
-		   Not @message Like '%No entry could be found%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Instrument ' + @InstrumentName		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrument'

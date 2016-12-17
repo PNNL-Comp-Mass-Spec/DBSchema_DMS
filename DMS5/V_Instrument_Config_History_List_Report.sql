@@ -7,7 +7,7 @@ GO
 CREATE view [dbo].[V_Instrument_Config_History_List_Report] as
 SELECT TIH.ID,
        TIH.Instrument,
-       TIH.Date_Of_Change AS [Date of Change],
+       Cast(TIH.Date_Of_Change AS date) AS [Date of Change],
        TIH.Description,
        CASE
            WHEN DATALENGTH(TIH.Note) < 150 THEN Note
@@ -21,6 +21,7 @@ SELECT TIH.ID,
 FROM T_Instrument_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
        ON TIH.EnteredBy = TU.U_PRN
+
 
 
 GO

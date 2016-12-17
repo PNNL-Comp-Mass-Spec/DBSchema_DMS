@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateUser]
+CREATE Procedure dbo.AddUpdateUser
 /****************************************************
 **
 **	Desc: Adds new or updates existing User in database
@@ -30,6 +30,7 @@ CREATE Procedure [dbo].[AddUpdateUser]
 **			08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @HanfordIDNum starts with a number
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -56,6 +57,7 @@ As
 	set @message = ''
 	
 	declare @msg varchar(256)
+	Declare @logErrors tinyint = 0
 
 	BEGIN TRY 
 
@@ -122,9 +124,12 @@ As
 			return 51004
 		end
 
+		Set @logErrors = 1
+
 		---------------------------------------------------
 		-- action for add mode
 		---------------------------------------------------
+		
 		if @Mode = 'add'
 		begin
 			If @HanfordIDNum Like '[0-9]%'
@@ -238,9 +243,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%was blank%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Username ' + @Username		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateUser'

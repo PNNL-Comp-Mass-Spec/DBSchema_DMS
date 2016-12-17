@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateCellCulture]
+CREATE Procedure dbo.AddUpdateCellCulture
 /****************************************************
 **
 **	Desc: Adds new or updates existing cell culture in database
@@ -29,6 +29,7 @@ CREATE Procedure [dbo].[AddUpdateCellCulture]
 **						   - Trim trailing and leading spaces from input parameters
 **			12/02/2016 mem - Add @organismList
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -65,7 +66,8 @@ As
 	Set @message = ''
 
 	Declare @msg varchar(256)
-
+	Declare @logErrors tinyint = 0
+	
 	Begin TRY 
 
 	---------------------------------------------------
@@ -257,8 +259,8 @@ As
 	---------------------------------------------------
 	-- Resolve current container id to name
 	---------------------------------------------------
-	Declare @curContainerName varchar(125)
-	Set @curContainerName = ''
+	
+	Declare @curContainerName varchar(125) = ''
 	--
 	SELECT @curContainerName = Tag 
 	FROM T_Material_Containers 
@@ -326,6 +328,8 @@ As
 		End
 	End
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
@@ -486,10 +490,7 @@ As
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%Could not find entry in database%' And
-		   Not @message Like '%was blank%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'

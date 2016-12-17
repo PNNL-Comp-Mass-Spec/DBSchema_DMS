@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
+CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 /****************************************************
 **
 **  Desc: Adds new or edits existing SamplePrepRequest
@@ -63,6 +63,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -125,7 +126,7 @@ As
 	declare @currentStateID int
 	
 	DECLARE @retireMaterial INT
-	IF @State = 'Closed (containers and material)'
+	IF IsNull(@State, '') = 'Closed (containers and material)'
 	BEGIN
 		SET @retireMaterial = 1
 		SET @State = 'Closed'
@@ -134,6 +135,7 @@ As
 		SET @retireMaterial = 0
 
 	Declare @RequestType varchar(16) = 'Default'
+	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
 
@@ -418,6 +420,8 @@ As
 			Set @SeparationGroup = @SeparationGroupAlt
 	End
 	
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -679,14 +683,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		If Not @message Like '%cannot be empty%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%Could not find entry in database%' And
-		   Not @message Like '%was blank%' And
-		   Not @message Like '%should be Yes%' And
-		   Not @message Like '%requires justification reason%' And
-		   Not @message Like 'ValidateEUSUsage%' And
-		   Not @message Like 'ValidateWP%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Request ' + @RequestName
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateSamplePrepRequest'

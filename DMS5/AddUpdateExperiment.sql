@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateExperiment]
+CREATE Procedure dbo.AddUpdateExperiment
 /****************************************************
 **
 **	Desc:	Adds a new experiment to DB
@@ -48,6 +48,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **			11/23/2016 mem - Include the experiment name when calling PostLogEntry from within the catch block
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
+**			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -87,7 +88,8 @@ As
 	declare @result int
 	
 	declare @msg varchar(256)
-
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -152,11 +154,8 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @experimentID int
-	set @experimentID = 0
-	--
-	declare @curContainerID int
-	set @curContainerID = 0
+	declare @experimentID int = 0
+	declare @curContainerID int = 0
 	--
 	SELECT 
 		@experimentID = Exp_ID,
@@ -265,8 +264,7 @@ As
 	-- Resolve labelling ID
 	---------------------------------------------------
 
-	declare @labelID int
-	set @labelID = 0
+	declare @labelID int = 0
 	--
 	SELECT @labelID = ID
 	FROM T_Sample_Labelling
@@ -340,8 +338,7 @@ As
 	-- Resolve current container id to name 
 	-- (skip if adding experiment)
 	---------------------------------------------------
-	declare @curContainerName varchar(125)
-	set @curContainerName = ''
+	declare @curContainerName varchar(125) = ''
 	--
 	If Not @mode In ('add', 'check_add')
 	Begin
@@ -409,7 +406,8 @@ As
 
 
 	declare @transName varchar(32)
-
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
@@ -622,10 +620,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		
-		If Not @message Like '%is not in database%' And 
-		   Not @message Like '%already in database%' And 
-		   Not @message Like '%Could not find entry in database%' And
-		   Not @message Like '%may not contain%'
+		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum		
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
