@@ -188,10 +188,11 @@ AS
 			WHERE [Name] = 'transferFolderPath'
 			
 			If IsNull(@TransferFolderPath, '') <> ''
+			Begin
 				UPDATE T_Jobs
 				SET Transfer_Folder_Path = @TransferFolderPath
 				WHERE Job = @Job
-
+			End
 			
 			---------------------------------------------------
 			-- If a data package is defined, update entries for 

@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.ValidateJobServerInfo
 **	Auth:	mem
 **	Date:	07/12/2011 mem - Initial version
 **			11/14/2011 mem - Updated to support Dataset Name being blank
+**			12/21/2016 mem - Use job parameter DatasetFolderName when constructing the transfer folder path
 **
 *****************************************************/
 (
@@ -34,6 +35,7 @@ As
 	Declare @TransferFolderPath varchar(256)
 	Declare @StorageServerName varchar(128)
 	Declare @Dataset varchar(256)
+	Declare @DatasetFolderName varchar(256)
 	
 	---------------------------------------------------
 	-- Validate the inputs
@@ -45,6 +47,7 @@ As
 	
 	Set @TransferFolderPath = ''
 	Set @Dataset = ''
+	Set @DatasetFolderName = ''
 	Set @StorageServerName = ''
 	
 	if @UseJobParameters <> 0
@@ -62,15 +65,19 @@ As
 		SELECT @Dataset = [Value]
 		FROM dbo.GetJobParamTableLocal ( @Job )
 		WHERE [Name] = 'DatasetNum'
+
+		SELECT @DatasetFolderName = [Value]
+		FROM dbo.GetJobParamTableLocal ( @Job )
+		WHERE [Name] = 'DatasetFolderName'		
 	
 		If @DebugMode <> 0
-			Select @Job as Job, @TransferFolderPath as TransferFolder, @Dataset as Dataset, 'T_Job_Parameters' as Source
+			Select @Job as Job, @TransferFolderPath as TransferFolder, @Dataset as Dataset, @DatasetFolderName as Dataset_Folder_Path, 'T_Job_Parameters' as Source
 	End
 	
 	If IsNull(@TransferFolderPath, '') = ''
 	Begin
 		---------------------------------------------------
-		-- Info not found in T_Job_Parameters
+		-- Info not found in T_Job_Parameters (or @UseJobParameters is 0)
 		-- Directly query DMS
 		---------------------------------------------------
 		--
@@ -90,14 +97,18 @@ As
 		
 		SELECT @TransferFolderPath = Value
 		FROM @Job_Parameters
-		WHERE Name = 'transferFolderPath'		
+		WHERE [Name] = 'transferFolderPath'		
 			
 		SELECT @Dataset = Value
 		FROM @Job_Parameters
-		WHERE Name = 'DatasetNum'
+		WHERE [Name] = 'DatasetNum'
+
+		SELECT @DatasetFolderName = Value
+		FROM @Job_Parameters
+		WHERE [Name] = 'DatasetFolderName'		
 
 		If @DebugMode <> 0
-			Select @Job as Job, @TransferFolderPath as TransferFolder, @Dataset as Dataset, 'DMS5' as Source
+			Select @Job as Job, @TransferFolderPath as TransferFolder, @Dataset as Dataset, @DatasetFolderName as Dataset_Folder_Path, 'DMS5' as Source
 			
 	End
 		
@@ -105,8 +116,15 @@ As
 	Begin
 		-- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
 		--
-		If IsNull(@Dataset, '') <> ''
-			Set @TransferFolderPath = dbo.udfCombinePaths(@TransferFolderPath, @Dataset)
+		If IsNull(@DatasetFolderName, '') <> ''
+		Begin
+			Set @TransferFolderPath = dbo.udfCombinePaths(@TransferFolderPath, @DatasetFolderName)
+		End
+		Else
+		Begin
+			If IsNull(@Dataset, '') <> ''
+				Set @TransferFolderPath = dbo.udfCombinePaths(@TransferFolderPath, @Dataset)
+		End
 		
 		If Right(@TransferFolderPath, 1) <> '\'
 			Set @TransferFolderPath = @TransferFolderPath + '\'

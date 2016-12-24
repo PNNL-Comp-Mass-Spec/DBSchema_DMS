@@ -293,9 +293,21 @@ AS
 	begin	
 		-- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
 		--	
-		INSERT INTO T_Jobs ( Job,  Priority, Script,   State, Dataset,     Dataset_ID, Transfer_Folder_Path, Comment, Storage_Server, Owner,            DataPkgID)
-		VALUES             (@job, @priority, @scriptName, 1, @datasetNum, @datasetID, NULL,                 @comment, NULL,          @ownerPRN, IsNull(@DataPackageID, 0))
-
+		INSERT INTO T_Jobs( Job,
+		                    Priority,
+		                    Script,
+		                    State,
+		                    Dataset,
+		                    Dataset_ID,
+		                    Transfer_Folder_Path,
+		                    [Comment],
+		                    Storage_Server,
+		                    Owner,
+		                    DataPkgID )
+		VALUES(@job, @priority, @scriptName, 1, 
+		       @datasetNum, @datasetID, NULL, 
+		       @comment, NULL, @ownerPRN,
+		       IsNull(@DataPackageID, 0))
 
 		exec @myError = MoveJobsToMainTables @message output
 		
