@@ -231,6 +231,7 @@ ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Organis
 GO
 ALTER TABLE [dbo].[T_Analysis_Job]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Job_T_Param_Files] FOREIGN KEY([AJ_parmFileName])
 REFERENCES [dbo].[T_Param_Files] ([Param_File_Name])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] CHECK CONSTRAINT [FK_T_Analysis_Job_T_Param_Files]
 GO
