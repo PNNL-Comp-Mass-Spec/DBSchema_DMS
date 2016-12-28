@@ -40,6 +40,8 @@ CREATE NONCLUSTERED INDEX [IX_T_Predefined_Analysis_Scheduling_Queue_State] ON [
 	[State] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Queue_CallingUser]  DEFAULT (suser_sname()) FOR [CallingUser]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Queue_AnalysisToolNameFilter]  DEFAULT ('') FOR [AnalysisToolNameFilter]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] ADD  CONSTRAINT [DF_T_Predefined_Analysis_Scheduling_Queue_ExcludeDatasetsNotReleased]  DEFAULT ((1)) FOR [ExcludeDatasetsNotReleased]
