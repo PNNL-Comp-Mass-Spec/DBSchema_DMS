@@ -30,6 +30,8 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			12/02/2016 mem - Add @organismList
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			01/06/2017 mem - When adding a new entry, only call UpdateOrganismListForBiomaterial if @organismList is not null
+**			               - When updating an existing entry, update @organismList to be '' if null (since the DMS website sends null when a form field is blank)
 **    
 *****************************************************/
 (
@@ -423,8 +425,11 @@ As
 				'Biomaterial (Cell Culture) added'
 		End
 
-		-- Update the associated organism(s)
-		exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
+		If IsNull(@organismList, '') <> ''
+		Begin
+			-- Update the associated organism(s)
+			exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
+		End
 		
 	End -- </add>
 
@@ -478,6 +483,7 @@ As
 		End
 
 		-- Update the associated organism(s)
+		Set @organismList = IsNull(@organismList, '')
 		exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
 		
 	End -- </update>
