@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
@@ -73,6 +74,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			01/09/2017 mem - Add parameter @logDebugMessages
 **
 *****************************************************/
 (
@@ -721,7 +723,15 @@ As
 		if @myError <> 0
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
 		
-		commit transaction @transName
+		If @@trancount > 0
+		Begin
+			commit transaction @transName
+		End
+		Else
+		Begin
+			Set @debugMsg = '@@trancount is 0; this is unexpected'
+			exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRun'
+		End
 
 		If @logDebugMessages > 0
 		Begin
@@ -792,7 +802,15 @@ As
 		if @myError <> 0
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
 
-		commit transaction @transName
+		If @@trancount > 0
+		Begin
+			commit transaction @transName
+		End
+		Else
+		Begin
+			Set @debugMsg = '@@trancount is 0; this is unexpected'
+			exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRun'
+		End
 		
 		-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
 		exec UpdateCachedRequestedRunEUSUsers @request
@@ -815,6 +833,7 @@ As
 
 	END CATCH
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]

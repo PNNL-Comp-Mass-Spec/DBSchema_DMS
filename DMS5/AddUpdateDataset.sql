@@ -1143,7 +1143,7 @@ As
 		-- requested run
 		---------------------------------------------------
 		--
-		if @LCCartName NOT IN ('', 'no update')
+		if @LCCartName NOT IN ('', 'no update') And @requestID > 0
 		begin
 		
 			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
@@ -1174,7 +1174,7 @@ As
 		WHERE (Dataset_Num = @datasetNum)
 
 		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
-				Set @warning = @message
+			Set @warning = @message
 				
 		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser, @logDebugMessages
 		--
@@ -1186,8 +1186,16 @@ As
 			RAISERROR (@msg, 11, 16)
 		end
 
-		commit transaction @transName
-		
+		If @@trancount > 0
+		Begin
+			commit transaction @transName
+		End
+		Else
+		Begin
+			Set @debugMsg = '@@trancount is 0; this is unexpected'
+			exec PostLogEntry 'Error', @debugMsg, 'AddUpdateDataset'
+		End
+				
 	end -- </AddMode>
 
 	---------------------------------------------------
@@ -1347,6 +1355,7 @@ As
 	END CATCH
 	
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [DDL_Viewer] AS [dbo]
