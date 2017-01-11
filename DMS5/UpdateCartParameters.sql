@@ -27,6 +27,7 @@ CREATE Procedure dbo.UpdateCartParameters
 **          05/10/2006 grk - added verification of request ID
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			04/02/2013 mem - Now using @message to return errors looking up cart name from T_LC_Cart
+**			01/09/2017 mem - Update @message when using RAISERROR
 **    
 *****************************************************/
 (
@@ -63,12 +64,14 @@ As
 	if @myError <> 0
 	begin
 		set @msg = 'Error trying verify request ID'
+		Set @message = @msg
 		RAISERROR (@msg, 10, 1)
 		return @myError
 	end
 	if @tmp = 0
 	begin
 		set @msg = 'Request ID not found'
+		Set @message = @msg
 		RAISERROR (@msg, 10, 1)
 		return 52131
 	end
@@ -173,6 +176,7 @@ As
 	---------------------------------------------------
 	if @myError <> 0 or @myRowCount = 0
 	begin
+		Set @message = 'operation failed for mode ' + @mode
 		RAISERROR ('operation failed: "%s"', 10, 1, @mode)
 		return 51310
 	end	
