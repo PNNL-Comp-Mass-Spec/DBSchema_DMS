@@ -29,34 +29,36 @@ CREATE Procedure DoDatasetOperation
 **			01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_ActiveOrComplete
 **			11/14/2013 mem - Now preventing reset if the first step of dataset capture succeeded
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created 
+**			                 (duplicate jobs are not created)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@mode varchar(12),					-- 'delete', 'delete_all', 'reset'; legacy version supported 'burn'
+	@mode varchar(12),					-- 'delete', 'delete_all', 'reset', 'createjobs'; legacy version supported 'burn'
     @message varchar(512) output,
 	@callingUser varchar (128) = ''
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
 
-	declare @datasetID int
+	Declare @datasetID int
 	set @datasetID = 0
 	
-	declare @CurrentState int
-	declare @NewState int
+	Declare @CurrentState int
+	Declare @NewState int
 	
-	declare @result int
-	declare @ValidMode tinyint = 0
+	Declare @result int
+	Declare @ValidMode tinyint = 0
 	
 	BEGIN TRY 
 
@@ -78,6 +80,51 @@ As
 		RAISERROR (@msg, 11, 1)
 	end
 
+	---------------------------------------------------
+	-- Schedule the dataset for predefined job processing
+	---------------------------------------------------
+	--
+	if @mode = 'createjobs'
+	begin
+		If IsNull(@callingUser, '') = ''
+			Set @callingUser = SUSER_SNAME()
+
+		If Exists (SELECT * FROM T_Predefined_Analysis_Scheduling_Queue WHERE Dataset_ID = @datasetID AND State = 'New')
+		Begin
+			Declare @enteredMax datetime
+			
+			SELECT @enteredMax = Max(Entered) 
+			FROM T_Predefined_Analysis_Scheduling_Queue 
+			WHERE Dataset_ID = @datasetID AND State = 'New'
+			
+			Declare @elapsedHours float = DateDiff(minute, IsNull(@enteredMax, GetDate()), GetDate()) / 60.0
+			
+			If @elapsedHours >= 0.5
+			Begin
+				-- Round @elapsedHours to one digit, then convert to a string
+				Declare @elapsedHoursText varchar(9) = Cast(Cast(Round(@elapsedHours, 1) AS Numeric(12,1)) AS varchar(9))
+				RAISERROR ('Default job creation for dataset ID %d has been waiting for %s hours; please contact a DMS administrator to diagnose the delay', 11, 2, @datasetID, @elapsedHoursText)
+			End
+			Else
+			Begin
+				RAISERROR ('Dataset ID %d is already scheduled to have default jobs created; please wait at least 5 minutes', 11, 2, @datasetID)
+			End
+			
+		End
+
+		INSERT INTO T_Predefined_Analysis_Scheduling_Queue (Dataset_ID, CallingUser)
+		VALUES (@datasetID, @callingUser)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			RAISERROR ('Error adding "%s" to T_Predefined_Analysis_Scheduling_Queue, error code %d', 11, 2, @datasetNum, @myError)
+		end
+		
+		set @ValidMode = 1
+	end
+	
 	---------------------------------------------------
 	-- Delete dataset regardless of state
 	---------------------------------------------------
