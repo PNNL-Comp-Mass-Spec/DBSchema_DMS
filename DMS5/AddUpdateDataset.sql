@@ -83,6 +83,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			01/09/2017 mem - Pass @logDebugMessages to AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -282,7 +283,6 @@ As
 				set @msg = 'Dataset name may not contain the characters ' + @badCh
 		End
 
-		-- Declare @DebugMsg varchar(512)
 		-- Set @DebugMsg = 'Problem with dataset ' + @datasetnum + ': ' + @msg
 		-- exec postlogentry 'Debug', @DebugMsg, 'AddUpdateDataset'
 
@@ -1000,6 +1000,7 @@ As
 		--
 		declare @transName varchar(32)
 		set @transName = 'AddNewDataset'
+
 		begin transaction @transName
 
 		If IsNull(@AggregationJobDataset, 0) = 1
@@ -1125,7 +1126,8 @@ As
 									@status = 'Completed',
 									@SkipTransactionRollback = 1,
 									@AutoPopulateUserListIfBlank = 1,		-- Auto populate @eusUsersList if blank since this is an Auto-Request
-									@callingUser = @callingUser
+									@callingUser = @callingUser,
+									@logDebugMessages = @logDebugMessages
 			--
 			set @myError = @result
 			--

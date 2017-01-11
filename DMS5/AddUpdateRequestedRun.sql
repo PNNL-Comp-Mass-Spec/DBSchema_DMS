@@ -101,7 +101,8 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@callingUser varchar(128) = '',
 	@VialingConc varchar(32) = Null,
 	@VialingVol varchar(32) = Null,
-	@requestIDForUpdate int = Null				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
+	@requestIDForUpdate int = Null,				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
+	@logDebugMessages tinyint = 1
 )
 As
 	Set XACT_ABORT, nocount on
@@ -119,7 +120,10 @@ As
 	-- default priority at which new requests will be created
 	declare @defaultPriority int = 0
 	
-	Declare @logErrors tinyint = 0
+	declare @debugMsg varchar(512)
+	declare @logErrors tinyint = 0
+
+	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 	
 	BEGIN TRY
 
@@ -138,6 +142,13 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Validate input fields'
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 
 	if IsNull(@reqName, '') = ''
 		RAISERROR ('Request name was blank', 11, 110)
@@ -349,6 +360,12 @@ As
 	-- verify user ID for operator PRN
 	---------------------------------------------------
 
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Call GetUserID for ' + @operPRN
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	declare @userID int
 	execute @userID = GetUserID @operPRN
 	if @userID = 0
@@ -378,6 +395,12 @@ As
 	-- (only effective for experiments that have associated sample prep requests)
 	---------------------------------------------------
 
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'LookupInstrumentRunInfoFromExperimentSamplePrep for ' + @experimentNum
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	exec @myError = LookupInstrumentRunInfoFromExperimentSamplePrep
 						@experimentNum,
 						@instrumentGroup output,
@@ -404,6 +427,13 @@ As
 	---------------------------------------------------
 	-- Validate instrument group and dataset type
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'ValidateInstrumentGroupAndDatasetType for ' + @msType
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	declare @datasetTypeID int
 	--
 	exec @myError = ValidateInstrumentGroupAndDatasetType
@@ -419,12 +449,18 @@ As
 	-- First look in T_Separation_Group
 	---------------------------------------------------
 	--
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Resolve secondary separation: ' + @secSep
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	declare @sepID int = 0
 	declare @sepGroup varchar(64) = ''
 	
 	SELECT @sepGroup = Sep_Group
 	FROM T_Separation_Group
-	WHERE Sep_Group = @secSep	
+	WHERE Sep_Group = @secSep
 	
 	If IsNull(@sepGroup, '') <> ''
 		Set @secSep = @sepGroup
@@ -474,6 +510,12 @@ As
 	-- Lookup EUS field (only effective for experiments that have associated sample prep requests)
 	-- This will update the data in @eusUsageType, @eusProposalID, or @eusUsersList if it is "(lookup)"
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Lookup EUS info for: ' + @experimentNum
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
 	--
 	exec @myError = LookupEUSFromExperimentSamplePrep	
 						@experimentNum,
@@ -488,6 +530,17 @@ As
 	---------------------------------------------------
 	-- Validate EUS type, proposal, and user list
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Call ValidateEUSUsage with ' + 
+			'type ' + IsNull(@eusUsageType, '?Null?') + ', ' +
+			'proposal ' + IsNull(@eusProposalID, '?Null?') + ', and ' +
+			'user list ' + IsNull(@eusUsersList, '?Null?')
+
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
 						@eusUsageType output,
@@ -508,6 +561,13 @@ As
 	-- Lookup misc fields (only effective for experiments
 	-- that have associated sample prep requests)
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Lookup misc fields for the experiment'
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
+
 	exec @myError = LookupOtherFromExperimentSamplePrep 
 						@experimentNum, 
 						@workPackage output, 
@@ -520,6 +580,12 @@ As
 	---------------------------------------------------
 	-- Validate the work package
 	---------------------------------------------------
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Validate the WP'
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
 
 	Declare @allowNoneWP tinyint = @AutoPopulateUserListIfBlank
 	Declare @requireWP tinyint = 1
@@ -553,6 +619,12 @@ As
 	End
 	
 	Set @logErrors = 1
+
+	If @logDebugMessages > 0
+	Begin
+		Set @debugMsg = 'Start a new transaction'
+		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+	End
 
 	---------------------------------------------------
 	-- Start a transaction
@@ -632,6 +704,12 @@ As
 			Exec AlterEventLogEntryUser 11, @request, @StatusID, @callingUser
 		End
 
+		If @logDebugMessages > 0
+		Begin
+			Set @debugMsg = 'Call AssignEUSUsersToRequestedRun'
+			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+		End
+
 		-- assign users to the request
 		--
 		exec @myError = AssignEUSUsersToRequestedRun
@@ -644,6 +722,12 @@ As
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
 		
 		commit transaction @transName
+
+		If @logDebugMessages > 0
+		Begin
+			Set @debugMsg = 'Transaction committed'
+			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+		End
 
 		If @status = 'Active'
 		Begin
