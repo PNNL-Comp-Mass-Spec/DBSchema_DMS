@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ValidateEUSUsage
+CREATE PROCEDURE dbo.ValidateEUSUsage
 /****************************************************
 **
 **	Desc: 
@@ -26,6 +26,7 @@ CREATE PROCEDURE ValidateEUSUsage
 **			08/11/2015 mem - Now trimming spaces from the parameters
 **			10/01/2015 mem - When @eusUsageType is '(ignore)' we now auto-change it to 'CAP_DEV'
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			01/09/2016 mem - Added option for disabling EUS validation using table T_MiscOptions
 **
 *****************************************************/
 (
@@ -82,7 +83,29 @@ As
 	If @eusUsageType Like 'Brok%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
 		Set @eusUsageType = 'BROKEN'
 
+	---------------------------------------------------
+	-- Confirm that EUS validation is enabled
+	---------------------------------------------------
+	--
+	Declare @validateEUSData tinyint = 1
+	
+	SELECT @validateEUSData = Value
+	FROM T_MiscOptions
+	WHERE (Name = 'ValidateEUSData')
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	If @myRowCount = 0
+		Set @validateEUSData = 1
+
+	If IsNull(@validateEUSData, 0) = 0
+	Begin
+		-- Validation is disabled
+		set @eusUsageTypeID = 10
+		set @eusProposalID = null
+		Return 0
+	End
+	
 	---------------------------------------------------
 	-- resolve EUS usage type name to ID
 	---------------------------------------------------
