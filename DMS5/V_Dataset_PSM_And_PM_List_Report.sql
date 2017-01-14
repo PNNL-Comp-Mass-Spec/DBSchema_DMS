@@ -12,6 +12,7 @@ SELECT
        QCM.MassErrorPPM AS Mass_Error_PPM,
        ISNULL(QCM.MassErrorPPM_VIPER, -PM.PPM_Shift) AS Mass_Error_AMTs,
        ISNULL(QCM.AMTs_10pct_FDR, PM.[AMTs 10pct FDR]) AS AMTs_10pct_FDR,
+	   ISNULL(QCM.AMTs_25pct_FDR, PM.[AMTs 25pct FDR]) AS AMTs_25pct_FDR,
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
        PM.Results_URL AS PM_Results_URL,
 	   -- CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
@@ -60,7 +61,6 @@ FROM V_Analysis_Job_PSM_List_Report PSM
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.StateID NOT IN (5, 14)
-
 
 
 GO

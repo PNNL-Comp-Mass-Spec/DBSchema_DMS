@@ -20,6 +20,7 @@ CREATE PROCEDURE RefreshCachedMTSPeakMatchingTasks
 **			05/24/2013 mem - Added column Refine_Mass_Cal_PPMShift
 **			08/09/2013 mem - Now populating MassErrorPPM_VIPER and AMTs_10pct_FDR in T_Dataset_QC using Refine_Mass_Cal_PPMShift
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			01/12/2007 mem - Populate AMTs_25pct_FDR to T_Dataset_QC
 **
 *****************************************************/
 (
@@ -95,9 +96,10 @@ AS
 
 
 
-		
-		-- Use a MERGE Statement (introduced in Sql Server 2008) to synchronize T_MTS_Peak_Matching_Tasks_Cached with S_MTS_Peak_Matching_Tasks
-
+		---------------------------------------------------
+		-- Use a MERGE Statement to synchronize T_MTS_Peak_Matching_Tasks_Cached with S_MTS_Peak_Matching_Tasks
+		---------------------------------------------------
+		--
 		MERGE T_MTS_Peak_Matching_Tasks_Cached AS target
 		USING 
 			( SELECT	Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
@@ -249,13 +251,21 @@ AS
 
 		Set @CurrentLocation = 'Copy mass error and match stat values into T_Dataset_QC'
 
-		UPDATE T_Dataset_QC 
+		---------------------------------------------------
+		-- Update the cached VIPER stats in T_Dataset_QC
+		-- The stats used come from the most recent DeconTools job for the datasets
+		-- If there are multiple peak matching tasks, results come from the task with the lowest MD_State value and latest Job_Finish value
+		---------------------------------------------------
+		--
+		UPDATE T_Dataset_QC
 		SET MassErrorPPM_VIPER = SourceQ.PPMShift_VIPER,
-		    AMTs_10pct_FDR = SourceQ.AMT_Count_10pct_FDR
+		    AMTs_10pct_FDR = SourceQ.AMT_Count_10pct_FDR,
+		    AMTs_25pct_FDR = SourceQ.AMT_Count_25pct_FDR
 		FROM T_Dataset_QC DQC
 			INNER JOIN ( SELECT J.AJ_DatasetID AS Dataset_ID,
 								-PM.Refine_Mass_Cal_PPMShift AS PPMShift_VIPER,
 								PM.AMT_Count_10pct_FDR,
+								PM.AMT_Count_25pct_FDR,
 								Row_Number() OVER ( PARTITION BY J.AJ_DatasetID ORDER BY J.AJ_JobID DESC, PM.MD_State, PM.Job_Finish DESC ) AS TaskRank
 						FROM T_MTS_Peak_Matching_Tasks_Cached PM
 							INNER JOIN T_Analysis_Job J
@@ -266,7 +276,8 @@ AS
 						) SourceQ
 			ON DQC.Dataset_ID = SourceQ.Dataset_ID AND SourceQ.TaskRank = 1
 		WHERE ISNULL(DQC.MassErrorPPM_VIPER, -99999) <> SourceQ.PPMShift_VIPER OR
-		      ISNULL(DQC.AMTs_10pct_FDR, -1) <> SourceQ.AMT_Count_10pct_FDR
+		      ISNULL(DQC.AMTs_10pct_FDR, -1) <> SourceQ.AMT_Count_10pct_FDR OR
+		      ISNULL(DQC.AMTs_25pct_FDR, -1) <> SourceQ.AMT_Count_25pct_FDR
 		
 
 
@@ -292,7 +303,6 @@ AS
 			
 Done:
 	Return @myError
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSPeakMatchingTasks] TO [DDL_Viewer] AS [dbo]
 GO

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Dataset_QC_Metrics
+CREATE VIEW [dbo].[V_Dataset_QC_Metrics]
 AS
 SELECT InstName.IN_Group AS [Instrument Group],
        InstName.IN_name AS Instrument,
@@ -16,6 +16,7 @@ SELECT InstName.IN_Group AS [Instrument Group],
        Cast(DQC.MassErrorPPM AS decimal(9,2)) AS MassErrorPPM,
        Cast(DQC.MassErrorPPM_VIPER AS decimal(9,2)) AS MassErrorPPM_VIPER,
        Cast(DQC.AMTs_10pct_FDR AS integer) AS AMTs_10pct_FDR,
+	   Cast(DQC.AMTs_25pct_FDR AS integer) AS AMTs_25pct_FDR,
        Cast(DQC.XIC_FWHM_Q2 AS decimal(9,1)) AS XIC_FWHM_Q2,
        Cast(DQC.XIC_WideFrac AS decimal(9,2)) AS XIC_WideFrac,       
 	   CAST(DQC.Phos_2C as integer) AS Phos_2C,
@@ -130,6 +131,7 @@ FROM T_Dataset_QC DQC
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_DatasetRatingName DRN
        ON DS.DS_rating = DRN.DRN_state_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics] TO [DDL_Viewer] AS [dbo]
