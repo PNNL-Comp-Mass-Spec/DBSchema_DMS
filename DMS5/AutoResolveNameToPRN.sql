@@ -16,6 +16,7 @@ CREATE Procedure dbo.AutoResolveNameToPRN
 ** 
 **	Auth:	mem
 **	Date:	02/07/2010
+**			01/20/2017 mem - Now checking for names of the form "Last, First (D3P704)" or "Last, First Middle (D3P704)" and auto-fixing those
 **    
 *****************************************************/
 (
@@ -25,17 +26,46 @@ CREATE Procedure dbo.AutoResolveNameToPRN
 	@MatchingUserID int=0 output				-- If @NameSearchSpec > 0, then the ID of the first match in T_Users
 )
 As
-	set nocount on
+	Set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
 	Set @MatchCount = 0
 
+	If @NameSearchSpec Like '%,%(%)'
+	Begin
+		-- Name is of the form  "Last, First (D3P704)" or "Last, First Middle (D3P704)"
+		-- Extract D3P704
+		
+		Declare @charIndexStart int = PatIndex('%(%)%', @NameSearchSpec)
+		Declare @charIndexEnd int = CharIndex(')', @NameSearchSpec, @charIndexStart)
+
+		If @charIndexStart > 0
+		Begin
+			Set @NameSearchSpec = Substring(@NameSearchSpec, @charIndexStart+1, @charIndexEnd-@charIndexStart-1)
+			
+			SELECT @MatchingPRN = U_PRN,
+			       @MatchingUserID = ID
+			FROM T_Users
+			WHERE U_PRN = @NameSearchSpec
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount > 0
+			Begin
+				Set @MatchCount = 1
+				Goto Done
+			End
+		End
+	End
+	
 	If Not @NameSearchSpec LIKE '%[%]'
+	Begin
 		Set @NameSearchSpec = @NameSearchSpec + '%'
+	End
 	
 	SELECT @MatchCount = COUNT(*)
 	FROM T_Users
@@ -49,12 +79,14 @@ As
 		SELECT TOP 1 @MatchingPRN = U_PRN,
 		             @MatchingUserID = ID
 		FROM T_Users
-		WHERE (U_Name LIKE @NameSearchSpec)
+		WHERE U_Name LIKE @NameSearchSpec
 		ORDER BY ID
 		
 	End
-		
+
+Done:		
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AutoResolveNameToPRN] TO [DDL_Viewer] AS [dbo]

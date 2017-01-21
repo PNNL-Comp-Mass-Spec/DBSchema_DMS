@@ -35,6 +35,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			07/12/2016 mem - Now using a synonym when calling S_SetManagerErrorCleanupMode in the Manager_Control database
 **			09/02/2016 mem - Switch the archive server path from \\a2 to \\adms
+**			01/18/2017 mem - Auto-reset Bruker_DA_Export jobs up to 2 times
 **
 *****************************************************/
 (
@@ -283,7 +284,7 @@ As
 					Begin
 						-- Job step is failed and overall job is failed
 						
-						If @RetryJob = 0 And @StepTool = 'Decon2LS' And @RetryCount < 2
+						If @RetryJob = 0 And @StepTool IN ('Decon2LS', 'MSGF', 'Bruker_DA_Export') And @RetryCount < 2
 							Set @RetryJob = 1
 						
 						if @RetryJob = 0 and @StepTool = 'ICR2LS' And @RetryCount < 15
@@ -292,9 +293,6 @@ As
 						If @RetryJob = 0 And @StepTool = 'DataExtractor' And Not @Comment Like '%have a mass error over%' And @RetryCount < 2
 							Set @RetryJob = 1
 
-						If @RetryJob = 0 And @StepTool = 'MSGF' And @RetryCount < 2
-							Set @RetryJob = 1
-						
 						If @RetryJob = 0 And @StepTool IN ('Sequest', 'MSGFPlus', 'XTandem', 'MSAlign') And @Comment Like '%Exception generating OrgDb file%' And @RetryCount < 2
 							Set @RetryJob = 1
 

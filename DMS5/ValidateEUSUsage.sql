@@ -27,6 +27,7 @@ CREATE PROCEDURE dbo.ValidateEUSUsage
 **			10/01/2015 mem - When @eusUsageType is '(ignore)' we now auto-change it to 'CAP_DEV'
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			01/09/2016 mem - Added option for disabling EUS validation using table T_MiscOptions
+**			01/20/2017 mem - Auto-fix USER_UNKOWN to USER_UNKNOWN for @eusUsageType
 **
 *****************************************************/
 (
@@ -83,6 +84,9 @@ As
 	If @eusUsageType Like 'Brok%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
 		Set @eusUsageType = 'BROKEN'
 
+	iF @eusUsageType Like 'USER_UNKOWN%'
+		Set @eusUsageType = 'USER_UNKNOWN'
+		
 	---------------------------------------------------
 	-- Confirm that EUS validation is enabled
 	---------------------------------------------------
