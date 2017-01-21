@@ -21,6 +21,7 @@ CREATE PROCEDURE dbo.RemoveOldJobs
 **			02/24/2012 mem - Added parameter @MaxJobsToProcess with a default of 25000
 **			08/20/2013 mem - Added parameter @LogDeletions
 **			03/10/2014 mem - Added call to SynchronizeJobStatsWithJobSteps
+**			01/18/2017 mem - Now counting job state 7 (No Intermediate Files Created) as Success
 **
 *****************************************************/
 (
@@ -50,9 +51,19 @@ As
  	---------------------------------------------------
 	--	
 	CREATE TABLE #SJL (
-		Job INT,
+		Job INT not null,
 		State INT
 	)
+
+	CREATE INDEX #IX_SJL_Job ON #SJL (Job)
+
+	CREATE TABLE #TmpJobsNotInHistory (
+		Job int not null,
+		State int,
+		JobFinish datetime
+	)
+
+	CREATE INDEX #IX_TmpJobsNotInHistory ON #TmpJobsNotInHistory (Job)
 
 	---------------------------------------------------
  	-- Validate the inputs
@@ -91,7 +102,7 @@ As
 		SELECT TOP (@MaxJobsToProcess) Job, State
 		FROM T_Jobs
 		WHERE
-			State = 4 AND /* "Complete"*/
+			State in (4,7) AND			-- 4=Complete, 7=No Intermediate Files Created
 			Finish < @cutoffDateTimeForSuccess
 		ORDER BY Finish
  		--
@@ -134,7 +145,7 @@ As
 		SELECT Job, State
 		FROM T_Jobs
 		WHERE
-			State = 5 AND /* "failed" */
+			State = 5 AND			-- 5=Failed
 			IsNull(Finish, Start) < @cutoffDateTimeForFail
  		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -162,8 +173,57 @@ As
 	End
 	 
 	---------------------------------------------------
-	-- FUTURE: make sure candidates have some history?
+	-- Make sure the jobs to be deleted exist 
+	-- in T_Jobs_History and T_Job_Steps_History
  	---------------------------------------------------
+
+	INSERT INTO #TmpJobsNotInHistory (Job, State)
+	SELECT #SJL.Job,
+	       #SJL.State
+	FROM #SJL
+	     LEFT OUTER JOIN T_Jobs_History JH
+	       ON #SJL.Job = JH.Job
+	WHERE JH.Job IS NULL
+ 	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If Exists (Select * from #TmpJobsNotInHistory)
+	Begin
+		Declare @JobToAdd int = 0
+		Declare @State int
+		Declare @SaveTimeOverride datetime
+		Declare @continue tinyint = 1
+		
+		UPDATE #TmpJobsNotInHistory
+		SET JobFinish = Coalesce(J.Finish, J.Start, GetDate())
+		FROM #TmpJobsNotInHistory Target
+		     INNER JOIN T_Jobs J
+		       ON Target.Job = J.Job
+		
+		While @Continue > 0
+		Begin
+			SELECT TOP 1 @JobToAdd = Job,
+			             @State = State,
+			             @SaveTimeOverride = JobFinish
+			FROM #TmpJobsNotInHistory
+			WHERE Job > @JobToAdd
+			ORDER BY Job
+ 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount = 0
+				Set @Continue = 0
+			Else
+			Begin
+				If @infoOnly > 0
+					Print 'Call copyJobToHistory for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
+				Else
+					exec CopyJobToHistory @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
+			End
+		End		
+		
+	End
+	
 
 	---------------------------------------------------
 	-- do actual deletion
