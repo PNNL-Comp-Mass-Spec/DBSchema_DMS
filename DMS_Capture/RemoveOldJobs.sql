@@ -17,6 +17,7 @@ CREATE PROCEDURE RemoveOldJobs
 **			06/21/2010 mem - Increased retention to 60 days for successful jobs
 **						   - Now removing jobs with state Complete, Inactive, or Ignore
 **			03/10/2014 mem - Added call to SynchronizeJobStatsWithJobSteps
+**			01/23/2017 mem - Assure that jobs exist in the history before deleting from T_Jobs
 **
 *****************************************************/
 (
@@ -30,13 +31,11 @@ As
 	set nocount on
 	
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
-	declare @saveTime datetime
-	set @saveTime = getdate()
+	declare @saveTime datetime = getdate()
  
 	---------------------------------------------------
  	-- Create table to track the list of affected jobs
@@ -47,6 +46,14 @@ As
 		State INT
 	)
 
+	CREATE TABLE #TmpJobsNotInHistory (
+		Job int not null,
+		State int,
+		JobFinish datetime
+	)
+
+	CREATE INDEX #IX_TmpJobsNotInHistory ON #TmpJobsNotInHistory (Job)
+	
 	---------------------------------------------------
  	-- Validate the inputs
  	---------------------------------------------------
@@ -67,7 +74,7 @@ As
 	Exec SynchronizeJobStatsWithJobSteps @infoOnly=0
 	
 	---------------------------------------------------
- 	-- add old successful jobs to be removed to list
+ 	-- Add old successful jobs to be removed to list
  	---------------------------------------------------
 	--	
 	if @intervalDaysForSuccess > 0
@@ -111,7 +118,7 @@ As
 	end -- </a>
  
 	---------------------------------------------------
- 	-- add old failed jobs to be removed to list
+ 	-- Add old failed jobs to be removed to list
  	---------------------------------------------------
 	--	
 	if @intervalDaysForFail > 0
@@ -134,17 +141,64 @@ As
 			goto Done
 		end
 	end -- </b>
-
+	
 	---------------------------------------------------
-	-- FUTURE: make sure candidates have some history?
+	-- Make sure the jobs to be deleted exist 
+	-- in T_Jobs_History and T_Job_Steps_History
  	---------------------------------------------------
 
+	INSERT INTO #TmpJobsNotInHistory (Job, State)
+	SELECT #SJL.Job,
+	       #SJL.State
+	FROM #SJL
+	     LEFT OUTER JOIN T_Jobs_History JH
+	       ON #SJL.Job = JH.Job
+	WHERE JH.Job IS NULL
+ 	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If Exists (Select * from #TmpJobsNotInHistory)
+	Begin
+		Declare @JobToAdd int = 0
+		Declare @State int
+		Declare @SaveTimeOverride datetime
+		Declare @continue tinyint = 1
+		
+		UPDATE #TmpJobsNotInHistory
+		SET JobFinish = Coalesce(J.Finish, J.Start, GetDate())
+		FROM #TmpJobsNotInHistory Target
+		     INNER JOIN T_Jobs J
+		       ON Target.Job = J.Job
+		
+		While @Continue > 0
+		Begin
+			SELECT TOP 1 @JobToAdd = Job,
+			             @State = State,
+			             @SaveTimeOverride = JobFinish
+			FROM #TmpJobsNotInHistory
+			WHERE Job > @JobToAdd
+			ORDER BY Job
+ 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount = 0
+				Set @Continue = 0
+			Else
+			Begin
+				If @infoOnly > 0
+					Print 'Call copyJobToHistory for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
+				Else
+					exec CopyJobToHistory @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
+			End
+		End		
+		
+	End	
+	
 	---------------------------------------------------
-	-- do actual deletion
+	-- Do actual deletion
  	---------------------------------------------------
 
-	declare @transName varchar(64)
-	set @transName = 'RemoveOldJobs'
+	declare @transName varchar(64) = 'RemoveOldJobs'
 	begin transaction @transName
 
 	exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions=0

@@ -49,6 +49,7 @@ CREATE PROCEDURE UpdateJobState
 **						   - Only call CopyJobToHistory if the new job state is 3 or 5 and if not changing the state from 5 to 2
 **						   - Add parameter @infoOnly
 **						   - No longer computing @ProcessingTimeMinutes since not stored in any table
+**			01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
 **    
 *****************************************************/
 (
@@ -482,7 +483,7 @@ As
 			-- Save job history
 			---------------------------------------------------
 			--
-			If Not @newJobStateInBroker IN (3,5) AND
+			If @newJobStateInBroker IN (3,5) AND
 			   Not (@oldJobStateInBroker = 2 And @newJobStateInBroker = 2) AND
 			   Not (@oldJobStateInBroker = 5 And @newJobStateInBroker = 2)
 			Begin
