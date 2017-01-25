@@ -39,35 +39,29 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 
-	declare @jobID int
-	set @jobID = convert(int, @jobNum)
+	declare @jobID int = Cast(@jobNum as int)
 
+	-------------------------------------------------------
+	-- Validate that the job exists
+	-------------------------------------------------------
+	--
+	If Not Exists (SELECT * FROM T_Analysis_Job WHERE AJ_jobID = @jobID)
+	Begin
+		Declare @msg varchar(128) = 'Job not found; nothing to delete: ' + @jobNum
+		RAISERROR (@msg, 10, 1)
+		return 54450
+	End
+
+	-------------------------------------------------------
 	-- Start transaction
+	-------------------------------------------------------
 	--
-	declare @transName varchar(32)
-	set @transName = 'DeleteAnalysisJob'
-	begin transaction @transName
+	declare @transName varchar(32) = 'DeleteAnalysisJob'
+	begin transaction @transName	
 
-	/*
-	---------------------------------------------------
-	-- Deprecated in May 2015: 
-	-- delete any job-to-group associations 
-	-- that exist for this job
-	--
-	DELETE FROM T_Analysis_Job_Processor_Group_Associations
-	WHERE     (Job_ID = @jobID)	
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		rollback transaction @transName
-		RAISERROR ('Delete job associations operation failed', 10, 1)
-		return 54452
-	end
-	*/
-	
-	-- delete analysis job
+	-------------------------------------------------------	
+	-- Delete the analysis job
+	-------------------------------------------------------
 	--
 	DELETE FROM T_Analysis_Job 
 	WHERE (AJ_jobID = @jobID)
@@ -81,7 +75,10 @@ As
 		return 54451
 	end
 
+	-------------------------------------------------------
 	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+	-------------------------------------------------------
+	--
 	If Len(@callingUser) > 0
 	Begin
 		Declare @stateID int

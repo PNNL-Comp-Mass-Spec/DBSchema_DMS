@@ -49,6 +49,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
 **
 *****************************************************/
 (
@@ -101,10 +102,15 @@ As
 	Set @researcherPRN = LTrim(RTrim(IsNull(@researcherPRN, '')))
 	Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
 	Set @reason = LTrim(RTrim(IsNull(@reason, '')))
-	Set @labelling = LTrim(RTrim(IsNull(@labelling, '')))
-	Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
 	Set @comment = LTrim(RTrim(IsNull(@comment, '')))
-
+	Set @enzymeName = LTrim(RTrim(IsNull(@enzymeName, '')))
+	Set @labelling = LTrim(RTrim(IsNull(@labelling, '')))
+	Set @cellCultureList = LTrim(RTrim(IsNull(@cellCultureList, '')))
+	Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, '')))
+	Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, '')))
+	Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
+	Set @mode = LTrim(RTrim(IsNull(@mode, '')))
+	
 	if LEN(@experimentNum) < 1
 		RAISERROR ('experiment name must be defined', 11, 30)
 	--
@@ -257,20 +263,27 @@ As
 
 	declare @enzymeID int
 	execute @enzymeID = GetEnzymeID @enzymeName
-	if @enzymeID = 0
-		RAISERROR ('Could not find entry in database for enzyme "%s"', 11, 47, @enzymeName)
-
+	If @enzymeID = 0
+	Begin
+		If @enzymeName = 'na'
+			RAISERROR ('The enzyme cannot be "%s"; use No_Enzyme if enzymatic digestion was not used', 11, 47, @enzymeName)
+		Else
+			RAISERROR ('Could not find entry in database for enzyme "%s"', 11, 47, @enzymeName)
+	End
+	
 	---------------------------------------------------
 	-- Resolve labelling ID
 	---------------------------------------------------
 
-	declare @labelID int = 0
+	Declare @labelID int = 0
 	--
 	SELECT @labelID = ID
 	FROM T_Sample_Labelling
 	WHERE (Label = @labelling)
 	--
-	if @labelID < 0
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myRowCount = 0
 		RAISERROR ('Could not find entry in database for labelling "%s"; use "none" if unlabeled', 11, 48, @labelling)
 	
 	---------------------------------------------------

@@ -13,8 +13,6 @@ CREATE Procedure dbo.DeleteDataset
 **
 **	Parameters: 
 **
-**	
-**
 **	Auth:	grk
 **	Date:	01/26/2001
 **			03/01/2004 grk - added unconsume scheduled run
@@ -30,6 +28,7 @@ CREATE Procedure dbo.DeleteDataset
 **			05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
 **			08/31/2016 mem - Delete failed capture jobs for the dataset
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
+**			01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Jobs
 **    
 *****************************************************/
 (
@@ -87,7 +86,7 @@ As
 		return 51140
 	end
 	--
-	if @datasetID = 0
+	If @datasetID = 0
 	begin
 		set @msg = 'Dataset does not exist "' + @datasetNum + '"'
 		RAISERROR (@msg, 10, 1)
@@ -205,7 +204,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM DMS_Capture.dbo.T_Jobs
-	WHERE Dataset = @datasetNum AND State = 5
+	WHERE Dataset_ID = @datasetID AND State = 5
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
@@ -233,7 +232,19 @@ As
 		RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
 		return 51136
 	end
-
+	
+	---------------------------------------------------
+	-- Remove jobs from T_Jobs in DMS_Capture
+	---------------------------------------------------
+	--
+	DELETE DMS_Capture.dbo.T_Jobs
+	FROM DMS_Capture.dbo.T_Jobs Jobs
+	     INNER JOIN DMS_Capture.dbo.T_Jobs_History History
+	       ON Jobs.Job = History.Job
+	WHERE Jobs.Dataset_ID = @datasetID AND
+	      NOT History.Job IS NULL
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	---------------------------------------------------
 	-- Delete entry from dataset table
