@@ -420,7 +420,7 @@ As
 			--  then change the job state to 14=No Export
 			---------------------------------------------------
 			--
-			If @NewDMSJobState = 4
+			If @NewDMSJobState = 4		-- Complete
 			Begin
 				If Exists ( SELECT Step_Number
 					        FROM T_Job_Steps
@@ -435,7 +435,7 @@ As
 			--  then change the job state to 14=No Export
 			---------------------------------------------------
 			--
-			If @NewDMSJobState = 4
+			If @NewDMSJobState = 4		-- Complete
 			Begin
 				If Exists ( SELECT Step_Number
 					        FROM T_Job_Steps
