@@ -41,7 +41,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			09/09/2014 mem - Added @barcode
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			07/31/2015 mem - Now updating Last_Used when key fields are updated
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
 **			09/14/2016 mem - Validate inputs
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
@@ -50,6 +50,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
+**			01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
 **
 *****************************************************/
 (
@@ -79,16 +80,16 @@ CREATE Procedure dbo.AddUpdateExperiment
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
-	set @message = ''
+	Set @message = ''
 
-	declare @result int
+	Declare @result int
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
@@ -136,12 +137,18 @@ As
 	If @comment LIKE '%&quot;%'
 		Set @comment = Replace(@comment, '&quot;', '"')
 
+	-- Auto change empty internal standards to "none" since now rarely used
+	If @internalStandard = ''
+		Set @internalStandard = 'none'
+
+	If @postdigestIntStd= ''
+		Set @postdigestIntStd = 'none'
+
 	---------------------------------------------------
-	-- Validate experimentname
+	-- Validate experiment name
 	---------------------------------------------------
 
-	declare @badCh varchar(128)
-	set @badCh =  dbo.ValidateChars(@experimentNum, '')
+	Declare @badCh varchar(128) = dbo.ValidateChars(@experimentNum, '')
 	if @badCh <> ''
 	begin
 		If @badCh = '[space]'
@@ -152,7 +159,7 @@ As
 
 	If Len(@experimentNum) < 6
 	begin
-		set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentNum)) + ' characters'
+		Set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentNum)) + ' characters'
 		RAISERROR (@msg, 11, 37)
 	end
 
@@ -160,8 +167,8 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @experimentID int = 0
-	declare @curContainerID int = 0
+	Declare @experimentID int = 0
+	Declare @curContainerID int = 0
 	--
 	SELECT 
 		@experimentID = Exp_ID,
@@ -188,7 +195,7 @@ As
 	-- Resolve campaign ID
 	---------------------------------------------------
 
-	declare @campaignID int
+	Declare @campaignID int
 	execute @campaignID = GetCampaignID @campaignNum
 	if @campaignID = 0
 		RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignNum)
@@ -197,7 +204,7 @@ As
 	-- Resolve researcher PRN
 	---------------------------------------------------
 
-	declare @userID int
+	Declare @userID int
 	execute @userID = GetUserID @researcherPRN
 	if @userID = 0
 	begin
@@ -226,17 +233,16 @@ As
 	-- Resolve organism ID
 	---------------------------------------------------
 
-	declare @organismID int
-	execute @organismID = GetOrganismID @organismName
+	Declare @organismID int = 0
+	exec @organismID = GetOrganismID @organismName
 	if @organismID = 0
 		RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
 
-
 	---------------------------------------------------
-	-- set up and validate wellplate values
+	-- Set up and validate wellplate values
 	---------------------------------------------------
-	DECLARE @totalCount INT
-	declare @wellIndex int
+	Declare @totalCount INT
+	Declare @wellIndex int
 	--
 	SELECT @totalCount = CASE WHEN @mode In ('add', 'check_add') THEN 1 ELSE 0 END
 	--
@@ -261,8 +267,8 @@ As
 	-- Resolve enzyme ID
 	---------------------------------------------------
 
-	declare @enzymeID int
-	execute @enzymeID = GetEnzymeID @enzymeName
+	Declare @enzymeID int = 0
+	exec @enzymeID = GetEnzymeID @enzymeName
 	If @enzymeID = 0
 	Begin
 		If @enzymeName = 'na'
@@ -291,11 +297,8 @@ As
 	-- If creating a new experiment, make sure the internal standard is active
 	---------------------------------------------------
 
-	declare @internalStandardID int
-	declare @internalStandardState char
-	
-	set @internalStandardID = 0
-	set @internalStandardState = 'I'
+	Declare @internalStandardID int = 0
+	Declare @internalStandardState char = 'I'
 	--
 	SELECT @internalStandardID = Internal_Std_Mix_ID,
 	       @internalStandardState = Active
@@ -312,9 +315,8 @@ As
 	-- Resolve postdigestion internal standard ID
 	---------------------------------------------------
 	-- 
-	declare @postdigestIntStdID int
-	set @postdigestIntStdID = 0
-	set @internalStandardState = 'I'
+	Declare @postdigestIntStdID int = 0
+	Set @internalStandardState = 'I'
 	--
 	SELECT @postdigestIntStdID = Internal_Std_Mix_ID,
 	       @internalStandardState = Active
@@ -322,7 +324,7 @@ As
 	WHERE (Name = @postdigestIntStd)
 	--
 	if @postdigestIntStdID = 0
-		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 50, @postdigestIntStdID)
+		RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 50, @postdigestIntStd)
 
 	if (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
 		RAISERROR ('Postdigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @postdigestIntStd)
@@ -335,8 +337,7 @@ As
 	If @container = 'none'
 		Set @container = 'na'
 
-	declare @contID int
-	set @contID = 0
+	Declare @contID int = 0
 	--
 	SELECT @contID = ID
 	FROM T_Material_Containers
@@ -351,7 +352,7 @@ As
 	-- Resolve current container id to name 
 	-- (skip if adding experiment)
 	---------------------------------------------------
-	declare @curContainerName varchar(125) = ''
+	Declare @curContainerName varchar(125) = ''
 	--
 	If Not @mode In ('add', 'check_add')
 	Begin
@@ -401,7 +402,7 @@ As
 	
 	-- verify that cell cultures exist
 	--
-	declare @InvalidCCList varchar(255) = null
+	Declare @InvalidCCList varchar(255) = null
 	
 	SELECT @InvalidCCList = Coalesce(@InvalidCCList + ', ' + #CC.CC_Name, #CC.CC_Name)
 	FROM #CC
@@ -418,7 +419,7 @@ As
 		RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @InvalidCCList)
 
 
-	declare @transName varchar(32)
+	Declare @transName varchar(32)
 	Set @logErrors = 1
 	
 	---------------------------------------------------
@@ -430,7 +431,7 @@ As
 
 		-- Start transaction
 		--
-		set @transName = 'AddNewExperiment'
+		Set @transName = 'AddNewExperiment'
 		begin transaction @transName
 
 		INSERT INTO T_Experiments(
@@ -508,8 +509,7 @@ As
 		End
 
 
-		declare @StateID int
-		set @StateID = 1
+		Declare @StateID int = 1
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
@@ -550,14 +550,14 @@ As
 
 	if @Mode = 'update' 
 	begin
-		set @myError = 0
+		Set @myError = 0
 
 		-- Start transaction
 		--
-		set @transName = 'AddNewExperiment'
+		Set @transName = 'AddNewExperiment'
 		begin transaction @transName
 
-		UPDATE T_Experiments SET 
+		UPDATE T_Experiments Set 
 			EX_researcher_PRN = @researcherPRN, 
 			EX_organism_ID = @organismID, 
 			EX_reason = @reason, 
@@ -580,7 +580,7 @@ As
 			                      EX_reason <> @reason OR
 			                      EX_comment <> @comment OR
 			                      EX_enzyme_ID <> @enzymeID OR
-			                      EX_Labelling <> @labelling OR
+			        EX_Labelling <> @labelling OR
 			                      EX_campaign_ID <> @campaignID OR
 			                      EX_cell_culture_list <> @cellCultureList OR
 			                      EX_sample_prep_request_ID <> @samplePrepRequest OR
