@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Automatic_Jobs](
 	[Script_For_Completed_Job] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Script_For_New_Job] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Enabled] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Automatic_Jobs] PRIMARY KEY CLUSTERED 
 (
 	[Script_For_Completed_Job] ASC,
@@ -15,6 +16,8 @@ CREATE TABLE [dbo].[T_Automatic_Jobs](
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Automatic_Jobs] TO [DDL_Viewer] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Automatic_Jobs] ADD  DEFAULT ((1)) FOR [Enabled]
 GO
 ALTER TABLE [dbo].[T_Automatic_Jobs]  WITH CHECK ADD  CONSTRAINT [FK_T_Automatic_Jobs_T_Scripts] FOREIGN KEY([Script_For_Completed_Job])
 REFERENCES [dbo].[T_Scripts] ([Script])

@@ -11,11 +11,16 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **
 **	Auth:	mem
 **	Date:	08/01/2016 mem - Initial version
-**    
+**			01/26/2017 mem - Add parameters @maxJobsToReset and @jobListOverride
+**			               - Check for Completion_Message "Exception checking archive status"
+**			               - Expand @message to varchar(4000)
+**
 *****************************************************/
 (
 	@infoOnly tinyint = 0,								-- 1 to preview the changes
-	@message varchar(512) = '' output
+	@maxJobsToReset int = 0,
+	@jobListOverride varchar(4000) = '',				-- Comma-separated list of jobs to reset.  Jobs must have a failed step in T_Job_Steps
+	@message varchar(4000) = '' output
 )
 As
 
@@ -33,6 +38,8 @@ As
 		-----------------------------------------------------------
 		--
 		Set @infoOnly = IsNull(@infoOnly, 0)
+		Set @maxJobsToReset = IsNull(@maxJobsToReset, 0)
+		Set @jobListOverride = IsNull(@jobListOverride, '')
 		Set @message = ''
 		
 		-----------------------------------------------------------
@@ -53,10 +60,27 @@ As
 		FROM V_Job_Steps
 		WHERE Tool = 'ArchiveVerify' AND
 		      State = 6 AND
-		      Completion_Message LIKE '%Input/output error%' AND
+		      (Completion_Message LIKE '%Input/output error%' OR 
+		       Completion_Message LIKE '%Exception checking archive status%') AND
 		      Job_State = 5
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @jobListOverride <> ''
+        Begin
+			INSERT INTO #Tmp_FailedJobs( Job )
+			SELECT Distinct Value
+			FROM dbo.udfParseDelimitedIntegerList ( @jobListOverride, ',' ) SrcJobs
+			     INNER JOIN V_Job_Steps JS
+			       ON SrcJobs.VALUE = JS.Job
+			     LEFT OUTER JOIN #Tmp_FailedJobs Target
+			       ON JS.Job = Target.Job
+			WHERE JS.Tool LIKE '%archive%' AND
+			      JS.State = 6 AND
+			      Target.Job Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
 
         If Not Exists (Select * From #Tmp_FailedJobs)
         Begin
@@ -64,6 +88,34 @@ As
                 Select 'No failed jobs were found' as Message
                 
             Goto Done
+        End
+
+        -----------------------------------------------------------
+        -- Possibly limit the number of jobs to reset
+        -----------------------------------------------------------
+        --
+
+		Declare @jobCountAtStart int
+		
+		Select @jobCountAtStart = Count(*) 
+		FROM #Tmp_FailedJobs
+
+        If @maxJobsToReset > 0 And @jobCountAtStart > @maxJobsToReset
+        Begin
+			
+			DELETE #Tmp_FailedJobs
+			WHERE NOT Job IN ( SELECT TOP ( @maxJobsToReset ) Job
+			                   FROM #Tmp_FailedJobs
+			                   ORDER BY Job )
+			
+			Declare @verb varchar(16)
+			If @infoOnly = 0
+				Set @verb = 'Resetting '
+			Else
+				Set @verb = 'Would reset '
+			
+			Select @verb + Cast(@maxJobsToReset as varchar(9)) + ' out of ' + Cast(@jobCountAtStart as varchar(9)) + ' candidate jobs' as Reset_Message
+
         End
         
 		-----------------------------------------------------------
@@ -96,6 +148,8 @@ As
             Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.CheckPlural(@jobCount, 'job ', 'jobs ') + @jobList
             
             exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
+            
+            Select @message as Message
         End
 		
 	END TRY

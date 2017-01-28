@@ -15,8 +15,9 @@ CREATE PROCEDURE RequestStepTaskExplanation
 **	Parameters:
 **
 **	Auth:	grk
-**	09/07/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**	01/20/2010 grk -- added logic for instrument/processor assignment
+**	Date:	09/07/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			01/20/2010 grk - Added logic for instrument/processor assignment
+**			01/27/2017 mem - Clarify some descriptions
 **
 *****************************************************/
   (
@@ -116,43 +117,43 @@ AS
 	
 	IF @infoOnly > 2
 	BEGIN 
-	--
-	SELECT 'Step tools available to this processor (#AvailableProcessorTools)' AS [Section]
+		--
+		SELECT 'Step tools available to this processor (#AvailableProcessorTools)' AS [Section]
 
-	SELECT
-	CONVERT(VARCHAR(24), Tool_Name) AS Tool_Name,
-	CONVERT(VARCHAR(12), Tool_Priority) AS Tool_Priority,
-	CONVERT(VARCHAR(24), Only_On_Storage_Server) AS Only_On_Storage_Server,
-	CONVERT(VARCHAR(24), Instrument_Capacity_Limited) AS Instrument_Capacity_Limited,
-	CONVERT(VARCHAR(12), Bionet_OK) AS Bionet_OK,
-	CONVERT(VARCHAR(24), Processor_Assignment_Applies) AS Processor_Assignment_Applies
-	FROM
-	#AvailableProcessorTools
-	--
-	SELECT 'Instruments subject to CPU loading restrictions (#InstrumentLoading)' AS [Section]
+		SELECT
+		CONVERT(VARCHAR(24), Tool_Name) AS Tool_Name,
+		CONVERT(VARCHAR(12), Tool_Priority) AS Tool_Priority,
+		CONVERT(VARCHAR(24), Only_On_Storage_Server) AS Only_On_Storage_Server,
+		CONVERT(VARCHAR(24), Instrument_Capacity_Limited) AS Instrument_Capacity_Limited,
+		CONVERT(VARCHAR(12), Bionet_OK) AS Bionet_OK,
+		CONVERT(VARCHAR(24), Processor_Assignment_Applies) AS Processor_Assignment_Applies
+		FROM
+		#AvailableProcessorTools
+		--
+		SELECT 'Instruments subject to CPU loading restrictions (#InstrumentLoading)' AS [Section]
 
-	SELECT
-	CONVERT(VARCHAR(24), Instrument) AS Instrument,
-	CONVERT(VARCHAR(12), Captures_In_Progress) AS Captures_In_Progress,
-	CONVERT(VARCHAR(12), Max_Simultaneous_Captures) AS Max_Simultaneous_Captures,
-	CONVERT(VARCHAR(12), Available_Capacity) AS Available_Capacity
-	FROM
-	#InstrumentLoading
+		SELECT
+		CONVERT(VARCHAR(24), Instrument) AS Instrument,
+		CONVERT(VARCHAR(12), Captures_In_Progress) AS Captures_In_Progress,
+		CONVERT(VARCHAR(12), Max_Simultaneous_Captures) AS Max_Simultaneous_Captures,
+		CONVERT(VARCHAR(12), Available_Capacity) AS Available_Capacity
+		FROM
+		#InstrumentLoading
 
-	--
-	SELECT 'Instruments assigned to specific processors (#InstrumentProcessor)' AS [Section]
+		--
+		SELECT 'Instruments assigned to specific processors (#InstrumentProcessor)' AS [Section]
 
-	SELECT 
-	CONVERT(VARCHAR(24), Instrument) AS Instrument,
-	CONVERT(VARCHAR(24), Assigned_To_This_Processor) AS Assigned_To_This_Processor,
-	CONVERT(VARCHAR(24), Assigned_To_Any_Processor) AS Assigned_To_Any_Processor
-	FROM 
-	#InstrumentProcessor
+		SELECT 
+		CONVERT(VARCHAR(24), Instrument) AS Instrument,
+		CONVERT(VARCHAR(24), Assigned_To_This_Processor) AS Assigned_To_This_Processor,
+		CONVERT(VARCHAR(24), Assigned_To_Any_Processor) AS Assigned_To_Any_Processor
+		FROM 
+		#InstrumentProcessor
 
 	END
 
 	--
-	SELECT 'Candidate job steps (#CandidateJobSteps)' AS [Section]
+	SELECT 'Candidate job steps (#CandidateJobSteps) that could be assigned to this processor, but may be excluded due to a Bionet, Storage Server, Instrument Capacity, or Instrument Lock rule' AS [Section]
 
 	SELECT
 		CONVERT(VARCHAR(12), #CandidateJobSteps.Job) AS Job,
@@ -180,6 +181,7 @@ AS
 		#CandidateJobSteps
 		INNER JOIN dbo.T_Jobs ON T_Jobs.Job = #CandidateJobSteps.Job
 		LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Step_Tool
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskExplanation] TO [DDL_Viewer] AS [dbo]

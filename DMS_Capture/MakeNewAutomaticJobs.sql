@@ -15,7 +15,8 @@ CREATE PROCEDURE MakeNewAutomaticJobs
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	grk
-**	09/11/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**	Date:	09/11/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			01/26/2017 mem - Add support for column Enabled in T_Automatic_Jobs
 **    
 *****************************************************/
 (
@@ -31,31 +32,30 @@ As
 	declare @myRowCount int
 	Set @myError = 0
 	Set @myRowCount = 0
-	
-	INSERT  INTO T_Jobs
+
+	-- Find jobs that are complete for which jobs for the same script and dataset don't already exist
+	--
+	INSERT INTO T_Jobs
 			( Script,
 			  Dataset,
 			  Dataset_ID,
 			  Comment		
 			)
-	-- jobs that are complete for which jobs for the same script and dataset don't already exist
-	SELECT
-	  T_Automatic_Jobs.Script_For_New_Job AS Script,
-	  T_Jobs_1.Dataset,
-	  T_Jobs_1.Dataset_ID,
-	  'Created from Job ' + CONVERT(VARCHAR(12), T_Jobs_1.Job) AS Comment
-	FROM
-	  T_Jobs AS T_Jobs_1
-	  INNER JOIN T_Automatic_Jobs ON T_Jobs_1.Script = T_Automatic_Jobs.Script_For_Completed_Job
-	WHERE
-	  NOT EXISTS ( SELECT
-					*
-				   FROM
-					dbo.T_Jobs
-				   WHERE
-					Script = Script_For_New_Job
-					AND Dataset = T_Jobs_1.Dataset )
-	  AND ( State = 3 )
+	SELECT AJ.Script_For_New_Job AS Script,
+	       J.Dataset,
+	       J.Dataset_ID,
+	       'Created from Job ' + CONVERT(varchar(12), J.Job) AS [Comment]
+	FROM T_Jobs AS J
+	     INNER JOIN T_Automatic_Jobs AJ
+	       ON J.Script = AJ.Script_For_Completed_Job AND
+	          AJ.Enabled = 1
+	WHERE (J.State = 3) AND 
+	      NOT EXISTS ( SELECT *
+	                   FROM dbo.T_Jobs
+	                   WHERE Script = Script_For_New_Job AND
+	                         Dataset = J.Dataset )
+	      
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeNewAutomaticJobs] TO [DDL_Viewer] AS [dbo]
 GO

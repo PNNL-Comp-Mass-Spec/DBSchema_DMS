@@ -13,24 +13,25 @@ CREATE PROCEDURE RetryMyEMSLUpload
 **
 **	Auth:	mem
 **	Date:	11/17/2014 mem - Initial version
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
+**			01/26/2017 mem - Expand @message to varchar(4000)
 **    
 *****************************************************/
 (
 	@Jobs varchar(Max),									-- List of jobs whose steps should be reset
 	@InfoOnly tinyint = 0,								-- 1 to preview the changes
-	@message varchar(512) = '' output
+	@message varchar(4000) = '' output
 )
 As
 
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	declare @JobResetTran varchar(24) = 'ResetArchiveOperation'
+	Declare @JobResetTran varchar(24) = 'ResetArchiveOperation'
 	
 	BEGIN TRY 
 	
@@ -44,7 +45,7 @@ As
 		
 		If @Jobs = ''
 		Begin
-			set @message = 'Job number not supplied'
+			Set @message = 'Job number not supplied'
 			print @message
 			RAISERROR (@message, 11, 17)
 		End
@@ -112,7 +113,7 @@ As
 
 		If Not Exists (Select * From #Tmp_JobsToReset)
 		Begin
-			set @message = 'None of the job(s) has a failed ArchiveVerify step'
+			Set @message = 'None of the job(s) has a failed ArchiveVerify step'
 			print @message
 			RAISERROR (@message, 11, 17)
 			Goto Done
@@ -125,7 +126,7 @@ As
 		
 		If IsNull(@SkipCount, 0) > 0
 		Begin
-			set @message = 'Skipping ' + Cast(@SkipCount as varchar(6)) + ' job(s) that do not have a failed ArchiveVerify step'
+			Set @message = 'Skipping ' + Cast(@SkipCount as varchar(6)) + ' job(s) that do not have a failed ArchiveVerify step'
 			Print @message
 			Select @message as Warning
 		End
@@ -150,7 +151,7 @@ As
 			       JS.Tool,
 			       'Step would be reset' AS Message,
 			       JS.State,
-			       JS.Start,
+			   JS.Start,
 			       JS.Finish
 			FROM V_Job_Steps JS
 			     INNER JOIN #Tmp_JobsToReset JR
@@ -183,7 +184,7 @@ As
 			-- Reset the retry counts for the ArchiveVerify step
 			--
 			UPDATE V_Job_Steps
-			SET Retry_Count = 75,
+			Set Retry_Count = 75,
 			    Next_Try = DateAdd(hour, 1, GetDate())
 			FROM V_Job_Steps JS
 			     INNER JOIN #Tmp_JobsToReset JR

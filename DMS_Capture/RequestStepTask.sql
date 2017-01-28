@@ -3,6 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
+
 CREATE PROCEDURE RequestStepTask
 /****************************************************
 **
@@ -41,6 +43,7 @@ CREATE PROCEDURE RequestStepTask
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **			11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
 **			01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
+**			01/27/2017 mem - Show additional information when @infoOnly > 0
 **
 *****************************************************/
 (
@@ -55,18 +58,18 @@ CREATE PROCEDURE RequestStepTask
 AS 
 	SET nocount ON
 
-	DECLARE @myError INT
-	DECLARE @myRowCount INT
+	Declare @myError INT
+	Declare @myRowCount INT
 	SET @myError = 0
 	SET @myRowCount = 0
 
-	DECLARE @jobAssigned TINYINT
+	Declare @jobAssigned TINYINT
 	SET @jobAssigned = 0
 
-	DECLARE @CandidateJobStepsToRetrieve INT
+	Declare @CandidateJobStepsToRetrieve INT
 	SET @CandidateJobStepsToRetrieve = 25
 
-	DECLARE @excludeCaptureTasks tinyint = 0
+	Declare @excludeCaptureTasks tinyint = 0
 
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
@@ -90,7 +93,7 @@ AS
 	-- Code 53000 is used for this
 	---------------------------------------------------
 	--
-	DECLARE @jobNotAvailableErrorCode INT
+	Declare @jobNotAvailableErrorCode INT
 	SET @jobNotAvailableErrorCode = 53000
 
 	If @infoOnly > 1
@@ -101,7 +104,7 @@ AS
 	-- (and capitalize it according to T_Local_Processors)
 	---------------------------------------------------
 	--
-	DECLARE @machine VARCHAR(64)
+	Declare @machine VARCHAR(64)
 	--
 	SELECT @machine = Machine,
 	       @processorName = Processor_Name
@@ -130,7 +133,7 @@ AS
 	---------------------------------------------------
 	--
 	IF @infoOnly <> 0
-		SELECT @processorName AS Processor, @infoOnly AS InfoOnlyLevel, @Machine as Machine
+		SELECT 'Processor and Machine Info' as Information, @processorName AS Processor, @infoOnly AS InfoOnlyLevel, @Machine as Machine
 			
 	---------------------------------------------------
 	-- Update processor's request timestamp
@@ -205,12 +208,19 @@ AS
 		GOTO Done
     END
 
+	If @infoOnly > 1
+	Begin
+		Select 'Tools enabled for this processor' as Information, * 
+		FROM #AvailableProcessorTools
+		ORDER BY Tool_Name
+	End
+	
 	---------------------------------------------------
 	-- bail out if no tools available, and we are not 
 	-- in infoOnly mode
 	---------------------------------------------------
 	--
-    DECLARE @num_tools INT
+    Declare @num_tools INT
 	SELECT @num_tools = COUNT(*)
 	FROM #AvailableProcessorTools
 	--
@@ -269,8 +279,8 @@ AS
 	-- Is processor assigned to any instrument?
 	---------------------------------------------------
 	--
-	DECLARE @processorIsAssigned INT
-	SET @processorIsAssigned = 0
+	Declare @processorIsAssigned INT = 0
+	Declare @processorLockedToInstrument tinyint = 0
 	--
 	SELECT @processorIsAssigned = COUNT(*)
 	FROM T_Processor_Instrument
@@ -324,6 +334,18 @@ AS
 			Print 'Note: setting @excludeCaptureTasks=1 because this processor does not have any entries in T_Processor_Instrument yet @serverPerspectiveEnabled=1'
 	End
 
+	If Exists (Select * From #InstrumentProcessor)
+	Begin
+		Set @processorLockedToInstrument = 1
+		If @infoOnly > 1
+		Begin
+			SELECT 'Instruments locked to this processor' AS Information,
+			       @processorName AS Processor,
+			       *
+			FROM #InstrumentProcessor
+			ORDER BY Instrument
+		End
+	End
 	
 	---------------------------------------------------
 	-- table variable to hold job step candidates
@@ -378,7 +400,7 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-	DECLARE @num_candidates INT
+	Declare @num_candidates INT
     SET @num_candidates = @myRowCount
 
 	---------------------------------------------------
@@ -404,7 +426,7 @@ AS
 	-- set up transaction parameters
 	---------------------------------------------------
 	--
-	DECLARE @transName VARCHAR(32)
+	Declare @transName VARCHAR(32)
 	SET @transName = 'RequestStepTask'
 		
 	-- Start transaction
@@ -419,16 +441,16 @@ AS
 	--   Job number
 	---------------------------------------------------
 	--
-	DECLARE @stepNumber INT
+	Declare @stepNumber INT
 	SET @stepNumber = 0
-	DECLARE @stepTool VARCHAR(64)
+	Declare @stepTool VARCHAR(64)
 	--
 	SELECT TOP 1 @jobNumber = TJS.Job,
 	             @stepNumber = TJS.Step_Number,
 	             @stepTool = TJS.Step_Tool
 	FROM T_Job_Steps TJS WITH ( HOLDLOCK )
 	     INNER JOIN #Tmp_CandidateJobSteps CJS
-	       ON CJS.Job = TJS.Job AND
+	   ON CJS.Job = TJS.Job AND
 	          CJS.Step_Number = TJS.Step_Number
 	WHERE TJS.State = 2
 	ORDER BY Seq
@@ -470,7 +492,7 @@ AS
           GOTO Done
         END
     END --<e>
-       
+
 	-- update was successful
 	COMMIT TRANSACTION @transName
 
@@ -512,7 +534,7 @@ AS
 		-- get metadata for dataset if request is going to dataset info tool
 		IF @stepTool = 'DatasetQuality'
 		BEGIN
-			DECLARE @dataset VARCHAR(128)
+			Declare @dataset VARCHAR(128)
 			SELECT @dataset = Dataset FROM T_Jobs WHERE Job = @jobNumber
 			EXEC GetMetadataForDataset @dataset
 		END
@@ -531,7 +553,6 @@ AS
 		
     END
 
-
 	---------------------------------------------------
 	-- dump candidate list if in infoOnly mode
 	---------------------------------------------------
@@ -543,19 +564,33 @@ AS
 
 		-- Preview the next @JobCountToPreview available jobs
 
+		If Exists (Select * From #Tmp_CandidateJobSteps)
+		Begin
 		SELECT TOP ( @JobCountToPreview ) 
+			   'Candidate Job Steps for ' + @processorName AS Information,
 		       Seq,
 		       Tool_Priority,
 		       Job_Priority,
 		       CJS.Job,
 		       Step_Number,
 		       Step_Tool,
-		       J.Dataset,
-		       @processorName AS Processor
+		       J.Dataset
 		FROM #Tmp_CandidateJobSteps CJS
 		     INNER JOIN T_Jobs J
 		       ON CJS.Job = J.Job
+		End
+		Else
+		Begin
+			SELECT 'Candidate Job Steps for ' + @processorName AS Information,
+			       @machine AS Machine,
+			       'No candidate job steps were found' AS Message,
+			       CASE
+			           WHEN @processorLockedToInstrument > 0 THEN 'Processor locked to instrument'
+			           ELSE ''
+			       END AS Warning
 
+		End
+		
 		---------------------------------------------------
 		-- dump candidate list if infoOnly mode is 2 or higher
 		---------------------------------------------------
@@ -584,6 +619,7 @@ AS
 
 
 	RETURN @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestStepTask] TO [DDL_Viewer] AS [dbo]
