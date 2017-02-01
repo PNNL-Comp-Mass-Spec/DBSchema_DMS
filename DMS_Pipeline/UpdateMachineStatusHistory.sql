@@ -15,8 +15,9 @@ CREATE PROCEDURE UpdateMachineStatusHistory
 **
 **	Parameters: 
 **
-**		Auth: mem
-**		Date: 08/10/2010
+**	Auth:	mem
+**	Date:	08/10/2010 mem - Initial version
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -77,7 +78,7 @@ AS
 			   ON PS.Processor_Name = LP.Processor_Name
 			 INNER JOIN T_Machines M
 			   ON LP.Machine = M.Machine
-		WHERE (DATEDIFF(HOUR, PS.Status_Date, GETDATE()) <= @ActiveProcessWindowHours)
+		WHERE PS.Status_Date > DateAdd(Hour, -@ActiveProcessWindowHours, GetDate())
 		GROUP BY M.Machine
 		ORDER BY M.Machine
 		--

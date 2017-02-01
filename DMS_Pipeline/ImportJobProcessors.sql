@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.ImportJobProcessors
 **			07/01/2010 mem - No longer logging message "Updated T_Local_Job_Processors; DeleteCount=" each time T_Local_Job_Processors is updated
 **			06/01/2015 mem - No longer deleting rows in T_Local_Job_Processors since we have deprecated processor groups
 **			02/15/2016 mem - Re-enabled support for processor groups, but altered logic to wait for 2 hours before deleting completed jobs
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -48,7 +49,7 @@ As
 	WHERE Job IN ( SELECT Job
 	               FROM T_Jobs
 	               WHERE State = 4 AND
-	                     DATEDIFF(HOUR, Finish, GETDATE()) > 2 )
+	                     Finish < DateAdd(hour, -2, GetDate()) )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
      --

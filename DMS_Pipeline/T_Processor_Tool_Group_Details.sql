@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Processor_Tool_Group_Details](
 	[Priority] [tinyint] NOT NULL,
 	[Enabled] [smallint] NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Max_Cost] [tinyint] NOT NULL,
 	[Last_Affected] [datetime] NULL,
  CONSTRAINT [PK_T_Processor_Tool_Group_Details] PRIMARY KEY CLUSTERED 
 (
@@ -23,6 +24,8 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[T_Processor_Tool_Group_Details] TO [DDL_Viewer] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Max_Cost]  DEFAULT ((100)) FOR [Max_Cost]
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
@@ -41,7 +44,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Processor_Tool_Group_Details] on [dbo].[T_Processor_Tool_Group_Details]
 For Update
 /****************************************************
@@ -70,6 +72,5 @@ AS
 		          PTGD.Tool_Name = inserted.Tool_Name
 
 	End
-
 
 GO
