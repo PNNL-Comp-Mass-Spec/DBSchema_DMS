@@ -36,6 +36,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			07/12/2016 mem - Now using a synonym when calling S_SetManagerErrorCleanupMode in the Manager_Control database
 **			09/02/2016 mem - Switch the archive server path from \\a2 to \\adms
 **			01/18/2017 mem - Auto-reset Bruker_DA_Export jobs up to 2 times
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **
 *****************************************************/
 (
@@ -178,8 +179,8 @@ As
 		WHERE (J.AJ_StateID = 2) AND
 		      (JS.State = 4) AND
 		      (ProcStatus.Mgr_Status = 'Stopped Error') AND
-		      (JS.Start <= DATEADD(HOUR, - 1, GETDATE())) AND
-		      (DATEDIFF(MINUTE, ProcStatus.Status_Date, GETDATE()) < 30)
+		      (JS.Start <= DATEADD(hour, -1, GETDATE())) AND
+		      ProcStatus.Status_Date > DATEADD(minute, -30, GetDate())
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 

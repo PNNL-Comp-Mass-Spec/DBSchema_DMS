@@ -18,6 +18,7 @@ CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 **	Date:	07/12/2010 mem - Initial version
 **			12/13/2010 mem - Changed @ResetHoldoffHours from tinyint to real
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -68,8 +69,8 @@ As
 			       ON DA.AS_Dataset_ID = DS.Dataset_ID
 			     INNER JOIN t_storage_path SPath
 			       ON DS.DS_storage_path_ID = SPath.SP_path_ID
-			WHERE (DA.AS_state_ID = 8) AND
-			      (DATEDIFF(MINUTE, DA.AS_state_Last_Affected, GETDATE()) >= @ResetHoldoffHours * 60)
+			WHERE DA.AS_state_ID = 8 AND
+			      DA.AS_state_Last_Affected < DateAdd(minute, -@ResetHoldoffHours * 60, GETDATE())
 			ORDER BY SPath.SP_vol_name_client, SPath.SP_instrument_name, DS.Dataset_Num
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount

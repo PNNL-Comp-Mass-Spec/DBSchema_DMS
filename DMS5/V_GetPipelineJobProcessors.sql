@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_GetPipelineJobProcessors]
 AS
 SELECT TAJ.AJ_jobID AS Job,
@@ -28,12 +27,11 @@ FROM dbo.T_Analysis_Job AS TAJ
        ON PGM.Processor_ID = P.ID
 WHERE (PG.Group_Enabled = 'Y') AND
       (PGM.Membership_Enabled = 'Y') AND
-      (TAJ.AJ_StateID IN (1,2,8) OR                                             -- Jobs new, in progress, or holding
-       TAJ.AJ_StateID = 4 AND DATEDIFF(hour, TAJ.AJ_Finish, GETDATE()) <= 2 OR  -- Jobs completed within the last 2 hours
-       TAJ.AJ_StateID = 5 AND DATEDIFF(day,  TAJ.AJ_Start,  GETDATE()) < 30     -- Jobs failed within the last 30 days
+      (TAJ.AJ_StateID IN (1,2,8) OR                                            -- Jobs new, in progress, or holding
+       TAJ.AJ_StateID = 4 AND TAJ.AJ_Finish > DateAdd(Hour, -2, GetDate()) OR  -- Jobs completed within the last 2 hours
+       TAJ.AJ_StateID = 5 AND TAJ.AJ_Start  > DateAdd(day, -30, GetDate())     -- Jobs failed within the last 30 days
        )
 GROUP BY TAJ.AJ_jobID, P.Processor_Name
-
 
 
 GO

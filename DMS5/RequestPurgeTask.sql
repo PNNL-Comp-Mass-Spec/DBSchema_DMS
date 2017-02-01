@@ -46,6 +46,7 @@ CREATE Procedure RequestPurgeTask
 **						   - Now including PurgePolicy in the job parameters table (0=Auto, 1=Purge All except QC Subfolder, 2=Purge All)
 **						   - Now looking for state 3, 14, or 15 when actually selecting a dataset to purge
 **			06/07/2013 mem - Now sorting by Archive_State_ID, Purge_Priority, then OrderByCol
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -289,7 +290,7 @@ As
 			Set @S = @S +               ' Src.ServerVol,'
 			Set @S = @S +               ' Src.StageMD5_Required,'
 			Set @S = @S +               ' Src.Archive_State_ID,'
-			Set @S = @S +               ' Src.Purge_Priority'
+			Set @S = @S +         ' Src.Purge_Priority'
 			Set @S = @S +        ' FROM ' + @PurgeViewName + ' Src'
 			Set @S = @S +               ' LEFT OUTER JOIN #TmpStorageVolsToSkip '
 			Set @S = @S +                 ' ON Src.StorageServerName = #TmpStorageVolsToSkip.StorageServerName AND'
@@ -309,10 +310,10 @@ As
 				Set @S = @S +           ' AND (Src.ServerVol = ''' + @ServerDisk + ''')'
 
 			If @HoldoffDays >= 0
-				Set @S = @S +           ' AND (DATEDIFF(DAY, ' + @OrderByCol + ', GetDate()) > ' + Convert(varchar(24), @HoldoffDays) + ')'
+				Set @S = @S +           ' AND (' + @OrderByCol + ' < DateAdd(Day, -' + Cast(@HoldoffDays as varchar(12)) + ', GetDate()) )'
 			
 			Set @S = @S +     ') LookupQ'
-			Set @S = @S + ' WHERE RowNumVal <= ' + Convert(varchar(12), @PreviewCount)
+			Set @S = @S + ' WHERE RowNumVal <= ' + Cast(@PreviewCount as varchar(12))
 			Set @S = @S + ' ORDER BY StorageServerName, ServerVol, Archive_State_ID, Purge_Priority, ' + @OrderByCol + ', Dataset_ID'
 			
 			If @PreviewSql <> 0

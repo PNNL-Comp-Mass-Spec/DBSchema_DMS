@@ -13,6 +13,7 @@ CREATE PROCEDURE dbo.ValidateJobDatasetStates
 **
 **	Auth:	mem
 **	Date:	11/11/2016 mem - Initial Version
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ AS
 		                  FROM S_V_Capture_Jobs_ActiveOrComplete
 		                  WHERE Script = 'DatasetCapture' AND
 		                        State = 3 AND
-		                        DateDiff(HOUR, Finish, GetDate()) > 1 
+		                        Finish < DateAdd(Hour, -1, GetDate()) 
 		                ) PipelineQ
 		       ON DS.Dataset_ID = PipelineQ.Dataset_ID
 		WHERE DS.DS_state_ID IN (1, 2)
@@ -89,7 +90,7 @@ AS
 		     INNER JOIN ( SELECT Job, State AS NewState
 		                  FROM S_V_Pipeline_Jobs_ActiveOrComplete
 		                  WHERE State IN (4, 7, 14) AND
-		                        DateDiff(HOUR, Finish, GetDate()) > 1 
+		                        Finish < DateAdd(Hour, -1, GetDate()) 
 		                ) PipelineQ
 		       ON J.AJ_jobID = PipelineQ.Job
 		WHERE (J.AJ_StateID IN (1, 2, 8))

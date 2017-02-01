@@ -16,8 +16,7 @@ SELECT Dataset_ID,
        Purge_Priority,
        Archive_State_ID
 FROM V_Purgable_Datasets_NoInterest
-WHERE DATEDIFF(DAY, MostRecentJob, GETDATE()) > 60
-
+WHERE MostRecentJob < DateAdd(day, -60, GetDate())
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoInterest_NoRecentJob] TO [DDL_Viewer] AS [dbo]

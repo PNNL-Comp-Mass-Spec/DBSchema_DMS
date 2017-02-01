@@ -19,6 +19,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 **	Date:	10/25/2016 mem - Initial version
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **			11/02/2016 mem - Check for Folder size changed and File size changed
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -76,9 +77,8 @@ As
 		WHERE DS_state_ID = 5 AND
 		      (DS_comment LIKE '%Exception validating constant%' OR
 		       DS_comment LIKE '%File size changed%' OR
-		       DS_comment LIKE '%Folder size changed%')
-		      AND
-		      DATEDIFF(MINUTE, DS_Last_Affected, GETDATE()) >= @resetHoldoffHours * 60
+		       DS_comment LIKE '%Folder size changed%') AND
+		       DS_Last_Affected < DateAdd(Minute, -@resetHoldoffHours * 60, GetDate())
 		ORDER BY Dataset_ID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -123,7 +123,7 @@ As
 				UPDATE T_Dataset
 				SET DS_state_ID = 1,
 					DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
-					            DS_Comment, 
+					        DS_Comment, 
 								'Dataset not ready: Exception validating constant file size'), 
 								'Dataset not ready: Exception validating constant folder size'), 
 								'Dataset not ready: Folder size changed'), 

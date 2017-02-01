@@ -21,6 +21,7 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **			  02/27/07 grk - fixed prep manager reporting (Ticket #398)
 **			  04/04/08 dac - changed output sort order to DESC
 **			  09/30/09 grk - eliminated references to health log
+**			  01/30/17 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 AS
@@ -55,10 +56,11 @@ AS
 		-- get distinct list of analysis managers 
 		-- that have been active in the previous three months
 		--
-		SELECT ISNULL(AJ_assignedProcessorName, '(unknown)') as AJ_assignedProcessorName, ISNULL(MAX(AJ_start), CONVERT(DATETIME, '2003-01-01 00:00:00', 102)) as [When]
+		SELECT ISNULL(AJ_assignedProcessorName, '(unknown)') as AJ_assignedProcessorName, 
+		       ISNULL(MAX(AJ_start), CONVERT(DATETIME, '2003-01-01 00:00:00', 102)) as [When]
 		FROM         T_Analysis_Job
 		GROUP BY AJ_assignedProcessorName
-		HAVING (DATEDIFF(month, MAX(AJ_finish), GETDATE()) < 3)
+		HAVING Max(AJ_finish) > DateAdd(month, -3, GETDATE())
 	) M
 
 /*

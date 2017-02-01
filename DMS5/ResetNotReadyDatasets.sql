@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.ResetNotReadyDatasets
 **	Auth:	grk
 **	Date:	08/06/2003
 **			05/16/2007 mem - Updated to use DS_Last_Affected (Ticket:478)
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ As
 	UPDATE T_Dataset
 	SET	DS_state_ID = @StateNew
 	WHERE DS_state_ID = @StateNotReady AND
-		  DATEDIFF(minute, DS_Last_Affected, GETDATE()) > @interval
+	      DS_Last_Affected < DateAdd(minute, -@interval, GetDate())
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

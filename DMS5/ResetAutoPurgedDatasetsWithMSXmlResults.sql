@@ -8,15 +8,18 @@ CREATE PROCEDURE ResetAutoPurgedDatasetsWithMSXmlResults
 /****************************************************
 ** 
 **	Desc:	Looks for datasets with archive state 14 (Purged Instrument Data (plus auto-purge))
-**			that have potentially unpurge MSXml jobs.  Changes the 
+**			that have potentially unpurged MSXml jobs.  Changes the 
 **			dataset archive state back to 3=Complete to give the 
 **			space manager a chance to purge the .mzXML file
+**
+**			This procedure is no longer needed because we use _CacheInfo.txt placholder files
 **
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	mem
 **	Date:	01/13/2014 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -60,7 +63,7 @@ As
 		       ON J.AJ_analysisToolID = AnTool.AJT_toolID
 		WHERE (DA.AS_state_ID = 14) AND
 		      (AnTool.AJT_toolName LIKE 'MSXML%') AND
-		      (DATEDIFF(DAY, DA.AS_state_Last_Affected, GETDATE()) > 180) AND
+		      DA.AS_state_Last_Affected < DateAdd(day, -180, GetDate()) AND
 		      (J.AJ_Purged = 0)
 
 		If @infoOnly <> 0

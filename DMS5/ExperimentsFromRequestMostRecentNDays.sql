@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
+CREATE FUNCTION dbo.ExperimentsFromRequestMostRecentNDays
 /****************************************************
 **
 **	Desc: 
@@ -14,8 +14,9 @@ CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
 **		Only includes experiments created within the most recent N days, specified by @days
 **
 **
-**		Auth: mem
-**		Date: 03/26/2013
+**	Auth:	mem
+**	Date:	03/26/2013 mem - Initial version
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -29,8 +30,8 @@ AS
 		
 		SELECT @n = COUNT(*)
 		FROM   T_Experiments
-		WHERE (EX_sample_prep_request_ID = @requestID) AND
-		      DATEDIFF(DAY, EX_created, GETDATE()) < ISNULL(@days, 1) + 1		
+		WHERE EX_sample_prep_request_ID = @requestID AND
+		      EX_created > DateAdd(Day, -ISNULL(@days, 1), GetDate())
 		
  		RETURN @n
 	END

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION GetDatasetInstrumentRuntime
+CREATE FUNCTION dbo.GetDatasetInstrumentRuntime
 /****************************************************
 **
 **	Desc: 
@@ -17,7 +17,7 @@ CREATE FUNCTION GetDatasetInstrumentRuntime
 **	Auth:	grk   
 **	Date:	05/26/2011 grk - initial release
 **			12/02/2011 mem - Added several Campaign-related columns: Campaign_ID, Fraction_EMSL_Funded, and Campaign_Proposals
-**			01/31/2012 grk - Added Interval column to output and made separaate interval rows an option
+**			01/31/2012 grk - Added Interval column to output and made separate interval rows an option
 **			02/06/2012 grk - Added @endIntervalEOD padding to pick up trailing interval
 **			02/07/2012 grk - Added anchoring of long intervals to beginning and end of month.
 **			02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes

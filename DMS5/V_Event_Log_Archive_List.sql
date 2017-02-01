@@ -5,19 +5,24 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-
-
-
-Create View V_Event_Log_Archive_List
+CREATE View [dbo].[V_Event_Log_Archive_List]
 As
-SELECT     T_Event_Log.[Index], T_Event_Log.Target_ID AS [Dataset ID], T_Dataset.Dataset_Num AS Dataset, 
-                      T_DatasetArchiveStateName_1.DASN_StateName AS [Old State], S1.DASN_StateName AS [New State], T_Event_Log.Entered AS Date
-FROM         T_Event_Log INNER JOIN
-                      T_Dataset ON T_Event_Log.Target_ID = T_Dataset.Dataset_ID INNER JOIN
-                      T_DatasetArchiveStateName S1 ON T_Event_Log.Target_State = S1.DASN_StateID INNER JOIN
-                      T_DatasetArchiveStateName T_DatasetArchiveStateName_1 ON 
-                      T_Event_Log.Prev_Target_State = T_DatasetArchiveStateName_1.DASN_StateID
-WHERE     (T_Event_Log.Target_Type = 6) AND (DATEDIFF(Day, T_Event_Log.Entered, GETDATE()) < 4)
+SELECT EL.[Index],
+       EL.Target_ID AS [Dataset ID],
+       T_Dataset.Dataset_Num AS Dataset,
+       OldState.DASN_StateName AS [Old State],
+       NewState.DASN_StateName AS [New State],
+       EL.Entered AS [Date]
+FROM T_Event_Log EL
+     INNER JOIN T_Dataset
+       ON EL.Target_ID = T_Dataset.Dataset_ID
+     INNER JOIN T_DatasetArchiveStateName NewState
+       ON EL.Target_State = NewState.DASN_StateID
+     INNER JOIN T_DatasetArchiveStateName OldState
+       ON EL.Prev_Target_State = OldState.DASN_StateID
+WHERE EL.Target_Type = 6 AND
+      EL.Entered > DateAdd(day, -4, GetDate())
+
 
 
 GO
