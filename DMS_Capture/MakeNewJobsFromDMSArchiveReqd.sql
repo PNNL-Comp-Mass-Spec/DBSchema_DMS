@@ -13,7 +13,8 @@ CREATE PROCEDURE MakeNewJobsFromDMSArchiveReqd
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	grk
-**	12/17/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**	Date:	12/17/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -43,26 +44,22 @@ As
 	-- get datasets from DMS that are in archive required state
 	---------------------------------------------------
 
-	INSERT INTO #AUJobs (
-		Dataset, 
-		Dataset_ID)
-	SELECT
-		Dataset, 
-		Dataset_ID
-	FROM
-		V_DMS_Dataset_Archive_Status
-	WHERE
-		AS_state_ID = 1
-	AND (DS_state_ID = 3)
-	AND ( DATEDIFF(day, AS_state_Last_Affected, GETDATE()) < @ImportWindowDays )
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error getting candidate DatasetArchive steps'
-			goto Done
-		end
+	INSERT INTO #AUJobs( Dataset,
+	                     Dataset_ID )
+	SELECT Dataset,
+	       Dataset_ID
+	FROM V_DMS_Dataset_Archive_Status
+	WHERE AS_state_ID = 1 AND
+	      DS_state_ID = 3 AND
+	      AS_state_Last_Affected > DateAdd(day, -@ImportWindowDays, GetDate())
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		set @message = 'Error getting candidate DatasetArchive steps'
+		goto Done
+	end
 
 	---------------------------------------------------
 	-- make jobs

@@ -23,6 +23,7 @@ CREATE PROCEDURE MakeNewJobsFromAnalysisBroker
 **			06/04/2010 dac - Excluding rows where there are any existing jobs that are not in state 3 (complete)
 **			05/05/2011 mem - Removed @onlyDMSArchiveUpdateReqdDatasets since it was only required for a short while after we switched over to the DMS_Capture DB in January 2010
 **						   - Now using T_Default_SP_Params to get default input params from database table
+**			01/30/2017 mem - Switch from DateDiff to DateAdd
 **    
 *****************************************************/
 (
@@ -136,21 +137,17 @@ As
 		Pending_Archive_Update,
 		Archive_Update_Current
 	)
-	SELECT
-		Dataset,
-		Dataset_ID,
-		Input_Folder_Name,
-		Finish,
-		0 AS No_Dataset_Archive,
-		0 AS Pending_Archive_Update,
-		0 AS Archive_Update_Current
-	FROM
-	  V_DMS_Pipeline_Get_Completed_Results_Transfer AS TS
-	WHERE
-	  NOT Input_Folder_Name Is Null AND
-	  ( DATEDIFF(day, Finish, GETDATE()) < @ImportWindowDays )
-	ORDER BY
-	  Finish DESC
+	SELECT Dataset,
+	       Dataset_ID,
+	       Input_Folder_Name,
+	       Finish,
+	       0 AS No_Dataset_Archive,
+	       0 AS Pending_Archive_Update,
+	       0 AS Archive_Update_Current
+	FROM V_DMS_Pipeline_Get_Completed_Results_Transfer AS TS
+	WHERE NOT Input_Folder_Name IS NULL AND
+	      Finish > DateAdd(day, -@ImportWindowDays, GetDate())
+	ORDER BY Finish DESC
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -211,15 +208,12 @@ As
 	SET Pending_Archive_Update = 1
 	WHERE
 	EXISTS ( 
-		SELECT
-			Dataset
-		FROM
-			T_Jobs
-		WHERE
-			( Script = 'ArchiveUpdate' )
-		AND (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID)
-		AND (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name)
-		AND (State <> 3)
+		SELECT Dataset
+		FROM T_Jobs
+		WHERE (Script = 'ArchiveUpdate') AND
+		      (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID) AND
+		      (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
+		      (State <> 3)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -241,16 +235,13 @@ As
 	SET Archive_Update_Current = 1
 	WHERE
 	EXISTS ( 
-		SELECT
-			Dataset
-		FROM
-			T_Jobs
-		WHERE
-			( Script = 'ArchiveUpdate' )
-		AND (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID)
-		AND (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name)
-		AND (State = 3)
-		AND (T_Jobs.Finish > #AUJobs.AJ_Finish)
+		SELECT Dataset
+		FROM T_Jobs
+		WHERE (Script = 'ArchiveUpdate') AND
+		      (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID) AND
+		      (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
+		      (State = 3) AND
+		      (T_Jobs.Finish > #AUJobs.AJ_Finish)
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -292,19 +283,16 @@ As
 		---------------------------------------------------
 		--
 		INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
-		SELECT DISTINCT
-		  'ArchiveUpdate' AS Script,
-		  Dataset,
-		  Dataset_ID,
-		  Results_Folder_Name,
-		  'Created from broker import' AS Comment
-		FROM
-		  #AUJobs
-		WHERE
-			((No_Dataset_Archive = 0) OR (@bypassDatasetArchive > 0))
-			AND Pending_Archive_Update = 0
-			AND Archive_Update_Current = 0
-				
+		SELECT DISTINCT 'ArchiveUpdate' AS Script,
+		                Dataset,
+		                Dataset_ID,
+		                Results_Folder_Name,
+		                'Created from broker import' AS COMMENT
+		FROM #AUJobs
+		WHERE ((No_Dataset_Archive = 0) OR
+		       (@bypassDatasetArchive > 0)) AND
+		      Pending_Archive_Update = 0 AND
+		      Archive_Update_Current = 0				
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
