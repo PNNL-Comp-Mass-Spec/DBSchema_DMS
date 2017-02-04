@@ -20,6 +20,7 @@ CREATE TABLE [dbo].[T_Step_Tools](
 	[Tag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AvgRuntime_Minutes] [real] NULL,
 	[Disable_Output_Folder_Name_Override_on_Skip] [tinyint] NOT NULL,
+	[Primary_Step_Tool] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Step_Tools_1] PRIMARY KEY CLUSTERED 
 (
 	[Name] ASC
@@ -57,4 +58,6 @@ GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Disable_Output_Folder_Name_Override_on_Skip]  DEFAULT ((0)) FOR [Disable_Output_Folder_Name_Override_on_Skip]
+GO
+ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Primary_Step_Tool]  DEFAULT ((0)) FOR [Primary_Step_Tool]
 GO
