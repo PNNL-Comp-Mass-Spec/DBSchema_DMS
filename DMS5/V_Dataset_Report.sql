@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -14,9 +13,8 @@ SELECT DS.Dataset_Num AS Dataset,
        InstName.IN_name AS Instrument,
        DS.DS_created AS Created,
        DS.DS_comment AS [Comment],
-       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
+	   DS.DateSortKey AS [Acq Start],
        DS.Acq_Length_Minutes AS [Acq Length],
-       --DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish)) AS [Acq Length],
        DS.DS_Oper_PRN AS [Oper.],
        DTN.DST_Name AS [Type],
        E.Experiment_Num AS Experiment,

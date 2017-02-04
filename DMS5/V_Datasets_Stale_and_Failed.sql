@@ -105,7 +105,8 @@ FROM (
 		   ON DS.DS_storage_path_ID = Spath.SP_path_ID
 	     LEFT OUTER JOIN JobStepStatus 
 		   ON DA.AS_Dataset_ID = JobStepStatus.Dataset_ID		    
-	WHERE DA.AS_state_ID IN (1, 2, 6, 7, 8, 11, 12, 13)
+	WHERE DA.AS_state_ID IN (1, 2, 6, 7, 8, 11, 12, 13) AND 
+	      NOT Exists (Select * FROM T_MiscOptions WHERE Name = 'ArchiveDisabled' and Value = 1)
 ) UnionQ
 WHERE Warning_Message <> ''
 

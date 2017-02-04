@@ -35,7 +35,8 @@ SELECT DS.Dataset_ID,
        DS.Scan_Count,
        DS.File_Size_Bytes,
        DS.File_Info_Last_Modified,
-       DS.Dataset_Num AS Dataset
+       DS.Dataset_Num AS Dataset,
+	   DS.DateSortKey AS #DateSortKey
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
@@ -51,7 +52,6 @@ FROM T_DatasetStateName DSN
        ON Exp.EX_campaign_ID = C.Campaign_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
-
 
 
 GO
