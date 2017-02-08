@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
@@ -75,6 +74,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/09/2017 mem - Add parameter @logDebugMessages
+**			02/07/2017 mem - Change default for @logDebugMessages to 0
 **
 *****************************************************/
 (
@@ -104,7 +104,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@VialingConc varchar(32) = Null,
 	@VialingVol varchar(32) = Null,
 	@requestIDForUpdate int = Null,				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
-	@logDebugMessages tinyint = 1
+	@logDebugMessages tinyint = 0
 )
 As
 	Set XACT_ABORT, nocount on
@@ -833,8 +833,6 @@ As
 
 	END CATCH
 	return @myError
-
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]
 GO

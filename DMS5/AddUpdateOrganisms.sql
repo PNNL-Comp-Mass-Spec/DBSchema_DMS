@@ -40,6 +40,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			03/03/2016 mem - Now storing @AutoDefineTaxonomy in column Auto_Define_Taxonomy
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
+**			02/06/2017 mem - Auto-update @NEWTIDList to match @NCBITaxonomyID if @NEWTIDList is null or empty
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -62,8 +63,8 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 	@orgDNATransTabID varchar(6), 
 	@orgMitoDNATransTabID varchar(6),
 	@orgActive varchar(3),
-	@NEWTIDList varchar(255),
-	@NCBITaxonomyID int,
+	@NEWTIDList varchar(255),			-- If blank, this is auto-populated using @NCBITaxonomyID
+	@NCBITaxonomyID int,				-- This is the preferred way to define the taxonomy ID for the organism.  NEWT ID is typically identical to taxonomy ID
 	@AutoDefineTaxonomy varchar(12),	-- 'Yes', or 'No'
 	@ID int output,
 	@mode varchar(12) = 'add',			-- 'add' or 'update'
@@ -211,6 +212,16 @@ As
 			RAISERROR (@msg, 11, 3)
 		End
 		
+	End 
+	Else
+	Begin
+		-- Auto-define @NEWTIDList using @NCBITaxonomyID though only if the NEWT table has the ID 
+		-- (there are numerous organisms that nave an NCBI Taxonomy ID but not a NEWT ID)
+		--
+		If Exists (SELECT * FROM S_V_CV_NEWT WHERE Identifier = Cast(@NCBITaxonomyID as varchar(24)))
+		Begin
+			Set @NEWTIDList = Cast(@NCBITaxonomyID as varchar(24))
+		End
 	End
 
 	If IsNull(@NCBITaxonomyID, 0) = 0
