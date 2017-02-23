@@ -196,6 +196,11 @@ As
 		
 	---------------------------------------------------
 	-- get list of new or held jobs from DMS
+	-- Data comes from view V_DMS_PipelineJobs, which pulls from
+	--   synonym S_DMS_V_GetPipelineJobs, which pulls from
+	--   view V_GetPipelineJobs in DMS5
+	-- That view shows new jobs in state 1 or 8
+	--   but it excludes jobs that have recently been archived
 	---------------------------------------------------
 	--
 	INSERT INTO #Tmp_DMSJobs
