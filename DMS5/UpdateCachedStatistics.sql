@@ -11,6 +11,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **			- Job_Usage_Count in T_Settings_Files
 **			- Job_Count in T_Analysis_Job_Request
 **			- Job_Usage_Count in T_Protein_Collection_Usage
+**			- Dataset usage stats in T_LC_Cart_Configuration
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -20,6 +21,7 @@ CREATE PROCEDURE dbo.UpdateCachedStatistics
 **			10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
 **			09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling UpdateProteinCollectionUsage
 **          07/18/2016 mem - Now updating Job_Usage_Last_Year in T_Param_Files and T_Settings_Files
+**			02/23/2017 mem - Update dataset usage in T_LC_Cart_Configuration
 **    
 *****************************************************/
 (
@@ -55,6 +57,7 @@ As
 	------------------------------------------------
 	-- Validate the inputs
 	------------------------------------------------
+	--
 	Set @message = ''
 	Set @PreviewSql = IsNull(@PreviewSql, 0)
 	Set @UpdateParamSettingsFileCounts = IsNull(@UpdateParamSettingsFileCounts, 1)
@@ -117,13 +120,34 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		
+		------------------------------------------------
+		-- Update Usage Counts for LC Cart Configuration items
+		------------------------------------------------
+		--
+		UPDATE T_LC_Cart_Configuration
+		SET Dataset_Usage_Count = IsNull(StatsQ.DatasetCount, 0),
+		    Dataset_Usage_Last_Year = IsNull(StatsQ.DatasetCountLastYear, 0)        -- Usage over the last 12 months
+		FROM T_LC_Cart_Configuration Target
+		     LEFT OUTER JOIN ( SELECT Cart_Config_ID,
+		                              COUNT(*) AS DatasetCount,
+		                              SUM(CASE
+		                                      WHEN DS_Created >= @thresholdOneYear THEN 1
+		                                      ELSE 0
+		                                  END) AS DatasetCountLastYear
+		                       FROM T_Dataset
+		                       WHERE NOT Cart_Config_ID IS NULL
+		                       GROUP BY Cart_Config_ID ) StatsQ
+		       ON Target.Cart_Config_ID = StatsQ.Cart_Config_ID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
 		------------------------------------------------
 		-- Update Usage Counts for Protein Collections
 		------------------------------------------------
 		--
 		Exec UpdateProteinCollectionUsage @message output
-		
+
 	End -- </a1>
 	
 	If @UpdateGeneralStatistics <> 0
@@ -161,7 +185,7 @@ As
 		INSERT INTO #TmpStatEntries VALUES ('Experiment_Count', 'Last 7 days',  'SELECT @Total = COUNT(*) FROM T_Experiments WHERE EX_created > DATEADD(day, -7, GetDate())', 0)
 		INSERT INTO #TmpStatEntries VALUES ('Experiment_Count', 'Last 30 days', 'SELECT @Total = COUNT(*) FROM T_Experiments WHERE EX_created > DATEADD(day, -30, GetDate())', 0)
 
-		INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'All',          'SELECT @Total = COUNT(*) FROM T_Organisms', 0)
+		INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'All', 'SELECT @Total = COUNT(*) FROM T_Organisms', 0)
 		INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'Last 7 days',  'SELECT @Total = COUNT(*) FROM T_Organisms WHERE OG_Created > DATEADD(day, -7, GetDate())', 0)
 		INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'Last 30 days', 'SELECT @Total = COUNT(*) FROM T_Organisms WHERE OG_Created > DATEADD(day, -30, GetDate())', 0)
 

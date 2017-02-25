@@ -18,6 +18,7 @@ CREATE Procedure SyncWithDMS5
 **			02/03/2016 mem - Added QCART, Keratin_2A, and Keratin_2C
 **			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 **			03/31/2016 mem - Add T_Material_Freezers and update columns for T_Material_Locations
+**			02/23/2017 mem - Add RDS_Cart_Config_ID to T_Requested_Run
 **    
 *****************************************************/
 (
@@ -298,8 +299,6 @@ As
 						NULLIF(s.[SP_code], t.[SP_code])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[SP_description], s.[SP_description]),
 						NULLIF(s.[SP_description], t.[SP_description])) IS NOT NULL OR
-				ISNULL( NULLIF(t.[SP_URL], s.[SP_URL]),
-						NULLIF(s.[SP_URL], t.[SP_URL])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[SP_created], s.[SP_created]),
 						NULLIF(s.[SP_created], t.[SP_created])) IS NOT NULL
 				)
@@ -312,11 +311,10 @@ As
 				[SP_instrument_name] = s.[SP_instrument_name],
 				[SP_code] = s.[SP_code],
 				[SP_description] = s.[SP_description],
-				[SP_URL] = s.[SP_URL],
 				[SP_created] = s.[SP_created]
 			WHEN NOT MATCHED BY TARGET THEN
-				INSERT([SP_path_ID], [SP_path], [SP_machine_name], [SP_vol_name_client], [SP_vol_name_server], [SP_function], [SP_instrument_name], [SP_code], [SP_description], [SP_URL], [SP_created])
-				VALUES(s.[SP_path_ID], s.[SP_path], s.[SP_machine_name], s.[SP_vol_name_client], s.[SP_vol_name_server], s.[SP_function], s.[SP_instrument_name], s.[SP_code], s.[SP_description], s.[SP_URL], s.[SP_created])
+				INSERT([SP_path_ID], [SP_path], [SP_machine_name], [SP_vol_name_client], [SP_vol_name_server], [SP_function], [SP_instrument_name], [SP_code], [SP_description], [SP_created])
+				VALUES(s.[SP_path_ID], s.[SP_path], s.[SP_machine_name], s.[SP_vol_name_client], s.[SP_vol_name_server], s.[SP_function], s.[SP_instrument_name], s.[SP_code], s.[SP_description], s.[SP_created])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action, 
 			       Cast(Inserted.[SP_path_ID] as varchar(12)), 
@@ -2925,7 +2923,7 @@ As
 			    ISNULL( NULLIF(t.[TIC_Median_MSn], s.[TIC_Median_MSn]),
 			            NULLIF(s.[TIC_Median_MSn], t.[TIC_Median_MSn])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[BPI_Median_MS], s.[BPI_Median_MS]),
-			     NULLIF(s.[BPI_Median_MS], t.[BPI_Median_MS])) IS NOT NULL OR
+			    NULLIF(s.[BPI_Median_MS], t.[BPI_Median_MS])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[BPI_Median_MSn], s.[BPI_Median_MSn]),
 			            NULLIF(s.[BPI_Median_MSn], t.[BPI_Median_MSn])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[Elution_Time_Max], s.[Elution_Time_Max]),
@@ -3359,7 +3357,7 @@ As
 			    [Last_Ordered] = s.[Last_Ordered],
 			    [Requested_Batch_Priority] = s.[Requested_Batch_Priority],
 			    [Actual_Batch_Priority] = s.[Actual_Batch_Priority],
-			    [Requested_Completion_Date] = s.[Requested_Completion_Date],
+			   [Requested_Completion_Date] = s.[Requested_Completion_Date],
 			    [Justification_for_High_Priority] = s.[Justification_for_High_Priority],
 			    [Comment] = s.[Comment],
 			    [Requested_Instrument] = s.[Requested_Instrument]
@@ -3414,6 +3412,7 @@ As
 			    t.[RDS_BatchID] <> s.[RDS_BatchID] OR
 			    t.[RDS_EUS_UsageType] <> s.[RDS_EUS_UsageType] OR
 			    t.[RDS_Cart_ID] <> s.[RDS_Cart_ID] OR
+			    t.[RDS_Cart_Config_ID] <> s.[RDS_Cart_Config_ID] OR
 			    t.[RDS_Status] <> s.[RDS_Status] OR
 			    ISNULL( NULLIF(t.[RDS_comment], s.[RDS_comment]),
 			            NULLIF(s.[RDS_comment], t.[RDS_comment])) IS NOT NULL OR
@@ -3493,6 +3492,7 @@ As
 			    [RDS_EUS_Proposal_ID] = s.[RDS_EUS_Proposal_ID],
 			    [RDS_EUS_UsageType] = s.[RDS_EUS_UsageType],
 			    [RDS_Cart_ID] = s.[RDS_Cart_ID],
+			    [RDS_Cart_Config_ID] = s.[RDS_Cart_Config_ID],
 			    [RDS_Cart_Col] = s.[RDS_Cart_Col],
 			    [RDS_Sec_Sep] = s.[RDS_Sec_Sep],
 			    [RDS_MRM_Attachment] = s.[RDS_MRM_Attachment],
@@ -3504,8 +3504,8 @@ As
 			    [Vialing_Conc] = s.[Vialing_Conc],
 			    [Vialing_Vol] = s.[Vialing_Vol]
 			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([RDS_Name], [RDS_Oper_PRN], [RDS_comment], [RDS_created], [RDS_instrument_name], [RDS_type_ID], [RDS_instrument_setting], [RDS_special_instructions], [RDS_Well_Plate_Num], [RDS_Well_Num], [RDS_priority], [RDS_note], [Exp_ID], [RDS_Run_Start], [RDS_Run_Finish], [RDS_internal_standard], [ID], [RDS_WorkPackage], [RDS_BatchID], [RDS_Blocking_Factor], [RDS_Block], [RDS_Run_Order], [RDS_EUS_Proposal_ID], [RDS_EUS_UsageType], [RDS_Cart_ID], [RDS_Cart_Col], [RDS_Sec_Sep], [RDS_MRM_Attachment], [DatasetID], [RDS_Origin], [RDS_Status], [RDS_NameCode], [Entered], [Vialing_Conc], [Vialing_Vol])
-			    VALUES(s.[RDS_Name], s.[RDS_Oper_PRN], s.[RDS_comment], s.[RDS_created], s.[RDS_instrument_name], s.[RDS_type_ID], s.[RDS_instrument_setting], s.[RDS_special_instructions], s.[RDS_Well_Plate_Num], s.[RDS_Well_Num], s.[RDS_priority], s.[RDS_note], s.[Exp_ID], s.[RDS_Run_Start], s.[RDS_Run_Finish], s.[RDS_internal_standard], s.[ID], s.[RDS_WorkPackage], s.[RDS_BatchID], s.[RDS_Blocking_Factor], s.[RDS_Block], s.[RDS_Run_Order], s.[RDS_EUS_Proposal_ID], s.[RDS_EUS_UsageType], s.[RDS_Cart_ID], s.[RDS_Cart_Col], s.[RDS_Sec_Sep], s.[RDS_MRM_Attachment], s.[DatasetID], s.[RDS_Origin], s.[RDS_Status], s.[RDS_NameCode], s.[Entered], s.[Vialing_Conc], s.[Vialing_Vol])
+			    INSERT([RDS_Name], [RDS_Oper_PRN], [RDS_comment], [RDS_created], [RDS_instrument_name], [RDS_type_ID], [RDS_instrument_setting], [RDS_special_instructions], [RDS_Well_Plate_Num], [RDS_Well_Num], [RDS_priority], [RDS_note], [Exp_ID], [RDS_Run_Start], [RDS_Run_Finish], [RDS_internal_standard], [ID], [RDS_WorkPackage], [RDS_BatchID], [RDS_Blocking_Factor], [RDS_Block], [RDS_Run_Order], [RDS_EUS_Proposal_ID], [RDS_EUS_UsageType], [RDS_Cart_ID], [RDS_Cart_Config_ID], [RDS_Cart_Col], [RDS_Sec_Sep], [RDS_MRM_Attachment], [DatasetID], [RDS_Origin], [RDS_Status], [RDS_NameCode], [Entered], [Vialing_Conc], [Vialing_Vol])
+			    VALUES(s.[RDS_Name], s.[RDS_Oper_PRN], s.[RDS_comment], s.[RDS_created], s.[RDS_instrument_name], s.[RDS_type_ID], s.[RDS_instrument_setting], s.[RDS_special_instructions], s.[RDS_Well_Plate_Num], s.[RDS_Well_Num], s.[RDS_priority], s.[RDS_note], s.[Exp_ID], s.[RDS_Run_Start], s.[RDS_Run_Finish], s.[RDS_internal_standard], s.[ID], s.[RDS_WorkPackage], s.[RDS_BatchID], s.[RDS_Blocking_Factor], s.[RDS_Block], s.[RDS_Run_Order], s.[RDS_EUS_Proposal_ID], s.[RDS_EUS_UsageType], s.[RDS_Cart_ID], s.[RDS_Cart_Config_ID], s.[RDS_Cart_Col], s.[RDS_Sec_Sep], s.[RDS_MRM_Attachment], s.[DatasetID], s.[RDS_Origin], s.[RDS_Status], s.[RDS_NameCode], s.[Entered], s.[Vialing_Conc], s.[Vialing_Vol])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 			       Cast(Inserted.[ID] as varchar(12)),
@@ -3577,7 +3577,7 @@ As
 			    ISNULL( NULLIF(t.[QueueTime_0Days], s.[QueueTime_0Days]),
 			            NULLIF(s.[QueueTime_0Days], t.[QueueTime_0Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_1to6Days], s.[QueueTime_1to6Days]),
-			            NULLIF(s.[QueueTime_1to6Days], t.[QueueTime_1to6Days])) IS NOT NULL OR
+			         NULLIF(s.[QueueTime_1to6Days], t.[QueueTime_1to6Days])) IS NOT NULL OR
 			   ISNULL( NULLIF(t.[QueueTime_7to44Days], s.[QueueTime_7to44Days]),
 			            NULLIF(s.[QueueTime_7to44Days], t.[QueueTime_7to44Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_45to89Days], s.[QueueTime_45to89Days]),
@@ -3974,7 +3974,7 @@ As
 			    ISNULL( NULLIF(t.[AJ_finish], s.[AJ_finish]),
 			            NULLIF(s.[AJ_finish], t.[AJ_finish])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_settingsFileName], s.[AJ_settingsFileName]),
-			     NULLIF(s.[AJ_settingsFileName], t.[AJ_settingsFileName])) IS NOT NULL OR
+			    NULLIF(s.[AJ_settingsFileName], t.[AJ_settingsFileName])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_organismDBName], s.[AJ_organismDBName]),
 			            NULLIF(s.[AJ_organismDBName], t.[AJ_organismDBName])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_comment], s.[AJ_comment]),

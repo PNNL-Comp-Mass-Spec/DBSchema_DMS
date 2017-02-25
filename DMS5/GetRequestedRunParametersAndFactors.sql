@@ -5,12 +5,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE PROCEDURE [dbo].[GetRequestedRunParametersAndFactors]
+CREATE PROCEDURE dbo.GetRequestedRunParametersAndFactors
 /****************************************************
 **
 **  Desc: 
-**  Returns the run parameters and factors associated with the
-**  run requests in the input list
+**		Returns the run parameters and factors associated with the run requests in the input list
+**
+**		This is used by http://dms2.pnl.gov/requested_run_batch_blocking/grid
 **
 **  Auth: grk 
 **  Date: 03/28/2013

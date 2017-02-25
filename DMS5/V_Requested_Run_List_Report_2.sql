@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_List_Report_2] 
 AS
 SELECT RR.ID AS Request,
@@ -36,6 +35,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
+	   CartConfig.Cart_Config_Name AS [Cart Config],
        CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
        DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
@@ -66,6 +66,8 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_Cart_ID = LC.ID
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
+	 LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
+	   ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT

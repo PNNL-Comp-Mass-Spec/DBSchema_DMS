@@ -39,6 +39,7 @@ CREATE Procedure dbo.AddNewDataset
 **			05/29/2015 mem - Added support for "Capture Subfolder"
 **			06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
 **			11/21/2016 mem - Added parameter @logDebugMessages
+**			02/23/2017 mem - Added support for "LC Cart Config"
 **    
 *****************************************************/
 (
@@ -70,26 +71,27 @@ AS
 	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 	
 	Declare
-		@Dataset_Name		varchar(128) = '',
-		@Experiment_Name	varchar(64)  = '',
-		@Instrument_Name	varchar(64)  = '',
-		@CaptureSubfolder   varchar(255) = '',
-		@Separation_Type	varchar(64)  = '',
-		@LC_Cart_Name		varchar(128) = '',
-		@LC_Column			varchar(64)  = '',
-		@Wellplate_Number	varchar(64)  = '',
-		@Well_Number		varchar(64)  = '',
-		@Dataset_Type		varchar(64)  = '',
-		@Operator_PRN		varchar(64)  = '',
-		@Comment			varchar(512) = '',
-		@Interest_Rating	varchar(32)  = '',
-		@Request			int          = '', -- @requestID; this might get updated by AddUpdateDataset
-		@EMSL_Usage_Type	varchar(50)  = '',
-		@EMSL_Proposal_ID	varchar(10)  = '',
-		@EMSL_Users_List	varchar(1024)  = '',
-		@Run_Start		    varchar(64)    = '',
-		@Run_Finish		    varchar(64)    = '',
-		@DatasetCreatorPRN	varchar(128)   = ''
+		@Dataset_Name       varchar(128)  = '',
+		@Experiment_Name    varchar(64)   = '',
+		@Instrument_Name    varchar(64)   = '',
+		@CaptureSubfolder   varchar(255)  = '',
+		@Separation_Type    varchar(64)   = '',
+		@LC_Cart_Name       varchar(128)  = '',
+		@LC_Cart_Config     varchar(128)  = '',
+		@LC_Column          varchar(64)   = '',
+		@Wellplate_Number   varchar(64)   = '',
+		@Well_Number        varchar(64)   = '',
+		@Dataset_Type       varchar(64)   = '',
+		@Operator_PRN       varchar(64)   = '',
+		@Comment            varchar(512)  = '',
+		@Interest_Rating    varchar(32)   = '',
+		@Request            int           = '',      -- @requestID; this might get updated by AddUpdateDataset
+		@EMSL_Usage_Type    varchar(50)   = '',
+		@EMSL_Proposal_ID   varchar(10)   = '',
+		@EMSL_Users_List    varchar(1024) = '',
+		@Run_Start          varchar(64)   = '',
+		@Run_Finish         varchar(64)   = '',
+		@DatasetCreatorPRN  varchar(128)  = ''
 		
 		-- Note that @DatasetCreatorPRN is the PRN of the person that created the dataset; 
 		-- It is typically only present in trigger files created due to a dataset manually being created by a user
@@ -151,30 +153,31 @@ AS
 	-- Get agruments from parsed parameters
  	---------------------------------------------------
 
-	SELECT	@Dataset_Name		 = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
-	SELECT	@Experiment_Name	 = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
-	SELECT	@Instrument_Name	 = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
+	SELECT	@Dataset_Name        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
+	SELECT	@Experiment_Name     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
+	SELECT	@Instrument_Name     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
 	SELECT  @CaptureSubfolder    = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder' 
-	SELECT	@Separation_Type	 = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
-	SELECT	@LC_Cart_Name		 = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
-	SELECT	@LC_Column			 = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
-	SELECT	@Wellplate_Number	 = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number' 
-	SELECT	@Well_Number		 = paramValue FROM #TPAR WHERE paramName = 'Well Number' 
-	SELECT	@Dataset_Type		 = paramValue FROM #TPAR WHERE paramName = 'Dataset Type' 
-	SELECT	@Operator_PRN		 = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)' 
-	SELECT	@Comment			 = paramValue FROM #TPAR WHERE paramName = 'Comment' 
-	SELECT	@Interest_Rating	 = paramValue FROM #TPAR WHERE paramName = 'Interest Rating' 
-	SELECT	@Request			 = paramValue FROM #TPAR WHERE paramName = 'Request' 
-	SELECT	@EMSL_Usage_Type	 = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type' 
-	SELECT	@EMSL_Proposal_ID	 = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID' 
-	SELECT	@EMSL_Users_List	 = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
-	SELECT	@Run_Start		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
-	SELECT	@Run_Finish		   	 = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
+	SELECT	@Separation_Type     = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
+	SELECT	@LC_Cart_Name        = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
+	SELECT	@LC_Cart_Config      = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
+	SELECT	@LC_Column           = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
+	SELECT	@Wellplate_Number    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number' 
+	SELECT	@Well_Number         = paramValue FROM #TPAR WHERE paramName = 'Well Number' 
+	SELECT	@Dataset_Type        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type' 
+	SELECT	@Operator_PRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)' 
+	SELECT	@Comment             = paramValue FROM #TPAR WHERE paramName = 'Comment' 
+	SELECT	@Interest_Rating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating' 
+	SELECT	@Request             = paramValue FROM #TPAR WHERE paramName = 'Request' 
+	SELECT	@EMSL_Usage_Type     = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type' 
+	SELECT	@EMSL_Proposal_ID    = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID' 
+	SELECT	@EMSL_Users_List     = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
+	SELECT	@Run_Start           = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
+	SELECT	@Run_Finish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
 	SELECT  @DatasetCreatorPRN   = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
 	
  	---------------------------------------------------
-	-- check for QC or Blank datasets
+	-- Check for QC or Blank datasets
  	---------------------------------------------------
 
 	If dbo.DatasetPreference(@Dataset_Name) <> 0 OR 
@@ -217,7 +220,7 @@ AS
 	End
 
  	---------------------------------------------------
-	-- establish default parameters
+	-- Establish default parameters
  	---------------------------------------------------
 
 	Set @internalStandards  = 'none'
@@ -264,6 +267,7 @@ AS
 						@mode,
 						@message output,
 						@CaptureSubfolder=@CaptureSubfolder,
+						@lcCartConfig=@LC_Cart_Config,
 						@logDebugMessages=@logDebugMessages
 	If @myError <> 0
 	Begin
@@ -314,7 +318,7 @@ AS
 	--
 	SELECT @tmp = ID
 	FROM T_Requested_Run
-	WHERE (DatasetID = @dsid)		
+	WHERE (DatasetID = @dsid)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -368,7 +372,7 @@ AS
 			-- Check whether the @RunFinishDate value is in the future
 			-- If it is, update it to match @RunStartDate
 			If DateDiff(day, GetDate(), @RunFinishDate) > 1
-				Set @RunFinishDate = @RunStartDate			
+				Set @RunFinishDate = @RunStartDate
 		End
 		
 		UPDATE T_Requested_Run

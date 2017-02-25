@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateDataset
 /****************************************************
 **
@@ -66,13 +67,13 @@ CREATE Procedure dbo.AddUpdateDataset
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
 **			02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
 **			05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
-**			05/29/2015 mem - Added parameter @CaptureSubfolder (only used if @mode is 'add' or 'bad')
+**			05/29/2015 mem - Added parameter @captureSubfolder (only used if @mode is 'add' or 'bad')
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			06/19/2015 mem - Now auto-fixing QC_Shew names, e.g. QC_Shew_15-01 to QC_Shew_15_01
 **			10/01/2015 mem - Add support for (ignore) for @eusProposalID, @eusUsageType, and @eusUsersList
 **			10/14/2015 mem - Remove double quotes from error messages
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **			05/23/2016 mem - Disallow certain dataset names
 **			06/10/2016 mem - Try to auto-associate new datasets with an active requested run (only associate if only one active requested run matches the dataset name)
 **			06/21/2016 mem - Add additional debug messages
@@ -84,6 +85,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/09/2017 mem - Pass @logDebugMessages to AddUpdateRequestedRun
+**			02/23/2017 mem - Add parameter @lcCartConfig
 **    
 *****************************************************/
 (
@@ -108,32 +110,33 @@ CREATE Procedure dbo.AddUpdateDataset
 	@message varchar(512) output,
    	@callingUser varchar(128) = '',
    	@AggregationJobDataset tinyint = 0,		-- Set to 1 when creating an in-silico dataset to associate with an aggregation job
-   	@CaptureSubfolder varchar(255) = '',	-- Only used when @mode is 'add' or 'bad'
+   	@captureSubfolder varchar(255) = '',	-- Only used when @mode is 'add' or 'bad'
+   	@lcCartConfig varchar(128) = '',
    	@logDebugMessages tinyint = 0
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
-	declare @msg varchar(256)
-	declare @folderName varchar(128)
-	declare @AddingDataset tinyint = 0
+	Declare @msg varchar(256)
+	Declare @folderName varchar(128)
+	Declare @AddingDataset tinyint = 0
 	
-	declare @result int
-	declare @warning varchar(256)
-	declare @warningAddon varchar(128)
-	declare @ExperimentCheck varchar(128)
-	declare @debugMsg varchar(512)
+	Declare @result int
+	Declare @warning varchar(256)
+	Declare @warningAddon varchar(128)
+	Declare @ExperimentCheck varchar(128)
+	Declare @debugMsg varchar(512)
 	Declare @logErrors tinyint = 0
 	
-	set @message = ''
-	set @warning = ''
+	Set @message = ''
+	Set @warning = ''
 
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -150,91 +153,91 @@ As
 	Set @rating = LTrim(RTrim(IsNull(@rating, '')))
 
 	Set @internalStandards = IsNull(@internalStandards, '')
-	if @internalStandards = '' Or @internalStandards = 'na'
-		set @internalStandards = 'none'
+	If @internalStandards = '' Or @internalStandards = 'na'
+		Set @internalStandards = 'none'
 	
-	if IsNull(@mode, '') = ''
-	begin
-		set @msg = '@mode was blank'
+	If IsNull(@mode, '') = ''
+	Begin
+		Set @msg = '@mode was blank'
 		RAISERROR (@msg, 11, 17)
-	end
+	End
 		
-	if IsNull(@secSep, '') = ''
-	begin
-		set @msg = 'Separation type was blank'
+	If IsNull(@secSep, '') = ''
+	Begin
+		Set @msg = 'Separation type was blank'
 		RAISERROR (@msg, 11, 17)
-	end
+	End
 	--
-	if IsNull(@LCColumnNum, '') = ''
-	begin
-		set @msg = 'LC Column name was blank'
+	If IsNull(@LCColumnNum, '') = ''
+	Begin
+		Set @msg = 'LC Column name was blank'
 		RAISERROR (@msg, 11, 16)
-	end
+	End
 	--
-	if IsNull(@datasetNum, '') = ''
-	begin
-		set @msg = 'Dataset name was blank'
+	If IsNull(@datasetNum, '') = ''
+	Begin
+		Set @msg = 'Dataset name was blank'
 		RAISERROR (@msg, 11, 10)
-	end
+	End
 	--
-	set @folderName = @datasetNum
+	Set @folderName = @datasetNum
 	--
-	if IsNull(@experimentNum, '') = ''
-	begin
-		set @msg = 'Experiment name was blank'
+	If IsNull(@experimentNum, '') = ''
+	Begin
+		Set @msg = 'Experiment name was blank'
 		RAISERROR (@msg, 11, 11)
-	end
+	End
 	--
-	if IsNull(@folderName, '') = ''
-	begin
-		set @msg = 'Folder name was blank'
+	If IsNull(@folderName, '') = ''
+	Begin
+		Set @msg = 'Folder name was blank'
 		RAISERROR (@msg, 11, 12)
-	end
+	End
 	--
-	if IsNull(@operPRN, '') = ''
-	begin
-		set @msg = 'Operator payroll number/HID was blank'
+	If IsNull(@operPRN, '') = ''
+	Begin
+		Set @msg = 'Operator payroll number/HID was blank'
 		RAISERROR (@msg, 11, 13)
-	end
+	End
 	--
-	if IsNull(@instrumentName, '') = ''
-	begin
-		set @msg = 'Instrument name was blank'
+	If IsNull(@instrumentName, '') = ''
+	Begin
+		Set @msg = 'Instrument name was blank'
 		RAISERROR (@msg, 11, 14)
-	end
+	End
 	--
-	set @msType = IsNull(@msType, '')
+	Set @msType = IsNull(@msType, '')
 	
-	-- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_trigger or update
-	if @msType = '' And NOT @mode In ('Add', 'Bad')
-	begin
-		set @msg = 'Dataset type was blank'
+	-- Allow @msType to be blank If @mode is Add or Bad but not if check_add or add_trigger or update
+	If @msType = '' And NOT @mode In ('Add', 'Bad')
+	Begin
+		Set @msg = 'Dataset type was blank'
 		RAISERROR (@msg, 11, 15)
-	end
+	End
 	--
-	if IsNull(@LCCartName, '') = ''
-	begin
-		set @msg = 'LC Cart name was blank'
+	If IsNull(@LCCartName, '') = ''
+	Begin
+		Set @msg = 'LC Cart name was blank'
 		RAISERROR (@msg, 11, 15)
-	end
+	End
 
 	-- Assure that @comment is not null and assure that it doesn't have &quot;
-	set @comment = IsNull(@comment, '')
+	Set @comment = IsNull(@comment, '')
 	If @comment LIKE '%&quot;%'
 		Set @comment = Replace(@comment, '&quot;', '"')
 	
 	-- 
 	If IsNull(@rating, '') = ''
-	begin
-		set @msg = 'Rating was blank'
+	Begin
+		Set @msg = 'Rating was blank'
 		RAISERROR (@msg, 11, 15)
-	end
+	End
 	
 	If IsNull(@wellplateNum, '') IN ('', 'na')
-		set @wellplateNum = NULL
+		Set @wellplateNum = NULL
 	
 	If IsNull(@wellNum, '') IN ('', 'na')
-		set @wellNum = NULL
+		Set @wellNum = NULL
 
 	Set @eusProposalID = IsNull(@eusProposalID, '')
 	Set @eusUsageType = IsNull(@eusUsageType, '')
@@ -242,22 +245,22 @@ As
 	
 	Set @requestID = IsNull(@requestID, 0)
 	Set @AggregationJobDataset = IsNull(@AggregationJobDataset, 0)	
-	Set @CaptureSubfolder = LTrim(RTrim(IsNull(@CaptureSubfolder, '')))
+	Set @captureSubfolder = LTrim(RTrim(IsNull(@captureSubfolder, '')))
 	
+	Set @lcCartConfig = LTrim(RTrim(IsNull(@lcCartConfig, '')))
+	If @lcCartConfig = ''
+		Set @lcCartConfig = null
+		
 	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 	
 	---------------------------------------------------
 	-- Determine if we are adding or check_adding a dataset
 	---------------------------------------------------
+	--
 	If @mode IN ('add', 'check_add', 'add_trigger')
 		Set @AddingDataset = 1
 	Else
 		Set @AddingDataset = 0
-
-
-	---------------------------------------------------
-	-- Determine if we are adding or check_adding a dataset
-	---------------------------------------------------
 
 	If @logDebugMessages > 0
 	Begin
@@ -266,91 +269,88 @@ As
 	End
 	
 	---------------------------------------------------
-	-- validate dataset name
+	-- Validate dataset name
 	---------------------------------------------------
-
-	declare @badCh varchar(128)
-	set @badCh =  dbo.ValidateChars(@datasetNum, '')
-	if @badCh <> ''
-	begin
+	--
+	Declare @badCh varchar(128)
+	Set @badCh =  dbo.ValidateChars(@datasetNum, '')
+	If @badCh <> ''
+	Begin
 		If @badCh = '[space]'
-			set @msg = 'Dataset name may not contain spaces'
+			Set @msg = 'Dataset name may not contain spaces'
 		Else
 		Begin
-			if Len(@badCh) = 1
-				set @msg = 'Dataset name may not contain the character ' + @badCh
+			If Len(@badCh) = 1
+				Set @msg = 'Dataset name may not contain the character ' + @badCh
 			else
-				set @msg = 'Dataset name may not contain the characters ' + @badCh
+				Set @msg = 'Dataset name may not contain the characters ' + @badCh
 		End
 
-		-- Set @DebugMsg = 'Problem with dataset ' + @datasetnum + ': ' + @msg
-		-- exec postlogentry 'Debug', @DebugMsg, 'AddUpdateDataset'
-
 		RAISERROR (@msg, 11, 1)
-	end
+	End
 
-	if @AggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
-	begin
-		set @msg = 'Dataset name may not end in raw or wiff'
+	If @AggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
+	Begin
+		Set @msg = 'Dataset name may not end in raw or wiff'
 		RAISERROR (@msg, 11, 2)
-	end
+	End
 
 	If Len(@datasetNum) > 90
-	begin
-		set @msg = 'Dataset name cannot be over 90 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
+	Begin
+		Set @msg = 'Dataset name cannot be over 90 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
 		RAISERROR (@msg, 11, 3)
-	end
+	End
 	
 	If Len(@datasetNum) < 6
-	begin
-		set @msg = 'Dataset name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
+	Begin
+		Set @msg = 'Dataset name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
 		RAISERROR (@msg, 11, 3)
-	end
+	End
 
 	If @datasetNum in (
 	   'Archive', 'Dispositioned', 'Processed', 'Reprocessed', 'Not-Dispositioned', 
 	   'High-pH', 'NotDispositioned', 'Yufeng', 'Uploaded', 'Sequence', 'Sequences', 
 	   'Peptide', 'BadData')
-	begin
-		set @msg = 'Dataset name is too generic; be more specific'
+	Begin
+		Set @msg = 'Dataset name is too generic; be more specific'
 		RAISERROR (@msg, 11, 3)
-	end	
+	End	
 		
 	---------------------------------------------------
 	-- Resolve id for rating
 	---------------------------------------------------
 
-	declare @ratingID int
+	Declare @ratingID int
 
-	if @mode = 'bad'
-	begin
-		set @ratingID = -1 -- "No Data"
-		set @mode = 'add'
-		set @AddingDataset = 1
-	end
+	If @mode = 'bad'
+	Begin
+		Set @ratingID = -1 -- "No Data"
+		Set @mode = 'add'
+		Set @AddingDataset = 1
+	End
 	else
-	begin
+	Begin
 		execute @ratingID = GetDatasetRatingID @rating
-		if @ratingID = 0
-		begin
-			set @msg = 'Could not find entry in database for rating ' + @rating
+		If @ratingID = 0
+		Begin
+			Set @msg = 'Could not find entry in database for rating ' + @rating
 			RAISERROR (@msg, 11, 18)
-		end
-	end
+		End
+	End
 
 		
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @datasetID int
-	declare @curDSTypeID int
-	declare @curDSInstID int
-	declare @curDSStateID int
-	declare @curDSRatingID int
-	declare @newDSStateID int
+	Declare @datasetID int
+	Declare @curDSTypeID int
+	Declare @curDSInstID int
+	Declare @curDSStateID int
+	Declare @curDSRatingID int
+	Declare @newDSStateID int
 	
-	set @datasetID = 0
+	Set @datasetID = 0
 	SELECT 
 		@datasetID = Dataset_ID,
 		@curDSInstID = DS_instrument_name_ID, 
@@ -361,41 +361,40 @@ As
 
 	Set @datasetID = IsNull(@datasetID, 0)
 	
-	if @datasetID = 0 
-	begin
+	If @datasetID = 0 
+	Begin
 		-- cannot update a non-existent entry
 		--
-		if @mode IN ('update', 'check_update')
-		begin
-			set @msg = 'Cannot update: Dataset ' + @datasetNum + ' is not in database'
+		If @mode IN ('update', 'check_update')
+		Begin
+			Set @msg = 'Cannot update: Dataset ' + @datasetNum + ' is not in database'
 			RAISERROR (@msg, 11, 4)
-		end
-	end
+		End
+	End
 	else
-	begin
+	Begin
 		-- cannot create an entry that already exists
 		--
-		if @AddingDataset = 1
-		begin
-			set @msg = 'Cannot add dataset ' + @datasetNum + ' since already in database'
+		If @AddingDataset = 1
+		Begin
+			Set @msg = 'Cannot add dataset ' + @datasetNum + ' since already in database'
 			RAISERROR (@msg, 11, 5)
-		end
+		End
 
 		-- do not allow a rating change from 'Unreviewed' to any other rating within this procedure
 		--
-		if @curDSRatingID = -10 And @rating <> 'Unreviewed'
-		begin
-			set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/search" or SP UpdateDatasetDispositions)'
+		If @curDSRatingID = -10 And @rating <> 'Unreviewed'
+		Begin
+			Set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/search" or SP UpdateDatasetDispositions)'
 			RAISERROR (@msg, 11, 6)
-		end		
-	end
+		End		
+	End
 
 	---------------------------------------------------
 	-- Resolve ID for LC Column
 	---------------------------------------------------
 	
-	declare @columnID int
-	set @columnID = -1
+	Declare @columnID int = -1
 	--
 	SELECT @columnID = ID
 	FROM T_LC_Column
@@ -403,23 +402,53 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Error trying to look up column ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Error trying to look up column ID'
 		RAISERROR (@msg, 11, 93)
-	end
-	if @columnID = -1
-	begin
-		set @msg = 'Could not resolve column number to ID'
+	End
+	If @columnID = -1
+	Begin
+		Set @msg = 'Unknown LC column name: ' + @LCColumnNum
 		RAISERROR (@msg, 11, 94)
-	end
+	End
 
+	---------------------------------------------------
+	-- Resolve ID for LC Cart Config
+	---------------------------------------------------
+	
+	Declare @cartConfigID int
+	If @lcCartConfig Is Null
+	Begin
+		Set @cartConfigID = null
+	End
+	Else
+	Begin
+		Set @cartConfigID = -1
+		
+		SELECT @cartConfigID = Cart_Config_ID
+		FROM T_LC_Cart_Configuration
+		WHERE (Cart_Config_Name = @lcCartConfig)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myError <> 0
+		Begin
+			Set @msg = 'Error trying to look up LC cart config ID'
+			RAISERROR (@msg, 11, 95)
+		End
+		If @cartConfigID = -1
+		Begin
+			Set @msg = 'Unknown LC cart config: ' + @lcCartConfig
+			RAISERROR (@msg, 11, 96)
+		End
+	End
+		
 	---------------------------------------------------
 	-- Resolve ID for @secSep
 	---------------------------------------------------
 
-	declare @sepID int
-	set @sepID = 0
+	Declare @sepID int = 0
 	--
 	SELECT @sepID = SS_ID
 	FROM T_Secondary_Sep
@@ -427,23 +456,22 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Error trying to look up separation type ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Error trying to look up separation type ID'
 		RAISERROR (@msg, 11, 98)
-	end
-	if @sepID = 0
-	begin
-		set @msg = 'Could not resolve separation type to ID'
+	End
+	If @sepID = 0
+	Begin
+		Set @msg = 'Unknown separation type: ' + @secSep
 		RAISERROR (@msg, 11, 99)
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve ID for @internalStandards
 	---------------------------------------------------
 
-	declare @intStdID int
-	set @intStdID = -1
+	Declare @intStdID int = -1
 	--
 	SELECT @intStdID = Internal_Std_Mix_ID
 	FROM [T_Internal_Standards]
@@ -451,21 +479,21 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @msg = 'Error trying to look up internal standards ID'
+	If @myError <> 0
+	Begin
+		Set @msg = 'Error trying to look up internal standards ID'
 		RAISERROR (@msg, 11, 95)
-	end
-	if @intStdID = -1
-	begin
-		set @msg = 'Could not resolve internal standards to ID'
+	End
+	If @intStdID = -1
+	Begin
+		Set @msg = 'Unknown internal standard name: ' + @internalStandards
 		RAISERROR (@msg, 11, 96)
-	end
-
+	End
 
 	---------------------------------------------------
 	-- If Dataset starts with "Blank", then make sure @experimentNum contains "Blank"
 	---------------------------------------------------
+	
 	If @datasetNum Like 'Blank%' And @AddingDataset = 1
 	Begin
 		If NOT @ExperimentNum LIKE '%blank%'
@@ -476,7 +504,7 @@ As
 	-- Resolve experiment ID
 	---------------------------------------------------
 
-	declare @experimentID int
+	Declare @experimentID int
 	execute @experimentID = GetExperimentID @experimentNum
 
 	If @experimentID = 0 And @experimentNum LIKE 'QC_Shew_[0-9][0-9]_[0-9][0-9]' And @experimentNum LIKE '%-%'
@@ -494,7 +522,7 @@ As
 
 	If @experimentID = 0
 	Begin
-		set @msg = 'Could not find entry in database for experiment ' + @experimentNum
+		Set @msg = 'Could not find entry in database for experiment ' + @experimentNum
 		RAISERROR (@msg, 11, 12)
 	End
 
@@ -503,17 +531,17 @@ As
 	-- Resolve instrument ID
 	---------------------------------------------------
 
-	declare @instrumentID int
-	declare @InstrumentGroup varchar(64) = ''
-	declare @DefaultDatasetTypeID int
-	declare @msTypeOld varchar(50)
+	Declare @instrumentID int
+	Declare @InstrumentGroup varchar(64) = ''
+	Declare @DefaultDatasetTypeID int
+	Declare @msTypeOld varchar(50)
 	
 	execute @instrumentID = GetinstrumentID @instrumentName
-	if @instrumentID = 0
-	begin
-		set @msg = 'Could not find entry in database for instrument ' + @instrumentName
+	If @instrumentID = 0
+	Begin
+		Set @msg = 'Could not find entry in database for instrument ' + @instrumentName
 		RAISERROR (@msg, 11, 14)
-	end
+	End
 
 	---------------------------------------------------
 	-- Lookup the Instrument Group
@@ -523,11 +551,11 @@ As
 	FROM T_Instrument_Name
 	WHERE Instrument_ID = @instrumentID
 
-	if @InstrumentGroup = ''
-	begin
-		set @msg = 'Instrument group not defined for instrument ' + @instrumentName
+	If @InstrumentGroup = ''
+	Begin
+		Set @msg = 'Instrument group not defined for instrument ' + @instrumentName
 		RAISERROR (@msg, 11, 14)
-	end
+	End
 
 	---------------------------------------------------
 	-- Lookup the default dataset type ID (could be null)
@@ -542,11 +570,11 @@ As
 	-- Resolve dataset type ID
 	---------------------------------------------------
 
-	declare @datasetTypeID int
+	Declare @datasetTypeID int
 	execute @datasetTypeID = GetDatasetTypeID @msType
 	
-	if @datasetTypeID = 0
-	begin
+	If @datasetTypeID = 0
+	Begin
 		-- Could not resolve @msType to a dataset type
 		-- If @mode is Add, we will auto-update @msType to the default
 		--
@@ -588,17 +616,17 @@ As
 		End
 		Else
 		Begin
-			set @msg = 'Could not find entry in database for dataset type'
+			Set @msg = 'Could not find entry in database for dataset type ' + @msType
 			RAISERROR (@msg, 11, 13)
 		End
-	end
+	End
 
 
 	---------------------------------------------------
 	-- Verify that dataset type is valid for given instrument group
 	---------------------------------------------------
 
-	declare @allowedDatasetTypes varchar(255)
+	Declare @allowedDatasetTypes varchar(255)
 		
 	exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 
@@ -663,7 +691,7 @@ As
 		End
 	End
 	
-	if @result <> 0
+	If @result <> 0
 	Begin
 		-- @msg should already contain the details of the error
 		If IsNull(@msg, '') = ''
@@ -676,20 +704,20 @@ As
 	-- Check for instrument changing when dataset not in new state
 	---------------------------------------------------
 	--
-	if @mode IN ('update', 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
-	begin
-		set @msg = 'Cannot change instrument if dataset not in "new" state'
+	If @mode IN ('update', 'check_update') and @instrumentID <> @curDSInstID and @curDSStateID <> 1
+	Begin
+		Set @msg = 'Cannot change instrument if dataset not in "new" state'
 		RAISERROR (@msg, 11, 23)
-	end
+	End
 	
 	---------------------------------------------------
 	-- Resolve user ID for operator PRN
 	---------------------------------------------------
 
-	declare @userID int
+	Declare @userID int
 	execute @userID = GetUserID @operPRN
-	if @userID = 0
-	begin
+	If @userID = 0
+	Begin
 		-- Could not find entry in database for PRN @operPRN
 		-- Try to auto-resolve the name
 
@@ -705,10 +733,10 @@ As
 		End
 		Else
 		Begin
-			set @msg = 'Could not find entry in database for operator PRN ' + @operPRN
+			Set @msg = 'Could not find entry in database for operator PRN ' + @operPRN
 			RAISERROR (@msg, 11, 19)
 		End
-	end
+	End
 
 	---------------------------------------------------
 	-- Verify acceptable combination of EUS fields
@@ -740,7 +768,7 @@ As
 		---------------------------------------------------
 		If @datasetNum Like 'Blank%'
 		Begin
-			-- See if the experiment matches for this request; if it doesn't, change @requestID to 0
+			-- See If the experiment matches for this request; if it doesn't, change @requestID to 0
 			Set @ExperimentCheck = ''
 			
 			SELECT @ExperimentCheck = E.Experiment_Num
@@ -761,7 +789,7 @@ As
 	Begin
 		-- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
 		If @datasetNum Like 'Blank%' And @eusProposalID = '' And @eusUsageType = ''
-			set @eusUsageType = 'MAINTENANCE'
+			Set @eusUsageType = 'MAINTENANCE'
 
 	End
 
@@ -771,7 +799,7 @@ As
 	--
 	If @requestID = 0 AND @AddingDataset = 1
 	Begin
-		DECLARE @requestInstGroup varchar(128)
+		Declare @requestInstGroup varchar(128)
 		
 		EXEC FindActiveRequestedRunForDataset @datasetNum, @experimentID, @requestID out, @requestInstGroup OUT, @showDebugMessages=0
 		
@@ -788,14 +816,15 @@ As
 		End
 	End
 	
+	-- Validation checks are complete; now enable @logErrors	
 	Set @logErrors = 1
 	
 	---------------------------------------------------
 	-- action for add trigger mode
 	---------------------------------------------------
 	
-	if @mode = 'add_trigger'
-	begin -- <AddTrigger>
+	If @mode = 'add_trigger'
+	Begin -- <AddTrigger>
 
 		If @requestID <> 0
 		Begin
@@ -809,8 +838,8 @@ As
 
 			-- get experiment ID from scheduled run
 			--
-			declare @reqExperimentID int
-			set @reqExperimentID = 0
+			Declare @reqExperimentID int
+			Set @reqExperimentID = 0
 			--
 			SELECT @reqExperimentID = Exp_ID
 			FROM T_Requested_Run
@@ -818,19 +847,19 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
-			begin
-				set @message = 'Error trying to look up experiment for request'
+			If @myError <> 0
+			Begin
+				Set @message = 'Error trying to look up experiment for request'
 				RAISERROR (@message, 11, 86)
-			end
+			End
 		
 			-- validate that experiments match
 			--
-			if @experimentID <> @reqExperimentID
-			begin
-				set @message = 'Experiment for dataset (' + @experimentNum + ') does not match with the requested run''s experiment (Request ' + Convert(varchar(12), @requestID) + ')'
+			If @experimentID <> @reqExperimentID
+			Begin
+				Set @message = 'Experiment for dataset (' + @experimentNum + ') does not match with the requested run''s experiment (Request ' + Convert(varchar(12), @requestID) + ')'
 				RAISERROR (@message, 11, 72)
-			end
+			End
 		End
 
 		--**Check code taken from UpdateCartParameters stored procedure**
@@ -838,8 +867,8 @@ As
 		-- Resolve ID for LC Cart and update requested run table
 		---------------------------------------------------
 
-		declare @cartID int
-		set @cartID = 0
+		Declare @cartID int
+		Set @cartID = 0
 		--
 		SELECT @cartID = ID
 		FROM T_LC_Cart
@@ -847,21 +876,20 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @msg = 'Error trying to look up cart ID'
+		If @myError <> 0
+		Begin
+			Set @msg = 'Error trying to look up cart ID'
 			RAISERROR (@msg, 11, 33)
-		end
+		End
 		else 
-		if @cartID = 0
-		begin
-			set @msg = 'Could not resolve cart name to ID'
+		If @cartID = 0
+		Begin
+			Set @msg = 'Unknown LC Cart name: ' + @LCCartName
 			RAISERROR (@msg, 11, 35)
-		end
+		End
 
-
-		if @requestID = 0
-		begin -- <b1>
+		If @requestID = 0
+		Begin -- <b1>
 		
 			-- RequestID not specified
 			-- Try to determine EUS information using Experiment name
@@ -879,13 +907,13 @@ As
 							@eusUsersList output,
 							@msg output
 							
-			if @myError <> 0
+			If @myError <> 0
 				RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 			---------------------------------------------------
 			-- validate EUS type, proposal, and user list
 			---------------------------------------------------
-			declare @eusUsageTypeID int
+			Declare @eusUsageTypeID int
 			exec @myError = ValidateEUSUsage
 							@eusUsageType output,
 							@eusProposalID output,
@@ -894,38 +922,38 @@ As
 							@msg output,
 							@AutoPopulateUserListIfBlank = 0
 							
-			if @myError <> 0
+			If @myError <> 0
 				RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 			
 			If IsNull(@msg, '') <> ''
 				Set @message = @msg
 				
-		end -- </b1>
+		End -- </b1>
 		else
-		begin -- <b2>
+		Begin -- <b2>
 			
 			---------------------------------------------------
 			-- verify that request ID is correct
 			---------------------------------------------------
 			
-			IF NOT EXISTS (SELECT * FROM T_Requested_Run WHERE ID = @requestID)
-			begin
-				set @msg = 'Request ID not found'
+			If NOT EXISTS (SELECT * FROM T_Requested_Run WHERE ID = @requestID)
+			Begin
+				Set @msg = 'Request ID not found'
 				RAISERROR (@msg, 11, 52)
-			end
+			End
 
-		end -- </b2>
+		End -- </b2>
 
-		declare @DSCreatorPRN varchar(256)
-		set @DSCreatorPRN = suser_sname()
+		Declare @DSCreatorPRN varchar(256)
+		Set @DSCreatorPRN = suser_sname()
 
-		declare @rslt int
-		declare @Run_Start varchar(10)
-		declare @Run_Finish varchar(10)
-		set @Run_Start = ''
-		set @Run_Finish = ''
+		Declare @rslt int
+		Declare @Run_Start varchar(10)
+		Declare @Run_Finish varchar(10)
+		Set @Run_Start = ''
+		Set @Run_Finish = ''
 
-		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+		If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 			Set @warning = @message
 
 		If @logDebugMessages > 0
@@ -954,41 +982,39 @@ As
 			@eusUsersList,
 			@Run_Start,
 			@Run_Finish,
-			@CaptureSubfolder,
+			@captureSubfolder,
+			@lcCartConfig,
 			@message output
 
-		if @rslt > 0 
-		begin
-			set @msg = 'There was an error while creating the XML Trigger file: ' + @message
+		If @rslt > 0 
+		Begin
+			Set @msg = 'There was an error while creating the XML Trigger file: ' + @message
 			RAISERROR (@msg, 11, 55)
-		end
-	end -- </AddTrigger>
+		End
+	End -- </AddTrigger>
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	
-	if @mode = 'add' 
-	begin -- <AddMode>
+	If @mode = 'add' 
+	Begin -- <AddMode>
 	
 		---------------------------------------------------
 		-- Lookup storage path ID
 		---------------------------------------------------
 		--
-		declare @storagePathID int
-		declare @RefDate datetime
-		
-		set @storagePathID = 0
-		set @RefDate = GetDate()
+		Declare @storagePathID int = 0
+		Declare @RefDate datetime = GetDate()
 		--
 		Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @RefDate, @AutoSwitchActiveStorage=1, @infoOnly=0
 		--
-		IF @storagePathID = 0
-		begin
-			set @storagePathID = 2 -- index of "none" in table
-			set @msg = 'Valid storage path could not be found'
+		If @storagePathID = 0
+		Begin
+			Set @storagePathID = 2 -- index of "none" in T_Storage_Path
+			Set @msg = 'Valid storage path could not be found'
 			RAISERROR (@msg, 11, 43)
-		end
+		End
 
 		If @logDebugMessages > 0
 		Begin
@@ -998,10 +1024,10 @@ As
 		
 		-- Start transaction
 		--
-		declare @transName varchar(32)
-		set @transName = 'AddNewDataset'
+		Declare @transName varchar(32)
+		Set @transName = 'AddNewDataset'
 
-		begin transaction @transName
+		Begin transaction @transName
 
 		If IsNull(@AggregationJobDataset, 0) = 1
 			Set @newDSStateID = 3
@@ -1027,7 +1053,8 @@ As
 				DS_LC_column_ID, 
 				DS_wellplate_num, 
 				DS_internal_standard_ID,
-				Capture_Subfolder
+				Capture_Subfolder,
+				Cart_Config_ID
 				) 
 			VALUES (
 				@datasetNum,
@@ -1046,17 +1073,18 @@ As
 				@columnID,
 				@wellplateNum,
 				@intStdID,
-				@CaptureSubfolder
+				@captureSubfolder,
+				@cartConfigID
 				)
  
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 or @myRowCount <> 1
-		begin
-			set @msg = 'Insert operation failed for dataset ' + @datasetNum
+		If @myError <> 0 or @myRowCount <> 1
+		Begin
+			Set @msg = 'Insert operation failed for dataset ' + @datasetNum
 			RAISERROR (@msg, 11, 7)
-		end
+		End
 		
 		-- This method is more accurate than using IDENT_CURRENT
 		Set @datasetID = SCOPE_IDENTITY()		
@@ -1089,20 +1117,20 @@ As
 
 	
 		---------------------------------------------------
-		-- if scheduled run is not specified, create one
+		-- If scheduled run is not specified, create one
 		---------------------------------------------------
 
-		if @requestID = 0
-		begin -- <b3>
+		If @requestID = 0
+		Begin -- <b3>
 		
-			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+			If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 				Set @warning = @message
 
 			Declare @workPackage varchar(12) = 'none'			
 			EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
 
-			declare @reqName varchar(128)
-			set @reqName = 'AutoReq_' + @datasetNum
+			Declare @reqName varchar(128)
+			Set @reqName = 'AutoReq_' + @datasetNum
 			EXEC @result = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
 									@experimentNum = @experimentNum,
@@ -1129,24 +1157,24 @@ As
 									@callingUser = @callingUser,
 									@logDebugMessages = @logDebugMessages
 			--
-			set @myError = @result
+			Set @myError = @result
 			--
-			if @myError <> 0
-			begin
-				set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+			If @myError <> 0
+			Begin
+				Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
 				RAISERROR (@msg, 11, 24)
-			end
-		end -- </b3>
+			End
+		End -- </b3>
 
 		---------------------------------------------------
 		-- If a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
 		--
-		if @LCCartName NOT IN ('', 'no update') And @requestID > 0
-		begin
+		If @LCCartName NOT IN ('', 'no update') And @requestID > 0
+		Begin
 		
-			if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+			If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 				Set @warning = @message
 
 			exec @result = UpdateCartParameters
@@ -1155,36 +1183,37 @@ As
 								@LCCartName output,
 								@message output
 			--
-			set @myError = @result
+			Set @myError = @result
 			--
-			if @myError <> 0
-			begin
-				set @msg = 'Update LC cart name failed: dataset ' + @datasetNum + ' -> ' + @message
+			If @myError <> 0
+			Begin
+				Set @msg = 'Update LC cart name failed: dataset ' + @datasetNum + ' -> ' + @message
 				RAISERROR (@msg, 11, 21)
-			end
-		end
+			End
+		End
 		
 		---------------------------------------------------
 		-- consume the scheduled run 
 		---------------------------------------------------
-		set @datasetID = 0
+		
+		Set @datasetID = 0
 		SELECT 
 			@datasetID = Dataset_ID
 		FROM T_Dataset 
 		WHERE (Dataset_Num = @datasetNum)
 
-		if IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
+		If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 			Set @warning = @message
 				
 		exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser, @logDebugMessages
 		--
-		set @myError = @result
+		Set @myError = @result
 		--
-		if @myError <> 0
-		begin
-			set @msg = 'Consume operation failed: dataset ' + @datasetNum + ' -> ' + @message
+		If @myError <> 0
+		Begin
+			Set @msg = 'Consume operation failed: dataset ' + @datasetNum + ' -> ' + @message
 			RAISERROR (@msg, 11, 16)
-		end
+		End
 
 		If @@trancount > 0
 		Begin
@@ -1196,14 +1225,14 @@ As
 			exec PostLogEntry 'Error', @debugMsg, 'AddUpdateDataset'
 		End
 				
-	end -- </AddMode>
+	End -- </AddMode>
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @mode = 'update' 
-	begin -- <UpdateMode>
+	If @mode = 'update' 
+	Begin -- <UpdateMode>
 	
 		If @logDebugMessages > 0
 		Begin
@@ -1211,10 +1240,10 @@ As
 			exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
 		End
 
-		set @myError = 0
+		Set @myError = 0
 		--
 		UPDATE T_Dataset 
-		SET 
+		Set 
 				DS_Oper_PRN = @operPRN, 
 				DS_comment = @comment, 
 				DS_type_ID = @datasetTypeID, 
@@ -1226,28 +1255,29 @@ As
 				DS_LC_column_ID = @columnID, 
 				DS_wellplate_num = @wellplateNum, 
 				DS_internal_standard_ID = @intStdID,
-				Capture_Subfolder = @captureSubfolder
+				Capture_Subfolder = @captureSubfolder,
+				Cart_Config_ID = @cartConfigID
 		WHERE Dataset_ID = @datasetID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: dataset ' + @datasetNum
+		If @myError <> 0
+		Begin
+			Set @msg = 'Update operation failed: dataset ' + @datasetNum
 			RAISERROR (@msg, 11, 4)
-		end
+		End
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
 
 		---------------------------------------------------
-		-- if a cart name is specified, update it for the 
+		-- If a cart name is specified, update it for the 
 		-- requested run
 		---------------------------------------------------
 		--
-		if @LCCartName NOT IN ('', 'no update')
-		begin
+		If @LCCartName NOT IN ('', 'no update')
+		Begin
 
 			-- Lookup the RequestID for this dataset
 			SELECT @requestID = RR.ID
@@ -1258,8 +1288,8 @@ As
 
 			If IsNull(@requestID, 0) = 0
 			Begin
-				set @warningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
-				set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
+				Set @warningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
+				Set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
 			End
 			Begin
 				Set @warningAddon = ''
@@ -1269,20 +1299,23 @@ As
 									@LCCartName output,
 									@warningAddon output
 				--
-				set @myError = @result
+				Set @myError = @result
 				--
-				if @myError <> 0
-				begin
-					set @warningAddon = 'Update LC cart name failed: ' + @warningAddon
-					set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
-					set @myError = 0
-				end
+				If @myError <> 0
+				Begin
+					Set @warningAddon = 'Update LC cart name failed: ' + @warningAddon
+					Set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ')
+					Set @myError = 0
+				End
 			End	
-		end
-					
+		End
+
+		---------------------------------------------------
 		-- If rating changed from -5, -6, or -7 to 5, then check if any jobs exist for this dataset
 		-- If no jobs are found, then call SchedulePredefinedAnalyses for this dataset
 		-- Skip jobs with AJ_DatasetUnreviewed=1 when looking for existing jobs (these jobs were created before the dataset was dispositioned)
+		---------------------------------------------------
+		--
 		If @ratingID >= 2 and IsNull(@curDSRatingID, -1000) IN (-5, -6, -7)
 		Begin
 			If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID) AND AJ_DatasetUnreviewed = 0 )
@@ -1313,7 +1346,7 @@ As
 			End
 		End
 
-	end -- </UpdateMode>
+	End -- </UpdateMode>
 
 
 	-- Update @message if @warning is not empty	
@@ -1337,12 +1370,12 @@ As
 		End
 	End
 
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
 		If @logErrors > 0 And
@@ -1352,7 +1385,7 @@ As
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataset'
 		End
 
-	END CATCH
+	End CATCH
 	
 	return @myError
 

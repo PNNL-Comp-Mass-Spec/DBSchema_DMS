@@ -20,6 +20,7 @@ CREATE PROCEDURE CopyRequestedRun
 **			02/21/2013 mem - Now verifying that a new row was added to T_Requested_Run
 **			05/08/2013 mem - Now copying Vialing_Conc and Vialing_Vol
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**			02/23/2017 mem - Add column RDS_Cart_Config_ID
 **
 *****************************************************/
 (
@@ -86,6 +87,7 @@ As
 		RDS_EUS_Proposal_ID,
 		RDS_EUS_UsageType,
 		RDS_Cart_ID,
+		RDS_Cart_Config_ID,
 		RDS_Cart_Col,
 		RDS_Sec_Sep,
 		RDS_MRM_Attachment,
@@ -120,6 +122,7 @@ As
 		RDS_EUS_Proposal_ID,
 		RDS_EUS_UsageType,
 		RDS_Cart_ID,
+		RDS_Cart_Config_ID,
 		RDS_Cart_Col,
 		RDS_Sec_Sep,
 		RDS_MRM_Attachment,

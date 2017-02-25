@@ -11,6 +11,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TIN.IN_name AS Instrument,
        DS.DS_sec_sep AS [Separation Type],
        LCCart.Cart_Name AS [LC Cart],
+	   CartConfig.Cart_Config_Name AS [LC Cart Config],
        LCCol.SC_Column_Number AS [LC Column],
        DS.DS_wellplate_num AS [Wellplate Number],
        DS.DS_well_num AS [Well Number],
@@ -127,7 +128,9 @@ FROM dbo.T_Storage_Path AS SPath
        ON DA.AS_state_ID = TDASN.DASN_StateID
      LEFT OUTER JOIN dbo.T_Archive_Update_State_Name AS AUSN
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
-     LEFT OUTER JOIN ( SELECT AJ.AJ_datasetID AS DatasetID,
+     LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
+	   ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
+	 LEFT OUTER JOIN ( SELECT AJ.AJ_datasetID AS DatasetID,
                               COUNT(*) AS PMTasks
                        FROM dbo.T_Analysis_Job AS AJ
                             INNER JOIN dbo.T_MTS_Peak_Matching_Tasks_Cached AS PM

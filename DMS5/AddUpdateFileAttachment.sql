@@ -7,8 +7,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 /****************************************************
 **
 **  Desc: 
-**    Adds new or edits existing item in 
-**    T_File_Attachment 
+**    Adds new or edits existing item in T_File_Attachment 
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -25,10 +24,10 @@ CREATE PROCEDURE AddUpdateFileAttachment
 	@ID int,
 	@FileName varchar(256),
 	@Description varchar(1024),
-	@EntityType varchar(64),
-	@EntityID VARCHAR(256),			-- Must be text because Experiment and Campaign file attachments are tracked via Experiment Name or Campaign Name
-	@FileSizeBytes varchar(12),     -- This file size is actually in KB
-	@ArchiveFolderPath varchar(256),
+	@EntityType varchar(64),			-- campaign, experiment, sample_prep_request, lc_cart_configuration, etc.
+	@EntityID varchar(256),				-- Must be text because Experiment and Campaign file attachments are tracked via Experiment Name or Campaign Name
+	@FileSizeBytes varchar(12),			-- This file size is actually in KB
+	@ArchiveFolderPath varchar(256),	-- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function GetFileAttachmentPath in this database
 	@FileMimeType varchar(256),
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -68,6 +67,7 @@ As
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
 		-- cannot update a non-existent entry
 		if @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 16)
@@ -99,25 +99,23 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_File_Attachment (
-		File_Name,
-		Description,
-		Entity_Type,
-		Entity_ID,
-		Owner_PRN,
-		File_Size_Bytes,
-		Archive_Folder_Path,
-		File_Mime_Type
-		) VALUES (
-		@FileName,
-		IsNull(@Description, ''),
-		@EntityType,
-		@EntityID,
-		@callingUser,
+	INSERT INTO T_File_Attachment( File_Name,
+	                               Description,
+	                               Entity_Type,
+	                               Entity_ID,
+	                               Owner_PRN,
+	                               File_Size_Bytes,
+	                               Archive_Folder_Path,
+	                               File_Mime_Type )
+	VALUES(
+		@FileName, 
+		IsNull(@Description, ''), 
+		@EntityType, 
+		@EntityID, 
+		@callingUser, 
 		@FileSizeBytes,
-		@ArchiveFolderPath,
-		@FileMimeType
-	)
+		@ArchiveFolderPath, 
+		@FileMimeType)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -138,15 +136,14 @@ As
 	begin
 		set @myError = 0
 		--
-		UPDATE T_File_Attachment 
-		SET 
-		Description = IsNull(@Description, ''),
-		Entity_Type = @EntityType,
-		Entity_ID = @EntityID,
-		File_Size_Bytes = @FileSizeBytes,
-		Last_Affected = GETDATE(),
-		Archive_Folder_Path = @ArchiveFolderPath,
-		File_Mime_Type = @FileMimeType
+		UPDATE T_File_Attachment
+		SET Description = IsNull(@Description, ''),
+		    Entity_Type = @EntityType,
+		    Entity_ID = @EntityID,
+		    File_Size_Bytes = @FileSizeBytes,
+		    Last_Affected = GETDATE(),
+		    Archive_Folder_Path = @ArchiveFolderPath,
+		    File_Mime_Type = @FileMimeType
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

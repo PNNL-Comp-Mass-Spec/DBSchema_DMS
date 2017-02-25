@@ -18,6 +18,7 @@ CREATE Procedure dbo.StoreProjectUsageStats
 **	Auth:	mem
 **	Date:	12/18/2015 mem - Initial version
 **			05/06/2016 mem - Now tracking experiments
+**			02/24/2017 mem - Update the Merge logic to join on Proposal_User
 **    
 *****************************************************/
 (	
@@ -204,7 +205,8 @@ AS
 		 t.WeekOfYear = s.WeekOfYear AND
 		 IsNull(t.Proposal_ID, 0) = IsNull(s.Proposal_ID, 0) AND
 		 t.RDS_WorkPackage = s.RDS_WorkPackage AND
-		 t.EUS_UsageType = s.EUS_UsageType)
+		 t.EUS_UsageType = s.EUS_UsageType AND
+		 IsNull(t.Proposal_User, '') = IsNull(s.Proposal_User, ''))
 	WHEN MATCHED AND (
 		ISNULL( NULLIF(t.Jobs, s.Jobs),
 				NULLIF(s.Jobs, t.Jobs)) IS NOT NULL
@@ -288,7 +290,8 @@ AS
 		 t.WeekOfYear = s.WeekOfYear AND
 		 IsNull(t.Proposal_ID, 0) = IsNull(s.Proposal_ID, 0) AND
 		 t.RDS_WorkPackage = s.Work_Package_Number AND
-		 t.EUS_UsageType = s.EUS_UsageType)
+		 t.EUS_UsageType = s.EUS_UsageType AND
+		 IsNull(t.Proposal_User, '') = IsNull(s.Proposal_User, ''))
 	WHEN MATCHED AND (
 		ISNULL( NULLIF(t.Samples, s.Samples),
 				NULLIF(s.Samples, t.Samples)) IS NOT NULL

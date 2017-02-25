@@ -29,6 +29,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_EUS_UsageType] [smallint] NOT NULL,
 	[RDS_Cart_ID] [int] NOT NULL,
+	[RDS_Cart_Config_ID] [int] NULL,
 	[RDS_Cart_Col] [smallint] NULL,
 	[RDS_Sec_Sep] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_MRM_Attachment] [int] NULL,
@@ -207,6 +208,11 @@ REFERENCES [dbo].[T_LC_Cart] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_LC_Cart]
 GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_LC_Cart_Configuration] FOREIGN KEY([RDS_Cart_Config_ID])
+REFERENCES [dbo].[T_LC_Cart_Configuration] ([Cart_Config_ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_LC_Cart_Configuration]
+GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches] FOREIGN KEY([RDS_BatchID])
 REFERENCES [dbo].[T_Requested_Run_Batches] ([ID])
 GO
@@ -237,7 +243,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger trig_d_Requested_Run on T_Requested_Run
+create Trigger trig_d_Requested_Run on dbo.T_Requested_Run
 For Delete
 /****************************************************
 **
@@ -278,7 +284,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger trig_i_Requested_Run on T_Requested_Run
+create Trigger trig_i_Requested_Run on dbo.T_Requested_Run
 For Insert
 /****************************************************
 **
@@ -307,7 +313,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger trig_u_Requested_Run on T_Requested_Run
+CREATE Trigger trig_u_Requested_Run on dbo.T_Requested_Run
 After Insert, Update
 /****************************************************
 **
