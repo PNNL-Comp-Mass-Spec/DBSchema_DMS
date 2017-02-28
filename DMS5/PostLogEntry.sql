@@ -23,6 +23,7 @@ CREATE Procedure dbo.PostLogEntry
 **			07/20/2009 grk - eliminate health log (http://prismtrac.pnl.gov/trac/ticket/742)
 **			09/13/2010 mem - Eliminate analysis log
 **						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
+**			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter (512 characters in DMS); disable ANSI Warnings before inserting into the table
 **    
 *****************************************************/
 (
@@ -32,8 +33,12 @@ CREATE Procedure dbo.PostLogEntry
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 )
 As
-	Declare @duplicateRowCount int
-	Set @duplicateRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
+
+	Declare @duplicateRowCount int = 0
 	
 	If (@postedBy Like 'Space%') And @type In ('Health', 'Normal')
 	Begin
@@ -54,17 +59,27 @@ As
 
 	If @duplicateRowCount = 0
 	Begin
-		INSERT INTO T_Log_Entries (posted_by, posting_time, type, message) 
-		VALUES ( @postedBy, GETDATE(), @type, @message)
+		SET ANSI_WARNINGS OFF;
+		
+		INSERT INTO T_Log_Entries( posted_by,
+		                           posting_time,
+		                           [Type],
+		                           message )
+		VALUES(@postedBy, GETDATE(), @type, @message);
 		--
-		if @@rowcount <> 1
+		SELECT @myError = @@error, @myRowCount = @@rowcount;
+		
+		SET ANSI_WARNINGS ON;
+		--
+		if @myRowCount <> 1
 		begin
 			RAISERROR ('Update was unsuccessful for T_Log_Entries table', 10, 1)
 			return 51191
-		end
+		end				
 	End
 			
 	return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [DDL_Viewer] AS [dbo]

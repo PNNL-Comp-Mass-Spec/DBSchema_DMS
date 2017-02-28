@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure PostLogEntry
+CREATE Procedure PostLogEntry
 /****************************************************
 **
 **	Desc: Put new entry into the main log table
@@ -14,16 +14,22 @@ create Procedure PostLogEntry
 **	Date:	10/31/2001
 **			02/17/2005 mem - Added parameter @duplicateEntryHoldoffHours
 **			05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
+**			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter; disable ANSI Warnings before inserting into the table
 **    
 *****************************************************/
+(
 	@type varchar(128),
 	@message varchar(4096),
 	@postedBy varchar(128)= 'na',
 	@duplicateEntryHoldoffHours int = 0			-- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
+)
 As
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	Declare @duplicateRowCount int
-	Set @duplicateRowCount = 0
+	Declare @duplicateRowCount int = 0
 	
 	If IsNull(@duplicateEntryHoldoffHours, 0) > 0
 	Begin
@@ -34,11 +40,19 @@ As
 
 	If @duplicateRowCount = 0
 	Begin
-		INSERT INTO T_Log_Entries
-			(posted_by, posting_time, type, message) 
-		VALUES ( @postedBy, GETDATE(), @type, @message)
+		SET ANSI_WARNINGS OFF;
+		
+		INSERT INTO T_Log_Entries( posted_by,
+		                           posting_time,
+		                           [Type],
+		                           message )
+		VALUES(@postedBy, GETDATE(), @type, @message);
 		--
-		if @@rowcount <> 1
+		SELECT @myError = @@error, @myRowCount = @@rowcount;
+		
+		SET ANSI_WARNINGS ON;
+		--
+		if @myRowCount <> 1
 		begin
 			RAISERROR ('Update was unsuccessful for T_Log_Entries table', 10, 1)
 			return 51191
