@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_LC_Cart_Config_Picklist] ******/
+/****** Object:  View [dbo].[V_LC_Cart_Configuration_Picklist] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_LC_Cart_Config_Picklist]
+CREATE VIEW [dbo].[V_LC_Cart_Configuration_Picklist]
 AS
 SELECT Config.Cart_Config_Name AS [Name],
        Config.Description AS [Desc],
@@ -20,5 +20,5 @@ WHERE (Config.Cart_Config_State = 'Active')
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_Picklist] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Configuration_Picklist] TO [DDL_Viewer] AS [dbo]
 GO
