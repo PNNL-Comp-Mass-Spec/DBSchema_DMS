@@ -11,9 +11,12 @@ CREATE Procedure dbo.UpdateLCCartRequestAssignments
 **	Set LC cart and col assignments for requested runs
 **
 **	Example XML for @cartAssignmentList
-**		<r rq="543451" ct="Andromeda" co="1" />
-**		<r rq="543450" ct="Andromeda" co="2" />
-**		<r rq="543449" ct="Andromeda" co="1" />
+**		<r rq="543451" ct="Andromeda" co="1" cg="" />
+**		<r rq="543450" ct="Andromeda" co="2" cg="" />
+**		<r rq="543449" ct="Andromeda" co="1" cg="Tiger_Jup_2D_Peptides_20uL" />
+**
+**	Where rq is the request ID, ct is the cart name, co is the column ID, and cg is the cart config name
+**	See method saveChangesToDatabase below lc_cart_request_loading in file javascript/lcmd.js
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -23,134 +26,214 @@ CREATE Procedure dbo.UpdateLCCartRequestAssignments
 **	Date: 	03/10/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			11/07/2016 mem - Add optional logging via PostLogEntry
+**			02/27/2017 mem - Add support for cart config name
 **    
 *****************************************************/
 (
 	@cartAssignmentList text,		-- XML (see above)
-	@mode varchar(32),				-- Unused
+	@mode varchar(32),				-- Unused, but likely 'update'
 	@message varchar(512) output
 )
 As
-	SET NOCOUNT ON 
+	Set NOCOUNT ON 
+	Set CONCAT_NULL_YIELDS_NULL ON
+	Set ANSI_PADDING ON
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	DECLARE @xml AS xml
-	SET CONCAT_NULL_YIELDS_NULL ON
-	SET ANSI_PADDING ON
-	SET @xml = @cartAssignmentList
+	Declare @xml AS xml
+	Set @xml = @cartAssignmentList
+	
+	Set @message = ''
 
-	SET @message = ''
-
-	-- Uncomment to log the XML for debugging purposes
-	-- exec PostLogEntry 'Debug', Cast(@cartAssignmentList As varchar(4096)), 'UpdateLCCartRequestAssignments'
-
+	-- Change this to 1 to enable debugging
+	Declare @debugMode tinyint = 0
+	Declare @debugMsg varchar(4096)
+	
+	If @debugMode > 0
+	Begin
+		Set @debugMsg = Cast(@cartAssignmentList As varchar(4096))
+		exec PostLogEntry 'Debug', @debugMsg, 'UpdateLCCartRequestAssignments'
+	End
+	
 	-----------------------------------------------------------
-	-- create and populate temp table with block assignments
+	-- Create and populate temp table with block assignments
 	-----------------------------------------------------------
 	--
 	CREATE TABLE #TMP (
 		request INT,
 		cart VARCHAR(64),
+		cartConfig varchar(128),
 		col	VARCHAR(12),
 		cartID INT NULL,
+		cartConfigID INT NULL,
 		locked VARCHAR(24) NULL 
 	)
 	--
 	INSERT INTO #TMP
-		( request, cart , col)
+		( request, cart, cartConfig, col)
 	SELECT
 		xmlNode.value('@rq', 'nvarchar(256)') request,
 		xmlNode.value('@ct', 'nvarchar(256)') cart,
+		xmlNode.value('@cg', 'nvarchar(256)') cartConfig,
 		xmlNode.value('@co', 'nvarchar(256)') col
 	FROM @xml.nodes('//r') AS R(xmlNode)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	Declare @requestCountInXML int = @myRowCount
+	
+	UPDATE #TMP
+	SET cartConfig = ''
+	WHERE cartConfig Is Null
+	
 	-----------------------------------------------------------
-	-- resolve cart name to cart ID
+	-- Resolve cart name to cart ID
 	-----------------------------------------------------------
 	--
 	UPDATE #TMP
-	SET
-		cartID = T_LC_Cart.ID
-	FROM
-		#TMP
-		LEFT OUTER JOIN dbo.T_LC_Cart ON cart = Cart_Name
-
+	SET cartID = LCCart.ID
+	FROM #TMP
+	     INNER JOIN T_LC_Cart AS LCCart
+	       ON #TMP.cart = LCCart.Cart_Name
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 	IF EXISTS (SELECT * FROM #TMP WHERE cartID IS NULL)
 	BEGIN
-		SET @message = 'Invalid cart name'
-		SET @myError = 510027
+		Declare @invalidCart varchar(64) = ''
+		
+		SELECT Top 1 @invalidCart = cart
+		FROM #TMP 
+		WHERE cartID IS NULL
+	
+		If IsNull(@invalidCart, '') = ''
+			Set @message = 'Cart names cannot be blank'
+		Else
+			Set @message = 'Invalid cart name: ' + @invalidCart
+		Set @myError = 510027
 		GOTO Done	
-	END 
+	END
 
 	-----------------------------------------------------------
-	-- batch info
+	-- Resolve cart config name to cart config ID
 	-----------------------------------------------------------
 	--
 	UPDATE #TMP
-	SET locked = dbo.T_Requested_Run_Batches.Locked
-	FROM #TMP 
-	INNER JOIN dbo.T_Requested_Run ON request = dbo.T_Requested_Run.ID
-	INNER JOIN dbo.T_Requested_Run_Batches ON dbo.T_Requested_Run.RDS_BatchID = dbo.T_Requested_Run_Batches.ID
+	SET cartConfigID = CartConfig.Cart_Config_ID
+	FROM #TMP
+	     INNER JOIN T_LC_Cart_Configuration AS CartConfig
+	       ON #TMP.cartConfig = CartConfig.Cart_Config_Name
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+	IF EXISTS (SELECT * FROM #TMP WHERE cartConfig <> '' AND cartConfigID IS NULL)
+	BEGIN
+		Declare @invalidCartConfig varchar(128) = ''
+		
+		SELECT Top 1 @invalidCartConfig = cartConfig
+		FROM #TMP 
+		WHERE cartConfig <> '' AND cartConfigID IS NULL
+	
+		Set @message = 'Invalid cart config name: ' + @invalidCartConfig
+		Set @myError = 510028
+		GOTO Done	
+	END 
+	
+	-----------------------------------------------------------
+	-- Batch info
+	-----------------------------------------------------------
+	--
+	UPDATE #TMP
+	SET locked = RRB.Locked
+	FROM #TMP
+	   INNER JOIN T_Requested_Run RR
+	       ON #TMP.request = RR.ID
+	     INNER JOIN T_Requested_Run_Batches AS RRB
+	       ON RR.RDS_BatchID = RRB.ID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	-----------------------------------------------------------
-	-- check for locked batches
+	-- Check for locked batches
 	-----------------------------------------------------------
 	
 	IF EXISTS (SELECT * FROM #TMP WHERE locked = 'Yes')
 	BEGIN
-		SET @message = 'Cannot change requests in locked batches'
-		SET @myError = 510012
+		Declare @firstLocked int
+		Declare @lastLocked int
+		
+		SELECT @firstLocked = Min(request),
+		       @lastLocked = Max(request)
+		FROM #TMP
+		WHERE locked = 'Yes'
+	
+		If @firstLocked = @lastLocked
+			Set @message = 'Cannot change requests in locked batches; request ' + Cast(@firstLocked as varchar(12)) + ' is locked'
+		Else
+			Set @message = 'Cannot change requests in locked batches; locked requests include ' + Cast(@firstLocked as varchar(12)) + ' and ' + + Cast(@lastLocked as varchar(12))
+		
+		Set @myError = 510012
 		GOTO Done
 	END 
 
 	-----------------------------------------------------------
-	-- disregard unchanged requests
+	-- Disregard unchanged requests
 	-----------------------------------------------------------
 	--
-	DELETE FROM
-		#TMP
-	WHERE
-		EXISTS ( 
-			SELECT
-				*
-			FROM
-				dbo.T_Requested_Run
-			WHERE
-				request = ID
-				AND cartID = RDS_Cart_ID
-				AND CASE WHEN col = '' THEN 0 ELSE CONVERT(INT, col) END = ISNULL(RDS_Cart_Col, 0) 
-		)
+	DELETE FROM #TMP
+	WHERE request IN ( SELECT request
+	                   FROM #TMP
+	                        INNER JOIN T_Requested_Run AS RR
+	                          ON #TMP.request = RR.ID AND
+	                             #TMP.cartID = RR.RDS_Cart_ID AND
+	                             IsNull(#TMP.cartConfigID, 0) = IsNull(RR.RDS_Cart_Config_ID, 0) AND
+	                             CASE
+	                                 WHEN #TMP.col = '' THEN 0
+	                                 ELSE Cast(#TMP.col AS int)
+	                             END = ISNULL(RR.RDS_Cart_Col, 0) )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error trying to remove unchanged requests'
+		Set @message = 'Error trying to remove unchanged requests'
 		GOTO Done
 	end
+	
+	If @debugMode > 0
+	Begin
+		If @requestCountInXML = @myRowCount
+			Set @debugMsg = 'All ' + Cast(@requestCountInXML as varchar(9)) + ' requests were unchanged; nothing to do'
+		Else If @myRowCount = 0
+			Set @debugMsg = 'Will update all ' + Cast(@requestCountInXML as varchar(9)) + ' requests'
+		Else
+			Set @debugMsg = 'Will update ' + Cast(@requestCountInXML - @myRowCount as varchar(9)) + ' of ' + Cast(@requestCountInXML as varchar(9)) + ' requests'
+			
+		Exec PostLogEntry 'Debug', @debugMsg, 'UpdateLCCartRequestAssignments'
+		
+	End	
 
 	-----------------------------------------------------------
-	-- update requested runs
+	-- Update requested runs
 	-----------------------------------------------------------
 	--
 	UPDATE T_Requested_Run
-	SET
-		RDS_Cart_ID = cartID,
-		RDS_Cart_Col = col
-	FROM
-		T_Requested_Run
-		INNER JOIN #TMP ON request =ID
+	SET RDS_Cart_ID = #TMP.cartID,
+	    RDS_Cart_Config_ID = #TMP.cartConfigID,
+	    RDS_Cart_Col = #TMP.col
+	FROM T_Requested_Run RR
+	     INNER JOIN #TMP
+	       ON #TMP.request = RR.ID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error updating requested runs'
+		Set @message = 'Error updating requested runs'
 		GOTO Done
 	end
 
@@ -165,6 +248,7 @@ Done:
 	Exec PostUsageLogEntry 'UpdateLCCartRequestAssignments', @UsageMessage
 
 	RETURN @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [DDL_Viewer] AS [dbo]
