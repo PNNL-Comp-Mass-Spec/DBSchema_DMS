@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE AddUpdateLCCartConfiguration
 /****************************************************
 **
@@ -20,6 +19,8 @@ CREATE PROCEDURE AddUpdateLCCartConfiguration
 **			02/23/2017 mem - Validate the config name
 **			02/24/2017 mem - Add parameters @primaryTrapTime and @primaryTrapMobilePhase
 **			               - Allow changing state even if the Cart Config is associated with datasets
+**			02/28/2017 mem - Remove parameter @cartName
+**						   - Validate that @configName starts with a valid cart name
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -27,7 +28,6 @@ CREATE PROCEDURE AddUpdateLCCartConfiguration
 (
 	@ID int,
 	@configName varchar(128),
-	@cartName varchar(128),
 	@description varchar(512),
 	@autosampler varchar(128),
 	@customValveConfig varchar(256),
@@ -73,7 +73,6 @@ As
 
 	Set @ID = IsNull(@ID, 0)
 	Set @configName = IsNull(@configName, '')
-	Set @cartName = IsNull(@cartName, '')
 	Set @state = IsNull(@state, 'Active')
 	Set @callingUser = IsNull(@callingUser, '')
 	Set @mode = IsNull(@mode, 'add')
@@ -107,6 +106,7 @@ As
 	
 	---------------------------------------------------
 	-- Validate the cart configuration name
+	-- First assure that it does not have invalid characters and is long enough
 	---------------------------------------------------
 
 	Declare @badCh varchar(128) = dbo.ValidateChars(@configName, '')
@@ -121,11 +121,32 @@ As
 	end
 
 	If Len(@configName) < 6
-	begin
+	Begin
 		Set @message = 'LC Cart Configuration name must be at least 6 characters in length; currently ' + Cast(Len(@configName) as varchar(9)) + ' characters'
 		RAISERROR (@message, 10, 1)
 		Return 51005
-	end
+	End
+
+	---------------------------------------------------
+	-- Next assure that is starts with a valid cart name followed by an underscore, or starts with "Unknown_"
+	---------------------------------------------------
+	--
+	Declare @underscoreLoc int
+	Declare @cartName varchar(128)
+	
+	Set @underscoreLoc = CharIndex('_', @configName)
+	
+	If @underscoreLoc <=1
+	Begin
+	Set @message = 'LC Cart Configuration name start with a valid cart name, followed by an underscore'
+		RAISERROR (@message, 10, 1)
+		Return 51006
+	End
+		
+	Set @cartName = Substring(@configName, 1, @underscoreLoc-1)
+
+	If @cartName = 'Unknown'
+		Set @cartName= 'No_Cart'
 		
 	---------------------------------------------------
 	-- Resolve cart name to ID
@@ -148,7 +169,7 @@ As
 
 	If @cartID = 0
 	Begin
-		Set @message = 'Could not find cart ' + @cartName
+		Set @message = 'Cart Config name must start with a valid LC cart name, followed by an underscore; unknown cart: ' + @cartName
 		RAISERROR (@message, 10, 1)
 		Return 51007
 	End

@@ -8,7 +8,6 @@ CREATE VIEW [dbo].[V_LC_Cart_Configuration_Entry]
 AS
 SELECT Config.Cart_Config_ID AS ID,
        Config.Cart_Config_Name AS Config_Name,
-       Cart.Cart_Name AS Cart,
        Config.Description,
        Config.Autosampler,
 	   Config.Custom_Valve_Config,
