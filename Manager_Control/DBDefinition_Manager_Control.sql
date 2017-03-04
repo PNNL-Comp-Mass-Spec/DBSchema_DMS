@@ -1,8 +1,8 @@
 /****** Object:  Database [Manager_Control] ******/
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
-( NAME = N'ManagerControl', FILENAME = N'I:\SQLServerData\Manager_Control.mdf' , SIZE = 78464KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 78464KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'H:\SQLServerData\Manager_Control_log.ldf' , SIZE = 34752KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
+( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 17664KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Manager_Control] SET COMPATIBILITY_LEVEL = 100
