@@ -27,6 +27,8 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **			01/08/2014 mem - Now returning additional debug information when @InfoOnly > 0
 **			06/18/2014 mem - Now passing default to udfParseDelimitedList
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/03/2017 mem - Exclude datasets associated with the Tracking experiment
+**			               - Exclude datasets of type Tracking
 **
 *****************************************************/
 (
@@ -69,6 +71,7 @@ As
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
+	--
 	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	Set @MaxDatasetsToProcess = IsNull(@MaxDatasetsToProcess, 0)
 	Set @DayCountForRecentDatasets = IsNull(@DayCountForRecentDatasets, 30)
@@ -129,7 +132,7 @@ As
 	-- Also excludes datasets with an undesired state or undesired rating
 	-- Optionally only matches analysis tools with names matching @AnalysisToolNameFilter
 	---------------------------------------------------
-	
+	--
 	-- First construct a list of all recent datasets that have an instrument class
 	-- that has an active predefined job
 	-- Optionally filter on campaign
@@ -137,15 +140,19 @@ As
 	INSERT INTO #Tmp_DatasetsToProcess( Dataset_ID, Process_Dataset )
 	SELECT DISTINCT DS.Dataset_ID, 1 AS Process_Dataset
 	FROM T_Dataset DS
+	     INNER JOIN T_DatasetTypeName DSType
+	       ON DSType.DST_Type_ID = DS.DS_type_ID
 	     INNER JOIN T_Instrument_Name InstName
 	       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-	     INNER JOIN T_Experiments E 
-	       ON DS.Exp_ID = E.Exp_ID 
-	     INNER JOIN T_Campaign C 
+	     INNER JOIN T_Experiments E
+	       ON DS.Exp_ID = E.Exp_ID
+	     INNER JOIN T_Campaign C
 	       ON E.EX_campaign_ID = C.Campaign_ID
 	WHERE (NOT DS.DS_rating IN (SELECT Rating FROM #TmpDSRatingExclusionList)) AND
 	      (DS.DS_state_ID = 3) AND
 	      (@CampaignFilter = '' Or C.Campaign_Num Like @CampaignFilter) AND
+	      (NOT DSType.DST_name IN ('Tracking')) AND
+	      (NOT E.Experiment_Num in ('Tracking')) AND	      
 	      (DS.DS_created BETWEEN DATEADD(day, -@DayCountForRecentDatasets, GETDATE()) AND 
 	                             DATEADD(hour, - 12, GETDATE())) AND
 	      InstName.IN_Class IN ( SELECT DISTINCT InstClass.IN_class

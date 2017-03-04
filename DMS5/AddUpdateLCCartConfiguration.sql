@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateLCCartConfiguration
 **			               - Allow changing state even if the Cart Config is associated with datasets
 **			02/28/2017 mem - Remove parameter @cartName
 **						   - Validate that @configName starts with a valid cart name
+**			03/03/2017 mem - Add parameter @entryUser
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -52,6 +53,7 @@ CREATE PROCEDURE AddUpdateLCCartConfiguration
 	@upstreamAnalyticalFlowRate varchar(64),
 	@upstreamFractionationProfile varchar(128),
 	@upstreamFractionationDetails varchar(512),
+	@entryUser varchar(128) = '',					-- User who entered the LC Cart Configuration entry; defaults to @callingUser if empty
 	@state varchar(12) = 'Active',					-- Active, Inactive, Invalid, or Override (see comments below)
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
@@ -74,6 +76,7 @@ As
 	Set @ID = IsNull(@ID, 0)
 	Set @configName = IsNull(@configName, '')
 	Set @state = IsNull(@state, 'Active')
+	Set @entryUser = IsNull(@entryUser, '')
 	Set @callingUser = IsNull(@callingUser, '')
 	Set @mode = IsNull(@mode, 'add')
 	
@@ -98,7 +101,12 @@ As
 
 	If Not Exists (Select U_PRN From T_Users Where U_PRN = @callingUser)
 		Set @callingUser = null
-
+	Else
+	Begin
+		If @entryUser = ''
+			Set @entryUser = @callingUser
+	End
+	
 	If @state = 'Override' and @mode <> 'Update'
 	Begin
 		Set @message = 'Cart config state must be Active, Inactive, or Invalid when @mode is ' + @mode + '; ' + @state + ' is not allowed'
@@ -184,9 +192,11 @@ As
 		Declare @existingName varchar(128) = ''
 		Declare @oldState varchar(24) = ''
 		Declare @ignoreDatasetChecks tinyint = 0
+		Declare @existingEntryUser varchar(128) = ''
 		
 		SELECT @existingName = Cart_Config_Name,
-		       @oldState = Cart_Config_State
+		       @oldState = Cart_Config_State,
+		       @existingEntryUser = Entered_By
 		FROM T_LC_Cart_Configuration 
 		WHERE Cart_Config_ID = @ID
 		--
@@ -242,6 +252,11 @@ As
 			End
 		End
 
+		If @entryUser = ''
+		Begin
+			Set @entryUser = @existingEntryUser
+		End
+		
 		---------------------------------------------------
 		-- Only allow updating the state of Cart Config items that are associated with a dataset
 		---------------------------------------------------
@@ -334,11 +349,13 @@ As
 		                                     Upstream_Analytical_Column,
 		                                     Upstream_Column_Temperature,
 		                                     Upstream_Analytical_Flow_Rate,
-		                                     Upstream_Fractionation_Profile,
+		            Upstream_Fractionation_Profile,
 		                                     Upstream_Fractionation_Details,
 		                                     Cart_Config_State,
 		                                     Entered,
-		                                     Entered_By )
+		                                     Entered_By,
+		                                     Updated,
+		                                     Updated_By )
 		VALUES (
 			@configName, 
 			@cartID, 
@@ -348,7 +365,7 @@ As
 			@pumps,
 		    @primaryInjectionVolume, 
 		    @primaryMobilePhases, 
-		    @primaryTrapColumn,
+		  @primaryTrapColumn,
 		    @primaryTrapFlowRate,
 		    @primaryTrapTime,
 		    @primaryTrapMobilePhase,
@@ -367,6 +384,8 @@ As
 		    @upstreamFractionationProfile,
 		    @upstreamFractionationDetails,
 		    @state, 
+		    GetDate(), 
+		    @entryUser,
 		    GetDate(), 
 		    @callingUser
 		)
@@ -394,7 +413,6 @@ As
 	Begin
 		Set @myError = 0
 		--
-
 		UPDATE T_LC_Cart_Configuration
 		SET Cart_Config_Name = @configName,
 		    Cart_ID = @cartID,
@@ -423,6 +441,7 @@ As
 		    Upstream_Fractionation_Profile = @upstreamFractionationProfile,
 		    Upstream_Fractionation_Details = @upstreamFractionationDetails,
 		    Cart_Config_State = @state,
+		    Entered_By = @entryUser,
 		    Updated = GetDate(),
 		    Updated_By = @callingUser
 		WHERE Cart_Config_ID = @ID

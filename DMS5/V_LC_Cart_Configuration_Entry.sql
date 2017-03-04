@@ -32,7 +32,8 @@ SELECT Config.Cart_Config_ID AS ID,
        Config.Upstream_Analytical_Flow_Rate,
        Config.Upstream_Fractionation_Profile,
 	   Config.Upstream_Fractionation_Details,
-       Config.Cart_Config_State
+       Config.Cart_Config_State,
+	   Config.Entered_By
 FROM T_LC_Cart_Configuration Config
      INNER JOIN T_LC_Cart Cart
        ON Config.Cart_ID = Cart.ID
