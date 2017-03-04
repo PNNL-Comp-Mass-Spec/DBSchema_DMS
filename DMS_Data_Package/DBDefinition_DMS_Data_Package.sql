@@ -2,9 +2,9 @@
 CREATE DATABASE [DMS_Data_Package]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'DMS_Data_Package', FILENAME = N'I:\SQLServerData\DMS_Data_Package.mdf' , SIZE = 139008KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'DMS_Data_Package', FILENAME = N'J:\SQLServerData\DMS_Data_Package.mdf' , SIZE = 139008KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'DMS_Data_Package_log', FILENAME = N'H:\SQLServerData\DMS_Data_Package_log.ldf' , SIZE = 18688KB , MAXSIZE = 2048GB , FILEGROWTH = 16384KB )
+( NAME = N'DMS_Data_Package_log', FILENAME = N'K:\SQLServerData\DMS_Data_Package_log.ldf' , SIZE = 2304KB , MAXSIZE = 2048GB , FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
