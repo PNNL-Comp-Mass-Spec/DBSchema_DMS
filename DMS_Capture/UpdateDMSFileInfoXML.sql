@@ -8,6 +8,11 @@ CREATE PROCEDURE UpdateDMSFileInfoXML
 **
 **  Desc:
 **		Calls S_UpdateDatasetFileInfoXML for the specified DatasetID
+**		That synonym calls UpdateDatasetFileInfoXML in DMS, which copies
+**		data from T_Dataset_Info_XML in DMS_Capture to update:
+**		- T_Dataset, columns Acq_Time_Start, Acq_Time_End, Scan_Count, File_Size_Bytes, File_Info_Last_Modified
+**		- T_Dataset_Info, columns ScanCountMS, ScanCountMSn, Elution_Time_Max, etc.
+**		- T_Dataset_ScanTypes
 **
 **  Return values: 0: success, otherwise, error code
 **
