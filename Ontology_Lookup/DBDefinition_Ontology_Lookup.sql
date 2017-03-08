@@ -4,7 +4,7 @@ CREATE DATABASE [Ontology_Lookup]
  ON  PRIMARY 
 ( NAME = N'Ontology_Lookup', FILENAME = N'J:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 4086016KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'Ontology_Lookup_log', FILENAME = N'K:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 256832KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
+( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 256832KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
