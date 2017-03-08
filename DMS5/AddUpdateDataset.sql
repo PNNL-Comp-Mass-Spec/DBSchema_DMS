@@ -86,6 +86,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/09/2017 mem - Pass @logDebugMessages to AddUpdateRequestedRun
 **			02/23/2017 mem - Add parameter @lcCartConfig
+**			03/06/2017 mem - Decreased maximum dataset name length from 90 characters to 80 characters
 **    
 *****************************************************/
 (
@@ -295,9 +296,9 @@ As
 		RAISERROR (@msg, 11, 2)
 	End
 
-	If Len(@datasetNum) > 90
+	If Len(@datasetNum) > 80 And Not @mode in ('update', 'check_update')
 	Begin
-		Set @msg = 'Dataset name cannot be over 90 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
+		Set @msg = 'Dataset name cannot be over 80 characters in length; currently ' + Convert(varchar(12), Len(@datasetNum)) + ' characters'
 		RAISERROR (@msg, 11, 3)
 	End
 	

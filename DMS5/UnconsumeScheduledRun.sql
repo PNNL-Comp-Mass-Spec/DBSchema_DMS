@@ -51,6 +51,8 @@ CREATE Procedure UnconsumeScheduledRun
 **		07/08/2014 mem - Now checking for empty requested run comment
 **		03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
 **		11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**		03/07/2017 mem - Append _Recycled to new requests created when @recycleRequest is yes
+**		               - Remove leading space in message ' (recycled from dataset ...'
 **    
 *****************************************************/
 (
@@ -143,7 +145,7 @@ As
 	---------------------------------------------------
 	-- start transaction
 	---------------------------------------------------	
-	declare @notation varchar(256)
+	Declare @notation varchar(256)
 	Declare @AddnlText varchar(1024)
 	
 	declare @transName varchar(32)
@@ -298,15 +300,18 @@ As
 		--
 		-- Warning: The text "Automatically created by recycling request" is used earlier in this stored procedure; thus, do not update it here
 		--
-		set @notation = 'Automatically created by recycling request ' + cast(@requestIDOriginal as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101)
-		--
+		Set @notation = 'Automatically created by recycling request ' + cast(@requestIDOriginal as varchar(12)) + ' from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101)
+		
+		Declare @requestNameAppendText varchar(128) = '_Recycled'
+		
 		EXEC @myError = CopyRequestedRun
 								@requestIDOriginal,
 								@datasetID,
 								'Completed',
 								@notation,
-								@message output,
-								@callingUser
+								@requestNameAppendText = @requestNameAppendText,
+								@message = @message output,
+								@callingUser = @callingUser
 		--
 		if @myError <> 0
 		begin
@@ -325,7 +330,7 @@ As
 		--
 	    -- create annotation to be appended to comment
 	    --
-		set @notation = ' (recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
+		set @notation = '(recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
 		if len(@requestComment) + len(@notation) > 1024
 		begin
 			-- Dataset comment could become too long; do not append the additional note
@@ -344,7 +349,7 @@ As
 			RDS_Run_Start = NULL,
 			RDS_Run_Finish = NULL,
 			DatasetID = NULL,
-			RDS_comment = CASE WHEN IsNull(RDS_Comment, '') = '' THEN @notation ELSE RDS_comment + @notation END
+			RDS_comment = CASE WHEN IsNull(RDS_Comment, '') = '' THEN @notation ELSE RDS_comment + ' ' + @notation END
 		WHERE 
 			ID = @requestIDOriginal
 		--

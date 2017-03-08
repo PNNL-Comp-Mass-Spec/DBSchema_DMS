@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.RenameDataset
 **			01/25/2013 mem - Initial version
 **			07/08/2016 mem - Now show old/new names and jobs even when @infoOnly is 0
 **			12/06/2016 mem - Include file rename statements
+**			03/06/2017 mem - Validate that @DatasetNameNew is no more than 80 characters long
 **    
 *****************************************************/
 (
@@ -66,6 +67,12 @@ AS
 		Goto Done
 	End
 
+	If Len(@DatasetNameNew) > 80
+	Begin
+		Set @message = 'New dataset name cannot be more than 80 characters in length'
+		Goto Done
+	End
+	
 	--------------------------------------------
 	-- Lookup the dataset ID
 	--------------------------------------------

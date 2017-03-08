@@ -21,13 +21,16 @@ CREATE PROCEDURE CopyRequestedRun
 **			05/08/2013 mem - Now copying Vialing_Conc and Vialing_Vol
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
 **			02/23/2017 mem - Add column RDS_Cart_Config_ID
+**			03/07/2017 mem - Add parameter @requestNameAppendText
+**			               - Assure that the newly created request has a unique name
 **
 *****************************************************/
 (
 	@requestID int,
 	@datasetID int,
-	@status VARCHAR(24),
+	@status varchar(24),
 	@notation varchar(256),
+	@requestNameAppendText varchar(128),		-- Text appended to the name of the newly created request; append nothing if null or ''
 	@message varchar(255) output,
 	@callingUser varchar(128) = ''
 )
@@ -39,8 +42,13 @@ As
 	set @myError = 0
 	set @myRowCount = 0
 	
+	Declare @newReqID int
+	Declare @oldReqName varchar(128)
+	Declare @newReqName varchar(128)
+	
 	set @message = ''
 
+	Set @requestNameAppendText = LTrim(RTrim(IsNull(@requestNameAppendText, '')))
 	Set @callingUser = IsNull(@callingUser, '')
 	
 	---------------------------------------------------
@@ -53,8 +61,50 @@ As
 		goto Done
 	end
 
+
 	---------------------------------------------------
-	-- make copy
+	-- Make sure the source request exists
+	---------------------------------------------------
+	--
+	SELECT @oldReqName = RDS_Name
+	FROM T_Requested_Run
+	WHERE ID = @requestID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myRowCount = 0
+	begin
+		set @message = 'Source request not found in T_Requested_Run: ' + Cast(@requestID as varchar(9))
+		exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+		goto Done
+	end
+
+	---------------------------------------------------
+	-- Determine the name for the new request
+	-- Note that @requestNameAppendText may be blank
+	---------------------------------------------------
+	--
+	Declare @continue tinyint = 1
+	Declare @iteration int = 1
+	
+	Set @newReqName = @oldReqName + @requestNameAppendText
+	
+	While @continue = 1
+	Begin
+		If Not Exists (Select * From T_Requested_Run Where RDS_Name = @newReqName)
+		Begin
+			Set @continue = 0
+		End
+		Else
+		Begin
+			Set @iteration = @iteration + 1
+			Set @newReqName = @oldReqName + @requestNameAppendText + Cast(@iteration as varchar(9))
+		End
+		
+	End
+	
+	---------------------------------------------------
+	-- Make copy
 	---------------------------------------------------
 	--
 	-- make new request
@@ -95,9 +145,9 @@ As
 		RDS_Origin,
 		DatasetID
 	)
-	SELECT TOP(1) -- shouldn't be any duplicates, but let's not make mistakes any worse
+	SELECT
 		@notation,
-		RDS_Name,
+		@newReqName,
 		RDS_Oper_PRN,
 		RDS_created,				-- Pass along the original request's "created" date into the new entry
 		RDS_instrument_name,
@@ -129,15 +179,12 @@ As
 		@status,
 		'auto',
 		CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END 
-	FROM
-		T_Requested_Run
-	WHERE
-		ID = @requestID
+	FROM T_Requested_Run
+	WHERE ID = @requestID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	declare @newReqID int
-	set @newReqID = SCOPE_IDENTITY()
+	Set @newReqID = SCOPE_IDENTITY()
 	--
 	if @myError <> 0
 	begin
