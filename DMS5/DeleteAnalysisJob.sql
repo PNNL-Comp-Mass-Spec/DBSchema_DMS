@@ -25,6 +25,7 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			12/31/2008 mem - Now calling DMS_Pipeline.dbo.DeleteJob
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **			05/28/2015 mem - No longer deleting processor group entries
+**			03/08/2017 mem - Delete jobs in the DMS_Pipeline database if they are new, holding, or failed
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ As
 		RAISERROR ('Delete job operation failed', 10, 1)
 		return 54451
 	end
-
+	
 	-------------------------------------------------------
 	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 	-------------------------------------------------------
@@ -88,6 +89,26 @@ As
 	End
 	
 	commit transaction @transName
+
+	-------------------------------------------------------
+	-- Also delete from the DMS_Pipeline database if the state is New, Failed, or Holding
+	-- Ignore any jobs with running job steps (though if the step started over 48 hours ago, ignore that job step)
+	-------------------------------------------------------
+	--
+	DELETE FROM DMS_Pipeline.dbo.T_Jobs
+	WHERE Job IN ( SELECT Job
+	               FROM DMS_Pipeline.dbo.T_Jobs
+	               WHERE Job = @jobID AND
+	                     State IN (1, 5, 8) AND
+	                     NOT Job IN ( SELECT JS.Job
+	                                  FROM DMS_Pipeline.dbo.T_Job_Steps JS
+	                                  WHERE JS.Job = @jobID AND
+	                                        JS.State = 4 AND
+	                                        JS.Start >= DateAdd(hour, -48, GetDate()) 
+	                                 ) 
+	              )
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
 	return 0
 
