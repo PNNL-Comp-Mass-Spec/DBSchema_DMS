@@ -22,6 +22,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 **			05/08/2013 mem - Removed IsNull() checks since XMLQuoteCheck() now changes Nulls to empty strings
 **			06/23/2015 mem - Added @Capture_Subfolder
 **			02/23/2017 mem - Added @LC_Cart_Config
+**			03/15/2017 mem - Log an error if @triggerFolderPath does not exist
 **    
 *****************************************************/
 (
@@ -51,26 +52,61 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 As
 set nocount on
 
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
+	
+	Set @message = ''
 	
 	If @Request Is Null
 	Begin
 		Set @myError = 70
+		Set @message = 'Request is null, cannot create trigger file'
 		Goto done
 	End
+
+	Declare @fso int
+	Declare @hr int
+	Declare @src varchar(255), @desc varchar(255)
+	Declare @result int
 	
-	declare @filePath varchar(100)
-	select @filePath = server
+	Declare @triggerFolderPath varchar(100)
+	select @triggerFolderPath = server
 	from T_MiscPaths
 	where [Function] = 'DIMTriggerFileDir'
 
-	declare @filename varchar(150)
-	set @filename = dbo.udfCombinePaths(@filePath, 'man_' + @Dataset_Name + '.xml')
+	-- Create a filesystem object
+	EXEC @hr = sp_OACreate 'Scripting.FileSystemObject', @fso OUT
+	IF @hr <> 0
+	BEGIN
+		EXEC sp_OAGetErrorInfo @fso, @src OUT, @desc OUT
+		SELECT hr=convert(varbinary(4),@hr), Source=@src, Description=@desc
+		Set @message = 'Error creating FileSystemObject, cannot create trigger file'
+	    goto Done
+	END
+	
+	-- Make sure @triggerFolderPath exists
+	EXEC @hr = sp_OAMethod  @fso, 'FolderExists', @result OUT, @triggerFolderPath
+	IF @hr <> 0
+	BEGIN
+	    EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
+		set @myError = 72
+		If IsNull(@message, '') = ''
+			Set @message = 'Error verifying that the trigger folder exists at ' + IsNull(@triggerFolderPath, '??')
+	    goto DestroyFSO
+	END
+	
+	If @result = 0
+	Begin
+		set @myError = 74
+		Set @message = 'Trigger folder not found at ' + IsNull(@triggerFolderPath, '??') + '; update T_MiscPaths'		
+	    goto DestroyFSO
+	End
+	
+	Declare @filePath varchar(150) = dbo.udfCombinePaths(@triggerFolderPath, 'man_' + @Dataset_Name + '.xml')
 
-	declare @xmlLine varchar(50)
+	Declare @xmlLine varchar(50)
 	set @xmlLine = ''
 	
 	Set @Capture_Subfolder = IsNull(@Capture_Subfolder, '')
@@ -86,7 +122,6 @@ set nocount on
 	---------------------------------------------------
 	--
 	Declare @tmpXmlLine varchar(4000)
-	Declare @result int
 	Declare @newLine varchar(2) = char(13) + char(10)
 	
 	--XML Header
@@ -122,46 +157,38 @@ set nocount on
 	-- write XML dataset trigger file
 	---------------------------------------------------
 	
-	DECLARE @fso int
-	DECLARE @hr int
-	DECLARE @ts int
-	DECLARE @property varchar(255)
-	DECLARE @return varchar(255)
-	DECLARE @src varchar(255), @desc varchar(255)
-
-	-- Create a filesystem object
-	EXEC @hr = sp_OACreate 'Scripting.FileSystemObject', @fso OUT
-	IF @hr <> 0
-	BEGIN
-		EXEC sp_OAGetErrorInfo @fso, @src OUT, @desc OUT
-		SELECT hr=convert(varbinary(4),@hr), Source=@src, Description=@desc
-	    goto Done
-	END
+	Declare @ts int
+	Declare @property varchar(255)
+	Declare @return varchar(255)
 
 	-- see if file already exists
 	--
-	EXEC @hr = sp_OAMethod  @fso, 'FileExists', @result OUT, @FileName
+	EXEC @hr = sp_OAMethod  @fso, 'FileExists', @result OUT, @filePath
 	IF @hr <> 0
 	BEGIN
 	    EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
-		set @myError = 60
+		set @myError = 76
+		If IsNull(@message, '') = ''
+			Set @message = 'Error looking for an existing trigger file at ' + IsNull(@filePath, '??')
 	    goto DestroyFSO
 	END
 
 	If @result = 1
 	begin
-		set @message = 'Trigger file already exists (' + @FileName + ').  Enter a different dataset name'
-		set @myError = 62
+		set @message = 'Trigger file already exists (' + @filePath + ').  Enter a different dataset name'
+		set @myError = 78
 	    goto DestroyFSO
 	end
 
 	-- Open the text file for appending (1- ForReading, 2 - ForWriting, 8 - ForAppending)
-	EXEC @hr = sp_OAMethod @fso, 'OpenTextFile', @ts OUT, @FileName, 8, true
+	EXEC @hr = sp_OAMethod @fso, 'OpenTextFile', @ts OUT, @filePath, 8, true
 	IF @hr <> 0
 	BEGIN
 		EXEC sp_OAGetErrorInfo @fso, @src OUT, @desc OUT
 		SELECT hr=convert(varbinary(4),@hr), Source=@src, Description=@desc
-		set @myError = 64
+		set @myError = 80
+		If IsNull(@message, '') = ''
+			Set @message = 'Error creating the trigger file at ' + IsNull(@filePath, '??')
 	    goto DestroyFSO
 	END
 
@@ -171,7 +198,9 @@ set nocount on
 	BEGIN
 		EXEC sp_OAGetErrorInfo @fso, @src OUT, @desc OUT
 		SELECT hr=convert(varbinary(4),@hr), Source=@src, Description=@desc
-		set @myError = 66
+		set @myError = 82
+		If IsNull(@message, '') = ''
+			Set @message = 'Error writing to the trigger file at ' + IsNull(@filePath, '??')
 	    goto DestroyFSO
 	END
 
@@ -181,7 +210,9 @@ set nocount on
 	BEGIN
 		EXEC sp_OAGetErrorInfo @fso, @src OUT, @desc OUT
 		SELECT hr=convert(varbinary(4),@hr), Source=@src, Description=@desc
-		set @myError = 68
+		set @myError = 84
+		If IsNull(@message, '') = ''
+			Set @message = 'Error closing the trigger file at ' + IsNull(@filePath, '??')
 	    goto DestroyFSO
 	END
 
@@ -199,14 +230,23 @@ DestroyFSO:
 	IF @hr <> 0
 	BEGIN
 	    EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
-		set @myError = 60
+		set @myError = 86
+		Set @message = 'Error destroying FileSystemObject'
 		goto done
 	END
 
 	-----------------------------------------------
 	-- Exit
 	-----------------------------------------------
+	
 Done:
+	If @myError <> 0
+	Begin
+		If IsNull(@message, '') = ''
+			Set @message = 'Error code ' + Cast(@myError as varchar(9)) + ' in CreateXmlDatasetTriggerFile'
+			
+		Exec PostLogEntry 'Error', @message, 'CreateXmlDatasetTriggerFile'
+	End
 	
 	return @myError
 
