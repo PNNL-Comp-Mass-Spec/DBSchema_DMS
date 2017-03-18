@@ -21,37 +21,46 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **			05/03/2012 mem - Added parameter @PopulateTempTable
 **          07/26/2016 mem - Now include Dataset Rating
 **			08/04/2016 mem - Fix column name for dataset Rating ID
+**			03/17/2017 mem - Include job, parameter file, settings file, etc. for the predefines that would run for the matching datasets
 **    
 *****************************************************/
+(
 	@ruleID int,
 	@message varchar(512)='' output,
 	@InfoOnly tinyint = 0,				-- When 1, then returns the count of the number of datasets, not the actual datasets
 	@previewSql tinyint = 0,
 	@PopulateTempTable tinyint = 0		-- When 1, then populates table T_Tmp_PredefinedAnalysisDatasets with the results
+)
 As
 	set nocount on
 	
-	declare @myError int
+	Declare @myError int
 	set @myError = 0
 
-	declare @myRowCount int
+	Declare @myRowCount int
 	set @myRowCount = 0
 	
-	declare @instrumentClassCriteria varchar(1024)
-	declare @campaignNameCriteria varchar(1024)
-	declare @experimentNameCriteria varchar(1024)
-	declare @instrumentNameCriteria varchar(1024)
-	declare @organismNameCriteria varchar(1024)
-	declare @labellingInclCriteria varchar(1024)
-	declare @labellingExclCriteria varchar(1024)
-	declare @datasetNameCriteria varchar(1024)
-	declare @datasetTypeCriteria varchar(64)
-	declare @expCommentCriteria varchar(1024)
+	Declare @instrumentClassCriteria varchar(1024)
+	Declare @campaignNameCriteria varchar(1024)
+	Declare @experimentNameCriteria varchar(1024)
+	Declare @instrumentNameCriteria varchar(1024)
+	Declare @organismNameCriteria varchar(1024)
+	Declare @labellingInclCriteria varchar(1024)
+	Declare @labellingExclCriteria varchar(1024)
+	Declare @datasetNameCriteria varchar(1024)
+	Declare @datasetTypeCriteria varchar(64)
+	Declare @expCommentCriteria varchar(1024)
 
-	declare @separationTypeCriteria varchar(64)
-	declare @campaignExclCriteria varchar(128)
-	declare @experimentExclCriteria varchar(128)
-	declare @datasetExclCriteria varchar(128)	
+	Declare @separationTypeCriteria varchar(64)
+	Declare @campaignExclCriteria varchar(128)
+	Declare @experimentExclCriteria varchar(128)
+	Declare @datasetExclCriteria varchar(128)	
+
+	Declare @analysisToolName varchar(64)
+	Declare @parmFileName varchar(255)
+	Declare @settingsFileName varchar(255)
+	Declare @proteinCollectionList varchar(512)
+	Declare @organismDBName varchar(128)
 
 	Declare @S varchar(max)
 	Declare @SqlWhere varchar(max)
@@ -88,7 +97,12 @@ As
 		@separationTypeCriteria = AD_separationTypeCriteria,
 		@campaignExclCriteria = AD_campaignExclCriteria,
 		@experimentExclCriteria = AD_experimentExclCriteria,
-		@datasetExclCriteria = AD_datasetExclCriteria
+		@datasetExclCriteria = AD_datasetExclCriteria,		
+		@analysisToolName = AD_analysisToolName,
+		@parmFileName = AD_parmFileName,
+		@settingsFileName = AD_settingsFileName,
+		@proteinCollectionList = AD_proteinCollectionList,
+		@organismDBName = AD_organismDBName
 	FROM T_Predefined_Analysis
 	WHERE (AD_ID = @ruleID )
 
@@ -164,7 +178,12 @@ As
 		Set @S = @S +        ' Experiment_Labelling As [Exp Labelling], Experiment_Comment As [Exp Comment],'
 		Set @S = @S +        ' Dataset_Comment As [DS Comment], Dataset_Type As [DS Type],'
 		Set @S = @S +        ' Rating As [DS Rating], Rating_Name AS Rating,'
-		Set @S = @S +        ' Separation_Type As [Sep Type]'
+		Set @S = @S +        ' Separation_Type As [Sep Type],'
+		Set @S = @S +        ' ''' + @analysisToolName + ''' AS Tool,'
+		Set @S = @S +        ' ''' + @parmFileName + ''' AS [Parameter File],'
+		Set @S = @S +        ' ''' + @settingsFileName + ''' AS [Settings File],'
+		Set @S = @S +        ' ''' + @proteinCollectionList + ''' AS [Protein Collections],'
+		Set @S = @S +        ' ''' + @organismDBName + ''' AS [Legacy FASTA]'
 		If @PopulateTempTable <> 0
 			Set @S = @S + ' INTO T_Tmp_PredefinedAnalysisDatasets'
 		Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'

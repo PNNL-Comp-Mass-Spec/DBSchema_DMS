@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateUserPermissionsViewDefinitions
 **			12/28/2009 mem - Updated to also update views (and to include parameters @updateSPs and @updateViews)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			12/06/2016 mem - Rename @userList to @roleOrUserList and add @revokeList, @updateTables, and @updateOther
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ As
 		
 		INSERT INTO #TmpLoginsToProcess (LoginName, Action)
 		SELECT Value, 'Grant'
-		FROM dbo.udfParseDelimitedList(@roleOrUserList, ',')
+		FROM dbo.udfParseDelimitedList(@roleOrUserList, ',', 'UpdateUserPermissionsViewDefinitions')
 		ORDER BY Value
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -98,7 +99,7 @@ As
 		
 		INSERT INTO #TmpLoginsToProcess (LoginName, Action)
 		SELECT Value, 'Revoke'
-		FROM dbo.udfParseDelimitedList(@revokeList, ',')
+		FROM dbo.udfParseDelimitedList(@revokeList, ',', 'UpdateUserPermissionsViewDefinitions')
 		ORDER BY Value
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -293,6 +294,7 @@ Done:
 	Print @message
 	
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissionsViewDefinitions] TO [DDL_Viewer] AS [dbo]

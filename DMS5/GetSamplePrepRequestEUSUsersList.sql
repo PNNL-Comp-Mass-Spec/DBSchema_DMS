@@ -4,35 +4,35 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
+CREATE FUNCTION dbo.GetSamplePrepRequestEUSUsersList
 /****************************************************
 **
 **	Desc: 
 **  Builds delimited list of EUS users for given sample prep request
 **
-**  @mode = 'I' means return integer
-**  @mode = 'N' means return name
-**  @mode = 'V' means return hybrid in the form Person_Name (Person_ID)
+**		@mode = 'I' means return integer
+**		@mode = 'N' means return name
+**		@mode = 'V' means return hybrid in the form Person_Name (Person_ID)
 **
 **	Return value: delimited list
 **
 **	Parameters: 
 **
-**		Auth: mem
-**		Date: 05/01/2014
+**	Auth:	mem
+**	Date:	05/01/2014
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
-@requestID int,
-@mode char(1) = 'I' -- 'N', 'V'
+	@requestID int,
+	@mode char(1) = 'I' -- 'N', 'V'
 )
 RETURNS varchar(1024)
 AS
 Begin
 	Declare @UserList varchar(1024)
 
-	declare @list varchar(1024)
-	set @list = ''
+	declare @list varchar(1024) = ''
 
 	SELECT @UserList = EUS_User_List
 	FROM T_Sample_Prep_Request
@@ -52,7 +52,7 @@ Begin
 									ELSE ', ' + CAST(EU.Person_ID AS varchar(12))
 								END
 			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList ( @UserList, ',' ) 
+			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
 				 ) ReqUsers
 			     INNER JOIN T_EUS_Users EU
 			       ON ReqUsers.Person_ID = EU.PERSON_ID		
@@ -66,7 +66,7 @@ Begin
 									ELSE '; ' + EU.NAME_FM
 								End
 			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList ( @UserList, ',' ) 
+			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
 				 ) ReqUsers
 			     INNER JOIN T_EUS_Users EU
 			       ON ReqUsers.Person_ID = EU.PERSON_ID			
@@ -80,7 +80,7 @@ Begin
 									ELSE '; ' + NAME_FM + ' (' + CAST(EU.PERSON_ID AS varchar(12)) + ')'
 								End
 			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList ( @UserList, ',' ) 
+			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
 				 ) ReqUsers
 			     INNER JOIN T_EUS_Users EU
 			       ON ReqUsers.Person_ID = EU.PERSON_ID

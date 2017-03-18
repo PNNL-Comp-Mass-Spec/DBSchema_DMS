@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.ReportProductionStats
 /****************************************************
 **
@@ -32,6 +33,7 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **			               - Added new columns, including "% EMSL Owned", "EMSL-Funded Study Specific Datasets", and "EF Study Specific Datasets per day"
 **			03/15/2012 mem - Added parameter @EUSUsageFilterList
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -142,7 +144,7 @@ AS
 	Begin	
 		INSERT INTO #Tmp_EUSUsageFilter (Usage_Name, Usage_ID)
 		SELECT DISTINCT Value AS Usage_Name, 0 AS ID
-		FROM dbo.udfParseDelimitedList(@EUSUsageFilterList, ',')
+		FROM dbo.udfParseDelimitedList(@EUSUsageFilterList, ',', 'ReportProductionStats')
 		ORDER BY Value
 		
 		-- Look for invalid Usage_Name values

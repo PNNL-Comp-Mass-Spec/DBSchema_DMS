@@ -28,6 +28,7 @@ CREATE PROCEDURE dbo.ValidateEUSUsage
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			01/09/2016 mem - Added option for disabling EUS validation using table T_MiscOptions
 **			01/20/2017 mem - Auto-fix USER_UNKOWN to USER_UNKNOWN for @eusUsageType
+**			03/17/2017 mem - Only call MakeTableFromList if @eusUsersList contains a semicolon
 **
 *****************************************************/
 (
@@ -237,9 +238,17 @@ As
    
 			-- Split items in @eusUsersList on commas
 			-- 
-			INSERT INTO @tmpUsers (Item)
-			SELECT Item
-			FROM MakeTableFromList(@eusUsersList)
+			If @eusUsersList Like '%,%'
+			Begin
+				INSERT INTO @tmpUsers (Item)
+				SELECT Item
+				FROM MakeTableFromList(@eusUsersList)
+			End
+			Else
+			Begin
+				INSERT INTO @tmpUsers (Item) 
+				VALUES (@eusUsersList)
+			End
 
 			-- Look for entries that are not integers
 			--

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
+	
 CREATE FUNCTION dbo.udfParseDelimitedList
 /****************************************************	
 **	Parses the text in @DelimitedList and returns a table
@@ -21,11 +21,14 @@ CREATE FUNCTION dbo.udfParseDelimitedList
 **			04/02/2012 mem - Now removing Tab characters
 **			03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @Delimiter
 **			01/20/2016 mem - Add numbers table example
+**			03/17/2017 mem - Add parameter @CallingProcedure
+**						   - Add optional call to PostUsageLogEntry
 **  
 ****************************************************/
 (
 	@DelimitedList varchar(max),
-	@Delimiter varchar(2) = ','
+	@Delimiter varchar(2) = ',',
+	@CallingProcedure varchar(128)= ''
 )
 RETURNS @tmpValues TABLE(Value varchar(2048))
 AS
@@ -37,6 +40,19 @@ BEGIN
 	
 	Declare @Value varchar(2048)
 
+	Declare @procedureNameForUsageLog varchar(255) = 'udfParseDelimitedList_' + @CallingProcedure
+
+	-- Uncomment the following to log usage of this procedure to a file in C:\temp\
+	-- Requirements for this to work:
+	--  - Enable xp_cmdshell
+	--  - Enable the Server Proxy Account
+	--  - Grant execute on master..xp_cmdshell to DMSWebUser and any other user that will call this udf
+	
+	--DECLARE @SQL varchar(500)
+	--SELECT @SQL = '"C:\Program Files (x86)\Windows Resource Kits\Tools\Now.exe" ' + @procedureNameForUsageLog + ' >> C:\temp\UsageLogStats.txt'
+	--EXEC master..xp_cmdshell @SQL
+
+	
 	Set @DelimitedList = IsNull(@DelimitedList, '')
 	
 	If Len(@DelimitedList) > 0
@@ -123,6 +139,7 @@ BEGIN
 	
 	RETURN
 END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedList] TO [DDL_Viewer] AS [dbo]

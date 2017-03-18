@@ -51,6 +51,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
 **			01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
+**			03/17/2017 mem - Only call MakeTableFromListDelim if @cellCultureList contains a semicolon
 **
 *****************************************************/
 (
@@ -391,9 +392,17 @@ As
 
 	-- get names of cell cultures from list argument into table
 	--
-	insert into #CC (CC_Name) 
-	Select item 
-	From MakeTableFromListDelim(@cellCultureList, ';')
+	If @cellCultureList Like '%;%'
+	Begin
+		INSERT INTO #CC (CC_Name) 
+		SELECT item 
+		FROM MakeTableFromListDelim(@cellCultureList, ';')
+	End
+	Else
+	Begin
+		INSERT INTO #CC (CC_Name) 
+		VALUES (@cellCultureList)
+	End
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

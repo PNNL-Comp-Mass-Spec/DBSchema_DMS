@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddMissingPredefinedJobs
 /****************************************************
 **
@@ -29,6 +30,7 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/03/2017 mem - Exclude datasets associated with the Tracking experiment
 **			               - Exclude datasets of type Tracking
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **
 *****************************************************/
 (
@@ -205,7 +207,7 @@ As
 		       ON Target.Dataset_ID = DS.Dataset_ID
 		     INNER JOIN T_Instrument_Name InstName 
 		     ON InstName.Instrument_ID = DS.DS_instrument_name_ID
-    	     INNER JOIN udfParseDelimitedList(@InstrumentSkipList, default) AS ExclusionList 
+    	     INNER JOIN udfParseDelimitedList(@InstrumentSkipList, default, 'AddMissingPredefinedJobs') AS ExclusionList 
     	       ON InstName.IN_name = ExclusionList.Value
 	End
 	
@@ -413,7 +415,6 @@ As
 	
 Done:
 	return @myError
-
 
 
 GO

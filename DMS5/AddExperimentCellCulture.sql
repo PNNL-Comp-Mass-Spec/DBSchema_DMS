@@ -17,6 +17,7 @@ CREATE Procedure AddExperimentCellCulture
 **			12/21/2009 grk - commented out requirement that cell cultures belong to same campaign
 **			02/20/2012 mem - Now using a temporary table to track the cell culture names in @cellCultureList
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -58,7 +59,7 @@ As
 	
 	INSERT INTO @tblCellCulture (CellCultureName)
 	SELECT Value
-	FROM dbo.udfParseDelimitedList(@cellCultureList, ';')
+	FROM dbo.udfParseDelimitedList(@cellCultureList, ';', 'AddExperimentCellCulture')
 	WHERE Len(Value) > 0
 	ORDER BY Value
 
@@ -119,6 +120,7 @@ As
 	
 	return 0
 	
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddExperimentCellCulture] TO [DDL_Viewer] AS [dbo]
 GO

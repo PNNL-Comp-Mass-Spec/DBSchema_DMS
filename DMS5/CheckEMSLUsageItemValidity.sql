@@ -20,6 +20,7 @@ CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 **			03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			10/05/2016 mem - Add one day to the proposal end date
+**			03/17/2017 mem - Only call MakeTableFromList if @Users is a comma separated list
 **    
 *****************************************************/
 (
@@ -107,12 +108,23 @@ AS
 		IF NOT @ProposalId IS NULL
 		BEGIN 
 			DECLARE @hits INT = 0
-		   SELECT @hits = COUNT(*)
-		   FROM dbo.MakeTableFromList(@Users)
-					INNER JOIN ( SELECT Proposal_ID , Person_ID
-								 FROM   T_EUS_Proposal_Users
-								 WHERE  Proposal_ID = @Proposal
-							   ) TZ ON Person_ID = CONVERT(INT, Item) 
+			If @Users Like '%,%'
+			Begin
+				SELECT @hits = COUNT(*)
+				FROM dbo.MakeTableFromList ( @Users )
+				     INNER JOIN ( SELECT Proposal_ID,
+				                         Person_ID
+				                  FROM T_EUS_Proposal_Users
+				                  WHERE Proposal_ID = @Proposal ) TZ
+				       ON Person_ID = Try_Convert(int, Item)
+			End
+			Else
+			Begin
+				SELECT @hits = COUNT(*)
+				FROM T_EUS_Proposal_Users
+				WHERE Proposal_ID = @Proposal And Person_ID = Try_Convert(int, @Users)
+			End
+			
 			IF @hits = 0
 				SET @Message = @Message + 'No users were listed for proposal' + ', '
 		END

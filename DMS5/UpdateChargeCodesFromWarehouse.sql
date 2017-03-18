@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure UpdateChargeCodesFromWarehouse
 /****************************************************
 **
@@ -23,6 +24,7 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 **						   - Now populating Activation_State when inserting new rows via the merge
 **			08/13/2015 mem - Added field @ExplicitChargeCodeList
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -87,7 +89,7 @@ AS
 			-- Populate #IX_Tmp_WPsExplicit
 			INSERT INTO #Tmp_WPsExplicit (Charge_Code)
 			SELECT Value
-			FROM dbo.udfParseDelimitedList(@ExplicitChargeCodeList, ',')			
+			FROM dbo.udfParseDelimitedList(@ExplicitChargeCodeList, ',', 'UpdateChargeCodesFromWarehouse')
 		End
 
 		
@@ -519,6 +521,7 @@ AS
 	END CATCH
 	
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodesFromWarehouse] TO [DDL_Viewer] AS [dbo]

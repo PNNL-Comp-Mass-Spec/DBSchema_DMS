@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure UpdateDatasetRating
 /****************************************************
 **
@@ -12,7 +13,7 @@ CREATE Procedure UpdateDatasetRating
 ** 
 **	Auth:	mem
 **	Date:	10/07/2015 mem - Initial release
-
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ As
 	Declare @DatasetCount int = 0
 	
 	SELECT @DatasetCount= COUNT (DISTINCT Value)
-	FROM udfParseDelimitedList(@datasets, ',')
+	FROM udfParseDelimitedList(@datasets, ',', 'UpdateDatasetRating')
 	
 	If @DatasetCount = 0
 	Begin
@@ -85,6 +86,7 @@ As
 	
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetRating] TO [DDL_Viewer] AS [dbo]

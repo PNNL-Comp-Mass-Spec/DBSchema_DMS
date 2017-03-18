@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure AddRequestedRuns
 /****************************************************
 **
@@ -38,6 +39,7 @@ CREATE Procedure AddRequestedRuns
 **		06/18/2014 mem - Now passing default to udfParseDelimitedList
 **		02/23/2016 mem - Add set XACT_ABORT on
 **		04/06/2016 mem - Now using Try_Convert to convert from text to int
+**		03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **
 *****************************************************/
 (
@@ -193,7 +195,7 @@ As
 
 		INSERT INTO @tblExperimentsToProcess (Experiment)
 		SELECT Value
-		FROM dbo.udfParseDelimitedList(@experimentList, default)
+		FROM dbo.udfParseDelimitedList(@experimentList, default, 'AddRequestedRuns')
 		WHERE Len(Value) > 0
 		ORDER BY Value
 	End

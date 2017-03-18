@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE dbo.AddUpdateOrganisms
 /****************************************************
 **
@@ -41,6 +42,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
 **			02/06/2017 mem - Auto-update @NEWTIDList to match @NCBITaxonomyID if @NEWTIDList is null or empty
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -184,7 +186,7 @@ As
 		
 		INSERT INTO #NEWTIDs (NEWT_ID_Text)
 		SELECT Cast(Value as varchar(24))
-		FROM dbo.udfParseDelimitedList(@NEWTIDList, ',')
+		FROM dbo.udfParseDelimitedList(@NEWTIDList, ',', 'AddUpdateOrganisms')
 		WHERE IsNull(Value, '') <> ''
 		
 		-- Look for non-numeric values

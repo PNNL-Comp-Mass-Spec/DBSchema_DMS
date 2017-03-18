@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 **			11/20/2012 mem - Now updating Job_Usage_Count_Last12Months
 **			08/14/2014 mem - Fixed bug updating Job_Usage_Count_Last12Months (occurred when a protein collection had not been used in the last year)
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Use tables T_Cached_Protein_Collection_List_Map and T_Cached_Protein_Collection_List_Members to minimize calls to MakeTableFromListDelim
 **
 *****************************************************/
 (
@@ -76,29 +77,72 @@ AS
 			execute PostLogEntry 'Error', @message, 'UpdateProteinCollectionUsage'
 		End
 
+		---------------------------------------------------
+		-- Update the usage counts in T_Protein_Collection_Usage
+		-- We use tables T_Cached_Protein_Collection_List_Map and
+		-- T_Cached_Protein_Collection_List_Members to
+		-- minimize calls to MakeTableFromListDelim
+		---------------------------------------------------
+		
+		-- First add any missing protein collection lists to T_Cached_Protein_Collection_List_Map
+		--
+		INSERT INTO T_Cached_Protein_Collection_List_Map( Protein_Collection_List )
+		SELECT AJ_proteinCollectionList
+		FROM T_Cached_Protein_Collection_List_Map Target
+		     RIGHT OUTER JOIN ( SELECT AJ_proteinCollectionList
+		                        FROM T_Analysis_Job
+		                        GROUP BY AJ_proteinCollectionList ) Source
+		       ON Target.Protein_Collection_List = Source.AJ_proteinCollectionList
+		WHERE Target.Protein_Collection_List IS NULL
+		ORDER BY AJ_proteinCollectionList
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		-- Next add missing rows to T_Cached_Protein_Collection_List_Members
+		--
+		INSERT INTO T_Cached_Protein_Collection_List_Members( ProtCollectionList_ID,
+		                                                      Protein_Collection_Name )
+		SELECT DISTINCT ProtCollectionList_ID,
+		                ProteinCollections.Item
+		FROM ( SELECT DISTINCT PCLMap.ProtCollectionList_ID,
+		                       PCLMap.Protein_Collection_List
+		       FROM T_Cached_Protein_Collection_List_Map PCLMap
+		            LEFT OUTER JOIN T_Cached_Protein_Collection_List_Members PCLMembers
+		              ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
+		       WHERE (PCLMembers.Protein_Collection_Name IS NULL) 
+		     ) SourceQ
+		     CROSS APPLY dbo.MakeTableFromListDelim ( SourceQ.Protein_Collection_List, ',' ) AS ProteinCollections
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
 		-- Update the usage counts in T_Protein_Collection_Usage
 		--
 		UPDATE T_Protein_Collection_Usage
 		SET Job_Usage_Count_Last12Months = UsageQ.Job_Usage_Count_Last12Months,
-		    Job_Usage_Count = UsageQ.Job_Usage_Count,		 
+		    Job_Usage_Count = UsageQ.Job_Usage_Count,
 		    Most_Recently_Used = UsageQ.Most_Recent_Date
 		FROM T_Protein_Collection_Usage Target
-		     INNER JOIN ( SELECT ProteinCollectionName,
-		                         COUNT(DISTINCT Job) AS Job_Usage_Count,
-								 SUM(CASE WHEN JobDate >= DateAdd(month, -12, GetDate()) THEN 1 
-								     ELSE 0 
-								     End) As Job_Usage_Count_Last12Months,
-		                         MAX(JobDate) AS Most_Recent_Date
-		                  FROM ( SELECT AJ_JobID AS Job,
-		                                ProteinCollections.Item AS ProteinCollectionName,
-		                                COALESCE(AJ_created, AJ_Start, AJ_finish) AS JobDate
+		     INNER JOIN ( SELECT PCLMembers.Protein_Collection_Name AS ProteinCollection,
+		                         Sum(Jobs) AS Job_Usage_Count,
+		                         Sum(Job_Usage_Count_Last12Months) AS Job_Usage_Count_Last12Months,
+		                         Max(NewestJob) AS Most_Recent_Date
+		                  FROM ( SELECT AJ_proteinCollectionList,
+		                                COUNT(*) AS Jobs,
+		                                Sum(CASE WHEN COALESCE(AJ_created, AJ_start, AJ_finish) >= DateAdd(MONTH, - 12, GetDate()) 
+		                                         THEN 1
+		                                         ELSE 0
+		                                    END) AS Job_Usage_Count_Last12Months,
+		                                MAX(COALESCE(AJ_created, AJ_start, AJ_finish)) AS NewestJob
 		                         FROM T_Analysis_Job
-		                              CROSS APPLY dbo.MakeTableFromListDelim ( AJ_ProteinCollectionList, ',' ) ProteinCollections
-		                         WHERE AJ_ProteinCollectionList <> 'na' 
-		                        ) SplitQ
-		                  GROUP BY ProteinCollectionName 
-		                 ) AS UsageQ
-		       ON Target.Name = UsageQ.ProteinCollectionName
+		                         GROUP BY AJ_proteinCollectionList 
+		                       ) CountQ
+		                       INNER JOIN T_Cached_Protein_Collection_List_Map PCLMap
+		                         ON CountQ.AJ_proteinCollectionList = PCLMap.Protein_Collection_List
+		                       INNER JOIN T_Cached_Protein_Collection_List_Members PCLMembers
+		                         ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
+		                  GROUP BY PCLMembers.Protein_Collection_Name 
+		                ) AS UsageQ
+		       ON Target.Name = UsageQ.ProteinCollection
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		

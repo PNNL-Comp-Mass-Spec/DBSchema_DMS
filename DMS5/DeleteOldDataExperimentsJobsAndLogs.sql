@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 /****************************************************
 **
@@ -38,6 +39,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **			05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations, since deprecated
 **			10/28/2015 mem - Added T_Prep_LC_Run_Dataset and removed T_Analysis_Job_Annotations and T_Dataset_Annotations
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -160,7 +162,7 @@ AS
 		WHERE (DS_created < @DeleteThreshold) AND
 		    NOT Dataset_Num Like 'DataPackage_[0-9]%' AND
 			NOT Dataset_Num IN ( SELECT Value
-								FROM dbo.udfParseDelimitedList ( @DatasetSkipList, ',' ) 
+								FROM dbo.udfParseDelimitedList ( @DatasetSkipList, ',', 'DeleteOldDataExperimentsJobsAndLogs') 
 								) AND
 			NOT Dataset_Num IN ( SELECT DISTINCT DS.Dataset_Num
 								FROM T_Dataset DS INNER JOIN
@@ -186,7 +188,7 @@ AS
 		WHERE E.Experiment_Num NOT IN ('Placeholder', 'DMS_Pipeline_Data') AND
 			E.EX_created < @DeleteThreshold AND
 			NOT Experiment_Num IN ( SELECT Value
-									FROM dbo.udfParseDelimitedList ( @ExperimentSkipList, ',' ) 
+									FROM dbo.udfParseDelimitedList ( @ExperimentSkipList, ',', 'DeleteOldDataExperimentsJobsAndLogs') 
 									) AND
 			NOT Experiment_Num IN ( SELECT E.Experiment_Num
 									FROM T_Dataset DS
@@ -823,6 +825,7 @@ AS
 Done:
 
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteOldDataExperimentsJobsAndLogs] TO [DDL_Viewer] AS [dbo]

@@ -22,6 +22,7 @@ CREATE Procedure dbo.UpdateDatasets
 **			03/30/2015 mem - Tweak warning message grammar
 **			10/07/2015 mem - Added @mode "preview"
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -125,7 +126,7 @@ As
 
 	INSERT INTO #TDS (DatasetNum)
 	SELECT DISTINCT Value
-	FROM udfParseDelimitedList(@datasetList, ',')
+	FROM udfParseDelimitedList(@datasetList, ',', 'UpdateDatasets')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

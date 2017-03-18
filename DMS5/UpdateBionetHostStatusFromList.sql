@@ -15,6 +15,7 @@ CREATE Procedure dbo.UpdateBionetHostStatusFromList
 **	Date:	12/03/2015 mem - Initial version
 **			12/04/2015 mem - Now auto-removing ".bionet"
 **						   - Add support for including IP addresses, for example ltq_orb_3@192.168.30.78
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
 	
 	INSERT INTO #Tmp_Hosts (Host)
 	SELECT DISTINCT Value
-	FROM dbo.udfParseDelimitedList(@hostNames, ',')
+	FROM dbo.udfParseDelimitedList(@hostNames, ',', 'UpdateBionetHostStatusFromList')
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 	
@@ -140,7 +141,7 @@ AS
 			INSERT INTO T_Bionet_Hosts( Host,
 			                            IP,
 			                            Entered,
-			                            Last_Online )
+			                      Last_Online )
 			SELECT Src.Host,
 			       Src.IP,
 			       GetDate(),

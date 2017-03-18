@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.UpdateRequestedRunWP
 /****************************************************
 **
@@ -22,6 +23,7 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 **	Auth: 	mem
 **	Date: 	07/01/2014 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -94,7 +96,7 @@ AS
 			--		
 			INSERT INTO #Tmp_RequestedRunList( ID )
 			SELECT Value
-			FROM dbo.udfParseDelimitedList ( @RequestedIdList, ',' )
+			FROM dbo.udfParseDelimitedList (@RequestedIdList, ',', 'UpdateRequestedRunWP')
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -251,6 +253,7 @@ AS
 Done:
 
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunWP] TO [DDL_Viewer] AS [dbo]

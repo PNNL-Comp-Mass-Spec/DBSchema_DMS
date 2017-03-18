@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
 /****************************************************
 ** 
@@ -25,6 +26,7 @@ CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
 **			02/20/2012 mem - Now using a temporary table to track the dataset names in @datasetList
 **			02/22/2012 mem - Switched to using a table-variable for dataset names (instead of a physical temporary table)
 **			05/03/2012 mem - Added support for the Special Processing field
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **    
 *****************************************************/
 (
@@ -93,7 +95,7 @@ As
 
 	INSERT INTO @tblDatasetsToProcess (Dataset)
 	SELECT Value
-	FROM dbo.udfParseDelimitedList(@datasetList, ',')
+	FROM dbo.udfParseDelimitedList(@datasetList, ',', 'EvaluatePredefinedAnalysisRulesMDS')
 	WHERE Len(Value) > 0
 	ORDER BY Value
 
@@ -169,6 +171,7 @@ As
 	---------------------------------------------------
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DDL_Viewer] AS [dbo]
