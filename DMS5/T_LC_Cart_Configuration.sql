@@ -62,7 +62,11 @@ CREATE NONCLUSTERED INDEX [IX_T_LC_Cart_Configuration_Cart_Id] ON [dbo].[T_LC_Ca
 	[Cart_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Cart_Config_State]  DEFAULT ('Active') FOR [Cart_Config_State]
+GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Configuration_T_LC_Cart] FOREIGN KEY([Cart_ID])
 REFERENCES [dbo].[T_LC_Cart] ([ID])
