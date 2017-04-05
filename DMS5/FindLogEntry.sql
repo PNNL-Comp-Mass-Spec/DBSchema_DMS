@@ -116,5 +116,7 @@ GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMS_Guest] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMSReader] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [Limited_Table_Write] AS [dbo]
 GO
