@@ -22,6 +22,7 @@ CREATE FUNCTION dbo.GetDatasetInstrumentRuntime
 **			02/07/2012 grk - Added anchoring of long intervals to beginning and end of month.
 **			02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes
 **			06/08/2012 grk - added lookup for @maxNormalInterval
+**			04/05/2017 mem - Compute Fraction_EMSL_Funded using EUS usage type (previously computed using CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
 **    
 *****************************************************/
 (
@@ -43,6 +44,7 @@ RETURNS @TX TABLE (
 	Request INT ,
 	EUS_Proposal VARCHAR(32) ,
 	EUS_Usage VARCHAR(64),
+	EUS_Proposal_Type VARCHAR(100),
 	Work_Package VARCHAR(32),
 	LC_Column VARCHAR(128) ,
 	Instrument VARCHAR(128),
@@ -289,18 +291,22 @@ AS
 				Work_Package = RR.RDS_WorkPackage  ,
 				EUS_Proposal = RR.RDS_EUS_Proposal_ID  ,
 				EUS_Usage = EUT.Name,
+				EUS_Proposal_Type = EUP.Proposal_Type,
 				Campaign_ID  = C.Campaign_ID, 
-				Fraction_EMSL_Funded = C.CM_Fraction_EMSL_Funded,
+				-- Fraction_EMSL_Funded = C.CM_Fraction_EMSL_Funded,   -- Campaign based estimation of fraction EMSL funded; this has been replaced by the following case statement
+				Fraction_EMSL_Funded = Case When IsNull(EUP.Proposal_Type, 'PROPRIETARY') IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER') Then 0 Else 1 End,
 				Campaign_Proposals = C.CM_EUS_Proposal_List
-			FROM @TX T
-			INNER JOIN T_Dataset DS ON T.ID = DS.Dataset_ID 
-			INNER JOIN T_Experiments E ON DS.Exp_ID = E.Exp_ID 
-			INNER JOIN T_Campaign C ON E.EX_campaign_ID = C.Campaign_ID
-			INNER JOIN T_DatasetStateName DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
-			INNER JOIN T_DatasetRatingName DRN ON DS.DS_rating = DRN.DRN_state_ID
-			INNER JOIN T_LC_Column LC ON DS.DS_LC_column_ID = LC.ID
-			LEFT OUTER JOIN T_Requested_Run RR ON DS.Dataset_ID = RR.DatasetID    
-			INNER JOIN T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID   
+			FROM @TX T INNER JOIN
+				T_Dataset DS ON T.ID = DS.Dataset_ID INNER JOIN
+				T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
+				T_Campaign C ON E.EX_campaign_ID = C.Campaign_ID INNER JOIN
+				T_DatasetStateName DSN ON DS.DS_state_ID = DSN.Dataset_state_ID INNER JOIN
+				T_DatasetRatingName DRN ON DS.DS_rating = DRN.DRN_state_ID INNER JOIN
+				T_LC_Column LC ON DS.DS_LC_column_ID = LC.ID LEFT OUTER JOIN
+				T_Requested_Run RR ON DS.Dataset_ID = RR.DatasetID LEFT OUTER JOIN
+				T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID LEFT OUTER JOIN
+				T_EUS_Proposals EUP ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+
 		END
 		
 		---------------------------------------------------

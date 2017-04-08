@@ -7,6 +7,7 @@ GO
 
 
 
+
 CREATE view [dbo].[V_Dataset_Disposition] as
 SELECT DS.Dataset_ID AS ID,
        '' AS [Sel.],
@@ -36,7 +37,6 @@ FROM T_LC_Cart AS LCC
      INNER JOIN t_storage_path AS SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
 WHERE (DS.DS_rating = -10)
-
 
 
 

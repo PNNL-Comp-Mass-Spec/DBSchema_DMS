@@ -34,14 +34,19 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **			03/15/2012 mem - Added parameter @EUSUsageFilterList
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			04/05/2017 mem - Determine whether a dataset is EMSL funded using EUS usage type (previously used CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
+**			               - No longer differentiate reruns or unreviewed
+**						   - Added parameter @InstrumentFilterList
+**						   - Changed [% EF Study Specific] to be based on [Total] instead of [EF_Total]
 **    
 *****************************************************/
 (
 	@startDate varchar(24),
 	@endDate varchar(24),
 	@productionOnly tinyint = 1,			-- When 0 then shows all instruments; otherwise limits the report to production instruments only
-	@CampaignIDFilterList varchar(2000) = '',
-	@EUSUsageFilterList varchar(2000) = '',
+	@CampaignIDFilterList varchar(2000) = '',	-- Comma separated list of campaign IDs
+	@EUSUsageFilterList varchar(2000) = '',		-- Comma separate list of EUS usage types
+	@InstrumentFilterList varchar(2000) = '',	-- Comma separated list of instrument names (% and * wild cards are allowed)
 	@message varchar(256) = '' output	
 )
 AS
@@ -67,6 +72,8 @@ AS
 	Set @productionOnly = IsNull(@productionOnly, 1)
 	Set @CampaignIDFilterList = LTrim(RTrim(IsNull(@CampaignIDFilterList, '')))
 	Set @EUSUsageFilterList = LTrim(RTrim(IsNull(@EUSUsageFilterList, '')))
+	Set @InstrumentFilterList = LTrim(RTrim(IsNull(@InstrumentFilterList, '')))
+	
 	Set @message = ''
 
 	--------------------------------------------------------------------
@@ -111,23 +118,92 @@ AS
 			RAISERROR (@msg, 11, 15)
 		End
 
-		-- Update column Fraction_EMSL_Funded
-		--	
-		UPDATE #Tmp_CampaignFilter
-		SET Fraction_EMSL_Funded = C.CM_Fraction_EMSL_Funded
-		FROM #Tmp_CampaignFilter CF
-		     INNER JOIN T_Campaign C
-		       ON CF.Campaign_ID = C.Campaign_ID
-
 	End
 	Else
 	Begin
-		INSERT INTO #Tmp_CampaignFilter (Campaign_ID, Fraction_EMSL_Funded)
-		SELECT Campaign_ID, CM_Fraction_EMSL_Funded
+		INSERT INTO #Tmp_CampaignFilter (Campaign_ID)
+		SELECT Campaign_ID
 		FROM T_Campaign
 		ORDER BY Campaign_ID
 	End
+
+	--------------------------------------------------------------------
+	-- Populate a temporary table with the Instrument IDs to filter on
+	--------------------------------------------------------------------
+	--
+	CREATE TABLE #Tmp_InstrumentFilter (
+		Instrument_ID int NOT NULL
+	)
 	
+	CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_InstrumentFilter ON #Tmp_InstrumentFilter (Instrument_ID)
+	
+	If @InstrumentFilterList <> ''
+	Begin
+		
+		CREATE TABLE #Tmp_MatchSpec (
+			Match_Spec_ID int NOT NULL identity(1,1),
+			Match_Spec varchar(2048)
+		)
+		
+		INSERT INTO #Tmp_MatchSpec (Match_Spec)
+		SELECT DISTINCT Value
+		FROM dbo.udfParseDelimitedList(@InstrumentFilterList, ',', 'ReportProductionStats')
+		ORDER BY Value
+
+		Declare @matchSpecID int = 0
+		Declare @matchSpec varchar(2048)
+		
+		While @matchSpecID >= 0
+		Begin
+			SELECT TOP 1 @matchSpecID = Match_Spec_ID,
+			             @matchSpec = Match_Spec
+			FROM #Tmp_MatchSpec
+			WHERE Match_Spec_ID > @matchSpecID
+			ORDER BY Match_Spec_ID
+			--
+			SELECT @myRowCount = @@RowCount
+
+			If @myRowCount = 0
+			Begin
+				Set @matchSpecID = -1
+			End
+			Else
+			Begin
+				Set @matchSpec = Replace(@matchSpec, '*', '%')
+				
+				If CharIndex('%', @matchSpec) > 0
+				Begin
+					INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
+					SELECT FilterQ.Instrument_ID
+					FROM ( SELECT Instrument_ID
+					       FROM T_Instrument_Name
+					       WHERE IN_name LIKE @matchSpec ) FilterQ
+					     LEFT OUTER JOIN #Tmp_InstrumentFilter Target
+					       ON FilterQ.Instrument_ID = Target.Instrument_ID
+					WHERE Target.Instrument_ID IS NULL
+
+				End
+				Else
+				Begin
+					INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
+					SELECT FilterQ.Instrument_ID
+					FROM ( SELECT Instrument_ID
+					       FROM T_Instrument_Name
+					       WHERE IN_name = @matchSpec ) FilterQ
+					     LEFT OUTER JOIN #Tmp_InstrumentFilter Target
+					       ON FilterQ.Instrument_ID = Target.Instrument_ID
+					WHERE Target.Instrument_ID IS NULL
+				End
+			End
+		End
+		
+	End
+	Else
+	Begin
+		INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
+		SELECT DISTINCT Instrument_ID
+		FROM T_Instrument_Name
+	End
 	
 	--------------------------------------------------------------------
 	-- Populate a temporary table with the EUS Usage types to filter on
@@ -203,7 +279,7 @@ AS
 	--
 	If IsNull(@endDate, '') = ''
 	Begin
-		Set @eDateAlternate = CONVERT(datetime, convert(varchar(32), GETDATE(), 101))
+		Set @eDateAlternate = Convert(datetime, Convert(varchar(32), GETDATE(), 101))
 		Set @eDateAlternate = DateAdd(second, 86399, @eDateAlternate)
 		Set @eDateAlternate = DateAdd(millisecond, 995, @eDateAlternate)
 		Set @endDate = Convert(varchar(32), @eDateAlternate, 121)
@@ -221,7 +297,7 @@ AS
 	-- Check whether @endDate only contains year, month, and day
 	--------------------------------------------------------------------
 	--
-	set @eDate = CONVERT(DATETIME, @endDate, 102) 
+	set @eDate = Convert(DATETIME, @endDate, 102) 
 
 	set @eDateAlternate = Convert(datetime, Floor(Convert(float, @eDate)))
 	
@@ -250,7 +326,7 @@ AS
 			RAISERROR (@msg, 11, 16)
 		End
 
-		Set @stDate = CONVERT(DATETIME, @startDate, 102) 
+		Set @stDate = Convert(DATETIME, @startDate, 102) 
 	End
 	
 	--------------------------------------------------------------------
@@ -266,7 +342,8 @@ AS
 	--
 	CREATE TABLE #Tmp_Datasets (
 		Dataset_ID int NOT NULL,
-		Campaign_ID int NOT NULL
+		Campaign_ID int NOT NULL,
+		EMSL_Funded tinyint NOT NULL
 	)
 	
 	CREATE CLUSTERED INDEX #IX_Tmp_Datasets ON #Tmp_Datasets (Dataset_ID, Campaign_ID)
@@ -276,30 +353,52 @@ AS
 		-- Filter on the EMSL usage types defined in #Tmp_EUSUsageFilter
 		--
 		INSERT INTO #Tmp_Datasets( Dataset_ID,
-		                           Campaign_ID )
+		                           Campaign_ID,
+		                           EMSL_Funded )
 		SELECT D.Dataset_ID,
-		       E.EX_campaign_ID
+		       E.EX_campaign_ID,
+		       CASE
+		           WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
+		                IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER') THEN 0
+		           ELSE 1
+		       END AS EMSL_Funded
 		FROM T_Dataset D
 		     INNER JOIN T_Experiments E
 		       ON E.Exp_ID = D.Exp_ID
+		     INNER JOIN #Tmp_InstrumentFilter InstFilter 
+		       ON D.DS_Instrument_Name_ID = InstFilter.Instrument_ID
 		     INNER JOIN T_Requested_Run RR
 		       ON D.Dataset_ID = RR.DatasetID
+		     INNER JOIN T_EUS_Proposals EUP
+		       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID		     
 		WHERE ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate 
 		      AND
 		      RR.RDS_EUS_UsageType IN ( SELECT Usage_ID
 		                                FROM #Tmp_EUSUsageFilter )
-
 	End
 	Else
 	Begin
-		INSERT INTO #Tmp_Datasets ( Dataset_ID, Campaign_ID)
-		SELECT D.Dataset_ID, E.EX_campaign_ID
+		INSERT INTO #Tmp_Datasets( Dataset_ID,
+		                           Campaign_ID,
+		                           EMSL_Funded )
+		SELECT D.Dataset_ID,
+		       E.EX_campaign_ID,
+		       CASE
+		           WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
+		                IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER') THEN 0
+		           ELSE 1
+		       END AS EMSL_Funded
 		FROM T_Dataset D
 		     INNER JOIN T_Experiments E
 		       ON E.Exp_ID = D.Exp_ID
+		     INNER JOIN #Tmp_InstrumentFilter InstFilter 
+		       ON D.DS_Instrument_Name_ID = InstFilter.Instrument_ID
+		     LEFT OUTER JOIN T_Requested_Run RR
+		       ON D.Dataset_ID = RR.DatasetID
+		     LEFT OUTER JOIN T_EUS_Proposals EUP
+		       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
 		WHERE ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate
 	End	
-	
 	
 	---------------------------------------------------
 	-- Generate report
@@ -309,120 +408,96 @@ AS
 		Instrument,
 		[Total] AS [Total Datasets],
 		@daysInRange AS [Days in range],
-		convert(decimal(5,1), [Total]/@daysInRange) AS [Datasets per day],
+		Convert(decimal(5,1), [Total]/@daysInRange) AS [Datasets per day],
 		[Blank] AS [Blank Datasets],
 		[QC] AS [QC Datasets],
 		-- [TS] as [Troubleshooting],
 		[Bad] as [Bad Datasets],
-		[Reruns] AS [Reruns],
-		[Unreviewed] AS [Unreviewed],
 		[Study Specific] AS [Study Specific Datasets],
-		convert(decimal(5,1), [Study Specific] / @daysInRange) AS [Study Specific Datasets per day],
-		CASE WHEN [EF_Total] > 0 AND [EF Study Specific] >= 0.01 THEN Convert(float, Convert(decimal(9,2), [EF Study Specific])) ELSE NULL END AS [EMSL-Funded Study Specific Datasets],
-		CASE WHEN [EF_Total] > 0 AND [EF Study Specific] >= 0.01 THEN convert(decimal(5,1), [EF Study Specific] / @daysInRange) ELSE NULL END AS [EF Study Specific Datasets per day],
+		Convert(decimal(5,1), [Study Specific] / @daysInRange) AS [Study Specific Datasets per day],
+		[EF Study Specific] AS [EMSL-Funded Study Specific Datasets],
+		Convert(decimal(5,1), [EF Study Specific] / @daysInRange) AS [EF Study Specific Datasets per day],
 
 		Instrument AS [Inst.],
 		Percent_EMSL_Owned AS [% Inst EMSL Owned],
 		
 		-- EMSL Funded Counts:
 		Convert(float, Convert(decimal(9,2), [EF_Total])) AS [EF Total Datasets],
-		convert(decimal(5,1), [EF_Total]/@daysInRange) AS [EF Datasets per day],
-		Convert(float, Convert(decimal(9,2), [EF_Blank])) AS [EF Blank Datasets],
-		Convert(float, Convert(decimal(9,2), [EF_QC])) AS [EF QC Datasets],
-		Convert(float, Convert(decimal(9,2), [EF_Bad])) as [EF Bad Datasets],
-		Convert(float, Convert(decimal(9,2), [EF_Reruns])) AS [EF Reruns],
-		Convert(float, Convert(decimal(9,2), [EF_Unreviewed])) AS [EF Unreviewed],
+		Convert(decimal(5,1), [EF_Total]/@daysInRange) AS [EF Datasets per day],
+		-- Convert(float, Convert(decimal(9,2), [EF_Blank])) AS [EF Blank Datasets],
+		-- Convert(float, Convert(decimal(9,2), [EF_QC])) AS [EF QC Datasets],
+		-- Convert(float, Convert(decimal(9,2), [EF_Bad])) as [EF Bad Datasets],
 
-		convert(decimal(5,1), ([Blank] * 100.0/[Total])) AS [% Blank Datasets],
-		convert(decimal(5,1), ([QC] * 100.0/[Total])) AS [% QC Datasets],
-		convert(decimal(5,1), ([Bad] * 100.0/[Total])) AS [% Bad Datasets],
-		convert(decimal(5,1), ([Reruns] * 100.0/[Total])) AS [% Reruns],
-		convert(decimal(5,1), ([Study Specific] * 100.0/[Total])) AS [% Study Specific],
+		Convert(decimal(5,1), ([Blank] * 100.0/[Total])) AS [% Blank Datasets],
+		Convert(decimal(5,1), ([QC] * 100.0/[Total])) AS [% QC Datasets],
+		Convert(decimal(5,1), ([Bad] * 100.0/[Total])) AS [% Bad Datasets],
+		-- Convert(decimal(5,1), ([Reruns] * 100.0/[Total])) AS [% Reruns],
+		Convert(decimal(5,1), ([Study Specific] * 100.0/[Total])) AS [% Study Specific],
 
-		CASE WHEN [EF_Total] > 0 THEN convert(decimal(5,1), ([EF_Blank] * 100.0/[EF_Total])) ELSE NULL END AS [% EF Blank Datasets],
-		CASE WHEN [EF_Total] > 0 THEN convert(decimal(5,1), ([EF_QC] * 100.0/[EF_Total])) ELSE NULL END AS [% EF QC Datasets],
-		CASE WHEN [EF_Total] > 0 THEN convert(decimal(5,1), ([EF_Bad] * 100.0/[EF_Total])) ELSE NULL END AS [% EF Bad Datasets],
-		CASE WHEN [EF_Total] > 0 THEN convert(decimal(5,1), ([EF_Reruns] * 100.0/[EF_Total])) ELSE NULL END AS [% EF Reruns],
-		CASE WHEN [EF_Total] > 0 THEN convert(decimal(5,1), ([EF Study Specific] * 100.0/[EF_Total])) ELSE NULL END AS [% EF Study Specific],
+		CASE WHEN [Total] > 0 THEN Convert(decimal(5,1), ([EF Study Specific] * 100.0/[Total])) ELSE NULL END AS [% EF Study Specific],
 		
 		Instrument AS [Inst]
 	FROM (
 		SELECT Instrument, Percent_EMSL_Owned, 
-		    [Total], [Bad], [Blank], [QC], [Reruns], [Unreviewed],
-			[Total] - ([Blank] + [QC] + [Bad] + [Reruns] + [Unreviewed]) AS [Study Specific],			
-			[EF_Total], [EF_Bad], [EF_Blank], [EF_QC], [EF_Reruns], [EF_Unreviewed],
-			[EF_Total] - ([EF_Blank] + [EF_QC] + [EF_Bad] + [EF_Reruns] + [EF_Unreviewed]) AS [EF Study Specific]			    
+		    [Total], [Bad], [Blank], [QC],
+			[Total] - ([Blank] + [QC] + [Bad]) AS [Study Specific],			
+			[EF_Total], [EF_Bad], [EF_Blank], [EF_QC],
+			[EF_Total] - ([EF_Blank] + [EF_QC] + [EF_Bad]) AS [EF Study Specific]			    
 
 		FROM
 			(SELECT Instrument, 
 			        Percent_EMSL_Owned,
-					SUM([Total]) AS [Total],		-- Total
-					SUM([Bad]) AS [Bad],			-- Bad
-					SUM([Blank]) AS [Blank],		-- Blank
-					SUM([QC]) AS [QC],				-- QC
-					-- SUM([TS]) AS [TS],			-- Troubleshooting and Method Development
-					SUM([Reruns]) AS [Reruns],			-- Rerun
-					SUM([Unreviewed]) AS [Unreviewed],	-- Unreviewed
+					SUM([Total]) AS [Total],		-- Total (Good + bad)
+					SUM([Bad]) AS [Bad],			-- Bad (not blank)
+					SUM([Blank]) AS [Blank],		-- Blank (Good + bad)
+					SUM([QC]) AS [QC],				-- QC (not bad)
 					
 					-- EMSL Funded Counts:
-					Sum([EF_Total]) AS [EF_Total],
-					Sum([EF_Bad]) AS [EF_Bad],
-					Sum([EF_Blank]) AS [EF_Blank],
-					Sum([EF_QC]) AS [EF_QC],
-					Sum([EF_Reruns]) AS [EF_Reruns],
-					Sum([EF_Unreviewed]) AS [EF_Unreviewed]
+					Sum([EF_Total]) AS [EF_Total],	-- EF Total (Good + bad)
+					Sum([EF_Bad]) AS [EF_Bad],		-- EF Bad (not blank)
+					Sum([EF_Blank]) AS [EF_Blank],	-- EF Blank (Good + bad)
+					Sum([EF_QC]) AS [EF_QC]			-- EF QC (not bad)
 			FROM
 				(	-- Select Good datasets (excluded Bad, Not Released, Unreviewed, etc.)
 					SELECT
 						I.IN_Name as Instrument, 
 						I.Percent_EMSL_Owned,
 						COUNT(*) AS [Total],														-- Total
-						0 AS [Bad],																	-- Bad
+						0                                                            AS [Bad],	    -- Bad
 						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Blank],	-- Blank
-						SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN 1 ELSE 0 END) AS [QC],			-- QC
-						SUM(CASE WHEN D.DS_Rating = -6 THEN 1 ELSE 0 END) AS [Reruns],				-- Rerun (Good Data)
-						-- SUM(CASE WHEN D.Dataset_Num LIKE 'TS%' OR D.Dataset_Num LIKE 'MD%' THEN 1 ELSE 0 END) AS [TS],				-- Troubleshooting or Method Development
-						0 AS [Unreviewed],															-- Unreviewed
+						SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN 1 ELSE 0 END)    AS [QC],		-- QC
 						
 						-- EMSL Funded Counts:
-						SUM(CF.Fraction_EMSL_Funded) AS [EF_Total],
-						0 AS [EF_Bad],																						-- Bad
-						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN CF.Fraction_EMSL_Funded ELSE 0 END) AS [EF_Blank],	-- Blank
-						SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN CF.Fraction_EMSL_Funded ELSE 0 END) AS [EF_QC],			-- QC
-						SUM(CASE WHEN D.DS_Rating = -6 THEN CF.Fraction_EMSL_Funded ELSE 0 END) AS [EF_Reruns],				-- Rerun (Good Data)
-						0 AS [EF_Unreviewed]																				-- Unreviewed
+						SUM(DF.EMSL_Funded) AS [EF_Total],                                                          -- EF_Total
+						0 AS [EF_Bad],																				-- EF_Bad
+						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN DF.EMSL_Funded ELSE 0 END) AS [EF_Blank],	-- EF_Blank
+						SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN DF.EMSL_Funded ELSE 0 END) AS [EF_QC]			-- EF_QC
 					FROM
 						#Tmp_Datasets DF INNER JOIN
 						T_Dataset D ON DF.Dataset_ID = D.Dataset_ID INNER JOIN
 						T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN 
-						#Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID
+						#Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID						
 					WHERE NOT ( D.Dataset_Num LIKE 'Bad%' OR
 								D.DS_Rating IN (-1,-2,-5) OR
 								D.DS_State_ID = 4
 							) AND
-						D.DS_Rating <> -10 AND						-- Exclude unreviewed datasets
 						(I.IN_operations_role = 'Production' OR @productionOnly = 0)
 					GROUP BY I.IN_Name, I.Percent_EMSL_Owned
 					UNION
-					-- Select Bad or Not Released datasets (exclude Unreviewed)
+					-- Select Bad or Not Released datasets
 					SELECT
 						I.IN_Name as Instrument, 
 						I.Percent_EMSL_Owned,
-						COUNT(*) AS [Total],														-- Total
-						SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Bad],	-- Bad
-						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Blank],	-- Blank
-						0 AS [QC],																	-- QC
-						0 AS [Reruns],																-- Rerun (Good Data)
-						-- 0 AS [TS],																-- Troubleshooting or Method Development
-						0 AS [Unreviewed],															-- Unreviewed
+						COUNT(*) AS [Total],															-- Total
+						SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Bad],		-- Bad (not blank)
+						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END)     AS [Blank],	-- Bad Blank; will be counted as a blank
+						0                                                                AS [QC],		-- Bad QC; simply counted as [Bad]
 						
 						-- EMSL Funded Counts:
-						SUM(CF.Fraction_EMSL_Funded) AS [EF_Total],														-- Total
-						SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN CF.Fraction_EMSL_Funded ELSE 0 END) AS [EF_Bad],	-- Bad
-						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN CF.Fraction_EMSL_Funded ELSE 0 END) AS [EF_Blank],	-- Blank
-						0 AS [EF_QC],																						-- QC
-						0 AS [EF_Reruns],																					-- Rerun (Good Data)
-						0 AS [EF_Unreviewed]																				-- Unreviewed
+						SUM(DF.EMSL_Funded) AS [EF_Total],														    -- EF_Total
+						SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN DF.EMSL_Funded ELSE 0 END) AS [EF_Bad],	-- EF_Bad (not blank)
+						SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN DF.EMSL_Funded ELSE 0 END) AS [EF_Blank],	-- Bad EF_Blank; will be counted as a blank
+						0 AS [EF_QC]																				-- Bad EF_QC; simply counted as [Bad]
 					FROM
 						#Tmp_Datasets DF INNER JOIN
 						T_Dataset D ON DF.Dataset_ID = D.Dataset_ID INNER JOIN
@@ -432,41 +507,8 @@ AS
 							D.DS_Rating IN (-1,-2,-5) OR
 							D.DS_State_ID = 4
 						) AND
-						D.DS_Rating <> -10 AND						-- Exclude unreviewed datasets
 						(I.IN_operations_role = 'Production' OR @productionOnly = 0) 
-					GROUP BY I.IN_Name, I.Percent_EMSL_Owned
-					UNION
-					-- Select Unreviewed datasets (but exclude Bad or Not Released datasets)
-					SELECT
-						I.IN_Name as Instrument, 
-						I.Percent_EMSL_Owned,
-						COUNT(*) AS [Total],														-- Total
-						0 AS [Bad],																	-- Bad
-						0 AS [Blank],																-- Blank
-						0 AS [QC],																	-- QC
-						0 AS [Reruns],																-- Rerun (Good Data),
-						-- 0 AS [TS],																-- Troubleshooting or Method Development
-						COUNT(*) AS [Unreviewed],													-- Unreviewed
-						
-						-- EMSL Funded Counts:
-						SUM(CF.Fraction_EMSL_Funded) AS [EF_Total],									-- Total
-						0 AS [EF_Bad],																-- Bad
-						0 AS [EF_Blank],															-- Blank
-						0 AS [EF_QC],																-- QC
-						0 AS [EF_Reruns],															-- Rerun (Good Data)
-						SUM(CF.Fraction_EMSL_Funded) AS [EF_Unreviewed]								-- Unreviewed
-					FROM
-						#Tmp_Datasets DF INNER JOIN
-						T_Dataset D ON DF.Dataset_ID = D.Dataset_ID INNER JOIN
-						T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN 
-						#Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID
-					WHERE NOT ( D.Dataset_Num LIKE 'Bad%' OR
-								D.DS_Rating IN (-1,-2,-5) OR
-								D.DS_State_ID = 4
-							) AND
-						D.DS_Rating = -10 AND						-- Select unreviewed datasets
-						(I.IN_operations_role = 'Production' OR @productionOnly = 0)
-					GROUP BY I.IN_Name, I.Percent_EMSL_Owned
+					GROUP BY I.IN_Name, I.Percent_EMSL_Owned					
 				) StatsQ
 			GROUP BY Instrument, Percent_EMSL_Owned
 			) CombinedStatsQ 
