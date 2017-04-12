@@ -197,6 +197,9 @@ As
 		-- Rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateDatasetIntervalForMultipleInstruments'
+		
 	END CATCH
 	
 	If @infoOnly <> 0 and @myError <> 0
