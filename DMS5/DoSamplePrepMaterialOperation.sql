@@ -15,7 +15,7 @@ CREATE Procedure DoSamplePrepMaterialOperation
 **	Auth:	grk
 **	Date:	08/08/2008 grk - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
-**
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 **	Note:
 **		GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
@@ -194,6 +194,8 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		
+		Exec PostLogEntry 'Error', @message, 'DoSamplePrepMaterialOperation'
 	END CATCH
 	return @myError
 

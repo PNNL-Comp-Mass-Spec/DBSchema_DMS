@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE  AddUpdatePipelineMacJobRequest 
+CREATE PROCEDURE AddUpdatePipelineMacJobRequest
 /****************************************************
 **
 **  Desc: 
@@ -18,6 +18,7 @@ CREATE PROCEDURE  AddUpdatePipelineMacJobRequest
 **    Date: 03/19/2012 
 **          03/26/2012 grk - added @ScheduledJob and @SchedulingNotes
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -153,6 +154,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdatePipelineMacJobRequest'
 	END CATCH
 	return @myError
 

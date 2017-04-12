@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 /****************************************************
 **
@@ -35,6 +34,7 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -312,6 +312,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunBatchParameters'
 	END CATCH
 	RETURN @myError
 

@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			04/10/2017 mem - Remove @day and @hour since not used
 **			04/11/2017 mem - Populate columns DMS_Inst_ID and Usage_Type instead of Instrument and Usage
 **			               - Add parameter @infoOnly
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -532,9 +533,10 @@ AS
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-
-	END CATCH
-	
+		
+		Exec PostLogEntry 'Error', @message, 'UpdateEMSLInstrumentUsageReport'
+		
+	END CATCH	
 
 	RETURN @myError
 GO

@@ -22,6 +22,7 @@ CREATE Procedure DoAnalysisJobOperation
 **			08/19/2010 grk - try-catch for error handling
 **			11/18/2010 mem - Now returning 0 after successful call to DeleteNewAnalysisJob
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -96,6 +97,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'DoAnalysisJobOperation'
 	END CATCH
 	return @myError
 

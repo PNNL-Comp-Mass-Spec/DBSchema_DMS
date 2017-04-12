@@ -15,6 +15,7 @@ CREATE PROCEDURE RetryMyEMSLUpload
 **	Date:	11/17/2014 mem - Initial version
 **			02/23/2016 mem - Add Set XACT_ABORT on
 **			01/26/2017 mem - Expand @message to varchar(4000)
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -202,6 +203,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'RetryMyEMSLUpload'
 	END CATCH
 
 Done:

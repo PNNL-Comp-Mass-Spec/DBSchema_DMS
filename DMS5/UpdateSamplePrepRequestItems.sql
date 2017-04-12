@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.UpdateSamplePrepRequestItems
 **	Auth:	grk
 **	Date:	07/05/2013 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -289,14 +290,14 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateSamplePrepRequestItems'
 	END CATCH
 	
  	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
 	return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateSamplePrepRequestItems] TO [DDL_Viewer] AS [dbo]

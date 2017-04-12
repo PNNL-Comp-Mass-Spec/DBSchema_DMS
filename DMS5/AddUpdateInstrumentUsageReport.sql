@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport 
+CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 /****************************************************
 **
 **  Desc: 
@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 **          09/11/2012 grk - changed type of @Start
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/11/2017 mem - Replace column Usage with Usage_Type
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -139,6 +140,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateInstrumentUsageReport'
 	END CATCH
 	return @myError
 

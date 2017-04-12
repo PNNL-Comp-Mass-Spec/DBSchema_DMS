@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.CloneAnalysisJobs
 /****************************************************
 **
@@ -24,6 +23,7 @@ CREATE PROCEDURE dbo.CloneAnalysisJobs
 **    Auth: mem
 **    Date: 07/12/2016 - Initial Release
 **          07/19/2016 - Add parameter @allowDuplicateJob
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -459,6 +459,8 @@ As
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
+            
+        Exec PostLogEntry 'Error', @message, 'CloneAnalysisJobs'
     END CATCH
 
 Done:    

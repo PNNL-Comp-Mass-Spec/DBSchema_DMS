@@ -30,6 +30,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			07/24/2013 mem - Added mode 'separationGroup'
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -397,6 +398,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunAssignments'
 	END CATCH
 
 	---------------------------------------------------

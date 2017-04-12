@@ -17,6 +17,7 @@ CREATE Procedure DoMaterialContainerOperation
 **			10/01/2009 mem - Expanded error message
 **			08/19/2010 grk - try-catch for error handling
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -90,6 +91,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'DoMaterialContainerOperation'
 	END CATCH
 	return @myError
 

@@ -22,6 +22,7 @@ CREATE Procedure GetPSMJobDefaults
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/18/2016 mem - Added TMT6 and TMT10
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -360,6 +361,8 @@ As
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'GetPSMJobDefaults'
 	END CATCH
 	
 	return @myError

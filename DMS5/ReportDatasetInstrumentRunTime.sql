@@ -16,6 +16,7 @@ CREATE PROCEDURE ReportDatasetInstrumentRunTime
 **	Date:	05/26/2011 grk - initial release
 **			01/31/2012 grk - Added Interval column to output and made separate interval rows an option
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -113,6 +114,8 @@ AS
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'ReportDatasetInstrumentRunTime'
 	END CATCH
 	
 	RETURN @myError

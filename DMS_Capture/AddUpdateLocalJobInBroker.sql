@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			03/15/2011 dac - Modified to allow updating in HOLD mode
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/08/2016 mem - Include job number in errors raised by RAISERROR
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -133,11 +134,10 @@ AS
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
 	END CATCH
 
 	return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]

@@ -19,6 +19,7 @@ CREATE PROCEDURE AddJobRequestPSM
 **			11/21/2012 mem - Now calling CreatePSMJobRequest
 **			12/13/2012 mem - Added support for @mode='preview'
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -106,6 +107,7 @@ AS
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'AddJobRequestPSM'
 	END CATCH
 	RETURN @myError
 

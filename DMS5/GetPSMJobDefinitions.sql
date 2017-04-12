@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.GetPSMJobDefinitions
 **			11/20/2012 mem - Now returning organism name, protein collection list, and protein options list
 **			11/20/2012 grk - removed extra RETURN that was blocking error return
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -77,6 +78,8 @@ AS
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'GetPSMJobDefinitions'
 	END CATCH
 	RETURN @myError
 

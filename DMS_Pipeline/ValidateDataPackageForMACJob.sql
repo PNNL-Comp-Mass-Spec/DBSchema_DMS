@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 /****************************************************
 **
@@ -25,6 +24,7 @@ CREATE PROCEDURE dbo.ValidateDataPackageForMACJob
 **			08/14/2013 mem - Now validating datasets and jobs for script Global_Label-Free_AMT_Tag
 **			04/20/2014 mem - Now mentioning ReporterTol param file when MASIC counts are not correct for an Isobaric_Labeling or MAC_iTRAQ script
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -168,6 +168,7 @@ AS
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		Exec PostLogEntry 'Error', @message, 'ValidateDataPackageForMACJob'
 	END CATCH      
 	return @myError
 

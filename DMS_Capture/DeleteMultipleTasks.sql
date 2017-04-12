@@ -18,6 +18,7 @@ CREATE PROCEDURE DeleteMultipleTasks
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -99,6 +100,7 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'DeleteMultipleTasks'
 	END CATCH
 
  	---------------------------------------------------

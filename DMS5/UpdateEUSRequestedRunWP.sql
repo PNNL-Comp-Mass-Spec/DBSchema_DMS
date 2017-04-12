@@ -18,6 +18,7 @@ CREATE Procedure dbo.UpdateEUSRequestedRunWP
 **	Auth: 	mem
 **	Date: 	12/18/2015 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -277,6 +278,8 @@ AS
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateEUSRequestedRunWP'
 	End CATCH
 
 Done:

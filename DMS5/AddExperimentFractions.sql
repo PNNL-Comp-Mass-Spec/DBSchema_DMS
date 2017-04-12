@@ -36,6 +36,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			11/10/2011 grk - Added Tab field
 **			11/15/2011 grk - added handling for experiment alkylation field
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -594,6 +595,8 @@ AS
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
 	END CATCH
 	return @myError
 

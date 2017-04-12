@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateRunInterval 
+CREATE PROCEDURE AddUpdateRunInterval
 /****************************************************
 **
 **  Desc: 
@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateRunInterval
 **          03/07/2012 mem - Now populating Last_Affected and Entered_By
 **          03/21/2012 grk - modified to handle modified ParseUsageText
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **   
 *****************************************************/
 (
@@ -117,6 +118,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
 	END CATCH
 
 	return @myError

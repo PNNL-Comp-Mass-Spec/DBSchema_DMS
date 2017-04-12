@@ -20,6 +20,7 @@ CREATE PROCEDURE ProcessWaitingSpecialProcJobs
 **			07/02/2013 mem - Changed filter for "bad datasets" to include -1 and -2 (previously included -5 aka Not Released)
 **			07/10/2015 mem - Log message now mentions "Not released dataset" when applicable
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -320,6 +321,8 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		
+		Exec PostLogEntry 'Error', @message, 'ProcessWaitingSpecialProcJobs'
 	END CATCH
 
 	return @myError

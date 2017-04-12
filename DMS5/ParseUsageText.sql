@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **			09/18/2012 grk - added 'Operator' and 'PropUser' keywords
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -230,6 +231,7 @@ AS
 
 		SET @message = ERROR_MESSAGE() -- + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
 
+		Exec PostLogEntry 'Error', @message, 'ParseUsageText'
 	END CATCH
 
 	RETURN @myError

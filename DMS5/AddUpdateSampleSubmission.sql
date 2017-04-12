@@ -22,6 +22,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **			12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
 **			03/26/2015 mem - Update duplicate sample submission message
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -261,6 +262,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateSampleSubmission'
 	END CATCH
 	return @myError
 

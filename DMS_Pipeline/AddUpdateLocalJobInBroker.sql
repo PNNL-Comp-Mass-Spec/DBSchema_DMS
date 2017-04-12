@@ -32,6 +32,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			06/16/2016 mem - Add call to AddUpdateTransferPathsInParamsUsingDataPkg
 **			11/08/2016 mem - Auto-define @ownerPRN if it is empty
 **			11/10/2016 mem - Pass @callingUser to GetUserLoginWithoutDomain
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -261,6 +262,7 @@ AS
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
 	END CATCH
 	return @myError
 

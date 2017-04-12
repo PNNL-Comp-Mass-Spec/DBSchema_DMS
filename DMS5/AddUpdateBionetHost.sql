@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE AddUpdateBionetHost 
+CREATE PROCEDURE AddUpdateBionetHost
 /****************************************************
 **
 **	Desc: 
@@ -13,7 +12,8 @@ CREATE PROCEDURE AddUpdateBionetHost
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Date: 09/08/2016 mem - Initial version
+**	Date:	09/08/2016 mem - Initial version
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -142,6 +142,8 @@ As
 		-- Rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateBionetHost'
 	End Catch
 
 	return @myError

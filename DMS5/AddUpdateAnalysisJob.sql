@@ -821,13 +821,11 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-
 		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'
 		End
-			
 		
 	END CATCH
 

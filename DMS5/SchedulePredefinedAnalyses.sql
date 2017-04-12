@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE SchedulePredefinedAnalyses
 /****************************************************
 ** 
@@ -28,6 +27,7 @@ CREATE PROCEDURE SchedulePredefinedAnalyses
 **			05/24/2011 mem - Added back support for @infoOnly
 **			03/27/2013 mem - No longer storing dataset name in T_Predefined_Analysis_Scheduling_Queue
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -112,6 +112,7 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		Exec PostLogEntry 'Error', @message, 'SchedulePredefinedAnalyses'
 	END CATCH
 
 	return @myError

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.AddBOMTrackingDatasets
 /****************************************************
 **
@@ -20,6 +19,7 @@ CREATE PROCEDURE dbo.AddBOMTrackingDatasets
 **    Date: 12/16/2012 
 **			12/16/2012 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -110,6 +110,7 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+		Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDatasets'
 	END CATCH
 	RETURN @myError
 

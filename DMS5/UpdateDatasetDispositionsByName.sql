@@ -21,6 +21,7 @@ CREATE Procedure UpdateDatasetDispositionsByName
 **			02/20/2013 mem - Expanded @message to varchar(1024)
 **			02/21/2013 mem - Now requiring @recycleRequest to be yes or no
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -165,6 +166,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositionsByName'
 	END CATCH
 
 	---------------------------------------------------

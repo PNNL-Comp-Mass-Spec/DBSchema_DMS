@@ -19,6 +19,7 @@ CREATE PROCEDURE AddMACJob
 **			01/11/2013 mem - Now aborting if MapMACJobParameters returns an error code
 **			04/10/2013 mem - Now passing @callingUser to MakeLocalJobInBroker
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -209,6 +210,7 @@ AS
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'AddMACJob'
 	END CATCH
 	return @myError
 

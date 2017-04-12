@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateDatasets
 /****************************************************
 **
@@ -23,6 +22,7 @@ CREATE Procedure dbo.UpdateDatasets
 **			10/07/2015 mem - Added @mode "preview"
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -427,8 +427,9 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateDatasets'
 	END CATCH
-
 	
 	---------------------------------------------------
 	-- Log SP usage

@@ -17,6 +17,7 @@ CREATE PROCEDURE DoSampleSubmissonOperation
 **  Auth:	grk
 **  Date:	05/07/2010 grk - initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -91,6 +92,8 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		
+		Exec PostLogEntry 'Error', @message, 'DoSampleSubmissonOperation'
 	END CATCH
 	return @myError
 

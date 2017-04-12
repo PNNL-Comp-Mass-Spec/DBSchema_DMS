@@ -33,6 +33,7 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 **			06/24/2015 mem - Now passing @infoOnly to AddUpdateAnalysisJob
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/21/2016 mem - Log errors in PostLogEntry
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -310,6 +311,8 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		
+		Exec PostLogEntry 'Error', @message, 'CreatePredefinedAnalysesJobs'
 	END CATCH
 	
 	return @myError

@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.DoFileAttachmentOperation
 **  Auth:	grk
 **  Date:	09/05/2012 
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -70,6 +71,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'DoFileAttachmentOperation'
 	END CATCH
 	return @myError
 GO

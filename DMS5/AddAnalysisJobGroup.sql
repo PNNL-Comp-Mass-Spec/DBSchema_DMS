@@ -59,6 +59,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **			05/18/2016 mem - Include the Request ID in error messages
 **          07/12/2016 mem - Pass @priority to ValidateAnalysisJobParameters
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (

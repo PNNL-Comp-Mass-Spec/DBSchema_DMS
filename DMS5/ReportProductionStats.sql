@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE dbo.ReportProductionStats
 /****************************************************
 **
@@ -38,6 +37,7 @@ CREATE PROCEDURE dbo.ReportProductionStats
 **			               - No longer differentiate reruns or unreviewed
 **						   - Added parameter @InstrumentFilterList
 **						   - Changed [% EF Study Specific] to be based on [Total] instead of [EF_Total]
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -523,6 +523,8 @@ AS
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'ReportProductionStats'
 	END CATCH
 	
 	RETURN @myError

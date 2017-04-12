@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateAnalysisJobs
 /****************************************************
 **
@@ -42,6 +41,7 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -159,6 +159,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateAnalysisJobs'
 	END CATCH
 
 	---------------------------------------------------

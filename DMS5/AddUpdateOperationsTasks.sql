@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateOperationsTasks 
+CREATE PROCEDURE dbo.AddUpdateOperationsTasks
 /****************************************************
 **
 **  Desc: 
@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.AddUpdateOperationsTasks
 **			11/19/2012 grk - added work package and closed date
 **			11/04/2013 grk - added @HoursSpent
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -177,6 +178,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
 	END CATCH
 	return @myError
 GO

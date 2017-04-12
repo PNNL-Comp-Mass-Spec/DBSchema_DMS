@@ -21,6 +21,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocations
 **			03/31/2012 mem - Added @FiscalYear, @ProposalID, and @mode
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -285,8 +286,6 @@ As
 		--
 		EXEC @myError = UpdateInstrumentUsageAllocationsWork @fy, @message output, @callingUser, @infoOnly
 		
-		
-
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
@@ -294,6 +293,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateInstrumentUsageAllocations'
 	END CATCH
 	return @myError
 

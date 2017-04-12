@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure AddRequestedRuns
 /****************************************************
 **
@@ -40,6 +39,7 @@ CREATE Procedure AddRequestedRuns
 **		02/23/2016 mem - Add set XACT_ABORT on
 **		04/06/2016 mem - Now using Try_Convert to convert from text to int
 **		03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**		04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -288,6 +288,7 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
+		Exec PostLogEntry 'Error', @message, 'AddRequestedRuns'
 	END CATCH
 	return @myError
 

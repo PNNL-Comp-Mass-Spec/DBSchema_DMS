@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **    Auth: grk
 **    Date: 05/20/2010
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -147,6 +148,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateInstrumentOperationHistory'
 	END CATCH
 
 	return @myError

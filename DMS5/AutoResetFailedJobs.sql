@@ -37,6 +37,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			09/02/2016 mem - Switch the archive server path from \\a2 to \\adms
 **			01/18/2017 mem - Auto-reset Bruker_DA_Export jobs up to 2 times
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -203,7 +204,7 @@ As
 				             @Processor = Processor,
 				             @Comment = Comment,
 				             @SettingsFile = Settings_File,
-				             @AnalysisTool = AnalysisTool		-- Overall Job Analysis Tool Name
+				        @AnalysisTool = AnalysisTool		-- Overall Job Analysis Tool Name
 				FROM #Tmp_FailedJobs
 				WHERE Job > @Job
 				ORDER BY Job
@@ -497,6 +498,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AutoResetFailedJobs'
 	END CATCH
 	return @myError
 

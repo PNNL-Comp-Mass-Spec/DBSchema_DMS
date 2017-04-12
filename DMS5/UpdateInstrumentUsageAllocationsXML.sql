@@ -33,6 +33,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocationsXML
 **			03/30/2012 mem - Added support for x="Comment" in the XML
 **						   - Now calling UpdateInstrumentUsageAllocationsWork to apply the updates
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -140,6 +141,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateInstrumentUsageAllocationsXML'
 	END CATCH
 	return @myError
 

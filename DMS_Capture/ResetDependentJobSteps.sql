@@ -18,6 +18,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			11/18/2014 mem - Add a table alias for T_Job_Step_Dependencies
 **			04/24/2015 mem - Now updating State in T_Jobs
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -154,6 +155,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'ResetDependentJobSteps'
 	END CATCH
 
 	return @myError

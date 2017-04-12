@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateRequestedRunWP
 /****************************************************
 **
@@ -24,6 +23,7 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 **	Date: 	07/01/2014 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -130,7 +130,7 @@ AS
 			    Set @message = 'None of the ' + Convert(varchar(12), @RRCount) + ' specified requested run IDs uses work package ' + @OldWorkPackage
 			    If @InfoOnly <> 0
 			        SELECT @message AS Message
-			        
+			    
 			    Goto done
 			End
 		End
@@ -248,12 +248,13 @@ AS
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunWP'
 	End CATCH
 
 Done:
 
 	return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunWP] TO [DDL_Viewer] AS [dbo]

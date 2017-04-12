@@ -21,6 +21,7 @@ CREATE PROCEDURE dbo.UpdateRunOpLog
 **  Auth:	grk
 **  Date:	02/21/2013 grk - Initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -217,7 +218,9 @@ AS
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+		Exec PostLogEntry 'Error', @message, 'UpdateRunOpLog'
 	END CATCH
+	
 	RETURN @myError
 
 GO

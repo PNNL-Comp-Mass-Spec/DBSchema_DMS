@@ -26,6 +26,7 @@ CREATE Procedure dbo.UpdateMaterialLocations
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -140,6 +141,7 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+		Exec PostLogEntry 'Error', @message, 'UpdateMaterialLocations'
 	END CATCH
 	RETURN @myError
 

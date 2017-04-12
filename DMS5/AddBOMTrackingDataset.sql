@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE dbo.AddBOMTrackingDataset 
 /****************************************************
 **
@@ -16,12 +15,13 @@ CREATE PROCEDURE dbo.AddBOMTrackingDataset
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 12/14/2012 
-**    12/14/2012 grk - initial release
-**    12/16/2012 grk - added concept of 'next' month
-**    02/01/2013 grk - fixed broken logic for specifying year/month
-**    02/23/2016 mem - Add set XACT_ABORT on
+**  Auth:	grk
+**  Date:	12/14/2012 
+**			12/14/2012 grk - initial release
+**			12/16/2012 grk - added concept of 'next' month
+**			02/01/2013 grk - fixed broken logic for specifying year/month
+**			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -166,10 +166,10 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDataset'
 	END CATCH
 	RETURN @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDataset] TO [DDL_Viewer] AS [dbo]

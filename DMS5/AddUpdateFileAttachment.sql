@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateFileAttachment 
+CREATE PROCEDURE AddUpdateFileAttachment
 /****************************************************
 **
 **  Desc: 
@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **			03/30/2011 grk - don't allow duplicate entries
 **			12/16/2011 mem - Convert null descriptions to empty strings
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -162,6 +163,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateFileAttachment'
 	END CATCH
 
 	return @myError

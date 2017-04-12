@@ -14,6 +14,7 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **			01/26/2017 mem - Add parameters @maxJobsToReset and @jobListOverride
 **			               - Check for Completion_Message "Exception checking archive status"
 **			               - Expand @message to varchar(4000)
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -159,6 +160,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
 	END CATCH
 
 Done:

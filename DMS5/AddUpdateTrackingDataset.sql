@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateTrackingDataset 
+CREATE PROCEDURE AddUpdateTrackingDataset
 /****************************************************
 **
 **  Desc: 
@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 **			07/19/2012 grk - Extended interval update range around dataset date
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null instead of 'na'
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -508,6 +509,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateTrackingDataset'
 	END CATCH
 	return @myError
 

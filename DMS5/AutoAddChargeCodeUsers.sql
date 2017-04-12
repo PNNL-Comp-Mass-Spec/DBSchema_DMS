@@ -21,6 +21,7 @@ CREATE Procedure AutoAddChargeCodeUsers
 **	Date:	06/05/2013 mem - Initial Version
 **			06/10/2013 mem - Now storing payroll number in U_Payroll and Network_ID in U_PRN
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **
 *****************************************************/
 (
@@ -164,6 +165,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
 	END CATCH
 	
 	return 0

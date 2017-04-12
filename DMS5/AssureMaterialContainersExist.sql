@@ -19,6 +19,7 @@ CREATE PROCEDURE AssureMaterialContainersExist
 **			04/27/2010 grk - initial release
 **			09/23/2011 grk - accomodate researcher field in AddUpdateMaterialContainer
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -151,10 +152,10 @@ AS
 		-- rollback any open transactions
 --		IF (XACT_STATE()) <> 0
 --			ROLLBACK TRANSACTION;
+
+		Exec PostLogEntry 'Error', @message, 'AssureMaterialContainersExist'
 	END CATCH
 	return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [DDL_Viewer] AS [dbo]

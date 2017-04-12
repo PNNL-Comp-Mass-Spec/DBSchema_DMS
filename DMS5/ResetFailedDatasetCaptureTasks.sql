@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 /****************************************************
 ** 
@@ -20,6 +19,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **			11/02/2016 mem - Check for Folder size changed and File size changed
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -183,7 +183,8 @@ As
 		
 	END TRY
 	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
+		EXEC FormatErrorMessage @message output, @myError output		
+		Exec PostLogEntry 'Error', @message, 'ResetFailedDatasetCaptureTasks'
 	END CATCH
 
 	return @myError

@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateRNAPrepRequest
 **	Date:	05/19/2014 mem - Initial version
 **			05/20/2014 mem - Switched from InstrumentGroup to InstrumentName
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -470,6 +471,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'AddUpdateRNAPrepRequest'
 	END CATCH
 	return @myError
 

@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 **			07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -146,6 +147,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'ResetDependentJobSteps'
 	END CATCH
 
 	return @myError

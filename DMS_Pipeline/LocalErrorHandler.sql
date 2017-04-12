@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.LocalErrorHandler
 **	Date:	11/30/2006
 **			01/03/2008 mem - Added parameter @duplicateEntryHoldoffHours
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -112,6 +113,9 @@ As
 		Set @message = 'Error ' + @CurrentLocation + ' in LocalErrorHandler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Convert(varchar(12), IsNull(ERROR_NUMBER(), 0))
 		Set @myError = ERROR_NUMBER()
 		SELECT @message as Error_Description
+		
+		Declare @postedBy varchar(128) = 'LocalErrorHandler (' + @CallingProcName + ')'
+		Exec PostLogEntry 'Error', @message, @postedBy
 	End Catch
 
 	RETURN @myError

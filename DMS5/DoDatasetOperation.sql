@@ -31,6 +31,7 @@ CREATE Procedure DoDatasetOperation
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created 
 **			                 (duplicate jobs are not created)
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -255,6 +256,8 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'DoDatasetOperation'
 	END CATCH
 	return @myError
 

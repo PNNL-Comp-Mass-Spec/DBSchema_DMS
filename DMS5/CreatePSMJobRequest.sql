@@ -25,6 +25,7 @@ CREATE Procedure CreatePSMJobRequest
 **						   - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			03/21/2016 mem - Add support for column Enabled
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -219,7 +220,7 @@ As
 		--
 		SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
 		FROM #TD
-		     INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+		   INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
 		     INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
 		WHERE DI.ProfileScanCount_MSn > 0
 	
@@ -344,6 +345,8 @@ As
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+			
+		Exec PostLogEntry 'Error', @message, 'CreatePSMJobRequest'
 	END CATCH
 
 	---------------------------------------------------

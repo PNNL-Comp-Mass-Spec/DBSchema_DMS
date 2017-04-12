@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 /****************************************************
 ** 
@@ -19,6 +18,7 @@ CREATE PROCEDURE ResetFailedDatasetPurgeTasks
 **			12/13/2010 mem - Changed @ResetHoldoffHours from tinyint to real
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -106,7 +106,8 @@ As
 
 	END TRY
 	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
+		EXEC FormatErrorMessage @message output, @myError output		
+		Exec PostLogEntry 'Error', @message, 'ResetFailedDatasetPurgeTasks'
 	END CATCH
 
 	return @myError
