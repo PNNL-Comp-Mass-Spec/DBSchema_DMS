@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 **			03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/10/2017 mem - Add parameter @instrumentsToProcess
+**			04/11/2017 mem - Now passing @infoOnly to UpdateEMSLInstrumentUsageReport
 **    
 *****************************************************/
 (
@@ -175,15 +176,21 @@ As
 				If @UpdateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
 				Begin
 					If @infoOnly > 0
-						Print 'Call UpdateEMSLInstrumentUsageReport'
+						Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
 
 					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output, @infoonly=@infoonly
 					
+					If @infoOnly > 0
+						Print ''
+						
 				End
 				Else
 				Begin
 					If @infoOnly > 0
-						Print 'Skip call to UpdateEMSLInstrumentUsageReport'
+					Begin
+						Print 'Skip call to UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
+						Print ''
+					End
 				End
 					
 			END  -- </b>
