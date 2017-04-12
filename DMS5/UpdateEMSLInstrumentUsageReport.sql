@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			04/11/2017 mem - Populate columns DMS_Inst_ID and Usage_Type instead of Instrument and Usage
 **			               - Add parameter @infoOnly
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			               - Set @validateTotal to 0 when calling ParseUsageText
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -316,67 +317,86 @@ AS
 		---------------------------------------------------
 		-- update existing values in report table from staging table
 		---------------------------------------------------
-		
+
 		If Not Exists (Select * from #Tmp_DebugReports)
 		BEGIN --<a>
-			BEGIN --<m>	
-				If @infoonly = 0
-					UPDATE InstUsage
-						SET
-						[Minutes] = #STAGING.Minutes ,
-						Start = #STAGING.Start ,
-						Proposal = CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END ,
-						Usage_Type = CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END ,
-						Users = CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END ,
-						Operator = CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END ,
-						[Year] = #STAGING.Year ,
-						[Month] = #STAGING.Month ,
-						Comment = CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
-						[Updated] = GETDATE(),
-						UpdatedBy = @callingUser						
-					FROM T_EMSL_Instrument_Usage_Report InstUsage
-					     INNER JOIN #STAGING
-					       ON InstUsage.ID = #STAGING.ID AND
-					          InstUsage.TYPE = #STAGING.TYPE
-					WHERE #STAGING.MARK = 1
-				Else
-					SELECT 'Update Row' as Action, 
-					     #STAGING.Minutes ,
-						 #STAGING.Start ,
-						 CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END ,
-						 CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END ,
-						 CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END ,
-						 CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END ,
-						 #STAGING.Year ,
-						 #STAGING.Month ,
-						 CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
-						 GETDATE(),
-						 @callingUser						
-					FROM T_EMSL_Instrument_Usage_Report InstUsage
-					     INNER JOIN #STAGING
-					       ON InstUsage.ID = #STAGING.ID AND
-					          InstUsage.TYPE = #STAGING.TYPE
-					WHERE #STAGING.MARK = 1
-			END --<m>
-
+		
+			If @infoonly = 0
+			Begin
+				UPDATE InstUsage
+					SET
+					[Minutes] = #STAGING.Minutes ,
+					Start = #STAGING.Start ,
+					Proposal = CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END ,
+					Usage_Type = CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END ,
+					Users = CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END ,
+					Operator = CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END ,
+					[Year] = #STAGING.Year ,
+					[Month] = #STAGING.Month ,
+					Comment = CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
+					[Updated] = GETDATE(),
+					UpdatedBy = @callingUser						
+				FROM T_EMSL_Instrument_Usage_Report InstUsage
+					    INNER JOIN #STAGING
+					    ON InstUsage.ID = #STAGING.ID AND
+					        InstUsage.[Type] = #STAGING.[Type]
+				WHERE #STAGING.MARK = 1
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Updated ' + Cast(@myRowCount as varchar(9)) + ' rows in T_EMSL_Instrument_Usage_Report'
+			End
+			Else
+			Begin
+				SELECT 'Update Row' as Action, 
+					    #STAGING.Minutes ,
+						#STAGING.Start ,
+						CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END ,
+						CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END ,
+						CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END ,
+						CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END ,
+						#STAGING.Year ,
+						#STAGING.Month ,
+						CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
+						GETDATE(),
+						@callingUser						
+				FROM T_EMSL_Instrument_Usage_Report InstUsage
+					    INNER JOIN #STAGING
+					    ON InstUsage.ID = #STAGING.ID AND
+					        InstUsage.[Type] = #STAGING.[Type]
+				WHERE #STAGING.MARK = 1
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Would update ' + Cast(@myRowCount as varchar(9)) + ' rows in T_EMSL_Instrument_Usage_Report'
+			End
+			
 			---------------------------------------------------
 			-- clean out any short "long intervals"
 			---------------------------------------------------
 	
 			DELETE FROM #STAGING
-			WHERE Type = 'Interval'
+			WHERE [Type] = 'Interval'
 			AND Minutes < @maxNormalInterval
-
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+			If @infoOnly > 0 And @myRowCount > 0
+				Print 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' short "long intervals" from #STAGING'
+				
 			---------------------------------------------------
 			-- add new values from staging table to database
 			---------------------------------------------------		
 
 			If @infoonly = 0
-				INSERT INTO T_EMSL_Instrument_Usage_Report( EMSL_Inst_ID, DMS_Inst_ID, Type,
+			Begin
+				INSERT INTO T_EMSL_Instrument_Usage_Report( EMSL_Inst_ID, DMS_Inst_ID, [Type],
 				                                            Start, Minutes, Proposal, Usage_Type,
 				                                            Users, Operator, Comment, Year, Month,
 				                                            ID, UpdatedBy, Seq )
-				SELECT EMSL_Inst_ID, DMS_Inst_ID, Type,
+				SELECT EMSL_Inst_ID, DMS_Inst_ID, [Type],
 				       Start, Minutes, Proposal, Usage_Type,
 				       Users, Operator, Comment, Year, Month,
 				       ID, @callingUser, Seq
@@ -384,10 +404,16 @@ AS
 				WHERE [Mark] = 0
 				--AND NOT [EMSL_Inst_ID] IS NULL
 				ORDER BY [Start]
-
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Inserted ' + Cast(@myRowCount as varchar(9)) + ' rows into T_EMSL_Instrument_Usage_Report'
+			End
 			Else
+			Begin
 				SELECT 'Insert Row' as Action, 
-				       EMSL_Inst_ID, DMS_Inst_ID, Type,
+				       EMSL_Inst_ID, DMS_Inst_ID, [Type],
 				       Start, Minutes, Proposal, Usage_Type,
 				       Users, Operator, Comment, Year, Month,
 				       ID, @callingUser as UpdatedBy, Seq
@@ -395,28 +421,44 @@ AS
 				WHERE [Mark] = 0
 				--AND NOT [EMSL_Inst_ID] IS NULL
 				ORDER BY [Start]
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Would insert ' + Cast(@myRowCount as varchar(9)) + ' rows into T_EMSL_Instrument_Usage_Report'
+			End
 
 			---------------------------------------------------
 			-- clean out short "long intervals"
 			---------------------------------------------------
 	
 			If @infoonly = 0
+			Begin
 				DELETE FROM T_EMSL_Instrument_Usage_Report
 				WHERE ID IN ( SELECT ID
 				              FROM #STAGING ) AND
-				      TYPE = 'Interval' AND
+				      [Type] = 'Interval' AND
 				      Minutes < @maxNormalInterval
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' shorter "long intervals" from T_EMSL_Instrument_Usage_Report'
+			End
 			Else
+			Begin
 				SELECT 'Delete short "long interval"' as Action, *
 				FROM T_EMSL_Instrument_Usage_Report
 				WHERE ID IN ( SELECT ID
 				              FROM #STAGING ) AND
-				      TYPE = 'Interval' AND
+				      [Type] = 'Interval' AND
 				      Minutes < @maxNormalInterval
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Would delete ' + Cast(@myRowCount as varchar(9)) + ' shorter "long intervals" from T_EMSL_Instrument_Usage_Report'
+			End
 		
 
 			---------------------------------------------------
@@ -425,6 +467,7 @@ AS
 			---------------------------------------------------
 
 			If @infoonly = 0
+			Begin
 				DELETE T_EMSL_Instrument_Usage_Report
 				FROM T_EMSL_Instrument_Usage_Report InstUsage
 				     INNER JOIN T_Instrument_Name InstName
@@ -435,7 +478,14 @@ AS
 				      InstName.IN_Name = @instrument AND
 				      NOT InstUsage.ID IN ( SELECT ID
 				                            FROM T_Run_Interval )
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' longer "long intervals" from T_EMSL_Instrument_Usage_Report'
+			End
 			Else
+			Begin
 				SELECT 'Delete long "long interval"' AS Action,
 				       InstUsage.*
 				FROM T_EMSL_Instrument_Usage_Report InstUsage
@@ -447,8 +497,12 @@ AS
 				      InstName.IN_Name = @instrument AND
 				      NOT InstUsage.ID IN ( SELECT ID
 				                            FROM T_Run_Interval )
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+				
+				If @infoOnly > 0 And @myRowCount > 0
+					Print 'Would delete ' + Cast(@myRowCount as varchar(9)) + ' longer "long intervals" from T_EMSL_Instrument_Usage_Report'
+			End
 
 
 			---------------------------------------------------
@@ -457,6 +511,7 @@ AS
 			---------------------------------------------------
 
 			If @infoonly = 0
+			Begin
 				UPDATE T_EMSL_Instrument_Usage_Report
 				SET [Comment] = dbo.GetNearestPrecedingLogEntry(InstUsage.Seq, 0)
 				FROM T_EMSL_Instrument_Usage_Report InstUsage
@@ -467,7 +522,11 @@ AS
 					InstUsage.[Type]= 'Dataset' AND
 					IsNull(InstUsageType.Name, '') NOT IN ('MAINTENANCE', 'ONSITE') AND
 					ISNULL(InstUsage.[Comment], '') = ''
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			End
 			Else
+			Begin
 				SELECT 'Add log reference to comment' as Action, 
 				       InstUsage.Seq,
 				       InstName.IN_Name AS Instrument,
@@ -483,14 +542,16 @@ AS
 				      InstUsage.[Type] = 'Dataset' AND
 				      IsNull(InstUsageType.Name, '') NOT IN ('MAINTENANCE', 'ONSITE') AND
 				      ISNULL(InstUsage.[Comment], '') = ''
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			End
 
 			---------------------------------------------------
 			-- Remove "ONSITE" comments
 			---------------------------------------------------
 			
 			If @infoonly = 0
+			Begin
 				UPDATE T_EMSL_Instrument_Usage_Report
 				SET [Comment] = ''
 				FROM T_EMSL_Instrument_Usage_Report InstUsage
@@ -503,7 +564,11 @@ AS
 				      InstUsage.[Year] = @year AND
 				      InstUsage.[Month] = @month AND
 				      ([Comment] IS NULL OR IsNull([Comment], '') <> '')
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			End
 			Else
+			Begin
 				SELECT 'Clear maintenance and onsite comments' AS Action,
 				       InstUsage.Seq,
 				       InstName.IN_Name AS Instrument,
@@ -519,8 +584,9 @@ AS
 				      InstUsage.[Year] = @year AND
 				      InstUsage.[Month] = @month AND
 				      ([Comment] IS NULL OR IsNull([Comment], '') <> '')
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+			End
 			      
 		END --</a>
 		
