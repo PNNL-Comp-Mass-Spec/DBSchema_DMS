@@ -29,12 +29,14 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 **          10/06/2012 grk - removed update of EMSL usage report for previous month
 **			03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/10/2017 mem - Add parameter @instrumentsToProcess
 **    
 *****************************************************/
 (
     @DaysToProcess int = 60,
     @UpdateEMSLInstrumentUsage tinyint = 1,
     @infoOnly tinyint = 0,
+    @instrumentsToProcess varchar(255) = '',
 	@message varchar(512) = '' output
 )
 As
@@ -52,9 +54,10 @@ As
 	Set @DaysToProcess = IsNull(@DaysToProcess, 30)
 	Set @message = ''	
 	Set @infoOnly = IsNull(@infoOnly, 0)
+	Set @instrumentsToProcess = IsNull(@instrumentsToProcess, '')
 	
 	---------------------------------------------------
-	-- set up date interval and key values
+	-- Set up date interval and key values
 	---------------------------------------------------
 	
 	DECLARE @endDate DATETIME =  GETDATE()
@@ -72,7 +75,7 @@ As
 	DECLARE @bonm DATETIME = CONVERT(VARCHAR(12), @nextMonth) + '/1/' + CONVERT(VARCHAR(12), @nextYear)
 	
 	---------------------------------------------------
-	-- temp table to hold list of production instruments
+	-- Temp table to hold list of production instruments
 	---------------------------------------------------
 	
 	CREATE TABLE #Tmp_Instruments (
@@ -82,20 +85,68 @@ As
 		Tracked TINYINT
 	)
 
+	CREATE TABLE #Tmp_InstrumentFilter (
+		Instrument varchar(65)
+	)
+	
 	---------------------------------------------------
-	-- process updates for all instruments, one at a time
+	-- Process updates for all instruments, one at a time
+	-- Filter on @instrumentsToProcess if not-blank
 	---------------------------------------------------
+	
 	BEGIN TRY 
 
-		---------------------------------------------------
-		-- get list of tracked instruments
-		---------------------------------------------------
+		If Len(@instrumentsToProcess) > 0
+		Begin
+		
+			---------------------------------------------------
+			-- Get filtered list of tracked instruments
+			---------------------------------------------------
 
-		INSERT INTO #Tmp_Instruments (Instrument, EMSL, Tracked)
-		SELECT [Name], EUS_Primary_Instrument AS EMSL, Tracked FROM V_Instrument_Tracked
+			-- Populate #Tmp_InstrumentFilter using @instrumentsToProcess
+
+			INSERT INTO #Tmp_InstrumentFilter( Instrument )
+			SELECT VALUE
+			FROM dbo.udfParseDelimitedList ( @instrumentsToProcess, ',', 
+			       'UpdateDatasetIntervalForMultipleInstruments' )
+			--
+			SELECT @myError = @@Error, @myRowCount = @@RowCount
+
+			
+			INSERT INTO #Tmp_Instruments( Instrument,
+			                              EMSL,
+			                              Tracked )
+			SELECT InstList.[Name],
+			       InstList.EUS_Primary_Instrument AS EMSL,
+			       InstList.Tracked
+			FROM V_Instrument_Tracked InstList
+			     INNER JOIN #Tmp_InstrumentFilter InstFilter
+			       ON InstList.[Name] = InstFilter.Instrument
+			--
+			SELECT @myError = @@Error, @myRowCount = @@RowCount
+
+		End
+		Else
+		Begin
+		
+			---------------------------------------------------
+			-- Get list of tracked instruments
+			---------------------------------------------------
+
+			INSERT INTO #Tmp_Instruments( Instrument,
+			                              EMSL,
+			                              Tracked )
+			SELECT [Name],
+			       EUS_Primary_Instrument AS EMSL,
+			       Tracked
+			FROM V_Instrument_Tracked
+			--
+			SELECT @myError = @@Error, @myRowCount = @@RowCount
+
+		End
 
 		---------------------------------------------------
-		-- update intervals for given instrument
+		-- Update intervals for given instrument
 		---------------------------------------------------
 		
 		DECLARE @instrument VARCHAR(64)
@@ -122,9 +173,18 @@ As
 				EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
 				
 				If @UpdateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
-				BEGIN --<c>					
-					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output
-				END --<c>
+				Begin
+					If @infoOnly > 0
+						Print 'Call UpdateEMSLInstrumentUsageReport'
+
+					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output, @infoonly=@infoonly
+					
+				End
+				Else
+				Begin
+					If @infoOnly > 0
+						Print 'Skip call to UpdateEMSLInstrumentUsageReport'
+				End
 					
 			END  -- </b>
 		END -- </a>
@@ -134,7 +194,7 @@ As
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
-		-- rollback any open transactions
+		-- Rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 	END CATCH

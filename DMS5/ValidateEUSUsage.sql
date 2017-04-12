@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.ValidateEUSUsage
 **			01/09/2016 mem - Added option for disabling EUS validation using table T_MiscOptions
 **			01/20/2017 mem - Auto-fix USER_UNKOWN to USER_UNKNOWN for @eusUsageType
 **			03/17/2017 mem - Only call MakeTableFromList if @eusUsersList contains a semicolon
+**			04/10/2017 mem - Auto-change USER_UNKNOWN to CAP_DEV
 **
 *****************************************************/
 (
@@ -85,8 +86,16 @@ As
 	If @eusUsageType Like 'Brok%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
 		Set @eusUsageType = 'BROKEN'
 
-	iF @eusUsageType Like 'USER_UNKOWN%'
+	If @eusUsageType Like 'USER_UNKOWN%'
 		Set @eusUsageType = 'USER_UNKNOWN'
+
+	---------------------------------------------------
+	-- Auto-change USER_UNKNOWN to CAP_DEV
+	-- Monthly EUS instrument usage validation will not allow USER_UNKNOWN but will allow CAP_DEV
+	---------------------------------------------------
+	--
+	If @eusUsageType = 'USER_UNKNOWN'
+		Set @eusUsageType = 'CAP_DEV'
 		
 	---------------------------------------------------
 	-- Confirm that EUS validation is enabled

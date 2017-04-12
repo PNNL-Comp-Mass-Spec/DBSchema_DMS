@@ -218,7 +218,7 @@ As
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@Maintenance', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			'' AS Proposal,
-			'MAINTENANCE' AS Usage,
+			'MAINTENANCE' AS Usage,			-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID
@@ -230,7 +230,7 @@ As
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@OtherNotAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			'' AS Proposal,
-			'UNAVAILABLE' AS Usage,
+			'UNAVAILABLE' AS Usage,			-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID
@@ -242,7 +242,7 @@ As
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@StaffNotAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			'' AS Proposal,
-			'UNAVAIL_STAFF' AS Usage,
+			'UNAVAIL_STAFF' AS Usage,			-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID
@@ -255,7 +255,7 @@ As
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@CapDev', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			xmlNode.value('@Operator', 'varchar(32)') AS Operator,	
 			'' AS Proposal,
-			'CAP_DEV' AS Usage,
+			'CAP_DEV' AS Usage,					-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID
@@ -267,7 +267,7 @@ As
 			#TI.Start,
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@InstrumentAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			'' AS Proposal,
-			'AVAILABLE' AS Usage,
+			'AVAILABLE' AS Usage,				-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID
@@ -280,7 +280,7 @@ As
 			CONVERT(FLOAT, ISNULL(xmlNode.value('@User', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
 			xmlNode.value('@Proposal', 'varchar(32)') AS Proposal,
 			xmlNode.value('@PropUser', 'varchar(32)') AS Users,	
-			'ONSITE' AS Usage,
+			'ONSITE' AS Usage,					-- This is defined in T_EMSL_Instrument_Usage_Type
 			#TI.Comment
 		FROM #TI
 		INNER JOIN #TR ON #TR.ID = #TI.ID

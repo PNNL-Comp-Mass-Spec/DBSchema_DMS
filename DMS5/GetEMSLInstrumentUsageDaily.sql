@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
+CREATE FUNCTION dbo.GetEMSLInstrumentUsageDaily
 /****************************************************
 **	Desc: 
 **  Outputs contents of EMSL instrument usage report table as rollup
@@ -19,10 +19,11 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **
 **	Parameters:
 **	
-**	Auth: grk   
-**	Date: 09/15/2015 grk - initial release
-**	      10/20/2015 grk - added users to output
-**	      02/10/2016 grk - added rollup of comments and operators
+**	Auth:	grk   
+**	Date:	09/15/2015 grk - initial release
+**			10/20/2015 grk - added users to output
+**			02/10/2016 grk - added rollup of comments and operators
+**			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **    
 *****************************************************/ 
 (
@@ -112,24 +113,29 @@ AS
                   Comment ,
                   Operator
                 )
-                SELECT  ID ,
-                        EMSL_Inst_ID ,
-                        Instrument AS [DMS_Instrument] ,
-                        [Type] ,
-                        Proposal ,
-                        Usage ,
-                        Users ,
-                        Start ,
-                        [Minutes] * 60 AS [DurationSeconds] ,
-                        [Year] ,
-                        [Month] ,
-                        Comment ,
-                        Operator
-                FROM    T_EMSL_Instrument_Usage_Report AS TEIUR
-                WHERE   ( TEIUR.Year = @Year )
-                        AND ( TEIUR.Month = @Month )
+                SELECT InstUsage.ID,
+                       InstUsage.EMSL_Inst_ID,
+                       InstName.IN_Name AS [DMS_Instrument],
+                       InstUsage.[Type],
+                       InstUsage.Proposal,
+                       InstUsageType.Name AS [Usage],
+                       InstUsage.Users,
+                       InstUsage.Start,
+                       InstUsage.[Minutes] * 60 AS [DurationSeconds],
+                       InstUsage.[Year],
+                       InstUsage.[Month],
+                       InstUsage.[Comment],
+                       InstUsage.Operator
+                FROM T_EMSL_Instrument_Usage_Report InstUsage
+                     INNER JOIN T_Instrument_Name InstName
+                       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
+                     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+                       ON InstUsage.Usage_Type = InstUsageType.ID
+                WHERE (InstUsage.[Year] = @Year) AND
+                      (InstUsage.[Month] = @Month)
 
-		-- repetive process to pull records out of working table
+
+		-- repetitive process to pull records out of working table
 		-- into accumulation table, allowing for durations that
 		-- cross daily boundaries
         DECLARE @cnt INT = 1
@@ -211,7 +217,7 @@ AS
                           Usage ,
                           Users ,
                           [Start] ,
-                          [DurationSeconds] ,
+[DurationSeconds] ,
                           [Year] ,
                           [Month] ,
                           [Day] ,
@@ -285,7 +291,7 @@ AS
                              FROM   @T_Report_Accumulation TX
                              GROUP BY EMSL_Inst_ID ,
                                     DMS_Instrument ,
-                                    [Type] ,
+             [Type] ,
                                     Proposal ,
                                     Usage ,
                                     Users ,
@@ -357,7 +363,7 @@ AS
                   [Type] ,
                   [Start] ,
                   [Minutes] ,
-                  [Proposal] ,
+        [Proposal] ,
                   [Usage] ,
                   [Users] ,
                   [Operator] ,
@@ -368,7 +374,7 @@ AS
                   [Seq] ,
                   [Updated] ,
                   [UpdatedBy] 
-                )
+)
                 SELECT  EMSL_Inst_ID ,
                         DMS_Instrument AS Instrument ,
                         [Type] ,

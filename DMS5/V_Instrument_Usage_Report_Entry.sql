@@ -3,23 +3,27 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Instrument_Usage_Report_Entry AS 
- SELECT 
-	EMSL_Inst_ID AS EMSLInstID,
-	Instrument AS Instrument,
-	Type AS Type,
-	Start AS Start,
-	Minutes AS Minutes,
-	Proposal AS Proposal,
-	Usage AS Usage,
-	Users AS Users,
-	Operator AS Operator,
-	Comment AS Comment,
-	Year AS Year,
-	Month AS Month,
-	ID AS ID,
-	Seq AS Seq
-FROM T_EMSL_Instrument_Usage_Report
+
+CREATE VIEW [dbo].[V_Instrument_Usage_Report_Entry] AS 
+	SELECT InstUsage.EMSL_Inst_ID AS EMSLInstID,
+	       InstName.IN_Name AS [Instrument],
+	       InstUsage.[Type],
+	       InstUsage.[Start],
+	       InstUsage.[Minutes],
+	       InstUsage.Proposal,
+	       InstUsageType.[Name] AS [Usage],
+	       InstUsage.Users,
+	       InstUsage.Operator,
+	       InstUsage.Comment,
+	       InstUsage.[Year],
+	       InstUsage.[Month],
+	       InstUsage.ID,
+	       InstUsage.Seq
+	FROM T_EMSL_Instrument_Usage_Report InstUsage
+	     INNER JOIN T_Instrument_Name InstName
+	       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
+	     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+	       ON InstUsage.Usage_Type = InstUsageType.ID
 
 
 GO

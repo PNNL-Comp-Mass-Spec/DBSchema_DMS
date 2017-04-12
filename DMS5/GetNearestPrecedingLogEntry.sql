@@ -3,12 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
--- =============================================
--- Author:		<Author,,Name>
--- Create date: <Create Date, ,>
--- Description:	<Description, ,>
--- =============================================
-CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
+CREATE FUNCTION dbo.GetNearestPrecedingLogEntry
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +14,7 @@ CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
 **
 **	Auth:	grk
 **	Date:	08/28/2012
+**			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **    
 *****************************************************/
 (
@@ -44,25 +40,28 @@ AS
 			@Month INT ,
 			@ID INT 
 
-
-		SELECT  @EMSLInstID = EMSL_Inst_ID ,
-				@Instrument = Instrument ,
-				@Type = Type ,
-				@Start = Start ,
-				@Minutes = Minutes ,
-				@Proposal = Proposal ,
-				@Usage = Usage ,
-				@Users = Users ,
-				@Operator = Operator ,
-				@Comment = Comment ,
-				@Year = Year ,
-				@Month = Month ,
-				@ID = ID
-		FROM    T_EMSL_Instrument_Usage_Report
+		SELECT @EMSLInstID = InstUsage.EMSL_Inst_ID,
+		       @Instrument = InstName.IN_Name,
+		       @Type = InstUsage.TYPE,
+		       @Start = InstUsage.Start,
+		       @Minutes = InstUsage.Minutes,
+		       @Proposal = InstUsage.Proposal,
+		       @Usage = IsNull(InstUsageType.Name, ''),
+		       @Users = InstUsage.Users,
+		       @Operator = InstUsage.Operator,
+		       @Comment = InstUsage.[Comment],
+		       @Year = InstUsage.[Year],
+		       @Month = InstUsage.[Month],
+		       @ID = InstUsage.ID
+		FROM    T_EMSL_Instrument_Usage_Report InstUsage
+		     INNER JOIN T_Instrument_Name InstName
+		       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
+		     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+		       ON InstUsage.Usage_Type = InstUsageType.ID
 		WHERE   ( Seq = @Seq )
 
 
-		IF @Usage != 'ONSITE' AND ISNULL(@Comment, '') = ''
+		IF @Usage <> 'ONSITE' AND ISNULL(@Comment, '') = ''
 		BEGIN 
 			DECLARE @opNote VARCHAR(4096) = '', @opNoteTime DATETIME , @opNoteID INT = 0
 			DECLARE @confNote VARCHAR(4096) = '', @confNoteTime DATETIME , @confNoteID INT = 0

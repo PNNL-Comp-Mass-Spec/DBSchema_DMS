@@ -21,6 +21,7 @@ CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
 **	
 **	Auth:	grk   
 **	Date:	09/11/2012 grk - initial release
+**			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **    
 *****************************************************/ 
 ( 
@@ -90,21 +91,26 @@ AS
 			Year,
 			Month
 		)
-		SELECT ID,
-			EMSL_Inst_ID,
-			Instrument AS [DMS_Instrument],
-			[Type],
-			Proposal,
-			Usage,
-			Start,
-			[Minutes] * 60 AS [DurationSeconds],
-			[Year],
-			[Month]
-		FROM T_EMSL_Instrument_Usage_Report AS TEIUR
-		WHERE ( TEIUR.Year = @Year )
-				AND ( TEIUR.Month = @Month )
+		SELECT InstUsage.ID,
+		       InstUsage.EMSL_Inst_ID,
+		       InstName.IN_Name AS [DMS_Instrument],
+		       InstUsage.[Type],
+		       InstUsage.Proposal,
+		       InstUsageType.Name AS [Usage],
+		       InstUsage.Start,
+		       InstUsage.[Minutes] * 60 AS [DurationSeconds],
+		       InstUsage.[Year],
+		       InstUsage.[Month]
+		FROM T_EMSL_Instrument_Usage_Report InstUsage
+		     INNER JOIN T_Instrument_Name InstName
+		       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
+		     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+		       ON InstUsage.Usage_Type = InstUsageType.ID
+		WHERE (InstUsage.[Year] = @Year) AND
+		      (InstUsage.[Month] = @Month)
 
-		-- repetive process to pull records out of working table
+
+		-- repetitive process to pull records out of working table
 		-- into accumulation table, allowing for durations that
 		-- cross daily boundaries
 		DECLARE @cnt INT = 1

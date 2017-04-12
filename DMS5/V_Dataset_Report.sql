@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+-- Note that this view is used by page family helper_dataset_ckbx
 
 CREATE VIEW [dbo].[V_Dataset_Report]
 AS
@@ -20,6 +21,7 @@ SELECT DS.Dataset_Num AS Dataset,
        E.Experiment_Num AS Experiment,
 	   C.Campaign_Num AS Campaign,
        RRH.ID AS Request,
+	   RRH.RDS_BatchID AS Batch,
        ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS [Dataset Folder Path],
        ISNULL(DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS [Archive Folder Path]
 FROM dbo.T_DatasetStateName AS DSN

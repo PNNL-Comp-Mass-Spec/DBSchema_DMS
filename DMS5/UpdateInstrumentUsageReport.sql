@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			04/11/2017 mem - Now using fields DMS_Inst_ID and Usage_Type in T_EMSL_Instrument_Usage_Report
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -71,7 +72,28 @@ As
 	
 	If IsNull(@callingUser, '') = ''
 		SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+
+	Declare @instrumentID int = 0
+	
+	Set @instrument = IsNull(@instrument, '')
+	
+	If @Instrument <> ''
+	Begin
+		SELECT @instrumentID = Instrument_ID
+		FROM T_Instrument_Name
+		WHERE IN_name = @Instrument
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
+		If @instrumentID = 0
+		Begin
+			RAISERROR ('Instrument not found: "%s"', 11, 4, @Instrument)
+		End
+	End
+
+	-- Uncomment to debug
+	-- Exec PostLogEntry 'Debug', @factorList, 'UpdateInstrumentUsageReport'
+	
 	-----------------------------------------------------------
 	-- Copy @factorList text variable into the XML variable
 	-----------------------------------------------------------
@@ -87,10 +109,10 @@ As
 		SET @bom = @month + '/1/' + @year		-- Beginning of the month that we are updating
 		SET @bonm = DATEADD(MONTH, 1, @bom)		-- Beginning of the next month after @bom
 		SET @eom = DATEADD(MINUTE, -1, @bonm)	-- End of the month that we are editing
-		SET @coff = DATEADD(DAY, 90, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
+		SET @coff = DATEADD(DAY, 180, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
 		
 		IF GETDATE() > @coff
-			RAISERROR ('Changes are not allowed to prior months after 90 days into the next month', 11, 13)
+			RAISERROR ('Changes are not allowed to prior months after 180 days into the next month', 11, 13)
 
 		-----------------------------------------------------------
 		-- foundational actions for various operations
@@ -145,7 +167,7 @@ As
 			-----------------------------------------------------------
 			
 			IF @operation = 'reload' AND ISNULL(@instrument, '') = ''
-				RAISERROR ('An instrument must be specified for this operation', 11, 10)
+				RAISERROR ('An instrument must be specified for the reload operation', 11, 10)
 		
 					
 			IF ISNULL(@year, '') = '' OR ISNULL(@month, '') = ''
@@ -196,11 +218,14 @@ As
 			WHERE Field = 'Users'
 
 			UPDATE T_EMSL_Instrument_Usage_Report
-			SET Usage = #TMP.Value
-			FROM T_EMSL_Instrument_Usage_Report
-			INNER JOIN #TMP ON Seq = Identifier
+			SET Usage_Type = InstUsageType.ID
+			FROM T_EMSL_Instrument_Usage_Report InstUsage
+			     INNER JOIN #TMP
+			       ON InstUsage.Seq = #TMP.Identifier
+			     INNER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+			       ON #TMP.VALUE = InstUsageType.Name
 			WHERE Field = 'Usage'
-
+			
 			UPDATE T_EMSL_Instrument_Usage_Report
 			SET 
 				Updated = GETDATE(),
@@ -214,14 +239,14 @@ As
 		BEGIN		
 			UPDATE T_EMSL_Instrument_Usage_Report
 			SET 
-				Usage = '',
+				Usage_Type = Null,
 				Proposal = '',
 				Users = '',
 				Operator = '',
 				Comment = ''
 			WHERE @year = Year
 			AND @month = Month
-			AND (@instrument = '' OR Instrument = @instrument)																										
+			AND (@instrument = '' OR DMS_Inst_ID = @instrumentID)
 
 			EXEC UpdateDatasetInterval @instrument, @bom, @eom, @message output
 	

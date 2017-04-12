@@ -19,6 +19,7 @@ CREATE Procedure SyncWithDMS5
 **			02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 **			03/31/2016 mem - Add T_Material_Freezers and update columns for T_Material_Locations
 **			02/23/2017 mem - Add RDS_Cart_Config_ID to T_Requested_Run
+**			04/11/2017 mem - Rename columns in T_EMSL_Instrument_Usage_Report
 **    
 *****************************************************/
 (
@@ -1568,8 +1569,8 @@ As
 				t.[Updated] <> s.[Updated] OR
 				ISNULL( NULLIF(t.[EMSL_Inst_ID], s.[EMSL_Inst_ID]),
 						NULLIF(s.[EMSL_Inst_ID], t.[EMSL_Inst_ID])) IS NOT NULL OR
-				ISNULL( NULLIF(t.[Instrument], s.[Instrument]),
-						NULLIF(s.[Instrument], t.[Instrument])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[DMS_Inst_ID], s.[DMS_Inst_ID]),
+						NULLIF(s.[DMS_Inst_ID], t.[DMS_Inst_ID])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[Type], s.[Type]),
 						NULLIF(s.[Type], t.[Type])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[Start], s.[Start]),
@@ -1578,8 +1579,8 @@ As
 						NULLIF(s.[Minutes], t.[Minutes])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[Proposal], s.[Proposal]),
 						NULLIF(s.[Proposal], t.[Proposal])) IS NOT NULL OR
-				ISNULL( NULLIF(t.[Usage], s.[Usage]),
-						NULLIF(s.[Usage], t.[Usage])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Usage_Type], s.[Usage_Type]),
+						NULLIF(s.[Usage_Type], t.[Usage_Type])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[Users], s.[Users]),
 						NULLIF(s.[Users], t.[Users])) IS NOT NULL OR
 				ISNULL( NULLIF(t.[Operator], s.[Operator]),
@@ -1597,12 +1598,12 @@ As
 				)
 			THEN UPDATE SET 
 				[EMSL_Inst_ID] = s.[EMSL_Inst_ID],
-				[Instrument] = s.[Instrument],
+				[DMS_Inst_ID] = s.[DMS_Inst_ID],
 				[Type] = s.[Type],
 				[Start] = s.[Start],
 				[Minutes] = s.[Minutes],
 				[Proposal] = s.[Proposal],
-				[Usage] = s.[Usage],
+				[Usage_Type] = s.[Usage_Type],
 				[Users] = s.[Users],
 				[Operator] = s.[Operator],
 				[Comment] = s.[Comment],
@@ -1612,8 +1613,8 @@ As
 				[Updated] = s.[Updated],
 				[UpdatedBy] = s.[UpdatedBy]
 			WHEN NOT MATCHED BY TARGET THEN
-				INSERT([EMSL_Inst_ID], [Instrument], [Type], [Start], [Minutes], [Proposal], [Usage], [Users], [Operator], [Comment], [Year], [Month], [ID], [Seq], [Updated], [UpdatedBy])
-				VALUES(s.[EMSL_Inst_ID], s.[Instrument], s.[Type], s.[Start], s.[Minutes], s.[Proposal], s.[Usage], s.[Users], s.[Operator], s.[Comment], s.[Year], s.[Month], s.[ID], s.[Seq], s.[Updated], s.[UpdatedBy])
+				INSERT([EMSL_Inst_ID], [DMS_Inst_ID], [Type], [Start], [Minutes], [Proposal], [Usage_Type], [Users], [Operator], [Comment], [Year], [Month], [ID], [Seq], [Updated], [UpdatedBy])
+				VALUES(s.[EMSL_Inst_ID], s.[DMS_Inst_ID], s.[Type], s.[Start], s.[Minutes], s.[Proposal], s.[Usage_Type], s.[Users], s.[Operator], s.[Comment], s.[Year], s.[Month], s.[ID], s.[Seq], s.[Updated], s.[UpdatedBy])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 				Cast(Inserted.[Seq] as varchar(12)),
@@ -3577,7 +3578,7 @@ As
 			    ISNULL( NULLIF(t.[QueueTime_0Days], s.[QueueTime_0Days]),
 			            NULLIF(s.[QueueTime_0Days], t.[QueueTime_0Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_1to6Days], s.[QueueTime_1to6Days]),
-			         NULLIF(s.[QueueTime_1to6Days], t.[QueueTime_1to6Days])) IS NOT NULL OR
+			   NULLIF(s.[QueueTime_1to6Days], t.[QueueTime_1to6Days])) IS NOT NULL OR
 			   ISNULL( NULLIF(t.[QueueTime_7to44Days], s.[QueueTime_7to44Days]),
 			            NULLIF(s.[QueueTime_7to44Days], t.[QueueTime_7to44Days])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[QueueTime_45to89Days], s.[QueueTime_45to89Days]),
@@ -3973,7 +3974,7 @@ As
 			            NULLIF(s.[AJ_start], t.[AJ_start])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_finish], s.[AJ_finish]),
 			            NULLIF(s.[AJ_finish], t.[AJ_finish])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[AJ_settingsFileName], s.[AJ_settingsFileName]),
+			 ISNULL( NULLIF(t.[AJ_settingsFileName], s.[AJ_settingsFileName]),
 			    NULLIF(s.[AJ_settingsFileName], t.[AJ_settingsFileName])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[AJ_organismDBName], s.[AJ_organismDBName]),
 			            NULLIF(s.[AJ_organismDBName], t.[AJ_organismDBName])) IS NOT NULL OR

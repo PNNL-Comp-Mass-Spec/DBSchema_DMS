@@ -21,6 +21,7 @@ CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			10/05/2016 mem - Add one day to the proposal end date
 **			03/17/2017 mem - Only call MakeTableFromList if @Users is a comma separated list
+**			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **    
 *****************************************************/
 (
@@ -55,21 +56,25 @@ AS
 			@LastAffected DATETIME 
 
 
-		SELECT  @EMSLInstID = EMSL_Inst_ID ,
-				@Instrument = Instrument ,
-				@Type = Type ,
-				@Start = Start ,
-				@Minutes = Minutes ,
-				@Proposal = Proposal ,
-				@Usage = Usage ,
-				@Users = Users ,
-				@Operator = Operator ,
-				@Comment = Comment ,
-				@Year = Year ,
-				@Month = Month ,
-				@ID = ID
-		FROM    T_EMSL_Instrument_Usage_Report
-		WHERE   ( Seq = @Seq )
+		SELECT @EMSLInstID = InstUsage.EMSL_Inst_ID,
+		       @Instrument = InstName.IN_Name,
+		       @Type = InstUsage.TYPE,
+		       @Start = InstUsage.Start,
+		       @Minutes = InstUsage.Minutes,
+		       @Proposal = InstUsage.Proposal,
+		       @Usage = IsNull(InstUsageType.Name, ''),
+		       @Users = InstUsage.Users,
+		       @Operator = InstUsage.Operator,
+		       @Comment = InstUsage.[Comment],
+		       @Year = InstUsage.[Year],
+		       @Month = InstUsage.[Month],
+		       @ID = InstUsage.ID
+		FROM T_EMSL_Instrument_Usage_Report InstUsage
+		     INNER JOIN T_Instrument_Name InstName
+		       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
+		     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
+		       ON InstUsage.Usage_Type = InstUsageType.ID
+		WHERE (InstUsage.Seq = @Seq)
 
 		IF @Usage = 'CAP_DEV' AND ISNULL(@Operator, '') = ''
 			SET @Message = @Message + 'Capability Development requires an operator' + ', ' 
@@ -79,7 +84,6 @@ AS
 
 		IF @Usage = 'OFFSITE' AND @Proposal = '' 
 			SET @Message = @Message + 'Missing Proposal' + ', ' 
-
 
 		IF @Usage = 'ONSITE' AND Try_Convert(int, SUBSTRING(@Proposal, 1, 1)) Is Null
 			SET @Message = @Message + 'Preliminary Proposal number' + ', '

@@ -14,38 +14,40 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 03/27/2012 
+**  Auth:	grk
+**  Date:	03/27/2012 
 **          09/11/2012 grk - changed type of @Start
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			04/11/2017 mem - Replace column Usage with Usage_Type
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@Seq int,
-	@EMSLInstID int,
-	@Instrument varchar(64),
-	@Type varchar(128),
-	@Start VARCHAR(32),
-	@Minutes int,
-	@Year int,
-	@Month int,
-	@ID int,
-	@Proposal varchar(32),
-	@Usage varchar(32),
-	@Users varchar(1024),
-	@Operator varchar(64),
-	@Comment varchar(4096),
-	@mode varchar(12) = 'update', 
+	@EMSLInstID int,					-- @EMSLInstID
+	@Instrument varchar(64),			-- Unused (not updatable)
+	@Type varchar(128),					-- Unused (not updatable)
+	@Start varchar(32),					-- Unused (not updatable)
+	@Minutes int,						-- Unused (not updatable)
+	@Year int,							-- Unused (not updatable)
+	@Month int,							-- Unused (not updatable)
+	@ID int,							-- Unused (not updatable)
+	@Proposal varchar(32),				-- Proposal for update
+	@Usage varchar(32),					-- Usage name for update
+	@Users varchar(1024),				-- Users forupdate
+	@Operator varchar(64),				-- Operator for update
+	@Comment varchar(4096),				-- Comment for update
+	@mode varchar(12) = 'update',		-- The only supported mode is update
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
@@ -58,8 +60,23 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	-- future: this could get more complicated
+	Set @mode = IsNull(@mode, '')
+	Set @Usage = IsNull(@Usage, '')
+	
+	Declare @usageTypeID tinyint = 0
+	
+	SELECT @usageTypeID = ID
+	FROM T_EMSL_Instrument_Usage_Type
+	WHERE ([Name] = @Usage)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	If @myRowCount = 0 Or IsNull(@usageTypeID, 0) = 0
+	Begin
+		Declare @msg varchar(128) = 'Invalid usage ' + @Usage
+		RAISERROR (@msg, 11, 16)
+	End
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
@@ -68,11 +85,11 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		declare @tmp int = 0
 		--
 		SELECT @tmp = ID
-		FROM  T_EMSL_Instrument_Usage_Report		WHERE (Seq = @Seq)
+		FROM  T_EMSL_Instrument_Usage_Report
+		WHERE (Seq = @Seq)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -83,7 +100,8 @@ As
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
+	
+	if @mode = 'add'
 	begin
 		RAISERROR ('"Add" mode not supported', 11, 7)
 	end -- add mode
@@ -92,14 +110,14 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin
 		set @myError = 0
 		--
 		UPDATE T_EMSL_Instrument_Usage_Report 
 		SET 		
 			Proposal = @Proposal,
-			Usage = @Usage,
+			Usage_Type = @usageTypeID,
 			Users = @Users,
 			Operator = @Operator,
 			Comment = @Comment
@@ -108,7 +126,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Update operation failed: "%s"', 11, 4, @Seq)
+			RAISERROR ('Update operation failed: "%d"', 11, 4, @Seq)
 
 	end -- update mode
 
