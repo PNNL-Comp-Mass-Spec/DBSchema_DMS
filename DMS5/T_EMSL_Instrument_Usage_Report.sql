@@ -5,9 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 	[EMSL_Inst_ID] [int] NULL,
-	[Instrument] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Instrument] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DMS_Inst_ID] [int] NOT NULL,
-	[Type] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Type] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Start] [datetime] NULL,
 	[Minutes] [int] NULL,
 	[Proposal] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 	[Comment] [varchar](4096) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Year] [int] NULL,
 	[Month] [int] NULL,
-	[ID] [int] NULL,
+	[ID] [int] NOT NULL,
 	[Seq] [int] NOT NULL,
 	[Updated] [datetime] NOT NULL,
 	[UpdatedBy] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
