@@ -21,6 +21,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			               - Add parameters @seq, @showDebug, and @validateTotal
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -28,7 +29,10 @@ CREATE PROCEDURE dbo.ParseUsageText
 (
 	@comment VARCHAR(4096) output,
 	@usageXML XML output,
-	@message varchar(512) output
+	@message varchar(512) output,
+	@seq int = -1,
+	@showDebug tinyint = 0,
+	@validateTotal tinyint = 1
 )
 AS
 	Set XACT_ABORT, nocount on
@@ -40,7 +44,9 @@ AS
 
 	set @message = ''
 
---PRINT @comment	
+	If @showDebug > 0
+		Print 'Initial comment for SeqID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
+		
 	---------------------------------------------------
 	-- temp table to hold usage key-values
 	---------------------------------------------------
@@ -48,7 +54,7 @@ AS
 	CREATE TABLE #TU (
 		UsageKey varchar(32),
 		UsageValue VARCHAR(12) NULL,
-		Seq int IDENTITY(1,1) NOT NULL
+		UniqueID int IDENTITY(1,1) NOT NULL
 	)
 
 	CREATE TABLE #TN (
@@ -105,7 +111,7 @@ AS
 		DECLARE @curVal VARCHAR(24)
 		DECLARE @bot INT = 0
 		
-		DECLARE @seq INT = 0, @next INT = 0
+		DECLARE @uniqueID INT = 0, @nextID INT = 0
 		DECLARE @kw VARCHAR(32)
 		DECLARE @done INT = 0
 		WHILE @done = 0
@@ -117,11 +123,11 @@ AS
 			SELECT TOP 1 
 				@kw = UsageKey + '[',
 				@curVal = UsageValue,
-				@seq = Seq
+				@uniqueID = UniqueID
 			FROM #TU
-			WHERE Seq > @next
+			WHERE UniqueID > @nextID
 		
-			SET @next = @seq
+			SET @nextID = @uniqueID
 
 			---------------------------------------------------
 			-- done if no more keywords,
@@ -160,7 +166,7 @@ AS
 
 					UPDATE #TU
 					SET UsageValue = @val
-					WHERE Seq = @seq
+					WHERE UniqueID = @uniqueID
 				END --<c>
 			END --<b>
 		END --<a>
@@ -175,15 +181,19 @@ AS
 		---------------------------------------------------
 
 		DECLARE @total INT = 0
-		SELECT @total = @total + CASE WHEN NOT UsageKey IN (SELECT UsageKey FROM #TN) THEN CONVERT(INT, UsageValue) ELSE 0 END 
+		SELECT @total = @total + CASE WHEN NOT UsageKey IN ( SELECT UsageKey FROM #TN ) 
+		                              THEN CONVERT(int, UsageValue)
+		                              ELSE 0
+		                         END
 		FROM #TU
 
-		IF @total <> 100
-				RAISERROR ('Total percentage (%d) does not add up to 100', 11, 7, @total)
-	
+		IF @validateTotal > 0 And @total <> 100
+			RAISERROR ('Total percentage (%d) does not add up to 100 for SeqID %d', 11, 7, @total, @seq)
+
 		---------------------------------------------------
 		-- verify proposal (if user present)
 		---------------------------------------------------
+		
 		DECLARE @hasUser INT = 0
 		DECLARE @hasProposal INT = 0
 		
@@ -191,7 +201,7 @@ AS
 		SELECT @hasProposal = COUNT(*) FROM #TU WHERE UsageKey = 'Proposal'
 		
 		IF (@hasUser > 0 ) AND (@hasProposal = 0)
-				RAISERROR ('Proposal is needed if user allocation is specified', 11, 6)
+			RAISERROR ('Proposal is needed if user allocation is specified; SeqID %d', 11, 6, @seq)
 				
 		---------------------------------------------------
 		-- FUTURE: Vaidate proposal number?		
@@ -219,6 +229,9 @@ AS
 		SET @comment = REPLACE(@comment, '. ,', '. ')
 		SET @comment = REPLACE(@comment, '.,', '. ')
 		SET @comment = RTRIM(@comment)
+
+		If @showDebug > 0
+			Print 'Final comment for @seq ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>') + '; @total = ' + Cast(@total as varchar(9))
 
 	---------------------------------------------------
 	---------------------------------------------------
