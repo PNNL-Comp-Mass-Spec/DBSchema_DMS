@@ -217,7 +217,8 @@ AS
 			
 			IF @cleanedComment <> ''
 			BEGIN
-				EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message  output
+				EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
+				
 				UPDATE #STAGING
 				SET Comment = @cleanedComment
 				WHERE Seq = @seq
