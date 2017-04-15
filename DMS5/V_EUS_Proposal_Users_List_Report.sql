@@ -10,7 +10,7 @@ SELECT PU.Person_ID AS [EUS Person ID],
        PU.Of_DMS_Interest AS [DMS Interest],
        U.NAME_FM AS Name,
        SS.Name AS [Site Status],
-       PU.Proposal_ID AS [#EUS Proposal ID]
+       PU.Proposal_ID AS [EUS Proposal ID]
 FROM dbo.T_EUS_Proposal_Users PU
      INNER JOIN dbo.T_EUS_Users U
        ON PU.Person_ID = U.PERSON_ID
