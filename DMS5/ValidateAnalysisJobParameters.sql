@@ -72,6 +72,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **			12/16/2015 mem - No longer auto-switching the settings file to a centroided one if high res MSn spectra; only switching if profile mode MSn spectra
 **          07/12/2016 mem - Force priority to 4 if using @organismDBName and it has a size over 400 MB
 **          07/20/2016 mem - Tweak error messages
+**			04/19/2017 mem - Validate the settings file for SplitFasta tools
 **
 *****************************************************/
 (
@@ -666,11 +667,68 @@ As
 		
 	End	
 
+	If @toolName Like '%SplitFasta%'
+	Begin
+		-- Assure that the settings file has SplitFasta=True and NumberOfClonedSteps > 1
+		
+		Declare @xml xml
+		Declare @numberOfClonedSteps int = 0
+		Declare @splitFasta varchar(128) = ''
+		
+		SELECT @xml = Contents
+		FROM T_Settings_Files
+		WHERE [File_Name] = @settingsFileName 
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myRowCount = 0
+		Begin
+			set @message = 'Settings file not found: ' + @settingsFileName
+			If @showDebugMessages <> 0
+				print @message
+			return 53114
+		End
+		
+		SELECT @splitFasta = SettingValue 
+		FROM ( SELECT b.value('@key', 'varchar(128)') as SettingName, 
+		              b.value('@value', 'varchar(128)') as SettingValue
+		       FROM @xml.nodes('/sections/section/item') as a(b) 
+		     ) ParseQ 
+		WHERE SettingName = 'SplitFasta'
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myRowCount = 0 Or IsNull(@splitFasta, 'False') <> 'True'
+		Begin
+			set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
+			If @showDebugMessages <> 0
+				print @message
+			return 53115
+		End
+
+		Select @numberOfClonedSteps = SettingValue 
+		From ( SELECT b.value('@key', 'varchar(128)') as SettingName, 
+		              b.value('@value', 'int') as SettingValue
+		       FROM @xml.nodes('/sections/section/item') as a(b) 
+		     ) ParseQ 
+		WHERE SettingName = 'NumberOfClonedSteps'
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myRowCount = 0 Or IsNull(@numberOfClonedSteps, 0) < 1
+		Begin
+			set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
+			If @showDebugMessages <> 0
+				print @message
+			return 53116
+		End
+		
+	End
+	
 	If @result <> 0 And @showDebugMessages <> 0 And IsNull(@message, '') <> ''
 		print @message
 	
 	return @result
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [DDL_Viewer] AS [dbo]
