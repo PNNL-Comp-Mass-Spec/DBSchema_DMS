@@ -109,10 +109,10 @@ As
 		SET @bom = @month + '/1/' + @year		-- Beginning of the month that we are updating
 		SET @bonm = DATEADD(MONTH, 1, @bom)		-- Beginning of the next month after @bom
 		SET @eom = DATEADD(MINUTE, -1, @bonm)	-- End of the month that we are editing
-		SET @coff = DATEADD(DAY, 180, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
+		SET @coff = DATEADD(DAY, 90, @bonm)		-- Date threshold, afterwhich users can no longer make changes to this month's data
 		
 		IF GETDATE() > @coff
-			RAISERROR ('Changes are not allowed to prior months after 180 days into the next month', 11, 13)
+			RAISERROR ('Changes are not allowed to prior months after 90 days into the next month', 11, 13)
 
 		-----------------------------------------------------------
 		-- foundational actions for various operations
