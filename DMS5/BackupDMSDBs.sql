@@ -37,27 +37,31 @@ CREATE PROCEDURE BackupDMSDBs
 **			11/16/2016 mem - Mention Powershell script DeleteOldBackups.ps1
 **			04/18/2017 mem - Remove support for Redgate backup, including removing several parameters
 **			               - Added parameter @BackupTool for optionally using Ola Hallengren's Maintenance Solution
+**			04/19/2017 mem - Replace parameter @TransactionLogBackup with @BackupMode
+**			               - Add parameters @FullBackupIntervalDays and @UpdateLastBackup
 **    
 *****************************************************/
 (
 	@BackupFolderRoot varchar(128) = '',			-- If blank, then looks up the value in T_MiscPaths
 	@DBNameMatchList varchar(2048) = 'DMS%',		-- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
-	@TransactionLogBackup tinyint = 0,				-- Set to 0 for a full backup, 1 for a transaction log backup
+	@BackupMode tinyint = 0,						-- Set to 0 for a full backup, 1 for a transaction log backup, 2 to auto-choose full or transaction log based on @FullBackupIntervalDays and entries in T_Database_Backups
+	@FullBackupIntervalDays float = 7,				-- Default days between full backups.  Backup intervals in T_Database_Backups will override this value
 	@IncludeSystemDBs tinyint = 0,					-- Set to 1 to include master, model and MSDB databases; these always get full DB backups since transaction log backups are not allowed
 	@DaysToKeepOldBackups smallint = 20,			-- Defines the number of days to retain full or transaction log backups; files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3.  Only used if @BackupTool = 1
 	@Verify tinyint = 1,							-- Set to 1 to verify each backup
 	@InfoOnly tinyint = 1,							-- Set to 1 to display the backup SQL that would be run
 	@CompressionLevel tinyint = 1,					-- Set to 1 to compress backups, 0 to disable compression
 	@BackupTool tinyint = 0,						-- 0 to use native backup, 1 to use Ola Hallengren's Maintenance Solution
+	@UpdateLastBackup tinyint = 1,					-- When 1, update backup times in T_Database_Backup.  If @BackupMode is 2, @UpdateLastBackup is forced to 1
 	@message varchar(2048) = '' OUTPUT
 )
 As	
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
 	Declare @ExitCode int = 0
 	Declare @SqlErrorCode int = 0
@@ -69,7 +73,9 @@ As
 	Set @BackupFolderRoot = IsNull(@BackupFolderRoot, '')
 	Set @DBNameMatchList = LTrim(RTrim(IsNull(@DBNameMatchList, '')))
 
-	Set @TransactionLogBackup = IsNull(@TransactionLogBackup, 0)
+	Set @BackupMode = IsNull(@BackupMode, 0)
+	Set @FullBackupIntervalDays = IsNull(@FullBackupIntervalDays, 7)
+
 	Set @IncludeSystemDBs = IsNull(@IncludeSystemDBs, 0)
 	
 	Set @Verify = IsNull(@Verify, 0)
@@ -78,7 +84,7 @@ As
 	Set @DaysToKeepOldBackups = IsNull(@DaysToKeepOldBackups, 20)
 	If @DaysToKeepOldBackups < 3
 		Set @DaysToKeepOldBackups = 3
-	
+
 	Set @CompressionLevel = IsNull(@CompressionLevel, 1)
 
 	If @CompressionLevel < 1
@@ -87,7 +93,8 @@ As
 		Set @CompressionLevel = 1
 
 	Set @BackupTool = IsNull(@BackupTool, 0)
-
+	Set @UpdateLastBackup = IsNull(@UpdateLastBackup, 1)
+	
 	Set @message = ''
 
 	---------------------------------------
@@ -95,13 +102,9 @@ As
 	---------------------------------------
 	--
 	Declare @DBName varchar(255)
-	Declare @DBList varchar(max)
-	Declare @DBsProcessed varchar(max)
-	Set @DBsProcessed = ''
+	Declare @DBsProcessed varchar(max) = ''
 	
-	Declare @DBListMaxLength int = 25000
-
-	Declare @DBsProcessedMaxLenth int = 1250
+	Declare @DBsProcessedMaxLength int = 1250
 
 	Declare @Sql varchar(max)
 	Declare @SqlRestore varchar(max)
@@ -113,21 +116,22 @@ As
 	Declare @BackupFileBaseName varchar(512)
 	Declare @BackupFileBasePath varchar(1024)
 	Declare @FileExtension varchar(6)
-	
+
 	Declare @BackupFileList varchar(2048)
-	Declare @Periods varchar(6)
 	
 	Declare @continue tinyint
-	Declare @AddDBsToBatch tinyint
 	
 	Declare @FullDBBackupMatchMode tinyint
 	Declare @CharLoc int
 	Declare @DBBackupFullCount int = 0
 	Declare @DBBackupTransCount int = 0
+	Declare @BackupSuccess tinyint = 0
 
 	Declare @FailedBackupCount int = 0
 	Declare @FailedVerifyCount int = 0
-	
+
+	Declare @procedureName varchar(24) = 'BackupDMSDBs'
+
 	---------------------------------------
 	-- Validate @BackupFolderRoot
 	---------------------------------------
@@ -156,7 +160,7 @@ As
 	Begin
 		Set @myError = 50000
 		Set @message = 'Backup path not defined via @BackupFolderRoot parameter, and could not be found in table T_MiscPaths'
-		exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+		exec PostLogEntry 'Error', @message, @procedureName
 		Goto Done
 	End
 	
@@ -168,9 +172,6 @@ As
 	-- Create a temporary table to hold the databases to process
 	---------------------------------------
 	--
-	If Exists (SELECT * from sys.tables where Name = '#Tmp_DB_Backup_List')
-		DROP TABLE #Tmp_DB_Backup_List
-
 	CREATE TABLE #Tmp_DB_Backup_List (
 		DatabaseName varchar(255) NOT NULL,
 		Recovery_Model varchar(64) NOT NULL DEFAULT 'Unknown',
@@ -180,20 +181,9 @@ As
 	-- Note that this is not a unique index because the model database will be listed twice if it is using Full Recovery mode
 	CREATE CLUSTERED INDEX #IX_Tmp_DB_Backup_List ON #Tmp_DB_Backup_List (DatabaseName)
 
-
-	If Exists (SELECT * from sys.tables where Name = '#Tmp_Current_Batch')
-		DROP TABLE #Tmp_Current_Batch
-
-	CREATE TABLE #Tmp_Current_Batch (
-		DatabaseName varchar(255) NOT NULL,
-		IncludeDB tinyint NOT NULL Default(0)
-	)
-
-	CREATE CLUSTERED INDEX #IX_Tmp_Current_Batch ON #Tmp_Current_Batch (DatabaseName)
-
 	---------------------------------------
 	-- Optionally include the system databases
-	-- Note that system DBs are forced to perform a full backup, even if @TransactionLogBackup = 1
+	-- Note that system DBs are forced to perform a full backup, even if @BackupMode is 1 or 2
 	---------------------------------------
 	--
 	If @IncludeSystemDBs > 0
@@ -212,12 +202,11 @@ As
 
 		SELECT @ModelDbRecoveryModel = recovery_model_desc
 		FROM sys.databases
-		where name = 'Model'
+		WHERE name = 'Model'
 
 		If @ModelDbRecoveryModel = 'Full'
 			INSERT INTO #Tmp_DB_Backup_List (DatabaseName, Perform_Full_DB_Backup) VALUES ('Model', 0)
 	End
-
 
 	---------------------------------------
 	-- Look for databases on this server that match @DBNameMatchList
@@ -243,6 +232,9 @@ As
 				Set @DBName = LTrim(RTrim(SubString(@DBNameMatchList, 1, @CharLoc-1)))
 				Set @DBNameMatchList = LTrim(SubString(@DBNameMatchList, @CharLoc+1, Len(@DBNameMatchList) - @CharLoc))
 
+				-- Added databases will default to a transaction log backup for now
+				-- This will get changed below if necessary
+				--
 				Set @Sql = ''
 				Set @Sql = @Sql + ' INSERT INTO #Tmp_DB_Backup_List (DatabaseName)'
 				Set @Sql = @Sql + ' SELECT [Name]'
@@ -297,14 +289,23 @@ As
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 	End
 
-	
 	---------------------------------------
-	-- If @TransactionLogBackup = 0, update Perform_Full_DB_Backup to 1 for all DBs
+	-- If @BackupMode = 0, update Perform_Full_DB_Backup to 1 for all DBs
 	-- Otherwise, update Perform_Full_DB_Backup to 1 for databases with a Simple recovery model
 	---------------------------------------
 	--
-	If @TransactionLogBackup = 0
+	-- First, switch the backup mode to full backup for databases with a Simple recovery model
+	--
+	UPDATE #Tmp_DB_Backup_List
+	SET Perform_Full_DB_Backup = 1
+	WHERE Recovery_Model = 'SIMPLE'
+	--
+	SELECT @myRowCount = @@rowcount, @myError = @@error
+
+	If @BackupMode = 0
 	Begin
+		-- Full backup for all databases
+		--
 		UPDATE #Tmp_DB_Backup_List
 		SET Perform_Full_DB_Backup = 1
 		WHERE DatabaseName <> 'Model'
@@ -312,20 +313,76 @@ As
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 	End
 	Else
+	If @BackupMode = 1
 	Begin
-		UPDATE #Tmp_DB_Backup_List
-		SET Perform_Full_DB_Backup = 1
-		WHERE Recovery_Model = 'SIMPLE'
+		-- Transaction log backup for all databases
+		Set @myError = 0
+	End
+	Else
+	Begin
+		---------------------------------------
+		-- @BackupMode = 2
+		-- Auto-switch databases to full backups if @FullBackupIntervalDays has elapsed
+		---------------------------------------
+		--
+		Set @UpdateLastBackup = 1
+		
+		-- Find databases that have had recent full backups
+		-- Note that field Full_Backup_Interval_Days in T_Database_Backups takes precedence over @FullBackupIntervalDays
+		--
+		CREATE TABLE #Tmp_DBs_with_Recent_Full_Backups (
+			DatabaseName varchar(255) NOT NULL,
+			Last_Full_Backup DateTime NULL,
+			Backup_Interval_Days float NULL
+		)
+		
+		INSERT INTO #Tmp_DBs_with_Recent_Full_Backups (DatabaseName, Last_Full_Backup, Backup_Interval_Days)
+		SELECT [Name],
+		       Last_Full_Backup,
+		       Full_Backup_Interval_Days
+		FROM T_Database_Backups
+		WHERE IsNull(Last_Full_Backup, DateAdd(day, -1000, GetDate())) >= 
+		        DateAdd(day, -IsNull(Full_Backup_Interval_Days, @FullBackupIntervalDays), GetDate())
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
+
+		If @InfoOnly > 0 And @myRowCount > 0
+		Begin
+			SELECT *
+			FROM #Tmp_DBs_with_Recent_Full_Backups
+		End
+
+		-- Find databases in #Tmp_DB_Backup_List that are not in #Tmp_DBs_with_Recent_Full_Backups
+		--
+		UPDATE #Tmp_DB_Backup_List
+		SET Perform_Full_DB_Backup = 1
+		WHERE NOT DatabaseName IN ( SELECT DatabaseName
+		                            FROM #Tmp_DBs_with_Recent_Full_Backups )
+		--
+		SELECT @myRowCount = @@rowcount, @myError = @@error
+
 	End
 
-
 	If @InfoOnly > 0
+	Begin
 		SELECT *
 		FROM #Tmp_DB_Backup_List
 		ORDER BY DatabaseName
-
+	End
+	Else
+	Begin
+		---------------------------------------
+		-- Add missing databases to T_Database_Backups
+		---------------------------------------
+	
+		INSERT INTO T_Database_Backups ([Name])
+		SELECT DatabaseName
+		FROM #Tmp_DB_Backup_List
+		WHERE Not DatabaseName IN (Select [Name] FROM T_Database_Backups)
+		--
+		SELECT @myRowCount = @@rowcount, @myError = @@error
+	End
+	
 	---------------------------------------
 	-- Count the number of databases in #Tmp_DB_Backup_List
 	---------------------------------------
@@ -337,32 +394,33 @@ As
 	If @myRowCount = 0
 	Begin
 		Set @Message = 'Warning: no databases were found matching the given specifications'
-		exec PostLogEntry 'Warning', @message, 'BackupDMSDBs'
+		exec PostLogEntry 'Warning', @message, @procedureName
 		Goto Done
 	End
 	
-	---------------------------------------
-	-- Determine the version of Sql Server that we are running on
-	--   10.00 is Sql Server 2008
-	--   10.50 is Sql Server 2008 R2
-	--   11.00 is Sql Server 2012
-	---------------------------------------
-	
-	Declare @Version numeric(18,10)
-	Declare @Compress varchar(1)
-	
-	SET @Version = CAST(LEFT(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)),CHARINDEX('.',CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max))) - 1) + '.' + REPLACE(RIGHT(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)), LEN(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max))) - CHARINDEX('.',CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)))),'.','') AS numeric(18,10))
-
 	-- Initially assume compression is supported
-	Set @Compress = 'Y'
-
-	If @Version < 11
+	Declare @Compress varchar(1) = 'Y'
+	
+	If @VersionMajor < 11
 	Begin
-		If (NOT ((@Version >= 10 AND @Version < 10.5 AND SERVERPROPERTY('EngineEdition') = 3) OR (@Version >= 10.5 AND (SERVERPROPERTY('EngineEdition') = 3 OR SERVERPROPERTY('EditionID') IN (-1534726760, 284895786))))) 
-			-- Compression is Not Supported
-			Set @Compress = 'N'
-	End
+		---------------------------------------
+		-- Determine the version of Sql Server that we are running on
+		--   10.00 is Sql Server 2008
+		--   10.50 is Sql Server 2008 R2
+		--   11.00 is Sql Server 2012
+		---------------------------------------
 
+		Declare @Version numeric(18,10)
+		SET @Version = CAST(LEFT(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)),CHARINDEX('.',CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max))) - 1) + '.' + REPLACE(RIGHT(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)), LEN(CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max))) - CHARINDEX('.',CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(max)))),'.','') AS numeric(18,10))
+
+		If @Version < 11
+		Begin
+			If (NOT ((@Version >= 10 AND @Version < 10.5 AND SERVERPROPERTY('EngineEdition') = 3) OR (@Version >= 10.5 AND (SERVERPROPERTY('EngineEdition') = 3 OR SERVERPROPERTY('EditionID') IN (-1534726760, 284895786))))) 
+				-- Compression is not supported
+				Set @Compress = 'N'
+		End
+	End
+				
 	---------------------------------------
 	-- Loop through the databases in #Tmp_DB_Backup_List
 	-- First process DBs with Perform_Full_DB_Backup = 1
@@ -381,7 +439,7 @@ As
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 
-		If @myRowCount <> 1
+		If @myRowCount = 0
 		Begin
 			If @FullDBBackupMatchMode = 1
 				Set @FullDBBackupMatchMode = 0
@@ -446,21 +504,26 @@ As
 				Set @BackupTime = Convert(varchar(64), GetDate(), 120 )
 				Set @BackupTime = Replace(Replace(Replace(@BackupTime, ' ', '_'), ':', ''), '-', '_')
 				Set @BackupFileBaseName = @DBName + '_backup_' + @BackupTime
-				
+
 				-- Append the database name to the base path	
 				Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFolderRoot, @DBName)
 
-				-- Verify that the output directory exists; create if missing
-				--				
-				EXEC @ExitCode = VerifyDirectoryExists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
-
+				If @InfoOnly = 0
+				Begin
+					-- Verify that the output directory exists; create if missing
+					--
+					EXEC @ExitCode = VerifyDirectoryExists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
+				End
+				Else
+					Set @ExitCode = 0
+					
 				If @ExitCode <> 0
 				Begin
 					Set @myError = @ExitCode
 					Set @message = 'Error verifying the backup folder with VerifyDirectoryExists, path=' + @BackupFileBasePath + ', errorCode=' + Cast(@ExitCode as varchar(12))
 					
 					If @InfoOnly = 0
-						exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+						exec PostLogEntry 'Error', @message, @procedureName
 					else
 						Print @message
 						
@@ -484,7 +547,7 @@ As
 					Set @Sql = @Sql + ', COMPRESSION'
 
 				Set @SqlRestore = 'RESTORE VERIFYONLY FROM ' + @BackupFileList
-				
+
 			End
 			
 			If @InfoOnly = 0
@@ -505,12 +568,19 @@ As
 					---------------------------------------
 					
 					Set @message = 'SQL Backup of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
-					exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+					exec PostLogEntry 'Error', @message, @procedureName
 					
+					UPDATE T_Database_Backups
+					SET Last_Failed_Backup = GetDate(),
+						Failed_Backup_Message = @message
+					WHERE [Name] = @DBName
+							
 					Set @FailedBackupCount = @FailedBackupCount + 1
 				End
 				Else
 				Begin
+					Set @BackupSuccess = 1
+
 					If @Verify <> 0
 					Begin
 						-------------------------------------
@@ -519,7 +589,7 @@ As
 						
 						Set @UnicodeSql = @SqlRestore
 						exec @ExitCode = sp_executesql @UnicodeSql
-						
+
 						If (@ExitCode <> 0) OR (@SqlErrorCode <> 0)
 						Begin
 							---------------------------------------
@@ -528,11 +598,36 @@ As
 							---------------------------------------
 							
 							Set @message = 'SQL Backup Verify of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
-							exec PostLogEntry 'Error', @message, 'BackupDMSDBs'
+							exec PostLogEntry 'Error', @message, @procedureName
 							
+							UPDATE T_Database_Backups
+							SET Last_Failed_Backup = GetDate(),
+							    Failed_Backup_Message = @message
+							WHERE [Name] = @DBName
+
 							Set @FailedVerifyCount = @FailedVerifyCount + 1
+							
+							Set @BackupSuccess = 0
+							
 						End
 					End
+					
+					If @BackupSuccess = 1 And @UpdateLastBackup > 0
+					Begin
+						If @FullDBBackupMatchMode = 1
+						Begin
+							UPDATE T_Database_Backups
+							SET Last_Full_Backup = GetDate()
+							WHERE [Name] = @DBName
+						End
+						Else
+						Begin
+							UPDATE T_Database_Backups
+							SET Last_Trans_Backup = GetDate()
+							WHERE [Name] = @DBName
+						End
+					End
+
 				End
 				
 			End -- </f1>
@@ -541,9 +636,9 @@ As
 				---------------------------------------
 				-- Preview the backup Sql 
 				---------------------------------------
-				--					
+				--
 				Print @Sql
-				
+
 				If @Verify <> 0
 					Print @SqlRestore
 
@@ -552,7 +647,7 @@ As
 			End -- </f2>
 			
 			---------------------------------------
-			-- Append @DBName to @DBsProcessed, limiting to @DBsProcessedMaxLenth characters, 
+			-- Append @DBName to @DBsProcessed, limiting to @DBsProcessedMaxLength characters, 
 			--  afterwhich a period is added for each additional DB
 			---------------------------------------
 			--
@@ -560,7 +655,7 @@ As
 				Set @DBsProcessed = @DBName
 			Else
 			Begin
-				If Len(@DBsProcessed) <= @DBsProcessedMaxLenth
+				If Len(@DBsProcessed) <= @DBsProcessedMaxLength
 					Set @DBsProcessed = @DBsProcessed + ', ' + @DBName
 				Else
 					Set @DBsProcessed = @DBsProcessed + '.'
@@ -568,7 +663,7 @@ As
 
 		End -- </e>
 	End -- </d>
-				
+
 	If @FailedBackupCount = 0
 	Begin
 		---------------------------------------
@@ -616,9 +711,9 @@ As
 		If @DBBackupFullCount + @DBBackupTransCount > 0
 		Begin
 			If @FailedBackupCount > 0
-				exec PostLogEntry 'Error',  @message, 'BackupDMSDBs'
+				exec PostLogEntry 'Error',  @message, @procedureName
 			Else
-				exec PostLogEntry 'Normal', @message, 'BackupDMSDBs'
+				exec PostLogEntry 'Normal', @message, @procedureName
 		End
 	End
 	Else
@@ -627,7 +722,6 @@ As
 	End
 
 Done:
-	DROP TABLE #Tmp_DB_Backup_List
 
 	Return @myError
 
