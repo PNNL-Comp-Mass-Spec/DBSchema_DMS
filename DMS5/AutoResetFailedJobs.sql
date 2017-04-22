@@ -38,6 +38,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			01/18/2017 mem - Auto-reset Bruker_DA_Export jobs up to 2 times
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			04/21/2017 mem - Add check for "An unexpected network error occurred"
 **
 *****************************************************/
 (
@@ -201,7 +202,7 @@ As
 				             @StepTool = Step_Tool,				-- Step tool name
 				             @JobState = Job_State, 
 				             @StepState = Step_State, 
-				             @Processor = Processor,
+				          @Processor = Processor,
 				             @Comment = Comment,
 				             @SettingsFile = Settings_File,
 				        @AnalysisTool = AnalysisTool		-- Overall Job Analysis Tool Name
@@ -283,7 +284,7 @@ As
 					End
 					
 					If @StepState = 6
-					Begin
+					Begin -- <failedJob>
 						-- Job step is failed and overall job is failed
 						
 						If @RetryJob = 0 And @StepTool IN ('Decon2LS', 'MSGF', 'Bruker_DA_Export') And @RetryCount < 2
@@ -303,7 +304,7 @@ As
 						    @Comment Like '%skipped % of the spectra because they did not appear centroided%' OR
 						    @Comment Like '%skip % of the spectra because they do not appear centroided%'
 						    )
-						Begin
+						Begin -- <nonCentroided>
 							-- MSGF+ job that failed due to too many profile-mode spectra
 							-- Auto-change the SettingsFile to a MSConvert version if possible.
 							
@@ -340,7 +341,7 @@ As
 									End
 								End
 							End
-						End
+						End -- </nonCentroided>
 						
 						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone', 'DataExtractor') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
 							Set @RetryJob = 1
@@ -352,11 +353,18 @@ As
 							   @Comment Like '%File not found: \\adms%' Or
 							   @Comment Like '%Error copying %dta.zip%' Or
 							   @Comment Like '%Source dataset file file not found%'
-							 Set @RetryJob = 1
+								Set @RetryJob = 1
 
 						End
 						
-					End
+						If @RetryJob = 0 And @RetryCount < 5
+						Begin
+							-- Check for network errors
+							If @Comment Like '%unexpected network error occurred%'
+								Set @RetryJob = 1
+
+						End
+					End -- </failedJob>
 					
 					If @StepState = 4
 					Begin
@@ -371,7 +379,7 @@ As
 					End
 					
 					If @RetryJob = 1
-					Begin
+					Begin -- <retryJob>
 						Set @NewComment = RTrim(@NewComment)
 						
 						If @SettingsFileChanged = 1
@@ -476,7 +484,7 @@ As
 								print 'Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1'
 						End
 
-					End				
+					End	 -- </retryJob>			
 				End -- </c>
 				
 				

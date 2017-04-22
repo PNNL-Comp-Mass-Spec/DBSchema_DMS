@@ -37,6 +37,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 **			10/27/2016 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **						   - Explicitly update Last_Affected
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			04/21/2017 mem - Add @instrumentExclCriteria
 **    
 *****************************************************/
 (
@@ -46,6 +47,7 @@ CREATE Procedure dbo.AddUpdatePredefinedAnalysis
 	@campaignNameCriteria varchar(128),
 	@experimentNameCriteria varchar(128),
 	@instrumentNameCriteria varchar(64),
+	@instrumentExclCriteria varchar(64),
 	@organismNameCriteria varchar(128),
 	@datasetNameCriteria varchar(128),
 	@expCommentCriteria varchar(128),
@@ -146,6 +148,7 @@ As
 	Set @campaignNameCriteria    = LTrim(RTrim(IsNull(@campaignNameCriteria   , '')))
 	Set @experimentNameCriteria  = LTrim(RTrim(IsNull(@experimentNameCriteria , '')))
 	Set @instrumentNameCriteria  = LTrim(RTrim(IsNull(@instrumentNameCriteria , '')))
+	Set @instrumentExclCriteria  = LTrim(RTrim(IsNull(@instrumentExclCriteria , '')))
 	Set @organismNameCriteria    = LTrim(RTrim(IsNull(@organismNameCriteria   , '')))
 	Set @datasetNameCriteria     = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
 	Set @expCommentCriteria      = LTrim(RTrim(IsNull(@expCommentCriteria     , '')))
@@ -205,12 +208,12 @@ As
 	End
 
 	---------------------------------------------------
-	-- If @instrumentClassCriteria and/or @instrumentNameCriteria are defined 
-	-- then determine the associated Dataset Types and make sure they are 
+	-- If @instrumentClassCriteria or @instrumentNameCriteria or @instrumentExclCriteria are defined,
+	-- determine the associated Dataset Types and make sure they are 
 	-- valid for @analysisToolName
 	---------------------------------------------------
 	
-	If Len(@instrumentClassCriteria) > 0 Or Len(@instrumentNameCriteria) > 0
+	If Len(@instrumentClassCriteria) > 0 Or Len(@instrumentNameCriteria) > 0 Or Len(@instrumentExclCriteria) > 0
 	Begin -- <a>
 			
 		If Not Exists (
@@ -262,7 +265,8 @@ As
 		       ON InstName.IN_Group = InstGroupDSType.IN_Group AND 
 		          (InstGroupDSType.Dataset_Type LIKE @datasetTypeCriteria OR @datasetTypeCriteria = '')
 		WHERE (InstClass.IN_Class LIKE @instrumentClassCriteria OR @instrumentClassCriteria = '') AND
-		      (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '')		      
+		      (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '') AND
+		      (NOT (InstName.IN_name LIKE @instrumentExclCriteria) OR @instrumentExclCriteria = '')
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -475,6 +479,7 @@ As
 			AD_experimentNameCriteria, 
 			AD_experimentExclCriteria, 
 			AD_instrumentNameCriteria, 
+			AD_instrumentExclCriteria, 
 			AD_organismNameCriteria, 
 			AD_datasetNameCriteria, 
 			AD_datasetExclCriteria,
@@ -508,6 +513,7 @@ As
 			@experimentNameCriteria, 
 			@experimentExclCriteria,
 			@instrumentNameCriteria, 
+			@instrumentExclCriteria, 
 			@organismNameCriteria, 
 			@datasetNameCriteria, 
 			@datasetExclCriteria,
@@ -566,6 +572,7 @@ As
 			AD_experimentNameCriteria = @experimentNameCriteria, 
 			AD_experimentExclCriteria = @experimentExclCriteria,
 			AD_instrumentNameCriteria = @instrumentNameCriteria, 
+			AD_instrumentExclCriteria = @instrumentExclCriteria, 
 			AD_organismNameCriteria = @organismNameCriteria, 
 			AD_datasetNameCriteria = @datasetNameCriteria, 
 			AD_datasetExclCriteria = @datasetExclCriteria,

@@ -18,61 +18,74 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **			02/18/2008 grk - Modified to accept jobs in failed state (Ticket #723)
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **			09/28/2012 mem - Now allowing a job to be deleted if state 19 = "Special Proc. Waiting"
+**			04/21/2017 mem - Added parameter @previewMode
 **    
 *****************************************************/
 (
 	@jobNum varchar(32),
     @message varchar(512) output,
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@previewMode tinyint = 0
 )
 As
-	set nocount on
+	Set nocount on
 	
-	declare @jobID int
-	
-	set @message = ''
+	Declare @jobID int
 
-	set @jobID = convert(int, @jobNum)
-	-- future: this could get more complicated
+	Set @jobNum = IsNull(@jobNum, '')
+	Set @message = ''
+	Set @previewMode = IsNull(@previewMode, 0)	
+
+	Set @jobID = Try_Cast(@jobNum as int)
 	
-	-- verify that job exists in job table
+	If @jobID is null
+	Begin
+		Declare @msg varchar(128) = 'Job number is not numeric: ' + @jobNum
+		RAISERROR (@msg, 10, 1)
+		return 55321
+	End
+	
+	---------------------------------------------------
+	-- Verify that job exists in job table
+	---------------------------------------------------
 	--
-	declare @state int
-	set @state = 0
+	Declare @state int = 0
 	--
 	SELECT @state = AJ_StateID 
 	FROM T_Analysis_Job 
 	WHERE (AJ_jobID = @jobID)
 	--
-	if @state = 0
-	begin
-		set @message = 'Job entry "' + @jobNum + '" not in database'
-		return 55322
-	end
+	If @state = 0
+	Begin
+		Set @message = 'Job entry "' + @jobNum + '" not in database'
+		If @previewMode > 0
+			SELECT @message
+		Else
+			return 55322
+	End
 
-	-- verify that analysis job has state 'new', 'failed', or 'Special Proc. Waiting'
-	if NOT @state IN (1,5,19)
-	begin
-		set @message = 'Job "' + @jobNum + '" must be in "new" or "failed" state to be deleted by user'
+	-- Verify that analysis job has state 'new', 'failed', or 'Special Proc. Waiting'
+	If Not @state IN (0, 1, 5, 19)
+	Begin
+		Set @message = 'Job "' + @jobNum + '" must be in "new" or "failed" state to be deleted by user'
 		return 55323
-	end
+	End
 
-	-- delete the analysis job
+	-- Delete the analysis job
 	--
-	declare @result int
-	execute @result = DeleteAnalysisJob @jobID, @callingUser
-	if @result <> 0
-	begin
-		set @message = 'Job "' + @jobNum + '" could not be deleted'
+	Declare @result int
+	execute @result = DeleteAnalysisJob @jobID, @callingUser, @previewMode
+	
+	If @result <> 0
+	Begin
+		Set @message = 'Job "' + @jobNum + '" could not be deleted'
 		return 55320
-	end
+	End
 
 	return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [DDL_Viewer] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[DeleteNewAnalysisJob] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [Limited_Table_Write] AS [dbo]
 GO

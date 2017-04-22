@@ -26,89 +26,105 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **			05/28/2015 mem - No longer deleting processor group entries
 **			03/08/2017 mem - Delete jobs in the DMS_Pipeline database if they are new, holding, or failed
+**			04/21/2017 mem - Added parameter @previewMode
 **
 *****************************************************/
 (
     @jobNum varchar(32),
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@previewMode tinyint = 0
 )
 As
-	set nocount on
+	Set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	declare @jobID int = Cast(@jobNum as int)
+	Set @jobNum = IsNull(@jobNum, '')
+	Set @previewMode = IsNull(@previewMode, 0)	
 
+	Declare @message varchar(512)
+	Declare @msg varchar(128)
+
+	Declare @jobID int = Try_Cast(@jobNum as int)
+	
+	If @jobID is null
+	Begin
+		Set @msg = 'Job number is not numeric: ' + @jobNum
+		RAISERROR (@msg, 10, 1)
+		return 54449
+	End
+	
 	-------------------------------------------------------
 	-- Validate that the job exists
 	-------------------------------------------------------
 	--
 	If Not Exists (SELECT * FROM T_Analysis_Job WHERE AJ_jobID = @jobID)
 	Begin
-		Declare @msg varchar(128) = 'Job not found; nothing to delete: ' + @jobNum
-		RAISERROR (@msg, 10, 1)
-		return 54450
+		Set @msg = 'Job not found; nothing to delete: ' + @jobNum
+		If @previewMode > 0
+			Print @msg
+		Else
+		Begin
+			RAISERROR (@msg, 10, 1)
+			return 54450
+		End
 	End
 
-	-------------------------------------------------------
-	-- Start transaction
-	-------------------------------------------------------
-	--
-	declare @transName varchar(32) = 'DeleteAnalysisJob'
-	begin transaction @transName	
-
-	-------------------------------------------------------	
-	-- Delete the analysis job
-	-------------------------------------------------------
-	--
-	DELETE FROM T_Analysis_Job 
-	WHERE (AJ_jobID = @jobID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount = 0
-	begin
-		rollback transaction @transName
-		RAISERROR ('Delete job operation failed', 10, 1)
-		return 54451
-	end
-	
-	-------------------------------------------------------
-	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-	-------------------------------------------------------
-	--
-	If Len(@callingUser) > 0
+	If @previewMode > 0
 	Begin
-		Declare @stateID int
-		Set @stateID = 0
+		SELECT 'To be deleted' as Action, *
+		FROM T_Analysis_Job
+		WHERE (AJ_jobID = @jobID)
+	End
+	Else
+	Begin
+		-------------------------------------------------------
+		-- Start transaction
+		-------------------------------------------------------
+		--
+		Declare @transName varchar(32) = 'DeleteAnalysisJob'
+		Begin transaction @transName	
 
-		Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+		-------------------------------------------------------	
+		-- Delete the analysis job
+		-------------------------------------------------------
+		--
+		DELETE FROM T_Analysis_Job 
+		WHERE (AJ_jobID = @jobID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myError <> 0 or @myRowCount = 0
+		Begin
+			rollback transaction @transName
+			RAISERROR ('Delete job operation failed', 10, 1)
+			return 54451
+		End
+		
+		-------------------------------------------------------
+		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		-------------------------------------------------------
+		--
+		If Len(@callingUser) > 0
+		Begin
+			Declare @stateID int
+			Set @stateID = 0
+
+			Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+		End
+		
+		commit transaction @transName
 	End
 	
-	commit transaction @transName
-
 	-------------------------------------------------------
 	-- Also delete from the DMS_Pipeline database if the state is New, Failed, or Holding
 	-- Ignore any jobs with running job steps (though if the step started over 48 hours ago, ignore that job step)
 	-------------------------------------------------------
 	--
-	DELETE FROM DMS_Pipeline.dbo.T_Jobs
-	WHERE Job IN ( SELECT Job
-	               FROM DMS_Pipeline.dbo.T_Jobs
-	               WHERE Job = @jobID AND
-	                     State IN (1, 5, 8) AND
-	                     NOT Job IN ( SELECT JS.Job
-	                                  FROM DMS_Pipeline.dbo.T_Job_Steps JS
-	                                  WHERE JS.Job = @jobID AND
-	                                        JS.State = 4 AND
-	                                        JS.Start >= DateAdd(hour, -48, GetDate()) 
-	                                 ) 
-	              )
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+	exec S_DeleteJobIfNewOrFailed @jobID, @callingUser, @message output, @previewMode
 	
 	return 0
 

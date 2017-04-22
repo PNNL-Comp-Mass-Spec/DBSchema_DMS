@@ -20,6 +20,7 @@ CREATE Procedure SyncWithDMS5
 **			03/31/2016 mem - Add T_Material_Freezers and update columns for T_Material_Locations
 **			02/23/2017 mem - Add RDS_Cart_Config_ID to T_Requested_Run
 **			04/11/2017 mem - Rename columns in T_EMSL_Instrument_Usage_Report
+**			04/21/2017 mem - Add AD_instrumentExclCriteria to T_Predefined_Analysis
 **    
 *****************************************************/
 (
@@ -1824,7 +1825,7 @@ As
 			THEN UPDATE SET 
 			    [Label] = s.[Label]
 			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([Label], [ID])
+			 INSERT([Label], [ID])
 			    VALUES(s.[Label], s.[ID])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
@@ -3098,7 +3099,7 @@ As
 			    [MS2_PrecZ_likely_1] = s.[MS2_PrecZ_likely_1],
 			    [MS2_PrecZ_likely_multi] = s.[MS2_PrecZ_likely_multi],
 			    [QCDM_Last_Affected] = s.[QCDM_Last_Affected],
-			    [QCDM] = s.[QCDM],
+			 [QCDM] = s.[QCDM],
 			   [MassErrorPPM] = s.[MassErrorPPM],
 			    [MassErrorPPM_Refined] = s.[MassErrorPPM_Refined],
 			    [MassErrorPPM_VIPER] = s.[MassErrorPPM_VIPER],
@@ -3683,6 +3684,7 @@ As
 			    t.[AD_experimentNameCriteria] <> s.[AD_experimentNameCriteria] OR
 			    t.[AD_experimentExclCriteria] <> s.[AD_experimentExclCriteria] OR
 			    t.[AD_instrumentNameCriteria] <> s.[AD_instrumentNameCriteria] OR
+			    t.[AD_instrumentExclCriteria] <> s.[AD_instrumentExclCriteria] OR
 			    t.[AD_organismNameCriteria] <> s.[AD_organismNameCriteria] OR
 			    t.[AD_datasetNameCriteria] <> s.[AD_datasetNameCriteria] OR
 			    t.[AD_datasetExclCriteria] <> s.[AD_datasetExclCriteria] OR
@@ -3727,6 +3729,7 @@ As
 			    [AD_experimentNameCriteria] = s.[AD_experimentNameCriteria],
 			    [AD_experimentExclCriteria] = s.[AD_experimentExclCriteria],
 			    [AD_instrumentNameCriteria] = s.[AD_instrumentNameCriteria],
+			    [AD_instrumentExclCriteria] = s.[AD_instrumentExclCriteria],
 			    [AD_organismNameCriteria] = s.[AD_organismNameCriteria],
 			    [AD_datasetNameCriteria] = s.[AD_datasetNameCriteria],
 			    [AD_datasetExclCriteria] = s.[AD_datasetExclCriteria],
@@ -3755,8 +3758,8 @@ As
 			    [Propagation_Mode] = s.[Propagation_Mode],
 			    [Last_Affected] = s.[Last_Affected]
 			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([AD_ID], [AD_level], [AD_sequence], [AD_instrumentClassCriteria], [AD_campaignNameCriteria], [AD_campaignExclCriteria], [AD_experimentNameCriteria], [AD_experimentExclCriteria], [AD_instrumentNameCriteria], [AD_organismNameCriteria], [AD_datasetNameCriteria], [AD_datasetExclCriteria], [AD_datasetTypeCriteria], [AD_expCommentCriteria], [AD_labellingInclCriteria], [AD_labellingExclCriteria], [AD_separationTypeCriteria], [AD_scanCountMinCriteria], [AD_scanCountMaxCriteria], [AD_analysisToolName], [AD_parmFileName], [AD_settingsFileName], [AD_organism_ID], [AD_organismDBName], [AD_proteinCollectionList], [AD_proteinOptionsList], [AD_priority], [AD_specialProcessing], [AD_enabled], [AD_description], [AD_created], [AD_creator], [AD_nextLevel], [Trigger_Before_Disposition], [Propagation_Mode], [Last_Affected])
-			    VALUES(s.[AD_ID], s.[AD_level], s.[AD_sequence], s.[AD_instrumentClassCriteria], s.[AD_campaignNameCriteria], s.[AD_campaignExclCriteria], s.[AD_experimentNameCriteria], s.[AD_experimentExclCriteria], s.[AD_instrumentNameCriteria], s.[AD_organismNameCriteria], s.[AD_datasetNameCriteria], s.[AD_datasetExclCriteria], s.[AD_datasetTypeCriteria], s.[AD_expCommentCriteria], s.[AD_labellingInclCriteria], s.[AD_labellingExclCriteria], s.[AD_separationTypeCriteria], s.[AD_scanCountMinCriteria], s.[AD_scanCountMaxCriteria], s.[AD_analysisToolName], s.[AD_parmFileName], s.[AD_settingsFileName], s.[AD_organism_ID], s.[AD_organismDBName], s.[AD_proteinCollectionList], s.[AD_proteinOptionsList], s.[AD_priority], s.[AD_specialProcessing], s.[AD_enabled], s.[AD_description], s.[AD_created], s.[AD_creator], s.[AD_nextLevel], s.[Trigger_Before_Disposition], s.[Propagation_Mode], s.[Last_Affected])
+			    INSERT([AD_ID], [AD_level], [AD_sequence], [AD_instrumentClassCriteria], [AD_campaignNameCriteria], [AD_campaignExclCriteria], [AD_experimentNameCriteria], [AD_experimentExclCriteria], [AD_instrumentNameCriteria], [AD_instrumentExclCriteria], [AD_organismNameCriteria], [AD_datasetNameCriteria], [AD_datasetExclCriteria], [AD_datasetTypeCriteria], [AD_expCommentCriteria], [AD_labellingInclCriteria], [AD_labellingExclCriteria], [AD_separationTypeCriteria], [AD_scanCountMinCriteria], [AD_scanCountMaxCriteria], [AD_analysisToolName], [AD_parmFileName], [AD_settingsFileName], [AD_organism_ID], [AD_organismDBName], [AD_proteinCollectionList], [AD_proteinOptionsList], [AD_priority], [AD_specialProcessing], [AD_enabled], [AD_description], [AD_created], [AD_creator], [AD_nextLevel], [Trigger_Before_Disposition], [Propagation_Mode], [Last_Affected])
+			    VALUES(s.[AD_ID], s.[AD_level], s.[AD_sequence], s.[AD_instrumentClassCriteria], s.[AD_campaignNameCriteria], s.[AD_campaignExclCriteria], s.[AD_experimentNameCriteria], s.[AD_experimentExclCriteria], s.[AD_instrumentNameCriteria], s.[AD_instrumentExclCriteria], s.[AD_organismNameCriteria], s.[AD_datasetNameCriteria], s.[AD_datasetExclCriteria], s.[AD_datasetTypeCriteria], s.[AD_expCommentCriteria], s.[AD_labellingInclCriteria], s.[AD_labellingExclCriteria], s.[AD_separationTypeCriteria], s.[AD_scanCountMinCriteria], s.[AD_scanCountMaxCriteria], s.[AD_analysisToolName], s.[AD_parmFileName], s.[AD_settingsFileName], s.[AD_organism_ID], s.[AD_organismDBName], s.[AD_proteinCollectionList], s.[AD_proteinOptionsList], s.[AD_priority], s.[AD_specialProcessing], s.[AD_enabled], s.[AD_description], s.[AD_created], s.[AD_creator], s.[AD_nextLevel], s.[Trigger_Before_Disposition], s.[Propagation_Mode], s.[Last_Affected])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 			       Cast(Inserted.[AD_ID] as varchar(12)),

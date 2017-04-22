@@ -23,45 +23,51 @@ CREATE Procedure DoAnalysisJobOperation
 **			11/18/2010 mem - Now returning 0 after successful call to DeleteNewAnalysisJob
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			04/21/2017 mem - Add @mode previewDelete
 **    
 *****************************************************/
 (
 	@jobNum varchar(32),
-	@mode varchar(12),  -- 'delete, reset'
+	@mode varchar(24),  -- 'delete, reset, previewDelete' ; recognizeese reset but does not make any changes when @mode is 'reset'
     @message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
 
-	declare @jobID int
-	declare @state int
+	Declare @jobID int
+	Declare @state int
 	
-	declare @result int
+	Declare @result int
 
+	Declare @previewMode tinyint = 0
+	
+	If @mode Like 'preview%'
+		Set @previewMode = 1
+		
 	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Delete job if it is in "new" or "failed" state
 	---------------------------------------------------
 
-	if @mode = 'delete'
+	if @mode in ('delete', 'previewDelete')
 	begin
 		
 		---------------------------------------------------
 		-- delete the job
 		---------------------------------------------------
-
-		execute @result = DeleteNewAnalysisJob @jobNum, @msg output, @callingUser
+		
+		execute @result = DeleteNewAnalysisJob @jobNum, @msg output, @callingUser, @previewMode
 		--
 		if @result <> 0
 		begin
@@ -72,7 +78,7 @@ As
 	end -- mode 'delete'
 	
 	---------------------------------------------------
-	-- 
+	-- Legacy mode; not supported
 	---------------------------------------------------
 
 	if @mode = 'reset'

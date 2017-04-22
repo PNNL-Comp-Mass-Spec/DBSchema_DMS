@@ -22,6 +22,7 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **          07/26/2016 mem - Now include Dataset Rating
 **			08/04/2016 mem - Fix column name for dataset Rating ID
 **			03/17/2017 mem - Include job, parameter file, settings file, etc. for the predefines that would run for the matching datasets
+**			04/21/2017 mem - Add AD_instrumentNameCriteria
 **    
 *****************************************************/
 (
@@ -43,7 +44,10 @@ As
 	Declare @instrumentClassCriteria varchar(1024)
 	Declare @campaignNameCriteria varchar(1024)
 	Declare @experimentNameCriteria varchar(1024)
+	
 	Declare @instrumentNameCriteria varchar(1024)
+	Declare @instrumentExclCriteria varchar(1024)
+	
 	Declare @organismNameCriteria varchar(1024)
 	Declare @labellingInclCriteria varchar(1024)
 	Declare @labellingExclCriteria varchar(1024)
@@ -88,6 +92,7 @@ As
 		@campaignNameCriteria = AD_campaignNameCriteria,
 		@experimentNameCriteria = AD_experimentNameCriteria,
 		@instrumentNameCriteria = AD_instrumentNameCriteria,
+		@instrumentExclCriteria = AD_instrumentExclCriteria,
 		@organismNameCriteria = AD_organismNameCriteria,
 		@labellingInclCriteria = AD_labellingInclCriteria,
 		@labellingExclCriteria = AD_labellingExclCriteria,
@@ -111,6 +116,7 @@ As
 	print 'CampaignName: ' + @campaignNameCriteria 
 	print 'Experiment: ' + @experimentNameCriteria 
 	print 'InstrumentName: ' + @instrumentNameCriteria 
+	print 'InstrumentExcl: ' + @instrumentExclCriteria
 	print 'OrganismName: ' + @organismNameCriteria 
 	print 'LabellingIncl: ' + @labellingInclCriteria 
 	print 'LabellingExcl: ' + @labellingExclCriteria 
@@ -132,6 +138,9 @@ As
 
 	If @instrumentNameCriteria <> ''
 		Set @SqlWhere = @SqlWhere + ' AND (Instrument LIKE ''' + @instrumentNameCriteria + ''')'
+
+	If @instrumentExclCriteria <> ''
+		Set @SqlWhere = @SqlWhere + ' AND (NOT Instrument LIKE ''' + @instrumentExclCriteria + ''')'
 
 	If @campaignNameCriteria <> ''
 		Set @SqlWhere = @SqlWhere + ' AND (Campaign LIKE ''' + @campaignNameCriteria + ''')'
@@ -198,6 +207,7 @@ As
 
 		Set @S = @S +          ' ''' + @instrumentClassCriteria + ''' AS InstrumentClassCriteria,'
 		Set @S = @S +          ' ''' + @instrumentNameCriteria +  ''' AS InstrumentNameCriteria,'
+		Set @S = @S +          ' ''' + @instrumentExclCriteria +  ''' AS InstrumentExclCriteria,'
 
 		Set @S = @S +          ' ''' + @campaignNameCriteria +   ''' AS CampaignNameCriteria,'
 		Set @S = @S +          ' ''' + @campaignExclCriteria +   ''' AS CampaignExclCriteria,'

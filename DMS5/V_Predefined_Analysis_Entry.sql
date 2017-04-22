@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Predefined_Analysis_Entry]
 AS
 SELECT PA.AD_level AS [level],
@@ -13,6 +12,7 @@ SELECT PA.AD_level AS [level],
        PA.AD_campaignNameCriteria AS campaignNameCriteria,
        PA.AD_experimentNameCriteria AS experimentNameCriteria,
        PA.AD_instrumentNameCriteria AS instrumentNameCriteria,
+	   PA.AD_instrumentExclCriteria AS instrumentExclCriteria,
        PA.AD_organismNameCriteria AS organismNameCriteria,
        PA.AD_datasetNameCriteria AS datasetNameCriteria,
        PA.AD_expCommentCriteria AS expCommentCriteria,
@@ -43,7 +43,6 @@ SELECT PA.AD_level AS [level],
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID
-
 
 
 GO

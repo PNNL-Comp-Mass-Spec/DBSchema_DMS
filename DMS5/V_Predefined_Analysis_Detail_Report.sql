@@ -24,6 +24,7 @@ SELECT PA.AD_ID AS ID,
     PA.AD_experimentNameCriteria AS [Experiment Criteria], 
     PA.AD_experimentExclCriteria AS [Experiment Exclusion],
     PA.AD_instrumentNameCriteria AS [Instrument Criteria], 
+	PA.AD_instrumentExclCriteria AS [Instrument Exclusion], 
     PA.AD_organismNameCriteria AS [Organism Criteria], 
     PA.AD_datasetNameCriteria AS [Dataset Criteria], 
     PA.AD_datasetExclCriteria AS [Dataset Exclusion],
@@ -50,7 +51,6 @@ SELECT PA.AD_ID AS ID,
     PA.AD_creator AS Creator
 FROM T_Predefined_Analysis PA INNER JOIN
      T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID
-
 
 
 GO

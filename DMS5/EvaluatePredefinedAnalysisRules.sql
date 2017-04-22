@@ -68,6 +68,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			09/25/2012 mem - Expanded @organismName and @organismDBName to varchar(128)
 **			08/02/2013 mem - Added parameter @AnalysisToolNameFilter
 **			04/30/2015 mem - Added support for min and max ScanCount
+**			04/21/2017 mem - Add AD_instrumentNameCriteria
 **
 *****************************************************/
 (
@@ -223,6 +224,7 @@ As
 		AD_experimentNameCriteria varchar (128)  NOT NULL ,
 		AD_experimentExclCriteria varchar (128)  NOT NULL ,
 		AD_instrumentNameCriteria varchar (64)  NOT NULL ,
+		AD_instrumentExclCriteria varchar (64)  NOT NULL ,
 		AD_organismNameCriteria varchar (128)  NOT NULL ,
 		AD_datasetNameCriteria varchar (128)  NOT NULL ,
 		AD_datasetExclCriteria varchar (128)  NOT NULL ,
@@ -273,6 +275,7 @@ As
 			[Analysis Tool] varchar(64) NULL, 
 			[Instrument Class Crit.] varchar(32) NULL, 
 			[Instrument Crit.] varchar(128) NULL, 
+			[Instrument Exclusion] varchar(128) NULL, 
 			[Campaign Crit.] varchar(128) NULL, 
 			[Campaign Exclusion] varchar(128),
 			[Experiment Crit.] varchar(128) NULL, 
@@ -314,6 +317,7 @@ As
 		AD_experimentNameCriteria,
 		AD_experimentExclCriteria, 
 		AD_instrumentNameCriteria,
+		AD_instrumentExclCriteria,
 		AD_organismNameCriteria,
 		AD_datasetNameCriteria,
 		AD_datasetExclCriteria,
@@ -347,6 +351,7 @@ As
 		PA.AD_experimentNameCriteria,
 		PA.AD_experimentExclCriteria, 
 		PA.AD_instrumentNameCriteria,
+		PA.AD_instrumentExclCriteria,
 		PA.AD_organismNameCriteria,
 		PA.AD_datasetNameCriteria,
 		PA.AD_datasetExclCriteria,
@@ -375,6 +380,7 @@ As
 	WHERE (PA.AD_enabled > 0) 
 		AND ((@InstrumentClass LIKE PA.AD_instrumentClassCriteria) OR (PA.AD_instrumentClassCriteria = '')) 
 		AND ((@InstrumentName LIKE PA.AD_instrumentNameCriteria) OR (PA.AD_instrumentNameCriteria = '')) 
+		AND (NOT (@InstrumentName LIKE PA.AD_instrumentExclCriteria) OR (PA.AD_instrumentExclCriteria = '')) 
 		AND ((@Campaign LIKE PA.AD_campaignNameCriteria) OR (PA.AD_campaignNameCriteria = '')) 
 		AND ((@Experiment LIKE PA.AD_experimentNameCriteria) OR (PA.AD_experimentNameCriteria = '')) 
 		AND ((@Dataset LIKE PA.AD_datasetNameCriteria) OR (PA.AD_datasetNameCriteria = '')) 
@@ -428,7 +434,7 @@ As
 			[Level], [Seq.], Rule_ID, [Next Lvl.], [Trigger Mode], [Export Mode],
 			[Action], [Reason], 
 			[Notes], [Analysis Tool],
-			[Instrument Class Crit.], [Instrument Crit.], 
+			[Instrument Class Crit.], [Instrument Crit.], [Instrument Exclusion], 
 			[Campaign Crit.], [Campaign Exclusion],
 			[Experiment Crit.], [Experiment Exclusion], 
 			[Organism Crit.], 
@@ -453,7 +459,7 @@ As
 				     END AS [Export Mode],
 				'Skip' AS [Action], 'Level skip' AS [Reason], 
 				'' AS [Notes], AD_analysisToolName,
-				AD_instrumentClassCriteria, AD_instrumentNameCriteria,
+				AD_instrumentClassCriteria, AD_instrumentNameCriteria, AD_instrumentExclCriteria,
 				AD_campaignNameCriteria, AD_campaignExclCriteria, 
 				AD_experimentNameCriteria, AD_experimentExclCriteria, 
 				AD_organismNameCriteria, 

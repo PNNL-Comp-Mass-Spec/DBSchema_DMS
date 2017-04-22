@@ -21,6 +21,7 @@ SELECT PA.AD_ID AS ID,
            ELSE 'No Export'
        END AS [Export Mode],
        PA.AD_instrumentNameCriteria AS [Instrument Crit.],
+	   PA.AD_instrumentExclCriteria AS [Instrument Excl.],
        PA.AD_organismNameCriteria AS [Organism Crit.],
        PA.AD_campaignNameCriteria AS [Campaign Crit.],
        PA.AD_experimentNameCriteria AS [Experiment Crit.],

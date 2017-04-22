@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_experimentNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_experimentExclCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_instrumentNameCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_instrumentExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_organismNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_datasetNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_datasetExclCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -58,6 +59,8 @@ GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experimentExclCriteria]  DEFAULT ('') FOR [AD_experimentExclCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrument_Name]  DEFAULT ('') FOR [AD_instrumentNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrumentExclCriteria]  DEFAULT ('') FOR [AD_instrumentExclCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organism_Name]  DEFAULT ('') FOR [AD_organismNameCriteria]
 GO
@@ -117,8 +120,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [trig_u_T_Predefined_Analysis] on [dbo].[T_Predefined_Analysis]
+CREATE Trigger [trig_u_T_Predefined_Analysis] on dbo.T_Predefined_Analysis
 For Update
 AS
 	If @@RowCount = 0
@@ -160,4 +162,5 @@ AS
 		FROM T_Predefined_Analysis PA INNER JOIN 
 			 inserted ON PA.AD_ID = inserted.AD_ID
 	End
+
 GO
