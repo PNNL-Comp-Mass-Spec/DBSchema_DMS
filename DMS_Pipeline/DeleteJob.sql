@@ -8,7 +8,8 @@ CREATE PROCEDURE dbo.DeleteJob
 **
 **	Desc:
 **		Deletes the given job from T_Jobs and T_Job_Steps
-**		This procedure is called by DeleteAnalysisJob in DMS5
+**		This procedure was previously called by DeleteAnalysisJob in DMS5
+**		However, now DeleteAnalysisJob calls DeleteJobIfNewOrFailed in this database
 **	
 **	Return values: 0: success, otherwise, error code
 **
