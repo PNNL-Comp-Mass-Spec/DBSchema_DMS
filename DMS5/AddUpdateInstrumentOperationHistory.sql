@@ -18,10 +18,12 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **    Date: 05/20/2010
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			04/25/2017 mem - Require that @Instrument and @Note be defined
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+
 	@ID int,
 	@Instrument varchar(24),
 	@postedBy VARCHAR(64),
@@ -39,15 +41,29 @@ As
 
 	set @message = ''
 
-	BEGIN TRY 
-	set @message = ''
-
-
+	Declare @logErrors tinyint = 0
+	
+	
+	BEGIN TRY
+	
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
 
-	-- future: this could get more complicated
+	If IsNull(@Instrument, '') = ''
+	Begin
+		RAISERROR ('Instrument name not defined', 11, 16)
+	End 
+
+	If @Note Is Null
+	Begin
+		RAISERROR ('Note cannot be blank', 11, 16)
+	End 
+
+	If @mode = 'update' and @ID is null
+	Begin
+		RAISERROR ('ID cannot be null when updating a note', 11, 16)
+	End 
 
 	---------------------------------------------------
 	-- Resolve poster PRN
@@ -71,6 +87,8 @@ As
 			Set @postedBy = @NewPRN
 		End
 	end
+
+	Set @logErrors = 1
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
@@ -148,8 +166,13 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
+
+		If @logErrors > 0
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Instrument ' + @Instrument
+			exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrumentOperationHistory'
+		End
 			
-		Exec PostLogEntry 'Error', @message, 'AddUpdateInstrumentOperationHistory'
 	END CATCH
 
 	return @myError
