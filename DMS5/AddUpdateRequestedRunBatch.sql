@@ -29,7 +29,8 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
-**
+**			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
+**			
 *****************************************************/
 (
 	@ID int output,
@@ -55,6 +56,8 @@ As
 
 	set @message = ''
 
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -189,6 +192,8 @@ As
 		End
 	end
 	
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- create temporary table for requests in list
 	---------------------------------------------------
@@ -248,6 +253,7 @@ As
 
 	if @count <> 0
 	begin
+		Set @logErrors = 0
 		set @message = 'Requested run list contains requests that do not exist'
 		RAISERROR (@message, 11, 25)
 	end
@@ -407,9 +413,11 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRunBatch'
+		
+		If @logErrors > 0
+			Exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRunBatch'
 	END CATCH
+	
 	return @myError
 
 

@@ -23,6 +23,7 @@ CREATE Procedure dbo.CreateXmlDatasetTriggerFile
 **			06/23/2015 mem - Added @Capture_Subfolder
 **			02/23/2017 mem - Added @LC_Cart_Config
 **			03/15/2017 mem - Log an error if @triggerFolderPath does not exist
+**			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -59,6 +60,8 @@ set nocount on
 	
 	Set @message = ''
 	
+	Declare @logErrors tinyint = 0
+		
 	If @Request Is Null
 	Begin
 		Set @myError = 70
@@ -66,6 +69,8 @@ set nocount on
 		Goto done
 	End
 
+	Set @logErrors = 1
+	
 	Declare @fso int
 	Declare @hr int
 	Declare @src varchar(255), @desc varchar(255)
@@ -175,6 +180,7 @@ set nocount on
 
 	If @result = 1
 	begin
+		Set @logErrors = 0
 		set @message = 'Trigger file already exists (' + @filePath + ').  Enter a different dataset name'
 		set @myError = 78
 	    goto DestroyFSO
@@ -244,8 +250,9 @@ Done:
 	Begin
 		If IsNull(@message, '') = ''
 			Set @message = 'Error code ' + Cast(@myError as varchar(9)) + ' in CreateXmlDatasetTriggerFile'
-			
-		Exec PostLogEntry 'Error', @message, 'CreateXmlDatasetTriggerFile'
+
+		If @logErrors > 0			
+			Exec PostLogEntry 'Error', @message, 'CreateXmlDatasetTriggerFile'
 	End
 	
 	return @myError

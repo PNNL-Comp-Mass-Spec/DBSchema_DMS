@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			               - Add parameters @seq, @showDebug, and @validateTotal
+**			04/28/2017 mem - Disable logging to T_Log_Entries for Raiserror messages
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -46,7 +47,9 @@ AS
 
 	If @showDebug > 0
 		Print 'Initial comment for SeqID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
-		
+	
+	Declare @logErrors tinyint = 1
+	
 	---------------------------------------------------
 	-- temp table to hold usage key-values
 	---------------------------------------------------
@@ -151,7 +154,10 @@ AS
 					SET @index = @index + LEN(@kw)
 					SET @eov = CHARINDEX(']', @comment, @index)
 					IF @eov = 0
+					Begin
+						Set @logErrors = 0
 						RAISERROR ('Could not find closing bracket for "%s"', 11, 4, @kw)
+					End
 
 					INSERT INTO #UT ( UsageText )VALUES (SUBSTRING(@comment, @bot, (@eov - @bot) + 1))
 
@@ -162,8 +168,11 @@ AS
 					SET @val = REPLACE(@val, ',', '')
 
 					If Try_Convert(int, @val) Is Null
+					Begin
+						Set @logErrors = 0
 						RAISERROR ('Percentage value for usage "%s" is not a valid integer', 11, 5, @kw)
-
+					End
+					
 					UPDATE #TU
 					SET UsageValue = @val
 					WHERE UniqueID = @uniqueID
@@ -188,8 +197,11 @@ AS
 		FROM #TU
 
 		IF @validateTotal > 0 And @total <> 100
+		Begin
+			Set @logErrors = 0
 			RAISERROR ('Total percentage (%d) does not add up to 100 for SeqID %d', 11, 7, @total, @seq)
-
+		End
+		
 		---------------------------------------------------
 		-- verify proposal (if user present)
 		---------------------------------------------------
@@ -201,8 +213,11 @@ AS
 		SELECT @hasProposal = COUNT(*) FROM #TU WHERE UsageKey = 'Proposal'
 		
 		IF (@hasUser > 0 ) AND (@hasProposal = 0)
+		Begin
+			Set @logErrors = 0
 			RAISERROR ('Proposal is needed if user allocation is specified; SeqID %d', 11, 6, @seq)
-				
+		End
+			
 		---------------------------------------------------
 		-- FUTURE: Vaidate proposal number?		
 		---------------------------------------------------
@@ -244,7 +259,8 @@ AS
 
 		SET @message = ERROR_MESSAGE() -- + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
 
-		Exec PostLogEntry 'Error', @message, 'ParseUsageText'
+		If @logErrors > 0
+			Exec PostLogEntry 'Error', @message, 'ParseUsageText'
 	END CATCH
 
 	RETURN @myError

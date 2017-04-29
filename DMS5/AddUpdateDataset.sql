@@ -87,6 +87,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			01/09/2017 mem - Pass @logDebugMessages to AddUpdateRequestedRun
 **			02/23/2017 mem - Add parameter @lcCartConfig
 **			03/06/2017 mem - Decreased maximum dataset name length from 90 characters to 80 characters
+**			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -989,6 +990,9 @@ As
 
 		If @rslt > 0 
 		Begin
+			-- CreateXmlDatasetTriggerFile should have already logged critical errors to T_Log_Entries
+			-- No need for this procedure to log the message again
+			Set @logErrors = 0
 			Set @msg = 'There was an error while creating the XML Trigger file: ' + @message
 			RAISERROR (@msg, 11, 55)
 		End

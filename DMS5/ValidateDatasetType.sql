@@ -28,6 +28,7 @@ CREATE Procedure dbo.ValidateDatasetType
 **			01/13/2016 mem - Add support for ETciD and EThcD spectra
 **			08/25/2016 mem - Do not change the dataset type from EI-HMS to HMS
 **						   - Do not update the dataset comment when auto-changing an HMS dataset
+**			04/28/2017 mem - Do not update the dataset comment when auto-changing an IMS dataset
 **    
 *****************************************************/
 (
@@ -123,7 +124,7 @@ As
 	-----------------------------------------------------------
 
 	SELECT 
-	       @ActualCountMS   = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
+	       @ActualCountMS = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
 	       @ActualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
 	       @ActualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
 	
@@ -543,7 +544,7 @@ FixDSType:
 	-- If a warning message was defined, display it
 	-----------------------------------------------------------
 	--
-	If @WarnMessage <> ''
+	If @WarnMessage <> '' And Not (@CurrentDatasetType Like 'IMS%' and @DSTypeAutoGen Like 'IMS%')
 	Begin
 		Set @message = @WarnMessage
 

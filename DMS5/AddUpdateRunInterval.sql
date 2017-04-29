@@ -22,6 +22,7 @@ CREATE PROCEDURE AddUpdateRunInterval
 **          03/21/2012 grk - modified to handle modified ParseUsageText
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			04/28/2017 mem - Disable logging to T_Log_Entries when ParseUsageText reports an error
 **   
 *****************************************************/
 (
@@ -41,6 +42,8 @@ As
 
 	set @message = ''
 
+	Declare @logErrors tinyint = 0
+	
 	Set @CallingUser = IsNull(@CallingUser, '')
 	if @CallingUser = ''
 		Set @CallingUser = suser_sname()
@@ -59,8 +62,10 @@ As
 	EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output
 	
 	IF @myError <> 0
-			RAISERROR (@message, 11, 10)
+		RAISERROR (@message, 11, 10)
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
@@ -118,8 +123,9 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
+		
+		If @logErrors > 0	
+			Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
 	END CATCH
 
 	return @myError
