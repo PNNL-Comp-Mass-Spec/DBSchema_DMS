@@ -32,6 +32,7 @@ CREATE Procedure DoDatasetOperation
 **			01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created 
 **			                 (duplicate jobs are not created)
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			05/04/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -60,6 +61,7 @@ As
 	
 	Declare @result int
 	Declare @ValidMode tinyint = 0
+	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
 
@@ -81,6 +83,8 @@ As
 		RAISERROR (@msg, 11, 1)
 	end
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- Schedule the dataset for predefined job processing
 	---------------------------------------------------
@@ -99,6 +103,8 @@ As
 			WHERE Dataset_ID = @datasetID AND State = 'New'
 			
 			Declare @elapsedHours float = DateDiff(minute, IsNull(@enteredMax, GetDate()), GetDate()) / 60.0
+			
+			Set @logErrors = 0
 			
 			If @elapsedHours >= 0.5
 			Begin
@@ -156,6 +162,7 @@ As
 
 		if @CurrentState <> 1
 		begin
+			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" must be in "new" state to be deleted by user'
 			RAISERROR (@msg, 11, 3)
 		end
@@ -203,6 +210,7 @@ As
 		--
 		if @CurrentState not in (5, 9) -- "Failed" or "Not ready"
 		begin
+			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@CurrentState as varchar(12))
 			RAISERROR (@msg, 11, 5)
 		end
@@ -210,6 +218,7 @@ As
 		-- Do not allow a reset if the dataset succeeded the first step of capture
 		If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (4,5))
 		begin
+			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset because it has already been successfully captured; please contact a system administrator for further assistance'
 			RAISERROR (@msg, 11, 5)
 		end
@@ -257,8 +266,13 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 			
-		Exec PostLogEntry 'Error', @message, 'DoDatasetOperation'
+		If @logErrors > 0
+		Begin
+			Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum
+			Exec PostLogEntry 'Error', @logMessage, 'DoDatasetOperation'
+		End
 	END CATCH
+	
 	return @myError
 
 GO
