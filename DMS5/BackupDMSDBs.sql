@@ -166,11 +166,11 @@ As
 			Goto Done
 		End
 	End
-
+	
 	Set @BackupFolderRoot = LTrim(RTrim(@BackupFolderRoot))
 	If Len(@BackupFolderRoot) = 0
 	Begin
-		Set @myError = 50000
+		Set @myError = 50002
 		Set @message = 'Backup path not defined via @BackupFolderRoot parameter, and could not be found in table T_MiscPaths'
 		exec PostLogEntry 'Error', @message, @procedureName
 		Goto Done
@@ -292,7 +292,7 @@ As
 	                  FROM #Tmp_DB_Backup_List ) AND
 	      NOT [Name] IN ( SELECT [Name]
 	                      FROM T_Database_Backups
-	                      WHERE Backup_Folder = @BackupFolderRoot )
+	               WHERE Backup_Folder = @BackupFolderRoot )
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 	
