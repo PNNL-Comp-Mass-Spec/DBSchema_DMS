@@ -25,6 +25,9 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Job_Plus_Step]  AS ((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0))) PERSISTED,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
+	[Holdoff_Interval_Minutes] [smallint] NULL,
+	[Next_Try] [datetime] NULL,
+	[Retry_Count] [smallint] NULL,
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,
@@ -114,6 +117,19 @@ GO
 SET ANSI_PADDING ON
 
 GO
+/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ON [dbo].[T_Job_Steps]
+(
+	[Step_Tool] ASC,
+	[State] ASC,
+	[Next_Try] ASC
+)
+INCLUDE ( 	[Job],
+	[Step_Number]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+
+GO
 /****** Object:  Index [IX_T_Job_Steps_StepTool_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_StepTool_State] ON [dbo].[T_Job_Steps]
 (
@@ -128,6 +144,12 @@ GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Triggered]  DEFAULT ((0)) FOR [Completion_Code]
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Tool_Version_ID]  DEFAULT ((1)) FOR [Tool_Version_ID]
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Holdoff_Interval_Minutes]  DEFAULT ((0)) FOR [Holdoff_Interval_Minutes]
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_NextTry]  DEFAULT (getdate()) FOR [Next_Try]
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_RetryCount]  DEFAULT ((0)) FOR [Retry_Count]
 GO
 ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Jobs] FOREIGN KEY([Job])
 REFERENCES [dbo].[T_Jobs] ([Job])

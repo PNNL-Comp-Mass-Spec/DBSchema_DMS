@@ -74,6 +74,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			11/18/2015 mem - Now using Actual_CPU_Load instead of CPU_Load
 **			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors and processor groups
 **						   - Added job step exclusion using T_Local_Processor_Job_Step_Exclusion
+**			05/04/2017 mem - Filter on column Next_Try
 **
 *****************************************************/
 (
@@ -93,17 +94,13 @@ CREATE PROCEDURE RequestStepTaskXML
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
-	declare @jobAssigned tinyint
-	set @jobAssigned = 0
+	declare @jobAssigned tinyint = 0
 
-	Declare @CandidateJobStepsToRetrieve int
-	Set @CandidateJobStepsToRetrieve = 15
-
+	Declare @CandidateJobStepsToRetrieve int = 15
+	
 	Declare @HoldoffWindowMinutes int
 	Declare @MaxSimultaneousJobCount int
 
@@ -145,8 +142,7 @@ As
 	-- Code 53000 is used for this
 	---------------------------------------------------
 	--
-	declare @jobNotAvailableErrorCode int
-	set @jobNotAvailableErrorCode = 53000
+	declare @jobNotAvailableErrorCode int = 53000
 
 	If @infoOnly > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Starting; make sure this is a valid processor'
@@ -442,7 +438,7 @@ As
 		     ) TP
 		       ON JS.Step_Tool = 'Results_Transfer' AND 
 		          TP.Machine = IsNull(TJ.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
-		WHERE JS.State = 2
+		WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 		ORDER BY 
 			Association_Type,
 			TJ.Priority,		-- Job_Priority
@@ -500,7 +496,7 @@ As
 				) TP
 				ON JS.Step_Tool = 'Results_Transfer' AND 
 					TP.Machine <> TJ.Storage_Server
-			WHERE JS.State = 2
+			WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 			ORDER BY 
 				Association_Type,
 				TJ.Priority,		-- Job_Priority
@@ -625,7 +621,9 @@ As
 		                        PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
-		WHERE JS.State = 2 AND NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
+		WHERE GETDATE() > JS.Next_Try AND
+		      JS.State = 2 AND 
+		      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
 			Tool_Priority, 
@@ -721,6 +719,7 @@ As
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE TP.CPUs_Available >= TP.CPU_Load AND
+			      GETDATE() > JS.Next_Try AND
 			      JS.State = 2 AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
@@ -813,6 +812,7 @@ As
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE TP.CPUs_Available >= TP.CPU_Load AND
+			      GETDATE() > JS.Next_Try AND
 			      JS.State = 2 AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
@@ -862,8 +862,7 @@ As
 	If @infoOnly > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for jobs with Association_Type 101'
 
-	declare @cpuLoadExceeded int
-	set @cpuLoadExceeded = 0
+	declare @cpuLoadExceeded int = 0
 	
 	If Exists (SELECT * FROM #Tmp_CandidateJobSteps WHERE Association_Type = 101)
 		Set @cpuLoadExceeded = 1
@@ -921,8 +920,7 @@ As
 	-- otherwise keep everything
 	---------------------------------------------------
 	--
-	Declare @AssociationTypeIgnoreThreshold int
-	Set @AssociationTypeIgnoreThreshold = 10
+	Declare @AssociationTypeIgnoreThreshold int = 10
 	
 	If @infoOnly = 0
 	Begin
@@ -990,8 +988,7 @@ As
 	-- set up transaction parameters
 	---------------------------------------------------
 	--
-	declare @transName varchar(32)
-	set @transName = 'RequestStepTask'
+	declare @transName varchar(32) = 'RequestStepTask'
 		
 	-- Start transaction
 	begin transaction @transName
@@ -1005,8 +1002,7 @@ As
 	--   Job number
 	---------------------------------------------------
 	--
-	declare @stepNumber int
-	set @stepNumber = 0
+	declare @stepNumber int = 0
 	--
 	SELECT TOP 1
 		@jobNumber =  JS.Job,
@@ -1068,7 +1064,7 @@ As
 											 ELSE JS.Actual_CPU_Load
 										END ) AS CPUs_Busy
 		                  FROM T_Job_Steps JS
-		 INNER JOIN T_Local_Processors LP
+		                       INNER JOIN T_Local_Processors LP
 		                         ON JS.Processor = LP.Processor_Name
 		                       INNER JOIN T_Step_Tools Tools
 		                         ON Tools.Name = JS.Step_Tool
@@ -1181,7 +1177,7 @@ As
 		       @processorName AS Processor
 		FROM #Tmp_CandidateJobSteps CJS
 		     INNER JOIN T_Jobs J
-		       ON CJS.Job = J.Job
+		 ON CJS.Job = J.Job
 		ORDER BY Seq
 	End
 
