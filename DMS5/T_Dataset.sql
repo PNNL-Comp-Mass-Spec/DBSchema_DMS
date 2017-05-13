@@ -159,6 +159,18 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstNameID_Dataset_DatasetID] ON [dbo].[
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Dataset_InstrumentID_StateID_include_DatasetName_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentID_StateID_include_DatasetName_ID] ON [dbo].[T_Dataset]
+(
+	[DS_instrument_name_ID] ASC,
+	[DS_state_ID] ASC
+)
+INCLUDE ( 	[Dataset_Num],
+	[Dataset_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
 /****** Object:  Index [IX_T_Dataset_InstrumentNameID_AcqTimeStart_include_DatasetID_DSRating] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Dataset_InstrumentNameID_AcqTimeStart_include_DatasetID_DSRating] ON [dbo].[T_Dataset]
 (
