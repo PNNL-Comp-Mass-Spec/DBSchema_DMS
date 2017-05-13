@@ -22,6 +22,7 @@ CREATE PROCEDURE CopyHistoryToJobMulti
 **			01/19/2015 mem - Fix ambiguous column reference
 **			11/18/2015 mem - Add Actual_CPU_Load
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			05/12/2017 mem - Add Remote_Info_ID
 **    
 *****************************************************/
 (
@@ -249,7 +250,8 @@ As
 			Completion_Code,
 			Completion_Message,
 			Evaluation_Code,
-			Evaluation_Message
+			Evaluation_Message,
+			Remote_Info_ID
 		)
 		SELECT H.Job,
 			H.Step_Number,
@@ -269,7 +271,8 @@ As
 			H.Completion_Code,
 			H.Completion_Message,
 			H.Evaluation_Code,
-			H.Evaluation_Message
+			H.Evaluation_Message,
+			H.Remote_Info_ID
 		FROM T_Job_Steps_History H
 			INNER JOIN T_Step_Tools ST
 			  ON H.Step_Tool = ST.Name
@@ -413,7 +416,7 @@ As
 			                                                T_Job_Step_Dependencies_History JSD ON JH.Job = JSD.Job
 			                                         ) AS JobsWithDependencies			                              
 			                                ON MD.Script = JobsWithDependencies.Script AND
-			                                   JobsWithDependencies.Job > MD.Job 
+			      JobsWithDependencies.Job > MD.Job 
 			           ) AS MatchQ
 			                  WHERE SimilarJobRank = 1 
 			     ) AS source

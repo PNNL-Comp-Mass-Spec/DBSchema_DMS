@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.GetJobStepParamsXML
 **			01/14/2009 mem - Increased the length of the Value entries extracted from T_Job_Parameters to be 2000 characters (nvarchar(4000)), Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714
 **			05/29/2009 mem - Added parameter @DebugMode
 **			12/04/2009 mem - Moved the code that defines the job parameters to GetJobStepParamsWork
+**			05/11/2017 mem - Add parameter @jobIsRunningRemote
 **    
 *****************************************************/
 (
@@ -27,6 +28,7 @@ CREATE PROCEDURE dbo.GetJobStepParamsXML
 	@stepNumber int,
 	@parameters varchar(max) output, -- job step parameters (in XML)
     @message varchar(512) output,
+    @jobIsRunningRemote tinyint = 0,
     @DebugMode tinyint = 0
 )
 AS
@@ -59,6 +61,9 @@ AS
 	if @myError <> 0
 		Goto Done
 
+	INSERT INTO #Tmp_JobParamsTable (Section, Name, Value)
+	VALUES ('StepParameters', 'RunningRemote', IsNull(@jobIsRunningRemote, 0))	
+	
 	If @DebugMode > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: populate @st table'
 

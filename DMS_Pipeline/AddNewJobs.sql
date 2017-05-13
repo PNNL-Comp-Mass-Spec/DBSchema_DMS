@@ -72,6 +72,7 @@ CREATE PROCEDURE AddNewJobs
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			11/07/2014 mem - No longer performing a full job reset for ICR2LS or LTQ_FTPek jobs where the job state is failed but the DMS state is new
 **			01/04/2016 mem - Truncate the job comment at the first semicolon for failed jobs being reset
+**			05/12/2017 mem - Update Next_Try and Remote_Info_ID
 **    
 *****************************************************/
 (
@@ -665,7 +666,7 @@ As
 		SET Comment = DJ.Comment,
 		    Special_Processing = DJ.Special_Processing
 		FROM T_Jobs J
-		     INNER JOIN #Tmp_DMSJobs DJ
+		  INNER JOIN #Tmp_DMSJobs DJ
 		       ON J.Job = DJ.Job
 		     INNER JOIN #Tmp_JobsToResumeOrReset RJ
 		       ON DJ.Job = RJ.Job
@@ -700,7 +701,9 @@ As
 		--
 		UPDATE T_Job_Steps
 		SET State = 1,					-- 1=waiting
-			Tool_Version_ID = 1			-- 1=Unknown
+			Tool_Version_ID = 1,		-- 1=Unknown
+			Next_Try = GetDate(),
+			Remote_Info_ID = 1			-- 1=Unknown
 		WHERE
 			State IN (6,7) AND			-- 6=Failed, 7=Holding
 			Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)

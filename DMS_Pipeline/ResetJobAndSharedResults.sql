@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.ResetJobAndSharedResults
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			05/12/2017 mem - Update Next_Try and Remote_Info_ID
 **    
 *****************************************************/
 (
@@ -259,7 +260,9 @@ As
 			
 			UPDATE T_Job_Steps
 			SET State = 1,					-- 1=waiting
-			    Tool_Version_ID = 1			-- 1=Unknown
+				Tool_Version_ID = 1,		-- 1=Unknown
+				Next_Try = GetDate(),
+				Remote_Info_ID = 1			-- 1=Unknown
 			WHERE Job = @Job AND State <> 1
 			
 			UPDATE T_Jobs

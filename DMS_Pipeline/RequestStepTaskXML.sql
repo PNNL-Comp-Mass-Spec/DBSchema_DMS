@@ -75,6 +75,9 @@ CREATE PROCEDURE RequestStepTaskXML
 **			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors and processor groups
 **						   - Added job step exclusion using T_Local_Processor_Job_Step_Exclusion
 **			05/04/2017 mem - Filter on column Next_Try
+**			05/11/2017 mem - Look for jobs in state 2 or 9
+**			                 Commit the transaction earlier to reduce the time that a HoldLock is on table T_Job_Steps
+**			                 Pass @jobIsRunningRemote to GetJobStepParamsXML
 **
 *****************************************************/
 (
@@ -340,8 +343,8 @@ As
 		       CASE WHEN @processorDoesGP > 0 THEN 'Yes' ELSE 'No' END AS Processor_Does_General_Proc
 		FROM @availableProcessorTools PT
 		     CROSS JOIN ( SELECT M.Total_CPUs,
-		                         M.CPUs_Available,
-		                         M.Total_Memory_MB,
+		   M.CPUs_Available,
+		       M.Total_Memory_MB,
 		                         M.Memory_Available
 		                  FROM T_Local_Processors LP
 		                     INNER JOIN T_Machines M
@@ -438,7 +441,7 @@ As
 		     ) TP
 		       ON JS.Step_Tool = 'Results_Transfer' AND 
 		          TP.Machine = IsNull(TJ.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
-		WHERE GETDATE() > JS.Next_Try AND JS.State = 2
+		WHERE GETDATE() > JS.Next_Try AND JS.State IN (2, 9)
 		ORDER BY 
 			Association_Type,
 			TJ.Priority,		-- Job_Priority
@@ -496,7 +499,7 @@ As
 				) TP
 				ON JS.Step_Tool = 'Results_Transfer' AND 
 					TP.Machine <> TJ.Storage_Server
-			WHERE GETDATE() > JS.Next_Try AND JS.State = 2
+			WHERE GETDATE() > JS.Next_Try AND JS.State IN (2, 9)
 			ORDER BY 
 				Association_Type,
 				TJ.Priority,		-- Job_Priority
@@ -519,7 +522,7 @@ As
 		-- and Sql Server gets confused about which indices to use (more likely on Sql Server 2005)
 		--
 		-- This can lead to huge "lock request/sec" rates, particularly when there are 
-		-- thouands of jobs in T_Jobs with state <> 8 and steps with state = 2
+		-- thouands of jobs in T_Jobs with state <> 8 and steps with state IN (2, 9)
 		-- *********************************************************************************
 		--
 		INSERT INTO #Tmp_CandidateJobSteps (
@@ -543,7 +546,7 @@ As
 			TJ.Storage_Server,
 			TP.Machine,
 			CASE
-				WHEN (TP.CPUs_Available < TP.CPU_Load) 
+				WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) 
 					-- No processing load available on machine
 					THEN 101
 				WHEN (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) 
@@ -622,7 +625,7 @@ As
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
 		WHERE GETDATE() > JS.Next_Try AND
-		      JS.State = 2 AND 
+		       JS.State IN (2, 9) AND
 		      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
@@ -718,9 +721,9 @@ As
 			    PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
-			WHERE TP.CPUs_Available >= TP.CPU_Load AND
+			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      JS.State = 2 AND
+			      JS.State IN (2, 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
@@ -811,9 +814,9 @@ As
 			                        PTGD.Tool_Name <> 'Results_Transfer'			-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
-			WHERE TP.CPUs_Available >= TP.CPU_Load AND
+			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      JS.State = 2 AND
+			      JS.State IN (2, 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
@@ -945,10 +948,10 @@ As
  			UPDATE #Tmp_CandidateJobSteps
 			SET Association_Type = 103,
 				Alternate_Specific_Processor = LJP.Alternate_Processor + 
-				                               CASE WHEN Alternate_Processor_Count > 1
+				         CASE WHEN Alternate_Processor_Count > 1
 				                               THEN ' and others'
 				                               ELSE ''
-				                               END
+				                         END
 			FROM #Tmp_CandidateJobSteps CJS
 			     INNER JOIN ( SELECT Job,
 			                         Min(Processor) AS Alternate_Processor,
@@ -1002,16 +1005,18 @@ As
 	--   Job number
 	---------------------------------------------------
 	--
-	declare @stepNumber int = 0
+	Declare @stepNumber int = 0
+	Declare @jobIsRunningRemote tinyint
 	--
 	SELECT TOP 1
 		@jobNumber =  JS.Job,
 		@stepNumber = JS.Step_Number,
-		@machine = CJS.Machine
+		@machine = CJS.Machine,
+		@jobIsRunningRemote = CASE WHEN JS.State = 9 THEN 1 ELSE 0 END
 	FROM   
 		T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN 
 		#Tmp_CandidateJobSteps CJS ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
-	WHERE JS.State = 2 And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
+	WHERE JS.State IN (2, 9) And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
 	ORDER BY Seq
   	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -1038,9 +1043,10 @@ As
 			State = 4, 
 			Processor = @processorName,
 			Start = GetDate(),
-			Finish = Null
-		WHERE  Job = @jobNumber
-		       AND Step_Number = @stepNumber
+			Finish = Null,
+			Actual_CPU_Load = CPU_Load
+		WHERE Job = @jobNumber AND
+		      Step_Number = @stepNumber
   		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -1051,6 +1057,16 @@ As
 			goto Done
 		end
 
+	end --<e>
+      
+	-- update was successful
+	commit transaction @transName
+
+	If @infoOnly > 1
+		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Transaction committed'
+
+	If @jobAssigned = 1 AND @infoOnly = 0
+	begin --<f>
 		---------------------------------------------------
 		-- Update CPU loading for this processor's machine
 		---------------------------------------------------
@@ -1059,8 +1075,10 @@ As
 		SET CPUs_Available = Total_CPUs - CPUQ.CPUs_Busy
 		FROM T_Machines Target
 		     INNER JOIN ( SELECT LP.Machine,
-		                         SUM(	CASE WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
-											 THEN IsNull(M.Total_CPUs, JS.CPU_Load)
+		                         SUM(	CASE WHEN @jobIsRunningRemote > 0 AND JS.Step_Number = @stepNumber 
+		                                       THEN 1
+		                                     WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
+											   THEN IsNull(M.Total_CPUs, JS.CPU_Load)
 											 ELSE JS.Actual_CPU_Load
 										END ) AS CPUs_Busy
 		                  FROM T_Job_Steps JS
@@ -1080,18 +1098,9 @@ As
 		--
 		if @myError <> 0
 		begin
-			rollback transaction @transName
 			set @message = 'Error updating CPU loading'
-			goto Done
 		end
-
-	end --<e>
-       
-	-- update was successful
-	commit transaction @transName
-
-	If @infoOnly > 1
-		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Transaction committed'
+    end --<f>
 
 	if @jobAssigned = 1
 	begin
@@ -1120,6 +1129,7 @@ As
 								@stepNumber,
 								@parameters output,
 								@message output,
+								@jobIsRunningRemote=@jobIsRunningRemote,
 								@DebugMode=@infoOnly
 
 		if @infoOnly <> 0 And Len(@message) = 0

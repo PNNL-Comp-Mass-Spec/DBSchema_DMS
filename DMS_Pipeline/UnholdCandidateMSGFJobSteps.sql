@@ -17,6 +17,7 @@ CREATE PROCEDURE UnholdCandidateMSGFJobSteps
 **
 **	Auth:	mem
 **	Date:	12/20/2011 mem - Initial version
+**			05/12/2017 mem - Update Tool_Version_ID, Next_Try, and Remote_Info_ID
 **    
 *****************************************************/
 (
@@ -66,7 +67,10 @@ As
 		-----------------------------------------------------------
 		
 		UPDATE dbo.T_Job_Steps
-		SET State = 2
+		SET State = 2,
+			Tool_Version_ID = 1,		-- 1=Unknown
+			Next_Try = GetDate(),
+			Remote_Info_ID = 1			-- 1=Unknown
 		FROM T_Job_Steps
 		     INNER JOIN ( SELECT TOP ( @JobsToRelease ) JS_MSGF.Job,
 		                                                JS_MSGF.Step_Number

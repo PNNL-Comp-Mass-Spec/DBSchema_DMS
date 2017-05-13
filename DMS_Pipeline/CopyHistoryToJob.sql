@@ -33,6 +33,7 @@ CREATE PROCEDURE CopyHistoryToJob
 **			03/10/2015 mem - Now adding default dependencies if a similar job cannot be found
 **			03/10/2015 mem - Now updating T_Job_Steps.Dependencies if it doesn't match the dependent steps listed in T_Job_Step_Dependencies
 **			11/18/2015 mem - Add Actual_CPU_Load
+**			05/12/2017 mem - Add Remote_Info_ID
 **    
 *****************************************************/
 (
@@ -194,7 +195,8 @@ As
 		Completion_Code,
 		Completion_Message,
 		Evaluation_Code,
-		Evaluation_Message
+		Evaluation_Message,
+		Remote_Info_ID
 	)
 	SELECT H.Job,
 	       H.Step_Number,
@@ -214,7 +216,8 @@ As
 	       H.Completion_Code,
 	       H.Completion_Message,
 	       H.Evaluation_Code,
-	       H.Evaluation_Message
+	       H.Evaluation_Message,
+	       H.Remote_Info_ID
 	FROM T_Job_Steps_History H
 	     INNER JOIN T_Step_Tools ST
 	       ON H.Step_Tool = ST.Name
@@ -307,7 +310,7 @@ As
 		                  WHERE Job > @job AND
 		                        Script = ( SELECT Script
 		                                   FROM T_Jobs_History
-		                                   WHERE Job = @job AND
+		        WHERE Job = @job AND
 		                                         Most_Recent_Entry = 1 ) 
 		                 ) SimilarJobQ
 		       ON H.Job = SimilarJobQ.Job

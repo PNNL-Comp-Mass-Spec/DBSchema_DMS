@@ -25,9 +25,9 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Job_Plus_Step]  AS ((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0))) PERSISTED,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
-	[Holdoff_Interval_Minutes] [smallint] NULL,
-	[Next_Try] [datetime] NULL,
-	[Retry_Count] [smallint] NULL,
+	[Next_Try] [datetime] NOT NULL,
+	[Retry_Count] [smallint] NOT NULL,
+	[Remote_Info_ID] [int] NULL,
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,
@@ -145,17 +145,22 @@ ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Triggered]  DEFA
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Tool_Version_ID]  DEFAULT ((1)) FOR [Tool_Version_ID]
 GO
-ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Holdoff_Interval_Minutes]  DEFAULT ((0)) FOR [Holdoff_Interval_Minutes]
-GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_NextTry]  DEFAULT (getdate()) FOR [Next_Try]
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_RetryCount]  DEFAULT ((0)) FOR [Retry_Count]
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Remote_Info_ID]  DEFAULT ((1)) FOR [Remote_Info_ID]
 GO
 ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Jobs] FOREIGN KEY([Job])
 REFERENCES [dbo].[T_Jobs] ([Job])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Jobs]
+GO
+ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Remote_Info] FOREIGN KEY([Remote_Info_ID])
+REFERENCES [dbo].[T_Remote_Info] ([Remote_Info_ID])
+GO
+ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Remote_Info]
 GO
 ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Signatures] FOREIGN KEY([Signature])
 REFERENCES [dbo].[T_Signatures] ([Reference])

@@ -43,8 +43,9 @@ CREATE PROCEDURE CreateJobSteps
 **			10/17/2011 mem - Now populating column Memory_Usage_MB using UpdateJobStepMemoryUsage
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			09/14/2015 mem - Now passing @DebugMode to MoveJobsToMainTables
-**						   - Verifying that T_Step_Tool_Versions has Tool_Version_ID 1 (unknown)
-**			11/09/2015 mem - Assuring that Dataset_ID is only if the dataset name is 'Aggregation'
+**						   - Verify that T_Step_Tool_Versions has Tool_Version_ID 1 (unknown)
+**			11/09/2015 mem - Assure that Dataset_ID is only if the dataset name is 'Aggregation'
+**			05/12/2017 mem - Verify that T_Remote_Info has Remote_Info_ID 1 (unknown)
 **    
 *****************************************************/
 (
@@ -303,6 +304,20 @@ As
 		Values (1, 'Unknown')
 
 		Set IDENTITY_INSERT T_Step_Tool_Versions OFF
+	End
+
+	---------------------------------------------------
+	-- Make sure T_Remote_Info as the "Unknown" version (ID=1)
+	---------------------------------------------------
+	--	
+	If Not Exists (Select * from T_Remote_Info WHERE Remote_Info_ID = 1)
+	Begin
+		Set IDENTITY_INSERT T_Remote_Info ON
+
+		Insert Into T_Remote_Info (Remote_Info_ID, Remote_Info)
+		Values (1, 'Unknown')
+
+		Set IDENTITY_INSERT T_Remote_Info OFF
 	End
 
 	---------------------------------------------------

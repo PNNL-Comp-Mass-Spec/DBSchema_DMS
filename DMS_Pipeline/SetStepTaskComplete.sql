@@ -31,6 +31,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			06/17/2016 mem - Add missing space in log message
 **			06/20/2016 mem - Include the completion code description in logged messages
 **			12/02/2016 mem - Lookup step tools with shared results in T_Step_Tools when initializing @SharedResultStep
+**			05/11/2017 mem - Add support for @completionCode 25 (RUNNING_REMOTE) and columns Next_Try and Retry_Count
+**			05/12/2017 mem - Add parameter @remoteInfo, update Remote_Info_ID in T_Job_Steps, and update T_Remote_Info
 **
 *****************************************************/
 (
@@ -40,45 +42,39 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
     @completionMessage varchar(256) = '',
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
-	@organismDBName varchar(128) = ''
+	@organismDBName varchar(128) = '',
+	@remoteInfo varchar(900) = ''			-- Remote server info for jobs with @completionCode = 25
 )
 As
 	Set nocount on
 	
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	Declare @message varchar(512)
-	Set @message = ''
+	Declare @message varchar(512) = ''
 	
 	---------------------------------------------------
 	-- get current state of this job step
 	---------------------------------------------------
 	--
-	Declare @processor varchar(64)
-	Declare @state tinyint
-	Declare @cpuLoad smallint
-	Declare @MemoryUsageMB int
-	Declare @machine varchar(64)
-	Declare @stepTool varchar(64)
-	--
-	Set @processor = ''
-	Set @state = 0
-	Set @cpuLoad = 0
-	Set @MemoryUsageMB = 0
-	Set @machine = ''
+	Declare @processor varchar(64) = ''
+	Declare @state tinyint = 0
+	Declare @cpuLoad smallint = 0
+	Declare @memoryUsageMB int = 0
+	Declare @machine varchar(64) = ''
+	Declare @stepTool varchar(64) = ''
+	Declare @retryCount int = 0
 	--
 	SELECT @machine = LP.Machine,
 	       @cpuLoad = CASE WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
 						   THEN IsNull(M.Total_CPUs, 1)
 						   ELSE IsNull(JS.Actual_CPU_Load, 1)
 					  END,
-	       @MemoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
+	       @memoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
 	       @state = JS.State,
 	       @processor = JS.Processor,
-	       @stepTool = JS.Step_Tool
+	       @stepTool = JS.Step_Tool,
+	       @retryCount = JS.Retry_Count
 	FROM T_Job_Steps JS
 	     INNER JOIN T_Local_Processors LP
 	       ON LP.Processor_Name = JS.Processor
@@ -120,6 +116,7 @@ As
 	Declare @handleSkippedStep tinyint = 0
 	Declare @skipLCMSFeatureFinder tinyint = 0
 	Declare @completionCodeDescription varchar(64) = 'Unknown completion reason'
+	Declare @nextTry DateTime = GetDate()
 	
 	If @completionCode = 0
 	Begin
@@ -158,19 +155,46 @@ As
 			End
 		End
 		
+		If @completionCode = 25  -- RUNNING_REMOTE
+		Begin
+			Set @stepState = 9  -- Running_Remote			
+			Set @completionCodeDescription = 'Running remote'
+			
+			Declare @holdoffIntervalMinutes int
+			
+			SELECT @holdoffIntervalMinutes = Holdoff_Interval_Minutes
+			FROM T_Step_Tools
+			WHERE [Name] = @stepTool
+
+			If IsNull(@holdoffIntervalMinutes, 0) < 1
+				Set @holdoffIntervalMinutes = 5
+			
+			Set @retryCount = @retryCount + 1
+			If (@retryCount < 1)
+				Set @retryCount = 1
+				
+			-- Wait longer after each check of remote status, with a maximum holdoff interval of 90 minutes
+			-- If @holdoffIntervalMinutes is 5, will wait 5 minutes initially, then wait 10 minutes after the next check, then 15, etc.
+			Declare @adjustedHoldoffInterval int = @holdoffIntervalMinutes + (@retryCount - 1) * @holdoffIntervalMinutes
+			
+			If @adjustedHoldoffInterval > 90
+				Set @adjustedHoldoffInterval = 90
+			
+			Set @nextTry = DateAdd(minute, @adjustedHoldoffInterval, GetDate())
+		End
+		
 		If @stepState = 0
 		Begin
 			Set @stepState = 6 -- fail
 			Set @completionCodeDescription = 'General error'
 		End
 	End
-	
+
 	---------------------------------------------------
 	-- Set up transaction parameters
 	---------------------------------------------------
 	--
-	Declare @transName varchar(32)
-	Set @transName = 'SetStepTaskComplete'
+	Declare @transName varchar(32) = 'SetStepTaskComplete'
 		
 	-- Start transaction
 	Begin transaction @transName
@@ -185,7 +209,9 @@ As
 		   Completion_Code = @completionCode,
 		   Completion_Message = @completionMessage,
 		   Evaluation_Code = @evaluationCode,
-		   Evaluation_Message = @evaluationMessage
+		   Evaluation_Message = @evaluationMessage,
+		   Next_Try = @nextTry,
+		   Retry_Count = @retryCount
 	WHERE Job = @job AND 
 	      Step_Number = @step
  	--
@@ -204,9 +230,8 @@ As
 	--
 	UPDATE T_Machines
 	Set CPUs_Available = CPUs_Available + @cpuLoad,
-	    Memory_Available = Memory_Available + @MemoryUsageMB
+	    Memory_Available = Memory_Available + @memoryUsageMB
 	WHERE (Machine = @machine)
-
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -217,6 +242,73 @@ As
 		Goto Done
 	End
 
+	---------------------------------------------------
+	-- Update T_Remote_Info if appropriate
+	---------------------------------------------------
+	--
+	If IsNull(@remoteInfo, '') <> ''
+	Begin
+		Declare @remoteInfoID int
+		
+		SELECT @remoteInfoID = Remote_Info_ID
+		FROM T_Remote_Info
+		WHERE Remote_Info = @remoteInfo
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myRowCount = 0
+		Begin
+			---------------------------------------------------
+			-- Add a new entry to T_Remote_Info
+			-- Use a Merge statement to avoid the use of an explicit transaction
+			---------------------------------------------------		
+			--
+			MERGE T_Remote_Info AS target
+			USING 
+				(SELECT @remoteInfo AS Remote_Info
+				) AS Source ( Remote_Info)
+			ON (target.Remote_Info = source.Remote_Info)
+			WHEN Not Matched THEN
+				INSERT (Remote_Info, Entered)
+				VALUES (source.Remote_Info, GetDate());
+
+
+			SELECT @remoteInfoID = Remote_Info_ID
+			FROM T_Remote_Info
+			WHERE Remote_Info = @remoteInfo
+			
+		End
+		
+		If IsNull(@remoteInfoID, 0) = 0
+		Begin
+			---------------------------------------------------
+			-- Something went wrong; @remoteInfo wasn't found in T_Remote_Info 
+			-- and we were unable to add it with the Merge statement
+			---------------------------------------------------
+			
+			UPDATE T_Job_Steps
+			SET Remote_Info_ID = 1
+			WHERE Job = @job AND
+				Step_Number = @step AND
+				Remote_Info_ID IS NULL
+		End
+		Else
+		Begin
+			
+			UPDATE T_Job_Steps
+			SET Remote_Info_ID = @remoteInfoID
+			WHERE Job = @job AND
+			      Step_Number = @step
+			
+			UPDATE T_Remote_Info
+			SET Most_Recent_Job = @Job,
+			    Last_Used = GetDate()
+			WHERE Remote_Info_ID = @remoteInfoID
+					
+		End
+				
+	End
+	
 	If @resetSharedResultStep <> 0
 	Begin
 		-- Reset the the DTA_Gen, DTA_Refinery, Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen, ProMex step just upstream from this step
@@ -273,7 +365,9 @@ As
 
 		UPDATE T_Job_Steps
 		Set State = 2,					-- 2=Enabled
-			Tool_Version_ID = 1			-- 1=Unknown
+			Tool_Version_ID = 1,		-- 1=Unknown
+			Next_Try = GetDate(),
+			Remote_Info_ID = 1			-- 1=Unknown
 		WHERE Job = @job AND 
 			  Step_Number = @SharedResultStep And
 			  State <> 4                -- Do not reset the step if it is already running

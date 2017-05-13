@@ -24,7 +24,8 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[JobStepSavedCombo]  AS ((((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0)))+'.')+CONVERT([varchar](32),[Saved],(126))) PERSISTED,
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Tool_Version_ID] [int] NULL,
-	[Memory_Usage_MB] [int] NULL
+	[Memory_Usage_MB] [int] NULL,
+	[Remote_Info_ID] [int] NULL
 ) ON [PRIMARY]
 
 GO
