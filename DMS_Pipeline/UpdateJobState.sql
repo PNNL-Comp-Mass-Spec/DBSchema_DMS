@@ -92,6 +92,7 @@ CREATE PROCEDURE UpdateJobState
 **			05/04/2015 mem - Fix bug in logic that conditionally sets the job state to 7
 **			12/31/2015 mem - Setting job state in DMS to 14 if the job comment contains "No results in DeconTools Isos file"
 **			09/15/2016 mem - Update jobs in DMS5 that are in state 1=New, but are actually in progress
+**			05/13/2017 mem - Treat step state 9 (Running_Remote) as "In progress"
 **    
 *****************************************************/
 (
@@ -186,7 +187,7 @@ As
 	End
 	
 	---------------------------------------------------
-	-- determine what current state of active jobs should be
+	-- Determine what current state of active jobs should be
 	-- and get list of the ones that need be changed
 	---------------------------------------------------
 	--
@@ -211,12 +212,12 @@ As
 		  J.Results_Folder_Name,
 		  J.Organism_DB_Name,
 		  CASE 
-			WHEN JS_Stats.Failed > 0 THEN 5										-- Failed
+			WHEN JS_Stats.Failed > 0 THEN 5										-- Job Failed
 			WHEN JS_Stats.FinishedOrSkipped = Total THEN 
 				CASE WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7	-- No Intermediate Files Created (all steps skipped)
-				Else 4															-- Complete
+				Else 4															-- Job Complete
 				End			
-			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2					-- In Progress
+			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2					-- Job In Progress
 			Else J.State
 		  End AS NewState,
 		  J.Dataset,
@@ -229,7 +230,7 @@ As
 				JS.Job,
 				COUNT(*) AS Total,
 				SUM(CASE 
-					WHEN JS.State IN (3,4,5) THEN 1
+					WHEN JS.State IN (3,4,5,9) THEN 1
 					ELSE 0
 					END) AS StartedFinishedOrSkipped,
 				SUM(CASE 
@@ -247,7 +248,7 @@ As
 			FROM T_Job_Steps JS
 			     INNER JOIN T_Jobs J
 			       ON JS.Job = J.Job
-			WHERE (J.State IN (1,2,5,20))	-- New, in progress, failed, or resuming state
+			WHERE (J.State IN (1,2,5,20))	-- Job state new, in progress, failed, or resuming state
 			GROUP BY JS.Job, J.State
 		   ) AS JS_Stats 
 		   INNER JOIN T_Jobs AS J
@@ -417,7 +418,7 @@ As
 
 			---------------------------------------------------
 			-- If this job has a data extraction step with message "No results above threshold",
-			--  then change the job state to 14=No Export
+			-- change the job state to 14=No Export
 			---------------------------------------------------
 			--
 			If @NewDMSJobState = 4		-- Complete
@@ -432,7 +433,7 @@ As
 
 			---------------------------------------------------
 			-- If this job has a DeconTools step with message "No results in DeconTools Isos file",
-			--  then change the job state to 14=No Export
+			-- change the job state to 14=No Export
 			---------------------------------------------------
 			--
 			If @NewDMSJobState = 4		-- Complete

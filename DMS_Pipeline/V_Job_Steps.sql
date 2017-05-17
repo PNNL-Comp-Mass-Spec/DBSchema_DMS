@@ -47,6 +47,11 @@ SELECT	JS.Job,
 		JS.Completion_Message,
 		JS.Evaluation_Code,
 		JS.Evaluation_Message,
+		JS.Next_Try,
+		JS.Retry_Count,
+		JS.Remote_Info_ID,
+		JS.Remote_Info,
+		JS.Remote_Timestamp,
 		JS.Dataset_ID,
 		JS.Transfer_Folder_Path
 FROM (
@@ -74,6 +79,11 @@ FROM (
 		   JS.Completion_Message,
 		   JS.Evaluation_Code,
 		   JS.Evaluation_Message,
+		   JS.Next_Try,
+		   JS.Retry_Count,
+		   JS.Remote_Info_ID,
+		   RI.Remote_Info,		
+		   JS.Remote_Timestamp,
 		   J.Transfer_Folder_Path,
 		   JS.Tool_Version_ID,
 		   STV.Tool_Version
@@ -86,10 +96,11 @@ FROM (
 		   ON J.Script = S.Script
 		 LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV 
 		   ON JS.Tool_Version_ID = STV.Tool_Version_ID
+		 LEFT OUTER JOIN dbo.T_Remote_Info RI 
+		   ON JS.Remote_Info_ID = RI.Remote_Info_ID
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps] TO [DDL_Viewer] AS [dbo]

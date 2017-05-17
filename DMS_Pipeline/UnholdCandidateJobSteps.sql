@@ -16,6 +16,7 @@ CREATE PROCEDURE UnholdCandidateJobSteps
 **	Auth:	mem
 **	Date:	12/20/2011 mem - Initial version
 **			04/24/2014 mem - Added parameter @MaxCandidatesPlusJobs
+**			05/13/2017 mem - Add step state 9 (Running_Remote)
 **    
 *****************************************************/
 (
@@ -27,14 +28,11 @@ CREATE PROCEDURE UnholdCandidateJobSteps
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowcount int
-	set @myRowcount = 0
-	set @myError = 0
-
+	Declare @myError int = 0
+	Declare @myRowcount int = 0
 
 	Declare @CandidateSteps int = 0
-	Declare @CandidatesPlusJobs int = 0
+	Declare @CandidatesPlusRunning int = 0
 	Declare @JobsToRelease int = 0
 	
 	-----------------------------------------------------------
@@ -51,19 +49,19 @@ As
 	--
 	SELECT @CandidateSteps = COUNT(*)
 	FROM dbo.T_Job_Steps
-	WHERE State = 2 AND
-	      step_tool = @StepTool
+	WHERE State IN (2, 9) AND
+	      Step_Tool = @StepTool
 
-	SELECT @CandidatesPlusJobs = COUNT(*)
+	SELECT @CandidatesPlusRunning = COUNT(*)
 	FROM dbo.T_Job_Steps
-	WHERE State In (2, 4) AND
-	      step_tool = @StepTool
+	WHERE State In (2, 4, 9) AND
+	      Step_Tool = @StepTool
 	
 	-----------------------------------------------------------
 	-- Compute the number of jobs that need to be released (un-held)
 	-----------------------------------------------------------
 	
-	Set @JobsToRelease = @MaxCandidatesPlusJobs - @CandidatesPlusJobs
+	Set @JobsToRelease = @MaxCandidatesPlusJobs - @CandidatesPlusRunning
 	If @JobsToRelease > @TargetCandidates
 		Set @JobsToRelease = @TargetCandidates
 
@@ -94,7 +92,7 @@ As
 	End
 	Else
 	Begin
-		set @message = 'Already have ' + CONVERT(varchar(12), @CandidateSteps) + ' candidate jobs and ' + Convert(varchar(12), @CandidatesPlusJobs - @CandidateSteps) + ' running jobs; nothing to do'
+		set @message = 'Already have ' + CONVERT(varchar(12), @CandidateSteps) + ' candidate jobs and ' + Convert(varchar(12), @CandidatesPlusRunning - @CandidateSteps) + ' running jobs; nothing to do'
 	End
 
 	Return @myError

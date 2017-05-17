@@ -233,18 +233,18 @@ As
 		goto Done
 	end
 
-	-- Change any waiting or enabled steps to state 7 (holding)
+	-- Change any waiting, enabled, or running steps to state 7 (holding)
 	-- This is a safety feature to avoid job steps from starting inadvertently
 	--
 	UPDATE T_Job_Steps
 	SET State = 7
 	WHERE Job = @Job AND
-	      State IN (1, 2)
+	      State IN (1, 2, 4, 9)
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
    	---------------------------------------------------
-	-- copy parameters
+	-- Copy parameters
 	---------------------------------------------------
 	--
 	INSERT INTO T_Job_Parameters (

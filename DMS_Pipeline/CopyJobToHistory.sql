@@ -24,6 +24,7 @@ CREATE PROCEDURE CopyJobToHistory
 **			03/26/2013 mem - Added column Comment
 **			01/20/2014 mem - Added T_Job_Step_Dependencies_History
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			05/13/2017 mem - Add Remote_Info_Id
 **    
 *****************************************************/
 (
@@ -155,7 +156,8 @@ As
 		Evaluation_Code,
 		Evaluation_Message,
 		Saved,
-		Tool_Version_ID
+		Tool_Version_ID,
+		Remote_Info_Id
 	)
 	SELECT 
 		Job,
@@ -175,7 +177,8 @@ As
 		Evaluation_Code,
 		Evaluation_Message,
 		@saveTime,
-		Tool_Version_ID
+		Tool_Version_ID,
+		Remote_Info_Id
 	FROM T_Job_Steps
 	WHERE Job = @job
  	--

@@ -33,6 +33,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			12/02/2016 mem - Lookup step tools with shared results in T_Step_Tools when initializing @SharedResultStep
 **			05/11/2017 mem - Add support for @completionCode 25 (RUNNING_REMOTE) and columns Next_Try and Retry_Count
 **			05/12/2017 mem - Add parameter @remoteInfo, update Remote_Info_ID in T_Job_Steps, and update T_Remote_Info
+**			05/15/2017 mem - Add parameter @remoteTimestamp, which is used to define the remote info file in the TaskQueuePath folder
 **
 *****************************************************/
 (
@@ -43,11 +44,12 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
 	@organismDBName varchar(128) = '',
-	@remoteInfo varchar(900) = ''			-- Remote server info for jobs with @completionCode = 25
+	@remoteInfo varchar(900) = '',			-- Remote server info for jobs with @completionCode = 25
+	@remoteTimestamp varchar(24) = null		-- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
 )
 As
 	Set nocount on
-	
+
 	Declare @myError int = 0
 	Declare @myRowCount int = 0
 	
@@ -211,7 +213,8 @@ As
 		   Evaluation_Code = @evaluationCode,
 		   Evaluation_Message = @evaluationMessage,
 		   Next_Try = @nextTry,
-		   Retry_Count = @retryCount
+		   Retry_Count = @retryCount,
+		   Remote_Timestamp= @remoteTimestamp
 	WHERE Job = @job AND 
 	      Step_Number = @step
  	--
@@ -311,7 +314,8 @@ As
 	
 	If @resetSharedResultStep <> 0
 	Begin
-		-- Reset the the DTA_Gen, DTA_Refinery, Mz_Refinery, MSXML_Gen, MSXML_Bruker, or PBF_Gen, ProMex step just upstream from this step
+		-- Possibly reset the the DTA_Gen, DTA_Refinery, Mz_Refinery,
+		-- MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step just upstream from this step
 		
 		Declare @SharedResultStep int = -1
 		
@@ -363,6 +367,8 @@ As
 
 		Exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
 
+		-- Reset shared results step just upstream from this step
+		--
 		UPDATE T_Job_Steps
 		Set State = 2,					-- 2=Enabled
 			Tool_Version_ID = 1,		-- 1=Unknown
@@ -370,7 +376,7 @@ As
 			Remote_Info_ID = 1			-- 1=Unknown
 		WHERE Job = @job AND 
 			  Step_Number = @SharedResultStep And
-			  State <> 4                -- Do not reset the step if it is already running
+			  Not State IN (4, 9)       -- Do not reset the step if it is already running
 
 		UPDATE T_Job_Step_Dependencies
 		SET Evaluated = 0,
@@ -419,7 +425,7 @@ As
 	
 	If @skipLCMSFeatureFinder = 1
 	Begin
-		-- Skip any LCMSFeatureFinder for this job
+		-- Skip any LCMSFeatureFinder steps for this job
 		UPDATE T_Job_Steps
 		SET State = 3
 		WHERE Job = @job AND

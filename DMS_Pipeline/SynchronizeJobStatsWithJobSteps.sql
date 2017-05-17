@@ -66,6 +66,8 @@ As
 	WHERE (J.State = 4 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
 	      J.Start > JS.Start
 	GROUP BY J.Job
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
 	UPDATE #TmpJobsToUpdate
@@ -83,6 +85,8 @@ As
 	                  GROUP BY J.Job 
 	                ) SourceQ
 	       ON #TmpJobsToUpdate.Job = SourceQ.Job
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
 	If @InfoOnly <> 0
@@ -107,6 +111,9 @@ As
 		FROM T_Jobs J
 		     INNER JOIN #TmpJobsToUpdate JTU
 		       ON J.Job = JTU.Job
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
 	End
 
 	---------------------------------------------------

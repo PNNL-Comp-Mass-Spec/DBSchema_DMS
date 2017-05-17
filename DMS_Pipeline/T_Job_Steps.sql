@@ -28,6 +28,7 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Next_Try] [datetime] NOT NULL,
 	[Retry_Count] [smallint] NOT NULL,
 	[Remote_Info_ID] [int] NULL,
+	[Remote_Timestamp] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,

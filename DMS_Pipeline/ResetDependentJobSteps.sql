@@ -7,7 +7,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 /****************************************************
 **
 **	Desc:	Resets entries in T_Job_Steps and T_Job_Step_Dependencies for the given jobs
-**			for which the job steps that are complete yet depend a job step that is enabled, 
+**			for which the job steps that are complete yet depend on a job step that is enabled, 
 **			in progress, or completed after the given job step finished
 **
 **	Auth:	mem
@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/12/2017 mem - Update Next_Try and Remote_Info_ID
+**			05/13/2017 mem - Treat state 9 (Running_Remote) as "In progress"
 **    
 *****************************************************/
 (
@@ -98,7 +99,7 @@ As
 		      JS.State <> 3 AND
 		      JS.Job IN ( SELECT Job
 		                  FROM #Tmp_Jobs ) AND
-		      (JS_Target.State IN (0, 1, 2, 4) OR
+		      (JS_Target.State IN (0, 1, 2, 4, 9) OR
 		       JS_Target.Start > JS.Finish)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -138,8 +139,7 @@ As
 			          JS.Step_Number = JR.Step
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
-			
-			
+						
 			Commit Tran @JobResetTran
 		End	
 

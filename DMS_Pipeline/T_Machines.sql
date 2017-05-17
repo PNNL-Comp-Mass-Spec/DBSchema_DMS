@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Machines](
 	[ProcTool_Group_ID] [int] NOT NULL,
 	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Enabled] [tinyint] NOT NULL,
+	[MonitorRunningRemote] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Machines] PRIMARY KEY CLUSTERED 
 (
 	[Machine] ASC
@@ -32,6 +33,8 @@ GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_ProcTool_Group_ID]  DEFAULT ((0)) FOR [ProcTool_Group_ID]
 GO
 ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_Enabled]  DEFAULT ((1)) FOR [Enabled]
+GO
+ALTER TABLE [dbo].[T_Machines] ADD  CONSTRAINT [DF_T_Machines_MonitorRunningRemote]  DEFAULT ((1)) FOR [MonitorRunningRemote]
 GO
 ALTER TABLE [dbo].[T_Machines]  WITH CHECK ADD  CONSTRAINT [FK_T_Machines_T_Processor_Tool_Groups] FOREIGN KEY([ProcTool_Group_ID])
 REFERENCES [dbo].[T_Processor_Tool_Groups] ([Group_ID])

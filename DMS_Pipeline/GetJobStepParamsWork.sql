@@ -33,34 +33,41 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			02/16/2015 mem - Now storing T_Step_Tools.Param_File_Storage_Path if defined
 **			11/20/2015 mem - Now including CPU_Load
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
-**			06/20/2016 mem - Update procedure name shown when using @DebugMode
+**			06/20/2016 mem - Update procedure name shown when using @debugMode
+**			05/13/2017 mem - Include info from T_Remote_Info if Remote_Info_ID is not 1
+**			05/15/2017 mem - Include Remote_Timestamp if defined
 **    
 *****************************************************/
 (
 	@jobNumber int,
 	@stepNumber int,
     @message varchar(512) = '' output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
 	set nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	set @myError = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Declare @stepTool varchar(64) = ''
 	Declare @inputFolderName varchar(128) = ''
 	Declare @outputFolderName varchar(128) = ''
-	Declare @DataPackageID int = 0
+	
+	Declare @dataPackageID int = 0
 
+	Declare @remoteInfoId int
+	Declare @remoteInfo varchar(900) = ''
+
+	Declare @remoteTimestamp varchar(24)
+	
 	set @myRowCount = 0
 	
 	-- Clear the outputs
 	set @message = ''
-	set @DebugMode = IsNull(@DebugMode, 0)
+	set @debugMode = IsNull(@debugMode, 0)
 	
-	If @DebugMode <> 0
+	If @debugMode <> 0
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get basic job step parameters'
 		
 	---------------------------------------------------
@@ -70,8 +77,10 @@ AS
 	SELECT
 		@stepTool = Step_Tool, 
 		@inputFolderName = Input_Folder_Name, 
-		@outputFolderName = Output_Folder_Name
-	FROM  T_Job_Steps
+		@outputFolderName = Output_Folder_Name,
+		@remoteInfoId = Remote_Info_ID,
+		@remoteTimestamp = Remote_Timestamp
+	FROM T_Job_Steps
 	WHERE
 		Job = @jobNumber AND 
 		Step_Number = @stepNumber
@@ -91,25 +100,37 @@ AS
 		goto Done
 	end
 
-	If @DebugMode > 1
+	If @debugMode > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get shared results folder name list'
 
 	---------------------------------------------------
 	-- Lookup data package ID in T_Jobs
 	---------------------------------------------------
 	--
-	SELECT @DataPackageID = DataPkgID
+	SELECT @dataPackageID = DataPkgID
 	FROM T_Jobs 
 	WHERE Job = @jobNumber
 
-	Set @DataPackageID = IsNull(@DataPackageID, 0)
+	Set @dataPackageID = IsNull(@dataPackageID, 0)
+	
+	---------------------------------------------------
+	-- Lookup server info in T_Remote_Info if @remoteInfoId > 1
+	---------------------------------------------------
+	--
+	If IsNull(@remoteInfoId, 0) > 1
+	Begin		
+		SELECT @remoteInfo = Remote_Info
+		FROM T_Remote_Info 
+		WHERE Remote_Info_ID = @remoteInfoId
+
+		Set @remoteInfo = IsNull(@remoteInfo, '')
+	End
 	
 	---------------------------------------------------
 	-- Get shared results folder name list
 	-- Be sure to sort by increasing step number so that the newest shared result folder is last
 	---------------------------------------------------
-	Declare @sharedFolderList varchar(1024)
-	set @sharedFolderList = Null
+	Declare @sharedFolderList varchar(1024) = Null
 	--
 	SELECT @sharedFolderList = COALESCE(@sharedFolderList + ', ', 
 	                                    ISNULL(@sharedFolderList, '')) + 
@@ -128,7 +149,7 @@ AS
 		goto Done
 	end
 
-	If @DebugMode > 1
+	If @debugMode > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job step parameters'
 
 	---------------------------------------------------
@@ -163,7 +184,6 @@ AS
 	      (TSD.Step_Number = @stepNumber) AND
 	      TSD.Enable_Only = 0
 
-
 	---------------------------------------------------
 	-- Get job step parameters
 	---------------------------------------------------
@@ -181,13 +201,25 @@ AS
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepInputFolderName', @stepInputFolderName)
 
 	If IsNull(@paramFileStoragePath, '') <> ''
+	Begin
 		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
-
+	End
+	
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'CPU_Load', @CpuLoad)
 
-	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @DataPackageID)
+	If IsNull(@remoteInfo, '') <> ''
+	Begin
+		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'RemoteInfo', @remoteInfo)
+	End
 
-	If @DebugMode <> 0
+	If IsNull(@remoteTimestamp, '') <> ''
+	Begin
+		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Remote_Timestamp', @remoteTimestamp)
+	End
+	
+	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
+	
+	If @debugMode <> 0
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job parameters using cross apply'
 
 	---------------------------------------------------
@@ -202,7 +234,7 @@ AS
 	-- Prior to June 2012, step locking would use notation like this:
 	--  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="2" />
 	--
-	-- We now use notatio like this:
+	-- We now use notation like this:
 	--  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="Yes (2)" />
 	--
 	-- Thus, the following uses a series of REPLACE commands to remove text from the Step attribute, 
@@ -212,20 +244,20 @@ AS
 	--   ")"
 	
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], [Value])	
-	SELECT Section, Name, [Value]	
-	FROM ( SELECT Section,
-	             Name,
+	SELECT [Section], [Name], [Value]	
+	FROM ( SELECT [Section],
+	              [Name],
 	              [Value],
 	              IsNull(Try_Convert(int, Step), 0) AS StepNumber
-	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
-	                     xmlNode.value('@Name', 'nvarchar(256)') AS Name,
+	       FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS [Section],
+	                     xmlNode.value('@Name', 'nvarchar(256)') AS [Name],
 	                     xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
 	     REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
 	              FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
 	              WHERE T_Job_Parameters.Job = @jobNumber 
 	            ) LookupQ 
 	     ) ConvertQ
-	WHERE Name <> 'DataPackageID' AND
+	WHERE [Name] <> 'DataPackageID' AND
 	      (StepNumber = 0 OR
 	       StepNumber = @stepNumber)
 	--

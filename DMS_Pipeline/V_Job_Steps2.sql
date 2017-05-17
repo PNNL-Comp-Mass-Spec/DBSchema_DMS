@@ -18,8 +18,10 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
 			END AS Kill_ProgRunner,
 	   DataQ.Processor_Warning,
 	   DataQ.Input_Folder, DataQ.Output_Folder, DataQ.Priority, DataQ.Signature, DataQ.Dependencies, DataQ.CPU_Load, DataQ.Actual_CPU_Load, DataQ.Memory_Usage_MB, DataQ.Tool_Version_ID, DataQ.Tool_Version,
-       DataQ.Completion_Code, DataQ.Completion_Message, DataQ.Evaluation_Code, 
-       DataQ.Evaluation_Message, 
+       DataQ.Completion_Code, DataQ.Completion_Message, 
+	   DataQ.Evaluation_Code, DataQ.Evaluation_Message, 
+	   DataQ.Next_Try, DataQ.Retry_Count,
+	   DataQ.Remote_Info_ID, DataQ.Remote_Info, DataQ.Remote_Timestamp,
 	   DataQ.Dataset_ID,
 	   DataQ.Machine,
 	   DataQ.WorkDirPath,
@@ -70,6 +72,11 @@ FROM ( SELECT JS.Job,
               JS.Completion_Message,
               JS.Evaluation_Code,
               JS.Evaluation_Message,
+			  JS.Next_Try,
+			  JS.Retry_Count,
+			  JS.Remote_Info_ID,
+			  JS.Remote_Info,
+			  JS.Remote_Timestamp,
 			  JS.Dataset_ID,
 			  LP.Machine,
 			  LP.WorkDir_AdminShare AS WorkDirPath,
@@ -93,7 +100,6 @@ FROM ( SELECT JS.Job,
                  Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
           FROM [T_Job_Parameters] 
    ) ParamQ ON ParamQ.Job = DataQ.Job
-
 
 
 GO

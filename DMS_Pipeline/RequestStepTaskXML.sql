@@ -78,6 +78,8 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/11/2017 mem - Look for jobs in state 2 or 9
 **			                 Commit the transaction earlier to reduce the time that a HoldLock is on table T_Job_Steps
 **			                 Pass @jobIsRunningRemote to GetJobStepParamsXML
+**			05/15/2017 mem - Consider MonitorRunningRemote when looking for candidate jobs
+**			05/16/2017 mem - Do not update T_Job_Step_Processing_Log if checking the status of a remotely running job
 **
 *****************************************************/
 (
@@ -340,7 +342,7 @@ As
 		       MachineQ.Memory_Available,
 		       PT.Exceeds_Available_CPU_Load,
 		       PT.Exceeds_Available_Memory,
-		       CASE WHEN @processorDoesGP > 0 THEN 'Yes' ELSE 'No' END AS Processor_Does_General_Proc
+		     CASE WHEN @processorDoesGP > 0 THEN 'Yes' ELSE 'No' END AS Processor_Does_General_Proc
 		FROM @availableProcessorTools PT
 		     CROSS JOIN ( SELECT M.Total_CPUs,
 		   M.CPUs_Available,
@@ -441,7 +443,7 @@ As
 		     ) TP
 		       ON JS.Step_Tool = 'Results_Transfer' AND 
 		          TP.Machine = IsNull(TJ.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
-		WHERE GETDATE() > JS.Next_Try AND JS.State IN (2, 9)
+		WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 		ORDER BY 
 			Association_Type,
 			TJ.Priority,		-- Job_Priority
@@ -499,7 +501,7 @@ As
 				) TP
 				ON JS.Step_Tool = 'Results_Transfer' AND 
 					TP.Machine <> TJ.Storage_Server
-			WHERE GETDATE() > JS.Next_Try AND JS.State IN (2, 9)
+			WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 			ORDER BY 
 				Association_Type,
 				TJ.Priority,		-- Job_Priority
@@ -610,7 +612,8 @@ As
 		                         M.CPUs_Available,		                         
 		                         ST.CPU_Load,
 		                         M.Memory_Available,
-		                         M.Machine		                         
+		                         M.Machine,
+		                         M.MonitorRunningRemote
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
@@ -625,7 +628,7 @@ As
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
 		WHERE GETDATE() > JS.Next_Try AND
-		       JS.State IN (2, 9) AND
+		      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
 		      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
@@ -707,7 +710,8 @@ As
 			                         M.CPUs_Available,
 			                         ST.CPU_Load,
 			                         M.Memory_Available,
-			                         M.Machine
+			                         M.Machine,
+			                         M.MonitorRunningRemote
 			                  FROM T_Machines M
 			                       INNER JOIN T_Local_Processors LP
 			                         ON M.Machine = LP.Machine
@@ -723,7 +727,7 @@ As
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      JS.State IN (2, 9) AND
+			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
@@ -765,7 +769,6 @@ As
 				Tool_Priority,
 				TJ.Storage_Server,
 				TP.Machine,
-
 				CASE
 					WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 						-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
@@ -800,7 +803,8 @@ As
 			                         M.CPUs_Available,
 			                         ST.CPU_Load,
 		                             M.Memory_Available,
-			                         M.Machine
+			                         M.Machine,
+			                         M.MonitorRunningRemote
 			                  FROM T_Machines M
 			                       INNER JOIN T_Local_Processors LP
 			                         ON M.Machine = LP.Machine
@@ -816,7 +820,7 @@ As
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      JS.State IN (2, 9) AND
+			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
@@ -1006,7 +1010,7 @@ As
 	---------------------------------------------------
 	--
 	Declare @stepNumber int = 0
-	Declare @jobIsRunningRemote tinyint
+	Declare @jobIsRunningRemote tinyint = 0
 	--
 	SELECT TOP 1
 		@jobNumber =  JS.Job,
@@ -1105,10 +1109,11 @@ As
 	if @jobAssigned = 1
 	begin
 
-		if @infoOnly = 0
+		if @infoOnly = 0 And IsNull(@jobIsRunningRemote, 0) = 0
 		begin
 			---------------------------------------------------
 			-- Add entry to T_Job_Step_Processing_Log
+			-- However, skip this step if checking the status of a remote job
 			---------------------------------------------------
 			
 			INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor)

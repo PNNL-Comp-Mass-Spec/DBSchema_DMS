@@ -21,14 +21,15 @@ CREATE PROCEDURE dbo.GetJobStepParamsXML
 **			05/29/2009 mem - Added parameter @DebugMode
 **			12/04/2009 mem - Moved the code that defines the job parameters to GetJobStepParamsWork
 **			05/11/2017 mem - Add parameter @jobIsRunningRemote
+**			05/13/2017 mem - Only add RunningRemote to #Tmp_JobParamsTable if @jobIsRunningRemote is non-zero
 **    
 *****************************************************/
 (
 	@jobNumber int,
 	@stepNumber int,
-	@parameters varchar(max) output, -- job step parameters (in XML)
+	@parameters varchar(max) output,	-- Output: job step parameters (in XML)
     @message varchar(512) output,
-    @jobIsRunningRemote tinyint = 0,
+    @jobIsRunningRemote tinyint = 0,	-- RequestStepTaskXML will set this to 1 if the newly started job step was state 9
     @DebugMode tinyint = 0
 )
 AS
@@ -61,8 +62,11 @@ AS
 	if @myError <> 0
 		Goto Done
 
-	INSERT INTO #Tmp_JobParamsTable (Section, Name, Value)
-	VALUES ('StepParameters', 'RunningRemote', IsNull(@jobIsRunningRemote, 0))	
+	If (IsNull(@jobIsRunningRemote, 0) > 0)
+	Begin
+		INSERT INTO #Tmp_JobParamsTable (Section, Name, Value)
+		VALUES ('StepParameters', 'RunningRemote', @jobIsRunningRemote)	
+	End
 	
 	If @DebugMode > 1
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: populate @st table'

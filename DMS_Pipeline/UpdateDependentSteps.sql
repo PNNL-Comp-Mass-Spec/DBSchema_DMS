@@ -33,6 +33,7 @@ CREATE PROCEDURE UpdateDependentSteps
 **			09/17/2014 mem - Updated output_folder_name logic to recognize tool Mz_Refinery
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			12/01/2016 mem - Use Disable_Output_Folder_Name_Override_on_Skip when finding shared result step tools for which we should not override Output_Folder_Name when the step is skipped
+**			05/13/2017 mem - Add check for state 9 (Running_Remote)
 **    
 *****************************************************/
 (
@@ -350,13 +351,13 @@ As
 						--
 						SELECT 
 							@numCompleted = ISNULL(SUM(CASE WHEN State = 5 THEN 1 ELSE 0 END), 0),
-							@numPending   = ISNULL(SUM(CASE WHEN State in (2,4) THEN 1 ELSE 0 END), 0)
+							@numPending   = ISNULL(SUM(CASE WHEN State in (2,4,9) THEN 1 ELSE 0 END), 0)
 						FROM   
 							T_Job_Steps
 						WHERE 
 							Output_Folder_Name = @outputFolderName AND
 							NOT Output_Folder_Name IS NULL AND
-							State in (2,4,5)
+							State in (2, 4, 5, 9)
 						
 						if @numCompleted = 0
 						Begin
@@ -441,19 +442,19 @@ As
 						--
 						UPDATE T_Job_Steps
 						SET State = @newState,
-						    Output_Folder_Name = CASE
-						                             WHEN (@newState = 3 AND
-						                                   ISNULL(Input_Folder_Name, '') <> '' AND
-						                                   Step_Tool Not In (SELECT [Name] FROM T_Step_Tools 
-						                                                     WHERE Shared_Result_Version > 0 AND 
-						                                                           Disable_Output_Folder_Name_Override_on_Skip > 0)
-						                                                    ) 
-						                             THEN Input_Folder_Name
-						                             ELSE Output_Folder_Name
-						                         END
+						    Output_Folder_Name = 
+						      CASE WHEN (@newState = 3 AND
+						                ISNULL(Input_Folder_Name, '') <> '' AND
+						                Step_Tool NOT IN ( SELECT [Name]
+						                                   FROM T_Step_Tools
+						                                   WHERE Shared_Result_Version > 0 AND
+						                                         Disable_Output_Folder_Name_Override_on_Skip > 0 )
+						                ) THEN Input_Folder_Name
+						           ELSE Output_Folder_Name
+						      END
 						WHERE Job = @Job AND
 						      Step_Number = @Step AND
-						      State = 1		-- Assure that we only update steps in state 1=waiting
+						      State = 1	   -- Assure that we only update steps in state 1=waiting
 						-- 
 						SELECT @myError = @@error, @myRowCount = @@rowcount
 						--
