@@ -1,7 +1,7 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 174 ******/
+/****** RowCount: 182 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (3,'userpwd','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (4,'usetls','TrueFalsePickList','')
@@ -62,7 +62,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (58
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (59,'showinmgrctrl','TrueFalsePickList','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (60,'showinanmonitor','TrueFalsePickList','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (61,'logfilename','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (62,'brokerconnectionstring','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (62,'brokerconnectionstring','','Connection string to the DMS_Pipeline database')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (64,'storedprocedure','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (65,'importdelay','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (66,'enableemail','TrueFalsePickList','')
@@ -175,4 +175,12 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (19
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (192,'QCARTRScriptName','','Filename of the QC-ART script')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (193,'MzidToTsvConverterProgLoc','','Folder containing MzidToTsvConverter.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (194,'RawConverterProgLoc','','Folder containing RawConverter.exe (He and Yates. Anal Chem. 2015 Nov 17; 87 (22): 11361-11367)')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (195,'RunJobsRemotely','TrueFalsePickList','When True, copy required files to the Remote Host then create a new JobTask file in the LocalTaskQueue directory on the remote host')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (196,'RemoteHostName','','Remote host for pushing jobs')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (197,'RemoteHostUser','','Username for connecting to the remote host')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (198,'RemoteTaskQueuePath','','Path on the remote computer to create task info files, e.g. Job1449504_Step03_20170515_1532.info')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (199,'RemoteWorkDirPath','','Path on the remote computer to tranfer files required for the analysis')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (200,'RemoteOrgDBPath','','Path on the remote computer for storing FASTA files')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (201,'RemoteHostPrivateKeyFile','','File with the RSA private key for connecting to RemoteHostName as user RemoteHostUser')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (202,'RemoteHostPassphraseFile','','File with the RSA passphrase')
 SET IDENTITY_INSERT [T_ParamType] OFF
