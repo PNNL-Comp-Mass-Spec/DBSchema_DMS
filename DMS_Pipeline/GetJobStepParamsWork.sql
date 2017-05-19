@@ -35,7 +35,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			06/20/2016 mem - Update procedure name shown when using @debugMode
 **			05/13/2017 mem - Include info from T_Remote_Info if Remote_Info_ID is not 1
-**			05/15/2017 mem - Include Remote_Timestamp if defined
+**			05/16/2017 mem - Include RemoteTimestamp if defined
 **    
 *****************************************************/
 (
@@ -214,7 +214,7 @@ AS
 
 	If IsNull(@remoteTimestamp, '') <> ''
 	Begin
-		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Remote_Timestamp', @remoteTimestamp)
+		INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'RemoteTimestamp', @remoteTimestamp)
 	End
 	
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)

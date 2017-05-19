@@ -34,6 +34,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			05/11/2017 mem - Add support for @completionCode 25 (RUNNING_REMOTE) and columns Next_Try and Retry_Count
 **			05/12/2017 mem - Add parameter @remoteInfo, update Remote_Info_ID in T_Job_Steps, and update T_Remote_Info
 **			05/15/2017 mem - Add parameter @remoteTimestamp, which is used to define the remote info file in the TaskQueuePath folder
+**			05/18/2017 mem - Use GetRemoteInfoID to resolve @remoteInfo to @remoteInfoID
 **
 *****************************************************/
 (
@@ -251,36 +252,9 @@ As
 	--
 	If IsNull(@remoteInfo, '') <> ''
 	Begin
-		Declare @remoteInfoID int
+		Declare @remoteInfoID int = 0
 		
-		SELECT @remoteInfoID = Remote_Info_ID
-		FROM T_Remote_Info
-		WHERE Remote_Info = @remoteInfo
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		
-		If @myRowCount = 0
-		Begin
-			---------------------------------------------------
-			-- Add a new entry to T_Remote_Info
-			-- Use a Merge statement to avoid the use of an explicit transaction
-			---------------------------------------------------		
-			--
-			MERGE T_Remote_Info AS target
-			USING 
-				(SELECT @remoteInfo AS Remote_Info
-				) AS Source ( Remote_Info)
-			ON (target.Remote_Info = source.Remote_Info)
-			WHEN Not Matched THEN
-				INSERT (Remote_Info, Entered)
-				VALUES (source.Remote_Info, GetDate());
-
-
-			SELECT @remoteInfoID = Remote_Info_ID
-			FROM T_Remote_Info
-			WHERE Remote_Info = @remoteInfo
-			
-		End
+		Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
 		
 		If IsNull(@remoteInfoID, 0) = 0
 		Begin
