@@ -13,33 +13,34 @@ CREATE Procedure AddRequestedRuns
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 7/22/2005
-**		7/27/2005 grk -- modified prefix
-**      10/12/2005 -- grk Added stuff for new work package and proposal fields.
-**      2/23/2006  -- grk Added stuff for EUS proposal and user tracking.
-**      3/24/2006  -- grk Added stuff for auto incrementing well numbers.
-**      6/23/2006  -- grk Removed instrument name from generated request name
-**      10/12/2006  -- grk Fixed trailing suffix in name (Ticket #248)
-**      11/09/2006  -- grk Fixed error message handling (Ticket #318)
-**      07/17/2007 grk - Increased size of comment field (Ticket #500)
-**      09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
-**		04/25/2008 grk - Added secondary separation field (Ticket #658)
-**		03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
-**		07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
-**		03/02/2010 grk - added status field to requested run
-**		08/27/2010 mem - Now referring to @instrumentName as an instrument group
-**		09/29/2011 grk - fixed limited size of variable holding delimited list of experiments from group
-**		12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
-**		02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
-**		02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
-**		06/13/2013 mem - Added @VialingConc and @VialingVol
-					   - Now validating @WorkPackageNumber against T_Charge_Code
-**		06/18/2014 mem - Now passing default to udfParseDelimitedList
-**		02/23/2016 mem - Add set XACT_ABORT on
-**		04/06/2016 mem - Now using Try_Convert to convert from text to int
-**		03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
-**		04/12/2017 mem - Log exceptions to T_Log_Entries
+**	Auth:	grk
+**	Date:	07/22/2005 - Initial version
+**			07/27/2005 grk - modified prefix
+**          10/12/2005 grk - Added stuff for new work package and proposal fields.
+**          02/23/2006 grk - Added stuff for EUS proposal and user tracking.
+**          03/24/2006 grk - Added stuff for auto incrementing well numbers.
+**          06/23/2006 grk - Removed instrument name from generated request name
+**          10/12/2006 grk - Fixed trailing suffix in name (Ticket #248)
+**          11/09/2006 grk - Fixed error message handling (Ticket #318)
+**          07/17/2007 grk - Increased size of comment field (Ticket #500)
+**          09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
+**			04/25/2008 grk - Added secondary separation field (Ticket #658)
+**			03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
+**			07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**			03/02/2010 grk - added status field to requested run
+**			08/27/2010 mem - Now referring to @instrumentName as an instrument group
+**			09/29/2011 grk - fixed limited size of variable holding delimited list of experiments from group
+**			12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
+**			02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
+**			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**			06/13/2013 mem - Added @VialingConc and @VialingVol
+						   - Now validating @WorkPackageNumber against T_Charge_Code
+**			06/18/2014 mem - Now passing default to udfParseDelimitedList
+**			02/23/2016 mem - Add set XACT_ABORT on
+**			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -75,7 +76,8 @@ As
 	
 	set @message = ''
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
+	Declare @logErrors tinyint = 0
 
 	BEGIN TRY
 	
@@ -139,6 +141,9 @@ As
 	--
 	if @myError <> 0
 		return @myError
+
+	-- Validation checks are complete; now enable @logErrors	
+	Set @logErrors = 1
 		
 	---------------------------------------------------
 	-- Validate the work package
@@ -155,7 +160,10 @@ As
 							@msg output
 
 		If @myError <> 0
+		Begin
+			Set @logErrors = 0
 			RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+		End
 	End
 
 	---------------------------------------------------
@@ -276,8 +284,12 @@ As
 			set @message = '[' + @ExperimentName + '] ' + @message 
 			
 			if @myError <> 0
+			Begin
+				Set @logErrors = 0
 				RAISERROR (@message, 11, 1)
-
+				Set @logErrors = 1
+			End
+			
 			set @count = @count + 1
 			
 		end
@@ -288,7 +300,11 @@ As
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
-		Exec PostLogEntry 'Error', @message, 'AddRequestedRuns'
+		
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @message, 'AddRequestedRuns'
+		End
 	END CATCH
 	return @myError
 

@@ -18,10 +18,11 @@ CREATE Procedure AddUpdateLCColumn
 **			02/23/2016 mem - Add set XACT_ABORT on
 **          07/20/2016 mem - Fix error message entity name
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
-	@columnNumber varchar (128),
+	@columnNumber varchar (128),		-- Aka column name
 	@packingMfg varchar (64),
 	@packingType varchar (64),
 	@particleSize varchar (64),
@@ -46,7 +47,8 @@ As
 	
 	set @message = ''
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
+	Declare @logErrors tinyint = 1
 
 	BEGIN TRY 
 
@@ -64,8 +66,7 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @columnID int
-	set @columnID = -1
+	declare @columnID int = -1
 	--
 	SELECT @columnID = ID
 	FROM T_LC_Column
@@ -83,7 +84,8 @@ As
 	--
 	if @columnID <> -1 and @mode = 'add'
 	begin
-		set @msg = 'Cannot add: Specified column number already in database '
+		Set @logErrors = 0
+		set @msg = 'Cannot add: Specified LC column already in database'
 		RAISERROR (@msg, 11, 3)
 	end
 
@@ -91,7 +93,8 @@ As
 	--
 	if @columnID = -1 and @mode = 'update'
 	begin
-		set @msg = 'Cannot update: Specified column number is not in database '
+		Set @logErrors = 0
+		set @msg = 'Cannot update: Specified LC column is not in database'
 		RAISERROR (@msg, 11, 5)
 	end
 
@@ -99,8 +102,7 @@ As
 	-- Resolve ID for state
 	---------------------------------------------------
 
-	declare @stateID int
-	set @stateID = -1
+	Declare @stateID int = -1
 	--
 	SELECT @stateID = LCS_ID
 	FROM T_LC_Column_State_Name
@@ -115,7 +117,8 @@ As
 	end
 	if @stateID = -1
 	begin
-		set @msg = 'Could not resolve state to ID'
+		Set @logErrors = 0
+		set @msg = 'Invalid column state: ' + @state
 		RAISERROR (@msg, 11, 7)
 	end
 
@@ -204,8 +207,11 @@ As
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
+		
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
+		End
 	END CATCH
 	return @myError
 

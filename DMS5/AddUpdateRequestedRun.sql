@@ -620,6 +620,7 @@ As
 		End
 	End
 	
+	-- Validation checks are complete; now enable @logErrors	
 	Set @logErrors = 1
 
 	If @logDebugMessages > 0
