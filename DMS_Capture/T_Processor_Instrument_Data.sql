@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Instrument] ******/
-/****** RowCount: 17 ******/
+/****** RowCount: 15 ******/
 /****** Columns: Processor_Name, Instrument_Name, Enabled, Comment ******/
 INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','12T_FTICR_B',0,'Bruker')
 INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','15T_FTICR',0,'Bruker')
@@ -15,6 +15,4 @@ INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS05_AgQTOF04',1,'I
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS06_AgTOF07',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-2_CTM','IMS07_AgQTOF02',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-4_CTM','9T_FTICR_Imaging',0,'Bruker Imaging; old instrument')
-INSERT INTO [T_Processor_Instrument] VALUES ('Proto-6_CTM','IMS07_AgTOF04',1,'IMS Instrument')
-INSERT INTO [T_Processor_Instrument] VALUES ('Proto-6_CTM','SLIM03_AgTOF06',1,'IMS Instrument')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-7_CTM_2','Maxis_01',1,'Maxis')
