@@ -47,26 +47,26 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/14/2009 mem - Fixed logic that checks whether @cpuLoadExceeded should be non-zero
 **						   - Updated to report when a job is invalid for this processor, but is specifically associated with another processor (Association_Type 103)
 **			06/02/2009 mem - Optimized Big-bang query (which populates #Tmp_CandidateJobSteps) due to high LockRequest/sec rates when we have thousands of active jobs (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
-**						   - Added parameter @UseBigBangQuery to allow for disabling use of the Big-Bang query
+**						   - Added parameter @useBigBangQuery to allow for disabling use of the Big-Bang query
 **			06/03/2009 mem - When finding candidate tasks, now treating Results_Transfer steps as step "100" so that they are assigned first, and so that they are assigned grouped by Job when multiple Results_Transfer tasks are "Enabled" for a given job
 **			08/20/2009 mem - Now checking for @Machine in T_Machines when @infoOnly is non-zero
 **			09/02/2009 mem - Now using T_Processor_Tool_Groups and T_Processor_Tool_Group_Details to determine the processor tool priorities for the given processor
 **			09/03/2009 mem - Now verifying that the processor is enabled and the processor tool group is enabled
 **			10/12/2009 mem - Now treating enabled states <= 0 as disabled for processor tool groups
-**			03/03/2010 mem - Added parameters @ThrottleByStartTime and @MaxStepNumToThrottle
-**			03/10/2010 mem - Fixed bug that ignored @MaxStepNumToThrottle when updating #Tmp_CandidateJobSteps
+**			03/03/2010 mem - Added parameters @throttleByStartTime and @maxStepNumToThrottle
+**			03/10/2010 mem - Fixed bug that ignored @maxStepNumToThrottle when updating #Tmp_CandidateJobSteps
 **			08/20/2010 mem - No longer ordering by Step_Number Descending prior to job number; this caused problems choosing the next appropriate Sequest job since Sequest_DTARefinery jobs run Sequest as step 4 while normal Sequest jobs run Sequest as step 3
 **						   - Sort order is now: Association_Type, Tool_Priority, Job Priority, Favor Results_Transfer steps, Job, Step_Number
-**			09/09/2010 mem - Bumped @MaxStepNumToThrottle up to 10
-**						   - Added parameter @ThrottleAllStepTools, defaulting to 0 (meaning we will not throttle Sequest or Results_Transfer steps)
+**			09/09/2010 mem - Bumped @maxStepNumToThrottle up to 10
+**						   - Added parameter @throttleAllStepTools, defaulting to 0 (meaning we will not throttle Sequest or Results_Transfer steps)
 **			09/29/2010 mem - Tweaked throttling logic to move the Step_Tool exclusion test to the outer WHERE clause
-**			06/09/2011 mem - Added parameter @LogSPUsage, which posts a log entry to T_SP_Usage if non-zero
+**			06/09/2011 mem - Added parameter @logSPUsage, which posts a log entry to T_SP_Usage if non-zero
 **			10/17/2011 mem - Now considering Memory_Usage_MB
 **			11/01/2011 mem - Changed @HoldoffWindowMinutes from 7 to 3 minutes
 **			12/19/2011 mem - Now showing memory amounts in "Not enough memory available" error message
 **			04/25/2013 mem - Increased @MaxSimultaneousJobCount from 10 to 75; this is feasible since the storage servers now have the DMS_LockFiles share, which is used to prioritize copying large files
 **			01/10/2014 mem - Now only assigning Results_Transfer tasks to the storage server on which the dataset resides
-**						   - Changed @ThrottleByStartTime to 0
+**						   - Changed @throttleByStartTime to 0
 **			09/24/2014 mem - Removed reference to Machine in T_Job_Steps
 **			04/21/2015 mem - Now using column Uses_All_Cores
 **			06/01/2015 mem - No longer querying T_Local_Job_Processors since we have deprecated processor groups
@@ -80,6 +80,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			                 Pass @jobIsRunningRemote to GetJobStepParamsXML
 **			05/15/2017 mem - Consider MonitorRunningRemote when looking for candidate jobs
 **			05/16/2017 mem - Do not update T_Job_Step_Processing_Log if checking the status of a remotely running job
+**			05/18/2017 mem - Add parameter @remoteInfo
 **
 *****************************************************/
 (
@@ -88,13 +89,14 @@ CREATE PROCEDURE RequestStepTaskXML
 	@parameters varchar(max) output,			-- job step parameters (in XML)
     @message varchar(512) output,				-- Output message
 	@infoOnly tinyint = 0,						-- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
-	@AnalysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
-	@JobCountToPreview int = 10,				-- The number of jobs to preview when @infoOnly >= 1
-	@UseBigBangQuery tinyint = 1,				-- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
-	@ThrottleByStartTime tinyint = 0,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
-	@MaxStepNumToThrottle int = 10,
-	@ThrottleAllStepTools tinyint = 0,			-- When 0, then will not throttle Sequest or Results_Transfer steps
-	@LogSPUsage tinyint = 0
+	@analysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
+	@remoteInfo varchar(900) = '',				-- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once
+	@jobCountToPreview int = 10,				-- The number of jobs to preview when @infoOnly >= 1
+	@useBigBangQuery tinyint = 1,				-- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
+	@throttleByStartTime tinyint = 0,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
+	@maxStepNumToThrottle int = 10,
+	@throttleAllStepTools tinyint = 0,			-- When 0, then will not throttle Sequest or Results_Transfer steps
+	@logSPUsage tinyint = 0
 )
 As
 	set nocount on
@@ -109,14 +111,17 @@ As
 	Declare @HoldoffWindowMinutes int
 	Declare @MaxSimultaneousJobCount int
 
+	Declare @maxSimultaneousRunningRemoteSteps int = 0
+	Declare @runningRemoteLimitReached tinyint = 0
+
 	---------------------------------------------------
 	-- These 3 hard-coded values give optimal performance 
-	-- (note that @UseBigBangQuery overrides the value passed into this procedure)
+	-- (note that @useBigBangQuery overrides the value passed into this procedure)
 	---------------------------------------------------
 	--
 	Set @HoldoffWindowMinutes = 3				-- Typically 3
 	Set @MaxSimultaneousJobCount = 75			-- Increased from 10 to 75 on 4/25/2013
-	Set @UseBigBangQuery = 1					-- Always forced by this procedure to be 1
+	Set @useBigBangQuery = 1					-- Always forced by this procedure to be 1
 	
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
@@ -127,19 +132,20 @@ As
 	Set @parameters = ''
 	Set @message = ''
 	Set @infoOnly = IsNull(@infoOnly, 0)
-	Set @AnalysisManagerVersion = IsNull(@AnalysisManagerVersion, '')
-	Set @JobCountToPreview = IsNull(@JobCountToPreview, 10)
-	Set @UseBigBangQuery = IsNull(@UseBigBangQuery, 1)
+	Set @analysisManagerVersion = IsNull(@analysisManagerVersion, '')
+	Set @remoteInfo = IsNull(@remoteInfo, '')
+	Set @jobCountToPreview = IsNull(@jobCountToPreview, 10)
+	Set @useBigBangQuery = IsNull(@useBigBangQuery, 1)
 	
-	Set @ThrottleByStartTime = IsNull(@ThrottleByStartTime, 0)
-	Set @MaxStepNumToThrottle = IsNull(@MaxStepNumToThrottle, 10)
-	Set @ThrottleAllStepTools = IsNull(@ThrottleAllStepTools, 0)
+	Set @throttleByStartTime = IsNull(@throttleByStartTime, 0)
+	Set @maxStepNumToThrottle = IsNull(@maxStepNumToThrottle, 10)
+	Set @throttleAllStepTools = IsNull(@throttleAllStepTools, 0)
 
-	If @MaxStepNumToThrottle < 1
-		Set @MaxStepNumToThrottle = 1000000
+	If @maxStepNumToThrottle < 1
+		Set @maxStepNumToThrottle = 1000000
 
-	If @JobCountToPreview > @CandidateJobStepsToRetrieve
-		Set @CandidateJobStepsToRetrieve = @JobCountToPreview
+	If @jobCountToPreview > @CandidateJobStepsToRetrieve
+		Set @CandidateJobStepsToRetrieve = @jobCountToPreview
 		
 	---------------------------------------------------
 	-- The analysis manager expects a non-zero 
@@ -208,7 +214,7 @@ As
 	begin
 		UPDATE T_Local_Processors
 		SET Latest_Request = GETDATE(),
-			Manager_Version = @AnalysisManagerVersion
+			Manager_Version = @analysisManagerVersion
 		WHERE Processor_Name = @processorName
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -219,7 +225,7 @@ As
 			goto Done
 		end
 		
-		if IsNull(@LogSPUsage, 0) <> 0
+		if IsNull(@logSPUsage, 0) <> 0
 			INSERT INTO T_SP_Usage ( 
 			                Posted_By,
 							ProcessorID,
@@ -356,6 +362,77 @@ As
 		
 	End -- </PreviewProcessorTools>
 
+	
+	If @remoteInfo <> ''
+	Begin -- <CheckRunningRemoteTasks>
+
+		---------------------------------------------------
+		-- Get list of job steps that are currently RunningRemote
+		-- on the remote server associated with this manager
+		---------------------------------------------------
+		--
+		Declare @remoteInfoID int = 0
+		Declare @stepsRunningRemotely int = 0
+		
+		Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
+		
+		If @remoteInfoID > 0
+		Begin
+			
+			SELECT @stepsRunningRemotely = COUNT(*)
+			FROM T_Job_Steps
+			WHERE State IN (4,9) AND Remote_Info_ID = @remoteInfoID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @stepsRunningRemotely > 0
+			Begin
+				SELECT @maxSimultaneousRunningRemoteSteps = Max_Running_Job_Steps 
+				FROM T_Remote_Info 
+				WHERE Remote_Info_ID = @remoteInfoID
+				--
+				SELECT @myError = @@error, @myRowCount = @@rowcount
+
+				If @stepsRunningRemotely >= IsNull(@maxSimultaneousRunningRemoteSteps, 1)
+				Begin
+					Set @runningRemoteLimitReached = 1
+				End
+			End
+			
+			If @infoOnly <> 0
+			Begin
+				-- Preview RunningRemote tasks on the remote host associated with this manager
+				--
+				SELECT RemoteInfo.Remote_Info_ID,
+				       RemoteInfo.Remote_Info,
+				       RemoteInfo.Most_Recent_Job,
+				       RemoteInfo.Last_Used,
+				       RemoteInfo.Max_Running_Job_Steps,
+				       JS.Job,
+				       JS.Dataset,
+				       JS.StateName,
+				       JS.State,
+				       JS.Start,
+				       JS.Finish
+				FROM T_Remote_Info RemoteInfo
+				     INNER JOIN V_Job_Steps JS
+				       ON RemoteInfo.Remote_Info_ID = JS.Remote_Info_ID
+				WHERE (RemoteInfo.Remote_Info_ID = 3) AND
+				      (JS.State IN (4, 9))
+				ORDER BY Job, Step
+			End
+		
+		End
+		Else
+		Begin
+			If @infoOnly <> 0
+			Begin
+				Print 'Could not resolve ' + @remoteInfo + ' to Remote_Info_ID'
+			End
+		End
+		
+	End -- </CheckRunningRemoteTasks>
+
 	---------------------------------------------------
 	-- Table variable to hold job step candidates
 	-- for possible assignment
@@ -365,6 +442,7 @@ As
 		Seq smallint IDENTITY(1,1) NOT NULL,
 		Job int,
 		Step_Number int,
+		State int,
 		Job_Priority int,
 		Step_Tool varchar(64),
 		Tool_Priority int,
@@ -398,6 +476,7 @@ As
 		INSERT INTO #Tmp_CandidateJobSteps (
 			Job,
 			Step_Number,
+			State,
 			Job_Priority,
 			Step_Tool,
 			Tool_Priority,
@@ -409,6 +488,7 @@ As
 		SELECT TOP (@CandidateJobStepsToRetrieve)
 			JS.Job, 
 			JS.Step_Number,
+			JS.State,
 			TJ.Priority AS Job_Priority,
 			JS.Step_Tool,
 			1 As Tool_Priority,
@@ -420,8 +500,10 @@ As
 				WHEN (TJ.Archive_Busy = 1) 
 					THEN 102
 				-- Results_Transfer step for job without a specific storage server
-				When TJ.Storage_Server Is Null
+				WHEN TJ.Storage_Server Is Null
 					THEN 6
+				WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
+					THEN 107
 				-- Results_Transfer step to be run on the job-specific storage server
 				ELSE 5
 			END AS Association_Type
@@ -459,6 +541,7 @@ As
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
 				Step_Number,
+				State,
 				Job_Priority,
 				Step_Tool,
 				Tool_Priority,
@@ -470,6 +553,7 @@ As
 			SELECT TOP (@CandidateJobStepsToRetrieve)
 				JS.Job, 
 				JS.Step_Number,
+				JS.State,
 				TJ.Priority AS Job_Priority,
 				JS.Step_Tool,
 				1 As Tool_Priority,
@@ -516,7 +600,7 @@ As
 	-- by processor in order of assignment priority
 	---------------------------------------------------
 	--
-	If @UseBigBangQuery <> 0 OR @infoOnly <> 0
+	If @useBigBangQuery <> 0 OR @infoOnly <> 0
 	Begin -- <UseBigBang>
 		-- *********************************************************************************
 		-- Big-bang query
@@ -530,6 +614,7 @@ As
 		INSERT INTO #Tmp_CandidateJobSteps (
 			Job,
 			Step_Number,
+			State,
 			Job_Priority,
 			Step_Tool,
 			Tool_Priority,
@@ -541,6 +626,7 @@ As
 		SELECT TOP (@CandidateJobStepsToRetrieve)
 			JS.Job, 
 			JS.Step_Number,
+			JS.State,
 			TJ.Priority AS Job_Priority,
 			JS.Step_Tool,
 			TP.Tool_Priority,
@@ -557,6 +643,8 @@ As
 				WHEN (TP.Memory_Available < JS.Memory_Usage_MB) 
 					-- Not enough memory available on machine
 					THEN 105
+				WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
+					THEN 107
 				WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 					THEN 2
@@ -589,7 +677,7 @@ As
 				ELSE 100 -- not recognized assignment ('<Not recognized>')
 			END AS Association_Type
 		FROM ( SELECT TJ.Job,
-		              TJ.Priority,		-- Job_Priority
+		  TJ.Priority,		-- Job_Priority
 		              TJ.Archive_Busy,
 		              TJ.Storage_Server
 		       FROM T_Jobs TJ
@@ -676,6 +764,7 @@ As
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
 				Step_Number,
+				State,
 				Job_Priority,
 				Step_Tool,
 				Tool_Priority,
@@ -686,6 +775,7 @@ As
 			SELECT TOP (@CandidateJobStepsToRetrieve)
 				JS.Job, 
 				Step_Number,
+				State,
 				TJ.Priority AS Job_Priority,
 				Step_Tool,
 				Tool_Priority,
@@ -697,8 +787,8 @@ As
 			              TJ.Archive_Busy,
 			              TJ.Storage_Server
 			       FROM T_Jobs TJ
-			       WHERE TJ.State <> 8 ) TJ
-			     INNER JOIN T_Job_Steps JS
+			   WHERE TJ.State <> 8 ) TJ
+			   INNER JOIN T_Job_Steps JS
 		           ON TJ.Job = JS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
@@ -754,6 +844,7 @@ As
 			INSERT INTO #Tmp_CandidateJobSteps (
 				Job,
 				Step_Number,
+				State,
 				Job_Priority,
 				Step_Tool,
 				Tool_Priority,
@@ -764,12 +855,15 @@ As
 			SELECT TOP (@CandidateJobStepsToRetrieve)
 				JS.Job, 
 				Step_Number,
+				State,
 				TJ.Priority AS Job_Priority,
 				Step_Tool,
 				Tool_Priority,
 				TJ.Storage_Server,
 				TP.Machine,
 				CASE
+					WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
+						THEN 107
 					WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 						-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 						THEN 2
@@ -882,14 +976,14 @@ As
 	-- As of January 2013, this is no longer a necessity because copying of large files now uses lock files
 	---------------------------------------------------
 	--
-	If @ThrottleByStartTime <> 0
+	If @throttleByStartTime <> 0
 	Begin
 		If @infoOnly > 1
 			Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for servers that need to be throttled'
 
 		-- The following query counts the number of job steps that recently started, 
-		--  grouping by storage server, and only examining steps numbers <= @MaxStepNumToThrottle
-		-- If @ThrottleAllStepTools is 0, then it excludes Sequest and Results_Transfer steps
+		--  grouping by storage server, and only examining steps numbers <= @maxStepNumToThrottle
+		-- If @throttleAllStepTools is 0, then it excludes Sequest and Results_Transfer steps
 		-- It then looks for storage servers where too many steps have recently started (count >= @MaxSimultaneousJobCount)
 		-- We then link those results into #Tmp_CandidateJobSteps via Storage_Server
 		-- If any matches are found, then Association_Type is updated to 104 so that the given candidate(s) will be excluded
@@ -901,22 +995,22 @@ As
 						SELECT Storage_Server
 						FROM ( -- Look for running steps that started within the last @HoldoffWindow minutes
 								-- Group by storage server
-								-- Only examine steps <= @MaxStepNumToThrottle
+								-- Only examine steps <= @maxStepNumToThrottle
 								SELECT T_Jobs.Storage_Server,
 										COUNT(*) AS Running_Steps_Recently_Started
 								FROM T_Job_Steps JS
 									INNER JOIN T_Jobs
 										ON JS.Job = T_Jobs.Job
 								WHERE (JS.Start >= DATEADD(MINUTE, -@HoldoffWindowMinutes, GETDATE())) AND
-									  (JS.Step_Number <= @MaxStepNumToThrottle) AND
+									  (JS.Step_Number <= @maxStepNumToThrottle) AND
 									  (JS.State = 4)
 								GROUP BY T_Jobs.Storage_Server 
 							) LookupQ
 						WHERE (Running_Steps_Recently_Started >= @MaxSimultaneousJobCount)
 						) ServerQ
 			ON ServerQ.Storage_Server = CJS.Storage_Server
-		WHERE CJS.Step_Number <= @MaxStepNumToThrottle AND
-		      (NOT Step_Tool IN ('Sequest', 'Results_Transfer') OR @ThrottleAllStepTools > 0)
+		WHERE CJS.Step_Number <= @maxStepNumToThrottle AND
+		      (NOT Step_Tool IN ('Sequest', 'Results_Transfer') OR @throttleAllStepTools > 0)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -1091,10 +1185,10 @@ As
 		                       INNER JOIN T_Step_Tools Tools
 		                         ON Tools.Name = JS.Step_Tool
 		                       INNER JOIN T_Machines M
-		                         ON LP.Machine = M.Machine
-		                  WHERE LP.Machine = @machine AND
+		    ON LP.Machine = M.Machine
+		  WHERE LP.Machine = @machine AND
 		                        JS.State = 4
-		                  GROUP BY LP.Machine 
+		 GROUP BY LP.Machine 
 		                 ) CPUQ
 		       ON CPUQ.Machine = Target.Machine
 		--
@@ -1162,11 +1256,11 @@ As
 		If @infoOnly > 1
 			Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Preview results'
 
-		-- Preview the next @JobCountToPreview available jobs
+		-- Preview the next @jobCountToPreview available jobs
 
-		SELECT TOP ( @JobCountToPreview ) 
-		       Seq,
-		       CASE Association_Type
+		SELECT TOP ( @jobCountToPreview ) 
+		       CJS.Seq,
+		       CASE CJS.Association_Type
 		           WHEN 1 THEN 'Exclusive Association'
 		           WHEN 2 THEN 'Specific Association'
 		           WHEN 3 THEN 'Non-associated'
@@ -1181,13 +1275,15 @@ As
 		           WHEN 104 THEN 'Invalid: Storage Server has had ' + Convert(varchar(12), @MaxSimultaneousJobCount) + ' job steps start within the last ' + Convert(varchar(12), @HoldoffWindowMinutes)  + ' minutes'
 		           WHEN 105 THEN 'Invalid: Not enough memory available (' + Convert(varchar(12), CJS.Memory_Usage_MB) + ' > ' + Convert(varchar(12), @availableMemoryMB) + ', see T_Job_Steps.Memory_Usage_MB)'
 		           WHEN 106 THEN 'Invalid: Results_transfer task must run on ' + CJS.Storage_Server
+		           WHEN 107 THEN 'Invalid: Remote server already running ' + Cast(@maxSimultaneousRunningRemoteSteps as varchar(9)) + ' job steps; limit reached'
 		           ELSE 'Warning: Unknown association type'
 		       END AS Association_Type,
-		       Tool_Priority,
-		       Job_Priority,
+		       CJS.Tool_Priority,
+		       CJS.Job_Priority,
 		       CJS.Job,
-		       Step_Number,
-		       Step_Tool,
+		       CJS.Step_Number As Step,
+		       CJS.State,
+		       CJS.Step_Tool,
 		       J.Dataset,
 		       @processorName AS Processor
 		FROM #Tmp_CandidateJobSteps CJS
