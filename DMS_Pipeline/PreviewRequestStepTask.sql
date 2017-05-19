@@ -12,6 +12,9 @@ CREATE PROCEDURE dbo.PreviewRequestStepTask
 **			12/05/2008 mem
 **			01/15/2009 mem - Updated to only display the job info if a job is assigned (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
 **			08/23/2010 mem - Added parameter @infoOnly
+**			05/18/2017 mem - Call GetDefaultRemoteInfoForManager to retrieve the @remoteInfo XML for @processorName
+**						     Pass this to RequestStepTaskXML
+**							 (GetDefaultRemoteInfoForManager is a synonym for the stored procedure in the Manager_Control DB)
 **
 *****************************************************/
 (
@@ -33,13 +36,18 @@ As
 	Set @infoOnly = IsNull(@infoOnly, 1)
 	If @infoOnly < 1
 		Set @infoOnly = 1
-		
+
+	Declare @remoteInfo varchar(900)
+	
+	Exec GetDefaultRemoteInfoForManager @processorName, @remoteInfoXML = @remoteInfo output
+	
 	Exec RequestStepTaskXML @processorName, 
 							@jobNumber = @jobNumber output, 
 							@parameters = @parameters output, 
 							@message = @message output, 
 							@infoonly = @infoOnly,
-							@JobCountToPreview=@JobCountToPreview
+							@JobCountToPreview=@JobCountToPreview,
+							@remoteInfo = @remoteInfo
 
 	If Exists (Select * FROM T_Jobs WHERE Job = @JobNumber)
 		SELECT @jobNumber AS JobNumber,
