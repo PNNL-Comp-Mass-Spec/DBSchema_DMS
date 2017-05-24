@@ -27,7 +27,7 @@ CREATE TABLE [dbo].[T_Processor_Status](
 	[Most_Recent_Job_Info] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Spectrum_Count] [int] NULL,
 	[Monitor_Processor] [tinyint] NOT NULL,
-	[Remote_Status_Location] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Remote_Manager] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Processor_Status] PRIMARY KEY CLUSTERED 
 (
 	[Processor_Name] ASC
@@ -51,5 +51,5 @@ ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_St
 GO
 ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Monitor_Processor]  DEFAULT ((1)) FOR [Monitor_Processor]
 GO
-ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Remote_Status_Location]  DEFAULT ('') FOR [Remote_Status_Location]
+ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Remote_Manager]  DEFAULT ('') FOR [Remote_Manager]
 GO

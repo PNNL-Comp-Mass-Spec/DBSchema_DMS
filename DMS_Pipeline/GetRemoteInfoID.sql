@@ -65,7 +65,8 @@ AS
 			WHEN Not Matched THEN
 				INSERT (Remote_Info, Entered)
 				VALUES (source.Remote_Info, GetDate());
-
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
 
 			SELECT @remoteInfoID = Remote_Info_ID
 			FROM T_Remote_Info

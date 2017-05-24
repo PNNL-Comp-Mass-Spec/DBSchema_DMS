@@ -129,6 +129,7 @@ As
 
 	UPDATE T_Processor_Status
 	SET 
+	    Remote_Manager = '',
 		Mgr_Status_Code = @MgrStatusCode,
 		Status_Date = @LastUpdate,
 		Last_Start_Time = @LastStartTime,

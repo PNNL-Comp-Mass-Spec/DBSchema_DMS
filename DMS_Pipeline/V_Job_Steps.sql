@@ -17,12 +17,15 @@ SELECT	JS.Job,
 		JS.Finish,
 		JS.RunTime_Minutes,
         DATEDIFF(minute, PS.Status_Date, GetDate()) AS LastCPUStatus_Minutes,
-		CASE WHEN JS.State = 4 THEN PS.Progress 
-		     WHEN JS.State IN (3, 5) THEN 100
+		CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) THEN JS.Remote_Progress
+		     WHEN JS.State = 4 THEN PS.Progress 
+		     WHEN JS.State IN (3, 5) THEN 100			 
 		     ELSE 0 END AS Job_Progress,
-		CASE WHEN JS.State = 4 AND JS.Tool = 'XTandem' THEN 0						-- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
-		     WHEN JS.State = 4 AND PS.Progress > 0     THEN CONVERT(DECIMAL(9,2), JS.RunTime_Minutes / (PS.Progress / 100.0) / 60.0)
-		     WHEN JS.State = 5 THEN Convert(decimal(9,2), JS.RunTime_Minutes / 60.0)
+		CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) AND JS.Remote_Progress > 0
+		                                                      THEN CONVERT(DECIMAL(9,2), JS.RunTime_Minutes / (JS.Remote_Progress / 100.0) / 60.0)
+		     WHEN  JS.State = 4 AND JS.Tool = 'XTandem'       THEN 0						-- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
+			 WHEN  JS.State = 4 AND PS.Progress > 0           THEN CONVERT(DECIMAL(9,2), JS.RunTime_Minutes / (PS.Progress / 100.0) / 60.0)
+		     WHEN  JS.State = 5 THEN Convert(decimal(9,2), JS.RunTime_Minutes / 60.0)
 			 ELSE 0
 		END AS RunTime_Predicted_Hours,
 		JS.Processor,
@@ -52,6 +55,9 @@ SELECT	JS.Job,
 		JS.Remote_Info_ID,
 		JS.Remote_Info,
 		JS.Remote_Timestamp,
+		JS.Remote_Start,
+		JS.Remote_Finish,
+		JS.Remote_Progress,
 		JS.Dataset_ID,
 		JS.Transfer_Folder_Path
 FROM (
@@ -63,9 +69,18 @@ FROM (
 		   JS.Step_Tool AS Tool,
 		   SSN.Name AS StateName,
 		   JS.State,
-		   JS.Start,
-		   JS.Finish,
-		   CONVERT(decimal(9, 1), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) / 60.0) AS RunTime_Minutes,
+		   CASE WHEN JS.State <> 4 AND NOT JS.Remote_Start IS NULL
+		        THEN JS.Remote_Start
+				ELSE JS.Start
+		   END AS Start,
+		   CASE WHEN JS.State <> 4 AND NOT JS.Remote_Start IS NULL
+		        THEN JS.Remote_Finish
+				ELSE JS.Finish
+		   END AS Finish,
+		   CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) AND NOT JS.Remote_Start IS NULL
+		        THEN CONVERT(decimal(9, 1), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
+		        ELSE CONVERT(decimal(9, 1), DATEDIFF(second, JS.Start,        ISNULL(JS.Finish, GetDate())) / 60.0) 
+		   END AS RunTime_Minutes,
 		   JS.Processor,
 		   JS.Input_Folder_Name AS Input_Folder,
 		   JS.Output_Folder_Name AS Output_Folder,
@@ -84,6 +99,9 @@ FROM (
 		   JS.Remote_Info_ID,
 		   RI.Remote_Info,		
 		   JS.Remote_Timestamp,
+		   JS.Remote_Start,
+		   JS.Remote_Finish,
+		   JS.Remote_Progress,
 		   J.Transfer_Folder_Path,
 		   JS.Tool_Version_ID,
 		   STV.Tool_Version
@@ -101,6 +119,7 @@ FROM (
 	) JS
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
        ON JS.Processor = PS.Processor_Name
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Processor_Status
+
+CREATE VIEW [dbo].[V_Processor_Status]
 AS
 SELECT PS.Processor_Name,
        ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status,
@@ -28,7 +29,7 @@ SELECT PS.Processor_Name,
        PS.Most_Recent_Log_Message,
        PS.Most_Recent_Error_Message,
        PS.Status_Date,
-       PS.Remote_Status_Location,
+       PS.Remote_Manager,
 	   M.Enabled as Machine_Enabled
 FROM dbo.T_Processor_Status AS PS
      LEFT OUTER JOIN T_Local_Processors LP
@@ -36,6 +37,7 @@ FROM dbo.T_Processor_Status AS PS
      LEFT OUTER JOIN T_Machines M
        ON LP.Machine = M.Machine          
 WHERE (Monitor_Processor <> 0)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status] TO [DDL_Viewer] AS [dbo]

@@ -35,6 +35,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			05/12/2017 mem - Add parameter @remoteInfo, update Remote_Info_ID in T_Job_Steps, and update T_Remote_Info
 **			05/15/2017 mem - Add parameter @remoteTimestamp, which is used to define the remote info file in the TaskQueuePath folder
 **			05/18/2017 mem - Use GetRemoteInfoID to resolve @remoteInfo to @remoteInfoID
+**			05/23/2017 mem - Add parameter @remoteProgress
+**							 Update Remote_Finish if a remotely running job has finished (success or failure)
 **
 *****************************************************/
 (
@@ -46,7 +48,8 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
     @evaluationMessage varchar(256) = '',
 	@organismDBName varchar(128) = '',
 	@remoteInfo varchar(900) = '',			-- Remote server info for jobs with @completionCode = 25
-	@remoteTimestamp varchar(24) = null		-- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
+	@remoteTimestamp varchar(24) = null,	-- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
+	@remoteProgress real = null
 )
 As
 	Set nocount on
@@ -215,7 +218,8 @@ As
 		   Evaluation_Message = @evaluationMessage,
 		   Next_Try = @nextTry,
 		   Retry_Count = @retryCount,
-		   Remote_Timestamp= @remoteTimestamp
+		   Remote_Timestamp = @remoteTimestamp,
+		   Remote_Progress = @remoteProgress
 	WHERE Job = @job AND 
 	      Step_Number = @step
  	--
@@ -273,15 +277,21 @@ As
 		Begin
 			
 			UPDATE T_Job_Steps
-			SET Remote_Info_ID = @remoteInfoID
+			SET Remote_Info_ID = @remoteInfoID,
+			    Remote_Finish = CASE WHEN @stepState IN (3,5,6) THEN GetDate() ELSE Remote_Finish END			
 			WHERE Job = @job AND
 			      Step_Number = @step
+ 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
 			
 			UPDATE T_Remote_Info
 			SET Most_Recent_Job = @Job,
 			    Last_Used = GetDate()
 			WHERE Remote_Info_ID = @remoteInfoID
-					
+ 			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
 		End
 				
 	End

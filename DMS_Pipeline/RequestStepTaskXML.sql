@@ -81,6 +81,8 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/15/2017 mem - Consider MonitorRunningRemote when looking for candidate jobs
 **			05/16/2017 mem - Do not update T_Job_Step_Processing_Log if checking the status of a remotely running job
 **			05/18/2017 mem - Add parameter @remoteInfo
+**			05/22/2017 mem - Limit assignment of RunningRemote jobs to managers with the same RemoteInfoID as the job
+**			05/23/2017 mem - Update Remote_Start, Remote_Finish, and Remote_Progress
 **
 *****************************************************/
 (
@@ -90,7 +92,7 @@ CREATE PROCEDURE RequestStepTaskXML
     @message varchar(512) output,				-- Output message
 	@infoOnly tinyint = 0,						-- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
 	@analysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
-	@remoteInfo varchar(900) = '',				-- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once
+	@remoteInfo varchar(900) = '',				-- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once and to assure that we only check remote progress using a manager that has the same remote info as a job step
 	@jobCountToPreview int = 10,				-- The number of jobs to preview when @infoOnly >= 1
 	@useBigBangQuery tinyint = 1,				-- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
 	@throttleByStartTime tinyint = 0,			-- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
@@ -111,6 +113,7 @@ As
 	Declare @HoldoffWindowMinutes int
 	Declare @MaxSimultaneousJobCount int
 
+	Declare @remoteInfoID int = 0
 	Declare @maxSimultaneousRunningRemoteSteps int = 0
 	Declare @runningRemoteLimitReached tinyint = 0
 
@@ -371,12 +374,13 @@ As
 		-- on the remote server associated with this manager
 		---------------------------------------------------
 		--
-		Declare @remoteInfoID int = 0
 		Declare @stepsRunningRemotely int = 0
 		
 		Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
 		
-		If @remoteInfoID > 0
+		-- Note that @remoteInfoID 1 means the @remoteInfo is 'Unknown'
+
+		If @remoteInfoID > 1
 		Begin
 			
 			SELECT @stepsRunningRemotely = COUNT(*)
@@ -417,8 +421,8 @@ As
 				FROM T_Remote_Info RemoteInfo
 				     INNER JOIN V_Job_Steps JS
 				       ON RemoteInfo.Remote_Info_ID = JS.Remote_Info_ID
-				WHERE (RemoteInfo.Remote_Info_ID = 3) AND
-				      (JS.State IN (4, 9))
+				WHERE RemoteInfo.Remote_Info_ID = @remoteInfoID AND
+				      JS.State IN (4, 9)
 				ORDER BY Job, Step
 			End
 		
@@ -472,7 +476,8 @@ As
 	                 PTGD.Enabled > 0 And 
 	                 PTGD.Tool_Name = 'Results_Transfer')
 	Begin
-
+		-- Look for Results_Transfer candidates
+		--
 		INSERT INTO #Tmp_CandidateJobSteps (
 			Job,
 			Step_Number,
@@ -496,16 +501,13 @@ As
 			TJ.Storage_Server,
 			TP.Machine,
 			CASE
-				-- transfer tool steps for jobs that are in the midst of an archive operation
 				WHEN (TJ.Archive_Busy = 1) 
-					THEN 102
-				-- Results_Transfer step for job without a specific storage server
+					-- transfer tool steps for jobs that are in the midst of an archive operation
+					THEN 102				
 				WHEN TJ.Storage_Server Is Null
-					THEN 6
-				WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
-					THEN 107
-				-- Results_Transfer step to be run on the job-specific storage server
-				ELSE 5
+					-- Results_Transfer step for job without a specific storage server
+					THEN 6				
+				ELSE 5   -- Results_Transfer step to be run on the job-specific storage server 
 			END AS Association_Type
 		FROM ( SELECT TJ.Job,
 		              TJ.Priority,		-- Job_Priority
@@ -560,12 +562,11 @@ As
 				JS.Memory_Usage_MB,
 				TJ.Storage_Server,
 				TP.Machine,
-				CASE
-					-- transfer tool steps for jobs that are in the midst of an archive operation
+				CASE					
 					WHEN (TJ.Archive_Busy = 1) 
-						THEN 102
-					-- Results_Transfer step to be run on the job-specific storage server
-					ELSE 106
+						-- transfer tool steps for jobs that are in the midst of an archive operation
+						THEN 102					
+					ELSE 106  -- Results_Transfer step to be run on the job-specific storage server
 				END AS Association_Type
 			FROM ( SELECT TJ.Job,
 						TJ.Priority,		-- Job_Priority
@@ -644,7 +645,11 @@ As
 					-- Not enough memory available on machine
 					THEN 105
 				WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
+					-- Too many remote tasks are already running
 					THEN 107
+				WHEN JS.State = 9 AND JS.Remote_Info_ID <> @remoteInfoID
+					-- Remotely running task; only check status using a manager with the same Remote_Info
+					THEN 108
 				WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 					-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 					THEN 2
@@ -677,7 +682,7 @@ As
 				ELSE 100 -- not recognized assignment ('<Not recognized>')
 			END AS Association_Type
 		FROM ( SELECT TJ.Job,
-		  TJ.Priority,		-- Job_Priority
+		              TJ.Priority,		-- Job_Priority
 		              TJ.Archive_Busy,
 		              TJ.Storage_Server
 		       FROM T_Jobs TJ
@@ -817,7 +822,7 @@ As
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
+			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
@@ -863,7 +868,11 @@ As
 				TP.Machine,
 				CASE
 					WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
+						-- Too many remote tasks are already running
 						THEN 107
+					WHEN JS.State = 9 AND JS.Remote_Info_ID <> @remoteInfoID
+						-- Remotely running task; only check status using a manager with the same Remote_Info
+						THEN 108
 					WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
 						-- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
 						THEN 2
@@ -1104,8 +1113,10 @@ As
 	---------------------------------------------------
 	--
 	Declare @stepNumber int = 0
+	
+	-- This is set to 1 if the assigned job had state 9 and thus the manager is checking the status of a job step already running remotely
 	Declare @jobIsRunningRemote tinyint = 0
-	--
+	
 	SELECT TOP 1
 		@jobNumber =  JS.Job,
 		@stepNumber = JS.Step_Number,
@@ -1129,6 +1140,8 @@ As
 	if @myRowCount > 0
 		set @jobAssigned = 1
 	
+	Set @jobIsRunningRemote = IsNull(@jobIsRunningRemote, 0)
+	
 	---------------------------------------------------
 	-- If a job step was found (@jobNumber <> 0) and if @infoOnly = 0, 
 	--  then update the step state to Running
@@ -1142,7 +1155,19 @@ As
 			Processor = @processorName,
 			Start = GetDate(),
 			Finish = Null,
-			Actual_CPU_Load = CPU_Load
+			Actual_CPU_Load = CASE WHEN @remoteInfoId > 1 THEN 1 ELSE CPU_Load END,
+			Remote_Start = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
+			                    WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
+			                    ELSE NULL
+			               END,			
+			Remote_Finish = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Null
+			                     WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Finish
+			                     ELSE NULL
+			                END,
+			Remote_Progress = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN 0
+			                       WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Progress
+			                       ELSE NULL
+			                  END
 		WHERE Job = @jobNumber AND
 		      Step_Number = @stepNumber
   		--
@@ -1203,7 +1228,7 @@ As
 	if @jobAssigned = 1
 	begin
 
-		if @infoOnly = 0 And IsNull(@jobIsRunningRemote, 0) = 0
+		if @infoOnly = 0 And @jobIsRunningRemote = 0
 		begin
 			---------------------------------------------------
 			-- Add entry to T_Job_Step_Processing_Log
@@ -1276,6 +1301,7 @@ As
 		           WHEN 105 THEN 'Invalid: Not enough memory available (' + Convert(varchar(12), CJS.Memory_Usage_MB) + ' > ' + Convert(varchar(12), @availableMemoryMB) + ', see T_Job_Steps.Memory_Usage_MB)'
 		           WHEN 106 THEN 'Invalid: Results_transfer task must run on ' + CJS.Storage_Server
 		           WHEN 107 THEN 'Invalid: Remote server already running ' + Cast(@maxSimultaneousRunningRemoteSteps as varchar(9)) + ' job steps; limit reached'
+		           WHEN 108 THEN 'Invalid: Manager not configured to access remote server for running job step'
 		           ELSE 'Warning: Unknown association type'
 		       END AS Association_Type,
 		       CJS.Tool_Priority,
@@ -1285,10 +1311,14 @@ As
 		       CJS.State,
 		       CJS.Step_Tool,
 		       J.Dataset,
+		       JS.Remote_Info_ID,
+		       @remoteInfoID AS Proc_Remote_Info_ID,
 		       @processorName AS Processor
 		FROM #Tmp_CandidateJobSteps CJS
 		     INNER JOIN T_Jobs J
-		 ON CJS.Job = J.Job
+		       ON CJS.Job = J.Job 
+		     INNER JOIN T_Job_Steps JS 
+		       ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
 		ORDER BY Seq
 	End
 
