@@ -9,7 +9,10 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **	Desc:	Creates a requested run and associates it with
 **			the given dataset if there is not currently one
 **
-**			The requested run will be named 'AutoReq_DatasetName'
+**			The requested run will be named one of the following:
+**			  'AutoReq_DatasetName'
+**			  'AutoReq2_DatasetName'
+**			  'AutoReq3_DatasetName'
 **
 **
 **			Note that this procedure is similar to AddMissingRequestedRun, 
@@ -30,11 +33,12 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			05/22/2017 mem - If necessary, change the prefix from AutoReq_ to AutoReq2_ or AutoReq3 to avoid conflicts
 **    
 *****************************************************/
 (
-	@datasetID INT = 0,        -- can supply ID for dataset
-	@datasetNum varchar(128),  -- or name for dataset (but not both)
+	@datasetID INT = 0,        -- Can supply ID for dataset or name for dataset (but not both)
+	@datasetNum varchar(128),  -- 
 	@templateRequestID INT,    -- existing request to use for looking up some parameters for new one
 	@mode varchar(12) = 'add', -- compatibility with web entry page and possible future use
 	@message varchar(512) output,
@@ -43,111 +47,139 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 AS
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
 	set @myRowCount = 0
 	
-	set @message = ''
+	Set @message = ''
 			
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
-	-- validate dataset identification 
-	--(either name or ID, but not both)
+	-- Validate dataset identification 
+	-- (either name or ID, but not both)
 	---------------------------------------------------
 
-	DECLARE
-		@dID INT = 0,
-		@dName VARCHAR(128) = ''
+	Declare @dID INT = 0
+	Declare @dName VARCHAR(128) = ''
 	
 	SET @datasetID = ISNULL(@datasetID, 0)
 	SET @datasetNum = ISNULL(@datasetNum, '')
 	
-	if @datasetID <> 0 AND @datasetNum <> ''
-	RAISERROR ('Cannot specify both datasetID "%d" and datasetNum "%s"', 11, 3, @datasetID, @datasetNum)
+	If @datasetID <> 0 AND @datasetNum <> ''
+		RAISERROR ('Cannot specify both datasetID "%d" and datasetNum "%s"', 11, 3, @datasetID, @datasetNum)
 	
 	---------------------------------------------------
-	-- does dataset exist?
+	-- Does dataset exist?
 	---------------------------------------------------
 	
-	SELECT 
-		@dID = Dataset_ID, 
-		@dName = Dataset_Num
-	FROM   dbo.T_Dataset
-	WHERE  
-	Dataset_Num = @datasetNum OR Dataset_ID = @datasetID
+	SELECT @dID = Dataset_ID,
+	       @dName = Dataset_Num
+	FROM dbo.T_Dataset
+	WHERE Dataset_ID = @datasetID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	if @dID = 0
-	RAISERROR ('Could not find datasetID "%d" or dataset "%s"', 11, 4, @datasetID, @datasetNum)
+	If @myRowCount = 0 And @datasetNum <> ''
+	Begin
+		SELECT @dID = Dataset_ID,
+			   @dName = Dataset_Num
+		FROM dbo.T_Dataset
+		WHERE Dataset_Num = @datasetNum
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	End
+
+	If @dID = 0
+		RAISERROR ('Could not find datasetID "%d" or dataset "%s"', 11, 4, @datasetID, @datasetNum)
 
 	---------------------------------------------------
-	-- does the dataset have an associated request?
+	-- Does the dataset have an associated request?
 	---------------------------------------------------
-	DECLARE 
-		@rID INT = 0
+	
+	Declare @rID INT = 0
 		
 	SELECT @rID = RR.ID
 	FROM   T_Requested_Run AS RR
 	WHERE  RR.DatasetID = @dID
 
-	if @rID <> 0
-	RAISERROR ('Dataset "%d" has existing requested run "%d"', 11, 5, @dID, @rID)
+	If @rID <> 0
+		RAISERROR ('Dataset "%d" has existing requested run "%d"', 11, 5, @dID, @rID)
 
 	---------------------------------------------------
-	-- parameters for creating requested run
+	-- Parameters for creating requested run
 	---------------------------------------------------
-	DECLARE 
-	@reqName varchar(128) = 'AutoReq_' + @dName,
-	@experimentNum varchar(64),
-	@instrumentName varchar(64),
-	@msType varchar(20),
-	@comment varchar(1024) = 'Automatically created by Dataset entry',
-	@workPackage varchar(50)  = 'none',
-	@operPRN varchar(128) = '',
-	@eusProposalID varchar(10) = 'na',
-	@eusUsageType varchar(50),
-	@eusUsersList varchar(1024) = '',
-	@request int = 0,
-	@secSep varchar(64) = 'LC-ISCO-Standard',
-	@msg VARCHAR(512) = ''
+	
+	Declare @reqName varchar(128) = 'AutoReq_' + @dName
+	Declare @checkForDuplicates tinyint = 1
+	Declare @iteration int = 1
+	
+	While @checkForDuplicates > 0
+	Begin
+		If Exists (SELECT * FROM T_Requested_Run WHERE RDS_Name = @reqName)
+		Begin
+			-- Requested run already exists; bump up @iteration and try again
+			Set @iteration = @iteration + 1
+			Set @reqName = 'AutoReq' + Cast(@iteration as varchar(5)) + '_' + @dName
+		End
+		Else
+		Begin
+			Set @checkForDuplicates = 0
+		End
+	End
+	
+	Declare @experimentNum varchar(64)
+	Declare @instrumentName varchar(64)
+	Declare @msType varchar(20)
+	Declare @comment varchar(1024) = 'Automatically created by Dataset entry'
+	Declare @workPackage varchar(50)  = 'none'
+	Declare @operPRN varchar(128) = ''
+	Declare @eusProposalID varchar(10) = 'na'
+	Declare @eusUsageType varchar(50)
+	Declare @eusUsersList varchar(1024) = ''
+	Declare @request int = 0
+	Declare @secSep varchar(64) = 'LC-ISCO-Standard'
+	Declare @msg VARCHAR(512) = ''
 
 	---------------------------------------------------
-	-- fill in some requested run parameters from dataset
+	-- Fill in some requested run parameters from dataset
 	---------------------------------------------------
 
-	SELECT
-		@experimentNum = TEXP.Experiment_Num ,
-		@instrumentName = TIN.IN_name ,
-		@msType = TDTN.DST_name ,
-		@secSep = TSEP.SS_name
-	FROM
-		T_Dataset AS TD
-		INNER JOIN T_Instrument_Name AS TIN ON TD.DS_instrument_name_ID = TIN.Instrument_ID
-		INNER JOIN T_DatasetTypeName AS TDTN ON TD.DS_type_ID = TDTN.DST_Type_ID
-		INNER JOIN T_Experiments AS TEXP ON TD.Exp_ID = TEXP.Exp_ID
-		INNER JOIN T_Secondary_Sep AS TSEP ON TD.DS_sec_sep = TSEP.SS_name
-	WHERE 
-		TD.Dataset_ID = @dID
+	SELECT @experimentNum = TEXP.Experiment_Num,
+	       @instrumentName = TIN.IN_name,
+	       @msType = TDTN.DST_name,
+	       @secSep = TSEP.SS_name
+	FROM T_Dataset AS TD
+	     INNER JOIN T_Instrument_Name AS TIN
+	       ON TD.DS_instrument_name_ID = TIN.Instrument_ID
+	     INNER JOIN T_DatasetTypeName AS TDTN
+	       ON TD.DS_type_ID = TDTN.DST_Type_ID
+	     INNER JOIN T_Experiments AS TEXP
+	       ON TD.Exp_ID = TEXP.Exp_ID
+	     INNER JOIN T_Secondary_Sep AS TSEP
+	       ON TD.DS_sec_sep = TSEP.SS_name
+	WHERE TD.Dataset_ID = @dID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
 
 	---------------------------------------------------
-	-- fill in some parameters from existing requested run 
+	-- Fill in some parameters from existing requested run 
 	-- (if an ID was provided in @templateRequestID)
 	---------------------------------------------------
 	
-	IF ISNULL(@templateRequestID, 0) <> 0
-	BEGIN 
-		SELECT  
-			@workPackage = RDS_WorkPackage ,
-			@operPRN = RDS_Oper_PRN,
-			@eusProposalID = RDS_EUS_Proposal_ID ,
-			@eusUsageType = EUT.Name ,
-			@eusUsersList = dbo.GetRequestedRunEUSUsersList(RR.ID, 'I')
-		FROM
-			T_Requested_Run AS RR
-			INNER JOIN dbo.T_EUS_UsageType AS EUT ON RR.RDS_EUS_UsageType = EUT.ID
-		WHERE
-			RR.ID = @templateRequestID
+	If ISNULL(@templateRequestID, 0) <> 0
+	Begin 
+		SELECT @workPackage = RDS_WorkPackage,
+		       @operPRN = RDS_Oper_PRN,
+		       @eusProposalID = RDS_EUS_Proposal_ID,
+		       @eusUsageType = EUT.Name,
+		       @eusUsersList = dbo.GetRequestedRunEUSUsersList(RR.ID, 'I')
+		FROM T_Requested_Run AS RR
+		     INNER JOIN dbo.T_EUS_UsageType AS EUT
+		       ON RR.RDS_EUS_UsageType = EUT.ID
+		WHERE RR.ID = @templateRequestID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -162,7 +194,7 @@ AS
 		If IsNull(@workPackage, 'none') = 'none'			
 			EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
 
-	END 
+	End 
 
 	---------------------------------------------------
 	-- set up EUS parameters
@@ -221,8 +253,8 @@ AS
 	-- Errors end up here
 	---------------------------------------------------
 
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
@@ -230,7 +262,8 @@ AS
 			ROLLBACK TRANSACTION;
 			
 		Exec PostLogEntry 'Error', @message, 'AddRequestedRunToExistingDataset'
-	END CATCH
+	End CATCH
+	
 	RETURN @myError
 
 GO
