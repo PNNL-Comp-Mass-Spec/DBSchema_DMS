@@ -15,7 +15,8 @@ CREATE PROCEDURE dbo.DeleteJobIfNewOrFailed
 **
 **	Auth:	mem
 **			04/21/2017 mem - Initial release
-
+**			05/26/2017 mem - Check for job step state 9 (Running_Remote)
+**
 *****************************************************/
 (
     @job int,
@@ -40,7 +41,7 @@ As
 					   NOT Job IN ( SELECT JS.Job
 								    FROM T_Job_Steps JS
 								    WHERE JS.Job = @job AND
-									      JS.State = 4 AND
+									      JS.State IN (4, 9) AND
 									      JS.Start >= DateAdd(hour, -48, GetDate()) 
 								  ) )
 		Begin
@@ -71,7 +72,7 @@ As
 				NOT Job IN ( SELECT JS.Job
 							FROM T_Job_Steps JS
 							WHERE JS.Job = @job AND
-								JS.State = 4 AND
+								JS.State IN (4, 9) AND
 								JS.Start >= DateAdd(hour, -48, GetDate()) 
 							) 
 		--

@@ -17,6 +17,7 @@ CREATE PROCEDURE RemoveDMSDeletedJobs
 **			02/26/2009 mem - Updated to look for any job not present in DMS, but to exclude jobs with a currently running job step
 **			06/01/2009 mem - Added parameter @MaxJobsToProcess (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **			04/13/2010 grk - don't delete jobs where dataset ID = 0
+**			05/26/2017 mem - Treat state 9 (Running_Remote) as an active job
 **
 *****************************************************/
 (
@@ -71,7 +72,7 @@ As
 	DELETE #SJL
 	FROM #SJL INNER JOIN
 	     T_Job_Steps JS ON #SJL.Job = JS.Job
-	WHERE JS.State = 4 AND JS.Start >= DateAdd(hour, -48, GetDate())
+	WHERE JS.State IN (4,9) AND JS.Start >= DateAdd(hour, -48, GetDate())
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	

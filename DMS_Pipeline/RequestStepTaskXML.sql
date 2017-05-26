@@ -83,6 +83,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/18/2017 mem - Add parameter @remoteInfo
 **			05/22/2017 mem - Limit assignment of RunningRemote jobs to managers with the same RemoteInfoID as the job
 **			05/23/2017 mem - Update Remote_Start, Remote_Finish, and Remote_Progress
+**			05/26/2017 mem - Treat state 9 (Running_Remote) as having a CPU_Load of 0
 **
 *****************************************************/
 (
@@ -635,7 +636,7 @@ As
 			TJ.Storage_Server,
 			TP.Machine,
 			CASE
-				WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) 
+				WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) 
 					-- No processing load available on machine
 					THEN 101
 				WHEN (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) 
@@ -820,7 +821,7 @@ As
 			    PTGD.Tool_Name <> 'Results_Transfer'		-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
-			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
+			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
 			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
@@ -921,7 +922,7 @@ As
 			                        PTGD.Tool_Name <> 'Results_Transfer'			-- Candidate Result_Transfer steps were found above
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
-			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 1 ELSE TP.CPU_Load END) AND
+			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
 			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
@@ -1155,7 +1156,7 @@ As
 			Processor = @processorName,
 			Start = GetDate(),
 			Finish = Null,
-			Actual_CPU_Load = CASE WHEN @remoteInfoId > 1 THEN 1 ELSE CPU_Load END,
+			Actual_CPU_Load = CASE WHEN @remoteInfoId > 1 THEN 0 ELSE CPU_Load END,
 			Remote_Start = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
 			                    WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
 			                    ELSE NULL
@@ -1199,7 +1200,7 @@ As
 		FROM T_Machines Target
 		     INNER JOIN ( SELECT LP.Machine,
 		                         SUM(	CASE WHEN @jobIsRunningRemote > 0 AND JS.Step_Number = @stepNumber 
-		                                       THEN 1
+		                                       THEN 0
 		                                     WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
 											   THEN IsNull(M.Total_CPUs, JS.CPU_Load)
 											 ELSE JS.Actual_CPU_Load
