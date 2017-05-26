@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateParamFile
 **	Date:	07/22/2004 - Initial version
 **			12/06/2016 - Add parameters @paramFileID, @paramfileValid, @paramfileMassMods, and @replaceExistingMassMods
 **					   - Replaced parameter @paramFileTypeID with @paramFileType
+**			05/26/2017 - Update @paramfileMassMods to remove tabs
 **
 *****************************************************/
 (
@@ -84,6 +85,10 @@ As
 	Set @paramfileValid = IsNull(@paramfileValid, 1)
 	
 	Set @paramfileMassMods = IsNull(@paramfileMassMods, '')
+	
+	-- Assure that @paramfileMassMods does not have any tabs
+	Set @paramfileMassMods = Replace (@paramfileMassMods, CHAR(9), ' ')	
+	
 	Set @replaceExistingMassMods = IsNull(@replaceExistingMassMods, 0)
 	
 	If @myError <> 0
