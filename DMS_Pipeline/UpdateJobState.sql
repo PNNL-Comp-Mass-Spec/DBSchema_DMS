@@ -528,11 +528,15 @@ As
 
 			If @infoOnly = 0
 			Begin
-				---------------------------------------------------
-				-- save job history
-				---------------------------------------------------
-				--
-				exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
+				If @newJobStateInBroker IN (4,5)
+				Begin
+					---------------------------------------------------
+					-- Save job history
+					---------------------------------------------------
+					--
+					exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
+				End
+				
 			End 
 
 			Set @JobsProcessed = @JobsProcessed + 1
