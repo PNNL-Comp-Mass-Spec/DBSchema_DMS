@@ -25,7 +25,7 @@ SELECT Warning_Message,
 FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.LastCPUStatus_Minutes >= 4*60 )         THEN 'No status update for 4 hours'
                     WHEN (JS.State = 4 AND RunTime_Predicted_Hours >= 36 )            THEN 'Job predicted to run over 36 hours'
                     WHEN (JS.State = 4 AND DATEDIFF(day, JS.Start, GetDate()) >= 4 )  THEN 'Job step running over 4 days'
-                    WHEN (JS.State = 6 AND JS.Start >= DATEADD(day, -14, GETDATE()) ) THEN 'Job step failed within the last 14 days'
+                    WHEN (JS.State IN (6, 16) AND JS.Start >= DATEADD(day, -14, GETDATE()) ) THEN 'Job step failed within the last 14 days'
                     -- Use a Bitwise Or to look for Evaluation_Codes that include Code 2, which indicates for Sequest that NodeCountActive is less than the expected value
                     WHEN (Tool LIKE '%sequest%' AND (JS.Evaluation_Code & 2) = 2 AND JS.Start >= DATEADD(day, -2, GETDATE())) THEN 'SEQUEST node count is less than the expected value'
                     WHEN (NOT FailedJobQ.Job IS Null)                                 THEN 'Overall job state is "failed"'
@@ -39,8 +39,7 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.LastCPUStatus_Minutes >= 4*60 )   
               JS.State,
               CASE
                   WHEN JS.State = 4 THEN 'Stale'
-                  ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State = 6
-                       THEN JS.StateName
+                  ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State in (6, 16) THEN JS.StateName
                        ELSE JS.StateName + ' (Failed in T_Jobs)'
                        END
               END AS StateName,

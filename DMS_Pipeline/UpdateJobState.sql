@@ -93,6 +93,8 @@ CREATE PROCEDURE UpdateJobState
 **			12/31/2015 mem - Setting job state in DMS to 14 if the job comment contains "No results in DeconTools Isos file"
 **			09/15/2016 mem - Update jobs in DMS5 that are in state 1=New, but are actually in progress
 **			05/13/2017 mem - Treat step state 9 (Running_Remote) as "In progress"
+**			05/26/2017 mem - Add step state 16 (Failed_Remote)
+**			               - Only call CopyJobToHistory if the job state is 4 or 5
 **    
 *****************************************************/
 (
@@ -234,7 +236,7 @@ As
 					ELSE 0
 					END) AS StartedFinishedOrSkipped,
 				SUM(CASE 
-					WHEN JS.State IN (6) THEN 1
+					WHEN JS.State IN (6,16) THEN 1
 					ELSE 0
 					END) AS Failed,
 				SUM(CASE 
@@ -248,7 +250,7 @@ As
 			FROM T_Job_Steps JS
 			     INNER JOIN T_Jobs J
 			       ON JS.Job = J.Job
-			WHERE (J.State IN (1,2,5,20))	-- Job state new, in progress, failed, or resuming state
+			WHERE (J.State IN (1,2,5,20))	-- Job state (not step state!) new, in progress, failed, or resuming state
 			GROUP BY JS.Job, J.State
 		   ) AS JS_Stats 
 		   INNER JOIN T_Jobs AS J
@@ -335,8 +337,7 @@ As
 			-- Roll up step completion comments
 			---------------------------------------------------
 			--
-			declare @comment varchar(255)
-			Set @comment = ''
+			declare @comment varchar(255) = ''
 			--
 			SELECT @comment = @comment + CASE 
 											WHEN LTrim(RTrim(Completion_Message)) = '' 
@@ -373,7 +374,7 @@ As
 			Begin
 				
 				---------------------------------------------------
-				-- update local job state, timestamp (if appropriate), and comment
+				-- Update local job state, timestamp (if appropriate), and comment
 				---------------------------------------------------
 				--				
 				UPDATE T_Jobs
@@ -401,7 +402,7 @@ As
 			End
 
 			---------------------------------------------------
-			-- figure out what DMS job state should be
+			-- Figure out what DMS job state should be
 			-- and update it
 			---------------------------------------------------
 			--
@@ -444,12 +445,13 @@ As
 					              Completion_Message LIKE '%No results in DeconTools Isos file%' AND
 					              Step_Tool LIKE 'Decon%' )
 					Set @NewDMSJobState = 14
-			End							
+			End	
+									
 			---------------------------------------------------
 			-- Decide on the fasta file name to save in job
 			-- In addition, check whether the job has a Propagation mode of 1
 			---------------------------------------------------
-			declare @jobInDMS INT = 0
+			Declare @jobInDMS INT = 0
 			--
 			If @datasetID <> 0
 			Begin 
@@ -497,7 +499,7 @@ As
 				
 				-- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
 				-- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job
-				--  and if the values don't match, then the update is not performed
+				--  and if the values don't match, the update is not performed
 				
 				If @Job % 2 = 0
 					Set @UpdateCode = (@Job % 220) + 14

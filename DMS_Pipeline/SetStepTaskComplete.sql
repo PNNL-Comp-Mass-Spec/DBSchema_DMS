@@ -37,6 +37,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			05/18/2017 mem - Use GetRemoteInfoID to resolve @remoteInfo to @remoteInfoID
 **			05/23/2017 mem - Add parameter @remoteProgress
 **							 Update Remote_Finish if a remotely running job has finished (success or failure)
+**			05/26/2017 mem - Add completion code 26 (FAILED_REMOTE), which leads to step state 16
 **
 *****************************************************/
 (
@@ -189,6 +190,12 @@ As
 			Set @nextTry = DateAdd(minute, @adjustedHoldoffInterval, GetDate())
 		End
 		
+		If @completionCode = 26  -- FAILED_REMOTE
+		Begin
+			Set @stepState = 16  -- Failed_Remote			
+			Set @completionCodeDescription = 'Failed remote'
+		End
+		
 		If @stepState = 0
 		Begin
 			Set @stepState = 6 -- fail
@@ -278,7 +285,8 @@ As
 			
 			UPDATE T_Job_Steps
 			SET Remote_Info_ID = @remoteInfoID,
-			    Remote_Finish = CASE WHEN @stepState IN (3,5,6) THEN GetDate() ELSE Remote_Finish END			
+			    Remote_Finish = CASE WHEN @stepState IN (3,5,6,16) THEN GetDate() ELSE Remote_Finish END,
+			    Remote_Progress = CASE WHEN @stepState = 5 THEN 100 ELSE Remote_Progress END
 			WHERE Job = @job AND
 			      Step_Number = @step
  			--
@@ -329,7 +337,7 @@ As
 			        WHERE Message = @message And
 			              type = 'Normal' And
 			              posting_Time >= DateAdd(day, -1, GetDate()) 
-			      )
+			 )
 		Begin
 			Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')' + 
 			               ' within the last 24 hours'

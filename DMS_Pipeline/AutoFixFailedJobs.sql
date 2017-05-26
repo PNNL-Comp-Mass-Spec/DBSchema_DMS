@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.AutoFixFailedJobs
 **	Auth:	mem
 **	Date:	05/01/2015 mem - Initial version
 **			05/08/2015 mem - Added support for "Cannot run BuildSA since less than"
+**			05/26/2017 mem - Add step state 16 (Failed_Remote)
 **
 *****************************************************/
 (
@@ -162,7 +163,7 @@ As
 	INSERT INTO #Tmp_JobsToFix (Job, Step)
 	SELECT Job, Step_Number
 	FROM T_Job_Steps
-	WHERE Step_Tool = 'MSGFPlus' AND State = 6 And 
+	WHERE Step_Tool = 'MSGFPlus' AND State IN (6,16) And 
 	      Completion_Message LIKE '%Cannot run BuildSA since less than % MB of free memory%'
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
