@@ -16,6 +16,7 @@ CREATE PROCEDURE UpdateActualCPULoading
 **	Auth:	mem
 **	Date:	11/20/2015 mem - Initial release
 **			01/05/2016 mem - Check for load values over 255
+**			05/26/2017 mem - Ignore jobs running remotely
 **    
 *****************************************************/
 (
@@ -41,8 +42,9 @@ As
 	)
 
 
-	--
+	---------------------------------------------------
 	-- Find managers with an active job step and valid values for ProgRunner_ProcessID and ProgRunner_CoreUsage
+	---------------------------------------------------
 	--
 	INSERT INTO @PendingUpdates( Processor_Name,
 	                             Job,
@@ -58,6 +60,7 @@ As
 	          PS.Job_Step = JS.Step_Number AND
 	          PS.Processor_Name = JS.Processor
 	WHERE JS.State = 4 AND
+	      IsNull(JS.Remote_Info_ID, 0) <= 1 AND
 	      ISNULL(PS.ProgRunner_ProcessID, 0) > 0 AND
 	      NOT (PS.ProgRunner_CoreUsage IS NULL)
 	--
@@ -104,14 +107,14 @@ As
 		Else
 		Begin
 			UPDATE T_Job_Steps
-			SET Actual_CPU_Load = New_CPU_Load
+			SET Actual_CPU_Load = U.New_CPU_Load
 			FROM @PendingUpdates U
 			     INNER JOIN T_Job_Steps JS
 			       ON U.Job = JS.Job AND
 			          U.Step = JS.Step_Number AND
 			          U.Processor_Name = JS.Processor
-			WHERE Actual_CPU_Load <> New_CPU_Load OR
-			      Actual_CPU_Load IS NULL
+			WHERE JS.Actual_CPU_Load <> U.New_CPU_Load OR
+			      JS.Actual_CPU_Load IS NULL
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 

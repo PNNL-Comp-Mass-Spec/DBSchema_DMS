@@ -25,6 +25,7 @@ CREATE PROCEDURE dbo.UpdateCPULoading
 **			02/26/2015 mem - Split the Update query into two parts
 **			04/17/2015 mem - Now using column Uses_All_Cores
 **			11/18/2015 mem - Now using Actual_CPU_Load
+**			05/26/2017 mem - Consider Remote_Info_ID when determining CPU and memory usage
 **    
 *****************************************************/
 (
@@ -58,14 +59,18 @@ As
 	INSERT INTO #Tmp_MachineStats (Machine, CPUs_Used, Memory_Used)
 	SELECT M.Machine,
 		SUM(CASE WHEN JobStepsQ.State = 4 
-				 THEN 
-					CASE WHEN JobStepsQ.Uses_All_Cores > 0 AND JobStepsQ.Actual_CPU_Load = JobStepsQ.CPU_Load
-						 THEN M.Total_CPUs
-						 ELSE IsNull(JobStepsQ.Actual_CPU_Load, 1)
+				 THEN 				    
+					CASE 
+					   WHEN JobStepsQ.Remote_Info_ID > 1 
+					     THEN 0
+					   WHEN JobStepsQ.Uses_All_Cores > 0 AND JobStepsQ.Actual_CPU_Load = JobStepsQ.CPU_Load 
+					     THEN M.Total_CPUs
+					   ELSE 
+					     IsNull(JobStepsQ.Actual_CPU_Load, 1)
 					END
 				 ELSE 0
 			END) AS CPUs_used,
-		SUM(CASE WHEN JobStepsQ.State = 4 
+		SUM(CASE WHEN JobStepsQ.State = 4 AND JobStepsQ.Remote_Info_ID <= 1
 				 THEN JobStepsQ.Memory_Usage_MB
 				 ELSE 0
 			END) AS Memory_Used
@@ -77,7 +82,8 @@ As
 	                              Tools.Uses_All_Cores,
 	                              JS.CPU_Load,
 	                              JS.Actual_CPU_Load,
-	                              JS.Memory_Usage_MB
+	                              JS.Memory_Usage_MB,
+	                              IsNull(JS.Remote_Info_ID, 0) AS Remote_Info_ID
 	                       FROM T_Job_Steps JS WITH ( READUNCOMMITTED )
 	                            INNER JOIN T_Step_Tools Tools
 	                              ON Tools.Name = JS.Step_Tool ) JobStepsQ
