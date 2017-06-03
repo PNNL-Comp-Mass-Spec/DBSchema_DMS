@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[T_MyEMSL_Uploads](
 	[StatusURI_PathID] [int] NULL,
 	[ContentURI_PathID] [int] NULL,
 	[StatusNum] [int] NULL,
+	[TransactionID] [int] NULL,
 	[Verified] [tinyint] NOT NULL,
 	[Ingest_Steps_Completed] [tinyint] NULL,
 	[ErrorCode] [int] NULL,

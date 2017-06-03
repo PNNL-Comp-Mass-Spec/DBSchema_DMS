@@ -15,23 +15,25 @@ CREATE PROCEDURE dbo.UpdateMyEMSLUploadIngestStats
 **
 **	Auth:	mem
 **	Date:	12/18/2014 mem - Initial version
-**			06/23/2016 mem - Add parameter @FatalError
+**			06/23/2016 mem - Add parameter @fatalError
+**			05/31/2017 mem - Update TransactionID in T_MyEMSL_Uploads using @transactionId
 **    
 *****************************************************/
 (
-	@DatasetID int,
-	@StatusNum int,							-- The status number must match the specified DatasetID (this is a safety check)
-	@IngestStepsCompleted tinyint,			-- Number of ingest steps that were completed for this entry
-	@FatalError tinyint = 0,				-- Set to 1 if the ingest failed and the ErrorCode column needs to be set to -1 (if currently 0 or null)
+	@datasetID int,
+	@statusNum int,							-- The status number must match the specified DatasetID (this is a safety check)
+	@ingestStepsCompleted tinyint,			-- Number of ingest steps that were completed for this entry
+	@fatalError tinyint = 0,				-- Set to 1 if the ingest failed and the ErrorCode column needs to be set to -1 (if currently 0 or null)
+	@transactionId int = 0,					-- Transaction ID (null or 0 if unknown)
 	@message varchar(512)='' output
 )
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 	
 	Declare @errorCode int = 0
 	
@@ -39,27 +41,28 @@ As
 	-- Validate the inputs
 	---------------------------------------------------
 	
-	Set @DatasetID = IsNull(@DatasetID, 0)
-	Set @StatusNum = IsNull(@StatusNum, 0)
-	Set @IngestStepsCompleted = IsNull(@IngestStepsCompleted, 0)
-	Set @FatalError = IsNull(@FatalError, 0)
+	Set @datasetID = IsNull(@datasetID, 0)
+	Set @statusNum = IsNull(@statusNum, 0)
+	Set @ingestStepsCompleted = IsNull(@ingestStepsCompleted, 0)
+	Set @fatalError = IsNull(@fatalError, 0)
+	Set @transactionId = IsNull(@transactionId, 0)
 	
 	Set @message = ''
 	
-	If @DatasetID <= 0
+	If @datasetID <= 0
 	Begin
-		Set @message = '@DatasetID must be positive; unable to continue'
+		Set @message = '@datasetID must be positive; unable to continue'
 		Set @myError = 60000
 		Goto Done
 	End
 
 	---------------------------------------------------
-	-- Make sure the @StatusNum exists in T_MyEMSL_Uploads
+	-- Make sure the @statusNum exists in T_MyEMSL_Uploads
 	---------------------------------------------------
 	
-	If Not Exists (SELECT * FROM T_MyEMSL_Uploads MU WHERE StatusNum = @StatusNum)
+	If Not Exists (SELECT * FROM T_MyEMSL_Uploads MU WHERE StatusNum = @statusNum)
 	Begin
-		Set @message = 'StatusNum ' + Cast(@StatusNum as varchar(12)) + ' not found in T_MyEMSL_Uploads'
+		Set @message = 'StatusNum ' + Cast(@statusNum as varchar(12)) + ' not found in T_MyEMSL_Uploads'
 		Set @myError = 60003
 		Goto Done
 	End
@@ -71,14 +74,14 @@ As
 	
 	SELECT @errorCode = ErrorCode
 	FROM T_MyEMSL_Uploads
-	WHERE StatusNum = @StatusNum AND
-	      Dataset_ID = @DatasetID
+	WHERE StatusNum = @statusNum AND
+	      Dataset_ID = @datasetID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
 	If @myRowCount = 0
 	Begin
-		Set @message = 'The DatasetID for StatusNum ' + Cast(@StatusNum as varchar(12)) + ' is not ' + Cast(@DatasetID as varchar(12)) + '; will not update Ingest_Steps_Completed'
+		Set @message = 'The DatasetID for StatusNum ' + Cast(@statusNum as varchar(12)) + ' is not ' + Cast(@datasetID as varchar(12)) + '; will not update Ingest_Steps_Completed'
 		Set @myError = 60004
 		Goto Done
 	End
@@ -87,7 +90,7 @@ As
 	-- Possibly update the error code
 	---------------------------------------------------
 	
-	If @FatalError > 0 And IsNull(@errorCode, 0) = 0
+	If @fatalError > 0 And IsNull(@errorCode, 0) = 0
 	Begin
 		Set @errorCode = -1
 	End
@@ -97,11 +100,21 @@ As
 	---------------------------------------------------
 	
 	UPDATE T_MyEMSL_Uploads
-	SET Ingest_Steps_Completed = @IngestStepsCompleted,
-	    ErrorCode = @errorCode
-	WHERE StatusNum = @StatusNum AND
-	      (IsNull(Ingest_Steps_Completed, 0) <> @IngestStepsCompleted OR
+	SET Ingest_Steps_Completed = @ingestStepsCompleted,
+	    ErrorCode = @errorCode,
+	    TransactionID = CASE WHEN @transactionId = 0 THEN TransactionID ELSE @transactionId END
+	WHERE StatusNum = @statusNum AND
+	      (IsNull(Ingest_Steps_Completed, 0) <> @ingestStepsCompleted OR
 	       IsNull(ErrorCode, 0) <> IsNull(@errorCode, 0))
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If @myError > 0
+	Begin
+		Set @message = 'Error updating T_MyEMSL_Uploads for StatusNum ' + Cast(@statusNum as varchar(12))
+		Set @myError = 60006
+		Goto Done
+	End
 	
 Done:
 

@@ -46,6 +46,7 @@ SELECT JS.Job,
        JS.Next_Try,
        JS.Retry_Count,
        JS.Instrument,
+	   'http://dms2.pnl.gov/helper_inst_source/view/' + JS.Instrument AS InstrumentSourceFiles,
        JS.Storage_Server,
        JS.Transfer_Folder_Path,
        JS.Dataset_Folder_Path,
@@ -100,7 +101,6 @@ FROM ( SELECT JS.Job,
        WHERE J.State <> 101 ) JS
      LEFT OUTER JOIN dbo.T_Processor_Status PS ( READUNCOMMITTED )
        ON JS.Processor = PS.Processor_Name
-
 
 
 GO

@@ -15,43 +15,44 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **
 **	Auth:	mem
 **	Date:	09/20/2013 mem - Initial version
-**			12/19/2014 mem - Added parameter @IngestStepsCompleted
+**			12/19/2014 mem - Added parameter @ingestStepsCompleted
+**			05/31/2017 mem - Add logging
 **    
 *****************************************************/
 (
-	@DatasetID int,
-	@StatusNumList varchar(1024),			-- The status numbers in this list must match the specified DatasetID (this is a safety check)
-	@IngestStepsCompleted tinyint,			-- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
+	@datasetID int,
+	@statusNumList varchar(1024),			-- The status numbers in this list must match the specified DatasetID (this is a safety check)
+	@ingestStepsCompleted tinyint,			-- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
 	@message varchar(512)='' output
 )
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 		
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
 	
-	Set @DatasetID = IsNull(@DatasetID, 0)
-	Set @StatusNumList = IsNull(@StatusNumList, '')
-	Set @IngestStepsCompleted = IsNull(@IngestStepsCompleted, 0)
+	Set @datasetID = IsNull(@datasetID, 0)
+	Set @statusNumList = IsNull(@statusNumList, '')
+	Set @ingestStepsCompleted = IsNull(@ingestStepsCompleted, 0)
 	
 	Set @message = ''
 	
-	If @DatasetID <= 0
+	If @datasetID <= 0
 	Begin
-		Set @message = '@DatasetID must be positive; unable to continue'
+		Set @message = '@datasetID must be positive; unable to continue'
 		Set @myError = 60000
 		Goto Done
 	End
 	
-	If Len(@StatusNumList) = 0
+	If Len(@statusNumList) = 0
 	Begin
-		Set @message = '@StatusNumList was empty; unable to continue'
+		Set @message = '@statusNumList was empty; unable to continue'
 		Set @myError = 60001
 		Goto Done
 	End
@@ -64,7 +65,7 @@ As
 	
 	INSERT INTO @StatusNumListTable (StatusNum)
 	SELECT DISTINCT Value
-	FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
+	FROM dbo.udfParseDelimitedIntegerList(@statusNumList, ',')
 	ORDER BY Value
 
 	Declare @StatusNumCount int = 0
@@ -73,18 +74,18 @@ As
 	
 	If IsNull(@StatusNumCount, 0) = 0
 	Begin
-		Set @message = 'No status nums were found in @StatusNumList; unable to continue'
+		Set @message = 'No status nums were found in @statusNumList; unable to continue'
 		Set @myError = 60002
 		Goto Done
 	End
-	
+
 	---------------------------------------------------
 	-- Make sure the StatusNums in @StatusNumListTable exist in T_MyEMSL_Uploads
 	---------------------------------------------------
 	
 	If Exists (SELECT * FROM @StatusNumListTable SL LEFT OUTER JOIN T_MyEMSL_Uploads MU ON MU.StatusNum = SL.StatusNum WHERE MU.Entry_ID IS NULL)
 	Begin
-		Set @message = 'One or more StatusNums in @StatusNumList were not found in T_MyEMSL_Uploads: ' + @StatusNumList
+		Set @message = 'One or more StatusNums in @statusNumList were not found in T_MyEMSL_Uploads: ' + @statusNumList
 		Set @myError = 60003
 		Goto Done
 	End
@@ -93,13 +94,13 @@ As
 	-- Make sure the Dataset_ID is correct
 	---------------------------------------------------
 	
-	If Exists (Select * FROM T_MyEMSL_Uploads WHERE StatusNum IN (Select StatusNum From @StatusNumListTable) And Dataset_ID <> @DatasetID)
+	If Exists (Select * FROM T_MyEMSL_Uploads WHERE StatusNum IN (Select StatusNum From @StatusNumListTable) And Dataset_ID <> @datasetID)
 	Begin
-		Set @message = 'One or more StatusNums in @StatusNumList do not have Dataset_ID ' + Convert(varchar(12), @DatasetID) + ' in T_MyEMSL_Uploads: ' + @StatusNumList
+		Set @message = 'One or more StatusNums in @statusNumList do not have Dataset_ID ' + Convert(varchar(12), @datasetID) + ' in T_MyEMSL_Uploads: ' + @statusNumList
 		Set @myError = 60004
 		Goto Done
 	End
-	 
+
 	---------------------------------------------------
 	-- Perform the update
 	---------------------------------------------------
@@ -107,19 +108,38 @@ As
 	-- First update Ingest_Steps_Completed for steps that have already been verified
 	--
 	UPDATE T_MyEMSL_Uploads
-	SET Ingest_Steps_Completed = @IngestStepsCompleted
+	SET Ingest_Steps_Completed = @ingestStepsCompleted
 	WHERE Verified = 1 AND
 	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable ) AND
-	      (Ingest_Steps_Completed Is Null Or Ingest_Steps_Completed < @IngestStepsCompleted)
+	      (Ingest_Steps_Completed Is Null Or Ingest_Steps_Completed < @ingestStepsCompleted)
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	If @myError > 0
+	Begin
+		Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 1 in T_MyEMSL_Uploads ' + 
+		               'for StatusNum: ' + @statusNumList + ', dataset ID ' + Convert(varchar(12), @datasetID)
+		Set @myError = 60006
+		Goto Done
+	End
 	
 	-- Now update newly verified steps
 	--
 	UPDATE T_MyEMSL_Uploads
 	SET Verified = 1,
-	    Ingest_Steps_Completed = @IngestStepsCompleted
+	    Ingest_Steps_Completed = @ingestStepsCompleted
 	WHERE Verified = 0 AND
 	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable )
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If @myError > 0
+	Begin
+		Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 0 in T_MyEMSL_Uploads ' + 
+		               'for StatusNum: ' + @statusNumList + ', dataset ID ' + Convert(varchar(12), @datasetID)
+		Set @myError = 60007
+		Goto Done
+	End
 	      	
 Done:
 
@@ -134,9 +154,6 @@ Done:
 	End	
 
 	Return @myError
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadVerified] TO [DDL_Viewer] AS [dbo]
