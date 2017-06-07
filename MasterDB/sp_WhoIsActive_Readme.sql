@@ -10,4 +10,6 @@ exec sp_WhoIsActive
 
 exec sp_whoisactive @help=1
 
+exec sp_whoisactive @get_plans=1
+
 GO
