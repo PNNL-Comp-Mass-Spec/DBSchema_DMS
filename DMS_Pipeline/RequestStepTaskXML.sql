@@ -84,6 +84,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/22/2017 mem - Limit assignment of RunningRemote jobs to managers with the same RemoteInfoID as the job
 **			05/23/2017 mem - Update Remote_Start, Remote_Finish, and Remote_Progress
 **			05/26/2017 mem - Treat state 9 (Running_Remote) as having a CPU_Load of 0
+**			06/08/2017 mem - Remove use of column MonitorRunningRemote in T_Machines since @remoteInfo replaces it
 **
 *****************************************************/
 (
@@ -706,8 +707,7 @@ As
 		                         M.CPUs_Available,		                         
 		                         ST.CPU_Load,
 		                         M.Memory_Available,
-		                         M.Machine,
-		                         M.MonitorRunningRemote
+		                         M.Machine
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
@@ -722,7 +722,7 @@ As
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
 		WHERE GETDATE() > JS.Next_Try AND
-		      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
+		      (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
 		      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
@@ -806,8 +806,7 @@ As
 			                         M.CPUs_Available,
 			                         ST.CPU_Load,
 			                         M.Memory_Available,
-			                         M.Machine,
-			                         M.MonitorRunningRemote
+			                         M.Machine
 			                  FROM T_Machines M
 			                       INNER JOIN T_Local_Processors LP
 			                         ON M.Machine = LP.Machine
@@ -823,7 +822,7 @@ As
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
+			      (JS.State = 2 OR JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
@@ -907,8 +906,7 @@ As
 			                         M.CPUs_Available,
 			                         ST.CPU_Load,
 		                             M.Memory_Available,
-			                         M.Machine,
-			                         M.MonitorRunningRemote
+			                         M.Machine
 			                  FROM T_Machines M
 			                       INNER JOIN T_Local_Processors LP
 			                         ON M.Machine = LP.Machine
@@ -924,7 +922,7 @@ As
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
 			      GETDATE() > JS.Next_Try AND
-			      (JS.State = 2 OR TP.MonitorRunningRemote > 0 And JS.State = 9) AND
+			      (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
 			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
@@ -1150,6 +1148,18 @@ As
 	--
 	If @jobAssigned = 1 AND @infoOnly = 0
 	begin --<e>
+		Declare @debugMsg varchar(512) = 
+			'Assigned job ' + Cast(@jobNumber as varchar(9)) + ', step ' + Cast(@stepNumber as varchar(9)) + '; ' + 
+			'remoteInfoID=' + Cast(@remoteInfoId as varchar(9)) + ', ' + 
+			'jobIsRunningRemote=' + Cast(@jobIsRunningRemote as varchar(3)) + ', ' +
+			'setting Remote_Start to ' + 
+				CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Cast(GetDate() as varchar(32))
+				WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN 'existing Remote_Start value'
+				ELSE 'Null'
+				END
+			               
+		-- Exec PostLogEntry 'Debug', @debugMsg, 'RequestStepTaskXML'
+		
 		UPDATE T_Job_Steps
 		SET
 			State = 4, 
