@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_State_Name] ******/
-/****** RowCount: 20 ******/
+/****** RowCount: 21 ******/
 /****** Columns: AJS_stateID, AJS_name, Comment ******/
 INSERT INTO [T_Analysis_State_Name] VALUES (0,'(none)','State is unknown')
 INSERT INTO [T_Analysis_State_Name] VALUES (1,'New','New')
@@ -14,6 +14,7 @@ INSERT INTO [T_Analysis_State_Name] VALUES (9,'Transfer In Progress','No longer 
 INSERT INTO [T_Analysis_State_Name] VALUES (10,'Spectra Required','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (11,'Spectra Req. In Progress','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (12,'Spectra Req. Failed','No longer used')
+INSERT INTO [T_Analysis_State_Name] VALUES (13,'Inactive','Job aborted or failed, and we do not plan to re-run this job')
 INSERT INTO [T_Analysis_State_Name] VALUES (14,'No Export','Completed, but don''t put in MTS')
 INSERT INTO [T_Analysis_State_Name] VALUES (15,'SpecialClusterFailed','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (16,'Data Extraction Required','No longer used')

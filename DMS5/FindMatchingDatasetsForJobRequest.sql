@@ -22,6 +22,7 @@ CREATE PROCEDURE FindMatchingDatasetsForJobRequest
 **			06/17/2009 mem - Updated to ignore OrganismName when using protein collection lists
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**			06/09/2017 mem - Add support for state 13 (inactive)
 **    
 *****************************************************/
 (
@@ -101,7 +102,7 @@ AS
 			SUM(CASE WHEN AJ.AJ_StateID IN (1) THEN 1 ELSE 0 END) AS New,
 			SUM(CASE WHEN AJ.AJ_StateID IN (2, 3, 9, 10, 11, 16, 17) THEN 1 ELSE 0 END) AS Busy,
 			SUM(CASE WHEN AJ.AJ_StateID IN (4, 14) THEN 1 ELSE 0 END) AS Complete,
-			SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 15, 18, 99) THEN 1 ELSE 0 END) AS Failed,
+			SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 13, 15, 18, 99) THEN 1 ELSE 0 END) AS Failed,
 			SUM(CASE WHEN AJ.AJ_StateID IN (8) THEN 1 ELSE 0 END) AS Holding
 		FROM
 			T_Dataset DS INNER JOIN

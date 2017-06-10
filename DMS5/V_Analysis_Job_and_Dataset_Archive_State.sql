@@ -9,7 +9,8 @@ AS
 SELECT AJ.AJ_jobID AS Job,
        CASE
            WHEN AJ.AJ_StateID = 1 AND
-                DA.AS_state_ID IN (3, 4, 10, 14, 15) THEN ASN.AJS_name
+                (DA.AS_state_ID IN (3, 4, 10, 14, 15) OR
+				 DA.AS_state_Last_Affected < DateAdd(minute, -180, GetDate())) THEN ASN.AJS_name
            WHEN AJ.AJ_StateID = 1 AND
                 DA.AS_state_ID < 3 THEN ASN.AJS_name + ' (Dataset Not Archived)'
            WHEN AJ.AJ_StateID = 1 AND

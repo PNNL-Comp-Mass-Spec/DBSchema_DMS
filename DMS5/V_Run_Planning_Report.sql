@@ -4,14 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
---
 CREATE view [dbo].[V_Run_Planning_Report] as
 SELECT  GroupQ.[Inst. Group] ,
         GroupQ.[DS Type] ,
         GroupQ.[Run Count] ,
         GroupQ.Blocked ,
         GroupQ.BlkMissing ,
-        GroupQ.[Request Name or Batch],
+        GroupQ.[Request Name],
         RequestLookupQ.RDS_BatchID AS Batch ,
         GroupQ.Requester ,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue] ,
@@ -40,7 +39,7 @@ SELECT  GroupQ.[Inst. Group] ,
 FROM    ( SELECT    [Inst. Group] ,
                     MIN(RequestID) AS [Min Request] ,
                     COUNT(RequestName) AS [Run Count] ,
-                    MIN([Batch/Request]) AS [Request Name or Batch],
+                    MIN(Request_Prefix) AS [Request Name],
                     Requester ,
                     MIN(Request_Created) AS [Date Created] ,
                     [Separation Group] ,
@@ -60,18 +59,11 @@ FROM    ( SELECT    [Inst. Group] ,
                                 RA.[Type] AS [DS Type] ,
                                 RA.Request AS RequestID ,
                                 RA.Name AS RequestName ,
-                               CASE WHEN RA.Batch = 0
-                                     THEN LEFT(RA.Name, 20)
+                                LEFT(RA.Name, 20)
                                           + CASE WHEN LEN(RA.Name) > 20
                                                  THEN '...'
                                                  ELSE ''
-                                            END
-                                     ELSE LEFT(RRB.Batch, 20)
-                                          + CASE WHEN LEN(RRB.Batch) > 20
-                                                 THEN '...'
-                                                 ELSE ''
-                                            END
-                                END AS [Batch/Request] ,                                
+                                            END AS [Request_Prefix] ,
                                 RA.[Request Name Code] ,
                                 RA.Requester ,
                                 RA.Created AS Request_Created ,

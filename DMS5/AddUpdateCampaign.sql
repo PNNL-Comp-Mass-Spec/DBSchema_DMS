@@ -42,6 +42,7 @@ CREATE Procedure dbo.AddUpdateCampaign
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/09/2017 mem - Disable logging when the campaign name has invalid characters
 **    
 *****************************************************/
 (
@@ -208,11 +209,12 @@ As
 		-- validate campaign name
 		---------------------------------------------------
 		--
-		declare @badCh varchar(128)
-		set @badCh =  dbo.ValidateChars(@campaignNum, '')
-		SET @badCh = REPLACE(@badCh, '[space]', '') -- allow spaces?
+		Declare @badCh varchar(128)
+		Set @badCh = dbo.ValidateChars(@campaignNum, '')
+		Set @badCh = REPLACE(@badCh, '[space]', '')
 		if @badCh <> ''
 		begin
+			Set @logErrors = 0
 			If @badCh = '[space]'
 				RAISERROR ('Campaign name may not contain spaces', 11, 8)
 			Else
