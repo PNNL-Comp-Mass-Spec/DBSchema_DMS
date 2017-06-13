@@ -401,7 +401,7 @@ As
 			
 			-- return ID of newly created batch
 			--
-			Set @batchID = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Batches')
+			Set @batchID = SCOPE_IDENTITY()
 		End
 		---------------------------------------------------
 		-- Deal with request

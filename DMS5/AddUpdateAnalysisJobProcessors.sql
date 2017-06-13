@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 **			03/15/2007 mem - Tweaked invalid tool name error message
 **			02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -202,7 +203,7 @@ As
 
 		-- return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Analysis_Job_Processors')
+		set @ID = SCOPE_IDENTITY()
 
 		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
 		If Len(@callingUser) > 0

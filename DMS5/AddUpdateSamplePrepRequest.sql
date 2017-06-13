@@ -70,6 +70,9 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **						   - Change the default state from 'Pending Approval' to 'New'
 **						   - Validate list of Requested Personnel and Assigned Personnel
 **						   - Expand @Comment to varchar(2048)
+**			06/13/2017 mem - Validate @Priority
+**						   - Check for name collisions when @mode is update
+**						   - Use SCOPE_IDENTITY
 **    
 *****************************************************/
 (
@@ -154,12 +157,15 @@ As
 		RAISERROR ('Block And Randomize Runs must be Yes or No', 11, 116)
 
 	---------------------------------------------------
-	-- validate priority
+	-- Validate priority
 	---------------------------------------------------
 
-	IF @Priority <> 'Normal' AND ISNULL(@ReasonForHighPriority, '') = ''
+	If @Priority <> 'Normal' AND ISNULL(@ReasonForHighPriority, '') = ''
 		RAISERROR ('Priority "%s" requires justification reason to be provided', 11, 37, @Priority)
-		
+	
+	If Not @Priority IN ('Normal', 'High')
+		RAISERROR ('Priority should be Normal or High', 11, 37)
+	
 	---------------------------------------------------
 	-- Validate instrument group and dataset type
 	---------------------------------------------------
@@ -196,7 +202,7 @@ As
 		End
 
 		---------------------------------------------------
-		-- validate instrument group and dataset type
+		-- Validate instrument group and dataset type
 		---------------------------------------------------
 		
 		declare @datasetTypeID int
@@ -215,8 +221,7 @@ As
 	-- Resolve campaign ID
 	---------------------------------------------------
 
-	declare @campaignID int
-	SET @campaignID = 0
+	declare @campaignID int = 0
 	--
 	execute @campaignID = GetCampaignID @Campaign
 	--
@@ -227,10 +232,10 @@ As
 	-- Resolve material containers
 	---------------------------------------------------
 
-	-- create tempoary table to hold names of material containers as input
+	-- Create temporary table to hold names of material containers as input
 	--
-	create table #MC (
-		name varchar(128) not null
+	CREATE TABLE #MC (
+		[name] varchar(128) not null
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -238,9 +243,9 @@ As
 	if @myError <> 0
 		RAISERROR ('Could not create temporary table for material container list', 11, 50)
 
-	-- get names of material containers from list argument into table
+	-- Get names of material containers from list argument into table
 	--
-	INSERT INTO #MC (name) 
+	INSERT INTO #MC ([name]) 
 	SELECT item FROM MakeTableFromList(@MaterialContainerList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -248,7 +253,7 @@ As
 	if @myError <> 0
 		RAISERROR ('Could not populate temporary table for material container list', 11, 51)
 
-	-- verify that material containers exist
+	-- Verify that material containers exist
 	--
 	Declare @cnt int = -1
 	
@@ -277,8 +282,9 @@ As
 		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
 
 	---------------------------------------------------
-	-- convert estimated completion date
+	-- Convert estimated completion date
 	---------------------------------------------------
+	
 	declare @EstimatedCompletionDate datetime
 
 	if @EstimatedCompletion <> ''
@@ -294,7 +300,7 @@ As
 	Begin
 		set @State = 'New'
 		set @AssignedPersonnel = 'na'
-	End
+	End	
 	
 	---------------------------------------------------
 	-- Validate requested and assigned personnel
@@ -444,8 +450,7 @@ As
 		
 		Set @nameValidationIteration = @nameValidationIteration + 1
 		
-	End -- </a>
-		
+	End -- </a>		
     	
 	---------------------------------------------------
 	-- Convert state name to ID
@@ -460,14 +465,15 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
-      RAISERROR ('Error trying to resolving state name', 11, 83)
- --
+		RAISERROR ('Error trying to resolving state name', 11, 83)
+    --
     if @StateID = 0
 		RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
     
 	---------------------------------------------------
-	-- validate EUS type, proposal, and user list
+	-- Validate EUS type, proposal, and user list
 	---------------------------------------------------
+	
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
 						@eusUsageType output,
@@ -517,15 +523,13 @@ As
 			Set @SeparationGroup = @SeparationGroupAlt
 	End
 	
-	Set @logErrors = 1
-	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
 
 	if @mode = 'update'
 	begin
-		-- cannot update a non-existent entry
+		-- Cannot update a non-existent entry
 		--
 		Declare @tmp int = 0
 		Declare @currentAssignedPersonnel VARCHAR(256)
@@ -545,12 +549,12 @@ As
 		if @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 7)
 
-		-- changes not allowed if in "closed" state
+		-- Changes not allowed if in "closed" state
 		--
 		if @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
 			RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
-		-- don't allow change to "Prep in Progress" 
+		-- Don't allow change to "Prep in Progress" 
 		-- unless someone has been assigned @AssignedPersonnel @currentAssignedPersonnel
 		If @State = 'Prep in Progress' AND ((@AssignedPersonnel = '') OR (@AssignedPersonnel = 'na'))
 			RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
@@ -562,17 +566,6 @@ As
 
 	if @mode = 'add'
 	begin
-		-- name must be unique
-		--
-		SELECT @myRowCount = count(*)
-		FROM T_Sample_Prep_Request
-		WHERE (Request_Name = @RequestName)
-		--
-		SELECT @myError = @@error
-		--
-		if @myError <> 0 OR @myRowCount> 0
-			RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
-
 		If @EstimatedCompletionDate < CONVERT(date, getdate())
 			RAISERROR ('Cannot add: Estimated completion must be today or later', 11, 8)
 		
@@ -593,10 +586,33 @@ As
 	end
 
 	---------------------------------------------------
-	-- action for add mode
+	-- Check for name collisions
 	---------------------------------------------------
-	if @Mode = 'add'
+	--
+	If @mode = 'add'
+	Begin
+		IF EXISTS (SELECT * FROM T_Sample_Prep_Request WHERE Request_Name = @RequestName)
+			RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
+
+	End
+	Else
+	Begin
+		IF EXISTS (SELECT * FROM T_Sample_Prep_Request WHERE Request_Name = @RequestName AND ID <> @ID)
+			RAISERROR ('Cannot rename: Request "%s" already in database', 11, 8, @RequestName)
+	End	
+
+	Set @logErrors = 1
+
+	declare @transName varchar(32)
+	set @transName = 'AddUpdateSamplePrepRequest'
+	
+	---------------------------------------------------
+	-- Action for add mode
+	---------------------------------------------------
+	--
+	if @mode = 'add'
 	begin
+		begin transaction @transName
 			
 		INSERT INTO T_Sample_Prep_Request (
 			Request_Name, 
@@ -669,33 +685,38 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed:%d', 11, 7, @myError)
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Sample_Prep_Request')
-
+		set @ID = SCOPE_IDENTITY()
+		
+		commit transaction @transName
+		
 		-- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
 		If Len(@callingUser) > 0
 			Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser, 
 									@EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
-	end -- add mode
+	end -- Add mode
 
 	---------------------------------------------------
-	-- action for update mode
+	-- Action for update mode
 	---------------------------------------------------
-	if @Mode = 'update' AND @retireMaterial = 1
-	BEGIN
-		EXEC @myError = DoSamplePrepMaterialOperation
-							@ID,
-							'retire_all',
-							@message output,
-							@callingUser
-		if @myError <> 0
-			RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
-	END 
 	--
-	if @Mode = 'update' 
-	begin
+	if @mode = 'update'
+	BEGIN
+		begin transaction @transName
+		
+		If @retireMaterial = 1
+		Begin
+			EXEC @myError = DoSamplePrepMaterialOperation
+								@ID,
+								'retire_all',
+								@message output,
+								@callingUser
+			if @myError <> 0
+				RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
+		End
+		
 		set @myError = 0
 		--
 		UPDATE T_Sample_Prep_Request 
@@ -737,6 +758,8 @@ As
 		--
 		if @myError <> 0
 			RAISERROR ('Update operation failed: "%d"', 11, 4, @ID)
+
+		commit transaction @transName
 
 		-- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
 		If Len(@callingUser) > 0

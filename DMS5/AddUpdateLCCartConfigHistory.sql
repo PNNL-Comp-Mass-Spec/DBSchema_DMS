@@ -19,10 +19,12 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 **          03/26/2012 grk - added @PostedBy
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ID int,
 	@Cart varchar(128),
 	@DateOfChange VARCHAR(32),
@@ -32,26 +34,26 @@ CREATE PROCEDURE AddUpdateLCCartConfigHistory
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
 
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
 
-	-- future: this could get more complicated
+	Declare @entryDate DateTime = Try_cast(@DateOfChange as DateTime)
+	If @entryDate Is Null
+		Set @entryDate = GETDATE()
 
 	IF @PostedBy IS NULL OR @PostedBy = ''
 	BEGIN 
@@ -85,28 +87,28 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_LC_Cart_Config_History (
-		Cart,
-		Date_Of_Change,
-		Description,
-		Note,
-		EnteredBy
-		) VALUES (
-		@Cart,
-		CASE WHEN @DateOfChange = '' THEN GETDATE() ELSE @DateOfChange END,
-		@Description,
-		@Note,
-		@PostedBy
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Insert operation failed', 11, 7)
+		INSERT INTO T_LC_Cart_Config_History (
+			Cart,
+			Date_Of_Change,
+			Description,
+			Note,
+			EnteredBy 
+		 ) VALUES (
+		 	@Cart,
+		 	@entryDate,
+			@Description, 
+			@Note, 
+			@PostedBy
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Insert operation failed', 11, 7)
 
-	-- return ID of newly created entry
-	--
-	set @ID = IDENT_CURRENT('T_LC_Cart_Config_History')
+		-- Return ID of newly created entry
+		--
+		set @ID = SCOPE_IDENTITY()
 
 	end -- add mode
 
@@ -118,13 +120,12 @@ As
 	begin
 		set @myError = 0
 		--
-		UPDATE T_LC_Cart_Config_History 
-		SET 
-		Cart = @Cart,
-		Date_Of_Change = @DateOfChange,
-		Description = @Description,
-		Note = @Note,
-		EnteredBy = @PostedBy
+		UPDATE T_LC_Cart_Config_History
+		SET Cart = @Cart,
+		    Date_Of_Change = @entryDate,
+		    Description = @Description,
+		    Note = @Note,
+		    EnteredBy = @PostedBy
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -134,8 +135,6 @@ As
 
 	end -- update mode
 
-	---------------------------------------------------
-	---------------------------------------------------
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output

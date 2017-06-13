@@ -1091,7 +1091,7 @@ As
 			RAISERROR (@msg, 11, 7)
 		End
 		
-		-- This method is more accurate than using IDENT_CURRENT
+		-- Get the ID of newly created dataset
 		Set @datasetID = SCOPE_IDENTITY()		
 
 		-- As a precaution, query T_Dataset using Dataset name to make sure we have the correct Dataset_ID

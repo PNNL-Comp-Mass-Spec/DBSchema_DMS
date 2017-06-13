@@ -23,6 +23,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **			03/26/2015 mem - Update duplicate sample submission message
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -149,13 +150,13 @@ As
 		SET @cl = @ContainerList
 		--
 		EXEC @myError = AssureMaterialContainersExist
-						@ContainerList = @cl OUTPUT,
-						@Comment = '',
-						@Type = '',
-						@Researcher = @Researcher,
-						@mode = 'verify_only',
-						@message = @msg output,
-						@callingUser = ''
+							@ContainerList = @cl OUTPUT,
+							@Comment = '',
+							@Type = '',
+							@Researcher = @Researcher,
+							@mode = 'verify_only',
+							@message = @msg output,
+							@callingUser = ''
 		--
 		IF @myError <> 0
 			RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @message)
@@ -196,9 +197,9 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed', 11, 24)
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Sample_Submission')
+		set @ID = SCOPE_IDENTITY()
 
 		---------------------------------------------------
 		-- add containers (as needed)

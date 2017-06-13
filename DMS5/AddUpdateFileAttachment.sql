@@ -6,8 +6,7 @@ GO
 CREATE PROCEDURE AddUpdateFileAttachment
 /****************************************************
 **
-**  Desc: 
-**    Adds new or edits existing item in T_File_Attachment 
+**  Desc: Adds new or edits existing item in T_File_Attachment 
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +18,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **			12/16/2011 mem - Convert null descriptions to empty strings
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Use SCOPE_IDENTITY
 **    
 *****************************************************/
 (
@@ -100,15 +100,16 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_File_Attachment( File_Name,
-	                               Description,
-	                               Entity_Type,
-	                               Entity_ID,
-	                               Owner_PRN,
-	                               File_Size_Bytes,
-	                               Archive_Folder_Path,
-	                               File_Mime_Type )
-	VALUES(
+	INSERT INTO T_File_Attachment (
+		[File_Name],
+		Description,
+		Entity_Type,
+		Entity_ID,
+		Owner_PRN,
+		File_Size_Bytes,
+		Archive_Folder_Path,
+		File_Mime_Type
+	 ) VALUES (
 		@FileName, 
 		IsNull(@Description, ''), 
 		@EntityType, 
@@ -116,16 +117,17 @@ As
 		@callingUser, 
 		@FileSizeBytes,
 		@ArchiveFolderPath, 
-		@FileMimeType)
+		@FileMimeType
+	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
 		RAISERROR ('Insert operation failed', 11, 7)
 
-	-- return ID of newly created entry
+	-- Return ID of newly created entry
 	--
-	set @ID = IDENT_CURRENT('T_File_Attachment')
+	set @ID = SCOPE_IDENTITY()
 
 	end -- add mode
 

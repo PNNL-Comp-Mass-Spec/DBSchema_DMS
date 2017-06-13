@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateRNAPrepRequest
 **			05/20/2014 mem - Switched from InstrumentGroup to InstrumentName
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -395,9 +396,9 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed:%d', 11, 7, @myError)
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Sample_Prep_Request')
+		set @ID = SCOPE_IDENTITY()
 
 		-- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
 		If Len(@callingUser) > 0

@@ -19,6 +19,8 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null instead of 'na'
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**						   - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -321,45 +323,44 @@ As
 		-- insert values into a new row
 		--
 		INSERT INTO T_Dataset(
-				Dataset_Num, 
-				DS_Oper_PRN, 
-				DS_comment, 
-				DS_created, 
-				DS_instrument_name_ID, 
-				DS_type_ID, 
-				DS_well_num, 
-				DS_sec_sep, 
-				DS_state_ID, 
-				DS_folder_name, 
-				DS_storage_path_ID, 
-				Exp_ID,
-				DS_rating,
-				DS_LC_column_ID, 
-				DS_wellplate_num, 
-				DS_internal_standard_ID,
-				Acq_Time_Start, 
-				Acq_Time_End
-				) 
-			VALUES (
-				@datasetNum,
-				@operPRN,
-				@comment,
-				@RefDate,
-				@instrumentID,
-				@datasetTypeID,
-				@wellNum,
-				@secSep,
-				@newDSStateID,
-				@folderName,
-				@storagePathID,
-				@experimentID,
-				@ratingID,
-				@columnID,
-				@wellplateNum,
-				@intStdID,
-				@acqStart,
-				@acqEnd
-				)
+			Dataset_Num, 
+			DS_Oper_PRN, 
+			DS_comment, 
+			DS_created, 
+			DS_instrument_name_ID, 
+			DS_type_ID, 
+			DS_well_num, 
+			DS_sec_sep, 
+			DS_state_ID, 
+			DS_folder_name, 
+			DS_storage_path_ID, 
+			Exp_ID,
+			DS_rating,
+			DS_LC_column_ID, 
+			DS_wellplate_num, 
+			DS_internal_standard_ID,
+			Acq_Time_Start, 
+			Acq_Time_End
+		) VALUES (
+			@datasetNum,
+			@operPRN,
+			@comment,
+			@RefDate,
+			@instrumentID,
+			@datasetTypeID,
+			@wellNum,
+			@secSep,
+			@newDSStateID,
+			@folderName,
+			@storagePathID,
+			@experimentID,
+			@ratingID,
+			@columnID,
+			@wellplateNum,
+			@intStdID,
+			@acqStart,
+			@acqEnd
+		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -368,7 +369,10 @@ As
 			set @msg = 'Insert operation failed: "' + @datasetNum + '"'
 			RAISERROR (@msg, 11, 7)
 		end
-		set @datasetID = IDENT_CURRENT('T_Dataset')
+		
+		-- Get the ID of the newly added dataset
+		--
+		set @datasetID = SCOPE_IDENTITY()
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
@@ -382,7 +386,7 @@ As
 		---------------------------------------------------
 		-- if scheduled run is not specified, create one
 		---------------------------------------------------
-/* ??? */
+
 		if @requestID = 0
 		begin -- <b3>
 		
@@ -394,7 +398,7 @@ As
 			EXEC @result = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
 									@experimentNum = @experimentNum,
-									@operPRN = @operPRN,
+									@requestorPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = 'none',
 									@msType = @msType,

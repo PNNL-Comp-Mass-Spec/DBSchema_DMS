@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.AddUpdateOperationsTasks
 **			11/04/2013 grk - added @HoursSpent
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -102,40 +103,40 @@ As
 	if @Mode = 'add'
 	BEGIN
 
-	INSERT INTO T_Operations_Tasks (
-		Tab,
-		Requestor,
-		Requested_Personal,
-		Assigned_Personal,
-		Description,
-		Comments,
-		Status,
-		Priority,
-		Work_Package,
-		Closed,
-		Hours_Spent
-	) VALUES (
-		@Tab,
-		@Requestor,
-		@RequestedPersonal,
-		@AssignedPersonal,
-		@Description,
-		@Comments,
-		@Status,
-		@Priority,
-		@WorkPackage,
-		@closed,
-		@HoursSpent
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	IF @myError <> 0
-		RAISERROR ('Insert operation failed', 11, 7)
+		INSERT INTO T_Operations_Tasks (
+			Tab,
+			Requestor,
+			Requested_Personal,
+			Assigned_Personal,
+			Description,
+			Comments,
+			Status,
+			Priority,
+			Work_Package,
+			Closed,
+			Hours_Spent 
+		) VALUES(
+			@Tab, 
+			@Requestor, 
+			@RequestedPersonal, 
+			@AssignedPersonal, 
+			@Description, 
+			@Comments, 
+			@Status,
+			@Priority,
+			@WorkPackage,
+			@closed,
+			@HoursSpent
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		IF @myError <> 0
+			RAISERROR ('Insert operation failed', 11, 7)
 
-	-- return ID of newly created entry
-	--
-	SET @ID = IDENT_CURRENT('T_Operations_Tasks')
+		-- Return ID of newly created entry
+		--
+		set @ID = SCOPE_IDENTITY()
 
 	END -- add mode
 
@@ -147,19 +148,18 @@ As
 	BEGIN
 		set @myError = 0
 		--
-		UPDATE T_Operations_Tasks 
-		SET 
-			Tab = @Tab,
-			Requestor = @Requestor,
-			Requested_Personal = @RequestedPersonal,
-			Assigned_Personal = @AssignedPersonal,
-			Description = @Description,
-			Comments = @Comments,
-			Status = @Status,
-			Priority = @Priority,
-			Work_Package = @WorkPackage,
-			Closed = @closed,
-			Hours_Spent = @HoursSpent
+		UPDATE T_Operations_Tasks
+		SET Tab = @Tab,
+		    Requestor = @Requestor,
+		    Requested_Personal = @RequestedPersonal,
+		    Assigned_Personal = @AssignedPersonal,
+		    Description = @Description,
+		    Comments = @Comments,
+		    Status = @Status,
+		    Priority = @Priority,
+		    Work_Package = @WorkPackage,
+		    Closed = @closed,
+		    Hours_Spent = @HoursSpent
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -181,6 +181,7 @@ As
 			
 		Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
 	END CATCH
+	
 	return @myError
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateOperationsTasks] TO [DDL_Viewer] AS [dbo]

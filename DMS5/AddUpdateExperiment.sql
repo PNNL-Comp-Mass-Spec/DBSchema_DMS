@@ -443,7 +443,7 @@ As
 		Set @transName = 'AddNewExperiment'
 		begin transaction @transName
 
-		INSERT INTO T_Experiments(
+		INSERT INTO T_Experiments (
 				Experiment_Num, 
 				EX_researcher_PRN, 
 				EX_organism_ID, 
@@ -487,7 +487,6 @@ As
 				@alkylation,
 				@barcode,
 				Cast(GETDATE() as Date)
-
 			)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -495,7 +494,7 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
 
-		-- This method is more accurate than using IDENT_CURRENT
+		-- Get the ID of newly created experiment
 		Set @experimentID = SCOPE_IDENTITY()		
 
 		-- As a precaution, query T_Experiments using Experiment name to make sure we have the correct Exp_ID

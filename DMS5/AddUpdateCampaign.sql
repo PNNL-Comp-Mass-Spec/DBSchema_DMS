@@ -284,7 +284,7 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 12, @campaignNum )
 		
-		-- This method is more accurate than using IDENT_CURRENT
+		-- Get the ID of newly created campaign
 		Set @CampaignID = SCOPE_IDENTITY()		
 
 		-- As a precaution, query T_Campaign using Campaign name to make sure we have the correct Campaign_ID

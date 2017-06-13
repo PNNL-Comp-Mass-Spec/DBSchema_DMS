@@ -12,140 +12,136 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 09/30/2008
+**	Auth:	grk
+**	Date:	09/30/2008
 **          03/19/2012 grk - added "PostedBy"
+**			06/13/2017 mem - Use SCOPE_IDENTITY
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
-  @ID int,
-  @Instrument varchar(24),
-  @DateOfChange varchar(24),
-  @PostedBy VARCHAR(64),
-  @Description varchar(128),
-  @Note text,
-  @mode varchar(12) = 'add', -- or 'update'
-  @message varchar(512) output,
-  @callingUser varchar(128) = ''
+(
+	@ID int,
+	@Instrument varchar(24),
+	@DateOfChange varchar(24),
+	@PostedBy VARCHAR(64),
+	@Description varchar(128),
+	@Note text,
+	@mode varchar(12) = 'add', -- or 'update'
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
+)
 As
-  set nocount on
+	Set XACT_ABORT, nocount on
 
-  declare @myError int
-  set @myError = 0
+	declare @myError int
+	declare @myRowCount int
+	set @myError = 0
+	set @myRowCount = 0
 
-  declare @myRowCount int
-  set @myRowCount = 0
-  
-  set @message = ''
+	set @message = ''
 
+	---------------------------------------------------
+	-- Validate input fields
+	---------------------------------------------------
 
-  ---------------------------------------------------
-  -- Validate input fields
-  ---------------------------------------------------
+	-- future: this could get more complicated
 
-  -- future: this could get more complicated
-  
-  IF @PostedBy IS NULL OR @PostedBy = ''
-  BEGIN 
-	SET @PostedBy = @callingUser
-  END 
-  
-
-  ---------------------------------------------------
-  -- Is entry already in database? (only applies to updates)
-  ---------------------------------------------------
-
-  if @mode = 'update'
-  begin
-    -- cannot update a non-existent entry
-    --
-    declare @tmp int
-  set @tmp = 0
-  --
-  SELECT @tmp = ID
-     FROM  T_Instrument_Config_History
-    WHERE (ID = @ID)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0 OR @tmp = 0
-    begin
-      set @message = 'No entry could be found in database for update'
-      RAISERROR (@message, 10, 1)
-      return 51007
-    end
-  
-  end
+	IF @PostedBy IS NULL OR @PostedBy = ''
+	BEGIN 
+		SET @PostedBy = @callingUser
+	END 
 
 
-  ---------------------------------------------------
-  -- action for add mode
-  ---------------------------------------------------
-  if @Mode = 'add'
-  begin
- 
-  INSERT INTO T_Instrument_Config_History (
-    Instrument, 
-    Date_Of_Change, 
-    Description, 
-    Note, 
-    Entered, 
-    EnteredBy
-  ) VALUES (
-    @Instrument, 
-    @DateOfChange,
-    @Description, 
-    @Note, 
-    getdate(), 
-    @PostedBy
-  )
- /**/
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Insert operation failed'
-      RAISERROR (@message, 10, 1)
-      return 51007
-    end
-    
-    -- return IDof newly created entry
-    --
-    set @ID = IDENT_CURRENT('T_Instrument_Config_History')
+	---------------------------------------------------
+	-- Is entry already in database? (only applies to updates)
+	---------------------------------------------------
 
-  end -- add mode
+	if @mode = 'update'
+	begin
+		-- cannot update a non-existent entry
+		--
+		declare @tmp int
+		set @tmp = 0
+		--
+		SELECT @tmp = ID
+			FROM  T_Instrument_Config_History
+		WHERE (ID = @ID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0 OR @tmp = 0
+		begin
+			set @message = 'No entry could be found in database for update'
+			RAISERROR (@message, 10, 1)
+			return 51007
+		end
 
-  ---------------------------------------------------
-  -- action for update mode
-  ---------------------------------------------------
-  --
-  if @Mode = 'update' 
-  begin
-    set @myError = 0
-    --
+	end
 
-    UPDATE T_Instrument_Config_History 
-    SET 
-      Instrument = @Instrument, 
-      Date_Of_Change = @DateOfChange,
-      Description = @Description, 
-      Note = @Note, 
-      EnteredBy = @PostedBy
-    WHERE (ID = @ID)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Update operation failed: "' + @ID + '"'
-      RAISERROR (@message, 10, 1)
-      return 51004
-    end
-  end -- update mode
 
-  return @myError
+	---------------------------------------------------
+	-- action for add mode
+	---------------------------------------------------
+	if @Mode = 'add'
+	begin
+	
+		INSERT INTO T_Instrument_Config_History ( 
+			Instrument,
+			Date_Of_Change,
+			Description,
+			Note,
+			Entered,
+			EnteredBy
+		) VALUES (
+			@Instrument, 
+			@DateOfChange, 
+			@Description, 
+			@Note, 
+			getdate(), 
+			@PostedBy
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Insert operation failed'
+			RAISERROR (@message, 10, 1)
+			return 51007
+		end
+
+		-- Return ID of newly created entry
+		--
+		set @ID = SCOPE_IDENTITY()
+
+	end -- add mode
+
+	---------------------------------------------------
+	-- action for update mode
+	---------------------------------------------------
+	--
+	if @Mode = 'update' 
+	begin
+		UPDATE T_Instrument_Config_History
+		SET Instrument = @Instrument,
+		    Date_Of_Change = @DateOfChange,
+		    Description = @Description,
+		    Note = @Note,
+		    EnteredBy = @PostedBy
+		WHERE (ID = @ID)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Update operation failed: "' + @ID + '"'
+			RAISERROR (@message, 10, 1)
+			return 51004
+		end
+	end -- update mode
+
+	return @myError
 
 
 GO

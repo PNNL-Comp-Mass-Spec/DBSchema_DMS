@@ -14,16 +14,17 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 05/20/2010
+**	Auth:	grk
+**	Date:	05/20/2010
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			04/25/2017 mem - Require that @Instrument and @Note be defined
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
-
+(
 	@ID int,
 	@Instrument varchar(24),
 	@postedBy VARCHAR(64),
@@ -31,6 +32,7 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	Set XACT_ABORT, nocount on
 
@@ -98,8 +100,7 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		declare @tmp int = 0
 		--
 		SELECT @tmp = ID
 		FROM  T_Instrument_Operation_History
@@ -117,24 +118,24 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_Instrument_Operation_History (
-		Instrument,
-		EnteredBy,
-		Note
-	) VALUES (
-		@Instrument,
-		@postedBy,
-		@Note
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Insert operation failed', 11, 7)
+		INSERT INTO T_Instrument_Operation_History (
+			Instrument,
+			EnteredBy,
+			Note
+		) VALUES (
+			@Instrument, 
+			@postedBy, 
+			@Note
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+			RAISERROR ('Insert operation failed', 11, 7)
 
-	-- return ID of newly created entry
-	--
-	set @ID = IDENT_CURRENT('T_Instrument_Operation_History')
+		-- Return ID of newly created entry
+		--
+		set @ID = SCOPE_IDENTITY()
 
 	end -- add mode
 
@@ -146,10 +147,9 @@ As
 	begin
 		set @myError = 0
 		--
-		UPDATE T_Instrument_Operation_History 
-		SET 
-		Instrument = @Instrument,
-		Note = @Note
+		UPDATE T_Instrument_Operation_History
+		SET Instrument = @Instrument,
+		    Note = @Note
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.AddUpdateParamFileEntry
 **			08/10/2004 kja - Added in code to update mapping table as well
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			01/20/2010 mem - Added support for dynamic peptide terminus mods (TermDynamicModification)
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -36,12 +37,11 @@ CREATE PROCEDURE dbo.AddUpdateParamFileEntry
 	@infoOnly tinyint = 0
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
-	set @myError = 0
-
 	declare @myRowCount int
+	set @myError = 0
 	set @myRowCount = 0
 	
 	set @message = ''
@@ -54,8 +54,7 @@ As
 	if @paramFileID = 0
 	begin
 		set @myError = 51000
-		RAISERROR ('ParamFileID was blank',
-			10, 1)
+		RAISERROR ('ParamFileID was blank', 10, 1)
 	end
 	
 	--
@@ -63,8 +62,7 @@ As
 	if @entrySeqOrder = 0
 	begin
 		set @myError = 51001
-		RAISERROR ('EntrySeqOrder was blank',
-			10, 1)
+		RAISERROR ('EntrySeqOrder was blank', 10, 1)
 	end
 	
 	--
@@ -72,16 +70,14 @@ As
 	if LEN(@entryType) < 1
 	begin
 		set @myError = 51001
-		RAISERROR ('EntryType was blank',
-			10, 1)
+		RAISERROR ('EntryType was blank', 10, 1)
 	end
 
 	--
 		if LEN(@entrySpecifier) < 1
 	begin
 		set @myError = 51001
-		RAISERROR ('EntrySpecifier was blank',
-			10, 1)
+		RAISERROR ('EntrySpecifier was blank', 10, 1)
 	end
 
 	--
@@ -89,8 +85,7 @@ As
 		if LEN(@entryValue) < 1
 	begin
 		set @myError = 51001
-		RAISERROR ('EntryValue was blank',
-			10, 1)
+		RAISERROR ('EntryValue was blank', 10, 1)
 	end
 
 	--
@@ -106,10 +101,7 @@ As
 	
 	declare @transName varchar(32)
 
-	if (@entryType = 'DynamicModification' OR 
-	    @entryType = 'StaticModification' OR 
-	    @entryType = 'IsotopicModification' OR 
-	    @entryType = 'TermDynamicModification')
+	if (@entryType IN ('DynamicModification', 'StaticModification', 'IsotopicModification', 'TermDynamicModification'))
 	begin
 		declare @localSymbolID int
 		declare @typeSymbol char(1)
@@ -275,8 +267,7 @@ As
 	-- Is it already in database?
 	---------------------------------------------------
 
-	declare @ParamEntryID int
-	set @ParamEntryID = 0
+	declare @ParamEntryID int = 0
 	--
 	execute @ParamEntryID = GetParamEntryID @ParamFileID, @EntryType, @EntrySpecifier, @EntrySeqOrder
 	
@@ -347,9 +338,9 @@ As
 				return 51131
 			end
 
-			Set @ParamEntryID = IDENT_CURRENT('T_Param_Entries')
+			Set @ParamEntryID = SCOPE_IDENTITY()
 			
-			-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
+			-- If @callingUser is defined, update Entered_By in T_Analysis_Job_Processor_Group
 			If Len(@callingUser) > 0
 				Exec AlterEnteredByUser 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
 		End

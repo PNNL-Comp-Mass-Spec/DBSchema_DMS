@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 **			03/15/2007 mem - Replaced processor name with associated processor group (Ticket #388)
 **			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
 **			02/28/2014 mem - Now auto-converting null values to empty strings
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -31,7 +32,7 @@ CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 	@message varchar(512) output
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
@@ -132,9 +133,9 @@ As
 			return 51007
 		end
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Predefined_Analysis_Scheduling_Rules')
+		set @ID = SCOPE_IDENTITY()
 
 	end -- add mode
 

@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateSettingsFile
 **  Date:	08/22/2008
 **			03/30/2015 mem - Added parameters @HMSAutoSupersede and @MSGFPlusAutoCentroid
 **			03/21/2016 mem - Update column Last_Updated
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -34,7 +35,7 @@ CREATE PROCEDURE AddUpdateSettingsFile
 	@callingUser varchar(128) = ''
 )
 As
-	set nocount on
+	Set XACT_ABORT, nocount on
 
 	declare @myError int
 	declare @myRowCount int
@@ -150,8 +151,7 @@ As
 	Begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		declare @tmp int = 0
 		--
 		SELECT @tmp = ID
 		FROM T_Settings_Files
@@ -176,14 +176,23 @@ As
 	If @Mode = 'add'
 	Begin
 
-		INSERT INTO T_Settings_Files( Analysis_Tool,
-									File_Name,
-									Description,
-									Active,
-									Contents,
-									HMS_AutoSupersede,
-									MSGFPlus_AutoCentroid )
-		VALUES(@AnalysisTool, @FileName, @Description, @Active, @xmlContents, @HMSAutoSupersede, @MSGFPlusAutoCentroid)
+		INSERT INTO T_Settings_Files(
+			Analysis_Tool,
+			File_Name,
+			Description,
+			Active,
+			Contents,
+			HMS_AutoSupersede,
+			MSGFPlus_AutoCentroid 
+		) VALUES (
+			@AnalysisTool, 
+			@FileName, 
+			@Description, 
+			@Active, 
+			@xmlContents, 
+			@HMSAutoSupersede,
+			@MSGFPlusAutoCentroid
+		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -194,9 +203,9 @@ As
 			return 51007
 		End
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Settings_Files')
+		set @ID = SCOPE_IDENTITY()
 
 	End -- add mode
 
@@ -219,7 +228,6 @@ As
 		    MSGFPlus_AutoCentroid = @MSGFPlusAutoCentroid,
 		    Last_Updated = GetDate()
 		WHERE (ID = @ID)
-
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

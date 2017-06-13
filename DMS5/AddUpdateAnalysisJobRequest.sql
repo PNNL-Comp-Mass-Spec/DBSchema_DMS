@@ -498,7 +498,7 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert new job operation failed', 11, 9)
 		--
-		set @newRequestNum = SCOPE_IDENTITY()			-- IDENT_CURRENT('T_Analysis_Job_Request')
+		set @newRequestNum = SCOPE_IDENTITY()
 
 		-- return job number of newly created request
 		--

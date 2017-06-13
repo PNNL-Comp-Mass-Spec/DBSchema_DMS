@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.AddUpdatePrepLCRun
 **			08/25/2011 grk - added QC field
 **			09/30/2011 grk - added datasets field
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -60,12 +61,6 @@ As
 	BEGIN TRY 
 
 	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
-
-	-- future: this could get more complicated
-
-	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 
@@ -93,15 +88,15 @@ As
 	  Dataset_ID INT NULL
 	)
 
-	INSERT INTO #DSL
-	( Dataset )
+	INSERT INTO #DSL( Dataset )
 	SELECT Item AS Dataset
-	FROM dbo.MakeTableFromList(@datasets)
+	FROM dbo.MakeTableFromList ( @datasets )
 
 	UPDATE #DSL
 	SET Dataset_ID = dbo.T_Dataset.Dataset_ID
 	FROM #DSL
-	INNER JOIN dbo.T_Dataset ON #DSL.Dataset = dbo.T_Dataset.Dataset_Num
+	     INNER JOIN dbo.T_Dataset
+	       ON #DSL.Dataset = dbo.T_Dataset.Dataset_Num
 
 	---------------------------------------------------
 	-- define transaction
@@ -154,9 +149,9 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed', 11, 8)
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Prep_LC_Run')
+		set @ID = SCOPE_IDENTITY()
 
 		INSERT INTO dbo.T_Prep_LC_Run_Dataset
 		        ( Prep_LC_Run_ID, Dataset_ID )
@@ -177,22 +172,21 @@ As
 		
 		set @myError = 0
 		--
-		UPDATE T_Prep_LC_Run 
-		SET
-		Tab = @Tab,
-		Instrument = @Instrument,
-		Type = @Type,
-		LC_Column = @LCColumn,    
-		LC_Column_2 = @LCColumn2,	
-		Comment = @Comment,
-		Guard_Column = @GuardColumn,
-		OperatorPRN = @OperatorPRN,
-		Digestion_Method = @DigestionMethod,
-		Sample_Type = @SampleType,
-		SamplePrepRequest = @SamplePrepRequest,
-		Number_Of_Runs = @NumberOfRuns,
-		Instrument_Pressure = @InstrumentPressure,
-		Quality_Control = @QualityControl 
+		UPDATE T_Prep_LC_Run
+		SET Tab = @Tab,
+		    Instrument = @Instrument,
+		    TYPE = @Type,
+		    LC_Column = @LCColumn,
+		    LC_Column_2 = @LCColumn2,
+		    COMMENT = @Comment,
+		    Guard_Column = @GuardColumn,
+		    OperatorPRN = @OperatorPRN,
+		    Digestion_Method = @DigestionMethod,
+		    Sample_Type = @SampleType,
+		    SamplePrepRequest = @SamplePrepRequest,
+		    Number_Of_Runs = @NumberOfRuns,
+		    Instrument_Pressure = @InstrumentPressure,
+		    Quality_Control = @QualityControl
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

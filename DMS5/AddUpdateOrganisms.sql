@@ -43,6 +43,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
 **			02/06/2017 mem - Auto-update @NEWTIDList to match @NCBITaxonomyID if @NEWTIDList is null or empty
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -340,9 +341,9 @@ As
 	set @orgSpecies = dbo.ValidateNAParameter(@orgSpecies, 1)
 	set @orgStrain =  dbo.ValidateNAParameter(@orgStrain, 1)
 		
-	if (@orgGenus = 'unknown'   or @orgGenus = 'na'   or @orgGenus = 'none') AND
-	   (@orgSpecies = 'unknown' or @orgSpecies = 'na' or @orgSpecies = 'none') AND
-	   (@orgStrain = 'unknown'  or @orgStrain = 'na' or @orgStrain = 'none') 
+	If @orgGenus   IN ('unknown', 'na', 'none') AND
+	   @orgSpecies IN ('unknown', 'na', 'none') AND
+	   @orgStrain  IN ('unknown', 'na', 'none')
 	Begin
 		Set @orgGenus = 'na'
 		Set @orgSpecies = 'na'
@@ -466,10 +467,10 @@ As
 			RAISERROR (@message, 11, 10)
 		end
 
-		-- return ID of newly created entry
+		-- Return ID of newly created entry
 		--
-		set @ID = IDENT_CURRENT('T_Organisms')
-		
+		set @ID = SCOPE_IDENTITY()
+
 		-- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
 		If Len(@callingUser) > 0
 			Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @ID, @CallingUser
