@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Separation_Group](
 	[Sep_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active] [tinyint] NOT NULL,
+	[Sample_Prep_Visible] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Separation_Group] PRIMARY KEY CLUSTERED 
 (
 	[Sep_Group] ASC
@@ -19,4 +20,6 @@ GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Comment]  DEFAULT ('') FOR [Comment]
 GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Active]  DEFAULT ((1)) FOR [Active]
+GO
+ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Sample_Prep_Visible]  DEFAULT ((1)) FOR [Sample_Prep_Visible]
 GO
