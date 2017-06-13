@@ -40,12 +40,12 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **    
 *****************************************************/
 (
-	@parentExperiment varchar(128),       -- Parent experiment for group (must already exist)
-	@groupType varchar(20) = 'Fraction',  -- 'None', 'Fraction'
-	@tab VARCHAR(128),
-	@description varchar(512),            -- Purpose of group
-	@totalCount int,                      -- Number of new experiments to automatically create
-	@groupID int,                         -- ID of newly created experiment group
+	@parentExperiment varchar(128),			-- Parent experiment for group (must already exist)
+	@groupType varchar(20) = 'Fraction',	-- 'None', 'Fraction'
+	@tab VARCHAR(128),						-- User-defined name for this fraction group, aka tag
+	@description varchar(512),				-- Purpose of group
+	@totalCount int,						-- Number of new experiments to automatically create
+	@groupID int,							-- ID of newly created experiment group
 	@requestOverride varchar(12) = 'parent',   -- ID of request for fractions (if different than parent)
 	@internalStandard varchar(50) = 'parent',
 	@postdigestIntStd varchar(50) = 'parent',
@@ -324,7 +324,7 @@ AS
 	---------------------------------------------------
 	-- Make Experiment group entry
 	---------------------------------------------------
-	INSERT  INTO T_Experiment_Groups ( 
+	INSERT INTO T_Experiment_Groups ( 
 		EG_Group_Type ,
 		Parent_Exp_ID ,
 		EG_Description ,
@@ -332,8 +332,7 @@ AS
 		EG_Created ,
 		Researcher,
 		Tab
-	)
-	VALUES  ( 
+	) VALUES ( 
 		@groupType ,
 		@ParentExperimentID ,
 		@description ,
@@ -357,9 +356,13 @@ AS
 	-- Add parent experiment to reference group
 	---------------------------------------------------
 	
-	INSERT INTO T_Experiment_Group_Members
-		(Group_ID, Exp_ID)
-	VALUES (@groupID, @ParentExperimentID)
+	INSERT INTO T_Experiment_Group_Members (
+		Group_ID, 
+		Exp_ID
+	) VALUES (
+		@groupID, 
+		@ParentExperimentID
+	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -479,9 +482,13 @@ AS
 		-- Add fractionated experiment reference to experiment group
 		---------------------------------------------------
 		
-		INSERT INTO T_Experiment_Group_Members
-			(Group_ID, Exp_ID)
-		VALUES (@groupID, @newExpID)
+		INSERT INTO T_Experiment_Group_Members (
+			Group_ID, 
+			Exp_ID
+		) VALUES (
+			@groupID, 
+			@newExpID
+		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

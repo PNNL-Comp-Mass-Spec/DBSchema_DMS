@@ -196,7 +196,7 @@ As
 			@ParamFileTypeID, 
 			GETDATE(),  
 			GETDATE(),
-			1
+			1		-- Valid
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

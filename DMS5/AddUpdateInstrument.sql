@@ -39,7 +39,6 @@ CREATE PROCEDURE dbo.AddUpdateInstrument
 	@Usage varchar(50),
 	@OperationsRole varchar(50),
 	@PercentEMSLOwned varchar(24),				-- % of instrument owned by EMSL; number between 0 and 100
-
 	@AutoDefineStoragePath varchar(32) = 'No',	-- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
 	@AutoSPVolNameClient varchar(128),
 	@AutoSPVolNameServer varchar(128),
@@ -115,7 +114,7 @@ As
 
 	exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @AutoSPVolNameClient, @AutoSPVolNameServer,
                                                    @AutoSPPathRoot, @AutoSPArchiveServerName, 
-                                                   @AutoSPArchivePathRoot, @AutoSPArchiveSharePathRoot
+   @AutoSPArchivePathRoot, @AutoSPArchiveSharePathRoot
 
 	if @myError <> 0
 		return @myError

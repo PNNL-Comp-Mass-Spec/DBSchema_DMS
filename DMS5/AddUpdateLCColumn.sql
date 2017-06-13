@@ -142,9 +142,7 @@ As
 			SC_Operator_PRN,
 			SC_Comment,
 			SC_Created
-		)
-		VALUES
-		(
+		) VALUES (
 			@columnNumber,
 			@packingMfg,
 			@packingType,
