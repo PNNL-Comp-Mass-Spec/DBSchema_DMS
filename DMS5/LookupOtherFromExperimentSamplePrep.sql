@@ -28,7 +28,7 @@ CREATE PROCEDURE dbo.LookupOtherFromExperimentSamplePrep
 	@message varchar(512) output
 )
 As
-	Set nocount on
+	Set XACT_ABORT, nocount on
 
 	Declare @myError int
 	Declare @myRowCount int
