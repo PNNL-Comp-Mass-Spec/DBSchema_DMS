@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
+
+CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
 /****************************************************
 **
 **	Desc:	Creates a requested run and associates it with
@@ -34,6 +35,7 @@ CREATE PROCEDURE dbo.AddRequestedRunToExistingDataset
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/22/2017 mem - If necessary, change the prefix from AutoReq_ to AutoReq2_ or AutoReq3 to avoid conflicts
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -213,7 +215,7 @@ AS
 	EXEC @myError = dbo.AddUpdateRequestedRun 
 							@reqName = @reqName,
 							@experimentNum = @experimentNum,
-							@operPRN = @operPRN,
+							@requestorPRN = @operPRN,
 							@instrumentName = @instrumentName,
 							@workPackage = @workPackage,
 							@msType = @msType,
@@ -264,7 +266,8 @@ AS
 		Exec PostLogEntry 'Error', @message, 'AddRequestedRunToExistingDataset'
 	End CATCH
 	
-	RETURN @myError
+	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunToExistingDataset] TO [DDL_Viewer] AS [dbo]

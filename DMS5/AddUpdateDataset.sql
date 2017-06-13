@@ -88,6 +88,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			02/23/2017 mem - Add parameter @lcCartConfig
 **			03/06/2017 mem - Decreased maximum dataset name length from 90 characters to 80 characters
 **			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -1041,47 +1042,45 @@ As
 		
 		-- insert values into a new row
 		--
-		INSERT INTO T_Dataset(
-				Dataset_Num, 
-				DS_Oper_PRN, 
-				DS_comment, 
-				DS_created, 
-				DS_instrument_name_ID, 
-				DS_type_ID, 
-				DS_well_num, 
-				DS_sec_sep, 
-				DS_state_ID, 
-				DS_folder_name, 
-				DS_storage_path_ID, 
-				Exp_ID,
-				DS_rating,
-				DS_LC_column_ID, 
-				DS_wellplate_num, 
-				DS_internal_standard_ID,
-				Capture_Subfolder,
-				Cart_Config_ID
-				) 
-			VALUES (
-				@datasetNum,
-				@operPRN,
-				@comment,
-				@RefDate,
-				@instrumentID,
-				@datasetTypeID,
-				@wellNum,
-				@secSep,
-				@newDSStateID,
-				@folderName,
-				@storagePathID,
-				@experimentID,
-				@ratingID,
-				@columnID,
-				@wellplateNum,
-				@intStdID,
-				@captureSubfolder,
-				@cartConfigID
-				)
- 
+		INSERT INTO T_Dataset (
+			Dataset_Num, 
+			DS_Oper_PRN, 
+			DS_comment, 
+			DS_created, 
+			DS_instrument_name_ID, 
+			DS_type_ID, 
+			DS_well_num, 
+			DS_sec_sep, 
+			DS_state_ID, 
+			DS_folder_name, 
+			DS_storage_path_ID, 
+			Exp_ID,
+			DS_rating,
+			DS_LC_column_ID, 
+			DS_wellplate_num, 
+			DS_internal_standard_ID,
+			Capture_Subfolder,
+			Cart_Config_ID
+		) VALUES (
+			@datasetNum,
+			@operPRN,
+			@comment,
+			@RefDate,
+			@instrumentID,
+			@datasetTypeID,
+			@wellNum,
+			@secSep,
+			@newDSStateID,
+			@folderName,
+			@storagePathID,
+			@experimentID,
+			@ratingID,
+			@columnID,
+			@wellplateNum,
+			@intStdID,
+			@captureSubfolder,
+			@cartConfigID
+		) 
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -1139,7 +1138,7 @@ As
 			EXEC @result = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
 									@experimentNum = @experimentNum,
-									@operPRN = @operPRN,
+									@requestorPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = @workPackage,
 									@msType = @msType,

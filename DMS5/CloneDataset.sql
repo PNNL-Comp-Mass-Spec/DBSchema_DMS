@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure CloneDataset
+
+CREATE Procedure [dbo].[CloneDataset]
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +20,7 @@ CREATE Procedure CloneDataset
 **			09/25/2014 mem - Updated T_Job_Step_Dependencies to use Job
 **			                 Removed the Machine column from T_Job_Steps
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -247,10 +249,10 @@ AS
 			-- Create a requested run for the dataset
 			-- (code is from AddUpdateDataset)
 			
-			EXEC @myError = dbo.AddUpdateRequestedRun 
+			EXEC @myError = dbo.AddUpdateRequestedRun
 									@reqName = @requestNameNew,
 									@experimentNum = @experimentNum,
-									@operPRN = @operPRN,
+									@requestorPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = @workPackage,
 									@msType = @datasetType,
@@ -526,7 +528,8 @@ AS
 
 Done:
 
-	Return @myError
+	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CloneDataset] TO [DDL_Viewer] AS [dbo]

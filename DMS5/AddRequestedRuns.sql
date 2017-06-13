@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddRequestedRuns
+
+CREATE Procedure [dbo].[AddRequestedRuns]
 /****************************************************
 **
 **	Desc: 
@@ -41,6 +42,7 @@ CREATE Procedure AddRequestedRuns
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -259,7 +261,7 @@ As
 			EXEC @myError = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
 									@experimentNum = @ExperimentName,
-									@operPRN = @operPRN,
+									@requestorPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = @workPackage,
 									@msType = @msType,
@@ -306,6 +308,7 @@ As
 			Exec PostLogEntry 'Error', @message, 'AddRequestedRuns'
 		End
 	END CATCH
+
 	return @myError
 
 
