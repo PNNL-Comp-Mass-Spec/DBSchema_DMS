@@ -29,7 +29,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Instrument_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Instrument_Analysis_Specifications] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Priority] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[State] [tinyint] NOT NULL,
@@ -149,7 +149,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Delete
 /****************************************************
@@ -179,15 +178,12 @@ AS
 	FROM deleted
 	ORDER BY deleted.ID
 
-
-
 GO
 /****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Insert
 /****************************************************
@@ -219,15 +215,12 @@ AS
 	FROM inserted
 	ORDER BY inserted.ID
 
-
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
 /****************************************************
@@ -258,7 +251,5 @@ AS
 			inserted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
-
-
 
 GO
