@@ -17,6 +17,7 @@ CREATE Procedure dbo.AutoResolveNameToPRN
 **	Auth:	mem
 **	Date:	02/07/2010
 **			01/20/2017 mem - Now checking for names of the form "Last, First (D3P704)" or "Last, First Middle (D3P704)" and auto-fixing those
+**			06/12/2017 mem - Check for @NameSearchSpec being a username
 **    
 *****************************************************/
 (
@@ -84,6 +85,27 @@ As
 		
 	End
 
+	If @MatchCount = 0
+	Begin
+		-- Check @NameSearchSpec against the U_PRN column
+		SELECT @MatchCount = COUNT(*)
+		FROM T_Users
+		WHERE (U_PRN LIKE @NameSearchSpec)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+		If @myError = 0 And @MatchCount > 0
+		Begin
+			-- Update @MatchingPRN and @MatchingUserID
+			SELECT TOP 1 @MatchingPRN = U_PRN,
+						 @MatchingUserID = ID
+			FROM T_Users
+			WHERE U_PRN LIKE @NameSearchSpec
+			ORDER BY ID			
+		End
+		
+	End
+	
 Done:		
 	return @myError
 
