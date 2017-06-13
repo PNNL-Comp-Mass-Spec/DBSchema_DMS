@@ -6,6 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Sample_Prep_Request_State_Name](
 	[State_ID] [tinyint] NOT NULL,
 	[State_Name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Active] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Sample_Prep_Request_State_Name] PRIMARY KEY CLUSTERED 
 (
 	[State_ID] ASC
@@ -14,4 +15,6 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request_State_Name](
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Sample_Prep_Request_State_Name] TO [DDL_Viewer] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request_State_Name] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_State_Name_Active]  DEFAULT ((1)) FOR [Active]
 GO
