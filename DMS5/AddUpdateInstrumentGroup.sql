@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 **			10/18/2012 mem - Added parameter @AllocationTag
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/12/2017 mem - Added parameter @SamplePrepVisible
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -29,6 +30,7 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 	@Usage varchar(64),
 	@Comment varchar(512),
 	@Active tinyint,
+	@SamplePrepVisible tinyint,
 	@AllocationTag varchar(24),
 	@DefaultDatasetTypeName varchar(64),			-- This is allowed to be blank
 	@mode varchar(12) = 'add', -- or 'update'
@@ -50,6 +52,10 @@ As
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
+
+	Set @Comment = IsNull(@comment, '')
+	Set @Active = IsNull(@active, 0)
+	Set @SamplePrepVisible = IsNull(@samplePrepVisible, 0)
 
 	Set @message = ''
 	Set @DefaultDatasetTypeName = IsNull(@DefaultDatasetTypeName, '')
@@ -87,12 +93,18 @@ As
 	begin
 
 		INSERT INTO T_Instrument_Group( IN_Group,
-		                                Usage,
-		                                Comment,
+		                                [Usage],
+		                                [Comment],
 		                                Active,
+		                                Sample_Prep_Visible,
 		                                Allocation_Tag,
 		                                Default_Dataset_Type )
-		VALUES(@InstrumentGroup, @Usage, @Comment, @Active, @AllocationTag, CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End )
+		VALUES(@InstrumentGroup, @Usage, @Comment, @Active, @SamplePrepVisible, @AllocationTag, 
+		         CASE
+		             WHEN @datasetTypeID > 0 THEN @datasetTypeID
+		             ELSE NULL
+		         END)
+
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -113,6 +125,7 @@ As
 		SET Usage = @Usage,
 		    Comment = @Comment,
 		    Active = @Active,
+		    Sample_Prep_Visible = @SamplePrepVisible,
 		    Allocation_Tag = @AllocationTag,
 		    Default_Dataset_Type = CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End 
 		WHERE (IN_Group = @InstrumentGroup)

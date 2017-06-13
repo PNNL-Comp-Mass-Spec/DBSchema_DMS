@@ -9,7 +9,8 @@ SELECT I.IN_Group AS Instrument_Group,
        I.Usage,
        dbo.GetInstrumentGroupMembershipList(I.IN_Group) AS Instruments,
        I.Comment,
-       dbo.GetInstrumentGroupDatasetTypeList(I.IN_Group) AS Allowed_Dataset_Types
+       dbo.GetInstrumentGroupDatasetTypeList(I.IN_Group) AS Allowed_Dataset_Types,
+	   I.Sample_Prep_Visible
 FROM dbo.T_Instrument_Group I
      LEFT OUTER JOIN dbo.T_DatasetTypeName DT
        ON I.Default_Dataset_Type = DT.DST_Type_ID

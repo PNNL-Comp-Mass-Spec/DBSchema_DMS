@@ -4,12 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_Instrument_Group_List_Report] as
 SELECT I.IN_Group AS Instrument_Group,
        I.Usage,
        I.Comment,
        I.Active,
+	   I.Sample_Prep_Visible,
        I.Allocation_Tag,
        ISNULL(DT.DST_name, '') AS [Default Dataset Type],
        dbo.GetInstrumentGroupMembershipList(I.IN_Group) AS Instruments,
