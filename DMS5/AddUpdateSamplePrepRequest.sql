@@ -45,7 +45,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **			10/19/2012 mem - Now auto-changing @SeparationType to Separation_Group if @SeparationType specifies a separation type
 **			04/05/2013 mem - Now requiring that @EstimatedMSRuns be defined.  If it is non-zero, then instrument group, dataset type, and separation group must also be defined
-**			04/08/2013 grk - Added @BlockAndRandomizeSamples, @BlockAndRandomizeRuns,and @IOPSPermitsCurrent
+**			04/08/2013 grk - Added @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent
 **			04/09/2013 grk - disregarding internal standards
 **			04/09/2013 grk - chaged priority to text "Normal/High", added @NumberOfBiomaterialRepsReceived, removed Facility field
 **			04/09/2013 mem - Renamed parameter @InstrumentName to @InstrumentGroup
@@ -64,13 +64,18 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/12/2017 mem - Remove 9 deprecated parameters:
+**								@CellCultureList, @NumberOfBiomaterialRepsReceived, @ReplicatesofSamples, @PrepByRobot,
+**								@TechnicalReplicates, @SpecialInstructions, @UseSingleLCColumn, @ProjectNumber, and @IOPSPermitsCurrent
+**						   - Change the default state from 'Pending Approval' to 'New'
+**						   - Validate list of Requested Personnel and Assigned Personnel
+**						   - Expand @Comment to varchar(2048)
 **    
 *****************************************************/
 (
 	@RequestName varchar(128),
 	@RequesterPRN varchar(32),
 	@Reason varchar(512),
-	@CellCultureList varchar(1024),
 	@MaterialContainerList VARCHAR(2048),
 	@Organism varchar(128),
 	@BiohazardLevel varchar(12),
@@ -79,34 +84,26 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 	@SampleNameList varchar(1500),
 	@SampleType varchar(128),
 	@PrepMethod varchar(512),
-	@PrepByRobot varchar(8),
-	@SpecialInstructions varchar(1024),
 	@SampleNamingConvention varchar(128),
 	@AssignedPersonnel varchar(256),
 	@RequestedPersonnel varchar(256),
 	@EstimatedCompletion varchar(32),
 	@EstimatedMSRuns varchar(16),
 	@WorkPackageNumber varchar(64),
-	@ProjectNumber varchar(15),
 	@eusProposalID varchar(10),
 	@eusUsageType varchar(50),
 	@eusUsersList varchar(1024),
-	@ReplicatesofSamples varchar(512),  
-	@TechnicalReplicates varchar(64),
-	@instrumentGroup varchar(128),				-- Will typically contain an instrument group name; could also contain "None" or any other text
+	@InstrumentGroup varchar(128),				-- Will typically contain an instrument group name; could also contain "None" or any other text
 	@DatasetType varchar(50),
 	@InstrumentAnalysisSpecifications varchar(512),
-	@Comment varchar(1024),
+	@Comment varchar(2048),
 	@Priority varchar(12),
 	@State varchar(32),
-	@UseSingleLCColumn varchar(50),
 	@ID int output,
 	@SeparationGroup varchar(256),			-- Separation group	
-	@BlockAndRandomizeSamples char(3),		-- 'Yes', 'No', or 'NA'
+	@BlockAndRandomizeSamples char(3),		-- 'Yes', 'No', or 'na'
 	@BlockAndRandomizeRuns char(3),			-- 'Yes' or 'No'
-	@IOPSPermitsCurrent char(3),			-- 'Yes' or 'No'
 	@ReasonForHighPriority varchar(1024),
-	@NumberOfBiomaterialRepsReceived int,
 	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -147,20 +144,15 @@ As
 	
 	Set @DatasetType = IsNull(@DatasetType, '')
  
-	Set @TechnicalReplicates = IsNull(@TechnicalReplicates, '')
- 
 	If Len(IsNull(@EstimatedMSRuns, '')) < 1
 		RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
 
-	If IsNull(@BlockAndRandomizeSamples, '') NOT IN ('', 'Yes', 'No', 'NA')
-		RAISERROR ('Field BlockAndRandomizeSamples should be Yes, No, or NA', 11, 116)
+	If IsNull(@BlockAndRandomizeSamples, '') NOT IN ('Yes', 'No', 'NA')
+		RAISERROR ('Block And Randomize Samples must be Yes, No, or NA', 11, 116)
 	
-	If IsNull(@BlockAndRandomizeRuns, '') NOT IN ('', 'Yes', 'No')
-		RAISERROR ('Field BlockAndRandomizeRuns should be Yes or No', 11, 116)
+	If IsNull(@BlockAndRandomizeRuns, '') NOT IN ('Yes', 'No')
+		RAISERROR ('Block And Randomize Runs must be Yes or No', 11, 116)
 
-	If IsNull(@IOPSPermitsCurrent, '') NOT IN ('', 'Yes', 'No')
-		RAISERROR ('Field IOPSPermitsCurrent should be Yes or No', 11, 116)
-				
 	---------------------------------------------------
 	-- validate priority
 	---------------------------------------------------
@@ -189,9 +181,6 @@ As
 		If IsNull(@SeparationGroup, '') = ''
 			RAISERROR ('Separation group cannot be empty since the estimated MS run count is non-zero', 11, 119)
 
-		If IsNull(@TechnicalReplicates, '') = ''
-			RAISERROR ('Technical Replicate count cannot be empty since the estimated MS run count is non-zero; enter "none" if no replicates', 11, 120)
-		
 		---------------------------------------------------
 		-- Determine the Instrument Group
 		---------------------------------------------------
@@ -214,7 +203,7 @@ As
 		--
 		exec @myError = ValidateInstrumentGroupAndDatasetType
 								@DatasetType,
-								@instrumentGroup,
+								@InstrumentGroup,
 								@datasetTypeID output,
 								@msg output 
 		if @myError <> 0
@@ -233,50 +222,6 @@ As
 	--
 	if @campaignID = 0
 		RAISERROR('Could not find entry in database for campaignNum "%s"', 11, 14, @Campaign)
-
-	---------------------------------------------------
-	-- Resolve cell cultures
-	---------------------------------------------------
-
-	-- create tempoary table to hold names of cell cultures as input
-	--
-	create table #CC (
-		name varchar(128) not null
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Could not create temporary table for cell culture list', 11, 78)
-
-	-- get names of cell cultures from list argument into table
-	--
-	INSERT INTO #CC (name) 
-	SELECT item FROM MakeTableFromListDelim(@cellCultureList, ';')
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
-
-	-- verify that cell cultures exist
-	--
-	declare @cnt int
-	set @cnt = -1
-	SELECT @cnt = count(*) 
-	FROM #CC 
-	WHERE [name] not in (
-		SELECT CC_Name
-		FROM	T_Cell_Culture
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Was not able to check for cell cultures in database', 11, 80)
-	--
-	if @cnt <> 0 
-		RAISERROR ('One or more cell cultures was not in database', 11, 81)
 
 	---------------------------------------------------
 	-- Resolve material containers
@@ -305,7 +250,8 @@ As
 
 	-- verify that material containers exist
 	--
-	set @cnt = -1
+	Declare @cnt int = -1
+	
 	SELECT @cnt = count(*) 
 	FROM #MC 
 	WHERE [name] not in (
@@ -341,20 +287,20 @@ As
 	end
   
 	---------------------------------------------------
-	-- force values of some properties for add mode
+	-- Force values of some properties for add mode
 	---------------------------------------------------
   
-	if @mode = 'add'
-	begin
-		set @State = 'Pending Approval'
+	If @mode = 'add'
+	Begin
+		set @State = 'New'
 		set @AssignedPersonnel = 'na'
-	end
+	End
 
 	---------------------------------------------------
 	-- Convert state name to ID
 	---------------------------------------------------
-	declare @StateID int
-	set @StateID = 0
+	
+	declare @StateID int = 0
 	--
 	SELECT  @StateID = State_ID
 	FROM  T_Sample_Prep_Request_State_Name
@@ -505,7 +451,6 @@ As
 			Request_Name, 
 			Requester_PRN, 
 			Reason,
-			Cell_Culture_List, 
 			Organism, 
 			Biohazard_Level, 
 			Campaign, 
@@ -513,40 +458,31 @@ As
 			Sample_Name_List, 
 			Sample_Type, 
 			Prep_Method, 
-			Prep_By_Robot, 
-			Special_Instructions, 
 			Sample_Naming_Convention, 
 			Requested_Personnel,
 			Assigned_Personnel, 
 			Estimated_Completion,
 			Estimated_MS_runs,
 			Work_Package_Number, 
-			Project_Number,
 			EUS_UsageType, 
 			EUS_Proposal_ID, 
 			EUS_User_List,
-			Replicates_of_Samples, 
 			Instrument_Analysis_Specifications, 
-			Comment, 
+			Comment,
 			Priority, 
-			UseSingleLCColumn,
 			State, 
 			Instrument_Group, 
 			Dataset_Type,
-			Technical_Replicates,
 			Separation_Type,
 			BlockAndRandomizeSamples,
 			BlockAndRandomizeRuns,
-			IOPSPermitsCurrent,
 			Reason_For_High_Priority,
-			Number_Of_Biomaterial_Reps_Received,
 			Request_Type,
 			Material_Container_List	
 		) VALUES (
 			@RequestName, 
 			@RequesterPRN, 
 			@Reason,
-			@CellCultureList, 
 			@Organism, 
 			@BiohazardLevel, 
 			@Campaign, 
@@ -554,33 +490,25 @@ As
 			@SampleNameList, 
 			@SampleType, 
 			@PrepMethod, 
-			@PrepByRobot, 
-			@SpecialInstructions, 
 			@SampleNamingConvention, 
 			@RequestedPersonnel,
 			@AssignedPersonnel, 
 			@EstimatedCompletionDate,
 			@EstimatedMSRuns,
 			@WorkPackageNumber, 
-			@ProjectNumber,
 			@eusUsageType,
 			@eusProposalID,
 			@eusUsersList,
-			@ReplicatesofSamples, 
 			@InstrumentAnalysisSpecifications, 
-			@Comment, 
+			@Comment,
 			@Priority, 
-			@UseSingleLCColumn,
 			@StateID,
-			@instrumentGroup,
+			@InstrumentGroup,
 			@DatasetType,
-			@TechnicalReplicates,
 			@SeparationGroup,
 			@BlockAndRandomizeSamples,
 			@BlockAndRandomizeRuns,
-			@IOPSPermitsCurrent,
 			@ReasonForHighPriority,
-			@NumberOfBiomaterialRepsReceived,
 			@RequestType,
 			@MaterialContainerList
 		)
@@ -624,7 +552,6 @@ As
 			Request_Name = @RequestName, 
 			Requester_PRN = @RequesterPRN, 
 			Reason = @Reason,
-			Cell_Culture_List = @CellCultureList, 
 			Material_Container_List = @MaterialContainerList,
 			Organism = @Organism, 
 			Biohazard_Level = @BiohazardLevel, 
@@ -633,34 +560,26 @@ As
 			Sample_Name_List = @SampleNameList, 
 			Sample_Type = @SampleType, 
 			Prep_Method = @PrepMethod, 
-			Prep_By_Robot = @PrepByRobot, 
-			Special_Instructions = @SpecialInstructions, 
 			Sample_Naming_Convention = @SampleNamingConvention, 
 			Requested_Personnel = @RequestedPersonnel,
 			Assigned_Personnel = @AssignedPersonnel, 
 			Estimated_Completion = @EstimatedCompletionDate,
 			Estimated_MS_runs = @EstimatedMSRuns,
 			Work_Package_Number = @WorkPackageNumber, 
-			Project_Number = @ProjectNumber,
 			EUS_Proposal_ID = @eusProposalID,
 			EUS_UsageType = @eusUsageType,
 			EUS_User_List = @eusUsersList,
-			Replicates_of_Samples = @ReplicatesofSamples, 
 			Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications, 
 			Comment = @Comment, 
 			Priority = @Priority, 
-			UseSingleLCColumn = @UseSingleLCColumn,
 			State = @StateID,
-			Instrument_Group = @instrumentGroup, 
+			Instrument_Group = @InstrumentGroup, 
 			Instrument_Name = Null,
 			Dataset_Type = @DatasetType,
-			Technical_Replicates = @TechnicalReplicates,
 			Separation_Type = @SeparationGroup,
 			BlockAndRandomizeSamples = @BlockAndRandomizeSamples,
 			BlockAndRandomizeRuns = @BlockAndRandomizeRuns,
-			IOPSPermitsCurrent = @IOPSPermitsCurrent,
-			Reason_For_High_Priority = @ReasonForHighPriority,
-			Number_Of_Biomaterial_Reps_Received = @NumberOfBiomaterialRepsReceived 
+			Reason_For_High_Priority = @ReasonForHighPriority
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount

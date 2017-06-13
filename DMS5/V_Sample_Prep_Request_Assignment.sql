@@ -4,9 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
 SELECT '' AS [Sel.],
@@ -26,8 +23,9 @@ SELECT '' AS [Sel.],
        SPR.Number_of_Samples AS Samples,
        SPR.Sample_Type AS [Sample Type],
        SPR.Prep_Method AS [Prep Method],
-       SPR.Replicates_of_Samples AS Replicates,
+       -- Deprecated in June 2017: SPR.Replicates_of_Samples AS Replicates,
        SPR.[Comment],
+       SPR.[Reason],
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
 			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
@@ -44,10 +42,6 @@ FROM T_Sample_Prep_Request SPR
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
-
-
-
-
 
 
 GO
