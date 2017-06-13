@@ -295,7 +295,158 @@ As
 		set @State = 'New'
 		set @AssignedPersonnel = 'na'
 	End
+	
+	---------------------------------------------------
+	-- Validate requested and assigned personnel
+	-- Names should be in the form "Last Name, First Name (PRN)"
+	---------------------------------------------------
+	
+	CREATE TABLE #Tmp_UserInfo (
+		EntryID int identity(1,1),
+		[Name_and_PRN] varchar(255) NOT NULL,
+		[User_ID] int NULL
+	)
 
+	Declare @nameValidationIteration int = 1
+	Declare @userFieldName varchar(32) = ''
+	Declare @cleanNameList varchar(255)
+	
+	While @nameValidationIteration <= 2
+	Begin -- <a>
+		
+		TRUNCATE TABLE #Tmp_UserInfo
+		
+		If @nameValidationIteration = 1
+		Begin
+			INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
+			SELECT Item AS Name_and_PRN
+			FROM dbo.MakeTableFromListDelim(@RequestedPersonnel, ';')
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			Set @userFieldName = 'requested personnel'
+		End
+		Else
+		Begin
+			INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
+			SELECT Item AS Name_and_PRN
+			FROM dbo.MakeTableFromListDelim(@AssignedPersonnel, ';')
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			Set @userFieldName = 'assigned personnel'
+		End
+
+		UPDATE #Tmp_UserInfo
+		SET [User_ID] = U.ID
+		FROM #Tmp_UserInfo
+			INNER JOIN T_Users U
+			ON #Tmp_UserInfo.Name_and_PRN = U.Name_with_PRN
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+	    
+	    -- Allow personnel to be 'na'
+	    -- Set User_ID to 0
+	    UPDATE #Tmp_UserInfo
+	    SET [User_ID] = 0
+	    WHERE Name_and_PRN IN ('na')
+	    
+	    If @nameValidationIteration = 1
+	    Begin
+			-- Allow requested personnel to be "any"
+			-- Set User_ID to 0
+			UPDATE #Tmp_UserInfo
+			SET [User_ID] = 0
+			WHERE Name_and_PRN IN ('any')
+	    End
+	    
+		---------------------------------------------------
+		-- Look for entries in #Tmp_UserInfo where Name_and_PRN did not resolve to a User_ID
+		-- Try-to auto-resolve using the U_Name and U_PRN columns in T_Users
+		---------------------------------------------------
+		
+		Declare @EntryID int = 0
+		Declare @continue tinyint = 1
+		Declare @UnknownUser varchar(255)
+		Declare @MatchCount tinyint
+		Declare @NewPRN varchar(64)
+		Declare @NewUserID int
+		
+		While @Continue = 1
+		Begin -- <b>
+			SELECT TOP 1 @EntryID = EntryID,
+						@UnknownUser = Name_and_PRN
+			FROM #Tmp_UserInfo
+			WHERE EntryID > @EntryID AND [USER_ID] IS NULL
+			ORDER BY EntryID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount = 0
+				Set @Continue = 0
+			Else
+			Begin -- <c>
+				Set @MatchCount = 0
+				
+				exec AutoResolveNameToPRN @UnknownUser, @MatchCount output, @NewPRN output, @NewUserID output
+							
+				If @MatchCount = 1
+				Begin
+					-- Single match was found; update [User_ID] in #Tmp_UserInfo
+					UPDATE #Tmp_UserInfo
+					SET [User_ID] = @NewUserID
+					WHERE EntryID = @EntryID
+
+				End
+			End -- </c>
+			
+		End -- </b>
+		
+		If Exists (SELECT * FROM #Tmp_UserInfo WHERE [User_ID] Is Null)
+		Begin
+			Declare @firstInvalidUser varchar(255) = ''
+			
+			SELECT TOP 1 @firstInvalidUser = Name_and_PRN
+			FROM #Tmp_UserInfo
+			WHERE [USER_ID] IS NULL
+			
+			RAISERROR ('Invalid username for %s (use "na" if unspecified): "%s"', 11, 37, @userFieldName, @firstInvalidUser)
+		End
+		
+		-- Make sure names are capitalized properly
+		--
+		UPDATE #Tmp_UserInfo
+		SET Name_and_PRN = U.Name_with_PRN
+		FROM #Tmp_UserInfo
+			INNER JOIN T_Users U
+			ON #Tmp_UserInfo.User_ID = U.ID
+		WHERE #Tmp_UserInfo.User_ID <> 0
+			
+		-- Regenerate the list of names
+		--		
+		Set @cleanNameList = ''
+
+		SELECT @cleanNameList = @cleanNameList + CASE
+		                                             WHEN @cleanNameList = '' THEN ''
+		                                             ELSE '; '
+		                                         END + Name_and_PRN
+		FROM #Tmp_UserInfo
+		ORDER BY EntryID
+
+		If @nameValidationIteration = 1
+		Begin
+			Set @RequestedPersonnel = @cleanNameList
+		End
+		Else
+		Begin
+			Set @AssignedPersonnel = @cleanNameList
+		End
+		
+		Set @nameValidationIteration = @nameValidationIteration + 1
+		
+	End -- </a>
+		
+    	
 	---------------------------------------------------
 	-- Convert state name to ID
 	---------------------------------------------------
