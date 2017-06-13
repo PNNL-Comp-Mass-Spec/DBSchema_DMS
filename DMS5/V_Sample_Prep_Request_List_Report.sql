@@ -50,11 +50,11 @@ FROM    T_Sample_Prep_Request AS SPR
         INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
         LEFT OUTER JOIN T_Users AS QP ON SPR.Requester_PRN = QP.U_PRN
         LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
-        LEFT OUTER JOIN ( SELECT    Entity_ID AS [Entity ID] ,
+        LEFT OUTER JOIN ( SELECT    Try_Cast(Entity_ID as int) AS [Entity ID],
                                     COUNT(*) AS Attachments
                           FROM      T_File_Attachment
-                          WHERE     ( Entity_Type = 'sample_prep_request' ) And Active > 0
-                          GROUP BY  Entity_ID
+                          WHERE     Entity_Type = 'sample_prep_request' AND Active > 0
+                          GROUP BY  Try_Cast(Entity_ID as int)
                         ) AS TA ON SPR.ID = TA.[Entity ID]
         LEFT OUTER JOIN T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
         LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
