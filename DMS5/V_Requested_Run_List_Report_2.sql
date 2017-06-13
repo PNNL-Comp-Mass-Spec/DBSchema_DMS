@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Requested_Run_List_Report_2] 
 AS
 SELECT RR.ID AS Request,
@@ -18,7 +19,7 @@ SELECT RR.ID AS Request,
        DS.Dataset_Num AS Dataset,
        ISNULL(InstName.IN_name, '') AS Instrument,
        RR.RDS_instrument_name AS [Inst. Group],
-       U.U_Name AS Requester,
+       U.U_Name AS Requestor,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_WorkPackage AS [Work Package],

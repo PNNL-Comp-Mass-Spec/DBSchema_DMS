@@ -19,7 +19,7 @@ SELECT RR.ID AS Request,
        RR.RDS_instrument_name AS [Instrument Group],
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
-       U.Name_with_PRN AS Requester,
+       U.Name_with_PRN AS Requestor,
        RR.RDS_Oper_PRN AS [Username],
        RR.RDS_created AS Created,
        QT.[Days In Queue],
@@ -76,7 +76,6 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
-
 
 
 GO
