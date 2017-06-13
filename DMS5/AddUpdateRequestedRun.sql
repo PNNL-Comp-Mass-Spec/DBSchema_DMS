@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure dbo.AddUpdateRequestedRun
 /****************************************************
 **
@@ -24,7 +25,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			02/21/2006 grk - Added stuff for EUS proposal and user tracking.
 **			11/09/2006 grk - Fixed error message handling (Ticket #318)
 **			01/12/2007 grk - added verification mode
-**			01/31/2007 grk - added verification for @operPRN (Ticket #371)
+**			01/31/2007 grk - added verification for @requestorPRN (Ticket #371)
 **			03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
 **			04/25/2007 grk - get new ID from UDF (Ticket #446)
 **			04/30/2007 grk - added better name validation (Ticket #450)
@@ -46,7 +47,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			03/27/2010 grk - fixed problem creating new requests with "Completed" status.
 **			04/20/2010 grk - fixed problem with experiment lookup validation
 **			04/21/2010 grk - try-catch for error handling
-**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
+**			05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @requestorPRN contains a person's real name rather than their username
 **			08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **			09/01/2010 mem - Added parameter @SkipTransactionRollback
 **			09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
@@ -75,12 +76,13 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/09/2017 mem - Add parameter @logDebugMessages
 **			02/07/2017 mem - Change default for @logDebugMessages to 0
+**			06/13/2017 mem - Rename @operPRN to @requestorPRN
 **
 *****************************************************/
 (
 	@reqName varchar(128),
 	@experimentNum varchar(64),
-	@operPRN varchar(64),
+	@requestorPRN varchar(64),
 	@instrumentName varchar(64),				-- Instrument group; could also contain "(lookup)"
 	@workPackage varchar(50),					-- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
 	@msType varchar(20),
@@ -158,8 +160,8 @@ As
 	if IsNull(@experimentNum, '') = ''
 		RAISERROR ('Experiment number was blank', 11, 111)
 	--
-	if IsNull(@operPRN, '') = ''
-		RAISERROR ('Operator payroll number/HID was blank', 11, 113)
+	if IsNull(@requestorPRN, '') = ''
+		RAISERROR ('Requester payroll number/HID was blank', 11, 113)
 	--
 	Declare @InstrumentGroup varchar(64) = @instrumentName	
 	if IsNull(@InstrumentGroup, '') = ''
@@ -364,30 +366,30 @@ As
 
 	If @logDebugMessages > 0
 	Begin
-		Set @debugMsg = 'Call GetUserID for ' + @operPRN
+		Set @debugMsg = 'Call GetUserID for ' + @requestorPRN
 		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
 	End
 
 	declare @userID int
-	execute @userID = GetUserID @operPRN
+	execute @userID = GetUserID @requestorPRN
 	if @userID = 0
 	begin
-		-- Could not find entry in database for PRN @operPRN
+		-- Could not find entry in database for PRN @requestorPRN
 		-- Try to auto-resolve the name
 
 		Declare @MatchCount int
 		Declare @NewPRN varchar(64)
 
-		exec AutoResolveNameToPRN @operPRN, @MatchCount output, @NewPRN output, @userID output
+		exec AutoResolveNameToPRN @requestorPRN, @MatchCount output, @NewPRN output, @userID output
 
 		If @MatchCount = 1
 		Begin
-			-- Single match found; update @operPRN
-			Set @operPRN = @NewPRN
+			-- Single match found; update @requestorPRN
+			Set @requestorPRN = @NewPRN
 		End
 		Else
 		Begin
-			RAISERROR ('Could not find entry in database for operator PRN "%s"', 11, 19, @operPRN)
+			RAISERROR ('Could not find entry in database for requestor PRN "%s"', 11, 19, @requestorPRN)
 			return 51019
 		End
 	end
@@ -645,60 +647,57 @@ As
 		begin transaction @transName
 		
 		INSERT INTO T_Requested_Run
-			(
-				RDS_name, 
-				RDS_Oper_PRN, 
-				RDS_comment, 
-				RDS_created, 
-				RDS_instrument_name, 
-				RDS_type_ID, 
-				RDS_instrument_setting, 
-				RDS_priority, 
-				Exp_ID,
-				RDS_WorkPackage, 
-				RDS_Well_Plate_Num,
-				RDS_Well_Num,
-				RDS_internal_standard,
-				RDS_EUS_Proposal_ID,
-				RDS_EUS_UsageType,
-				RDS_Sec_Sep,
-				RDS_MRM_Attachment,
-				RDS_Origin,
-				RDS_Status,
-				Vialing_Conc,
-				Vialing_Vol
-			) 
-			VALUES 
-			(
-				@reqName, 
-				@operPRN, 
-				@comment, 
-				GETDATE(), 
-				@instrumentGroup, 
-				@datasetTypeID, 
-				@instrumentSettings, 
-				@defaultPriority, -- priority
-				@experimentID,
-				@workPackage,
-				@wellplateNum,
-				@wellNum,
-				@internalStandard,
-				@eusProposalID,
-				@eusUsageTypeID,
-				@secSep,
-				@mrmAttachmentID,
-				@requestOrigin,
-				@status,
-				@VialingConc,
-				@VialingVol 
-			)
+		(
+			RDS_name, 
+			RDS_Oper_PRN, 
+			RDS_comment, 
+			RDS_created, 
+			RDS_instrument_name, 
+			RDS_type_ID, 
+			RDS_instrument_setting, 
+			RDS_priority, 
+			Exp_ID,
+			RDS_WorkPackage, 
+			RDS_Well_Plate_Num,
+			RDS_Well_Num,
+			RDS_internal_standard,
+			RDS_EUS_Proposal_ID,
+			RDS_EUS_UsageType,
+			RDS_Sec_Sep,
+			RDS_MRM_Attachment,
+			RDS_Origin,
+			RDS_Status,
+			Vialing_Conc,
+			Vialing_Vol
+		) VALUES (
+			@reqName, 
+			@requestorPRN, 
+			@comment, 
+			GETDATE(), 
+			@instrumentGroup, 
+			@datasetTypeID, 
+			@instrumentSettings, 
+			@defaultPriority, -- priority
+			@experimentID,
+			@workPackage,
+			@wellplateNum,
+			@wellNum,
+			@internalStandard,
+			@eusProposalID,
+			@eusUsageTypeID,
+			@secSep,
+			@mrmAttachmentID,
+			@requestOrigin,
+			@status,
+			@VialingConc,
+			@VialingVol 
+		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
 		
-		-- This method is more accurate than using IDENT_CURRENT
 		Set @Request = SCOPE_IDENTITY()
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -761,7 +760,7 @@ As
 		UPDATE T_Requested_Run 
 		SET 
 			RDS_Name = Case When @requestIDForUpdate > 0 Then @reqName Else RDS_Name End,
-			RDS_Oper_PRN = @operPRN, 
+			RDS_Oper_PRN = @requestorPRN, 
 			RDS_comment = @comment, 
 			RDS_instrument_name = @instrumentGroup, 
 			RDS_type_ID = @datasetTypeID, 
@@ -833,7 +832,10 @@ As
 		End
 
 	END CATCH
+
 	return @myError
+
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]
 GO
