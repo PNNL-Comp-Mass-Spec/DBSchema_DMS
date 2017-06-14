@@ -3,11 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_MyEMSL_Supplemental_Metadata]
+CREATE VIEW dbo.V_MyEMSL_Supplemental_Metadata
 AS
-SELECT TOP (1000) 
-       DS.Dataset_ID AS dataset_id,
+SELECT DS.Dataset_ID AS dataset_id,
        DS.Dataset_Num AS dataset_name,
        E.Exp_ID AS experiment_id,
        E.Experiment_Num AS experiment_name,
@@ -21,18 +19,17 @@ SELECT TOP (1000)
        DS.Scan_Count AS number_of_scans,
        RR.RDS_Sec_Sep AS separation_type,
        DTN.DST_name AS dataset_type
-FROM T_Campaign C
-     INNER JOIN T_Experiments E
+FROM dbo.T_Campaign AS C
+     INNER JOIN dbo.T_Experiments AS E
        ON C.Campaign_ID = E.EX_campaign_ID
-     INNER JOIN T_Dataset DS
+     INNER JOIN dbo.T_Dataset AS DS
        ON E.Exp_ID = DS.Exp_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN dbo.T_DatasetTypeName AS DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
-     INNER JOIN T_Requested_Run RR
+     INNER JOIN dbo.T_Requested_Run AS RR
        ON DS.Dataset_ID = RR.DatasetID
-     INNER JOIN T_Organisms Org
+     INNER JOIN dbo.T_Organisms AS Org
        ON E.EX_organism_ID = Org.Organism_ID
-ORDER BY DS.Dataset_ID DESC
 
 
 GO
