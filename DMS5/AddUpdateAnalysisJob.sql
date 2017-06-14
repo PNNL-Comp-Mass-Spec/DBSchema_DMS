@@ -68,6 +68,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/09/2017 mem - Add support for state 13 (inactive)
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 	@mode varchar(12) = 'add', -- or 'update' or 'reset'; use 'previewadd' or 'previewupdate' to validate the parameters but not actually make the change (used by the Spreadsheet loader page)
 	@message varchar(512) output,
 	@callingUser varchar(128) = '',
-	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed); if @PreventDuplicatesIgnoresNoExport = 1 then also ignores jobs with state 14 (no export)
+	@PreventDuplicateJobs tinyint = 0,				-- Only used if @Mode is 'add'; ignores jobs with state 5 (failed), 13 (inactive) or 14 (no export)
 	@PreventDuplicatesIgnoresNoExport tinyint = 1,
 	@SpecialProcessingWaitUntilReady tinyint = 0,	-- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
 	@infoOnly tinyint = 0							-- When 1, preview the change even when @mode is 'add' or 'update'
@@ -435,8 +436,8 @@ As
 				T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
 				#TD ON #TD.Dataset_Num = DS.Dataset_Num
 			WHERE
-			    ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 14) OR
-			    @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
+			    ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 13, 14) OR
+			      @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
 			    ) AND
 			    AJT.AJT_toolName = @toolName AND 
 			    AJ.AJ_parmFileName = @parmFileName AND 
@@ -821,17 +822,20 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
+
 		If @logErrors > 0
 		Begin
 			Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'
 		End
+			
 		
 	END CATCH
 
 Done:
 
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [DDL_Viewer] AS [dbo]
