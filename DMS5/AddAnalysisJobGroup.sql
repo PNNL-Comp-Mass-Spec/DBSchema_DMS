@@ -574,7 +574,7 @@ As
 		If @batchID = 0 AND @myRowCount = 1
 		Begin
 			-- Added a single job; cache the jobID value
-			Set @jobID = SCOPE_IDENTITY()				-- IDENT_CURRENT('T_Analysis_Job')
+			Set @jobID = SCOPE_IDENTITY()
 		End
 		/*
 		---------------------------------------------------

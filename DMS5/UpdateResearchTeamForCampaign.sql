@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateResearchTeamForCampaign]
+CREATE Procedure dbo.UpdateResearchTeamForCampaign
 /****************************************************
 **
 **	Desc:
@@ -22,6 +22,7 @@ CREATE Procedure [dbo].[UpdateResearchTeamForCampaign]
 **                         - However, "anderson, gordon" will be split into two entries: "anderson" and "gordon" when MakeTableFromList is called
 **                         - Thus, use "anderson%gordon" to match the "anderson, gordon" entry in T_Users
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **    
 *****************************************************/
 (
@@ -97,7 +98,7 @@ AS
 			GOTO Done
 		end
 		--
-		SET @researchTeamID = IDENT_CURRENT('T_Research_Team')
+		SET @researchTeamID = SCOPE_IDENTITY()
 	END
 
 	IF @researchTeamID = 0 

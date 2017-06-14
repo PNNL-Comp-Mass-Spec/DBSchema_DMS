@@ -31,6 +31,7 @@ CREATE Procedure dbo.AddUpdateUser
 **			11/18/2016 mem - Log try/catch errors using PostLogEntry
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/13/2017 mem - Use SCOPE_IDENTITY()
 **
 *****************************************************/
 (
@@ -158,7 +159,7 @@ As
 			)	
 			-- Obtain User ID of newly created User
 			--
-			set @UserID = IDENT_CURRENT('T_Users')
+			set @UserID = SCOPE_IDENTITY()
 
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
