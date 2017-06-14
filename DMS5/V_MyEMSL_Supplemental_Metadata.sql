@@ -19,7 +19,8 @@ SELECT DS.Dataset_ID AS dataset_id,
        DS.Acq_Length_Minutes AS acquisition_length,
        DS.Scan_Count AS number_of_scans,
        RR.RDS_Sec_Sep AS separation_type,
-       DTN.DST_name AS dataset_type
+       DTN.DST_name AS dataset_type,
+       RR.ID AS requested_run_id
 FROM dbo.T_Campaign AS C
      INNER JOIN dbo.T_Experiments AS E
        ON C.Campaign_ID = E.EX_campaign_ID
@@ -31,5 +32,6 @@ FROM dbo.T_Campaign AS C
        ON DS.Dataset_ID = RR.DatasetID
      INNER JOIN dbo.T_Organisms AS Org
        ON E.EX_organism_ID = Org.Organism_ID
+
 
 GO
