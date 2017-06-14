@@ -26,6 +26,8 @@ CREATE Procedure CreatePSMJobRequest
 **			04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **			03/21/2016 mem - Add support for column Enabled
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Update grammar
+**			               - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -60,6 +62,8 @@ As
 	Declare @msg varchar(255)
 	
 	Declare @DatasetCount int = 0
+	
+	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
 
@@ -117,7 +121,9 @@ As
 
 		If @toolName Like '%_DTARefinery' And @jobTypeName = 'Low Res MS1'
 			RAISERROR ('DTARefinery cannot be used with datasets that have low resolution MS1 spectra', 11, 4)
-	
+
+		Set @logErrors = 1
+
 		---------------------------------------------------
 		-- Create temporary table to hold list of datasets
 		---------------------------------------------------
@@ -164,8 +170,11 @@ As
 		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
 		
 		If @result <> 0
+		Begin
+			Set @logErrors = 0
 			RAISERROR (@message, 11, 10)
-	
+		End
+		
 		---------------------------------------------------
 		-- Regenerate the dataset list, sorting by dataset name
 		---------------------------------------------------
@@ -179,7 +188,6 @@ As
 		-- Remove the trailing comma
 		If Len(@datasets) > 0
 		Set @datasets = SubString(@datasets, 1, Len(@datasets)-1)
-	
 	
 		---------------------------------------------------
 		-- Determine the appropriate parameter file and settings file given @toolName and @jobTypeName
@@ -197,7 +205,7 @@ As
 
 		If IsNull(@SettingsFile, '') = ''
 		Begin
-			Set @msg = 'Tool ' + @toolName + ' and job type ' + @jobTypeName + ' do not have a default settings file defined with ' + 
+			Set @msg = 'Tool ' + @toolName + ' with job type ' + @jobTypeName + ' does not have a default settings file defined for ' + 
 			           'Stat Cys Alk ' + dbo.TinyintToEnabledDisabled(@StatCysAlkEnabled) + ' and ' +
 			           'Dyn STY Phos ' + dbo.TinyintToEnabledDisabled(@DynSTYPhosEnabled)
 			           
@@ -275,7 +283,7 @@ As
 
 		If IsNull(@ParamFile, '') = ''
 		Begin
-			Set @msg = 'Tool ' + @toolName + ' and job type ' + @jobTypeName + ' do not have a default parameter file defined with ' + 
+			Set @msg = 'Tool ' + @toolName + ' with job type ' + @jobTypeName + ' does not have a default parameter file defined for ' + 
 			            'Dyn Met Ox ' +   dbo.TinyintToEnabledDisabled(@DynMetOxEnabled) + ', ' + 
 			            'Stat Cys Alk ' + dbo.TinyintToEnabledDisabled(@StatCysAlkEnabled) + ', and ' + 
 			            'Dyn STY Phos ' + dbo.TinyintToEnabledDisabled(@DynSTYPhosEnabled)
@@ -345,8 +353,9 @@ As
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'CreatePSMJobRequest'
+
+		If @logErrors > 0
+			Exec PostLogEntry 'Error', @message, 'CreatePSMJobRequest'
 	END CATCH
 
 	---------------------------------------------------

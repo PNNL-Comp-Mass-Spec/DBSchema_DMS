@@ -23,6 +23,7 @@ CREATE Procedure GetPSMJobDefaults
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/18/2016 mem - Added TMT6 and TMT10
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Exclude logging some try/catch errors
 **    
 *****************************************************/
 (
@@ -59,6 +60,8 @@ As
 	Declare @DatasetCountPhospho int = 0
 	Declare @OrganismCount int = 0
 	
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY 
 
 		---------------------------------------------------
@@ -83,6 +86,8 @@ As
 		If IsNull(@datasets, '') = ''
 			RAISERROR ('Dataset list is empty', 11, 1)
 
+		Set @logErrors = 1
+		
 		---------------------------------------------------
 		-- Create temporary table to hold list of datasets
 		---------------------------------------------------
@@ -147,8 +152,11 @@ As
 		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
 		
 		If @result <> 0
+		Begin
+			Set @logErrors = 0
 			RAISERROR (@message, 11, 10)
-	
+		End
+		
 		---------------------------------------------------
 		-- Regenerate the dataset list, sorting by dataset name
 		---------------------------------------------------
@@ -162,8 +170,7 @@ As
 		-- Remove the trailing comma
 		If Len(@datasets) > 0
 		Set @datasets = SubString(@datasets, 1, Len(@datasets)-1)
-	
-	
+		
 		---------------------------------------------------
 		-- Populate a temporary table with dataset type stats
 		---------------------------------------------------
@@ -361,8 +368,9 @@ As
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'GetPSMJobDefaults'
+
+		If @logErrors > 0			
+			Exec PostLogEntry 'Error', @message, 'GetPSMJobDefaults'
 	END CATCH
 	
 	return @myError

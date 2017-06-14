@@ -19,6 +19,7 @@ CREATE Procedure DeleteRequestedRun
 **          02/26/2010 grk - delete factors
 **			12/12/2011 mem - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
 **			03/22/2016 mem - Added parameter @skipDatasetCheck
+**			06/13/2017 mem - Fix typo
 **    
 *****************************************************/
 (
@@ -72,7 +73,7 @@ As
 			FROM T_Dataset
 			Where Dataset_ID = @DatasetID
 			
-			Set @message = 'Cannot deleted requested run ' + Cast(@requestID as varchar(9)) + 
+			Set @message = 'Cannot delete requested run ' + Cast(@requestID as varchar(9)) + 
 			               ' because it is associated with dataset ' + Coalesce(@Dataset, '??') + 
 			               ' (ID ' + Cast (@DatasetID as varchar(12)) + ')'
 			               
@@ -84,18 +85,15 @@ As
 	-- Start a transaction
 	---------------------------------------------------
 
-	declare @transName varchar(32)
-	set @transName = 'DeleteRequestedRun'
+	declare @transName varchar(32) = 'DeleteRequestedRun'
 	begin transaction @transName
 	
 	---------------------------------------------------
 	-- delete associated factors
 	---------------------------------------------------
 	--
-	DELETE FROM
-		T_Factor
-	WHERE
-		TargetID = @requestID
+	DELETE FROM T_Factor
+	WHERE TargetID = @requestID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

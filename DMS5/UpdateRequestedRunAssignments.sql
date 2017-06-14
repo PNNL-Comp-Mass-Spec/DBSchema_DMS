@@ -32,6 +32,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/31/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/13/2017 mem - Do not log an error when a requested run cannot be deleted because it is associated with a dataset 
 **    
 *****************************************************/
 (
@@ -394,8 +395,17 @@ As
 
 				If @myError <> 0
 				Begin -- <d>
+					If @message Like '%associated with dataset%'
+					Begin
+						-- Message is of the form
+						-- Error deleting Request ID 123456: Cannot delete requested run 123456 because it is associated with dataset xyz 
+						Set @logErrors = 0
+					End
+					
 					Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @RequestID) + ': ' + @message
 					RAISERROR (@msg, 11, 5)
+					
+					Set @logErrors = 1
 				End	-- </d>
 				
 				Set @CountDeleted = @CountDeleted + 1
