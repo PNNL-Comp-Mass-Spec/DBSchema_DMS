@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoSamplePrepMaterialOperation
+
+CREATE Procedure dbo.DoSamplePrepMaterialOperation
 /****************************************************
 **
 **  Desc: 
@@ -16,6 +17,8 @@ CREATE Procedure DoSamplePrepMaterialOperation
 **	Date:	08/08/2008 grk - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/13/2017 mem - Exclude the Staging container when finding containers to retire
+**						   - Log debug messages
 **
 **	Note:
 **		GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
@@ -32,22 +35,28 @@ CREATE Procedure DoSamplePrepMaterialOperation
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int	
-	declare @myRowCount int
+	Declare @myError int	
+	Declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
 	
-	DECLARE @requestID INT
-	SET @requestID = CONVERT(INT, @ID)
+	Declare @requestID INT = Try_Cast(@ID as int)
 	
-	DECLARE @comment varchar(512)
+	If @requestID Is Null
+		RAISERROR ('SamplePrepMaterialOperation failed: RequestID is null', 11, 21)
+		
+	Declare @comment varchar(512)
+	Declare @msg varchar(512)
 	
 	SET @comment = 'Retired as part of closing sample prep request ' + @ID
 
 	BEGIN TRY
 
+		Set @msg = '@mode is ' + @mode + '; find items for prep request ' + @ID
+		exec PostLogEntry 'Debug', @msg, 'DoSamplePrepMaterialOperation'
+		
 		---------------------------------------------------
 		-- get list of material items and containers for prep request
 		---------------------------------------------------
@@ -90,62 +99,66 @@ As
 				                ItemName,
 				                CanRetire )
 			SELECT DISTINCT 'Container' AS ItemName,
-				            Container,
-				            CASE
-				                WHEN Container_Status = 'Active' THEN 'Yes'
-				                ELSE 'No (container not Active)'
-				            END AS CanRetire
+			                Container,
+			                CASE
+			                    WHEN Container = 'Staging' THEN 'No'
+			                    WHEN Container_Status = 'Active' THEN 'Yes'
+			                    ELSE 'No (container not Active)'
+			                END AS CanRetire
 			FROM V_Sample_Prep_Biomaterial_Location_List_Report
-			WHERE ID = @requestID AND
-				    NOT Container = 'na'
+			WHERE ID = @requestID AND 
+			      NOT Container = 'na'
 			
 			-- get ID for containers
 			 UPDATE #RTI
-			 SET    ID = TM.ID
-			 FROM   #RTI
-			INNER JOIN ( SELECT ID ,
-								Tag AS Name
-						 FROM   T_Material_Containers
-					   ) TM ON TM.NAME = #RTI.ItemName
+			 SET ID = TM.ID
+			 FROM #RTI
+			      INNER JOIN ( SELECT ID,
+			                          Tag AS Name
+			                   FROM T_Material_Containers ) TM
+			        ON TM.NAME = #RTI.ItemName
 
 			-- mark containers that hold foreign material
 			UPDATE #RTI
 			SET CanRetire = 'No (contains material not associated with this prep request)'
-			FROM #RTI INNER join
-			(
-			SELECT  Container ,
-					Item ,
-					Item_Type
-			FROM    V_Material_Items_List_Report
-			WHERE   Container IN ( SELECT   ItemName
-								   FROM     #RTI
-								   WHERE    ItemType = 'Container' )
-					AND ( ( Item_Type = 'Biomaterial'
-							AND NOT ITEM IN ( SELECT    ItemName
-											  FROM      #RTI
-											  WHERE     ItemType = 'Biomaterial' )
-						  )
-						  OR Item_Type <> 'Biomaterial'
-						)
-			) T_Forn ON #RTI.ItemName = T_Forn.Container AND #RTI.ItemType = 'Container'
+			FROM #RTI
+			     INNER JOIN ( SELECT Container,
+			                         Item,
+			                         Item_Type
+			                  FROM V_Material_Items_List_Report
+			                  WHERE Container IN ( SELECT ItemName
+			                                       FROM #RTI
+			       WHERE ItemType = 'Container' ) AND
+			                        ( (Item_Type = 'Biomaterial' AND
+			                           NOT ITEM IN ( SELECT ItemName FROM #RTI WHERE ItemType = 'Biomaterial' )
+			                           ) OR
+			                          Item_Type <> 'Biomaterial'
+			                        ) 
+			                 ) FilterQ
+			       ON #RTI.ItemName = FilterQ.Container AND
+			          #RTI.ItemType = 'Container'
 
 			-- get list of items
-			DECLARE @itemList VARCHAR(4096)
+			Declare @itemList VARCHAR(4096)
 			SET @itemList = ''
-		   SELECT   @itemList = @itemList + CASE WHEN @itemList = '' THEN ''
-												 ELSE ', '
-											END + ID
-		   FROM     #RTI
-		   WHERE    ItemType = 'Biomaterial' AND CanRetire = 'Yes'
+			SELECT @itemList = @itemList + CASE
+			                                   WHEN @itemList = '' THEN ''
+			                                   ELSE ', '
+			                               END + ID
+			FROM #RTI
+			WHERE ItemType = 'Biomaterial' AND
+			      CanRetire = 'Yes'
 
 			-- get list of containers
-			DECLARE @containerList VARCHAR(4096)
+			Declare @containerList VARCHAR(4096)
 			SET @containerList = ''
-		   SELECT   @containerList = @containerList + CASE WHEN @containerList = '' THEN ''
-												 ELSE ', '
-											END + ID
-		   FROM     #RTI
-		   WHERE    ItemType = 'Container' AND CanRetire = 'Yes'
+			SELECT @containerList = @containerList + CASE
+			                                             WHEN @containerList = '' THEN ''
+			                                             ELSE ', '
+			                                         END + ID
+			FROM #RTI
+			WHERE ItemType = 'Container' AND
+			      CanRetire = 'Yes'
 	END
 
 	---------------------------------------------------
@@ -161,6 +174,9 @@ As
 	---------------------------------------------------
 	if (@mode = 'retire_items' OR @mode = 'retire_all') AND @itemList <> ''
 	BEGIN
+		Set @msg = 'Call UpdateMaterialItems for: ' + @itemList
+		exec PostLogEntry 'Debug', @msg, 'DoSamplePrepMaterialOperation'
+		
 		exec @myError = UpdateMaterialItems
 							'retire_items',
 							@itemList,
@@ -178,6 +194,9 @@ As
 	---------------------------------------------------
 	if @mode = 'retire_all' AND @containerList <> ''
 	BEGIN
+		Set @msg = 'Call UpdateMaterialContainers for: ' + @containerList		
+		exec PostLogEntry 'Debug', @msg, 'DoSamplePrepMaterialOperation'
+		
 		exec @myError = UpdateMaterialContainers
 							'retire_container',
 							@containerList,
@@ -198,6 +217,7 @@ As
 		Exec PostLogEntry 'Error', @message, 'DoSamplePrepMaterialOperation'
 	END CATCH
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoSamplePrepMaterialOperation] TO [DDL_Viewer] AS [dbo]
