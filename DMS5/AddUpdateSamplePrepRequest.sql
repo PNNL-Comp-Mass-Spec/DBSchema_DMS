@@ -114,18 +114,18 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int
+	Declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
 
 	set @message = ''
 	
-	DECLARE @msg varchar(512) 
+	Declare @msg varchar(512) 
 
-	declare @currentStateID int
+	Declare @currentStateID int
 	
-	DECLARE @retireMaterial INT
+	Declare @retireMaterial INT
 	IF IsNull(@State, '') = 'Closed (containers and material)'
 	BEGIN
 		SET @retireMaterial = 1
@@ -205,7 +205,7 @@ As
 		-- Validate instrument group and dataset type
 		---------------------------------------------------
 		
-		declare @datasetTypeID int
+		Declare @datasetTypeID int
 		--
 		exec @myError = ValidateInstrumentGroupAndDatasetType
 								@DatasetType,
@@ -221,7 +221,7 @@ As
 	-- Resolve campaign ID
 	---------------------------------------------------
 
-	declare @campaignID int = 0
+	Declare @campaignID int = 0
 	--
 	execute @campaignID = GetCampaignID @Campaign
 	--
@@ -276,7 +276,7 @@ As
 	-- Resolve organism ID
 	---------------------------------------------------
 
-	declare @organismID int
+	Declare @organismID int
 	execute @organismID = GetOrganismID @Organism
 	if @organismID = 0
 		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
@@ -285,7 +285,7 @@ As
 	-- Convert estimated completion date
 	---------------------------------------------------
 	
-	declare @EstimatedCompletionDate datetime
+	Declare @EstimatedCompletionDate datetime
 
 	if @EstimatedCompletion <> ''
 	begin
@@ -456,7 +456,7 @@ As
 	-- Convert state name to ID
 	---------------------------------------------------
 	
-	declare @StateID int = 0
+	Declare @StateID int = 0
 	--
 	SELECT  @StateID = State_ID
 	FROM  T_Sample_Prep_Request_State_Name
@@ -474,7 +474,7 @@ As
 	-- Validate EUS type, proposal, and user list
 	---------------------------------------------------
 	
-	declare @eusUsageTypeID int
+	Declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
 						@eusUsageType output,
 						@eusProposalID output,
@@ -505,7 +505,13 @@ As
 		If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
 			Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ')
 	End
-		
+
+	-- Make sure the Work Package is capitalized properly
+	--
+	SELECT @workPackageNumber = Charge_Code
+	FROM T_Charge_Code 
+	WHERE Charge_Code = @workPackageNumber
+
 	---------------------------------------------------
 	-- Auto-change separation type to separation group, if applicable
 	---------------------------------------------------
@@ -603,7 +609,7 @@ As
 
 	Set @logErrors = 1
 
-	declare @transName varchar(32)
+	Declare @transName varchar(32)
 	set @transName = 'AddUpdateSamplePrepRequest'
 	
 	---------------------------------------------------

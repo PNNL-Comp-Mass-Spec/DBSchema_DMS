@@ -77,6 +77,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			01/09/2017 mem - Add parameter @logDebugMessages
 **			02/07/2017 mem - Change default for @logDebugMessages to 0
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN
+**						   - Make sure the Work Package is capitalized properly
 **
 *****************************************************/
 (
@@ -161,7 +162,7 @@ As
 		RAISERROR ('Experiment number was blank', 11, 111)
 	--
 	if IsNull(@requestorPRN, '') = ''
-		RAISERROR ('Requester payroll number/HID was blank', 11, 113)
+		RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
 	--
 	Declare @InstrumentGroup varchar(64) = @instrumentName	
 	if IsNull(@InstrumentGroup, '') = ''
@@ -575,7 +576,7 @@ As
 	exec @myError = LookupOtherFromExperimentSamplePrep 
 						@experimentNum, 
 						@workPackage output, 
-						@msg  output
+						@msg output
 						
 	if @myError <> 0
 		RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)	
@@ -611,6 +612,12 @@ As
 	If @myError <> 0
 		RAISERROR ('ValidateWP: %s', 11, 1, @msg)
 
+	-- Make sure the Work Package is capitalized properly
+	--
+	SELECT @workPackage = Charge_Code
+	FROM T_Charge_Code 
+	WHERE Charge_Code = @workPackage
+	
 	If @AutoPopulateUserListIfBlank = 0
 	Begin
 		If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')	   
