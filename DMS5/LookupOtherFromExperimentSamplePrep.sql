@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.LookupOtherFromExperimentSamplePrep
 **	Auth:	grk
 **	Date:	06/03/2009 grk - Initial release (Ticket #499)
 **			01/23/2017 mem - Provide clearer error messages
+**			06/13/2017 mem - Fix failure to update @workPackage using sample prep request's work package
 **
 *****************************************************/
 (
@@ -102,10 +103,11 @@ As
 			Return @myError
 		End
 		
+		Set @workPackage = @newWorkPackage
 	End
 	
 	Return 0
-	
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [DDL_Viewer] AS [dbo]
 GO
