@@ -10,15 +10,6 @@ CREATE Procedure dbo.AddUpdateCampaign
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**		@campaignNum  unique name for the new campaign
-**		@projectNum   project number of the new campaign 
-**		@progmgrPRN	  program manager
-**		@piPRN        principal investigator 
-**		@comment
-**	
-**
 **	Auth:	grk
 **	Date:	01/08/2002
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
@@ -42,7 +33,7 @@ CREATE Procedure dbo.AddUpdateCampaign
 **						   - Trim trailing and leading spaces from input parameters
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**			06/09/2017 mem - Disable logging when the campaign name has invalid characters
+**			06/13/2017 mem - Disable logging when the campaign name has invalid characters
 **    
 *****************************************************/
 (
@@ -192,6 +183,25 @@ As
 	Else
 		RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
 	
+	---------------------------------------------------
+	-- validate campaign name
+	---------------------------------------------------
+	--
+	If @mode = 'add'
+	Begin
+		Declare @badCh varchar(128)
+		Set @badCh = dbo.ValidateChars(@campaignNum, '')
+		Set @badCh = REPLACE(@badCh, '[space]', '')
+		
+		If @badCh <> ''
+		Begin
+			If @badCh = '[space]'
+				RAISERROR ('Campaign name may not contain spaces', 11, 8)
+			Else
+				RAISERROR ('Campaign name may not contain the character(s) "%s"', 11, 9, @badCh)
+		End
+	End
+	
 	Set @logErrors = 1
 	
 	---------------------------------------------------
@@ -203,24 +213,8 @@ As
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
+	if @mode = 'add'
 	begin
-		---------------------------------------------------
-		-- validate campaign name
-		---------------------------------------------------
-		--
-		Declare @badCh varchar(128)
-		Set @badCh = dbo.ValidateChars(@campaignNum, '')
-		Set @badCh = REPLACE(@badCh, '[space]', '')
-		if @badCh <> ''
-		begin
-			Set @logErrors = 0
-			If @badCh = '[space]'
-				RAISERROR ('Campaign name may not contain spaces', 11, 8)
-			Else
-				RAISERROR ('Campaign name may not contain the character(s) "%s"', 11, 9, @badCh)
-		end
-
 
 		begin transaction @transName
 
@@ -326,7 +320,7 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin
 		begin transaction @transName
 		--
