@@ -17,6 +17,7 @@ CREATE PROCEDURE GetJobStepParams
 **	Date:	09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			08/30/2013 mem - Added MyEMSL_Status_URI
 **			01/04/2016 mem - Added EUS_InstrumentID, EUS_ProposalID, and EUS_UploaderID
+**			06/15/2017 mem - Only append /xml to the MyEMSL status URI if it contains /status/
 **    
 *****************************************************/
 (
@@ -90,7 +91,7 @@ AS
 	-- Furthermore, we won't get a row until after the ArchiveUpdate or DatasetArchive step successfully completes
 	-- This URI will be used by the ArchiveVerify tool
 	--
-	SELECT TOP 1 @MyEMSLStatusURI = StatusU.URI_Path + CONVERT(varchar(16), MU.StatusNum) + '/xml',
+	SELECT TOP 1 @MyEMSLStatusURI = StatusU.URI_Path + CONVERT(varchar(16), MU.StatusNum),
 	             @EUSInstrumentID = EUS_InstrumentID,
 	             @EUSProposalID = EUS_ProposalID,
 	             @EUSUploaderID = EUS_UploaderID
@@ -101,6 +102,13 @@ AS
 	      MU.StatusURI_PathID > 1
 	ORDER BY MU.Entry_ID DESC
 
+	If @MyEMSLStatusURI Like '%/status/%'
+	Begin
+		-- Need a URL of the form https://ingest.my.emsl.pnl.gov/myemsl/cgi-bin/status/3268638/xml
+		Set @MyEMSLStatusURI = @MyEMSLStatusURI + '/xml'
+	End
+	
+		
 	---------------------------------------------------
 	-- Get job step parameters
 	---------------------------------------------------

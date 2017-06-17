@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **			01/04/2016 mem - Added parameters @EUSUploaderID, @EUSInstrumentID, and @EUSProposalID
 **						   - Removed parameter @ContentURI
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			06/15/2017 mem - Add support for status URLs of the form https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=84
 **    
 *****************************************************/
 (
@@ -92,6 +93,11 @@ As
 	-- For example, in https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/644749/xml
 	-- extract out     https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/
 	-- and also        644749
+	--
+	-- In June 2017 the format changed to
+	-- https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=84
+	-- For that, the base is: https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=
+	-- and the value is 84	
 	-----------------------------------------------
 	--
 	Set @StatusURI_PathID = 1
@@ -112,9 +118,56 @@ As
 		
 		Set @CharLoc = CharIndex('/status/', @StatusURI)
 		If @CharLoc = 0
-			Set @LogMsg = @LogMsg + ': /status/ not found in ' + @StatusURI
-		Else
 		Begin -- <b1>
+			Declare @getStateToken varchar(24) = 'get_state?job_id='
+			
+			Set @CharLoc = CharIndex(@getStateToken, @StatusURI)
+			If @CharLoc = 0			
+			Begin
+				Set @LogMsg = @LogMsg + ': did not find either ' + @getStateToken + ' or /status/ in ' + @StatusURI
+			End
+			Else
+			Begin -- <c>
+				
+				-- Extract out the base path, for example:
+				-- https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=
+				Set @StatusURI_Path = SUBSTRING(@StatusURI, 1, @CharLoc + Len(@getStateToken) - 1)
+				
+				-- Extract out the number
+				Set @SubString = SubString(@StatusURI, @CharLoc + Len(@getStateToken), 255)
+				
+				If Len(IsNull(@SubString, '')) > 0
+				Begin
+					-- Find the first non-numeric character in @SubString
+					Set @CharLoc = PATINDEX('%[^0-9]%', @SubString)
+					
+					If @CharLoc <= 0
+					Begin
+						-- Match not found; @SubString is simply an integer
+						Set @StatusNum = Try_Convert(int, @SubString)
+						If Not @StatusNum Is Null
+						Begin
+							Set @InvalidFormat = 0
+						End
+					End
+					
+					If @CharLoc > 1
+					Begin
+						Set @StatusNum = CONVERT(int, SUBSTRING(@SubString, 1, @CharLoc-1))
+						Set @InvalidFormat = 0
+					End
+				End
+				
+				If @InvalidFormat > 0
+				Begin
+					Set @LogMsg = @LogMsg + ': number not found after ' + @getStateToken + ' in ' + @StatusURI
+				End
+				
+			End -- </c>
+			
+		End -- </b1>
+		Else
+		Begin -- <b2>
 			-- Extract out the base path, for example:
 			-- https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/
 			Set @StatusURI_Path = SUBSTRING(@StatusURI, 1, @CharLoc + 7)
@@ -128,6 +181,7 @@ As
 			
 			If @CharLoc <= 0
 			Begin
+				-- Match not found; @SubString is simply an integer
 				Set @StatusNum = Try_Convert(int, @SubString)
 				If IsNull(@SubString, '') <> '' And Not @StatusNum Is Null
 				Begin
@@ -150,7 +204,7 @@ As
 				Set @InvalidFormat = 0
 			End
 			
-		End -- </b1>
+		End -- </b2>
 		
 		If @InvalidFormat <> 0
 		Begin
@@ -163,7 +217,7 @@ As
 				Print @LogMsg
 		End
 		Else
-		Begin -- <b2>
+		Begin -- <b3>
 			-- Resolve @StatusURI_Path to @StatusURI_PathID
 			
 			Exec @StatusURI_PathID = GetURIPathID @StatusURI_Path, @infoOnly=@infoOnly
@@ -183,7 +237,7 @@ As
 				Set @StatusURI = ''
 			End
 			
-		End -- </b2>
+		End -- </b3>
 	End -- </a1>
 	
 	If @infoOnly <> 0
@@ -256,7 +310,7 @@ As
 			                              FileCountNew, FileCountUpdated, 
 			                              Bytes, UploadTimeSeconds, 
 			                              StatusURI_PathID, StatusNum,
-			                              EUS_InstrumentID, EUS_ProposalID, EUS_UploaderID,	
+			             EUS_InstrumentID, EUS_ProposalID, EUS_UploaderID,	
 			                              ErrorCode, Entered )
 			SELECT @Job,
 			       @DatasetID,

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_MyEMSL_Uploads]
 AS
 /*
@@ -23,7 +24,7 @@ SELECT MU.Entry_ID,
        MU.StatusNum,
        MU.ErrorCode,
 	   MU.TransactionID, 
-       StatusU.URI_Path + CONVERT(varchar(12), MU.StatusNum) + '/xml' AS Status_URI,
+       StatusU.URI_Path + CONVERT(varchar(12), MU.StatusNum) + CASE WHEN StatusU.URI_Path LIKE '%/status/%' Then '/xml' ELSE '' End AS Status_URI,
        MU.Verified,
 	   MU.Ingest_Steps_Completed,
        MU.Entered,
