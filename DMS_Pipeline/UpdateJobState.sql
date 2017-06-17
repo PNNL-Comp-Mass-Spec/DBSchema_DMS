@@ -95,6 +95,7 @@ CREATE PROCEDURE UpdateJobState
 **			05/13/2017 mem - Treat step state 9 (Running_Remote) as "In progress"
 **			05/26/2017 mem - Add step state 16 (Failed_Remote)
 **			               - Only call CopyJobToHistory if the job state is 4 or 5
+**			06/15/2017 mem - Expand @comment to varchar(512)
 **    
 *****************************************************/
 (
@@ -107,40 +108,34 @@ CREATE PROCEDURE UpdateJobState
 As
 	Set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @job int
-	declare @newJobStateInBroker int
+	Declare @job int
+	Declare @newJobStateInBroker int
 	--
-	declare @curJob int
-	Set @curJob = 0
+	Declare @curJob int = 0
 	--
-	declare @resultsFolderName varchar(64)
+	Declare @resultsFolderName varchar(64)
 	Set @resultsFolderName = ''
 	--
-	declare @orgDBName varchar(128)
-	Set @orgDBName = ''
+	Declare @orgDBName varchar(128) = ''
 	
-	declare @JobPropagationMode int
-	Set @JobPropagationMode = 0
+	Declare @JobPropagationMode int = 0
 	
-	declare @done tinyint
-	declare @JobCountToProcess int
-	declare @JobsProcessed int
-	declare @datasetID int
-	
-	
+	Declare @done tinyint
+	Declare @JobCountToProcess int
+	Declare @JobsProcessed int
+	Declare @datasetID int
+		
 	Declare @StartMin datetime
 	Declare @FinishMax datetime
 	Declare @ProcessingTimeMinutes real
 	Declare @UpdateCode int
 
-	declare @StartTime datetime
-	declare @LastLogTime datetime
-	declare @StatusMessage varchar(512)	
+	Declare @StartTime datetime
+	Declare @LastLogTime datetime
+	Declare @StatusMessage varchar(512)	
 
 	---------------------------------------------------
 	-- Validate the inputs	
@@ -337,7 +332,7 @@ As
 			-- Roll up step completion comments
 			---------------------------------------------------
 			--
-			declare @comment varchar(255) = ''
+			Declare @comment varchar(512) = ''
 			--
 			SELECT @comment = @comment + CASE 
 											WHEN LTrim(RTrim(Completion_Message)) = '' 
@@ -406,7 +401,7 @@ As
 			-- and update it
 			---------------------------------------------------
 			--
-			declare @NewDMSJobState int
+			Declare @NewDMSJobState int
 			Set @NewDMSJobState = 0 
 			--
 			Set @NewDMSJobState = CASE @newJobStateInBroker
