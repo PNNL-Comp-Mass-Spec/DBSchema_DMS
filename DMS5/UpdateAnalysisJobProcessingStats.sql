@@ -21,6 +21,7 @@ CREATE Procedure dbo.UpdateAnalysisJobProcessingStats
 **			09/02/2011 mem - Now setting AJ_Purged to 0 when job is complete, no-export, or failed
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			04/18/2012 mem - Now preventing addition of @JobCommentAddnl to the comment field if it already contains @JobCommentAddnl
+**			06/15/2015 mem - Use function AppendToText to concatenate @JobCommentAddnl to AJ_Comment
 **    
 *****************************************************/
 (
@@ -119,15 +120,16 @@ As
 		       AJ_AssignedProcessorName,
 		       @AssignedProcessor AS AJ_AssignedProcessorName_New,
 		       CASE
-		           WHEN @NewBrokerJobState = 2 THEN AJ_Comment
-		           ELSE IsNull(AJ_comment, '') + @JobCommentAddnl
+		           WHEN @NewBrokerJobState = 2 
+		           THEN AJ_Comment
+		           ELSE Substring(dbo.AppendtoText(AJ_comment, @JobCommentAddnl, 0, '; '), 1, 512)
 		       END AS Comment_New,
 		       AJ_organismDBName,
 		       IsNull(@OrganismDBName, AJ_organismDBName) AS AJ_organismDBName_New,
 		       AJ_ProcessingTimeMinutes,
 		       CASE
 		           WHEN @NewBrokerJobState <> 2 THEN @ProcessingTimeMinutes
-		           ELSE AJ_ProcessingTimeMinutes
+		       ELSE AJ_ProcessingTimeMinutes
 		       END AS AJ_ProcessingTimeMinutes_New
 		FROM T_Analysis_Job
 		WHERE AJ_jobID = @job
@@ -151,11 +153,7 @@ As
 		    AJ_AssignedProcessorName = 'Job_Broker',
 		    AJ_comment = CASE WHEN @NewBrokerJobState = 2 
 		                      THEN AJ_Comment
-		                      ELSE 
-		                           CASE WHEN CHARINDEX(@JobCommentAddnl, IsNull(AJ_comment, '')) > 0 
-		                                THEN IsNull(AJ_comment, '')
-		                                ELSE IsNull(AJ_comment, '') + @JobCommentAddnl
-		                           END
+		                      ELSE Substring(dbo.AppendtoText(AJ_comment, @JobCommentAddnl, 0, '; '), 1, 512)
 		                 END,
 		    AJ_organismDBName = IsNull(@OrganismDBName, AJ_organismDBName),
 		    AJ_ProcessingTimeMinutes = CASE WHEN @NewBrokerJobState <> 2 
