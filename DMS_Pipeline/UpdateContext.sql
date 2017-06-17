@@ -42,10 +42,8 @@ CREATE PROCEDURE UpdateContext
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	declare @StatusMessage varchar(512)	
 	declare @message varchar(512)
