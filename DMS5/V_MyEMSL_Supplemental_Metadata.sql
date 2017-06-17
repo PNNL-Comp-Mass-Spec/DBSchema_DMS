@@ -6,21 +6,21 @@ GO
 
 CREATE VIEW [dbo].[V_MyEMSL_Supplemental_Metadata]
 AS
-SELECT DS.Dataset_ID AS dataset_id,
-       DS.Dataset_Num AS dataset_name,
-       E.Exp_ID AS experiment_id,
-       E.Experiment_Num AS experiment_name,
-       C.Campaign_ID AS campaign_id,
-       C.Campaign_Num AS campaign_name,
-       Org.Organism_ID AS organism_id,
+SELECT DS.Dataset_ID AS [omics.dms.dataset_id],
+       DS.Dataset_Num AS [omics.dms.dataset_name],
+       E.Exp_ID AS [omics.dms.experiment_id],
+       E.Experiment_Num AS [omics.dms.experiment_name],
+       C.Campaign_ID AS [omics.dms.campaign_id],
+       C.Campaign_Num AS [omics.dms.campaign_name],
+       Org.Organism_ID AS [omics.dms.organism_id],
        Org.OG_name AS organism_name,
        Org.NCBI_Taxonomy_ID AS ncbi_taxonomy_id,
-       DS.Acq_Time_Start AS acquisition_time,
-       DS.Acq_Length_Minutes AS acquisition_length,
-       DS.Scan_Count AS number_of_scans,
-       RR.RDS_Sec_Sep AS separation_type,
-       DTN.DST_name AS dataset_type,
-       RR.ID AS requested_run_id
+       DS.Acq_Time_Start AS [omics.dms.acquisition_time],
+       DS.Acq_Length_Minutes AS [omics.dms.acquisition_length_min],
+       DS.Scan_Count AS [omics.dms.number_of_scans],
+       RR.RDS_Sec_Sep AS [omics.dms.separation_type],
+       DTN.DST_name AS [omics.dms.dataset_type],
+       RR.ID AS [omics.dms.requested_run_id]
 FROM dbo.T_Campaign AS C
      INNER JOIN dbo.T_Experiments AS E
        ON C.Campaign_ID = E.EX_campaign_ID
