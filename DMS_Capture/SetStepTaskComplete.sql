@@ -25,6 +25,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
 **			09/24/2014 mem - No longer looking up machine
 **			11/03/2013 mem - Added support for @evaluationCode = 8
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,12 +40,21 @@ CREATE PROCEDURE SetStepTaskComplete
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- get current state of this job step

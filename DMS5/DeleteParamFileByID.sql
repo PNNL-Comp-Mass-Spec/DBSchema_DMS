@@ -3,8 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE DeleteParamFileByID
-
+CREATE PROCEDURE DeleteParamFileByID
+/****************************************************
+**
+**	Desc: Deletes a parameter file by ID
+**
+**	Return values: 0: success, otherwise, error code
+**
+**	Auth:	kja
+**	Date:	08/11/2004 kja
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**    
+*****************************************************/
 (
 	@ParamFileID int,
     @message varchar(512) output
@@ -12,17 +22,25 @@ create PROCEDURE DeleteParamFileByID
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
 	
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteParamFileByID', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Start transaction

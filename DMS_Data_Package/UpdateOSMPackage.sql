@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.UpdateOSMPackage
 **  Date:	07/08/2013 grk - Initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -33,9 +34,19 @@ AS
 
 	DECLARE @DebugMode tinyint = 0
 
-
 	BEGIN TRY
 	
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateOSMPackage', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
 	---------------------------------------------------
 	-- verify OSM package exists
 	---------------------------------------------------
@@ -62,7 +73,7 @@ AS
 
 		---------------------------------------------------
 		-- remove OSM package from table
-		---------------------------------------------------\
+		---------------------------------------------------
 		
 		DELETE  FROM dbo.T_OSM_Package
 		WHERE   ID = @osmPackageID

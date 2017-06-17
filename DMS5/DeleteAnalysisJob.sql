@@ -27,6 +27,7 @@ CREATE Procedure dbo.DeleteAnalysisJob
 **			05/28/2015 mem - No longer deleting processor group entries
 **			03/08/2017 mem - Delete jobs in the DMS_Pipeline database if they are new, holding, or failed
 **			04/21/2017 mem - Added parameter @previewMode
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -37,10 +38,8 @@ CREATE Procedure dbo.DeleteAnalysisJob
 As
 	Set nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Set @jobNum = IsNull(@jobNum, '')
 	Set @previewMode = IsNull(@previewMode, 0)	
@@ -55,6 +54,17 @@ As
 		Set @msg = 'Job number is not numeric: ' + @jobNum
 		RAISERROR (@msg, 10, 1)
 		return 54449
+	End
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteAnalysisJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
 	End
 	
 	-------------------------------------------------------

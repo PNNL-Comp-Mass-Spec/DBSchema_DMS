@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
+CREATE PROCEDURE dbo.AddUpdateMaterialContainer
 /****************************************************
 **
 **  Desc: Adds new or edits an existing material container
@@ -12,16 +12,18 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **
 **  Parameters:
 **
-**    Auth: grk
-**    03/20/2008 grk -- initial release
-**    07/18/2008 grk -- added checking for location's container limit
-**    11/25/2008 grk -- corrected udpdate not to check for room if location doesn't change
-**    07/28/2011 grk -- added owner field
-**    08/01/2011 grk -- always create new container if mode is "add"
+**	Auth:	grk
+**	Date:	03/20/2008 grk - initial release
+**			07/18/2008 grk - added checking for location's container limit
+**			11/25/2008 grk - corrected udpdate not to check for room if location doesn't change
+**			07/28/2011 grk - added owner field
+**			08/01/2011 grk - always create new container if mode is "add"
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
+(
 	@Container varchar(128) output,
 	@Type varchar(32),
 	@Location varchar(24),
@@ -31,14 +33,12 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output, 
 	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
@@ -46,10 +46,15 @@ As
 	set @Status = 'Active'
 
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future: this could get more complicated
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateMaterialContainer', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- optionally generate name
@@ -202,24 +207,25 @@ As
 	if @Mode = 'add'
 	begin
 		-- future: accept '<next bag>' or '<next box> and generate container name
-	
-  INSERT    INTO T_Material_Containers
-            ( Tag ,
-              Type ,
-              Comment ,
-              Barcode ,
-              Location_ID ,
-              Status ,
-              Researcher
-            )
-  VALUES    ( @Container ,
-              @Type ,
-              @Comment ,
-              @Barcode ,
-              @LocationID ,
-              @Status ,
-              @Researcher
-            )
+			
+		INSERT INTO T_Material_Containers
+		(
+			Tag ,
+			Type ,
+			Comment ,
+			Barcode ,
+			Location_ID ,
+			Status ,
+			Researcher
+		) VALUES (
+			@Container ,
+			@Type ,
+			@Comment ,
+			@Barcode ,
+			@LocationID ,
+			@Status ,
+			@Researcher
+		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

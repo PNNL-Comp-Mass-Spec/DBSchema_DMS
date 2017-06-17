@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 **	Date:	10/18/2016 mem - Initial version
 **			10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
 **			11/04/2016 mem - Exclude proposals that start with EPR
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -24,13 +25,22 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	Declare @DataPackageCount int = 0
-	
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDataPackageEUSInfo', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
@@ -131,7 +141,7 @@ As
 	     INNER JOIN ( SELECT RankQ.Data_Package_ID,
 	                         RankQ.EUS_Proposal_ID
 	                  FROM ( SELECT Data_Package_ID,
-	                                EUS_Proposal_ID,
+	          EUS_Proposal_ID,
 	                                ProposalCount,
 	                                Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
 	                         FROM ( SELECT DPD.Data_Package_ID,

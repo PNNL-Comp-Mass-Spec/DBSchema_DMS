@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 **			03/16/2007 mem - Updated to use processor group ID (Ticket #419)
 **			02/28/2014 mem - Now auto-converting null values to empty strings
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -34,14 +35,23 @@ CREATE PROCEDURE dbo.AddUpdatePredefinedAnalysisSchedulingRules
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @processorGroupID int
 	
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdatePredefinedAnalysisSchedulingRules', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

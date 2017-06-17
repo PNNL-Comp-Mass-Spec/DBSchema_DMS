@@ -15,11 +15,13 @@ CREATE PROCEDURE AddUpdatePrepLCColumn
 **  Parameters:
 **
 **    Auth: grk
-**    Date: 07/29/2009
+**    Date: 07/29/2009 grk - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
+(
 	@ColumnName varchar(128),
 	@MfgName varchar(128),
 	@MfgModel varchar(128),
@@ -37,29 +39,31 @@ CREATE PROCEDURE AddUpdatePrepLCColumn
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+)
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future: this could get more complicated
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdatePrepLCColumn', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 	
-	declare @tmp int
-	set @tmp = 0
+	declare @tmp int = 0
 	--
 	SELECT @tmp = ID
 	FROM  T_Prep_LC_Column
@@ -94,46 +98,46 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_Prep_LC_Column (
-		Column_Name,
-		Mfg_Name,
-		Mfg_Model,
-		Mfg_Serial_Number,
-		Packing_Mfg,
-		Packing_Type,
-		Particle_size,
-		Particle_type,
-		Column_Inner_Dia,
-		Column_Outer_Dia,
-		Length,
-		State,
-		Operator_PRN,
-		Comment
-	) VALUES (
-		@ColumnName,
-		@MfgName,
-		@MfgModel,
-		@MfgSerialNumber,
-		@PackingMfg,
-		@PackingType,
-		@Particlesize,
-		@Particletype,
-		@ColumnInnerDia,
-		@ColumnOuterDia,
-		@Length,
-		@State,
-		@OperatorPRN,
-		@Comment
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Insert operation failed'
-		RAISERROR (@message, 10, 1)
-		return 51010
-	end
+		INSERT INTO T_Prep_LC_Column (
+			Column_Name,
+			Mfg_Name,
+			Mfg_Model,
+			Mfg_Serial_Number,
+			Packing_Mfg,
+			Packing_Type,
+			Particle_size,
+			Particle_type,
+			Column_Inner_Dia,
+			Column_Outer_Dia,
+			Length,
+			State,
+			Operator_PRN,
+			Comment
+		) VALUES (
+			@ColumnName,
+			@MfgName,
+			@MfgModel,
+			@MfgSerialNumber,
+			@PackingMfg,
+			@PackingType,
+			@Particlesize,
+			@Particletype,
+			@ColumnInnerDia,
+			@ColumnOuterDia,
+			@Length,
+			@State,
+			@OperatorPRN,
+			@Comment
+		)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Insert operation failed'
+			RAISERROR (@message, 10, 1)
+			return 51010
+		end
 
 	end -- add mode
 

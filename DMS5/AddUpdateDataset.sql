@@ -89,6 +89,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			03/06/2017 mem - Decreased maximum dataset name length from 90 characters to 80 characters
 **			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -120,10 +121,8 @@ CREATE Procedure dbo.AddUpdateDataset
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Declare @msg varchar(256)
 	Declare @folderName varchar(128)
@@ -140,6 +139,17 @@ As
 	Set @warning = ''
 
 	Begin TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateDataset', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

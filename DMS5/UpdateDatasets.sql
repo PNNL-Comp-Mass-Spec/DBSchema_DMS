@@ -23,6 +23,7 @@ CREATE Procedure dbo.UpdateDatasets
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,10 +40,8 @@ CREATE Procedure dbo.UpdateDatasets
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
@@ -53,7 +52,7 @@ As
 	declare @DatasetRatingUpdated tinyint
 	set @DatasetStateUpdated = 0
 	set @DatasetRatingUpdated = 0
-
+	
 	declare @datasetCount int = 0
 
 	Set @state = IsNull(@state, '')	
@@ -76,8 +75,18 @@ As
 	If @replaceText = ''
 		Set @replaceText = '[no change]'
 
-
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasets', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs

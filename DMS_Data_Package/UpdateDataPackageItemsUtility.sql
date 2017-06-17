@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
+CREATE PROCEDURE dbo.UpdateDataPackageItemsUtility
 /****************************************************
 **
 **	Desc:
@@ -40,6 +39,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **						   - Call UpdateDataPackageEUSInfo
 **						   - Prevent addition of Biomaterial '(none)'
 **			11/14/2016 mem - Add parameter @removeParents
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -53,10 +53,8 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 	
@@ -76,6 +74,17 @@ As
 	CREATE INDEX #IX_Tmp_JobsToAddOrDelete ON #Tmp_JobsToAddOrDelete (Job, DataPackageID)
 
 	BEGIN TRY 
+		
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateDataPackageItemsUtility', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		-- If working with analysis jobs, populate #Tmp_JobsToAddOrDelete with all numeric job entries
 		--
@@ -230,7 +239,7 @@ As
 			                       'Dataset' AS ItemType,
 			                       TX.Dataset AS Dataset
 			       FROM #Tmp_JobsToAddOrDelete J
-			            INNER JOIN S_V_Analysis_Job_List_Report_2 TX
+			           INNER JOIN S_V_Analysis_Job_List_Report_2 TX
 			              ON J.Job = TX.Job
 			     ) ToDelete
 			     LEFT OUTER JOIN (

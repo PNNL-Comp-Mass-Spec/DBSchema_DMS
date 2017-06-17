@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure DoDatasetCompletionActions
 /****************************************************
 **
@@ -23,6 +22,7 @@ CREATE Procedure DoDatasetCompletionActions
 **						   - Removed CD burn schedule code
 **			02/09/2011 mem - Added back calling SchedulePredefinedAnalyses regardless of dataset rating
 **						   - Required since predefines with Trigger_Before_Disposition should create jobs even if a dataset is unreviewed
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -33,16 +33,25 @@ CREATE Procedure DoDatasetCompletionActions
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @datasetID int
 	declare @datasetState int
 	declare @datasetRating smallint 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoDatasetCompletionActions', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
    	---------------------------------------------------
 	-- resolve dataset into ID and state

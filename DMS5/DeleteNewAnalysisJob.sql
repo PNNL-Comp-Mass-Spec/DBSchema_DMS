@@ -19,6 +19,7 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **			02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **			09/28/2012 mem - Now allowing a job to be deleted if state 19 = "Special Proc. Waiting"
 **			04/21/2017 mem - Added parameter @previewMode
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -36,6 +37,18 @@ As
 	Set @message = ''
 	Set @previewMode = IsNull(@previewMode, 0)	
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteNewAnalysisJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
+
 	Set @jobID = Try_Cast(@jobNum as int)
 	
 	If @jobID is null
@@ -44,7 +57,7 @@ As
 		RAISERROR (@msg, 10, 1)
 		return 55321
 	End
-	
+
 	---------------------------------------------------
 	-- Verify that job exists in job table
 	---------------------------------------------------

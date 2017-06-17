@@ -75,6 +75,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			11/23/2016 mem - Include the request name when calling PostLogEntry from within the catch block
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -112,6 +113,17 @@ As
 	
 	BEGIN TRY 
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobRequest', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------

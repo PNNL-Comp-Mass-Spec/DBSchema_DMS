@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/08/2016 mem - Include job number in errors raised by RAISERROR
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -34,11 +35,8 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	DECLARE @DebugMode TINYINT = 0
 
@@ -50,6 +48,16 @@ AS
 	END 
 
 	BEGIN TRY
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		---------------------------------------------------
 		-- does job exist

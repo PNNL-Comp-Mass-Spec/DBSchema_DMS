@@ -14,6 +14,7 @@ CREATE PROCEDURE SetStepTaskToolVersion
 **
 **	Auth:	mem
 **	Date:	03/12/2012 mem - Initial version (ported from DMS_Pipeline DB)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -24,12 +25,21 @@ CREATE PROCEDURE SetStepTaskToolVersion
 As
 	set nocount on
 	
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @ToolVersionID int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'SetStepTaskToolVersion', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs

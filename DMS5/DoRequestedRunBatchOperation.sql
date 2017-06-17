@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.DoRequestedRunBatchOperation
 /****************************************************
 **
@@ -13,15 +12,12 @@ CREATE Procedure dbo.DoRequestedRunBatchOperation
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
-**		Auth: grk
-**		Date: 1/12/2006
-**		09/20/2006 jds - Added support for Granting High Priority and Denying High Priority for fields Actual_Bath_Priority and Requested_Batch_Priority
-**		08/27/2009 grk - Delete batch fixes requested run references in history table
-**		02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**	Auth:	grk
+**	Date:	01/12/2006
+**			09/20/2006 jds - Added support for Granting High Priority and Denying High Priority for fields Actual_Bath_Priority and Requested_Batch_Priority
+**			08/27/2009 grk - Delete batch fixes requested run references in history table
+**			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -32,15 +28,23 @@ CREATE Procedure dbo.DoRequestedRunBatchOperation
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 		
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoRequestedRunBatchOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Is batch in table?

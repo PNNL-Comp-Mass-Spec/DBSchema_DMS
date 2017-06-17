@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.UpdateMultipleCaptureJobs
 **			10/25/2010 mem - Now raising an error if @mode is empty or invalid
 **			04/28/2011 mem - Set defaults for @action and @mode
 **			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -31,17 +32,27 @@ CREATE PROCEDURE dbo.UpdateMultipleCaptureJobs
 )
 As
 	set nocount on
-	-- had to set these to avoid warnings when RetrySelectedJobs was called.  Why??
+	
+	-- Required to avoid warnings when RetrySelectedJobs is called
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_WARNINGS ON
 	SET ANSI_PADDING ON
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateMultipleCaptureJobs', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs

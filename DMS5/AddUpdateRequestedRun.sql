@@ -78,6 +78,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **			02/07/2017 mem - Change default for @logDebugMessages to 0
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN
 **						   - Make sure the Work Package is capitalized properly
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -112,10 +113,8 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -131,6 +130,17 @@ As
 	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 	
 	BEGIN TRY
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRun', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Preliminary steps

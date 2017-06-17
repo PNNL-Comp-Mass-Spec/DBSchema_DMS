@@ -11,13 +11,10 @@ CREATE Procedure DoAnalysisRequestOperation
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
-**		Auth: grk
-**		Date: 10/13/2004
-**		Date: 5/5/2005 grk - removed default mode value
+**	Auth:	grk
+**	Date:	10/13/2004
+**			05/05/2005 grk - removed default mode value
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -28,15 +25,23 @@ CREATE Procedure DoAnalysisRequestOperation
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 		
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoAnalysisRequestOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Delete analysis job request if it is unused

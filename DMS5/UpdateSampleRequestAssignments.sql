@@ -24,6 +24,7 @@ CREATE Procedure UpdateSampleRequestAssignments
 **			02/20/2012 mem - Now using a temporary table to track the requests to update
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -32,10 +33,8 @@ CREATE Procedure UpdateSampleRequestAssignments
 	@reqIDList varchar(2048)
 )
 As
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @dt datetime
 
@@ -43,6 +42,17 @@ As
 	declare @count int = 0
 	declare @id int = 0
 	declare @RequestIDNum varchar(12)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateSampleRequestAssignments', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Populate a temorary table with the requests to process

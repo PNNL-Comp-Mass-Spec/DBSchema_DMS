@@ -13,8 +13,9 @@ CREATE Procedure AddUpdateAuxInfoDefinition
 **
 **	Return values: 0: success, otherwise, error code
 **
-**		Auth: grk
-**		Date: 4/19/2002
+**	Auth:	grk
+**	Date:	04/19/2002
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -32,11 +33,8 @@ CREATE Procedure AddUpdateAuxInfoDefinition
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -47,12 +45,15 @@ As
 	declare @msg varchar(256)
 	
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future
-
-
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfoDefinition', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	---------------------------------------------------
 	-- 
 	---------------------------------------------------

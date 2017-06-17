@@ -14,9 +14,10 @@ CREATE Procedure DeleteAnalysisRequest
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 10/13/2004
-**			  04/07/2006 grk - eliminated job to request map table
+**	Auth:	grk
+**	Date:	10/13/2004
+**			04/07/2006 grk - eliminated job to request map table
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -26,13 +27,22 @@ CREATE Procedure DeleteAnalysisRequest
 As	
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
+	declare @myError int = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteAnalysisRequest', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Does request exist?

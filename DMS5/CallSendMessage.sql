@@ -14,6 +14,7 @@ CREATE PROCEDURE CallSendMessage
 **
 **	Auth:	grk
 **	Date:	04/29/2010
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -26,15 +27,23 @@ CREATE PROCEDURE CallSendMessage
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
 	DECLARE @result INT
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'CallSendMessage', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Create a temporary table to hold any messages returned by the program

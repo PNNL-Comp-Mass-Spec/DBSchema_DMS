@@ -15,6 +15,7 @@ CREATE PROCEDURE MakeNewJobsFromDMS
 **			02/10/2010 dac - Removed comment stating that jobs were created from test script
 **			03/09/2011 grk - Added logic to choose different capture script based on instrument group
 **			09/17/2015 mem - Added parameter @infoOnly
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -30,10 +31,8 @@ CREATE PROCEDURE MakeNewJobsFromDMS
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @currJob int
 	declare @Dataset varchar(128)
@@ -48,6 +47,17 @@ As
 	declare @StartTime datetime
 	declare @LastLogTime datetime
 	declare @StatusMessage varchar(512)	
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'MakeNewJobsFromDMS', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 		
 	---------------------------------------------------
 	-- Validate the inputs

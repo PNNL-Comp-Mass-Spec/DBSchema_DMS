@@ -20,6 +20,7 @@ CREATE Procedure DeleteRequestedRun
 **			12/12/2011 mem - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
 **			03/22/2016 mem - Added parameter @skipDatasetCheck
 **			06/13/2017 mem - Fix typo
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,6 +40,17 @@ As
 	
 	set @message = ''
 	Set @skipDatasetCheck = Isnull(@skipDatasetCheck, 0)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteRequestedRun', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- We are done if there is no associated request
@@ -81,6 +93,7 @@ As
 			Goto Done
 		End
 	End
+	
 	---------------------------------------------------
 	-- Start a transaction
 	---------------------------------------------------

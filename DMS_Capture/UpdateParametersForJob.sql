@@ -24,6 +24,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			05/29/2015 mem - Add support for column Capture_Subfolder
 **			06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
 **			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -34,12 +35,21 @@ CREATE PROCEDURE UpdateParametersForJob
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateParametersForJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	-----------------------------------------------------------
 	-- Parse the job list

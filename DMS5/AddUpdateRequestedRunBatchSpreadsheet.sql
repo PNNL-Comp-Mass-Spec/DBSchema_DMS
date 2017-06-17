@@ -15,7 +15,8 @@ CREATE PROCEDURE AddUpdateRequestedRunBatchSpreadsheet
 **    Auth: jds
 **    Date: 05/18/2009
 **			08/27/2010 mem - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -37,13 +38,21 @@ CREATE PROCEDURE AddUpdateRequestedRunBatchSpreadsheet
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatchSpreadsheet', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- get list of request ids based on Request name list

@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateParamFile
 **			12/06/2016 - Add parameters @paramFileID, @paramfileValid, @paramfileMassMods, and @replaceExistingMassMods
 **					   - Replaced parameter @paramFileTypeID with @paramFileType
 **			05/26/2017 - Update @paramfileMassMods to remove tabs
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -33,10 +34,8 @@ CREATE PROCEDURE AddUpdateParamFile
 As
 	Set nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Set @message = ''
 	
@@ -44,6 +43,17 @@ As
 	Declare @updateMassMods tinyint = 0
 
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateParamFile', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate input fields

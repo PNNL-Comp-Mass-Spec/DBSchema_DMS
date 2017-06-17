@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
 **	Date:	09/30/2008
 **          03/19/2012 grk - added "PostedBy"
 **			06/13/2017 mem - Use SCOPE_IDENTITY
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -40,6 +41,17 @@ As
 	set @myRowCount = 0
 
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentConfigHistory', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

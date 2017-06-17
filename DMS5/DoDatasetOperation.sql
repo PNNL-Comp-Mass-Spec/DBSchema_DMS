@@ -11,10 +11,6 @@ CREATE Procedure DoDatasetOperation
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	grk
 **	Date:	04/08/2002
 **			08/07/2003 grk - allowed reset from "Not Ready" state
@@ -33,6 +29,7 @@ CREATE Procedure DoDatasetOperation
 **			                 (duplicate jobs are not created)
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/04/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -44,10 +41,8 @@ CREATE Procedure DoDatasetOperation
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -64,6 +59,17 @@ As
 	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoDatasetOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- get datasetID and current state

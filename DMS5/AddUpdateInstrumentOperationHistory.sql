@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			04/25/2017 mem - Require that @Instrument and @Note be defined
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -44,10 +45,20 @@ As
 	set @message = ''
 
 	Declare @logErrors tinyint = 0
-	
-	
+		
 	BEGIN TRY
-	
+		
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentOperationHistory', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------

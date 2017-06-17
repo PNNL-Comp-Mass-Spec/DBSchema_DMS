@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 /****************************************************
 **
@@ -40,6 +39,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **			10/28/2015 mem - Added T_Prep_LC_Run_Dataset and removed T_Analysis_Job_Annotations and T_Dataset_Annotations
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -66,6 +66,17 @@ AS
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
 	Set @CurrentLocation = 'Start'
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteOldDataExperimentsJobsAndLogs', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Make sure we're not running in DMS5

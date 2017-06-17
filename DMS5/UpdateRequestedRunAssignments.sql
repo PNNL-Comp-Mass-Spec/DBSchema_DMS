@@ -32,7 +32,8 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/31/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**			06/13/2017 mem - Do not log an error when a requested run cannot be deleted because it is associated with a dataset 
+**			06/13/2017 mem - Do not log an error when a requested run cannot be deleted because it is associated with a dataset
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -46,10 +47,8 @@ As
 
 	Set XACT_ABORT, nocount on
 	
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Declare @msg varchar(512)
 	Declare @continue int
@@ -75,6 +74,17 @@ As
 	Set @message = ''
 
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAssignments', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Populate a temporary table with the values in @reqRunIDList

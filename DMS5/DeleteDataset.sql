@@ -29,6 +29,7 @@ CREATE Procedure dbo.DeleteDataset
 **			08/31/2016 mem - Delete failed capture jobs for the dataset
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **			01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Jobs
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,10 +40,8 @@ CREATE Procedure dbo.DeleteDataset
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	declare @msg varchar(256)
 
@@ -50,6 +49,17 @@ As
 	declare @state int
 	
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteDataset', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	------------------------------------------------
 	-- Validate the inputs

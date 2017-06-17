@@ -27,6 +27,7 @@ CREATE Procedure dbo.UpdateMaterialLocations
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -50,7 +51,18 @@ As
 	SET @message = ''
 	
 	BEGIN TRY 
-	
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateMaterialLocations', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
+
 		-----------------------------------------------------------
 		-- Validate the inputs
 		-----------------------------------------------------------

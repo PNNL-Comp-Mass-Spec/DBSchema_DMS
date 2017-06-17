@@ -7,18 +7,17 @@ CREATE PROCEDURE ManageJobExecution
 /****************************************************
 **
 **	Desc:
-**   Updates parameters to new values for jobs in list
-**   Meant to be called by job control dashboard program
+**		Updates parameters to new values for jobs in list
+**		Meant to be called by job control dashboard program
 **
 **	Return values: 0: success, otherwise, error code
-**
-**	Parameters:
 **
 **	Auth:	grk
 **			07/09/2009 grk - Initial release
 **			09/16/2009 mem - Updated to pass table #TAJ to UpdateAnalysisJobsWork
 **						   - Updated to resolve job state defined in the XML with T_Analysis_State_Name
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -28,28 +27,34 @@ CREATE PROCEDURE ManageJobExecution
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
-	declare @JobCount int
-	set @JobCount = 0
-	
+	declare @JobCount int = 0
 	set @result = ''
 
 	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'ManageJobExecution', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
 	---------------------------------------------------
 	--  Extract parameters from XML input
 	---------------------------------------------------
-	---------------------------------------------------
-
+	--
 	declare @paramXML xml
 	set @paramXML = @parameters
 
 	---------------------------------------------------
 	--  get action and value parameters
 	---------------------------------------------------
+	
 	declare @action varchar(64)
 	set @action = ''
 
@@ -90,57 +95,34 @@ As
 	
 
 	---------------------------------------------------
-	---------------------------------------------------
 	-- set up default arguments 
 	-- for calling UpdateAnalysisJobs
 	---------------------------------------------------
-	---------------------------------------------------
+	--
+	declare @NoChangeText varchar(32) = '[no change]'
 
-	declare @NoChangeText varchar(32)
-	set @NoChangeText = '[no change]'
+	declare @state varchar(32)                      = @NoChangeText
+	declare @priority varchar(12)                   = @NoChangeText
+	declare @comment varchar(512)                   = @NoChangeText
+	declare @findText varchar(255)                  = @NoChangeText
+	declare @replaceText varchar(255)               = @NoChangeText
+	declare @assignedProcessor varchar(64)          = @NoChangeText
+	declare @associatedProcessorGroup varchar(64)   = @NoChangeText
+	declare @propagationMode varchar(24)            = @NoChangeText
+	declare @parmFileName varchar(255)              = @NoChangeText
+	declare @settingsFileName varchar(255)          = @NoChangeText
+	declare @organismName varchar(64)               = @NoChangeText
+	declare @protCollNameList varchar(4000)         = @NoChangeText
+	declare @protCollOptionsList varchar(256)       = @NoChangeText
+	declare @mode varchar(12)                       = 'update'
+	declare @message varchar(512)                   = ''
+	declare @callingUser varchar(128)               = ''
 
-	declare
-		@state varchar(32),
-		@priority varchar(12),
-		@comment varchar(512),
-		@findText varchar(255),
-		@replaceText varchar(255),
-		@assignedProcessor varchar(64),
-		@associatedProcessorGroup varchar(64),
-		@propagationMode varchar(24),
-		@parmFileName varchar(255),
-		@settingsFileName varchar(255),
-		@organismName varchar(64),
-		@protCollNameList varchar(4000),
-		@protCollOptionsList varchar(256),
-		@mode varchar(12),
-		@message varchar(512),
-		@callingUser varchar(128)
-	
-	set @state = @NoChangeText 
-	set @priority = @NoChangeText 
-	set @comment = @NoChangeText 
-	set @findText = @NoChangeText 
-	set @replaceText = @NoChangeText 
-	set @assignedProcessor = @NoChangeText 
-	set @associatedProcessorGroup = @NoChangeText
-	set @propagationMode = @NoChangeText 
-	set @parmFileName = @NoChangeText 
-	set @settingsFileName = @NoChangeText 
-	set @organismName = @NoChangeText 
-	set @protCollNameList = @NoChangeText 
-	set @protCollOptionsList = @NoChangeText 
-	set @mode = 'update' 
-	set @message = '' 
-	set @callingUser = ''
-
-	---------------------------------------------------
 	---------------------------------------------------
 	-- change affected calling arguments based on 
 	-- command action and value
 	---------------------------------------------------
-	---------------------------------------------------
-
+	--
 	if(@action = 'state')
 	begin
 		If @value = 'Hold'
@@ -180,12 +162,10 @@ As
 	end
 
 	---------------------------------------------------
-	---------------------------------------------------
 	-- Call UpdateAnalysisJobsWork function
 	-- It uses #TAJ to determine which jobs to update
 	---------------------------------------------------
-	---------------------------------------------------
-
+	--
 	exec @myError = UpdateAnalysisJobsWork
 		@state,
 		@priority,

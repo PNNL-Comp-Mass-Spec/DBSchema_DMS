@@ -17,7 +17,8 @@ CREATE Procedure dbo.DeleteSamplePrepRequest
 **	Date:	11/10/2005
 **			01/04/2006 grk - added delete for aux info
 **			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 *****************************************************/
 (
 	@requestID int,
@@ -27,14 +28,21 @@ CREATE Procedure dbo.DeleteSamplePrepRequest
 As	
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteSamplePrepRequest', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
    	---------------------------------------------------
 	-- Start transaction
@@ -43,7 +51,6 @@ As
 	declare @transName varchar(32)
 	set @transName = 'DeleteSamplePrepRequest'
 	begin transaction @transName
-
 
 	---------------------------------------------------
 	-- remove any references from experiments
@@ -105,7 +112,6 @@ As
 		set @message = 'Error deleting sample prep request'
 		goto Done
 	end
-
 
 	---------------------------------------------------
 	-- if we got here, complete transaction

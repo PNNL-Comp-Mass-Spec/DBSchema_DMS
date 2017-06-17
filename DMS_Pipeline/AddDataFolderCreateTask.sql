@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.AddDataFolderCreateTask
 **
 **	Auth:	mem
 **	Date:	03/17/2011 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -34,13 +35,21 @@ CREATE PROCEDURE dbo.AddDataFolderCreateTask
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowcount int
-	set @myRowcount = 0
-	set @myError = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Set @message = ''
 		
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddDataFolderCreateTask', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	If @infoOnly <> 0
 	Begin

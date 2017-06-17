@@ -42,6 +42,7 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -68,10 +69,8 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
@@ -79,7 +78,18 @@ As
 	Declare @JobCount int = 0
 
 	BEGIN TRY 
-    
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobs', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+   
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------

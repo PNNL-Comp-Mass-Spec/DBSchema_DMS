@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
 /****************************************************
 **
@@ -29,6 +28,7 @@ CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
 **	Date: 	02/21/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			11/07/2016 mem - Add optional logging via PostLogEntry
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -40,16 +40,25 @@ CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
 As
 	SET NOCOUNT ON 
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
 
 	Set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBlockingAndFactors', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	Declare @debugEnabled tinyint = 0
 	

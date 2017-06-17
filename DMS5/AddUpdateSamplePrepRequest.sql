@@ -73,7 +73,8 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **			06/13/2017 mem - Validate @Priority
 **						   - Check for name collisions when @mode is update
 **						   - Use SCOPE_IDENTITY
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 *****************************************************/
 (
 	@RequestName varchar(128),
@@ -114,10 +115,8 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	set @message = ''
 	
@@ -138,6 +137,17 @@ As
 	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateSamplePrepRequest', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

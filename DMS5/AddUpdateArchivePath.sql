@@ -20,6 +20,7 @@ CREATE Procedure AddUpdateArchivePath
 **			12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
 **			05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @NetworkSharePath, and @ArchiveNote to larger varchar() variables
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -36,16 +37,24 @@ CREATE Procedure AddUpdateArchivePath
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateArchivePath', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------

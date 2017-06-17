@@ -85,6 +85,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/23/2017 mem - Update Remote_Start, Remote_Finish, and Remote_Progress
 **			05/26/2017 mem - Treat state 9 (Running_Remote) as having a CPU_Load of 0
 **			06/08/2017 mem - Remove use of column MonitorRunningRemote in T_Machines since @remoteInfo replaces it
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -118,6 +119,17 @@ As
 	Declare @remoteInfoID int = 0
 	Declare @maxSimultaneousRunningRemoteSteps int = 0
 	Declare @runningRemoteLimitReached tinyint = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'RequestStepTaskXML', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- These 3 hard-coded values give optimal performance 

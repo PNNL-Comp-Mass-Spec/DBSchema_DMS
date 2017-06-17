@@ -13,9 +13,10 @@ CREATE Procedure UpdateMaterialContainers
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
-**    
+**	Auth:	grk
+**	Date:	03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 *****************************************************/
 (
 	@mode varchar(32), -- 'move_container', 'retire_container', 'retire_container_and_contents'
@@ -26,11 +27,19 @@ CREATE Procedure UpdateMaterialContainers
    	@callingUser varchar(128) = ''
 )
 As
-	declare @myError int
-	set @myError = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateMaterialContainers', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- temporary table to hold containers

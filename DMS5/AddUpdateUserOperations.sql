@@ -3,14 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create PROCEDURE AddUpdateUserOperations
+CREATE PROCEDURE AddUpdateUserOperations
 /****************************************************
 **
 **	Desc:	Updates the user operations defined for the given user
 **
 **	Auth:	mem
 **	Date:	06/05/2013 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -21,10 +21,19 @@ create PROCEDURE AddUpdateUserOperations
 As
 	Set nocount on
 	
-	Declare @myRowCount int
-	Declare @myError int
-	Set @myRowCount = 0
-	Set @myError = 0
+	Declare @myRowCount int = 0
+	Declare @myError int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateUserOperations', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Add/update operations defined for user

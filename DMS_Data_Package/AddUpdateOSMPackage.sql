@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateOSMPackage 
+CREATE PROCEDURE dbo.AddUpdateOSMPackage
 /****************************************************
 **
 **  Desc: 
@@ -11,8 +11,6 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 **    T_OSM_Package 
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **    Auth: grk
 **    Date:
@@ -26,10 +24,11 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 **          11/04/2013 grk - added @UserFolderPath
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
-	@ID INT OUTPUT,
+	@ID int output,
 	@Name varchar(128),
 	@PackageType varchar(128),
 	@Description varchar(2048),
@@ -46,22 +45,23 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY 
 
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future: this could get more complicated
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateOSMPackage', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Get active path
@@ -221,8 +221,6 @@ As
 	if @mode = 'add'
 		exec @myError = MakeOSMPackageStorageFolder @ID, @mode, @message=@message output, @callingUser=@callingUser
 
-	---------------------------------------------------
-	---------------------------------------------------
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
@@ -235,6 +233,7 @@ As
 		Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateOSMPackage'
 				
 	END CATCH
+
 	return @myError
 
 GO

@@ -26,6 +26,8 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			05/22/2017 mem - Replace Remote_Status_Location with Remote_Manager
 **			05/23/2017 mem - Update fewer status fields if Remote_Manager is not empty
 **						   - Change @debugMode to recognize various values
+**			06/15/2017 mem - Use Cast and Try_Cast
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -36,11 +38,8 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @result = ''
 	Set @debugMode = IsNull(@debugMode, 0)
@@ -54,6 +53,17 @@ As
 	Set @CurrentLocation = 'Start'
 
 	Begin Try
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		---------------------------------------------------
 		--  Extract parameters from XML input
@@ -179,7 +189,7 @@ As
 			ORDER BY Processor_Name
 		End
 		
-		set @temp = @temp + 'Messages:' + convert(varchar(12), @myRowCount)
+		set @temp = @temp + 'Messages:' + Cast(@myRowCount as varchar(12))
 
 		If @debugMode IN (2, 4)
 			Goto Done
@@ -217,7 +227,7 @@ As
 			goto Done
 		end
 
-		set @temp = @temp + ', PreservedA:' + convert(varchar(12), @myRowCount)
+		set @temp = @temp + ', PreservedA:' + Cast(@myRowCount as varchar(12))
 		
 		
 		-- Next update managers where Remote_Manager is empty
@@ -234,8 +244,8 @@ As
 			ProgRunner_CoreUsage = Src.ProgRunner_CoreUsage,
 			Step_Tool = Src.Step_Tool,
 			Task_Status = Src.Task_Status,
-			Duration_Hours = CASE WHEN IsNull(Src.Duration_Minutes, '') = '' Then 0 Else Convert(real, Src.Duration_Minutes) End / 60.0,
-			Progress = CASE WHEN IsNull(Src.Progress, '') = '' Then 0 Else Convert(real, Src.Progress) End,
+			Duration_Hours = Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
+			Progress = Coalesce(Try_Cast(Src.Progress AS real), 0),
 			Current_Operation = Src.Current_Operation,
 			Task_Detail_Status = Src.Task_Detail_Status,
 			Job = Src.Job,
@@ -261,7 +271,7 @@ As
 			goto Done
 		end
 
-		set @temp = @temp + ', PreservedB:' + convert(varchar(12), @myRowCount)
+		set @temp = @temp + ', PreservedB:' + Cast(@myRowCount as varchar(12))
 
 
 	 	---------------------------------------------------
@@ -311,7 +321,7 @@ As
 			goto Done
 		end
 		
-		set @temp = @temp + ', InsertedA:' + convert(varchar(12), @myRowCount)
+		set @temp = @temp + ', InsertedA:' + Cast(@myRowCount as varchar(12))
 
 		-- Add managers where Remote_Manager is empty
 		--		
@@ -354,8 +364,8 @@ As
 			Src.Most_Recent_Error_Message,
 			Src.Step_Tool,
 			Src.Task_Status,
-			CASE WHEN IsNull(Src.Duration_Minutes, '') = '' Then 0 Else Convert(real, Src.Duration_Minutes) End / 60.0,
-			CASE WHEN IsNull(Src.Progress, '') = '' Then 0 Else Convert(real, Src.Progress) End,
+			Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
+			Coalesce(Try_Cast(Src.Progress AS real), 0),
 			Src.Current_Operation,
 			Src.Task_Detail_Status,
 			Src.Job,
@@ -377,7 +387,7 @@ As
 			set @result = 'Error adding new rows to the status table'
 			goto Done
 		end
-		set @temp = @temp + ', InsertedB:' + convert(varchar(12), @myRowCount)
+		set @temp = @temp + ', InsertedB:' + Cast(@myRowCount as varchar(12))
 
 	End Try
 	Begin Catch

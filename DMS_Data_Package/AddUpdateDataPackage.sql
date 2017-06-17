@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 **			08/31/2015 mem - Now replacing the symbol & with 'and' in the name when @mode = 'add'
 **			02/19/2016 mem - Now replacing a semicolon with a comma when @mode = 'add'
 **			10/18/2016 mem - Call UpdateDataPackageEUSInfo
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -53,10 +54,8 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @CurrentID int
 	declare @TeamCurrent varchar(64)
@@ -65,6 +64,19 @@ As
 
 	set @TeamChangeWarning = ''
 	set @message = ''
+
+	BEGIN TRY
+	
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateDataPackage', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -75,7 +87,6 @@ As
 	Set @Description = IsNull(@Description, '')
 	Set @Comment = IsNull(@Comment, '')
 	
-
 	If @Team = ''
 	Begin
 		set @message = 'Data package team cannot be blank'
@@ -307,13 +318,20 @@ As
 	--
 	Exec UpdateDataPackageEUSInfo @ID
 	
-	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
+	END TRY
+	BEGIN CATCH 
+		EXEC FormatErrorMessage @message output, @myError output
+		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+		
+		-- rollback any open transactions
+		IF (XACT_STATE()) <> 0
+			ROLLBACK TRANSACTION;
+		
+		Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateDataPackage'
+				
+	END CATCH
 
 	return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataPackage] TO [DDL_Viewer] AS [dbo]

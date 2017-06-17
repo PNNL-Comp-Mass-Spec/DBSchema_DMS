@@ -24,6 +24,7 @@ CREATE Procedure dbo.AddUpdateEUSProposals
 **			11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)  
 **			04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **			10/13/2015 mem - Added @EUSProposalType
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,15 +40,24 @@ CREATE Procedure dbo.AddUpdateEUSProposals
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
 	Declare @EUSPropStateID int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateEUSProposals', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate input fields

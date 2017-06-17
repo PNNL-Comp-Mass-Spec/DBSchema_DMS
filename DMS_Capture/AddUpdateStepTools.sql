@@ -12,12 +12,14 @@ CREATE PROCEDURE AddUpdateStepTools
 **
 **  Parameters:
 **
-**  Auth: grk
-**	09/15/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**  Auth:	grk
+**	Date:	09/15/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
+(
 	@Name varchar(64),
 	@Description varchar(512),
 	@BionetRequired char(1),
@@ -26,24 +28,25 @@ CREATE PROCEDURE AddUpdateStepTools
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
-	As
+)
+As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
-
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future: this could get more complicated
-
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateStepTools', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Is entry already in database?

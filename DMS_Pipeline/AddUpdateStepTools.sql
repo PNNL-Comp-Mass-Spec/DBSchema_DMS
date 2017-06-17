@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateStepTools
 **  Date:	09/24/2008
 **			12/17/2009 mem - Added parameter @ParamFileStoragePath
 **			10/17/2011 mem - Added parameter @MemoryUsageMB
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -37,21 +38,21 @@ CREATE PROCEDURE AddUpdateStepTools
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
-
 	---------------------------------------------------
-	-- Validate input fields
+	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-
-	-- future: this could get more complicated
-
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateStepTools', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Is entry already in database?

@@ -21,7 +21,8 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **						   - Use SCOPE_IDENTITY()
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -43,10 +44,8 @@ CREATE PROCEDURE AddUpdateTrackingDataset
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	declare @msg varchar(256)
 	declare @folderName varchar(128)
@@ -58,9 +57,6 @@ As
 	
 	set @message = ''
 	set @Warning = ''
-
-	---------------------------------------------------
-	---------------------------------------------------
 	 
 	DECLARE @requestID int = 0				-- Only valid if @mode is 'add', or 'check_add'; ignored if @mode is 'update' or 'check_update'
 	DECLARE @wellplateNum varchar(64) = NULL
@@ -75,6 +71,17 @@ As
 	DECLARE @msType varchar(50) = 'Tracking'
 
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateTrackingDataset', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	declare @RefDate DATETIME = GETDATE()
 	DECLARE @acqStart DATETIME = @runStart

@@ -32,6 +32,7 @@ CREATE Procedure dbo.AddUpdateUser
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -61,6 +62,17 @@ As
 	Declare @logErrors tinyint = 0
 
 	BEGIN TRY 
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'AddUpdateUser', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		---------------------------------------------------
 		-- Validate input fields

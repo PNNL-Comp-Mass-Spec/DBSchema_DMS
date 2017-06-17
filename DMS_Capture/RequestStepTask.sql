@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE PROCEDURE RequestStepTask
 /****************************************************
 **
@@ -44,6 +42,7 @@ CREATE PROCEDURE RequestStepTask
 **			11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
 **			01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
 **			01/27/2017 mem - Show additional information when @infoOnly > 0
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -58,10 +57,8 @@ CREATE PROCEDURE RequestStepTask
 AS 
 	SET nocount ON
 
-	Declare @myError INT
-	Declare @myRowCount INT
-	SET @myError = 0
-	SET @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @jobAssigned TINYINT
 	SET @jobAssigned = 0
@@ -70,6 +67,17 @@ AS
 	SET @CandidateJobStepsToRetrieve = 25
 
 	Declare @excludeCaptureTasks tinyint = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
@@ -576,7 +584,7 @@ AS
 		       Step_Tool,
 		       J.Dataset
 		FROM #Tmp_CandidateJobSteps CJS
-		     INNER JOIN T_Jobs J
+		 INNER JOIN T_Jobs J
 		       ON CJS.Job = J.Job
 		End
 		Else

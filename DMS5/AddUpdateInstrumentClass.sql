@@ -24,6 +24,7 @@ CREATE Procedure AddUpdateInstrumentClass
 **			09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
 **			06/21/2010 mem - Added parameter @Params
 **			11/16/2010 mem - Added parameter @Comment
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,11 +40,8 @@ CREATE Procedure AddUpdateInstrumentClass
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	declare @msg varchar(256)
 
@@ -51,8 +49,18 @@ As
 
 	set @xmlParams = @Params
 	set @message = ''
-	
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentClass', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------

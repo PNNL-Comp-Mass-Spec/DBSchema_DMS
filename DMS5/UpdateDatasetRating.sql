@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure UpdateDatasetRating
 /****************************************************
 **
@@ -14,6 +13,7 @@ CREATE Procedure UpdateDatasetRating
 **	Auth:	mem
 **	Date:	10/07/2015 mem - Initial release
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -26,13 +26,22 @@ CREATE Procedure UpdateDatasetRating
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	Set @rating = IsNull(@rating, '')
 	Set @infoOnly = IsNull(@infoOnly, 0)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasetRating', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Resolve id for rating

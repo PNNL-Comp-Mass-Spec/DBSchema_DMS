@@ -24,7 +24,8 @@ CREATE Procedure dbo.DeleteExperiment
 **			02/27/2006 grk - added delete for experiment group table
 **			08/31/2006 jds - added check for requested runs (Ticket #199)
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
-**			02/26/2010  merged T_Requested_Run_History with T_Requested_Run
+**			02/26/2010 mem - Merged T_Requested_Run_History with T_Requested_Run
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -35,10 +36,8 @@ CREATE Procedure dbo.DeleteExperiment
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -47,6 +46,17 @@ As
 	
 	declare @result int
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteExperiment', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
 	---------------------------------------------------
 	-- get ExperimentID and current state
 	---------------------------------------------------

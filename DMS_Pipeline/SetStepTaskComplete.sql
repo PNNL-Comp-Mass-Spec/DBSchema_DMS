@@ -38,6 +38,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			05/23/2017 mem - Add parameter @remoteProgress
 **							 Update Remote_Finish if a remotely running job has finished (success or failure)
 **			05/26/2017 mem - Add completion code 26 (FAILED_REMOTE), which leads to step state 16
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -59,6 +60,17 @@ As
 	Declare @myRowCount int = 0
 	
 	Declare @message varchar(512) = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- get current state of this job step

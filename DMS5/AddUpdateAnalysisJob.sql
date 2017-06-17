@@ -69,6 +69,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/09/2017 mem - Add support for state 13 (inactive)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -127,6 +128,17 @@ As
     Declare @logErrors tinyint = 0
 
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates and resets)

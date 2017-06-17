@@ -52,6 +52,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
 **			01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
 **			03/17/2017 mem - Only call MakeTableFromListDelim if @cellCultureList contains a semicolon
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -81,10 +82,8 @@ CREATE Procedure dbo.AddUpdateExperiment
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Set @message = ''
 
@@ -94,6 +93,17 @@ As
 	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateExperiment', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

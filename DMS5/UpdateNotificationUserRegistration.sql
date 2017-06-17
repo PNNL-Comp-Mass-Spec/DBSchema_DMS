@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateNotificationUserRegistration
 /****************************************************
 **
@@ -19,6 +18,7 @@ CREATE Procedure dbo.UpdateNotificationUserRegistration
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			06/11/2012 mem - Renamed @Dataset to @DatasetNotReleased
 **                         - Added @DatasetReleased
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -36,27 +36,31 @@ CREATE Procedure dbo.UpdateNotificationUserRegistration
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateNotificationUserRegistration', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Lookup user
 	---------------------------------------------------
 	--
-	DECLARE @userID INT
-	SET @userID = 0
+	DECLARE @userID INT = 0
 	--
-	SELECT
-		@userID = ID
-	FROM
-		T_Users
-	WHERE
-		U_PRN = @PRN
+	SELECT @userID = ID
+	FROM T_Users
+	WHERE U_PRN = @PRN
 	--
 	IF @userID = 0
 	BEGIN

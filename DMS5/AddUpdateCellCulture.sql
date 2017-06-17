@@ -32,6 +32,7 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			01/06/2017 mem - When adding a new entry, only call UpdateOrganismListForBiomaterial if @organismList is not null
 **			               - When updating an existing entry, update @organismList to be '' if null (since the DMS website sends null when a form field is blank)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -60,10 +61,8 @@ CREATE Procedure dbo.AddUpdateCellCulture
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Set @message = ''
 
@@ -71,6 +70,17 @@ As
 	Declare @logErrors tinyint = 0
 	
 	Begin TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateCellCulture', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

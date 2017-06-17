@@ -14,6 +14,7 @@ CREATE PROCEDURE AddUpdateBionetHost
 **
 **	Date:	09/08/2016 mem - Initial version
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -30,10 +31,8 @@ CREATE PROCEDURE AddUpdateBionetHost
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	Set @message = ''
 
@@ -41,6 +40,17 @@ As
 
 	Begin Try 
 	
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'AddUpdateBionetHost', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
+
 		---------------------------------------------------
 		-- Validate input fields
 		---------------------------------------------------
@@ -96,15 +106,24 @@ As
 		If @Mode = 'add'
 		Begin
 		
-			INSERT INTO T_Bionet_Hosts( Host,
-			                            IP,
-			                            Alias,
-			                            Entered,
-			                            Instruments,
-			                            Active,
-			                            Tag )
-			VALUES(@Host, @IP, @Alias, GetDate(), @Instruments, @Active, @Tag)
-
+			INSERT INTO T_Bionet_Hosts( 
+				Host,
+				IP,
+				Alias,
+				Entered,
+				Instruments,
+				Active,
+				Tag 
+			)
+			VALUES(
+				@Host, 
+				@IP, 
+				@Alias, 
+				GetDate(), 
+				@Instruments, 
+				@Active, 
+				@Tag
+			)
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--

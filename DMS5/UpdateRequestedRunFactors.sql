@@ -63,6 +63,7 @@ CREATE Procedure UpdateRequestedRunFactors
 **						   - Expand the warning message for unrecognized @IDType
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -74,17 +75,26 @@ CREATE Procedure UpdateRequestedRunFactors
 As
 	SET NOCOUNT ON 
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-
+	declare @myError int = 0
+	declare @myRowCount int = 0
+	
 	Declare @Msg2 varchar(512)
 	Declare @invalidCount int
 	
 	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunFactors', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	-----------------------------------------------------------
 	-- Validate the inputs

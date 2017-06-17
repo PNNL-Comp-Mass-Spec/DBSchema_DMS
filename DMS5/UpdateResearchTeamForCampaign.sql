@@ -23,6 +23,7 @@ CREATE Procedure dbo.UpdateResearchTeamForCampaign
 **                         - Thus, use "anderson%gordon" to match the "anderson, gordon" entry in T_Users
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -40,10 +41,8 @@ CREATE Procedure dbo.UpdateResearchTeamForCampaign
 AS
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -54,6 +53,17 @@ AS
 	Declare @UnknownPRN varchar(64)
 	Declare @NewPRN varchar(64)
 	Declare @NewUserID int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamForCampaign', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- update research team if ID is given,

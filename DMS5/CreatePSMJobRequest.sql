@@ -28,6 +28,7 @@ CREATE Procedure CreatePSMJobRequest
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Update grammar
 **			               - Exclude logging some try/catch errors
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -50,10 +51,8 @@ CREATE Procedure CreatePSMJobRequest
 As
 	Set NoCount On
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Declare @result int
 	
@@ -66,6 +65,17 @@ As
 	Declare @logErrors tinyint = 0
 	
 	BEGIN TRY 
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'CreatePSMJobRequest', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		---------------------------------------------------
 		-- Validate the inputs

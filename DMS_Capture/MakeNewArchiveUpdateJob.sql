@@ -17,6 +17,7 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 **			05/31/2013 mem - Added parameter @PushDatasetToMyEMSL
 **			07/11/2013 mem - Added parameter @PushDatasetRecursive
 **			10/24/2014 mem - Changed priority to 2 when @ResultsFolderName = ''
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -31,14 +32,23 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 As
 	Set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @DatasetID int
 	Declare @JobID int
 	Declare @Script varchar(64)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'MakeNewArchiveUpdateJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs

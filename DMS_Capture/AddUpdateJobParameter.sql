@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateJobParameter
 **  Date:	03/22/2011 mem - Initial Version
 **			04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
 **			01/19/2012 mem - Now using AddUpdateJobParameterXML
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -31,13 +32,22 @@ CREATE PROCEDURE AddUpdateJobParameter
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @pXML xml
 	Declare @ExistingParamsFound tinyint = 0	
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

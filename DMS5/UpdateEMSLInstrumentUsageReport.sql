@@ -12,8 +12,6 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **    Auth: grk
 **    Date: 03/21/2012 
 **          03/26/2012 grk - added code to clean up comments and pin trans-month interval starting time
@@ -32,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			               - Add parameter @infoOnly
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			               - Set @validateTotal to 0 when calling ParseUsageText
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -45,12 +44,21 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 AS
 	SET XACT_ABORT, NOCOUNT ON
 
-	DECLARE @myError int
-	DECLARE @myRowCount int
-	SET @myError = 0
-	SET @myRowCount = 0
+	DECLARE @myError int = 0
+	DECLARE @myRowCount int = 0
 	
 	Set @message = LTrim(RTrim(IsNull(@message, '')))
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateEMSLInstrumentUsageReport', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	------------------------------------------------------
 	-- Create a table for tracking debug reports to show
@@ -451,7 +459,7 @@ AS
 				FROM T_EMSL_Instrument_Usage_Report
 				WHERE ID IN ( SELECT ID
 				              FROM #STAGING ) AND
-				      [Type] = 'Interval' AND
+				   [Type] = 'Interval' AND
 				      Minutes < @maxNormalInterval
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount

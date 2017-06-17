@@ -19,7 +19,8 @@ CREATE Procedure AddUpdateLCColumn
 **          07/20/2016 mem - Fix error message entity name
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 *****************************************************/
 (
 	@columnNumber varchar (128),		-- Aka column name
@@ -40,10 +41,8 @@ CREATE Procedure AddUpdateLCColumn
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -51,6 +50,17 @@ As
 	Declare @logErrors tinyint = 1
 
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateLCColumn', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

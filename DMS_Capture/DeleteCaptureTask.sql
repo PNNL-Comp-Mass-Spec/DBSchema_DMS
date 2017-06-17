@@ -16,6 +16,7 @@ CREATE PROCEDURE DeleteCaptureTask
 **			09/12/2009 mem - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			09/11/2012 mem - Renamed from DeleteJob to DeleteCaptureTask
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -26,25 +27,32 @@ CREATE PROCEDURE DeleteCaptureTask
 As
 	set nocount on
 	
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
-	declare @jobID int
-	set @jobID = convert(int, @jobNum)
+	declare @jobID int = convert(int, @jobNum)
 
-	declare @transName varchar(32)
-	set @transName = 'DeleteBrokerJob'
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteCaptureTask', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
+	declare @transName varchar(32) = 'DeleteBrokerJob'
+	
 	begin transaction @transName
  
 	---------------------------------------------------
-	-- delete job dependencies
+	-- Delete the job dependencies
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Step_Dependencies
-	WHERE (Job = @jobNum)
+	WHERE Job = @jobID
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -55,11 +63,11 @@ As
 	end
 
    	---------------------------------------------------
-	-- delete job parameters
+	-- Delete the job parameters
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Parameters
-	WHERE Job = @jobNum
+	WHERE Job = @jobID
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -69,9 +77,8 @@ As
 		goto Done
 	end
 
-
 	---------------------------------------------------
-	-- delete job steps
+	-- Delete the job steps
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Steps
@@ -87,7 +94,7 @@ As
 	end
 
    	---------------------------------------------------
-	-- delete jobs
+	-- Delete the job
 	---------------------------------------------------
 	--
 	DELETE FROM T_Jobs

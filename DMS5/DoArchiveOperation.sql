@@ -11,36 +11,41 @@ CREATE Procedure dbo.DoArchiveOperation
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	grk
 **	Date:	10/06/2004
 **			04/17/2006 grk - added stuf for set archive update 
 **			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@mode varchar(12),
+	@mode varchar(12),				-- 'archivereset' or 'update_req'
     @message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
-
 	
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoArchiveOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- get datasetID and archive state
@@ -139,26 +144,7 @@ As
 
 		return 0
 	end -- mode 'update_req'
-	
-	---------------------------------------------------
-	-- Operation for mode ???
-	---------------------------------------------------
 
-	if @mode = '???'
-	begin
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0 or @myRowCount <> 1
-		begin
-			set @msg = 'Insert operation failed'
-			RAISERROR (@msg, 10, 1)
-			return 51211
-		end
-
-		return 0
-	end -- mode '???'
-	
 	---------------------------------------------------
 	-- Mode was unrecognized
 	---------------------------------------------------

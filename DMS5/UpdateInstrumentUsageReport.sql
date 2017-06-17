@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateInstrumentUsageReport 
+CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 /****************************************************
 **
 **  Desc: 
@@ -19,10 +19,8 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**    Auth: grk
-**    Date: 10/07/2012 
+**	Auth:	grk
+**	Date:	10/07/2012 
 **          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
 **			11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
 **			01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 10 days
@@ -32,6 +30,7 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **			04/11/2017 mem - Now using fields DMS_Inst_ID and Usage_Type in T_EMSL_Instrument_Usage_Report
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -47,11 +46,11 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 )
 As
 	Set XACT_ABORT, nocount on
+	SET CONCAT_NULL_YIELDS_NULL ON
+	SET ANSI_PADDING ON
 
-	declare @myError int
-	declare @myRowCount INT
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 	 
@@ -63,8 +62,17 @@ As
  	DECLARE @coff DATETIME
    
 	DECLARE @xml AS xml
-	SET CONCAT_NULL_YIELDS_NULL ON
-	SET ANSI_PADDING ON
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageReport', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	 -- validate inputs

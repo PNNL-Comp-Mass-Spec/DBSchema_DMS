@@ -21,6 +21,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			08/31/2009 mem - Switched to running a bulk Insert and bulk Update instead of a Delete then Bulk Insert
 **			05/04/2015 mem - Added Process_ID
 **			02/23/2016 mem - Add set XACT_ABORT on
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -30,10 +31,8 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @result = ''
 	
@@ -47,6 +46,17 @@ As
 	Set @CurrentLocation = 'Start'
 
 	Begin Try
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		---------------------------------------------------
 		--  Extract parameters from XML input

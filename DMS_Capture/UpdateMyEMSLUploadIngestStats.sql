@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.UpdateMyEMSLUploadIngestStats
 **	Date:	12/18/2014 mem - Initial version
 **			06/23/2016 mem - Add parameter @fatalError
 **			05/31/2017 mem - Update TransactionID in T_MyEMSL_Uploads using @transactionId
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -30,12 +31,21 @@ CREATE PROCEDURE dbo.UpdateMyEMSLUploadIngestStats
 As
 	set nocount on
 	
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	Declare @errorCode int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateMyEMSLUploadIngestStats', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate the inputs

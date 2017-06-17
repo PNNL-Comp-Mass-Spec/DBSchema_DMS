@@ -35,6 +35,7 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -46,14 +47,23 @@ CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 As
 	SET NOCOUNT ON 
 
-	DECLARE @myError INT
-	DECLARE @myRowCount INT
-	SET @myError = 0
-	SET @myRowCount = 0
+	DECLARE @myError INT = 0
+	DECLARE @myRowCount INT = 0
 
 	DECLARE @xml AS XML
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBatchParameters', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	-----------------------------------------------------------
 	-- Validate the inputs

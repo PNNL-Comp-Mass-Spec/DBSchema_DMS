@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 **	Auth:	mem
 **  Date:	01/24/2014 mem - Initial version
 **			01/15/2015 mem - Added parameter @FileSizeKB
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -28,13 +29,21 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateOrganismDBFile', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

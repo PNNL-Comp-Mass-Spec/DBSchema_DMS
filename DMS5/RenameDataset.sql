@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.RenameDataset
 **			07/08/2016 mem - Now show old/new names and jobs even when @infoOnly is 0
 **			12/06/2016 mem - Include file rename statements
 **			03/06/2017 mem - Validate that @DatasetNameNew is no more than 80 characters long
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -28,10 +29,8 @@ CREATE PROCEDURE dbo.RenameDataset
 AS
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @DatasetID int = 0
 	Declare @folderPath varchar(255) = ''
@@ -47,6 +46,17 @@ AS
 	
 	Declare @toolBaseName varchar(64)
 	Declare @resultsFolder varchar(128)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'RenameDataset', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	--------------------------------------------
 	-- Validate the inputs

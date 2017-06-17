@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateLCCartBlockAssignments
 /****************************************************
 **
@@ -20,6 +19,7 @@ CREATE Procedure dbo.UpdateLCCartBlockAssignments
 **	Date: 	02/15/2010
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			11/07/2016 mem - Add optional logging via PostLogEntry
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -30,10 +30,8 @@ CREATE Procedure dbo.UpdateLCCartBlockAssignments
 As
 	SET NOCOUNT ON 
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
@@ -44,6 +42,17 @@ As
 
 	-- Uncomment to log the XML for debugging purposes
 	-- exec PostLogEntry 'Debug', @cartAssignmentList, 'UpdateLCCartBlockAssignments'
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateLCCartBlockAssignments', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	-----------------------------------------------------------
 	-- create and populate temp table with block assignments

@@ -15,6 +15,7 @@ CREATE PROCEDURE AddUpdateScripts
 **  Auth:	grk
 **  Date:	09/23/2008 grk - Initial Veresion
 **			03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -30,12 +31,21 @@ CREATE PROCEDURE AddUpdateScripts
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @ID int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate input fields

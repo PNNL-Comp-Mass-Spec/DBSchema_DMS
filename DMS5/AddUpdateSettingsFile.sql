@@ -17,7 +17,8 @@ CREATE PROCEDURE AddUpdateSettingsFile
 **			03/30/2015 mem - Added parameters @HMSAutoSupersede and @MSGFPlusAutoCentroid
 **			03/21/2016 mem - Update column Last_Updated
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
@@ -46,6 +47,17 @@ As
 
 	declare @xmlContents xml
 	set @xmlContents = @Contents
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateSettingsFile', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate the inputs

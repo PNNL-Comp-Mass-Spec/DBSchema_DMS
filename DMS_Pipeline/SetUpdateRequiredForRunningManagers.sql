@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.SetUpdateRequiredForRunningManagers
 **
 **	Auth:	mem
 **			04/17/2014 mem - Initial release
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -23,13 +24,22 @@ CREATE PROCEDURE dbo.SetUpdateRequiredForRunningManagers
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'RequestStepTaskXML', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Get a list of the currently running managers

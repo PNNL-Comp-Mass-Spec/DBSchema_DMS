@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.DoSamplePrepMaterialOperation
 /****************************************************
 **
@@ -19,6 +18,7 @@ CREATE Procedure dbo.DoSamplePrepMaterialOperation
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Exclude the Staging container when finding containers to retire
 **						   - Log debug messages
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 **	Note:
 **		GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
@@ -35,10 +35,8 @@ CREATE Procedure dbo.DoSamplePrepMaterialOperation
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int	
-	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	set @message = ''
 	
@@ -53,6 +51,17 @@ As
 	SET @comment = 'Retired as part of closing sample prep request ' + @ID
 
 	BEGIN TRY
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'DoSamplePrepMaterialOperation', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		Set @msg = '@mode is ' + @mode + '; find items for prep request ' + @ID
 		exec PostLogEntry 'Debug', @msg, 'DoSamplePrepMaterialOperation'

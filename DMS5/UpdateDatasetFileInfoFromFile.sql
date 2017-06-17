@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 /****************************************************
 ** 
@@ -26,6 +24,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 **	Date:	09/15/2005
 **			08/27/2007 mem - Added support for a 9th column in the source file
 **			09/02/2011 mem - Now calling PostUsageLogEntry
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -35,10 +34,8 @@ CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @fileExists tinyint
 	Declare @columnCount int
@@ -48,6 +45,17 @@ As
 	declare @result int
 	declare @NumLoaded int
 	declare @UpdateCount int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoFromFile', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	-----------------------------------------------------------
 	-- Create the table to hold the data

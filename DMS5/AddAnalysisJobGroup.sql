@@ -60,6 +60,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			05/18/2016 mem - Include the Request ID in error messages
 **          07/12/2016 mem - Pass @priority to ValidateAnalysisJobParameters
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -105,7 +106,19 @@ As
 	Declare @jobsCreated INT
 	Set @jobsCreated = 0
 
-	Begin Try
+	Begin Try	
+	
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddAnalysisJobGroup', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
 	---------------------------------------------------
 	-- list shouldn't be empty
 	---------------------------------------------------

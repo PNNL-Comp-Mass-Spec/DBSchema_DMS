@@ -20,8 +20,7 @@ CREATE Procedure dbo.AddUpdateEUSUsers
 **	Auth:	jds
 **	Date:	09/01/2006
 **			03/19/2012 mem - Added @HanfordID
-**		      
-**		      
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -35,15 +34,23 @@ CREATE Procedure dbo.AddUpdateEUSUsers
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateEUSUsers', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -161,12 +168,7 @@ As
 		end
 	end -- update mode
 
-
 	return 0
-
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSUsers] TO [DDL_Viewer] AS [dbo]

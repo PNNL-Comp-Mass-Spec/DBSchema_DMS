@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateScripts
 **			01/09/2012 mem - Added parameter @BackfillToDMS
 						   - Changed ID field in T_Scripts to a non-identity based int
 **			08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -38,13 +39,22 @@ CREATE PROCEDURE AddUpdateScripts
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @ID int
 	declare @BackFill tinyint
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Validate input fields

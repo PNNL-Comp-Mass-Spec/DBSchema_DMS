@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
+CREATE PROCEDURE dbo.UpdateDataPackageItemsXML
 /****************************************************
 **
 **	Desc:
@@ -25,6 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **			10/19/2016 mem - Update #TPI to use an integer field for data package ID
 **			11/11/2016 mem - Add parameter @removeParents
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -38,10 +38,8 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 	
@@ -61,6 +59,17 @@ As
 
 	BEGIN TRY 
 	
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateDataPackageItemsXML', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
+
 		Declare @logUsage tinyint = 0
 		
 		If @logUsage > 0

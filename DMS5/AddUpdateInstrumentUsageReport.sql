@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/11/2017 mem - Replace column Usage with Usage_Type
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -46,16 +47,23 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
-	---------------------------------------------------
-	---------------------------------------------------
 	BEGIN TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentUsageReport', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

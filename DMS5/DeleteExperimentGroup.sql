@@ -13,32 +13,41 @@ CREATE Procedure DeleteExperimentGroup
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 7/13/2006
+**	Auth:	grk
+**	Date:	07/13/2006
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
+(
 	@groupID int = 0,
 	@message varchar(512)='' output
+)
 As
-	declare @delim char(1)
-	set @delim = ','
+	declare @delim char(1) = ','
 
 	declare @done int
 	declare @count int
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	set @message = ''
 
 	declare @msg varchar(256)
 
-	
 	---------------------------------------------------
-	-- 
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteExperimentGroup', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+		
+	---------------------------------------------------
+	-- Start a transaction
 	---------------------------------------------------
 
 	declare @transName varchar(32)
@@ -46,7 +55,7 @@ As
 	begin transaction @transName
 
 	---------------------------------------------------
-	-- 
+	-- Delete the items
 	---------------------------------------------------
 
 	DELETE FROM T_Experiment_Group_Members
@@ -75,6 +84,9 @@ As
 		return 51093
 	end
 	
+	---------------------------------------------------
+	-- Finalize the changes
+	---------------------------------------------------
 
 	commit transaction @transName
 	return 0

@@ -24,6 +24,7 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -37,14 +38,23 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	Declare @RequestCountToUpdate int = 0
 
 	Begin TRY 
+
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunWP', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
 
 		----------------------------------------------------------
 		-- Validate the inputs

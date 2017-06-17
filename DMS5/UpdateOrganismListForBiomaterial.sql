@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateOrganismListForBiomaterial
 /****************************************************
 **
@@ -16,6 +15,7 @@ CREATE Procedure dbo.UpdateOrganismListForBiomaterial
 **
 **	Auth:	mem
 **	Date:	12/02/2016 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -27,10 +27,8 @@ CREATE Procedure dbo.UpdateOrganismListForBiomaterial
 AS
 	set nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -42,6 +40,17 @@ AS
 	Declare @UnknownOrganism varchar(64)
 	Declare @NewOrganismName varchar(64)
 	Declare @NewOrganismID int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateOrganismListForBiomaterial', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Resolve biomaterial name to ID

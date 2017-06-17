@@ -21,6 +21,7 @@ CREATE Procedure AddUpdateAuxInfo
 **			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -36,11 +37,8 @@ CREATE Procedure AddUpdateAuxInfo
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int= 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -48,6 +46,17 @@ As
 
 	BEGIN TRY 
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfo', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+	
 	---------------------------------------------------
 	-- what mode are we in
 	---------------------------------------------------

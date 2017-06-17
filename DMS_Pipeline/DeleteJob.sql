@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.DeleteJob
 **			12/31/2008 mem - initial release
 **			05/26/2009 mem - Now deleting from T_Job_Step_Dependencies and T_Job_Parameters
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -27,17 +28,23 @@ CREATE PROCEDURE dbo.DeleteJob
 As
 	set nocount on
 	
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
-	declare @jobID int
-	set @jobID = convert(int, @jobNum)
+	declare @jobID int = convert(int, @jobNum)
 
-	declare @transName varchar(32)
-	set @transName = 'DeleteBrokerJob'
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteJob', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
+
+	declare @transName varchar(32) = 'DeleteBrokerJob'
 	begin transaction @transName
  
 	---------------------------------------------------
@@ -45,7 +52,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Step_Dependencies
-	WHERE (Job = @jobNum)
+	WHERE (Job = @jobID)
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -60,7 +67,7 @@ As
 	---------------------------------------------------
 	--
 	DELETE FROM T_Job_Parameters
-	WHERE Job = @jobNum
+	WHERE Job = @jobID
  	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 		--

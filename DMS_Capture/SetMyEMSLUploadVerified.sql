@@ -10,6 +10,7 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **		Marks one or more MyEMSL upload tasks as verified by the MyEMSL ingest process
 **		This procedure should only be called after the MyEMSL Status page shows "verified" and "SUCCESS" for step 6
 **		For example, see https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/2271574/xml
+**		              or https://ingest.my.emsl.pnl.gov/myemsl/cgi-bin/status/3268638/xml
 **	
 **	Return values: 0: success, otherwise, error code
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **	Date:	09/20/2013 mem - Initial version
 **			12/19/2014 mem - Added parameter @ingestStepsCompleted
 **			05/31/2017 mem - Add logging
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -28,10 +30,19 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 As
 	set nocount on
 	
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'SetMyEMSLUploadVerified', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 		
 	---------------------------------------------------
 	-- Validate the inputs

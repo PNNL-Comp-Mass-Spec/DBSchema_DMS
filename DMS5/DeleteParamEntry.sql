@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE DeleteParamEntry
+CREATE PROCEDURE DeleteParamEntry
 /****************************************************
 **
 **	Desc: Deletes given Sequest Param Entry from the T_Param_Entries
@@ -12,10 +12,9 @@ create PROCEDURE DeleteParamEntry
 **
 **	Parameters: 
 **
-**	
-**
-**		Auth: kja
-**		Date: 7/22/2004
+**	Auth:	kja
+**	Date:	07/22/2004
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -28,11 +27,8 @@ create PROCEDURE DeleteParamEntry
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -42,6 +38,19 @@ As
 --	declare @state int
 	
 	declare @result int
+
+
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteParamEntry', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- get ParamFileID

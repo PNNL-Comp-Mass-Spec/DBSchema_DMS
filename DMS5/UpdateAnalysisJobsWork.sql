@@ -45,6 +45,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			03/30/2015 mem - Tweak warning message grammar
 **			05/28/2015 mem - No longer updating processor group entries (thus @associatedProcessorGroup is ignored)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -71,10 +72,8 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @NoChangeText varchar(32)
 	set @NoChangeText = '[no change]'
@@ -112,6 +111,17 @@ As
 	
 	declare @transName varchar(32)
 	set @transName = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobsWork', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Clean up null arguments

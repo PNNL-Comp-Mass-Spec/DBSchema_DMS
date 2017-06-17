@@ -41,7 +41,8 @@ CREATE Procedure AddUpdateStorage
 **			05/01/2009 mem - Updated description field in t_storage_path to be named SP_description
 **			05/09/2011 mem - Now validating @instrumentName
 **			07/15/2015 mem - Now checking for an existing entry to prevent adding a duplicate
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 *****************************************************/
 (
 	@path varchar(255), 
@@ -57,11 +58,8 @@ CREATE Procedure AddUpdateStorage
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -70,6 +68,17 @@ As
 	declare @msg varchar(256)
 	
 	declare @machineName varchar(64)
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateStorage', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

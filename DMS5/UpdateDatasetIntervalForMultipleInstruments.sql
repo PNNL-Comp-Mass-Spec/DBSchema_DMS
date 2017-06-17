@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/10/2017 mem - Add parameter @instrumentsToProcess
 **			04/11/2017 mem - Now passing @infoOnly to UpdateEMSLInstrumentUsageReport
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -43,10 +44,19 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasetIntervalForMultipleInstruments', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate the inputs

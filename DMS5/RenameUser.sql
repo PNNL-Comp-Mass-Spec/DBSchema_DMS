@@ -13,6 +13,7 @@ CREATE PROCEDURE dbo.RenameUser
 ** 
 **	Auth:	mem
 **			10/31/2014 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -24,10 +25,19 @@ CREATE PROCEDURE dbo.RenameUser
 AS
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'RenameUser', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	--------------------------------------------
 	-- Validate the inputs

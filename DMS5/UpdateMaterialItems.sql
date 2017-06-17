@@ -17,32 +17,41 @@ CREATE PROCEDURE UpdateMaterialItems
 **	Date:	03/27/2008 grk - Initial release (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **			07/24/2008 grk - Added retirement mode
 **			09/14/2016 mem - When retiring a single experiment, will abort and update @message if the experiment is already retired
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
-	@mode varchar(32), -- 'move_material', 'retire_items'
-	@itemList varchar(4096), -- either list of material IDs with type tag prefixes, or list of containers
-	@itemType varchar(128), -- 'mixed_material', 'containers'
+	@mode varchar(32),			-- 'move_material', 'retire_items'
+	@itemList varchar(4096),	-- either list of material IDs with type tag prefixes, or list of containers
+	@itemType varchar(128),		-- 'mixed_material', 'containers'
 	@newValue varchar(128),
 	@comment varchar(512),
     @message varchar(512) output,
    	@callingUser varchar(128) = ''
 )
 As
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	---------------------------------------------------
 	-- Default container to null container
 	---------------------------------------------------
 	--
-	declare @container varchar(128)
-	set @container = 'na'
+	declare @container varchar(128) = 'na'
 	--
 	declare @contID int = 1		-- the null container
+
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateMaterialItems', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Resolve container name to actual ID (if applicable)

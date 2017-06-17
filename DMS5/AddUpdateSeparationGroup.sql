@@ -16,7 +16,8 @@ CREATE PROCEDURE AddUpdateSeparationGroup
 **
 **	Auth:	mem
 **	Date:	06/12/2017 mem - Initial version
-**    
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -32,14 +33,23 @@ CREATE PROCEDURE AddUpdateSeparationGroup
 As
 	Set XACT_ABORT, nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int =0 
 
 	Declare @datasetTypeID int
 	
 	Begin TRY 
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateSeparationGroup', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Validate input fields

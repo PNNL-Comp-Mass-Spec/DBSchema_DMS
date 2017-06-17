@@ -12,10 +12,9 @@ CREATE PROCEDURE DeleteParamEntriesForID
 **
 **	Parameters: 
 **
-**	
-**
-**		Auth: kja
-**		Date: 7/22/2004
+**	Auth:	kja
+**	Date:	07/22/2004
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -25,17 +24,25 @@ CREATE PROCEDURE DeleteParamEntriesForID
 As
 	set nocount on
 
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	
 	set @message = ''
 	
 	declare @msg varchar(256)
 	
 	declare @result int
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteParamEntriesForID', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	---------------------------------------------------
 	-- Start transaction

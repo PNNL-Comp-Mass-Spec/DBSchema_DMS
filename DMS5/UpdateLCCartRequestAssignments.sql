@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.UpdateLCCartRequestAssignments
 /****************************************************
 **
@@ -27,6 +26,7 @@ CREATE Procedure dbo.UpdateLCCartRequestAssignments
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			11/07/2016 mem - Add optional logging via PostLogEntry
 **			02/27/2017 mem - Add support for cart config name
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -39,10 +39,19 @@ As
 	Set CONCAT_NULL_YIELDS_NULL ON
 	Set ANSI_PADDING ON
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateLCCartRequestAssignments', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	Declare @xml AS xml
 	Set @xml = @cartAssignmentList

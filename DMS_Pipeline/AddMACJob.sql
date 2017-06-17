@@ -20,6 +20,7 @@ CREATE PROCEDURE AddMACJob
 **			04/10/2013 mem - Now passing @callingUser to MakeLocalJobInBroker
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -43,7 +44,18 @@ AS
 	
 	DECLARE @DebugMode tinyint = 0
 
-	BEGIN TRY                
+	BEGIN TRY
+		---------------------------------------------------
+		-- Verify that the user can execute this procedure from the given client host
+		---------------------------------------------------
+			
+		Declare @authorized tinyint = 0	
+		Exec @authorized = VerifySPAuthorized 'AddMACJob', @raiseError = 1
+		If @authorized = 0
+		Begin
+			RAISERROR ('Access denied', 11, 3)
+		End
+
 		---------------------------------------------------
 		-- does data package exist?
 		---------------------------------------------------

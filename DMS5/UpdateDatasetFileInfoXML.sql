@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE Procedure dbo.UpdateDatasetFileInfoXML
 /****************************************************
 ** 
@@ -51,8 +49,6 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **
 **	Return values: 0: success, otherwise, error code
 ** 
-**	Parameters:
-**
 **	Auth:	mem
 **	Date:	05/03/2010 mem - Initial version
 **			05/13/2010 mem - Added parameter @ValidateDatasetType
@@ -64,6 +60,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			08/21/2012 mem - Now including DatasetID in the error message
 **			04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
 **			02/24/2015 mem - Now validating that @DatasetID exists in T_Dataset
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -76,10 +73,8 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Declare @DatasetName varchar(128)
 	Declare @DatasetIDCheck int
@@ -89,6 +84,17 @@ As
 	
 	Declare @AcqTimeStart datetime
 	Declare @AcqTimeEnd datetime
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoXML', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	-----------------------------------------------------------
 	-- Create the table to hold the data

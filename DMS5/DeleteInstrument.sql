@@ -16,6 +16,7 @@ CREATE Procedure dbo.DeleteInstrument
 **	Auth:	mem
 **	Date:	02/12/2010
 **			08/28/2010 mem - No longer deleting entries in the Instrument_Allowed_Dataset_Type table
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -25,13 +26,22 @@ CREATE Procedure dbo.DeleteInstrument
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	declare @InstrumentID int
 	set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteInstrument', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	---------------------------------------------------
 	-- Look up instrument ID for @InstrumentName

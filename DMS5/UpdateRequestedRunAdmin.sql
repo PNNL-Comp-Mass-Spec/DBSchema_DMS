@@ -22,6 +22,8 @@ CREATE Procedure UpdateRequestedRunAdmin
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			12/12/2011 mem - Now calling AlterEventLogEntryUserMultiID
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+
 **    
 *****************************************************/
 (
@@ -33,10 +35,8 @@ CREATE Procedure UpdateRequestedRunAdmin
 As
 	SET NOCOUNT ON 
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	DECLARE @xml AS xml
 	SET CONCAT_NULL_YIELDS_NULL ON
@@ -47,6 +47,16 @@ As
 	Declare @UsageMessage varchar(512) = ''
 	Declare @stateID int = 0
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAdmin', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	-- Set to 1 to log the contents of @requestList
 	Declare @debugEnabled tinyint = 0

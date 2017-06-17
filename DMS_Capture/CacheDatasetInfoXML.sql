@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure dbo.CacheDatasetInfoXML
 /****************************************************
 ** 
@@ -15,6 +14,7 @@ CREATE Procedure dbo.CacheDatasetInfoXML
 **
 **	Auth:	mem
 **	Date:	05/03/2010 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -25,12 +25,21 @@ CREATE Procedure dbo.CacheDatasetInfoXML
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 
 	Set @message = ''
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'CacheDatasetInfoXML', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 	
 	-----------------------------------------------
 	-- Add/Update T_Dataset_Info_XML using a MERGE statement

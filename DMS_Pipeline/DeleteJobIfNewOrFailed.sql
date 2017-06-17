@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.DeleteJobIfNewOrFailed
 **	Auth:	mem
 **			04/21/2017 mem - Initial release
 **			05/26/2017 mem - Check for job step state 9 (Running_Remote)
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **
 *****************************************************/
 (
@@ -29,6 +30,17 @@ As
 	
 	Declare @myError int= 0
 	Declare @myRowCount int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteJobIfNewOrFailed', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
  
 	Set @message = ''
 	Set @previewMode = IsNull(@previewMode, 0)

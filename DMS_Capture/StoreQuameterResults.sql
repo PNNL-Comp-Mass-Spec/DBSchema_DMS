@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[StoreQuameterResults]
+CREATE PROCEDURE dbo.StoreQuameterResults
 /****************************************************
 **
 **	Desc: 
@@ -14,6 +13,7 @@ CREATE PROCEDURE [dbo].[StoreQuameterResults]
 **
 **	Auth:	mem
 **	Date:	09/17/2012 mem - Initial version
+**			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **    
 *****************************************************/
 (
@@ -25,8 +25,18 @@ CREATE PROCEDURE [dbo].[StoreQuameterResults]
 As
 	set nocount on
 	
-	declare @myError int
-	set @myError = 0
+	declare @myError int = 0
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'StoreQuameterResults', @raiseError = 1
+	If @authorized = 0
+	Begin
+		RAISERROR ('Access denied', 11, 3)
+	End
 
 	exec @myError = S_StoreQuameterResults @DatasetID=@DatasetID, @ResultsXML=@ResultsXML, @message=@message output, @infoOnly=@infoOnly
 
