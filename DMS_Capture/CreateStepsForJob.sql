@@ -125,5 +125,3 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateStepsForJob] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CreateStepsForJob] TO [DMS_SP_User] AS [dbo]
-GO

@@ -369,5 +369,3 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateContext] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateContext] TO [DMS_SP_User] AS [dbo]
-GO

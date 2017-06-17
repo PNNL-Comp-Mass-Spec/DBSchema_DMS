@@ -78,5 +78,3 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateStepStates] TO [DMS_SP_User] AS [dbo]
-GO
