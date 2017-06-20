@@ -30,6 +30,8 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 **			02/19/2016 mem - Now replacing a semicolon with a comma when @mode = 'add'
 **			10/18/2016 mem - Call UpdateDataPackageEUSInfo
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			06/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			               - Validate @State
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -54,16 +56,18 @@ CREATE PROCEDURE dbo.AddUpdateDataPackage
 As
 	set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @CurrentID int
-	declare @TeamCurrent varchar(64)
-	declare @TeamChangeWarning varchar(256)
-	declare @PkgFileFolder varchar(256)
+	Declare @CurrentID int
+	Declare @TeamCurrent varchar(64)
+	Declare @TeamChangeWarning varchar(256)
+	Declare @PkgFileFolder varchar(256)
 
 	set @TeamChangeWarning = ''
 	set @message = ''
+
+	Declare @logErrors tinyint = 0
 
 	BEGIN TRY
 	
@@ -121,11 +125,21 @@ As
 	-- Get active path
 	---------------------------------------------------
 	--
-	declare @rootPath int
+	Declare @rootPath int
 	--
 	SELECT @rootPath = ID
 	FROM T_Data_Package_Storage
 	WHERE State = 'Active'
+
+	---------------------------------------------------
+	-- Validate the state
+	---------------------------------------------------
+	
+	If Not Exists (SELECT * FROM T_Data_Package_State WHERE [Name] = @state)
+	Begin
+		set @message = 'Invalid state: ' + @state
+		RAISERROR (@message, 11, 32)
+	End	
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
@@ -160,6 +174,8 @@ As
 		
 	end -- mode update
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
@@ -327,8 +343,11 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		
-		Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateDataPackage'
-				
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateDataPackage'
+		End
+					
 	END CATCH
 
 	return @myError

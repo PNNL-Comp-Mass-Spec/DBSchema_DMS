@@ -25,6 +25,8 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			06/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**			               - Validate @State
 **    
 *****************************************************/
 (
@@ -45,11 +47,13 @@ CREATE PROCEDURE dbo.AddUpdateOSMPackage
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	set @message = ''
 
+	Declare @logErrors tinyint = 0
+	
 	BEGIN TRY 
 
 	---------------------------------------------------
@@ -67,18 +71,18 @@ As
 	-- Get active path
 	---------------------------------------------------
 	--
-	declare @rootPath int
+	Declare @rootPath int
 	--
 	SELECT @rootPath = ID
 	FROM T_OSM_Package_Storage
 	WHERE State = 'Active'
 	
 	---------------------------------------------------
-	-- validate sample prep request list
+	-- Validate sample prep request list
 	---------------------------------------------------
 	
 	-- Table variable to hold items from sample prep request list
-	DECLARE @ITM TABLE (
+	Declare @ITM TABLE (
 		Item INT,
 		Valid CHAR(1) null
 	)
@@ -92,7 +96,7 @@ As
 	FROM @ITM TX INNER JOIN dbo.S_Sample_Prep_Request_List SPL ON TX.Item = SPL.ID
 	
 	-- get list of any list items that weren't in the database
-	DECLARE @badIDs VARCHAR(1024) = ''
+	Declare @badIDs VARCHAR(1024) = ''
 	SELECT @badIDs = @badIDs + CASE WHEN @badIDs <> '' THEN ', ' + CONVERT(VARCHAR(12), Item) ELSE CONVERT(VARCHAR(12), Item) END
 	FROM @ITM 
 	WHERE Valid = 'N'
@@ -103,12 +107,21 @@ As
 		RAISERROR (@message, 11, 31)
 	End
 
-	DECLARE @goodIDs VARCHAR(1024) = ''
+	Declare @goodIDs VARCHAR(1024) = ''
 	SELECT @goodIDs = @goodIDs + CASE WHEN @goodIDs <> '' THEN ', ' + CONVERT(VARCHAR(12), Item) ELSE CONVERT(VARCHAR(12), Item) END
 	FROM @ITM
 	ORDER BY Item
 
-
+	---------------------------------------------------
+	-- Validate the state
+	---------------------------------------------------
+	
+	If Not Exists (SELECT * FROM T_OSM_Package_State WHERE [Name] = @state)
+	Begin
+		set @message = 'Invalid state: ' + @state
+		RAISERROR (@message, 11, 32)
+	End
+	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
@@ -117,11 +130,11 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		Declare @tmp int = 0
 		--
 		SELECT @tmp = ID
-		FROM  T_OSM_Package		WHERE (ID = @ID)
+		FROM  T_OSM_Package
+		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -129,6 +142,8 @@ As
 			RAISERROR ('No entry could be found in database for update', 11, 16)
 	end
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
@@ -143,7 +158,7 @@ As
 	End
 
 	-- create wiki page link
-	DECLARE @wikiLink VARCHAR(1024) = ''
+	Declare @wikiLink VARCHAR(1024) = ''
 	if NOT @Name IS NULL
 	BEGIN
 		SET @wikiLink = 'http://prismwiki.pnl.gov/wiki/OSMPackages:' + REPLACE(@Name, ' ', '_')
@@ -230,8 +245,11 @@ As
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 		
-		Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateOSMPackage'
-				
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateOSMPackage'
+		End
+					
 	END CATCH
 
 	return @myError
