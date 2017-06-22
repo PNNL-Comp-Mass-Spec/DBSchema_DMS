@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateJobParameter
 **			04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
 **			01/19/2012 mem - Now using AddUpdateJobParameterXML
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			06/22/2017 mem - If updating DataPackageID, also update T_Jobs
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE AddUpdateJobParameter
 	@ParamName varchar(128),		-- Example: SourceJob
 	@Value varchar(1024),			-- value for parameter @ParamName in section @Section
 	@DeleteParam tinyint = 0,		-- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
-	@message varchar(512)='' output,
+	@message varchar(512) = '' output,
 	@infoOnly tinyint = 0
 )
 As
@@ -82,7 +83,6 @@ As
 	--
 	exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
 
-
 	If @infoOnly = 0
 	Begin
 		---------------------------------------------------
@@ -110,6 +110,16 @@ As
 		begin
 			set @message = 'Error storing parameters in T_Job_Parameters for job ' + Convert(varchar(12), @Job)
 		end
+		
+		If @ParamName = 'DataPackageID'
+		Begin
+			Declare @dataPkgID int = Try_Cast(@Value As int)
+			
+			UPDATE T_Jobs
+			SET DataPkgID = @dataPkgID
+			WHERE Job = @Job
+		End
+		
 	End
 	
 	---------------------------------------------------
