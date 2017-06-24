@@ -3,7 +3,7 @@
 /****** Columns: Processor_Name, Instrument_Name, Enabled, Comment ******/
 INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','12T_FTICR_B',0,'Bruker')
 INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','15T_FTICR',0,'Bruker')
-INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','QExactP02',1,'')
+INSERT INTO [T_Processor_Instrument] VALUES ('Monroe_CTM','QExactP02',0,'')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-11_CTM_2','12T_FTICR_B',1,'Bruker')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-11_CTM_2','15T_FTICR',1,'Bruker')
 INSERT INTO [T_Processor_Instrument] VALUES ('Proto-11_CTM_2','15T_FTICR_Imaging',1,'Bruker Imaging')
