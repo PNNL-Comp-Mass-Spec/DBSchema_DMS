@@ -25,6 +25,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoFromFile
 **			08/27/2007 mem - Added support for a 9th column in the source file
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			06/23/2017 mem - Use Try_Cast
 **    
 *****************************************************/
 (
@@ -135,13 +136,13 @@ As
 	
 	-----------------------------------------------
 	-- See If @FirstRowPreview starts with a number
-	-- If it does not, then skip the first row
+	-- If it does not, skip the first row
 	-----------------------------------------------
 	
-	If IsNumeric(SubString(@FirstRowPreview, 1, 1)) = 1
-		Set @FirstRowNum = 1
-	Else
+	If Try_Cast(SubString(@FirstRowPreview, 1, 1) As Int) Is Null
 		Set @FirstRowNum = 2
+	Else
+		Set @FirstRowNum = 1
 
 	-----------------------------------------------
 	-- Bulk load contents of @DatasetInfoFilePath into 

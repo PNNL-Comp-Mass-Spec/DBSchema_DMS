@@ -31,13 +31,14 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			06/23/2017 mem - Check for @RequestedRunList containing request names instead of IDs
 **
 *****************************************************/
 (
 	@ID int output,
 	@Name varchar(50),
 	@Description varchar(256),
-	@RequestedRunList varchar(4000),
+	@RequestedRunList varchar(4000),				-- Requested run IDs
 	@OwnerPRN varchar(64),
 	@RequestedBatchPriority varchar(24),
 	@RequestedCompletionDate varchar(32),
@@ -209,7 +210,8 @@ As
 	---------------------------------------------------
 	--
 	CREATE TABLE #XR (
-		Request_ID [int] NOT NULL
+		RequestIDText varchar(128) NULL,
+		Request_ID [int] NULL
 	) 
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -219,13 +221,13 @@ As
 		set @message = 'Failed to create temporary table for requests'
 		RAISERROR (@message, 11, 22)
 	end
-
+	
 	---------------------------------------------------
-	-- populate temporary table from list
+	-- Populate temporary table from list
 	---------------------------------------------------
 	--
-	INSERT INTO #XR (Request_ID)
-	SELECT cast(Item as int) 
+	INSERT INTO #XR (RequestIDText)
+	SELECT Item
 	FROM MakeTableFromList(@RequestedRunList)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -237,6 +239,26 @@ As
 	end
 
 	---------------------------------------------------
+	-- Convert Request IDs to integers
+	---------------------------------------------------
+	--
+	UPDATE #XR
+	SET Request_ID = try_cast(RequestIDText as int)
+	
+	If Exists (Select * FROM #XR WHERE Request_ID Is Null)
+	Begin
+		Declare @firstInvalid varchar(128)
+		
+		SELECT TOP 1 @firstInvalid = RequestIDText
+		FROM #XR 
+		WHERE Request_ID Is Null
+
+		Set @logErrors = 0
+		Set @message = 'Requested runs must be integers, not names; first invalid item: ' + IsNull(@firstInvalid, '')
+		RAISERROR (@message, 11, 30)
+	End
+	
+	---------------------------------------------------
 	-- check status of prospective member requests
 	---------------------------------------------------
 	declare @count int
@@ -245,8 +267,8 @@ As
 	--
 	set @count = 0
 	--
-	Select @count = count(*) 
-	from #XR
+	SELECT @count = count(*) 
+	FROM #XR
 	WHERE NOT (Request_ID IN 
 	(
 		SELECT ID
@@ -263,22 +285,22 @@ As
 
 	if @count <> 0
 	begin
-		Set @logErrors = 0
-		set @message = 'Requested run list contains requests that do not exist'
-		RAISERROR (@message, 11, 25)
-	end
+		
+		Declare @invalidIDs varchar(64) = null
+			
+		SELECT @invalidIDs = Coalesce(@invalidIDs + ', ', '') + RequestIDText
+		FROM #XR
+		WHERE NOT (Request_ID IN 
+		(
+			SELECT ID
+			FROM T_Requested_Run)
+		)
 
-	
-	-- are there any requests in the list that are part of another batch 
-	-- especially locked batches
-/*
-	SELECT ID
-	FROM T_Requested_Run
-	WHERE RDS_BatchID in
-	(Select Request_ID from #XR) AND 
-	(RDS_BatchID <> 0) AND 
-	(RDS_BatchID <> 0) AND 
-*/
+		Set @logErrors = 0
+		set @message = 'Requested run list contains requests that do not exist: ' + @invalidIDs
+		RAISERROR (@message, 11, 25)	
+
+	end
 
 	-- start transaction
 	--
