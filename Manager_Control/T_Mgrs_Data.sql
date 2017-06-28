@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 793 ******/
+/****** RowCount: 792 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (340,'SeqCluster1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (341,'SeqCluster2',11,1,1,'')
@@ -714,7 +714,6 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1395,'Peaks2-4',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1396,'Pub-13-1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1397,'Pub-13-2',11,1,1,'')
-INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1399,'Proto-7_Space_Remote',8,1,0,'Temporary fix (only used for a short while in 2016); Manager runs on Proto-6 but manages space on Proto-7.  Required because Proto-7 is unable to contact MyEMSL')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1400,'Proto-10_Space_Remote',8,1,0,'Temporary fix (only used for a short while in 2016); Manager runs on Proto-6 but manages space on Proto-10.  Required because Proto-10 is unable to contact MyEMSL')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1401,'Proto-4_CTM_ProcProto-7',15,1,0,'Temporary fix (only used for a short while in 2016); Configured to run on Proto-4 but process data on Proto-7')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1402,'Proto-4_CTM_ProcProto-10',15,1,0,'Temporary fix (only used for a short while in 2016); Configured to run on Proto-4 but process data on Proto-10')

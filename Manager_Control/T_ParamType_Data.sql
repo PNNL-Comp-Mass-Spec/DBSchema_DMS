@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 182 ******/
+/****** RowCount: 183 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -125,7 +125,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (13
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (140,'ProteoWizardDir','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (141,'PeptideProphetRunnerProgLoc','','Full path to file PeptideProphetRunner.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (142,'DeconToolsProgLoc','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (143,'MSGFDbProgLoc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (143,'MSGFDbProgLoc','','Superseded by MSGFPlusProgLoc')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (144,'PHRPProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (145,'MSDeconvProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (146,'MSAlignProgLoc','','')
@@ -183,4 +183,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (19
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (200,'RemoteOrgDBPath','','Path on the remote computer for storing FASTA files')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (201,'RemoteHostPrivateKeyFile','','File with the RSA private key for connecting to RemoteHostName as user RemoteHostUser')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (202,'RemoteHostPassphraseFile','','File with the RSA passphrase')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (203,'MSGFPlusProgLoc','','')
 SET IDENTITY_INSERT [T_ParamType] OFF
