@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -34,7 +35,8 @@ SELECT DS.Dataset_Num AS Dataset,
            WHEN DA.MyEMSLState > 0 And DS.DS_created >= '9/17/2013' Then ''
            ELSE DFP.Archive_Folder_Path
        END AS [Archive Folder Path],
-       dbo.GetMyEMSLUrlDatasetName(Dataset_Num) AS [MyEMSL URL],
+       -- dbo.GetMyEMSLUrlDatasetName(Dataset_Num) AS [MyEMSL URL],
+	   'https://metadata.my.emsl.pnl.gov/fileinfo/files_for_keyvalue/omics.dms.dataset_id/' + Cast(DS.Dataset_ID as Varchar(9)) As [MyEMSL URL],
        DFP.Dataset_URL AS [Data Folder Link],
        CASE
            WHEN DA.QC_Data_Purged > 0 THEN ''
@@ -147,6 +149,7 @@ FROM dbo.T_Storage_Path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
+
 
 
 GO
