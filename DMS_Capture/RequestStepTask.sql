@@ -43,6 +43,7 @@ CREATE PROCEDURE RequestStepTask
 **			01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
 **			01/27/2017 mem - Show additional information when @infoOnly > 0
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/01/2017 mem - Improve info displayed when @infoOnly > 0 and no jobs are available
 **
 *****************************************************/
 (
@@ -342,7 +343,7 @@ AS
 			Print 'Note: setting @excludeCaptureTasks=1 because this processor does not have any entries in T_Processor_Instrument yet @serverPerspectiveEnabled=1'
 	End
 
-	If Exists (Select * From #InstrumentProcessor)
+	If Exists (Select * From #InstrumentProcessor WHERE Assigned_To_This_Processor > 0)
 	Begin
 		Set @processorLockedToInstrument = 1
 		If @infoOnly > 1
@@ -570,6 +571,12 @@ AS
 		If @infoOnly > 1
 			Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Preview results'
 
+		Declare @machineLockedStepTools varchar(64) = null
+		
+		SELECT @machineLockedStepTools = Coalesce(@machineLockedStepTools + ', ' + [Name], [Name])
+		FROM T_Step_Tools
+		WHERE (Only_On_Storage_Server = 'Y')
+				
 		-- Preview the next @JobCountToPreview available jobs
 
 		If Exists (Select * From #Tmp_CandidateJobSteps)
@@ -591,7 +598,8 @@ AS
 		Begin
 			SELECT 'Candidate Job Steps for ' + @processorName AS Information,
 			       @machine AS Machine,
-			       'No candidate job steps were found' AS Message,
+			       'No candidate job stepsfound (jobs with step tools ' + @machineLockedStepTools + 
+			         ' only assigned if dataset stored on ' + @machine + ')' AS Message,
 			       CASE
 			           WHEN @processorLockedToInstrument > 0 THEN 'Processor locked to instrument'
 			           ELSE ''

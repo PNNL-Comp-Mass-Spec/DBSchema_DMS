@@ -1,5 +1,5 @@
 /****** Object:  Table [T_URI_Paths] ******/
-/****** RowCount: 167 ******/
+/****** RowCount: 168 ******/
 SET IDENTITY_INSERT [T_URI_Paths] ON
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (1,'Undefined','4/2/2012 6:11:26 PM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (100,'https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/','4/2/2012 6:42:50 PM')
@@ -168,4 +168,5 @@ INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (262,'https://a
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (263,'https://test3.my.emsl.pnl.gov/myemsl/cgi-bin/status/','10/19/2015 4:58:32 PM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (264,'https://ingest.my.emsl.pnl.gov/myemsl/cgi-bin/status/','12/11/2015 9:55:04 AM')
 INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (265,'https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=','6/15/2017 7:03:04 PM')
+INSERT INTO [T_URI_Paths] (URI_PathID, URI_Path, Entered) VALUES (266,'https://ingestdms.my.emsl.pnl.gov/get_state?job_id=','7/1/2017 5:09:44 PM')
 SET IDENTITY_INSERT [T_URI_Paths] OFF
