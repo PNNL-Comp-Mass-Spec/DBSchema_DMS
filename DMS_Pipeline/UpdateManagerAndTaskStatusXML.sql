@@ -28,6 +28,8 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **						   - Change @debugMode to recognize various values
 **			06/15/2017 mem - Use Cast and Try_Cast
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
+**			                 Use Try_Cast to convert from varchar to numbers
 **
 *****************************************************/
 (
@@ -94,7 +96,9 @@ As
 			Remote_Manager varchar(128),
 			Mgr_Status varchar(50),
 			Status_Date varchar(50), -- datetime
+			Status_Date_Value datetime NULL,
 			Last_Start_Time varchar(50), -- datetime
+			Last_Start_Time_Value datetime,
 			CPU_Utilization varchar(50), -- real
 			Free_Memory_MB varchar(50), -- real
 			Process_ID varchar(50), -- int
@@ -122,7 +126,30 @@ As
 		-- load status messages into temp table
 		---------------------------------------------------
 		--
-		INSERT INTO #TPS
+		INSERT INTO #TPS( Processor_Name,
+		                  Remote_Manager,
+		                  Mgr_Status,
+		                  Status_Date,
+		                  Last_Start_Time,
+		                  CPU_Utilization,
+		                  Free_Memory_MB,
+		                  Process_ID,
+		                  ProgRunner_ProcessID,
+		                  ProgRunner_CoreUsage,
+		                  Most_Recent_Error_Message,
+		                  Step_Tool,
+		                  Task_Status,
+		                  Duration_Minutes,
+		                  Progress,
+		                  Current_Operation,
+		                  Task_Detail_Status,
+		                  Job,
+		                  Job_Step,
+		                  Dataset,
+		                  Most_Recent_Log_Message,
+		                  Most_Recent_Job_Info,
+		                  Spectrum_Count,
+		                  IsNew )
 		SELECT 
 			xmlNode.value('data((Manager/MgrName)[1])', 'nvarchar(128)') Processor_Name,
 			xmlNode.value('data((Manager/RemoteMgrName)[1])', 'nvarchar(128)') Remote_Manager,
@@ -152,7 +179,7 @@ As
 			xmlNode.value('data((Task/TaskDetails/MostRecentJobInfo)[1])', 'nvarchar(256)') Most_Recent_Job_Info ,
 			xmlNode.value('data((Task/TaskDetails/SpectrumCount)[1])', 'nvarchar(50)') Spectrum_Count,
 			1 AS IsNew
-		FROM   @paramXML.nodes('//Root') AS R(xmlNode)
+		FROM @paramXML.nodes('//Root') AS R(xmlNode)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -193,11 +220,45 @@ As
 
 		If @debugMode IN (2, 4)
 			Goto Done
-			
+
+		---------------------------------------------------
+		-- Populate columns Status_Date_Value and Last_Start_Time_Value
+		-- Note that UTC-based dates will end in Z and must be in the form:
+		-- 2017-07-06T08:27:52Z
+		---------------------------------------------------
+
+		-- Compute the difference for our time zone vs. UTC
+		--
+		DECLARE @hourOffset INT
+		SELECT @hourOffset = DATEDIFF(HOUR, GETUTCDATE(), GETDATE())
+		
+		-- Check for dates with more than 3 digits of precision in the millisecond location
+		-- SQL Server allows for a maximum of 3 digits
+		--
+		UPDATE #TPS
+		SET Status_Date = SUBSTRING(Status_Date, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Status_Date) + 3) + 'Z'
+		WHERE Status_Date LIKE '%.[0-9][0-9][0-9][0-9]%Z'
+		
+		UPDATE #TPS
+		SET Last_Start_Time = SUBSTRING(Last_Start_Time, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Last_Start_Time) + 3) + 'Z'
+		WHERE Last_Start_Time LIKE '%.[0-9][0-9][0-9][0-9]%Z'
+
+		-- Now convert from text-based UTC date to local datetime
+		--
+		UPDATE #TPS
+		SET Status_Date_Value = CASE WHEN Status_Date LIKE '%Z' 
+		                        THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Status_Date), 127) 
+		                        ELSE Try_Cast(Status_Date As DateTime) 
+		                        END,
+		    Last_Start_Time_Value = CASE WHEN Last_Start_Time LIKE '%Z' 
+		                        THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Last_Start_Time), 127) 
+		                        ELSE Try_Cast(Last_Start_Time As DateTime) 
+		                        END
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
 	 	---------------------------------------------------
 		-- Update status for existing processors
-		--
-		-- FUTURE: Explicit type conversion on number fields?
 		---------------------------------------------------
 
 		-- First update managers with a Remote_Manager defined
@@ -205,15 +266,15 @@ As
 		UPDATE T_Processor_Status
 		SET Remote_Manager = Src.Remote_Manager,
 			Mgr_Status = Src.Mgr_Status,
-			Status_Date = Src.Status_Date,
+			Status_Date = Src.Status_Date_Value,
 			Step_Tool = Src.Step_Tool,
 			Task_Status = Src.Task_Status,
 			Current_Operation = Src.Current_Operation,
 			Task_Detail_Status = Src.Task_Detail_Status,
-			Job = Src.Job,
-			Job_Step = Src.Job_Step,
+			Job = Try_Cast(Src.Job as Int),
+			Job_Step = Try_Cast(Src.Job_Step as Int),
 			Dataset = Src.Dataset,
-			Spectrum_Count = Src.Spectrum_Count
+			Spectrum_Count = Try_Cast(Src.Spectrum_Count as Int)
 		FROM T_Processor_Status Target
 			INNER JOIN #TPS Src
 				ON Src.Processor_Name = Target.Processor_Name
@@ -235,29 +296,35 @@ As
 		UPDATE T_Processor_Status
 		SET Remote_Manager = Src.Remote_Manager,
 			Mgr_Status = Src.Mgr_Status,
-			Status_Date = Src.Status_Date,
-			Last_Start_Time = Src.Last_Start_Time,
-			CPU_Utilization = Src.CPU_Utilization,
-			Free_Memory_MB = Src.Free_Memory_MB,
+			Status_Date = Src.Status_Date_Value,
+			Last_Start_Time = Src.Last_Start_Time_Value,
+			CPU_Utilization = Try_Cast(Src.CPU_Utilization as real),
+			Free_Memory_MB = Try_Cast(Src.Free_Memory_MB as real),
 			Process_ID = Src.Process_ID,
-			ProgRunner_ProcessID = Src.ProgRunner_ProcessID,
-			ProgRunner_CoreUsage = Src.ProgRunner_CoreUsage,
+			ProgRunner_ProcessID = Try_Cast(Src.ProgRunner_ProcessID as int),
+			ProgRunner_CoreUsage = Try_Cast(Src.ProgRunner_CoreUsage as real),
 			Step_Tool = Src.Step_Tool,
 			Task_Status = Src.Task_Status,
 			Duration_Hours = Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
 			Progress = Coalesce(Try_Cast(Src.Progress AS real), 0),
 			Current_Operation = Src.Current_Operation,
 			Task_Detail_Status = Src.Task_Detail_Status,
-			Job = Src.Job,
-			Job_Step = Src.Job_Step,
+			Job = Try_Cast(Src.Job as Int),
+			Job_Step = Try_Cast(Src.Job_Step as Int),
 			Dataset = Src.Dataset,
-			Spectrum_Count = Src.Spectrum_Count,
-			Most_Recent_Error_Message = 
-			CASE WHEN Src.Most_Recent_Error_Message <> '' THEN Src.Most_Recent_Error_Message ELSE Target.Most_Recent_Error_Message END,
-			Most_Recent_Log_Message = 
-			CASE WHEN Src.Most_Recent_Log_Message <> ''   THEN Src.Most_Recent_Log_Message   ELSE Target.Most_Recent_Log_Message END,
-			Most_Recent_Job_Info = 
-		CASE WHEN Src.Most_Recent_Job_Info <> ''          THEN Src.Most_Recent_Job_Info      ELSE Target.Most_Recent_Job_Info END
+			Spectrum_Count = Try_Cast(Src.Spectrum_Count as Int),
+			Most_Recent_Error_Message = CASE WHEN Src.Most_Recent_Error_Message <> '' 
+			                            THEN Src.Most_Recent_Error_Message 
+			                            ELSE Target.Most_Recent_Error_Message 
+			                            END,
+			Most_Recent_Log_Message = CASE WHEN Src.Most_Recent_Log_Message <> ''
+			                          THEN Src.Most_Recent_Log_Message
+			                          ELSE Target.Most_Recent_Log_Message 
+			                          END,
+			Most_Recent_Job_Info = CASE WHEN Src.Most_Recent_Job_Info <> ''
+			                       THEN Src.Most_Recent_Job_Info
+			                       ELSE Target.Most_Recent_Job_Info 
+			                       END
 		FROM T_Processor_Status Target
 			INNER JOIN #TPS Src
 				ON Src.Processor_Name = Target.Processor_Name
@@ -298,15 +365,15 @@ As
 		SELECT Src.Processor_Name,
 			Src.Remote_Manager,
 			Src.Mgr_Status,
-			Src.Status_Date,
+			Src.Status_Date_Value,
 			Src.Step_Tool,
 			Src.Task_Status,
 			Src.Current_Operation,
 			Src.Task_Detail_Status,
-			Src.Job,
-			Src.Job_Step,
+			Try_Cast(Src.Job as Int),
+			Try_Cast(Src.Job_Step as Int),
 			Src.Dataset,
-			Src.Spectrum_Count,
+			Try_Cast(Src.Spectrum_Count as Int),
 			1 AS Monitor_Processor
 		FROM T_Processor_Status Target
 			INNER JOIN #TPS Src
@@ -354,13 +421,13 @@ As
 		SELECT Src.Processor_Name,
 			Src.Remote_Manager,
 			Src.Mgr_Status,
-			Src.Status_Date,
-			Src.Last_Start_Time,
-			Src.CPU_Utilization,
-			Src.Free_Memory_MB,
+			Src.Status_Date_Value,
+			Src.Last_Start_Time_Value,
+			Try_Cast(Src.CPU_Utilization as real),
+			Try_Cast(Src.Free_Memory_MB as real),
 			Src.Process_ID,
-			Src.ProgRunner_ProcessID,
-			Src.ProgRunner_CoreUsage,
+			Try_Cast(Src.ProgRunner_ProcessID as int),
+			Try_Cast(Src.ProgRunner_CoreUsage as real),
 			Src.Most_Recent_Error_Message,
 			Src.Step_Tool,
 			Src.Task_Status,
@@ -368,8 +435,8 @@ As
 			Coalesce(Try_Cast(Src.Progress AS real), 0),
 			Src.Current_Operation,
 			Src.Task_Detail_Status,
-			Src.Job,
-			Src.Job_Step,
+			Try_Cast(Src.Job as Int),
+			Try_Cast(Src.Job_Step as Int),
 			Src.Dataset,
 			Src.Most_Recent_Log_Message,
 			Src.Most_Recent_Job_Info,

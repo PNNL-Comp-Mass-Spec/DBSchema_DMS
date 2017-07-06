@@ -22,11 +22,15 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			05/04/2015 mem - Added Process_ID
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
+**			                 Use Try_Cast to convert from varchar to numbers
+**			                 Add parameter @debugMode
 **
 *****************************************************/
 (
     @parameters text = '',
-    @result varchar(4096) output
+    @result varchar(4096) output,
+    @debugMode tinyint = 0			-- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @parameters, use test data, and update tables, 4 to ignore @parameters, use test data, and not update tables
 )
 As
 	Set XACT_ABORT, nocount on
@@ -35,9 +39,9 @@ As
 	declare @myRowCount int = 0
 	
 	set @result = ''
+	Set @debugMode = IsNull(@debugMode, 0)
 	
-	declare @temp varchar(2048)
-	set @temp = ''
+	declare @temp varchar(2048) = ''
 
 	declare @message varchar(512)
 	
@@ -64,19 +68,18 @@ As
 
 		declare @paramXML xml
 		set @paramXML = @parameters
-
-		/********** TEMPORARY TEST DATA - REMOVE FOR PRODUCTION *****************/
-		/*
-		SET @paramXML ='<Root><Manager><MgrName>Chemstation1326</MgrName><MgrStatus>Stopped</MgrStatus><LastUpdate>8/20/2009 10:39:21 AM</LastUpdate><LastStartTime>8/20/2009 10:39:20 AM</LastStartTime><CPUUtilization>100.0</CPUUtilization><FreeMemoryMB>490.0</FreeMemoryMB><ProcessID>5555</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool /><Status>No Task</Status><Duration>0.00</Duration><DurationMinutes>0.0</DurationMinutes><Progress>0.00</Progress><CurrentOperation /><TaskDetails><Status>No Task</Status><Job>0</Job><Step>0</Step><Dataset /><MostRecentLogMessage>Closing manager.</MostRecentLogMessage><MostRecentJobInfo /><SpectrumCount>0</SpectrumCount></TaskDetails></Task></Root>
-		<Root><Manager><MgrName>SeqCluster3</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:35 AM</LastUpdate><LastStartTime>8/20/2009 10:23:11 AM</LastStartTime><CPUUtilization>28.0</CPUUtilization><FreeMemoryMB>402.0</FreeMemoryMB><ProcessID>4444</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>0.27</Duration><DurationMinutes>16.4</DurationMinutes><Progress>8.34</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525282</Job><Step>3</Step><Dataset>Mcq_CynoLung_norm_11_7Apr08_Phoenix_08-03-01</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525282; Sequest, Step 3; Mcq_CynoLung_norm_11_7Apr08_Phoenix_08-03-01; 8/20/2009 10:23:11 AM</MostRecentJobInfo><SpectrumCount>26897</SpectrumCount></TaskDetails></Task></Root>
-		<Root><Manager><MgrName>SeqCluster5</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:02:28 PM</LastStartTime><CPUUtilization>14.0</CPUUtilization><FreeMemoryMB>3054.0</FreeMemoryMB><ProcessID>3333</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.62</Duration><DurationMinutes>757.0</DurationMinutes><Progress>74.46</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525235</Job><Step>3</Step><Dataset>PL-1_pro_B_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525235; Sequest, Step 3; PL-1_pro_B_5Aug09_Owl_09-05-10; 8/19/2009 10:02:28 PM</MostRecentJobInfo><SpectrumCount>50229</SpectrumCount></TaskDetails></Task></Root>
-		<Root><Manager><MgrName>Pub-02-2</MgrName><MgrStatus>Stopped</MgrStatus><LastUpdate>8/20/2009 10:39:23 AM</LastUpdate><LastStartTime>8/20/2009 10:39:22 AM</LastStartTime><CPUUtilization>25.0</CPUUtilization><FreeMemoryMB>917.0</FreeMemoryMB><ProcessID>2222</ProcessID><RecentErrorMessages><ErrMsg>8/18/2009 02:44:31, Pub-02-2: No spectra files created, Job 524793, Dataset QC_Shew_09_02-pt5-e_18Aug09_Griffin_09-07-13</ErrMsg></RecentErrorMessages></Manager><Task><Tool /><Status>No Task</Status><Duration>0.00</Duration><DurationMinutes>0.0</DurationMinutes><Progress>0.00</Progress><CurrentOperation /><TaskDetails><Status>No Task</Status><Job>0</Job><Step>0</Step><Dataset /><MostRecentLogMessage>Closing manager.</MostRecentLogMessage><MostRecentJobInfo /><SpectrumCount>0</SpectrumCount></TaskDetails></Task></Root>
-		<Root><Manager><MgrName>SeqCluster4</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:31 AM</LastUpdate><LastStartTime>8/20/2009 10:24:05 AM</LastStartTime><CPUUtilization>30.0</CPUUtilization><FreeMemoryMB>415.0</FreeMemoryMB><ProcessID>1111</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>0.26</Duration><DurationMinutes>15.4</DurationMinutes><Progress>9.88</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525283</Job><Step>3</Step><Dataset>Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525283; Sequest, Step 3; Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01; 8/20/2009 10:24:05 AM</MostRecentJobInfo><SpectrumCount>27664</SpectrumCount></TaskDetails></Task></Root>
-		<Root><Manager><MgrName>SeqCluster2</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:24:32 PM</LastStartTime><CPUUtilization>33.0</CPUUtilization><FreeMemoryMB>1133.0</FreeMemoryMB><ProcessID>6666</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.25</Duration><DurationMinutes>735.0</DurationMinutes><Progress>81.81</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525236</Job><Step>3</Step><Dataset>PL-1_pro_A_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525236; Sequest, Step 3; PL-1_pro_A_5Aug09_Owl_09-05-10; 8/19/2009 10:24:32 PM</MostRecentJobInfo><SpectrumCount>44321</SpectrumCount></TaskDetails></Task></Root>
-		'
-		*/
-		/********** TEMPORARY TEST DATA - REMOVE FOR PRODUCTION *****************/
-
+		
+		If @debugMode >= 3
+		Begin
+			-- Use some test data
+			SET @paramXML ='<Root><Manager><MgrName>TestManager1</MgrName><MgrStatus>Stopped</MgrStatus><LastUpdate>8/20/2009 10:39:21 AM</LastUpdate><LastStartTime>8/20/2009 10:39:20 AM</LastStartTime><CPUUtilization>100.0</CPUUtilization><FreeMemoryMB>490.0</FreeMemoryMB><ProcessID>5555</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool /><Status>No Task</Status><Duration>0.00</Duration><DurationMinutes>0.0</DurationMinutes><Progress>0.00</Progress><CurrentOperation /><TaskDetails><Status>No Task</Status><Job>0</Job><Step>0</Step><Dataset /><MostRecentLogMessage>Closing manager.</MostRecentLogMessage><MostRecentJobInfo /><SpectrumCount>0</SpectrumCount></TaskDetails></Task></Root>
+							<Root><Manager><MgrName>TestManager2</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:35 AM</LastUpdate><LastStartTime>8/20/2009 10:23:11 AM</LastStartTime><CPUUtilization>28.0</CPUUtilization><FreeMemoryMB>402.0</FreeMemoryMB><ProcessID>4444</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>0.27</Duration><DurationMinutes>16.4</DurationMinutes><Progress>8.34</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525282</Job><Step>3</Step><Dataset>Mcq_CynoLung_norm_11_7Apr08_Phoenix_08-03-01</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525282; Sequest, Step 3; Mcq_CynoLung_norm_11_7Apr08_Phoenix_08-03-01; 8/20/2009 10:23:11 AM</MostRecentJobInfo><SpectrumCount>26897</SpectrumCount></TaskDetails></Task></Root>
+							<Root><Manager><MgrName>TestManager3</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:02:28 PM</LastStartTime><CPUUtilization>14.0</CPUUtilization><FreeMemoryMB>3054.0</FreeMemoryMB><ProcessID>3333</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.62</Duration><DurationMinutes>757.0</DurationMinutes><Progress>74.46</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525235</Job><Step>3</Step><Dataset>PL-1_pro_B_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525235; Sequest, Step 3; PL-1_pro_B_5Aug09_Owl_09-05-10; 8/19/2009 10:02:28 PM</MostRecentJobInfo><SpectrumCount>50229</SpectrumCount></TaskDetails></Task></Root>
+							<Root><Manager><MgrName>TestManager4</MgrName><MgrStatus>Stopped</MgrStatus><LastUpdate>8/20/2009 10:39:23 AM</LastUpdate><LastStartTime>8/20/2009 10:39:22 AM</LastStartTime><CPUUtilization>25.0</CPUUtilization><FreeMemoryMB>917.0</FreeMemoryMB><ProcessID>2222</ProcessID><RecentErrorMessages><ErrMsg>8/18/2009 02:44:31, Pub-02-2: No spectra files created, Job 524793, Dataset QC_Shew_09_02-pt5-e_18Aug09_Griffin_09-07-13</ErrMsg></RecentErrorMessages></Manager><Task><Tool /><Status>No Task</Status><Duration>0.00</Duration><DurationMinutes>0.0</DurationMinutes><Progress>0.00</Progress><CurrentOperation /><TaskDetails><Status>No Task</Status><Job>0</Job><Step>0</Step><Dataset /><MostRecentLogMessage>Closing manager.</MostRecentLogMessage><MostRecentJobInfo /><SpectrumCount>0</SpectrumCount></TaskDetails></Task></Root>
+							<Root><Manager><MgrName>TestManager5</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:31 AM</LastUpdate><LastStartTime>8/20/2009 10:24:05 AM</LastStartTime><CPUUtilization>30.0</CPUUtilization><FreeMemoryMB>415.0</FreeMemoryMB><ProcessID>1111</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>0.26</Duration><DurationMinutes>15.4</DurationMinutes><Progress>9.88</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525283</Job><Step>3</Step><Dataset>Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525283; Sequest, Step 3; Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01; 8/20/2009 10:24:05 AM</MostRecentJobInfo><SpectrumCount>27664</SpectrumCount></TaskDetails></Task></Root>
+							<Root><Manager><MgrName>TestManager6</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:24:32 PM</LastStartTime><CPUUtilization>33.0</CPUUtilization><FreeMemoryMB>1133.0</FreeMemoryMB><ProcessID>6666</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.25</Duration><DurationMinutes>735.0</DurationMinutes><Progress>81.81</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525236</Job><Step>3</Step><Dataset>PL-1_pro_A_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525236; Sequest, Step 3; PL-1_pro_A_5Aug09_Owl_09-05-10; 8/19/2009 10:24:32 PM</MostRecentJobInfo><SpectrumCount>44321</SpectrumCount></TaskDetails></Task></Root>'
+		End
+		
  		---------------------------------------------------
 		-- temporary table to hold processor status messages
 		---------------------------------------------------
@@ -85,7 +88,9 @@ As
 			Processor_Name varchar(128),
 			Mgr_Status varchar(50),
 			Status_Date varchar(50), -- datetime
+			Status_Date_Value datetime NULL,
 			Last_Start_Time varchar(50), -- datetime
+			Last_Start_Time_Value datetime,
 			CPU_Utilization varchar(50), -- real
 			Free_Memory_MB varchar(50), -- real
 			Process_ID varchar(50), -- int
@@ -112,7 +117,28 @@ As
 		-- load status messages into temp table
 		---------------------------------------------------
 		--
-		INSERT INTO #TPS
+		INSERT INTO #TPS( Processor_Name, 
+		                  Mgr_Status, 
+		                  Status_Date, 
+		                  Last_Start_Time, 
+		                  CPU_Utilization, 
+		                  Free_Memory_MB, 
+		                  Process_ID, 
+		                  Most_Recent_Error_Message, 
+		                  Step_Tool, 
+		                  Task_Status, 
+		                  Duration_Minutes, 
+		                  Progress, 
+		                  Current_Operation, 
+		                  Task_Detail_Status, 
+		                  Job, 
+		                  Job_Step, 
+		                  Dataset, 
+		                  Most_Recent_Log_Message, 
+		                  Most_Recent_Job_Info, 
+		                  Spectrum_Count, 
+		                  Monitor_Processor, 
+		                  Remote_Status_Location)
 		SELECT 
 			xmlNode.value('data((Manager/MgrName)[1])', 'nvarchar(128)') Processor_Name,
 			xmlNode.value('data((Manager/MgrStatus)[1])', 'nvarchar(50)') Mgr_Status,
@@ -138,7 +164,7 @@ As
 			xmlNode.value('data((Task/TaskDetails/SpectrumCount)[1])', 'nvarchar(50)')Spectrum_Count,
 			'1' as Monitor_Processor,
 			'' as Remote_Status_Location
-		FROM   @paramXML.nodes('//Root') AS R(xmlNode)
+		FROM  @paramXML.nodes('//Root') AS R(xmlNode)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -148,8 +174,18 @@ As
 			goto Done
 		end
 		
+		If @debugMode > 0
+		Begin
+			SELECT * 
+			FROM #TPS
+			ORDER BY Processor_Name
+		End
+		
 		set @temp = @temp + 'Messages:' + convert(varchar(12), @myRowCount)
 
+		If @debugMode IN (2, 4)
+			Goto Done
+			
 /*
  		---------------------------------------------------
 		-- update error message column in temp table
@@ -178,33 +214,75 @@ As
 
 */
 
+		---------------------------------------------------
+		-- Populate columns Status_Date_Value and Last_Start_Time_Value
+		-- Note that UTC-based dates will end in Z and must be in the form:
+		-- 2017-07-06T08:27:52Z
+		---------------------------------------------------
+
+		-- Compute the difference for our time zone vs. UTC
+		--
+		DECLARE @hourOffset INT
+		SELECT @hourOffset = DATEDIFF(HOUR, GETUTCDATE(), GETDATE())
+
+		-- Check for dates with more than 3 digits of precision in the millisecond location
+		-- SQL Server allows for a maximum of 3 digits
+		--
+		UPDATE #TPS
+		SET Status_Date = SUBSTRING(Status_Date, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Status_Date) + 3) + 'Z'
+		WHERE Status_Date LIKE '%.[0-9][0-9][0-9][0-9]%Z'
+		
+		UPDATE #TPS
+		SET Last_Start_Time = SUBSTRING(Last_Start_Time, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Last_Start_Time) + 3) + 'Z'
+		WHERE Last_Start_Time LIKE '%.[0-9][0-9][0-9][0-9]%Z'
+
+		-- Now convert from text-based UTC date to local datetime
+		--
+		UPDATE #TPS
+		SET Status_Date_Value = CASE WHEN Status_Date LIKE '%Z' 
+		                        THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Status_Date), 127) 
+		                        ELSE Try_Cast(Status_Date As DateTime) 
+		                        END,
+		    Last_Start_Time_Value = CASE WHEN Last_Start_Time LIKE '%Z' 
+		                        THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Last_Start_Time), 127) 
+		                        ELSE Try_Cast(Last_Start_Time As DateTime) 
+		                        END
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
 	 	---------------------------------------------------
 		-- Update status for existing processors
 		---------------------------------------------------
 		--
 		UPDATE T_Processor_Status
 		SET Mgr_Status = Src.Mgr_Status,
-		    Status_Date = Src.Status_Date,
-		    Last_Start_Time = Src.Last_Start_Time,
-		    CPU_Utilization = Src.CPU_Utilization,
-		    Free_Memory_MB = Src.Free_Memory_MB,
-		    Process_ID = Src.Process_ID,
+		    Status_Date = Status_Date_Value,
+		    Last_Start_Time = Src.Last_Start_Time_Value,
+		    CPU_Utilization = Try_Cast(Src.CPU_Utilization as real),
+		    Free_Memory_MB = Try_Cast(Src.Free_Memory_MB as real),
+		    Process_ID = Try_Cast(Src.Process_ID as int),
 		    Step_Tool = Src.Step_Tool,
 		    Task_Status = Src.Task_Status,
-		    Duration_Hours = CASE WHEN IsNull(Src.Duration_Minutes, '') = '' Then 0 Else Convert(real, Src.Duration_Minutes) End / 60.0,
-		    Progress = CASE WHEN IsNull(Src.Progress, '') = '' Then 0 Else Convert(real, Src.Progress) End,
+		    Duration_Hours = Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
+		    Progress = Coalesce(Try_Cast(Src.Progress AS real), 0),
 		    Current_Operation = Src.Current_Operation,
 		    Task_Detail_Status = Src.Task_Detail_Status,
-		    Job = Src.Job,
-		    Job_Step = Src.Job_Step,
+		    Job = Try_Cast(Src.Job as Int),
+		    Job_Step = Try_Cast(Src.Job_Step as Int),
 		    Dataset = Src.Dataset,
-		    Spectrum_Count = Src.Spectrum_Count,
-		    Most_Recent_Error_Message = 
-		      CASE WHEN Src.Most_Recent_Error_Message <> '' THEN Src.Most_Recent_Error_Message ELSE Target.Most_Recent_Error_Message END,
-		    Most_Recent_Log_Message = 
-		      CASE WHEN Src.Most_Recent_Log_Message <> ''   THEN Src.Most_Recent_Log_Message   ELSE Target.Most_Recent_Log_Message END,
-		    Most_Recent_Job_Info = 
-		  CASE WHEN Src.Most_Recent_Job_Info <> ''      THEN Src.Most_Recent_Job_Info      ELSE Target.Most_Recent_Job_Info END
+		    Spectrum_Count = Try_Cast(Src.Spectrum_Count as Int),
+		    Most_Recent_Error_Message = CASE WHEN Src.Most_Recent_Error_Message <> '' 
+			                            THEN Src.Most_Recent_Error_Message 
+			                            ELSE Target.Most_Recent_Error_Message 
+			                            END,
+			Most_Recent_Log_Message = CASE WHEN Src.Most_Recent_Log_Message <> ''
+			                          THEN Src.Most_Recent_Log_Message
+			                          ELSE Target.Most_Recent_Log_Message 
+			                          END,
+			Most_Recent_Job_Info = CASE WHEN Src.Most_Recent_Job_Info <> ''
+			                       THEN Src.Most_Recent_Job_Info
+			                       ELSE Target.Most_Recent_Job_Info 
+			                       END			
 		FROM T_Processor_Status Target
 		     INNER JOIN #TPS Src
 		       ON Src.Processor_Name = Target.Processor_Name
@@ -222,7 +300,6 @@ As
 	 	---------------------------------------------------
 		-- Add missing processors to the table
 		---------------------------------------------------
-		-- FUTURE: Explicit type conversion on number fields?
 		--
 		INSERT INTO T_Processor_Status (
 			Processor_Name,
@@ -250,24 +327,24 @@ As
 		)
 		SELECT Src.Processor_Name,
 		       Src.Mgr_Status,
-		       Src.Status_Date,
-		       Src.Last_Start_Time,
-		       Src.CPU_Utilization,
-		       Src.Free_Memory_MB,
-		       Src.Process_ID,
+		       Src.Status_Date_Value,
+		       Src.Last_Start_Time_Value,
+		       Try_Cast(Src.CPU_Utilization as real),
+		       Try_Cast(Src.Free_Memory_MB as real),
+		       Try_Cast(Src.Process_ID as int),
 		       Src.Most_Recent_Error_Message,
 		       Src.Step_Tool,
 		       Src.Task_Status,
-		       CASE WHEN IsNull(Src.Duration_Minutes, '') = '' Then 0 Else Convert(real, Src.Duration_Minutes) End / 60.0,
-		       CASE WHEN IsNull(Src.Progress, '') = '' Then 0 Else Convert(real, Src.Progress) End,
+		       Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
+		       Coalesce(Try_Cast(Src.Progress AS real), 0),
 		       Src.Current_Operation,
 		       Src.Task_Detail_Status,
-		       Src.Job,
-		       Src.Job_Step,
+		       Try_Cast(Src.Job as Int),
+		       Try_Cast(Src.Job_Step as Int),
 		       Src.Dataset,
 		       Src.Most_Recent_Log_Message,
 		       Src.Most_Recent_Job_Info,
-		       Src.Spectrum_Count,
+		       Try_Cast(Src.Spectrum_Count as Int),
 		       Src.Monitor_Processor,
 		       Src.Remote_Status_Location
 		FROM #TPS Src
