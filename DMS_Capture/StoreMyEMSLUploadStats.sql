@@ -22,7 +22,7 @@ CREATE PROCEDURE dbo.StoreMyEMSLUploadStats
 **			01/04/2016 mem - Added parameters @EUSUploaderID, @EUSInstrumentID, and @EUSProposalID
 **						   - Removed parameter @ContentURI
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
-**			06/15/2017 mem - Add support for status URLs of the form https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=84
+**			06/15/2017 mem - Add support for status URLs of the form https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1305088
 **    
 *****************************************************/
 (
@@ -95,9 +95,9 @@ As
 	-- and also        644749
 	--
 	-- In June 2017 the format changed to
-	-- https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=84
-	-- For that, the base is: https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=
-	-- and the value is 84	
+	-- https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1305088
+	-- For that, the base is: https://ingestdms.my.emsl.pnl.gov/get_state?job_id=
+	-- and the value is 1305088
 	-----------------------------------------------
 	--
 	Set @StatusURI_PathID = 1
@@ -129,8 +129,9 @@ As
 			Else
 			Begin -- <c>
 				
-				-- Extract out the base path, for example:
+				-- Extract out the base path, examples:
 				-- https://ingestdmsdev.my.emsl.pnl.gov/get_state?job_id=
+				-- https://ingestdms.my.emsl.pnl.gov/get_state?job_id=
 				Set @StatusURI_Path = SUBSTRING(@StatusURI, 1, @CharLoc + Len(@getStateToken) - 1)
 				
 				-- Extract out the number
@@ -355,9 +356,6 @@ Done:
 		Print @message
 
 	Return @myError
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreMyEMSLUploadStats] TO [DDL_Viewer] AS [dbo]
