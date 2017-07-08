@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Data_Package_Export]
 AS
 SELECT DP.ID,
@@ -28,8 +26,10 @@ SELECT DP.ID,
        DPP.Share_Path,
        DPP.Archive_Path,
        DPP.Local_Path,
+	   DP.Instrument,
 	   DP.EUS_Person_ID,
 	   DP.EUS_Proposal_ID,
+	   DP.EUS_Instrument_ID,
        IsNull(UploadQ.MyEmsl_Uploads, 0) As MyEMSL_Uploads
 FROM T_Data_Package DP
      INNER JOIN V_Data_Package_Paths DPP

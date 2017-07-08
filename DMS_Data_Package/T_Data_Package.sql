@@ -26,8 +26,10 @@ CREATE TABLE [dbo].[T_Data_Package](
 	[Total_Item_Count] [int] NOT NULL,
 	[Mass_Tag_Database] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Wiki_Page_Link] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Instrument] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Person_ID] [int] NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EUS_Instrument_ID] [int] NULL,
  CONSTRAINT [PK_T_Data_Package] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

@@ -7,7 +7,8 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 /****************************************************
 **
 **	Desc: 
-**		Updates fields EUS_Person_ID and EUS_Proposal_ID in T_Data_Package for one or more data packages
+**		Updates EUS-related fields in T_Data_Package for one or more data packages
+**		Also updates Instrument_ID
 **	
 **	Return values: 0: success, otherwise, error code
 **
@@ -16,6 +17,7 @@ CREATE PROCEDURE dbo.UpdateDataPackageEUSInfo
 **			10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
 **			11/04/2016 mem - Exclude proposals that start with EPR
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/07/2017 mem - Now updating Instrument and EUS_Instrument_ID
 **    
 *****************************************************/
 (
@@ -54,7 +56,9 @@ As
 	
 	CREATE TABLE dbo.[#TmpDataPackagesToUpdate] (
 		ID int not NULL,
-		Best_EUS_Proposal_ID varchar(10) NULL
+		Best_EUS_Proposal_ID varchar(10) NULL,
+		Best_Instrument_Name varchar(50) NULL,
+		Best_EUS_Instrument_ID int NULL
 	)
 	
 	CREATE CLUSTERED INDEX [#IX_TmpDataPackagesToUpdate] ON [dbo].[#TmpDataPackagesToUpdate]
@@ -141,7 +145,7 @@ As
 	     INNER JOIN ( SELECT RankQ.Data_Package_ID,
 	                         RankQ.EUS_Proposal_ID
 	                  FROM ( SELECT Data_Package_ID,
-	          EUS_Proposal_ID,
+	                                EUS_Proposal_ID,
 	                                ProposalCount,
 	                                Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
 	                         FROM ( SELECT DPD.Data_Package_ID,
@@ -188,23 +192,67 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	---------------------------------------------------
+	-- Find the most common Instrument used by the datasets associated with each data package
+	---------------------------------------------------
+	--
+	UPDATE #TmpDataPackagesToUpdate
+	SET Best_Instrument_Name = FilterQ.Instrument
+	FROM #TmpDataPackagesToUpdate Target
+	     INNER JOIN ( SELECT RankQ.Data_Package_ID,
+	                         RankQ.Instrument
+	                  FROM ( SELECT Data_Package_ID,
+	                                Instrument,
+	                                InstrumentCount,
+	                                Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By InstrumentCount DESC ) AS CountRank
+	                         FROM ( SELECT DPD.Data_Package_ID,
+	                                       DPD.Instrument,
+	                                       COUNT(*) AS InstrumentCount
+	     FROM T_Data_Package_Datasets DPD
+	                                     INNER JOIN #TmpDataPackagesToUpdate Src
+	                                       ON DPD.Data_Package_ID = Src.ID
+	                                WHERE NOT DPD.Instrument Is Null
+	                                GROUP BY DPD.Data_Package_ID, DPD.Instrument
+	                              ) SourceQ 
+	                       ) RankQ
+	                  WHERE RankQ.CountRank = 1 
+	                 ) FilterQ
+	       ON Target.ID = FilterQ.Data_Package_ID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	---------------------------------------------------
-	-- Update EUS Proposal ID as necessary
+	-- Update EUS_Instrument_ID in #TmpDataPackagesToUpdate
+	---------------------------------------------------
+	--
+	UPDATE #TmpDataPackagesToUpdate
+	SET Best_EUS_Instrument_ID = EUSInst.EUS_Instrument_ID
+	FROM #TmpDataPackagesToUpdate Target 
+	     INNER JOIN S_V_EUS_Instrument_ID_Lookup EUSInst 
+	       ON Target.Best_Instrument_Name = EUSInst.Instrument_Name
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	---------------------------------------------------
+	-- Update EUS Proposal ID, EUS_Instrument_ID, and Instrument_ID as necessary
 	---------------------------------------------------
 	--
 	UPDATE T_Data_Package
-	SET EUS_Proposal_ID = Best_EUS_Proposal_ID
+	SET EUS_Proposal_ID = Coalesce(Best_EUS_Proposal_ID, EUS_Proposal_ID),
+	    EUS_Instrument_ID = Coalesce(Best_EUS_Instrument_ID, EUS_Instrument_ID),
+	    Instrument = Coalesce(Best_Instrument_Name, Instrument)
 	FROM T_Data_Package DP
 	     INNER JOIN #TmpDataPackagesToUpdate Src
 	       ON DP.ID = Src.ID
-	WHERE IsNull(DP.EUS_Proposal_ID, '') <> IsNull(Src.Best_EUS_Proposal_ID, '')
+	WHERE IsNull(DP.EUS_Proposal_ID, '') <> IsNull(Src.Best_EUS_Proposal_ID, '') OR
+	      IsNull(DP.EUS_Instrument_ID, '') <> IsNull(Src.Best_EUS_Instrument_ID, '') OR
+	      IsNull(DP.Instrument, '') <> IsNull(Src.Best_Instrument_Name, '')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	If @myRowCount > 0 And @DataPackageCount > 1
 	Begin
-		Set @message = 'Updated EUS_Proposal_ID for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
+		Set @message = 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
 		Exec PostLogEntry 'Normal', @message, 'UpdateDataPackageEUSInfo'
 	End
 
