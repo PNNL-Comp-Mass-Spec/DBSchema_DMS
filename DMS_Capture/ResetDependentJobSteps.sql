@@ -19,6 +19,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			04/24/2015 mem - Now updating State in T_Jobs
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			07/10/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **    
 *****************************************************/
 (
@@ -129,7 +130,11 @@ As
 			--
 			UPDATE T_Job_Steps
 			SET State = 1,					-- 1=waiting
-				Tool_Version_ID = 1			-- 1=Unknown
+				Tool_Version_ID = 1,		-- 1=Unknown
+				Completion_Code = 0, 
+			    Completion_Message = Null, 
+			    Evaluation_Code = Null, 
+			    Evaluation_Message = Null
 			FROM T_Job_Steps JS
 			     INNER JOIN #Tmp_JobStepsToReset JR
 			       ON JS.Job = JR.Job AND

@@ -16,6 +16,7 @@ CREATE PROCEDURE RetryMyEMSLUpload
 **			02/23/2016 mem - Add Set XACT_ABORT on
 **			01/26/2017 mem - Expand @message to varchar(4000)
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			07/09/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **    
 *****************************************************/
 (
@@ -171,7 +172,11 @@ As
 			-- Reset the archive step
 			--
 			UPDATE V_Job_Steps
-			Set State = 2
+			Set State = 2,
+			    Completion_Code = 0, 
+			    Completion_Message = Null, 
+			    Evaluation_Code = Null, 
+			    Evaluation_Message = Null
 			FROM V_Job_Steps JS INNER JOIN #Tmp_JobsToReset JR
 		       ON JS.Job = JR.Job
 			WHERE Tool IN ('ArchiveUpdate', 'DatasetArchive')
@@ -186,7 +191,7 @@ As
 			--
 			UPDATE V_Job_Steps
 			Set Retry_Count = 75,
-			    Next_Try = DateAdd(hour, 1, GetDate())
+			    Next_Try = DateAdd(minute, 10, GetDate())
 			FROM V_Job_Steps JS
 			     INNER JOIN #Tmp_JobsToReset JR
 			       ON JS.Job = JR.Job
