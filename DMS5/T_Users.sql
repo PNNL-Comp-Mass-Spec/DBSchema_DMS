@@ -18,6 +18,7 @@ CREATE TABLE [dbo].[T_Users](
 	[U_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Affected] [datetime] NULL,
 	[Name_with_PRN]  AS ((([U_Name]+' (')+[U_PRN])+')') PERSISTED NOT NULL,
+	[HID_Number]  AS (substring([U_HID],(2),(20))) PERSISTED,
  CONSTRAINT [PK_T_Users] PRIMARY KEY NONCLUSTERED 
 (
 	[ID] ASC

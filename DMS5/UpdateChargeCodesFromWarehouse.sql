@@ -25,6 +25,7 @@ CREATE Procedure UpdateChargeCodesFromWarehouse
 **			08/13/2015 mem - Added field @ExplicitChargeCodeList
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**			07/11/2017 mem - Use computed column HID_Number in T_Users
 **    
 *****************************************************/
 (
@@ -200,18 +201,18 @@ AS
 			     LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
 			       ON CC.CHARGE_CD = CT.CHARGE_CD
 			WHERE	(CC.SETUP_DATE >= DateAdd(year, -10, GetDate()) AND			-- Filter out charge codes created over 10 years ago
-					 CC.AUTH_AMT > 0 AND											-- Ignore charge codes with an authorization amount of $0
-					 CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
+					 CC.AUTH_AMT > 0 AND										-- Ignore charge codes with an authorization amount of $0
+					 CC.CHARGE_CD NOT LIKE 'RB%' AND							-- Filter out charge codes that are used for purchasing, not labor
 					 CC.CHARGE_CD NOT LIKE '[RV]%'
 					)
 					OR
 					(CC.SETUP_DATE >= DateAdd(year, -2, GetDate()) AND			-- Filter out charge codes created over 2 years ago
-					 CC.RESP_HID IN (												-- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
-						SELECT SUBSTRING(U_HID, 2, 20)
+					 CC.RESP_HID IN (											-- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
+						SELECT HID_Number
 						FROM T_Users 
-						WHERE U_Status = 'Active' AND LEN(U_HID) > 1
+						WHERE U_Status = 'Active'
 						) AND
-					 CC.CHARGE_CD NOT LIKE 'RB%' AND								-- Filter out charge codes that are used for purchasing, not labor
+					 CC.CHARGE_CD NOT LIKE 'RB%' AND							-- Filter out charge codes that are used for purchasing, not labor
 					 CC.CHARGE_CD NOT LIKE '[RV]%'
 					)
 					OR
