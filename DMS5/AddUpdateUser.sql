@@ -33,11 +33,12 @@ CREATE Procedure dbo.AddUpdateUser
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/11/2017 mem - Require @HanfordIDNum to be at least 2 characters long
 **
 *****************************************************/
 (
 	@Username varchar(50), 
-	@HanfordIDNum varchar(50), 
+	@HanfordIDNum varchar(50),				-- Cannot be blank
 	@LastNameFirstName varchar(128),		-- Cannot be blank (though this field is auto-updated by UpdateUsersFromWarehouse)
 	@Payroll varchar(32),					-- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
 	@Email varchar(64),						-- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
@@ -93,10 +94,10 @@ As
 				11, 1)
 		end
 		--
-		if LEN(@HanfordIDNum) < 1
+		if LEN(@HanfordIDNum) <= 1
 		begin
 			set @myError = 51002
-			RAISERROR ('Hanford ID number was blank',
+			RAISERROR ('Hanford ID number cannot be blank or a single character',
 				11, 1)
 		end
 		--
@@ -145,6 +146,7 @@ As
 		
 		if @Mode = 'add'
 		begin
+			-- Add an H to @HanfordIDNum if it starts with a number
 			If @HanfordIDNum Like '[0-9]%'
 			Begin
 				Set @HanfordIDNum = 'H' + @HanfordIDNum
