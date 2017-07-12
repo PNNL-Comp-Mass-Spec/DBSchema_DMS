@@ -35,11 +35,12 @@ CREATE Procedure dbo.SetPurgeTaskComplete
 **						   - Archive path is now aurora.emsl.pnl.gov
 **			09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **			11/09/2016 mem - Include the storage server name when calling PostLogEntry
+**			07/11/2017 mem - Add support for @completionCode = 9 (Previewed purge)
 **    
 *****************************************************/
 (
 	@datasetNum varchar(128),
-	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Archive offline
+	@completionCode int = 0,	-- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Archive offline, 9 = Preview purge
 	@message varchar(512) output
 )
 As
@@ -230,6 +231,13 @@ Code 6 (Purged all data except QC folder)
 		set @completionState = 3    -- complete
 		goto SetStates
 	end
+
+	-- (Previewed purge)
+	if @completionCode = 9
+	begin
+		set @completionState = 3    -- complete
+		goto SetStates
+	end
 	
 	-- if we got here, completion code was not recognized.  Bummer.
 	--
@@ -246,10 +254,11 @@ SetStates:
 		                             WHEN @completionCode = 7        THEN DATEADD(  HOUR, 48, GETDATE()) 
 		                             ELSE AS_purge_holdoff_date 
 		                        END, 
-		AS_StageMD5_Required = CASE WHEN @completionCode = 3         THEN 1
-		        ELSE AS_StageMD5_Required
-		  END
-	WHERE  (AS_Dataset_ID = @datasetID)
+		AS_StageMD5_Required = CASE WHEN @completionCode = 3         
+		                       THEN 1
+		                       ELSE AS_StageMD5_Required
+		                       END
+	WHERE AS_Dataset_ID = @datasetID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
