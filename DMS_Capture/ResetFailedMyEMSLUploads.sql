@@ -15,12 +15,15 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **			               - Check for Completion_Message "Exception checking archive status"
 **			               - Expand @message to varchar(4000)
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			07/13/2017 mem - Add parameter @resetHoldoffMinutes
+**			                 Change exception messages to reflect the new MyEMSL API
 **
 *****************************************************/
 (
-	@infoOnly tinyint = 0,								-- 1 to preview the changes
+	@infoOnly tinyint = 0,						-- 1 to preview the changes
 	@maxJobsToReset int = 0,
-	@jobListOverride varchar(4000) = '',				-- Comma-separated list of jobs to reset.  Jobs must have a failed step in T_Job_Steps
+	@jobListOverride varchar(4000) = '',		-- Comma-separated list of jobs to reset.  Jobs must have a failed step in T_Job_Steps
+	@resetHoldoffMinutes real = 15,				-- Holdoff time to apply to column Finish
 	@message varchar(4000) = '' output
 )
 As
@@ -41,6 +44,7 @@ As
 		Set @infoOnly = IsNull(@infoOnly, 0)
 		Set @maxJobsToReset = IsNull(@maxJobsToReset, 0)
 		Set @jobListOverride = IsNull(@jobListOverride, '')
+		Set @resetHoldoffMinutes = IsNull(@resetHoldoffMinutes, 15)
 		Set @message = ''
 		
 		-----------------------------------------------------------
@@ -61,9 +65,11 @@ As
 		FROM V_Job_Steps
 		WHERE Tool = 'ArchiveVerify' AND
 		      State = 6 AND
-		      (Completion_Message LIKE '%Input/output error%' OR 
-		       Completion_Message LIKE '%Exception checking archive status%') AND
-		      Job_State = 5
+		      (Completion_Message LIKE '%ConnectionTimeout%' OR
+		       Completion_Message LIKE '%Connection reset by peer%' OR
+		       Completion_Message LIKE '%Internal Server Error%') AND
+		      Job_State = 5 AND
+		      Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -131,8 +137,7 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
-        exec @myError = RetryMyEMSLUpload @Jobs = @JobList, @infoOnly = @infoOnly, @message = ''
+        exec @myError = RetryMyEMSLUpload @Jobs = @JobList, @infoOnly = @infoOnly, @message = @message
         
 		-----------------------------------------------------------
 		-- Post a log entry if any jobs were reset
