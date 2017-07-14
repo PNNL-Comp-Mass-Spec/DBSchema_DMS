@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.UpdateMyEMSLUploadIngestStats
 **			06/23/2016 mem - Add parameter @fatalError
 **			05/31/2017 mem - Update TransactionID in T_MyEMSL_Uploads using @transactionId
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/12/2017 mem - Update TransactionId if null yet Ingest_Steps_Completed and ErrorCode are unchanged
 **    
 *****************************************************/
 (
@@ -115,7 +116,8 @@ As
 	    TransactionID = CASE WHEN @transactionId = 0 THEN TransactionID ELSE @transactionId END
 	WHERE StatusNum = @statusNum AND
 	      (IsNull(Ingest_Steps_Completed, 0) <> @ingestStepsCompleted OR
-	       IsNull(ErrorCode, 0) <> IsNull(@errorCode, 0))
+	       IsNull(ErrorCode, 0) <> IsNull(@errorCode, 0) OR
+	       IsNull(TransactionID, 0) <> IsNull(@transactionId, 0) )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
