@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadManuallyVerified
 **
 **	Auth:	mem
 **	Date:	10/03/2013 mem - Initial version
+**			07/13/2017 mem - Pass both StatusNumList and StatusURIList to SetMyEMSLUploadVerified
 **    
 *****************************************************/
 (
@@ -149,10 +150,32 @@ As
 	
 	If @Tool = 'ArchiveStatusCheck'
 	Begin
+		Declare @VerifiedStatusNumTable as Table(StatusNum int NOT NULL)
+				
+		---------------------------------------------------
+		-- Find the Status URIs that correspond to the values in @StatusNumList
+		---------------------------------------------------
+		
+		INSERT INTO @VerifiedStatusNumTable (StatusNum)
+		SELECT DISTINCT Value
+		FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
+		ORDER BY Value
+		
+		Declare @StatusURIList varchar(4000)
+		
+		SELECT @StatusURIList = Coalesce(@StatusURIList + ', ' + MU.Status_URI, MU.Status_URI)
+		FROM V_MyEMSL_Uploads MU
+		     INNER JOIN @VerifiedStatusNumTable SL
+		       ON MU.StatusNum = SL.StatusNum
+		
 		If @infoOnly = 1
-			Select 'exec SetMyEMSLUploadVerified @datasetID=' + Convert(varchar(12), @datasetID) + ', @StatusNumList=''' + @StatusNumList + '''' AS Command
+			Select 'exec SetMyEMSLUploadVerified @datasetID=' + 
+			       Convert(varchar(12), @datasetID) + 
+			       ', @StatusNumList=''' + @StatusNumList + '''' + 
+			       ', @StatusURIList=''' + @StatusURIList + '''' AS Command
 		Else
-			exec SetMyEMSLUploadVerified @DatasetID, @StatusNumList
+			exec SetMyEMSLUploadVerified @DatasetID, @StatusNumList, @StatusURIList
+		
 	End
 	
 Done:
@@ -168,9 +191,6 @@ Done:
 	End	
 
 	Return @myError
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadManuallyVerified] TO [DDL_Viewer] AS [dbo]

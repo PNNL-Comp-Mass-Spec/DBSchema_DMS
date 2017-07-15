@@ -9,8 +9,7 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **	Desc: 
 **		Marks one or more MyEMSL upload tasks as verified by the MyEMSL ingest process
 **		This procedure should only be called after the MyEMSL Status page shows "verified" and "SUCCESS" for step 6
-**		For example, see https://a4.my.emsl.pnl.gov/myemsl/cgi-bin/status/2271574/xml
-**		              or https://ingest.my.emsl.pnl.gov/myemsl/cgi-bin/status/3268638/xml
+**		For example, see https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1309016
 **	
 **	Return values: 0: success, otherwise, error code
 **
@@ -19,11 +18,13 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **			12/19/2014 mem - Added parameter @ingestStepsCompleted
 **			05/31/2017 mem - Add logging
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/13/2017 mem - Add parameter @statusURIList (required to avoid conflicts between StatusNums from the old MyEMSL backend vs. ones from the new backend)
 **    
 *****************************************************/
 (
 	@datasetID int,
-	@statusNumList varchar(1024),			-- The status numbers in this list must match the specified DatasetID (this is a safety check)
+	@StatusNumList varchar(1024),			-- Comma separated list of status numbers; these must all match the specified DatasetID and they must match the Status entries that the @statusURIList values match
+	@statusURIList varchar(4000),			-- Comma separated list of status URIs; these must all match the specified DatasetID using V_MyEMSL_Uploads (this is a safety check)
 	@ingestStepsCompleted tinyint,			-- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
 	@message varchar(512)='' output
 )
@@ -49,7 +50,8 @@ As
 	---------------------------------------------------
 	
 	Set @datasetID = IsNull(@datasetID, 0)
-	Set @statusNumList = IsNull(@statusNumList, '')
+	Set @StatusNumList = IsNull(@StatusNumList, '')
+	Set @statusURIList = IsNull(@statusURIList, '')
 	Set @ingestStepsCompleted = IsNull(@ingestStepsCompleted, 0)
 	
 	Set @message = ''
@@ -61,22 +63,33 @@ As
 		Goto Done
 	End
 	
-	If Len(@statusNumList) = 0
+	If Len(@StatusNumList) = 0
 	Begin
-		Set @message = '@statusNumList was empty; unable to continue'
+		Set @message = '@StatusNumList was empty; unable to continue'
+		Set @myError = 60001
+		Goto Done
+	End
+	
+	If Len(@statusURIList) = 0
+	Begin
+		Set @message = '@statusURIList was empty; unable to continue'
 		Set @myError = 60001
 		Goto Done
 	End
 	
 	Declare @StatusNumListTable as Table(StatusNum int NOT NULL)
 	
+	Declare @StatusURIListTable as Table(StatusURI varchar(255) NOT NULL)
+	
+	Declare @StatusEntryIDsTable as Table(Entry_ID int NOT NULL, Dataset_ID int NOT NULL)
+	
 	---------------------------------------------------
-	-- Split the StatusNumList on commas
+	-- Split StatusNumList and StatusURIList on commas
 	---------------------------------------------------
 	
 	INSERT INTO @StatusNumListTable (StatusNum)
 	SELECT DISTINCT Value
-	FROM dbo.udfParseDelimitedIntegerList(@statusNumList, ',')
+	FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
 	ORDER BY Value
 
 	Declare @StatusNumCount int = 0
@@ -85,19 +98,63 @@ As
 	
 	If IsNull(@StatusNumCount, 0) = 0
 	Begin
-		Set @message = 'No status nums were found in @statusNumList; unable to continue'
+		Set @message = 'No status nums were found in @StatusNumList; unable to continue'
+		Set @myError = 60002
+		Goto Done
+	End
+	
+	INSERT INTO @StatusURIListTable (StatusURI)
+	SELECT DISTINCT Value
+	FROM dbo.udfParseDelimitedList(@statusURIList, ',')
+	ORDER BY Value
+
+	Declare @StatusURICount int = 0
+
+	SELECT @StatusURICount = COUNT(*) FROM @StatusURIListTable
+	
+	If IsNull(@StatusURICount, 0) = 0
+	Begin
+		Set @message = 'No status URIs were found in @statusURIList; unable to continue'
 		Set @myError = 60002
 		Goto Done
 	End
 
+	If @StatusNumCount <> @StatusURICount
+	Begin
+		Set @message = 'Differing number of Status Nums and Status URIs; unable to continue'
+		Set @myError = 60009
+		Goto Done
+	End
+	
 	---------------------------------------------------
 	-- Make sure the StatusNums in @StatusNumListTable exist in T_MyEMSL_Uploads
 	---------------------------------------------------
 	
 	If Exists (SELECT * FROM @StatusNumListTable SL LEFT OUTER JOIN T_MyEMSL_Uploads MU ON MU.StatusNum = SL.StatusNum WHERE MU.Entry_ID IS NULL)
 	Begin
-		Set @message = 'One or more StatusNums in @statusNumList were not found in T_MyEMSL_Uploads: ' + @statusNumList
+		Set @message = 'One or more StatusNums in @StatusNumList were not found in T_MyEMSL_Uploads: ' + @StatusNumList
 		Set @myError = 60003
+		Goto Done
+	End
+
+	---------------------------------------------------
+	-- Find the Entry_ID values of the status entries to examine
+	---------------------------------------------------
+	
+	INSERT INTO @StatusEntryIDsTable (Entry_ID, Dataset_ID)
+	SELECT Entry_ID, Dataset_ID
+	FROM V_MyEMSL_Uploads
+	WHERE StatusNum  IN (Select StatusNum From @StatusNumListTable) AND
+	      Status_URI IN (Select StatusURI From @StatusURIListTable)
+
+	Declare @EntryIDCount int
+	SELECT @EntryIDCount = COUNT(*) FROM @StatusEntryIDsTable
+
+	If @EntryIDCount < @StatusURICount
+	Begin
+		Set @message = 'One or more StatusURIs do not correspond to a given StatusNum V_MyEMSL_Uploads; ' + 
+		               'see ' + @StatusNumList + ' and ' + @StatusURIList
+		Set @myError = 60010
 		Goto Done
 	End
 	
@@ -105,12 +162,14 @@ As
 	-- Make sure the Dataset_ID is correct
 	---------------------------------------------------
 	
-	If Exists (Select * FROM T_MyEMSL_Uploads WHERE StatusNum IN (Select StatusNum From @StatusNumListTable) And Dataset_ID <> @datasetID)
+	If Exists (Select * FROM @StatusEntryIDsTable WHERE Dataset_ID <> @DatasetID)
 	Begin
-		Set @message = 'One or more StatusNums in @statusNumList do not have Dataset_ID ' + Convert(varchar(12), @datasetID) + ' in T_MyEMSL_Uploads: ' + @statusNumList
+		Set @message = 'One or more StatusNums in @StatusNumList do not have Dataset_ID ' + Convert(varchar(12), @DatasetID) + ' in V_MyEMSL_Uploads; ' + 
+		               'see ' + @StatusNumList + ' and ' + @StatusURIList
 		Set @myError = 60004
 		Goto Done
 	End
+		
 
 	---------------------------------------------------
 	-- Perform the update
@@ -121,15 +180,15 @@ As
 	UPDATE T_MyEMSL_Uploads
 	SET Ingest_Steps_Completed = @ingestStepsCompleted
 	WHERE Verified = 1 AND
-	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable ) AND
+	      Entry_ID IN ( SELECT Entry_ID FROM @StatusEntryIDsTable ) AND
 	      (Ingest_Steps_Completed Is Null Or Ingest_Steps_Completed < @ingestStepsCompleted)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	If @myError > 0
 	Begin
-		Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 1 in T_MyEMSL_Uploads ' + 
-		               'for StatusNum: ' + @statusNumList + ', dataset ID ' + Convert(varchar(12), @datasetID)
+		Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 1 in StatusURIs ' + 
+		               'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID as varchar(12))
 		Set @myError = 60006
 		Goto Done
 	End
@@ -140,14 +199,14 @@ As
 	SET Verified = 1,
 	    Ingest_Steps_Completed = @ingestStepsCompleted
 	WHERE Verified = 0 AND
-	      StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable )
+	      Entry_ID IN ( SELECT Entry_ID FROM @StatusEntryIDsTable )
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	If @myError > 0
 	Begin
 		Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 0 in T_MyEMSL_Uploads ' + 
-		               'for StatusNum: ' + @statusNumList + ', dataset ID ' + Convert(varchar(12), @datasetID)
+		               'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID as varchar(12))
 		Set @myError = 60007
 		Goto Done
 	End
