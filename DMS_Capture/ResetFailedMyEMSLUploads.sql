@@ -17,6 +17,8 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			07/13/2017 mem - Add parameter @resetHoldoffMinutes
 **			                 Change exception messages to reflect the new MyEMSL API
+**			07/20/2017 mem - Store the upload error message in T_MyEMSL_Upload_Resets
+**						   - Reset steps with message 'Connection aborted.', BadStatusLine("''",)
 **
 *****************************************************/
 (
@@ -53,30 +55,35 @@ As
 		--
 
 		CREATE TABLE #Tmp_FailedJobs (
-			Job int
+			Job int,
+			Dataset_ID int,
+			Subfolder varchar(128) NULL,
+			Error_Message varchar(256) NULL
 		)
 			
 		-----------------------------------------------------------
 		-- Look for failed jobs
 		-----------------------------------------------------------
 
-		INSERT INTO #Tmp_FailedJobs( Job )
-		SELECT DISTINCT Job
+		INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, Error_Message )
+		SELECT Job, Dataset_ID, Output_Folder, Max(Completion_Message)
 		FROM V_Job_Steps
 		WHERE Tool = 'ArchiveVerify' AND
 		      State = 6 AND
 		      (Completion_Message LIKE '%ConnectionTimeout%' OR
 		       Completion_Message LIKE '%Connection reset by peer%' OR
-		       Completion_Message LIKE '%Internal Server Error%') AND
+		       Completion_Message LIKE '%Internal Server Error%' OR
+		       Completion_Message LIKE '%Connection aborted%BadStatusLine%' ) AND
 		      Job_State = 5 AND
 		      Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
+		GROUP BY Job, Dataset_ID, Output_Folder
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @jobListOverride <> ''
         Begin
-			INSERT INTO #Tmp_FailedJobs( Job )
-			SELECT Distinct Value
+			INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, Error_Message )
+			SELECT DISTINCT Value, JS.Dataset_ID, JS.Output_Folder, JS.Completion_Message
 			FROM dbo.udfParseDelimitedIntegerList ( @jobListOverride, ',' ) SrcJobs
 			     INNER JOIN V_Job_Steps JS
 			       ON SrcJobs.VALUE = JS.Job
@@ -89,10 +96,10 @@ As
 			SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
-        If Not Exists (Select * From #Tmp_FailedJobs)
+        If Not Exists (SELECT * FROM #Tmp_FailedJobs)
         Begin
             If @infoOnly > 0
-                Select 'No failed jobs were found' as Message
+                SELECT 'No failed jobs were found' AS Message
                 
             Goto Done
         End
@@ -104,7 +111,7 @@ As
 
 		Declare @jobCountAtStart int
 		
-		Select @jobCountAtStart = Count(*) 
+		SELECT @jobCountAtStart = Count(*) 
 		FROM #Tmp_FailedJobs
 
         If @maxJobsToReset > 0 And @jobCountAtStart > @maxJobsToReset
@@ -151,11 +158,16 @@ As
             SELECT @jobCount = COUNT(*)
             FROM #Tmp_FailedJobs
             
-            Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.CheckPlural(@jobCount, 'job ', 'jobs ') + @jobList
+            Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.CheckPlural(@jobCount, 'job ', 'jobs ') + @jobList + '; for details, see T_MyEMSL_Upload_Resets'
             
             exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
             
-            Select @message as Message
+            SELECT @message AS Message
+            
+            INSERT INTO T_MyEMSL_Upload_Resets (Job, Dataset_ID, Subfolder, Error_Message)
+            SELECT Job, Dataset_ID, Subfolder, Error_Message
+            FROM #Tmp_FailedJobs
+            
         End
 		
 	END TRY
