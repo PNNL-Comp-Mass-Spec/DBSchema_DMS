@@ -34,10 +34,11 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			11/10/2016 mem - Pass @callingUser to GetUserLoginWithoutDomain
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/21/2017 mem - Fix double logging of exceptions
 **
 *****************************************************/
 (
-	@job int OUTPUT,
+	@job int output,
 	@scriptName varchar(64),
 	@datasetNum varchar(128) = 'na',
 	@priority int,
@@ -266,13 +267,12 @@ AS
 		Declare @LogMessage varchar(4096)
 		Set @LogMessage = @message + '; error code ' + Convert(varchar(12), @myError)
 		
-		exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
-		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
+		Exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
+		
 	END CATCH
 	return @myError
 
