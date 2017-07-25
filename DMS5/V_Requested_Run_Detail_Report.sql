@@ -42,6 +42,7 @@ SELECT RR.ID AS Request,
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
+	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
        RR.RDS_note AS Note,
@@ -76,6 +77,10 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON RR.RDS_WorkPackage = CC.Charge_Code
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
 
 
 GO

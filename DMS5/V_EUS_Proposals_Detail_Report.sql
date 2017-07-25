@@ -6,18 +6,22 @@ GO
 
 CREATE  VIEW [dbo].[V_EUS_Proposals_Detail_Report]
 AS
-SELECT P.Proposal_ID AS ID,
+SELECT EUP.Proposal_ID AS ID,
        S.Name AS State,
-       P.Title,
-       P.Proposal_Type,
-       P.Proposal_Start_Date,
-       P.Proposal_End_Date,
-       P.Import_Date AS [Import Date],
-       P.Last_Affected,
-       dbo.GetProposalEUSUsersList(P.Proposal_ID, 'V') AS [EUS Users]
-FROM dbo.T_EUS_Proposals P
+       EUP.Title,
+       EUP.Proposal_Type AS [Proposal Type],
+	   EPT.Proposal_Type_Name AS [Proposal Type Name],
+	   EPT.Abbreviation AS [Abbreviation],
+       EUP.Proposal_Start_Date AS [Proposal Start Date],
+       EUP.Proposal_End_Date AS [Proposal End Date],
+       EUP.Import_Date AS [Import Date],
+       EUP.Last_Affected,
+       dbo.GetProposalEUSUsersList(EUP.Proposal_ID, 'V') AS [EUS Users]
+FROM dbo.T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
-       ON P.State_ID = S.ID
+       ON EUP.State_ID = S.ID 
+	 LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
 
 
 GO

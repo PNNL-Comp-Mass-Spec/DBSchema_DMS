@@ -6,18 +6,20 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Proposals_List_Report]
 AS
-SELECT DISTINCT P.Proposal_ID AS ID,
+SELECT DISTINCT EUP.Proposal_ID AS ID,
                 S.Name AS State,
-                dbo.GetProposalEUSUsersList(P.Proposal_ID, 'N') AS Users,
-                P.Title,
-                P.Import_Date AS [Import Date],
-                P.Proposal_Type,
-				P.Numeric_ID
-FROM T_EUS_Proposals P
+                dbo.GetProposalEUSUsersList(EUP.Proposal_ID, 'N') AS Users,
+                EUP.Title,
+                EUP.Import_Date AS [Import Date],
+                EUP.Proposal_Type AS [Proposal Type],
+				EPT.Proposal_Type_Name AS [Type Name],
+				EPT.Abbreviation,
+				EUP.Numeric_ID
+FROM T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
-       ON P.State_ID = S.ID
-
-
+       ON EUP.State_ID = S.ID
+	 LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+       ON EUP.Proposal_Type = EPT.Proposal_Type
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_List_Report] TO [DDL_Viewer] AS [dbo]

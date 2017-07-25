@@ -26,6 +26,8 @@ SELECT '' AS [Sel.],
        -- Deprecated in June 2017: SPR.Replicates_of_Samples AS Replicates,
        SPR.[Comment],
        SPR.[Reason],
+	   SPR.EUS_Proposal_ID AS [EUS Proposal],
+	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
        Case 
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
 			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
@@ -41,6 +43,10 @@ FROM T_Sample_Prep_Request SPR
        ON SPR.Requester_PRN = QP.U_PRN
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
+	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+	   ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
+	 LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
 
 

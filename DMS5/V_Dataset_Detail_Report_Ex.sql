@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -79,6 +78,7 @@ SELECT DS.Dataset_Num AS Dataset,
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
+	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        TIS_1.Name AS [Predigest Int Std],
        TIS_2.Name AS [Postdigest Int Std],
@@ -113,6 +113,10 @@ FROM dbo.T_Storage_Path AS SPath
      LEFT OUTER JOIN dbo.T_LC_Cart AS LCCart
                      INNER JOIN dbo.T_Requested_Run AS RR
                        ON LCCart.ID = RR.RDS_Cart_ID
+					 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+					   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+					 LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+					   ON EUP.Proposal_Type = EPT.Proposal_Type
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN ( SELECT AJ_datasetID AS DatasetID,
                               COUNT(*) AS Jobs

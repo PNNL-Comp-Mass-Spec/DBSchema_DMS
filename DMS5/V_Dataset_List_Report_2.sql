@@ -4,8 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Dataset_List_Report_2] as 
-
+CREATE view [dbo].[V_Dataset_List_Report_2] 
+AS
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        Exp.Experiment_Num AS Experiment,
@@ -23,21 +23,22 @@ SELECT DS.Dataset_ID AS ID,
            ELSE DFP.Archive_Folder_Path
        END AS [Archive Folder Path],
        DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
-       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
-       ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq. End],
+       ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
+       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq. End],
        DS.Acq_Length_Minutes AS [Acq Length],
        DS.Scan_Count AS [Scan Count],
 	   Cast(DS.File_Size_Bytes / 1024.0 / 1024 AS decimal(9,2)) AS [File Size MB],
        CartConfig.Cart_Config_Name AS [Cart Config],
 	   LC.SC_Column_Number AS [LC Column],
        DS.DS_sec_sep AS [Separation Type],
-       RRH.RDS_Blocking_Factor AS [Blocking Factor],
-       RRH.RDS_Block AS [Block],
-       RRH.RDS_Run_Order AS [Run Order],
-       RRH.ID AS Request,
-       RRH.RDS_EUS_Proposal_ID AS [EMSL Proposal],
-       RRH.RDS_WorkPackage AS [Work Package],
-       RRH.RDS_Oper_PRN AS Requester,
+       RR.RDS_Blocking_Factor AS [Blocking Factor],
+       RR.RDS_Block AS [Block],
+       RR.RDS_Run_Order AS [Run Order],
+       RR.ID AS Request,
+       RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
+	   EPT.Abbreviation AS [EUS Proposal Type],
+       RR.RDS_WorkPackage AS [Work Package],
+       RR.RDS_Oper_PRN AS Requester,
        DASN.DASN_StateName AS [Archive State],
        T_YesNo.Description AS [Inst. Data Purged],
 	   Org.OG_name AS Organism,
@@ -63,8 +64,12 @@ FROM T_DatasetStateName DSN
        ON Org.Organism_ID = Exp.EX_organism_ID
 	 Left OUTER JOIN T_LC_Cart_Configuration CartConfig
 	   ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
-     LEFT OUTER JOIN T_Requested_Run RRH
-       ON DS.Dataset_ID = RRH.DatasetID
+     LEFT OUTER JOIN T_Requested_Run RR
+       ON DS.Dataset_ID = RR.DatasetID
+	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_DatasetArchiveStateName DASN
                      INNER JOIN T_Dataset_Archive DA
                        ON DASN.DASN_StateID = DA.AS_state_ID

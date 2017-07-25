@@ -27,6 +27,8 @@ SELECT SPR.ID ,
        SPR.[Comment],
        SPR.Work_Package_Number AS WP ,
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
+	   SPR.EUS_Proposal_ID AS [EUS Proposal],
+	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
        SPR.Instrument_Group AS Instrument ,
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis] ,
        SPR.Separation_Type AS [Separation Group],
@@ -58,6 +60,8 @@ FROM    T_Sample_Prep_Request AS SPR
                         ) AS TA ON SPR.ID = TA.[Entity ID]
         LEFT OUTER JOIN T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
         LEFT OUTER JOIN V_Charge_Code_Status CC ON SPR.Work_Package_Number = CC.Charge_Code
+		LEFT OUTER JOIN T_EUS_Proposals AS EUP ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
+		LEFT OUTER JOIN T_EUS_Proposal_Type EPT ON EUP.Proposal_Type = EPT.Proposal_Type
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
 GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Priority, TA.Attachments,
          SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
@@ -65,7 +69,8 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
          SPR.[Comment], SPR.Work_Package_Number, SPR.Instrument_Group,
          SPR.Instrument_Analysis_Specifications, SPR.Separation_Type,
-         CC.Activation_State, CC.Activation_State_Name
+         CC.Activation_State, CC.Activation_State_Name,
+		 SPR.EUS_Proposal_ID, EPT.Proposal_Type_Name
 
 
 GO

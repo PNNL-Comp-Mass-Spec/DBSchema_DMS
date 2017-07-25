@@ -26,6 +26,7 @@ SELECT RR.ID AS Request,
 	   ISNULL(CC.Activation_State_Name, '') AS [WP State],
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS Proposal,
+	   EPT.Abbreviation AS [Proposal Type],
        RR.RDS_comment AS [Comment],
        DTN.DST_name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
@@ -75,6 +76,10 @@ FROM T_Requested_Run AS RR
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
+	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
 
 
 GO

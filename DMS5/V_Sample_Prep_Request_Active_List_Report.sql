@@ -26,6 +26,8 @@ SELECT SPR.ID,
        SPR.[Comment],
        SPR.Work_Package_Number AS [Work Package],
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
+	   SPR.EUS_Proposal_ID AS [EUS Proposal],
+	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
        SPR.Instrument_Group AS [Inst. Group],
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
        Case 
@@ -49,8 +51,11 @@ FROM T_Sample_Prep_Request SPR
        ON SPR.ID = QT.Request_ID
 	 LEFT OUTER JOIN V_Charge_Code_Status CC 
 	   ON SPR.Work_Package_Number = CC.Charge_Code
+	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+	   ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
+	 LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+	   ON EUP.Proposal_Type = EPT.Proposal_Type
 WHERE (NOT (SPR.State IN (0, 4, 5))) And SPR.Request_Type = 'Default'
-
 
 
 GO
