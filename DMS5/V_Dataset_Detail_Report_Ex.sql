@@ -54,6 +54,7 @@ SELECT DS.Dataset_Num AS Dataset,
            ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
        END AS 'QC Metric Stats',
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,
+	   ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
        ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
        ISNULL(FC.Factor_Count, 0) AS Factors,
        ISNULL(PredefinedJobQ.JobCount, 0) AS [Predefines Triggered],
@@ -118,7 +119,13 @@ FROM dbo.T_Storage_Path AS SPath
                        FROM dbo.T_Analysis_Job
                        GROUP BY AJ_datasetID ) AS JobCountQ
        ON JobCountQ.DatasetID = DS.Dataset_ID
-     LEFT OUTER JOIN dbo.T_Dataset_Archive AS DA 
+     LEFT OUTER JOIN ( SELECT J.AJ_datasetID AS DatasetID, 
+	                          COUNT(PSMs.Job) AS Jobs
+                       FROM T_Analysis_Job_PSM_Stats PSMs INNER JOIN
+                            T_Analysis_Job J ON PSMs.Job = J.AJ_jobID
+                       GROUP BY J.AJ_datasetID) AS PSMJobsQ
+       ON PSMJobsQ.DatasetID = DS.Dataset_ID
+	 LEFT OUTER JOIN dbo.T_Dataset_Archive AS DA 
          INNER JOIN T_MyEMSLState
              ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState
        ON DA.AS_Dataset_ID = DS.Dataset_ID
@@ -141,7 +148,7 @@ FROM dbo.T_Storage_Path AS SPath
        ON PMTaskCountQ.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Dataset AS FC
        ON FC.Dataset_ID = DS.Dataset_ID
-     Left Outer Join dbo.T_Analysis_Job J
+     LEFT OUTER JOIN dbo.T_Analysis_Job J
 	   On DS.DeconTools_Job_for_QC = J.AJ_JobID
      LEFT OUTER JOIN ( SELECT Dataset_ID,
                               SUM(jobs_created) AS JobCount
@@ -149,7 +156,6 @@ FROM dbo.T_Storage_Path AS SPath
                        GROUP BY Dataset_ID ) PredefinedJobQ
        ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
      CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-
 
 
 GO
