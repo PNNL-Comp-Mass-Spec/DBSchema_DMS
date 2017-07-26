@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE view [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] as
-SELECT TOP 250 Tab as val
+SELECT TOP 1000 Tab as val
 FROM ( SELECT Tab,
               UsageCount,
               Row_Number() OVER ( ORDER BY UsageCount DESC, Tab ) AS UsageRank
@@ -17,7 +17,6 @@ FROM ( SELECT Tab,
             ) SourceQ 
       ) RankQ
 ORDER BY UsageRank
-
 
 
 GO
