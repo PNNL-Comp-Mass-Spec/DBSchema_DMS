@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Custom_Factors_List_Report as
+
+CREATE VIEW [dbo].[V_Custom_Factors_List_Report] as
 SELECT RR.RDS_BatchID AS Batch,
        RR.ID AS Request,
        F.Factor,
@@ -12,13 +13,12 @@ SELECT RR.RDS_BatchID AS Batch,
        DS.Dataset_Num AS Dataset,
        ISNULL(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,
        ISNULL(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
-       ISNULL(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign,
-       ROW_NUMBER() OVER (ORDER BY RDS_BatchID, RR.ID) AS SortKey
+       ISNULL(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
 FROM (SELECT TargetID AS RequestID,
              Name AS Factor,
              Value AS [Value]
       FROM T_Factor F
-      WHERE (TYPE = 'Run_Request')      
+      WHERE (TYPE = 'Run_Request')
      ) F
      INNER JOIN T_Requested_Run RR
        ON F.RequestID = RR.ID
@@ -32,6 +32,7 @@ FROM (SELECT TargetID AS RequestID,
        ON DS.Exp_ID = DSExp.Exp_ID
      LEFT OUTER JOIN T_Campaign DSCampaign
        ON DSExp.EX_campaign_ID = DSCampaign.Campaign_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Custom_Factors_List_Report] TO [DDL_Viewer] AS [dbo]
