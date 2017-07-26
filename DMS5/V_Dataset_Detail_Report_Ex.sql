@@ -5,6 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
+-- Note: this view is intended to be used for retrieving information for a single dataset
+-- Performance will be poor if used to query multiple datasets because it references several scalar-valued functions
+-- For changes, see https://github.com/PNNL-Comp-Mass-Spec/DBSchema_DMS/commit/e843c6bb52
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
        OG.OG_name AS Organism,
