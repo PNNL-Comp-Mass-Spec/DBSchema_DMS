@@ -23,46 +23,24 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID AS ID,
        DS.DS_created AS Created,
        RR.ID AS Request,
-       CASE
-           WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
-           ELSE CASE
-                    WHEN DA.AS_instrument_data_purged > 0 THEN 'Raw Data Purged: ' + DFP.Dataset_Folder_Path
-                    ELSE DFP.Dataset_Folder_Path
-                END
-       END AS [Dataset Folder Path],
-       CASE
-           WHEN DA.MyEMSLState > 0 And DS.DS_created >= '9/17/2013' Then ''
-           ELSE DFP.Archive_Folder_Path
-       END AS [Archive Folder Path],
-       -- dbo.GetMyEMSLUrlDatasetName(Dataset_Num) AS [MyEMSL URL],
-	   'https://metadata.my.emsl.pnl.gov/fileinfo/files_for_keyvalue/omics.dms.dataset_id/' + Cast(DS.Dataset_ID as Varchar(9)) As [MyEMSL URL],
+       DL.Dataset_Folder_Path AS [Dataset Folder Path],
+	   DL.Archive_Folder_Path AS [Archive Folder Path],
+	   DL.MyEMSL_URL AS [MyEMSL URL],
        DFP.Dataset_URL AS [Data Folder Link],
-       CASE
-           WHEN DA.QC_Data_Purged > 0 THEN ''
-           ELSE DFP.Dataset_URL + 'QC/index.html'
-       END AS [QC Link],
-	   CASE
-           WHEN DA.QC_Data_Purged > 0 THEN ''
-           ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
-       END AS [QC 2D],
-       CASE
-           WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
-                'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + IN_Name + '/filterDS/QC_Shew'
-           WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN 
-		        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + IN_Name + '/filterDS/TEDDY_DISCOVERY'
-           ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
-       END AS 'QC Metric Stats',
+       DL.QC_Link AS [QC Link],
+	   DL.QC_2D AS [QC 2D],
+       DL.QC_Metric_Stats AS [QC Metric Stats],
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,
 	   ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
-       ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
-       ISNULL(FC.Factor_Count, 0) AS Factors,
-       ISNULL(PredefinedJobQ.JobCount, 0) AS [Predefines Triggered],
+	   dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS [Peak Matching Results],
+       dbo.GetDatasetFactorCount(DS.Dataset_ID) AS Factors,
+	   dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS [Predefines Triggered],
        DS.Acq_Time_Start AS [Acquisition Start],
        DS.Acq_Time_End AS [Acquisition End],
        RR.RDS_Run_Start AS [Run Start],
        RR.RDS_Run_Finish AS [Run Finish],
        DS.Scan_Count AS [Scan Count],
-       DSTypes.ScanTypeList AS [Scan Types],
+	   dbo.GetDatasetScanTypes(DS.Dataset_ID) AS [Scan Types],
        DS.Acq_Length_Minutes AS [Acq Length],
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
@@ -106,8 +84,10 @@ FROM dbo.T_Storage_Path AS SPath
                       INNER JOIN dbo.T_Organisms AS OG
                         ON TE.EX_organism_ID = OG.Organism_ID
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
-     INNER JOIN V_Dataset_Folder_Paths AS DFP
+     INNER JOIN T_Cached_Dataset_Folder_Paths AS DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
+	 LEFT OUTER JOIN T_Cached_Dataset_Links AS DL
+       ON DS.Dataset_ID = DL.Dataset_ID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path AS DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
      LEFT OUTER JOIN dbo.T_LC_Cart AS LCCart
@@ -143,23 +123,6 @@ FROM dbo.T_Storage_Path AS SPath
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
 	   ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
-	 LEFT OUTER JOIN ( SELECT AJ.AJ_datasetID AS DatasetID,
-                              COUNT(*) AS PMTasks
-                       FROM dbo.T_Analysis_Job AS AJ
-                            INNER JOIN dbo.T_MTS_Peak_Matching_Tasks_Cached AS PM
-                              ON AJ.AJ_jobID = PM.DMS_Job
-                       GROUP BY AJ.AJ_datasetID ) AS PMTaskCountQ
-       ON PMTaskCountQ.DatasetID = DS.Dataset_ID
-     LEFT OUTER JOIN dbo.V_Factor_Count_By_Dataset AS FC
-       ON FC.Dataset_ID = DS.Dataset_ID
-     LEFT OUTER JOIN dbo.T_Analysis_Job J
-	   On DS.DeconTools_Job_for_QC = J.AJ_JobID
-     LEFT OUTER JOIN ( SELECT Dataset_ID,
-                              SUM(jobs_created) AS JobCount
-                       FROM T_Predefined_Analysis_Scheduling_Queue
-                       GROUP BY Dataset_ID ) PredefinedJobQ
-       ON PredefinedJobQ.Dataset_ID = DS.Dataset_ID
-     CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
 
 
 GO
