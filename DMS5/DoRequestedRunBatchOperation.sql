@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DoRequestedRunBatchOperation
+CREATE Procedure [dbo].[DoRequestedRunBatchOperation]
 /****************************************************
 **
 **	Desc: 
@@ -18,11 +18,12 @@ CREATE Procedure dbo.DoRequestedRunBatchOperation
 **			08/27/2009 grk - Delete batch fixes requested run references in history table
 **			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			07/25/2017 mem - Remove mode BatchOrder since unused
 **    
 *****************************************************/
 (
 	@batchID int,
-	@mode varchar(12), -- 'LockBatch', 'UnlockBatch', 'BatchOrder', 'FreeMembers', 'delete', 'GrantHiPri', 'DenyHiPri'
+	@mode varchar(12), -- 'LockBatch', 'UnlockBatch', 'delete'; Supported, but unused in July 2017 are 'FreeMembers', 'GrantHiPri', 'DenyHiPri'
 	@message varchar(512) output
 )
 As
@@ -114,30 +115,6 @@ As
 			end
 		end
 		return 0
-	end
-
-	---------------------------------------------------
-	-- Calculate batch run order
-	---------------------------------------------------
-
-	if @mode = 'BatchOrder'
-	begin
-		if @lock = 'yes'
-			begin
-				set @message = 'Cannot update run order of locked batch'
-				RAISERROR (@message, 10, 1)
-				return 51170
-			end
-		else
-			begin
-				exec @result = UpdateRequestedRunBatchOrder @batchID, @message output
-				if @result <> 0
-				begin
-					RAISERROR (@message, 10, 1)
-					return 51001
-				end
-				return 0
-			end
 	end
 
 
