@@ -174,6 +174,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_i_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Insert
 /****************************************************
@@ -187,6 +188,7 @@ For Insert
 **			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
 **			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
 **			11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
+**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
 **    
 *****************************************************/
 AS
@@ -215,6 +217,11 @@ AS
 	SET UpdateRequired = 1
 	FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
 	     inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID
+	
+	UPDATE T_Cached_Dataset_Links
+	SET UpdateRequired = 1
+	FROM T_Cached_Dataset_Links DL INNER JOIN
+	     inserted ON DL.Dataset_ID = inserted.AS_Dataset_ID
 
 
 GO
@@ -223,7 +230,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
@@ -244,6 +250,7 @@ For Update
 **			06/11/2012 mem - Now updating QC_Data_Purged to 1 if AS_state_ID changes to 4
 **			06/12/2012 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 or 14
 **			11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
+**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
 **    
 *****************************************************/
 AS
@@ -320,7 +327,19 @@ AS
 		UPDATE T_Cached_Dataset_Folder_Paths
 		SET UpdateRequired = 1
 		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
-	         inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID
+	         inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID		
+	End
+	
+	If Update(AS_state_ID) OR
+	   Update(AS_storage_path_ID) OR
+	   Update(AS_instrument_data_purged) OR
+	   Update(QC_Data_Purged) OR	   
+	   Update(MyEMSLState)
+	Begin
+		UPDATE T_Cached_Dataset_Links
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Links DL INNER JOIN
+	         inserted ON DL.Dataset_ID = inserted.AS_Dataset_ID
 	End
 
 

@@ -393,7 +393,7 @@ AS
 	FROM inserted
 	ORDER BY inserted.Dataset_ID
 
-	-- This query must stay sync'd where the Update query in trigger trig_u_Dataset
+	-- This query must stay sync'd with the Update query in trigger trig_u_Dataset
 	UPDATE T_Dataset
 	SET DateSortKey = CASE
 	                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
@@ -404,6 +404,7 @@ AS
 	       ON DS.Dataset_ID = INSERTED.Dataset_ID
 	     INNER JOIN T_Experiments E
 	       ON DS.Exp_ID = E.Exp_ID
+
 
 
 GO
@@ -428,6 +429,7 @@ For Update
 **			07/19/2010 mem - Now updating T_Entity_Rename_Log if the dataset is renamed
 **			11/15/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
 **			11/22/2013 mem - Now updating DateSortKey
+**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
 **    
 *****************************************************/
 AS
@@ -471,11 +473,17 @@ AS
 		SET UpdateRequired = 1
 		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
 			 inserted ON DFP.Dataset_ID = inserted.Dataset_ID
+
+		UPDATE T_Cached_Dataset_Links
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Links DL INNER JOIN
+			 inserted ON DL.Dataset_ID = inserted.Dataset_ID
+			 
 	End
 
 	If Update(Acq_Time_Start) Or Update(DS_created)
 	Begin
-		-- This query must stay sync'd where the Update query in trigger trig_i_Dataset
+		-- This query must stay sync'd with the Update query in trigger trig_i_Dataset
 		UPDATE T_Dataset
 		SET DateSortKey = CASE
 		                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
@@ -487,6 +495,8 @@ AS
 		     INNER JOIN T_Experiments E
 		       ON DS.Exp_ID = E.Exp_ID
 	End
+
+
 
 
 GO

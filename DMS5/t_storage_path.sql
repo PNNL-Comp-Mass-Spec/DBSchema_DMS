@@ -48,6 +48,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Storage_Path] on [dbo].[T_Storage_Path]
 After Update
 /****************************************************
@@ -57,6 +58,7 @@ After Update
 **
 **	Auth:	mem
 **	Date:	01/22/2015 mem
+**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
 **    
 *****************************************************/
 AS
@@ -67,7 +69,7 @@ AS
 
 	If Update(SP_path) OR 
 	   Update(SP_machine_name) OR 
-	   Update (SP_vol_name_client)
+	   Update(SP_vol_name_client)
 	Begin
 		UPDATE T_Cached_Dataset_Folder_Paths
 		SET UpdateRequired = 1
@@ -77,6 +79,15 @@ AS
 		     INNER JOIN inserted
 		       ON DS.DS_storage_path_ID = inserted.SP_path_ID
 
+		UPDATE T_Cached_Dataset_Links
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Links DL
+		     INNER JOIN T_Dataset DS
+		       ON DL.Dataset_ID = DS.Dataset_ID
+		     INNER JOIN inserted
+		       ON DS.DS_storage_path_ID = inserted.SP_path_ID
+
 	End
+
 
 GO

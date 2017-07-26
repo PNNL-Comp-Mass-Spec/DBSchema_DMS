@@ -38,3 +38,41 @@ ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Folder_Paths] CHECK CONSTRAINT [FK_T_Cached_Dataset_Folder_Paths_T_Dataset]
 GO
+/****** Object:  Trigger [dbo].[trig_u_Cached_Dataset_Folder_Paths] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Trigger [dbo].[trig_u_Cached_Dataset_Folder_Paths] on [dbo].[T_Cached_Dataset_Folder_Paths]
+For Update
+/****************************************************
+**
+**	Desc: 
+**		Updates UpdateRequired in T_Cached_Dataset_Links
+**
+**	Auth:	mem
+**	Date:	07/25/2017
+**    
+*****************************************************/
+AS
+	If @@RowCount = 0
+		Return
+
+	Set NoCount On
+
+	If Update(DS_RowVersion) OR
+	   Update(SPath_RowVersion) OR
+	   Update(Dataset_Folder_Path) OR
+	   Update(Archive_Folder_Path) OR
+	   Update(MyEMSL_Path_Flag) OR
+	   Update(Dataset_URL)
+	Begin
+		UPDATE T_Cached_Dataset_Links
+		SET UpdateRequired = 1
+		FROM T_Cached_Dataset_Links DL INNER JOIN
+			 inserted ON DL.Dataset_ID = inserted.Dataset_ID
+	End
+
+
+GO
