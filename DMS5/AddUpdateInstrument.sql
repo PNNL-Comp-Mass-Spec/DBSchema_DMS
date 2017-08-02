@@ -82,9 +82,10 @@ As
 	if @Usage is null
 		set @Usage = ''
 
-	Declare @PercentEMSLOwnedVal int = Try_Convert(Int, @PercentEMSLOwned)
+	Declare @PercentEMSLOwnedVal int = Try_Convert(Int, @PercentEMSLOwned);
+	
 	if @PercentEMSLOwnedVal Is Null Or @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
-		RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
+		THROW 51001, 'Percent EMSL Owned should be a number between 0 and 100', 1
 		
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
@@ -101,10 +102,10 @@ As
 		FROM  T_Instrument_Name
 		WHERE (IN_name = @InstrumentName)
 		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+		SELECT @myError = @@error, @myRowCount = @@rowcount;
 		--
 		if @myError <> 0 OR @tmp = 0
-			RAISERROR ('No entry could be found in database for update', 11, 4)
+			THROW 51002, 'No entry could be found in database for update', 1
 	
 	end
 
@@ -128,14 +129,14 @@ As
    @AutoSPArchivePathRoot, @AutoSPArchiveSharePathRoot
 
 	if @myError <> 0
-		return @myError
+		return @myError;
 	
 	---------------------------------------------------
 	-- Note: the add mode is not enabled in this stored procedure
 	---------------------------------------------------
 	if @Mode = 'add'
 	begin
-		RAISERROR ('The "add" instrument mode is disabled for this page; instead, use http://dms2.pnl.gov/new_instrument/create', 11, 5)	 
+		THROW 51003, 'The "add" instrument mode is disabled for this page; instead, use http://dms2.pnl.gov/new_instrument/create', 1
 	end 
 
 	---------------------------------------------------
@@ -167,10 +168,10 @@ As
 		    Auto_SP_Archive_Share_Path_Root = @AutoSPArchiveSharePathRoot
 		WHERE (Instrument_ID = @InstrumentID)
 		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+		SELECT @myError = @@error, @myRowCount = @@rowcount;
 		--
 		if @myError <> 0
-			RAISERROR ('Update operation failed', 11, 7)
+			THROW 51004, 'Update operation failed', 1
 		
 	end -- update mode
 

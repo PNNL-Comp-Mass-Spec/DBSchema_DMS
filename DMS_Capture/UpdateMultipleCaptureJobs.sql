@@ -62,9 +62,8 @@ As
 
 	if IsNull(@JobList, '') = ''
 	begin
-		set @message = 'Job list is empty'
-		RAISERROR (@message, 10, 1)
-		return 51001
+		set @message = 'Job list is empty';
+		THROW 51001, @message, 1;
 	end
 
 	Set @Mode = IsNull(@mode, '')
@@ -72,11 +71,11 @@ As
 	If Not @Mode IN ('Update', 'Preview')
 	begin
 		If @action = 'Retry'
-			set @message = 'Mode should be Update when Action is Retry'
+			set @message = 'Mode should be Update when Action is Retry';
 		Else
-			set @message = 'Mode should be Update or Preview'
-		RAISERROR (@message, 10, 1)
-		return 51001
+			set @message = 'Mode should be Update or Preview';
+			
+		THROW 51002, @message, 1;
 	end
 	
    	---------------------------------------------------
@@ -120,9 +119,8 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Failed to create temporary job table'
-		RAISERROR (@message, 10, 1)
-		return 51007
+		set @message = 'Failed to create temporary job table';
+		THROW 51003, @message, 1;
 	end
 
  	---------------------------------------------------
@@ -138,9 +136,8 @@ As
 	
 	if @myError <> 0
 	begin
-		set @message = 'Error populating temporary job table'
-		RAISERROR (@message, 10, 1)
-		return 51007
+		set @message = 'Error populating temporary job table';
+		THROW 51004, @message, 1;
 	end
 
    	---------------------------------------------------

@@ -36,17 +36,18 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	DECLARE @DebugMode TINYINT = 0
-
-	DECLARE @reset CHAR(1) = 'N'
-	IF @mode = 'reset'
-	BEGIN 
+	Declare @DebugMode TINYINT = 0
+	Declare @errorMsg varchar(128)
+	
+	Declare @reset CHAR(1) = 'N'
+	If @mode = 'reset'
+	Begin 
 		SET @mode = 'update'
 		SET @reset = 'Y'
-	END 
+	End 
 
 	BEGIN TRY
 		---------------------------------------------------
@@ -75,11 +76,18 @@ AS
 		WHERE Job = @job
 		
 		IF @mode = 'update' AND @id = 0
-			RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
-
+		Begin
+			Set @errorMsg = 'Cannot update nonexistent job ' + Cast(@job as varchar(9));
+			THROW 51001, @errorMsg, 1;
+		End
+		
 		IF @mode = 'update' AND NOT @state IN (1, 4, 5, 100) -- new, complete, failed, hold
-			RAISERROR ('Cannot update job %d in state %d; must be 1, 4, 5, or 100', 11, 3, @job, @state)
-
+		Begin
+		Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) + 
+		                ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 4, 5, or 100';
+			THROW 51002, @errorMsg, 1;
+		End
+		
 		---------------------------------------------------
 		-- verify parameters
 		---------------------------------------------------
@@ -118,8 +126,8 @@ AS
 		BEGIN --<add>
 
 			set @message = 'Add mode is not implemented; cannot add job ' + 
-			               Cast(@job as varchar(9)) + ' with state ' + Cast(@state as varchar(9))
-			RAISERROR (@message, 11, 1)
+			               Cast(@job as varchar(9)) + ' with state ' + Cast(@state as varchar(9));
+			THROW 51003, @message, 1;
 
 			DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
 /*			
