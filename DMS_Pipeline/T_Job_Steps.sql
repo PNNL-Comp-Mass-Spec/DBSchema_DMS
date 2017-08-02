@@ -27,7 +27,7 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Memory_Usage_MB] [int] NULL,
 	[Next_Try] [datetime] NOT NULL,
 	[Retry_Count] [smallint] NOT NULL,
-	[Remote_Info_ID] [int] NULL,
+	[Remote_Info_ID] [int] NOT NULL,
 	[Remote_Timestamp] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Remote_Start] [smalldatetime] NULL,
 	[Remote_Finish] [smalldatetime] NULL,
@@ -121,15 +121,17 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ON [dbo].[T_Job_Steps]
+/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_StepNumber_MemoryUsage_RemoteInfo] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_StepNumber_MemoryUsage_RemoteInfo] ON [dbo].[T_Job_Steps]
 (
 	[Step_Tool] ASC,
 	[State] ASC,
 	[Next_Try] ASC
 )
 INCLUDE ( 	[Job],
-	[Step_Number]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+	[Step_Number],
+	[Memory_Usage_MB],
+	[Remote_Info_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
