@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateScripts
 **  Date:	09/23/2008 grk - Initial Veresion
 **			03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -36,15 +37,21 @@ As
 
 	declare @ID int
 
+	declare @CallingProcName varchar(128)
+	declare @CurrentLocation varchar(128)
+	Set @CurrentLocation = 'Start'
+
+	Begin Try
+	
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------
@@ -60,22 +67,19 @@ As
 	If @Description = ''
 	begin
 		set @message = 'Description cannot be blank'
-		RAISERROR (@message, 10, 1)
 		return 51005
 	End
 
 	If @Mode <> 'add' and @mode <> 'update'
 	Begin
 		set @message = 'Unknown Mode: ' + @mode
-		RAISERROR (@message, 10, 1)
 		return 51006
 	End
 			
 	---------------------------------------------------
 	-- Is entry already in database? 
 	---------------------------------------------------
-	declare @tmp int
-	set @tmp = 0
+	declare @tmp int = 0
 	--
 	SELECT @tmp = ID
 	FROM  T_Scripts
@@ -86,7 +90,6 @@ As
 	if @myError <> 0
 	begin
 		set @message = 'Error searching for existing entry'
-		RAISERROR (@message, 10, 1)
 		return 51007
 	end
 
@@ -95,7 +98,6 @@ As
 	if @mode = 'update' and @tmp = 0
 	begin
 		set @message = 'Could not find "' + @Script + '" in database'
-		RAISERROR (@message, 10, 1)
 		return 51008
 	end
 
@@ -104,7 +106,6 @@ As
 	if @mode = 'add' and @tmp <> 0
 	begin
 		set @message = 'Script "' + @Script + '" already exists in database'
-		RAISERROR (@message, 10, 1)
 		return 51009
 	end
 
@@ -134,8 +135,7 @@ As
 		if @myError <> 0
 		begin
 			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
+			return 51010
 		end
 
 		-- If @callingUser is defined, then update Entered_By in T_Scripts_History
@@ -174,7 +174,6 @@ As
 		if @myError <> 0
 		begin
 		  set @message = 'Update operation failed: "' + @Script + '"'
-		  RAISERROR (@message, 10, 1)
 		  return 51004
 		end
 		
@@ -192,6 +191,13 @@ As
 		
 	end -- update mode
 
+	End Try
+	Begin Catch
+		-- Error caught; log the error, then continue at the next section
+		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'AddUpdateScripts')
+		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+								@ErrorNum = @myError output, @message = @message output
+	End Catch
 	return @myError
 
 GO

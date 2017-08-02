@@ -21,6 +21,7 @@ CREATE Procedure DeleteRequestedRun
 **			03/22/2016 mem - Added parameter @skipDatasetCheck
 **			06/13/2017 mem - Fix typo
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -49,7 +50,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DeleteRequestedRun', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

@@ -21,6 +21,7 @@ CREATE Procedure dbo.UpdateInstrumentGroupAllowedDatasetType
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -39,8 +40,6 @@ As
 	
 	declare @msg varchar(256)
 	declare @ValidMode tinyint = 0
-	
-	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -50,8 +49,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateInstrumentGroupAllowedDatasetType', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+	
+	BEGIN TRY 
 	
 	---------------------------------------------------
 	-- Validate InstrumentGroup and DatasetType

@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateInstrumentUsageReport
 **			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **			04/11/2017 mem - Now using fields DMS_Inst_ID and Usage_Type in T_EMSL_Instrument_Usage_Report
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -71,7 +72,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageReport', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

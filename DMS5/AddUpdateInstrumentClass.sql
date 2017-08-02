@@ -16,7 +16,6 @@ CREATE Procedure AddUpdateInstrumentClass
 **		@isPurgable           Determines if the instrument class is purgable 
 **		@rawDataType	      Specifies the raw data type for the instrument class
 **		@requiresPreparation  Determines if the instrument class requires preparation
-**	
 **
 **	Auth:	jds
 **	Date:	07/06/2006
@@ -25,6 +24,7 @@ CREATE Procedure AddUpdateInstrumentClass
 **			06/21/2010 mem - Added parameter @Params
 **			11/16/2010 mem - Added parameter @Comment
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -58,7 +58,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentClass', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

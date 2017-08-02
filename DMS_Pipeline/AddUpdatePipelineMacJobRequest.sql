@@ -12,20 +12,17 @@ CREATE PROCEDURE AddUpdatePipelineMacJobRequest
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**    Auth: grk
-**    Date: 03/19/2012 
-**          03/26/2012 grk - added @ScheduledJob and @SchedulingNotes
+**	Auth:	grk
+**	Date:	03/19/2012 
+**			03/26/2012 grk - added @ScheduledJob and @SchedulingNotes
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
+**			08/01/2017 mem - Add Goto Done after RAISERROR
+**
 *****************************************************/
 (
-	@ID INT output,
+	@ID int output,
 	@Description varchar(128),
 	@RequestType varchar(128),
 	@Requestor varchar(128),
@@ -58,6 +55,7 @@ As
 	If @authorized = 0
 	Begin
 		RAISERROR ('Access denied', 11, 3)
+		Goto Done
 	End
 
 	---------------------------------------------------
@@ -77,12 +75,16 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = 0
+		Begin
 			RAISERROR ('No entry could be found in database for update', 11, 16)
+			Goto Done
+		End
 	end
 
 	---------------------------------------------------
-	-- action for add mode
+	-- Action for add mode
 	---------------------------------------------------
+	--
 	if @Mode = 'add'
 	begin
 
@@ -111,8 +113,11 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
+	Begin
 		RAISERROR ('Insert operation failed', 11, 7)
-
+		Goto Done
+	End
+	
 	-- return ID of newly created entry
 	--
 	set @ID = IDENT_CURRENT('T_MAC_Job_Request')
@@ -120,7 +125,7 @@ As
 	end -- add mode
 
 	---------------------------------------------------
-	-- action for update mode
+	-- Action for update mode
 	---------------------------------------------------
 	--
 	if @Mode = 'update' 
@@ -143,8 +148,10 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
+		Begin
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
-
+			Goto Done
+		End		
 	end -- update mode
 
 	---------------------------------------------------
@@ -159,6 +166,8 @@ As
 			
 		Exec PostLogEntry 'Error', @message, 'AddUpdatePipelineMacJobRequest'
 	END CATCH
+
+Done:
 	return @myError
 
 GO

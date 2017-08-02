@@ -11,11 +11,10 @@ CREATE PROCEDURE AddUpdateJobParameterXML
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:	mem
 **  Date:	01/19/2012 mem - Initial Version (refactored from AddUpdateJobParameter)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -41,7 +40,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameterXML', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------
@@ -138,8 +137,8 @@ As
 	Else
 	Begin
 		SELECT @pXML = ( SELECT [Section],
-		                        [Name],
-		                        [Value]
+		                     [Name],
+		           [Value]
 		                 FROM @Job_Parameters Param
 		                 ORDER BY [Section]
 		                 FOR XML AUTO )

@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.StoreQuameterResults
 **	Auth:	mem
 **	Date:	09/17/2012 mem - Initial version
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -32,10 +33,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'StoreQuameterResults', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'StoreQuameterResults', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	exec @myError = S_StoreQuameterResults @DatasetID=@DatasetID, @ResultsXML=@ResultsXML, @message=@message output, @infoOnly=@infoOnly

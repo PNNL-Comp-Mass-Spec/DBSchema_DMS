@@ -18,6 +18,7 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 **			07/11/2013 mem - Added parameter @PushDatasetRecursive
 **			10/24/2014 mem - Changed priority to 2 when @ResultsFolderName = ''
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -44,10 +45,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'MakeNewArchiveUpdateJob', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'MakeNewArchiveUpdateJob', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

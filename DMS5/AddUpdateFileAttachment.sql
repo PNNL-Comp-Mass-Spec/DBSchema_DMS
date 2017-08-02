@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Use SCOPE_IDENTITY
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -43,8 +44,6 @@ As
 
 	set @message = ''
 
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -53,8 +52,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateFileAttachment', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)

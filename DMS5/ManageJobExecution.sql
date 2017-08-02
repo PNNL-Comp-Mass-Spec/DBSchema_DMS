@@ -18,6 +18,7 @@ CREATE PROCEDURE ManageJobExecution
 **						   - Updated to resolve job state defined in the XML with T_Analysis_State_Name
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'ManageJobExecution', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

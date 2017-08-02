@@ -25,6 +25,7 @@ CREATE Procedure dbo.AddUpdateEUSProposals
 **			04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **			10/13/2015 mem - Added @EUSProposalType
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -56,7 +57,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateEUSProposals', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

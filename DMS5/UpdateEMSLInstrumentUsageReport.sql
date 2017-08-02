@@ -31,6 +31,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			               - Set @validateTotal to 0 when calling ParseUsageText
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -57,7 +58,7 @@ AS
 	Exec @authorized = VerifySPAuthorized 'UpdateEMSLInstrumentUsageReport', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	------------------------------------------------------

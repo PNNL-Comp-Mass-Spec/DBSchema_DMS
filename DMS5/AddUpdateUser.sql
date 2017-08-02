@@ -34,6 +34,7 @@ CREATE Procedure dbo.AddUpdateUser
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/11/2017 mem - Require @HanfordIDNum to be at least 2 characters long
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -62,18 +63,18 @@ As
 	declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
 
-	BEGIN TRY 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateUser', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'AddUpdateUser', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	BEGIN TRY 
 
 		---------------------------------------------------
 		-- Validate input fields

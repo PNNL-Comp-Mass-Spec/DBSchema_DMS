@@ -15,6 +15,7 @@ CREATE Procedure dbo.DoCellCultureOperation
 **	Date:	06/17/2002
 **			03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -41,7 +42,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DoCellCultureOperation', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

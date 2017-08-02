@@ -23,6 +23,7 @@ CREATE PROCEDURE UpdateInstrumentUsageAllocations
 **			04/06/2016 mem - Now using Try_Convert to convert from text to int
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -64,18 +65,18 @@ As
 	SET CONCAT_NULL_YIELDS_NULL ON
 	SET ANSI_PADDING ON
 
-	BEGIN TRY 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageAllocations', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageAllocations', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	BEGIN TRY 
 
 		-----------------------------------------------------------
 		-- Validate the inputs

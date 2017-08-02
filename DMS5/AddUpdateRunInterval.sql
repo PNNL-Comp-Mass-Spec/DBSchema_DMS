@@ -24,6 +24,7 @@ CREATE PROCEDURE AddUpdateRunInterval
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			04/28/2017 mem - Disable logging to T_Log_Entries when ParseUsageText reports an error
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **   
 *****************************************************/
 (
@@ -47,8 +48,6 @@ As
 	if @CallingUser = ''
 		Set @CallingUser = suser_sname()
 
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -57,9 +56,11 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateRunInterval', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- validate usage and comment
 	---------------------------------------------------

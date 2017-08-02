@@ -20,6 +20,7 @@ CREATE PROCEDURE DoSampleSubmissonOperation
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			               - Add call to PostUsageLogEntry
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -37,19 +38,19 @@ As
 	declare @myRowCount int = 0
 
 	set @message = ''
+	
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoSampleSubmissonOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
 	BEGIN TRY
-	
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'DoSampleSubmissonOperation', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
 
 		---------------------------------------------------
 		-- Make the folder for the sample submission

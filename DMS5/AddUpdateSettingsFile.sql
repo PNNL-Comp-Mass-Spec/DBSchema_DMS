@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateSettingsFile
 **			03/21/2016 mem - Update column Last_Updated
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -56,7 +57,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateSettingsFile', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

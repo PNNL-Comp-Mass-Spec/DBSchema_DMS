@@ -76,6 +76,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			12/05/2016 mem - Exclude logging some try/catch errors
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -111,8 +112,6 @@ As
 	Declare @MsgToAppend varchar(255)
 	Declare @logErrors tinyint = 0
 	
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -121,9 +120,11 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobRequest', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------

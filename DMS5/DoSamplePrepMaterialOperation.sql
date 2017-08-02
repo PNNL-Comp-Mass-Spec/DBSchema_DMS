@@ -19,6 +19,7 @@ CREATE Procedure dbo.DoSamplePrepMaterialOperation
 **			06/13/2017 mem - Exclude the Staging container when finding containers to retire
 **						   - Log debug messages
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 **	Note:
 **		GRANT EXECUTE ON DoSamplePrepMaterialOperation TO [DMS_SP_User]    
@@ -50,18 +51,18 @@ As
 	
 	SET @comment = 'Retired as part of closing sample prep request ' + @ID
 
-	BEGIN TRY
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DoSamplePrepMaterialOperation', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'DoSamplePrepMaterialOperation', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	BEGIN TRY
 
 		Set @msg = '@mode is ' + @mode + '; find items for prep request ' + @ID
 		exec PostLogEntry 'Debug', @msg, 'DoSamplePrepMaterialOperation'

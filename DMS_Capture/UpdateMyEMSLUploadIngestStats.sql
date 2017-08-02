@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.UpdateMyEMSLUploadIngestStats
 **			05/31/2017 mem - Update TransactionID in T_MyEMSL_Uploads using @transactionId
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/12/2017 mem - Update TransactionId if null yet Ingest_Steps_Completed and ErrorCode are unchanged
+**			08/01/2017 mem - Use THROW instead of RAISERROR
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateMyEMSLUploadIngestStats', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1
 	End
 	
 	---------------------------------------------------

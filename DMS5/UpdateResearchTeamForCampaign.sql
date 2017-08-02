@@ -24,6 +24,7 @@ CREATE Procedure dbo.UpdateResearchTeamForCampaign
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -62,7 +63,7 @@ AS
 	Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamForCampaign', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

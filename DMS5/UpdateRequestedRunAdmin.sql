@@ -23,7 +23,7 @@ CREATE Procedure UpdateRequestedRunAdmin
 **			12/12/2011 mem - Now calling AlterEventLogEntryUserMultiID
 **			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
-
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -55,7 +55,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAdmin', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	-- Set to 1 to log the contents of @requestList

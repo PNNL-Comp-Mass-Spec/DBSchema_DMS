@@ -16,7 +16,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatchSpreadsheet
 **    Date: 05/18/2009
 **			08/27/2010 mem - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**
+**			08/01/2017 mem - Use THROW if not authorized
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -51,7 +51,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatchSpreadsheet', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

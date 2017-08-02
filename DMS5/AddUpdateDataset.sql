@@ -90,6 +90,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -138,8 +139,6 @@ As
 	Set @message = ''
 	Set @warning = ''
 
-	Begin TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -148,8 +147,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateDataset', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields

@@ -19,6 +19,7 @@ CREATE Procedure dbo.UpdateNotificationUserRegistration
 **			06/11/2012 mem - Renamed @Dataset to @DatasetNotReleased
 **                         - Added @DatasetReleased
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -49,7 +50,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateNotificationUserRegistration', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

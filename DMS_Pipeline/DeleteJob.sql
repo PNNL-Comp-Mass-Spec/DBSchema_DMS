@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.DeleteJob
 **			05/26/2009 mem - Now deleting from T_Job_Step_Dependencies and T_Job_Parameters
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DeleteJob', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	declare @transName varchar(32) = 'DeleteBrokerJob'

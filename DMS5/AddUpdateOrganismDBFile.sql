@@ -16,6 +16,7 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 **  Date:	01/24/2014 mem - Initial version
 **			01/15/2015 mem - Added parameter @FileSizeKB
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -42,7 +43,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateOrganismDBFile', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

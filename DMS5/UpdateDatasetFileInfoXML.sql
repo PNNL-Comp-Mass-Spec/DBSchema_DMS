@@ -61,6 +61,7 @@ CREATE Procedure dbo.UpdateDatasetFileInfoXML
 **			04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
 **			02/24/2015 mem - Now validating that @DatasetID exists in T_Dataset
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -93,7 +94,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoXML', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	-----------------------------------------------------------

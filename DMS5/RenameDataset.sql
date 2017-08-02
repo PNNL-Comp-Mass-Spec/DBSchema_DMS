@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.RenameDataset
 **			12/06/2016 mem - Include file rename statements
 **			03/06/2017 mem - Validate that @DatasetNameNew is no more than 80 characters long
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -55,7 +56,7 @@ AS
 	Exec @authorized = VerifySPAuthorized 'RenameDataset', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	--------------------------------------------

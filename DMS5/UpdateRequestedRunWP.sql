@@ -25,6 +25,7 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -43,18 +44,18 @@ AS
 	
 	Declare @RequestCountToUpdate int = 0
 
-	Begin TRY 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunWP', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunWP', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	Begin TRY 
 
 		----------------------------------------------------------
 		-- Validate the inputs

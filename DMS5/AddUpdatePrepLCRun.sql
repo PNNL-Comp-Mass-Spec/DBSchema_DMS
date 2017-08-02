@@ -24,6 +24,7 @@ CREATE PROCEDURE dbo.AddUpdatePrepLCRun
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -57,8 +58,6 @@ As
 
 	set @message = ''
 
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -67,8 +66,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdatePrepLCRun', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)

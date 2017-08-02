@@ -18,6 +18,7 @@ CREATE PROCEDURE AddUpdateJobParameter
 **			04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
 **			01/19/2012 mem - Now using AddUpdateJobParameterXML
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -43,10 +44,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------
@@ -116,7 +117,6 @@ As
 	-- Exit
 	---------------------------------------------------
 	--
-Done:
 	return @myError
 
 GO

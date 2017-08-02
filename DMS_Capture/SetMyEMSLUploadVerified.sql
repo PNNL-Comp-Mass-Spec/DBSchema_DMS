@@ -19,6 +19,7 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadVerified
 **			05/31/2017 mem - Add logging
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/13/2017 mem - Add parameter @statusURIList (required to avoid conflicts between StatusNums from the old MyEMSL backend vs. ones from the new backend)
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -38,11 +39,11 @@ As
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
 		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'SetMyEMSLUploadVerified', @raiseError = 1
+	Declare @authorized tinyint = 0
+	Exec @authorized = VerifySPAuthorized 'SetMyEMSLUploadVerified', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 		
 	---------------------------------------------------

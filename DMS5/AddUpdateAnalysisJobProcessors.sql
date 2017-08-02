@@ -20,6 +20,7 @@ CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 **			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -51,7 +52,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobProcessors', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

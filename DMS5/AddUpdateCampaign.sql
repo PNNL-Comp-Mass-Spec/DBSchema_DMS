@@ -36,6 +36,7 @@ CREATE Procedure dbo.AddUpdateCampaign
 **			06/13/2017 mem - Disable logging when the campaign name has invalid characters
 **			06/14/2017 mem - Allow @FractionEMSLFundedValue to be empty
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -82,8 +83,6 @@ As
 	
 	Declare @logErrors tinyint = 0
 	
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -92,8 +91,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateCampaign', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+
+	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields

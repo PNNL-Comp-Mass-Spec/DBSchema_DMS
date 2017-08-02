@@ -27,6 +27,7 @@ CREATE Procedure dbo.UpdateLCCartRequestAssignments
 **			11/07/2016 mem - Add optional logging via PostLogEntry
 **			02/27/2017 mem - Add support for cart config name
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateLCCartRequestAssignments', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	Declare @xml AS xml

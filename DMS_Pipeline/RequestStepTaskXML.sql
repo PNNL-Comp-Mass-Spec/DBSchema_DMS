@@ -86,6 +86,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **			05/26/2017 mem - Treat state 9 (Running_Remote) as having a CPU_Load of 0
 **			06/08/2017 mem - Remove use of column MonitorRunningRemote in T_Machines since @remoteInfo replaces it
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -128,7 +129,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'RequestStepTaskXML', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------
@@ -327,7 +328,7 @@ As
 		       PTGD.Tool_Name,
 		       ST.CPU_Load,
 		       ST.Memory_Usage_MB,
-		       PTGD.Priority,
+		  PTGD.Priority,
 		       1 AS GP,			-- Prior to May 2015 used: CASE WHEN ST.Available_For_General_Processing = 'N' THEN 0 ELSE 1 END AS GP,
 		       CASE WHEN ST.CPU_Load > @availableCPUs THEN 1 ELSE 0 END AS Exceeds_Available_CPU_Load,
 		       CASE WHEN ST.Memory_Usage_MB > @availableMemoryMB THEN 1 ELSE 0 END AS Exceeds_Available_Memory
@@ -1160,7 +1161,7 @@ As
 	--
 	If @jobAssigned = 1 AND @infoOnly = 0
 	begin --<e>
-		Declare @debugMsg varchar(512) = 
+		/* Declare @debugMsg varchar(512) = 
 			'Assigned job ' + Cast(@jobNumber as varchar(9)) + ', step ' + Cast(@stepNumber as varchar(9)) + '; ' + 
 			'remoteInfoID=' + Cast(@remoteInfoId as varchar(9)) + ', ' + 
 			'jobIsRunningRemote=' + Cast(@jobIsRunningRemote as varchar(3)) + ', ' +
@@ -1170,7 +1171,8 @@ As
 				ELSE 'Null'
 				END
 			               
-		-- Exec PostLogEntry 'Debug', @debugMsg, 'RequestStepTaskXML'
+		   Exec PostLogEntry 'Debug', @debugMsg, 'RequestStepTaskXML'
+		*/
 		
 		UPDATE T_Job_Steps
 		SET
@@ -1350,7 +1352,6 @@ As
 	---------------------------------------------------
 	--
 Done:
-	--
 	return @myError
 
 GO

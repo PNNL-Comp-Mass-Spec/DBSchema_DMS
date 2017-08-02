@@ -35,6 +35,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/21/2017 mem - Fix double logging of exceptions
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -69,18 +70,18 @@ AS
 		SET @reset = 'Y'
 	END 
 
-	BEGIN TRY
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
 		
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
+	
+	BEGIN TRY
 
 		---------------------------------------------------
 		-- does job exist
@@ -274,6 +275,8 @@ AS
 		Exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
 		
 	END CATCH
+
+Done:
 	return @myError
 
 GO

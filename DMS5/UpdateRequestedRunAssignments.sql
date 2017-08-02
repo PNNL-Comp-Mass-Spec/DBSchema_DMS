@@ -34,6 +34,7 @@ CREATE Procedure UpdateRequestedRunAssignments
 **			05/31/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/13/2017 mem - Do not log an error when a requested run cannot be deleted because it is associated with a dataset
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -73,8 +74,6 @@ As
 
 	Set @message = ''
 
-	BEGIN TRY 
-
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -83,8 +82,10 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAssignments', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+
+	BEGIN TRY 
 	
 	---------------------------------------------------
 	-- Populate a temporary table with the values in @reqRunIDList

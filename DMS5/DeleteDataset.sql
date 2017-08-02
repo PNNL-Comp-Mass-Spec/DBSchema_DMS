@@ -30,6 +30,7 @@ CREATE Procedure dbo.DeleteDataset
 **			10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **			01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Jobs
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -58,7 +59,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DeleteDataset', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	------------------------------------------------

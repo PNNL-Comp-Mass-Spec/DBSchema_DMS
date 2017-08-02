@@ -16,6 +16,7 @@ CREATE Procedure AddUpdateAuxInfoDefinition
 **	Auth:	grk
 **	Date:	04/19/2002
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -52,10 +53,11 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfoDefinition', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
+	
 	---------------------------------------------------
-	-- 
+	-- Add Target
 	---------------------------------------------------
 
 	if @mode = 'AddTarget'
@@ -96,7 +98,7 @@ As
 	end -- mode 'AddTarget'
 
 	---------------------------------------------------
-	-- 
+	-- Add Category
 	---------------------------------------------------
 
 	if @mode = 'AddCategory'
@@ -162,7 +164,7 @@ As
 	end -- mode 'AddCategory'
 
 	---------------------------------------------------
-	-- 
+	-- Add Subcategory
 	---------------------------------------------------
 
 	if @mode = 'AddSubcategory'
@@ -231,7 +233,7 @@ As
 	end -- mode 'AddSubcategory'
 
 	---------------------------------------------------
-	-- 
+	-- Add Item
 	---------------------------------------------------
 
 	if @mode = 'AddItem'
@@ -305,7 +307,7 @@ As
 
 
 	---------------------------------------------------
-	-- 
+	-- Add Allowed Value
 	---------------------------------------------------
 
 	if @mode = 'AddAllowedValue'
@@ -370,7 +372,7 @@ As
 
 
 	---------------------------------------------------
-	-- 
+	-- Update Item
 	---------------------------------------------------
 
 	if @mode = 'UpdateItem'
@@ -448,14 +450,7 @@ As
 			RAISERROR (@msg, 10, 1)
 			return 51000
 		end
-	end -- mode 'AddItem'
-
-
-
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-
+	end -- mode 'UpdateItem'
 
 	return 0
 GO

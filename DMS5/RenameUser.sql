@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.RenameUser
 **	Auth:	mem
 **			10/31/2014 mem - Initial version
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -36,7 +37,7 @@ AS
 	Exec @authorized = VerifySPAuthorized 'RenameUser', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	--------------------------------------------

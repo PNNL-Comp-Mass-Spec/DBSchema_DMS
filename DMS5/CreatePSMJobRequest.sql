@@ -29,6 +29,7 @@ CREATE Procedure CreatePSMJobRequest
 **			06/13/2017 mem - Update grammar
 **			               - Exclude logging some try/catch errors
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -63,19 +64,19 @@ As
 	Declare @DatasetCount int = 0
 	
 	Declare @logErrors tinyint = 0
-	
-	BEGIN TRY 
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'CreatePSMJobRequest', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'CreatePSMJobRequest', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
+		
+	BEGIN TRY 
 
 		---------------------------------------------------
 		-- Validate the inputs

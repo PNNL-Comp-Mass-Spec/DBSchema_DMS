@@ -14,6 +14,7 @@ CREATE Procedure UpdateDatasetRating
 **	Date:	10/07/2015 mem - Initial release
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -40,7 +41,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateDatasetRating', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

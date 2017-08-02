@@ -23,7 +23,7 @@ CREATE PROCEDURE dbo.UpdateRunOpLog
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
-
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -49,18 +49,18 @@ AS
 	DECLARE @done INT = 0
 	DECLARE @msg VARCHAR(512)
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateRunOpLog', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
+
 	BEGIN TRY
-	
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateRunOpLog', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
 
 		-----------------------------------------------------------
 		-- make temp table to hold requested run changes

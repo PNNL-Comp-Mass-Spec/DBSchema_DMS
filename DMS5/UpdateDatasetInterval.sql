@@ -29,6 +29,7 @@ CREATE PROCEDURE dbo.UpdateDatasetInterval
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -48,19 +49,19 @@ AS
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	
 	DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateDatasetInterval', @raiseError = 1
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 	
 	BEGIN TRY 
-
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateDatasetInterval', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
 
 		---------------------------------------------------
 		-- Make sure @instrumentName is valid (and is properly capitalized)

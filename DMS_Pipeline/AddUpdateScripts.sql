@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateScripts
 						   - Changed ID field in T_Scripts to a non-identity based int
 **			08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -53,7 +54,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

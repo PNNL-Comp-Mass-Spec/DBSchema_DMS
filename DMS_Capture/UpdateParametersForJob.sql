@@ -25,6 +25,7 @@ CREATE PROCEDURE UpdateParametersForJob
 **			06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
 **			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW instead of RAISERROR
 **    
 *****************************************************/
 (
@@ -45,10 +46,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'UpdateParametersForJob', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'UpdateParametersForJob', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	-----------------------------------------------------------

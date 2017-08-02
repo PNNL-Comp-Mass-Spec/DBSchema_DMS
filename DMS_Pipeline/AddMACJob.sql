@@ -11,7 +11,6 @@ CREATE PROCEDURE AddMACJob
 **	
 **  Return values: 0: success, otherwise, error code
 **
-**
 **  Auth:	grk
 **  Date:	10/27/2012 grk - Initial release
 **			11/01/2012 grk - eliminated job template
@@ -21,6 +20,7 @@ CREATE PROCEDURE AddMACJob
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -44,17 +44,18 @@ AS
 	
 	DECLARE @DebugMode tinyint = 0
 
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'AddMACJob', @raiseError = 1;
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
+
 	BEGIN TRY
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'AddMACJob', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
 
 		---------------------------------------------------
 		-- does data package exist?
@@ -71,10 +72,10 @@ AS
 		WHERE TPKG.ID = @DataPackageID
 		
 		IF @pkgName IS Null
-				RAISERROR('Data package does not exist', 11, 20)
+			RAISERROR('Data package does not exist', 11, 20)
 	 
 		IF @pkgJobCount = 0	 			
-				RAISERROR('Data package has no analysis jobs', 11, 21)
+			RAISERROR('Data package has no analysis jobs', 11, 21)
 												
 		---------------------------------------------------
 		-- get script
@@ -224,6 +225,8 @@ AS
 
 		Exec PostLogEntry 'Error', @message, 'AddMACJob'
 	END CATCH
+
+Done:
 	return @myError
 
 GO

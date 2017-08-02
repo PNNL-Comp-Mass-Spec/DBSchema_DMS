@@ -44,6 +44,7 @@ CREATE PROCEDURE RequestStepTask
 **			01/27/2017 mem - Show additional information when @infoOnly > 0
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/01/2017 mem - Improve info displayed when @infoOnly > 0 and no jobs are available
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -74,10 +75,10 @@ AS
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

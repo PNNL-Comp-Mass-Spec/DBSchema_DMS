@@ -46,6 +46,7 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **			03/30/2015 mem - Tweak warning message grammar
 **			05/28/2015 mem - No longer updating processor group entries (thus @associatedProcessorGroup is ignored)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -120,7 +121,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobsWork', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

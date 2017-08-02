@@ -17,6 +17,7 @@ CREATE PROCEDURE AddUpdateAttachments
 **    Date: 07/22/2010 grk -- allowed update mode
 **			06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -52,7 +53,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateAttachments', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------

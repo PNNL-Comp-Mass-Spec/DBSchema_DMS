@@ -16,6 +16,7 @@ CREATE PROCEDURE MakeNewJobsFromDMS
 **			03/09/2011 grk - Added logic to choose different capture script based on instrument group
 **			09/17/2015 mem - Added parameter @infoOnly
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -53,10 +54,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'MakeNewJobsFromDMS', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'MakeNewJobsFromDMS', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 		
 	---------------------------------------------------

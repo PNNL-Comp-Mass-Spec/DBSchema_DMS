@@ -20,6 +20,7 @@ CREATE PROCEDURE DeleteMultipleTasks
 **			03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -33,18 +34,18 @@ As
 	declare @myError int = 0
 	declare @myRowCount int = 0
 
-	BEGIN TRY
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'DeleteMultipleTasks', @raiseError = 1;
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'DeleteMultipleTasks', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	BEGIN TRY
 
 		---------------------------------------------------
 		-- Create and populate a temporary table

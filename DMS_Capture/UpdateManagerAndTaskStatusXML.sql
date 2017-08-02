@@ -12,8 +12,6 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters:
-**
 **	Auth:	grk
 **			08/20/2009 grk - Initial release
 **			08/29/2009 mem - Now converting Duration_Minutes to Duration_Hours
@@ -25,6 +23,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
 **			                 Use Try_Cast to convert from varchar to numbers
 **			                 Add parameter @debugMode
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -56,10 +55,10 @@ As
 		---------------------------------------------------
 			
 		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1
+		Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
 		If @authorized = 0
 		Begin
-			RAISERROR ('Access denied', 11, 3)
+			Throw 50000, 'Access denied', 1;
 		End
 
 		---------------------------------------------------

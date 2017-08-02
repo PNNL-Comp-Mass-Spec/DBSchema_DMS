@@ -14,7 +14,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **
 **	Auth:	grk
 **	Date:	09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**			09/30/2009 ??? - Made @message an output parameter
+**			09/30/2009 grk - Made @message an output parameter
 **			01/15/2010 grk - Set step state back to enable If retrying
 **			05/05/2011 mem - Now leaving Next_Try unchanged If state = 5 (since @completionCode = 0)
 **			02/08/2012 mem - Added support for @evaluationCode = 3 when @completionCode = 0
@@ -26,6 +26,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			09/24/2014 mem - No longer looking up machine
 **			11/03/2013 mem - Added support for @evaluationCode = 8
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -50,10 +51,10 @@ As
 	---------------------------------------------------
 		
 	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1
+	Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1;
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 	---------------------------------------------------

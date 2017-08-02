@@ -20,6 +20,7 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **			09/28/2012 mem - Now allowing a job to be deleted if state 19 = "Special Proc. Waiting"
 **			04/21/2017 mem - Added parameter @previewMode
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DeleteNewAnalysisJob', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 	
 

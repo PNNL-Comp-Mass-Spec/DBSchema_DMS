@@ -12,8 +12,6 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters:
-**
 **	Auth:	grk
 **			08/20/2009 grk - Initial release
 **			08/29/2009 mem - Now converting Duration_Minutes to Duration_Hours
@@ -30,6 +28,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
 **			                 Use Try_Cast to convert from varchar to numbers
+**			08/01/2017 mem - Use THROW if not authorized
 **
 *****************************************************/
 (
@@ -54,18 +53,18 @@ As
 	declare @CurrentLocation varchar(128)
 	Set @CurrentLocation = 'Start'
 
-	Begin Try
+	---------------------------------------------------
+	-- Verify that the user can execute this procedure from the given client host
+	---------------------------------------------------
+		
+	Declare @authorized tinyint = 0	
+	Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
+	If @authorized = 0
+	Begin
+		THROW 51000, 'Access denied', 1;
+	End
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
+	Begin Try
 
 		---------------------------------------------------
 		--  Extract parameters from XML input

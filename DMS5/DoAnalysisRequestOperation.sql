@@ -15,6 +15,7 @@ CREATE Procedure DoAnalysisRequestOperation
 **	Date:	10/13/2004
 **			05/05/2005 grk - removed default mode value
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**			08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
@@ -40,7 +41,7 @@ As
 	Exec @authorized = VerifySPAuthorized 'DoAnalysisRequestOperation', @raiseError = 1
 	If @authorized = 0
 	Begin
-		RAISERROR ('Access denied', 11, 3)
+		THROW 51000, 'Access denied', 1;
 	End
 
 	---------------------------------------------------
