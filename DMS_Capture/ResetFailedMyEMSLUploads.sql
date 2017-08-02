@@ -19,6 +19,7 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **			                 Change exception messages to reflect the new MyEMSL API
 **			07/20/2017 mem - Store the upload error message in T_MyEMSL_Upload_Resets
 **						   - Reset steps with message 'Connection aborted.', BadStatusLine("''",)
+**			08/01/2017 mem - Reset steps with message 'Connection aborted.', error(32, 'Broken pipe')
 **
 *****************************************************/
 (
@@ -73,7 +74,8 @@ As
 		      (Completion_Message LIKE '%ConnectionTimeout%' OR
 		       Completion_Message LIKE '%Connection reset by peer%' OR
 		       Completion_Message LIKE '%Internal Server Error%' OR
-		       Completion_Message LIKE '%Connection aborted%BadStatusLine%' ) AND
+		       Completion_Message LIKE '%Connection aborted%BadStatusLine%' OR
+		       Completion_Message LIKE '%Connection aborted%Broken pipe%' ) AND
 		      Job_State = 5 AND
 		      Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
 		GROUP BY Job, Dataset_ID, Output_Folder
