@@ -51,8 +51,7 @@ As
 	-- Is entry already in database?
 	---------------------------------------------------
 
-	declare @tmp int
-	set @tmp = 0
+	declare @tmp int = 0
 	--
 	SELECT @tmp = ID
 	FROM  T_Step_Tools
@@ -92,29 +91,29 @@ As
 	if @Mode = 'add'
 	begin
 
-	INSERT INTO T_Step_Tools (
-		Name,
-		Description,
-		Bionet_Required,
-		Only_On_Storage_Server,
-		Instrument_Capacity_Limited
-	) VALUES (
-		@Name,
-		@Description,
-		@BionetRequired,
-		@OnlyOnStorageServer,
-		@InstrumentCapacityLimited
-	)
-	/**/
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-	  set @message = 'Insert operation failed'
-	  RAISERROR (@message, 10, 1)
-	  return 51007
-	end
+		INSERT INTO T_Step_Tools (
+			Name,
+			Description,
+			Bionet_Required,
+			Only_On_Storage_Server,
+			Instrument_Capacity_Limited
+		) VALUES (
+			@Name,
+			@Description,
+			@BionetRequired,
+			@OnlyOnStorageServer,
+			@InstrumentCapacityLimited
+		)
+		/**/
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+		set @message = 'Insert operation failed'
+		RAISERROR (@message, 10, 1)
+		return 51007
+		end
 
 	end -- add mode
 
@@ -124,25 +123,25 @@ As
 	--
 	if @Mode = 'update' 
 	begin
-	set @myError = 0
-	--
+		set @myError = 0
+		--
 
-	UPDATE T_Step_Tools 
-	SET 
-		Description = @Description,
-		Bionet_Required = @BionetRequired,
-		Only_On_Storage_Server = @OnlyOnStorageServer,
-		Instrument_Capacity_Limited = @InstrumentCapacityLimited
-	WHERE (Name = @Name)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-	  set @message = 'Update operation failed: "' + @Name + '"'
-	  RAISERROR (@message, 10, 1)
-	  return 51004
-	end
+		UPDATE T_Step_Tools 
+		SET 
+			Description = @Description,
+			Bionet_Required = @BionetRequired,
+			Only_On_Storage_Server = @OnlyOnStorageServer,
+			Instrument_Capacity_Limited = @InstrumentCapacityLimited
+		WHERE (Name = @Name)
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+		set @message = 'Update operation failed: "' + @Name + '"'
+		RAISERROR (@message, 10, 1)
+		return 51004
+		end
 	end -- update mode
 
 	return @myError
