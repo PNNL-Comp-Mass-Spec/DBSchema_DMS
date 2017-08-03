@@ -95,10 +95,10 @@ As
 	DECLARE @usageXML XML
 	DECLARE @cleanedComment VARCHAR(MAX) = @comment
 	
-	EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output
 	If @showDebug > 0
 		print 'Calling ParseUsageText'
 		
+	EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output, @seq=@ID, @showDebug=@showDebug, @validateTotal = 1, @invalidUsage=@invalidUsage output
 	
 	If @showDebug > 0
 		print 'ParseUsageText returned ' + Cast(@myError as varchar(9))

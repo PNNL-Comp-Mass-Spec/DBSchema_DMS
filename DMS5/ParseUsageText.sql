@@ -28,12 +28,13 @@ CREATE PROCEDURE dbo.ParseUsageText
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@comment VARCHAR(4096) output,
-	@usageXML XML output,
+	@comment VARCHAR(4096) output,		-- Usage (input / output); see above for examples.  Usage keys and values will be removed from this string
+	@usageXML XML output,				-- Usage information, as XML.  Will be Null if @validateTotal is 1 and the percentages do not sum to 100%
 	@message varchar(512) output,
 	@seq int = -1,
 	@showDebug tinyint = 0,
-	@validateTotal tinyint = 1
+	@validateTotal tinyint = 1,			-- Raise an error (and do not update @comment or @usageXML) if the sum of the percentages is not 100
+	@invalidUsage tinyint = 0 output	-- Set to 1 if the usage text in @comment cannot be parsed; UpdateRunOpLog uses this to skip invalid entries (value passed back via AddUpdateRunInterval)
 )
 AS
 	Set XACT_ABORT, nocount on
@@ -42,9 +43,18 @@ AS
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
+	
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
 
+	Set @comment = IsNull(@comment, '')
 	set @message = ''
-
+	Set @seq = IsNull(@seq, -1)
+	Set @showDebug = IsNull(@showDebug, 0)
+	Set @validateTotal = IsNull(@validateTotal, 1)
+	Set @invalidUsage = 0
+	
 	If @showDebug > 0
 		Print 'Initial comment for SeqID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
 	
@@ -156,6 +166,7 @@ AS
 					IF @eov = 0
 					Begin
 						Set @logErrors = 0
+						Set @invalidUsage = 1
 						RAISERROR ('Could not find closing bracket for "%s"', 11, 4, @kw)
 					End
 
@@ -171,6 +182,7 @@ AS
 					Begin
 						Set @logErrors = 0
 						RAISERROR ('Percentage value for usage "%s" is not a valid integer', 11, 5, @kw)
+						Set @invalidUsage = 1
 					End
 					
 					UPDATE #TU
@@ -200,6 +212,7 @@ AS
 		Begin
 			Set @logErrors = 0
 			RAISERROR ('Total percentage (%d) does not add up to 100 for SeqID %d', 11, 7, @total, @seq)
+			Set @invalidUsage = 1
 		End
 		
 		---------------------------------------------------
@@ -216,6 +229,7 @@ AS
 		Begin
 			Set @logErrors = 0
 			RAISERROR ('Proposal is needed if user allocation is specified; SeqID %d', 11, 6, @seq)
+			Set @invalidUsage = 1
 		End
 			
 		---------------------------------------------------
