@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure GetParamFileModInfo
+CREATE PROCEDURE GetParamFileModInfo
 /****************************************************
 ** 
 **	Desc:
@@ -16,13 +16,13 @@ CREATE Procedure GetParamFileModInfo
 **	Parameters:
 **		  @parameterFileName	name of analysis parameter file
 **
-**	Updates: 
-**		07/24/2004 grk - Initial version
-**		07/26/2004 mem - Added Order By Mod_ID
-**		08/07/2004 mem - Added @paramFileFound parameter and updated references to use T_Seq_Local_Symbols_List
-**		08/20/2004 grk - Major change to support consolidated mod description
-**		08/22/2004 grk - added @paramFileID
-**		02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
+**	Auth:	grk
+**	Date:	07/24/2004 grk - Initial version
+**			07/26/2004 mem - Added Order By Mod_ID
+**			08/07/2004 mem - Added @paramFileFound parameter and updated references to use T_Seq_Local_Symbols_List
+**			08/20/2004 grk - Major change to support consolidated mod description
+**			08/22/2004 grk - added @paramFileID
+**			02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
 **    
 *****************************************************/
 (
@@ -35,17 +35,14 @@ CREATE Procedure GetParamFileModInfo
 	@message varchar(256) output
 )
 As
-	set nocount on
+	Set NoCount On
 	
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 
-	declare @ln int
+	Declare @ln int
 	
 	set @paramFileID = 0
 	set @PM_TargetSymbolList = ''
@@ -56,8 +53,7 @@ As
 	-- Make sure this parameter file is defined in T_Param_Files
 	-----------------------------------------------------------
 	--
-	SELECT 
-		@paramFileID =  Param_File_ID
+	SELECT @paramFileID = Param_File_ID
 	FROM T_Param_Files
 	WHERE Param_File_Name = @parameterFileName
 	--
@@ -74,19 +70,16 @@ As
 	end
 	
 	-----------------------------------------------------------
-	-- dynamic mods
+	-- Dynamic mods
 	-----------------------------------------------------------
 	--
 
-	SELECT
-		@PM_TargetSymbolList = @PM_TargetSymbolList + Local_Symbol + ',', 
-		@PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast( Mass_Correction_Tag as varchar(12)) + ','
-	FROM
-		V_Param_File_Mass_Mod_Info
-	WHERE     
-		(Mod_Type_Symbol = 'D') AND 
-		(Param_File_Name = @parameterFileName)
-	GROUP BY Local_Symbol,  Mass_Correction_Tag
+	SELECT @PM_TargetSymbolList = @PM_TargetSymbolList + Local_Symbol + ',',
+	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	FROM V_Param_File_Mass_Mod_Info
+	WHERE Mod_Type_Symbol = 'D' AND
+	      Param_File_Name = @parameterFileName
+	GROUP BY Local_Symbol, Mass_Correction_Tag
 	ORDER BY Local_Symbol
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -97,21 +90,17 @@ As
 		goto done
 	end
 
-	-- future: make sure that a local symbol only appears once
-
 	-----------------------------------------------------------
-	-- static mods and terminus mods
+	-- Static mods and terminus mods
 	-----------------------------------------------------------
 
-	SELECT
-		@PM_TargetSymbolList = @PM_TargetSymbolList + Residue_Symbol + ',', 
-		@PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast( Mass_Correction_Tag as varchar(12)) + ','
-	FROM
-		V_Param_File_Mass_Mod_Info
-	WHERE     
-		(Mod_Type_Symbol in ('T', 'P', 'S') ) AND 
-		(Param_File_Name = @parameterFileName)
+	SELECT @PM_TargetSymbolList = @PM_TargetSymbolList + Residue_Symbol + ',',
+	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	FROM V_Param_File_Mass_Mod_Info
+	WHERE Mod_Type_Symbol IN ('T', 'P', 'S') AND
+	      Param_File_Name = @parameterFileName
 	ORDER BY Residue_Symbol
+
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -121,19 +110,16 @@ As
 		goto done
 	end
 
-
 	-----------------------------------------------------------
 	-- isotopic mods
 	-----------------------------------------------------------
 
-	SELECT
-		@NP_MassCorrectionTagList = @NP_MassCorrectionTagList + cast( Mass_Correction_Tag as varchar(12)) + ','
-	FROM
-		V_Param_File_Mass_Mod_Info
-	WHERE     
-		(Mod_Type_Symbol = 'I' ) AND 
-		(Param_File_Name = @parameterFileName)
-	ORDER BY  Mass_Correction_Tag
+	SELECT @NP_MassCorrectionTagList = @NP_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	FROM V_Param_File_Mass_Mod_Info
+	WHERE Mod_Type_Symbol = 'I' AND
+	      Param_File_Name = @parameterFileName
+	ORDER BY Mass_Correction_Tag
+
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -142,7 +128,6 @@ As
 		set @message = 'Error trying to get isotopic modifications'
 		goto done
 	end
-
 
 	-----------------------------------------------------------
 	-- Exit
