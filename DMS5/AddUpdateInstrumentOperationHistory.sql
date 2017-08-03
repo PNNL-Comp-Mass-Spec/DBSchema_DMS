@@ -12,8 +12,6 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **	Auth:	grk
 **	Date:	05/20/2010
 **			02/23/2016 mem - Add set XACT_ABORT on
@@ -22,6 +20,7 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/02/2017 mem - Assure that the username is properly capitalized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -38,12 +37,12 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int
+	Declare @myRowCount int
+	Set @myError = 0
+	Set @myRowCount = 0
 
-	set @message = ''
+	Set @message = ''
 
 	Declare @logErrors tinyint = 0
 		
@@ -83,10 +82,11 @@ As
 	-- Resolve poster PRN
 	---------------------------------------------------
 
-	declare @userID int
+	Declare @userID int
 	execute @userID = GetUserID @postedBy
-	if @userID = 0
-	begin
+
+	If @userID = 0
+	Begin
 		-- Could not find entry in database for PRN @postedBy
 		-- Try to auto-resolve the name
 
@@ -100,7 +100,14 @@ As
 			-- Single match found; update @postedBy
 			Set @postedBy = @NewPRN
 		End
-	end
+	End
+	Else
+	Begin
+		-- Assure that @postedBy is properly capitalized
+		SELECT @postedBy = U_Prn
+		FROM T_Users
+		WHERE ID = @userID
+	End
 
 	Set @logErrors = 1
 
@@ -108,11 +115,11 @@ As
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 
-	if @mode = 'update'
-	begin
+	If @mode = 'update'
+	Begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int = 0
+		Declare @tmp int = 0
 		--
 		SELECT @tmp = ID
 		FROM  T_Instrument_Operation_History
@@ -120,15 +127,15 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 OR @tmp = 0
+		If @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 16)
-	end
+	End
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+	If @Mode = 'add'
+	Begin
 
 		INSERT INTO T_Instrument_Operation_History (
 			Instrument,
@@ -142,21 +149,21 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Insert operation failed', 11, 7)
 
 		-- Return ID of newly created entry
 		--
 		set @ID = SCOPE_IDENTITY()
 
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
+	If @Mode = 'update' 
+	Begin
 		set @myError = 0
 		--
 		UPDATE T_Instrument_Operation_History
@@ -166,10 +173,10 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
 
-	end -- update mode
+	End -- update mode
 
 	END TRY
 	BEGIN CATCH 
