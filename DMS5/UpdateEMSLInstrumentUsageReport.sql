@@ -32,6 +32,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			               - Set @validateTotal to 0 when calling ParseUsageText
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/02/2017 mem - Trim whitespace from the cleaned comment returned by ParseUsageText
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -227,10 +228,20 @@ AS
 			
 			IF @cleanedComment <> ''
 			BEGIN
+				---------------------------------------------------
+				-- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
+				--
+				-- If @cleanedComment is initially 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
+				-- after calling ParseUsageText, @cleanedComment will be ' Extra information about interval''
+				-- and @xml will be <u User="100" Proposal="49361" PropUser="50082" />
+				--
+				-- If @cleanedComment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
+				---------------------------------------------------
+			
 				EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
 				
 				UPDATE #STAGING
-				SET Comment = @cleanedComment
+				SET Comment = LTrim(RTrim(@cleanedComment))
 				WHERE Seq = @seq
 			END 
 			SET @count = @count + 1
