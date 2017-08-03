@@ -24,6 +24,7 @@ CREATE PROCEDURE dbo.UpdateRunOpLog
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/02/2017 mem - Pass @invalidUsage to AddUpdateRunInterval; continue updating long intervals if the usage info fails validation for a given entry
 **
 *****************************************************/
 (
@@ -63,7 +64,7 @@ AS
 	BEGIN TRY
 
 		-----------------------------------------------------------
-		-- make temp table to hold requested run changes
+		-- Make temp table to hold requested run changes
 		-- and populate it from the input XML
 		-----------------------------------------------------------
 		--
@@ -84,7 +85,8 @@ AS
 			xmlNode.value('@user', 'nvarchar(256)') emsl_user
 		FROM @xml.nodes('//run') AS R(xmlNode)
 
-		-- get current status of request (needed for change log updating)
+		-- Get current status of request (needed for change log updating)
+		--
 		UPDATE #RRCHG
 		SET statusID = TRSN.State_ID
 		FROM #RRCHG
@@ -94,7 +96,7 @@ AS
 		       ON TRR.RDS_Status = TRSN.State_Name
 
 		---------------------------------------------------
-		-- create temp table to hold interval changes
+		-- Create temp table to hold interval changes
 		-- and populate it from the input XML
 		---------------------------------------------------
 		
@@ -111,7 +113,7 @@ AS
 		FROM @xml.nodes('//interval') AS R(xmlNode)
 
 		-----------------------------------------------------------
-		-- loop through requested run changes
+		-- Loop through requested run changes
 		-- and validate and update
 		-----------------------------------------------------------
 		DECLARE 
@@ -152,11 +154,12 @@ AS
 							@eusUsageTypeID output,
 							@msg output,
 							@AutoPopulateUserListIfBlank
+				
 				if @myError <> 0
 					RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
 				-----------------------------------------------------------
-				-- 
+				-- Update the requested run
 				-----------------------------------------------------------
 
 				UPDATE T_Requested_Run 
@@ -176,7 +179,7 @@ AS
 					Exec AlterEventLogEntryUser 11, @curID, @StatusID, @callingUser
 				End
 
-				-- assign users to the request
+				-- Assign users to the request
 				--
 				exec @myError = AssignEUSUsersToRequestedRun
 										@curID,
@@ -189,10 +192,13 @@ AS
 		END --<a>
 
 		---------------------------------------------------
-		-- loop though long intervals and update 
+		-- Loop though long intervals and update 
 		---------------------------------------------------
+		--
 		DECLARE @comment varchar(MAX)
-
+		DECLARE @invalidUsage tinyint = 0
+		DECLARE @invalidEntries int = 0
+		
 		SET @prevID = 0
 		SET @curID = 0
 		SET @done = 0
@@ -213,22 +219,40 @@ AS
 			END
 			ELSE 
 			BEGIN --<y>
+			
 				exec @myError = AddUpdateRunInterval
-										@curID output,
-										@comment,
-										'update',
-										@msg output,
-										@callingUser 	
-				if @myError <> 0
+											@curID,
+											@comment,
+											'update',
+											@msg output,
+											@callingUser,
+											@invalidUsage=@invalidUsage output
+
+				If @invalidUsage > 0
+				Begin
+					-- Update @message then continue to the next item
+					Set @message = dbo.AppendToText(@message, @msg, 0, '; ')
+					Set @myError = 0
+					Set @invalidEntries = @invalidEntries + 1
+				End
+				Else If @myError <> 0
 					RAISERROR ('AddUpdateRunInterval: %s', 11, 20, @msg)
+					
 			END --<y>
 		END --<x>
 
+		If @invalidEntries > 0
+		Begin
+			-- @msg will be 'Parse error: error details' or 'Parse errors: error details'
+			Set @msg = 'Parse ' + dbo.CheckPlural(@invalidEntries, 'error', 'errors') + ': ' + @message
+			RAISERROR (@msg, 11, 21)
+		End
+		
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 
-		-- rollback any open transactions
+		-- Rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
