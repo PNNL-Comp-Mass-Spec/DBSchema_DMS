@@ -7,8 +7,7 @@ CREATE PROCEDURE AddUpdateRunInterval
 /****************************************************
 **
 **  Desc: 
-**    Adds new or edits existing item in 
-**    T_Run_Interval 
+**		 Adds new or edits existing item in T_Run_Interval 
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -25,14 +24,19 @@ CREATE PROCEDURE AddUpdateRunInterval
 **			04/28/2017 mem - Disable logging to T_Log_Entries when ParseUsageText reports an error
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/02/2017 mem - @ID is no longer an output variable
+**						   - Add parameters @showDebug and @invalidUsage
+**						   - Pass @ID and @invalidUsage to ParseUsageText
 **   
 *****************************************************/
 (
-	@ID INT OUTPUT ,
-	@Comment varchar(MAX),
-	@mode varchar(12) = 'add', -- or 'update'
+	@ID int ,
+	@Comment varchar(MAX),				-- Usage comment, e.g. 'User[100%], Proposal[49521], PropUser[50151]'
+	@mode varchar(12) = 'add',			-- 'add' or 'update'
 	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+	@callingUser varchar(128) = '',
+	@showDebug tinyint = 0,
+	@invalidUsage tinyint = 0 output	-- Set to 1 if the usage text in @comment cannot be parsed (or if the total percentage is not 100); UpdateRunOpLog uses this to skip invalid entries
 )
 As
 	Set XACT_ABORT, nocount on
@@ -40,8 +44,15 @@ As
 	declare @myError int = 0
 	declare @myRowCount int = 0
 
-	set @message = ''
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
 
+	Set @ID = IsNull(@ID, -1)
+	Set @message = ''
+	Set @showDebug = IsNull(@showDebug, 0)
+	Set @invalidUsage = 0
+	
 	Declare @logErrors tinyint = 0
 	
 	Set @CallingUser = IsNull(@CallingUser, '')
@@ -61,18 +72,48 @@ As
 	
 	BEGIN TRY 
 
+	IF @ID < 0
+	Begin
+		Set @message = 'Invalid ID: ' + Cast(@id as varchar(9))
+		RAISERROR (@message, 11, 10)
+		Goto Done
+	End
+	
 	---------------------------------------------------
-	-- validate usage and comment
+	-- Validate usage and comment
+	-- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
+	--
+	-- If @comment is 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
+	-- after calling ParseUsageText, @cleanedComment will be 'Extra information about interval'
+	-- and @usageXML will be <u User="100" Proposal="49361" PropUser="50082" />
+	--
+	-- If @comment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
+	--
+	-- Since @validateTotal is set to 1, if the percentages do not add up to 100%, ParseUsageText will raise an error (and @usageXML will be null)
 	---------------------------------------------------
 	
 	DECLARE @usageXML XML
 	DECLARE @cleanedComment VARCHAR(MAX) = @comment
 	
 	EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output
+	If @showDebug > 0
+		print 'Calling ParseUsageText'
+		
 	
+	If @showDebug > 0
+		print 'ParseUsageText returned ' + Cast(@myError as varchar(9))
+		
 	IF @myError <> 0
-		RAISERROR (@message, 11, 10)
-
+	Begin
+		If @myError BETWEEN 1 and 255
+			RAISERROR (@message, 11, @myError)
+		Else
+			RAISERROR (@message, 11, 12)
+	End
+	
+	If @showDebug > 0
+		print '@myError is 0 after ParseUsageText'
+	
 	Set @logErrors = 1
 	
 	---------------------------------------------------
@@ -104,7 +145,7 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin
 		set @myError = 0
 		--
@@ -123,8 +164,6 @@ As
 
 	end -- update mode
 
-	---------------------------------------------------
-	---------------------------------------------------
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
@@ -137,6 +176,7 @@ As
 			Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
 	END CATCH
 
+Done:
 	return @myError
 
 GO
