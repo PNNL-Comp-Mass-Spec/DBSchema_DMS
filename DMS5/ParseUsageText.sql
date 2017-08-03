@@ -7,11 +7,14 @@ CREATE PROCEDURE dbo.ParseUsageText
 /****************************************************
 **
 **  Desc: 
-**    Parse EMSL usage text in comment into XML
+**		Parse EMSL usage text in comment into XML
+**		Example usage values (note that each key can only be present once, so you cannot specify multiple proposals)
+**
+**		'User[100%], Proposal[49361], PropUser[50082]'
+**		'User[100%], Proposal[49361], PropUser[50082] Extra info about the interval'
+**		'CapDev[10%], User[90%], Proposal[49361], PropUser[50082]'
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **	Auth:	grk
 **	Date:	03/02/2012 
@@ -23,6 +26,10 @@ CREATE PROCEDURE dbo.ParseUsageText
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			               - Add parameters @seq, @showDebug, and @validateTotal
 **			04/28/2017 mem - Disable logging to T_Log_Entries for Raiserror messages
+**			08/02/2017 mem - Add output parameter @invalidUsage
+**						   - Use Try_Convert when parsing UsageValue
+**						   - Rename temp tables
+**						   - Additional comment cleanup logic
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -56,21 +63,21 @@ AS
 	Set @invalidUsage = 0
 	
 	If @showDebug > 0
-		Print 'Initial comment for SeqID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
+		Print 'Initial comment for ID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
 	
 	Declare @logErrors tinyint = 1
 	
 	---------------------------------------------------
-	-- temp table to hold usage key-values
+	-- Temp table to hold usage key-values
 	---------------------------------------------------
 	
-	CREATE TABLE #TU (
+	CREATE TABLE #TmpUsageInfo (
 		UsageKey varchar(32),
 		UsageValue VARCHAR(12) NULL,
 		UniqueID int IDENTITY(1,1) NOT NULL
 	)
 
-	CREATE TABLE #TN (
+	CREATE TABLE #TmpNonPercentageKeys (
 		UsageKey varchar(32)
 	)
 
@@ -78,7 +85,7 @@ AS
 	-- temp table to hold location of usage text
 	---------------------------------------------------
 	
-	CREATE TABLE #UT (
+	CREATE TABLE #TmpUsageText (
 		UsageText VARCHAR(64)
 	)
 	
@@ -86,35 +93,41 @@ AS
 	-- usage keywords
 	---------------------------------------------------
 	
-	DECLARE @usageKeys VARCHAR(256) = 'CapDev, Operator, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User, Proposal, PropUser'
+	DECLARE @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User'
 	DECLARE @nonPercentageKeys VARCHAR(256) =  'Operator, Proposal, PropUser'
 
 	BEGIN TRY 
 		---------------------------------------------------
-		-- normalize punctuation
+		-- Normalize punctuation to remove spaces around commas
 		---------------------------------------------------
 		
 		SET @comment = REPLACE(@comment, ', ', ',')
 		SET @comment = REPLACE(@comment, ' ,', ',')
 	
 		---------------------------------------------------
-		-- set up temp table with keywords
+		-- Set up temp table with keywords
 		---------------------------------------------------
-		
-		INSERT INTO #TU (UsageKey)
-		SELECT Item FROM dbo.MakeTableFromList(@usageKeys)
-		
-		UPDATE #TU
-		SET UsageKey = LTRIM(RTRIM(UsageKey))
 
-		INSERT INTO #TN (UsageKey)
-		SELECT Item FROM dbo.MakeTableFromList(@nonPercentageKeys)
+		-- Store the non-percentage based keys
+		--
+		INSERT INTO #TmpNonPercentageKeys (UsageKey)
+		SELECT LTRIM(RTRIM(Item))
+		FROM dbo.MakeTableFromList(@nonPercentageKeys)
 		
-		UPDATE #TN
-		SET UsageKey = LTRIM(RTRIM(UsageKey))
-
+		-- Add the percentage-based keys to #TmpUsageInfo
+		--
+		INSERT INTO #TmpUsageInfo (UsageKey)
+		SELECT LTRIM(RTRIM(Item))
+		FROM dbo.MakeTableFromList(@usageKeys)
+		
+		-- Add the non-percentage-based keys to #TmpUsageInfo
+		--
+		INSERT INTO #TmpUsageInfo (UsageKey)
+		SELECT UsageKey
+		FROM #TmpNonPercentageKeys
+		
 		---------------------------------------------------
-		-- look for keywords in text and update table with
+		-- Look for keywords in text and update table with
 		-- corresponding values
 		---------------------------------------------------
 		
@@ -126,40 +139,50 @@ AS
 		
 		DECLARE @uniqueID INT = 0, @nextID INT = 0
 		DECLARE @kw VARCHAR(32)
-		DECLARE @done INT = 0
+		DECLARE @done tinyint = 0
+				
 		WHILE @done = 0
-		BEGIN --<a>
+		BEGIN -- <a>
 			---------------------------------------------------
-			-- get next keyword to look for
+			-- Get next keyword to look for
 			---------------------------------------------------
+			
 			SET @kw = ''
 			SELECT TOP 1 
 				@kw = UsageKey + '[',
 				@curVal = UsageValue,
 				@uniqueID = UniqueID
-			FROM #TU
+			FROM #TmpUsageInfo
 			WHERE UniqueID > @nextID
 		
 			SET @nextID = @uniqueID
 
 			---------------------------------------------------
-			-- done if no more keywords,
+			-- Done if no more keywords,
 			-- otherwise look for it in text
 			---------------------------------------------------
 
 			IF @kw = ''
 				SET @done = 1
 			ELSE 
-			BEGIN --<b>
+			BEGIN -- <b>
 				SET @index = CHARINDEX(@kw, @comment)
-				
+
 				---------------------------------------------------
-				-- if we found a keyword in the text
+				-- If we found a keyword in the text
 				-- parse out its values and save that in the usage table
 				---------------------------------------------------
 			
-				IF @index > 0
-				BEGIN --<c>
+				IF @index  = 0
+				BEGIN
+					if @showDebug > 0
+						Print 'Keyword not found: ' + @kw
+				END
+				ELSE
+				BEGIN -- <c>
+					if @showDebug > 0
+						Print 'Parse keyword ' + @kw + ' at index ' + Cast(@index as varchar(9))
+
 					SET @bot = @index
 					SET @index = @index + LEN(@kw)
 					SET @eov = CHARINDEX(']', @comment, @index)
@@ -170,7 +193,8 @@ AS
 						RAISERROR ('Could not find closing bracket for "%s"', 11, 4, @kw)
 					End
 
-					INSERT INTO #UT ( UsageText )VALUES (SUBSTRING(@comment, @bot, (@eov - @bot) + 1))
+					INSERT INTO #TmpUsageText ( UsageText )
+					VALUES (SUBSTRING(@comment, @bot, (@eov - @bot) + 1))
 
 					SET @val = ''
 					SET @val = SUBSTRING(@comment, @index, @eov - @index)
@@ -181,89 +205,97 @@ AS
 					If Try_Convert(int, @val) Is Null
 					Begin
 						Set @logErrors = 0
-						RAISERROR ('Percentage value for usage "%s" is not a valid integer', 11, 5, @kw)
 						Set @invalidUsage = 1
+						RAISERROR ('Percentage value for usage "%s" is not a valid integer; see ID %d', 11, 5, @kw, @seq)
 					End
 					
-					UPDATE #TU
+					UPDATE #TmpUsageInfo
 					SET UsageValue = @val
 					WHERE UniqueID = @uniqueID
-				END --<c>
-			END --<b>
-		END --<a>
+					
+				END -- </c>
+			END -- </b>
+		END -- </a>
+	
 		---------------------------------------------------
 		-- clear keywords not found from table
 		---------------------------------------------------
 		
-		DELETE FROM #TU WHERE UsageValue IS null
+		DELETE FROM #TmpUsageInfo WHERE UsageValue IS null
 
 		---------------------------------------------------
-		-- verify percentage total
+		-- Verify percentage total
+		-- Skip keys in #TmpNonPercentageKeys ('Operator, Proposal, PropUser')
 		---------------------------------------------------
 
 		DECLARE @total INT = 0
-		SELECT @total = @total + CASE WHEN NOT UsageKey IN ( SELECT UsageKey FROM #TN ) 
-		                              THEN CONVERT(int, UsageValue)
+		SELECT @total = @total + CASE WHEN NOT UsageKey IN ( SELECT UsageKey FROM #TmpNonPercentageKeys ) 
+		                              THEN COALESCE(Try_Convert(int, UsageValue), 0)
 		                              ELSE 0
 		                         END
-		FROM #TU
+		FROM #TmpUsageInfo
 
 		IF @validateTotal > 0 And @total <> 100
 		Begin
 			Set @logErrors = 0
-			RAISERROR ('Total percentage (%d) does not add up to 100 for SeqID %d', 11, 7, @total, @seq)
 			Set @invalidUsage = 1
+			RAISERROR ('Total percentage (%d) does not add up to 100 for ID %d', 11, 7, @total, @seq)
 		End
 		
 		---------------------------------------------------
-		-- verify proposal (if user present)
+		-- Verify proposal (if user present)
 		---------------------------------------------------
 		
 		DECLARE @hasUser INT = 0
 		DECLARE @hasProposal INT = 0
 		
-		SELECT @hasUser = COUNT(*) FROM #TU WHERE UsageKey = 'User'
-		SELECT @hasProposal = COUNT(*) FROM #TU WHERE UsageKey = 'Proposal'
+		SELECT @hasUser = COUNT(*) FROM #TmpUsageInfo WHERE UsageKey = 'User'
+		SELECT @hasProposal = COUNT(*) FROM #TmpUsageInfo WHERE UsageKey = 'Proposal'
 		
 		IF (@hasUser > 0 ) AND (@hasProposal = 0)
 		Begin
 			Set @logErrors = 0
-			RAISERROR ('Proposal is needed if user allocation is specified; SeqID %d', 11, 6, @seq)
 			Set @invalidUsage = 1
+			RAISERROR ('Proposal is needed if user allocation is specified; see ID %d', 11, 6, @seq)
 		End
-			
+					
 		---------------------------------------------------
-		-- FUTURE: Vaidate proposal number?		
-		---------------------------------------------------
-		
-		---------------------------------------------------
-		-- make XML
+		-- Make XML
 		---------------------------------------------------
 
 		DECLARE @s VARCHAR(512) = ''
 		--
 		SELECT @s =  @s + UsageKey + '="' + UsageValue + '" '
-		FROM #TU
+		FROM #TmpUsageInfo
 		--
 		SET @usageXML = '<u ' + @s + ' />'
 
 		---------------------------------------------------
-		-- remove usage text from comment	
+		-- Remove usage text from comment	
 		---------------------------------------------------
 
-		SELECT @comment = REPLACE(@comment, UsageText, '') FROM #UT
+		SELECT @comment = REPLACE(@comment, UsageText, '') 
+		FROM #TmpUsageText
 		
+		SET @comment = LTRIM(RTRIM(@comment))
+		If @comment LIKE ',%'
+			Set @comment = LTRIM(Substring(@comment, 2, LEN(@Comment)-1))
+		
+		If @comment LIKE '%,'
+			Set @comment = RTRIM(Substring(@comment, 1, LEN(@Comment)-1))
+				
 		SET @comment = REPLACE(@comment, ',,', '')
 		SET @comment = REPLACE(@comment, ', ,', '')
 		SET @comment = REPLACE(@comment, '. ,', '. ')
 		SET @comment = REPLACE(@comment, '.,', '. ')
-		SET @comment = RTRIM(@comment)
-
+		SET @comment = LTRIM(RTRIM(@comment))
+		
+		If @comment = ','
+			Set @comment =''			
+			
 		If @showDebug > 0
 			Print 'Final comment for @seq ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>') + '; @total = ' + Cast(@total as varchar(9))
 
-	---------------------------------------------------
-	---------------------------------------------------
 	END TRY
 	BEGIN CATCH 
 		--EXEC FormatErrorMessage @message output, @myError output
