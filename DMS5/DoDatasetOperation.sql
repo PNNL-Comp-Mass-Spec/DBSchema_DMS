@@ -31,6 +31,7 @@ CREATE Procedure DoDatasetOperation
 **			05/04/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/03/2017 mem - Allow resetting a dataset if DatasetIntegrity failed
 **    
 *****************************************************/
 (
@@ -48,11 +49,14 @@ As
 	set @message = ''
 	
 	Declare @msg varchar(256)
-
+	Declare @logMsg varchar(256)
+	
 	Declare @datasetID int = 0
 	
-	Declare @CurrentState int
+	Declare @currentState int
 	Declare @NewState int
+
+	Declare @currentComment varchar(512)
 	
 	Declare @result int
 	Declare @ValidMode tinyint = 0
@@ -76,7 +80,8 @@ As
 	---------------------------------------------------
 
 	SELECT  
-		@CurrentState = DS_state_ID,
+		@currentState = DS_state_ID,
+		@currentComment = DS_Comment,
 		@datasetID = Dataset_ID 
 	FROM T_Dataset 
 	WHERE (Dataset_Num = @datasetNum)
@@ -85,7 +90,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Could not get Id or state for dataset "' + @datasetNum + '"'
+		set @msg = 'Could not get ID or state for dataset "' + @datasetNum + '"'
 		RAISERROR (@msg, 11, 1)
 	end
 
@@ -166,7 +171,7 @@ As
 		-- verify that dataset is still in 'new' state
 		---------------------------------------------------
 
-		if @CurrentState <> 1
+		if @currentState <> 1
 		begin
 			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" must be in "new" state to be deleted by user'
@@ -214,21 +219,59 @@ As
 
 		-- if dataset not in failed state, can't reset it
 		--
-		if @CurrentState not in (5, 9) -- "Failed" or "Not ready"
+		if @currentState not in (5, 9) -- "Failed" or "Not ready"
 		begin
 			Set @logErrors = 0
-			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@CurrentState as varchar(12))
+			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@currentState as varchar(12))
 			RAISERROR (@msg, 11, 5)
 		end
 
 		-- Do not allow a reset if the dataset succeeded the first step of capture
-		If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (4,5))
+		If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (1,2,4,5))
 		begin
-			Set @logErrors = 0
-			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset because it has already been successfully captured; please contact a system administrator for further assistance'
-			RAISERROR (@msg, 11, 5)
-		end
+			Declare @allowReset tinyint = 0
+			
+			If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetIntegrity' AND State = 6) AND
+			   Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State = 5)
+			Begin
+				-- Do allow a reset if the DatasetIntegrity step failed and if we haven't already retried capture of this dataset once
+				set @msg = 'Retrying capture of dataset ' + @datasetNum + ' at user request (dataset was captured, but DatasetIntegrity failed)'
+				If Exists (SELECT * FROM T_Log_Entries WHERE message LIKE @msg + '%')
+				Begin
+					Set @msg = 'Dataset "' + @datasetNum + '" cannot be reset because it has already been reset once'
+					
+					If @callingUser = ''
+						Set @logMsg = @msg + '; user ' + SUSER_SNAME()
+					Else
+						Set @logMsg = @msg + '; user ' + @callingUser
+						
+					Exec PostLogEntry 'Error', @logMsg, 'DoDatasetOperation'
+					
+					Set @msg = @msg + '; please contact a system administrator for further assistance'
+				End
+				Else
+				Begin
+					Set @allowReset=1
+					If @callingUser = ''
+						Set @msg = @msg + '; user ' + SUSER_SNAME()
+					Else
+						Set @msg = @msg + '; user ' + @callingUser
 
+					Exec PostLogEntry 'Warning', @msg, 'DoDatasetOperation'
+				End
+				
+			End
+			Else
+			Begin
+				Set @msg = 'Dataset "' + @datasetNum + '" cannot be reset because it has already been successfully captured; please contact a system administrator for further assistance'
+			End
+			
+			If @allowReset = 0
+			Begin
+				Set @logErrors = 0
+				RAISERROR (@msg, 11, 5)
+			End
+		end
 
 		-- Update state of dataset to new
 		--
@@ -236,7 +279,7 @@ As
 
 		UPDATE T_Dataset 
 		SET DS_state_ID = @NewState
-		WHERE (Dataset_ID = @datasetID)
+		WHERE Dataset_ID = @datasetID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
@@ -250,6 +293,24 @@ As
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
 
+		-- Remove common error messages from the dataset comment
+		-- Look for 'Data file size is less than 50 KB'
+		Declare @matchPos int = PatIndex('%Data % size is less than%', @currentComment)
+
+		If @matchPos >= 1
+		Begin
+			Set @currentComment = Rtrim(Left(@currentComment, @matchPos-1))
+
+			If @currentComment LIKE '%;'
+			Begin
+				Set @currentComment = Left(@currentComment, Len(@currentComment)-1)
+			End
+			
+			UPDATE T_Dataset 
+			SET DS_Comment = @currentComment
+			WHERE Dataset_ID = @datasetID
+		End
+		
 		set @ValidMode = 1
 	end -- mode 'reset'
 	
