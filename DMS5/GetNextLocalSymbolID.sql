@@ -10,28 +10,24 @@ CREATE PROCEDURE GetNextLocalSymbolID
 **
 **	Return values: 0: failure, otherwise, LocalSymbolID
 **
-**	Parameters: 
-**
 **	Auth:	kja
 **	Date:	08/10/2004
 **			10/01/2009 mem - Updated to jump from ID 3 to ID 9 for Sequest param files
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
 	@ParamFileID int
 )
 As
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-
-	declare @LocalSymbolID int
-	declare @NextSymbolID int
-	declare @ParamFileTypeID int
+	Set NoCount On
 	
-	Set @NextSymbolID = 0
-	Set @ParamFileTypeID = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
+
+	Declare @LocalSymbolID int
+	Declare @NextSymbolID int = 0
+	Declare @ParamFileTypeID int = 0
 	
 	-- Determine the param file type for this param file ID
 	SELECT @ParamFileTypeID = Param_File_Type_ID
@@ -97,7 +93,7 @@ As
 		Set @NextSymbolID = @LocalSymbolID + 1
 	End
 	
-	return(@NextSymbolID)
+	return @NextSymbolID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNextLocalSymbolID] TO [DDL_Viewer] AS [dbo]

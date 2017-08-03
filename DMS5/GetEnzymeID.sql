@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure GetEnzymeID
+CREATE PROCEDURE GetEnzymeID
 /****************************************************
 **
 **	Desc: Gets enzymeID for given enzyme name
@@ -12,18 +12,24 @@ create Procedure GetEnzymeID
 **
 **	Parameters: 
 **
-**		Auth: jds
-**		Date: 8/25/2004
+**	Auth:	jds
+**	Date:	08/25/2004
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
-		@enzymeName varchar(50) = " "
+	@enzymeName varchar(50) = " "
 )
 As
-	declare @enzymeID int
-	set @enzymeID = 0
-	SELECT @enzymeID = Enzyme_ID FROM T_Enzymes WHERE (Enzyme_Name = @enzymeName)
-	return(@enzymeID)
+	Set NoCount On
+	
+	Declare @enzymeID int = 0
+	
+	SELECT @enzymeID = Enzyme_ID
+	FROM T_Enzymes
+	WHERE Enzyme_Name = @enzymeName
+
+	return @enzymeID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetEnzymeID] TO [DDL_Viewer] AS [dbo]

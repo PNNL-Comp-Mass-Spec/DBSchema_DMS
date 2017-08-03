@@ -3,35 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-
-
-
-
-CREATE Procedure GetCampaignID
+CREATE PROCEDURE GetCampaignID
 /****************************************************
 **
 **	Desc: Gets campaignID for given campaign name
 **
 **	Return values: 0: failure, otherwise, campaign ID
 **
-**	Parameters: 
-**
-**		Auth: grk
-**		Date: 1/26/2001
+**	Auth:	grk
+**	Date:	01/26/2001
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
-		@campaignNum varchar(80) = " "
+	@campaignNum varchar(80) = " "
 )
 As
-	declare @campaignID int
-	set @campaignID = 0
-	SELECT @campaignID = Campaign_ID FROM T_Campaign WHERE (Campaign_Num = @campaignNum)
-	return(@campaignID)
+	Set NoCount On
+
+	Declare @campaignID int = 0
+	
+	SELECT @campaignID = Campaign_ID
+	FROM T_Campaign
+	WHERE Campaign_Num = @campaignNum
+
+	return @campaignID
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetCampaignID] TO [DDL_Viewer] AS [dbo]
 GO

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Procedure GetActiveInstrumentID
+CREATE PROCEDURE GetActiveInstrumentID
 /****************************************************
 **
 **	Desc: Gets the "Active" InstrumentID for given instrument name
@@ -12,18 +12,27 @@ create Procedure GetActiveInstrumentID
 **
 **	Parameters: Instrument Name - the name of the instrument
 **
-**		Auth: jds
-**		Date: 6/28/2004
+**	Auth:	jds
+**	Date:	06/28/2004
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
 	@instrumentName varchar(80) = " "
 )
 As
-	declare @instrumentID int
-	set @instrumentID = 0
-	SELECT @instrumentID = Instrument_ID FROM T_Instrument_Name INNER JOIN T_Archive_Path ON Instrument_ID = AP_Instrument_Name_ID and IN_name = @instrumentName and AP_Function = 'Active'
-	return(@instrumentID)
+	Set NoCount On
+
+	Declare @instrumentID int = 0
+
+	SELECT @instrumentID = Instrument_ID
+	FROM T_Instrument_Name
+	     INNER JOIN T_Archive_Path
+	       ON Instrument_ID = AP_Instrument_Name_ID AND
+	          IN_name = @instrumentName AND
+	          AP_Function = 'Active'
+
+	return @instrumentID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetActiveInstrumentID] TO [DDL_Viewer] AS [dbo]

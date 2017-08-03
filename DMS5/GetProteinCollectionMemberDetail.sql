@@ -3,18 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.GetProteinCollectionMemberDetail
+CREATE PROCEDURE dbo.GetProteinCollectionMemberDetail
 /****************************************************
 **
 **	Desc:	Gets detailed information regarding a single protein in a protein collection
 **
 **			This is called from the Protein Collection Member detail report, for example:
-**			http://dmsdev.pnl.gov/protein_collection_members/show/13363564
+**			http://dms2.pnl.gov/protein_collection_members/show/13363564
 **
 **	Return values: 0: success, otherwise, error code
 ** 
 **	Auth:	mem
 **	Date:	06/27/2016 mem - Initial version
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
@@ -24,10 +25,10 @@ CREATE Procedure dbo.GetProteinCollectionMemberDetail
    	@callingUser varchar(128) = ''
 )
 As
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Set NoCount On
+	
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -39,19 +40,19 @@ As
 		
 		Set @mode = IsNull(@mode, 'get')
 
-		declare @proteinCollectionID int = 0
-		declare @proteinName varchar(128) = ''
-		declare @description varchar(900) = ''
-		declare @proteinSequence varchar(max) = ''
-		declare @formattedSequence varchar(max) = '<pre>'
-		declare @monoisotopicMass float = 0
-		declare @averageMass float = 0
-		declare @residueCount int = 0
-		declare @molecularFormula varchar(128) = ''
-		declare @proteinId int = 0
-		declare @sha1Hash varchar(40) = ''
-		declare @memberId int = 0
-		declare @sortingIndex int = 0
+		Declare @proteinCollectionID int = 0
+		Declare @proteinName varchar(128) = ''
+		Declare @description varchar(900) = ''
+		Declare @proteinSequence varchar(max) = ''
+		Declare @formattedSequence varchar(max) = '<pre>'
+		Declare @monoisotopicMass float = 0
+		Declare @averageMass float = 0
+		Declare @residueCount int = 0
+		Declare @molecularFormula varchar(128) = ''
+		Declare @proteinId int = 0
+		Declare @sha1Hash varchar(40) = ''
+		Declare @memberId int = 0
+		Declare @sortingIndex int = 0
 
 		---------------------------------------------------
 		-- Retrieve one row of data
@@ -125,7 +126,7 @@ As
 		       @monoisotopicMass AS Monoisotopic_Mass,
 		       @averageMass AS Average_Mass,
 		       @residueCount AS Residue_Count,
-		      @molecularFormula AS Molecular_Formula,
+		       @molecularFormula AS Molecular_Formula,
 		       @proteinId AS Protein_ID,
 		       @id AS Reference_ID,
 		       @sha1Hash AS SHA1_Hash,

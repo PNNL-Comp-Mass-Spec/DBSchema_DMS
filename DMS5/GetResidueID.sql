@@ -3,27 +3,29 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE GetResidueID
+CREATE PROCEDURE GetResidueID
 /****************************************************
 **
 **	Desc: Gets ResidueID for given Residue Symbol
 **
 **	Return values: 0: failure, otherwise, ResidueID
 **
-**	Parameters: 
-**
-**		Auth: kja
-**		Date: 08/22/2004
+**	Auth:	kja
+**	Date:	08/22/2004
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
-		@ResidueSymbol char(1)
+	@ResidueSymbol char(1)
 )
 As
-	declare @ResidueID int
-	set @ResidueID = 0
+	Set NoCount On
 	
-	SELECT @ResidueID = Residue_ID FROM T_Residues WHERE (Residue_Symbol = @ResidueSymbol)
+	Declare @ResidueID int = 0
+	
+	SELECT @ResidueID = Residue_ID
+	FROM T_Residues
+	WHERE Residue_Symbol = @ResidueSymbol
 	
 	return @ResidueID
 

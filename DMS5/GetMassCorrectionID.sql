@@ -10,26 +10,26 @@ CREATE PROCEDURE GetMassCorrectionID
 **
 **	Return values: 0: failure, otherwise, MassCorrectionID
 **
-**	Parameters: 
-**
-**		Auth: kja
-**		Date: 08/22/2004
+**	Auth:	kja
+**	Date:	08/22/2004
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
-		@modMass varchar(32)
+	@modMass varchar(32)
 )
 As
-	declare @MassCorrectionID int
-	set @MassCorrectionID = 0
-	declare @MCVariance float
-	set @MCVariance = 0.00006
+	Set NoCount On
 	
-	SELECT     @MassCorrectionID = Mass_Correction_ID
-FROM         T_Mass_Correction_Factors
-WHERE     (Monoisotopic_Mass_Correction < @modMass + @MCVariance AND Monoisotopic_Mass_Correction > @modMass - @MCVariance)			
+	Declare @MassCorrectionID int = 0
+	Declare @MCVariance float = 0.00006
 	
-	return(@MassCorrectionID)
+	SELECT @MassCorrectionID = Mass_Correction_ID
+	FROM T_Mass_Correction_Factors
+	WHERE (Monoisotopic_Mass_Correction < @modMass + @MCVariance AND
+	       Monoisotopic_Mass_Correction > @modMass - @MCVariance)
+	
+	return @MassCorrectionID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMassCorrectionID] TO [DDL_Viewer] AS [dbo]

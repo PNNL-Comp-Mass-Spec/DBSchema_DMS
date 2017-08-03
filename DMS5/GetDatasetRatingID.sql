@@ -3,34 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-Create Procedure GetDatasetRatingID
+CREATE Procedure GetDatasetRatingID
 /****************************************************
 **
 **	Desc: Gets datasetRatingID for given  DatasetRating name
 **
 **	Return values: 0: failure, otherwise, datasetRatingID
 **
-**	Parameters: 
-**
-**		Auth: grk
-**		Date: 1/26/2001
+**	Auth:	grk
+**	Date:	01/26/2001
+**			08/03/2017 mem - Add set nocount on
 **    
 *****************************************************/
 (
 	@datasetRatingName varchar(80) = " "
 )
 As
-	declare @datasetRatingID int
-	set @datasetRatingID = 0
+	set nocount on
+	
+	declare @datasetRatingID int = 0
 
 	SELECT @datasetRatingID = DRN_state_ID 
 	FROM T_DatasetRatingName 
-	WHERE (DRN_name = @datasetRatingName)
+	WHERE DRN_name = @datasetRatingName
 	
-	return(@datasetRatingID)
+	return @datasetRatingID
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetRatingID] TO [DDL_Viewer] AS [dbo]
 GO

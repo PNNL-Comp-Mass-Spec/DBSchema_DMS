@@ -3,31 +3,30 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure GetOrganismID
+CREATE PROCEDURE GetOrganismID
 /****************************************************
 **
 **	Desc: Gets organismID for given organism name
 **
 **	Return values: 0: failure, otherwise, organismID
 **
-**	Parameters: 
-**
 **	Auth:	grk
 **	Date:	01/26/2001
 **			09/25/2012 mem - Expanded @organismName to varchar(128)
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
 	@organismName varchar(128) = ''
 )
 As
-	declare @organismID int
-	set @organismID = 0
+	Set NoCount On
+	
+	Declare @organismID int = 0
 	
 	SELECT @organismID = Organism_ID 
 	FROM T_Organisms 
-	WHERE (OG_name = @organismName)
+	WHERE OG_name = @organismName
 	
 	return @organismID
 GO

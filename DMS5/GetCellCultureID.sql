@@ -3,28 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-Create Procedure GetCellCultureID
+CREATE PROCEDURE GetCellCultureID
 /****************************************************
 **
 **	Desc: Gets CC_ID for given cell culture name
 **
 **	Return values: 0: failure, otherwise, campaign ID
 **
-**	Parameters: 
-**
-**		Auth: grk
-**		Date: 3/26/2003
+**	Auth:	grk
+**	Date:	03/26/2003
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
-		@cellCultureName varchar(128) = " "
+	@cellCultureName varchar(128) = " "
 )
 As
-	declare @ccID int
-	set @ccID = 0
-	SELECT @ccID = CC_ID FROM T_Cell_Culture WHERE (CC_Name = @cellCultureName)
-	return(@ccID)
+	Set NoCount On
+	
+	Declare @ccID int = 0
+
+	SELECT @ccID = CC_ID
+	FROM T_Cell_Culture
+	WHERE CC_Name = @cellCultureName
+
+	return @ccID
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetCellCultureID] TO [DDL_Viewer] AS [dbo]
 GO

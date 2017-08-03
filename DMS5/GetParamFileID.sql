@@ -10,24 +10,23 @@ CREATE PROCEDURE GetParamFileID
 **
 **	Return values: 0: failure, otherwise, ParamFileID
 **
-**	Parameters: 
-**
 **	Auth:	grk
 **	Date:	01/26/2001
 **			02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
+**			08/03/2017 mem - Add Set NoCount On
 **    
 *****************************************************/
 (
 	@ParamFileName varchar(255) = " "
 )
 As
-	declare @ParamFileID int
+	Set NoCount On
 	
-	set @ParamFileID = 0
+	Declare @ParamFileID int = 0
 
 	SELECT @ParamFileID = Param_File_ID
 	FROM T_Param_Files
-	WHERE (Param_File_Name = @ParamFileName)
+	WHERE Param_File_Name = @ParamFileName
 
 	Return @ParamFileID
 
