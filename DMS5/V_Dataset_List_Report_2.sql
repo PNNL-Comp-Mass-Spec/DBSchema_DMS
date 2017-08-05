@@ -17,12 +17,9 @@ SELECT DS.Dataset_ID AS ID,
        DSRating.DRN_name AS Rating,
        DTN.DST_name AS [Dataset Type],
        DS.DS_Oper_PRN AS Operator,
-       DFP.Dataset_Folder_Path AS [Dataset Folder Path],
-       CASE
-           WHEN DA.MyEMSLState > 0 THEN 'MyEMSL'
-           ELSE DFP.Archive_Folder_Path
-       END AS [Archive Folder Path],
-       DFP.Dataset_URL + 'QC/index.html' AS QC_Link,
+       DL.Dataset_Folder_Path AS [Dataset Folder Path],
+       DL.Archive_Folder_Path AS [Archive Folder Path],
+       DL.QC_Link AS QC_Link,
        ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
        ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq. End],
        DS.Acq_Length_Minutes AS [Acq Length],
@@ -56,8 +53,8 @@ FROM T_DatasetStateName DSN
        ON DS.Exp_ID = Exp.Exp_ID
      INNER JOIN T_Campaign C
        ON Exp.EX_campaign_ID = C.Campaign_ID
-     INNER JOIN V_Dataset_Folder_Paths DFP
-       ON DS.Dataset_ID = DFP.Dataset_ID
+     INNER JOIN T_Cached_Dataset_Links AS DL
+       ON DS.Dataset_ID = DL.Dataset_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
      INNER JOIN T_Organisms Org

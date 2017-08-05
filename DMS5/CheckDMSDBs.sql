@@ -17,15 +17,19 @@ CREATE PROCEDURE dbo.CheckDMSDBs
 **	Auth:	mem
 **	Date:	08/26/2006
 **			11/08/2007 mem - Ported to DMS
+**			08/04/2017 mem - @ShrinkDB now supports 3 modes
+**							 @ShrinkDB=0 means do not shrink; this is the default
+**							 @ShrinkDB=1 will use DBCC SHRINKDATABASE ('DBName', TargetPercent, TRUNATEONLY); relatively fast operation, not moving any data
+**							 @ShrinkDB=2 will use DBCC SHRINKDATABASE ('DBName', TargetPercent);              slower operation since it consolidates data on disk
 **    
 *****************************************************/
 (
 	@DBNameMatchList varchar(2048) = 'DMS%',		-- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
 	@IncludeSystemDBs tinyint = 0,
 	@CheckDB tinyint = 1,							-- Set to 1 to call DBCC CHECKDB against each DB
-	@ShrinkDB tinyint = 1,							-- Set to 1 to call DBCC SHRINKDATABASE against each DB
+	@ShrinkDB tinyint = 0,							-- Set to 1 to call DBCC SHRINKDATABASE using TRUNCATEONLY (fast); Set to 2 to call DBCC SHRINKDATABASE without TRUNATEONLY (slower)
 	@CheckPhysicalOnly tinyint = 0,					-- Set to 1 to use the PHYSICAL_ONLY switch with DBCC, which performs a quick, less thorough check of each DB
-	@ShrinkTargetPercent tinyint = 10,				-- Target percentage for shrinking each database
+	@ShrinkTargetPercent tinyint = 20,				-- Target percentage for shrinking each database
 	@InfoOnly tinyint = 0,							-- Set to 1 to display the SQL that would be run
 	@message varchar(255) = '' OUTPUT
 )
@@ -55,7 +59,7 @@ As
 
 	---------------------------------------
 	-- Make sure either @CheckDB or @ShrinkDB is non-zero
-	-- If not, then there is nothing to do
+	-- If not, there is nothing to do
 	---------------------------------------
 	
 	If @CheckDB = 0 And @ShrinkDB = 0
@@ -212,8 +216,10 @@ As
 				Set @SqlCheck = ''
 
 			
-			If @ShrinkDB <> 0
+			If @ShrinkDB = 1
 				Set @SqlShrink = N'DBCC SHRINKDATABASE (''' + @DBName + ''', ' + Convert(nvarchar(9), @ShrinkTargetPercent) + ', TRUNCATEONLY)'
+			Else If @ShrinkDB = 2
+				Set @SqlShrink = N'DBCC SHRINKDATABASE (''' + @DBName + ''', ' + Convert(nvarchar(9), @ShrinkTargetPercent) + ')'
 			Else
 				Set @SqlShrink = ''
 			

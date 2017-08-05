@@ -36,6 +36,7 @@ ALTER TABLE [dbo].[T_Cached_Dataset_Links] ADD  CONSTRAINT [DF_T_Cached_Dataset_
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Links]  WITH CHECK ADD  CONSTRAINT [FK_T_Cached_Dataset_Links_T_Dataset] FOREIGN KEY([Dataset_ID])
 REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
+ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Links] CHECK CONSTRAINT [FK_T_Cached_Dataset_Links_T_Dataset]
 GO
