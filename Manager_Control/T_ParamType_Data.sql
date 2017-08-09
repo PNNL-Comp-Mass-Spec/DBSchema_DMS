@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 183 ******/
+/****** RowCount: 184 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -183,5 +183,6 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (19
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (200,'RemoteOrgDBPath','','Path on the remote computer for storing FASTA files')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (201,'RemoteHostPrivateKeyFile','','File with the RSA private key for connecting to RemoteHostName as user RemoteHostUser')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (202,'RemoteHostPassphraseFile','','File with the RSA passphrase')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (203,'MSGFPlusProgLoc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (203,'MSGFPlusProgLoc','','Folder containing MSGFPlus.jar')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (204,'UimfToMassHunterProgLoc','','Folder containing UimfToMassHunter.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
