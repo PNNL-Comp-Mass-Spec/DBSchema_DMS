@@ -20,6 +20,7 @@ CREATE PROCEDURE ResetFailedDatasetCaptureTasks
 **			11/02/2016 mem - Check for Folder size changed and File size changed
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			08/08/2017 mem - Call RemoveCaptureErrorsFromString instead of RemoveFromString
 **    
 *****************************************************/
 (
@@ -122,12 +123,7 @@ As
 				--
 				UPDATE T_Dataset
 				SET DS_state_ID = 1,
-					DS_Comment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
-					        DS_Comment, 
-								'Dataset not ready: Exception validating constant file size'), 
-								'Dataset not ready: Exception validating constant folder size'), 
-								'Dataset not ready: Folder size changed'), 
-								'Dataset not ready: File size changed')
+					DS_Comment = dbo.RemoveCaptureErrorsFromString(DS_Comment)
 				FROM #Tmp_Datasets Src
 					INNER JOIN T_Dataset DS
 					ON Src.Dataset_ID = DS.Dataset_ID

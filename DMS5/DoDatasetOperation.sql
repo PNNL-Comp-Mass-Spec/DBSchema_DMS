@@ -32,6 +32,7 @@ CREATE Procedure DoDatasetOperation
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/03/2017 mem - Allow resetting a dataset if DatasetIntegrity failed
+**			08/08/2017 mem - Use function RemoveCaptureErrorsFromString to remove common dataset capture errors when resetting a dataset
 **    
 *****************************************************/
 (
@@ -62,7 +63,7 @@ As
 	Declare @ValidMode tinyint = 0
 	Declare @logErrors tinyint = 0
 	
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -88,11 +89,11 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @msg = 'Could not get ID or state for dataset "' + @datasetNum + '"'
 		RAISERROR (@msg, 11, 1)
-	end
+	End
 
 	Set @logErrors = 1
 	
@@ -100,8 +101,8 @@ As
 	-- Schedule the dataset for predefined job processing
 	---------------------------------------------------
 	--
-	if @mode = 'createjobs'
-	begin
+	If @mode = 'createjobs'
+	Begin
 		If IsNull(@callingUser, '') = ''
 			Set @callingUser = SUSER_SNAME()
 
@@ -135,64 +136,64 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			RAISERROR ('Error adding "%s" to T_Predefined_Analysis_Scheduling_Queue, error code %d', 11, 2, @datasetNum, @myError)
-		end
+		End
 		
 		set @ValidMode = 1
-	end
+	End
 	
 	---------------------------------------------------
 	-- Delete dataset regardless of state
 	---------------------------------------------------
 	--
-	if @mode = 'delete_all'
-	begin
+	If @mode = 'delete_all'
+	Begin
 
 		execute @result = DeleteDataset @datasetNum, @message output, @callingUser
 		--
-		if @result <> 0
-		begin
+		If @result <> 0
+		Begin
 			RAISERROR ('Could not delete dataset "%s"', 11, 2, @datasetNum)
-		end
+		End
 		
 		set @ValidMode = 1
-	end
+	End
 
 	---------------------------------------------------
 	-- Delete dataset if it is in "new" state only
 	---------------------------------------------------
 	--
-	if @mode = 'delete'
-	begin
+	If @mode = 'delete'
+	Begin
 
 		---------------------------------------------------
 		-- verify that dataset is still in 'new' state
 		---------------------------------------------------
 
-		if @currentState <> 1
-		begin
+		If @currentState <> 1
+		Begin
 			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" must be in "new" state to be deleted by user'
 			RAISERROR (@msg, 11, 3)
-		end
+		End
 		
 		---------------------------------------------------
 		-- Verify that the dataset does not have an active or completed capture job
 		---------------------------------------------------
 
 		If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State <= 2)
-		begin
+		Begin
 			set @msg = 'Dataset "' + @datasetNum + '" is being processed by the DMS_Capture database; unable to delete'
 			RAISERROR (@msg, 11, 3)
-		end		
+		End		
 
 		If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State > 2)
-		begin
+		Begin
 			set @msg = 'Dataset "' + @datasetNum + '" has been processed by the DMS_Capture database; unable to delete'
 			RAISERROR (@msg, 11, 3)
-		end		
+		End		
 		
 		
 		---------------------------------------------------
@@ -201,34 +202,34 @@ As
 
 		execute @result = DeleteDataset @datasetNum, @message output, @callingUser
 		--
-		if @result <> 0
-		begin
+		If @result <> 0
+		Begin
 			RAISERROR ('Could not delete dataset "%s"', 11, 4, @datasetNum)
-		end
+		End
 		
 		set @ValidMode = 1
-	end -- mode 'delete'
+	End -- mode 'delete'
 	
 	---------------------------------------------------
 	-- Reset state of failed dataset to 'new' 
 	-- This is used by the "Retry Capture" button on the dataset detail report page
 	---------------------------------------------------
 	--
-	if @mode = 'reset'
-	begin
+	If @mode = 'reset'
+	Begin
 
-		-- if dataset not in failed state, can't reset it
+		-- If dataset not in failed state, can't reset it
 		--
-		if @currentState not in (5, 9) -- "Failed" or "Not ready"
-		begin
+		If @currentState not in (5, 9) -- "Failed" or "Not ready"
+		Begin
 			Set @logErrors = 0
 			set @msg = 'Dataset "' + @datasetNum + '" cannot be reset if capture not in failed or in not ready state ' + cast(@currentState as varchar(12))
 			RAISERROR (@msg, 11, 5)
-		end
+		End
 
 		-- Do not allow a reset if the dataset succeeded the first step of capture
 		If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (1,2,4,5))
-		begin
+		Begin
 			Declare @allowReset tinyint = 0
 			
 			If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetIntegrity' AND State = 6) AND
@@ -271,62 +272,45 @@ As
 				Set @logErrors = 0
 				RAISERROR (@msg, 11, 5)
 			End
-		end
+		End
 
 		-- Update state of dataset to new
 		--
 		Set @NewState = 1		 -- "new' state
 
 		UPDATE T_Dataset 
-		SET DS_state_ID = @NewState
+		SET DS_state_ID = @NewState,
+		    DS_Comment = dbo.RemoveCaptureErrorsFromString(DS_Comment)
 		WHERE Dataset_ID = @datasetID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 or @myRowCount <> 1
-		begin
+		If @myError <> 0 or @myRowCount <> 1
+		Begin
 			set @msg = 'Update was unsuccessful for dataset table "' + @datasetNum + '"'
 			RAISERROR (@msg, 11, 6)
-		end
+		End
 
-		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
 
-		-- Remove common error messages from the dataset comment
-		-- Look for 'Data file size is less than 50 KB'
-		Declare @matchPos int = PatIndex('%Data % size is less than%', @currentComment)
-
-		If @matchPos >= 1
-		Begin
-			Set @currentComment = Rtrim(Left(@currentComment, @matchPos-1))
-
-			If @currentComment LIKE '%;'
-			Begin
-				Set @currentComment = Left(@currentComment, Len(@currentComment)-1)
-			End
-			
-			UPDATE T_Dataset 
-			SET DS_Comment = @currentComment
-			WHERE Dataset_ID = @datasetID
-		End
-		
 		set @ValidMode = 1
-	end -- mode 'reset'
+	End -- mode 'reset'
 	
 	
-	if @ValidMode = 0
-	begin
+	If @ValidMode = 0
+	Begin
 		---------------------------------------------------
 		-- Mode was unrecognized
 		---------------------------------------------------
 		
 		set @msg = 'Mode "' + @mode +  '" was unrecognized'
 		RAISERROR (@msg, 11, 10)
-	end
+	End
 	
 	END TRY
-	BEGIN CATCH 
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions

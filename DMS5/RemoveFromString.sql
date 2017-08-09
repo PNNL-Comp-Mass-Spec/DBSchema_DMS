@@ -10,15 +10,19 @@ CREATE FUNCTION dbo.RemoveFromString
 **	Desc:	Removes the specified text from the parent string, including
 **			removing any comma or semicolon delimiter that precedes the text
 **
+**			If @textToRemove ends in a percent sign, this function will also remove text
+**			following @textToRemove, continuing to the next delimiter (comma, semicolon, or end of string)
+**
 **	Returns the updated string
 **
-**		Auth:	mem
-**		Date:	10/25/2016 mem - Initial version
+**	Auth:	mem
+**	Date:	10/25/2016 mem - Initial version
+**			08/08/2017 mem - Add support for @textToRemove ending in %
 **
 *****************************************************/
 (
 	@text varchar(2048),				-- Text to search
-	@textToRemove varchar(1024)			-- Text to remove
+	@textToRemove varchar(1024)			-- Text to remove; may optionally end wit a percent sign
 )
 	RETURNS varchar(2048)
 AS
@@ -28,6 +32,9 @@ Begin
 	Declare @iteration tinyint = 0
 	Declare @textToFind varchar(1030)
 	
+	Declare @matchPos int
+	Declare @nextDelimiter int
+			
 	If IsNull(@text, '') = ''
 		Set @text = ''
 
@@ -46,11 +53,51 @@ Begin
 			If @iteration = 4
 				Set @textToFind = @textToRemove
 
-			Set @text = Replace(@text, @textToFind, '')
+			If Right(@textToRemove, 1) = '%'
+			Begin
+				Set @matchPos = PatIndex('%' + @textToRemove, @text)
+				
+				If @matchPos >= 1
+				Begin
+					Set @nextDelimiter = CharIndex(';', @text, @matchPos + 1)
+					If @nextDelimiter = 0
+					Begin
+						Set @nextDelimiter = CharIndex(',', @text, @matchPos + 1)
+					End
+					
+					If @nextDelimiter > 1
+					Begin
+						Set @text = 
+							Rtrim(Left(@text, @matchPos-1) + 
+							LTrim(Substring(@text, @nextDelimiter + 1, Len(@text))))
+					End
+					Else
+					Begin
+						Set @text = Rtrim(Left(@text, @matchPos-1))
+					End
+				End
+			End
+			Else
+			Begin
+				Set @text = Replace(@text, @textToFind, '')
+			End
 
 			Set @iteration = @iteration + 1
 		End		
 	End
+		
+	-- Check for leading or trailing whitespace, comma, or semicolon
+	Set @text = LTrim(RTrim(@text))
+	
+	If @text LIKE '%;' Or @text LIKE '%,'
+	Begin
+		Set @text = RTrim(Left(@text, Len(@text)-1))
+	End	
+	
+	If @text LIKE ';%' Or @text LIKE ',%'
+	Begin
+		Set @text = LTrim(Substring(@text, 2, Len(@text)-1))
+	End	
 	
 	Return @text 
 End
