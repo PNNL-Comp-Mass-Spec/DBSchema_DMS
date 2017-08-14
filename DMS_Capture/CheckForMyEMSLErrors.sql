@@ -15,6 +15,7 @@ CREATE Procedure dbo.CheckForMyEMSLErrors
 **
 **	Auth:	mem
 **	Date:	12/10/2013 mem - Initial version
+**			08/13/2017 mem - Increase the error rate threshold from 1% to 3% since we're now auto-retrying uploads
 **    
 *****************************************************/
 (
@@ -99,10 +100,10 @@ As
 	If @DatasetFolderUploads > 0
 		Set @DuplicateRate = @DuplicateUploads / CONVERT(float, @DatasetFolderUploads)
 
-	If @UploadErrorRate > 0.01
+	If @UploadErrorRate > 0.03
 	Begin
 		-- 
-		Set @message = 'More than 1% of the uploads to MyEMSL had an error; error rate: ' + Convert(varchar(12), Convert(int, @UploadErrorRate*100)) + '% for ' + Convert(varchar(12), @UploadAttempts) + ' upload attempts'
+		Set @message = 'More than 3% of the uploads to MyEMSL had an error; error rate: ' + Convert(varchar(12), Convert(decimal(9,1), @UploadErrorRate*100)) + '% for ' + Convert(varchar(12), @UploadAttempts) + ' upload attempts'
 		
 		If @LogErrors <> 0
 			Exec PostLogEntry 'Error', @message, 'CheckForMyEMSLErrors'
