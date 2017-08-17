@@ -13,6 +13,7 @@ CREATE FUNCTION dbo.RemoveCaptureErrorsFromString
 **
 **	Auth:	mem
 **	Date:	08/08/2017 mem - Initial version
+**			08/16/2017 mem - Add "Error running OpenChrom"
 **
 *****************************************************/
 (
@@ -24,13 +25,14 @@ Begin
  
 	Declare @updatedComment varchar(2048)
 	
-	Set @updatedComment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
+	Set @updatedComment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
 			@comment, 
 			'Dataset not ready: Exception validating constant file size'), 
 			'Dataset not ready: Exception validating constant folder size'), 
 			'Dataset not ready: Folder size changed'), 
 			'Dataset not ready: File size changed'),
-			'Dataset name matched multiple files; must be a .uimf file, .d folder, or folder with a single .uimf file')
+			'Dataset name matched multiple files; must be a .uimf file, .d folder, or folder with a single .uimf file'),
+			'Error running OpenChrom')
 
 	-- Look for text that can have various values following it:
 	--   Data file size is less than 50 KB

@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.RetryCaptureForDMSResetJobs
 **
 **  Auth:	mem
 **  Date:	05/25/2011 mem - Initial version
+**			08/16/2017 mem - For jobs with error Error running OpenChrom, only reset the DatasetIntegrity step
 **    
 *****************************************************/
 (
@@ -30,7 +31,8 @@ As
 	set @myRowCount = 0
 
 	CREATE TABLE #SJL (
-		Job int NOT NULL
+		Job int NOT NULL,
+		ResetFailedStepsOnly tinyint NOT NULL
 	)
 	
 	---------------------------------------------------
@@ -40,8 +42,8 @@ As
 	--  and we thus want to retry capture for these datasets
 	---------------------------------------------------
 	--
-	INSERT INTO #SJL (Job)
-	SELECT DISTINCT J.Job
+	INSERT INTO #SJL (Job, ResetFailedStepsOnly)
+	SELECT DISTINCT J.Job, 0
 	FROM V_DMS_Get_New_Datasets NewDS
 	     INNER JOIN T_Jobs J
 	       ON NewDS.Dataset_ID = J.Dataset_ID
@@ -77,21 +79,25 @@ As
 	-- Remove the trailing comma
 	If Len(@jobList) > 0
 		Set @jobList = SubString(@jobList, 1, Len(@jobList)-1)
-		
+	
+	UPDATE #SJL
+	SET ResetFailedStepsOnly = 1
+	WHERE Job IN ( SELECT Job
+	               FROM T_Job_Steps
+	               WHERE State = 6 AND
+	                     Step_Tool = 'DatasetIntegrity' AND
+	                     Completion_Message = 'Error running OpenChrom' AND
+	                     Job IN ( SELECT Job FROM #SJL ) )
 		
 	If @infoOnly <> 0
 	Begin
-		SELECT *
-		FROM T_Jobs
-		WHERE Job IN ( SELECT Job
-		               FROM #SJL )
-		ORDER BY Job
+		SELECT #SJL.ResetFailedStepsOnly, J.*
+		FROM V_Jobs J INNER JOIN #SJL ON J.Job = #SJL.Job
+		ORDER BY J.Job
 		
-		SELECT *
-		FROM V_Job_Steps
-		WHERE Job IN ( SELECT Job
-		               FROM #SJL )
-		ORDER BY Job, Step
+		SELECT #SJL.ResetFailedStepsOnly, JS.*
+		FROM V_Job_Steps JS INNER JOIN #SJL ON JS.Job = #SJL.Job
+		ORDER BY JS.Job, JS.Step
 		
 		Print 'JobList: ' + @jobList		
 	End
@@ -108,11 +114,34 @@ As
 
 		begin transaction @transName
 		
+		-- First reset job steps for jobs in #SJL with ResetFailedStepsOnly = 1
+		--
 		UPDATE T_Job_Steps
-		SET State = 6
-		WHERE State = 5 AND Job IN (SELECT Job FROM #SJL)
-	
-		EXEC @myError = RetrySelectedJobs @message output
+		SET State = 2
+		WHERE State = 6 AND
+		      Step_Tool = 'DatasetIntegrity' AND
+		      Completion_Message = 'Error running OpenChrom' AND
+		      Job IN ( SELECT Job
+		               FROM #SJL
+		               WHERE ResetFailedStepsOnly = 1 )
+		
+		DELETE FROM #SJL
+		WHERE ResetFailedStepsOnly = 1 
+		
+		IF Exists (SELECT * FROM #SJL)
+		Begin
+			-- Next reset entirely any jobs remaining in #SJL
+			UPDATE T_Job_Steps
+			SET State = 6
+			WHERE State = 5 AND Job IN (SELECT Job FROM #SJL)
+		
+			EXEC @myError = RetrySelectedJobs @message output
+		End
+		Else
+		Begin
+			Set @myError = 0
+		End
+		
 		IF @myError <> 0
 			rollback transaction @transName
 		ELSE 
