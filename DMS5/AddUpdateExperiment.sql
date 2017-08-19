@@ -53,7 +53,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
 **			03/17/2017 mem - Only call MakeTableFromListDelim if @cellCultureList contains a semicolon
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**			08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **
 *****************************************************/
 (
@@ -78,6 +78,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
 	@barcode varchar(64) = '',
+	@tissue varchar(128) = '',
 	@callingUser varchar(128) = ''
 )
 As
@@ -93,6 +94,8 @@ As
 	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
 	
+	BEGIN TRY 
+
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -101,10 +104,8 @@ As
 	Exec @authorized = VerifySPAuthorized 'AddUpdateExperiment', @raiseError = 1
 	If @authorized = 0
 	Begin
-		THROW 51000, 'Access denied', 1;
+		RAISERROR ('Access denied', 11, 3)
 	End
-
-	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -175,6 +176,26 @@ As
 		RAISERROR (@msg, 11, 37)
 	end
 
+	---------------------------------------------------
+	-- Resolve @tissue to BTO identifier
+	---------------------------------------------------
+	
+	Declare @tissueIdentifier varchar(24) = null
+	
+	If IsNull(@tissue, '') <> ''
+	Begin
+		Set @tissue = LTrim(RTrim(@tissue))
+		
+		SELECT @tissueIdentifier = Identifier
+		FROM S_V_BTO_ID_to_Name
+		WHERE Tissue = @tissue
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--	
+		If @myRowCount = 0
+			RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
+	End
+	
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -475,6 +496,7 @@ As
 				EX_well_num,
 				EX_Alkylation,
 				EX_Barcode,
+				EX_Tissue_ID,
 				Last_Used
 			) VALUES (
 				@experimentNum, 
@@ -497,6 +519,7 @@ As
 				@wellNum,
 				@alkylation,
 				@barcode,
+				@tissueIdentifier,
 				Cast(GETDATE() as Date)
 			)
 		--
@@ -573,7 +596,7 @@ As
 
 		-- Start transaction
 		--
-		Set @transName = 'AddNewExperiment'
+		Set @transName = 'UpdateExperiment'
 		begin transaction @transName
 
 		UPDATE T_Experiments Set 
@@ -595,11 +618,12 @@ As
 			EX_well_num = @wellNum,
 			EX_Alkylation = @alkylation,
 			EX_Barcode = @barcode,
+			EX_Tissue_ID = @tissueIdentifier,
 			Last_Used = Case When EX_organism_ID <> @organismID OR
 			                      EX_reason <> @reason OR
 			                      EX_comment <> @comment OR
 			                      EX_enzyme_ID <> @enzymeID OR
-			        EX_Labelling <> @labelling OR
+			                      EX_Labelling <> @labelling OR
 			                      EX_campaign_ID <> @campaignID OR
 			                      EX_cell_culture_list <> @cellCultureList OR
 			                      EX_sample_prep_request_ID <> @samplePrepRequest OR
@@ -661,6 +685,7 @@ As
 	END CATCH
 	
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [DDL_Viewer] AS [dbo]

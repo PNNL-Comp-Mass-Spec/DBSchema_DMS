@@ -26,7 +26,8 @@ SELECT E.Exp_ID AS ID,
        ML.Tag AS Location,
        E.EX_wellplate_num AS Wellplate,
        E.EX_well_num AS Well,
-       E.EX_Alkylation AS Alkylated
+       E.EX_Alkylation AS Alkylated,
+	  BTO.Tissue
 FROM T_Experiments E
      INNER JOIN dbo.T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
@@ -44,6 +45,8 @@ FROM T_Experiments E
        ON E.EX_Container_ID = MC.ID
      INNER JOIN dbo.T_Material_Locations ML
        ON MC.Location_ID = ML.ID
+     LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
+	  ON E.EX_Tissue_ID = BTO.Identifier
 
 
 GO

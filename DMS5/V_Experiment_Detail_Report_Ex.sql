@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex] AS 
+CREATE View [dbo].[V_Experiment_Detail_Report_Ex] AS 
 SELECT  E.Experiment_Num AS Experiment ,
         U.Name_with_PRN AS Researcher ,
         Org.OG_name AS Organism ,
@@ -22,6 +21,8 @@ SELECT  E.Experiment_Num AS Experiment ,
         IntStdPost.Name AS [Postdigest Int Std] ,
         E.EX_Alkylation AS Alkylated ,
         E.EX_sample_prep_request_ID AS Request ,
+        BTO.Tissue,
+	   BTO.Identifier AS [Tissue ID],
         dbo.GetExperimentGroupList(E.Exp_ID) AS [Experiment Groups] ,
         ISNULL(DSCountQ.Datasets, 0) AS Datasets ,
         DSCountQ.Most_Recent_Dataset AS [Most Recent Dataset] ,
@@ -35,8 +36,7 @@ SELECT  E.Experiment_Num AS Experiment ,
         E.Last_Used AS [Last Used] ,
         E.EX_wellplate_num AS [Wellplate Number] ,
         E.EX_well_num AS [Well Number],
-		E.EX_Barcode AS Barcode,
-        dbo.GetMyEMSLUrlExperiment(E.Experiment_Num) [MyEMSL URL]
+        E.EX_Barcode AS Barcode
 FROM    T_Experiments AS E
         INNER JOIN T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID
         INNER JOIN T_Users AS U ON E.EX_researcher_PRN = U.U_PRN
@@ -73,8 +73,8 @@ FROM    T_Experiments AS E
                                                  GROUP BY Entity_ID
                                                ) AS FA ON EG.Group_ID = CONVERT(INT, FA.Entity_ID)
                         ) AS ExpGroupFileCount ON ExpGroupFileCount.Exp_ID = E.Exp_ID
-
-
+        LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
+	     ON E.EX_Tissue_ID = BTO.Identifier
 
 
 

@@ -26,6 +26,7 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_well_num] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Alkylation] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[EX_Barcode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EX_Tissue_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Used] [date] NOT NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY CLUSTERED 
 (
@@ -275,8 +276,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE Trigger [dbo].[trig_u_Experiments] on [dbo].[T_Experiments]
 For Update
 /****************************************************
@@ -313,14 +312,12 @@ AS
 		WHERE (Entity_Type = 'experiment')
 	End
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Experiments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_ud_T_Experiments]
 ON [dbo].[T_Experiments]
 FOR UPDATE, DELETE AS
@@ -354,6 +351,5 @@ BEGIN
     END
 
 END
-
 
 GO

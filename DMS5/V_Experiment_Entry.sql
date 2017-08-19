@@ -23,7 +23,8 @@ SELECT E.Experiment_Num AS experimentNum,
        E.EX_wellplate_num AS wellplateNum,
        E.EX_well_num AS wellNum,
        E.EX_Alkylation AS alkylation,
-	   E.EX_Barcode As barcode
+       BTO.Tissue AS tissue,
+       E.EX_Barcode As barcode
 FROM T_Experiments E
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
@@ -37,7 +38,8 @@ FROM T_Experiments E
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN T_Material_Containers MC
        ON E.EX_Container_ID = MC.ID
-
+	LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
+	  ON E.EX_Tissue_ID = BTO.Identifier
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Entry] TO [DDL_Viewer] AS [dbo]
