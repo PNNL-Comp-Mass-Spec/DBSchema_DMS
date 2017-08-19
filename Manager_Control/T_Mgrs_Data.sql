@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 792 ******/
+/****** RowCount: 794 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (340,'SeqCluster1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (341,'SeqCluster2',11,1,1,'')
@@ -793,4 +793,6 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1479,'Proto-3_CTM',15,0,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1480,'Proto-3_CTM_2',15,0,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1483,'Proto-3_Space',8,0,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1484,'Proto-3_Analysis-3',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1485,'Proto-4_Analysis-3',11,1,1,'')
 SET IDENTITY_INSERT [T_Mgrs] OFF
