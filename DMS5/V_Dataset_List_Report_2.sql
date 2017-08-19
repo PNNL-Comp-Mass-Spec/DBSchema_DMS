@@ -53,7 +53,7 @@ FROM T_DatasetStateName DSN
        ON DS.Exp_ID = Exp.Exp_ID
      INNER JOIN T_Campaign C
        ON Exp.EX_campaign_ID = C.Campaign_ID
-     INNER JOIN T_Cached_Dataset_Links AS DL
+     LEFT OUTER JOIN T_Cached_Dataset_Links AS DL
        ON DS.Dataset_ID = DL.Dataset_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
@@ -73,6 +73,7 @@ FROM T_DatasetStateName DSN
                      INNER JOIN T_YesNo
                        ON DA.AS_instrument_data_purged = T_YesNo.Flag
        ON DS.Dataset_ID = DA.AS_Dataset_ID
+
 
 
 GO

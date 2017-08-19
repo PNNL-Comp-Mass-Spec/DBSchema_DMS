@@ -14,7 +14,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TIN.IN_name AS Instrument,
        DS.DS_sec_sep AS [Separation Type],
        LCCart.Cart_Name AS [LC Cart],
-	   CartConfig.Cart_Config_Name AS [LC Cart Config],
+       CartConfig.Cart_Config_Name AS [LC Cart Config],
        LCCol.SC_Column_Number AS [LC Column],
        DS.DS_wellplate_num AS [Wellplate Number],
        DS.DS_well_num AS [Well Number],
@@ -27,23 +27,23 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_created AS Created,
        RR.ID AS Request,
        DL.Dataset_Folder_Path AS [Dataset Folder Path],
-	   DL.Archive_Folder_Path AS [Archive Folder Path],
-	   DL.MyEMSL_URL AS [MyEMSL URL],
+       DL.Archive_Folder_Path AS [Archive Folder Path],
+       DL.MyEMSL_URL AS [MyEMSL URL],
        DFP.Dataset_URL AS [Data Folder Link],
        DL.QC_Link AS [QC Link],
-	   DL.QC_2D AS [QC 2D],
+       DL.QC_2D AS [QC 2D],
        DL.QC_Metric_Stats AS [QC Metric Stats],
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,
-	   ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
-	   dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS [Peak Matching Results],
+       ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
+       dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS [Peak Matching Results],
        dbo.GetDatasetFactorCount(DS.Dataset_ID) AS Factors,
-	   dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS [Predefines Triggered],
+       dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS [Predefines Triggered],
        DS.Acq_Time_Start AS [Acquisition Start],
        DS.Acq_Time_End AS [Acquisition End],
        RR.RDS_Run_Start AS [Run Start],
        RR.RDS_Run_Finish AS [Run Finish],
        DS.Scan_Count AS [Scan Count],
-	   dbo.GetDatasetScanTypes(DS.Dataset_ID) AS [Scan Types],
+       dbo.GetDatasetScanTypes(DS.Dataset_ID) AS [Scan Types],
        DS.Acq_Length_Minutes AS [Acq Length],
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
@@ -59,7 +59,7 @@ SELECT DS.Dataset_Num AS Dataset,
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
-	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
+       EPT.Proposal_Type_Name AS [EUS Proposal Type],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        TIS_1.Name AS [Predigest Int Std],
        TIS_2.Name AS [Postdigest Int Std],
@@ -87,7 +87,7 @@ FROM dbo.T_Storage_Path AS SPath
                       INNER JOIN dbo.T_Organisms AS OG
                         ON TE.EX_organism_ID = OG.Organism_ID
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
-     INNER JOIN T_Cached_Dataset_Folder_Paths AS DFP
+     LEFT OUTER JOIN T_Cached_Dataset_Folder_Paths AS DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
 	 LEFT OUTER JOIN T_Cached_Dataset_Links AS DL
        ON DS.Dataset_ID = DL.Dataset_ID
@@ -126,6 +126,7 @@ FROM dbo.T_Storage_Path AS SPath
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
 	   ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
+
 
 
 GO
