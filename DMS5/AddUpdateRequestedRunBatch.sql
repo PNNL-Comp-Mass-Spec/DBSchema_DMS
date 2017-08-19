@@ -33,6 +33,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			06/23/2017 mem - Check for @RequestedRunList containing request names instead of IDs
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/18/2017 mem - Log additional errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -134,6 +135,7 @@ As
 		--
 		if @myError <> 0
 		begin
+			Set @logErrors = 1
 			set @message = 'Error trying to find existing entry'
 			RAISERROR (@message, 11, 16)
 		end
@@ -159,13 +161,14 @@ As
 		--
 		if @myError <> 0
 		begin
+			Set @logErrors = 1
 			set @message = 'Error trying to find existing entry'
 			RAISERROR (@message, 11, 18)
 		end
 
 		if @tmp = 0
 		begin
-			set @message = 'Cannot update: entry does not exits in database'
+			set @message = 'Cannot update: entry does not exist in database'
 			RAISERROR (@message, 11, 19)
 		end
 		
