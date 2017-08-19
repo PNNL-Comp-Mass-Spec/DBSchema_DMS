@@ -308,7 +308,7 @@ As
 			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
 			                Cast(@CampaignID as varchar(12))
 			                
-			exec PotLogEntry 'Error', @DebugMsg, 'AddUpdateCampaign'
+			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateCampaign'
 			
 			Set @CampaignID = @IDConfirm
 		End
