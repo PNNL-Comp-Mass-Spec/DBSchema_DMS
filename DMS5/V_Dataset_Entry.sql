@@ -25,7 +25,8 @@ SELECT T_Experiments.Experiment_Num,
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS DS_EUSUsers,
        LCCart.Cart_Name AS DS_LCCartName,
        CartConfig.Cart_Config_Name AS LC_Cart_Config,
-       DS.Capture_Subfolder AS Capture_Subfolder
+       DS.Capture_Subfolder AS Capture_Subfolder,
+	  DS.Dataset_ID
 FROM T_Dataset DS
      INNER JOIN T_Experiments
        ON DS.Exp_ID = T_Experiments.Exp_ID
@@ -47,6 +48,7 @@ FROM T_Dataset DS
        ON RR.RDS_EUS_UsageType = EUSUsage.ID
      LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
+
 
 
 GO
