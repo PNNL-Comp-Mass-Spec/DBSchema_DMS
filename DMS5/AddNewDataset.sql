@@ -40,6 +40,7 @@ CREATE Procedure dbo.AddNewDataset
 **			06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
 **			11/21/2016 mem - Added parameter @logDebugMessages
 **			02/23/2017 mem - Added support for "LC Cart Config"
+**			08/18/2017 mem - Change @CaptureSubfolder to '' if it is the same as @Dataset_Name
 **    
 *****************************************************/
 (
@@ -243,6 +244,22 @@ AS
         Set @CaptureSubfolder = ''
 	End
  
+	If @CaptureSubfolder = @Dataset_Name
+	Begin
+		Set @message = 'Capture subfolder is identical to the dataset name for ' + @Dataset_Name + '; changing to an empty string'
+
+		-- Post this message to the log every 3 days
+		If Not Exists (
+		   SELECT * FROM T_Log_Entries 
+		   WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND 
+		         posting_time > DATEADD(day, -3, GETDATE()) )
+		Begin
+			exec PostLogEntry 'Debug', @message, 'AddNewDataset'
+		End
+	   
+        Set @CaptureSubfolder = ''
+	End
+	
 	---------------------------------------------------
 	-- Create new dataset
 	---------------------------------------------------
