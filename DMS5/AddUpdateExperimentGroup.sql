@@ -21,6 +21,7 @@ CREATE PROCEDURE AddUpdateExperimentGroup
 **			06/13/2017 mem - Use SCOPE_IDENTITY
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -39,10 +40,12 @@ CREATE PROCEDURE AddUpdateExperimentGroup
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''
+
+	Declare @logErrors tinyint = 0
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -59,11 +62,11 @@ As
 	-- Resolve parent experiment name to ID
 	---------------------------------------------------
 
-	declare @ParentExpID int
-	set @ParentExpID = 0
+	Declare @ParentExpID int
+	Set @ParentExpID = 0
 	--
-	if @ParentExp <> ''
-	begin
+	If @ParentExp <> ''
+	Begin
 
 		SELECT @ParentExpID = Exp_ID
 		FROM T_Experiments
@@ -71,29 +74,30 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to find existing entry'
+		If @myError <> 0
+		Begin
+			Set @logErrors = 1
+			Set @message = 'Error trying to find existing entry'
 			RAISERROR (@message, 10, 1)
 			return 51004
-		end
-	end
+		End
+	End
 
-	if @ParentExpID = 0
-	begin
-		set @ParentExpID = 15 -- "Placeholder" experiment NOTE: better to look it up
-	end
+	If @ParentExpID = 0
+	Begin
+		Set @ParentExpID = 15 -- "Placeholder" experiment NOTE: better to look it up
+	End
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
-	declare @tmp int
+	Declare @tmp int
 
-	if @mode = 'update'
-	begin
+	If @mode = 'update'
+	Begin
 		-- cannot update a non-existent entry
 		--
-		set @tmp = 0
+		Set @tmp = 0
 		--
 		SELECT @tmp = Group_ID
 		FROM  T_Experiment_Groups
@@ -101,21 +105,24 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to find existing entry'
+		If @myError <> 0
+		Begin
+			Set @logErrors = 1
+			Set @message = 'Error trying to find existing entry'
 			RAISERROR (@message, 10, 1)
 			return 51004
-		end
+		End
 
-		if @tmp = 0
-		begin
-			set @message = 'Cannot update: entry does not exits in database'
+		If @tmp = 0
+		Begin
+			Set @message = 'Cannot update: entry does not exist in database'
 			RAISERROR (@message, 10, 1)
 			return 51004
-		end
-	end
+		End
+	End
 
+	Set @logErrors = 1
+	
 	---------------------------------------------------
 	-- create temporary table for experiments in list
 	---------------------------------------------------
@@ -127,12 +134,12 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to create temporary table for experiments'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed to create temporary table for experiments'
 		RAISERROR (@message, 10, 1)
 		return 51219
-	end
+	End
 
 	---------------------------------------------------
 	-- populate temporary table from list
@@ -146,12 +153,12 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to populate temporary table for experiments'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed to populate temporary table for experiments'
 		RAISERROR (@message, 10, 1)
 		return 51219
-	end
+	End
 
 
 	---------------------------------------------------
@@ -166,21 +173,21 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed trying to resolve experiment IDs'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed trying to resolve experiment IDs'
 		RAISERROR (@message, 10, 1)
 		return 51219
-	end
+	End
 
 	---------------------------------------------------
 	-- check status of prospective member experiments
 	---------------------------------------------------
-	declare @count int
+	Declare @count int
 
 	-- do all experiments in list actually exist?
 	--
-	set @count = 0
+	Set @count = 0
 	--
 	SELECT @count = count(*)
 	FROM #XR
@@ -188,15 +195,15 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed trying to check existence of experiments in list'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed trying to check existence of experiments in list'
 		RAISERROR (@message, 10, 1)
 		return 51219
-	end
+	End
 
-	if @count <> 0
-	begin
+	If @count <> 0
+	Begin
 		Declare @InvalidExperiments varchar(256) = ''
 		SELECT @InvalidExperiments = @InvalidExperiments + Experiment_Num + ','
 		FROM #XR
@@ -205,20 +212,21 @@ As
 		-- Remove the trailing comma
 		If @InvalidExperiments Like '%,'
 			Set @InvalidExperiments = Substring(@InvalidExperiments, 1, Len(@InvalidExperiments)-1)
-			
-		set @message = 'experiment run list contains experiments that do not exist: ' + @InvalidExperiments
+		
+		Set @logErrors = 0
+		Set @message = 'Experiment run list contains experiments that do not exist: ' + @InvalidExperiments
 		RAISERROR (@message, 10, 1)
 		return 51221
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve researcher PRN
 	---------------------------------------------------
 
-	declare @userID int
+	Declare @userID int
 	execute @userID = GetUserID @researcher
-	if @userID = 0
-	begin
+	If @userID = 0
+	Begin
 		-- Could not find entry in database for PRN @researcher
 		-- Try to auto-resolve the name
 
@@ -234,26 +242,27 @@ As
 		End
 		Else
 		Begin
-			set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+			Set @logErrors = 0
+			Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
 			RAISERROR (@message, 10, 1)
 			return 51037
 		End
 
-	end
+	End
 
 	---------------------------------------------------
 	-- start transaction
 	--
-	declare @transName varchar(32)
-	set @transName = 'AddUpdateExperimentGroup'
-	begin transaction @transName
+	Declare @transName varchar(32)
+	Set @transName = 'AddUpdateExperimentGroup'
+	Begin transaction @transName
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	--
-	if @Mode = 'add'
-	begin
+	If @Mode = 'add'
+	Begin
 
 		INSERT INTO T_Experiment_Groups (
 			EG_Group_Type,
@@ -273,27 +282,27 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Insert operation failed'
+			Set @message = 'Insert operation failed'
 			RAISERROR (@message, 10, 1)
 			return 51007
-		end
+		End
 
 		-- return ID of newly created entry
 		--
-		set @ID = SCOPE_IDENTITY()
+		Set @ID = SCOPE_IDENTITY()
 
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
+	If @Mode = 'update' 
+	Begin
+		Set @myError = 0
 		--
 
 		UPDATE T_Experiment_Groups
@@ -306,21 +315,21 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Update operation failed: "' + @ID + '"'
+			Set @message = 'Update operation failed: "' + @ID + '"'
 			RAISERROR (@message, 10, 1)
 			return 51004
-		end
-	end -- update mode
+		End
+	End -- update mode
 
 	---------------------------------------------------
 	-- update member experiments 
 	---------------------------------------------------
 
-	if @Mode = 'add' OR @Mode = 'update' 
-	begin
+	If @Mode = 'add' OR @Mode = 'update' 
+	Begin
 		-- remove any existing group members that are not in temporary table
 		--
 		DELETE FROM T_Experiment_Group_Members
@@ -329,13 +338,13 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Failed trying to remove members from group'
+			Set @message = 'Failed trying to remove members from group'
 			RAISERROR (@message, 10, 1)
 		return 51004
-		end
+		End
 		    
 		-- add group members from temporary table that are not already members
 		--
@@ -352,14 +361,14 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Failed trying to add members to group'
+			Set @message = 'Failed trying to add members to group'
 			RAISERROR (@message, 10, 1)
 			return 51004
-		end
-	end
+		End
+	End
 
 	commit transaction @transName
 	

@@ -26,6 +26,7 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -44,13 +45,14 @@ CREATE PROCEDURE AddUpdateSampleSubmission
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''
 
-	DECLARE @msg VARCHAR(512) = ''
-
+	Declare @msg VARCHAR(512) = ''
+	Declare @logErrors tinyint = 0
+	
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -62,7 +64,7 @@ As
 		THROW 51000, 'Access denied', 1;
 	End
 
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -90,7 +92,7 @@ As
 	-- Resolve Campaign ID
 	---------------------------------------------------
 	--
-	DECLARE @CampaignID int
+	Declare @CampaignID int
 	SET @CampaignID = 0
 	SELECT
 		@CampaignID = Campaign_ID
@@ -106,9 +108,10 @@ As
 	-- Resolve PRN
 	---------------------------------------------------
 	--
-	DECLARE @Researcher VARCHAR(128)
-	DECLARE @ReceivedByUserID int
-	SET @ReceivedByUserID = 0
+	Declare @Researcher VARCHAR(128)
+	Declare @ReceivedByUserID int
+	Set @ReceivedByUserID = 0
+	
 	SELECT 
 		@ReceivedByUserID = ID,
 		@Researcher = Name_with_PRN
@@ -122,12 +125,11 @@ As
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 
-	if @mode = 'update'
-	begin
+	If @mode = 'update'
+	Begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int
-		set @tmp = 0
+		Declare @tmp int = 0
 		--
 		SELECT @tmp = ID
 		FROM  T_Sample_Submission
@@ -135,29 +137,27 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 OR @tmp = 0
+		If @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 21)
-	end
+	End
 	
 	---------------------------------------------------
 	-- Define the transaction name
 	---------------------------------------------------
-	declare @transName varchar(32)
-	set @transName = 'AddUpdateSampleSubmission'
+	Declare @transName varchar(32) = 'AddUpdateSampleSubmission'
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
 	--
-	if @Mode = 'add'
-	begin
+	If @Mode = 'add'
+	Begin
 
 		---------------------------------------------------
 		-- verify container list
 		---------------------------------------------------
 		--
-		DECLARE @cl varchar(1024)
-		SET @cl = @ContainerList
+		Declare @cl varchar(1024) = @ContainerList
 		--
 		EXEC @myError = AssureMaterialContainersExist
 							@ContainerList = @cl OUTPUT,
@@ -169,7 +169,7 @@ As
 							@callingUser = ''
 		--
 		IF @myError <> 0
-			RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @message)
+			RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @msg)
 
 		---------------------------------------------------
 		-- Verify that this doesn't duplicate an existing sample submission request
@@ -183,10 +183,12 @@ As
 		If @ID > 0
 			RAISERROR('New sample submission is duplicate of existing sample submission, ID %d; both have identical Campaign, Received By User, and Description', 11, 23, @ID)
 		
+		Set @logErrors = 1
+	
 		---------------------------------------------------
 		-- Add the new data
 		--
-		begin transaction @transName
+		Begin transaction @transName
 
 		INSERT INTO T_Sample_Submission (
 			Campaign_ID,
@@ -204,7 +206,7 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Insert operation failed', 11, 24)
 
 		-- Return ID of newly created entry
@@ -214,11 +216,11 @@ As
 		---------------------------------------------------
 		-- add containers (as needed)
 		--
-		DECLARE @Comment varchar(1024)
+		Declare @Comment varchar(1024)
 		If @NewContainerComment = ''
-			SET @Comment = '(created via sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+			Set @Comment = '(created via sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
 		Else
-			SET @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+			Set @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
 		--
 		EXEC @myError = AssureMaterialContainersExist
 						@ContainerList = @ContainerList OUTPUT,
@@ -241,41 +243,45 @@ As
 			
 		commit transaction @transName
 
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
+	If @Mode = 'update' 
+	Begin
+		Set @logErrors = 1
+	
+		Set @myError = 0
 		--
-		UPDATE T_Sample_Submission 
-		SET 
-		Campaign_ID = @CampaignID,
-		Received_By_User_ID = @ReceivedByUserID,
-		Container_List = @ContainerList,
-		Description = @Description
+		UPDATE T_Sample_Submission
+		SET Campaign_ID = @CampaignID,
+		    Received_By_User_ID = @ReceivedByUserID,
+		    Container_List = @ContainerList,
+		    Description = @Description
 		WHERE (ID = @ID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Update operation failed: "%d"', 11, 26, @ID)
 
-	end -- update mode
+	End -- update mode
 
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'AddUpdateSampleSubmission'
-	END CATCH
+
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @message, 'AddUpdateSampleSubmission'
+		End
+	End CATCH
 	return @myError
 
 GO

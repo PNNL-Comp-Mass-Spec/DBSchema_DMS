@@ -37,6 +37,7 @@ CREATE Procedure dbo.AddUpdateCampaign
 **			06/14/2017 mem - Allow @FractionEMSLFundedValue to be empty
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ CREATE Procedure dbo.AddUpdateCampaign
 	@projectNum varchar(64), 
 	@progmgrPRN varchar(64), 
 	@piPRN varchar(64), 
-	@TechnicalLead VARCHAR(256),
+	@TechnicalLead varchar(256),
 	@SamplePreparationStaff varchar(256),
 	@DatasetAcquisitionStaff varchar(256),
 	@InformaticsStaff varchar(256),
@@ -66,20 +67,18 @@ CREATE Procedure dbo.AddUpdateCampaign
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	set @message = ''
+	Set @message = ''
 	
-	declare @msg varchar(256)
+	Declare @msg varchar(256)
 	
-	declare @StateID int
-	declare @PercentEMSLFunded int
+	Declare @StateID int
+	Declare @PercentEMSLFunded int
 
 	-- Leave this as Null for now
-	declare @FractionEMSLFundedValue decimal(3, 2) = 0
+	Declare @FractionEMSLFundedValue decimal(3, 2) = 0
 	
 	Declare @logErrors tinyint = 0
 	
@@ -105,17 +104,17 @@ As
 	Set @progmgrPRN = LTrim(RTrim(IsNull(@progmgrPRN, '')))
 	Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
 
-	set @myError = 0
-	if LEN(@campaignNum) < 1
+	Set @myError = 0
+	If LEN(@campaignNum) < 1
 		RAISERROR ('campaign name was blank', 11, 1)
 	--
-	if LEN(@projectNum) < 1
+	If LEN(@projectNum) < 1
 		RAISERROR ('Project Number was blank', 11, 1)
 	--
-	if LEN(@progmgrPRN) < 1
+	If LEN(@progmgrPRN) < 1
 		RAISERROR ('Program Manager PRN was blank', 11, 2)
 	--
-	if LEN(@piPRN) < 1
+	If LEN(@piPRN) < 1
 		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
 	
 	---------------------------------------------------
@@ -135,12 +134,12 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @campaignID <> 0 and @mode = 'add'
+	If @campaignID <> 0 and @mode = 'add'
 		RAISERROR ('Cannot add: Campaign "%s" already in database', 11, 4, @campaignNum)
 
 	-- cannot update a non-existent entry
 	--
-	if @campaignID = 0 and @mode = 'update'
+	If @campaignID = 0 and @mode = 'update'
 		RAISERROR ('Cannot update: Campaign "%s" is not in database', 11, 5, @campaignNum)
 
 	---------------------------------------------------
@@ -158,10 +157,10 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('Error resolving data release restriction', 11, 6)
 	--
-	if @DataReleaseRestrictionsID < 0
+	If @DataReleaseRestrictionsID < 0
 		RAISERROR ('Could not resolve data release restriction; please select a valid entry from the list', 11, 7)
 
 	---------------------------------------------------
@@ -222,15 +221,15 @@ As
 	-- transaction name
 	---------------------------------------------------
 	--
-	declare @transName varchar(32) = 'AddUpdateCampaign'
+	Declare @transName varchar(32) = 'AddUpdateCampaign'
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @mode = 'add'
-	begin
+	If @mode = 'add'
+	Begin
 
-		begin transaction @transName
+		Begin transaction @transName
 
 		---------------------------------------------------
 		-- create research team
@@ -248,7 +247,7 @@ As
 							@researchTeamID output,
 							@message output
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR (@message, 11, 11)
 
 		---------------------------------------------------
@@ -289,7 +288,7 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 12, @campaignNum )
 		
 		-- Get the ID of newly created campaign
@@ -309,7 +308,7 @@ As
 			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
 			                Cast(@CampaignID as varchar(12))
 			                
-			exec postlogentry 'Error', @DebugMsg, 'AddUpdateCampaign'
+			exec PotLogEntry 'Error', @DebugMsg, 'AddUpdateCampaign'
 			
 			Set @CampaignID = @IDConfirm
 		End
@@ -317,8 +316,8 @@ As
 
 		commit transaction @transName
 		
-		set @StateID = 1
-		set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
+		Set @StateID = 1
+		Set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
@@ -328,17 +327,17 @@ As
 			Exec AlterEventLogEntryUser 10, @CampaignID, @DataReleaseRestrictionsID, @callingUser
 		End
 			
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @mode = 'update' 
-	begin
-		begin transaction @transName
+	If @mode = 'update' 
+	Begin
+		Begin transaction @transName
 		--
-		set @myError = 0
+		Set @myError = 0
 		--
 		---------------------------------------------------
 		-- update campaign
@@ -361,7 +360,7 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignNum)
 
 		---------------------------------------------------
@@ -380,12 +379,12 @@ As
 							@researchTeamID output,
 							@message output
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR (@message, 11, 1)
 
 		commit transaction @transName
 		
-		set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
+		Set @PercentEMSLFunded = CONVERT(int, @FractionEMSLFundedValue * 100)
 		
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
@@ -393,7 +392,7 @@ As
 			Exec AlterEventLogEntryUser 9, @CampaignID, @PercentEMSLFunded, @callingUser
 			Exec AlterEventLogEntryUser 10, @CampaignID, @DataReleaseRestrictionsID, @callingUser
 		End
-	end -- update mode
+	End -- update mode
 
 	END TRY
 	BEGIN CATCH 
