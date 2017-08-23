@@ -17,26 +17,27 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **
 **	Auth:	grk
 **	Date:	05/28/2005
-**          05/29/2005 grk - added mods to better work with entry page
-**          05/31/2005 grk - added mods for separate group members table
-**          06/10/2005 grk - added handling for sample prep request
-**          10/04/2005 grk - added call to AddExperimentCellCulture
-**          10/04/2005 grk - added override for request ID
-**          10/28/2005 grk - added handling for internal standard
-**          11/11/2005 grk - added handling for postdigest internal standard
-**          12/20/2005 grk - added handling for separate user
-**          02/06/2006 grk - increased maximum count
-**          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
+**          05/29/2005 grk - Added mods to better work with entry page
+**          05/31/2005 grk - Added mods for separate group members table
+**          06/10/2005 grk - Added handling for sample prep request
+**          10/04/2005 grk - Added call to AddExperimentCellCulture
+**          10/04/2005 grk - Added override for request ID
+**          10/28/2005 grk - Added handling for internal standard
+**          11/11/2005 grk - Added handling for postdigest internal standard
+**          12/20/2005 grk - Added handling for separate user
+**          02/06/2006 grk - Increased maximum count
+**          01/13/2007 grk - Switched to organism ID instead of organism name (Ticket #360)
 **			09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
 **			10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
-**			07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
-**			07/31/2009 grk - added prep LC run field (http://prismtrac.pnl.gov/trac/ticket/743)
-**			09/13/2011 grk - added researcher to experiment group
-**			10/03/2011 grk - added try-catch error handling
+**			07/16/2009 grk - Added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**			07/31/2009 grk - Added prep LC run field (http://prismtrac.pnl.gov/trac/ticket/743)
+**			09/13/2011 grk - Added researcher to experiment group
+**			10/03/2011 grk - Added try-catch error handling
 **			11/10/2011 grk - Added Tab field
-**			11/15/2011 grk - added handling for experiment alkylation field
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			11/15/2011 grk - Added handling for experiment alkylation field
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**			08/22/2017 mem - Copy TissueID
 **    
 *****************************************************/
 (
@@ -61,53 +62,48 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	declare @fractionCount int
-	set @fractionCount = 0
-	declare @maxCount smallint
-	set @maxCount = 200
+	Declare @fractionCount int = 0
+	Declare @maxCount smallint = 200
 	
 	Declare @fractionNumberText varchar(2)
 	
-	declare @fullFractionCount int
-	declare @newExpID int
-	declare @matchCount int
+	Declare @fullFractionCount int
+	Declare @newExpID int
+	Declare @matchCount int
 	
-	declare @msg varchar(512)
+	Declare @msg varchar(512)
 
-	declare @startingIndex int
-	declare @step int
-	set @startingIndex = 1               -- Initial index for automatic naming of new experiments
-	set @step = 1                        -- Step interval in index
+	Declare @startingIndex int = 1               -- Initial index for automatic naming of new experiments
+	Declare @step int = 1                        -- Step interval in index
 	
 	-- T_Experiments column variables
 	--
-	declare @researcherPRN varchar(50)
-	declare @organismID int
-	declare @reason varchar(500)
-	declare @comment varchar(500)
-	declare @created datetime
-	declare @sampleConc varchar(50)
-	declare @labNotebook varchar(50)
-	declare @campaignID int
-	declare @cellCultureList varchar(1024)
-	declare @labelling varchar(64)
-	declare @enzymeID int
-	declare @samplePrepRequest int
-	declare @internalStandardID int
-	declare @postdigestIntStdID int
-	DECLARE @alkylation CHAR(1)
+	Declare @researcherPRN varchar(50)
+	Declare @organismID int
+	Declare @reason varchar(500)
+	Declare @comment varchar(500)
+	Declare @created datetime
+	Declare @sampleConc varchar(50)
+	Declare @labNotebook varchar(50)
+	Declare @campaignID int
+	Declare @cellCultureList varchar(1024)
+	Declare @labelling varchar(64)
+	Declare @enzymeID int
+	Declare @samplePrepRequest int
+	Declare @internalStandardID int
+	Declare @postdigestIntStdID int
+	Declare @alkylation CHAR(1)
+	Declare @tissueID int
+	
+	Declare @ExperimentIDList varchar(8000) = ''
 
-	declare @ExperimentIDList varchar(8000)
-	Set @ExperimentIDList = ''
-
-	declare @MaterialIDList varchar(8000)
-	Set @MaterialIDList = ''
+	Declare @MaterialIDList varchar(8000) = ''
 
 
-	BEGIN TRY
+	Begin TRY
 	
 	---------------------------------------------------
 	-- Validate arguments
@@ -115,28 +111,26 @@ AS
 	
 	-- don't allow too many child experiments to be created
 	--
-	if @totalCount > @maxCount
-	begin
-		set @message = 'Cannot create more than ' + convert(varchar(12), @maxCount) + ' child experments'
+	If @totalCount > @maxCount
+	Begin
+		Set @message = 'Cannot create more than ' + convert(varchar(12), @maxCount) + ' child experments'
 		RAISERROR (@message, 11, 4)
-	end
+	End
 
 	-- make sure that we don't overflow our alloted space for digits
 	--
-	if @startingIndex + (@totalCount * @step) > 999
-	begin
-		set @message = 'Automatic numbering parameters will require too many digits'
+	If @startingIndex + (@totalCount * @step) > 999
+	Begin
+		Set @message = 'Automatic numbering parameters will require too many digits'
 		RAISERROR (@message, 11, 5)
-	end
+	End
 
 	---------------------------------------------------
 	-- Get information for parent experiment
 	---------------------------------------------------
 	
-	declare @ParentExperimentID int
-	set @ParentExperimentID = 0
-	declare @parentContainerID int
-	set @parentContainerID = 0
+	Declare @ParentExperimentID int = 0
+	Declare @parentContainerID int = 0
 	--
 	SELECT
 		@ParentExperimentID = Exp_ID,
@@ -155,70 +149,71 @@ AS
 		@internalStandardID = EX_internal_standard_ID,
 		@postdigestIntStdID = EX_postdigest_internal_std_ID,
 		@parentContainerID = EX_Container_ID,
-		@alkylation = EX_Alkylation
+		@alkylation = EX_Alkylation,
+		@tissueID = EX_Tissue_ID
 	FROM	T_Experiments
 	WHERE (Experiment_Num = @parentExperiment)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0 OR @ParentExperimentID = 0
-	begin
-		set @message = 'Could not find parent experiment in database'
+	If @myError <> 0 OR @ParentExperimentID = 0
+	Begin
+		Set @message = 'Could not find parent experiment in database'
 		RAISERROR (@message, 11, 6)
-	end
+	End
 
 	---------------------------------------------------
-	-- set up and validate wellplate values
+	-- Set up and validate wellplate values
 	---------------------------------------------------
 	--
-	declare @wellIndex int
+	Declare @wellIndex int
 	exec @myError = ValidateWellplateLoading
-						@wellplateNum  output,
-						@wellNum  output,
+						@wellplateNum output,
+						@wellNum output,
 						@totalCount,
 						@wellIndex output,
 						@message output
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		RAISERROR (@message, 11, 7)
-	end
+	End
 
 	---------------------------------------------------
 	-- assure that wellplate is in wellplate table (if set)
 	---------------------------------------------------
 	--
-	if not @wellplateNum is null
-	begin
-		if @wellplateNum = 'new'
-		begin
-			set @wellplateNum = '(generate name)'
-			set @mode = 'add'
-		end
-		else
-		begin
-			set @mode = 'assure'
-		end
+	If Not @wellplateNum Is Null
+	Begin
+		If @wellplateNum = 'new'
+		Begin
+			Set @wellplateNum = '(generate name)'
+			Set @mode = 'add'
+		End
+		Else
+		Begin
+			Set @mode = 'assure'
+		End
 		--
-		declare @note varchar(128)
-		set @note = 'Created by experiment fraction entry (' + @parentExperiment + ')'
+		Declare @note varchar(128)
+		Set @note = 'Created by experiment fraction entry (' + @parentExperiment + ')'
 		exec @myError = AddUpdateWellplate
 							@wellplateNum output,
 							@note,
 							@mode,
 							@message output,
 							@callingUser
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			return @myError
-		end
-	end
+		End
+	End
 
 	---------------------------------------------------
 	-- override request ID
 	---------------------------------------------------
 
-	if @requestOverride <> 'parent'
-	begin
+	If @requestOverride <> 'parent'
+	Begin
 		Set @samplePrepRequest = CONVERT(int, @requestOverride)
 		Set @matchCount = 0
 		
@@ -228,20 +223,20 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0 OR @matchCount <> 1
-		begin
-			set @message = 'Could not find sample prep request'
+		If @myError <> 0 OR @matchCount <> 1
+		Begin
+			Set @message = 'Could not find sample prep request'
 			RAISERROR (@message, 11, 8)
-		end
-	end
+		End
+	End
 
 	---------------------------------------------------
 	-- Resolve predigest internal standard ID
 	---------------------------------------------------
-	if @internalStandard <> 'parent'
-	begin
-		declare @tmpID int
-		set @tmpID = Null
+	If @internalStandard <> 'parent'
+	Begin
+		Declare @tmpID int
+		Set @tmpID = Null
 		--
 		SELECT @tmpID = Internal_Std_Mix_ID
 		FROM T_Internal_Standards
@@ -249,21 +244,21 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myRowCount = 0
-		begin
-			set @message = 'Could not find entry in database for internal standard "' + @internalStandard + '"'
+		If @myRowCount = 0
+		Begin
+			Set @message = 'Could not find entry in database for internal standard "' + @internalStandard + '"'
 			RAISERROR (@message, 11, 9)
-		end
+		End
 		Set @internalStandardID = @tmpID
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve postdigestion internal standard ID
 	---------------------------------------------------
 	-- 
-	if @postdigestIntStd <> 'parent'
-	begin
-		set @tmpID = Null
+	If @postdigestIntStd <> 'parent'
+	Begin
+		Set @tmpID = Null
 		--
 		SELECT @tmpID = Internal_Std_Mix_ID
 		FROM T_Internal_Standards
@@ -271,24 +266,24 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myRowCount = 0
-		begin
-			set @message = 'Could not find entry in database for postdigestion internal standard "' + @tmpID + '"'
+		If @myRowCount = 0
+		Begin
+			Set @message = 'Could not find entry in database for postdigestion internal standard "' + @tmpID + '"'
 			RAISERROR (@message, 11, 10)
-		end
+		End
 		Set @postdigestIntStdID = @tmpID
-	end
+	End
 
 	---------------------------------------------------
 	-- Resolve researcher
 	---------------------------------------------------
 	-- 
-	if @researcher <> 'parent'
-	begin
-		declare @userID int
+	If @researcher <> 'parent'
+	Begin
+		Declare @userID int
 		execute @userID = GetUserID @researcher
-		if @userID = 0
-		begin
+		If @userID = 0
+		Begin
 			-- Could not find entry in database for PRN @researcher
 			-- Try to auto-resolve the name
 
@@ -303,12 +298,12 @@ AS
 			End
 			Else
 			Begin
-			 set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+			 Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
 			 RAISERROR (@message, 11, 11)
 			End
-		end
-		SET @researcherPRN = @researcher
-	end
+		End
+		Set @researcherPRN = @researcher
+	End
 
 	---------------------------------------------------
 	-- Set up transaction around multiple table modifications
@@ -317,9 +312,9 @@ AS
 --RAISERROR ('Researcher:%s', 11, 40, @researcherPRN)
 
 
-	declare @transName varchar(32)
-	set @transName = 'AddBatchExperimentEntry'
-	begin transaction @transName
+	Declare @transName varchar(32) = 'AddBatchExperimentEntry'
+	
+	Begin transaction @transName
 	
 	---------------------------------------------------
 	-- Make Experiment group entry
@@ -344,13 +339,13 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to insert new group entry into database'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed to insert new group entry into database'
 		RAISERROR (@message, 11, 12)
-	end
+	End
 	
-	set @groupID = SCOPE_IDENTITY()
+	Set @groupID = SCOPE_IDENTITY()
 
 	---------------------------------------------------
 	-- Add parent experiment to reference group
@@ -366,51 +361,50 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to update group reference for experiment'
+	If @myError <> 0
+	Begin
+		Set @message = 'Failed to update group reference for experiment'
 		RAISERROR (@message, 11, 14)
-	end
+	End
 
 	---------------------------------------------------
 	-- Insert Fractionated experiment entries
 	---------------------------------------------------
-	declare @newComment varchar(500)
-	declare @newExpName varchar(129)
-	declare @xID int
-	declare @result int
-	declare @wn varchar(8)
-	set @wn = @wellNum
+	Declare @newComment varchar(500)
+	Declare @newExpName varchar(129)
+	Declare @xID int
+	Declare @result int
+	Declare @wn varchar(8) = @wellNum
 	
 	WHILE @fractionCount < @totalCount and @myError = 0
-	BEGIN -- <a>
+	Begin -- <a>
 		-- build name for new experiment fraction
 		--
-		set @fullFractionCount = @startingIndex + @fractionCount
-		set @fractionNumberText = CAST(@fullFractionCount as varchar(3))
-		if  @fullFractionCount < 10
-		begin
-			set @fractionNumberText = '0' + @fractionNumberText
-		end
+		Set @fullFractionCount = @startingIndex + @fractionCount
+		Set @fractionNumberText = CAST(@fullFractionCount as varchar(3))
+		If  @fullFractionCount < 10
+		Begin
+			Set @fractionNumberText = '0' + @fractionNumberText
+		End
 
-		set @fractionCount = @fractionCount + @step
-		set @newComment = '(Fraction ' + CAST(@fullfractioncount as varchar(3)) + ' of ' + CAST(@totalcount as varchar(3)) + ')'
-		set @newExpName = @parentExperiment + '_' + @fractionNumberText
+		Set @fractionCount = @fractionCount + @step
+		Set @newComment = '(Fraction ' + CAST(@fullfractioncount as varchar(3)) + ' of ' + CAST(@totalcount as varchar(3)) + ')'
+		Set @newExpName = @parentExperiment + '_' + @fractionNumberText
 
 		-- verify that experiment name is not duplicated in table
 		--
-		set @xID = 0
+		Set @xID = 0
 		execute @xID = GetexperimentID @newExpName
 		--
-		if @xID <> 0
-		begin
+		If @xID <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Failed to add new fraction experiment because name already in database'
-			set @myError = 51002
+			Set @message = 'Failed to add new fraction experiment because name already in database'
+			Set @myError = 51002
 			RAISERROR (@message, 11, 16)
-		end
+		End
 
-		-- insert new experiment into database
+		-- Insert new experiment into database
 		--
 		INSERT INTO [T_Experiments] (
 			Experiment_Num, 
@@ -430,7 +424,8 @@ AS
 			EX_postdigest_internal_std_ID,
 			EX_wellplate_num, 
 			EX_well_num,
-			EX_Alkylation
+			EX_Alkylation,
+			EX_Tissue_ID
 		) VALUES (
 			@newExpName, 
 			@researcherPRN, 
@@ -449,19 +444,20 @@ AS
 			@postdigestIntStdID,
 			@wellplateNum,
 			@wn,
-			@alkylation
+			@alkylation,
+			@tissueID
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Insert operation failed!'
+			Set @message = 'Insert operation failed!'
 			RAISERROR (@message, 11, 17)
-		end
+		End
 		
-		set @newExpID = SCOPE_IDENTITY()
+		Set @newExpID = SCOPE_IDENTITY()
 
 		-- Add the cell cultures
 		--
@@ -470,12 +466,12 @@ AS
 								@cellCultureList,
 								@message output
 		--
-		if @result <> 0
-		begin
+		If @result <> 0
+		Begin
 			rollback transaction @transName
-			set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @newExpName + '" ' + @message
+			Set @msg = 'Could not add experiment cell cultures to database for experiment: "' + @newExpName + '" ' + @message
 			RAISERROR (@msg, 11, 18)
-		end
+		End
 
 
 		---------------------------------------------------
@@ -492,58 +488,58 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Failed to update group reference for new experiment'
+			Set @message = 'Failed to update group reference for new experiment'
 			RAISERROR (@message, 11, 19)
-		end
+		End
 	
 		---------------------------------------------------
 		-- Append Experiment ID to @ExperimentIDList and @MaterialIDList
 		---------------------------------------------------
 		--
 		If Len(@ExperimentIDList) > 0
-			set @ExperimentIDList = @ExperimentIDList + ','
+			Set @ExperimentIDList = @ExperimentIDList + ','
 
 		Set @ExperimentIDList = @ExperimentIDList + Convert(varchar(12), @newExpID)
 
 		If Len(@MaterialIDList) > 0
-			set @MaterialIDList = @MaterialIDList + ','
+			Set @MaterialIDList = @MaterialIDList + ','
 			
-		set @MaterialIDList = @MaterialIDList + 'E:' + Convert(varchar(12), @newExpID) 
+		Set @MaterialIDList = @MaterialIDList + 'E:' + Convert(varchar(12), @newExpID) 
 
 		---------------------------------------------------
 		-- increment well number
 		---------------------------------------------------
 		--
-		if not @wn is null
-		begin
-			set @wellIndex = @wellIndex + 1
-			set @wn = dbo.GetWellNum(@wellIndex)
-		end
+		If Not @wn Is Null
+		Begin
+			Set @wellIndex = @wellIndex + 1
+			Set @wn = dbo.GetWellNum(@wellIndex)
+		End
 
-	END -- </a>
+	End -- </a>
 
 	---------------------------------------------------
 	-- resolve parent container name
 	---------------------------------------------------
 	--
-	if @container = 'parent'
-	begin
+	If @container = 'parent'
+	Begin
 		SELECT @container = Tag
 		FROM T_Material_Containers
 		WHERE ID = @parentContainerID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			rollback transaction @transName
-			set @message = 'Failed to find parent container'
+			Set @message = 'Failed to find parent container'
 			RAISERROR (@message, 11, 20)
-		end
-	end
+		End
+	End
 
 	---------------------------------------------------
 	-- move new fraction experiments to container
@@ -559,7 +555,7 @@ AS
    					@callingUser
 	If @result <> 0
 	Begin
-		if @@TRANCOUNT > 0
+		If @@TRANCOUNT > 0
 			rollback transaction @transName
 		RAISERROR (@message, 11, 22)
 	End
@@ -580,9 +576,9 @@ AS
 
 	If @result <> 0
 	Begin
-		if @@TRANCOUNT > 0
+		If @@TRANCOUNT > 0
 			rollback transaction @transName
-		set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
+		Set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
 		RAISERROR (@message, 11, 23)
 	End
 
@@ -595,8 +591,8 @@ AS
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
@@ -604,7 +600,7 @@ AS
 			ROLLBACK TRANSACTION;
 			
 		Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
-	END CATCH
+	End CATCH
 	return @myError
 
 

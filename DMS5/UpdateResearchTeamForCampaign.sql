@@ -25,17 +25,18 @@ CREATE Procedure dbo.UpdateResearchTeamForCampaign
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/22/2017 mem - Validate @campaignNum
 **    
 *****************************************************/
 (
-	@campaignNum varchar(64), 
-	@progmgrPRN varchar(64), 
-	@piPRN varchar(64), 
-	@TechnicalLead varchar(256),
-	@SamplePreparationStaff varchar(256),
-	@DatasetAcquisitionStaff varchar(256),
-	@InformaticsStaff varchar(256),
-	@Collaborators varchar(256),
+	@campaignNum varchar(64),				-- Campaign name (required if @researchTeamID is 0)
+	@progmgrPRN varchar(64),				-- Project Manager PRN (required)
+	@piPRN varchar(64),						-- Principal Investigator PRN (required)
+	@TechnicalLead varchar(256),			-- Technical Lead
+	@SamplePreparationStaff varchar(256),	-- Sample Prep Staff
+	@DatasetAcquisitionStaff varchar(256),	-- Dataset acquisition staff
+	@InformaticsStaff varchar(256),			-- Informatics staff
+	@Collaborators varchar(256),			-- Collaborators
 	@researchTeamID int output,
 	@message varchar(512) output
 )
@@ -67,30 +68,24 @@ AS
 	End
 	
 	---------------------------------------------------
-	-- update research team if ID is given,
-	-- make new one if not
+	-- Validate the inputs
+	---------------------------------------------------
+	
+	Set @campaignNum = IsNull(@campaignNum, '')
+	
+	---------------------------------------------------
+	-- Make new research team if ID is 0
 	---------------------------------------------------
 
-	-- update existing research team
-	IF @researchTeamID <> 0 
-	BEGIN
-		UPDATE dbo.T_Research_Team
-			SET Collaborators = @Collaborators
-		WHERE
-			ID = @researchTeamID
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error updating research team fields'
-			GOTO Done
-		end
-	END
-
-	-- make new research team
 	IF @researchTeamID = 0 
 	BEGIN
+		If @campaignNum = ''
+		Begin
+			Set @myerror = 51002
+			set @message = 'Campaign name is blank; cannot create a new research team'
+			GOTO Done
+		End
+		
 		INSERT INTO T_Research_Team (
 			Team,
 			Description,
@@ -111,7 +106,23 @@ AS
 		--
 		SET @researchTeamID = SCOPE_IDENTITY()
 	END
-
+	Else
+	Begin
+		-- Update Collaborators
+		
+		UPDATE dbo.T_Research_Team
+		SET Collaborators = @Collaborators
+		WHERE ID = @researchTeamID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error updating collaborators'
+			GOTO Done
+		end
+	End
+	
 	IF @researchTeamID = 0 
 	begin
 		set @message = 'Research team ID was not valid'
@@ -211,11 +222,10 @@ AS
 	---------------------------------------------------
 	--
 	UPDATE #Tmp_TeamMembers
-	SET
-		[User_ID] = dbo.T_Users.ID
-	FROM
-		#Tmp_TeamMembers
-		INNER JOIN dbo.T_Users ON #Tmp_TeamMembers.User_PRN = dbo.T_Users.U_PRN
+	SET [User_ID] = dbo.T_Users.ID
+	FROM #Tmp_TeamMembers
+	     INNER JOIN dbo.T_Users
+	       ON #Tmp_TeamMembers.User_PRN = dbo.T_Users.U_PRN
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -232,6 +242,11 @@ AS
 		#Tmp_TeamMembers
 		INNER JOIN dbo.T_Research_Team_Roles ON T_Research_Team_Roles.Role = #Tmp_TeamMembers.Role
 	--
+	UPDATE #Tmp_TeamMembers
+	SET Role_ID = T_Research_Team_Roles.ID
+	FROM #Tmp_TeamMembers
+	     INNER JOIN dbo.T_Research_Team_Roles
+	       ON T_Research_Team_Roles.ROLE = #Tmp_TeamMembers.ROLE
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
@@ -283,15 +298,14 @@ AS
 	-- error if any PRN or role did not resolve to ID
 	---------------------------------------------------
 	--
-	DECLARE @list VARCHAR(512)
-	SET @list = ''
+	DECLARE @list VARCHAR(512) = ''
 	--
-	SELECT
-		@list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + User_PRN 
-	FROM
-		#Tmp_TeamMembers
-	WHERE
-		[USER_ID] IS NULL
+	SELECT @list = @list + CASE
+	                           WHEN @list = '' THEN ''
+	                           ELSE ', '
+	                       END + User_PRN
+	FROM #Tmp_TeamMembers
+	WHERE [USER_ID] IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -312,12 +326,13 @@ AS
 
 	SET @list = ''
 	--
-	SELECT
-		@list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + [Role] 
+	SELECT @list = @list + CASE
+	                           WHEN @list = '' THEN ''
+	                           ELSE ', '
+	                       END + [Role]
 	FROM ( SELECT DISTINCT [Role]
 	       FROM #Tmp_TeamMembers
-	       WHERE Role_ID IS NULL 
-	     ) LookupQ
+	       WHERE Role_ID IS NULL ) LookupQ
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -339,11 +354,9 @@ AS
 	-- clean out any existing membership
 	---------------------------------------------------
 	--
-	DELETE FROM
-		T_Research_Team_Membership
-	WHERE
-		Team_ID = @researchTeamID
-		AND Role_ID BETWEEN 1 AND 6 -- restrict to roles that are editable via campaign
+	DELETE FROM T_Research_Team_Membership
+	WHERE Team_ID = @researchTeamID AND
+	      Role_ID BETWEEN 1 AND 6 -- restrict to roles that are editable via campaign
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -357,12 +370,13 @@ AS
 	-- replace with new membership
 	---------------------------------------------------
 	--
-	INSERT INTO T_Research_Team_Membership
-		(Team_ID, Role_ID, User_ID)
-	SELECT 
-		@researchTeamID, Role_ID, USER_ID 
-	FROM 
-		#Tmp_TeamMembers
+	INSERT INTO T_Research_Team_Membership( Team_ID,
+	                                        Role_ID,
+	                                        [User_ID] )
+	SELECT @researchTeamID,
+	       Role_ID,
+	       [User_ID]
+	FROM #Tmp_TeamMembers
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--

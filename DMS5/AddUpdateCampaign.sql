@@ -41,15 +41,15 @@ CREATE Procedure dbo.AddUpdateCampaign
 **    
 *****************************************************/
 (
-	@campaignNum varchar(64), 
-	@projectNum varchar(64), 
-	@progmgrPRN varchar(64), 
-	@piPRN varchar(64), 
-	@TechnicalLead varchar(256),
-	@SamplePreparationStaff varchar(256),
-	@DatasetAcquisitionStaff varchar(256),
-	@InformaticsStaff varchar(256),
-	@Collaborators varchar(256),
+	@campaignNum varchar(64),				-- Campaign name
+	@projectNum varchar(64),				-- Project name
+	@progmgrPRN varchar(64),				-- Project Manager PRN (required)
+	@piPRN varchar(64),						-- Principal Investigator PRN (required)
+	@TechnicalLead varchar(256),			-- Technical Lead
+	@SamplePreparationStaff varchar(256),	-- Sample Prep Staff
+	@DatasetAcquisitionStaff varchar(256),	-- Dataset acquisition staff
+	@InformaticsStaff varchar(256),			-- Informatics staff
+	@Collaborators varchar(256),			-- Collaborators
 	@comment varchar(500),
 	@State varchar(24),
 	@Description varchar(512),
@@ -106,16 +106,16 @@ As
 
 	Set @myError = 0
 	If LEN(@campaignNum) < 1
-		RAISERROR ('campaign name was blank', 11, 1)
+		RAISERROR ('Campaign name is blank', 11, 1)
 	--
 	If LEN(@projectNum) < 1
-		RAISERROR ('Project Number was blank', 11, 1)
+		RAISERROR ('Project Number is blank', 11, 1)
 	--
 	If LEN(@progmgrPRN) < 1
-		RAISERROR ('Program Manager PRN was blank', 11, 2)
+		RAISERROR ('Project Manager PRN is blank', 11, 2)
 	--
 	If LEN(@piPRN) < 1
-		RAISERROR ('Principle Investigator PRN was blank', 11, 3)
+		RAISERROR ('Principle Investigator PRN is blank', 11, 3)
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -132,18 +132,18 @@ As
 	WHERE
 		Campaign_Num = @campaignNum
 
-	-- cannot create an entry that already exists
+	-- Cannot create an entry that already exists
 	--
 	If @campaignID <> 0 and @mode = 'add'
 		RAISERROR ('Cannot add: Campaign "%s" already in database', 11, 4, @campaignNum)
 
-	-- cannot update a non-existent entry
+	-- Cannot update a non-existent entry
 	--
 	If @campaignID = 0 and @mode = 'update'
 		RAISERROR ('Cannot update: Campaign "%s" is not in database', 11, 5, @campaignNum)
 
 	---------------------------------------------------
-	-- resolve data release restriction name to ID
+	-- Resolve data release restriction name to ID
 	---------------------------------------------------
 	--
 	Declare @DataReleaseRestrictionsID int = -1
@@ -197,7 +197,7 @@ As
 		Set @FractionEMSLFundedValue = 0
 	
 	---------------------------------------------------
-	-- validate campaign name
+	-- Validate campaign name
 	---------------------------------------------------
 	--
 	If @mode = 'add'
@@ -218,13 +218,13 @@ As
 	Set @logErrors = 1
 	
 	---------------------------------------------------
-	-- transaction name
+	-- Transaction name
 	---------------------------------------------------
 	--
 	Declare @transName varchar(32) = 'AddUpdateCampaign'
 
 	---------------------------------------------------
-	-- action for add mode
+	-- Action for add mode
 	---------------------------------------------------
 	If @mode = 'add'
 	Begin
@@ -232,7 +232,7 @@ As
 		Begin transaction @transName
 
 		---------------------------------------------------
-		-- create research team
+		-- Create research team
 		---------------------------------------------------
 		--
 		EXEC @myError = UpdateResearchTeamForCampaign
@@ -251,7 +251,7 @@ As
 			RAISERROR (@message, 11, 11)
 
 		---------------------------------------------------
-		-- create campaign
+		-- Create campaign
 		---------------------------------------------------
 		--
 		INSERT INTO T_Campaign (
@@ -330,7 +330,7 @@ As
 	End -- add mode
 
 	---------------------------------------------------
-	-- action for update mode
+	-- Action for update mode
 	---------------------------------------------------
 	--
 	If @mode = 'update' 
@@ -340,7 +340,7 @@ As
 		Set @myError = 0
 		--
 		---------------------------------------------------
-		-- update campaign
+		-- Update campaign
 		---------------------------------------------------
 		--
 		UPDATE T_Campaign 
@@ -364,7 +364,7 @@ As
 			RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignNum)
 
 		---------------------------------------------------
-		-- update research team membershipe
+		-- Update research team membershipe
 		---------------------------------------------------
 		--
 		EXEC @myError = UpdateResearchTeamForCampaign
@@ -398,7 +398,7 @@ As
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
-		-- rollback any open transactions
+		-- Rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
