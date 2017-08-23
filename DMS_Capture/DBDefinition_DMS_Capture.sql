@@ -2,9 +2,9 @@
 CREATE DATABASE [DMS_Capture]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'DMS_Capture', FILENAME = N'J:\SQLServerData\DMS_Capture.mdf' , SIZE = 5130496KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'DMS_Capture', FILENAME = N'J:\SQLServerData\DMS_Capture.mdf' , SIZE = 5651392KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'DMS_Capture_log', FILENAME = N'H:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 50432KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
+( NAME = N'DMS_Capture_log', FILENAME = N'H:\SQLServerData\DMS_Capture_log.ldf' , SIZE = 378112KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -78,6 +78,9 @@ GO
 /****** Object:  User [DMSWebUser] ******/
 CREATE USER [DMSWebUser] FOR LOGIN [DMSWebUser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [memadmin] ******/
+CREATE USER [memadmin] FOR LOGIN [PNL\memadmin] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [pnl\d3m578] ******/
 CREATE USER [pnl\d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -102,6 +105,8 @@ GO
 GRANT CONNECT TO [DMSWebUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
+GO
+GRANT CONNECT TO [memadmin] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3m578] AS [dbo]
 GO
