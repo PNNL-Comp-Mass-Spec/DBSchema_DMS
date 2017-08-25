@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[term](
 	[is_obsolete] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[is_root_term] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[is_leaf] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Updated] [smalldatetime] NULL,
  CONSTRAINT [PK_term] PRIMARY KEY CLUSTERED 
 (
 	[term_pk] ASC
