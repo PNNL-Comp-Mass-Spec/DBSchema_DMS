@@ -272,6 +272,37 @@ AS
 				End -- </d>
 			End -- </c>
 		End -- </b>
+		
+		
+		---------------------------------------------------
+		-- Update the Children counts
+		---------------------------------------------------
+		--
+		UPDATE T_CV_BTO
+		SET Children = StatsQ.Children
+		FROM T_CV_BTO Target
+		     INNER JOIN ( SELECT Parent_term_ID, COUNT(*) AS Children
+		                  FROM T_CV_BTO
+		                  GROUP BY Parent_term_ID ) StatsQ
+		       ON Target.Identifier = StatsQ.Parent_Term_ID
+		WHERE IsNull(Target.Children, 0) <> StatsQ.Children
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		-- Change counts to null if no children
+		--
+		UPDATE T_CV_BTO
+		SET Children = NULL
+		FROM T_CV_BTO Target
+		     LEFT OUTER JOIN ( SELECT Parent_term_ID, COUNT(*) AS Children
+		                       FROM T_CV_BTO
+		                       GROUP BY Parent_term_ID ) StatsQ
+		       ON Target.Identifier = StatsQ.Parent_Term_ID
+		WHERE StatsQ.Parent_term_ID IS NULL AND
+		      NOT Target.Children IS NULL
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		     
 	End -- </a1>
 	Else
 	Begin -- <a2>
