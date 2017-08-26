@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE View [dbo].[V_Experiment_Detail_Report_Ex] AS 
+CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex] AS 
 SELECT  E.Experiment_Num AS Experiment ,
         U.Name_with_PRN AS Researcher ,
         Org.OG_name AS Organism ,
@@ -15,13 +15,13 @@ SELECT  E.Experiment_Num AS Experiment ,
         Enz.Enzyme_Name AS [Digestion Enzyme] ,
         E.EX_lab_notebook_ref AS [Lab Notebook] ,
         C.Campaign_Num AS Campaign ,
+        BTO.Tissue,
         E.EX_cell_culture_list AS [Cell Cultures] ,
         E.EX_Labelling AS Labelling ,
         IntStdPre.Name AS [Predigest Int Std] ,
         IntStdPost.Name AS [Postdigest Int Std] ,
         E.EX_Alkylation AS Alkylated ,
         E.EX_sample_prep_request_ID AS Request ,
-        BTO.Tissue,
 	   BTO.Identifier AS [Tissue ID],
         dbo.GetExperimentGroupList(E.Exp_ID) AS [Experiment Groups] ,
         ISNULL(DSCountQ.Datasets, 0) AS Datasets ,
@@ -75,7 +75,6 @@ FROM    T_Experiments AS E
                         ) AS ExpGroupFileCount ON ExpGroupFileCount.Exp_ID = E.Exp_ID
         LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
 	     ON E.EX_Tissue_ID = BTO.Identifier
-
 
 
 GO

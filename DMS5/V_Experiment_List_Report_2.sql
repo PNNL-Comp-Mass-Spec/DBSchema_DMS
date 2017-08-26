@@ -15,6 +15,7 @@ SELECT E.Exp_ID AS ID,
        E.EX_sample_concentration AS Concentration,
        E.EX_created AS Created,
        C.Campaign_Num AS Campaign,
+       BTO.Tissue,
        E.EX_cell_culture_list AS [Cell Cultures],
        Enz.Enzyme_Name AS Enzyme,
        E.EX_lab_notebook_ref AS Notebook,
@@ -26,8 +27,7 @@ SELECT E.Exp_ID AS ID,
        ML.Tag AS Location,
        E.EX_wellplate_num AS Wellplate,
        E.EX_well_num AS Well,
-       E.EX_Alkylation AS Alkylated,
-	  BTO.Tissue
+       E.EX_Alkylation AS Alkylated
 FROM T_Experiments E
      INNER JOIN dbo.T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
