@@ -75,6 +75,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 **						   - Use SCOPE_IDENTITY
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/25/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **
 *****************************************************/
 (
@@ -109,6 +110,7 @@ CREATE PROCEDURE dbo.AddUpdateSamplePrepRequest
 	@BlockAndRandomizeSamples char(3),		-- 'Yes', 'No', or 'na'
 	@BlockAndRandomizeRuns char(3),			-- 'Yes' or 'No'
 	@ReasonForHighPriority varchar(1024),
+	@tissue varchar(128) = '',
 	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -292,6 +294,26 @@ As
 	if @organismID = 0
 		RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
 
+	---------------------------------------------------
+	-- Resolve @tissue to BTO identifier
+	---------------------------------------------------
+	
+	Declare @tissueIdentifier varchar(24) = null
+	
+	If IsNull(@tissue, '') <> ''
+	Begin
+		Set @tissue = LTrim(RTrim(@tissue))
+		
+		SELECT @tissueIdentifier = Identifier
+		FROM S_V_BTO_ID_to_Name
+		WHERE Tissue = @tissue
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--	
+		If @myRowCount = 0
+			RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
+	End
+	
 	---------------------------------------------------
 	-- Convert estimated completion date
 	---------------------------------------------------
@@ -636,6 +658,7 @@ As
 			Requester_PRN, 
 			Reason,
 			Organism, 
+			Tissue_ID,
 			Biohazard_Level, 
 			Campaign, 
 			Number_of_Samples, 
@@ -668,6 +691,7 @@ As
 			@RequesterPRN, 
 			@Reason,
 			@Organism, 
+			@tissueIdentifier,
 			@BiohazardLevel, 
 			@Campaign, 
 			@NumberofSamples, 
@@ -743,6 +767,7 @@ As
 			Reason = @Reason,
 			Material_Container_List = @MaterialContainerList,
 			Organism = @Organism, 
+			Tissue_ID = @tissueIdentifier,
 			Biohazard_Level = @BiohazardLevel, 
 			Campaign = @Campaign, 
 			Number_of_Samples = @NumberofSamples, 

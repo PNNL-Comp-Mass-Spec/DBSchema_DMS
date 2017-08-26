@@ -11,6 +11,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Reason] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Cell_Culture_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Tissue_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Biohazard_Level] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Campaign] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Number_of_Samples] [int] NULL,

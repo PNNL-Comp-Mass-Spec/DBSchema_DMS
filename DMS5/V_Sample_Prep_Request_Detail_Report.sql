@@ -14,6 +14,7 @@ SELECT  SPR.ID,
         -- Deprecated in June 2017: SPR.Cell_Culture_List AS [Biomaterial List],
         SPR.Material_Container_List AS [Material Containers],
         SPR.Organism,
+        BTO.Tissue,
         -- Deprecated in June 2017: SPR.Number_Of_Biomaterial_Reps_Received AS [Number Of Biomaterial Reps Received],
         SPR.Biohazard_Level AS [Biohazard Level],
         SPR.Number_of_Samples AS [Number of Samples],
@@ -38,7 +39,7 @@ SELECT  SPR.ID,
         -- Deprecated in June 2017: SPR.Project_Number AS [Project Number],
         SPR.EUS_UsageType AS [EUS Usage Type],
         SPR.EUS_Proposal_ID AS [EUS Proposal],
-		EPT.Proposal_Type_Name AS [EUS Proposal Type],
+        EPT.Proposal_Type_Name AS [EUS Proposal Type],
         dbo.GetSamplePrepRequestEUSUsersList(SPR.ID, 'V') AS [EUS User],
         SPR.Requested_Personnel AS [Requested Personnel],
         SPR.Assigned_Personnel AS [Assigned Personnel],
@@ -61,21 +62,28 @@ SELECT  SPR.ID,
         SPR.HPLC_Runs_Item_Count AS [HPLC Runs Item Count],
         SPR.Total_Item_Count,
         CASE WHEN SPR.State <> 5
-                  AND CC.Activation_State >= 3 THEN 10	-- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
+                  AND CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
              ELSE CC.Activation_State
         END AS #WPActivationState 
-FROM    T_Sample_Prep_Request AS SPR
-        INNER JOIN T_Sample_Prep_Request_State_Name AS SN ON SPR.State = SN.State_ID
-        LEFT OUTER JOIN T_Users AS QP ON SPR.Requester_PRN = QP.U_PRN
-        LEFT OUTER JOIN ( SELECT    Request_ID,
-                                    COUNT(*) AS Updates
-                          FROM      T_Sample_Prep_Request_Updates
-                          GROUP BY  Request_ID
-                        ) AS NU ON SPR.ID = NU.Request_ID
-        LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT ON SPR.ID = QT.Request_ID
-        LEFT OUTER JOIN V_Charge_Code_Status AS CC ON SPR.Work_Package_Number = CC.Charge_Code
-		LEFT OUTER JOIN T_EUS_Proposals AS EUP ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
-		LEFT OUTER JOIN T_EUS_Proposal_Type EPT ON EUP.Proposal_Type = EPT.Proposal_Type
+FROM T_Sample_Prep_Request AS SPR
+     INNER JOIN T_Sample_Prep_Request_State_Name AS SN
+       ON SPR.State = SN.State_ID
+     LEFT OUTER JOIN T_Users AS QP
+       ON SPR.Requester_PRN = QP.U_PRN
+     LEFT OUTER JOIN ( SELECT Request_ID, COUNT(*) AS Updates
+                       FROM T_Sample_Prep_Request_Updates
+                       GROUP BY Request_ID ) AS NU
+       ON SPR.ID = NU.Request_ID
+     LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
+       ON SPR.ID = QT.Request_ID
+     LEFT OUTER JOIN V_Charge_Code_Status AS CC
+       ON SPR.Work_Package_Number = CC.Charge_Code
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
+       ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+       ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
+       ON SPR.Tissue_ID = BTO.Identifier
 
 
 GO
