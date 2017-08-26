@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Helper_BTO_Tissue_Report]
 AS
 	SELECT Term_Name AS Tissue,

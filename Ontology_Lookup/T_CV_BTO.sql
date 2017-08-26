@@ -14,6 +14,7 @@ CREATE TABLE [dbo].[T_CV_BTO](
 	[Parent_term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[GrandParent_term_name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[GrandParent_term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Children] [int] NULL,
 	[Entered] [smalldatetime] NOT NULL,
 	[Updated] [smalldatetime] NOT NULL,
  CONSTRAINT [PK_T_CV_BTO] PRIMARY KEY NONCLUSTERED 
