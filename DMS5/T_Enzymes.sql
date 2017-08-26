@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[T_Enzymes](
 	[Cleavage_Offset] [tinyint] NOT NULL,
 	[Sequest_Enzyme_Index] [int] NULL,
 	[Protein_Collection_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Enzymes] PRIMARY KEY CLUSTERED 
 (
 	[Enzyme_ID] ASC
