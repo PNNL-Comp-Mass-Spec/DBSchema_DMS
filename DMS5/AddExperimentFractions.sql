@@ -38,6 +38,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			02/23/2016 mem - Add Set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			08/22/2017 mem - Copy TissueID
+**			08/25/2017 mem - Use TissueID from the Sample Prep Request if @requestOverride is not "parent" and if the prep request has a tissue defined
 **    
 *****************************************************/
 (
@@ -47,7 +48,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 	@description varchar(512),				-- Purpose of group
 	@totalCount int,						-- Number of new experiments to automatically create
 	@groupID int,							-- ID of newly created experiment group
-	@requestOverride varchar(12) = 'parent',   -- ID of request for fractions (if different than parent)
+	@requestOverride varchar(12) = 'parent',   -- ID of sample prep request for fractions (if different than parent experiment)
 	@internalStandard varchar(50) = 'parent',
 	@postdigestIntStd varchar(50) = 'parent',
 	@researcher varchar(50) = 'parent',
@@ -72,7 +73,6 @@ AS
 	
 	Declare @fullFractionCount int
 	Declare @newExpID int
-	Declare @matchCount int
 	
 	Declare @msg varchar(512)
 
@@ -212,20 +212,27 @@ AS
 	-- override request ID
 	---------------------------------------------------
 
+	Declare @prepRequestTissueID varchar(24) = Null
+	
 	If @requestOverride <> 'parent'
 	Begin
-		Set @samplePrepRequest = CONVERT(int, @requestOverride)
-		Set @matchCount = 0
+		Set @samplePrepRequest = Try_Cast(@requestOverride as int)
 		
-		SELECT @matchCount = COUNT(*)
+		If @samplePrepRequest Is Null
+		Begin
+			Set @message = 'Prep request ID is not an integer: ' + @requestOverride
+			RAISERROR (@message, 11, 8)
+		End
+		
+		SELECT @prepRequestTissueID = Tissue_ID
 		FROM T_Sample_Prep_Request
 		WHERE ID = @samplePrepRequest
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		If @myError <> 0 OR @matchCount <> 1
+		If @myError <> 0 OR @myRowCount <> 1
 		Begin
-			Set @message = 'Could not find sample prep request'
+			Set @message = 'Could not find sample prep request: ' + @requestOverride
 			RAISERROR (@message, 11, 8)
 		End
 	End
@@ -235,8 +242,7 @@ AS
 	---------------------------------------------------
 	If @internalStandard <> 'parent'
 	Begin
-		Declare @tmpID int
-		Set @tmpID = Null
+		Declare @tmpID int = Null
 		--
 		SELECT @tmpID = Internal_Std_Mix_ID
 		FROM T_Internal_Standards
@@ -288,18 +294,19 @@ AS
 			-- Try to auto-resolve the name
 
 			Declare @NewPRN varchar(64)
+			Declare @matchCount int
 
 			exec AutoResolveNameToPRN @researcher, @matchCount output, @NewPRN output, @userID output
 
 			If @matchCount = 1
 			Begin
-			  -- Single match found; update @researcher
-			  Set @researcher = @NewPRN
+				-- Single match found; update @researcher
+				Set @researcher = @NewPRN
 			End
 			Else
 			Begin
-			 Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
-			 RAISERROR (@message, 11, 11)
+				Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+				RAISERROR (@message, 11, 11)
 			End
 		End
 		Set @researcherPRN = @researcher
@@ -445,7 +452,7 @@ AS
 			@wellplateNum,
 			@wn,
 			@alkylation,
-			@tissueID
+			Case When IsNull(@prepRequestTissueID, '') <> '' Then @prepRequestTissueID Else @tissueID End
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
