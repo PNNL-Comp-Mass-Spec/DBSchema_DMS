@@ -61,6 +61,7 @@ FROM T_Sample_Prep_Request SPR
 WHERE (NOT (SPR.State IN (0, 4, 5))) And SPR.Request_Type = 'Default'
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Active_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

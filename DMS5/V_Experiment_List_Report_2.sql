@@ -49,6 +49,7 @@ FROM T_Experiments E
 	  ON E.EX_Tissue_ID = BTO.Identifier
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_List_Report_2] TO [DDL_Viewer] AS [dbo]
 GO

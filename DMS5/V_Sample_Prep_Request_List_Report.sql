@@ -83,6 +83,7 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          EPT.Proposal_Type_Name, BTO.Tissue
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

@@ -86,6 +86,7 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.Tissue_ID = BTO.Identifier
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO

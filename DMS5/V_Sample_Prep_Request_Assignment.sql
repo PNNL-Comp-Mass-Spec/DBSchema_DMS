@@ -53,6 +53,7 @@ FROM T_Sample_Prep_Request SPR
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Assignment] TO [DDL_Viewer] AS [dbo]
 GO
