@@ -19,6 +19,7 @@ CREATE PROCEDURE AddUpdateParamFile
 **			05/26/2017 - Update @paramfileMassMods to remove tabs
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/28/2017 mem - Add @validateUnimod
 **
 *****************************************************/
 (
@@ -29,6 +30,7 @@ CREATE PROCEDURE AddUpdateParamFile
 	@paramfileValid tinyint = 1,			-- Forced to 1 if @mode is 'add'
 	@paramfileMassMods varchar(4000) = '',
 	@replaceExistingMassMods tinyint = 0,
+	@validateUnimod tinyint = 1,
 	@mode varchar(12) = 'add',				-- 'add' or 'update'
 	@message varchar(512) output
 )
@@ -101,6 +103,8 @@ As
 	Set @paramfileMassMods = Replace (@paramfileMassMods, CHAR(9), ' ')	
 	
 	Set @replaceExistingMassMods = IsNull(@replaceExistingMassMods, 0)
+	
+	Set @validateUnimod = IsNull(@validateUnimod, 1)
 	
 	If @myError <> 0
 		return @myError
@@ -263,7 +267,11 @@ As
 		If @updateMassMods = 1
 		Begin
 			-- Store the param file mass mods in T_Param_File_Mass_Mods
-			exec @myError = StoreParamFileMassMods @ParamFileID, @paramfileMassMods, @InfoOnly=0, @ReplaceExisting=@ReplaceExistingMassMods, @ValidateUnimod=1, @message=@message output
+			exec @myError = StoreParamFileMassMods 
+				@ParamFileID, @paramfileMassMods, @InfoOnly=0, 
+				@ReplaceExisting=@ReplaceExistingMassMods, 
+				@ValidateUnimod=@validateUnimod, 
+				@message=@message output
 						
 			If @myError <> 0
 			Begin
