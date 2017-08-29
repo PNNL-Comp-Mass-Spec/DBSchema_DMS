@@ -19,6 +19,7 @@ CREATE PROCEDURE MakeNewArchiveUpdateJob
 **			10/24/2014 mem - Changed priority to 2 when @ResultsFolderName = ''
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/28/2017 mem - Update status messages
 **    
 *****************************************************/
 (
@@ -111,7 +112,10 @@ As
 
 	If @JobID > 0 
 	Begin
-		Set @message = 'Existing pending job already exists for ' + @DatasetName + ' and ' + @ResultsFolderName + '; job ' + Convert(varchar(12), @JobID)
+		if @ResultsFolderName = ''
+			Set @message = 'Existing pending job already exists for ' + @DatasetName + ' and subfolder ' + @ResultsFolderName + '; job ' + Convert(varchar(12), @JobID)
+		else
+			Set @message = 'Existing pending job already exists for ' + @DatasetName + '; job ' + Convert(varchar(12), @JobID)
 		Set @myError = 0
 		Goto Done
 	End
@@ -168,7 +172,12 @@ As
 		
 		Set @JobID = SCOPE_IDENTITY()
 		
-		Set @message = 'Created Job ' + Convert(varchar(12), @JobID) + ' for dataset ' + @DatasetName + ' and results folder ' + @ResultsFolderName
+		Set @message = 'Created Job ' + Convert(varchar(12), @JobID) + ' for dataset ' + @DatasetName
+		
+		if @ResultsFolderName = ''
+			Set @message = @message + ' and all subfolders'
+		else
+			Set @message = @message + ' and results folder ' + @ResultsFolderName
 
 	End
 	

@@ -30,6 +30,7 @@ CREATE PROCEDURE dbo.ParseUsageText
 **						   - Use Try_Convert when parsing UsageValue
 **						   - Rename temp tables
 **						   - Additional comment cleanup logic
+**			08/29/2017 mem - Direct users to http://prismwiki.pnl.gov/wiki/Long_Interval_Notes
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -94,7 +95,7 @@ AS
 	---------------------------------------------------
 	
 	DECLARE @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User'
-	DECLARE @nonPercentageKeys VARCHAR(256) =  'Operator, Proposal, PropUser'
+	DECLARE @nonPercentageKeys VARCHAR(256) = 'Operator, Proposal, PropUser'
 
 	BEGIN TRY 
 		---------------------------------------------------
@@ -140,7 +141,7 @@ AS
 		DECLARE @uniqueID INT = 0, @nextID INT = 0
 		DECLARE @kw VARCHAR(32)
 		DECLARE @done tinyint = 0
-				
+		
 		WHILE @done = 0
 		BEGIN -- <a>
 			---------------------------------------------------
@@ -173,7 +174,7 @@ AS
 				-- parse out its values and save that in the usage table
 				---------------------------------------------------
 			
-				IF @index  = 0
+				IF @index = 0
 				BEGIN
 					if @showDebug > 0
 						Print 'Keyword not found: ' + @kw
@@ -239,7 +240,7 @@ AS
 		Begin
 			Set @logErrors = 0
 			Set @invalidUsage = 1
-			RAISERROR ('Total percentage (%d) does not add up to 100 for ID %d', 11, 7, @total, @seq)
+			RAISERROR ('Total percentage (%d) does not add up to 100 for ID %d; see %s', 11, 7, @total, @seq, 'http://prismwiki.pnl.gov/wiki/Long_Interval_Notes')
 		End
 		
 		---------------------------------------------------
@@ -265,7 +266,7 @@ AS
 
 		DECLARE @s VARCHAR(512) = ''
 		--
-		SELECT @s =  @s + UsageKey + '="' + UsageValue + '" '
+		SELECT @s = @s + UsageKey + '="' + UsageValue + '" '
 		FROM #TmpUsageInfo
 		--
 		SET @usageXML = '<u ' + @s + ' />'
