@@ -226,6 +226,7 @@ AS
 											'update',
 											@msg output,
 											@callingUser,
+											@showDebug=0,
 											@invalidUsage=@invalidUsage output
 
 				If @invalidUsage > 0
