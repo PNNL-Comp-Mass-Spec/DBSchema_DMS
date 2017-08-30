@@ -91,6 +91,7 @@ CREATE Procedure dbo.AddUpdateDataset
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			08/29/2017 mem - Allow updating EUS info for existing datasets (calls AddUpdateRequestedRun)
 **    
 *****************************************************/
 (
@@ -135,7 +136,15 @@ As
 	Declare @ExperimentCheck varchar(128)
 	Declare @debugMsg varchar(512)
 	Declare @logErrors tinyint = 0
-	
+
+	Declare @workPackage varchar(12) = 'none'			
+	Declare @reqName varchar(128)
+	Declare @reqRunInstSettings varchar(512)
+	Declare @reqRunComment varchar(1024)
+	Declare @reqRunInternalStandard varchar(50)
+	Declare @mrmAttachmentID int
+	Declare @reqRunStatus varchar(24)
+			
 	Set @message = ''
 	Set @warning = ''
 
@@ -881,8 +890,7 @@ As
 		-- Resolve ID for LC Cart and update requested run table
 		---------------------------------------------------
 
-		Declare @cartID int
-		Set @cartID = 0
+		Declare @cartID int = 0
 		--
 		SELECT @cartID = ID
 		FROM T_LC_Cart
@@ -958,14 +966,11 @@ As
 
 		End -- </b2>
 
-		Declare @DSCreatorPRN varchar(256)
-		Set @DSCreatorPRN = suser_sname()
+		Declare @DSCreatorPRN varchar(256) = suser_sname()
 
 		Declare @rslt int
-		Declare @Run_Start varchar(10)
-		Declare @Run_Finish varchar(10)
-		Set @Run_Start = ''
-		Set @Run_Finish = ''
+		Declare @Run_Start varchar(10) = ''
+		Declare @Run_Finish varchar(10) = ''
 
 		If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 			Set @warning = @message
@@ -1122,7 +1127,7 @@ As
 			Set @datasetID = @DatasetIDConfirm
 		End
 		
-		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 		Begin
 			Exec AlterEventLogEntryUser 4, @datasetID, @newDSStateID, @callingUser
@@ -1141,11 +1146,10 @@ As
 			If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
 				Set @warning = @message
 
-			Declare @workPackage varchar(12) = 'none'			
 			EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
 
-			Declare @reqName varchar(128)
 			Set @reqName = 'AutoReq_' + @datasetNum
+			
 			EXEC @result = dbo.AddUpdateRequestedRun 
 									@reqName = @reqName,
 									@experimentNum = @experimentNum,
@@ -1208,12 +1212,11 @@ As
 		End
 		
 		---------------------------------------------------
-		-- consume the scheduled run 
+		-- Consume the scheduled run 
 		---------------------------------------------------
 		
 		Set @datasetID = 0
-		SELECT 
-			@datasetID = Dataset_ID
+		SELECT @datasetID = Dataset_ID
 		FROM T_Dataset 
 		WHERE (Dataset_Num = @datasetNum)
 
@@ -1282,9 +1285,31 @@ As
 			RAISERROR (@msg, 11, 4)
 		End
 		
-		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
 			Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+
+		-- Lookup the Requested Run info for this dataset
+		--
+		SELECT @requestID = RR.ID,
+		       @reqName = RR.RDS_Name,
+		       @reqRunInstSettings = RR.RDS_instrument_setting,
+		       @workPackage = RR.RDS_WorkPackage,
+		       @wellplateNum = RR.RDS_Well_Plate_Num,
+		       @wellNum = RR.RDS_Well_Num,
+		       @reqRunComment = RDS_comment,
+		       @reqRunInternalStandard = RDS_internal_standard,
+		       @mrmAttachmentID = RDS_MRM_Attachment,
+		       @reqRunStatus = RDS_Status
+		FROM T_Dataset DS
+		     INNER JOIN T_Requested_Run RR
+		       ON DS.Dataset_ID = RR.DatasetID
+		WHERE DS.Dataset_ID = @datasetID
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		If @myRowCount = 0
+			Set @requestID = 0
 
 		---------------------------------------------------
 		-- If a cart name is specified, update it for the 
@@ -1293,13 +1318,6 @@ As
 		--
 		If @LCCartName NOT IN ('', 'no update')
 		Begin
-
-			-- Lookup the RequestID for this dataset
-			SELECT @requestID = RR.ID
-			FROM T_Dataset DS
-			     INNER JOIN T_Requested_Run RR
-			       ON DS.Dataset_ID = RR.DatasetID
-			WHERE DS.Dataset_ID = @datasetID
 
 			If IsNull(@requestID, 0) = 0
 			Begin
@@ -1325,9 +1343,47 @@ As
 			End	
 		End
 
+		If @requestID > 0 And @eusUsageType <> ''
+		Begin -- <b4>
+			EXEC @result = dbo.AddUpdateRequestedRun 
+									@reqName = @reqName,
+									@experimentNum = @experimentNum,
+									@requestorPRN = @operPRN,
+									@instrumentName = @instrumentName,
+									@workPackage = @workPackage,
+									@msType = @msType,
+									@instrumentSettings = @reqRunInstSettings,
+									@wellplateNum = @wellplateNum,
+									@wellNum = @wellNum,
+									@internalStandard = @reqRunInternalStandard,
+									@comment = @reqRunComment,
+									@eusProposalID = @eusProposalID,
+									@eusUsageType = @eusUsageType,
+									@eusUsersList = @eusUsersList,
+									@mode = 'update',
+									@request = @requestID output,
+									@message = @message output,
+									@secSep = @secSep,
+									@MRMAttachment = @mrmAttachmentID,
+									@status = @reqRunStatus,
+									@SkipTransactionRollback = 1,
+									@AutoPopulateUserListIfBlank = 1,		-- Auto populate @eusUsersList if blank since this is an Auto-Request
+									@callingUser = @callingUser,
+									@logDebugMessages = @logDebugMessages
+
+			--
+			Set @myError = @result
+			--
+			If @myError <> 0
+			Begin
+				Set @msg = 'Requested run update error using Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+				RAISERROR (@msg, 11, 24)
+			End
+		End -- </b4>
+
 		---------------------------------------------------
-		-- If rating changed from -5, -6, or -7 to 5, then check if any jobs exist for this dataset
-		-- If no jobs are found, then call SchedulePredefinedAnalyses for this dataset
+		-- If rating changed from -5, -6, or -7 to 5, check if any jobs exist for this dataset
+		-- If no jobs are found, call SchedulePredefinedAnalyses for this dataset
 		-- Skip jobs with AJ_DatasetUnreviewed=1 when looking for existing jobs (these jobs were created before the dataset was dispositioned)
 		---------------------------------------------------
 		--
@@ -1337,7 +1393,7 @@ As
 			Begin
 				Exec SchedulePredefinedAnalyses @datasetNum, @callingUser=@callingUser
 				
-				-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in 
+				-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in 
 				--  T_Event_Log for any newly created jobs for this dataset
 				If Len(@callingUser) > 0
 				Begin
