@@ -54,6 +54,7 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			03/17/2017 mem - Only call MakeTableFromListDelim if @cellCultureList contains a semicolon
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
+**			09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
 **
 *****************************************************/
 (
@@ -180,21 +181,19 @@ As
 	-- Resolve @tissue to BTO identifier
 	---------------------------------------------------
 	
-	Declare @tissueIdentifier varchar(24) = null
+	Declare @tissueIdentifier varchar(24)
+	Declare @tissueName varchar(128)
+	Declare @errorCode int
+
+	EXEC @errorCode = GetTissueID 
+		@tissueNameOrID=@tissue,
+		@tissueIdentifier=@tissueIdentifier output,
+		@tissueName=@tissueName output
 	
-	If IsNull(@tissue, '') <> ''
-	Begin
-		Set @tissue = LTrim(RTrim(@tissue))
-		
-		SELECT @tissueIdentifier = Identifier
-		FROM S_V_BTO_ID_to_Name
-		WHERE Tissue = @tissue
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--	
-		If @myRowCount = 0
-			RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
-	End
+	If @errorCode = 100
+		RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
+	Else If @errorCode > 0
+		RAISERROR ('Could not resolve tissue name or id: "%s"', 11, 41, @tissue)
 	
 	---------------------------------------------------
 	-- Is entry already in database?
