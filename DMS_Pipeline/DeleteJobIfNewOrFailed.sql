@@ -18,6 +18,7 @@ CREATE PROCEDURE dbo.DeleteJobIfNewOrFailed
 **			05/26/2017 mem - Check for job step state 9 (Running_Remote)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			09/01/2017 mem - Fix preview bug
 **
 *****************************************************/
 (
@@ -60,6 +61,7 @@ As
 		Begin
 			SELECT 'To be deleted' as Action, *
 			FROM T_Jobs
+			WHERE Job = @job
 		End
 		Else
 		Begin
