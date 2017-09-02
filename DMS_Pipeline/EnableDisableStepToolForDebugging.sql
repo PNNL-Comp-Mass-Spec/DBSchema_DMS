@@ -15,6 +15,7 @@ CREATE PROCEDURE EnableDisableStepToolForDebugging
 **	Date:	10/22/2013 mem - Initial version
 **			11/11/2013 mem - Added parameter @GroupName
 **			11/22/2013 mem - Now validating @Tool
+**			09/01/2017 mem - Implement functionality of @InfoOnly
 **
 *****************************************************/
 (
@@ -26,17 +27,19 @@ CREATE PROCEDURE EnableDisableStepToolForDebugging
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
+	Declare @GroupID int
+	Declare @UpdatedRows int = 0
 		
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
-	Declare @GroupID int
-	Declare @NewValueForPubs tinyint
+
+	Set @Tool = IsNull(@Tool, '')
+	Set @DebugMode = IsNull(@DebugMode, 0)
+	Set @InfoOnly = IsNull(@InfoOnly, 0)
 	
 	SELECT @GroupID = Group_ID
 	FROM T_Processor_Tool_Groups 
@@ -56,31 +59,108 @@ As
 		Goto Done
 	End
 	
-	If IsNull(@DebugMode, 0) = 0
-	Begin
+	If @DebugMode = 0
+	Begin -- <a1>
 		-- Disable debugging
+		
+		If @InfoOnly = 0
+		Begin			
+			UPDATE T_Processor_Tool_Group_Details
+			SET Enabled = 1
+			WHERE (Tool_Name = @Tool) and Enabled < 0 AND Group_ID <> @GroupID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
 			
-		UPDATE T_Processor_Tool_Group_Details
-		SET Enabled = 1
-		WHERE (Tool_Name = @Tool) and Enabled < 0 AND Group_ID <> @GroupID
+			Set @UpdatedRows = @UpdatedRows + @myRowCount
 
-		UPDATE T_Processor_Tool_Group_Details
-		SET Enabled = 0
-		WHERE (Tool_Name = @Tool) and Enabled <> 0 AND Group_ID = @GroupID
-		
-	End
+			UPDATE T_Processor_Tool_Group_Details
+			SET Enabled = 0
+			WHERE (Tool_Name = @Tool) and Enabled <> 0 AND Group_ID = @GroupID					
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			Set @UpdatedRows = @UpdatedRows + @myRowCount
+			
+			If @UpdatedRows = 0
+			Begin
+				Print 'Debug mode is already disabled for ' + @Tool
+			End
+			Else
+			Begin
+				Print 'Debug mode disabled for ' + @Tool + '; updated ' + Cast(@UpdatedRows as varchar(9)) + ' rows'
+			End
+		End
+		Else
+		Begin
+			SELECT 'Set enabled to 1' as [Action], *
+			FROM T_Processor_Tool_Group_Details
+			WHERE (Tool_Name = @Tool) and Enabled < 0 AND Group_ID <> @GroupID
+			UNION
+			SELECT 'Set enabled to 0' as [Action], *
+			FROM T_Processor_Tool_Group_Details
+			WHERE (Tool_Name = @Tool) and Enabled <> 0 AND Group_ID = @GroupID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+			If @myRowCount = 0
+			Begin
+				SELECT 'Debug mode is already disabled' AS Comment, *
+				FROM T_Processor_Tool_Group_Details
+				WHERE (Tool_Name = @Tool) and Enabled > 0
+			End
+		End				
+	End -- </a1>
 	Else
-	Begin
+	Begin -- <a2>
 		-- Enable debugging
-		UPDATE T_Processor_Tool_Group_Details
-		SET Enabled = -1
-		WHERE (Tool_Name = @Tool) and Enabled > 0 AND Group_ID <> @GroupID
-
-		UPDATE T_Processor_Tool_Group_Details
-		SET Enabled = 1
-		WHERE (Tool_Name = @Tool) and Enabled <> 1 AND Group_ID = @GroupID
 		
-	End
+		If @InfoOnly = 0
+		Begin
+			UPDATE T_Processor_Tool_Group_Details
+			SET Enabled = -1
+			WHERE (Tool_Name = @Tool) and Enabled > 0 AND Group_ID <> @GroupID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			Set @UpdatedRows = @UpdatedRows + @myRowCount
+			
+			UPDATE T_Processor_Tool_Group_Details
+			SET Enabled = 1
+			WHERE (Tool_Name = @Tool) and Enabled <> 1 AND Group_ID = @GroupID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			Set @UpdatedRows = @UpdatedRows + @myRowCount
+			
+			If @UpdatedRows = 0
+			Begin
+				Print 'Debug mode is already enabled for ' + @Tool
+			End
+			Else
+			Begin
+				Print 'Debug mode enabled for ' + @Tool + '; updated ' + Cast(@UpdatedRows as varchar(9)) + ' rows'
+			End			
+		End
+		Else
+		Begin
+			SELECT 'Set enabled to -1' as [Action], *
+			FROM T_Processor_Tool_Group_Details
+			WHERE (Tool_Name = @Tool) and Enabled > 0 AND Group_ID <> @GroupID
+			UNION
+			SELECT 'Set enabled to 1' as [Action], *
+			FROM T_Processor_Tool_Group_Details
+			WHERE (Tool_Name = @Tool) and Enabled <> 1 AND Group_ID = @GroupID
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+
+			If @myRowCount = 0
+			Begin
+				SELECT 'Debug mode is already enabled' AS Comment, *
+				FROM T_Processor_Tool_Group_Details
+				WHERE (Tool_Name = @Tool) and Enabled > 0
+			End
+		End		
+	End -- </a2>
 
 	---------------------------------------------------
 	-- Exit
