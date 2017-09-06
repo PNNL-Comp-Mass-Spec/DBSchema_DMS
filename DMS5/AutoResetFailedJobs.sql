@@ -39,6 +39,7 @@ CREATE Procedure dbo.AutoResetFailedJobs
 **			01/30/2017 mem - Switch from DateDiff to DateAdd
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			04/21/2017 mem - Add check for "An unexpected network error occurred"
+**			09/05/2017 mem - Check for Mz_Refinery reporting Not enough free memory
 **
 *****************************************************/
 (
@@ -202,7 +203,7 @@ As
 				             @StepTool = Step_Tool,				-- Step tool name
 				             @JobState = Job_State, 
 				             @StepState = Step_State, 
-				          @Processor = Processor,
+				 @Processor = Processor,
 				             @Comment = Comment,
 				             @SettingsFile = Settings_File,
 				        @AnalysisTool = AnalysisTool		-- Overall Job Analysis Tool Name
@@ -314,7 +315,7 @@ As
 							FROM T_Settings_Files
 							WHERE Analysis_Tool = @AnalysisTool AND
 							      File_Name = @SettingsFile AND
-							      IsNull(MSGFPlus_AutoCentroid, '') <> ''
+							 IsNull(MSGFPlus_AutoCentroid, '') <> ''
 		
 							If IsNull(@NewSettingsFile, '') <> ''
 							Begin
@@ -343,8 +344,11 @@ As
 							End
 						End -- </nonCentroided>
 						
-						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone', 'DataExtractor') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
+						If @RetryJob = 0 And @StepTool IN ('MSGFPlus', 'MSGFPlus_IMS', 'MSAlign', 'MSAlign_Histone', 'DataExtractor', 'Mz_Refinery') And @Comment Like '%Not enough free memory%' And @RetryCount < 10
+						Begin
+							Print 'Reset ' + Cast(@Job as varchar(9))
 							Set @RetryJob = 1
+						End
 						
 						If @RetryJob = 0 And @RetryCount < 5
 						Begin
