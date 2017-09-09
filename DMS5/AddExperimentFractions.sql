@@ -39,6 +39,7 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			08/22/2017 mem - Copy TissueID
 **			08/25/2017 mem - Use TissueID from the Sample Prep Request if @requestOverride is not "parent" and if the prep request has a tissue defined
+**			09/06/2017 mem - Fix data type for @tissueID
 **    
 *****************************************************/
 (
@@ -96,7 +97,7 @@ AS
 	Declare @internalStandardID int
 	Declare @postdigestIntStdID int
 	Declare @alkylation CHAR(1)
-	Declare @tissueID int
+	Declare @tissueID varchar(24)
 	
 	Declare @ExperimentIDList varchar(8000) = ''
 
