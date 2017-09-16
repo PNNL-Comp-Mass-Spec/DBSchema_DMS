@@ -1,6 +1,6 @@
 /****** Object:  Database [Manager_Control] ******/
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
-( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 78464KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 36288KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
 ( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 17664KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -67,9 +67,6 @@ GO
 ALTER DATABASE [Manager_Control] SET DB_CHAINING OFF 
 GO
 USE [Manager_Control]
-GO
-/****** Object:  User [D3J410] ******/
-CREATE USER [D3J410] FOR LOGIN [PNL\D3J410] WITH DEFAULT_SCHEMA=[dbo]
 GO
 /****** Object:  User [DMS_Guest] ******/
 CREATE USER [DMS_Guest] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_Guest]
