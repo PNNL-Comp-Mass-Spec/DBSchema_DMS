@@ -27,6 +27,8 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_Alkylation] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[EX_Barcode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Tissue_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EX_TissueSource_ID] [smallint] NULL,
+	[EX_Disease_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Last_Used] [date] NOT NULL,
  CONSTRAINT [PK_T_Experiments] PRIMARY KEY CLUSTERED 
 (
@@ -130,7 +132,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiments_TissueID_include_ExperimentName_Orga
 	[EX_Tissue_ID] ASC
 )
 INCLUDE ( 	[Experiment_Num],
-	[EX_organism_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+	[EX_organism_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
@@ -198,6 +200,11 @@ ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_
 REFERENCES [dbo].[T_Sample_Prep_Request] ([ID])
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Sample_Prep_Request]
+GO
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Tissue_Source] FOREIGN KEY([EX_TissueSource_ID])
+REFERENCES [dbo].[T_Tissue_Source] ([Tissue_Source_ID])
+GO
+ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [FK_T_Experiments_T_Tissue_Source]
 GO
 ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiments_T_Users] FOREIGN KEY([EX_researcher_PRN])
 REFERENCES [dbo].[T_Users] ([U_PRN])
