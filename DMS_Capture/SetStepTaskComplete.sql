@@ -20,13 +20,14 @@ CREATE PROCEDURE SetStepTaskComplete
 **			02/08/2012 mem - Added support for @evaluationCode = 3 when @completionCode = 0
 **			09/10/2013 mem - Added support for @evaluationCode being 4, 5, or 6
 **			09/11/2013 mem - Now auto-adjusting the holdoff interval for ArchiveVerify job steps
-**			09/18/2013 mem - Added support for @evaluationCode = 7
+**			09/18/2013 mem - Added support for @evaluationCode = 7 (MyEMSL is already up to date)
 **			09/19/2013 mem - Now skipping ArchiveStatusCheck when skipping ArchiveVerify
 **			10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
 **			09/24/2014 mem - No longer looking up machine
-**			11/03/2013 mem - Added support for @evaluationCode = 8
+**			11/03/2013 mem - Added support for @evaluationCode = 8 (failed, do not retry)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			09/21/2017 mem - Added support for @evaluationCode = 9 (tool skipped)
 **    
 *****************************************************/
 (
@@ -107,7 +108,7 @@ As
 	--
 	declare @stepState int = 5
 
-	If @completionCode = 0
+	If @completionCode = 0 And @evaluationCode <> 9
 		Set @stepState = 5
 	Else
 	Begin
@@ -118,7 +119,12 @@ As
 			Set @retryCount = 0
 		End
 		
-		If @retryCount > 0 Or @evaluationCode = 3
+		If @evaluationCode = 9  -- EVAL_CODE_SKIPPED
+		Begin
+			Set @stepState = 3
+		End
+		
+		If @stepState <> 3 And (@retryCount > 0 Or @evaluationCode = 3)
 		Begin
 			If @state = 4
 				Set @stepState = 2
@@ -154,7 +160,8 @@ As
 		End
 		Else
 		Begin
-			set @stepState = 6 -- fail
+			If @stepState <> 3
+				Set @stepState = 6 -- fail
 		End
 	End
 
