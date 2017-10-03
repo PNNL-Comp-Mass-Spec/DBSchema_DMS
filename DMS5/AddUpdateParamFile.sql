@@ -13,13 +13,14 @@ CREATE PROCEDURE AddUpdateParamFile
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	kja
-**	Date:	07/22/2004 - Initial version
-**			12/06/2016 - Add parameters @paramFileID, @paramfileValid, @paramfileMassMods, and @replaceExistingMassMods
-**					   - Replaced parameter @paramFileTypeID with @paramFileType
-**			05/26/2017 - Update @paramfileMassMods to remove tabs
+**	Date:	07/22/2004 kja - Initial version
+**			12/06/2016 mem - Add parameters @paramFileID, @paramfileValid, @paramfileMassMods, and @replaceExistingMassMods
+**					   mem - Replaced parameter @paramFileTypeID with @paramFileType
+**			05/26/2017 mem - Update @paramfileMassMods to remove tabs
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/28/2017 mem - Add @validateUnimod
+**			10/02/2017 mem - Abort adding a new parameter file if @paramfileMassMods does not validate (when @validateUnimod is 1)
 **
 *****************************************************/
 (
@@ -100,7 +101,7 @@ As
 	Set @paramfileMassMods = IsNull(@paramfileMassMods, '')
 	
 	-- Assure that @paramfileMassMods does not have any tabs
-	Set @paramfileMassMods = Replace (@paramfileMassMods, CHAR(9), ' ')	
+	Set @paramfileMassMods = Replace(@paramfileMassMods, CHAR(9), ' ')	
 	
 	Set @replaceExistingMassMods = IsNull(@replaceExistingMassMods, 0)
 	
@@ -153,8 +154,10 @@ As
 		RAISERROR (@msg, 11, 1)
 		Goto Done
 	End
-	
+
+	---------------------------------------------------
 	-- Check for renaming or changing the type when the parameter file has already been used
+	---------------------------------------------------
 	--
 	If @mode Like '%update%'
 	Begin
@@ -190,6 +193,68 @@ As
 			End
 		End
 	End
+
+	If @paramfileMassMods <> ''
+	Begin -- <a>
+		-----------------------------------------
+		-- Check whether all of the lines in @paramfileMassMods are blank or start with a # sign (comment character)
+		-- Split @paramfileMassMods on carriage returns
+		-- Store the data in #Tmp_Mods
+		-----------------------------------------
+		Declare @Delimiter varchar(1) = ''
+
+		If CHARINDEX(CHAR(10), @paramfileMassMods) > 0
+			Set @Delimiter = CHAR(10)
+		Else
+			Set @Delimiter = CHAR(13)
+		
+		CREATE TABLE #Tmp_Mods_Precheck (
+			EntryID int NOT NULL,
+			Value varchar(2048) null
+		)
+
+		INSERT INTO #Tmp_Mods_Precheck (EntryID, Value)
+		SELECT EntryID, Value
+		FROM dbo.udfParseDelimitedListOrdered ( @paramfileMassMods, @Delimiter )
+
+		DELETE FROM #Tmp_Mods_Precheck
+		WHERE Value Is Null Or Value Like '#%' or LTrim(RTrim(Value)) = ''
+		
+		If Not Exists (SELECT * FROM #Tmp_Mods_Precheck) 
+			Set @paramfileMassMods = ''
+		
+		If @paramfileMassMods <> '' And (
+			@Mode = 'add' OR 
+			@Mode = 'update' And @replaceExistingMassMods = 1 OR
+			@Mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @ParamFileID))
+		Begin -- <b>
+		
+			---------------------------------------------------
+			-- Validate the mods
+			---------------------------------------------------
+			
+			-- Store the param file mass mods in T_Param_File_Mass_Mods
+			exec @myError = StoreParamFileMassMods
+				@ParamFileID=0, 
+				@mods=@paramfileMassMods,
+				@InfoOnly=0, 
+				@ReplaceExisting=1, 
+				@ValidateUnimod=@validateUnimod, 
+				@message=@message output
+
+			If @myError <> 0
+			Begin
+				If IsNull(@message, '') = ''
+					Set @msg = 'StoreParamFileMassMods returned error code ' + cast(@myError as varchar(9)) + '; unknown error'
+				Else
+					Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
+				
+				RAISERROR (@msg, 11, 1)
+			End
+
+		End -- </b>
+		
+	End -- </a>
 	
 	---------------------------------------------------
 	-- Action for add mode
@@ -227,7 +292,6 @@ As
 		Set @updateMassMods = 1
 		
 	End -- </add>
-
 
 	---------------------------------------------------
 	-- action for update mode
@@ -268,7 +332,9 @@ As
 		Begin
 			-- Store the param file mass mods in T_Param_File_Mass_Mods
 			exec @myError = StoreParamFileMassMods 
-				@ParamFileID, @paramfileMassMods, @InfoOnly=0, 
+				@ParamFileID, 
+				@mods=@paramfileMassMods, 
+				@InfoOnly=0, 
 				@ReplaceExisting=@ReplaceExistingMassMods, 
 				@ValidateUnimod=@validateUnimod, 
 				@message=@message output
