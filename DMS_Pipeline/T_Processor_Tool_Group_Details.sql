@@ -10,7 +10,8 @@ CREATE TABLE [dbo].[T_Processor_Tool_Group_Details](
 	[Priority] [tinyint] NOT NULL,
 	[Enabled] [smallint] NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Max_Cost] [tinyint] NOT NULL,
+	[Max_Step_Cost] [tinyint] NOT NULL,
+	[Max_Job_Priority] [tinyint] NOT NULL,
 	[Last_Affected] [datetime] NULL,
  CONSTRAINT [PK_T_Processor_Tool_Group_Details] PRIMARY KEY CLUSTERED 
 (
@@ -25,7 +26,9 @@ GRANT VIEW DEFINITION ON [dbo].[T_Processor_Tool_Group_Details] TO [DDL_Viewer] 
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Comment]  DEFAULT ('') FOR [Comment]
 GO
-ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Max_Cost]  DEFAULT ((100)) FOR [Max_Cost]
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Max_Step_Cost]  DEFAULT ((100)) FOR [Max_Step_Cost]
+GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Max_Job_Priority]  DEFAULT ((50)) FOR [Max_Job_Priority]
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ADD  CONSTRAINT [DF_T_Processor_Tool_Group_Details_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO

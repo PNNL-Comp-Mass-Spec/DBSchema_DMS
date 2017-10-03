@@ -15,12 +15,12 @@ SELECT PTG.Group_ID,
        PTGD.Priority,
        PTGD.Enabled,
        PTGD.Comment,
+       PTGD.Max_Job_Priority,
        PTGD.Last_Affected
 FROM dbo.T_Processor_Tool_Group_Details AS PTGD
      INNER JOIN dbo.T_Processor_Tool_Groups AS PTG
        ON PTGD.Group_ID = PTG.Group_ID
 WHERE PTG.Enabled > -10
-
 
 
 GO

@@ -25,6 +25,7 @@ CREATE PROCEDURE RequestStepTaskXML
 **	Job priority
 **	Job number
 **	Step Number
+**	Max_Job_Priority for the step tool associated with a manager
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -87,13 +88,14 @@ CREATE PROCEDURE RequestStepTaskXML
 **			06/08/2017 mem - Remove use of column MonitorRunningRemote in T_Machines since @remoteInfo replaces it
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			10/03/2017 mem - Use column Max_Job_Priority in table T_Processor_Tool_Group_Details
 **
 *****************************************************/
 (
 	@processorName varchar(128),				-- Name of the processor requesting a job
 	@jobNumber int = 0 output,					-- Job number assigned; 0 if no job available
 	@parameters varchar(max) output,			-- job step parameters (in XML)
-    @message varchar(512) output,				-- Output message
+	@message varchar(512) output,				-- Output message
 	@infoOnly tinyint = 0,						-- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
 	@analysisManagerVersion varchar(128) = '',	-- Used to update T_Local_Processors
 	@remoteInfo varchar(900) = '',				-- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once and to assure that we only check remote progress using a manager that has the same remote info as a job step
@@ -319,17 +321,24 @@ As
 			Memory_Usage_MB int,
 			Tool_Priority tinyint,
 			GP int,					-- 1 when tool is designated as a "Generic Processing" tool, meaning it ignores processor groups
+			Max_Job_Priority tinyint,
 			Exceeds_Available_CPU_Load tinyint NOT NULL,
 			Exceeds_Available_Memory tinyint NOT NULL
 		)
 		--
-		INSERT INTO @availableProcessorTools (Processor_Tool_Group, Tool_Name, CPU_Load, Memory_Usage_MB, Tool_Priority, GP, Exceeds_Available_CPU_Load, Exceeds_Available_Memory)
+		INSERT INTO @availableProcessorTools (
+			Processor_Tool_Group, Tool_Name, 
+			CPU_Load, Memory_Usage_MB, 
+			Tool_Priority, GP, Max_Job_Priority,
+			Exceeds_Available_CPU_Load, 
+			Exceeds_Available_Memory)
 		SELECT PTG.Group_Name,
 		       PTGD.Tool_Name,
 		       ST.CPU_Load,
 		       ST.Memory_Usage_MB,
-		  PTGD.Priority,
+		       PTGD.Priority,
 		       1 AS GP,			-- Prior to May 2015 used: CASE WHEN ST.Available_For_General_Processing = 'N' THEN 0 ELSE 1 END AS GP,
+		       PTGD.Max_Job_Priority,
 		       CASE WHEN ST.CPU_Load > @availableCPUs THEN 1 ELSE 0 END AS Exceeds_Available_CPU_Load,
 		       CASE WHEN ST.Memory_Usage_MB > @availableMemoryMB THEN 1 ELSE 0 END AS Exceeds_Available_Memory
 		FROM T_Machines M
@@ -359,7 +368,7 @@ As
 		       PT.CPU_Load,
 		       PT.Memory_Usage_MB,
 		       PT.Tool_Priority,
-		       PT.GP AS GP_StepTool,
+		       PT.Max_Job_Priority,
 		       MachineQ.Total_CPUs,
 		       MachineQ.CPUs_Available,
 		       MachineQ.Total_Memory_MB,
@@ -464,7 +473,8 @@ As
 		State int,
 		Job_Priority int,
 		Step_Tool varchar(64),
-		Tool_Priority int,
+		Tool_Priority tinyint,
+		Max_Job_Priority tinyint,
 		Memory_Usage_MB int,
 		Association_Type tinyint NOT NULL,				-- Valid types are: 1=Exclusive Association, 2=Specific Association, 3=Non-associated, 4=Non-Associated Generic, etc.
 		Machine varchar(64),
@@ -509,17 +519,17 @@ As
 			JS.Job, 
 			JS.Step_Number,
 			JS.State,
-			TJ.Priority AS Job_Priority,
+			J.Priority AS Job_Priority,
 			JS.Step_Tool,
 			1 As Tool_Priority,
 			JS.Memory_Usage_MB,
-			TJ.Storage_Server,
+			J.Storage_Server,
 			TP.Machine,
 			CASE
-				WHEN (TJ.Archive_Busy = 1) 
+				WHEN (J.Archive_Busy = 1) 
 					-- transfer tool steps for jobs that are in the midst of an archive operation
 					THEN 102				
-				WHEN TJ.Storage_Server Is Null
+				WHEN J.Storage_Server Is Null
 					-- Results_Transfer step for job without a specific storage server
 					THEN 6				
 				ELSE 5   -- Results_Transfer step to be run on the job-specific storage server 
@@ -530,22 +540,27 @@ As
 		              TJ.Storage_Server
 		       FROM T_Jobs TJ
 		       WHERE TJ.State <> 8
-		     ) TJ
+		     ) J
 		     INNER JOIN T_Job_Steps JS
-		       ON TJ.Job = JS.Job
+		       ON J.Job = JS.Job
 		     INNER JOIN ( SELECT LP.Processor_Name,
 		                         M.Machine
 		                  FROM T_Machines M
 		                       INNER JOIN T_Local_Processors LP
 		                         ON M.Machine = LP.Machine
-		                  WHERE LP.Processor_Name = @processorName
+		                       INNER JOIN T_Processor_Tool_Group_Details PTGD
+		                         ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
+		                            M.ProcTool_Group_ID = PTGD.Group_ID
+		                  WHERE LP.Processor_Name = @processorName AND 
+		                        PTGD.Enabled > 0 AND
+		                        PTGD.Tool_Name = 'Results_Transfer'
 		     ) TP
 		       ON JS.Step_Tool = 'Results_Transfer' AND 
-		          TP.Machine = IsNull(TJ.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
+		          TP.Machine = IsNull(J.Storage_Server, TP.Machine)		-- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
 		WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 		ORDER BY 
 			Association_Type,
-			TJ.Priority,		-- Job_Priority
+			J.Priority,		-- Job_Priority
 			Job, 
 			Step_Number
 		--
@@ -571,14 +586,14 @@ As
 				JS.Job, 
 				JS.Step_Number,
 				JS.State,
-				TJ.Priority AS Job_Priority,
+				J.Priority AS Job_Priority,
 				JS.Step_Tool,
 				1 As Tool_Priority,
 				JS.Memory_Usage_MB,
-				TJ.Storage_Server,
+				J.Storage_Server,
 				TP.Machine,
 				CASE					
-					WHEN (TJ.Archive_Busy = 1) 
+					WHEN (J.Archive_Busy = 1) 
 						-- transfer tool steps for jobs that are in the midst of an archive operation
 						THEN 102					
 					ELSE 106  -- Results_Transfer step to be run on the job-specific storage server
@@ -589,22 +604,27 @@ As
 						TJ.Storage_Server
 				    FROM T_Jobs TJ
 				    WHERE TJ.State <> 8
-				  ) TJ
+				  ) J
 				  INNER JOIN T_Job_Steps JS
-				    ON TJ.Job = JS.Job
+				    ON J.Job = JS.Job
 				  INNER JOIN ( SELECT LP.Processor_Name,
 									M.Machine
 							FROM T_Machines M
 								INNER JOIN T_Local_Processors LP
 									ON M.Machine = LP.Machine
-							WHERE LP.Processor_Name = @processorName
+		                        INNER JOIN T_Processor_Tool_Group_Details PTGD
+		                            ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
+		                               M.ProcTool_Group_ID = PTGD.Group_ID
+							WHERE LP.Processor_Name = @processorName AND 
+		                          PTGD.Enabled > 0 AND
+		                          PTGD.Tool_Name = 'Results_Transfer'
 				) TP
 				ON JS.Step_Tool = 'Results_Transfer' AND 
-					TP.Machine <> TJ.Storage_Server
+					TP.Machine <> J.Storage_Server
 			WHERE GETDATE() > JS.Next_Try AND JS.State = 2
 			ORDER BY 
 				Association_Type,
-				TJ.Priority,		-- Job_Priority
+				J.Priority,		-- Job_Priority
 				Job, 
 				Step_Number
 		End
@@ -643,17 +663,17 @@ As
 			JS.Job, 
 			JS.Step_Number,
 			JS.State,
-			TJ.Priority AS Job_Priority,
+			J.Priority AS Job_Priority,
 			JS.Step_Tool,
 			TP.Tool_Priority,
 			JS.Memory_Usage_MB,
-			TJ.Storage_Server,
+			J.Storage_Server,
 			TP.Machine,
 			CASE
 				WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) 
 					-- No processing load available on machine
 					THEN 101
-				WHEN (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) 
+				WHEN (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) 
 					-- Transfer tool steps for jobs that are in the midst of an archive operation
 					THEN 102
 				WHEN (TP.Memory_Available < JS.Memory_Usage_MB) 
@@ -702,14 +722,15 @@ As
 		              TJ.Storage_Server
 		       FROM T_Jobs TJ
 		       WHERE TJ.State <> 8 
-		     ) TJ
+		     ) J
 		     INNER JOIN T_Job_Steps JS
-		       ON TJ.Job = JS.Job
+		       ON J.Job = JS.Job
 		     INNER JOIN (	-- Viable processors/step tool combinations (with CPU loading, memory usage,and processor group information)
 		                  SELECT LP.Processor_Name,
 		                         LP.ID AS Processor_ID,
 		                         PTGD.Tool_Name,
 		                         PTGD.Priority AS Tool_Priority,
+		                         PTGD.Max_Job_Priority,
 		                         /*
 								 ---------------------------------------------------
 								 -- Deprecated in May 2015: 
@@ -735,12 +756,13 @@ As
 		     ) TP
 		       ON TP.Tool_Name = JS.Step_Tool
 		WHERE GETDATE() > JS.Next_Try AND
+		      J.Priority <= TP.Max_Job_Priority AND
 		      (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
 		      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 		ORDER BY 
 			Association_Type,
 			Tool_Priority, 
-			TJ.Priority,		-- Job_Priority
+			J.Priority,		-- Job_Priority
 			CASE WHEN Step_Tool = 'Results_Transfer' Then 10	-- Give Results_Transfer steps priority so that they run first and are grouped by Job
 			     ELSE 0 
 			END DESC,			     
@@ -795,10 +817,10 @@ As
 				JS.Job, 
 				Step_Number,
 				State,
-				TJ.Priority AS Job_Priority,
+				J.Priority AS Job_Priority,
 				Step_Tool,
 				Tool_Priority,
-				TJ.Storage_Server,
+				J.Storage_Server,
 				TP.Machine,
 				1 AS Association_Type
 			FROM ( SELECT TJ.Job,
@@ -806,9 +828,9 @@ As
 			              TJ.Archive_Busy,
 			              TJ.Storage_Server
 			       FROM T_Jobs TJ
-			   WHERE TJ.State <> 8 ) TJ
+			   WHERE TJ.State <> 8 ) J
 			   INNER JOIN T_Job_Steps JS
-		           ON TJ.Job = JS.Job
+		           ON J.Job = JS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
 			                         LP.ID AS Processor_ID,
@@ -837,14 +859,14 @@ As
 			      GETDATE() > JS.Next_Try AND
 			      (JS.State = 2 OR JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
-			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
+			      NOT (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
 			      -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
 			      -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))			      
 			ORDER BY 
 				Association_Type,
 				Tool_Priority, 
-				TJ.Priority,	-- Job_Priority
+				J.Priority,	-- Job_Priority
 				CASE WHEN Step_Tool = 'Results_Transfer' Then 10	-- Give Results_Transfer steps priority so that they run first and are grouped by Job
 					ELSE 0 
 				END DESC,			    
@@ -874,10 +896,10 @@ As
 				JS.Job, 
 				Step_Number,
 				State,
-				TJ.Priority AS Job_Priority,
+				J.Priority AS Job_Priority,
 				Step_Tool,
 				Tool_Priority,
-				TJ.Storage_Server,
+				J.Storage_Server,
 				TP.Machine,
 				CASE
 					WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
@@ -902,14 +924,15 @@ As
 			              TJ.Archive_Busy,
 			              TJ.Storage_Server
 			       FROM T_Jobs TJ
-			       WHERE TJ.State <> 8 ) TJ
+			       WHERE TJ.State <> 8 ) J
 			     INNER JOIN T_Job_Steps JS
-			       ON TJ.Job = JS.Job
+			       ON J.Job = JS.Job
 			     INNER JOIN (	-- Viable processors/step tools combinations (with CPU loading and processor group information)
 			                  SELECT LP.Processor_Name,
 			                         LP.ID as Processor_ID,
 			                         PTGD.Tool_Name,
 			                         PTGD.Priority AS Tool_Priority,
+			                         PTGD.Max_Job_Priority,
 			                         /*
 									 ---------------------------------------------------
 									 -- Deprecated in May 2015: 
@@ -934,10 +957,11 @@ As
 			                ) TP
 			       ON TP.Tool_Name = JS.Step_Tool
 			WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
+			      J.Priority <= TP.Max_Job_Priority AND
 			      GETDATE() > JS.Next_Try AND
 			      (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
 			      TP.Memory_Available >= JS.Memory_Usage_MB AND
-			      NOT (Step_Tool = 'Results_Transfer' AND TJ.Archive_Busy = 1) AND
+			      NOT (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
 			      NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
 					/*
 					** To improve query speed remove the Case Statement above and uncomment the following series of tests
@@ -963,7 +987,7 @@ As
 			ORDER BY 
 				Association_Type,
 				Tool_Priority, 
-				TJ.Priority,		-- Job_Priority
+				J.Priority,		-- Job_Priority
 				CASE WHEN Step_Tool = 'Results_Transfer' Then 10	-- Give Results_Transfer steps priority so that they run first and are grouped by Job
 					ELSE 0 
 				END DESC,			     
@@ -1353,6 +1377,7 @@ As
 	--
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [DDL_Viewer] AS [dbo]
