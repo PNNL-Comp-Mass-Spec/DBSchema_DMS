@@ -8,7 +8,7 @@ CREATE Procedure dbo.StoreParamFileMassMods
 /****************************************************
 **
 **	Desc: 
-**		Stores the dynamic and static mods to associate with a given parameter file
+**		Stores (or validates) the dynamic and static mods to associate with a given parameter file
 **
 **		Mods must be defined in the format used for MSGF+ parameter files
 **		The mod names listed in the 5th comma-separated column must be Unimod names 
@@ -19,6 +19,8 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			StaticMod=C2H3N1O1,    C,  fix, any,       Carbamidomethyl       # Fixed Carbamidomethyl C (alkylation)
 **
 **			DynamicMod=HO3P, STY, opt, any,            Phospho               # Phosphorylation STY
+**
+**		To validate mods without storing them, set @ParamFileID to 0 or a negative number
 **
 **	Auth:	mem
 **	Date:	05/16/2013 mem - Initial version
@@ -34,10 +36,11 @@ CREATE Procedure dbo.StoreParamFileMassMods
 **			11/30/2016 mem - Check for a residue specification of any instead of *
 **			12/12/2016 mem - Check for tabs in the comma-separated mod definition rows
 **			12/13/2016 mem - Silently skip rows StaticMod=None and DynamicMod=None
+**			10/02/2017 mem - If @ParamFileID is 0 or negative, validate mods only.  Returns 0 if valid, error code if not valid
 **    
 *****************************************************/
 (
-	@ParamFileID int,
+	@ParamFileID int,			-- If 0 or a negative number, will validate the mods without updating any tables
 	@Mods varchar(max),
 	@InfoOnly tinyint = 0,
 	@ReplaceExisting tinyint = 0,
@@ -54,6 +57,9 @@ AS
 
 	Declare @MsgAddon varchar(512)
 	Declare @ParamFileName varchar(255)
+
+	Declare @validateOnly tinyint = 0
+	Declare @tempTablesCreated tinyint = 0
 	
 	-----------------------------------------
 	-- Validate the input parameters
@@ -79,30 +85,37 @@ AS
 		Goto Done
 	End
 
-	-----------------------------------------
-	-- Make sure the parameter file ID is valid
-	-----------------------------------------
-	
-	Set @ParamFileName = ''
-	
-	SELECT @ParamFileName = Param_File_Name
-	FROM T_Param_Files
-	WHERE Param_File_ID = @ParamFileID
-	
-	If IsNull(@ParamFileName, '') = ''
+	If @ParamFileID <= 0
 	Begin
-		Set @message = 'Param File ID (' + Convert(varchar(12), @ParamFileID) + ') not found in T_Param_Files; unable to continue'
-		Set @myError = 53002
-		Goto Done
+		Set @validateOnly = 1
+	End
+	Else
+	Begin
+		-----------------------------------------
+		-- Make sure the parameter file ID is valid
+		-----------------------------------------
+		
+		Set @ParamFileName = ''
+		
+		SELECT @ParamFileName = Param_File_Name
+		FROM T_Param_Files
+		WHERE Param_File_ID = @ParamFileID
+		
+		If IsNull(@ParamFileName, '') = ''
+		Begin
+			Set @message = 'Param File ID (' + Convert(varchar(12), @ParamFileID) + ') not found in T_Param_Files; unable to continue'
+			Set @myError = 53002
+			Goto Done
+		End
+		
+		If @ReplaceExisting = 0 And Exists (SELECT * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @ParamFileID)
+		Begin
+		Set @message = 'Param File ID (' + Convert(varchar(12), @ParamFileID) + ') has existing mods in T_Param_File_Mass_Mods but @ReplaceExisting = 0; unable to continue'
+			Set @myError = 53003
+			Goto Done
+		End
 	End
 	
-	If @ReplaceExisting = 0 And Exists (SELECT * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @ParamFileID)
-	Begin
-	Set @message = 'Param File ID (' + Convert(varchar(12), @ParamFileID) + ') has existing mods in T_Param_File_Mass_Mods but @ReplaceExisting = 0; unable to continue'
-		Set @myError = 53003
-		Goto Done
-	End
-
 	-----------------------------------------
 	-- Create some temporary tables
 	-----------------------------------------
@@ -143,6 +156,8 @@ AS
 	)
 	
 	CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_ModsToStore ON #Tmp_ModsToStore (Entry_ID)
+	
+	Set @tempTablesCreated = 1
 	
 	-----------------------------------------
 	-- Split @Mods on carriage returns
@@ -285,7 +300,7 @@ AS
 								If CharIndex(',', @Row) > 0
 									Set @message = 'Row has a mix of tabs and commas; should only be comma-separated: ' + @Row
 								Else
-									Set @message = 'Row appears to be tab separated insetad of comma-separated: ' + @Row
+									Set @message = 'Row appears to be tab separated instead of comma-separated: ' + @Row
 									
 								Set @myError = 53011
 								If @infoOnly = 0
@@ -559,7 +574,8 @@ AS
 		SELECT *, @ParamFileID AS Param_File_ID, @ParamFileName AS Param_File
 		FROM #Tmp_ModsToStore
 	End
-	Else
+	
+	If @InfoOnly = 0 And @validateOnly = 0
 	Begin
 		-- Store the mod defs
 		
@@ -592,7 +608,15 @@ Done:
 
 	If @infoOnly = 0 And @myError > 0
 		Print @message
-			
+
+	If @tempTablesCreated > 0
+	Begin
+		DROP TABLE #Tmp_Mods
+		DROP TABLE #Tmp_ModDef	
+		DROP TABLE #Tmp_Residues	
+		DROP TABLE #Tmp_ModsToStore
+	End
+		
 	--
 	Return @myError
 
