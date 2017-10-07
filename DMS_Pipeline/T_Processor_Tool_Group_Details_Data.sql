@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Group_Details] ******/
-/****** RowCount: 1297 ******/
+/****** RowCount: 1294 ******/
 /****** Columns: Group_ID, Mgr_ID, Tool_Name, Priority, Enabled, Comment, Max_Step_Cost, Max_Job_Priority, Last_Affected ******/
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Cleanup',3,1,'',100,50,'4/17/2013 8:57:15 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Transfer',3,1,'',100,50,'11/23/2016 3:25:08 PM')
