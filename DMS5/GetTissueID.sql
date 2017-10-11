@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.GetTissueID
 **
 **	Auth:	mem
 **	Date:	09/01/2017 mem - Initial version
+**			10/09/2017 mem - Auto-change @tissue to '' if 'none', 'na', or 'n/a'
 **    
 *****************************************************/
 (
@@ -33,6 +34,9 @@ As
 	Set @tissueIdentifier = null
 	Set @tissueName = null
 	
+	If @tissueNameOrID IN ('none', 'na', 'n/a')
+		Set @tissueNameOrID = ''
+
 	If Len(@tissueNameOrID) > 0
 	Begin
 		If @tissueNameOrID Like 'BTO:%'
