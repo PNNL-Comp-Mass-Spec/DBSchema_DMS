@@ -40,8 +40,8 @@ CREATE PROCEDURE CreatePredefinedAnalysesJobs
 	@datasetNum varchar(128),
 	@callingUser varchar(128) = '',
 	@AnalysisToolNameFilter varchar(128) = '',		-- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
-	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
-	@PreventDuplicateJobs tinyint = 1,				-- When non-zero, then will not create new jobs that duplicate old jobs
+	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
+	@PreventDuplicateJobs tinyint = 1,				-- When non-zero, will not create new jobs that duplicate old jobs
 	@infoOnly tinyint = 0,
 	@message VARCHAR(max) output,
 	@JobsCreated int = 0 output
@@ -291,7 +291,7 @@ As
 	If @message <> ''
 	Begin
 		-- @message might look like this: Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
-		-- If it does, then update @message to remove the dataset name
+		-- If it does, update @message to remove the dataset name
 		
 		Set @message = Replace(@message, 'does not allow creation of jobs: ' + @datasetNum, 'does not allow creation of jobs')
 		

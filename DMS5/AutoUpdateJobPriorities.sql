@@ -71,7 +71,7 @@ As
 	)
 	
 	CREATE CLUSTERED INDEX #IX_Tmp_DatasetsToUpdate ON #Tmp_JobsToUpdate (Job)
-	
+
 	----------------------------------------------
 	-- Find candidate jobs to update
 	----------------------------------------------
