@@ -14,7 +14,7 @@ SELECT  SPR.ID,
         -- Deprecated in June 2017: SPR.Cell_Culture_List AS [Biomaterial List],
         SPR.Material_Container_List AS [Material Containers],
         SPR.Organism,
-        BTO.Tissue,
+        BTO.Tissue AS [Plant/Animal Tissue],
         -- Deprecated in June 2017: SPR.Number_Of_Biomaterial_Reps_Received AS [Number Of Biomaterial Reps Received],
         SPR.Biohazard_Level AS [Biohazard Level],
         SPR.Number_of_Samples AS [Number of Samples],
@@ -84,7 +84,6 @@ FROM T_Sample_Prep_Request AS SPR
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON SPR.Tissue_ID = BTO.Identifier
-
 
 
 GO
