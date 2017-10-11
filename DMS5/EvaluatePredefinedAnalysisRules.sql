@@ -69,6 +69,7 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 **			08/02/2013 mem - Added parameter @AnalysisToolNameFilter
 **			04/30/2015 mem - Added support for min and max ScanCount
 **			04/21/2017 mem - Add AD_instrumentNameCriteria
+**			10/05/2017 mem - Create jobs for datasets with rating -4
 **
 *****************************************************/
 (
@@ -76,8 +77,8 @@ CREATE PROCEDURE dbo.EvaluatePredefinedAnalysisRules
 	@outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
 	@message varchar(512) = '' output,
 	@RaiseErrorMessages tinyint = 1,
-	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating < 2 but <> -10)	
-	@CreateJobsForUnreviewedDatasets tinyint = 1,	-- When non-zero, then will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+	@ExcludeDatasetsNotReleased tinyint = 1,		-- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
+	@CreateJobsForUnreviewedDatasets tinyint = 1,	-- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
 	@AnalysisToolNameFilter varchar(128) = ''		-- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
 As
@@ -173,7 +174,7 @@ As
 	if (@Rating < 2)
 	begin
 		-- Continue with these checks if the rating is > -10 or if we are creating jobs
-		-- (If the rating is -10 and @outputType is not 'Export Jobs', then we want to 
+		-- (If the rating is -10 and @outputType is not 'Export Jobs', we want to 
 		--  allow the predefined analysis rules to be evaluated so that we can preview the results)
 		if @Rating <> -10 OR @outputType = 'Export Jobs'
 		begin
@@ -185,9 +186,10 @@ As
 			End
 			Else
 			Begin
-				If @Rating = -10 And @CreateJobsForUnreviewedDatasets <> 0
+				If @Rating = -10 And @CreateJobsForUnreviewedDatasets <> 0 OR @Rating = -4
 				Begin
-					-- Dataset is unreviewed, but @CreateJobsForUnreviewedDatasets is non-zero
+					-- Either Dataset is unreviewed, but @CreateJobsForUnreviewedDatasets is non-zero
+					-- or Rating is -4 (Not released, allow analysis)
 					-- Allow the jobs to be created
 					Set @message = ''
 				End
