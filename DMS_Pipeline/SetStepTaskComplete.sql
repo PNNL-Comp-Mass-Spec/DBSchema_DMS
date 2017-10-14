@@ -40,6 +40,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			05/26/2017 mem - Add completion code 26 (FAILED_REMOTE), which leads to step state 16
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			10/12/2017 mem - Skip waiting step tools MSGF, IDPicker, and MSAlign_Quant when a DataExtractor step reports NO_DATA
 **
 *****************************************************/
 (
@@ -72,6 +73,12 @@ As
 	Begin
 		THROW 51000, 'Access denied', 1;
 	End
+	
+	---------------------------------------------------
+	-- This table variable tracks step tools that should be skipped when a job step reports NO_DATA
+	
+	---------------------------------------------------
+	DECLARE @stepToolsToSkip table (Step_Tool varchar(64))
 	
 	---------------------------------------------------
 	-- get current state of this job step
@@ -133,8 +140,7 @@ As
 	--
 	Declare @stepState int
 	Declare @resetSharedResultStep tinyint = 0
-	Declare @handleSkippedStep tinyint = 0
-	Declare @skipLCMSFeatureFinder tinyint = 0
+	Declare @handleSkippedStep tinyint = 0	
 	Declare @completionCodeDescription varchar(64) = 'Unknown completion reason'
 	Declare @nextTry DateTime = GetDate()
 	
@@ -168,7 +174,19 @@ As
 			Begin
 				-- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
 				Set @stepState = 5 -- Complete
-				Set @skipLCMSFeatureFinder = 1
+				
+				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
+				
+				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
+				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			End
+			
+			If @stepTool IN ('DataExtractor')
+			Begin
+				-- Treat "No_data" results for the DataExtractor as a completed job step but skip later job steps that match certain tools
+				Set @stepState = 5 -- Complete
+				
+				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 				
 				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
@@ -428,13 +446,17 @@ As
 		
 	End
 	
-	If @skipLCMSFeatureFinder = 1
+	IF Exists (SELECT * FROM @stepToolsToSkip)
 	Begin
-		-- Skip any LCMSFeatureFinder steps for this job
+		-- Skip specific waiting step tools for this job
+		--
 		UPDATE T_Job_Steps
 		SET State = 3
-		WHERE Job = @job AND
-		      Step_Tool = 'LCMSFeatureFinder'
+		FROM T_Job_Steps JS
+		     INNER JOIN @stepToolsToSkip ToolsToSkip
+		       ON JS.Step_Tool = ToolsToSkip.Step_Tool
+		WHERE JS.Job = @job AND
+		      JS.State = 1
 
 	End
 	
@@ -468,6 +490,7 @@ CommitTran:
 	--
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [DDL_Viewer] AS [dbo]
