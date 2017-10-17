@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.EnableDisableManagers
 **			05/09/2008 mem - Added parameter @ManagerNameList
 **			06/09/2011 mem - Now filtering on MT_Active > 0 in T_MgrTypes
 **						   - Now allowing @ManagerNameList to be All when @Enable = 1
+**			10/12/2017 mem - Allow @ManagerTypeID to be 0 if @ManagerNameList is provided
 **    
 *****************************************************/
 (
@@ -56,33 +57,40 @@ As
 		
 	If @ManagerTypeID Is Null 
 	Begin
-		set @myError  = 40001
+		set @myError = 40001
 		Set @message = '@ManagerTypeID cannot be null'
 		SELECT @message AS Message
 		Goto Done
 	End
 	
-	-- Make sure @ManagerTypeID is valid
-	Set @ManagerTypeName = ''
-	SELECT @ManagerTypeName = MT_TypeName
-	FROM T_MgrTypes
-	WHERE MT_TypeID = @ManagerTypeID AND
-	      MT_Active > 0
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-
-	If @myRowCount = 0
+	If @ManagerTypeID = 0 And Len(@ManagerNameList) > 0 And @ManagerNameList <> 'All'
 	Begin
-		If Exists (SELECT * FROM T_MgrTypes WHERE MT_TypeID = @ManagerTypeID AND MT_Active = 0)
-			Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' has MT_Active = 0 in T_MgrTypes; unable to continue'
-		Else
-			Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' not found in T_MgrTypes'
-			
-		SELECT @message AS Message
-		set @myError  = 40002
-		Goto Done
+		Set @ManagerTypeName = 'Any'
 	End
+	Else
+	Begin
+		-- Make sure @ManagerTypeID is valid
+		Set @ManagerTypeName = ''
+		SELECT @ManagerTypeName = MT_TypeName
+		FROM T_MgrTypes
+		WHERE MT_TypeID = @ManagerTypeID AND
+			MT_Active > 0
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
 
+		If @myRowCount = 0
+		Begin
+			If Exists (SELECT * FROM T_MgrTypes WHERE MT_TypeID = @ManagerTypeID AND MT_Active = 0)
+				Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' has MT_Active = 0 in T_MgrTypes; unable to continue'
+			Else
+				Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' not found in T_MgrTypes'
+				
+			SELECT @message AS Message
+			set @myError  = 40002
+			Goto Done
+		End
+	End
+	
 	If @Enable <> 0 AND Len(@ManagerNameList) = 0
 	Begin
 		Set @message = '@ManagerNameList cannot be blank when @Enable is non-zero; to update all managers, set @ManagerNameList to All'
@@ -90,7 +98,6 @@ As
 		set @myError  = 40003
 		Goto Done
 	End
-
 
 	-----------------------------------------------
 	-- Creata a temporary table
@@ -113,21 +120,22 @@ As
 				
 			Goto Done
 		End
-					
-		-- Delete entries from #TmpManagerList that don't match entries in M_Name of the given type
-		DELETE #TmpManagerList
-		FROM #TmpManagerList U LEFT OUTER JOIN
-			 T_Mgrs M ON M.M_Name = U.Manager_Name AND M.M_TypeID = @ManagerTypeID
-		WHERE M.M_Name Is Null
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		
-		If @myRowCount > 0
+
+		If @ManagerTypeID > 0
 		Begin
-			Set @message = 'Found ' + convert(varchar(12), @myRowCount) + ' entries in @ManagerNameList that are not ' + @ManagerTypeName + ' managers'
-			Print @message
+			-- Delete entries from #TmpManagerList that don't match entries in M_Name of the given type
+			DELETE #TmpManagerList
+			FROM #TmpManagerList U LEFT OUTER JOIN
+				T_Mgrs M ON M.M_Name = U.Manager_Name AND M.M_TypeID = @ManagerTypeID
+			WHERE M.M_Name Is Null
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
 			
-			Set @message = ''
+			If @myRowCount > 0
+			Begin
+				Set @message = 'Found ' + convert(varchar(12), @myRowCount) + ' entries in @ManagerNameList that are not ' + @ManagerTypeName + ' managers'
+				Set @message = ''
+			End
 		End
 		
 	End
@@ -199,13 +207,24 @@ As
 		If @CountUnchanged = 0
 		Begin
 			If Len(@ManagerNameList) > 0
-				Set @message = 'No ' + @ManagerTypeName + ' managers were found matching @ManagerNameList'
+			Begin
+				If @ManagerTypeID = 0
+					Set @message = 'None of the managers in @ManagerNameList was recognized'
+				Else
+					Set @message = 'No ' + @ManagerTypeName + ' managers were found matching @ManagerNameList'
+			End
 			Else
+			Begin
 				Set @message = 'No ' + @ManagerTypeName + ' managers were found in T_Mgrs'
+			End
 		End
 		Else
 		Begin
-			Set @message = 'All ' + Convert(varchar(12), @CountUnchanged) + ' ' + @ManagerTypeName + ' managers are already ' + @ActiveStateDescription
+			If @ManagerTypeID = 0
+				Set @message = 'All ' + Convert(varchar(12), @CountUnchanged) + ' managers are already ' + @ActiveStateDescription
+			Else
+				Set @message = 'All ' + Convert(varchar(12), @CountUnchanged) + ' ' + @ManagerTypeName + ' managers are already ' + @ActiveStateDescription
+				
 			SELECT @message AS Message
 		End
 	End
@@ -251,7 +270,10 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
-			Set @message = 'Set ' + Convert(varchar(12), @myRowCount) + ' ' + @ManagerTypeName + ' managers to state ' + @ActiveStateDescription
+			If @ManagerTypeID = 0
+				Set @message = 'Set ' + Convert(varchar(12), @myRowCount) + ' managers to state ' + @ActiveStateDescription
+			Else
+				Set @message = 'Set ' + Convert(varchar(12), @myRowCount) + ' ' + @ManagerTypeName + ' managers to state ' + @ActiveStateDescription
 			
 			If @CountUnchanged <> 0
 				Set @message = @message + ' (' + Convert(varchar(12), @CountUnchanged) + ' managers were already ' + @ActiveStateDescription + ')'
