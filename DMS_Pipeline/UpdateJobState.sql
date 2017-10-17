@@ -96,6 +96,7 @@ CREATE PROCEDURE UpdateJobState
 **			05/26/2017 mem - Add step state 16 (Failed_Remote)
 **			               - Only call CopyJobToHistory if the job state is 4 or 5
 **			06/15/2017 mem - Expand @comment to varchar(512)
+**			10/16/2017 mem - Remove the leading semicolon from @comment
 **    
 *****************************************************/
 (
@@ -344,6 +345,11 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 
+			If @comment Like '; %'
+			Begin
+				Set @comment = Substring(@comment, 3, Len(@comment))
+			End
+			
 			---------------------------------------------------
 			-- Examine the steps for this job to determine total processing time
 			-- Steps with the same Step Tool name are assumed to be steps that can run in parallel;
