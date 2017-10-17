@@ -41,6 +41,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			10/12/2017 mem - Skip waiting step tools MSGF, IDPicker, and MSAlign_Quant when a DataExtractor step reports NO_DATA
+**			10/17/2017 mem - Fix the warning logged when the DataExtractor reports no data
 **
 *****************************************************/
 (
@@ -177,7 +178,7 @@ As
 				
 				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
 				
-				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
+				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			End
 			
@@ -188,7 +189,7 @@ As
 				
 				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 				
-				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'				
+				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			End
 		End
