@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Collection_Picker]
 AS
-SELECT PCByOrg.FileName AS Name,
+SELECT PCByOrg.[FileName] AS [Name],
        PCByOrg.Protein_Collection_ID AS ID,
-       PCByOrg.Description,
+       PCByOrg.[Description],
        PCByOrg.NumProteins AS Entries,
-	   PCByOrg.NumResidues AS Residues,
+       PCByOrg.NumResidues AS Residues,
        PCByOrg.Organism_Name,
        PCTypes.[Type],
        AOF.Filesize,
@@ -21,7 +21,6 @@ FROM dbo.V_Protein_Collections_By_Organism AS PCByOrg
      LEFT OUTER JOIN dbo.T_Archived_Output_Files AS AOF
        ON PCByOrg.Authentication_Hash = AOF.Authentication_Hash
 WHERE (PCByOrg.Collection_State_ID BETWEEN 1 AND 3)
-
 
 
 GO
