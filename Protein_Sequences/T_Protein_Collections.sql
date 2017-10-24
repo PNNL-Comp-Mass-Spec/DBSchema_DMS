@@ -8,15 +8,16 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 	[FileName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Source] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Collection_Type_ID] [tinyint] NULL,
-	[Collection_State_ID] [tinyint] NULL,
-	[Primary_Annotation_Type_ID] [int] NULL,
+	[Collection_Type_ID] [tinyint] NOT NULL,
+	[Collection_State_ID] [tinyint] NOT NULL,
+	[Primary_Annotation_Type_ID] [int] NOT NULL,
 	[NumProteins] [int] NULL,
 	[NumResidues] [int] NULL,
-	[DateCreated] [datetime] NULL,
-	[DateModified] [datetime] NULL,
+	[Includes_Contaminants] [tinyint] NOT NULL,
+	[DateCreated] [datetime] NOT NULL,
+	[DateModified] [datetime] NOT NULL,
 	[Authentication_Hash] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Contents_Encrypted] [tinyint] NULL,
+	[Contents_Encrypted] [tinyint] NOT NULL,
 	[Uploaded_By] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Collection_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_T_Protein_Collections] PRIMARY KEY CLUSTERED 
@@ -38,6 +39,8 @@ GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_Type_ID]  DEFAULT ((1)) FOR [Collection_Type_ID]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_State_ID]  DEFAULT ((1)) FOR [Collection_State_ID]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Includes_Contaminants]  DEFAULT ((0)) FOR [Includes_Contaminants]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_DateCreated]  DEFAULT (getdate()) FOR [DateCreated]
 GO
