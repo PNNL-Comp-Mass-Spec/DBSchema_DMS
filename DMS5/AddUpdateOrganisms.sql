@@ -46,6 +46,7 @@ CREATE PROCEDURE dbo.AddUpdateOrganisms
 **			06/13/2017 mem - Use SCOPE_IDENTITY()
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			10/23/2017 mem - Check for the protein collection specified by @orgDBName being a valid name, but inactive
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -412,9 +413,16 @@ As
 	
 	If @orgDBName <> ''
 	Begin
-		If Not Exists (SELECT * FROM S_V_Protein_Collection_Picker WHERE Name = @orgDBName)
+		-- Protein collections in S_V_Protein_Collection_Picker are those with state 1, 2, or 3
+		-- In contrast, S_V_Protein_Collections_by_Organism has all protein collections
+		
+		If Not Exists (SELECT * FROM S_V_Protein_Collection_Picker WHERE [Name] = @orgDBName)
 		Begin
-			set @msg = 'Protein collection not found: ' + @orgDBName
+			If Exists (SELECT * FROM S_V_Protein_Collections_by_Organism WHERE Filename = @orgDBName AND Collection_State_ID = 4)
+				Set @msg = 'Default protein collection is invalid because it is inactive: ' + @orgDBName
+			Else			
+				Set @msg = 'Protein collection not found: ' + @orgDBName
+
 			RAISERROR (@msg, 11, 9)
 		End
 	End
