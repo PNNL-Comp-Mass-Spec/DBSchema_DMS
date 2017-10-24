@@ -13,6 +13,7 @@ CREATE PROCEDURE UpdateCachedProteinCollections
 **
 **	Auth:	mem
 **	Date:	06/13/2016 mem - Initial Version
+**			10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **
 *****************************************************/
 (
@@ -38,9 +39,11 @@ AS
 		--
 		 
 		MERGE [dbo].[T_Cached_Protein_Collections] AS t
-		USING (SELECT  ID, Organism_ID, [Name], Description, 
-		       Entries, Residues, [Type], Filesize
-		       FROM dbo.S_V_Protein_Collection_Picker) as s
+		USING (SELECT Protein_Collection_ID AS ID, Organism_ID, 
+		              FileName AS [Name], [Description], 
+		              NumProteins AS Entries, NumResidues AS Residues, 
+		              [Type], Filesize
+		       FROM dbo.S_V_Protein_Collections_by_Organism) as s
 		ON ( t.[ID] = s.[ID] AND t.[Organism_ID] = s.[Organism_ID])
 		WHEN MATCHED AND (
 			t.[Name] <> s.[Name] OR

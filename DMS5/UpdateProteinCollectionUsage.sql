@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.UpdateProteinCollectionUsage
 **			08/14/2014 mem - Fixed bug updating Job_Usage_Count_Last12Months (occurred when a protein collection had not been used in the last year)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			03/17/2017 mem - Use tables T_Cached_Protein_Collection_List_Map and T_Cached_Protein_Collection_List_Members to minimize calls to MakeTableFromListDelim
+**			10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **
 *****************************************************/
 (
@@ -53,17 +54,17 @@ AS
 				
 		Set @CurrentLocation = 'Merge data into T_Protein_Collection_Usage'
 
-		-- Use a MERGE Statement to synchronize T_Protein_Collection_Usage with S_V_Protein_Collection_Picker
+		-- Use a MERGE Statement to synchronize T_Protein_Collection_Usage with S_V_Protein_Collections_by_Organism
 		MERGE T_Protein_Collection_Usage AS target
-		USING (SELECT DISTINCT ID, Name FROM S_V_Protein_Collection_Picker
-			) AS Source (	Protein_Collection_ID, Name)
+		USING (SELECT DISTINCT Protein_Collection_ID AS ID, FileName AS [Name] FROM S_V_Protein_Collections_by_Organism
+			) AS Source ( Protein_Collection_ID, [Name])
 		ON (target.Protein_Collection_ID = source.Protein_Collection_ID)
-		WHEN Matched AND (  Target.Name <> Source.Name ) THEN 
+		WHEN Matched AND ( Target.[Name] <> Source.[Name] ) THEN 
 			UPDATE Set
-		          Name = Source.Name		         
+		          [Name] = Source.[Name]		         
 		WHEN Not Matched THEN
-			INSERT ( Protein_Collection_ID, Name, Job_Usage_Count)
-			VALUES ( Source.Protein_Collection_ID, Source.Name, 0)
+			INSERT ( Protein_Collection_ID, [Name], Job_Usage_Count)
+			VALUES ( Source.Protein_Collection_ID, Source.[Name], 0)
 		WHEN NOT MATCHED BY SOURCE THEN
 			DELETE
 		OUTPUT $action INTO #Tmp_UpdateSummary
@@ -73,7 +74,7 @@ AS
 
 		If @myError <> 0
 		Begin
-			set @message = 'Error merging S_V_Protein_Collection_Picker with T_Protein_Collection_Usage (ErrorID = ' + Convert(varchar(12), @myError) + ')'
+			set @message = 'Error merging S_V_Protein_Collections_by_Organism with T_Protein_Collection_Usage (ErrorID = ' + Convert(varchar(12), @myError) + ')'
 			execute PostLogEntry 'Error', @message, 'UpdateProteinCollectionUsage'
 		End
 
@@ -142,7 +143,7 @@ AS
 		                         ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
 		                  GROUP BY PCLMembers.Protein_Collection_Name 
 		                ) AS UsageQ
-		       ON Target.Name = UsageQ.ProteinCollection
+		       ON Target.[Name] = UsageQ.ProteinCollection
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
