@@ -21,6 +21,8 @@ CREATE PROCEDURE ValidateProteinCollectionListForDatasets
 **			09/02/2010 mem - Changed RAISERROR severity level from 10 to 11
 **			03/21/2011 mem - Expanded @datasets to varchar(max)
 **			03/14/2012 mem - Now preventing both Tryp_Pig_Bov and Tryp_Pig from being included in @protCollNameList
+**			10/23/2017 mem - Do not add any enzyme-related protein collections if any of the protein collections in @protCollNameList already include contaminants
+**					       - Place auto-added protein collections at the end of @protCollNameList, which is more consistent with the order we get after calling ValidateAnalysisJobParameters
 **    
 *****************************************************/
 (
@@ -28,7 +30,8 @@ CREATE PROCEDURE ValidateProteinCollectionListForDatasets
     @protCollNameList varchar(4000)='' output,
     @CollectionCountAdded int = 0 output,
     @ShowMessages tinyint = 1,
-    @message varchar(512)='' output
+    @message varchar(512)='' output,
+    @showDebug tinyint = 0
 )
 As
 	Set nocount on
@@ -37,25 +40,32 @@ As
 	Declare @myError int
 	Set @myRowCount = 0
 	Set @myError = 0
+	
+	Declare @msg varchar(512)
 
+	Declare @continue int
+	Declare @UniqueID int
+	Declare @ProteinCollectionName varchar(128)
+	
+	Declare @matchCount int
+	Declare @collectionWithContaminants varchar(128)
+	
+	Declare @DatasetCount int
+	Declare @ExperimentCount int
+	Declare @DatasetCountTotal int
+	Declare @ExperimentCountTotal int
+	
+	Declare @EnzymeContaminantCollection tinyint
+
+	--------------------------------------------------------------
+	-- Validate the inputs
+	--------------------------------------------------------------
+	
 	Set @protCollNameList = IsNull(@protCollNameList,'')
-	set @CollectionCountAdded = 0
-	set @message = ''
+	Set @CollectionCountAdded = 0
+	Set @message = ''
+	Set @showDebug = IsNull(@showDebug, 0)
 	
-	declare @msg varchar(512)
-
-	declare @continue int
-	declare @UniqueID int
-	declare @ProteinCollectionName varchar(128)
-	
-	declare @DatasetCount int
-	declare @ExperimentCount int
-	declare @DatasetCountTotal int
-	declare @ExperimentCountTotal int
-	
-	declare @EnzymeContaminantCollection tinyint
-	
-
 	--------------------------------------------------------------
 	-- Create the required temporary tables
 	--------------------------------------------------------------
@@ -68,7 +78,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Failed to create temporary table #TmpDatasets'
+		Set @msg = 'Failed to create temporary table #TmpDatasets'
 		RAISERROR (@msg, 11, 1)
 		return 51007
 	end
@@ -102,86 +112,148 @@ As
 	--------------------------------------------------------------
 	--
 	INSERT INTO #ProteinCollections (Protein_Collection_Name, Collection_Appended)
-	SELECT Item, 0 AS Collection_Appended
-	FROM MakeTableFromList(@protCollNameList)
+	SELECT Value, 0 AS Collection_Appended
+	FROM dbo.udfParseDelimitedList(@protCollNameList, ',', 'ValidateProteinCollectionListForDatasets')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
 	--------------------------------------------------------------
 	-- Look for duplicates in #ProteinCollections
+	-- If found, remove them
 	--------------------------------------------------------------
 	--
-	declare @dups varchar(1024)
-	set @dups = ''
+	Declare @dups varchar(1024) = ''
 
-	SELECT   
-		@dups = CASE 
-				WHEN @dups = '' THEN ''
-				ELSE @dups + ', '
-				END + Protein_Collection_Name
+	SELECT @dups = CASE
+	                   WHEN @dups = '' THEN ''
+	                   ELSE @dups + ', '
+	               END + Protein_Collection_Name
 	FROM #ProteinCollections
 	GROUP BY Protein_Collection_Name
-	HAVING   COUNT(*) > 1
+	HAVING COUNT(*) > 1
 	--
 	SELECT @myError = @@error
 	--
 	If @myError <> 0
 	Begin
-		set @msg = 'Error trying to look for duplicate protein collection names'
+		Set @msg = 'Error trying to look for duplicate protein collection names'
 		RAISERROR (@msg, 11, 1)
 		return 51009
 	End	
 	
 	If @dups <> ''
 	Begin
-		set @msg = 'There were duplicate names (' + @dups + ') in the protein collections list'
-		RAISERROR (@msg, 11, 1)
-		return 51010
+		Set @msg = 'There were duplicate names in the protein collections list, will auto remove: ' + @dups
+		
+		If @showDebug > 0
+			SELECT @msg as Debug_Message
+		Else
+			Print @msg
+		
+		DELETE FROM #ProteinCollections
+		WHERE NOT RowNumberID IN ( SELECT Min(RowNumberID) AS IDToKeep
+		                           FROM #ProteinCollections
+		                           GROUP BY Protein_Collection_Name )
+
 	End
 
+	If @showDebug > 0
+	Begin
+		SELECT '#ProteinCollections' as Table_Name, *
+		FROM #ProteinCollections
+	End
+	
 	--------------------------------------------------------------
 	-- Populate #TmpDatasets with the datasets in @datasets
 	--------------------------------------------------------------
 	--   
 	INSERT INTO #TmpDatasets (Dataset_Num)
-	SELECT Item
-	FROM MakeTableFromList(@datasets)
+	SELECT Value
+	FROM dbo.udfParseDelimitedList(@datasets, ',', 'ValidateProteinCollectionListForDatasets')
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
 
 	--------------------------------------------------------------
 	-- Populate #IntStds with any protein collections associated 
 	-- with the enzymes for the experiments of the datasets in #TmpDatasets
+	-- These are typically the contaminant collections like Tryp_Pig_Bov
 	--------------------------------------------------------------
-	--	
-	INSERT INTO #IntStds( Internal_Std_Mix_ID, Protein_Collection_Name,
-	                      Dataset_Count, Experiment_Count,
-	                      Enzyme_Contaminant_Collection )
+	--		
+	INSERT INTO #IntStds( Internal_Std_Mix_ID,
+		                    Protein_Collection_Name,
+		                    Dataset_Count,
+		                    Experiment_Count,
+		                    Enzyme_Contaminant_Collection )
 	SELECT DISTINCT Internal_Std_Mix_ID,
-	                Protein_Collection_Name,
-	                Dataset_Count,
-	                Experiment_Count,
-	                Enzyme_Contaminant_Collection
+		            Protein_Collection_Name,
+		            Dataset_Count,
+		            Experiment_Count,
+		            Enzyme_Contaminant_Collection
 	FROM ( SELECT -1 AS Internal_Std_Mix_ID,
-	              ISNULL(Enz.Protein_Collection_Name, '') AS Protein_Collection_Name,
-	              COUNT(DISTINCT DS.Dataset_Num) AS Dataset_Count,
-	              COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
-	              1 AS Enzyme_Contaminant_Collection
-	       FROM #TmpDatasets
-	            INNER JOIN dbo.T_Dataset DS
-	              ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
-	            INNER JOIN T_Experiments E
-	              ON DS.Exp_ID = E.Exp_ID
-	            INNER JOIN T_Enzymes Enz
-	              ON E.EX_enzyme_ID = Enz.Enzyme_ID
-	       GROUP BY ISNULL(Enz.Protein_Collection_Name, '') 
-	      ) LookupQ
+		            ISNULL(Enz.Protein_Collection_Name, '') AS Protein_Collection_Name,
+		            COUNT(DISTINCT DS.Dataset_Num) AS Dataset_Count,
+		            COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
+		            1 AS Enzyme_Contaminant_Collection
+		    FROM #TmpDatasets
+		        INNER JOIN dbo.T_Dataset DS
+		            ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+		        INNER JOIN T_Experiments E
+		            ON DS.Exp_ID = E.Exp_ID
+		        INNER JOIN T_Enzymes Enz
+		            ON E.EX_enzyme_ID = Enz.Enzyme_ID
+		    GROUP BY ISNULL(Enz.Protein_Collection_Name, '') 
+		    ) LookupQ
 	WHERE Protein_Collection_Name <> ''
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+
+	If Not Exists (SELECT * FROM #IntStds WHERE Enzyme_Contaminant_Collection > 0)
+	Begin
+		--------------------------------------------------------------
+		-- Nothing was added; no point in looking for protein collections with Includes_Contaminants > 0
+		--------------------------------------------------------------
+		--
+		If @showDebug > 0
+		Begin
+			SELECT '#IntStds' as Table_Name, *
+			FROM #IntStds
+		End
+	End
+	Else
+	Begin
+		--------------------------------------------------------------
+		-- Check whether any of the protein collections already includes contaminants
+		--------------------------------------------------------------
+		--	
+
+		Set @matchCount = 0
+		Set @collectionWithContaminants = ''
+		
+		SELECT @matchCount = COUNT(*),
+			@collectionWithContaminants = Min(PCLocal.Protein_Collection_Name)
+		FROM #ProteinCollections PCLocal
+			INNER JOIN S_V_Protein_Collections_by_Organism PCMaster
+			ON PCLocal.Protein_Collection_Name = PCMaster.Filename
+		WHERE PCMaster.Includes_Contaminants > 0
+
+		If @matchCount > 0
+		Begin
+			Set @msg = 'Not adding enzyme-associated protein collections (typically contaminant collections) since ' + @collectionWithContaminants + ' already includes contaminants'
+			
+			If @showDebug > 0
+				SELECT @msg as Debug_Message
+			Else
+				Print @msg
+			
+			Set @message = 'Did not add contaminants since ' + @collectionWithContaminants + ' already includes contaminant proteins'
+			
+			-- Remove the contaminant collections
+			--
+			DELETE FROM #IntStds WHERE Enzyme_Contaminant_Collection > 0
+		End
+	End
 	
 	--------------------------------------------------------------
 	-- Populate #IntStds with any internal standards associated 
@@ -191,39 +263,64 @@ As
 	INSERT INTO #IntStds( Internal_Std_Mix_ID, Protein_Collection_Name,
 	                      Dataset_Count, Experiment_Count,
 	                      Enzyme_Contaminant_Collection )
-	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
-		COUNT(*) AS Dataset_Count, 0 AS Experiment_Count, 0 AS Enzyme_Contaminant_Collection
-	FROM #TmpDatasets INNER JOIN 
-		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		dbo.T_Internal_Standards DSIntStd ON DS.DS_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
-		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	SELECT DSIntStd.Internal_Std_Mix_ID,
+	       ISPM.Protein_Collection_Name,
+	       COUNT(*) AS Dataset_Count,
+	       0 AS Experiment_Count,
+	       0 AS Enzyme_Contaminant_Collection
+	FROM #TmpDatasets
+	     INNER JOIN dbo.T_Dataset DS
+	       ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+	     INNER JOIN dbo.T_Internal_Standards DSIntStd
+	       ON DS.DS_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID
+	     INNER JOIN dbo.T_Internal_Std_Parent_Mixes ISPM
+	       ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
 	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
 	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	UNION
-	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
-		0 AS Dataset_Count, COUNT(DISTINCT E.Exp_ID) AS Experiment_Count, 0 AS Enzyme_Contaminant_Collection
-	FROM #TmpDatasets INNER JOIN 
-		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		dbo.T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
-		dbo.T_Internal_Standards DSIntStd ON E.EX_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
-		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	SELECT DSIntStd.Internal_Std_Mix_ID,
+	       ISPM.Protein_Collection_Name,
+	       0 AS Dataset_Count,
+	       COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
+	       0 AS Enzyme_Contaminant_Collection
+	FROM #TmpDatasets
+	     INNER JOIN dbo.T_Dataset DS
+	       ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+	     INNER JOIN dbo.T_Experiments E
+	       ON DS.Exp_ID = E.Exp_ID
+	     INNER JOIN dbo.T_Internal_Standards DSIntStd
+	       ON E.EX_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID
+	     INNER JOIN dbo.T_Internal_Std_Parent_Mixes ISPM
+	       ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
 	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
 	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	UNION
-	SELECT DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name, 
-		0 AS Dataset_Count, COUNT(DISTINCT E.Exp_ID) AS Experiment_Count, 0 AS Enzyme_Contaminant_Collection
-	FROM #TmpDatasets INNER JOIN 
-		dbo.T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
-		dbo.T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
-		dbo.T_Internal_Standards DSIntStd ON E.EX_postdigest_internal_std_ID = DSIntStd.Internal_Std_Mix_ID INNER JOIN
-		dbo.T_Internal_Std_Parent_Mixes ISPM ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
+	SELECT DSIntStd.Internal_Std_Mix_ID,
+	       ISPM.Protein_Collection_Name,
+	       0 AS Dataset_Count,
+	       COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
+	       0 AS Enzyme_Contaminant_Collection
+	FROM #TmpDatasets
+	     INNER JOIN dbo.T_Dataset DS
+	       ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+	     INNER JOIN dbo.T_Experiments E
+	       ON DS.Exp_ID = E.Exp_ID
+	     INNER JOIN dbo.T_Internal_Standards DSIntStd
+	       ON E.EX_postdigest_internal_std_ID = DSIntStd.Internal_Std_Mix_ID
+	     INNER JOIN dbo.T_Internal_Std_Parent_Mixes ISPM
+	       ON DSIntStd.Internal_Std_Parent_Mix_ID = ISPM.Parent_Mix_ID
 	WHERE LEN(IsNull(ISPM.Protein_Collection_Name, '')) > 0
 	GROUP BY DSIntStd.Internal_Std_Mix_ID, ISPM.Protein_Collection_Name
 	ORDER BY DSIntStd.Internal_Std_Mix_ID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	
+	If @showDebug > 0
+	Begin
+		SELECT '#IntStds' as Table_Name, *
+		FROM #IntStds
+	End
+		
 	--------------------------------------------------------------
 	-- Make sure @protCollNameList contains each of the 
 	-- Protein_Collection_Name values in #IntStds
@@ -247,9 +344,15 @@ As
 	--
 	If @myError <> 0
 	Begin
-		set @msg = 'Error populating #ProteinCollectionsToAdd with the missing protein collections'
+		Set @msg = 'Error populating #ProteinCollectionsToAdd with the missing protein collections'
 		RAISERROR (@msg, 11, 1)
 		return 51006
+	End
+
+	If @showDebug > 0
+	Begin
+		SELECT '#ProteinCollectionsToAdd' as Table_Name, *
+		FROM #ProteinCollectionsToAdd
 	End
 	
 	If @myRowCount > 0 
@@ -259,7 +362,8 @@ As
 		-- Note that we first append collections that did not come from digestion enzymes
 		--				
 		INSERT INTO #ProteinCollections (Protein_Collection_Name, Collection_Appended)
-		SELECT Protein_Collection_Name, 1 AS Collection_Appended
+		SELECT Protein_Collection_Name,
+		       1 AS Collection_Appended
 		FROM #ProteinCollectionsToAdd
 		GROUP BY Enzyme_Contaminant_Collection, Protein_Collection_Name
 		ORDER BY Enzyme_Contaminant_Collection, Protein_Collection_Name
@@ -268,21 +372,25 @@ As
 		--
 		If @myError <> 0
 		Begin
-			set @msg = 'Error populating #ProteinCollections with the missing protein collections'
+			Set @msg = 'Error populating #ProteinCollections with the missing protein collections'
 			RAISERROR (@msg, 11, 1)
 			return 51008
 		End
 		
 		Set @CollectionCountAdded = @myRowCount
 
-		-- Check for the presence of both ? and ? in #ProteinCollections
+		-- Check for the presence of both Tryp_Pig_Bov and Tryp_Pig in #ProteinCollections
+		--
 		Set @myRowCount = 0
+		
 		SELECT @myRowCount = COUNT(*)
 		FROM #ProteinCollections 
 		WHERE Protein_Collection_Name IN ('Tryp_Pig_Bov', 'Tryp_Pig')
 		
 		If @myRowCount = 2
 		Begin
+			-- The list has two overlapping contaminant collections; remove one of them
+			-- 
 			DELETE FROM #ProteinCollections 
 			WHERE Protein_Collection_Name = 'Tryp_Pig'
 			
@@ -294,12 +402,20 @@ As
 		-- The Order By statements in this query assure that the 
 		--  internal standard collections and contaminant collections 
 		--  are listed first and that the original collection order is preserved
+		--
+		-- Note that ValidateAnalysisJobParameters will call ValidateProteinCollectionParams, 
+		--  which calls Calling S_ValidateAnalysisJobProteinParameters in the Protein_Sequences database,
+		--  which uses StandardizeProteinCollectionList to order the protein collections in a standard manner,
+		--  so the order here is not critical
+		--
+		-- The standard order is:
+		--  Internal Standards, Normal Protein Collections, Contaminant collections		
 		--------------------------------------------------------------
 		
 		Set @protCollNameList = ''
 		SELECT @protCollNameList = @protCollNameList + Protein_Collection_Name + ','
 		FROM #ProteinCollections
-		ORDER BY Collection_Appended Desc, RowNumberID Asc
+		ORDER BY Collection_Appended Asc, RowNumberID Asc
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -346,7 +462,7 @@ As
 						If @DatasetCount > 0
 						Begin -- <e1>
 							Set @msg = @msg + Convert(varchar(12), @DatasetCount) + ' of '
-							set @msg = @msg + Convert(varchar(12), @DatasetCountTotal) + ' dataset'
+							Set @msg = @msg + Convert(varchar(12), @DatasetCountTotal) + ' dataset'
 							If @DatasetCountTotal <> 1
 								Set @msg = @msg + 's'
 						End -- </e1>
@@ -355,7 +471,7 @@ As
 							If @ExperimentCount > 0
 							Begin
 								Set @msg = @msg + Convert(varchar(12), @ExperimentCount) + ' of '
-								set @msg = @msg + Convert(varchar(12), @ExperimentCountTotal) + ' experiment'
+								Set @msg = @msg + Convert(varchar(12), @ExperimentCountTotal) + ' experiment'
 								If @ExperimentCountTotal <> 1
 									Set @msg = @msg + 's'
 							End
