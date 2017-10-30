@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Default_PSM_Job_Parameters] ******/
-/****** RowCount: 68 ******/
+/****** RowCount: 69 ******/
 SET IDENTITY_INSERT [T_Default_PSM_Job_Parameters] ON
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (60,'High Res MS1','MODa',0,0,0,'MODa_PartTryp_Par20ppm_Frag0pt6Da.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (76,'High Res MS1','MODa',0,0,1,'MODa_PartTryp_Par20ppm_Frag0pt6Da.txt',1)
@@ -13,6 +13,7 @@ INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, 
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (85,'High Res MS1','MSGFPlus',0,1,1,'MSGFDB_Tryp_DynSTYPhos_Stat_CysAlk_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (24,'High Res MS1','MSGFPlus',1,0,0,'MSGFDB_PartTryp_MetOx_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (27,'High Res MS1','MSGFPlus',1,1,0,'MSGFDB_PartTryp_MetOx_StatCysAlk_20ppmParTol.txt',1)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (109,'High Res MS1','MSGFPlus',1,1,1,'MSGFDB_Tryp_Dyn_MetOx_STYPhos_Stat_CysAlk_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (2,'High Res MS1','Sequest',0,0,0,'sequest_N14_PartTryp.params',0)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (6,'High Res MS1','Sequest',0,1,0,'sequest_N14_PartTryp_Stat_C_Iodo.params',0)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (10,'High Res MS1','Sequest',1,0,0,'sequest_N14_PartTryp_Dyn_M_Ox.params',0)

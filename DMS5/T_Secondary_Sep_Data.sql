@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 98 ******/
+/****** RowCount: 102 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',0,'CE',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0)
@@ -63,7 +63,9 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-KoreaU-Standard',21,'Datasets acquired
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-MIT-Standard',63,'Datasets acquired at Forest White''s lab at MIT',0,'Other',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-NU-Standard',94,'Datasets acquired in the Kelleher lab at Northwestern',0,'Other',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ORNL-Standard',7,'Datasets acquired at Oak Ridge National Lab',0,'Other',0)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Pentylammonium_highflow_High_pH',102,'Waters constant high flow, ion pairing pentylamine plus HFIP, high pH ',1,'LC-IonPairing',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-PFGRC-Standard',32,'Datasets acquired in the Pathogen Functional Genomics Resource Center at JCVI',1,'Other',0)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-ReproSil-75um',101,'75 um columns packed with 1.9 um Reprosil porous particles',1,'LC-ReproSil-75um',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-UNC-Standard',79,'Datasets acquired at the University of North Carolina',0,'Other',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Unknown',55,'Unknown LC separation',0,'Other',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanderbilt-Standard',53,'Datasets acquired at Vanderbilt University',0,'Other',0)
@@ -74,11 +76,13 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish-Formic_30min',92,'Vanquish hi
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish-Formic_60min',91,'Vanquish high flow LC, formic acid, 60 minute separation',1,'LC-HiFlow',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish-HILIC',93,'Vanquish high flow LC, HILIC',1,'LC-HiFlow',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish-Lipids_35min',98,'Vanquish high flow LC, optimized for lipid separation',1,'LC-HiFlow',4)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish_Pentylammonium_highflow_High_pH',103,'Vanquish constant high flow, ion pairing pentylamine plus HFIP, high pH ',1,'LC-IonPairing',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-WashU-Standard',61,'CPTAC datasets acquired at Washington University in St. Louis',0,'Other',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-2D-Formic',33,'Waters constant flow, formic acid 2D-LC',1,'LC-2D-Formic',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_100min',37,'Waters constant flow, formic acid, 100 minute separation',1,'LC-Formic_100min',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_10hr',45,'Waters constant flow, formic acid, 600 minute (10 hr) separation',1,'Other',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_20min',34,'Waters constant flow, formic acid, 20 minute separation',1,'LC-Formic_30min',0)
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_2hr',100,'Waters constant flow, formic acid, 120 minute (2 hr) separation',1,'LC-Formic_2hr',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_30min',35,'Waters constant flow, formic acid, 30 minute separation',1,'LC-Formic_30min',0)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_3hr',47,'Waters constant flow, formic acid, 180 minute (3 hr) separation',1,'LC-Formic_3hr',1)
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_40min',39,'Waters constant flow, formic acid, 40 minute separation',1,'LC-Formic_1hr',1)
