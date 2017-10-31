@@ -511,12 +511,12 @@ AS
 		    Progress = CASE
 		                   WHEN inserted.AJ_StateID = 5 THEN - 1
 		                   WHEN inserted.AJ_StateID IN (1, 8, 19) THEN 0
-		                   WHEN inserted.AJ_StateID IN (4, 7, 17) THEN 100
+		                   WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 100
 		                   ELSE inserted.Progress
 		               END,
 		    ETA_Minutes = CASE
 		                      WHEN inserted.AJ_StateID IN (1, 5, 8, 19) THEN NULL
-		                      WHEN inserted.AJ_StateID IN (4, 7, 17) THEN 0
+		                      WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 0
 		                      ELSE inserted.ETA_Minutes
 		                  END
 		FROM T_Analysis_Job AJ
