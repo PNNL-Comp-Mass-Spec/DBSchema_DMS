@@ -16,6 +16,8 @@ CREATE Procedure dbo.UpdateJobProgress
 **
 **	Auth:	mem
 **	Date:	09/01/2016 mem - Initial version
+**			10/30/2017 mem - Consider long-running job steps when computing Runtime_Predicted_Minutes
+**						   - Set progress to 0 for inactive jobs (state 13)
 **    
 *****************************************************/
 (
@@ -51,6 +53,7 @@ AS
 		Steps int null,
 		StepsCompleted int null,
 		CurrentRuntime_Minutes real null,
+		Runtime_Predicted_Minutes real null,
 		ETA_Minutes real null
 	)
 	
@@ -95,31 +98,26 @@ AS
 	End
 	
 	-----------------------------------------
-	-- Note:
-	--   The following logic for updating Progress and ETA_Minutes
-	--   based on Job State is also used in trigger trig_u_AnalysisJob
-	-----------------------------------------
-	
-	-----------------------------------------
 	-- Update progress and ETA for failed jobs
+	-- This logic is also used by trigger trig_u_AnalysisJob
 	-----------------------------------------
 	--
 	UPDATE #Tmp_JobsToUpdate
 	SET Progress_New = -1,
 	    ETA_Minutes = Null
-	WHERE State In (5)	
+	WHERE State = 5
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 	
-	
 	-----------------------------------------
-	-- Update progress and ETA for new jobs, holding jobs, or Special Proc. Waiting jobs
+	-- Update progress and ETA for new, holding, inactive, or Special Proc. Waiting jobs
+	-- This logic is also used by trigger trig_u_AnalysisJob
 	-----------------------------------------
 	--
 	UPDATE #Tmp_JobsToUpdate
 	SET Progress_New = 0,
 	    ETA_Minutes = Null
-	WHERE State In (1,8,19)
+	WHERE State In (1, 8, 13, 19)
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 	
@@ -131,7 +129,7 @@ AS
 	UPDATE #Tmp_JobsToUpdate
 	SET Progress_New = 100,
 	    ETA_Minutes = 0
-	WHERE State In (4,7,14)
+	WHERE State In (4, 7, 14)
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 	
@@ -153,7 +151,7 @@ AS
 	                         ProgressQ.TotalRuntime_Minutes
 	                  FROM ( SELECT JS.Job,
 	                                COUNT(*) AS Steps,
-	                                SUM(CASE WHEN state IN (3, 5) THEN 1 ELSE 0 END) AS StepsCompleted,
+	                                SUM(CASE WHEN JS.State IN (3, 5) THEN 1 ELSE 0 END) AS StepsCompleted,
 	                                SUM(CASE WHEN JS.State = 3 THEN 0 
 	                                         ELSE JS.Job_Progress * Tools.AvgRuntime_Minutes 
 	                                    END) AS WeightedProgressSum,
@@ -186,6 +184,52 @@ AS
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 
+	-----------------------------------------
+	-- Compute Runtime_Predicted_Minutes
+	-----------------------------------------
+	--
+	UPDATE #Tmp_JobsToUpdate
+	SET Runtime_Predicted_Minutes = CurrentRuntime_Minutes / (Progress_New / 100.0)
+	WHERE Progress_New > 0 AND
+	      CurrentRuntime_Minutes > 0
+	--
+	SELECT @myRowCount = @@rowcount, @myError = @@error
+
+
+	-----------------------------------------
+	-- Look for jobs with an active job step that has been running for over 30 minutes
+	-- and has a longer Runtime_Predicted_Minutes value than the one estimated using all of the job steps
+	--
+	-- The estimated value was computed by weighting on AvgRuntime_Minutes, but if a single step
+	-- is taking a long time, there is no way the overall job will finish earlier than that step will finish;
+	--
+	-- If this is the case, we update Runtime_Predicted_Minutes to match the predicted runtime of that job step
+	-- and compute a new overall job progress
+	-----------------------------------------
+	--
+	UPDATE #Tmp_JobsToUpdate
+	SET Runtime_Predicted_Minutes = RunningStepsQ.RunTime_Predicted_Minutes,
+	    Progress_New = CASE WHEN RunningStepsQ.Runtime_Predicted_Minutes > 0 
+	                        THEN CurrentRuntime_Minutes * 100.0 / RunningStepsQ.Runtime_Predicted_Minutes
+	                        ELSE Progress_New
+	                   END
+	FROM #Tmp_JobsToUpdate Target
+	     INNER JOIN ( SELECT JS.Job,
+	                         Max(JS.RunTime_Predicted_Hours * 60) AS RunTime_Predicted_Minutes
+	                  FROM S_V_Pipeline_Job_Steps JS
+	                       INNER JOIN ( SELECT Job
+	                                    FROM #Tmp_JobsToUpdate
+	                                    WHERE State = 2 ) JTU
+	                         ON JS.Job = JTU.Job
+	                  WHERE JS.RunTime_Minutes > 30 AND
+	                        JS.State IN (4, 9)		-- Running or Running_Remote
+	                  GROUP BY JS.Job 
+	                ) RunningStepsQ
+	       ON Target.Job = RunningStepsQ.Job
+	WHERE RunningStepsQ.RunTime_Predicted_Minutes > Target.Runtime_Predicted_Minutes
+	--
+	SELECT @myRowCount = @@rowcount, @myError = @@error
+
 
 	-----------------------------------------
 	-- Compute the approximate time remaining for the job to finish
@@ -193,15 +237,9 @@ AS
 	-----------------------------------------
 	--
     UPDATE #Tmp_JobsToUpdate
-    SET ETA_Minutes = StatsQ.Runtime_Predicted_Minutes - StatsQ.CurrentRuntime_Minutes + (Steps - StepsCompleted) * 0.5
+    SET ETA_Minutes = Runtime_Predicted_Minutes - CurrentRuntime_Minutes + (Steps - StepsCompleted) * 0.5
     FROM #Tmp_JobsToUpdate Target
-         INNER JOIN ( SELECT Job,
-                             CurrentRuntime_Minutes,
-                             CurrentRuntime_Minutes / (Progress_New / 100.0) AS Runtime_Predicted_Minutes
-                      FROM #Tmp_JobsToUpdate
-                      WHERE Progress_New > 0 AND
-                            CurrentRuntime_Minutes > 0 ) StatsQ
-           ON Target.Job = StatsQ.Job
+    WHERE Progress_New > 0
 	--
 	SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -215,6 +253,7 @@ AS
 		If @infoOnly = 1
 		Begin
 			-- Summarize the changes
+			--
 			SELECT State,
 			       Count(*) AS Jobs,
 			       Sum(CASE
@@ -230,6 +269,7 @@ AS
 		Else
 		Begin
 			-- Show all rows in #Tmp_JobsToUpdate
+			--
 			SELECT *,
 			       CASE
 			           WHEN IsNull(Progress_Old, 0) <> IsNull(Progress_New, 0) THEN 1
