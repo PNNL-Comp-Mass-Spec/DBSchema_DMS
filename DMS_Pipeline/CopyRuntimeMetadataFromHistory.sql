@@ -23,7 +23,8 @@ CREATE PROCEDURE CopyRuntimeMetadataFromHistory
 **		in T_Job_Steps match exactly the Results_Transfer steps in T_Job_Steps_History
 **
 **	Auth:	mem
-**			02/06/2009 mem - Initial release
+**			10/19/2017 mem - Initial release
+**			10/31/2017 mem - Look for job states with state 4 or 5 and a null Finish time, but a start time later than a Results_Transfer step
 **    
 *****************************************************/
 (
@@ -79,10 +80,13 @@ As
 		Set @message = 'No valid jobs were found: ' + @jobList
 		Goto Done
 	End
-	
+
 	---------------------------------------------------
 	-- Find job steps that need to be updated
 	---------------------------------------------------
+	
+	---------------------------------------------------
+	-- First look for jobs with a Finish date after the Start date of the corresponding Results_Transfer step
 	--
 	INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
 	SELECT JS.Job, JS.Step
@@ -101,6 +105,28 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
+	---------------------------------------------------
+	-- Next Look for job steps that are state 4 or 5 (Running or Complete) with a null Finish date,
+	-- but which started after their corresponding Results_Transfer step
+	--
+	INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
+	SELECT JS.Job, JS.Step
+	FROM #Tmp_Jobs
+	     INNER JOIN V_Job_Steps JS
+	       ON #Tmp_Jobs.Job = JS.Job
+	     INNER JOIN ( SELECT Job, Step, Start, Input_Folder
+	                  FROM V_Job_Steps
+	                  WHERE (Tool = 'Results_Transfer') 
+	                ) FilterQ
+	       ON JS.Job = FilterQ.Job AND
+	          JS.Output_Folder = FilterQ.Input_Folder AND
+	  JS.Finish Is Null AND
+	          JS.Start > FilterQ.Start AND
+	          JS.Step < FilterQ.Step
+	WHERE JS.Tool <> 'Results_Transfer'
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
 
 	UPDATE #Tmp_Jobs
 	SET UpdateRequired = 1
@@ -169,6 +195,7 @@ As
 		UPDATE T_Job_Steps
 		SET Start = JSH.Start,
 		    Finish = JSH.Finish,
+		    State = JSH.State,
 		    Processor = JSH.Processor,
 		    Completion_Code = JSH.Completion_Code,
 		    Completion_Message = JSH.Completion_Message,
@@ -230,22 +257,37 @@ As
 	---------------------------------------------------
 	--
 	SELECT J.Job,
-		   J.UpdateRequired,
-		   J.Invalid,
-		   J.[Comment],
-		   JS.Dataset,
-		   JS.Step, JS.Tool,
-		   JS.StateName, JS.State,
-		   JS.Start, JS.Finish,
-		   JS.Input_Folder, JS.Output_Folder,
-		   JS.Processor,
-		   JS.Tool_Version_ID, JS.Tool_Version,
-		   JS.Completion_Code, JS.Completion_Message,
-		   JS.Evaluation_Code, JS.Evaluation_Message
+	       J.UpdateRequired,
+	       J.Invalid,
+	       J.[Comment],
+	       JS.Dataset,
+	       JS.Step,
+	       JS.Tool,
+	       JS.StateName,
+	       JS.State,
+	       JSH.State as New_State,
+	       JS.Start,
+	       JS.Finish,
+	       JSH.Start AS New_Start,
+	       JSH.Finish AS New_Finish,
+	       JS.Input_Folder,
+	       JS.Output_Folder,
+	       JS.Processor,
+	       JSH.Processor AS New_Processor,
+	       JS.Tool_Version_ID,
+	       JS.Tool_Version,
+	       JS.Completion_Code,
+	       JS.Completion_Message,
+	       JS.Evaluation_Code,
+	       JS.Evaluation_Message
 	FROM #Tmp_JobStepsToUpdate JSU
 	     INNER JOIN V_Job_Steps JS
 	       ON JSU.Job = JS.Job AND
 	          JSU.Step = JS.Step
+	     INNER JOIN T_Job_Steps_History JSH
+	       ON JS.Job = JSH.Job AND
+	          JS.Step = JSH.Step_Number AND
+	          JSH.Most_Recent_Entry = 1
 	     RIGHT OUTER JOIN #Tmp_Jobs J
 	       ON J.Job = JSU.Job
 	--
