@@ -42,6 +42,7 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 **			08/01/2017 mem - Use THROW if not authorized
 **			10/12/2017 mem - Skip waiting step tools MSGF, IDPicker, and MSAlign_Quant when a DataExtractor step reports NO_DATA
 **			10/17/2017 mem - Fix the warning logged when the DataExtractor reports no data
+**			10/31/2017 mem - Add parameter @processorName
 **
 *****************************************************/
 (
@@ -54,7 +55,9 @@ CREATE PROCEDURE dbo.SetStepTaskComplete
 	@organismDBName varchar(128) = '',
 	@remoteInfo varchar(900) = '',			-- Remote server info for jobs with @completionCode = 25
 	@remoteTimestamp varchar(24) = null,	-- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
-	@remoteProgress real = null
+	@remoteProgress real = null,
+	@processorName varchar(128) = ''		-- Name of the processor setting the job as complete
+
 )
 As
 	Set nocount on
@@ -63,7 +66,7 @@ As
 	Declare @myRowCount int = 0
 	
 	Declare @message varchar(512) = ''
-
+	
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -77,15 +80,26 @@ As
 	
 	---------------------------------------------------
 	-- This table variable tracks step tools that should be skipped when a job step reports NO_DATA
-	
 	---------------------------------------------------
+	
 	DECLARE @stepToolsToSkip table (Step_Tool varchar(64))
+
+	---------------------------------------------------
+	-- Validate the inputs
+	---------------------------------------------------
+	
+	Set @job = IsNull(@job, 0)
+	Set @step = IsNull(@step, 0)
+	Set @processorName = IsNull(@processorName, '')
+	
+	Declare @jobStepDescription varchar(32) = 'job ' + Cast(@job as varchar(12)) + ', step ' + Cast(@step as varchar(9))
+	Declare @jobStepDescriptionCapital varchar(32) = 'Job ' + Cast(@job as varchar(12)) + ', step ' + Cast(@step as varchar(9))
 	
 	---------------------------------------------------
 	-- get current state of this job step
 	---------------------------------------------------
 	--
-	Declare @processor varchar(64) = ''
+	Declare @jobStepsProcessor varchar(64) = ''
 	Declare @state tinyint = 0
 	Declare @cpuLoad smallint = 0
 	Declare @memoryUsageMB int = 0
@@ -100,7 +114,7 @@ As
 					  END,
 	       @memoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
 	       @state = JS.State,
-	       @processor = JS.Processor,
+	       @jobStepsProcessor = JS.Processor,
 	       @stepTool = JS.Step_Tool,
 	       @retryCount = JS.Retry_Count
 	FROM T_Job_Steps JS
@@ -117,22 +131,38 @@ As
 	--
 	If @myError <> 0
 	Begin
-		Set @message = 'Error getting machine name from T_Local_Processors using T_Job_Steps'
+		Set @message = 'Error getting machine name from T_Local_Processors using T_Job_Steps for ' + @jobStepDescription
+		Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 		Goto Done
 	End
 	--
 	If IsNull(@machine, '') = ''
 	Begin
 		Set @myError = 66
-		Set @message = 'Could not find machine name in T_Local_Processors using T_Job_Steps'
+		Set @message = 'Could not find machine name in T_Local_Processors using T_Job_Steps; cannot mark ' + @jobStepDescription + ' complete for processor ' + @processorName
+		Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+		
 		Goto Done
 	End
 	--
 	If @state <> 4
 	Begin
 		Set @myError = 67
-		Set @message = 'Job step is not in correct state (4) to be completed'
+		Set @message = @jobStepDescriptionCapital + ' is not in the correct state (4) to be marked complete by processor ' + @processorName + '; actual state is ' + Cast(@state as varchar(9))
+		Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+		
 		Goto Done
+	End
+	Else
+	Begin
+		If @processorName <> '' And @jobStepsProcessor <> @processorName
+		Begin
+			Set @myError = 68
+			Set @message = @jobStepDescriptionCapital + ' is being processed by ' + @jobStepsProcessor + '; processor ' + @processorName + ' is not allowed to mark it as complete'
+			Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+			
+			Goto Done
+		End
 	End
 
 	---------------------------------------------------
@@ -178,7 +208,7 @@ As
 				
 				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
 				
-				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
+				Set @message = 'Warning, ' + @jobStepDescription + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			End
 			
@@ -189,7 +219,7 @@ As
 				
 				INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 				
-				Set @message = 'Warning, job ' + Cast(@job as varchar(12)) + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
+				Set @message = 'Warning, ' + @jobStepDescription + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
 				Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
 			End
 		End
