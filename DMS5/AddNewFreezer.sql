@@ -17,6 +17,7 @@ CREATE Procedure AddNewFreezer
 **	Auth:	mem
 **	Date:	04/22/2015 mem - Initial version
 **			03/31/2016 mem - Switch to using Freezer tags (and remove parameter @NewTagBase)
+**			11/13/2017 mem - Skip computed column Tag when copying data
 **    
 *****************************************************/
 (
@@ -64,8 +65,7 @@ As
 	---------------------------------------------------
 	-- Check for existing data
 	---------------------------------------------------
-	
-		
+
 	If Exists (SELECT * FROM T_Material_Locations WHERE Freezer_Tag = @newFreezerTag)
 	Begin
 		set @message = 'Cannot add ''' + @newFreezerTag + ''' because it already exists in T_Material_Locations'
@@ -86,8 +86,6 @@ As
 		RAISERROR (@message, 10, 1)
 		return 51004
 	End
-
-
 
 	---------------------------------------------------
 	-- Cache the new rows in a temporary table
@@ -130,9 +128,8 @@ As
 	                    FROM T_Material_Locations
 	                    WHERE (Freezer_Tag = @sourceFreezerTag) AND
 	                          (Status = 'inactive') AND
-	                          (Col = 'na') )))
+	                        (Col = 'na') )))
 	ORDER BY Shelf, Rack, Row, Col
-
 
 	---------------------------------------------------
 	-- Preview or store the rows
@@ -146,8 +143,7 @@ As
 	End
 	Else
 	Begin
-		INSERT INTO T_Material_Locations( Tag,
-		                                  Freezer_Tag,
+		INSERT INTO T_Material_Locations( Freezer_Tag,
 		                                  Shelf,
 		                                  Rack,
 		                                  Row,
@@ -156,8 +152,7 @@ As
 		                                  Barcode,
 		                                  [Comment],
 		                                  Container_Limit )
-		SELECT Tag,
-		       Freezer_Tag,
+		SELECT Freezer_Tag,
 		       Shelf,
 		       Rack,
 		       Row,
@@ -182,7 +177,6 @@ As
 
 		Exec PostLogEntry 'Normal', @message, 'AddNewFreezer'
 	End		
-
 
 	---------------------------------------------------
 	-- Done
