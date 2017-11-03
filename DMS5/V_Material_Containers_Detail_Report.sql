@@ -3,13 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
--- 
+
 CREATE VIEW [dbo].[V_Material_Containers_Detail_Report] AS 
 SELECT  MC.Tag AS Container ,
         MC.Type ,
         ML.Tag AS Location ,
         COUNT(T.M_ID) AS Items ,
         MC.Comment ,
+        ML.Freezer_Tag AS Freezer,
         MC.Barcode ,
         MC.Created ,
         MC.Status ,
@@ -40,7 +41,9 @@ GROUP BY MC.Tag ,
         MC.Created ,
         MC.Status ,
         MC.Researcher,
+        ML.Freezer_Tag,
         TFA.Files
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [DDL_Viewer] AS [dbo]
 GO
