@@ -24,7 +24,6 @@ FROM dbo.T_Material_Locations ML
        ON ML.Freezer_Tag = T_Material_Freezers.Freezer_Tag
      LEFT OUTER JOIN dbo.T_Material_Containers MC
        ON ML.ID = MC.Location_ID
-WHERE (ML.Status = 'Active')
 GROUP BY ML.ID, T_Material_Freezers.Freezer, ML.Shelf, ML.Rack, ML.Row, ML.Barcode, 
          ML.[Comment], ML.Tag, ML.Col, ML.Status, ML.Container_Limit
 
