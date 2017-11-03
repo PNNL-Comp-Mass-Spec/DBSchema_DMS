@@ -142,12 +142,12 @@ As
 		---------------------------------------------------
 		-- Log SP usage
 		---------------------------------------------------
-/*		
+/*
 		IF @infoOnly = 0
 		BEGIN 
-			Declare @UsageMessage varchar(512) = ''
-			Set @UsageMessage = ''
-			Exec PostUsageLogEntry 'UpdateRequestedRunFactors', @UsageMessage
+			Declare @UsageMessage varchar(512)
+			Set @UsageMessage = Cast(@locationList as varchar(512))			
+			Exec PostUsageLogEntry 'UpdateMaterialLocations', @UsageMessage
 		END
 */
 	END TRY
