@@ -61,7 +61,6 @@ ALTER TABLE [dbo].[T_Material_Locations] ADD  CONSTRAINT [DF_T_Material_Location
 GO
 ALTER TABLE [dbo].[T_Material_Locations]  WITH CHECK ADD  CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers] FOREIGN KEY([Freezer_Tag])
 REFERENCES [dbo].[T_Material_Freezers] ([Freezer_Tag])
-ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Material_Locations] CHECK CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers]
 GO
