@@ -3,15 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetJobParamTableLocal
+
+CREATE FUNCTION [dbo].[GetJobParamTableLocal]
 /****************************************************
 **
-**  Desc:	Returns a table of the job parameters stored locally in T_Job_Parameters
+**  Desc:   Returns a table of the job parameters stored locally in T_Job_Parameters
 **
-**  Auth:	grk
-**  Date:	06/07/2010
-**			04/04/2011 mem - Updated to only query T_Job_Parameters
-**      
+**  Auth:	  grk
+**  Date:	  06/07/2010
+**          04/04/2011 mem - Updated to only query T_Job_Parameters
 **    
 *****************************************************/
 (
@@ -55,6 +55,7 @@ BEGIN
 
 	RETURN
 END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobParamTableLocal] TO [DDL_Viewer] AS [dbo]
