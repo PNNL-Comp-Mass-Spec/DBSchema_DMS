@@ -12,15 +12,17 @@ SELECT U.CC_Name AS [Name or Peptide],
             Then U.CC_Contact_PRN 
             Else U_Contact.Name_with_PRN 
        End AS [Contact (usually PNNL Staff)],
-       U_PI.Name_with_PRN AS PI,
        CTN.Name AS [Type],
        U.CC_Reason AS Reason,
+       U.CC_Created AS Created,
+       U_PI.Name_with_PRN AS PI,
        U.CC_Comment AS [Comment],
        C.Campaign_Num AS Campaign,
        U.CC_ID AS ID,
        MC.Tag AS Container,
-       L.Tag AS Location,
-	   dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
+       L.Tag AS [Location],
+	  dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
+       U.CC_Material_Active AS [Material Status],
        U.Gene_Name AS [Gene Name],
        U.Gene_Location AS [Gene Location],
        U.Mod_Count AS [Mod Count],
@@ -28,8 +30,7 @@ SELECT U.CC_Name AS [Name or Peptide],
        U.Mass AS [Peptide Mass],
        CONVERT(varchar(32), U.Purchase_Date, 101) AS [Purchase Date],
        U.Peptide_Purity AS [Peptide Purity],
-       U.Purchase_Quantity AS [Purchase Quantity],
-       U.CC_Material_Active AS [Material Status]
+       U.Purchase_Quantity AS [Purchase Quantity]
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID
@@ -43,7 +44,6 @@ FROM T_Cell_Culture U
        ON U.CC_Contact_PRN = U_Contact.U_PRN
      LEFT OUTER JOIN T_Users U_PI
        ON U.CC_PI_PRN = U_PI.U_PRN
-
 
 
 GO
