@@ -36,6 +36,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			07/21/2017 mem - Fix double logging of exceptions
 **			08/01/2017 mem - Use THROW if not authorized
+**			11/15/2017 mem - Call ValidateDataPackageForMACJob
 **
 *****************************************************/
 (
@@ -56,18 +57,19 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	DECLARE @jobParamXML XML
+	Declare @jobParamXML XML
+	Declare @logErrors tinyint = 1
 	
 	Set @dataPackageID = IsNull(@dataPackageID, 0)
 	
-	DECLARE @reset CHAR(1) = 'N'
-	IF @mode = 'reset'
-	BEGIN 
-		SET @mode = 'update'
-		SET @reset = 'Y'
+	Declare @reset CHAR(1) = 'N'
+	If @mode = 'reset'
+	Begin 
+		Set @mode = 'update'
+		Set @reset = 'Y'
 	END 
 
 	---------------------------------------------------
@@ -81,13 +83,13 @@ AS
 		THROW 51000, 'Access denied', 1;
 	End
 	
-	BEGIN TRY
+	Begin TRY
 
 		---------------------------------------------------
 		-- does job exist
 		---------------------------------------------------
 		
-		DECLARE 
+		Declare 
 			@id INT = 0,
 			@state int = 0
 		--
@@ -97,13 +99,13 @@ AS
 		FROM dbo.T_Jobs
 		WHERE Job = @job
 		
-		IF @mode = 'update' AND @id = 0
+		If @mode = 'update' AND @id = 0
 			RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
-		IF @mode = 'update' AND NOT @state IN (1, 4, 5) -- new, complete, failed
+		If @mode = 'update' AND NOT @state IN (1, 4, 5) -- new, complete, failed
 			RAISERROR ('Cannot update job %d in state %d; must be 1, 4, or 5', 11, 3, @job, @state)
 
-		IF @mode = 'update' AND @datasetNum <> 'Aggregation'
+		If @mode = 'update' AND @datasetNum <> 'Aggregation'
 			RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
 			
 		---------------------------------------------------
@@ -117,7 +119,7 @@ AS
 			RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
 		
 		exec @myError = VerifyJobParameters @jobParam, @scriptName, @message output
-		IF @myError > 0
+		If @myError > 0
 		Begin
 			Set @message = 'Error message for job ' + Cast(@job as varchar(9)) + ' from VerifyJobParameters: ' + @message
 			RAISERROR(@message, 11, @myError)
@@ -128,6 +130,33 @@ AS
 			-- Auto-define the owner
 			Set @ownerPRN = dbo.GetUserLoginWithoutDomain(@callingUser)
 		End
+
+		If @mode = 'add'
+		Begin
+			---------------------------------------------------
+			-- Is data package set up correctly for the job?
+			---------------------------------------------------
+			
+			Declare 
+				@tool VARCHAR(64) = '',			-- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
+				@msg VARCHAR(512) = '',	                 
+				@valid INT = 0
+
+			EXEC @valid = dbo.ValidateDataPackageForMACJob
+									@dataPackageID,
+									@scriptName,						
+									@tool output,
+									'validate', 
+									@msg output
+			
+			If @valid <> 0
+			Begin
+				-- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
+				Set @logErrors = 0
+				
+				RAISERROR('%s', 11, 24, @msg)
+			End
+		End
 		
 		---------------------------------------------------
 		-- update mode 
@@ -135,9 +164,9 @@ AS
 		-- force reset of job?
 		---------------------------------------------------
 		
-		IF @mode = 'update'
-		BEGIN --<update>
-			BEGIN TRANSACTION
+		If @mode = 'update'
+		Begin --<update>
+			Begin TRANSACTION
 			
 			Set @jobParamXML = CONVERT(XML, @jobParam)
 			
@@ -161,7 +190,7 @@ AS
 
 				INSERT INTO #PARAMS
 						(Name, Value, Section)
-				select
+				SELECT
 						xmlNode.value('@Name', 'nvarchar(256)') [Name],
 						xmlNode.value('@Value', 'nvarchar(256)') VALUE,
 						xmlNode.value('@Section', 'nvarchar(256)') [Section]
@@ -177,10 +206,10 @@ AS
 								
 				exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
 				
-				IF @paramsUpdated <> 0
-				BEGIN 
-					SET @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
-				END
+				If @paramsUpdated <> 0
+				Begin 
+					Set @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
+				End
 				
 			End
 
@@ -218,8 +247,8 @@ AS
 			End
 			
 			
-			IF @reset = 'Y'
-			BEGIN --<reset>
+			If @reset = 'Y'
+			Begin --<reset>
 			
 				exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output							
 				
@@ -234,14 +263,14 @@ AS
 		-- add mode
 		---------------------------------------------------
 
-		IF @mode = 'add'
-		BEGIN --<add>
+		If @mode = 'add'
+		Begin --<add>
 
 			Set @jobParamXML = CONVERT(XML, @jobParam)
 			
-			if @DebugMode <> 0
+			If @DebugMode <> 0
 				Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
-				
+
 			exec MakeLocalJobInBroker
 					@scriptName,
 					@datasetNum,
@@ -259,7 +288,7 @@ AS
 		END --</add>
 
 	END TRY
-	BEGIN CATCH 
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		Set @message = IsNull(@message, 'Unknown error message')
@@ -269,11 +298,13 @@ AS
 		Set @LogMessage = @message + '; error code ' + Convert(varchar(12), @myError)
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
-		
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'			
+		End		
 	END CATCH
 
 Done:

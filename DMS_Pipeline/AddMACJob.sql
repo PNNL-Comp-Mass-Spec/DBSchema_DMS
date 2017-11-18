@@ -21,28 +21,30 @@ CREATE PROCEDURE AddMACJob
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			11/15/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
 	@job int OUTPUT,
 	@DataPackageID int,
-	@jobParam VARCHAR(8000),
-	@comment VARCHAR(512),
-	@ownerPRN VARCHAR(64),
-	@scriptName VARCHAR(64),
-	@mode VARCHAR(12) = 'add', 
-	@message VARCHAR(512) output,
-	@callingUser VARCHAR(128) = ''
+	@jobParam varchar(8000),
+	@comment varchar(512),
+	@ownerPRN varchar(64),
+	@scriptName varchar(64),
+	@mode varchar(12) = 'add', 
+	@message varchar(512) output,
+	@callingUser varchar(128) = ''
 )
 AS
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Set @DataPackageID = IsNull(@DataPackageID, 0)
 	
-	DECLARE @DebugMode tinyint = 0
+	Declare @DebugMode tinyint = 0
+	Declare @logErrors tinyint = 1
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -55,14 +57,14 @@ AS
 		THROW 51000, 'Access denied', 1;
 	End
 
-	BEGIN TRY
+	Begin TRY
 
 		---------------------------------------------------
 		-- does data package exist?
 		---------------------------------------------------
 		
-		DECLARE 
-			@pkgName VARCHAR(128),
+		Declare 
+			@pkgName varchar(128),
 			@pkgJobCount int			
 						   
 		SELECT    
@@ -71,17 +73,17 @@ AS
 		FROM S_Data_Package_Details TPKG
 		WHERE TPKG.ID = @DataPackageID
 		
-		IF @pkgName IS Null
+		If @pkgName IS Null
 			RAISERROR('Data package does not exist', 11, 20)
 	 
-		IF @pkgJobCount = 0	 			
+		If @pkgJobCount = 0	 			
 			RAISERROR('Data package has no analysis jobs', 11, 21)
 												
 		---------------------------------------------------
 		-- get script
 		---------------------------------------------------
 		
-		DECLARE 
+		Declare 
 			@scriptId int,
 			@scriptEnabled char(1),
 			@scriptParameters xml  
@@ -93,19 +95,19 @@ AS
 		FROM T_Scripts	
 		WHERE Script = @scriptName
 		
-		IF @scriptID IS NULL
+		If @scriptID IS NULL
 			 RAISERROR('Scrit "%s" could not be found', 11, 22, @scriptName)
 		
-		IF @scriptEnabled = 'N'
+		If @scriptEnabled = 'N'
 			 RAISERROR('Script "%s" is not enabled', 11, 23, @scriptName)
 
 		---------------------------------------------------
 		-- is data package set up correctly for the job?
 		---------------------------------------------------
 		
-		DECLARE 
-			@tool VARCHAR(64) = '',			-- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-			@msg VARCHAR(512) = '',	                 
+		Declare 
+			@tool varchar(64) = '',			-- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
+			@msg varchar(512) = '',	                 
 			@valid INT = 0
 
 		EXEC @valid = dbo.ValidateDataPackageForMACJob
@@ -114,8 +116,14 @@ AS
 								@tool output,
 								'validate', 
 								@msg output
-		IF @valid <> 0
+		
+		If @valid <> 0
+		Begin
+			-- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
+			Set @logErrors = 0
+			
 			RAISERROR('%s', 11, 24, @msg)
+		End
 		
 		---------------------------------------------------
 		-- get default job parameters from script
@@ -125,7 +133,7 @@ AS
 			[Section] varchar(64),
 			[Name] varchar(128),
 			[Value] varchar(4000),
-			Reqd VARCHAR(6) NULL,
+			Reqd varchar(6) NULL,
 			Step varchar(6) NULL
 		)
 
@@ -145,8 +153,8 @@ AS
 		-- (directly modifies #MACJobParams)
 		---------------------------------------------------
 		
-		DECLARE @result INT = 0
-		SET @msg = ''		
+		Declare @result INT = 0
+		Set @msg = ''		
 		
 		EXEC @result = MapMACJobParameters
 						@scriptName,				
@@ -163,7 +171,7 @@ AS
 		-- build final job param XML for creating job
 		---------------------------------------------------
 		
-		DECLARE @jobParamXML XML
+		Declare @jobParamXML XML
 		SELECT @jobParamXML = ( 
 				SELECT [Section],
 					[Name],
@@ -174,28 +182,28 @@ AS
 				ORDER BY [Section]
 				FOR XML AUTO )
 		
-		IF @mode = 'debug'	
-		BEGIN --<debug>
-			DECLARE @s VARCHAR(8000) = convert(varchar(8000), @jobParamXML)
+		If @mode = 'debug'	
+		Begin --<debug>
+			Declare @s varchar(8000) = convert(varchar(8000), @jobParamXML)
 			PRINT 	@s	 
 			
 			SELECT * FROM #MACJobParams
 									
-		END --<debug>               
+		End --<debug>               
 
 		---------------------------------------------------
 		-- add mode
 		---------------------------------------------------
 
-		IF @mode = 'add'
-		BEGIN --<add>
+		If @mode = 'add'
+		Begin --<add>
 
-			DECLARE 
-					@datasetNum VARCHAR(256) = 'Aggregation',
+			Declare 
+					@datasetNum varchar(256) = 'Aggregation',
 					@priority int = 3,
-					@resultsFolderName VARCHAR(256)
+					@resultsFolderName varchar(256)
 						
---			DECLARE @x VARCHAR(8000) = 	'<code>' + CONVERT(varchar(8000), @jobParamXML) + '</code>'		                                                                     
+--			Declare @x varchar(8000) = 	'<code>' + CONVERT(varchar(8000), @jobParamXML) + '</code>'		                                                                     
 --			RAISERROR('Debug:%s', 11, 42, @x)
 --			RAISERROR('Debug:%s', 11, 42, 'The call to "MakeLocalJobInBroker" is temporarily disabled')
 							 
@@ -213,18 +221,21 @@ AS
 					@message output,
 					@callingUser
 
-		END --<add>
+		End --<add>
 
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
+		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
-		Exec PostLogEntry 'Error', @message, 'AddMACJob'
-	END CATCH
+		If @logErrors > 0
+		Begin
+			Exec PostLogEntry 'Error', @message, 'AddMACJob'		
+		End
+	End CATCH
 
 Done:
 	return @myError
