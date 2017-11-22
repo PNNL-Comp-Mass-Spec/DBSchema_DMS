@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Mgrs] ******/
-/****** RowCount: 792 ******/
+/****** RowCount: 808 ******/
 SET IDENTITY_INSERT [T_Mgrs] ON
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (340,'SeqCluster1',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (341,'SeqCluster2',11,1,1,'')
@@ -793,4 +793,20 @@ INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromW
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1483,'Proto-3_Space',8,0,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1484,'Proto-3_Analysis-3',11,1,1,'')
 INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1485,'Proto-4_Analysis-3',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1486,'Andesite-1',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1487,'Andesite-2',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1488,'Andesite-3',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1489,'Andesite-4',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1490,'Andesite-5',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1491,'Andesite-6',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1492,'Andesite-7',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1493,'Andesite-8',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1494,'Granite-1',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1495,'Granite-2',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1496,'Granite-3',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1497,'Granite-4',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1498,'Granite-5',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1499,'Granite-6',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1500,'Granite-7',11,1,1,'')
+INSERT INTO [T_Mgrs] (M_ID, M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite, M_Comment) VALUES (1501,'Granite-8',11,1,1,'')
 SET IDENTITY_INSERT [T_Mgrs] OFF
