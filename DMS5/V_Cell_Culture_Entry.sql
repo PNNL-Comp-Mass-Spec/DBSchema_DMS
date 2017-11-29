@@ -4,10 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Cell_Culture_Entry]
 AS
-SELECT U.CC_Name AS Name_or_Peptide,
+SELECT U.CC_Name AS [Name],
        U.CC_Source_Name,
        U.CC_Contact_PRN,
        U.CC_PI_PRN,
@@ -16,15 +15,7 @@ SELECT U.CC_Name AS Name_or_Peptide,
        U.CC_Comment,
        C.Campaign_Num,
        MC.Tag AS Container,
-	   dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
-       U.Gene_Name,
-       U.Gene_Location,
-       U.Mod_Count,
-       U.Modifications,
-       U.Mass,
-       CONVERT(varchar(32), U.Purchase_Date, 101) AS Purchase_Date,
-       U.Peptide_Purity,
-       U.Purchase_Quantity
+	  dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

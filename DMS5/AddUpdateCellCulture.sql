@@ -34,6 +34,8 @@ CREATE Procedure dbo.AddUpdateCellCulture
 **			               - When updating an existing entry, update @organismList to be '' if null (since the DMS website sends null when a form field is blank)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			11/27/2017 mem - Fix variable name bug
+**			11/28/2017 mem - Deprecate old fields that are now tracked by Reference Compounds
 **    
 *****************************************************/
 (
@@ -48,14 +50,14 @@ CREATE Procedure dbo.AddUpdateCellCulture
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@container varchar(128) = 'na', 
-	@geneName varchar(128),
-	@geneLocation varchar(128),
-	@modCount varchar(20),			-- Will be converted to a Smallint
-	@modifications varchar(500),
-	@mass          varchar(30),		-- Will be converted to a float
-	@purchaseDate  varchar(30),		-- Will be converted to a date
-	@peptidePurity varchar(64),
-	@purchaseQuantity varchar(128),
+	@geneName varchar(128) = '',			-- Deprecated (no longer used)
+	@geneLocation varchar(128) = '',		-- Deprecated (no longer used)
+	@modCount varchar(20) = '',				-- Deprecated (no longer used)
+	@modifications varchar(500) = '',		-- Deprecated (no longer used)
+	@mass          varchar(30) = '',		-- Deprecated (no longer used)
+	@purchaseDate  varchar(30) = '',		-- Deprecated (no longer used)
+	@peptidePurity varchar(64) = '',		-- Deprecated (no longer used)
+	@purchaseQuantity varchar(128) = '',	-- Deprecated (no longer used)
 	@organismList varchar(max),		-- List of one or more organisms to associate with this biomaterial; stored in T_Biomaterial_Organisms; if null, T_Biomaterial_Organisms is unchanged
 	@callingUser varchar(128) = ''		
 )
@@ -94,9 +96,6 @@ As
 	Set @cultureType = LTrim(RTrim(IsNull(@cultureType, '')))
 	Set @reason = LTrim(RTrim(IsNull(@reason, '')))
 	Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
-	Set @modCount = LTrim(RTrim(IsNull(@modCount, '')))
-	Set @mass = LTrim(RTrim(IsNull(@mass, '')))
-	Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
 	
 	Set @callingUser = IsNull(@callingUser, '')
 
@@ -143,38 +142,6 @@ As
 	Begin
 		RAISERROR ('Campaign Name was blank', 11, 8)
 	End
-
-	Declare @modCountValue smallint
-	Declare @massValue float
-	Declare @purchaseDateValue datetime
-
-	If @modCount = ''
-		Set @modCountValue = 0
-	Else
-	Begin
-		Set @modCountValue = Try_Convert(smallint, @modCount)
-		If @modCountValue Is Null
-			RAISERROR ('Error, non-numeric modification count: %s', 11, 9, @modCount)
-	End	
-
-	If @mass = ''
-		Set @massValue = 0
-	Else
-	Begin
-		Set @massValue = Try_Convert(smallint, @mass)
-		If @modCountValue Is Null
-			RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
-	End
-
-	If @purchaseDate = ''
-		Set @purchaseDateValue = null
-	Else
-	Begin
-		If IsDate(@purchaseDate) = 1
-			Set @purchaseDateValue = CONVERT(datetime, @purchaseDate)
-		Else
-			RAISERROR ('Error, invalid purchase date: %s', 11, 9, @purchaseDate)
-	End		
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -358,14 +325,6 @@ As
 			CC_Comment, 
 			CC_Campaign_ID,
 			CC_Container_ID,
-			Gene_Name        ,
-			Gene_Location    ,
-			Mod_Count        ,
-			Modifications    ,
-			Mass             ,
-			Purchase_Date    ,
-			Peptide_Purity   ,
-			Purchase_Quantity,			
 			CC_Created
 		) VALUES (
 			@cellCultureName,
@@ -377,14 +336,6 @@ As
 			@comment,
 			@campaignID,
 			@contID,
-			@geneName,
-			@geneLocation,
-			@modCountValue,
-			@modifications,
-			@massValue,
-			@purchaseDateValue,
-			@peptidePurity,
-			@purchaseQuantity,			
 			GETDATE()			
 		)
 		--
@@ -461,15 +412,7 @@ As
 			CC_Reason         = @reason, 
 			CC_Comment        = @comment, 
 			CC_Campaign_ID    = @campaignID,
-			CC_Container_ID   = @contID,
-			Gene_Name         = @geneName,
-			Gene_Location     = @geneLocation,
-			Mod_Count         = @modCountValue,
-			Modifications     = @modifications,
-			Mass              = @massValue,
-			Purchase_Date     = @purchaseDateValue,
-			Peptide_Purity    = @peptidePurity,
-			Purchase_Quantity = @purchaseQuantity
+			CC_Container_ID   = @contID
 		WHERE (CC_Name = @cellCultureName)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -516,7 +459,6 @@ As
 	End CATCH
 
 	return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [DDL_Viewer] AS [dbo]

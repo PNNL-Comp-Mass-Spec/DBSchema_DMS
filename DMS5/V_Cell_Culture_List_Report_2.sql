@@ -19,15 +19,7 @@ SELECT U.CC_ID AS ID,
        MC.Tag AS Container,
        ML.Tag AS Location,
 	   Cached_Organism_List AS Organisms,
-       U.CC_Material_Active AS [Material Status],
-       U.Gene_Name AS [Gene Name],
-       U.Gene_Location AS [Gene Location],
-       U.Mod_Count AS [Mod Count],
-       U.Modifications AS [Modifications],
-       U.Mass AS [Peptide Mass],
-       U.Purchase_Date AS [Purchase Date],
-       U.Peptide_Purity AS [Peptide Purity],
-       U.Purchase_Quantity AS [Purchase Quantity]
+       U.CC_Material_Active AS [Material Status]      
 FROM dbo.T_Cell_Culture U
      INNER JOIN dbo.T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

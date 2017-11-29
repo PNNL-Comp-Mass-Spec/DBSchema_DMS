@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Cell_Culture_Detail_Report]
 AS
-SELECT U.CC_Name AS [Name or Peptide],
+SELECT U.CC_Name AS [Name],
        U.CC_Source_Name AS Supplier,
        Case When U_Contact.U_Name Is Null 
             Then U.CC_Contact_PRN 
@@ -22,15 +22,7 @@ SELECT U.CC_Name AS [Name or Peptide],
        MC.Tag AS Container,
        L.Tag AS [Location],
 	  dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
-       U.CC_Material_Active AS [Material Status],
-       U.Gene_Name AS [Gene Name],
-       U.Gene_Location AS [Gene Location],
-       U.Mod_Count AS [Mod Count],
-       U.Modifications AS [Modifications],
-       U.Mass AS [Peptide Mass],
-       CONVERT(varchar(32), U.Purchase_Date, 101) AS [Purchase Date],
-       U.Peptide_Purity AS [Peptide Purity],
-       U.Purchase_Quantity AS [Purchase Quantity]
+       U.CC_Material_Active AS [Material Status]
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID
