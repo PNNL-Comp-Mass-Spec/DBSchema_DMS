@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
--- V_Prep_LC_Run_Entry
 
 CREATE view [dbo].[V_Prep_LC_Run_Entry] as
 SELECT  ID ,
@@ -21,10 +20,9 @@ SELECT  ID ,
         Number_Of_Runs AS NumberOfRuns ,
         Instrument_Pressure AS InstrumentPressure ,
         SamplePrepRequest ,
-        Quality_Control,
+        Quality_Control AS QualityControl,
         dbo.GetHPLCRunDatasetList(ID, 'name') AS Datasets
 FROM    T_Prep_LC_Run
-
 
 
 GO
