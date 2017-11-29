@@ -21,7 +21,7 @@ CREATE PROCEDURE dbo.AlterEventLogEntryUser
 **    
 *****************************************************/
 (
-	@TargetType smallint,				-- 1=Campaign, 2=Cell Culture, 3=Experiment, 4=Dataset, 5=Analysis Job, 6=Archive, 7=Archive Update, 8=Dataset Rating
+	@TargetType smallint,				-- 1=Campaign, 2=Cell Culture, 3=Experiment, 4=Dataset, 5=Analysis Job, 6=Archive, 7=Archive Update, 8=Dataset Rating, etc.
 	@TargetID int,
 	@TargetState int,
 	@NewUser varchar(128),
