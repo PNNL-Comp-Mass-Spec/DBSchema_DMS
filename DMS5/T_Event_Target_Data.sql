@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Event_Target] ******/
-/****** RowCount: 13 ******/
+/****** RowCount: 14 ******/
 /****** Columns: ID, Name, Target_Table, Target_ID_Column, Target_State_Column ******/
 INSERT INTO [T_Event_Target] VALUES (0,'(none)','(none)','(none)','(none)')
 INSERT INTO [T_Event_Target] VALUES (1,'Campaign','T_Campaign','Campaign_ID','(none)')
@@ -14,3 +14,4 @@ INSERT INTO [T_Event_Target] VALUES (9,'Campaign Percent EMSL Funded','T_Campaig
 INSERT INTO [T_Event_Target] VALUES (10,'Campaign Data Release State','T_Campaign','Campaign_ID','CM_Data_Release_Restrictions')
 INSERT INTO [T_Event_Target] VALUES (11,'Requested Run','T_Requested_Run','ID','RDS_Status')
 INSERT INTO [T_Event_Target] VALUES (12,'Analysis Job Request','T_Analysis_Job_Request','AJR_requestID','AJR_state')
+INSERT INTO [T_Event_Target] VALUES (13,'Reference Compound','T_Reference_Compound','Compound_ID','(none)')
