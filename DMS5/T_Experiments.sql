@@ -294,6 +294,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Experiments] on [dbo].[T_Experiments]
 For Update
 /****************************************************
@@ -305,6 +306,7 @@ For Update
 **	Auth:	mem
 **	Date:	07/19/2010 mem - Initial version
 **			03/23/2012 mem - Now updating T_File_Attachment
+**			11/28/2017 mem - Check for unchanged experiment name
 **    
 *****************************************************/
 AS
@@ -318,6 +320,7 @@ AS
 		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
 		SELECT 3, inserted.Exp_ID, deleted.Experiment_Num, inserted.Experiment_Num, GETDATE()
 		FROM deleted INNER JOIN inserted ON deleted.Exp_ID = inserted.Exp_ID
+          WHERE deleted.Experiment_Num <> inserted.Experiment_Num
 		ORDER BY inserted.Exp_ID
 		
 		UPDATE T_File_Attachment
