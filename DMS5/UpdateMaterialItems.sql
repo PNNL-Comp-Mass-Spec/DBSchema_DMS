@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateMaterialItems
+CREATE PROCEDURE dbo.UpdateMaterialItems
 /****************************************************
 **
 **	Desc: 
@@ -19,29 +19,30 @@ CREATE PROCEDURE UpdateMaterialItems
 **			09/14/2016 mem - When retiring a single experiment, will abort and update @message if the experiment is already retired
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			11/28/2017 mem - Add support for Reference_Compound
+**			               - Only update Container_ID if @mode is 'move_material'
 **    
 *****************************************************/
 (
 	@mode varchar(32),			-- 'move_material', 'retire_items'
-	@itemList varchar(4096),	-- either list of material IDs with type tag prefixes, or list of containers
-	@itemType varchar(128),		-- 'mixed_material', 'containers'
+	@itemList varchar(4096),	-- Either list of material IDs with type tag prefixes (e.g. E:8432,E:8434,E:9786), or list of container IDs (integers)
+	@itemType varchar(128),		-- 'mixed_material' or 'containers'
 	@newValue varchar(128),
 	@comment varchar(512),
     @message varchar(512) output,
    	@callingUser varchar(128) = ''
 )
 As
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	---------------------------------------------------
 	-- Default container to null container
 	---------------------------------------------------
 	--
-	declare @container varchar(128) = 'na'
+	Declare @container varchar(128) = 'na'
 	--
-	declare @contID int = 1		-- the null container
-
+	Declare @contID int = 1		-- the null container
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -67,7 +68,7 @@ As
 	if @mode = 'move_material'
 	begin --<a>
 		--
-		declare @contStatus varchar(64)
+		Declare @contStatus varchar(64)
 		set @container = @newValue
 		set @contID = 0
 		--
@@ -105,9 +106,9 @@ As
 	-- temporary table to hold material items
 	---------------------------------------------------
 
-	declare @material_items as TABLE (
+	Declare @material_items as TABLE (
 		ID int,
-		iType varchar(8),
+		iType varchar(8),			-- B for Biomaterial, E for Experiment, R for RefCompound
 		iName varchar(128) NULL,
 		iContainer varchar(64) NULL
 	)
@@ -120,19 +121,22 @@ As
 		return 51007
 	end
 
-	---------------------------------------------------
-	-- populate temporary table from type-tagged list
-	-- of material items, if applicable
-	---------------------------------------------------
-	--
 	if @itemType = 'mixed_material'
 	begin --<mm>
-	
+		---------------------------------------------------
+		-- Populate temporary table from type-tagged list
+		-- of material items, if applicable
+		---------------------------------------------------
+		--
+
+		-- @itemList is a comma separated list of items of the form Type:ID, for example 'E:8432,E:8434,E:9786'
+		-- This is a list of three experiments, IDs 8432, 8434, and 9786
+		
 		INSERT INTO @material_items
 			(ID, iType)
 		SELECT 
 			substring(Item, 3, 300) as ID, 
-			substring(Item, 1, 1) as iType
+			substring(Item, 1, 1) as iType		-- B for Biomaterial, E for Experiment, R for RefCompound
 		FROM dbo.MakeTableFromList(@itemList)
    		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -189,7 +193,29 @@ As
 			set @message = 'Error updating material item table with experiment information'
 			return 51011
 		end
-		
+
+		---------------------------------------------------
+		-- Update temporary table with information from
+		-- reference compound entities (if any)
+		-- They have iType = 'R'
+		---------------------------------------------------
+		--
+		UPDATE @material_items
+		SET iName = V.Name,
+		    iContainer = V.Container
+		FROM @material_items M
+		     INNER JOIN V_Reference_Compound_List_Report V
+		       ON V.ID = M.ID
+		WHERE M.iType = 'R'
+       	--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error updating material item table with reference compound information'
+			return 51011
+		end
+				
 		If @mode = 'retire_items' AND @mixedMaterialCount = 1 AND @myRowCount = 1
 		Begin
 			-- Retiring a single experiment
@@ -216,52 +242,51 @@ As
 	
 	end --<mm>
 
-	---------------------------------------------------
-	-- populate material item list with items contained
-	-- by containers given in input list, if applicable
-	---------------------------------------------------
-	--
 	if 	@itemType = 'containers'
 	begin --<cn>
+		---------------------------------------------------
+		-- Populate material item list with items contained
+		-- by containers given in input list, if applicable
+		---------------------------------------------------
+		--
+
 		INSERT INTO @material_items
 			(ID, iType, iName, iContainer)
 		SELECT
-			T.Item_ID AS ID, 
-			SUBSTRING(T.Item_Type, 1, 1) AS iType, 
-			T.Item AS iName, 
-			T_Material_Containers.Tag AS iContainer
+			T.Item_ID, 
+			T.Item_Type,	-- B for Biomaterial, E for Experiment, R for RefCompound
+			T.Item, 
+			T_Material_Containers.Tag
 		FROM
 			T_Material_Containers INNER JOIN
 			(
-				SELECT 
-				  T_Cell_Culture_1.CC_Name       AS Item,
-				  'Biomaterial'                  AS Item_Type,
-				  T_Cell_Culture.CC_Container_ID AS C_ID,
-				  T_Cell_Culture.CC_ID           AS Item_ID
-				FROM   
-				  T_Cell_Culture
-				  INNER JOIN T_Cell_Culture AS T_Cell_Culture_1
-					ON T_Cell_Culture.CC_ID = T_Cell_Culture_1.CC_ID
+				SELECT CC_Name AS Item,
+				       'B' AS Item_Type,			-- Biomaterial
+				       CC_Container_ID AS C_ID,
+				       CC_ID AS Item_ID
+				FROM T_Cell_Culture
 				UNION
-				SELECT 
-				  T_Experiments_1.Experiment_Num AS Item,
-				  'Experiment'                   AS Item_Type,
-				  T_Experiments.EX_Container_ID  AS C_ID,
-				  T_Experiments.Exp_ID           AS Item_ID
-				FROM   
-				  T_Experiments
-				  INNER JOIN T_Experiments AS T_Experiments_1
-					ON T_Experiments.Exp_ID = T_Experiments_1.Exp_ID
+				SELECT Experiment_Num AS Item,
+				       'E' AS Item_Type,			-- Experiment
+				       EX_Container_ID AS C_ID,
+				       Exp_ID AS Item_ID
+				FROM T_Experiments
+				UNION
+				SELECT Compound_Name AS Item,
+				       'R' AS Item_Type,			-- Reference Compound
+				       Container_ID AS C_ID,
+				       Compound_ID AS Item_ID
+				FROM T_Reference_Compound
 			) AS T ON T.C_ID = T_Material_Containers.ID
-		WHERE T.C_ID in (SELECT Convert(int, Item) FROM dbo.MakeTableFromList(@itemList))
-       		--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Error populating material item table from container list'
-				return 51025
-			end
+		WHERE T.C_ID in (SELECT Try_Cast(Item AS int) FROM dbo.MakeTableFromList(@itemList))
+       	--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		if @myError <> 0
+		begin
+			set @message = 'Error populating material item table from container list'
+			return 51025
+		end
 	end --<cn>
 
 -- debug
@@ -275,21 +300,26 @@ return @myError
 	-- start transaction
 	---------------------------------------------------
 	--
-	declare @transName varchar(32)
+	Declare @transName varchar(32)
 	set @transName = 'UpdateMaterialItems'
 	begin transaction @transName
 
 	---------------------------------------------------
-	-- update container reference to destination container
+	-- Update container reference to destination container
 	-- and update material status (if retiring)
 	-- for biomaterial items (if any)
 	---------------------------------------------------
 	--
 	UPDATE T_Cell_Culture
-	SET 
-		CC_Container_ID = @contID,
-		CC_Material_Active = CASE WHEN @mode = 'retire_items' THEN 'Inactive' ELSE CC_Material_Active END
-	WHERE CC_ID IN (SELECT ID FROM @material_items WHERE iType = 'B')
+	SET CC_Container_ID = CASE
+	                          WHEN @mode = 'move_material' THEN @contID
+	                          ELSE CC_Container_ID
+	                      END,
+	    CC_Material_Active = CASE
+	                             WHEN @mode = 'retire_items' THEN 'Inactive'
+	                             ELSE CC_Material_Active
+	                         END
+	WHERE CC_ID IN ( SELECT ID FROM @material_items WHERE iType = 'B' )
    	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -301,15 +331,21 @@ return @myError
 	end
 
 	---------------------------------------------------
-	-- update container reference to destination container
+	-- Update container reference to destination container
 	-- and update material status (if retiring)
 	-- for experiment items (if any)
 	---------------------------------------------------
 	--
 	UPDATE T_Experiments
-	SET 
-		EX_Container_ID = @contID,
-		Ex_Material_Active = CASE WHEN @mode = 'retire_items' THEN 'Inactive' ELSE Ex_Material_Active END
+	SET EX_Container_ID = CASE
+	                          WHEN @mode = 'move_material' THEN @contID
+	                          ELSE EX_Container_ID
+	                      END,
+	    Ex_Material_Active = CASE
+	                             WHEN @mode = 'retire_items' THEN 'Inactive'
+	                             ELSE Ex_Material_Active
+	                         END
+
 	WHERE Exp_ID IN (SELECT ID FROM @material_items WHERE iType = 'E')
    	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -322,11 +358,35 @@ return @myError
 	end
 
 	---------------------------------------------------
-	-- set up appropriate label for log
+	-- Update container reference to destination container
+	-- for reference compounds (if any)
+	---------------------------------------------------
+	--
+	UPDATE T_Reference_Compound
+	SET Container_ID = CASE
+	                       WHEN @mode = 'move_material' THEN @contID
+	                       ELSE Container_ID
+	                   END,
+	    Active = CASE
+	                 WHEN @mode = 'retire_items' THEN 0
+	                 ELSE Active
+	             END
+	WHERE Compound_ID IN (SELECT ID FROM @material_items WHERE iType = 'R')
+   	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+	begin
+		rollback transaction @transName
+		set @message = 'Error updating container reference for reference compounds'
+		return 51010
+	end
+	
+	---------------------------------------------------
+	-- Set up appropriate label for log
 	---------------------------------------------------
 
-	declare @moveType varchar(128)
-	set @moveType = '??'
+	Declare @moveType varchar(128) = '??'
 
 	if @mode = 'retire_items'
 		set @moveType = 'Material Retirement'
@@ -335,7 +395,7 @@ return @myError
 		set @moveType = 'Material Move'
 
 	---------------------------------------------------
-	-- make log entries
+	-- Make log entries
 	---------------------------------------------------
 	--
 	INSERT INTO T_Material_Log (
@@ -367,6 +427,7 @@ return @myError
 	commit transaction @transName
 
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialItems] TO [DDL_Viewer] AS [dbo]
