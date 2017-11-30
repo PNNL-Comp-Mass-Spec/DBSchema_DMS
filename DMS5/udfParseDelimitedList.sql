@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 	
-CREATE FUNCTION dbo.udfParseDelimitedList
+CREATE FUNCTION [dbo].[udfParseDelimitedList]
 /****************************************************	
 **	Parses the text in @DelimitedList and returns a table
 **	containing the values
@@ -40,7 +40,7 @@ BEGIN
 	
 	Declare @Value varchar(2048)
 
-	Declare @procedureNameForUsageLog varchar(255) = 'udfParseDelimitedList_' + @CallingProcedure
+	-- Declare @procedureNameForUsageLog varchar(255) = 'udfParseDelimitedList_' + @CallingProcedure
 
 	-- Uncomment the following to log usage of this procedure to a file in C:\temp\
 	-- Requirements for this to work:
