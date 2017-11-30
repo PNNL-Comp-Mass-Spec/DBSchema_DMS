@@ -4,24 +4,27 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Dataset_Tracking
+CREATE VIEW [dbo].[V_Dataset_Tracking]
 AS
-SELECT dbo.T_Dataset.Dataset_Num AS Dataset, 
-   dbo.T_DatasetStateName.DSS_name AS State, 
-   dbo.T_Dataset.DS_created AS Created, 
-   dbo.T_Experiments.Experiment_Num AS Experiment, 
-   dbo.T_Experiments.EX_created AS [Created (Ex)], 
-   dbo.T_Experiments.EX_cell_culture_list AS [Cell Cultures], 
-   dbo.T_Campaign.Campaign_Num AS Campaign, 
-   dbo.T_Dataset.Dataset_ID AS #ID
-FROM dbo.T_Dataset INNER JOIN
-   dbo.T_Experiments ON 
-   dbo.T_Dataset.Exp_ID = dbo.T_Experiments.Exp_ID INNER JOIN
-   dbo.T_Campaign ON 
-   dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID
-    INNER JOIN
-   dbo.T_DatasetStateName ON 
-   dbo.T_Dataset.DS_state_ID = dbo.T_DatasetStateName.Dataset_state_ID
+SELECT DS.Dataset_Num AS Dataset,
+       DSN.DSS_name AS State,
+       DS.DS_created AS Created,
+       E.Experiment_Num AS Experiment,
+       E.EX_created AS [Created (Ex)],
+       CCE.Cell_Culture_List AS [Cell Cultures],
+       C.Campaign_Num AS Campaign,
+       DS.Dataset_ID AS [#ID]
+FROM T_Dataset DS
+     INNER JOIN T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
+     INNER JOIN T_Campaign C
+       ON E.EX_campaign_ID = C.Campaign_ID
+     INNER JOIN T_DatasetStateName DSN
+       ON DS.DS_state_ID = DSN.Dataset_state_ID
+     LEFT OUTER JOIN T_Cached_Experiment_Components CCE
+       ON E.Exp_ID = CCE.Exp_ID
+
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Tracking] TO [DDL_Viewer] AS [dbo]
 GO

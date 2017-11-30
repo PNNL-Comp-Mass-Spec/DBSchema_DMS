@@ -17,7 +17,8 @@ SELECT E.Experiment_Num AS Name,
        Enz.Enzyme_Name AS [Digestion Enzyme],
        E.EX_lab_notebook_ref AS [Lab Notebook],
        C.Campaign_Num AS Campaign,
-       E.EX_cell_culture_list AS [Cell Cultures],
+       CEC.Cell_Culture_List AS [Cell Cultures],
+       CEC.Reference_Compound_List AS [Ref Compounds],
        E.EX_Labelling AS Labelling,
        IntStd1.Name AS [Predigest Int Std],
        IntStd2.Name AS [Postdigest Int Std],
@@ -35,7 +36,8 @@ FROM dbo.T_Experiments E
        ON E.EX_postdigest_internal_std_ID = IntStd2.Internal_Std_Mix_ID
      INNER JOIN dbo.T_Organisms Org
        ON E.Ex_organism_ID = Org.Organism_ID
-
+     LEFT OUTER JOIN T_Cached_Experiment_Components CEC
+       ON E.Exp_ID = CEC.Exp_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Metadata] TO [DDL_Viewer] AS [dbo]

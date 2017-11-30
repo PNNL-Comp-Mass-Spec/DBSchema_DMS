@@ -16,7 +16,8 @@ SELECT E.Exp_ID AS ID,
        E.EX_created AS Created,
        C.Campaign_Num AS Campaign,
        BTO.Tissue,
-       E.EX_cell_culture_list AS [Cell Cultures],
+       CEC.Cell_Culture_List AS [Cell Cultures],
+       CEC.Reference_Compound_List AS [Ref Compounds],
        Enz.Enzyme_Name AS Enzyme,
        E.EX_lab_notebook_ref AS Notebook,
        E.EX_Labelling AS Labelling,
@@ -47,7 +48,8 @@ FROM T_Experiments E
        ON MC.Location_ID = ML.ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
 	  ON E.EX_Tissue_ID = BTO.Identifier
-
+     LEFT OUTER JOIN T_Cached_Experiment_Components CEC
+       ON E.Exp_ID = CEC.Exp_ID
 
 
 GO

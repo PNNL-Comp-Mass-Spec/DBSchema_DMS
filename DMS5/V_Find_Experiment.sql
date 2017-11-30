@@ -13,7 +13,7 @@ SELECT E.Experiment_Num AS Experiment,
        E.EX_comment AS [Comment],
        E.EX_created AS Created,
        C.Campaign_Num AS Campaign,
-       E.EX_cell_culture_list AS [Cell Cultures],
+       CCE.Cell_culture_list AS [Cell Cultures],
        E.Exp_ID AS ID
 FROM dbo.T_Experiments E
      INNER JOIN dbo.T_Campaign C
@@ -22,7 +22,8 @@ FROM dbo.T_Experiments E
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN dbo.T_Users U
        ON E.EX_researcher_PRN = U.U_PRN
-
+     LEFT OUTER JOIN T_Cached_Experiment_Components CCE
+       ON E.Exp_ID = CCE.Exp_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Experiment] TO [DDL_Viewer] AS [dbo]

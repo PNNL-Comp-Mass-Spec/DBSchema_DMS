@@ -4,19 +4,22 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Experiment_Cell_Culture_Report
+CREATE VIEW [dbo].[V_Experiment_Cell_Culture_Report]
 AS
-SELECT dbo.V_Experiment_Report.Experiment, 
-   dbo.V_Experiment_Report.Researcher, 
-   dbo.V_Experiment_Report.Organism, 
-   dbo.V_Experiment_Report.Comment, 
-   dbo.T_Cell_Culture.CC_Name AS [#Cell Culture]
-FROM dbo.T_Experiment_Cell_Cultures INNER JOIN
-   dbo.T_Cell_Culture ON 
-   dbo.T_Experiment_Cell_Cultures.CC_ID = dbo.T_Cell_Culture.CC_ID
-    INNER JOIN
-   dbo.V_Experiment_Report ON 
-   dbo.T_Experiment_Cell_Cultures.Exp_ID = dbo.V_Experiment_Report.#ID
+SELECT E.Experiment_Num AS Experiment,
+       E.EX_researcher_PRN AS Researcher,
+       Org.OG_name AS Organism,
+       E.EX_comment AS [Comment],
+       CC.CC_Name AS [#Cell Culture]
+FROM T_Experiment_Cell_Cultures ECC
+     INNER JOIN T_Experiments E
+       ON ECC.Exp_ID = E.Exp_ID
+     INNER JOIN T_Organisms Org
+       ON E.EX_organism_ID = Org.Organism_ID
+     INNER JOIN T_Cell_Culture CC
+       ON ECC.CC_ID = CC.CC_ID
+
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Cell_Culture_Report] TO [DDL_Viewer] AS [dbo]
 GO

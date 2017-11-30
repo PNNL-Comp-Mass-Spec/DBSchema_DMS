@@ -13,7 +13,6 @@ SELECT E.Experiment_Num AS Experiment,
        E.EX_comment AS [Comment],
        E.EX_created AS Created,
        C.Campaign_Num AS Campaign,
-       -- Deprecated in June 2017: E.EX_cell_culture_list AS [Cell Cultures], 
        E.EX_sample_prep_request_ID AS [#ID]
 FROM dbo.T_Experiments E
      INNER JOIN dbo.T_Campaign C
