@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SyncWithDMS5
+CREATE Procedure [dbo].[SyncWithDMS5]
 /****************************************************
 ** 
 **	Desc:	Synchronize data with database DMS5
@@ -21,6 +21,8 @@ CREATE Procedure SyncWithDMS5
 **			02/23/2017 mem - Add RDS_Cart_Config_ID to T_Requested_Run
 **			04/11/2017 mem - Rename columns in T_EMSL_Instrument_Usage_Report
 **			04/21/2017 mem - Add AD_instrumentExclCriteria to T_Predefined_Analysis
+**			11/29/2017 mem - Remove deprecated fields from T_Cell_Culture
+**			                 Add T_Reference_Compound, T_Cached_Experiment_Components, T_Experiment_Cell_Cultures, and T_Experiment_Reference_Compounds
 **    
 *****************************************************/
 (
@@ -2311,96 +2313,6 @@ As
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
 
-		Set @tableName = 'T_Cell_Culture'
-		Print 'Updating ' + @tableName
-		If @infoOnly = 0
-		Begin
-			Truncate Table #Tmp_SummaryOfChanges
-			SET IDENTITY_INSERT [dbo].[T_Cell_Culture] ON;
-			 
-			MERGE [dbo].[T_Cell_Culture] AS t
-			USING (SELECT * FROM [DMS5].[dbo].[T_Cell_Culture]) as s
-			ON ( t.[CC_ID] = s.[CC_ID])
-			WHEN MATCHED AND (
-			    t.[CC_Name] <> s.[CC_Name] OR
-			    t.[CC_Container_ID] <> s.[CC_Container_ID] OR
-			    t.[CC_Material_Active] <> s.[CC_Material_Active] OR
-			    ISNULL( NULLIF(t.[CC_Source_Name], s.[CC_Source_Name]),
-			            NULLIF(s.[CC_Source_Name], t.[CC_Source_Name])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Contact_PRN], s.[CC_Contact_PRN]),
-			            NULLIF(s.[CC_Contact_PRN], t.[CC_Contact_PRN])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_PI_PRN], s.[CC_PI_PRN]),
-			            NULLIF(s.[CC_PI_PRN], t.[CC_PI_PRN])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Type], s.[CC_Type]),
-			            NULLIF(s.[CC_Type], t.[CC_Type])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Reason], s.[CC_Reason]),
-			            NULLIF(s.[CC_Reason], t.[CC_Reason])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Comment], s.[CC_Comment]),
-			            NULLIF(s.[CC_Comment], t.[CC_Comment])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Campaign_ID], s.[CC_Campaign_ID]),
-			            NULLIF(s.[CC_Campaign_ID], t.[CC_Campaign_ID])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[CC_Created], s.[CC_Created]),
-			            NULLIF(s.[CC_Created], t.[CC_Created])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Gene_Name], s.[Gene_Name]),
-			            NULLIF(s.[Gene_Name], t.[Gene_Name])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Gene_Location], s.[Gene_Location]),
-			            NULLIF(s.[Gene_Location], t.[Gene_Location])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Mod_Count], s.[Mod_Count]),
-			            NULLIF(s.[Mod_Count], t.[Mod_Count])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Modifications], s.[Modifications]),
-			            NULLIF(s.[Modifications], t.[Modifications])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Mass], s.[Mass]),
-			            NULLIF(s.[Mass], t.[Mass])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Purchase_Date], s.[Purchase_Date]),
-			            NULLIF(s.[Purchase_Date], t.[Purchase_Date])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Peptide_Purity], s.[Peptide_Purity]),
-			            NULLIF(s.[Peptide_Purity], t.[Peptide_Purity])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[Purchase_Quantity], s.[Purchase_Quantity]),
-			            NULLIF(s.[Purchase_Quantity], t.[Purchase_Quantity])) IS NOT NULL
-			    )
-			THEN UPDATE SET 
-			    [CC_Name] = s.[CC_Name],
-			    [CC_Source_Name] = s.[CC_Source_Name],
-			    [CC_Contact_PRN] = s.[CC_Contact_PRN],
-			    [CC_PI_PRN] = s.[CC_PI_PRN],
-			    [CC_Type] = s.[CC_Type],
-			    [CC_Reason] = s.[CC_Reason],
-			    [CC_Comment] = s.[CC_Comment],
-			    [CC_Campaign_ID] = s.[CC_Campaign_ID],
-			    [CC_Container_ID] = s.[CC_Container_ID],
-			    [CC_Material_Active] = s.[CC_Material_Active],
-			    [CC_Created] = s.[CC_Created],
-			    [Gene_Name] = s.[Gene_Name],
-			    [Gene_Location] = s.[Gene_Location],
-			    [Mod_Count] = s.[Mod_Count],
-			    [Modifications] = s.[Modifications],
-			    [Mass] = s.[Mass],
-			    [Purchase_Date] = s.[Purchase_Date],
-			    [Peptide_Purity] = s.[Peptide_Purity],
-			    [Purchase_Quantity] = s.[Purchase_Quantity]
-			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([CC_Name], [CC_Source_Name], [CC_Contact_PRN], [CC_PI_PRN], [CC_Type], [CC_Reason], [CC_Comment], [CC_Campaign_ID], [CC_ID], [CC_Container_ID], [CC_Material_Active], [CC_Created], [Gene_Name], [Gene_Location], [Mod_Count], [Modifications], [Mass], [Purchase_Date], [Peptide_Purity], [Purchase_Quantity])
-			    VALUES(s.[CC_Name], s.[CC_Source_Name], s.[CC_Contact_PRN], s.[CC_PI_PRN], s.[CC_Type], s.[CC_Reason], s.[CC_Comment], s.[CC_Campaign_ID], s.[CC_ID], s.[CC_Container_ID], s.[CC_Material_Active], s.[CC_Created], s.[Gene_Name], s.[Gene_Location], s.[Mod_Count], s.[Modifications], s.[Mass], s.[Purchase_Date], s.[Peptide_Purity], s.[Purchase_Quantity])
-			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
-			OUTPUT @tableName, $action,
-			       Cast(Inserted.[CC_ID] as varchar(12)),
-			       Cast(Deleted.[CC_ID] as varchar(12))
-			       INTO #Tmp_SummaryOfChanges;
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			 
-			SET IDENTITY_INSERT [dbo].[T_Cell_Culture] OFF;
-
-			If @myError <> 0 
-			Begin
-				Set @message = 'Error updating ' + @tableName
-				Goto Done
-			End
-			
-			If @myRowCount > 0
-				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
-		End
-
 		Set @tableName = 'T_Organisms'
 		Print 'Updating ' + @tableName
 		If @infoOnly = 0
@@ -2493,6 +2405,162 @@ As
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
 
+
+		Set @tableName = 'T_Cell_Culture'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			SET IDENTITY_INSERT [dbo].[T_Cell_Culture] ON;
+			 
+			MERGE [dbo].[T_Cell_Culture] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Cell_Culture]) as s
+			ON ( t.[CC_ID] = s.[CC_ID])
+			WHEN MATCHED AND (
+			    t.[CC_Name] <> s.[CC_Name] OR
+			    t.[CC_Container_ID] <> s.[CC_Container_ID] OR
+			    t.[CC_Material_Active] <> s.[CC_Material_Active] OR
+			    ISNULL( NULLIF(t.[CC_Source_Name], s.[CC_Source_Name]),
+			            NULLIF(s.[CC_Source_Name], t.[CC_Source_Name])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Contact_PRN], s.[CC_Contact_PRN]),
+			            NULLIF(s.[CC_Contact_PRN], t.[CC_Contact_PRN])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_PI_PRN], s.[CC_PI_PRN]),
+			            NULLIF(s.[CC_PI_PRN], t.[CC_PI_PRN])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Type], s.[CC_Type]),
+			            NULLIF(s.[CC_Type], t.[CC_Type])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Reason], s.[CC_Reason]),
+			            NULLIF(s.[CC_Reason], t.[CC_Reason])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Comment], s.[CC_Comment]),
+			            NULLIF(s.[CC_Comment], t.[CC_Comment])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Campaign_ID], s.[CC_Campaign_ID]),
+			            NULLIF(s.[CC_Campaign_ID], t.[CC_Campaign_ID])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[CC_Created], s.[CC_Created]),
+			            NULLIF(s.[CC_Created], t.[CC_Created])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Gene_Name], s.[Gene_Name]),
+			            NULLIF(s.[Gene_Name], t.[Gene_Name])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Gene_Location], s.[Gene_Location]),
+			            NULLIF(s.[Gene_Location], t.[Gene_Location])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Mod_Count], s.[Mod_Count]),
+			            NULLIF(s.[Mod_Count], t.[Mod_Count])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Modifications], s.[Modifications]),
+			            NULLIF(s.[Modifications], t.[Modifications])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Mass], s.[Mass]),
+			            NULLIF(s.[Mass], t.[Mass])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Purchase_Date], s.[Purchase_Date]),
+			            NULLIF(s.[Purchase_Date], t.[Purchase_Date])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Peptide_Purity], s.[Peptide_Purity]),
+			            NULLIF(s.[Peptide_Purity], t.[Peptide_Purity])) IS NOT NULL OR
+			    ISNULL( NULLIF(t.[Purchase_Quantity], s.[Purchase_Quantity]),
+			            NULLIF(s.[Purchase_Quantity], t.[Purchase_Quantity])) IS NOT NULL
+			    )
+			THEN UPDATE SET 
+			    [CC_Name] = s.[CC_Name],
+			    [CC_Source_Name] = s.[CC_Source_Name],
+			    [CC_Contact_PRN] = s.[CC_Contact_PRN],
+			    [CC_PI_PRN] = s.[CC_PI_PRN],
+			    [CC_Type] = s.[CC_Type],
+			    [CC_Reason] = s.[CC_Reason],
+			    [CC_Comment] = s.[CC_Comment],
+			    [CC_Campaign_ID] = s.[CC_Campaign_ID],
+			    [CC_Container_ID] = s.[CC_Container_ID],
+			    [CC_Material_Active] = s.[CC_Material_Active],
+			    [CC_Created] = s.[CC_Created]
+			WHEN NOT MATCHED BY TARGET THEN
+			    INSERT([CC_Name], [CC_Source_Name], [CC_Contact_PRN], [CC_PI_PRN], [CC_Type], [CC_Reason], [CC_Comment], [CC_Campaign_ID], [CC_ID], [CC_Container_ID], [CC_Material_Active], [CC_Created], [Gene_Name], [Gene_Location], [Mod_Count], [Modifications], [Mass], [Purchase_Date], [Peptide_Purity], [Purchase_Quantity])
+			    VALUES(s.[CC_Name], s.[CC_Source_Name], s.[CC_Contact_PRN], s.[CC_PI_PRN], s.[CC_Type], s.[CC_Reason], s.[CC_Comment], s.[CC_Campaign_ID], s.[CC_ID], s.[CC_Container_ID], s.[CC_Material_Active], s.[CC_Created], s.[Gene_Name], s.[Gene_Location], s.[Mod_Count], s.[Modifications], s.[Mass], s.[Purchase_Date], s.[Peptide_Purity], s.[Purchase_Quantity])
+			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
+			OUTPUT @tableName, $action,
+			       Cast(Inserted.[CC_ID] as varchar(12)),
+			       Cast(Deleted.[CC_ID] as varchar(12))
+			       INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			 
+			SET IDENTITY_INSERT [dbo].[T_Cell_Culture] OFF;
+
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
+
+		Set @tableName = 'T_Reference_Compound'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			SET IDENTITY_INSERT [dbo].[T_Reference_Compound] ON;
+
+			MERGE [dbo].[T_Reference_Compound] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Reference_Compound]) as s
+			ON ( t.[Compound_ID] = s.[Compound_ID])
+			WHEN MATCHED AND (
+				t.[Compound_Name] <> s.[Compound_Name] OR
+				t.[Campaign_ID] <> s.[Campaign_ID] OR
+				t.[Container_ID] <> s.[Container_ID] OR
+				t.[Created] <> s.[Created] OR
+				t.[Active] <> s.[Active] OR
+				ISNULL( NULLIF(t.[Description], s.[Description]),
+						NULLIF(s.[Description], t.[Description])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[PubChem_CID], s.[PubChem_CID]),
+						NULLIF(s.[PubChem_CID], t.[PubChem_CID])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Contact_PRN], s.[Contact_PRN]),
+						NULLIF(s.[Contact_PRN], t.[Contact_PRN])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Supplier], s.[Supplier]),
+						NULLIF(s.[Supplier], t.[Supplier])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Product_ID], s.[Product_ID]),
+						NULLIF(s.[Product_ID], t.[Product_ID])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Purchase_Date], s.[Purchase_Date]),
+						NULLIF(s.[Purchase_Date], t.[Purchase_Date])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Purity], s.[Purity]),
+						NULLIF(s.[Purity], t.[Purity])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Purchase_Quantity], s.[Purchase_Quantity]),
+						NULLIF(s.[Purchase_Quantity], t.[Purchase_Quantity])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Mass], s.[Mass]),
+						NULLIF(s.[Mass], t.[Mass])) IS NOT NULL
+				)
+			THEN UPDATE SET 
+				[Compound_Name] = s.[Compound_Name],
+				[Description] = s.[Description],
+				[PubChem_CID] = s.[PubChem_CID],
+				[Campaign_ID] = s.[Campaign_ID],
+				[Container_ID] = s.[Container_ID],
+				[Contact_PRN] = s.[Contact_PRN],
+				[Supplier] = s.[Supplier],
+				[Product_ID] = s.[Product_ID],
+				[Purchase_Date] = s.[Purchase_Date],
+				[Purity] = s.[Purity],
+				[Purchase_Quantity] = s.[Purchase_Quantity],
+				[Mass] = s.[Mass],
+				[Created] = s.[Created],
+				[Active] = s.[Active]
+			WHEN NOT MATCHED BY TARGET THEN
+				INSERT([Compound_ID], [Compound_Name], [Description], [PubChem_CID], [Campaign_ID], [Container_ID], [Contact_PRN], [Supplier], [Product_ID], [Purchase_Date], [Purity], [Purchase_Quantity], [Mass], [Created], [Active])
+				VALUES(s.[Compound_ID], s.[Compound_Name], s.[Description], s.[PubChem_CID], s.[Campaign_ID], s.[Container_ID], s.[Contact_PRN], s.[Supplier], s.[Product_ID], s.[Purchase_Date], s.[Purity], s.[Purchase_Quantity], s.[Mass], s.[Created], s.[Active])
+			WHEN NOT MATCHED BY SOURCE THEN DELETE
+			OUTPUT @tableName, $action,
+				Cast(Inserted.[Compound_ID] as varchar(12)),
+				Cast(Deleted.[Compound_ID] as varchar(12))
+				INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			 
+			SET IDENTITY_INSERT [dbo].[T_Reference_Compound] OFF;
+
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
+
 		Set @tableName = 'T_Experiments'
 		Print 'Updating ' + @tableName
 		If @infoOnly = 0
@@ -2531,8 +2599,6 @@ As
 			            NULLIF(s.[EX_sample_concentration], t.[EX_sample_concentration])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[EX_lab_notebook_ref], s.[EX_lab_notebook_ref]),
 			            NULLIF(s.[EX_lab_notebook_ref], t.[EX_lab_notebook_ref])) IS NOT NULL OR
-			    ISNULL( NULLIF(t.[EX_cell_culture_list], s.[EX_cell_culture_list]),
-			            NULLIF(s.[EX_cell_culture_list], t.[EX_cell_culture_list])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[EX_Labelling], s.[EX_Labelling]),
 			            NULLIF(s.[EX_Labelling], t.[EX_Labelling])) IS NOT NULL OR
 			    ISNULL( NULLIF(t.[EX_wellplate_num], s.[EX_wellplate_num]),
@@ -2552,7 +2618,6 @@ As
 			    [EX_sample_concentration] = s.[EX_sample_concentration],
 			    [EX_lab_notebook_ref] = s.[EX_lab_notebook_ref],
 			    [EX_campaign_ID] = s.[EX_campaign_ID],
-			    [EX_cell_culture_list] = s.[EX_cell_culture_list],
 			    [EX_Labelling] = s.[EX_Labelling],
 			    [EX_Container_ID] = s.[EX_Container_ID],
 			    [Ex_Material_Active] = s.[Ex_Material_Active],
@@ -2566,8 +2631,8 @@ As
 			    [EX_Barcode] = s.[EX_Barcode],
 			    [Last_Used] = s.[Last_Used]
 			WHEN NOT MATCHED BY TARGET THEN
-			    INSERT([Experiment_Num], [EX_researcher_PRN], [EX_organism_ID], [EX_reason], [EX_comment], [EX_created], [EX_sample_concentration], [EX_lab_notebook_ref], [EX_campaign_ID], [EX_cell_culture_list], [EX_Labelling], [Exp_ID], [EX_Container_ID], [Ex_Material_Active], [EX_enzyme_ID], [EX_sample_prep_request_ID], [EX_internal_standard_ID], [EX_postdigest_internal_std_ID], [EX_wellplate_num], [EX_well_num], [EX_Alkylation], [EX_Barcode], [Last_Used])
-			    VALUES(s.[Experiment_Num], s.[EX_researcher_PRN], s.[EX_organism_ID], s.[EX_reason], s.[EX_comment], s.[EX_created], s.[EX_sample_concentration], s.[EX_lab_notebook_ref], s.[EX_campaign_ID], s.[EX_cell_culture_list], s.[EX_Labelling], s.[Exp_ID], s.[EX_Container_ID], s.[Ex_Material_Active], s.[EX_enzyme_ID], s.[EX_sample_prep_request_ID], s.[EX_internal_standard_ID], s.[EX_postdigest_internal_std_ID], s.[EX_wellplate_num], s.[EX_well_num], s.[EX_Alkylation], s.[EX_Barcode], s.[Last_Used])
+			    INSERT([Experiment_Num], [EX_researcher_PRN], [EX_organism_ID], [EX_reason], [EX_comment], [EX_created], [EX_sample_concentration], [EX_lab_notebook_ref], [EX_campaign_ID], [EX_Labelling], [Exp_ID], [EX_Container_ID], [Ex_Material_Active], [EX_enzyme_ID], [EX_sample_prep_request_ID], [EX_internal_standard_ID], [EX_postdigest_internal_std_ID], [EX_wellplate_num], [EX_well_num], [EX_Alkylation], [EX_Barcode], [Last_Used])
+			    VALUES(s.[Experiment_Num], s.[EX_researcher_PRN], s.[EX_organism_ID], s.[EX_reason], s.[EX_comment], s.[EX_created], s.[EX_sample_concentration], s.[EX_lab_notebook_ref], s.[EX_campaign_ID], s.[EX_Labelling], s.[Exp_ID], s.[EX_Container_ID], s.[Ex_Material_Active], s.[EX_enzyme_ID], s.[EX_sample_prep_request_ID], s.[EX_internal_standard_ID], s.[EX_postdigest_internal_std_ID], s.[EX_wellplate_num], s.[EX_well_num], s.[EX_Alkylation], s.[EX_Barcode], s.[Last_Used])
 			WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
 			OUTPUT @tableName, $action,
 			       Cast(Inserted.[Exp_ID] as varchar(12)),
@@ -2587,7 +2652,112 @@ As
 			If @myRowCount > 0
 				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
 		End
+
+		Set @tableName = 'T_Experiment_Cell_Cultures'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			 
+			MERGE [dbo].[T_Experiment_Cell_Cultures] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Experiment_Cell_Cultures]) as s
+			ON ( t.[CC_ID] = s.[CC_ID] AND t.[Exp_ID] = s.[Exp_ID])
+			-- Note: all of the columns in table T_Experiment_Cell_Cultures are primary keys or identity columns; there are no updatable columns
+			WHEN NOT MATCHED BY TARGET THEN
+				INSERT([Exp_ID], [CC_ID])
+				VALUES(s.[Exp_ID], s.[CC_ID])
+			WHEN NOT MATCHED BY SOURCE THEN DELETE
+			OUTPUT @tableName, $action,
+			       Cast(Inserted.[Exp_ID] as varchar(12)),
+			       Cast(Deleted.[Exp_ID] as varchar(12))
+			       INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			 
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
 		
+		Set @tableName = 'T_Experiment_Reference_Compounds'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			 
+			MERGE [dbo].[T_Experiment_Reference_Compounds] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Experiment_Reference_Compounds]) as s
+			ON ( t.[Compound_ID] = s.[Compound_ID] AND t.[Exp_ID] = s.[Exp_ID])
+			-- Note: all of the columns in table T_Experiment_Reference_Compounds are primary keys or identity columns; there are no updatable columns
+			WHEN NOT MATCHED BY TARGET THEN
+				INSERT([Exp_ID], [Compound_ID])
+				VALUES(s.[Exp_ID], s.[Compound_ID])
+			WHEN NOT MATCHED BY SOURCE THEN DELETE
+			OUTPUT @tableName, $action,
+			       Cast(Inserted.[Exp_ID] as varchar(12)),
+			       Cast(Deleted.[Exp_ID] as varchar(12))
+			       INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			 
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
+		
+		Set @tableName = 'T_Cached_Experiment_Components'
+		Print 'Updating ' + @tableName
+		If @infoOnly = 0
+		Begin
+			Truncate Table #Tmp_SummaryOfChanges
+			 
+			MERGE [dbo].[T_Cached_Experiment_Components] AS t
+			USING (SELECT * FROM [DMS5].[dbo].[T_Cached_Experiment_Components]) as s
+			ON ( t.[Exp_ID] = s.[Exp_ID])
+			WHEN MATCHED AND (
+				t.[Entered] <> s.[Entered] OR
+				t.[Last_affected] <> s.[Last_affected] OR
+				ISNULL( NULLIF(t.[Cell_Culture_List], s.[Cell_Culture_List]),
+						NULLIF(s.[Cell_Culture_List], t.[Cell_Culture_List])) IS NOT NULL OR
+				ISNULL( NULLIF(t.[Reference_Compound_List], s.[Reference_Compound_List]),
+						NULLIF(s.[Reference_Compound_List], t.[Reference_Compound_List])) IS NOT NULL
+				)
+			THEN UPDATE SET 
+				[Cell_Culture_List] = s.[Cell_Culture_List],
+				[Reference_Compound_List] = s.[Reference_Compound_List],
+				[Entered] = s.[Entered],
+				[Last_affected] = s.[Last_affected]
+			WHEN NOT MATCHED BY TARGET THEN
+				INSERT([Exp_ID], [Cell_Culture_List], [Reference_Compound_List], [Entered], [Last_affected])
+				VALUES(s.[Exp_ID], s.[Cell_Culture_List], s.[Reference_Compound_List], s.[Entered], s.[Last_affected])
+			WHEN NOT MATCHED BY SOURCE THEN DELETE
+			OUTPUT @tableName, $action,
+			       Cast(Inserted.[Exp_ID] as varchar(12)),
+			       Cast(Deleted.[Exp_ID] as varchar(12))
+			       INTO #Tmp_SummaryOfChanges;
+			--
+			SELECT @myError = @@error, @myRowCount = @@rowcount
+			 
+			If @myError <> 0 
+			Begin
+				Set @message = 'Error updating ' + @tableName
+				Goto Done
+			End
+			
+			If @myRowCount > 0
+				exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+		End
+
 	End -- </Experiments>
 
 	If @datasets <> 0
@@ -2791,7 +2961,7 @@ As
 			            [T_Dataset] DSTarget ON DSSource.Dataset_ID = DSTarget.Dataset_ID
 			       WHERE DSSource.DS_Created >= @importThreshold OR
 			             Not DSTarget.Dataset_ID IS Null OR
-			             DSSource.Dataset_Num Like 'DataPackage_[0-9]%') as s
+			    DSSource.Dataset_Num Like 'DataPackage_[0-9]%') as s
 			ON ( t.[Dataset_ID] = s.[Dataset_ID])
 			WHEN MATCHED AND (
 			 t.[Dataset_Num] <> s.[Dataset_Num] OR
