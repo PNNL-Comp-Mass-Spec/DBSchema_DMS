@@ -3,41 +3,42 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetExpCellCultureList
+CREATE FUNCTION [dbo].[GetExpCellCultureList]
 /****************************************************
 **
 **	Desc: 
-**  Builds delimited list of cell cultures for
-**  given experiment
+**  Builds delimited list of cell cultures for given experiment
 **
 **	Return value: delimited list
 **
 **	Parameters: 
 **
-**		Auth: grk
-**		Date: 2/4/2005
+**	Auth:	grk
+**	Date:	02/04/2005
+**			11/29/2017 mem - Expand the return value to varchar(2048) and use Coalesce
 **    
 *****************************************************/
 (
-@experimentNum varchar(50)
+	@experimentNum varchar(50)
 )
-RETURNS varchar(1024)
+RETURNS varchar(2048)
 AS
-	BEGIN
-		declare @list varchar(1024)
-		set @list = ''
+BEGIN
+	Declare @list varchar(2048) = null
+	
+	SELECT @list = Coalesce(@list + '; ' + CC.CC_Name, CC.CC_Name)
+	FROM T_Experiment_Cell_Cultures ECC
+		    INNER JOIN T_Experiments E
+		    ON ECC.Exp_ID = E.Exp_ID
+		    INNER JOIN T_Cell_Culture CC
+		    ON ECC.CC_ID = CC.CC_ID
+	WHERE E.Experiment_Num = @experimentNum
 		
-		SELECT 
-			@list = @list + CASE 
-								WHEN @list = '' THEN Cell_Culture_Name
-								ELSE '; ' + Cell_Culture_Name
-							END
-		FROM V_Experiment_Cell_Culture WHERE Experiment_Num = @experimentNum
-		
-		if @list = '' set @list = '(none)'
+	If @list Is Null
+		Set @list = ''
 
-		RETURN @list
-	END
+	RETURN @list
+END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetExpCellCultureList] TO [DDL_Viewer] AS [dbo]

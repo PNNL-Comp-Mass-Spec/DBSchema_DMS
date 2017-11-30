@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddExperimentFractions
+CREATE PROCEDURE [dbo].[AddExperimentFractions]
 /****************************************************
 **
 **	Desc: 
@@ -40,6 +40,9 @@ CREATE PROCEDURE dbo.AddExperimentFractions
 **			08/22/2017 mem - Copy TissueID
 **			08/25/2017 mem - Use TissueID from the Sample Prep Request if @requestOverride is not "parent" and if the prep request has a tissue defined
 **			09/06/2017 mem - Fix data type for @tissueID
+**			11/29/2017 mem - No longer pass @cellCultureList to AddExperimentCellCulture since it now uses temp table #Tmp_ExpToCCMap
+**			                 Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
+**			                 Call AddExperimentReferenceCompound
 **    
 *****************************************************/
 (
@@ -90,7 +93,6 @@ AS
 	Declare @sampleConc varchar(50)
 	Declare @labNotebook varchar(50)
 	Declare @campaignID int
-	Declare @cellCultureList varchar(1024)
 	Declare @labelling varchar(64)
 	Declare @enzymeID int
 	Declare @samplePrepRequest int
@@ -126,6 +128,18 @@ AS
 		RAISERROR (@message, 11, 5)
 	End
 
+	-- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
+	--
+	CREATE TABLE #Tmp_ExpToCCMap (
+		CC_Name varchar(128) not null,
+		CC_ID int null
+	)
+
+	CREATE TABLE #Tmp_ExpToRefCompoundMap (
+		Compound_Name varchar(128) not null,
+		Compound_ID int null
+	)
+	
 	---------------------------------------------------
 	-- Get information for parent experiment
 	---------------------------------------------------
@@ -133,27 +147,25 @@ AS
 	Declare @ParentExperimentID int = 0
 	Declare @parentContainerID int = 0
 	--
-	SELECT
-		@ParentExperimentID = Exp_ID,
-		@researcherPRN = EX_researcher_PRN,
-		@organismID = EX_organism_ID,
-		@reason = EX_reason,
-		@comment = EX_comment,
-		@created = EX_created,
-		@sampleConc = EX_sample_concentration,
-		@labNotebook = EX_lab_notebook_ref,
-		@campaignID = EX_campaign_ID,
-		@cellCultureList = EX_cell_culture_list,
-		@labelling = EX_Labelling,
-		@enzymeID = EX_enzyme_ID,
-		@samplePrepRequest = EX_sample_prep_request_ID,
-		@internalStandardID = EX_internal_standard_ID,
-		@postdigestIntStdID = EX_postdigest_internal_std_ID,
-		@parentContainerID = EX_Container_ID,
-		@alkylation = EX_Alkylation,
-		@tissueID = EX_Tissue_ID
-	FROM	T_Experiments
-	WHERE (Experiment_Num = @parentExperiment)
+	SELECT @ParentExperimentID = Exp_ID,
+	       @researcherPRN = EX_researcher_PRN,
+	       @organismID = EX_organism_ID,
+	       @reason = EX_reason,
+	       @comment = EX_comment,
+	       @created = EX_created,
+	       @sampleConc = EX_sample_concentration,
+	       @labNotebook = EX_lab_notebook_ref,
+	       @campaignID = EX_campaign_ID,
+	       @labelling = EX_Labelling,
+	       @enzymeID = EX_enzyme_ID,
+	       @samplePrepRequest = EX_sample_prep_request_ID,
+	       @internalStandardID = EX_internal_standard_ID,
+	       @postdigestIntStdID = EX_postdigest_internal_std_ID,
+	       @parentContainerID = EX_Container_ID,
+	       @alkylation = EX_Alkylation,
+	       @tissueID = EX_Tissue_ID
+	FROM T_Experiments
+	WHERE Experiment_Num = @parentExperiment
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -162,6 +174,38 @@ AS
 		Set @message = 'Could not find parent experiment in database'
 		RAISERROR (@message, 11, 6)
 	End
+
+	---------------------------------------------------
+	-- Cache the cell culture mapping
+	---------------------------------------------------
+	--
+	INSERT INTO #Tmp_ExpToCCMap( CC_Name,
+	                             CC_ID )
+	SELECT CC.CC_Name,
+	       CC.CC_ID
+	FROM T_Experiment_Cell_Cultures ECC
+	     INNER JOIN T_Cell_Culture CC
+	       ON ECC.CC_ID = CC.CC_ID
+	WHERE ECC.Exp_ID = @ParentExperimentID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+	---------------------------------------------------
+	-- Cache the reference compound mapping
+	---------------------------------------------------
+	--
+	INSERT INTO #Tmp_ExpToRefCompoundMap( Compound_Name,
+	                                      Compound_ID )
+	SELECT RC.Compound_Name,
+	       RC.Compound_ID
+	FROM T_Experiment_Reference_Compounds ERC
+	     INNER JOIN T_Reference_Compound RC
+	       ON ERC.Compound_ID = RC.Compound_ID
+	WHERE ERC.Exp_ID = @ParentExperimentID
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
 
 	---------------------------------------------------
 	-- Set up and validate wellplate values
@@ -424,7 +468,6 @@ AS
 			EX_sample_concentration, 
 			EX_lab_notebook_ref, 
 			EX_campaign_ID,
-			EX_cell_culture_list,
 			EX_Labelling,
 			EX_enzyme_ID,
 			EX_sample_prep_request_ID,
@@ -444,7 +487,6 @@ AS
 			@sampleConc, 
 			@labNotebook, 
 			@campaignID,
-			@cellCultureList,
 			@labelling,
 			@enzymeID,
 			@samplePrepRequest,
@@ -467,12 +509,13 @@ AS
 		
 		Set @newExpID = SCOPE_IDENTITY()
 
-		-- Add the cell cultures
+		-- Add the experiment to cell culture mapping
+		-- The stored procedure uses table #Tmp_ExpToCCMap
 		--
 		execute @result = AddExperimentCellCulture
 								@newExpID,
-								@cellCultureList,
-								@message output
+								@updateCachedInfo=0,
+								@message=@message output
 		--
 		If @result <> 0
 		Begin
@@ -481,6 +524,20 @@ AS
 			RAISERROR (@msg, 11, 18)
 		End
 
+		-- Add the experiment to reference compound mapping
+		-- The stored procedure uses table #Tmp_ExpToRefCompoundMap
+		--
+		execute @result = AddExperimentReferenceCompound
+								@newExpID,
+								@updateCachedInfo=1,
+								@message=@message output
+		--
+		If @result <> 0
+		Begin
+			rollback transaction @transName
+			Set @msg = 'Could not add experiment reference compounds to database for experiment: "' + @newExpName + '" ' + @message
+			RAISERROR (@msg, 11, 18)
+		End
 
 		---------------------------------------------------
 		-- Add fractionated experiment reference to experiment group
