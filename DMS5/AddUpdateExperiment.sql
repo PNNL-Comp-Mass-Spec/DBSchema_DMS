@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateExperiment
+CREATE Procedure [dbo].[AddUpdateExperiment]
 /****************************************************
 **
 **	Desc:	Adds a new experiment to DB
@@ -55,6 +55,11 @@ CREATE Procedure dbo.AddUpdateExperiment
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **			09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
+**			11/29/2017 mem - Call udfParseDelimitedList instead of MakeTableFromListDelim
+**			                 Rename #CC to #Tmp_ExpToCCMap
+**			                 No longer pass @cellCultureList to AddExperimentCellCulture since it uses #Tmp_ExpToCCMap
+**			                 Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
+**			                 Add argument @referenceCompoundList
 **
 *****************************************************/
 (
@@ -68,7 +73,8 @@ CREATE Procedure dbo.AddUpdateExperiment
 	@enzymeName varchar(50) = 'Trypsin',
 	@labNotebookRef varchar(64) = 'na',
 	@labelling varchar(64) = 'none',
-	@cellCultureList varchar(200) = '',
+	@cellCultureList varchar(2048) = '',
+	@referenceCompoundList varchar(2048) = '',
 	@samplePrepRequest int = 0,
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
@@ -121,6 +127,7 @@ As
 	Set @enzymeName = LTrim(RTrim(IsNull(@enzymeName, '')))
 	Set @labelling = LTrim(RTrim(IsNull(@labelling, '')))
 	Set @cellCultureList = LTrim(RTrim(IsNull(@cellCultureList, '')))
+	Set @referenceCompoundList = LTrim(RTrim(IsNull(@referenceCompoundList, '')))
 	Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, '')))
 	Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, '')))
 	Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
@@ -399,39 +406,42 @@ As
 	End
 	
 	---------------------------------------------------
-	-- Resolve cell cultures
-	-- Auto-switch from 'none' or 'na' to '(none)'
+	-- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
 	---------------------------------------------------
 	
-	If @cellCultureList IN ('none', 'na', '')
-		Set @cellCultureList = '(none)'
+	CREATE TABLE #Tmp_ExpToCCMap (
+		CC_Name varchar(128) not null,
+		CC_ID int null
+	)
+
+	CREATE TABLE #Tmp_ExpToRefCompoundMap (
+		Compound_Name varchar(128) not null,
+		Compound_ID int null
+	)
+	
+	---------------------------------------------------
+	-- Resolve cell cultures
+	-- Auto-switch from 'none' or 'na' or '(none)' to ''
+	---------------------------------------------------
+	
+	If @cellCultureList IN ('none', 'na', '(none)')
+		Set @cellCultureList = ''
 	
 	-- Replace commas with semicolons
 	If @cellCultureList Like '%,%'
 		Set @cellCultureList = Replace(@cellCultureList, ',', ';')
-		
-	-- create tempoary table to hold names of cell cultures as input
-	--
-	create table #CC (
-		CC_Name varchar(128) not null
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Could not create temporary table for cell culture list', 11, 70)
-
-	-- get names of cell cultures from list argument into table
+	
+	-- Get names of cell cultures from list argument into table
 	--
 	If @cellCultureList Like '%;%'
 	Begin
-		INSERT INTO #CC (CC_Name) 
-		SELECT item 
-		FROM MakeTableFromListDelim(@cellCultureList, ';')
+		INSERT INTO #Tmp_ExpToCCMap (CC_Name) 
+		SELECT Value
+		FROM dbo.udfParseDelimitedList(@cellCultureList, ';', 'AddUpdateExperiment')		
 	End
-	Else
+	Else If @cellCultureList <> ''
 	Begin
-		INSERT INTO #CC (CC_Name) 
+		INSERT INTO #Tmp_ExpToCCMap (CC_Name) 
 		VALUES (@cellCultureList)
 	End
 	--
@@ -440,35 +450,104 @@ As
 	if @myError <> 0
 		RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
 	
-	-- verify that cell cultures exist
+	-- Verify that cell cultures exist
 	--
-	Declare @InvalidCCList varchar(255) = null
+	UPDATE #Tmp_ExpToCCMap
+	SET CC_ID = Src.CC_ID
+	FROM #Tmp_ExpToCCMap Target
+	     INNER JOIN T_Cell_Culture Src
+	       ON Src.CC_Name = Target.CC_Name
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	if @myError <> 0
+		RAISERROR ('Error resolving cell culture name to ID', 11, 80)
 	
-	SELECT @InvalidCCList = Coalesce(@InvalidCCList + ', ' + #CC.CC_Name, #CC.CC_Name)
-	FROM #CC
-	     LEFT OUTER JOIN T_Cell_Culture
-	       ON #CC.CC_Name = T_Cell_Culture.CC_Name
-	WHERE T_Cell_Culture.CC_Name IS NULL
+	Declare @invalidCCList varchar(512) = null
+	
+	SELECT @invalidCCList = Coalesce(@invalidCCList + ', ' + CC_Name, CC_Name)
+	FROM #Tmp_ExpToCCMap
+	WHERE CC_ID IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	if @myError <> 0
-		RAISERROR ('Was not able to check for cell cultures in database', 11, 80)
-	--
-	if IsNull(@InvalidCCList, '') <> ''
-		RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @InvalidCCList)
+		RAISERROR ('Error looking for unresolved cell culture names', 11, 80)
+	
+	if IsNull(@invalidCCList, '') <> ''
+		RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @invalidCCList)
 
+	---------------------------------------------------
+	-- Resolve reference compounds
+	-- Auto-switch from 'none' or 'na' or '(none)' to ''
+	---------------------------------------------------
+	
+	If @referenceCompoundList IN ('none', 'na', '(none)')
+		Set @referenceCompoundList = ''
+	
+	-- Replace commas with semicolons
+	If @referenceCompoundList Like '%,%'
+		Set @referenceCompoundList = Replace(@referenceCompoundList, ',', ';')
+	
+	-- Get names of reference compounds from list argument into table
+	--
+	If @referenceCompoundList Like '%;%'
+	Begin
+		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_Name) 
+		SELECT Value
+		FROM dbo.udfParseDelimitedList(@referenceCompoundList, ';', 'AddUpdateExperiment')		
+	End
+	Else If @referenceCompoundList <> ''
+	Begin
+		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_Name) 
+		VALUES (@referenceCompoundList)
+	End
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+		RAISERROR ('Could not populate temporary table for reference compound list', 11, 90)
+	
+	-- Verify that reference compounds exist
+	--
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Compound_ID = Src.Compound_ID
+	FROM #Tmp_ExpToRefCompoundMap Target
+	     INNER JOIN T_Reference_Compound Src
+	       ON Src.Compound_Name = Target.Compound_Name
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	if @myError <> 0
+		RAISERROR ('Error resolving reference compound name to ID', 11, 91)
+	
+	Declare @invalidRefCompoundList varchar(512) = null
+	
+	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_Name, Compound_Name)
+	FROM #Tmp_ExpToRefCompoundMap
+	WHERE Compound_ID IS NULL
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	--
+	if @myError <> 0
+		RAISERROR ('Error looking for unresolved reference compound names', 11, 92)
+	
+	if IsNull(@invalidRefCompoundList, '') <> ''
+		RAISERROR ('Invalid reference compound name(s): %s', 11, 93, @invalidRefCompoundList)
+
+	---------------------------------------------------
+	-- Add/update the experiment
+	---------------------------------------------------
 
 	Declare @transName varchar(32)
 	Set @logErrors = 1
 	
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	
 	if @Mode = 'add'
 	begin
-
+		---------------------------------------------------
+		-- Action for add mode
+		---------------------------------------------------
+	
 		-- Start transaction
 		--
 		Set @transName = 'AddNewExperiment'
@@ -486,7 +565,6 @@ As
 				EX_Labelling, 
 				EX_lab_notebook_ref, 
 				EX_campaign_ID,
-				EX_cell_culture_list,
 				EX_sample_prep_request_ID,
 				EX_internal_standard_ID,
 				EX_postdigest_internal_std_ID,
@@ -509,7 +587,6 @@ As
 				@labelling, 
 				@labNotebookRef,
 				@campaignID,
-				@cellCultureList,
 				@samplePrepRequest,
 				@internalStandardID,
 				@postdigestIntStdID,
@@ -556,17 +633,29 @@ As
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 3, @experimentID, @StateID, @callingUser
 
-		-- Add the cell cultures
+		-- Add the experiment to cell culture mapping
+		-- The stored procedure uses table #Tmp_ExpToCCMap
 		--
 		execute @result = AddExperimentCellCulture
 								@experimentID,
-								@cellCultureList,
-								@msg output
+								@updateCachedInfo=0,
+								@message=@msg output
 		--
 		if @result <> 0
 			RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
-		--  material movement logging
+		-- Add the experiment to reference compound mapping
+		-- The stored procedure uses table #Tmp_ExpToRefCompoundMap
+		--
+		execute @result = AddExperimentReferenceCompound
+								@experimentID,
+								@updateCachedInfo=1,
+								@message=@msg output
+		--
+		if @result <> 0
+			RAISERROR ('Could not add experiment reference compounds to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+			
+		-- Material movement logging
 		--	
 		if @curContainerID != @contID
 		begin
@@ -579,19 +668,17 @@ As
 				'Experiment added'
 		end
 
-		-- we made it this far, commit
+		-- We made it this far, commit
 		--
 		commit transaction @transName
 
 	end -- add mode
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-
 	if @Mode = 'update' 
 	begin
-		Set @myError = 0
+		---------------------------------------------------
+		-- Action for update mode
+		---------------------------------------------------
 
 		-- Start transaction
 		--
@@ -608,7 +695,6 @@ As
 			EX_Labelling = @labelling, 
 			EX_lab_notebook_ref = @labNotebookRef, 
 			EX_campaign_ID = @campaignID,
-			EX_cell_culture_list = @cellCultureList,
 			EX_sample_prep_request_ID = @samplePrepRequest,
 			EX_internal_standard_ID = @internalStandardID,
 			EX_postdigest_internal_std_ID = @postdigestIntStdID,
@@ -624,31 +710,41 @@ As
 			                      EX_enzyme_ID <> @enzymeID OR
 			                      EX_Labelling <> @labelling OR
 			                      EX_campaign_ID <> @campaignID OR
-			                      EX_cell_culture_list <> @cellCultureList OR
 			                      EX_sample_prep_request_ID <> @samplePrepRequest OR
 			                      EX_Alkylation <> @alkylation
 			                 Then Cast(GetDate() as Date) 
 			                 Else Last_Used 
 			            End
-		WHERE 
-			(Experiment_Num = @experimentNum)
+		WHERE Experiment_Num = @experimentNum
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @experimentNum)
 
-		-- Add the cell cultures
+		-- Update the experiment to cell culture mapping
+		-- The stored procedure uses table #Tmp_ExpToCCMap
 		--
 		execute @result = AddExperimentCellCulture
 								@experimentID,
-								@cellCultureList,
-								@msg output
+								@updateCachedInfo=0,
+								@message=@msg output
 		--
 		if @result <> 0
-			RAISERROR ('Could not update experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+			RAISERROR ('Could not update experiment cell culture mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
-		--  material movement logging
+		-- Update the experiment to reference compound mapping
+		-- The stored procedure uses table #Tmp_ExpToRefCompoundMap
+		--
+		execute @result = AddExperimentReferenceCompound
+								@experimentID,
+								@updateCachedInfo=1,
+								@message=@msg output
+		--
+		if @result <> 0
+			RAISERROR ('Could not update experiment reference compound mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+
+		-- Material movement logging
 		--	
 		if @curContainerID != @contID
 		begin
@@ -661,7 +757,7 @@ As
 				'Experiment updated'
 		end
 
-		-- we made it this far, commit
+		-- We made it this far, commit
 		--
 		commit transaction @transName
 
