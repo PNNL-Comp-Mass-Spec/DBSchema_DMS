@@ -40,8 +40,19 @@ GRANT SELECT ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Cell_Culture] TO [Limited_Table_Write] AS [dbo]
 GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Cell_Culture_ID_Name_Container] ******/
+CREATE CLUSTERED INDEX [IX_T_Cell_Culture_ID_Name_Container] ON [dbo].[T_Cell_Culture]
+(
+	[CC_ID] ASC,
+	[CC_Name] ASC,
+	[CC_Container_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
 /****** Object:  Index [IX_T_Cell_Culture_CC_Campaign_ID] ******/
-CREATE CLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture]
+CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_CC_Campaign_ID] ON [dbo].[T_Cell_Culture]
 (
 	[CC_Campaign_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
@@ -75,13 +86,6 @@ GO
 /****** Object:  Index [IX_T_Cell_Culture_Container_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_Container_ID] ON [dbo].[T_Cell_Culture]
 (
-	[CC_Container_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-/****** Object:  Index [IX_T_Cell_Culture_ID_ContainerID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Cell_Culture_ID_ContainerID] ON [dbo].[T_Cell_Culture]
-(
-	[CC_ID] ASC,
 	[CC_Container_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
