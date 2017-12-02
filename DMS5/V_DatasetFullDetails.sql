@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_DatasetFullDetails
+
+CREATE VIEW [dbo].[V_DatasetFullDetails]
 AS
 SELECT DS.Dataset_Num,
        DS.DS_created,
@@ -48,6 +49,7 @@ FROM T_Dataset DS
        ON E.EX_organism_ID = Org.Organism_ID
      LEFT OUTER JOIN T_Cached_Experiment_Components CCE
        ON E.Exp_ID = CCE.Exp_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DatasetFullDetails] TO [DDL_Viewer] AS [dbo]
