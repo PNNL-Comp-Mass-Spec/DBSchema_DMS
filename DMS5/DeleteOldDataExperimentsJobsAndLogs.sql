@@ -41,6 +41,7 @@ CREATE Procedure DeleteOldDataExperimentsJobsAndLogs
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			12/04/2017 mem - Add T_Experiment_Reference_Compounds
 **    
 *****************************************************/
 (
@@ -668,7 +669,6 @@ AS
 				ON #Tmp_ExperimentsToDelete.Exp_ID = T_Experiment_Cell_Cultures.Exp_ID
 			--
 			Set @message = @message + 'T_Experiment_Cell_Cultures, '
-
 			
 			Set @CurrentLocation = 'DELETE T_Experiment_Group_Members'	
 			DELETE T_Experiment_Group_Members
@@ -687,6 +687,14 @@ AS
 			                                            FROM T_Experiment_Group_Members )
 			--
 			Set @message = @message + 'T_Experiment_Groups, '
+
+			Set @CurrentLocation = 'DELETE T_Experiment_Reference_Compounds'	
+			DELETE T_Experiment_Reference_Compounds
+			FROM #Tmp_ExperimentsToDelete
+				INNER JOIN T_Experiment_Reference_Compounds
+				ON #Tmp_ExperimentsToDelete.Exp_ID = T_Experiment_Reference_Compounds.Exp_ID
+			--
+			Set @message = @message + 'T_Experiment_Cell_Cultures, '
 			
 			Set @CurrentLocation = 'DELETE T_Experiments'
 			DELETE T_Experiments
