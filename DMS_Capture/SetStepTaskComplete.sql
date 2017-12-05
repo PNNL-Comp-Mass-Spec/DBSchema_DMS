@@ -28,6 +28,7 @@ CREATE PROCEDURE SetStepTaskComplete
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			09/21/2017 mem - Added support for @evaluationCode = 9 (tool skipped)
+**			12/04/2017 mem - Rename variables and add logic checks
 **    
 *****************************************************/
 (
@@ -42,8 +43,8 @@ CREATE PROCEDURE SetStepTaskComplete
 As
 	set nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 
@@ -62,20 +63,20 @@ As
 	-- get current state of this job step
 	---------------------------------------------------
 	--
-	declare @processor varchar(64) = ''
-	declare @state tinyint = 0
-	declare @retryCount smallint = 0
-	declare @HoldoffIntervalMinutes int = 30
-	declare @NextTry datetime = GetDate()
-	declare @stepTool varchar(64)
-	declare @outputFolderName varchar(255)
-	declare @datasetID int
+	Declare @processor varchar(64) = ''
+	Declare @initialState tinyint = 0
+	Declare @retryCount smallint = 0
+	Declare @HoldoffIntervalMinutes int = 30
+	Declare @nextTry datetime = GetDate()
+	Declare @stepTool varchar(64)
+	Declare @outputFolderName varchar(255)
+	Declare @datasetID int
 	--
-	SELECT @state = JS.State,
+	SELECT @initialState = JS.State,
 	       @processor = JS.Processor,
 	       @retryCount = JS.Retry_Count,
 	       @HoldoffIntervalMinutes = JS.Holdoff_Interval_Minutes,
-	       @NextTry = JS.Next_Try,
+	       @nextTry = JS.Next_Try,
 	       @stepTool = JS.Step_Tool,
 	       @outputFolderName = JS.Output_Folder_Name,
 	       @datasetID = J.Dataset_ID
@@ -95,40 +96,50 @@ As
 		goto Done
 	End
 	--
-	If @state <> 4
+	If @initialState <> 4
 	Begin
 		set @myError = 67
-		set @message = 'Job step is not in correct state to be completed; job ' + convert(varchar(12), @job) + ', step ' + convert(varchar(12), @step) + ', actual state ' + convert(varchar(6), @state) 
+		set @message = 'Job step is not in correct state to be completed; job ' + convert(varchar(12), @job) + ', step ' + convert(varchar(12), @step) + ', actual state ' + convert(varchar(6), @initialState) 
 		goto Done
 	End
 
 	---------------------------------------------------
 	-- Determine completion state
+	-- Initially assume new state will be 5 (success)
 	---------------------------------------------------
 	--
-	declare @stepState int = 5
+	Declare @newStepState int = 5
 
 	If @completionCode = 0 And @evaluationCode <> 9
-		Set @stepState = 5
+	Begin
+		-- Completed successfully
+		Set @newStepState = 5
+	End
 	Else
 	Begin
-	
+		-- Either completion code is non-zero, or the step was skipped (eval-code 9)
+		
 		If @evaluationCode = 8  -- EVAL_CODE_FAILURE_DO_NOT_RETRY
 		Begin
-			Set @stepState = 6
+			-- Failed
+			Set @newStepState = 6
 			Set @retryCount = 0
 		End
 		
 		If @evaluationCode = 9  -- EVAL_CODE_SKIPPED
 		Begin
-			Set @stepState = 3
+			-- Skipped
+			Set @newStepState = 3
 		End
 		
-		If @stepState <> 3 And (@retryCount > 0 Or @evaluationCode = 3)
+		If Not @newStepState IN (3, 6) And (@retryCount > 0 Or @evaluationCode = 3)
 		Begin
-			If @state = 4
-				Set @stepState = 2
-
+			If @initialState = 4
+			Begin
+				-- Retry the step
+				Set @newStepState = 2
+			End
+			
 			If @retryCount > 0
 			Begin
 				Set @retryCount = @retryCount - 1 -- decrement retry count
@@ -137,8 +148,8 @@ As
 			If @evaluationCode = 3
 			Begin
 				-- The captureTaskManager returns 3 (EVAL_CODE_NETWORK_ERROR_RETRY_CAPTURE) when a network error occurs during capture
-				-- Auto-retry the capture again (even If @retryCount = 0)
-				Set @NextTry = DATEADD(minute, 15, GETDATE())
+				-- Auto-retry the capture again (even if @retryCount is 0)
+				Set @nextTry = DATEADD(minute, 15, GETDATE())
 			End
 			Else
 			Begin
@@ -153,15 +164,18 @@ As
 					                              END
 				End
 				
-				If @stepState <> 5 And @retryCount > 0
-					set @NextTry = DATEADD(minute, @HoldoffIntervalMinutes, GETDATE())
+				If @newStepState <> 5 And @retryCount > 0
+					set @nextTry = DATEADD(minute, @HoldoffIntervalMinutes, GETDATE())
 			End
 				
 		End
 		Else
 		Begin
-			If @stepState <> 3
-				Set @stepState = 6 -- fail
+			If Not @newStepState IN (3, 6)
+			Begin
+				-- Failed
+				Set @newStepState = 6
+			End
 		End
 	End
 
@@ -169,7 +183,7 @@ As
 	-- set up transaction parameters
 	---------------------------------------------------
 	--
-	declare @transName varchar(32)
+	Declare @transName varchar(32)
 	set @transName = 'SetStepTaskComplete'
 		
 	-- Start transaction
@@ -180,7 +194,7 @@ As
 	---------------------------------------------------
 	--
 	UPDATE T_Job_Steps
-	SET    State = @stepState,
+	SET    State = @newStepState,
 		   Finish = Getdate(),
 		   Completion_Code = @completionCode,
 		   Completion_Message = @completionMessage,
@@ -188,7 +202,7 @@ As
 		   Evaluation_Message = @evaluationMessage,
 		   Retry_Count = @retryCount,
 		   Holdoff_Interval_Minutes = @HoldoffIntervalMinutes,
-		   Next_Try = @NextTry
+		   Next_Try = @nextTry
 	WHERE  (Job = @job)
 	AND (Step_Number = @step)
  	--
