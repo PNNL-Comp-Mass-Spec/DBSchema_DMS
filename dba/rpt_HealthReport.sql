@@ -97,6 +97,10 @@ AS
 **	07/09/2013		Michael Rounds								Added Orphaned Users section
 **	07/23/2013		Michael Rounds			2.5					Tweaked to support Case-sensitive
 **	04/15/2016		Matthew Monroe			2.5.1				Add check for @MaxDeadLockRows = 0
+**	05/30/2017      Matthew Monroe          2.5.2               Delete LongRunning-History jobs from #JOBSTATUS if they started over 30 days ago
+**	                                                            Use the values for @MaxDeadLockRows, @MaxErrorLogRows, and @MinLogFileSizeMB only if Enabled is 1
+**  12/05/2017      Matthew Monroe          2.5.3               Round Used Memory to the nearest MB
+**	                                                            Display Bytes Read and Written as MB and GB
 **
 ***************************************************************************************************************/
 BEGIN
@@ -168,13 +172,13 @@ BEGIN
 	SELECT @ShowFullJobInfo =          COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowFullJobInfo'
 	SELECT @ShowSchemaChanges =        COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowSchemaChanges'
 	SELECT @ShowBackups =              COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowBackups'
-	SELECT @ShowCPUStats =           COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowCPUStats'
+	SELECT @ShowCPUStats =             COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowCPUStats'
 	SELECT @ShowPerfStats =            COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowPerfStats'
 	SELECT @ShowEmptySections =        COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowEmptySections'
 	SELECT @ShowLogBackups =           COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowLogBackups'
-	SELECT @MaxDeadLockRows =            Cast(Value as int)  FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MaxDeadlockRows'
-	SELECT @MaxErrorLogRows =            Cast(Value as int)  FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MaxErrorLogRows'
-	SELECT @MinLogFileSizeMB =            Cast(Value as int) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MinLogFileSizeMB'
+	SELECT @MaxDeadLockRows =          Cast(Value as int)  FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MaxDeadlockRows' AND IsNull(Enabled, 0) > 0
+	SELECT @MaxErrorLogRows =          Cast(Value as int)  FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MaxErrorLogRows' AND IsNull(Enabled, 0) > 0
+	SELECT @MinLogFileSizeMB =         Cast(Value as int) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'MinLogFileSizeMB' AND IsNull(Enabled, 0) > 0
 	SELECT @ShowErrorLog =             COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowErrorLog'
 	SELECT @ShowOrphanedUsers =        COALESCE([Enabled],1) FROM [dba].dbo.AlertSettings WHERE AlertName = 'HealthReport' AND VariableName = 'ShowOrphanedUsers'	
 	SELECT @ReportTitle = '[dba]Database Health Report ('+ CONVERT(NVARCHAR(128), SERVERPROPERTY('ServerName')) + ')'
@@ -241,7 +245,7 @@ BEGIN
 	SELECT @SQLVersion = 'Microsoft SQL Server ' + CONVERT(NVARCHAR(128), SERVERPROPERTY('productversion')) + ' ' + 
 		CONVERT(NVARCHAR(128), SERVERPROPERTY('productlevel')) + ' ' + CONVERT(NVARCHAR(128), SERVERPROPERTY('edition'))
 
-	SELECT @ServerMemory = COALESCE(CAST(cntr_value/1024.0 AS NVARCHAR),'N/A') FROM sys.dm_os_performance_counters WHERE counter_name = 'Total Server Memory (KB)'
+	SELECT @ServerMemory = COALESCE(CAST(CAST(cntr_value/1024.0 AS INT) AS NVARCHAR),'N/A') FROM sys.dm_os_performance_counters WHERE counter_name = 'Total Server Memory (KB)'
 	SELECT @ServerCollation = COALESCE(CONVERT(NVARCHAR(128), SERVERPROPERTY('Collation')),'N/A')
 
 	SELECT @SingleUser = CASE SERVERPROPERTY ('IsSingleUser')
@@ -992,6 +996,12 @@ BEGIN
 
 	DROP TABLE #TEMPJOB
 
+	/* Delete LongRunning-History jobs from #JOBSTATUS if they started over 30 days ago */
+	
+	DELETE FROM #JOBSTATUS
+	WHERE RunTimeStatus = 'LongRunning-History' AND 
+	      StartTime < DateAdd(Day, -30, GetDate())
+
 	/* Replication Distributor */
 	CREATE TABLE #REPLINFO (
 		distributor NVARCHAR(128) NULL, 
@@ -1213,7 +1223,7 @@ BEGIN
 		FROM #ERRORLOG
 		WHERE LogDate >= DATEADD(day, -@WindowSizeDays, GETDATE())
 		      AND ProcessInfo LIKE 'spid%'
-		      AND	 [Text] LIKE '   process id=%'
+		      AND	 [Text] LIKE ' process id=%'
 
 		INSERT INTO #DEADLOCKINFO (DeadLockDate, DBName, ProcessInfo, VictimHostname, VictimLogin, VictimSPID, LockingHostname, LockingLogin, LockingSPID)
 		SELECT 
@@ -1697,9 +1707,9 @@ BEGIN
 		  <tr>
 			<th width="225">FileName</th>
 			<th width="100"># Reads</th>
-			<th width="175">KBytes Read</th>
+			<th width="175">MBytes Read</th>
 			<th width="100"># Writes</th>
-			<th width="175">KBytes Written</th>
+			<th width="175">MBytes Written</th>
 			<th width="125">IO Read Wait (MS)</th>
 			<th width="125">IO Write Wait (MS)</th>
 			<th width="125">Cumulative IO (GB)</th>
@@ -1708,11 +1718,11 @@ BEGIN
 	SELECT @HTML = @HTML +
 		'<tr><td width="225" class="c1">' + COALESCE([FileName],'N/A') +'</td>' +
 		'<td width="100" class="c2">' + COALESCE(CAST(NumberReads AS NVARCHAR),'0') +'</td>' +
-		'<td width="175" class="c1">' + COALESCE(CONVERT(NVARCHAR(50), KBytesRead),'0') + ' (' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesRead / 1024 AS NUMERIC(18,2))),'0') +
-			  ' MB)' +'</td>' +
+		'<td width="175" class="c1">' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesRead / 1024 AS NUMERIC(18,2))),'0') + ' (' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesRead / 1024 /1024 AS NUMERIC(18,2))),'0') +
+			  ' GB)' +'</td>' +
 		'<td width="100" class="c2">' + COALESCE(CAST(NumberWrites AS NVARCHAR),'0') +'</td>' +
-		'<td width="175" class="c1">' + COALESCE(CONVERT(NVARCHAR(50), KBytesWritten),'0') + ' (' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesWritten / 1024 AS NUMERIC(18,2)) ),'0') +
-			  ' MB)' +'</td>' +
+		'<td width="175" class="c1">' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesWritten / 1024 AS NUMERIC(18,2))),'0') + ' (' + COALESCE(CONVERT(NVARCHAR(50), CAST(KBytesWritten / 1024 / 1024 AS NUMERIC(18,2))),'0') +
+			  ' GB)' +'</td>' +
 		'<td width="125" class="c2">' + COALESCE(CAST(IoStallReadMS AS NVARCHAR),'0') +'</td>' +
 		'<td width="125" class="c1">' + COALESCE(CAST(IoStallWriteMS AS NVARCHAR),'0') + '</td>' +
 		'<td width="125" class="c2">' + COALESCE(CAST(Cum_IO_GB AS NVARCHAR),'0') + '</td>' +
@@ -2259,7 +2269,7 @@ BEGIN
 		END
 	END
 
-	IF EXISTS (SELECT * FROM #DEADLOCKINFO) AND @MaxDeadLockRows > 0
+	IF EXISTS (SELECT * FROM #DEADLOCKINFO) AND IsNull(@MaxDeadLockRows, 0) > 0
 	BEGIN
 		SELECT @HTML = @HTML +
 			'&nbsp;<div><table width="1250"> <tr><th class="header" width="1250">Deadlocks - Prior Day</th></tr></table></div><div>
