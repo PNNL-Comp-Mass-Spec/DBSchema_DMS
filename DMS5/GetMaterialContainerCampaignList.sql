@@ -56,7 +56,7 @@ BEGIN
 
     RETURN IsNull(@list, '')
 END
-        
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMaterialContainerCampaignList] TO [DDL_Viewer] AS [dbo]
