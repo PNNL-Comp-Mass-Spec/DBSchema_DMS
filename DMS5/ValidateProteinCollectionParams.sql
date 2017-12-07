@@ -205,7 +205,7 @@ As
 								IsNull(@protCollOptionsList, '??')
 		
 			Print @message
-			-- exec PostLogEntry 'Debug',@message, 'ValidateAnalysisJobParameters'
+			-- exec PostLogEntry 'Debug',@message, 'ValidateProteinCollectionParams'
 			Set @message = ''
 		end
 							
