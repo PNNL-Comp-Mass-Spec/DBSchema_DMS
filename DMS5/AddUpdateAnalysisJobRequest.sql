@@ -77,6 +77,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJobRequest
 **			12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -328,7 +329,8 @@ As
 							@organismID = @organismID output,
 							@message = @msg output,
 							@AutoRemoveNotReleasedDatasets = @AutoRemoveNotReleasedDatasets,
-							@AutoUpdateSettingsFileToCentroided = 0
+							@AutoUpdateSettingsFileToCentroided = 0,
+							@allowNewDatasets = 1
 	--
 	if @result <> 0
 		RAISERROR (@msg, 11, 8)

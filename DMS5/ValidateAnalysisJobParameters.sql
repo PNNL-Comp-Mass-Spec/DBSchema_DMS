@@ -73,6 +73,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 **          07/12/2016 mem - Force priority to 4 if using @organismDBName and it has a size over 400 MB
 **          07/20/2016 mem - Tweak error messages
 **			04/19/2017 mem - Validate the settings file for SplitFasta tools
+**			12/06/2017 mem - Add parameter @allowNewDatasets
 **
 *****************************************************/
 (
@@ -84,7 +85,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
 	@ownerPRN varchar(64) output,
-	@mode varchar(12), 
+	@mode varchar(12),							-- Used to tweak the warning if @analysisToolID is not found in T_Analysis_Tool
 	@userID int output,
 	@analysisToolID int output, 
 	@organismID int output,
@@ -92,6 +93,7 @@ CREATE Procedure ValidateAnalysisJobParameters
 	@AutoRemoveNotReleasedDatasets tinyint = 0,
 	@Job int = 0,
 	@AutoUpdateSettingsFileToCentroided tinyint = 1,
+	@allowNewDatasets tinyint = 0,				-- When 0, all datasets must have state 3 (Complete); when 1, will also allow datasets with state 1 or 2 (New or Capture In Progress)
 	@Warning varchar(255) = '' output,
 	@priority int = 2 output,
 	@showDebugMessages tinyint = 0
@@ -113,15 +115,16 @@ As
 	declare @ParamFileTool varchar(128) = '??NoMatch??'
 	declare @SettingsFileTool varchar(128)
 	declare @result int
-
+	
 	---------------------------------------------------
 	-- Validate the datasets in #TD
 	---------------------------------------------------
 	
 	exec @result = ValidateAnalysisJobRequestDatasets 
-						@message output, 
-						@AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets, 
-						@toolName=@toolName, 
+						@message output,
+						@AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets,
+						@toolName=@toolName,
+						@allowNewDatasets=@allowNewDatasets,
 						@showDebugMessages=@showDebugMessages
 		
 	If @result <> 0

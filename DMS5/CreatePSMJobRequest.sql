@@ -30,6 +30,7 @@ CREATE Procedure CreatePSMJobRequest
 **			               - Exclude logging some try/catch errors
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **    
 *****************************************************/
 (
@@ -178,7 +179,7 @@ As
 		-- Validate the datasets in #TD
 		---------------------------------------------------
 		
-		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
+		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
 		
 		If @result <> 0
 		Begin

@@ -23,12 +23,14 @@ CREATE Procedure ValidateAnalysisJobRequestDatasets
 **			04/23/2015 mem - Added parameter @toolName
 **			06/24/2015 mem - Added parameter @showDebugMessages
 **			07/20/2016 mem - Tweak error messages
+**			12/06/2017 mem - Add @allowNewDatasets
 **
 *****************************************************/
 (
 	@message varchar(512) output,
 	@AutoRemoveNotReleasedDatasets tinyint = 0,			-- When 1, then automatically removes datasets from #TD if they have an invalid rating
 	@toolName varchar(64) = 'unknown',
+	@allowNewDatasets tinyint = 0,						-- When 0, all datasets must have state 3 (Complete); when 1, will also allow datasets with state 1 or 2 (New or Capture In Progress)
 	@showDebugMessages tinyint = 0						-- 1 to print @message strings; 2 to also see the contents of #TD
 )
 As
@@ -137,15 +139,10 @@ As
 	-- Verify that datasets in list all exist
 	---------------------------------------------------
 	--
-	set @list = ''
+	set @list = null
 	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
+	SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+	FROM #TD
 	WHERE Dataset_ID IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -159,7 +156,7 @@ As
 		return 51007
 	end
 	--
-	if @list <> ''
+	if IsNull(@list, '') <> ''
 	begin
 		set @message = 'The following datasets were not in the database: ' + @list
 		if @showDebugMessages <> 0
@@ -170,18 +167,16 @@ As
 
 	---------------------------------------------------
 	-- Verify state of datasets
+	-- If @allowNewDatasets is 0, they must all have state Complete
+	-- If @allowNewDatasets is non-zero, we also allow New and Capture In Progress datasets
 	---------------------------------------------------
 	--
-	set @list = ''
+	set @list = null
 	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
-	WHERE (DS_state_ID <> 3)
+	SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+	FROM #TD
+	WHERE (@allowNewDatasets = 0 AND DS_state_ID <> 3) OR
+	      (@allowNewDatasets > 0 AND DS_state_ID NOT IN (1,2,3))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -194,7 +189,7 @@ As
 		return 51007
 	end
 	--
-	if @list <> ''
+	if IsNull(@list, '') <> ''
 	begin
 		set @message = 'The following datasets were not in correct state: ' + @list
 		if @showDebugMessages <> 0
@@ -207,15 +202,10 @@ As
 	-- Verify rating of datasets
 	---------------------------------------------------
 	--
-	set @list = ''
+	set @list = null
 	--
-	SELECT 
-		@list = @list + CASE 
-		WHEN @list = '' THEN Dataset_Num
-		ELSE ', ' + Dataset_Num
-		END
-	FROM
-		#TD
+	SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+	FROM #TD
 	WHERE (DS_rating IN (-1, -2))
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -229,7 +219,7 @@ As
 		return 51007
 	end
 	--
-	if @list <> ''
+	if IsNull(@list, '') <> ''
 	begin
 		set @message = 'The following datasets have a rating of -1 (No Data) or -2 (Data Files Missing): ' + @list
 		if @showDebugMessages <> 0

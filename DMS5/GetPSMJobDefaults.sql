@@ -24,6 +24,7 @@ CREATE Procedure GetPSMJobDefaults
 **			03/18/2016 mem - Added TMT6 and TMT10
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Exclude logging some try/catch errors
+**			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **    
 *****************************************************/
 (
@@ -149,7 +150,7 @@ As
 		-- Validate the datasets in #TD
 		---------------------------------------------------
 		
-		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName
+		exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
 		
 		If @result <> 0
 		Begin

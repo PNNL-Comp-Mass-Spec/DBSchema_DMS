@@ -62,6 +62,7 @@ CREATE Procedure AddAnalysisJobGroup
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -341,6 +342,7 @@ As
 							@message = @msg output,
 							@AutoRemoveNotReleasedDatasets = 0,
 							@AutoUpdateSettingsFileToCentroided = 1,
+							@allowNewDatasets = 0,
 							@Warning = @Warning output,
 							@priority = @priority output
 	--

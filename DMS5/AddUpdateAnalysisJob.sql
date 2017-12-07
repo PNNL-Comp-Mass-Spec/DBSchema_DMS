@@ -72,6 +72,7 @@ CREATE Procedure dbo.AddUpdateAnalysisJob
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			11/09/2017 mem - Allow job state to be changed from Complete (state 4) to No Export (state 14) if @propagationMode is 1 (aka 'No Export')
+**			12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
 **
 *****************************************************/
 (
@@ -381,6 +382,7 @@ As
 	Declare @organismID int
 	--
 	Declare @result int = 0
+	
 	Declare @Warning varchar(255) = ''
 	set @msg = ''
 	--
@@ -401,6 +403,7 @@ As
 							@AutoRemoveNotReleasedDatasets = 0,
 							@Job = @jobID,
 							@AutoUpdateSettingsFileToCentroided = 1,
+							@allowNewDatasets = 0,
 							@Warning = @Warning output,
 							@showDebugMessages = @infoOnly
 	--
@@ -549,7 +552,7 @@ As
 			       @ownerPRN AS AJ_owner,
 			       @batchID AS AJ_batchID,
 			       @newStateID AS AJ_StateID,
-			       @propMode AS AJ_propagationMode,
+			    @propMode AS AJ_propagationMode,
 			       @DatasetUnreviewed AS AJ_DatasetUnreviewed
 
 		End
