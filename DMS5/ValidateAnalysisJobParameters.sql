@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure ValidateAnalysisJobParameters
+CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 /****************************************************
 **
 **	Desc: Validates analysis job parameters and returns internal

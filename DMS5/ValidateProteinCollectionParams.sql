@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure ValidateProteinCollectionParams
+CREATE Procedure [dbo].[ValidateProteinCollectionParams]
 /****************************************************
 ** 
 **	Desc:	Validates the organism DB and/or protein collection options

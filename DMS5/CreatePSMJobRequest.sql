@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure CreatePSMJobRequest
+CREATE Procedure [dbo].[CreatePSMJobRequest]
 /****************************************************
 **
 **	Desc: Creates a new analysis job request using the appropriate

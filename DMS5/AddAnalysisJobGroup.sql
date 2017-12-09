@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddAnalysisJobGroup
+CREATE Procedure [dbo].[AddAnalysisJobGroup]
 /****************************************************
 **
 **	Desc: Adds new analysis jobs for list of datasets

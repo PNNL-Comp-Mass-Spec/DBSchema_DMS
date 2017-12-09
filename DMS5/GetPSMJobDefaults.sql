@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure GetPSMJobDefaults
+CREATE Procedure [dbo].[GetPSMJobDefaults]
 /****************************************************
 **
 **	Desc: Parses the list of datasets to create a table of stats and to suggest 

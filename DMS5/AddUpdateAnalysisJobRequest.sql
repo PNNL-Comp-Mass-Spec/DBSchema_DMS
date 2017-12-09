@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateAnalysisJobRequest
+CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
 /****************************************************
 **
 **	Desc: Adds new analysis job request to request queue
