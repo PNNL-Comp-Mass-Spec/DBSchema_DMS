@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Material_Locations](
 	[ID] [int] IDENTITY(1000,1) NOT NULL,
-	[Tag]  AS (case when [Freezer_Tag]='None' OR [Freezer_Tag]='-80_Staging' OR [Freezer_Tag]='-20_Staging' then [Freezer_Tag] else ((((((([Freezer_Tag]+'.')+[Shelf])+'.')+[Rack])+'.')+[Row])+'.')+[Col] end) PERSISTED NOT NULL,
+	[Tag]  AS (case when [Freezer_Tag]='Phosphopep_Staging' OR [Freezer_Tag]='QC_Staging' OR [Freezer_Tag]='-20_Staging' OR [Freezer_Tag]='-80_Staging' OR [Freezer_Tag]='None' then [Freezer_Tag] else ((((((([Freezer_Tag]+'.')+[Shelf])+'.')+[Rack])+'.')+[Row])+'.')+[Col] end) PERSISTED NOT NULL,
 	[Freezer_Tag] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Shelf] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Rack] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
