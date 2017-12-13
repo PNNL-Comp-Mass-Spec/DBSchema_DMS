@@ -80,6 +80,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 **						   - Make sure the Work Package is capitalized properly
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **
 *****************************************************/
 (
@@ -96,7 +97,7 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@comment varchar(1024) = 'na',
 	@eusProposalID varchar(10) = 'na',
 	@eusUsageType varchar(50),
-	@eusUsersList varchar(1024) = '',
+	@eusUsersList varchar(1024) = '',			-- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
 	@mode varchar(12) = 'add',					-- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
 	@request int output,
 	@message varchar(512) output,
@@ -106,9 +107,10 @@ CREATE Procedure dbo.AddUpdateRequestedRun
 	@SkipTransactionRollback tinyint = 0,		-- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
 	@AutoPopulateUserListIfBlank tinyint = 0,	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
 	@callingUser varchar(128) = '',
-	@VialingConc varchar(32) = Null,
-	@VialingVol varchar(32) = Null,
-	@requestIDForUpdate int = Null,				-- Only used if @mode is update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
+	@VialingConc varchar(32) = null,
+	@VialingVol varchar(32) = null,
+	@stagingLocation varchar(64) = null,
+	@requestIDForUpdate int = null,				-- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
 	@logDebugMessages tinyint = 0
 )
 As
@@ -149,8 +151,8 @@ As
 	--
 	DECLARE @requestOrigin CHAR(4) = 'user'
 	--
-	IF @mode = 'add-auto'
-	BEGIN
+	If @mode = 'add-auto'
+	Begin
 		SET @mode = 'add'
 		SET @requestOrigin = 'auto'
 	END  
@@ -165,24 +167,23 @@ As
 		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
 	End
 
-
-	if IsNull(@reqName, '') = ''
+	If IsNull(@reqName, '') = ''
 		RAISERROR ('Request name was blank', 11, 110)
 	--
-	if IsNull(@experimentNum, '') = ''
+	If IsNull(@experimentNum, '') = ''
 		RAISERROR ('Experiment number was blank', 11, 111)
 	--
-	if IsNull(@requestorPRN, '') = ''
+	If IsNull(@requestorPRN, '') = ''
 		RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
 	--
 	Declare @InstrumentGroup varchar(64) = @instrumentName	
-	if IsNull(@InstrumentGroup, '') = ''
+	If IsNull(@InstrumentGroup, '') = ''
 		RAISERROR ('Instrument group was blank', 11, 114)	
 	--
-	if IsNull(@msType, '') = ''
+	If IsNull(@msType, '') = ''
 		RAISERROR ('Dataset type was blank', 11, 115)
 	--
-	if IsNull(@workPackage, '') = ''
+	If IsNull(@workPackage, '') = ''
 		RAISERROR ('Work package was blank', 11, 116)
 	
 	Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
@@ -192,7 +193,7 @@ As
 	If @comment LIKE '%&quot;%'
 		Set @comment = Replace(@comment, '&quot;', '"')
 
-	if @myError <> 0
+	If @myError <> 0
 		return @myError
 
 	---------------------------------------------------
@@ -201,13 +202,13 @@ As
 
 	declare @badCh varchar(128)
 	set @badCh =  dbo.ValidateChars(@reqName, '')
-	if @badCh <> ''
-	begin
+	If @badCh <> ''
+	Begin
 		If @badCh = '[space]'
 			RAISERROR ('Requested run name may not contain spaces', 11, 1)
 		Else
 			RAISERROR ('Requested run name may not contain the character(s) "%s"', 11, 1, @badCh)
-	end
+	End
 	
 	---------------------------------------------------
 	-- Is entry already in database?
@@ -237,7 +238,7 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
+			If @myError <> 0
 				RAISERROR ('Error looking for request ID %d', 11, 7, @requestIDForUpdate)
 
 			If @oldReqName <> @reqName
@@ -265,7 +266,7 @@ As
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
-			if @myError <> 0
+			If @myError <> 0
 				RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
 
 			If @myRowCount > 0
@@ -273,7 +274,7 @@ As
 		End
 	End
 	
-	if @MatchFound = 0
+	If @MatchFound = 0
 	Begin
 		-- Match not found when filtering on Status
 		-- Query again, but this time ignore RDS_Status
@@ -287,7 +288,7 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
 	End
 	
@@ -298,16 +299,16 @@ As
 
 	-- cannot create an entry that already exists
 	--
-	if @requestID <> 0 and (@mode IN ('add', 'check_add'))
+	If @requestID <> 0 and (@mode IN ('add', 'check_add'))
 		RAISERROR ('Cannot add: Requested Run "%s" already in database; cannot add', 11, 4, @reqName)
 
 	-- cannot update a non-existent entry
 	--
-	if @requestID = 0 and (@mode IN ('update', 'check_update'))
+	If @requestID = 0 and (@mode IN ('update', 'check_update'))
 	Begin
 		If @requestIDForUpdate > 0
 			RAISERROR ('Cannot update: Requested Run ID "%d" is not in database; cannot update', 11, 4, @requestIDForUpdate)
-		else
+		Else
 			RAISERROR ('Cannot update: Requested Run "%s" is not in database; cannot update', 11, 4, @reqName)
 	End
 		
@@ -318,29 +319,29 @@ As
 	--
 	Set @status = IsNull(@status, '')
 	
-	IF @mode IN ('add', 'check_add') AND (@status = 'Completed' OR @status = '')
+	If @mode IN ('add', 'check_add') AND (@status = 'Completed' OR @status = '')
 		SET @status = 'Active'
 	--
-	IF @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	If @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
 		RAISERROR ('Status "%s" is not valid; must be Active, Inactive, or Completed', 11, 37, @status)
 	--
-	IF @mode IN ('update', 'check_update') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
+	If @mode IN ('update', 'check_update') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
 		RAISERROR ('Status "%s" is not valid; must be Active, Inactive, or Completed', 11, 38, @status)
 	--
-	IF @mode IN ('update', 'check_update') AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
+	If @mode IN ('update', 'check_update') AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
 	Begin
 		set @msg = 'Cannot set status of request to "Completed" when existing status is "' + @oldStatus + '"'
 		RAISERROR (@msg, 11, 39)
 	End
 	--
-	IF @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
+	If @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
 		RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
 
 	If IsNull(@wellplateNum, '') IN ('', 'na')
-		set @wellplateNum = NULL
+		set @wellplateNum = null
 	
 	If IsNull(@wellNum, '') IN ('', 'na')
-		set @wellNum = NULL
+		set @wellNum = null
 
 	Declare @StatusID int = 0
 	
@@ -359,17 +360,17 @@ As
 
 	SELECT 
 		@experimentID = Exp_ID, 
-		@wellplateNum = case when @wellplateNum = '(lookup)' then EX_wellplate_num else @wellplateNum end,
-		@wellNum = case when @wellNum = '(lookup)' then EX_well_num else @wellNum end
+		@wellplateNum = CASE WHEN @wellplateNum = '(lookup)' THEN EX_wellplate_num ELSE @wellplateNum END,
+		@wellNum =  CASE WHEN @wellNum = '(lookup)' THEN EX_well_num ELSE @wellNum END
 	FROM T_Experiments
 	WHERE Experiment_Num = @experimentNum
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('Error looking up experiment', 11, 17)
 	--
-	if @experimentID = 0
+	If @experimentID = 0
 		RAISERROR ('Could not find entry in database for experiment "%s"', 11, 18, @experimentNum)
 
 	---------------------------------------------------
@@ -384,8 +385,8 @@ As
 
 	declare @userID int
 	execute @userID = GetUserID @requestorPRN
-	if @userID = 0
-	begin
+	If @userID = 0
+	Begin
 		-- Could not find entry in database for PRN @requestorPRN
 		-- Try to auto-resolve the name
 
@@ -404,7 +405,7 @@ As
 			RAISERROR ('Could not find entry in database for requestor PRN "%s"', 11, 19, @requestorPRN)
 			return 51019
 		End
-	end
+	End
 	
 	---------------------------------------------------
 	-- Lookup instrument run info fields 
@@ -424,7 +425,7 @@ As
 						@instrumentSettings output,
 						@secSep output,
 						@msg output
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 
@@ -432,7 +433,7 @@ As
 	-- Determine the Instrument Group
 	---------------------------------------------------
 	
-	IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+	If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
 	Begin
 		-- Try to update instrument group using T_Instrument_Name
 		SELECT @InstrumentGroup = IN_Group
@@ -457,7 +458,7 @@ As
 							@instrumentGroup output,
 							@datasetTypeID output,
 							@msg output 
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
 
 	---------------------------------------------------
@@ -490,10 +491,10 @@ As
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Error trying to look up separation type ID', 11, 98)
 		--
-		if @sepID = 0
+		If @sepID = 0
 			RAISERROR ('Separation group not recognized', 11, 99)
 
 		If IsNull(@sepGroup, '') <> ''
@@ -510,17 +511,17 @@ As
 	declare @mrmAttachmentID int
 	--
 	set @MRMAttachment = ISNULL(@MRMAttachment, '')
-	if @MRMAttachment <> ''
-	begin
+	If @MRMAttachment <> ''
+	Begin
 		SELECT @mrmAttachmentID = ID
 		FROM T_Attachments
 		WHERE Attachment_Name = @MRMAttachment
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Error trying to look up attachement ID', 11, 73)
-	end
+	End
 	
 	---------------------------------------------------
 	-- Lookup EUS field (only effective for experiments that have associated sample prep requests)
@@ -540,7 +541,7 @@ As
 						@eusUsersList output,
 						@msg output
 						
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
 	---------------------------------------------------
@@ -557,6 +558,9 @@ As
 		exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
 	End
 
+	-- Note that if @eusUsersList contains a list of names in the form "Baker, Erin (41136)",
+	-- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
+	
 	declare @eusUsageTypeID int
 	exec @myError = ValidateEUSUsage
 						@eusUsageType output,
@@ -566,7 +570,7 @@ As
 						@msg output,
 						@AutoPopulateUserListIfBlank
 						
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
 	If IsNull(@msg, '') <> ''
@@ -574,8 +578,7 @@ As
 
 
 	---------------------------------------------------
-	-- Lookup misc fields (only effective for experiments
-	-- that have associated sample prep requests)
+	-- Lookup misc fields (only applies to experiments with sample prep requests)
 	---------------------------------------------------
 
 	If @logDebugMessages > 0
@@ -589,9 +592,30 @@ As
 						@workPackage output, 
 						@msg output
 						
-	if @myError <> 0
+	If @myError <> 0
 		RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)	
 		
+	---------------------------------------------------
+	-- Resolve staging location name to location ID
+	---------------------------------------------------
+	
+	Declare @locationID int = null
+	
+	If IsNull(@stagingLocation, '') <> ''
+	Begin
+		SELECT @locationID = ID
+		FROM T_Material_Locations
+		WHERE Tag = @stagingLocation
+		--
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		--
+		If @myError <> 0
+			RAISERROR ('Error trying to look up staging location ID', 11, 98)
+		--
+		If IsNull(@locationID, 0) = 0
+			RAISERROR ('Staging location not recognized', 11, 99)
+		
+	End
 		
 	---------------------------------------------------
 	-- Validate the work package
@@ -657,12 +681,12 @@ As
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
-	begin -- <add>
+	If @Mode = 'add'
+	Begin -- <add>
 	
 		-- Start transaction
 		--
-		begin transaction @transName
+		Begin transaction @transName
 		
 		INSERT INTO T_Requested_Run
 		(
@@ -686,7 +710,8 @@ As
 			RDS_Origin,
 			RDS_Status,
 			Vialing_Conc,
-			Vialing_Vol
+			Vialing_Vol,
+			Location_Id
 		) VALUES (
 			@reqName, 
 			@requestorPRN, 
@@ -708,12 +733,13 @@ As
 			@requestOrigin,
 			@status,
 			@VialingConc,
-			@VialingVol 
+			@VialingVol,
+			@locationId
 		)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
 		
 		Set @Request = SCOPE_IDENTITY()
@@ -738,7 +764,7 @@ As
 								@eusUsersList,
 								@msg output
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
 		
 		If @@trancount > 0
@@ -763,21 +789,21 @@ As
 			exec UpdateCachedRequestedRunEUSUsers @request
 		End
 		
-	end -- </add>
+	End -- </add>
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin -- <update>
-		begin transaction @transName
+	If @Mode = 'update' 
+	Begin -- <update>
+		Begin transaction @transName
 
 		set @myError = 0
 		--
 		UPDATE T_Requested_Run 
 		SET 
-			RDS_Name = Case When @requestIDForUpdate > 0 Then @reqName Else RDS_Name End,
+			RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @reqName ELSE RDS_Name END,
 			RDS_Oper_PRN = @requestorPRN, 
 			RDS_comment = @comment, 
 			RDS_instrument_name = @instrumentGroup, 
@@ -795,12 +821,13 @@ As
 			RDS_Status = @status,
 			RDS_created = CASE WHEN @oldStatus = 'Inactive' AND @status = 'Active' THEN GETDATE() ELSE RDS_created END,
 			Vialing_Conc = @VialingConc,
-			Vialing_Vol = @VialingVol 
+			Vialing_Vol = @VialingVol,
+			Location_Id = @locationId
 		WHERE (ID = @requestID)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @reqName)
 
 		-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -817,7 +844,7 @@ As
 								@eusUsersList,
 								@msg output
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
 
 		If @@trancount > 0
@@ -833,14 +860,14 @@ As
 		-- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
 		exec UpdateCachedRequestedRunEUSUsers @request
 		
-	end -- </update>
+	End -- </update>
 
 	END TRY
 	BEGIN CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
+		If (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
 			ROLLBACK TRANSACTION;
 
 		If @logErrors > 0
