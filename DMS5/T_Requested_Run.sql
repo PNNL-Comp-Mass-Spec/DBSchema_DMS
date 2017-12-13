@@ -40,6 +40,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[Entered] [datetime] NULL,
 	[Vialing_Conc] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Vialing_Vol] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Location_ID] [int] NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -223,6 +224,11 @@ ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_
 REFERENCES [dbo].[T_LC_Cart_Configuration] ([Cart_Config_ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_LC_Cart_Configuration]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Material_Locations] FOREIGN KEY([Location_ID])
+REFERENCES [dbo].[T_Material_Locations] ([ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Material_Locations]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches] FOREIGN KEY([RDS_BatchID])
 REFERENCES [dbo].[T_Requested_Run_Batches] ([ID])

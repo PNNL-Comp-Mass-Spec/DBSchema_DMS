@@ -9,12 +9,12 @@ AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_Status AS [Status],
-       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0)
-	   -- RR.RDS_priority AS Pri,
+       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0): RR.RDS_priority AS Pri,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,
-       dbo.ExpSampleLocation(RR.Exp_ID) AS [Sample Storage],
+       -- Deprecated in December 2017 since no longer used: dbo.ExpSampleLocation(RR.Exp_ID) AS [Sample Storage],
+       ML.Tag AS [Staging Location],
        InstName.IN_Name AS [Instrument Used],
        RR.RDS_instrument_name AS [Instrument Group],
        DTN.DST_Name AS [Type],
@@ -75,12 +75,14 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run FC
        ON FC.RR_ID = RR.ID
-     LEFT OUTER JOIN V_Charge_Code_Status CC 
+     LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
-     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
 	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
 	   ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_Material_Locations ML
+       ON RR.Location_ID = ML.ID
 
 
 GO

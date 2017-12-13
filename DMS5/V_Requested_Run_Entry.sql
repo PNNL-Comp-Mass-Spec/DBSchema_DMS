@@ -19,6 +19,7 @@ SELECT RR.ID AS RR_Request,
        RR.Vialing_Conc AS RR_VialingConc,
        RR.Vialing_Vol AS RR_VialingVol,
        RR.RDS_comment AS RR_Comment,
+       ML.Tag AS StagingLocation,
        RR.RDS_WorkPackage AS RR_WorkPackage,
        EUT.Name AS RR_EUSUsageType,
        RR.RDS_EUS_Proposal_ID AS RR_EUSProposalID,
@@ -26,16 +27,17 @@ SELECT RR.ID AS RR_Request,
        ISNULL(dbo.T_Attachments.Attachment_Name, '') AS MRMAttachment,
        RR.RDS_internal_standard AS RR_Internal_Standard,
        RR.RDS_Status AS RR_Status
-FROM dbo.T_DatasetTypeName DTN
-     INNER JOIN dbo.T_Requested_Run RR
-                INNER JOIN dbo.T_Experiments E
-                  ON RR.Exp_ID = E.Exp_ID
+FROM T_Requested_Run AS RR
+     INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
+     INNER JOIN dbo.T_Experiments E
+       ON RR.Exp_ID = E.Exp_ID
      INNER JOIN dbo.T_EUS_UsageType EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
      LEFT OUTER JOIN dbo.T_Attachments
        ON RR.RDS_MRM_Attachment = dbo.T_Attachments.ID
-
+     LEFT OUTER JOIN T_Material_Locations ML
+       ON RR.Location_ID = ML.ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Entry] TO [DDL_Viewer] AS [dbo]

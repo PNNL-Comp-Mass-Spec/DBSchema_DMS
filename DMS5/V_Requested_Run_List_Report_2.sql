@@ -10,8 +10,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_Status AS Status,
        RR.RDS_Origin AS Origin,
-       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0)
-	   -- RR.RDS_priority AS Pri,
+       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0): RR.RDS_priority AS Pri,
        ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS Acq_Start,
        RR.RDS_BatchID AS Batch,
        C.Campaign_Num AS Campaign,
@@ -23,10 +22,10 @@ SELECT RR.ID AS Request,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_WorkPackage AS [Work Package],
-	   ISNULL(CC.Activation_State_Name, '') AS [WP State],
+       ISNULL(CC.Activation_State_Name, '') AS [WP State],
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS Proposal,
-	   EPT.Abbreviation AS [Proposal Type],
+       EPT.Abbreviation AS [Proposal Type],
        RR.RDS_comment AS [Comment],
        DTN.DST_name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
@@ -34,10 +33,11 @@ SELECT RR.ID AS Request,
        RR.RDS_Well_Num AS Well,
        RR.Vialing_Conc AS [Vialing Conc],
        RR.Vialing_Vol AS [Vialing Vol],
+       ML.Tag AS [Staging Location],
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
-	   CartConfig.Cart_Config_Name AS [Cart Config],
+	  CartConfig.Cart_Config_Name AS [Cart Config],
        CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
        DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
@@ -68,18 +68,20 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_Cart_ID = LC.ID
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
-	 LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
-	   ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
+     LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
+       ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
-	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
-	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
-	   ON EUP.Proposal_Type = EPT.Proposal_Type
+       ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_Material_Locations ML
+       ON RR.Location_ID = ML.ID
 
 
 GO
