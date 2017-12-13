@@ -35,7 +35,7 @@ CREATE PROCEDURE dbo.ValidateEUSUsage
 (
 	@eusUsageType varchar(50) output,
 	@eusProposalID varchar(10) output,
-	@eusUsersList varchar(1024) output,
+	@eusUsersList varchar(1024) output,			-- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
 	@eusUsageTypeID int output,
 	@message varchar(512) output,
 	@AutoPopulateUserListIfBlank tinyint = 0	-- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
