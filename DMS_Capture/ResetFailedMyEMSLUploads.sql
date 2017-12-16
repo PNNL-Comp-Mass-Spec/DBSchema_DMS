@@ -20,6 +20,7 @@ CREATE PROCEDURE ResetFailedMyEMSLUploads
 **			07/20/2017 mem - Store the upload error message in T_MyEMSL_Upload_Resets
 **						   - Reset steps with message 'Connection aborted.', BadStatusLine("''",)
 **			08/01/2017 mem - Reset steps with message 'Connection aborted.', error(32, 'Broken pipe')
+**			12/15/2017 mem - Reset steps with message 'ingest/backend/tasks.py'
 **
 *****************************************************/
 (
@@ -75,7 +76,8 @@ As
 		       Completion_Message LIKE '%Connection reset by peer%' OR
 		       Completion_Message LIKE '%Internal Server Error%' OR
 		       Completion_Message LIKE '%Connection aborted%BadStatusLine%' OR
-		       Completion_Message LIKE '%Connection aborted%Broken pipe%' ) AND
+		       Completion_Message LIKE '%Connection aborted%Broken pipe%' OR
+		       Completion_Message LIKE '%ingest/backend/tasks.py%') AND
 		      Job_State = 5 AND
 		      Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
 		GROUP BY Job, Dataset_ID, Output_Folder
