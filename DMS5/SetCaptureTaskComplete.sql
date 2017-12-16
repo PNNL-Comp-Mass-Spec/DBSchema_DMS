@@ -27,6 +27,7 @@ CREATE Procedure dbo.SetCaptureTaskComplete
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			04/04/2012 mem - Added parameter @FailureMessage
 **			08/19/2015 mem - If @completionCode is 0, now looking for and removing messages of the form "Error while copying \\15TFTICR64\data\"
+**			12/16/2017 mem - If @completionCode is 0, now calling CleanupDatasetComments to remove error messages in the comment field
 **    
 *****************************************************/
 (
@@ -155,33 +156,7 @@ As
 		-- Dataset successfully captured
 		-- Remove error messages of the form Error while copying \\15TFTICR64\data\ ...
 		
-		Declare @CommentLengthCached int = Len(@Comment)
-		Declare @matchIndex int = CharIndex('; Error while copying \\', @Comment)
-		
-		If @matchIndex = 0
-		Begin
-			Set @matchIndex = CharIndex('Error while copying \\', @Comment)
-		End
-		
-		If @matchIndex = 1
-		Begin
-			Set @Comment = ''
-		End
-		
-		If @matchIndex > 1
-		Begin
-			-- Match found; remove the error message
-			Set @Comment = RTrim(Substring(@Comment, 1, @matchIndex - 1))
-		End
-						
-		If Len(@Comment) <> @CommentLengthCached
-		Begin
-			
-			UPDATE T_Dataset
-			SET DS_Comment = @Comment
-			WHERE Dataset_ID = @DatasetID
-			
-		End
+		exec CleanupDatasetComments @DatasetID, @infoonly=0
 		
 	End
 	
