@@ -18,11 +18,12 @@ CREATE Procedure dbo.EnableDisableArchiveStepTools
 **			05/12/2011 mem - Added comment parameter
 **			12/16/2013 mem - Added step tools 'ArchiveVerify' and 'ArchiveStatusCheck'
 **			12/11/2015 mem - Clearing comments that start with 'Disabled' when @enable = 1
+**			12/18/2017 mem - Avoid adding @disableComment to the comment field multiple times
 **    
 *****************************************************/
 (
 	@enable int = 0,
-	@DisableComment varchar(128) = '',			-- Optional text to add/remove from the Comment field (added if @enable=0 and removed if @enable=1)
+	@disableComment varchar(128) = '',			-- Optional text to add/remove from the Comment field (added if @enable=0 and removed if @enable=1)
 	@infoOnly tinyint = 0,
 	@message varchar(255) = '' output
 )
@@ -45,7 +46,7 @@ As
 	-----------------------------------------------
 	--
 	Set @enable = IsNull(@enable, 0)
-	Set @DisableComment = IsNull(@DisableComment, '')
+	Set @disableComment = IsNull(@disableComment, '')
 	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
 	
@@ -62,51 +63,78 @@ As
 		Set @Task = 'Enable'
 	End
 	
+	-----------------------------------------------
+	-- Create a temp table to track the tools to update
+	-----------------------------------------------
+	--
+	CREATE TABLE #Tmp_ToolsToUpdate (
+		Tool_Name varchar(64)
+	)
+	
+	INSERT INTO #Tmp_ToolsToUpdate (Tool_Name)
+	VALUES ('DatasetArchive'), ('ArchiveUpdate'), ('ArchiveVerify'), ('ArchiveStatusCheck')
+	
+	-----------------------------------------------
+	-- Preview changes, or perform the work
+	-----------------------------------------------
+	--
 	If @infoOnly <> 0
-		SELECT @Task as Task, *
-		FROM T_Processor_Tool
-		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate', 'ArchiveVerify', 'ArchiveStatusCheck')) AND (Enabled = @OldState)
+		SELECT @Task AS Task, *
+		FROM T_Processor_Tool ProcTool
+		     INNER JOIN #Tmp_ToolsToUpdate FilterQ
+		       ON ProcTool.Tool_Name = FilterQ.Tool_Name
+		WHERE Enabled = @OldState
 	Else
 	Begin
 		-- Update the Enabled column
 		--
 		UPDATE T_Processor_Tool
-		Set Enabled = @NewState
-		WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate', 'ArchiveVerify', 'ArchiveStatusCheck')) AND (Enabled = @OldState)
+		SET Enabled = @NewState
+		FROM T_Processor_Tool ProcTool
+		     INNER JOIN #Tmp_ToolsToUpdate FilterQ
+		       ON ProcTool.Tool_Name = FilterQ.Tool_Name
+		WHERE Enabled = @OldState
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		If @DisableComment <> ''
+		If @disableComment <> ''
 		Begin
-			-- Add or remove @DisableComment from the Comment column
+			-- Add or remove @disableComment from the Comment column
 			--
 			If @enable = 0
 				UPDATE T_Processor_Tool
-				SET [Comment] = CASE WHEN [Comment] = '' 
-				                   THEN @DisableComment
-				                   ELSE [Comment] + '; ' + @DisableComment
-				              END
-				WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
-				      (Enabled = @NewState)
+				SET [Comment] = CASE
+				                    WHEN [Comment] = '' THEN @disableComment
+				                    ELSE [Comment] + '; ' + @disableComment
+				                END
+				FROM T_Processor_Tool ProcTool
+				     INNER JOIN #Tmp_ToolsToUpdate FilterQ
+				       ON ProcTool.Tool_Name = FilterQ.Tool_Name
+				WHERE Enabled = @NewState AND
+				      NOT [Comment] LIKE '%' + @disableComment + '%'
 			
 			Else
 			
 				UPDATE T_Processor_Tool
-				SET [Comment] = CASE WHEN [Comment] = @DisableComment 
-				                   THEN ''
-				                   ELSE Replace([Comment], '; ' + @DisableComment, '')
-				              END
-				WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
-				      (Enabled = @NewState)
+				SET [Comment] = CASE
+				                    WHEN [Comment] = @disableComment THEN ''
+				                    ELSE Replace([Comment], '; ' + @disableComment, '')
+				                END
+				FROM T_Processor_Tool ProcTool
+				     INNER JOIN #Tmp_ToolsToUpdate FilterQ
+				       ON ProcTool.Tool_Name = FilterQ.Tool_Name
+				WHERE (Enabled = @NewState)
 			
 		End
 
-		If @DisableComment = '' AND @NewState = 1
+		If @disableComment = '' AND @NewState = 1
 		Begin
 			UPDATE T_Processor_Tool
 			SET [Comment] = ''
-			WHERE (Tool_Name IN ('DatasetArchive', 'ArchiveUpdate')) AND
-			      (Enabled = 1) AND
+			FROM T_Processor_Tool ProcTool
+			     INNER JOIN #Tmp_ToolsToUpdate FilterQ
+			       ON ProcTool.Tool_Name = FilterQ.Tool_Name
+			WHERE Enabled = 1 AND
 			      [Comment] LIKE 'Disabled%'
 
 		End
