@@ -14,6 +14,7 @@ CREATE PROCEDURE GetOrganismID
 **	Date:	01/26/2001
 **			09/25/2012 mem - Expanded @organismName to varchar(128)
 **			08/03/2017 mem - Add Set NoCount On
+**			12/19/2017 mem - Try matching field OG_Short_Name if no match to OG_name
 **    
 *****************************************************/
 (
@@ -27,6 +28,13 @@ As
 	SELECT @organismID = Organism_ID 
 	FROM T_Organisms 
 	WHERE OG_name = @organismName
+
+	If @organismID = 0
+	Begin
+		SELECT @organismID = Organism_ID 
+		FROM T_Organisms 
+		WHERE OG_Short_Name = @organismName
+	End
 	
 	return @organismID
 GO
