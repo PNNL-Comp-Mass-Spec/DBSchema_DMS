@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Cell_Culture_Type_Name](
 	[ID] [int] IDENTITY(100,1) NOT NULL,
-	[Name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Name] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Cell_Culture_Type_Name] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -14,4 +14,13 @@ CREATE TABLE [dbo].[T_Cell_Culture_Type_Name](
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Cell_Culture_Type_Name] TO [DDL_Viewer] AS [dbo]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Cell_Culture_Type_Name] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Cell_Culture_Type_Name] ON [dbo].[T_Cell_Culture_Type_Name]
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
