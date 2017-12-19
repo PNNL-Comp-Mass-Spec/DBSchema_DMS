@@ -7,9 +7,13 @@ CREATE TABLE [dbo].[T_Reference_Compound](
 	[Compound_ID] [int] IDENTITY(100,1) NOT NULL,
 	[Compound_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Compound_Type_ID] [int] NOT NULL,
+	[Organism_ID] [int] NOT NULL,
 	[PubChem_CID] [int] NULL,
 	[Campaign_ID] [int] NOT NULL,
 	[Container_ID] [int] NOT NULL,
+	[Wellplate_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Well_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Contact_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Supplier] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Product_ID] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -17,6 +21,7 @@ CREATE TABLE [dbo].[T_Reference_Compound](
 	[Purity] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Purchase_Quantity] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Mass] [float] NULL,
+	[Modifications] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[Active] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Reference_Compound] PRIMARY KEY NONCLUSTERED 
@@ -99,6 +104,16 @@ REFERENCES [dbo].[T_Material_Containers] ([ID])
 GO
 ALTER TABLE [dbo].[T_Reference_Compound] CHECK CONSTRAINT [FK_T_Reference_Compound_T_Material_Containers]
 GO
+ALTER TABLE [dbo].[T_Reference_Compound]  WITH CHECK ADD  CONSTRAINT [FK_T_Reference_Compound_T_Organisms] FOREIGN KEY([Organism_ID])
+REFERENCES [dbo].[T_Organisms] ([Organism_ID])
+GO
+ALTER TABLE [dbo].[T_Reference_Compound] CHECK CONSTRAINT [FK_T_Reference_Compound_T_Organisms]
+GO
+ALTER TABLE [dbo].[T_Reference_Compound]  WITH CHECK ADD  CONSTRAINT [FK_T_Reference_Compound_T_Reference_Compound_Type_Name] FOREIGN KEY([Compound_Type_ID])
+REFERENCES [dbo].[T_Reference_Compound_Type_Name] ([Compound_Type_ID])
+GO
+ALTER TABLE [dbo].[T_Reference_Compound] CHECK CONSTRAINT [FK_T_Reference_Compound_T_Reference_Compound_Type_Name]
+GO
 ALTER TABLE [dbo].[T_Reference_Compound]  WITH CHECK ADD  CONSTRAINT [FK_T_Reference_Compound_T_Users] FOREIGN KEY([Contact_PRN])
 REFERENCES [dbo].[T_Users] ([U_PRN])
 ON UPDATE CASCADE
@@ -114,7 +129,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Reference_Compound] on [dbo].[T_Reference_Compound]
 For Delete
 /****************************************************
@@ -154,7 +168,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Reference_Compound] on [dbo].[T_Reference_Compound]
 For Insert
 /****************************************************
@@ -183,7 +196,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Reference_Compound] on [dbo].[T_Reference_Compound]
 For Update
 /****************************************************
@@ -209,6 +221,5 @@ AS
           WHERE deleted.Compound_Name <> inserted.Compound_Name
 		ORDER BY inserted.Compound_ID
 	End
-
 
 GO

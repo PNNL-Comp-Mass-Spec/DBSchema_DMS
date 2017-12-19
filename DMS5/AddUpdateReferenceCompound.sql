@@ -12,15 +12,20 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 **
 **	Auth:	mem
 **	Date:	11/28/2017 mem - Initial version
+**			12/19/2017 mem - Add parameters @compoundTypeName, @organismName, @wellplateName, @wellNumber, and @modifications
 **    
 *****************************************************/
 (
 	@compoundID int,
 	@compoundName varchar(64),		-- Reference compound name or sequence
 	@description varchar(500),
+	@compoundTypeName varchar(64),
+	@organismName varchar(128),
 	@pubChemID varchar(30),			-- Will be converted to an integer; empty strings are stored as null
 	@campaignName varchar(64), 
 	@containerName varchar(128) = 'na', 
+	@wellplateName varchar(64),
+	@wellNumber varchar(64),
 	@contactPRN varchar(64),	    -- Contact for the Source; typically PNNL staff, but can be offsite person
 	@supplier varchar(64), 			-- Source that the material came from; can be a person (onsite or offsite) or a company
 	@productId varchar(128),
@@ -28,6 +33,7 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 	@purity varchar(64),
 	@purchaseQuantity varchar(128),
 	@mass varchar(30),				-- Will be converted to a float
+	@modifications varchar(500),
 	@active varchar(3),				-- Can be: Yes, No, Y, N, 1, 0
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
@@ -63,6 +69,8 @@ As
 
 	Set @compoundName = LTrim(RTrim(IsNull(@compoundName, '')))
 	Set @description = LTrim(RTrim(IsNull(@description, '')))
+	Set @compoundTypeName = LTrim(RTrim(IsNull(@compoundTypeName, '')))
+	Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
 	Set @pubChemID = LTrim(RTrim(IsNull(@pubChemID, '')))
 	Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
 	Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))	
@@ -75,34 +83,44 @@ As
 
 	Set @myError = 0
 	
-	If @compoundID Is Null
+	If @compoundID Is Null AND NOT @mode IN ('add', 'check_add')
 	Begin
 		RAISERROR ('Compound ID cannot be null', 11, 1)
 	End
 
 	If LEN(@compoundName) < 1
 	Begin
-		RAISERROR ('Compound Name is blank', 11, 1)
+		RAISERROR ('Compound Name must be defined', 11, 1)
 	End	
 
 	If LEN(@description) < 1
 	Begin
-		RAISERROR ('Description is blank', 11, 7)
+		RAISERROR ('Description must be defined', 11, 7)
+	End
+
+	If LEN(@compoundTypeName) < 1
+	Begin
+		RAISERROR ('Compound type name must be defined', 11, 7)
+	End
+
+	If LEN(@organismName) < 1
+	Begin
+		Set @organismName = 'None'
 	End
 	
 	If LEN(@campaignName) < 1
 	Begin
-		RAISERROR ('Campaign Name is blank', 11, 1)
+		RAISERROR ('Campaign Name must be defined', 11, 1)
 	End
 	
 	If LEN(@contactPRN) < 1
 	Begin
-		RAISERROR ('Contact Name is blank', 11, 3)
+		RAISERROR ('Contact Name cannot be blank', 11, 3)
 	End
 	
 	If LEN(@supplier) < 1
 	Begin
-		RAISERROR ('Supplier is blank', 11, 5)
+		RAISERROR ('Supplier cannot be blank', 11, 5)
 	End
 
 	Declare @pubChemIdValue int
@@ -146,12 +164,42 @@ As
 	End		
 	
 	---------------------------------------------------
+	-- Resolve compound type name to ID
+	---------------------------------------------------
+	
+	Declare @compoundTypeID int = 0
+	
+	SELECT @compoundTypeID = Compound_Type_ID
+	FROM T_Reference_Compound_Type_Name
+	WHERE Compound_Type_Name = @compoundTypeName
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If @compoundTypeID = 0
+	Begin
+		RAISERROR ('Invalid compound type name', 11, 5)
+	End
+
+	---------------------------------------------------
+	-- Resolve organism name to ID
+	---------------------------------------------------
+	
+	Declare @organismID int = 0
+	
+	exec @organismID = GetOrganismID @organismName
+	
+	If @organismID = 0
+	Begin
+		RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
+	End
+	
+	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
 
 	Declare @curContainerID int = 0
 
-	If @mode = 'add' or @mode = 'check_add'
+	If @mode IN ('add', 'check_add')
 	Begin
 		-- Check for a name conflict
 		--
@@ -162,7 +210,7 @@ As
 		End
 	End
 
-	If @mode = 'update' or @mode = 'check_update'
+	If @mode IN ('update', 'check_update')
 	Begin
 		-- Confirm the compound exists
 		--
@@ -266,14 +314,18 @@ As
 	-- action for add mode
 	---------------------------------------------------
 	
-	If @Mode = 'add'
+	If @mode = 'add'
 	Begin -- <add>
 		INSERT INTO T_Reference_Compound (
 			Compound_Name,
 			Description,
+			Compound_Type_ID,
+			Organism_ID,
 			PubChem_CID,
 			Campaign_ID,
 			Container_ID,
+			Wellplate_Name, 
+			Well_Number,
 			Contact_PRN,
 			Supplier,
 			Product_ID,
@@ -281,14 +333,19 @@ As
 			Purity,
 			Purchase_Quantity,
 			Mass,
+			Modifications,
 			Created,
 			[Active]
 		) VALUES (
 			@compoundName,
 			@description,
+			@compoundTypeID,
+			@organismID,
 			@pubChemIdValue,
 			@campaignID,
 			@containerID,
+			@wellplateName, 
+			@wellNumber,
 			@contactPRN,			
 			@supplier,
 			@productId,
@@ -296,6 +353,7 @@ As
 			@purity,
 			@purchaseQuantity,			
 			@massValue,
+			@modifications,
 			GETDATE(),
 			1             -- Active
 		)
@@ -355,7 +413,7 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	If @Mode = 'update' 
+	If @mode = 'update' 
 	Begin -- <update>
 		Set @myError = 0
 		--
@@ -363,9 +421,13 @@ As
 		Set 
 			Compound_Name = @compoundName,
 			Description = @description,
+			Compound_Type_ID = @compoundTypeID,
+			Organism_ID = @organismID,
 			PubChem_CID = @pubChemIdValue,
 			Campaign_ID = @campaignID,
 			Container_ID = @containerID,
+			Wellplate_Name = @wellplateName, 
+			Well_Number = @wellNumber,
 			Contact_PRN = @contactPRN,
 			Supplier = @supplier,
 			Product_ID = @productID,
@@ -373,6 +435,7 @@ As
 			Purity = @purity,
 			Purchase_Quantity = @purchaseQuantity,
 			Mass = @massValue,
+			Modifications = @modifications,
 			[Active] = @activeValue
 		WHERE Compound_ID = @compoundID
 		--
