@@ -11,6 +11,7 @@ CREATE Procedure dbo.CleanupDatasetComments
 **
 **	Auth:	mem
 **	Date:	12/16/2017 mem - Initial version
+**			01/02/2018 mem - Check for "Authentication failure" and "Error: NeedToAbortProcessing"
 **    
 *****************************************************/
 (
@@ -62,10 +63,14 @@ As
 	-- Example errors to remove:
 	--   Error while copying \\15TFTICR64\data\
 	--   Error running OpenChrom
+	--   Authentication failure: The user name or password is incorrect.
+	--   Error: NeedToAbortProcessing
 	
 	INSERT INTO #TmpMessagesToRemove (MessageText)
 	VALUES ('Error while copying \\'), 
-	       ('Error running OpenChrom')
+	       ('Error running OpenChrom'),
+	       ('Authentication failure'),
+	       ('Error: NeedToAbortProcessing')
 
 	----------------------------------------------------
 	-- Find datasets to process
