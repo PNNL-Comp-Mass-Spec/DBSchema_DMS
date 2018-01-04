@@ -13,13 +13,19 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 **	Auth:	mem
 **	Date:	11/28/2017 mem - Initial version
 **			12/19/2017 mem - Add parameters @compoundTypeName, @organismName, @wellplateName, @wellNumber, and @modifications
+**			01/03/2018 mem - Add parameter @geneName and move parameter @modifications
+**			               - No longer require that @compoundName be unique in T_Reference_Compound
+**			               - Allow @description to be empty
+**			               - Properly handle float-based dates (resulting from Excel copy / paste-value issues)
 **    
 *****************************************************/
 (
 	@compoundID int,
-	@compoundName varchar(64),		-- Reference compound name or sequence
+	@compoundName varchar(64),		-- Reference compound name or peptide sequence
 	@description varchar(500),
 	@compoundTypeName varchar(64),
+	@geneName varchar(128),			-- Gene or Protein name
+	@modifications varchar(500),	
 	@organismName varchar(128),
 	@pubChemID varchar(30),			-- Will be converted to an integer; empty strings are stored as null
 	@campaignName varchar(64), 
@@ -33,7 +39,6 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 	@purity varchar(64),
 	@purchaseQuantity varchar(128),
 	@mass varchar(30),				-- Will be converted to a float
-	@modifications varchar(500),
 	@active varchar(3),				-- Can be: Yes, No, Y, N, 1, 0
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
@@ -320,6 +325,7 @@ As
 			Compound_Name,
 			Description,
 			Compound_Type_ID,
+			Gene_Name,
 			Organism_ID,
 			PubChem_CID,
 			Campaign_ID,
@@ -340,6 +346,7 @@ As
 			@compoundName,
 			@description,
 			@compoundTypeID,
+			@geneName,
 			@organismID,
 			@pubChemIdValue,
 			@campaignID,
@@ -422,6 +429,7 @@ As
 			Compound_Name = @compoundName,
 			Description = @description,
 			Compound_Type_ID = @compoundTypeID,
+			Gene_Name = @geneName,
 			Organism_ID = @organismID,
 			PubChem_CID = @pubChemIdValue,
 			Campaign_ID = @campaignID,

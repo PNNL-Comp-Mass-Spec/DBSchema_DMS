@@ -8,6 +8,8 @@ CREATE TABLE [dbo].[T_Reference_Compound](
 	[Compound_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Compound_Type_ID] [int] NOT NULL,
+	[Gene_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Modifications] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Organism_ID] [int] NOT NULL,
 	[PubChem_CID] [int] NULL,
 	[Campaign_ID] [int] NOT NULL,
@@ -21,7 +23,6 @@ CREATE TABLE [dbo].[T_Reference_Compound](
 	[Purity] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Purchase_Quantity] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Mass] [float] NULL,
-	[Modifications] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[Active] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Reference_Compound] PRIMARY KEY NONCLUSTERED 

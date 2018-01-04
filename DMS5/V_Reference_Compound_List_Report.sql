@@ -4,13 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Reference_Compound_List_Report]
 AS
 SELECT RC.Compound_ID AS ID,
        RC.Compound_Name AS [Name],
        RC.Description AS Description,
        RCT.Compound_Type_Name AS [Type],
+       RC.Gene_Name AS Gene,
+       RC.Modifications,
        Org.OG_Name AS [Organism],
        RC.PubChem_CID AS [PubChem CID],
        ISNULL(U.U_Name, RC.Contact_PRN) AS [Contact], 
@@ -24,7 +25,6 @@ SELECT RC.Compound_ID AS ID,
        RC.Purity,
        RC.Purchase_Quantity AS [Purchase Quantity],
        RC.Mass,
-       RC.Modifications,
        YN.Description AS [Active]
 FROM dbo.T_Reference_Compound RC
      INNER JOIN dbo.T_Campaign C

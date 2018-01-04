@@ -10,6 +10,8 @@ SELECT RC.Compound_ID AS [Compound_ID],
        RC.Compound_Name AS [Compound Name],
        RC.Description,
        RCT.Compound_Type_Name AS [Compound Type],
+       RC.Gene_Name AS [Gene or Protein],
+       RC.Modifications,
        Org.OG_Name AS [Organism],
        RC.PubChem_CID AS [PubChem CID],
        Case When U.U_Name Is Null 
@@ -28,7 +30,6 @@ SELECT RC.Compound_ID AS [Compound_ID],
        RC.Purity,
        RC.Purchase_Quantity AS [Purchase Quantity],
        RC.Mass,
-       RC.Modifications,
        YN.Description AS [Active]
 FROM dbo.T_Reference_Compound RC
      INNER JOIN dbo.T_Campaign C
