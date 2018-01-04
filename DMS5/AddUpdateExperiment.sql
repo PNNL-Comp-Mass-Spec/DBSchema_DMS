@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateExperiment]
+CREATE Procedure dbo.AddUpdateExperiment
 /****************************************************
 **
 **	Desc:	Adds a new experiment to DB
@@ -60,6 +60,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **			                 No longer pass @cellCultureList to AddExperimentCellCulture since it uses #Tmp_ExpToCCMap
 **			                 Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
 **			                 Add argument @referenceCompoundList
+**			01/04/2018 mem - Entries in @referenceCompoundList are now assumed to be in the form Compound_ID:Compound_Name, though we also support only Compound_ID or only Compound_Name
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 	@labNotebookRef varchar(64) = 'na',
 	@labelling varchar(64) = 'none',
 	@cellCultureList varchar(2048) = '',
-	@referenceCompoundList varchar(2048) = '',
+	@referenceCompoundList varchar(2048) = '',		-- Semicolon separated list of reference compound IDs; supports integers, or names of the form 3311:ANFTSQETQGAGK
 	@samplePrepRequest int = 0,
 	@internalStandard varchar(50),
 	@postdigestIntStd varchar(50),
@@ -100,6 +101,9 @@ As
 	
 	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
+
+	Declare @invalidCCList varchar(512) = null
+	Declare @invalidRefCompoundList varchar(512)
 	
 	BEGIN TRY 
 
@@ -415,7 +419,8 @@ As
 	)
 
 	CREATE TABLE #Tmp_ExpToRefCompoundMap (
-		Compound_Name varchar(128) not null,
+		Compound_IDName varchar(128) not null,
+		Colon_Pos int null,
 		Compound_ID int null
 	)
 	
@@ -463,8 +468,6 @@ As
 	if @myError <> 0
 		RAISERROR ('Error resolving cell culture name to ID', 11, 80)
 	
-	Declare @invalidCCList varchar(512) = null
-	
 	SELECT @invalidCCList = Coalesce(@invalidCCList + ', ' + CC_Name, CC_Name)
 	FROM #Tmp_ExpToCCMap
 	WHERE CC_ID IS NULL
@@ -493,14 +496,14 @@ As
 	--
 	If @referenceCompoundList Like '%;%'
 	Begin
-		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_Name) 
-		SELECT Value
+		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos) 
+		SELECT Value, CharIndex(':', Value)
 		FROM dbo.udfParseDelimitedList(@referenceCompoundList, ';', 'AddUpdateExperiment')		
 	End
 	Else If @referenceCompoundList <> ''
 	Begin
-		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_Name) 
-		VALUES (@referenceCompoundList)
+		INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos) 
+		VALUES (@referenceCompoundList, CharIndex(':', @referenceCompoundList))
 	End
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -508,32 +511,71 @@ As
 	if @myError <> 0
 		RAISERROR ('Could not populate temporary table for reference compound list', 11, 90)
 	
-	-- Verify that reference compounds exist
+	-- Update entries in #Tmp_ExpToRefCompoundMap to remove extra text that may be present
+	-- For example, switch from 3311:ANFTSQETQGAGK to 3311
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Compound_IDName = Substring(Compound_IDName, 1, Colon_Pos - 1)
+	WHERE Not Colon_Pos Is Null And Colon_Pos > 0
+	
+	-- Populate the Compound_ID column using any integers in Compound_IDName
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Compound_ID = Try_Cast(Compound_IDName as Int)
+	
+	-- If any entries still have a null Compound_ID value, try matching via reference compound name
+	-- We have numerous reference compounds with identical names, so matches found this way will be ambiguous
 	--
 	UPDATE #Tmp_ExpToRefCompoundMap
 	SET Compound_ID = Src.Compound_ID
 	FROM #Tmp_ExpToRefCompoundMap Target
 	     INNER JOIN T_Reference_Compound Src
-	       ON Src.Compound_Name = Target.Compound_Name
+	       ON Src.Compound_Name = Target.Compound_IDName
+	WHERE Target.Compound_ID IS Null
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
 	if @myError <> 0
 		RAISERROR ('Error resolving reference compound name to ID', 11, 91)
+
+	---------------------------------------------------
+	-- Look for invalid entries in #Tmp_ExpToRefCompoundMap
+	---------------------------------------------------
+	--
 	
-	Declare @invalidRefCompoundList varchar(512) = null
+	-- First look for entries without a Compound_ID
+	--
+	Set @invalidRefCompoundList = null
 	
-	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_Name, Compound_Name)
+	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
 	FROM #Tmp_ExpToRefCompoundMap
 	WHERE Compound_ID IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
+
 	if @myError <> 0
 		RAISERROR ('Error looking for unresolved reference compound names', 11, 92)
 	
-	if IsNull(@invalidRefCompoundList, '') <> ''
+	If Len(IsNull(@invalidRefCompoundList, '')) > 0
+	Begin
 		RAISERROR ('Invalid reference compound name(s): %s', 11, 93, @invalidRefCompoundList)
+	End
+
+	-- Next look for entries with an invalid Compound_ID
+	--
+	Set @invalidRefCompoundList = null
+	
+	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
+	FROM #Tmp_ExpToRefCompoundMap Src
+	     LEFT OUTER JOIN T_Reference_Compound RC
+	       ON Src.Compound_ID = RC.Compound_ID
+	WHERE NOT Src.Compound_ID IS NULL AND
+	      RC.Compound_ID IS NULL
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If Len(IsNull(@invalidRefCompoundList, '')) > 0
+	Begin
+		RAISERROR ('Invalid reference compound ID(s): %s', 11, 93, @invalidRefCompoundList)
+	End
 
 	---------------------------------------------------
 	-- Add/update the experiment

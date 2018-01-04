@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.UpdateCachedExperimentComponentNames
 **
 **	Auth:	mem
 **	Date:	11/29/2017 mem - Initial version
+**			01/04/2018 mem - Now caching reference compounds using the ID_Name field (which is of the form Compound_ID:Compound_Name)
 **    
 *****************************************************/
 (
@@ -56,7 +57,7 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
-		SELECT @refCompoundList = Coalesce(@refCompoundList + '; ' + RC.Compound_Name, RC.Compound_Name)
+		SELECT @refCompoundList = Coalesce(@refCompoundList + '; ' + RC.ID_Name, RC.ID_Name)
 		FROM T_Experiment_Reference_Compounds ERC
 		     INNER JOIN T_Reference_Compound RC
 		       ON ERC.Compound_ID = RC.Compound_ID
@@ -141,7 +142,7 @@ As
 		--
 		INSERT INTO #Tmp_ExperimentRefCompounds (Exp_ID, Reference_Compound_List, Items)
 		SELECT ERC.Exp_ID,
-		       RC.Compound_Name,
+		       RC.ID_Name,
 		       1 as Items
 		FROM T_Experiment_Reference_Compounds ERC
 		     INNER JOIN T_Reference_Compound RC
@@ -230,7 +231,7 @@ As
 			Begin
 				Set @refCompoundList = null
 				
-				SELECT @refCompoundList = Coalesce(@refCompoundList + '; ' + RC.Compound_Name, RC.Compound_Name)
+				SELECT @refCompoundList = Coalesce(@refCompoundList + '; ' + RC.ID_Name, RC.ID_Name)
 				FROM T_Experiment_Reference_Compounds ERC
 				     INNER JOIN T_Reference_Compound RC
 				       ON ERC.Compound_ID = RC.Compound_ID
@@ -257,7 +258,7 @@ As
 			       ERC.Reference_Compound_List,
 			       ERC.Items AS RefCompound_Items
 			FROM #Tmp_ExperimentCellCultures ECC
-			     FULL OUTER JOIN #Tmp_ExperimentRefCompounds ERC
+			  FULL OUTER JOIN #Tmp_ExperimentRefCompounds ERC
 			       ON ECC.Exp_ID = ERC.Exp_ID
 			ORDER BY IsNull(ECC.Items, ERC.Items), Exp_ID
 
@@ -326,9 +327,8 @@ As
 
 	End -- </AllExperiments>
 	
-
-	
 Done:
 	return @myError
+
 
 GO

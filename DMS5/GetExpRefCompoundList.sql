@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetExpRefCompoundList]
+
+CREATE FUNCTION dbo.GetExpRefCompoundList
 /****************************************************
 **
 **	Desc: 
@@ -15,6 +16,7 @@ CREATE FUNCTION [dbo].[GetExpRefCompoundList]
 **
 **	Auth:	mem
 **	Date:	11/29/2017
+**			01/04/2018 mem - Now caching reference compounds using the ID_Name field (which is of the form Compound_ID:Compound_Name)
 **    
 *****************************************************/
 (
@@ -25,7 +27,7 @@ AS
 BEGIN
 	Declare @list varchar(2048) = null
 	
-	SELECT @list = Coalesce(@list + '; ' + RC.Compound_Name, RC.Compound_Name)
+	SELECT @list = Coalesce(@list + '; ' + RC.ID_Name, RC.ID_Name)
 	FROM T_Experiment_Reference_Compounds ERC
 	     INNER JOIN T_Experiments E
 	       ON ERC.Exp_ID = E.Exp_ID
@@ -38,5 +40,6 @@ BEGIN
 
 	RETURN @list
 END
+
 
 GO

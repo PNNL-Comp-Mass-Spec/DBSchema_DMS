@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddExperimentReferenceCompound]
+CREATE Procedure dbo.AddExperimentReferenceCompound
 /****************************************************
 **
 **	Desc: Adds reference compound entries to DB for given experiment
@@ -12,7 +11,8 @@ CREATE Procedure [dbo].[AddExperimentReferenceCompound]
 **	The calling procedure must create and populate temporary table #Tmp_ExpToRefCompoundMap:
 **
 **		CREATE TABLE #Tmp_ExpToRefCompoundMap (
-**			Compound_Name varchar(128) not null,
+**			Compound_IDName varchar(128) not null,
+**			Colon_Pos int null,
 **			Compound_ID int null
 **		)
 **
@@ -20,6 +20,7 @@ CREATE Procedure [dbo].[AddExperimentReferenceCompound]
 **
 **	Auth:	mem
 **	Date:	11/29/2017 mem - Initial version
+**			01/04/2018 mem - Update fields in #Tmp_ExpToRefCompoundMap, switching from Compound_Name to Compound_IDName
 **    
 *****************************************************/
 (
@@ -32,6 +33,7 @@ As
 	Declare @myRowCount int = 0
 
 	Declare @msg varchar(256)
+	Declare @invalidRefCompoundList varchar(512)
 	
 	---------------------------------------------------
 	-- Validate the inputs
@@ -50,12 +52,31 @@ As
 	-- Try to resolve any null reference compound ID values in #Tmp_ExpToRefCompoundMap
 	---------------------------------------------------
 	--
+	-- Make sure column Colon_Pos is populated
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Colon_Pos = CharIndex(':', Compound_IDName)
+	WHERE Colon_Pos Is Null
+	
+	-- Update entries in #Tmp_ExpToRefCompoundMap to remove extra text that may be present
+	-- For example, switch from 3311:ANFTSQETQGAGK to 3311
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Compound_IDName = Substring(Compound_IDName, 1, Colon_Pos - 1)
+	WHERE Not Colon_Pos Is Null And Colon_Pos > 0 AND Compound_IDName Like '%:%'
+	
+	-- Populate the Compound_ID column using any integers in Compound_IDName
+	UPDATE #Tmp_ExpToRefCompoundMap
+	SET Compound_ID = Try_Cast(Compound_IDName as Int)
+	WHERE Compound_ID Is Null
+	
+	-- If any entries still have a null Compound_ID value, try matching via reference compound name
+	-- We have numerous reference compounds with identical names, so matches found this way will be ambiguous
+	--
 	UPDATE #Tmp_ExpToRefCompoundMap
 	SET Compound_ID = Src.Compound_ID
 	FROM #Tmp_ExpToRefCompoundMap Target
 	     INNER JOIN T_Reference_Compound Src
-	       ON Src.Compound_Name = Target.Compound_Name
-	WHERE Target.Compound_ID Is Null
+	       ON Src.Compound_Name = Target.Compound_IDName
+	WHERE Target.Compound_ID IS Null
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -63,20 +84,42 @@ As
 	-- Look for invalid entries in #Tmp_ExpToRefCompoundMap
 	---------------------------------------------------
 	--
-	Declare @invalidCompoundList varchar(512) = null
-
-	SELECT @invalidCompoundList = Coalesce(@invalidCompoundList + ', ' + Compound_Name, Compound_Name)
+	
+	-- First look for entries without a Compound_ID
+	--
+	Set @invalidRefCompoundList = null
+	
+	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
 	FROM #Tmp_ExpToRefCompoundMap
 	WHERE Compound_ID IS NULL
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	If Len(IsNull(@invalidCompoundList, '')) > 0
+	If Len(IsNull(@invalidRefCompoundList, '')) > 0
 	Begin
-		Set @message = 'Invalid reference compound name(s): ' + @invalidCompoundList
+		Set @message = 'Invalid reference compound name(s): ' + @invalidRefCompoundList
 		return 51063
 	End
-		
+
+	-- Next look for entries with an invalid Compound_ID
+	--
+	Set @invalidRefCompoundList = null
+	
+	SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
+	FROM #Tmp_ExpToRefCompoundMap Src
+	     LEFT OUTER JOIN T_Reference_Compound RC
+	       ON Src.Compound_ID = RC.Compound_ID
+	WHERE NOT Src.Compound_ID IS NULL AND
+	      RC.Compound_ID IS NULL
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+	
+	If Len(IsNull(@invalidRefCompoundList, '')) > 0
+	Begin
+		Set @message = 'Invalid reference compound ID(s): ' + @invalidRefCompoundList
+		return 51063
+	End
+	
 	---------------------------------------------------
 	-- Add/remove reference compounds
 	---------------------------------------------------
@@ -108,5 +151,6 @@ As
 	End
 	
 	return 0
+
 
 GO

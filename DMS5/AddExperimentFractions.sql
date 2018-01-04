@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddExperimentFractions]
+
+CREATE PROCEDURE dbo.AddExperimentFractions
 /****************************************************
 **
 **	Desc: 
@@ -43,6 +44,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **			11/29/2017 mem - No longer pass @cellCultureList to AddExperimentCellCulture since it now uses temp table #Tmp_ExpToCCMap
 **			                 Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
 **			                 Call AddExperimentReferenceCompound
+**			01/04/2018 mem - Update fields in #Tmp_ExpToRefCompoundMap, switching from Compound_Name to Compound_IDName
 **    
 *****************************************************/
 (
@@ -81,7 +83,7 @@ AS
 	Declare @msg varchar(512)
 
 	Declare @startingIndex int = 1               -- Initial index for automatic naming of new experiments
-	Declare @step int = 1                        -- Step interval in index
+	Declare @step int = 1                 -- Step interval in index
 	
 	-- T_Experiments column variables
 	--
@@ -136,7 +138,8 @@ AS
 	)
 
 	CREATE TABLE #Tmp_ExpToRefCompoundMap (
-		Compound_Name varchar(128) not null,
+		Compound_IDName varchar(128) not null,
+		Colon_Pos int null,
 		Compound_ID int null
 	)
 	
@@ -195,9 +198,9 @@ AS
 	-- Cache the reference compound mapping
 	---------------------------------------------------
 	--
-	INSERT INTO #Tmp_ExpToRefCompoundMap( Compound_Name,
+	INSERT INTO #Tmp_ExpToRefCompoundMap( Compound_IDName,
 	                                      Compound_ID )
-	SELECT RC.Compound_Name,
+	SELECT Cast(RC.Compound_ID As varchar(12)),
 	       RC.Compound_ID
 	FROM T_Experiment_Reference_Compounds ERC
 	     INNER JOIN T_Reference_Compound RC
