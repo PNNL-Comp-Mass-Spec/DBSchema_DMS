@@ -54,6 +54,7 @@ As
 
 	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
+	Declare @compoundIdAndName varchar(128) = Cast(IsNull(@compoundID, 0) as varchar(12)) + ': ' + IsNull(@compoundName, '??')
 	
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -75,6 +76,7 @@ As
 	Set @compoundName = LTrim(RTrim(IsNull(@compoundName, '')))
 	Set @description = LTrim(RTrim(IsNull(@description, '')))
 	Set @compoundTypeName = LTrim(RTrim(IsNull(@compoundTypeName, '')))
+	Set @geneName = LTrim(RTrim(IsNull(@geneName, '')))
 	Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
 	Set @pubChemID = LTrim(RTrim(IsNull(@pubChemID, '')))
 	Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
@@ -98,10 +100,7 @@ As
 		RAISERROR ('Compound Name must be defined', 11, 1)
 	End	
 
-	If LEN(@description) < 1
-	Begin
-		RAISERROR ('Description must be defined', 11, 7)
-	End
+	Set @compoundIdAndName = Cast(IsNull(@compoundID, 0) as varchar(12)) + ': ' + IsNull(@compoundName, '??')
 
 	If LEN(@compoundTypeName) < 1
 	Begin
@@ -203,17 +202,6 @@ As
 	---------------------------------------------------
 
 	Declare @curContainerID int = 0
-
-	If @mode IN ('add', 'check_add')
-	Begin
-		-- Check for a name conflict
-		--
-		If Exists (SELECT * FROM T_Reference_Compound WHERE Compound_Name = @compoundName)
-		Begin
-			Set @msg = 'Cannot add: Reference compound "' + @compoundName + '" already in database '
-			RAISERROR (@msg, 11, 11)
-		End
-	End
 
 	If @mode IN ('update', 'check_update')
 	Begin
@@ -375,25 +363,6 @@ As
 
 		Set @compoundID = SCOPE_IDENTITY()
 		
-		-- As a precaution, query T_Reference_Compound using compound name to make sure we have the correct Compound_ID
-		Declare @IDConfirm int = 0
-		
-		SELECT @IDConfirm = Compound_ID
-		FROM T_Reference_Compound
-		WHERE Compound_Name = @compoundName
-		
-		If @compoundID <> IsNull(@IDConfirm, @compoundID)
-		Begin
-			Declare @DebugMsg varchar(512)
-			Set @DebugMsg = 'Warning: Inconsistent identity values when adding reference comp;ound ' + @compoundName + ': Found ID ' +
-			                Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
-			                Cast(@compoundID as varchar(12))
-			                
-			exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateReferenceCompound'
-			
-			Set @compoundID = @IDConfirm
-		End		
-		
 		Declare @StateID int = 1
 		
 		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -406,7 +375,7 @@ As
 		Begin
 			exec PostMaterialLogEntry
 				'Reference Compound Move',  -- Type
-				@compoundName,              -- Item
+				@compoundIdAndName,         -- Item
 				'na',                       -- Initial State (aka Old container)
 				@containerName,             -- Final State   (aka New container
 				@callingUser,               
@@ -451,7 +420,7 @@ As
 		--
 		If @myError <> 0 or @myRowCount <> 1
 		Begin
-			Set @msg = 'Update operation failed: ID ' + Cast(@compoundID as varchar(12))
+			Set @msg = 'Update operation failed, ID ' + @compoundIdAndName
 			RAISERROR (@msg, 11, 19)
 		End
 
@@ -461,7 +430,7 @@ As
 		Begin
 			exec PostMaterialLogEntry
 				'Reference Compound Move',  -- Type
-				@compoundName,              -- Item
+				@compoundIdAndName,         -- Item
 				@curContainerName,          -- Initial State (aka Old container)
 				@containerName,             -- Final State   (aka New container
 				@callingUser,               
@@ -480,7 +449,7 @@ As
 
 		If @logErrors > 0
 		Begin
-			Declare @logMessage varchar(1024) = @message + '; ID ' + Cast(@compoundID as varchar(12)) + '; Name ' + @compoundName
+			Declare @logMessage varchar(1024) = @message + '; ID ' + @compoundIdAndName
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateReferenceCompound'
 		End
 
