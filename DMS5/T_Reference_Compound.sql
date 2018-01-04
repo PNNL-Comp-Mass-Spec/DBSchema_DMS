@@ -197,6 +197,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Trigger [dbo].[trig_u_Reference_Compound] on [dbo].[T_Reference_Compound]
 For Update
 /****************************************************
@@ -206,6 +207,8 @@ For Update
 **
 **	Auth:	mem
 **	Date:	11/28/2017 mem - Initial version
+**	Date:	01/03/2018 mem - Store compound name, gene name, and modifications in the Old_Name and New_Name fields
+**              
 **    
 *****************************************************/
 AS
@@ -214,12 +217,16 @@ AS
 
 	Set NoCount On
 
-	If Update(Compound_Name)
+	If Update(Compound_Name) OR Update(Modifications) OR Update(Gene_Name)
 	Begin
 		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
-		SELECT 13, inserted.Compound_ID, deleted.Compound_Name, inserted.Compound_Name, GETDATE()
+		SELECT 13, inserted.Compound_ID, 
+              deleted.Compound_Name +  ' (Modifications ' + IsNull(deleted.Modifications, '') +  ', Gene ' + IsNull(deleted.Gene_Name, '') + ')', 
+              inserted.Compound_Name + ' (Modifications ' + IsNull(inserted.Modifications, '') + ', Gene ' + IsNull(inserted.Gene_Name, '') + ')', 
+              GETDATE()
 		FROM deleted INNER JOIN inserted ON deleted.Compound_ID = inserted.Compound_ID
-          WHERE deleted.Compound_Name <> inserted.Compound_Name
+          WHERE deleted.Compound_Name + '_' +  IsNull(deleted.Modifications, '') + '_' +   IsNull(deleted.Gene_Name, '') <>
+                inserted.Compound_Name + '_' + IsNull(inserted.Modifications, '') + '_' +  IsNull(inserted.Gene_Name, '')
 		ORDER BY inserted.Compound_ID
 	End
 
