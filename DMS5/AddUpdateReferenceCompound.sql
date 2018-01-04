@@ -164,7 +164,19 @@ As
 		If IsDate(@purchaseDate) = 1
 			Set @purchaseDateValue = CONVERT(datetime, @purchaseDate)
 		Else
-			RAISERROR ('Error, invalid purchase date: %s', 11, 9, @purchaseDate)
+		Begin
+			If Not TRY_CAST(@purchaseDate as float) IS NULL
+			Begin
+				-- Integer or float based date (likely an Excel conversion artifact)
+				-- Convert to a float then subtract 2 (trial and error revealed this subtraction to be necessary)
+				Declare @purchaseDateFloat int = Cast(@purchaseDate AS float) - 2
+				Set @purchaseDateValue = CONVERT(datetime, @purchaseDateFloat)
+			End
+			Else
+			Begin
+				RAISERROR ('Error, invalid purchase date: %s', 11, 9, @purchaseDate)
+			End
+		End
 	End		
 	
 	---------------------------------------------------
