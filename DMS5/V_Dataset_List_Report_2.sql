@@ -4,11 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Dataset_List_Report_2] 
-AS
+CREATE VIEW [dbo].[V_Dataset_List_Report_2] AS
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
-       Exp.Experiment_Num AS Experiment,
+       E.Experiment_Num AS Experiment,
        C.Campaign_Num AS Campaign,
        DSN.DSS_name AS State,
        InstName.IN_name AS Instrument,
@@ -24,22 +23,23 @@ SELECT DS.Dataset_ID AS ID,
        ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq. End],
        DS.Acq_Length_Minutes AS [Acq Length],
        DS.Scan_Count AS [Scan Count],
-	   Cast(DS.File_Size_Bytes / 1024.0 / 1024 AS decimal(9,2)) AS [File Size MB],
+       Cast(DS.File_Size_Bytes / 1024.0 / 1024 AS decimal(9,2)) AS [File Size MB],
        CartConfig.Cart_Config_Name AS [Cart Config],
-	   LC.SC_Column_Number AS [LC Column],
+       LC.SC_Column_Number AS [LC Column],
        DS.DS_sec_sep AS [Separation Type],
        RR.RDS_Blocking_Factor AS [Blocking Factor],
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        RR.ID AS Request,
        RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
-	   EPT.Abbreviation AS [EUS Proposal Type],
+       EPT.Abbreviation AS [EUS Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
        RR.RDS_Oper_PRN AS Requester,
        DASN.DASN_StateName AS [Archive State],
        T_YesNo.Description AS [Inst. Data Purged],
-	   Org.OG_name AS Organism,
-	   DS.DateSortKey AS #DateSortKey
+       Org.OG_name AS Organism,
+       BTO.Tissue,
+       DS.DateSortKey AS #DateSortKey
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
@@ -49,31 +49,32 @@ FROM T_DatasetStateName DSN
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_DatasetRatingName DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
-     INNER JOIN T_Experiments Exp
-       ON DS.Exp_ID = Exp.Exp_ID
+     INNER JOIN T_Experiments E
+       ON DS.Exp_ID = E.Exp_ID
      INNER JOIN T_Campaign C
-       ON Exp.EX_campaign_ID = C.Campaign_ID
+       ON E.EX_campaign_ID = C.Campaign_ID
      LEFT OUTER JOIN T_Cached_Dataset_Links AS DL
        ON DS.Dataset_ID = DL.Dataset_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
      INNER JOIN T_Organisms Org
-       ON Org.Organism_ID = Exp.EX_organism_ID
-	 Left OUTER JOIN T_LC_Cart_Configuration CartConfig
-	   ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
+       ON Org.Organism_ID = E.EX_organism_ID
+     LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
+       ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-	 LEFT OUTER JOIN T_EUS_Proposals AS EUP 
-	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
-	   ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
+       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+       ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_DatasetArchiveStateName DASN
                      INNER JOIN T_Dataset_Archive DA
                        ON DASN.DASN_StateID = DA.AS_state_ID
                      INNER JOIN T_YesNo
                        ON DA.AS_instrument_data_purged = T_YesNo.Flag
        ON DS.Dataset_ID = DA.AS_Dataset_ID
-
+     LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
+       ON BTO.Identifier = E.EX_Tissue_ID
 
 
 GO
