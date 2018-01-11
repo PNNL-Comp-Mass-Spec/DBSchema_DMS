@@ -19,6 +19,7 @@ CREATE Procedure dbo.VerifySPAuthorized
 **
 **	Auth:	mem
 **	Date:	06/16/2017 mem - Initial version
+**			01/05/2018 mem - Include username and hostname in RAISERROR message
 **    
 *****************************************************/
 (
@@ -96,7 +97,9 @@ AS
 			Begin
 				Set @message = 'User ' + @loginName + ' cannot execute procedure ' + @procedureName + ' from host ' + @clientHostName
 				Exec PostLogEntry 'Error', @message, 'VerifySPAuthorized'
-				RAISERROR ('Access denied for current user', 11, 4)
+				
+				Declare @msg varchar(128) = 'Access denied for current user (' + @loginName + ' on host ' + @clientHostName + ')'
+				RAISERROR (@msg, 11, 4)
 			End
 		End
 	End
