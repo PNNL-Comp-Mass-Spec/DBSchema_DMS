@@ -22,6 +22,7 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			01/05/2018 mem - Assure that @comment does not contain LF or CR
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -86,6 +87,9 @@ As
 		Declare @msg varchar(128) = 'Invalid usage ' + @Usage
 		RAISERROR (@msg, 11, 16)
 	End
+		
+	-- Assure that @comment does not contain LF or CR
+	Set @Comment = Replace(Replace(@Comment, Char(10), ' '), Char(13), ' ')
 	
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)

@@ -25,8 +25,8 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 **			03/27/2012 grk - Using V_Instrument_Tracked
 **          04/09/2012 grk - modified algorithm
 **			08/02/2012 mem - Updated @DaysToProcess to default to 60 days instead of 30 days
-**          09/18/2012 grk - only do EMSL instrumet updates for EMLS instruments 
-**          10/06/2012 grk - removed update of EMSL usage report for previous month
+**          09/18/2012 grk - Only do EMSL instrument updates for EMSL instruments 
+**          10/06/2012 grk - Removed update of EMSL usage report for previous month
 **			03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/10/2017 mem - Add parameter @instrumentsToProcess

@@ -33,6 +33,7 @@ CREATE PROCEDURE dbo.UpdateEMSLInstrumentUsageReport
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/02/2017 mem - Trim whitespace from the cleaned comment returned by ParseUsageText
+**			01/05/2017 mem - Remove LF and CR from dataset comments
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -156,6 +157,10 @@ AS
 				)
 		EXEC GetMonthlyInstrumentUsageReport @instrument, @year, @month, @outputFormat, @message OUTPUT
 
+		-- Assure that the comment field does not have LF or CR
+		UPDATE #STAGING
+		SET Comment = Replace(Replace(Comment, Char(10), ' '), Char(13), ' ')
+		
 		---------------------------------------------------
 		-- Populate columns DMS_Inst_ID and Usage_Type 
 		---------------------------------------------------
