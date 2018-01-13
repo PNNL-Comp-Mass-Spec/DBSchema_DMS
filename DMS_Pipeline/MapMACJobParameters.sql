@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.MapMACJobParameters
+
+CREATE PROCEDURE [dbo].[MapMACJobParameters]
 /****************************************************
 **
 **  Desc: 
