@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.RenameDataset
+
+CREATE PROCEDURE [dbo].[RenameDataset]
 /****************************************************
 **
 **	Desc: 
@@ -429,7 +430,7 @@ AS
 
 	If @jobFileUpdateCount > 0
 	Begin
-		Select 'See the console output for ' + Cast(@jobFileUpdateCount as varchar(9)) + ' job file update commands' as Comment
+		Select 'See the console output for ' + Cast(@jobFileUpdateCount as varchar(9)) + ' dataset/job file update commands' as Comment
 	End
 	
  	---------------------------------------------------

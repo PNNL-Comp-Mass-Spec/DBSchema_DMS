@@ -21,6 +21,7 @@ SELECT Location,
 FROM dbo.V_Material_Locations_List_Report
 WHERE Available > 0 AND
       Status = 'Active'
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_Available_List_Report] TO [DDL_Viewer] AS [dbo]
 GO
