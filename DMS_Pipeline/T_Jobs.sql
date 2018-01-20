@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[T_Jobs](
 	[Imported] [datetime] NOT NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
+	[Runtime_Minutes] [real] NULL,
 	[Archive_Busy] [tinyint] NOT NULL,
 	[Transfer_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -86,7 +87,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_d_Jobs] ON [dbo].[T_Jobs] 
 FOR DELETE
 AS
@@ -101,14 +101,12 @@ AS
 	FROM deleted
 	ORDER BY deleted.Job
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_i_Jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_i_Jobs] ON [dbo].[T_Jobs] 
 FOR INSERT
 AS
@@ -124,14 +122,12 @@ AS
 	WHERE inserted.State <> 0
 	ORDER BY inserted.Job
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_u_Jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_u_Jobs] ON [dbo].[T_Jobs] 
 FOR UPDATE
 /****************************************************
@@ -171,14 +167,12 @@ AS
 
 	End
 
-
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_ud_T_Jobs]
 ON [dbo].[T_Jobs]
 FOR UPDATE, DELETE AS
@@ -217,6 +211,5 @@ BEGIN
     END
 
 END
-
 
 GO

@@ -23,6 +23,7 @@ SELECT J.Job,
        J.Imported,
        J.Start,
        J.Finish,
+       J.Runtime_Minutes,
        J.Transfer_Folder_Path,
        CONVERT(varchar(MAX), JP.Parameters) AS Parameters
 FROM dbo.T_Jobs_History AS J
@@ -39,8 +40,6 @@ FROM dbo.T_Jobs_History AS J
      LEFT OUTER JOIN dbo.S_DMS_T_Analysis_Job AS AJ
        ON J.Job = AJ.AJ_jobID
 WHERE J.Most_Recent_Entry = 1
-
-
 
 
 GO

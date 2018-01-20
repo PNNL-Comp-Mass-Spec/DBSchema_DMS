@@ -16,6 +16,7 @@ CREATE TABLE [dbo].[T_Jobs_History](
 	[Imported] [datetime] NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
+	[Runtime_Minutes] [real] NULL,
 	[Saved] [datetime] NULL,
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Transfer_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

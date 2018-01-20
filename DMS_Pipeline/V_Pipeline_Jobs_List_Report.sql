@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Pipeline_Jobs_List_Report
+
+CREATE VIEW [dbo].[V_Pipeline_Jobs_List_Report]
 AS
 SELECT J.Job,
        J.Priority,
@@ -15,6 +16,7 @@ SELECT J.Job,
        J.Imported,
        J.Start,
        J.Finish,
+       J.Runtime_Minutes,
        J.DataPkgID,
        J.Owner,
        J.Transfer_Folder_Path,

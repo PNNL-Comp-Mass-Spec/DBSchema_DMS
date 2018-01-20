@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Pipeline_Jobs_History_List_Report]
 AS
 SELECT J.Job,
@@ -17,6 +16,7 @@ SELECT J.Job,
        J.Imported,
        J.Start,
        J.Finish,
+       J.Runtime_Minutes,
        J.DataPkgID,
        J.Owner,
        J.Transfer_Folder_Path,
@@ -25,7 +25,6 @@ FROM dbo.T_Jobs_History J
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID
 WHERE J.Most_Recent_Entry = 1
-
 
 
 GO
