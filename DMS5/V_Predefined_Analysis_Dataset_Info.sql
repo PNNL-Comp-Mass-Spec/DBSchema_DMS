@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Predefined_Analysis_Dataset_Info]
 AS
 SELECT C.Campaign_Num AS Campaign,
@@ -38,7 +37,6 @@ FROM dbo.T_Dataset DS
        ON DS.DS_rating = DRN.DRN_state_ID
      LEFT OUTER JOIN dbo.T_Secondary_Sep SepType
        ON DS.DS_sec_sep = SepType.SS_name
-
 
 
 GO
