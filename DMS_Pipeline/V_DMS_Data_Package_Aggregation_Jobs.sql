@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 /*
 ** This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
 **
@@ -48,7 +49,8 @@ FROM ( SELECT Src.Data_Package_ID,
             LEFT OUTER JOIN S_Production_Pipeline_Job_Steps_History JSH
               ON Src.Job = JSH.Job AND
                  JSH.Most_Recent_Entry = 1 AND
-                 JSH.Shared_Result_Version > 0
+                 JSH.Shared_Result_Version > 0 AND
+                 JSH.State = 5
      ) LookupQ
 GROUP BY Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
          DatasetFolder, ResultsFolder, DatasetID, Organism, InstrumentName, InstrumentGroup, InstrumentClass, Completed,
