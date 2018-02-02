@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_instrument_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_code] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SP_URL]  AS (case when [sp_function]='inbox' then NULL else (('http://'+[SP_machine_name])+'/')+replace([SP_path],'\','/') end) PERSISTED,
+	[SP_URL]  AS (case when [sp_function] like '%inbox' then NULL else (('http://'+[SP_machine_name])+'/')+replace([SP_path],'\','/') end) PERSISTED,
 	[SP_created] [datetime] NULL,
 	[SPath_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
@@ -48,7 +48,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Storage_Path] on [dbo].[T_Storage_Path]
 After Update
 /****************************************************
@@ -88,6 +87,5 @@ AS
 		       ON DS.DS_storage_path_ID = inserted.SP_path_ID
 
 	End
-
 
 GO
