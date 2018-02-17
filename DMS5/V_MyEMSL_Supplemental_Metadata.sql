@@ -33,4 +33,5 @@ FROM dbo.T_Campaign AS C
      LEFT OUTER JOIN dbo.T_Organisms AS Org
        ON E.EX_organism_ID = Org.Organism_ID
 
+
 GO
