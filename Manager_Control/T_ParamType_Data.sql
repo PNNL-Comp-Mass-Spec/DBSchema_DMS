@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 184 ******/
+/****** RowCount: 188 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -185,4 +185,8 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (20
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (202,'RemoteHostPassphraseFile','','File with the RSA passphrase')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (203,'MSGFPlusProgLoc','','Folder containing MSGFPlus.jar')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (204,'UimfToMassHunterProgLoc','','Folder containing UimfToMassHunter.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (205,'DMSUpdateManagerSource','','Server share with the master copy of files to copy to the local computer (or to a remote Linux host)')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (206,'RemoteHostDMSProgramsPath','','Path on the remote computer to the directory holding applications used by the analysis manager')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (207,'DMSUpdateManagerFilesToIgnore','','Filenames to ignore when updating files with the DMS Update Manager')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (209,'RemoteHostAnalysisManagerDir','','Name (not full path) of the directory below directory RemoteHostDMSProgramsPath')
 SET IDENTITY_INSERT [T_ParamType] OFF
