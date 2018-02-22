@@ -4,17 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Funding_Report]
 AS
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        InstName.IN_name AS Instrument,
        Exp.Experiment_Num AS Experiment,
-       ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS Run_Start,
-       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS Run_Finish,
+       DS.Acq_Time_Start AS Run_Start,
+       DS.Acq_Time_End AS Run_Finish,
        DS.Acq_Length_Minutes AS [Acq Length],
-       -- DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
        C.Campaign_Num AS Campaign,
        DSN.DSS_name AS State,
        DS.DS_created AS Created,
@@ -24,8 +22,8 @@ SELECT DS.Dataset_ID AS ID,
        RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
        RR.RDS_WorkPackage AS [Work Package],
        SPR.Work_Package_Number AS [SamplePrep Work Package],
-       dbo.GetProposalEUSUsersList(RR.RDS_EUS_Proposal_ID, 'N') AS EMSL_Users,
-       dbo.GetProposalEUSUsersList(RR.RDS_EUS_Proposal_ID, 'I') AS EMSL_UserIDs,
+       dbo.GetProposalEUSUsersList(RR.RDS_EUS_Proposal_ID, 'N', 5) AS EMSL_Users,
+       dbo.GetProposalEUSUsersList(RR.RDS_EUS_Proposal_ID, 'I', 20) AS EMSL_UserIDs,
        DTN.DST_name AS [Dataset Type],
        DS.DS_Oper_PRN AS Operator,
        DS.Scan_Count AS [Scan Count],
@@ -35,9 +33,9 @@ SELECT DS.Dataset_ID AS ID,
             WHEN SPR.Work_Package_Number LIKE 'K798%' OR RR.RDS_WorkPackage LIKE 'K798%' THEN 1 
             Else 0 
        End AS Fraction_EMSL_Funded,
-       CASE WHEN ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) < 2000 
-                 THEN YEAR(DATEADD(DAY, 92, DS_Created))
-            ELSE YEAR(DATEADD(DAY, 92, ISNULL(ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), DS_Created))) 
+       CASE WHEN DS.Acq_Time_Start < 2000 
+            THEN YEAR(DATEADD(DAY, 92, DS_Created))
+            ELSE YEAR(DATEADD(DAY, 92, ISNULL(DS.Acq_Time_Start, DS_Created)))
        END AS FY,
        InstName.IN_operations_role AS Instrument_Ops_Role,
        InstName.IN_class AS Instrument_Class

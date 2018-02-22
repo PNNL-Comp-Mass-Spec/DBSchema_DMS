@@ -10,10 +10,9 @@ SELECT P.Proposal_ID AS ID,
        P.State_ID AS State,
        P.Title,
        P.Import_Date AS ImportDate,
-	   P.Proposal_Type,
-       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'I') AS EUSUsers
+       P.Proposal_Type,
+       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'I', 1000) AS EUSUsers
 FROM dbo.T_EUS_Proposals P
-
 
 
 GO
