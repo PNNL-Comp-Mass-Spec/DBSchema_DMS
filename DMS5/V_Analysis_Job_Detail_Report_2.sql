@@ -47,10 +47,6 @@ SELECT AJ.AJ_jobID AS JobNum,
            WHEN AJ.AJ_MyEMSLState > 0 THEN ''
            ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName) 
        END AS [Archive Results Folder Path],
-       CASE
-           WHEN AJ.AJ_MyEMSLState > 0 THEN dbo.GetMyEMSLUrlAnalysisJob(AJ.AJ_resultsFolderName)
-           ELSE ''
-       END AS [MyEMSL URL],
        CASE 
            WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
            ELSE DFP.Dataset_URL
@@ -120,7 +116,6 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
      LEFT OUTER JOIN T_Dataset_Archive AS DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
-
 
 
 GO
