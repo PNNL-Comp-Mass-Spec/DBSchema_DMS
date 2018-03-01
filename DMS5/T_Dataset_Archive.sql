@@ -231,116 +231,116 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Trigger [dbo].[trig_u_Dataset_Archive] on [dbo].[T_Dataset_Archive]
 For Update
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the updated dataset archive task
+**  Desc:   Makes an entry in T_Event_Log for the updated dataset archive task
 **
-**	Auth:	grk
-**	Date:	01/01/2003
-**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			09/04/2007 mem - Now updating AS_state_Last_Affected when the state changes (Ticket #527)
-**			10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
-**						   - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
-**			12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
-**			08/04/2008 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 (Ticket #683)
-**			06/06/2012 mem - Now updating AS_state_Last_Affected and AS_update_state_Last_Affected only if the state actually changes
-**			06/11/2012 mem - Now updating QC_Data_Purged to 1 if AS_state_ID changes to 4
-**			06/12/2012 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 or 14
-**			11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
-**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
+**  Auth:   grk
+**  Date:   01/01/2003
+**          08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**          09/04/2007 mem - Now updating AS_state_Last_Affected when the state changes (Ticket #527)
+**          10/31/2007 mem - Updated to track changes to AS_update_state_ID (Ticket #569)
+**                         - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**          12/12/2007 mem - Now updating AJ_StateNameCached in T_Analysis_Job (Ticket #585)
+**          08/04/2008 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 (Ticket #683)
+**          06/06/2012 mem - Now updating AS_state_Last_Affected and AS_update_state_Last_Affected only if the state actually changes
+**          06/11/2012 mem - Now updating QC_Data_Purged to 1 if AS_state_ID changes to 4
+**          06/12/2012 mem - Now updating AS_instrument_data_purged if AS_state_ID changes to 4 or 14
+**          11/14/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
+**          07/25/2017 mem - Now updating T_Cached_Dataset_Links
 **    
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set Nocount On
+    Set Nocount On
 
-	Declare @CurrentDate DateTime
-	Set @CurrentDate = GetDate()
+    Declare @CurrentDate DateTime
+    Set @CurrentDate = GetDate()
 
-	If Update(AS_state_ID)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, deleted.AS_state_ID, @CurrentDate
-		FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
-		WHERE inserted.AS_state_ID <> deleted.AS_state_ID
-		ORDER BY inserted.AS_Dataset_ID
+    If Update(AS_state_ID)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 6, inserted.AS_Dataset_ID, inserted.AS_state_ID, deleted.AS_state_ID, @CurrentDate
+        FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
+        WHERE inserted.AS_state_ID <> deleted.AS_state_ID
+        ORDER BY inserted.AS_Dataset_ID
 
-		UPDATE T_Dataset_Archive
-		SET AS_state_Last_Affected = @CurrentDate
-		FROM T_Dataset_Archive DA
-		     INNER JOIN inserted
-		       ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
-		     INNER JOIN deleted
-		       ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
-		WHERE inserted.AS_state_ID <> deleted.AS_state_ID
+        UPDATE T_Dataset_Archive
+        SET AS_state_Last_Affected = @CurrentDate
+        FROM T_Dataset_Archive DA
+             INNER JOIN inserted
+               ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+             INNER JOIN deleted
+               ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
+        WHERE inserted.AS_state_ID <> deleted.AS_state_ID
 
-		UPDATE T_Dataset_Archive
-		SET AS_instrument_data_purged = 1
-		FROM T_Dataset_Archive DA INNER JOIN
-			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
-		WHERE inserted.AS_state_ID in (4, 14) AND IsNull(inserted.AS_instrument_data_purged, 0) = 0
-		
-		UPDATE T_Dataset_Archive
-		SET QC_Data_Purged = 1
-		FROM T_Dataset_Archive DA INNER JOIN
-			 inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
-		WHERE inserted.AS_state_ID = 4 AND IsNull(inserted.QC_Data_Purged, 0) = 0
-		
-	End
+        UPDATE T_Dataset_Archive
+        SET AS_instrument_data_purged = 1
+        FROM T_Dataset_Archive DA INNER JOIN
+             inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+        WHERE inserted.AS_state_ID in (4, 14) AND IsNull(inserted.AS_instrument_data_purged, 0) = 0
+        
+        UPDATE T_Dataset_Archive
+        SET QC_Data_Purged = 1
+        FROM T_Dataset_Archive DA INNER JOIN
+             inserted ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+        WHERE inserted.AS_state_ID = 4 AND IsNull(inserted.QC_Data_Purged, 0) = 0
+        
+    End
 
-	If Update(AS_update_state_ID)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 7, inserted.AS_Dataset_ID, inserted.AS_update_state_ID, deleted.AS_update_state_ID, @CurrentDate
-		FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
-		WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
-		ORDER BY inserted.AS_Dataset_ID
+    If Update(AS_update_state_ID)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 7, inserted.AS_Dataset_ID, inserted.AS_update_state_ID, deleted.AS_update_state_ID, @CurrentDate
+        FROM deleted INNER JOIN inserted ON deleted.AS_Dataset_ID = inserted.AS_Dataset_ID
+        WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
+        ORDER BY inserted.AS_Dataset_ID
 
-		UPDATE T_Dataset_Archive
-		SET AS_update_state_Last_Affected = @CurrentDate
-		FROM T_Dataset_Archive DA
-		     INNER JOIN inserted
-		       ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
-		     INNER JOIN deleted
-		       ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
-		WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
-	End
+        UPDATE T_Dataset_Archive
+        SET AS_update_state_Last_Affected = @CurrentDate
+        FROM T_Dataset_Archive DA
+             INNER JOIN inserted
+               ON DA.AS_Dataset_ID = inserted.AS_Dataset_ID
+             INNER JOIN deleted
+               ON DA.AS_Dataset_ID = deleted.AS_Dataset_ID
+        WHERE inserted.AS_update_state_ID <> deleted.AS_update_state_ID
+    End
 
-	If Update(AS_state_ID) OR
+    If Update(AS_state_ID) OR
        Update(AS_update_state_ID)
     Begin
-		UPDATE T_Analysis_Job
-		SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
-		FROM T_Analysis_Job AJ INNER JOIN
-			 inserted ON AJ.AJ_datasetID = inserted.AS_Dataset_ID INNER JOIN
-			 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
-		WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
-	End
+        UPDATE T_Analysis_Job
+        SET AJ_StateNameCached = IsNull(AJDAS.Job_State, '')
+        FROM T_Analysis_Job AJ INNER JOIN
+             inserted ON AJ.AJ_datasetID = inserted.AS_Dataset_ID INNER JOIN
+             V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job
+        WHERE AJ.AJ_StateNameCached <> IsNull(AJDAS.Job_State, '')
+    End
 
-	If Update(AS_storage_path_ID)
-	Begin
-		UPDATE T_Cached_Dataset_Folder_Paths
-		SET UpdateRequired = 1
-		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
-	         inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID		
-	End
-	
-	If Update(AS_state_ID) OR
-	   Update(AS_storage_path_ID) OR
-	   Update(AS_instrument_data_purged) OR
-	   Update(QC_Data_Purged) OR	   
-	   Update(MyEMSLState)
-	Begin
-		UPDATE T_Cached_Dataset_Links
-		SET UpdateRequired = 1
-		FROM T_Cached_Dataset_Links DL INNER JOIN
-	         inserted ON DL.Dataset_ID = inserted.AS_Dataset_ID
-	End
+    If Update(AS_storage_path_ID)
+    Begin
+        UPDATE T_Cached_Dataset_Folder_Paths
+        SET UpdateRequired = 1
+        FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
+             inserted ON DFP.Dataset_ID = inserted.AS_Dataset_ID        
+    End
+    
+    If Update(AS_state_ID) OR
+       Update(AS_storage_path_ID) OR
+       Update(AS_instrument_data_purged) OR
+       Update(QC_Data_Purged) OR       
+       Update(MyEMSLState)
+    Begin
+        UPDATE T_Cached_Dataset_Links
+        SET UpdateRequired = 1
+        FROM T_Cached_Dataset_Links DL INNER JOIN
+             inserted ON DL.Dataset_ID = inserted.AS_Dataset_ID
+    End
 
 
 GO
