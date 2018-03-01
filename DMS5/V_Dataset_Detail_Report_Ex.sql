@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
 -- Note: this view is intended to be used for retrieving information for a single dataset
 -- Performance will be poor if used to query multiple datasets because it references several scalar-valued functions
@@ -31,6 +30,7 @@ SELECT DS.Dataset_Num AS Dataset,
        DL.Dataset_Folder_Path AS [Dataset Folder Path],
        DL.Archive_Folder_Path AS [Archive Folder Path],
        DL.MyEMSL_URL AS [MyEMSL URL],
+       dbo.GetMyEMSLTransactionIdURLs(DS.Dataset_ID) As [MyEMSL Transaction IDs],    
        DFP.Dataset_URL AS [Data Folder Link],
        DL.QC_Link AS [QC Link],
        DL.QC_2D AS [QC 2D],
