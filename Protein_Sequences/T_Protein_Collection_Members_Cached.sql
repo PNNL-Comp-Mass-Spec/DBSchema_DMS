@@ -23,7 +23,7 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Protein_Collection_Members_Cached_Protein_ID] ON [dbo].[T_Protein_Collection_Members_Cached]
 (
 	[Protein_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Protein_Collection_Members_Cached]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collection_Members_Cached_T_Protein_Collections] FOREIGN KEY([Protein_Collection_ID])
 REFERENCES [dbo].[T_Protein_Collections] ([Protein_Collection_ID])
