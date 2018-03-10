@@ -90,21 +90,22 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/03/2017 mem - Use column Max_Job_Priority in table T_Processor_Tool_Group_Details
 **          02/17/2018 mem - When previewing job candidates, show jobs that would be excluded due to Next_Try
+**          03/08/2018 mem - Reset Next_Try and Retry_Count when a job is assigned
 **
 *****************************************************/
 (
     @processorName varchar(128),                -- Name of the processor requesting a job
-    @jobNumber int = 0 output,                    -- Job number assigned; 0 if no job available
+    @jobNumber int = 0 output,                  -- Job number assigned; 0 if no job available
     @parameters varchar(max) output,            -- job step parameters (in XML)
-    @message varchar(512) output,                -- Output message
-    @infoOnly tinyint = 0,                        -- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
-    @analysisManagerVersion varchar(128) = '',    -- Used to update T_Local_Processors
-    @remoteInfo varchar(900) = '',                -- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once and to assure that we only check remote progress using a manager that has the same remote info as a job step
+    @message varchar(512) output,               -- Output message
+    @infoOnly tinyint = 0,                      -- Set to 1 to preview the job that would be returned; if 2, then will print debug statements
+    @analysisManagerVersion varchar(128) = '',  -- Used to update T_Local_Processors
+    @remoteInfo varchar(900) = '',              -- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once and to assure that we only check remote progress using a manager that has the same remote info as a job step
     @jobCountToPreview int = 10,                -- The number of jobs to preview when @infoOnly >= 1
-    @useBigBangQuery tinyint = 1,                -- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
-    @throttleByStartTime tinyint = 0,            -- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
+    @useBigBangQuery tinyint = 1,               -- Ignored and always set to 1 by this procedure (When non-zero, then uses a single, large query to find candidate steps.  Can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
+    @throttleByStartTime tinyint = 0,           -- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
     @maxStepNumToThrottle int = 10,
-    @throttleAllStepTools tinyint = 0,            -- When 0, then will not throttle Sequest or Results_Transfer steps
+    @throttleAllStepTools tinyint = 0,          -- When 0, then will not throttle Sequest or Results_Transfer steps
     @logSPUsage tinyint = 0
 )
 As
@@ -1239,6 +1240,12 @@ As
             Start = GetDate(),
             Finish = Null,
             Actual_CPU_Load = CASE WHEN @remoteInfoId > 1 THEN 0 ELSE CPU_Load END,
+            Next_Try = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Next_Try
+                            ELSE DateAdd(second, 30, GetDate())
+                       END,
+		  Retry_Count = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Retry_Count
+                               ELSE 0
+                          END,
             Remote_Start = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
                                 WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
                                 ELSE NULL
@@ -1253,7 +1260,7 @@ As
                               END
         WHERE Job = @jobNumber AND
               Step_Number = @stepNumber
-          --
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
