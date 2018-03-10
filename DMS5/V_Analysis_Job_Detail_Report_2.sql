@@ -27,8 +27,9 @@ SELECT AJ.AJ_jobID AS JobNum,
        AJ.AJ_proteinCollectionList AS [Protein Collection List],
        AJ.AJ_proteinOptionsList AS [Protein Options List],
        CASE WHEN AJ.AJ_StateID = 2 THEN ASN.AJS_name + ': ' + 
-              CAST(CAST(AJ.Progress AS DECIMAL(9,2)) AS VARCHAR(12)) + '%, ETA ' + 
-              CASE 
+              CAST(CAST(IsNull(AJ.Progress, 0) AS DECIMAL(9,2)) AS VARCHAR(12)) + '%, ETA ' + 
+              CASE
+                WHEN AJ.ETA_Minutes IS NULL THEN '??'
                 WHEN AJ.ETA_Minutes > 3600 THEN CAST(CAST(AJ.ETA_Minutes/1440.0 AS DECIMAL(18,1)) AS VARCHAR(12)) + ' days'
                 WHEN AJ.ETA_Minutes > 90 THEN CAST(CAST(AJ.ETA_Minutes/60.0 AS DECIMAL(18,1)) AS VARCHAR(12)) + ' hours'
                 ELSE CAST(CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS VARCHAR(12)) + ' minutes'
