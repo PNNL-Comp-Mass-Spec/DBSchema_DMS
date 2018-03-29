@@ -188,5 +188,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (20
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (205,'DMSUpdateManagerSource','','Server share with the master copy of files to copy to the local computer (or to a remote Linux host)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (206,'RemoteHostDMSProgramsPath','','Path on the remote computer to the directory holding applications used by the analysis manager')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (207,'DMSUpdateManagerFilesToIgnore','','Filenames to ignore when updating files with the DMS Update Manager')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (209,'RemoteHostAnalysisManagerDir','','Name (not full path) of the directory below directory RemoteHostDMSProgramsPath')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (209,'RemoteHostAnalysisManagerDirs','','Name (not full path) of the directory or directories below directory RemoteHostDMSProgramsPath')
 SET IDENTITY_INSERT [T_ParamType] OFF
