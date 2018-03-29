@@ -4,9 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Protein_Collection_List_Report]
 AS
--- This view uses V_Protein_Collection_Picker in the Protein_Sequences database
+-- This view uses V_Collection_Picker in the Protein_Sequences database
 -- That view excludes inactive protein collections (by filtering to show collections with state 1, 2, or 3)
 SELECT LookupQ.ID,
        LookupQ.[Name],
@@ -33,10 +34,12 @@ SELECT LookupQ.ID,
            WHEN IntStandardOrContaminant > 0 THEN NULL
            ELSE SUBSTRING(CONVERT(varchar(32), dbo.GetDateWithoutTime(PCU.Most_Recently_Used), 120), 1, 10)
        END AS [Most Recent Usage],
-       LookupQ.[Type]
+       LookupQ.[Type],
+       LookupQ.[Source]
 FROM ( SELECT [Name],
               [Type],
               [Description],
+              [Source],
               Entries,
               Residues,
               IntStandardOrContaminant,
@@ -48,6 +51,7 @@ FROM ( SELECT [Name],
        FROM ( SELECT [Name],
                      [Type],
                      [Description],
+                     [Source],
                      Entries,
                      Residues,
               CASE
@@ -61,7 +65,7 @@ FROM ( SELECT [Name],
        ON LookupQ.[Organism Name] = Org.OG_Name
      LEFT OUTER JOIN T_Protein_Collection_Usage PCU
        ON LookupQ.ID = PCU.Protein_Collection_ID
-GROUP BY LookupQ.[Name], LookupQ.[Type], LookupQ.[Description], LookupQ.Entries, LookupQ.Residues,
+GROUP BY LookupQ.[Name], LookupQ.[Type], LookupQ.[Description], LookupQ.[Source], LookupQ.Entries, LookupQ.Residues,
          LookupQ.[Organism Name], LookupQ.ID, LookupQ.IntStandardOrContaminant, PCU.Most_Recently_Used,
          PCU.Job_Usage_Count, PCU.Job_Usage_Count_Last12Months, Org.OG_organismDBName
 
