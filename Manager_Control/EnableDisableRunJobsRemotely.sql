@@ -13,12 +13,14 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 **
 **  Auth:   mem
 **  Date:   03/28/2018 mem - Initial version
+**          03/29/2018 mem - Add parameter @addMgrParamsIfMissing
 **    
 *****************************************************/
 (
-    @Enable tinyint,                        -- 0 to disable running jobs remotely, 1 to enable running jobs remotely
-    @ManagerNameList varchar(4000) = '',    -- Manager(s) to update; supports % for wildcards
-    @PreviewUpdates tinyint = 0,
+    @enable tinyint,                        -- 0 to disable running jobs remotely, 1 to enable running jobs remotely
+    @managerNameList varchar(4000) = '',    -- Manager(s) to update; supports % for wildcards
+    @previewUpdates tinyint = 0,
+    @addMgrParamsIfMissing tinyint = 0,      -- When 1, if manger(s) are missing parameters RunJobsRemotely or RemoteHostName, will auto-add those parameters
     @message varchar(512) = '' output
 )
 As
@@ -38,21 +40,22 @@ As
     -- Validate the inputs
     -----------------------------------------------
     --
-    Set @ManagerNameList = IsNull(@ManagerNameList, '')
-    Set @PreviewUpdates = IsNull(@PreviewUpdates, 0)
+    Set @managerNameList = IsNull(@managerNameList, '')
+    Set @previewUpdates = IsNull(@previewUpdates, 0)
+    Set @addMgrParamsIfMissing = IsNull(@addMgrParamsIfMissing, 0)
 
-    If @Enable Is Null
+    If @enable Is Null
     Begin
         set @myError  = 40000
-        Set @message = '@Enable cannot be null'
+        Set @message = '@enable cannot be null'
         SELECT @message AS Message
         Goto Done
     End
 
-    If Len(@ManagerNameList) = 0
+    If Len(@managerNameList) = 0
     Begin
         set @myError  = 40003
-        Set @message = '@ManagerNameList cannot be blank'
+        Set @message = '@managerNameList cannot be blank'
         SELECT @message AS Message
         Goto Done
     End
@@ -67,7 +70,7 @@ As
     
     -- Populate #TmpMangerList using ParseManagerNameList
     --    
-    Exec @myError = ParseManagerNameList @ManagerNameList, @RemoveUnknownManagers=1, @message=@message output
+    Exec @myError = ParseManagerNameList @managerNameList, @RemoveUnknownManagers=1, @message=@message output
     
     If @myError <> 0
     Begin
@@ -77,8 +80,8 @@ As
         Goto Done
     End
     
-    -- Set @NewValue based on @Enable
-    If @Enable = 0
+    -- Set @NewValue based on @enable
+    If @enable = 0
     Begin
         Set @NewValue = 'False'
         Set @ActiveStateDescription = 'run jobs locally'
@@ -107,6 +110,87 @@ As
             Goto Done
         End
     End
+
+    If @addMgrParamsIfMissing > 0
+    Begin -- <a>
+        Declare @mgrName varchar(128) = ''
+        Declare @mgrId int = 0
+        Declare @paramTypeId int = 0
+        Declare @continue tinyint = 1
+
+        While @continue > 0
+        Begin -- <b>
+            SELECT TOP 1 @mgrName = #TmpManagerList.Manager_Name,
+                         @mgrId = T_Mgrs.M_ID
+            FROM #TmpManagerList
+                 INNER JOIN T_Mgrs
+                   ON #TmpManagerList.Manager_Name = T_Mgrs.M_Name
+            WHERE Manager_Name > @mgrName
+            ORDER BY Manager_Name
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+                Set @continue = 0
+            Else
+            Begin -- <c>
+                If Not Exists (SELECT * FROM V_MgrParams Where ParameterName = 'RunJobsRemotely' And ManagerName = @mgrName)
+                Begin -- <d1>
+                    Set @paramTypeId = null
+                    SELECT @paramTypeId = ParamID
+                    FROM [T_ParamType]
+                    Where ParamName = 'RunJobsRemotely'
+
+                    If IsNull(@paramTypeId, 0) = 0
+                    Begin
+                        Print 'Error: could not find parameter "RunJobsRemotely" in [T_ParamType]'
+                    End
+                    Else
+                    Begin
+                        If @previewUpdates > 0
+                        Begin
+                            Print 'Create parameter RunJobsRemotely for Manager ' + @mgrName + ', value ' + @newValue
+
+                            -- Actually do go ahead and create the parameter, but use a value of False even if @newValue is True
+                            -- We need to do this so the managers are included in the query below with PT.ParamName = 'RunJobsRemotely'
+                            Insert Into T_ParamValue (MgrID, TypeID, Value)
+                            Values (@mgrId, @paramTypeId, 'False')
+                        End
+                        Else
+                        Begin
+                            Insert Into T_ParamValue (MgrID, TypeID, Value)
+                            Values (@mgrId, @paramTypeId, @newValue)
+                        End
+                    End
+                End -- </d1>
+
+                If Not Exists (SELECT * FROM V_MgrParams Where ParameterName = 'RemoteHostName' And ManagerName = @mgrName)
+                Begin -- <d2>
+                    Set @paramTypeId = null
+                    SELECT @paramTypeId = ParamID
+                    FROM [T_ParamType]
+                    Where ParamName = 'RemoteHostName'
+
+                    If IsNull(@paramTypeId, 0) = 0
+                    Begin
+                        Print 'Error: could not find parameter "RemoteHostName" in [T_ParamType]'
+                    End
+                    Else
+                    Begin
+                        If @previewUpdates > 0
+                        Begin
+                            Print 'Create parameter RemoteHostName for Manager ' + @mgrName + ', value PrismWeb2'
+                        End
+                        Else
+                        Begin
+                            Insert Into T_ParamValue (MgrID, TypeID, Value)
+                            Values (@mgrId, @paramTypeId, 'PrismWeb2')
+                        End
+                    End
+                End -- </d1>
+            End -- </c>
+        End -- </b>
+    End -- </a>
 
     -- Count the number of managers that need to be updated
     Set @CountToUpdate = 0
@@ -150,7 +234,7 @@ As
     Begin
         If @CountUnchanged = 0
         Begin
-            Set @message = 'No managers were found matching @ManagerNameList'
+            Set @message = 'No managers were found matching @managerNameList'
         End
         Else
         Begin
@@ -164,7 +248,7 @@ As
     End
     Else
     Begin
-        If @PreviewUpdates <> 0
+        If @previewUpdates <> 0
         Begin
             SELECT Convert(varchar(32), PV.Value + '-->' + @NewValue) AS State_Change_Preview,
                    PT.ParamName AS Parameter_Name,
