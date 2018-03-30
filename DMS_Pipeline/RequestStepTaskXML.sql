@@ -92,6 +92,8 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          02/17/2018 mem - When previewing job candidates, show jobs that would be excluded due to Next_Try
 **          03/08/2018 mem - Reset Next_Try and Retry_Count when a job is assigned
 **          03/14/2018 mem - When finding job steps to assign, prevent multiple managers on a given machine from analyzing the same dataset simultaneously (filtering on job started within the last 10 minutes)
+**          03/29/2018 mem - Ignore CPU checks when the manager runs jobs remotely (@remoteInfoID is greater than 1 because @remoteInfo is non-blank)
+**                         - Update Remote_Info_ID when assigning a new job, both in T_Job_Steps and in T_Job_Step_Processing_Log
 **
 *****************************************************/
 (
@@ -411,10 +413,14 @@ As
 
         If @remoteInfoID > 1
         Begin
-            
+            If @infoOnly <> 0
+            Begin
+                Print '@remoteInfoID is ' + Cast(@remoteInfoID As varchar(9)) + ' for ' + @remoteInfo
+            End
+
             SELECT @stepsRunningRemotely = COUNT(*)
             FROM T_Job_Steps
-            WHERE State IN (4,9) AND Remote_Info_ID = @remoteInfoID
+            WHERE State IN (4, 9) AND Remote_Info_ID = @remoteInfoID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
@@ -696,7 +702,8 @@ As
             J.Dataset_ID,
             TP.Machine,
             CASE
-                WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) 
+                WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50
+                                               ELSE TP.CPU_Load END) 
                     -- No processing load available on machine
                     THEN 101
                 WHEN (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) 
@@ -1000,7 +1007,7 @@ As
                                     PTGD.Tool_Name <> 'Results_Transfer'            -- Candidate Result_Transfer steps were found above
                             ) TP
                    ON TP.Tool_Name = JS.Step_Tool
-            WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
+            WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50 ELSE TP.CPU_Load END) AND
                   J.Priority <= TP.Max_Job_Priority AND
                   (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
                   (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
@@ -1283,6 +1290,7 @@ As
             Next_Try = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Next_Try
                             ELSE DateAdd(second, 30, GetDate())
                        END,
+            Remote_Info_ID = CASE WHEN @remoteInfoID <= 1 THEN 1 ELSE @remoteInfoID END,
 		  Retry_Count = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Retry_Count
                                ELSE 0
                           END,
@@ -1318,7 +1326,7 @@ As
     If @infoOnly > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Transaction committed'
 
-    If @jobAssigned = 1 AND @infoOnly = 0
+    If @jobAssigned = 1 AND @infoOnly = 0 And @remoteInfoID <= 1
     Begin --<f>
         ---------------------------------------------------
         -- Update CPU loading for this processor's machine
@@ -1328,23 +1336,25 @@ As
         SET CPUs_Available = Total_CPUs - CPUQ.CPUs_Busy
         FROM T_Machines Target
              INNER JOIN ( SELECT LP.Machine,
-                                 SUM(    CASE WHEN @jobIsRunningRemote > 0 AND JS.Step_Number = @stepNumber 
-                                               THEN 0
-                                             WHEN Tools.Uses_All_Cores > 0 AND JS.Actual_CPU_Load = JS.CPU_Load
-                                               THEN IsNull(M.Total_CPUs, JS.CPU_Load)
-                                             ELSE JS.Actual_CPU_Load
-                                        END ) AS CPUs_Busy
+                                 SUM(CASE
+                                         WHEN @jobIsRunningRemote > 0 AND
+                                              JS.Step_Number = @stepNumber THEN 0
+                                         WHEN Tools.Uses_All_Cores > 0 AND
+                                              JS.Actual_CPU_Load = JS.CPU_Load THEN 
+                                           IsNull(M.Total_CPUs, JS.CPU_Load)
+                                         ELSE JS.Actual_CPU_Load
+                                     END) AS CPUs_Busy
                           FROM T_Job_Steps JS
                                INNER JOIN T_Local_Processors LP
                                  ON JS.Processor = LP.Processor_Name
                                INNER JOIN T_Step_Tools Tools
                                  ON Tools.Name = JS.Step_Tool
                                INNER JOIN T_Machines M
-            ON LP.Machine = M.Machine
-          WHERE LP.Machine = @machine AND
+                                 ON LP.Machine = M.Machine
+                          WHERE LP.Machine = @machine AND
                                 JS.State = 4
-         GROUP BY LP.Machine 
-                         ) CPUQ
+                          GROUP BY LP.Machine 
+                      ) CPUQ
                ON CPUQ.Machine = Target.Machine
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -1365,8 +1375,8 @@ As
             -- However, skip this step if checking the status of a remote job
             ---------------------------------------------------
             
-            INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor)
-            VALUES (@jobNumber, @stepNumber, @processorName)
+            INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor, Remote_Info_ID)
+            VALUES (@jobNumber, @stepNumber, @processorName, @remoteInfoID)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End

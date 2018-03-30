@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          10/17/2017 mem - Fix the warning logged when the DataExtractor reports no data
 **          10/31/2017 mem - Add parameter @processorName
 **          03/14/2018 mem - Use a shorter interval when updating Next_Try for remotely running jobs
+**          03/29/2018 mem - Decrease @adjustedHoldoffInterval from 90 to 30 minutes
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
     @organismDBName varchar(128) = '',
-    @remoteInfo varchar(900) = '',            -- Remote server info for jobs with @completionCode = 25
+    @remoteInfo varchar(900) = '',          -- Remote server info for jobs with @completionCode = 25
     @remoteTimestamp varchar(24) = null,    -- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
     @remoteProgress real = null,
     @processorName varchar(128) = ''        -- Name of the processor setting the job as complete
@@ -238,19 +239,28 @@ As
             WHERE [Name] = @stepTool
 
             If IsNull(@holdoffIntervalMinutes, 0) < 1
-                Set @holdoffIntervalMinutes = 5
+                Set @holdoffIntervalMinutes = 3
             
             Set @retryCount = @retryCount + 1
             If (@retryCount < 1)
                 Set @retryCount = 1
                 
-            -- Wait longer after each check of remote status, with a maximum holdoff interval of 90 minutes
+            -- Wait longer after each check of remote status, with a maximum holdoff interval of 30 minutes
             -- If @holdoffIntervalMinutes is 5, will wait 5 minutes initially, then wait 6 minutes after the next check, then 7, etc.
             Declare @adjustedHoldoffInterval int = @holdoffIntervalMinutes + (@retryCount - 1)
             
-            If @adjustedHoldoffInterval > 90
-                Set @adjustedHoldoffInterval = 90
+            If @adjustedHoldoffInterval > 30
+                Set @adjustedHoldoffInterval = 30
             
+            If @remoteProgress > 0
+            Begin
+                -- Bump @adjustedHoldoffInterval down based on @remoteProgress; examples:
+                -- If @adjustedHoldoffInterval is 20 and @remoteProgress is 10, change @adjustedHoldoffInterval to 19
+                -- If @adjustedHoldoffInterval is 20 and @remoteProgress is 50, change @adjustedHoldoffInterval to 15
+                -- If @adjustedHoldoffInterval is 20 and @remoteProgress is 90, change @adjustedHoldoffInterval to 11
+                Set @adjustedHoldoffInterval = @adjustedHoldoffInterval - @adjustedHoldoffInterval * @remoteProgress / 200
+            End
+
             Set @nextTry = DateAdd(minute, @adjustedHoldoffInterval, GetDate())
         End
         
