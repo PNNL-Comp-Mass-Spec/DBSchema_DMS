@@ -49,6 +49,11 @@ SELECT JS.Job,
        JS.Evaluation_Message,
        ParamQ.Settings_File,
        ParamQ.Dataset_Storage_Path + J.Dataset AS Dataset_Folder_Path,
+       JS.Next_Try,
+       JS.Retry_Count,
+       JS.Remote_Info_ID As RemoteInfoID,
+       JS.Remote_Start,
+       JS.Remote_Finish,
        JS.Job_Plus_Step AS [#ID]
 FROM dbo.T_Job_Steps AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
