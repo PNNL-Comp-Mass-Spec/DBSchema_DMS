@@ -7,19 +7,25 @@ GO
 CREATE PROCEDURE [dbo].[GetDefaultRemoteInfoForManager]
 /****************************************************
 ** 
-**  Desc:    Gets the parameters for the given analysis manager
-**            Uses MgrSettingGroupName to lookup parameters from the parent group, if any
+**  Desc:   Gets the default remote info parameters for the given manager
+**          Retrieves parameters using GetManagerParametersWork, so properly retrieves parent group parameters, if any
+**          If the manager does not have parameters RunJobsRemotely and RemoteHostName defined, returns an empty string
+**          Also returns an empty string if RunJobsRemotely is not True
+**
+**          Example value for @remoteInfoXML
+**          <host>prismweb2</host><user>svc-dms</user><taskQueue>/file1/temp/DMSTasks</taskQueue><workDir>/file1/temp/DMSWorkDir</workDir><orgDB>/file1/temp/DMSOrgDBs</orgDB><privateKey>Svc-Dms.key</privateKey><passphrase>Svc-Dms.pass</passphrase>
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   05/18/2017 mem - Initial version
 **          03/14/2018 mem - Use GetManagerParametersWork to lookup manager parameters, allowing for getting remote info parameters from parent groups
+**          03/29/2018 mem - Return an empty string if the manager does not have parameters RunJobsRemotely and RemoteHostName defined, or if RunJobsRemotely is false
 **    
 *****************************************************/
 (
-    @managerName varchar(128),
-    @remoteInfoXML varchar(900) output
+    @managerName varchar(128),            -- Manager name
+    @remoteInfoXML varchar(900) Output    -- Output XML if valid remote info parameters are defined, otherwise an empty string
 )
 As
     Set NoCount On
@@ -65,50 +71,67 @@ As
 
     -- Populate the temporary table with the manager parameters
     Exec @myError = GetManagerParametersWork @managerName, 0, 50
-        
-    SELECT @remoteInfoXML = @remoteInfoXML + SourceQ.[Value]
-    FROM (SELECT 1 AS Sort,
-                 '<host>' + [Value] + '</host>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteHostName' And M_Name = @managerName)
-          UNION
-          SELECT 2 AS Sort,
-                 '<user>' + [Value] + '</user>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteHostUser' And M_Name = @managerName)
-          UNION
-          SELECT 3 AS Sort,
-                 '<dmsPrograms>' + [Value] + '</dmsPrograms>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteHostDMSProgramsPath' And M_Name = @managerName)
-          UNION
-          SELECT 4 AS Sort,
-                 '<taskQueue>' + [Value] + '</taskQueue>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteTaskQueuePath' And M_Name = @managerName)
-          UNION
-          SELECT 5 AS Sort,
-                 '<workDir>' + [Value] + '</workDir>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteWorkDirPath' And M_Name = @managerName)
-          UNION
-          SELECT 6 AS Sort,
-                 '<orgDB>' + [Value] + '</orgDB>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteOrgDBPath' And M_Name = @managerName)
-          UNION
-          SELECT 7 AS Sort,
-                 '<privateKey>' + dbo.udfGetFilename([Value]) + '</privateKey>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteHostPrivateKeyFile' And M_Name = @managerName)
-          UNION
-          SELECT 8 AS Sort,
-                 '<passphrase>' + dbo.udfGetFilename([Value]) + '</passphrase>' AS [Value]
-          FROM #Tmp_Mgr_Params
-          WHERE (ParamName = 'RemoteHostPassphraseFile' And M_Name = @managerName)
-          ) SourceQ
-    ORDER BY SourceQ.Sort
-            
+    
+    If Not Exists ( SELECT [Value]
+                    FROM #Tmp_Mgr_Params
+                    WHERE M_Name = @managerName And
+                          ParamName = 'RunJobsRemotely' AND
+                          Value = 'True' ) 
+       OR
+       Not Exists ( SELECT [Value]
+                    FROM #Tmp_Mgr_Params
+                    WHERE M_Name = @managerName And
+                          ParamName = 'RemoteHostName' AND
+                          Len(Value) > 0 )
+    Begin
+        Set @remoteInfoXML = ''
+    End
+    Else
+    Begin
+        SELECT @remoteInfoXML = @remoteInfoXML + SourceQ.[Value]
+        FROM (SELECT 1 AS Sort,
+                     '<host>' + [Value] + '</host>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteHostName' And M_Name = @managerName)
+              UNION
+              SELECT 2 AS Sort,
+                     '<user>' + [Value] + '</user>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteHostUser' And M_Name = @managerName)
+              UNION
+              SELECT 3 AS Sort,
+                     '<dmsPrograms>' + [Value] + '</dmsPrograms>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteHostDMSProgramsPath' And M_Name = @managerName)
+              UNION
+              SELECT 4 AS Sort,
+                     '<taskQueue>' + [Value] + '</taskQueue>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteTaskQueuePath' And M_Name = @managerName)
+              UNION
+              SELECT 5 AS Sort,
+                     '<workDir>' + [Value] + '</workDir>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteWorkDirPath' And M_Name = @managerName)
+              UNION
+              SELECT 6 AS Sort,
+                     '<orgDB>' + [Value] + '</orgDB>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteOrgDBPath' And M_Name = @managerName)
+              UNION
+              SELECT 7 AS Sort,
+                     '<privateKey>' + dbo.udfGetFilename([Value]) + '</privateKey>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteHostPrivateKeyFile' And M_Name = @managerName)
+              UNION
+              SELECT 8 AS Sort,
+                     '<passphrase>' + dbo.udfGetFilename([Value]) + '</passphrase>' AS [Value]
+              FROM #Tmp_Mgr_Params
+              WHERE (ParamName = 'RemoteHostPassphraseFile' And M_Name = @managerName)
+              ) SourceQ
+        ORDER BY SourceQ.Sort
+    End
+       
 Done:
     Return @myError
 
