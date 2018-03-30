@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Processor_Step_Tools_List_Report] ******/
+/****** Object:  View [dbo].[V_Processor_Step_Tools_Detail_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Processor_Step_Tools_List_Report]
+CREATE VIEW [dbo].[V_Processor_Step_Tools_Detail_Report]
 AS
 SELECT LP.Processor_Name,
        PTGD.Tool_Name,
@@ -14,6 +14,7 @@ SELECT LP.Processor_Name,
        ST.CPU_Load As Tool_CPU_Load,
        LP.Latest_Request,
        LP.Manager_Version,
+       LP.WorkDir_AdminShare,
        LP.ID As Proc_ID,
        LP.State AS Processor_State,
        M.Machine,
@@ -24,7 +25,8 @@ SELECT LP.Processor_Name,
        M.[Comment] AS Machine_Comment,
        PTG.Group_ID,
        PTG.Group_Name,
-       PTG.Enabled AS Group_Enabled
+       PTG.Enabled AS Group_Enabled,
+       PTG.[Comment] AS Group_Comment
 FROM T_Machines AS M
      INNER JOIN T_Local_Processors AS LP
        ON M.Machine = LP.Machine
@@ -38,6 +40,4 @@ FROM T_Machines AS M
 WHERE M.Enabled > 0
 
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Processor_Step_Tools_List_Report] TO [DDL_Viewer] AS [dbo]
 GO
