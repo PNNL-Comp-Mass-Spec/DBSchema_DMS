@@ -1,6 +1,6 @@
 /****** Object:  Database [Manager_Control] ******/
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
-( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 36288KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 38656KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
 ( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 17664KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -12,7 +12,7 @@ begin
 EXEC [Manager_Control].[dbo].[sp_fulltext_database] @action = 'disable'
 end
 GO
-ALTER DATABASE [Manager_Control] SET ANSI_NULL_DEFAULT ON 
+ALTER DATABASE [Manager_Control] SET ANSI_NULL_DEFAULT OFF 
 GO
 ALTER DATABASE [Manager_Control] SET ANSI_NULLS ON 
 GO
