@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 125305984KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 142518784KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 1988992KB , MAXSIZE = UNLIMITED, FILEGROWTH = 131072KB )
+( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 172562816KB , MAXSIZE = UNLIMITED, FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -12,7 +12,7 @@ begin
 EXEC [Protein_Sequences].[dbo].[sp_fulltext_database] @action = 'disable'
 end
 GO
-ALTER DATABASE [Protein_Sequences] SET ANSI_NULL_DEFAULT ON 
+ALTER DATABASE [Protein_Sequences] SET ANSI_NULL_DEFAULT OFF 
 GO
 ALTER DATABASE [Protein_Sequences] SET ANSI_NULLS ON 
 GO
