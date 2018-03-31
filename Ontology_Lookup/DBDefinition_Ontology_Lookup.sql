@@ -12,7 +12,7 @@ begin
 EXEC [Ontology_Lookup].[dbo].[sp_fulltext_database] @action = 'enable'
 end
 GO
-ALTER DATABASE [Ontology_Lookup] SET ANSI_NULL_DEFAULT ON 
+ALTER DATABASE [Ontology_Lookup] SET ANSI_NULL_DEFAULT OFF 
 GO
 ALTER DATABASE [Ontology_Lookup] SET ANSI_NULLS ON 
 GO
