@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/15/2017 mem - Call ValidateDataPackageForMACJob
 **          03/07/2018 mem - Call AlterEnteredByUser
+**          04/06/2018 mem - Allow updating comment, priority, and owner regardless of job state
 **
 *****************************************************/
 (
@@ -104,9 +105,6 @@ AS
         If @mode = 'update' AND @id = 0
             RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
-        If @mode = 'update' AND NOT @state IN (1, 4, 5) -- new, complete, failed
-            RAISERROR ('Cannot update job %d in state %d; must be 1, 4, or 5', 11, 3, @job, @state)
-
         If @mode = 'update' AND @datasetNum <> 'Aggregation'
             RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
             
@@ -168,7 +166,9 @@ AS
         
         If @mode = 'update'
         Begin --<update>
-            Begin TRANSACTION
+            Declare @updateTran varchar(32) = 'Update PipelineJob'
+
+            Begin Tran @updateTran
             
             Set @jobParamXML = CONVERT(XML, @jobParam)
             
@@ -178,11 +178,10 @@ AS
             SET      Priority = @priority ,
                      Comment = @comment ,
                      Owner = @ownerPRN ,
-                     DataPkgID = @dataPackageID
+                     DataPkgID = Case When @state IN (1, 4, 5) Then @dataPackageID Else DataPkgID End
             WHERE    Job = @job
 
-
-            If @dataPackageID > 0
+            If @state IN (1, 4, 5) And @dataPackageID > 0
             Begin
                 CREATE TABLE #PARAMS (
                     [Section] varchar(128),
@@ -215,52 +214,57 @@ AS
                 
             End
 
-            -- Store the job parameters (as XML) in T_Job_Parameters
-            --
-            UPDATE   dbo.T_Job_Parameters
-            SET      Parameters = @jobParamXML
-            WHERE    job = @job
-            
-            ---------------------------------------------------
-            -- Lookup the transfer folder path from the job parameters
-            ---------------------------------------------------
-            --
-            Declare @TransferFolderPath varchar(512) = ''
-            
-            SELECT @TransferFolderPath = [Value]
-            FROM dbo.GetJobParamTableLocal ( @Job )
-            WHERE [Name] = 'transferFolderPath'
-            
-            If IsNull(@TransferFolderPath, '') <> ''
+            If @state IN (1, 4, 5)
             Begin
-                UPDATE T_Jobs
-                SET Transfer_Folder_Path = @TransferFolderPath
-                WHERE Job = @Job
-            End
+                -- Store the job parameters (as XML) in T_Job_Parameters
+                --
+                UPDATE   dbo.T_Job_Parameters
+                SET      Parameters = @jobParamXML
+                WHERE    job = @job
             
-            ---------------------------------------------------
-            -- If a data package is defined, update entries for 
-            -- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
-            ---------------------------------------------------
-            --
-            If @dataPackageID > 0
-            Begin
-                Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
-            End
+                ---------------------------------------------------
+                -- Lookup the transfer folder path from the job parameters
+                ---------------------------------------------------
+                --
+                Declare @TransferFolderPath varchar(512) = ''
             
+                SELECT @TransferFolderPath = [Value]
+                FROM dbo.GetJobParamTableLocal ( @Job )
+                WHERE [Name] = 'transferFolderPath'
             
-            If @reset = 'Y'
-            Begin --<reset>
+                If IsNull(@TransferFolderPath, '') <> ''
+                Begin
+                    UPDATE T_Jobs
+                    SET Transfer_Folder_Path = @TransferFolderPath
+                    WHERE Job = @Job
+                End
             
-                exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output                            
+                ---------------------------------------------------
+                -- If a data package is defined, update entries for 
+                -- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
+                ---------------------------------------------------
+                --
+                If @dataPackageID > 0
+                Begin
+                    Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+                End
+            
+                If @reset = 'Y'
+                Begin --<reset>
+            
+                    exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output                            
                 
-            END --<reset>
+                END --<reset>
+            End
+            Else
+            Begin
+                Set @message = 'Only updating priority, comment, and owner since job state is not New, Complete, or Failed'
+            End
 
-            COMMIT
+            Commit Tran @updateTran
 
         END --</update>
         
-
         ---------------------------------------------------
         -- add mode
         ---------------------------------------------------
@@ -296,8 +300,7 @@ AS
         Set @message = IsNull(@message, 'Unknown error message')
         Set @myError = IsNull(@myError, 'Unknown error details')
         
-        Declare @LogMessage varchar(4096)
-        Set @LogMessage = @message + '; error code ' + Convert(varchar(12), @myError)
+        Declare @LogMessage varchar(4096) = @message + '; error code ' + Convert(varchar(12), @myError)
         
         -- rollback any open transactions
         If (XACT_STATE()) <> 0

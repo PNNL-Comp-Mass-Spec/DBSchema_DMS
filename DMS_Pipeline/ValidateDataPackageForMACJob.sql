@@ -28,7 +28,8 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          11/15/2017 mem - Use AppendToText to combine strings
 **                         - Include data package ID in log messages
-**          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset    
+**          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset
+**          04/06/2018 mem - Allow Phospho_FDR_Aggregator jobs to have multiple MSGF+ jobs for each dataset
 **
 *****************************************************/
 (
@@ -132,23 +133,41 @@ AS
 
         If @scriptName Not In ('Global_Label-Free_AMT_Tag')
         Begin
-            If @tool = '' And @scriptName = 'PRIDE_Converter' And @MSGFPlusCountOneOrMore > 0
-                Set @tool = 'msgfplus'
-
-            If @tool = '' And @scriptName = 'PRIDE_Converter' And @SequestCountOneOrMore > 0
-                Set @tool = 'sequest'
+            If @scriptName = 'PRIDE_Converter'
+            Begin
+                If @MSGFPlusCountOneOrMore > 0
+                    Set @tool = 'msgfplus'
+                Else If @SequestCountOneOrMore > 0
+                    Set @tool = 'sequest'
+            End
    
-            If @tool = '' And @MSGFPlusCountExactlyOne > 0 
-                If @MSGFPlusCountNotOne = 0
+            If @tool = '' And @MSGFPlusCountOneOrMore > 0
+            Begin
+                If @MSGFPlusCountNotOne = 0 And @MSGFPlusCountExactlyOne = @MSGFPlusCountOneOrMore
                     Set @tool = 'msgfplus'
                 Else
-                    Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets)' 
-                    
-            If @tool = '' And @SequestCountExactlyOne > 0
-                If @SequestCountNotOne = 0
+                Begin
+                    If @scriptName In ('Phospho_FDR_Aggregator')
+                        -- Allow multiple MSGF+ jobs for each dataset
+                        Set @tool = 'msgfplus'
+                    Else
+                        Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets)' 
+                End
+            End
+
+            If @tool = '' And @SequestCountOneOrMore > 0
+            Begin
+                If @SequestCountNotOne = 0 And @SequestCountExactlyOne = @SequestCountOneOrMore
                     Set @tool = 'sequest'
                 Else
-                    Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets)' 
+                Begin
+                    If @scriptName In ('Phospho_FDR_Aggregator')
+                        -- Allow multiple Sequest jobs for each dataset
+                        Set @tool = 'sequest'
+                    Else
+                        Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets)' 
+                End
+            End
 
             If @tool = ''
                 Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs', 0, '; ')
