@@ -16,6 +16,10 @@ SELECT Instrument_ID AS ID,
        RTRIM(IN_status) AS Status,
        IN_usage AS [Usage],
        IN_operations_role AS OperationsRole,
+       CASE
+           WHEN ISNULL(Scan_SourceDir, 0) = 0 THEN 'N'
+           ELSE 'Y'
+       END AS Scan_SourceDir,
        Percent_EMSL_Owned AS PercentEMSLOwned,
        IN_source_path_ID AS SourcePathID,
        IN_storage_path_ID AS StoragePathID,

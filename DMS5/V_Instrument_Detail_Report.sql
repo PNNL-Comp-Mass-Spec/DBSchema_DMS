@@ -20,10 +20,12 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_status AS Status,
        InstName.IN_usage AS [Usage],
        InstName.IN_operations_role AS [Ops Role],
+       Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS [Scan Source],
+       InstGroup.Allocation_Tag AS Allocation_Tag,
        InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
        dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS [Allowed Dataset Types],
        InstName.IN_Created AS Created,
-       T_YesNo.Description AS [Auto Define Storage],
+       DefineStorageYesNo.Description AS [Auto Define Storage],
        InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path Root],
        InstName.Auto_SP_Vol_Name_Server + InstName.Auto_SP_Path_Root AS [Auto Defined Storage Path On Server],
        InstName.Auto_SP_Archive_Server_Name + InstName.Auto_SP_Archive_Path_Root AS [Auto Defined Archive Path Root],
@@ -31,7 +33,7 @@ SELECT InstName.Instrument_ID AS ID,
        EUSMapping.EUS_Instrument_ID,
        EUSMapping.EUS_Display_Name,
        EUSMapping.EUS_Instrument_Name,
-	   EUSMapping.Local_Instrument_Name
+       EUSMapping.Local_Instrument_Name
 FROM T_Instrument_Name InstName
      INNER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
@@ -39,8 +41,12 @@ FROM T_Instrument_Name InstName
                          SP_vol_name_server + SP_path AS Source
                   FROM T_Storage_Path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
-     INNER JOIN T_YesNo
-       ON InstName.Auto_Define_Storage_Path = T_YesNo.Flag
+     INNER JOIN T_YesNo DefineStorageYesNo
+       ON InstName.Auto_Define_Storage_Path = DefineStorageYesNo.Flag
+     INNER JOIN T_YesNo ScanSourceYesNo
+       ON InstName.Scan_SourceDir = ScanSourceYesNo.Flag
+     INNER JOIN dbo.T_Instrument_Group InstGroup
+       ON InstName.IN_Group = InstGroup.IN_Group
      LEFT OUTER JOIN T_Archive_Path AP
        ON AP.AP_instrument_name_ID = InstName.Instrument_ID AND
           AP.AP_Function = 'active'
@@ -48,7 +54,7 @@ FROM T_Instrument_Name InstName
                               EMSLInst.EUS_Instrument_ID,
                               EMSLInst.EUS_Display_Name,
                               EMSLInst.EUS_Instrument_Name,
-							  EMSLInst.Local_Instrument_Name
+                              EMSLInst.Local_Instrument_Name
                        FROM T_EMSL_DMS_Instrument_Mapping InstMapping
                             INNER JOIN T_EMSL_Instruments EMSLInst
                               ON InstMapping.EUS_Instrument_ID = EMSLInst.EUS_Instrument_ID

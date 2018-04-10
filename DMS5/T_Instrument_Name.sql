@@ -30,6 +30,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Auto_SP_Archive_Share_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Default_Purge_Policy] [tinyint] NOT NULL,
 	[Perform_Calibration] [tinyint] NOT NULL,
+	[Scan_SourceDir] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
@@ -82,6 +83,8 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Default_Purge_Policy]  DEFAULT ((0)) FOR [Default_Purge_Policy]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Perform_Calibration]  DEFAULT ((0)) FOR [Perform_Calibration]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Scan_SourceDir]  DEFAULT ((1)) FOR [Scan_SourceDir]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Class] FOREIGN KEY([IN_class])
 REFERENCES [dbo].[T_Instrument_Class] ([IN_class])
