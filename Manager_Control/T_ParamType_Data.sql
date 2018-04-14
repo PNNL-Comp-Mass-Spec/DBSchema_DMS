@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 188 ******/
+/****** RowCount: 189 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -189,4 +189,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (20
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (206,'RemoteHostDMSProgramsPath','','Path on the remote computer to the directory holding applications used by the analysis manager')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (207,'DMSUpdateManagerFilesToIgnore','','Filenames to ignore when updating files with the DMS Update Manager')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (209,'RemoteHostAnalysisManagerDirs','','Name (not full path) of the directory or directories below directory RemoteHostDMSProgramsPath')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (210,'MzidMergerProgLoc','','')
 SET IDENTITY_INSERT [T_ParamType] OFF
