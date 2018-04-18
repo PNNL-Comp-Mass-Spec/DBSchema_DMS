@@ -17,7 +17,11 @@ SELECT JS.Job_Plus_Step AS ID,
        JS.State AS StateID,
        JS.Start,
        JS.Finish,
-       Convert(decimal(9, 2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime_Minutes,
+       CASE WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) THEN
+                Convert(decimal(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
+            ELSE
+                Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) 
+       END As Runtime_Minutes,
        CASE WHEN JS.State In (4, 9) AND JS.Remote_Info_ID > 1 THEN CONVERT(varchar(12), CONVERT(decimal(9, 2), IsNull(JS.Remote_Progress, 0))) + '% complete' 
             WHEN JS.State = 4 THEN CONVERT(varchar(12), CONVERT(decimal(9, 2), PS.Progress)) + '% complete' 
             WHEN JS.State = 5 THEN 'Complete'
@@ -25,11 +29,11 @@ SELECT JS.Job_Plus_Step AS ID,
        END AS Job_Progress,
        CASE WHEN JS.State = 4 AND JS.Step_Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
             WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) AND IsNull(JS.Remote_Progress, 0) > 0 THEN
-                CONVERT(decimal(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
-                                           (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
-            WHEN JS.State = 4 AND PS.Progress > 0  THEN 
-                CONVERT(decimal(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
-                                           (PS.Progress / 100.0) / 60.0 / 60.0)
+               CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) /
+                                          (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
+            WHEN JS.State = 4 AND PS.Progress > 0 THEN 
+               CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
+                                          (PS.Progress / 100.0) / 60.0 / 60.0)
             WHEN JS.State = 5 THEN Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0 / 60.0)
             ELSE 0
        END AS [RunTime Predicted Hours],

@@ -16,24 +16,28 @@ SELECT JS.Job,
        J.Dataset,
        JS.Start,
        JS.Finish,
-       Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime,
+       CASE WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) THEN
+                Convert(decimal(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
+            ELSE
+                Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) 
+       END As Runtime,
        JS.Processor,      
        JS.State,
-        CASE WHEN JS.State = 9 Or JS.Remote_Info_ID > 1 THEN Convert(DECIMAL(9,2), IsNull(JS.Remote_Progress, 0))
-               WHEN JS.State = 4 THEN Convert(DECIMAL(9,2), PS.Progress)
-             WHEN JS.State = 5 THEN 100
-             ELSE 0 
-        END AS [Job Progress],
-        CASE WHEN JS.State = 4 AND JS.Step_Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
-             WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) AND IsNull(JS.Remote_Progress, 0) > 0 THEN
-                CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
-                                           (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
-             WHEN JS.State = 4 AND PS.Progress > 0  THEN 
-                CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
-                                           (PS.Progress / 100.0) / 60.0 / 60.0)
-             WHEN JS.State = 5 THEN Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0 / 60.0)
-             ELSE 0
-        END AS [RunTime Predicted Hours],
+       CASE WHEN JS.State = 9 Or JS.Remote_Info_ID > 1 THEN Convert(DECIMAL(9,2), IsNull(JS.Remote_Progress, 0))
+            WHEN JS.State = 4 THEN Convert(DECIMAL(9,2), PS.Progress)
+            WHEN JS.State = 5 THEN 100
+            ELSE 0 
+       END AS [Job Progress],
+       CASE WHEN JS.State = 4 AND JS.Step_Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
+            WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) AND IsNull(JS.Remote_Progress, 0) > 0 THEN
+               CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) /
+                                          (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
+            WHEN JS.State = 4 AND PS.Progress > 0 THEN 
+               CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
+                                          (PS.Progress / 100.0) / 60.0 / 60.0)
+            WHEN JS.State = 5 THEN Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0 / 60.0)
+            ELSE 0
+       END AS [RunTime Predicted Hours],
        Convert(decimal(9,1), DATEDIFF(second, PS.Status_Date, GetDate()) / 60.0) AS [Last CPU Status Minutes],
        JS.Input_Folder_Name AS Input_Folder,
        JS.Output_Folder_Name AS Output_Folder,
