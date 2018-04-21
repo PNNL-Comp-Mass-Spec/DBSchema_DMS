@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          10/31/2017 mem - Add parameter @processorName
 **          03/14/2018 mem - Use a shorter interval when updating Next_Try for remotely running jobs
 **          03/29/2018 mem - Decrease @adjustedHoldoffInterval from 90 to 30 minutes
+**          04/19/2018 mem - Add parameters @remoteStart and @remoteFinish
 **
 *****************************************************/
 (
@@ -59,6 +60,8 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @remoteInfo varchar(900) = '',          -- Remote server info for jobs with @completionCode = 25
     @remoteTimestamp varchar(24) = null,    -- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
     @remoteProgress real = null,
+    @remoteStart datetime = null,           -- Time the remote processor actually started processing the job
+    @remoteFinish datetime = null,          -- Time the remote processor actually finished processing the job
     @processorName varchar(128) = ''        -- Name of the processor setting the job as complete
 
 )
@@ -300,7 +303,9 @@ As
            Next_Try = @nextTry,
            Retry_Count = @retryCount,
            Remote_Timestamp = @remoteTimestamp,
-           Remote_Progress = @remoteProgress
+           Remote_Progress = @remoteProgress,
+           Remote_Start = @remoteStart,
+           Remote_Finish = @remoteFinish
     WHERE Job = @job AND 
           Step_Number = @step
      --
