@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Aggregation_List_Report]
 As
-SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TJ.Job) AS [Sel.],
+SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel.],
        TM.Job,
        TM.State,
        TM.Tool,
