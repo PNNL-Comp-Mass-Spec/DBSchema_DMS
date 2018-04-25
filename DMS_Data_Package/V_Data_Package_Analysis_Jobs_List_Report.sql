@@ -9,6 +9,7 @@ AS
 SELECT DPJ.Data_Package_ID AS ID,
        DPJ.Job,
        DPJ.Dataset,
+       DPJ.Dataset_ID,
        DPJ.Tool,
        DPJ.[Package Comment],
        AJL.Campaign,
