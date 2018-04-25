@@ -500,5 +500,7 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [DDL_Viewer] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[ValidateProteinCollectionListForDatasets] TO [DMS2_SP_User] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [Limited_Table_Write] AS [dbo]
 GO

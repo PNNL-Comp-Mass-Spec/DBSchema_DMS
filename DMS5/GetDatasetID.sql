@@ -33,5 +33,7 @@ GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[GetDatasetID] TO [DMS_SP_User] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[GetDatasetID] TO [DMS2_SP_User] AS [dbo]
+GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetID] TO [Limited_Table_Write] AS [dbo]
 GO
