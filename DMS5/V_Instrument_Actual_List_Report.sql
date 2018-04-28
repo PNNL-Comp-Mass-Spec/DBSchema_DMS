@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE view [dbo].[V_Instrument_Actual_List_Report] as
 SELECT UsageQ.Fiscal_Year,
        ISNULL(UsageQ.Proposal_ID, 0) AS Proposal_ID,
@@ -96,7 +95,7 @@ FROM T_EUS_Proposal_State_Name
                WHERE (TD.DS_rating > 1) AND
                      (TRR.RDS_EUS_UsageType NOT IN (10, 12, 13)) AND
                      (TD.DS_state_ID = 3) AND
-                     (TD.Acq_Time_Start >= dbo.GetFiscalYearStart(1)) AND
+                     -- (TD.Acq_Time_Start >= dbo.GetFiscalYearStart(1)) AND
                      TIN.IN_operations_role NOT IN ('Offsite', 'InSilico')
                GROUP BY dbo.GetFYFromDate(TD.Acq_Time_Start),
                         TRR.RDS_EUS_Proposal_ID
@@ -118,7 +117,6 @@ FROM T_EUS_Proposal_State_Name
                   TAC.FY = TAL.Fiscal_Year 
      ) UsageQ
        ON T_EUS_Proposals.PROPOSAL_ID = UsageQ.Proposal_ID
-
 
 
 GO
