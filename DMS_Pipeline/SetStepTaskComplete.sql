@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 /****************************************************
 **
@@ -47,6 +48,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          03/14/2018 mem - Use a shorter interval when updating Next_Try for remotely running jobs
 **          03/29/2018 mem - Decrease @adjustedHoldoffInterval from 90 to 30 minutes
 **          04/19/2018 mem - Add parameters @remoteStart and @remoteFinish
+**          04/25/2018 mem - Stop setting Remote_Finish to the current date since @remoteFinish provides that info
 **
 *****************************************************/
 (
@@ -364,11 +366,10 @@ As
             
             UPDATE T_Job_Steps
             SET Remote_Info_ID = @remoteInfoID,
-                Remote_Finish = CASE WHEN @stepState IN (3,5,6,16) THEN GetDate() ELSE Remote_Finish END,
                 Remote_Progress = CASE WHEN @stepState = 5 THEN 100 ELSE Remote_Progress END
             WHERE Job = @job AND
                   Step_Number = @step
-             --
+            --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             
@@ -376,7 +377,7 @@ As
             SET Most_Recent_Job = @Job,
                 Last_Used = GetDate()
             WHERE Remote_Info_ID = @remoteInfoID
-             --
+            --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
         End

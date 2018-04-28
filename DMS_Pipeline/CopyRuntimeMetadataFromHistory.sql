@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
 **          10/19/2017 mem - Initial release
 **          10/31/2017 mem - Look for job states with state 4 or 5 and a null Finish time, but a start time later than a Results_Transfer step
 **          02/17/2018 mem - Treat Results_Cleanup steps the same as Results_Transfer steps
+**          04/27/2018 mem - Use T_Job_Steps instead of V_Job_Steps so we can see the Start and Finish times for the job step (and not Remote_Start or Remote_Finish)
 **    
 *****************************************************/
 (
@@ -45,18 +46,18 @@ As
     Declare @job int
     Declare @jobStep int
         
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Validate the inputs
-     ---------------------------------------------------
+    ---------------------------------------------------
     --
-     Set @jobList = IsNull(@jobList, '')
+    Set @jobList = IsNull(@jobList, '')
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
     
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Create two temporary tables
-     ---------------------------------------------------
-     --
+    ---------------------------------------------------
+    --
     CREATE TABLE #Tmp_Jobs (
         Job int not null,
         UpdateRequired tinyint not null,
@@ -71,8 +72,8 @@ As
     
     ---------------------------------------------------
     -- Populate a temporary table with jobs to process
-     ---------------------------------------------------
-     --
+    ---------------------------------------------------
+    --
     INSERT INTO #Tmp_Jobs (Job, UpdateRequired, Invalid)
     SELECT Value as Job, 0, 0
     FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
@@ -91,19 +92,19 @@ As
     -- First look for jobs with a Finish date after the Start date of the corresponding Results_Transfer step
     --
     INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
-    SELECT JS.Job, JS.Step
+    SELECT JS.Job, JS.Step_Number
     FROM #Tmp_Jobs
-         INNER JOIN V_Job_Steps JS
+         INNER JOIN T_Job_Steps JS
            ON #Tmp_Jobs.Job = JS.Job
-         INNER JOIN ( SELECT Job, Step, Start, Input_Folder
-                      FROM V_Job_Steps
-                      WHERE (Tool In ('Results_Transfer', 'Results_Cleanup')) 
+         INNER JOIN ( SELECT Job, Step_Number, Start, Input_Folder_Name
+                      FROM T_Job_Steps
+                      WHERE (Step_Tool In ('Results_Transfer', 'Results_Cleanup')) 
                     ) FilterQ
            ON JS.Job = FilterQ.Job AND
-              JS.Output_Folder = FilterQ.Input_Folder AND
+              JS.Output_Folder_Name = FilterQ.Input_Folder_Name AND
               JS.Finish > FilterQ.Start AND
-              JS.Step < FilterQ.Step
-    WHERE Not JS.Tool In ('Results_Transfer', 'Results_Cleanup')
+              JS.Step_Number < FilterQ.Step_Number
+    WHERE Not JS.Step_Tool  In ('Results_Transfer', 'Results_Cleanup')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -112,20 +113,20 @@ As
     -- but which started after their corresponding Results_Transfer step
     --
     INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
-    SELECT JS.Job, JS.Step
+    SELECT JS.Job, JS.Step_Number
     FROM #Tmp_Jobs
-         INNER JOIN V_Job_Steps JS
+         INNER JOIN T_Job_Steps JS
            ON #Tmp_Jobs.Job = JS.Job
-         INNER JOIN ( SELECT Job, Step, Start, Input_Folder
-                      FROM V_Job_Steps
-                      WHERE (Tool In ('Results_Transfer', 'Results_Cleanup')) 
+         INNER JOIN ( SELECT Job, Step_Number, Start, Input_Folder_Name
+                      FROM T_Job_Steps
+                      WHERE (Step_Tool In ('Results_Transfer', 'Results_Cleanup')) 
                     ) FilterQ
            ON JS.Job = FilterQ.Job AND
-              JS.Output_Folder = FilterQ.Input_Folder AND
+              JS.Output_Folder_Name = FilterQ.Input_Folder_Name AND
       JS.Finish Is Null AND
               JS.Start > FilterQ.Start AND
-              JS.Step < FilterQ.Step
-    WHERE Not JS.Tool In ('Results_Transfer', 'Results_Cleanup')
+              JS.Step_Number < FilterQ.Step_Number
+    WHERE Not JS.Step_Tool In ('Results_Transfer', 'Results_Cleanup')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     
@@ -294,8 +295,8 @@ As
            ON J.Job = JSU.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
-     ---------------------------------------------------
+        
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
