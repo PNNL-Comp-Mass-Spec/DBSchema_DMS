@@ -1,8 +1,8 @@
 /****** Object:  Database [Protein_Sequences] ******/
 CREATE DATABASE [Protein_Sequences] ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 142518784KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 186294784KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 172562432KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 97832640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 ALTER DATABASE [Protein_Sequences] SET COMPATIBILITY_LEVEL = 100
@@ -23,8 +23,6 @@ GO
 ALTER DATABASE [Protein_Sequences] SET ARITHABORT ON 
 GO
 ALTER DATABASE [Protein_Sequences] SET AUTO_CLOSE OFF 
-GO
-ALTER DATABASE [Protein_Sequences] SET AUTO_CREATE_STATISTICS ON 
 GO
 ALTER DATABASE [Protein_Sequences] SET AUTO_SHRINK OFF 
 GO

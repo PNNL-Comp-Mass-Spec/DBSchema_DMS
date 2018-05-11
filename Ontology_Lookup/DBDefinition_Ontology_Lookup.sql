@@ -7,6 +7,8 @@ CREATE DATABASE [Ontology_Lookup]
 ( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 273216KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
+ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 120
+GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
 begin
 EXEC [Ontology_Lookup].[dbo].[sp_fulltext_database] @action = 'enable'
@@ -23,8 +25,6 @@ GO
 ALTER DATABASE [Ontology_Lookup] SET ARITHABORT ON 
 GO
 ALTER DATABASE [Ontology_Lookup] SET AUTO_CLOSE OFF 
-GO
-ALTER DATABASE [Ontology_Lookup] SET AUTO_CREATE_STATISTICS ON 
 GO
 ALTER DATABASE [Ontology_Lookup] SET AUTO_SHRINK OFF 
 GO
@@ -69,6 +69,8 @@ GO
 ALTER DATABASE [Ontology_Lookup] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
 GO
 ALTER DATABASE [Ontology_Lookup] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
+ALTER DATABASE [Ontology_Lookup] SET DELAYED_DURABILITY = DISABLED 
 GO
 USE [Ontology_Lookup]
 GO
