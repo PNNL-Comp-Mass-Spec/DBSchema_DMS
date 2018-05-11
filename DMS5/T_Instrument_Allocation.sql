@@ -69,6 +69,8 @@ AS
 	ORDER BY Allocation_Tag, Proposal_ID
 
 GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ENABLE TRIGGER [trig_d_Instrument_Allocation]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Instrument_Allocation] ******/
 SET ANSI_NULLS ON
 GO
@@ -108,6 +110,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.Allocation_Tag, inserted.Proposal_ID
 
+GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ENABLE TRIGGER [trig_i_Instrument_Allocation]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Instrument_Allocation] ******/
 SET ANSI_NULLS ON
@@ -158,4 +162,6 @@ AS
 		ORDER BY inserted.Allocation_Tag, inserted.Proposal_ID
 	End
 
+GO
+ALTER TABLE [dbo].[T_Instrument_Allocation] ENABLE TRIGGER [trig_u_Instrument_Allocation]
 GO

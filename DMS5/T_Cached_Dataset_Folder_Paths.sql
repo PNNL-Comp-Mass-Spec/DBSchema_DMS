@@ -76,3 +76,5 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Folder_Paths] ENABLE TRIGGER [trig_u_Cached_Dataset_Folder_Paths]
+GO

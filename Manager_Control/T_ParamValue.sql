@@ -90,6 +90,8 @@ AS
 	WHERE deleted.TypeID = 17
 
 GO
+ALTER TABLE [dbo].[T_ParamValue] DISABLE TRIGGER [trig_d_T_ParamValue]
+GO
 /****** Object:  Trigger [dbo].[trig_i_T_ParamValue] ******/
 SET ANSI_NULLS ON
 GO
@@ -128,6 +130,8 @@ AS
 		WHERE inserted.TypeID = 117
 		ORDER BY inserted.MgrID
 
+GO
+ALTER TABLE [dbo].[T_ParamValue] ENABLE TRIGGER [trig_i_T_ParamValue]
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_ParamValue] ******/
 SET ANSI_NULLS ON
@@ -193,4 +197,6 @@ AS
 
 	End
 
+GO
+ALTER TABLE [dbo].[T_ParamValue] ENABLE TRIGGER [trig_u_T_ParamValue]
 GO

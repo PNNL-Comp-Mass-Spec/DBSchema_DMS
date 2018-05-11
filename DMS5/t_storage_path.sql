@@ -89,3 +89,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Storage_Path] ENABLE TRIGGER [trig_u_Storage_Path]
+GO

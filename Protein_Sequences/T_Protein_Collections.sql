@@ -87,6 +87,8 @@ AS
 	ORDER BY Protein_Collection_ID
 
 GO
+ALTER TABLE [dbo].[T_Protein_Collections] ENABLE TRIGGER [trig_d_Protein_Collections]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Protein_Collections] ******/
 SET ANSI_NULLS ON
 GO
@@ -102,6 +104,8 @@ AS
 	SELECT 1, inserted.Protein_Collection_ID, inserted.Collection_State_ID, 0, GetDate()
 	FROM inserted
 
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ENABLE TRIGGER [trig_i_Protein_Collections]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Protein_Collections] ******/
 SET ANSI_NULLS ON
@@ -119,4 +123,6 @@ AS
 		SELECT 1, inserted.Protein_Collection_ID, inserted.Collection_State_ID, deleted.Collection_State_ID, GetDate()
 		FROM deleted INNER JOIN inserted ON deleted.Protein_Collection_ID = inserted.Protein_Collection_ID
 
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ENABLE TRIGGER [trig_u_Protein_Collections]
 GO

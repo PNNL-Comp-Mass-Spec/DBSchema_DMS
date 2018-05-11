@@ -158,6 +158,8 @@ AS
 	ORDER BY CC_ID
 
 GO
+ALTER TABLE [dbo].[T_Cell_Culture] ENABLE TRIGGER [trig_d_Cell_Culture]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Cell_Culture] ******/
 SET ANSI_NULLS ON
 GO
@@ -186,6 +188,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.CC_ID
 
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] ENABLE TRIGGER [trig_i_Cell_Culture]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Cell_Culture] ******/
 SET ANSI_NULLS ON
@@ -219,4 +223,6 @@ AS
 	End
 
 
+GO
+ALTER TABLE [dbo].[T_Cell_Culture] ENABLE TRIGGER [trig_u_Cell_Culture]
 GO

@@ -94,3 +94,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Processor_Group_Membership] ENABLE TRIGGER [trig_u_T_Analysis_Job_Processor_Group_Membership]
+GO

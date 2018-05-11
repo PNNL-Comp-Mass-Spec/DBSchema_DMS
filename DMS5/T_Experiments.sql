@@ -260,6 +260,8 @@ AS
 	ORDER BY Exp_ID
 
 GO
+ALTER TABLE [dbo].[T_Experiments] ENABLE TRIGGER [trig_d_Experiments]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Experiments] ******/
 SET ANSI_NULLS ON
 GO
@@ -288,6 +290,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.Exp_ID
 
+GO
+ALTER TABLE [dbo].[T_Experiments] ENABLE TRIGGER [trig_i_Experiments]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Experiments] ******/
 SET ANSI_NULLS ON
@@ -334,6 +338,8 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Experiments] ENABLE TRIGGER [trig_u_Experiments]
+GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Experiments] ******/
 SET ANSI_NULLS ON
 GO
@@ -373,4 +379,6 @@ BEGIN
 
 END
 
+GO
+ALTER TABLE [dbo].[T_Experiments] ENABLE TRIGGER [trig_ud_T_Experiments]
 GO

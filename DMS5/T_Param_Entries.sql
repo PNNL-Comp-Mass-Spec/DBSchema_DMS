@@ -71,6 +71,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Param_Entries] ENABLE TRIGGER [trig_d_T_Param_Entries]
+GO
 /****** Object:  Trigger [dbo].[trig_i_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
@@ -100,6 +102,8 @@ AS
 
 
 
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ENABLE TRIGGER [trig_i_T_Param_Entries]
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Param_Entries] ******/
 SET ANSI_NULLS ON
@@ -176,4 +180,6 @@ AS
 	End -- </a>
 
 
+GO
+ALTER TABLE [dbo].[T_Param_Entries] ENABLE TRIGGER [trig_u_T_Param_Entries]
 GO

@@ -81,3 +81,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Archive_Path] ENABLE TRIGGER [trig_iu_Archive_Path]
+GO

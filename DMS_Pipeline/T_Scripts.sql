@@ -55,6 +55,8 @@ AS
 	ORDER BY deleted.ID
 
 GO
+ALTER TABLE [dbo].[T_Scripts] ENABLE TRIGGER [trig_d_Scripts]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Scripts] ******/
 SET ANSI_NULLS ON
 GO
@@ -74,6 +76,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.ID
 
+GO
+ALTER TABLE [dbo].[T_Scripts] ENABLE TRIGGER [trig_i_Scripts]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Scripts] ******/
 SET ANSI_NULLS ON
@@ -97,4 +101,6 @@ AS
 		ORDER BY inserted.ID
 	End
 
+GO
+ALTER TABLE [dbo].[T_Scripts] ENABLE TRIGGER [trig_u_Scripts]
 GO

@@ -75,3 +75,5 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_MgrType_ParamType_Map] ENABLE TRIGGER [trig_u_T_MgrType_ParamType_Map]
+GO

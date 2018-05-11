@@ -124,6 +124,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_d_AnalysisJobRequest]
+GO
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJobRequest] ******/
 SET ANSI_NULLS ON
 GO
@@ -153,6 +155,8 @@ AS
 	ORDER BY inserted.AJR_requestID
 
 
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_i_AnalysisJobRequest]
 GO
 /****** Object:  Trigger [dbo].[trig_u_AnalysisJobRequest] ******/
 SET ANSI_NULLS ON
@@ -188,4 +192,6 @@ AS
 	End
 
 
+GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_u_AnalysisJobRequest]
 GO

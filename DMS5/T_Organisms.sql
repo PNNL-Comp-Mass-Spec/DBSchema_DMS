@@ -114,6 +114,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Organisms] ENABLE TRIGGER [trig_i_T_Organisms]
+GO
 /****** Object:  Trigger [dbo].[trig_u_T_Organisms] ******/
 SET ANSI_NULLS ON
 GO
@@ -154,4 +156,6 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
 
 
+GO
+ALTER TABLE [dbo].[T_Organisms] ENABLE TRIGGER [trig_u_T_Organisms]
 GO

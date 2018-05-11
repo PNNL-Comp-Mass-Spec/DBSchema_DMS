@@ -109,6 +109,8 @@ AS
 	ORDER BY Campaign_ID
 
 GO
+ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_d_Campaign]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Campaign] ******/
 SET ANSI_NULLS ON
 GO
@@ -152,6 +154,8 @@ AS
 	ORDER BY inserted.Campaign_ID
 	
 
+GO
+ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_i_Campaign]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Campaign] ******/
 SET ANSI_NULLS ON
@@ -218,4 +222,6 @@ AS
 
 
 
+GO
+ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_u_Campaign]
 GO

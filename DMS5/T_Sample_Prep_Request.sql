@@ -180,6 +180,8 @@ AS
 	ORDER BY deleted.ID
 
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ENABLE TRIGGER [trig_d_Sample_Prep_Req]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
@@ -217,6 +219,8 @@ AS
 	ORDER BY inserted.ID
 
 GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ENABLE TRIGGER [trig_i_Sample_Prep_Req]
+GO
 /****** Object:  Trigger [dbo].[trig_u_Sample_Prep_Req] ******/
 SET ANSI_NULLS ON
 GO
@@ -253,4 +257,6 @@ AS
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
 	ORDER BY inserted.ID
 
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ENABLE TRIGGER [trig_u_Sample_Prep_Req]
 GO

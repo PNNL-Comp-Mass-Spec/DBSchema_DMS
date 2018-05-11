@@ -83,3 +83,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Default_PSM_Job_Settings] ENABLE TRIGGER [trig_iu_T_Default_PSM_Job_Settings]
+GO

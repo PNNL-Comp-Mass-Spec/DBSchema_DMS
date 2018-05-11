@@ -117,6 +117,8 @@ AS
 	          LookupQ.Saved = Target.Saved
 
 GO
+ALTER TABLE [dbo].[T_Jobs_History] ENABLE TRIGGER [trig_d_T_Jobs_History]
+GO
 /****** Object:  Trigger [dbo].[trig_iu_T_Jobs_History] ******/
 SET ANSI_NULLS ON
 GO
@@ -155,4 +157,6 @@ AS
 
 	End
 
+GO
+ALTER TABLE [dbo].[T_Jobs_History] ENABLE TRIGGER [trig_iu_T_Jobs_History]
 GO

@@ -357,6 +357,8 @@ AS
 	ORDER BY Dataset_ID
 
 GO
+ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_d_Dataset]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Dataset] ******/
 SET ANSI_NULLS ON
 GO
@@ -407,6 +409,8 @@ AS
 
 
 
+GO
+ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_i_Dataset]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Dataset] ******/
 SET ANSI_NULLS ON
@@ -500,6 +504,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_u_Dataset]
+GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Dataset] ******/
 SET ANSI_NULLS ON
 GO
@@ -541,4 +547,6 @@ BEGIN
 END
 
 
+GO
+ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_ud_T_Dataset]
 GO

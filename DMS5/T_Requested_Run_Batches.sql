@@ -102,3 +102,5 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ENABLE TRIGGER [trig_u_Requested_Run_Batches]
+GO

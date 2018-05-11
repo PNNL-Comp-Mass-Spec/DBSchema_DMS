@@ -95,6 +95,8 @@ AS
 	FROM deleted
 
 GO
+ALTER TABLE [dbo].[T_Settings_Files] ENABLE TRIGGER [trig_d_T_Settings_Files]
+GO
 /****** Object:  Trigger [dbo].[trig_i_T_Settings_Files] ******/
 SET ANSI_NULLS ON
 GO
@@ -117,6 +119,8 @@ AS
 	       GetDate(), SYSTEM_USER
 	FROM inserted
 
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ENABLE TRIGGER [trig_i_T_Settings_Files]
 GO
 /****** Object:  Trigger [dbo].[trig_u_T_Settings_Files] ******/
 SET ANSI_NULLS ON
@@ -204,4 +208,6 @@ AS
 		FROM inserted
 	End
 
+GO
+ALTER TABLE [dbo].[T_Settings_Files] ENABLE TRIGGER [trig_u_T_Settings_Files]
 GO

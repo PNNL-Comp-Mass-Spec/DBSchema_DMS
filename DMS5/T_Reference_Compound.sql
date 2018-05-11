@@ -180,6 +180,8 @@ AS
 	ORDER BY Compound_ID
 
 GO
+ALTER TABLE [dbo].[T_Reference_Compound] ENABLE TRIGGER [trig_d_Reference_Compound]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Reference_Compound] ******/
 SET ANSI_NULLS ON
 GO
@@ -207,6 +209,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.Compound_ID
 
+GO
+ALTER TABLE [dbo].[T_Reference_Compound] ENABLE TRIGGER [trig_i_Reference_Compound]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Reference_Compound] ******/
 SET ANSI_NULLS ON
@@ -246,4 +250,6 @@ AS
 		ORDER BY inserted.Compound_ID
 	End
 
+GO
+ALTER TABLE [dbo].[T_Reference_Compound] ENABLE TRIGGER [trig_u_Reference_Compound]
 GO

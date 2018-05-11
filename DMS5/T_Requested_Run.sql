@@ -296,6 +296,8 @@ AS
 	ORDER BY deleted.ID
 
 GO
+ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_d_Requested_Run]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Requested_Run] ******/
 SET ANSI_NULLS ON
 GO
@@ -324,6 +326,8 @@ AS
 		   ON inserted.RDS_Status = RRS.State_Name
 	ORDER BY inserted.ID
 
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_i_Requested_Run]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Requested_Run] ******/
 SET ANSI_NULLS ON
@@ -385,4 +389,6 @@ AS
 		ORDER BY inserted.ID
 	End
 
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_u_Requested_Run]
 GO

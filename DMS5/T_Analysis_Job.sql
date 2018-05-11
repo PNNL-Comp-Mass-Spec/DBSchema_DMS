@@ -351,6 +351,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_d_AnalysisJob]
+GO
 /****** Object:  Trigger [dbo].[trig_i_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
@@ -391,6 +393,8 @@ AS
 		T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
 
 
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_i_AnalysisJob]
 GO
 /****** Object:  Trigger [dbo].[trig_iu_AnalysisJob] ******/
 SET ANSI_NULLS ON
@@ -469,6 +473,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_iu_AnalysisJob]
+GO
 /****** Object:  Trigger [dbo].[trig_u_AnalysisJob] ******/
 SET ANSI_NULLS ON
 GO
@@ -544,6 +550,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_u_AnalysisJob]
+GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Analysis_Job] ******/
 SET ANSI_NULLS ON
 GO
@@ -585,4 +593,6 @@ BEGIN
 END
 
 
+GO
+ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_ud_T_Analysis_Job]
 GO

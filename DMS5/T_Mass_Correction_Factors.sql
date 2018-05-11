@@ -90,6 +90,8 @@ AS
 	FROM inserted
 
 GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ENABLE TRIGGER [trig_i_Mass_Correction_Factors]
+GO
 /****** Object:  Trigger [dbo].[trig_u_Mass_Correction_Factors] ******/
 SET ANSI_NULLS ON
 GO
@@ -120,4 +122,6 @@ AS
 				GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
 
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] ENABLE TRIGGER [trig_u_Mass_Correction_Factors]
 GO

@@ -58,6 +58,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Residues] ENABLE TRIGGER [trig_i_Residues]
+GO
 /****** Object:  Trigger [dbo].[trig_u_Residues] ******/
 SET ANSI_NULLS ON
 GO
@@ -92,4 +94,6 @@ AS
 		FROM deleted INNER JOIN inserted ON deleted.Residue_ID = inserted.Residue_ID
 
 
+GO
+ALTER TABLE [dbo].[T_Residues] ENABLE TRIGGER [trig_u_Residues]
 GO

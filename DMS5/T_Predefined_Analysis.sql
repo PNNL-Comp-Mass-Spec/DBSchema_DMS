@@ -164,3 +164,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ENABLE TRIGGER [trig_u_T_Predefined_Analysis]
+GO

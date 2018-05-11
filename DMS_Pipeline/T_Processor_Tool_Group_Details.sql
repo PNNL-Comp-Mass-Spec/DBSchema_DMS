@@ -77,3 +77,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] ENABLE TRIGGER [trig_u_Processor_Tool_Group_Details]
+GO

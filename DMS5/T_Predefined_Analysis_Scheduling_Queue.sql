@@ -94,3 +94,5 @@ AS
 	End
 
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis_Scheduling_Queue] ENABLE TRIGGER [trig_u_Predefined_Analysis_Scheduling_Queue]
+GO

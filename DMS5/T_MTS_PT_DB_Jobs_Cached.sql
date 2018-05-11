@@ -81,3 +81,5 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_MTS_PT_DB_Jobs_Cached] ENABLE TRIGGER [trig_iu_MTS_PT_DB_Jobs_Cached]
+GO

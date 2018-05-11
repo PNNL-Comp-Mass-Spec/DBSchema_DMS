@@ -209,6 +209,8 @@ AS
 	ORDER BY deleted.Job, deleted.Step_Number
 
 GO
+ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_d_Job_Steps]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Job_Steps] ******/
 SET ANSI_NULLS ON
 GO
@@ -228,6 +230,8 @@ AS
 	FROM inserted
 	ORDER BY inserted.Job, inserted.Step_Number
 
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_i_Job_Steps]
 GO
 /****** Object:  Trigger [dbo].[trig_u_Job_Steps] ******/
 SET ANSI_NULLS ON
@@ -254,6 +258,8 @@ AS
 	
 	End
 
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_u_Job_Steps]
 GO
 /****** Object:  Trigger [dbo].[trig_ud_T_Job_Steps] ******/
 SET ANSI_NULLS ON
@@ -299,4 +305,6 @@ BEGIN
 
 END
 
+GO
+ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_ud_T_Job_Steps]
 GO

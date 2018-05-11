@@ -136,6 +136,8 @@ AS
 	ORDER BY deleted.Job
 
 GO
+ALTER TABLE [dbo].[T_Jobs] ENABLE TRIGGER [trig_d_Jobs]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Jobs] ******/
 SET ANSI_NULLS ON
 GO
@@ -159,6 +161,8 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Jobs] ENABLE TRIGGER [trig_i_Jobs]
+GO
 /****** Object:  Trigger [dbo].[trig_u_Jobs] ******/
 SET ANSI_NULLS ON
 GO
@@ -181,4 +185,6 @@ AS
 		ORDER BY inserted.Job
 	End
 
+GO
+ALTER TABLE [dbo].[T_Jobs] ENABLE TRIGGER [trig_u_Jobs]
 GO

@@ -135,3 +135,5 @@ AS
 
 
 GO
+ALTER TABLE [dbo].[T_Charge_Code] ENABLE TRIGGER [trig_u_Charge_Code]
+GO
