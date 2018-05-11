@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateLCCart
+
+CREATE PROCEDURE [dbo].[AddUpdateLCCart]
 /****************************************************
 **
 **  Desc: Adds new or edits existing LC Cart
@@ -12,160 +13,177 @@ CREATE PROCEDURE AddUpdateLCCart
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 02/23/2006
-**          03/03/2006 grk - fixed problem with duplicate entries
-**			06/13/2017 mem - Use SCOPE_IDENTITY()
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   02/23/2006
+**          03/03/2006 grk - Fixed problem with duplicate entries
+**          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          05/10/2018 mem - Fix bug checking for duplicate carts when adding a new cart
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int output,
-	@CartName varchar(128),
-	@CartDescription varchar(1024),
-	@CartState varchar(50),
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+    @ID int output,
+    @CartName varchar(128),
+    @CartDescription varchar(1024),
+    @CartState varchar(50),
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) output
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    Declare @myError int
+    Declare @myRowCount int
+    Set @myError = 0
+    Set @myRowCount = 0
 
-	set @message = ''	
-	
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateLCCart', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    Set @message = ''    
+    
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'AddUpdateLCCart', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	---------------------------------------------------
-	-- Resolve cart state name to ID
-	---------------------------------------------------
-	--
-	declare @CartStateID int = 0
-	--
-	SELECT @CartStateID = ID
-	FROM T_LC_Cart_State_Name
-	WHERE  [Name] = @CartState
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
+    --
+    Set @CartName = LTrim(RTrim(IsNull(@CartName, '')))
+    Set @CartDescription = LTrim(RTrim(IsNull(@CartDescription, '')))
+    Set @CartState = LTrim(RTrim(IsNull(@CartState, '')))
+    Set @mode = IsNull(@mode, '')
+
+    ---------------------------------------------------
+    -- Resolve cart state name to ID
+    ---------------------------------------------------
+    --
+    Declare @CartStateID int = 0
+    --
+    SELECT @CartStateID = ID
+    FROM T_LC_Cart_State_Name
+    WHERE  [Name] = @CartState
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-		set @message = 'Error trying to resolve state name to ID'
-		RAISERROR (@message, 10, 1)
-		return 51007
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error trying to resolve state name to ID'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    End
     --
-    if @CartStateID = 0
-    begin
-		set @message = 'Could not resolve state name to ID'
-		RAISERROR (@message, 10, 1)
-		return 51008
-    end
+    If @CartStateID = 0
+    Begin
+        Set @message = 'Could not resolve state name to ID'
+        RAISERROR (@message, 10, 1)
+        return 51008
+    End
 
-	---------------------------------------------------
-	-- Verify whether entry exists or not
-	---------------------------------------------------
-	declare @tmp int = 0
-	--
-	SELECT @tmp = ID
-	FROM T_LC_Cart
-	WHERE (ID = @ID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error trying to find entry in database'
-		RAISERROR (@message, 10, 1)
-		return 51007
-    end
+    ---------------------------------------------------
+    -- Verify whether entry exists or not
+    ---------------------------------------------------
 
-	if @mode = 'update' and @tmp = 0
-	begin
-		set @message = 'Cannot update - Entry does not exist.'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+    If @Mode = 'add'
+    Begin
+        Set @ID = 0
 
-	if @Mode = 'add' and @tmp <> 0
-	begin
-		set @message = 'Cannot Add - Entry already exists'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+        If Exists (SELECT * FROM T_LC_Cart WHERE Cart_Name = @CartName)
+        Begin
+            Set @message = 'Cannot Add - Entry already exists for cart "' + @CartName + '"'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        End
+    End
 
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+    If @Mode = 'update'
+    Begin
+        If Not Exists (SELECT * FROM T_LC_Cart WHERE ID = @ID)
+        Begin
+            Set @message = 'Cannot update - cart ID ' + Cast(@ID as varchar(9)) + ' does not exist'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        End
 
-		INSERT INTO T_LC_Cart ( 
-			Cart_Name,
-			Cart_State_ID,
-			Cart_Description
-		) VALUES (
-			@CartName, 
-			@CartStateID, 
-			@CartDescription
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
+        Declare @currentName varchar(128) = ''
 
-		-- Return ID of newly created entry
-		--
-		set @ID = SCOPE_IDENTITY()
+        SELECT @currentName = Cart_Name 
+        FROM T_LC_Cart 
+        WHERE ID = @ID
 
-	end -- add mode
+        If @CartName <> @currentName And Exists (SELECT * FROM T_LC_Cart WHERE Cart_Name = @CartName)
+        Begin
+            Set @message = 'Cannot rename - Entry already exists for cart "' + @CartName + '"'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        End
+    End
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
-		--
+    ---------------------------------------------------
+    -- action for add mode
+    ---------------------------------------------------
+    If @Mode = 'add'
+    Begin
 
-		UPDATE T_LC_Cart
-		SET Cart_Name = @CartName,
-		    Cart_State_ID = @CartStateID,
-		    Cart_Description = @CartDescription
-		WHERE (ID = @ID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
-	end -- update mode
+        INSERT INTO T_LC_Cart ( 
+            Cart_Name,
+            Cart_State_ID,
+            Cart_Description
+        ) VALUES (
+            @CartName, 
+            @CartStateID, 
+            @CartDescription
+        )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin
+            Set @message = 'Insert operation failed'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        End
 
-	return @myError
+        -- Return ID of newly created entry
+        --
+        Set @ID = SCOPE_IDENTITY()
+
+    End -- add mode
+
+    ---------------------------------------------------
+    -- action for update mode
+    ---------------------------------------------------
+    --
+    If @Mode = 'update' 
+    Begin
+        Set @myError = 0
+        --
+
+        UPDATE T_LC_Cart
+        SET Cart_Name = @CartName,
+            Cart_State_ID = @CartStateID,
+            Cart_Description = @CartDescription
+        WHERE ID = @ID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin
+            Set @message = 'Update operation failed, Cart ' + @CartName + ', ID "' + Cast(@ID as varchar(9)) + '"'
+            RAISERROR (@message, 10, 1)
+            return 51004
+        End
+    End -- update mode
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [DDL_Viewer] AS [dbo]
