@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[UpdateJobState]
 /****************************************************
 **
@@ -101,6 +100,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          10/16/2017 mem - Remove the leading semicolon from @comment
 **          01/19/2018 mem - Populate column Runtime_Minutes in T_Jobs
 **                         - Use column ProcTimeMinutes_CompletedSteps in V_Job_Processing_Time
+**          05/10/2018 mem - Append to the job comment, rather than replacing it (provided the job completed successfully)
 **    
 *****************************************************/
 (
@@ -386,18 +386,19 @@ As
                 Set 
                     State = @newJobStateInBroker,
                     Start = 
-                        CASE 
-                        WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())    -- Job state is 2 or higher
+                        CASE WHEN @newJobStateInBroker >= 2                      -- Job state is 2 or higher
+                        THEN IsNull(@StartMin, GetDate()) 
                         ELSE Start
                         END,
                     Finish = 
-                        CASE 
-                        WHEN @newJobStateInBroker IN (4, 5, 7) THEN @FinishMax              -- 4=Complete, 5=Failed, 7=No Intermediate Files Created
+                        CASE WHEN @newJobStateInBroker IN (4, 5, 7)              -- 4=Complete, 5=Failed, 7=No Intermediate Files Created
+                        THEN @FinishMax
                         ELSE Finish
                         END,
                     Comment = 
-                        CASE 
-                        WHEN @newJobStateInBroker IN (4, 5, 7) THEN @Comment                -- 4=Complete, 5=Failed, 7=No Intermediate Files Created
+                        CASE WHEN @newJobStateInBroker IN (5) THEN @Comment     -- 5=Failed                        
+                        WHEN @newJobStateInBroker IN (4, 7)                     -- 4=Complete, 7=No Intermediate Files Created
+                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ')
                         ELSE Comment
                         END,
                     Runtime_Minutes = @ProcessingTimeMinutes
