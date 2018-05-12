@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure [dbo].[AddAnalysisJobGroup]
 /****************************************************
 **
@@ -63,6 +64,7 @@ CREATE Procedure [dbo].[AddAnalysisJobGroup]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
+**          05/11/2018 mem - When the settings file is Decon2LS_DefSettings.xml, also match jobs with a settings file of 'na'
 **
 *****************************************************/
 (
@@ -172,6 +174,8 @@ As
 	If @myError <> 0
 		RAISERROR ('Failed to create temporary table for request %d', 11, 7, @requestID)
 
+    CREATE CLUSTERED INDEX #IX_TD_Dataset_Num ON #TD (Dataset_Num)
+
 	---------------------------------------------------
 	-- Populate table from dataset list  
 	-- Using Select Distinct to make sure any duplicates are removed
@@ -258,8 +262,9 @@ As
 		WHERE
 			(NOT (AJ.AJ_StateID IN (5))) AND
 			AJT.AJT_toolName = @toolName AND 
-			AJ.AJ_parmFileName = @parmFileName AND 
-			AJ.AJ_settingsFileName = @settingsFileName AND 
+			AJ.AJ_parmFileName = @parmFileName AND
+            (AJ.AJ_settingsFileName = @settingsFileName OR
+             AJ.AJ_settingsFileName = 'na' AND @settingsFileName = 'Decon2LS_DefSettings.xml') AND 
 			( (	@protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
 				Org.OG_name = IsNull(@organismName, Org.OG_name)
 			  ) OR
