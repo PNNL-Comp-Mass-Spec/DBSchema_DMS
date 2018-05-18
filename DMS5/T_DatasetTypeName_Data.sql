@@ -1,6 +1,9 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 51 ******/
+/****** RowCount: 54 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
+INSERT INTO [T_DatasetTypeName] VALUES (52,'1D-C','NMR analysis',1)
+INSERT INTO [T_DatasetTypeName] VALUES (51,'1D-H','NMR analysis',1)
+INSERT INTO [T_DatasetTypeName] VALUES (53,'2D','NMR analysis',1)
 INSERT INTO [T_DatasetTypeName] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
 INSERT INTO [T_DatasetTypeName] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_DatasetTypeName] VALUES (27,'DataFiles','DMS Pipeline Data or Data Packages',0)
