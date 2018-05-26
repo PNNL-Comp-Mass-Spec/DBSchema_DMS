@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ValidateProteinCollectionListForDatasets
+
+CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasets]
 /****************************************************
 **
 **	Desc:	Validates that the protein collection names in @protCollNameList
