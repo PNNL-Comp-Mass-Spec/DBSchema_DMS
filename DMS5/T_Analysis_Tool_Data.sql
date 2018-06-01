@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 81 ******/
+/****** RowCount: 82 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest\','C:\DMS_Parameter_Files\Sequest\','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
@@ -37,7 +37,7 @@ INSERT INTO [T_Analysis_Tool] VALUES (32,'Inspect_UseExistingExternalDTA','Inspe
 INSERT INTO [T_Analysis_Tool] VALUES (33,'LCMSFeature_Finder','LCMSFeature_Finder',1,'\\gigasax\dms_parameter_Files\LCMSFeatureFinder\','C:\DMS_Parameter_Files\LCMSFeatureFinder\','??','HMMA_Peak','yes',0,'(na)',0,'N','LCMSFeature_Finder','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (34,'MSXML_Bruker','MSXML_Bruker',1,'\\gigasax\DMS_Parameter_Files\MSXML_Bruker\','C:\DMS_Parameter_Files\MSXML_Bruker\','mzXML_Bruker.xml','XML_Raw','no ',1,'(na)',0,'N','MSXML_Gen','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (35,'MultiAlign','MultiAlign',1017,'\\gigasax\DMS_Parameter_Files\MultiAlign','C:\DMS_Parameter_Files\MultiAlign','??','MA_Peak_Matching','no ',0,'(na)',0,'N','MultiAlign','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (36,'MSGFPlus','MSGFPlus',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings.xml','MSG_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MSGFDB','Search MS/MS spectra with MS-GF+',0)
+INSERT INTO [T_Analysis_Tool] VALUES (36,'MSGFPlus','MSGFPlus',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','(na)','IonTrapDefSettings.xml','MSG_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MSGFDB','Search MS/MS spectra with MS-GF+',0)
 INSERT INTO [T_Analysis_Tool] VALUES (37,'MSGFPlus_DTARefinery','MSGFPlus_DTARefinery',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_DeconMSN_DTARef_NoMods.xml','MSG_Peptide_Hit','no ',1,'Concat_DTA',1,'Y','MSGFDB','Use DTA_Refinery to refine the parent ion masses, then search MS/MS spectra with MS-GF+. Allows you to post-filter the search results with a tight ppm mass error tolerance.',0)
 INSERT INTO [T_Analysis_Tool] VALUES (38,'MSAlign','MSAlign',1019,'\\gigasax\DMS_Parameter_Files\MSAlign\','C:\DMS_Parameter_Files\MSAlign\','??','MSA_Peptide_Hit','no ',1,'mzXML',1,'N','MSAlign','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (39,'MSGFPlus_MzXML','MSGFPlus',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzXML.xml','MSG_Peptide_Hit','no ',0,'mzXML',1,'Y','MSGFDB','',0)
@@ -73,12 +73,13 @@ INSERT INTO [T_Analysis_Tool] VALUES (68,'MSGFPlus_MzML','MSGFPlus_MzML',1018,'\
 INSERT INTO [T_Analysis_Tool] VALUES (69,'MSGFPlus_MzML_NoRefine','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzML_NoRefine.xml','MSG_Peptide_Hit','no ',1,'mzML',1,'Y','MSGFDB','Use MZ_Refinery to characterize the parent ion distribute, but does not refine.  Creates .mzML files',0)
 INSERT INTO [T_Analysis_Tool] VALUES (70,'ProMex','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (71,'ProMex_Bruker','ProMex',1026,'\\gigasax\DMS_Parameter_Files\ProMex\','C:\DMS_Parameter_Files\ProMex\','ProMex_TopDown_Standard.xml','PMX_MS1FT','no ',1,'(na)',0,'N','ProMex','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (72,'NOMSI','NOMSI',1027,'\\gigasax\DMS_Parameter_Files\NOMSI\','C:\DMS_Parameter_Files\NOMSI\','NOMSI_DI_Peaks_Diagnostics.param','NOM_Search','no ',1,'(na)',0,'N','','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (72,'NOMSI','NOMSI',1027,'\\gigasax\DMS_Parameter_Files\NOMSI\','(na)','NOMSI_Malak_Transformations.xml','NOM_Search','no ',1,'(na)',0,'N','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (73,'MODPlus','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',1,'mzML',1,'Y','MODPlus','Search MS/MS',0)
 INSERT INTO [T_Analysis_Tool] VALUES (74,'MODPlus_NoRefine','MODPlus',1028,'\\gigasax\DMS_Parameter_Files\MODPlus\','C:\DMS_Parameter_Files\MODPlus\','','MODPlus_Peptide_Hit','no ',0,'mzML',1,'Y','MODPlus','Search MS/MS',0)
 INSERT INTO [T_Analysis_Tool] VALUES (75,'QC-ART','QC-ART',1029,'\\gigasax\DMS_Parameter_Files\QC-ART\','C:\DMS_Parameter_Files\QC-ART\','??','QCA','no ',1,'(na)',0,'N','','QC of iTRAQ datasets using SMAQC results',1)
 INSERT INTO [T_Analysis_Tool] VALUES (76,'PBF_Gen','PBF_Gen',1,'(na)','(na)','(na)','','no ',1,'(na)',0,'N','','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (77,'NOMSI_MzXML','NOMSI',1027,'\\','x','x','NOM_Search','no ',1,'(na)',0,'N','','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (77,'NOMSI_MzXML','NOMSI',1027,'\\gigasax\DMS_Parameter_Files\NOMSI\','(na)','NOMSI_Malak_Transformations.xml','NOM_Search','no ',1,'(na)',0,'N','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (78,'MSGFPlus_DTARefinery_SplitFasta','MSGFPlus_DTARefinery',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','MSGFDB_DeconMSn_Centroid_Top500_DTARef_NoMods_15Parts_MergeResults_Top1.xml','MSG_Peptide_Hit','no ',1,'',1,'Y','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (79,'MSGFPlus_MzML_SplitFasta','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB\','C:\DMS_Parameter_Files\MSGFDB\','IonTrapDefSettings_MzML_StatCysAlk_6plexTMT_phospho_5Parts_MergeResults_Top1.xml','MSG_Peptide_Hit','no ',1,'',1,'Y','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (80,'MAC_TMT10Plex','Broker_Job',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (81,'Formularity','Formularity',1030,'\\gigasax\dms_parameter_Files\Formularity','(na)','Formularity_DefSettings.xml','FRM_Search','no ',1,'(na)',0,'N','','',0)

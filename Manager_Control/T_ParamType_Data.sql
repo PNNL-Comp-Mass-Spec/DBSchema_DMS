@@ -190,4 +190,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (20
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (207,'DMSUpdateManagerFilesToIgnore','','Filenames to ignore when updating files with the DMS Update Manager')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (209,'RemoteHostAnalysisManagerDirs','','Name (not full path) of the directory or directories below directory RemoteHostDMSProgramsPath')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (210,'MzidMergerProgLoc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (211,'FormularityProgLoc','','Directory with the Formularity command line tool CIA.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
