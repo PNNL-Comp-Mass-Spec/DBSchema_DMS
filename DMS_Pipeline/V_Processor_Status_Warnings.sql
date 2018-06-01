@@ -23,8 +23,9 @@ FROM dbo.T_Processor_Status AS PS
      LEFT OUTER JOIN ( SELECT Processor_Name,
                               'Stale status' AS Status_State
                        FROM dbo.T_Processor_Status AS PS
-                       WHERE (Status_Date >= DATEADD(DAY, - 21, GETDATE())) AND
-                             (Status_Date < DATEADD(HOUR, - 4, GETDATE())) 
+                       WHERE Status_Date >= DATEADD(DAY, -21, GETDATE()) AND
+                             Status_Date < DATEADD(HOUR, -4, GETDATE()) And
+                             PS.Remote_Processor = 0
                      ) AS StaleQ
        ON PS.Processor_Name = StaleQ.Processor_Name
      LEFT OUTER JOIN ( SELECT Processor AS Processor_Name,
@@ -34,15 +35,15 @@ FROM dbo.T_Processor_Status AS PS
                                     ELSE 's'
                                 END + ')' AS Status_State
                        FROM V_Sequest_Cluster_Warnings
-                       WHERE Finish >= DATEADD(HOUR, - 30, GETDATE())
+                       WHERE Finish >= DATEADD(HOUR, -30, GETDATE())
                        GROUP BY Processor, Warning 
                      ) NodeCountErrorQ
        ON PS.Processor_Name = NodeCountErrorQ.Processor_Name
-WHERE PS.Monitor_Processor <> 0 AND
-      ((PS.Status_Date >= DATEADD(DAY, - 21, GETDATE()) AND
-        PS.Mgr_Status LIKE '%Error' OR PS.Mgr_Status LIKE 'Disabled%') OR
-       (NOT StaleQ.Status_State IS NULL) OR
-       (NOT NodeCountErrorQ.Status_State IS NULL))
+WHERE PS.Monitor_Processor > 0 AND
+      ((PS.Status_Date >= DATEADD(DAY, -21, GETDATE()) AND PS.Mgr_Status LIKE '%Error') OR
+       PS.Mgr_Status LIKE 'Disabled%' OR
+       NOT StaleQ.Status_State IS NULL OR
+       NOT NodeCountErrorQ.Status_State IS NULL)
 
 
 GO

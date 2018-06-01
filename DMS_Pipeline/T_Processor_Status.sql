@@ -28,6 +28,7 @@ CREATE TABLE [dbo].[T_Processor_Status](
 	[Spectrum_Count] [int] NULL,
 	[Monitor_Processor] [tinyint] NOT NULL,
 	[Remote_Manager] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Remote_Processor] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Processor_Status] PRIMARY KEY CLUSTERED 
 (
 	[Processor_Name] ASC
@@ -52,4 +53,6 @@ GO
 ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Monitor_Processor]  DEFAULT ((1)) FOR [Monitor_Processor]
 GO
 ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Remote_Manager]  DEFAULT ('') FOR [Remote_Manager]
+GO
+ALTER TABLE [dbo].[T_Processor_Status] ADD  CONSTRAINT [DF_T_Processor_Status_Remote_Processor]  DEFAULT ((0)) FOR [Remote_Processor]
 GO
