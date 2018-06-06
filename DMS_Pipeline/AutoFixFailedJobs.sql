@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[AutoFixFailedJobs]
 **          05/08/2015 mem - Added support for "Cannot run BuildSA since less than"
 **          05/26/2017 mem - Add step state 16 (Failed_Remote)
 **          03/30/2018 mem - Reset MSGF+ steps with "Timeout expired"
+**          06/05/2018 mem - Add support for Formularity
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ As
     -- Look for Bruker_DA_Export jobs that failed with error "No spectra were exported"
     ---------------------------------------------------
     --
-    TRUNCATE TABLE #Tmp_JobsToFix
+    DELETE FROM #Tmp_JobsToFix
     
     INSERT INTO #Tmp_JobsToFix (Job, Step)
     SELECT Job, Step_Number
@@ -94,16 +95,16 @@ As
     End -- </a1>
          
     ---------------------------------------------------
-    -- Look for NOMSI jobs that failed with error "No peaks found"
+    -- Look for Formularity or NOMSI jobs that failed with error "No peaks found"
     ---------------------------------------------------
     --
-    TRUNCATE TABLE #Tmp_JobsToFix
+    DELETE FROM #Tmp_JobsToFix
     
     INSERT INTO #Tmp_JobsToFix( Job, Step )
     SELECT Job,
            Step_Number
     FROM T_Job_Steps
-    WHERE Step_Tool = 'NOMSI' AND
+    WHERE Step_Tool In ('Formularity', 'NOMSI') AND
           State IN (6, 16) AND
           Completion_Message = 'No peaks found'
     --
@@ -164,7 +165,7 @@ As
      -- Error retrieving protein collection or legacy FASTA file: Timeout expired
     ---------------------------------------------------
     --
-    TRUNCATE TABLE #Tmp_JobsToFix
+    DELETE FROM #Tmp_JobsToFix
     
     INSERT INTO #Tmp_JobsToFix (Job, Step)
     SELECT Job, Step_Number

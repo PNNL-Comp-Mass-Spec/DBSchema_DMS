@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 /****************************************************
 **
@@ -209,6 +208,9 @@ As
         If @completionCode = 20  -- CLOSEOUT_NO_DATA
         Begin
             Set @completionCodeDescription = 'No Data'
+
+            -- Note that Formularity and NOMSI jobs that report completion code 20 are handled in AutoFixFailedJobs
+
             If @stepTool IN ('Decon2LS_V2')
             Begin
                 -- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
