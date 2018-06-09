@@ -6,6 +6,8 @@ GO
 CREATE TABLE [dbo].[T_Sample_Labelling](
 	[Label] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[ID] [int] NOT NULL,
+	[Reporter_Mz_Min] [float] NULL,
+	[Reporter_Mz_Max] [float] NULL,
  CONSTRAINT [PK_T_Sample_Labelling] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
