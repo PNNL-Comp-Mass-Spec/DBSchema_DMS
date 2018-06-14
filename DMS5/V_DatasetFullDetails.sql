@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_DatasetFullDetails]
-AS
+As
 SELECT DS.Dataset_Num,
        DS.DS_created,
        InstName.IN_name,
@@ -31,7 +31,10 @@ SELECT DS.Dataset_Num,
        C.CM_Project_Num,
        ISNULL(C.CM_comment, '') AS CM_Comment,
        C.CM_created,
-       ISNULL(E.EX_sample_concentration, 'na') AS EX_sample_concentration
+       ISNULL(E.EX_sample_concentration, 'na') AS EX_sample_concentration,
+       E.EX_Labelling,
+       L.Reporter_Mz_Min,
+       L.Reporter_Mz_Max
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID
@@ -47,6 +50,8 @@ FROM T_Dataset DS
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
+     INNER JOIN T_Sample_Labelling L
+       ON E.EX_Labelling = L.Label
      LEFT OUTER JOIN T_Cached_Experiment_Components CCE
        ON E.Exp_ID = CCE.Exp_ID
 
