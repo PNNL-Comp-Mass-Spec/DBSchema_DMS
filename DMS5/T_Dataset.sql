@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Dataset](
 	[Dataset_Num] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[DS_Oper_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[DS_comment] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[DS_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DS_created] [datetime] NOT NULL,
 	[DS_instrument_name_ID] [int] NULL,
 	[DS_LC_column_ID] [int] NULL,
