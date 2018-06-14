@@ -3,21 +3,29 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetJobStepParams
+
+CREATE PROCEDURE [dbo].[GetJobStepParams]
 /****************************************************
 **
-**	Desc:
-**    Get job step parameters for given job step
-**    Into temporary table created by caller
+**	Desc:   Populate a temporary table with job step parameters for given job step
+**          Data comes from tables T_Jobs, T_Job_Steps, and T_Job_Parameters in the DMS_Capture DB, not from DMS5
+**
+**  The calling procedure must create this temporary table:
+**
+**      CREATE TABLE #ParamTab (
+**    		[Section] Varchar(128),
+**    		[Name] Varchar(128),
+**    		[Value] Varchar(max)
+**    	)
 **	
 **	Return values: 0: success, otherwise, error code
-**
 **
 **	Auth:	grk
 **	Date:	09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **			08/30/2013 mem - Added MyEMSL_Status_URI
 **			01/04/2016 mem - Added EUS_InstrumentID, EUS_ProposalID, and EUS_UploaderID
 **			06/15/2017 mem - Only append /xml to the MyEMSL status URI if it contains /status/
+**          06/12/2018 mem - Now calling GetMetadataForDataset
 **    
 *****************************************************/
 (
@@ -29,10 +37,8 @@ CREATE PROCEDURE GetJobStepParams
 AS
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	declare @myError int = 0
+	declare @myRowCount int = 0
 	--
 	declare @stepTool varchar(64)
 	declare @inputFolderName varchar(128)
@@ -55,7 +61,7 @@ AS
 	set @EUSUploaderID = 0
 	
 	set @message = ''
-		
+	
 	---------------------------------------------------
 	-- Get basic job step parameters
 	---------------------------------------------------
@@ -113,8 +119,7 @@ AS
 	-- Get job step parameters
 	---------------------------------------------------
 	--
-	declare @stepParmSectionName varchar(32)
-	set @stepParmSectionName = 'StepParameters'
+	declare @stepParmSectionName varchar(32) = 'StepParameters'
 	--
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Job', @jobNumber)
 	INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Step', @stepNumber)
@@ -134,7 +139,7 @@ AS
 	--
 	-- to allow for more than one instance of a tool
 	-- in a single script, look at parameters in sections 
-	-- that either are not locked to any setp 
+	-- that either are not locked to any step
 	-- (step number is null) or are locked to the current step
 	--
 	INSERT INTO #ParamTab
@@ -155,6 +160,20 @@ AS
 		set @message = 'Error getting job parameters'
 		goto Done
 	end
+
+
+    -- Get metadata for dataset if running the Dataset Info plugin or the Dataset Quality plugin
+    -- The Dataset Info tool uses the Reporter_Mz_Min value to validate datasets with reporter ions
+    -- The Dataset Quality tool creates file metadata.xml
+    If @stepTool In ('DatasetInfo', 'DatasetQuality')
+    Begin
+        Declare @dataset varchar(128) = ''
+        SELECT @dataset = Dataset 
+        FROM T_Jobs 
+        WHERE Job = @jobNumber
+
+        EXEC GetMetadataForDataset @dataset
+    End
 
 	---------------------------------------------------
 	-- Exit
