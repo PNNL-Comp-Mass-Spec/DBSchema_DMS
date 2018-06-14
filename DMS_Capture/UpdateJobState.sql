@@ -3,528 +3,526 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateJobState
+
+CREATE PROCEDURE [dbo].[UpdateJobState]
 /****************************************************
 **
-**	Desc: 
-**    Based on step state, look for jobs that have been completed, 
-**    or have entered the “in progress” state, 
-**    and update state of job locally and dataset in DMS accordingly
-**	
-**	First step: evaluate state of steps for jobs that are in new or busy state, 
-**	or in transient state of being resumed or reset, and determine what new
-**	broker job state should be, and accumulate list of jobs whose new state is different than their
-**	current state.  Only steps for jobs in New or Busy state are considered.
+**    Desc: Based on step state, look for jobs that have been completed, 
+**          or have entered the “in progress” state, 
+**          and update state of job locally and dataset in DMS accordingly
+**    
+**    First step: 
+**      Evaluate state of steps for jobs that are in new or busy state, 
+**      or in transient state of being resumed or reset, and determine what new
+**      broker job state should be, and accumulate list of jobs whose new state is different than their
+**      current state.  Only steps for jobs in New or Busy state are considered.
 ** 
-**	Current             Current                                     New          
-**	Broker              Job                                         Broker       
-**	Job                 Steps                                       Job          
-**	State               States                                      State        
-**	-----               -------                                     ---------    
-**	New or Busy         One or more steps failed                    Failed
+**    Current             Current                                     New          
+**    Broker              Job                                         Broker       
+**    Job                 Steps                                       Job          
+**    State               States                                      State        
+**    -----               -------                                     ---------    
+**    New or Busy         One or more steps failed                    Failed
 ** 
-**	New or Busy         All steps complete                          Complete
+**    New or Busy         All steps complete                          Complete
 ** 
-**	New,Busy,Resuming   One or more steps busy                      In Progress
+**    New,Busy,Resuming   One or more steps busy                      In Progress
 **
-**	Failed              All steps complete                          Complete, though only if max Job Step completion time is greater than Finish time in T_Jobs
+**    Failed              All steps complete                          Complete, though only if max Job Step completion time is greater than Finish time in T_Jobs
 ** 
-**	Failed              All steps waiting/enabled/In Progress       In Progress
+**    Failed              All steps waiting/enabled/In Progress       In Progress
 ** 
 ** 
-**	Second step: go through list of jobs from first step whose current state must be changed and
-**	take action in broker and DMS as noted.
+**    Second step: 
+**      Go through list of jobs from first step whose current state must be changed and
+**      take action in broker and DMS as noted.
 ** 
-**	Auth:	grk
-**	Date:	12/15/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**			01/14/2010 grk - Removed path ID fields
-**			05/04/2010 grk - Bypass DMS if dataset ID = 0
-**			05/08/2010 grk - Update DMS sample prep if dataset ID = 0
-**			05/05/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Jobs
-**			11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
-**			01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
-**			11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
-**			11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
-**			11/04/2016 mem - Now looking for jobs that are failed, yet should be listed as in progress
-**						   - Only call CopyJobToHistory if the new job state is 3 or 5 and if not changing the state from 5 to 2
-**						   - Add parameter @infoOnly
-**						   - No longer computing @ProcessingTimeMinutes since not stored in any table
-**			01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
+**  Auth:   grk
+**  Date:   12/15/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**          01/14/2010 grk - Removed path ID fields
+**          05/04/2010 grk - Bypass DMS if dataset ID = 0
+**          05/08/2010 grk - Update DMS sample prep if dataset ID = 0
+**          05/05/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Jobs
+**          11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
+**          01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
+**          11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
+**          11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
+**          11/04/2016 mem - Now looking for jobs that are failed, yet should be listed as in progress
+**                         - Only call CopyJobToHistory if the new job state is 3 or 5 and if not changing the state from 5 to 2
+**                         - Add parameter @infoOnly
+**                         - No longer computing @ProcessingTimeMinutes since not stored in any table
+**          01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
+**          06/13/2018 mem - Add comments regarding UpdateDMSFileInfoXML and T_Dataset_Info
 **    
 *****************************************************/
 (
-	@bypassDMS tinyint = 0,
-	@message varchar(512) output,
-	@MaxJobsToProcess int = 0,
-	@LoopingUpdateInterval int = 5,		-- Seconds between detailed logging while looping through the dependencies
-	@infoOnly tinyint = 0
+    @bypassDMS tinyint = 0,
+    @message varchar(512) output,
+    @MaxJobsToProcess int = 0,
+    @LoopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
+    @infoOnly tinyint = 0
 )
 As
-	Set nocount on
-	
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+    Set nocount on
+    
+    Declare @myError int = 0
+    Declare @myRowCount int =0
 
-	declare @job int
-	declare @oldJobStateInBroker int
-	declare @newJobStateInBroker int
-	--
-	declare @curJob int
-	Set @curJob = 0
-	--
-	declare @resultsFolderName varchar(64)
-	Set @resultsFolderName = ''
-	--
-	
-	declare @JobPropagationMode int
-	Set @JobPropagationMode = 0
+    Declare @job int
+    Declare @oldJobStateInBroker int
+    Declare @newJobStateInBroker int
+    --
+    Declare @curJob int = 0
+    --
+    Declare @resultsFolderName varchar(64) = ''
+    --
+    
+    Declare @JobPropagationMode int = 0
 
-	declare @done tinyint
-	declare @JobCountToProcess int
-	declare @JobsProcessed int
-	declare @script varchar(64)
+    Declare @done tinyint
+    Declare @JobCountToProcess int
+    Declare @JobsProcessed int
+    Declare @script varchar(64)
+    
+    Declare @StartMin datetime
+    Declare @FinishMax datetime
+    Declare @UpdateCode int
 
-	
-	Declare @StartMin datetime
-	Declare @FinishMax datetime
-	Declare @UpdateCode int
+    Declare @StartTime datetime
+    Declare @LastLogTime datetime
+    Declare @StatusMessage varchar(512)    
 
-	declare @StartTime datetime
-	declare @LastLogTime datetime
-	declare @StatusMessage varchar(512)	
+    ---------------------------------------------------
+    -- Validate the inputs    
+    ---------------------------------------------------
+    Set @bypassDMS = IsNull(@bypassDMS, 0)
+    Set @message = ''
+    Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
 
-	---------------------------------------------------
-	-- Validate the inputs	
-	---------------------------------------------------
-	Set @bypassDMS = IsNull(@bypassDMS, 0)
-	Set @message = ''
-	Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
+    Set @StartTime = GetDate()
+    Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
+    If @LoopingUpdateInterval < 2
+        Set @LoopingUpdateInterval = 2
 
-	Set @StartTime = GetDate()
-	Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
-	If @LoopingUpdateInterval < 2
-		Set @LoopingUpdateInterval = 2
+    Set @infoOnly = IsNull(@infoOnly, 0)
 
-	Set @infoOnly = IsNull(@infoOnly, 0)
+    ---------------------------------------------------
+    -- Table variable to hold state changes
+    ---------------------------------------------------
+    CREATE TABLE #Tmp_ChangedJobs (
+        Job int,
+        OldState int,
+        NewState int,
+        Results_Folder_Name varchar(128),
+        Dataset_Name varchar(128),
+        Dataset_ID int,
+        Script varchar(64),
+        Storage_Server varchar(128),
+        Start_New DateTime null,
+        Finish_New Datetime null
+    )
 
-	---------------------------------------------------
-	-- table variable to hold state changes
-	---------------------------------------------------
-	CREATE TABLE #Tmp_ChangedJobs (
-		Job int,
-		OldState int,
-		NewState int,
-		Results_Folder_Name varchar(128),
-		Dataset_Name varchar(128),
-		Dataset_ID int,
-		Script varchar(64),
-		Storage_Server varchar(128),
-		Start_New DateTime null,
-		Finish_New Datetime null
-	)
+    CREATE INDEX #IX_Tmp_ChangedJobs_Job ON #Tmp_ChangedJobs (Job)
 
-	CREATE INDEX #IX_Tmp_ChangedJobs_Job ON #Tmp_ChangedJobs (Job)
+    ---------------------------------------------------
+    -- Determine what current state of active jobs should be
+    -- and get list of the ones that need be changed
+    ---------------------------------------------------
+    --
+    INSERT INTO #Tmp_ChangedJobs (
+        Job, 
+        OldState,
+        NewState, 
+        Results_Folder_Name,
+        Dataset_Name,
+        Dataset_ID,
+        Script,
+        Storage_Server
+    )
+    SELECT
+        Job,
+        OldState,
+        NewState,
+        Results_Folder_Name,
+        Dataset,
+        Dataset_ID,
+        Script,
+        Storage_Server
+    FROM
+    (
+        -- Look at the state of steps for active or failed jobs
+        -- and determine what the new state of each job should be
+        SELECT 
+          J.Job,
+          J.Dataset_ID,
+          J.State as OldState,
+          J.Results_Folder_Name,
+          J.Storage_Server,
+          CASE 
+            WHEN JS_Stats.Failed > 0 THEN 5                     -- Failed
+            WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- Complete
+            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- In Progress
+            Else J.State
+          End AS NewState,
+          J.Dataset,
+          J.Script
+        FROM   
+          (
+            -- Count the number of steps for each job 
+            -- that are in the busy, finished, or failed states
+            -- (for jobs that are in new, in progress, or resuming state)
+            SELECT   
+                JS.Job,
+                COUNT(*) AS Total,
+                SUM(CASE 
+                    WHEN JS.State IN (3,4,5) THEN 1
+                    Else 0
+                    End) AS StartedFinishedOrSkipped,
+                SUM(CASE 
+                    WHEN JS.State IN (6) THEN 1
+                    Else 0
+                    End) AS Failed,
+                SUM(CASE 
+                    WHEN JS.State IN (3,5) THEN 1
+                    Else 0
+                    End) AS FinishedOrSkipped
+            FROM T_Job_Steps JS
+                 INNER JOIN T_Jobs J
+                   ON JS.Job = J.Job
+            WHERE (J.State IN (1,2,5,20))    -- New, in progress, failed, or resuming state
+            GROUP BY JS.Job, J.State
+           ) AS JS_Stats 
+           INNER JOIN T_Jobs AS J
+             ON JS_Stats.Job = J.Job
+    ) UpdateQ
+    WHERE UpdateQ.OldState <> UpdateQ.NewState
+     --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    Set @JobCountToProcess = @myRowCount
 
-	---------------------------------------------------
-	-- determine what current state of active jobs should be
-	-- and get list of the ones that need be changed
-	---------------------------------------------------
-	--
-	INSERT INTO #Tmp_ChangedJobs (
-		Job, 
-		OldState,
-		NewState, 
-		Results_Folder_Name,
-		Dataset_Name,
-		Dataset_ID,
-		Script,
-		Storage_Server
-	)
-	SELECT
-		Job,
-		OldState,
-		NewState,
-		Results_Folder_Name,
-		Dataset,
-		Dataset_ID,
-		Script,
-		Storage_Server
-	FROM
-	(
-		-- look at the state of steps for active or failed jobs
-		-- and determine what the new state of each job should be
-		SELECT 
-		  J.Job,
-		  J.Dataset_ID,
-		  J.State as OldState,
-		  J.Results_Folder_Name,
-		  J.Storage_Server,
-		  CASE 
-			WHEN JS_Stats.Failed > 0 THEN 5                     -- Failed
-			WHEN JS_Stats.FinishedOrSkipped = Total THEN 3		-- Complete
-			WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2	-- In Progress
-			Else J.State
-		  End AS NewState,
-		  J.Dataset,
-		  J.Script
-		FROM   
-		  (
-			-- Count the number of steps for each job 
-			-- that are in the busy, finished, or failed states
-			-- (for jobs that are in new, in progress, or resuming state)
-			SELECT   
-				JS.Job,
-				COUNT(*) AS Total,
-				SUM(CASE 
-					WHEN JS.State IN (3,4,5) THEN 1
-					Else 0
-					End) AS StartedFinishedOrSkipped,
-				SUM(CASE 
-					WHEN JS.State IN (6) THEN 1
-					Else 0
-					End) AS Failed,
-				SUM(CASE 
-					WHEN JS.State IN (3,5) THEN 1
-					Else 0
-					End) AS FinishedOrSkipped
-			FROM T_Job_Steps JS
-			     INNER JOIN T_Jobs J
-			       ON JS.Job = J.Job
-			WHERE (J.State IN (1,2,5,20))	-- New, in progress, failed, or resuming state
-			GROUP BY JS.Job, J.State
-		   ) AS JS_Stats 
-		   INNER JOIN T_Jobs AS J
-			 ON JS_Stats.Job = J.Job
-	) UpdateQ
-	WHERE UpdateQ.OldState <> UpdateQ.NewState
- 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	Set @JobCountToProcess = @myRowCount
+    ---------------------------------------------------
+    -- Find DatasetArchive and ArchiveUpdate jobs that are 
+    -- in progress, but for which DMS thinks that 
+    -- the operation has failed
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Find DatasetArchive and ArchiveUpdate jobs that are 
-	-- in progress, but for which DMS thinks that 
-	-- the operation has failed
-	---------------------------------------------------
+    INSERT INTO #Tmp_ChangedJobs (
+        Job, 
+        OldState,
+        NewState, 
+        Results_Folder_Name,
+        Dataset_Name,
+        Dataset_ID,
+        Script,
+        Storage_Server
+    )
+    SELECT J.Job,
+           J.State As OldState,
+           J.State As NewState,
+           J.Results_Folder_Name,
+           J.Dataset,
+           J.Dataset_ID,
+           J.Script,
+           J.Storage_Server
+    FROM T_Jobs J
+         INNER JOIN V_DMS_Dataset_Archive_Status DAS
+           ON J.Dataset_ID = DAS.Dataset_ID 
+         LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
+           ON J.Job = TargetTable.Job
+    WHERE TargetTable.Job Is Null AND 
+          ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.AS_state_ID = 6) OR
+            (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.AS_update_state_ID = 5) )
+     --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    Set @JobCountToProcess = @JobCountToProcess + @myRowCount
 
-	INSERT INTO #Tmp_ChangedJobs (
-		Job, 
-		OldState,
-		NewState, 
-		Results_Folder_Name,
-		Dataset_Name,
-		Dataset_ID,
-		Script,
-		Storage_Server
-	)
-	SELECT J.Job,
-	       J.State As OldState,
-	       J.State As NewState,
-	       J.Results_Folder_Name,
-	       J.Dataset,
-	       J.Dataset_ID,
-	       J.Script,
-	       J.Storage_Server
-	FROM T_Jobs J
-	     INNER JOIN V_DMS_Dataset_Archive_Status DAS
-	       ON J.Dataset_ID = DAS.Dataset_ID 
-	     LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
-	       ON J.Job = TargetTable.Job
-	WHERE TargetTable.Job Is Null AND 
-	      ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.AS_state_ID = 6) OR
-	        (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.AS_update_state_ID = 5) )
- 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	Set @JobCountToProcess = @JobCountToProcess + @myRowCount
+    ---------------------------------------------------
+    -- Find failed jobs that do not have any failed job steps
+    ---------------------------------------------------
+    --
+    INSERT INTO #Tmp_ChangedJobs( 
+        Job,
+        OldState,
+        NewState,
+        Results_Folder_Name,
+        Dataset_Name,
+        Dataset_ID,
+        Script,
+        Storage_Server )
+    
+    SELECT Job,
+           State AS OldState,
+           2 AS NewState,
+           Results_Folder_Name,
+           Dataset,
+           Dataset_ID,
+           Script,
+           Storage_Server
+    FROM T_Jobs
+    WHERE State = 5 AND
+          (Job IN ( SELECT Job FROM T_Job_Steps WHERE State IN (2, 3, 4, 5))) AND
+          (NOT Job IN (SELECT Job FROM T_Job_Steps WHERE State = 6)) AND
+          (NOT Job In (SELECT Job FROM #Tmp_ChangedJobs))
+     --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    Set @JobCountToProcess = @JobCountToProcess + @myRowCount
+        
+    ---------------------------------------------------
+    -- Loop through jobs whose state has changed 
+    -- and update local state and DMS state
+    ---------------------------------------------------
+    --
+    Set @done = 0
+    Set @JobsProcessed = 0
+    Set @LastLogTime = GetDate()
+    SET @script = ''
+    Declare
+        @datasetNum VARCHAR(128),
+        @datasetID INT,
+        @storageServerName VARCHAR(128)
+    --
+    While @done = 0
+    Begin --<a>
+        Set @job = 0
+        --
+        SELECT TOP 1 @job = Job,
+                     @curJob = Job,
+                     @oldJobStateInBroker = OldState,
+                     @newJobStateInBroker = NewState,
+                     @resultsFolderName = Results_Folder_Name,
+                     @script = Script,
+                     @datasetNum = Dataset_Name,
+                     @datasetID = Dataset_ID,
+                     @storageServerName = Storage_Server
+        FROM #Tmp_ChangedJobs
+        WHERE Job > @curJob
+        ORDER BY Job
+         --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+            
+        If @job = 0
+            Set @done = 1
+        Else
+        Begin --<b>
 
-	---------------------------------------------------
-	-- Find failed jobs that do not have any failed job steps
-	---------------------------------------------------
-	--
-	INSERT INTO #Tmp_ChangedJobs( 
-		Job,
-		OldState,
-		NewState,
-		Results_Folder_Name,
-		Dataset_Name,
-		Dataset_ID,
-		Script,
-		Storage_Server )
-	
-	SELECT Job,
-	       State AS OldState,
-	       2 AS NewState,
-	       Results_Folder_Name,
-	       Dataset,
-	       Dataset_ID,
-	       Script,
-	       Storage_Server
-	FROM T_Jobs
-	WHERE State = 5 AND
-	      (Job IN ( SELECT Job FROM T_Job_Steps WHERE State IN (2, 3, 4, 5))) AND
-	      (NOT Job IN (SELECT Job FROM T_Job_Steps WHERE State = 6)) AND
-	      (NOT Job In (SELECT Job FROM #Tmp_ChangedJobs))
- 	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	Set @JobCountToProcess = @JobCountToProcess + @myRowCount
-		
-	---------------------------------------------------
-	-- Loop through jobs whose state has changed 
-	-- and update local state and DMS state
-	---------------------------------------------------
-	--
-	Set @done = 0
-	Set @JobsProcessed = 0
-	Set @LastLogTime = GetDate()
-	SET @script = ''
-	DECLARE
-		@datasetNum VARCHAR(128),
-		@datasetID INT,
-		@storageServerName VARCHAR(128)
-	--
-	While @done = 0
-	Begin --<a>
-		Set @job = 0
-		--
-		SELECT TOP 1 @job = Job,
-		             @curJob = Job,
-		             @oldJobStateInBroker = OldState,
-		             @newJobStateInBroker = NewState,
-		             @resultsFolderName = Results_Folder_Name,
-		             @script = Script,
-		             @datasetNum = Dataset_Name,
-		             @datasetID = Dataset_ID,
-		             @storageServerName = Storage_Server
-		FROM #Tmp_ChangedJobs
-		WHERE Job > @curJob
-		ORDER BY Job
- 		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-			
-		If @job = 0
-			Set @done = 1
-		Else
-		Begin --<b>
+            ---------------------------------------------------
+            -- Examine the steps for this job to determine actual start/End times
+            ---------------------------------------------------
 
-			---------------------------------------------------
-			-- Examine the steps for this job to determine actual start/End times
-			---------------------------------------------------
+            Set @StartMin = Null
+            Set @FinishMax = Null
 
-			Set @StartMin = Null
-			Set @FinishMax = Null
+            -- Note: You can use the following query to update @StartMin and @FinishMax
+            -- However, when a job has some completed steps and some not yet started, this query 
+            --  will trigger the warning "Null value is eliminated by an aggregate or other Set operation"
+            -- The warning can be safely ignored, but tends to bloat up the Sql Server Agent logs, 
+            --  so we are instead populating @StartMin and @FinishMax separately
+            /*
+            SELECT @StartMin = Min(Start), 
+                   @FinishMax = Max(Finish)
+            FROM T_Job_Steps
+            WHERE (Job = @job)
+             --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            */
 
-			-- Note: You can use the following query to update @StartMin and @FinishMax
-			-- However, when a job has some completed steps and some not yet started, this query 
-			--  will trigger the warning "Null value is eliminated by an aggregate or other Set operation"
-			-- The warning can be safely ignored, but tends to bloat up the Sql Server Agent logs, 
-			--  so we are instead populating @StartMin and @FinishMax separately
-			/*
-			SELECT @StartMin = Min(Start), 
-				   @FinishMax = Max(Finish)
-			FROM T_Job_Steps
-			WHERE (Job = @job)
- 			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			*/
+            -- Update @StartMin
+            -- Note that if no steps have started yet, then @StartMin will be Null
+            SELECT @StartMin = Min(Start)       
+            FROM T_Job_Steps
+            WHERE (Job = @job) AND Not Start Is Null
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            
+            -- Update @FinishMax
+            -- Note that if no steps have finished yet, then @FinishMax will be Null
+            SELECT @FinishMax = Max(Finish)
+            FROM T_Job_Steps
+            WHERE (Job = @job) AND Not Finish Is Null
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
 
-			-- Update @StartMin
-			-- Note that if no steps have started yet, then @StartMin will be Null
-			SELECT @StartMin = Min(Start)	   
-			FROM T_Job_Steps
-			WHERE (Job = @job) AND Not Start Is Null
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			
-			-- Update @FinishMax
-			-- Note that if no steps have finished yet, then @FinishMax will be Null
-			SELECT @FinishMax = Max(Finish)
-			FROM T_Job_Steps
-			WHERE (Job = @job) AND Not Finish Is Null
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+            ---------------------------------------------------
+            -- Deprecated:
+            -- Examine the steps for this job to determine total processing time
+            -- Steps with the same Step Tool name are assumed to be steps that can run in parallel;
+            --   therefore, we use a Max(ProcessingTime) on steps with the same Step Tool name
+            -- We use ABS(DATEDIFF(HOUR, start, xx)) to avoid overflows produced with
+            --   DATEDIFF(SECOND, Start, xx) when Start and Finish are widely different
+            ---------------------------------------------------
+            /*
+            SELECT @ProcessingTimeMinutes = SUM(SecondsElapsedMax) / 60.0
+            FROM ( SELECT Step_Tool,
+                          MAX(ISNULL(SecondsElapsed1, 0) + ISNULL(SecondsElapsed2, 0)) AS SecondsElapsedMax
+                   FROM ( SELECT Step_Tool,
+                                 CASE
+                                     WHEN ABS(DATEDIFF(HOUR, start, finish)) > 100000 THEN 360000000
+                                     ELSE DATEDIFF(SECOND, Start, Finish)
+                                 END AS SecondsElapsed1,
+                                 CASE
+                                     WHEN (NOT Start IS NULL) AND
+                                          Finish IS NULL THEN 
+                                            CASE
+                                                WHEN ABS(DATEDIFF(HOUR, start, GETDATE())) > 100000 THEN 360000000
+                                                ELSE DATEDIFF(SECOND, Start, getdate())
+                                            END
+                                     ELSE NULL
+                                 END AS SecondsElapsed2
+                          FROM T_Job_Steps
+                          WHERE (Job = @job) 
+                          ) StatsQ
+                   GROUP BY Step_Tool 
+                   ) StepToolQ
+             --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
 
+            Set @ProcessingTimeMinutes = IsNull(@ProcessingTimeMinutes, 0)
+            */
+            
+            If @infoOnly > 0
+            Begin
+                UPDATE #Tmp_ChangedJobs
+                SET Start_New = 
+                        CASE
+                        WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())    -- Job state is 2 or higher
+                        ELSE Src.Start
+                        END,
+                    Finish_New = 
+                        CASE
+                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- 3=Complete, 5=Failed
+                        ELSE Src.Finish
+                        END
+                FROM #Tmp_ChangedJobs Target
+                     INNER JOIN T_Jobs Src
+                       ON Target.Job = Src.Job
+                WHERE Target.Job = @job
+                 --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                
+            End
+            Else
+            Begin
+                ---------------------------------------------------
+                -- Update local job state and timestamp (If appropriate)
+                ---------------------------------------------------
+                --                
+                UPDATE T_Jobs
+                Set 
+                    State = @newJobStateInBroker,
+                    Start = 
+                        CASE 
+                        WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())    -- Job state is 2 or higher
+                        Else Start
+                        End,
+                    Finish = 
+                        CASE 
+                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- 3=Complete, 5=Failed
+                        Else Finish
+                        End
+                WHERE Job = @job
+                 --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+            End
 
-			---------------------------------------------------
-			-- Deprecated:
-			-- Examine the steps for this job to determine total processing time
-			-- Steps with the same Step Tool name are assumed to be steps that can run in parallel;
-			--   therefore, we use a Max(ProcessingTime) on steps with the same Step Tool name
-			-- We use ABS(DATEDIFF(HOUR, start, xx)) to avoid overflows produced with
-			--   DATEDIFF(SECOND, Start, xx) when Start and Finish are widely different
-			---------------------------------------------------
-			/*
-			SELECT @ProcessingTimeMinutes = SUM(SecondsElapsedMax) / 60.0
-			FROM ( SELECT Step_Tool,
-			              MAX(ISNULL(SecondsElapsed1, 0) + ISNULL(SecondsElapsed2, 0)) AS SecondsElapsedMax
-			       FROM ( SELECT Step_Tool,
-			                     CASE
-			                         WHEN ABS(DATEDIFF(HOUR, start, finish)) > 100000 THEN 360000000
-			                         ELSE DATEDIFF(SECOND, Start, Finish)
-			                     END AS SecondsElapsed1,
-			                     CASE
-			                         WHEN (NOT Start IS NULL) AND
-			                              Finish IS NULL THEN 
-											CASE
-												WHEN ABS(DATEDIFF(HOUR, start, GETDATE())) > 100000 THEN 360000000
-												ELSE DATEDIFF(SECOND, Start, getdate())
-											END
-			                         ELSE NULL
-			                     END AS SecondsElapsed2
-			              FROM T_Job_Steps
-			              WHERE (Job = @job) 
-			              ) StatsQ
-			       GROUP BY Step_Tool 
-			       ) StepToolQ
- 			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
+            ---------------------------------------------------
+            -- Make changes to DMS if we are enabled to do so
+            -- UpdateDMSDatasetState will also call UpdateDMSFileInfoXML to push the data into T_Dataset_Info
+            -- If a duplicate dataset is found, UpdateDMSDatasetState will change this job's state to 5 in T_Jobs
+            ---------------------------------------------------
+            --
+            If @bypassDMS = 0 AND @datasetID <> 0
+            Begin --<c>
 
-			Set @ProcessingTimeMinutes = IsNull(@ProcessingTimeMinutes, 0)
-			*/
-			
-			If @infoOnly > 0
-			Begin
-				UPDATE #Tmp_ChangedJobs
-				SET Start_New = 
-						CASE
-				        WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())	-- Job state is 2 or higher
-				        ELSE Src.Start
-				        END,
-				    Finish_New = 
-						CASE
-				        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax					-- 3=Complete, 5=Failed
-				        ELSE Src.Finish
-				        END
-				FROM #Tmp_ChangedJobs Target
-				     INNER JOIN T_Jobs Src
-				       ON Target.Job = Src.Job
-				WHERE Target.Job = @job
- 				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-				
-			End
-			Else
-			Begin
-				---------------------------------------------------
-				-- Update local job state and timestamp (If appropriate)
-				---------------------------------------------------
-				--				
-				UPDATE T_Jobs
-				Set 
-					State = @newJobStateInBroker,
-					Start = 
-						CASE 
-						WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())	-- Job state is 2 or higher
-						Else Start
-						End,
-					Finish = 
-						CASE 
-						WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax					-- 3=Complete, 5=Failed
-						Else Finish
-						End
-				WHERE Job = @job
- 				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
-			End
+                If @infoOnly > 0
+                Begin
+                    Print 'Exec UpdateDMSDatasetState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                End
+                Else
+                Begin
+                    Exec @myError = UpdateDMSDatasetState
+                                        @job,
+                                        @datasetNum,
+                                        @datasetID,
+                                        @Script,
+                                        @storageServerName,
+                                        @newJobStateInBroker,
+                                        @message output
+                
+                    If @myError <> 0
+                        Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                End
+                
+            End --</c>
 
-			---------------------------------------------------
-			-- make changes to DMS if we are enabled to do so
-			---------------------------------------------------
-			--
-			If @bypassDMS = 0 AND @datasetID <> 0
-			Begin --<c>
+            If @bypassDMS = 0 AND @datasetID = 0
+            Begin --<d>
 
-				If @infoOnly > 0
-				Begin
-					Print 'Exec UpdateDMSDatasetState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
-				End
-				Else
-				Begin
-					Exec @myError = UpdateDMSDatasetState
-										@job,
-										@datasetNum,
-										@datasetID,
-										@Script,
-										@storageServerName,
-										@newJobStateInBroker,
-										@message output
-				
-					If @myError <> 0
-						Exec PostLogEntry 'Error', @message, 'UpdateJobState'
-				End
-				
-			End --</c>
+                If @infoOnly > 0
+                Begin
+                    Print 'Exec UpdateDMSPrepState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                End
+                Else
+                Begin
+                    Exec @myError = UpdateDMSPrepState
+                                @job,
+                                @Script,
+                                @newJobStateInBroker,
+                                @message output
+                    
+                    If @myError <> 0
+                        Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                End
+            End --<d>
 
-			If @bypassDMS = 0 AND @datasetID = 0
-			Begin --<d>
+            ---------------------------------------------------
+            -- Save job history
+            ---------------------------------------------------
+            --
+            If @newJobStateInBroker IN (3,5) AND
+               Not (@oldJobStateInBroker = 2 And @newJobStateInBroker = 2) AND
+               Not (@oldJobStateInBroker = 5 And @newJobStateInBroker = 2)
+            Begin
+                If @infoOnly > 0
+                Begin
+                    Print 'Exec CopyJobToHistory @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                End
+                Else
+                Begin
+                    exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
+                End
+            End
 
-				If @infoOnly > 0
-				Begin
-					Print 'Exec UpdateDMSPrepState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
-				End
-				Else
-				Begin
-					Exec @myError = UpdateDMSPrepState
-								@job,
-								@Script,
-								@newJobStateInBroker,
-								@message output
-					
-					If @myError <> 0
-						Exec PostLogEntry 'Error', @message, 'UpdateJobState'
-				End
-			End --<d>
+            Set @JobsProcessed = @JobsProcessed + 1
+        End --</b>
+        
+        If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
+        Begin
+            Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
+            exec PostLogEntry 'Progress', @StatusMessage, 'UpdateJobState'
+            Set @LastLogTime = GetDate()
+        End
+        
+        If @MaxJobsToProcess > 0 And @JobsProcessed >= @MaxJobsToProcess
+            Set @done = 1
+            
+    End --</a>
 
-			---------------------------------------------------
-			-- Save job history
-			---------------------------------------------------
-			--
-			If @newJobStateInBroker IN (3,5) AND
-			   Not (@oldJobStateInBroker = 2 And @newJobStateInBroker = 2) AND
-			   Not (@oldJobStateInBroker = 5 And @newJobStateInBroker = 2)
-			Begin
-				If @infoOnly > 0
-				Begin
-					Print 'Exec CopyJobToHistory @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
-				End
-				Else
-				Begin
-					exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
-				End
-			End
+    If @infoOnly > 0
+    Begin
+        SELECT *
+        FROM #Tmp_ChangedJobs
+        ORDER BY Job
+    End
 
-			Set @JobsProcessed = @JobsProcessed + 1
-		End --</b>
-		
-		If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
-		Begin
-			Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-			exec PostLogEntry 'Progress', @StatusMessage, 'UpdateJobState'
-			Set @LastLogTime = GetDate()
-		End
-		
-		If @MaxJobsToProcess > 0 And @JobsProcessed >= @MaxJobsToProcess
-			Set @done = 1
-			
-	End --</a>
-
-	If @infoOnly > 0
-	Begin
-		SELECT *
-		FROM #Tmp_ChangedJobs
-		ORDER BY Job
-	End
-
-	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    --
 Done:
-	return @myError
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [DDL_Viewer] AS [dbo]
