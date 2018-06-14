@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          11/14/2016 mem - Add parameter @removeParents
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          04/25/2018 mem - Populate column Dataset_ID in T_Data_Package_Analysis_Jobs
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **
 *****************************************************/
 (
@@ -413,7 +414,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete biomaterial>
@@ -446,7 +447,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment biomaterial>
@@ -511,7 +512,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add biomaterial>
@@ -546,7 +547,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete EUS Proposal>
@@ -580,7 +581,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment EUS Proposals>
@@ -629,7 +630,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add EUS Proposals>        
@@ -665,7 +666,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete experiments>
@@ -700,7 +701,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment experiments>
@@ -760,7 +761,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add experiments>
@@ -796,7 +797,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete datasets>
@@ -831,7 +832,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment datasets>
@@ -891,7 +892,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add datasets>
@@ -924,7 +925,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete analysis_jobs>
@@ -956,7 +957,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment analysis_jobs>
@@ -1012,7 +1013,7 @@ As
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
                     Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ')
+                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add analysis_jobs>

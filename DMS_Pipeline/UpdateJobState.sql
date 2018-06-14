@@ -101,6 +101,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          01/19/2018 mem - Populate column Runtime_Minutes in T_Jobs
 **                         - Use column ProcTimeMinutes_CompletedSteps in V_Job_Processing_Time
 **          05/10/2018 mem - Append to the job comment, rather than replacing it (provided the job completed successfully)
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **    
 *****************************************************/
 (
@@ -398,7 +399,7 @@ As
                     Comment = 
                         CASE WHEN @newJobStateInBroker IN (5) THEN @Comment     -- 5=Failed                        
                         WHEN @newJobStateInBroker IN (4, 7)                     -- 4=Complete, 7=No Intermediate Files Created
-                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ')
+                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ', 512)
                         ELSE Comment
                         END,
                     Runtime_Minutes = @ProcessingTimeMinutes

@@ -4,14 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
+CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 /****************************************************
 **
-**  Desc: Adds new analysis job request to request queue
+**  Desc:   Adds new analysis job request to request queue
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **  Date:   10/9/2003
@@ -80,6 +78,7 @@ CREATE Procedure [dbo].[AddUpdateAnalysisJobRequest]
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobParameters
 **          05/23/2018 mem - Do not allow @requestorPRN to be the autouser (login H09090911)
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **
 *****************************************************/
 (
@@ -397,7 +396,7 @@ As
             Set @settingsFileName = @AutoSupersedeName
             
             Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'            
-            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
+            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
         End
     End
     */
@@ -441,7 +440,7 @@ As
             Else
                 Set @MsgToAppend = @MsgToAppend + ' because one or more QExactive datasets are included in this job request'            
                 
-            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';')
+            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
         End
     End
     

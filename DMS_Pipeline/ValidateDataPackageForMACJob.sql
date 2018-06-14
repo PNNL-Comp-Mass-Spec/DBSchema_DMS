@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **                         - Include data package ID in log messages
 **          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset
 **          04/06/2018 mem - Allow Phospho_FDR_Aggregator jobs to have multiple MSGF+ jobs for each dataset
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **
 *****************************************************/
 (
@@ -107,7 +108,7 @@ AS
         ---------------------------------------------------
 
         Declare 
-            @errMsg varchar(4000) = '',
+            @errMsg varchar(1024) = '',
             @DeconToolsCountNotOne int,
             @MasicCountNotOne int,
             @MSGFPlusCountExactlyOne int,
@@ -170,7 +171,9 @@ AS
             End
 
             If @tool = ''
-                Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs', 0, '; ')
+            Begin
+                Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs', 0, '; ', 1024)
+            End
         End
         
         ---------------------------------------------------
@@ -181,16 +184,16 @@ AS
         If @scriptName IN ('Isobaric_Labeling', 'MAC_iTRAQ')
         Begin 
             If @DeconToolsCountNotOne > 0 
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ')
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
             
             If @MasicCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ')
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
         End 
 
         If @scriptName IN ('Global_Label-Free_AMT_Tag')
         Begin 
             If @DeconToolsCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ')
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
         End
         
         If @errMsg <> ''

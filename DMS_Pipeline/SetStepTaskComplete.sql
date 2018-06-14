@@ -48,6 +48,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          03/29/2018 mem - Decrease @adjustedHoldoffInterval from 90 to 30 minutes
 **          04/19/2018 mem - Add parameters @remoteStart and @remoteFinish
 **          04/25/2018 mem - Stop setting Remote_Finish to the current date since @remoteFinish provides that info
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **
 *****************************************************/
 (
@@ -426,7 +427,7 @@ As
             
             UPDATE T_Job_Steps
             SET State = 7,        -- Holding                
-                Completion_Message = dbo.AppendToText(Completion_Message, @message, 0, '; ')
+                Completion_Message = dbo.AppendToText(Completion_Message, @message, 0, '; ', 256)
             WHERE Job = @job AND
                   Step_Number = @step
             

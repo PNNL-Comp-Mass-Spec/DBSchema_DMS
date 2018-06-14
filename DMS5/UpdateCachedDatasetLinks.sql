@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 **
 **  Auth:   mem
 **  Date:   07/25/2017 mem - Initial version
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **    
 *****************************************************/
 (
@@ -107,7 +108,7 @@ As
         If @myRowCount > 0
             Set @message = dbo.AppendToText(@message, 
                                             Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion or SPath_RowVersion', 
-                                            0, '; ')
+                                            0, '; ', 512)
                                             
     End
     
@@ -259,7 +260,7 @@ As
     Begin
         Set @message = dbo.AppendToText(@message,
                                         'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Links', 
-                                        0, '; ')
+                                        0, '; ', 512)
                                         
         -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetLinks'
     End

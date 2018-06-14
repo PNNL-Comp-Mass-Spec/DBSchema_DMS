@@ -4,10 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateAnalysisJob]
+CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 /****************************************************
 **
-**  Desc: Adds new analysis job to job table
+**  Desc:   Adds new analysis job to job table
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -72,6 +72,7 @@ CREATE Procedure [dbo].[AddUpdateAnalysisJob]
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/09/2017 mem - Allow job state to be changed from Complete (state 4) to No Export (state 14) if @propagationMode is 1 (aka 'No Export')
 **          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **
 *****************************************************/
 (
@@ -234,17 +235,17 @@ As
                             SELECT @myError = @@error, @myRowCount = @@rowcount
                         End
 
-                        Set @message = dbo.AppendToText(@message, 'set job state to "No export"', 0, '; ')                        
+                        Set @message = dbo.AppendToText(@message, 'set job state to "No export"', 0, '; ', 512)
                     End
                     Else
                     Begin
                         Set @msg = 'job state cannot be changed from ' + @currentStateName + ' to ' + @stateName
-                        Set @message = dbo.AppendToText(@message, @msg, 0, '; ')
+                        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 512)
                             
                         If @propagationMode = 'Export' And @stateName = 'No export'
                         Begin
                             -- Job propagation mode is Export (0) but user wants to set the state to No export                            
-                            Set @message = dbo.AppendToText(@message, 'to make this change, set the Export Mode to "No Export"', 0, '; ')
+                            Set @message = dbo.AppendToText(@message, 'to make this change, set the Export Mode to "No Export"', 0, '; ', 512)
                         End
                     End
                 End
@@ -419,7 +420,7 @@ As
 
     If IsNull(@Warning, '') <> ''
     Begin
-        Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ')
+        Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
         
         If @mode Like 'preview%'
             Set @message = @warning

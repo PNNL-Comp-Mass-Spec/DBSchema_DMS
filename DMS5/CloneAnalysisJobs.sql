@@ -3,27 +3,26 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.CloneAnalysisJobs
+
+CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
 /****************************************************
 **
-**  Desc: 
-**        Clone a series of related analysis jobs to create new jobs
-**        with a new parameter file, new settings file, and/or new protein collection list
+**  Desc:   Clone a series of related analysis jobs to create new jobs
+**          with a new parameter file, new settings file, and/or new protein collection list
 **
-**        The source jobs must all have the same parameter file and settings file (this is a safety feature)
-**        The source jobs do not have to use the same protein collection
+**          The source jobs must all have the same parameter file and settings file (this is a safety feature)
+**          The source jobs do not have to use the same protein collection
 **
-**        If @newProteinCollectionList is empty, each new job will have the same protein collection as the old job
-**        If @newProteinCollectionList is not empty, all new jobs will have the same protein collection
+**          If @newProteinCollectionList is empty, each new job will have the same protein collection as the old job
+**          If @newProteinCollectionList is not empty, all new jobs will have the same protein collection
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**    Auth: mem
-**    Date: 07/12/2016 - Initial Release
-**          07/19/2016 - Add parameter @allowDuplicateJob
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
+**  Auth:   mem
+**  Date:   07/12/2016 mem - Initial Release
+**          07/19/2016 mem - Add parameter @allowDuplicateJob
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/12/2018 mem - Send @maxLength to AppendToText
 **    
 *****************************************************/
 (
@@ -428,7 +427,7 @@ As
                 UPDATE T_Analysis_Job
                 SET AJ_Comment = CASE
                                      WHEN @updateOldJobComment = 0 THEN Target.AJ_Comment
-                                     ELSE dbo.AppendToText(Target.AJ_Comment, @action + ' ' + Cast(Src.JobId_New AS varchar(9)), 0, '; ')
+                                     ELSE dbo.AppendToText(Target.AJ_Comment, @action + ' ' + Cast(Src.JobId_New AS varchar(9)), 0, '; ', 512)
                                  END,
                     AJ_StateID = CASE
                                      WHEN @supersedeOldJob = 0 THEN Target.AJ_StateID
