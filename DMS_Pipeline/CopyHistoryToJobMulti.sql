@@ -22,9 +22,10 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          01/19/2015 mem - Fix ambiguous column reference
 **          11/18/2015 mem - Add Actual_CPU_Load
-**          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2016 mem - Add Set XACT_ABORT on
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
+**          06/20/2018 mem - Move rollback transaction to before the call to LocalErrorHandler
 **    
 *****************************************************/
 (
@@ -35,12 +36,10 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
 As
     Set XACT_ABORT, nocount on
     
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
-    set @message = ''
+    Set @message = ''
     
     Declare @JobsCopied int = 0
     
@@ -55,8 +54,8 @@ As
     
     CREATE CLUSTERED INDEX #IX_Tmp_JobsToCopy ON #Tmp_JobsToCopy (Job)
     
-    declare @CallingProcName varchar(128)
-    declare @CurrentLocation varchar(128)
+    Declare @CallingProcName varchar(128)
+    Declare @CurrentLocation varchar(128)
     Set @CurrentLocation = 'Start'
         
     Begin Try
@@ -69,11 +68,11 @@ As
         -- Bail if no candidates found
         ---------------------------------------------------
         --
-         if not exists (SELECT * FROM #Tmp_JobsToCopy)
-         Begin
-             set @message = '@JobList was empty or contained no jobs'
-             print @message
-            goto Done
+        If Not exists (SELECT * FROM #Tmp_JobsToCopy)
+        Begin
+            Set @message = '@JobList was empty or contained no jobs'
+            print @message
+            Goto Done
         End
 
         ---------------------------------------------------
@@ -87,29 +86,29 @@ As
         -- Bail if no candidates found
         ---------------------------------------------------
         --
-        if not exists (SELECT * FROM #Tmp_JobsToCopy)
+        If not exists (SELECT * FROM #Tmp_JobsToCopy)
         Begin
-            set @message = 'All jobs in @JobList already exist in T_Jobs'
+            Set @message = 'All jobs in @JobList already exist in T_Jobs'
             print @message
-            goto Done
+            Goto Done
         End
 
         ---------------------------------------------------
         -- Delete jobs not present in T_Jobs_History
         ---------------------------------------------------
         --
-         DELETE FROM #Tmp_JobsToCopy
-         WHERE Job NOT IN (SELECT Job FROM T_Jobs_History)
+        DELETE FROM #Tmp_JobsToCopy
+        WHERE Job NOT IN (SELECT Job FROM T_Jobs_History)
 
         ---------------------------------------------------
         -- Bail if no candidates remain
         ---------------------------------------------------
         --
-        if not exists (SELECT * FROM #Tmp_JobsToCopy)
-         Begin
-             set @message = 'None of the jobs in @JobList exists in T_Jobs_History'
-             print @message
-            goto Done
+        If not exists (SELECT * FROM #Tmp_JobsToCopy)
+        Begin
+            Set @message = 'None of the jobs in @JobList exists in T_Jobs_History'
+            print @message
+            Goto Done
         End
 
         ---------------------------------------------------
@@ -121,54 +120,53 @@ As
         UPDATE #Tmp_JobsToCopy
         SET DateStamp = DateQ.MostRecentDate
         FROM #Tmp_JobsToCopy
-            INNER JOIN ( SELECT JH.Job,
-                                MAX(JH.Saved) AS MostRecentDate
-                        FROM T_Jobs_History JH
-                            INNER JOIN #Tmp_JobsToCopy Src
-                              ON JH.Job = Src.Job
-                        WHERE State = 4
-                        GROUP BY JH.Job 
-                        ) DateQ
-            ON #Tmp_JobsToCopy.Job = DateQ.Job
+             INNER JOIN ( SELECT JH.Job,
+                                 MAX(JH.Saved) AS MostRecentDate
+                          FROM T_Jobs_History JH
+                               INNER JOIN #Tmp_JobsToCopy Src
+                                 ON JH.Job = Src.Job
+                          WHERE State = 4
+                          GROUP BY JH.Job ) DateQ
+               ON #Tmp_JobsToCopy.Job = DateQ.Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Error '
-            goto Done
-        end
+        If @myError <> 0
+        Begin
+            Set @message = 'Error '
+            Goto Done
+        End
 
         ---------------------------------------------------
         -- Remove jobs where DateStamp is null
         ---------------------------------------------------
         --
         DELETE FROM #Tmp_JobsToCopy
-         WHERE DateStamp Is Null
-         --
+        WHERE DateStamp Is Null
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-         If @myRowCount > 0
-         Begin
-             Print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' job(s) from @JobList because they do not exist in T_Jobs_History with state 4'
-         End
+        If @myRowCount > 0
+        Begin
+            Print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' job(s) from @JobList because they do not exist in T_Jobs_History with state 4'
+        End
          
-         if @InfoOnly <> 0
-         Begin
-             SELECT *
-             FROM #Tmp_JobsToCopy
-             ORDER BY Job
+        If @InfoOnly <> 0
+        Begin
+            SELECT *
+            FROM #Tmp_JobsToCopy
+            ORDER BY Job
              
-             Goto Done
-         End
+            Goto Done
+        End
          
         ---------------------------------------------------
         -- Start transaction
         ---------------------------------------------------
         --
         declare @transName varchar(64)
-        set @transName = 'CopyHistoryToJob'
-        begin transaction @transName
+        Set @transName = 'CopyHistoryToJob'
+        Begin transaction @transName
 
         ---------------------------------------------------
         -- Copy jobs
@@ -214,18 +212,18 @@ As
             JH.DataPkgID,
             JH.Comment
         FROM T_Jobs_History JH
-            INNER JOIN #Tmp_JobsToCopy Src
-              ON JH.Job = Src.Job AND
-                 JH.Saved = Src.DateStamp
-         --
+             INNER JOIN #Tmp_JobsToCopy Src
+               ON JH.Job = Src.Job AND
+                  JH.Saved = Src.DateStamp
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error '
-            goto Done
-        end
+            Set @message = 'Error '
+            Goto Done
+        End
         Else
             Set @JobsCopied = @myRowCount
             
@@ -278,20 +276,20 @@ As
             H.Evaluation_Message,
             H.Remote_Info_ID
         FROM T_Job_Steps_History H
-            INNER JOIN T_Step_Tools ST
-              ON H.Step_Tool = ST.Name
-            INNER JOIN #Tmp_JobsToCopy Src
-              ON H.Job = Src.Job AND
-                 H.Saved = Src.DateStamp
+             INNER JOIN T_Step_Tools ST
+               ON H.Step_Tool = ST.Name
+             INNER JOIN #Tmp_JobsToCopy Src
+               ON H.Job = Src.Job AND
+                  H.Saved = Src.DateStamp
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error '
-            goto Done
-        end
+            Set @message = 'Error '
+            Goto Done
+        End
 
         ---------------------------------------------------
         -- copy parameters
@@ -314,12 +312,12 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error '
-            goto Done
-        end
+            Set @message = 'Error '
+            Goto Done
+        End
                  
         ---------------------------------------------------
         -- Copy job step dependencies
@@ -334,17 +332,17 @@ As
                   Target.Step_Number = Source.Step_Number AND
                   Target.Target_Step_Number = Source.Target_Step_Number
         WHERE Target.Job IN ( SELECT Job
-                                 FROM #Tmp_JobsToCopy ) AND
+                              FROM #Tmp_JobsToCopy ) AND
               Source.Job IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error '
-            goto Done
-        end
+            Set @message = 'Error '
+            Goto Done
+        End
         
         -- Now add/update the job step dependencies
         --    
@@ -385,18 +383,17 @@ As
         
         -- Find jobs that didn't have cached dependencies
         --
-        INSERT INTO #Tmp_JobsMissingDependencies (Job, Script)
-        SELECT DISTINCT J.Job,
-                        J.Script
+        INSERT INTO #Tmp_JobsMissingDependencies( Job,
+                                                  Script )
+        SELECT DISTINCT J.Job, J.Script
         FROM T_Jobs J
              INNER JOIN #Tmp_JobsToCopy Src
                ON J.Job = Src.Job
              LEFT OUTER JOIN T_Job_Step_Dependencies D
                ON J.Job = D.Job
         WHERE D.Job IS NULL
-         --
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-
         
         If Exists (Select * From #Tmp_JobsMissingDependencies)
         Begin
@@ -453,7 +450,7 @@ As
 
         End
         
-         commit transaction @transName
+        commit transaction @transName
 
 
         ---------------------------------------------------
@@ -514,12 +511,13 @@ As
         End
     End Try
     Begin Catch
+        If @@trancount > 0
+            Rollback
+
         -- Error caught; log the error
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CopyHistoryToJobMulti')
         exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
                                 @ErrorNum = @myError output, @message = @message output
-        If @@trancount > 0
-            Rollback
     End Catch
     
     ---------------------------------------------------
