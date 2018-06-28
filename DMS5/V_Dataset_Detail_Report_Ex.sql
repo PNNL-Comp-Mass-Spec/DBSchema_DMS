@@ -49,6 +49,8 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.Acq_Length_Minutes AS [Acq Length],
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
        DS.File_Info_Last_Modified AS [File Info Updated],
+       DF.File_Path AS [Dataset File],
+       DF.File_Hash AS [SHA1 Hash],
        DS.DS_folder_name AS [Folder Name],
        DS.Capture_Subfolder AS [Capture Subfolder],
        TDASN.DASN_StateName AS [Archive State],
@@ -131,7 +133,9 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
-
+     LEFT OUTER JOIN T_Dataset_Files DF
+       ON DF.Dataset_ID = DS.Dataset_ID AND
+          DF.File_Size_Rank = 1
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]
