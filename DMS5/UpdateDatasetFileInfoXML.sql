@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
@@ -67,6 +68,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW If not authorized
 **          06/13/2018 mem - Store instrument files info in T_Dataset_Files
+**          06/25/2018 mem - Populate the File_Size_Rank column
 **    
 *****************************************************/
 (
@@ -661,12 +663,10 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
     -----------------------------------------------
     -- Add/Update T_Dataset_Files using a Merge statement
     -----------------------------------------------
     --
-
     MERGE T_Dataset_Files As target
     USING 
         (SELECT @DatasetID, InstFilePath, InstFileSize, InstFileHash
@@ -700,6 +700,29 @@ As
               Target.File_Path = Source.InstFilePath
     WHERE Target.Dataset_ID = @DatasetID AND
           Source.InstFilePath IS NULL     
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    -----------------------------------------------
+    -- Update the File_Size_Rank column for this dataset
+    -----------------------------------------------
+    --
+    UPDATE T_Dataset_Files
+    SET File_Size_Rank = SrcQ.Size_Rank
+    FROM T_Dataset_Files Target
+         INNER JOIN ( SELECT Dataset_ID,
+                             File_Path,
+                             File_Size_Bytes,
+                             File_Hash,
+                             Dataset_File_ID,
+                             Row_Number() OVER ( 
+                                PARTITION BY Dataset_ID 
+                                ORDER BY Deleted DESC, File_Size_Bytes DESC 
+                                ) AS Size_Rank
+                      FROM T_Dataset_Files
+                      WHERE Dataset_ID = @DatasetID 
+                    ) SrcQ
+           ON Target.Dataset_File_ID = SrcQ.Dataset_File_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 

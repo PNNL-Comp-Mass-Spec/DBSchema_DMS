@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_Dataset_Files](
 	[File_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[File_Size_Bytes] [bigint] NULL,
 	[File_Hash] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[File_Size_Rank] [smallint] NULL,
 	[Allow_Duplicates] [bit] NULL,
 	[Deleted] [bit] NULL,
  CONSTRAINT [PK_T_Dataset_Files] PRIMARY KEY NONCLUSTERED 
