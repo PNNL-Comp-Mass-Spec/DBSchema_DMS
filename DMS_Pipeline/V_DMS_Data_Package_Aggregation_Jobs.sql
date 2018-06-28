@@ -4,12 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-/*
-** This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
-**
-*/
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
-AS
+As
+-- This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
 SELECT Data_Package_ID, Job, Tool, Dataset, ArchiveStoragePath, ServerStoragePath, 
        DatasetFolder, ResultsFolder, MAX(SharedResultsFolder) AS SharedResultsFolder,
        DatasetID, Organism, InstrumentName AS Instrument, InstrumentGroup, InstrumentClass, Completed,

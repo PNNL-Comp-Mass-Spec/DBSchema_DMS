@@ -6,6 +6,8 @@ GO
 
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
+-- Note that this view is used by V_DMS_Data_Package_Aggregation_Jobs in DMS_Pipeline
+-- and the PRIDE converter plugin uses that view to retrieve metadata for data package jobs
 SELECT TPJ.Data_Package_ID,
        JobInfo.Job,
        JobInfo.Tool,

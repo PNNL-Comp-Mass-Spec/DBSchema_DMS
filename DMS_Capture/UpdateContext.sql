@@ -257,6 +257,7 @@ AS
     End Catch
     
     -- Part E: Update Job States
+    --         This calls UpdateJobState, which calls UpdateDMSDatasetState, which calls UpdateDMSFileInfoXML
     Begin Try
 
         Set @result = 1
