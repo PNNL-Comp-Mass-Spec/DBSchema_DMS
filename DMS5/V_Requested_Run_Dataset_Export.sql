@@ -6,6 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Requested_Run_Dataset_Export] 
 AS
+-- MyEMSL uses this view
 SELECT RR.ID AS Request_ID,
        RR.RDS_Name AS Request_Name,
        RR.RDS_Status AS Status,
@@ -30,7 +31,8 @@ SELECT RR.ID AS Request_ID,
        DTN.DST_name AS Dataset_Type,
        EUT.Name AS EUS_Usage,
        RR.RDS_EUS_Proposal_ID,
-       EPT.Abbreviation AS EUS_Proposal_Type
+       EPT.Abbreviation AS EUS_Proposal_Type,
+       RR.Updated As Updated
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID

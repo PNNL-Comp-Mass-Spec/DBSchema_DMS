@@ -41,6 +41,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[Vialing_Conc] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Vialing_Vol] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Location_ID] [int] NULL,
+	[Updated] [smalldatetime] NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -173,6 +174,12 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Status] ON [dbo].[T_Requested_
 )
 INCLUDE ( 	[ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Requested_Run_Updated] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Updated] ON [dbo].[T_Requested_Run]
+(
+	[Updated] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_BatchID]  DEFAULT ((0)) FOR [RDS_BatchID]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_EUS_UsageType]  DEFAULT ((1)) FOR [RDS_EUS_UsageType]
@@ -184,6 +191,8 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Status]  DEFAULT ('Active') FOR [RDS_Status]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Entered]  DEFAULT (getdate()) FOR [Entered]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Updated]  DEFAULT (getdate()) FOR [Updated]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Attachments] FOREIGN KEY([RDS_MRM_Attachment])
 REFERENCES [dbo].[T_Attachments] ([ID])
@@ -334,60 +343,68 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger trig_u_Requested_Run on dbo.T_Requested_Run
+
+CREATE Trigger [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
 After Insert, Update
 /****************************************************
 **
-**	Desc: 
-**		Updates column RDS_NameCode for new or updated requested run(s)
+**  Desc:   Updates various columns for new or updated requested run(s)
 **
-**	Auth:	mem
-**	Date:	08/05/2010 mem - Initial version
-**			08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
-**			12/12/2011 mem - Now updating T_Event_Log
+**  Auth:   mem
+**  Date:   08/05/2010 mem - Initial version
+**          08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
+**          12/12/2011 mem - Now updating T_Event_Log
+**          06/27/2018 mem - Update the Updated column
 **    
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
+    Set NoCount On
 
-	If Update(RDS_Name) OR
-	   Update(RDS_Created) OR
-	   Update(RDS_Oper_PRN) OR
-	   Update(RDS_BatchID) OR
-	   Update(RDS_NameCode) OR
-	   Update(RDS_Type_ID) OR
-	   Update(RDS_Sec_Sep)
-	Begin
-		UPDATE T_Requested_Run
-		SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
-														 RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
-														 RR.RDS_type_ID, RR.RDS_Sec_Sep)
-		FROM T_Requested_Run RR
-			 INNER JOIN inserted
-			   ON RR.ID = inserted.ID
-			 LEFT OUTER JOIN T_Requested_Run_Batches RRB
-			   ON RRB.ID = RR.RDS_BatchID
-			 INNER JOIN T_Users U
-			   ON RRB.Owner = U.ID
-	End
-	
-	If Update(RDS_Status)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 11 AS Target_Type, inserted.ID, RRSNew.State_ID, RRSOld.State_ID, GetDate()
-		FROM deleted
-		     INNER JOIN inserted
-		       ON deleted.ID = inserted.ID
-		     INNER JOIN T_Requested_Run_State_Name RRSOld
-		       ON deleted.RDS_Status = RRSOld.State_Name
-		     INNER JOIN T_Requested_Run_State_Name RRSNew
-		       ON inserted.RDS_Status = RRSNew.State_Name
-		WHERE deleted.RDS_Status <> inserted.RDS_Status
-		ORDER BY inserted.ID
-	End
+    If Update(RDS_Name) OR
+       Update(RDS_Created) OR
+       Update(RDS_Oper_PRN) OR
+       Update(RDS_BatchID) OR
+       Update(RDS_NameCode) OR
+       Update(RDS_Type_ID) OR
+       Update(RDS_Sec_Sep)
+    Begin
+        UPDATE T_Requested_Run
+        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
+                                                         RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
+                                                         RR.RDS_type_ID, RR.RDS_Sec_Sep)
+        FROM T_Requested_Run RR
+             INNER JOIN inserted
+               ON RR.ID = inserted.ID
+             LEFT OUTER JOIN T_Requested_Run_Batches RRB
+               ON RRB.ID = RR.RDS_BatchID
+             INNER JOIN T_Users U
+               ON RRB.Owner = U.ID
+    End
+    
+    If Update(RDS_Status)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 11 AS Target_Type, inserted.ID, RRSNew.State_ID, RRSOld.State_ID, GetDate()
+        FROM deleted
+             INNER JOIN inserted
+               ON deleted.ID = inserted.ID
+             INNER JOIN T_Requested_Run_State_Name RRSOld
+               ON deleted.RDS_Status = RRSOld.State_Name
+             INNER JOIN T_Requested_Run_State_Name RRSNew
+               ON inserted.RDS_Status = RRSNew.State_Name
+        WHERE deleted.RDS_Status <> inserted.RDS_Status
+        ORDER BY inserted.ID
+    End
+
+    UPDATE T_Requested_Run
+    SET Updated = GetDate()
+    FROM T_Requested_Run RR
+         INNER JOIN inserted
+           ON RR.ID = inserted.ID
+
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_u_Requested_Run]
