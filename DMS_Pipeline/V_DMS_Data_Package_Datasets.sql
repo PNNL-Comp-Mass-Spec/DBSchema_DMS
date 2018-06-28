@@ -4,12 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-/*
-** This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
-**
-*/
 CREATE VIEW [dbo].[V_DMS_Data_Package_Datasets]
 AS
+-- This view is used by function LoadDataPackageDatasetInfo in the DMS Analysis Manager
 SELECT Data_Package_ID,
        DatasetID,
        Dataset,
@@ -27,6 +24,8 @@ SELECT Data_Package_ID,
        Experiment,
        Experiment_Reason,
        Experiment_Comment,
+       Experiment_Tissue_ID,
+       Experiment_Tissue_Name,
        ISNULL(PackageComment, '') AS PackageComment
 FROM S_Data_Package_Aggregation_Datasets
 
