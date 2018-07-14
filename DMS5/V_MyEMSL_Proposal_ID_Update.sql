@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_MyEMSL_Proposal_ID_Update] 
 AS 
 -- This view is used by MyEMSL to check for updated EUS Proposal IDs
@@ -16,4 +17,5 @@ FROM T_Requested_Run AS RR
        ON RR.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+
 GO
