@@ -20,6 +20,7 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          02/27/2014 mem - Now truncating dataset name to 90 characters if too long
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/31/2018 mem - Truncate dataset name at 80 characters if too long
+**          07/25/2018 mem - Replace brackets with underscores
 **    
 *****************************************************/
 (
@@ -31,11 +32,9 @@ AS
 
     Set XACT_ABORT, nocount on
 
-    declare @myRowCount int    
-    declare @myError int
-    set @myRowCount = 0
-    set @myError = 0
-
+    declare @myRowCount int = 0 
+    declare @myError int = 0
+    
     Declare @Job int
     Declare @Priority int
     Declare @Script varchar(64)
@@ -340,9 +339,15 @@ AS
                         Set @Dataset = Substring(@Dataset, 1, 80)
                     End
                     
-                    -- Make sure there are no spaces or periods in @Dataset
+                    -- Make sure there are no spaces, periods, brackets, braces, or parentheses in @Dataset
                     Set @Dataset = Replace(@Dataset, ' ', '_')
                     Set @Dataset = Replace(@Dataset, '.', '_')
+                    Set @Dataset = Replace(@Dataset, '[', '_')
+                    Set @Dataset = Replace(@Dataset, ']', '_')
+                    Set @Dataset = Replace(@Dataset, '{', '_')
+                    Set @Dataset = Replace(@Dataset, '}', '_')
+                    Set @Dataset = Replace(@Dataset, '(', '_')
+                    Set @Dataset = Replace(@Dataset, ')', '_')
                     
                     ------------------------------------------------
                     -- Now that we have constructed the name of the dataset to auto-create, see if it already exists
