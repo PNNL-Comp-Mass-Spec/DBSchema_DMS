@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          09/21/2017 mem - Added support for @evaluationCode = 9 (tool skipped)
 **          12/04/2017 mem - Rename variables and add logic checks
 **          06/14/2018 mem - Call S_PostEmailAlert if a reporter ion m/z validation error or warning is detected
+**          07/30/2018 mem - Include dataset name when calling S_PostEmailAlert
 **    
 *****************************************************/
 (
@@ -73,7 +74,8 @@ As
     Declare @stepTool varchar(64)
     Declare @outputFolderName varchar(255)
     Declare @datasetID int
-    --
+    Declare @datasetName varchar(128)
+
     SELECT @initialState = JS.State,
            @processor = JS.Processor,
            @retryCount = JS.Retry_Count,
@@ -81,7 +83,8 @@ As
            @nextTry = JS.Next_Try,
            @stepTool = JS.Step_Tool,
            @outputFolderName = JS.Output_Folder_Name,
-           @datasetID = J.Dataset_ID
+           @datasetID = J.Dataset_ID,
+           @datasetName = J.Dataset
     FROM T_Job_Steps JS
          INNER JOIN T_Local_Processors LP
            ON LP.Processor_Name = JS.Processor    
@@ -252,14 +255,13 @@ As
 
     If @completionMessage Like '%Over%of the % spectra have a minimum m/z value larger than the required minimum%' 
     Begin
-        Set @msg = 'Dataset ID ' + Cast(@datasetID  As varchar(12)) + ': ' + @completionMessage
+        Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
         Exec S_PostEmailAlert 'Error', @msg, 'SetStepTaskComplete', @recipients='admins', @postMessageToLogEntries=1
     End
     Else If @completionMessage Like '%Some of the % spectra have a minimum m/z value larger than the required minimum%' Or
             @completionMessage Like '%reporter ion peaks likely could not be detected%'
     Begin
-        Set @msg = 'Dataset ID ' + Cast(@datasetID  As varchar(12)) + ': ' + @completionMessage
-        Exec PostLogEntry 'Debug', 'Calling S_PostEmailAlert with a warning', 'SetStepTaskComplete'
+        Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
         Exec S_PostEmailAlert 'Warning', @msg, 'SetStepTaskComplete', @recipients='admins', @postMessageToLogEntries=1
     End
 
