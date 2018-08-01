@@ -33,7 +33,13 @@ SELECT InstName.Instrument_ID AS ID,
        EUSMapping.EUS_Instrument_ID,
        EUSMapping.EUS_Display_Name,
        EUSMapping.EUS_Instrument_Name,
-       EUSMapping.Local_Instrument_Name
+       EUSMapping.Local_Instrument_Name,
+       TrackingYesNo.Description As [Track Usage When Inactive],
+       Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
+            When InstTracking.Reporting Like '%P%' Then 'Production operations role'
+            When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
+            Else ''
+       End As [Usage Tracking Status]
 FROM T_Instrument_Name InstName
      INNER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
@@ -47,6 +53,8 @@ FROM T_Instrument_Name InstName
        ON InstName.Scan_SourceDir = ScanSourceYesNo.Flag
      INNER JOIN dbo.T_Instrument_Group InstGroup
        ON InstName.IN_Group = InstGroup.IN_Group
+     INNER JOIN T_YesNo TrackingYesNo
+       ON InstName.IN_Tracking = TrackingYesNo.Flag
      LEFT OUTER JOIN T_Archive_Path AP
        ON AP.AP_instrument_name_ID = InstName.Instrument_ID AND
           AP.AP_Function = 'active'
@@ -62,7 +70,8 @@ FROM T_Instrument_Name InstName
                               ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID ) AS 
                        EUSMapping
        ON InstName.Instrument_ID = EUSMapping.Instrument_ID
-
+     LEFT OUTER JOIN V_Instrument_Tracked InstTracking
+       ON InstName.IN_name = InstTracking.[Name]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Detail_Report] TO [DDL_Viewer] AS [dbo]

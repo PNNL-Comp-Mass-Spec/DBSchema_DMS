@@ -28,7 +28,12 @@ SELECT InstName.Instrument_ID AS ID,
        EUSMapping.EUS_Instrument_ID,
        EUSMapping.EUS_Display_Name,
        EUSMapping.EUS_Instrument_Name,
-       EUSMapping.Local_Instrument_Name
+       EUSMapping.Local_Instrument_Name,
+       Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
+            When InstTracking.Reporting Like '%P%' Then 'Production operations role'
+            When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
+            Else ''
+       End As [Usage Tracking Status]
 FROM dbo.T_Instrument_Name InstName
      INNER JOIN T_YesNo DefineStorageYesNo
        ON InstName.Auto_Define_Storage_Path = DefineStorageYesNo.Flag
@@ -54,7 +59,8 @@ FROM dbo.T_Instrument_Name InstName
                               ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID ) AS 
                        EUSMapping
        ON InstName.Instrument_ID = EUSMapping.Instrument_ID    
-
+     LEFT OUTER JOIN V_Instrument_Tracked InstTracking
+       ON InstName.IN_name = InstTracking.[Name]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [DDL_Viewer] AS [dbo]
