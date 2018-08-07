@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          07/03/2018 mem - Rename files in T_Dataset_Files
 **                         - Update commands for renaming the dataset directory and dataset file
 **          08/06/2018 mem - Fix where clause when querying V_Analysis_Job_Export
+**                         - Look for requested runs that may need to be updated
 **    
 *****************************************************/
 (
@@ -38,6 +39,7 @@ AS
     declare @myRowCount int = 0
 
     Declare @datasetID int = 0
+    Declare @experiment varchar(128)
     Declare @datasetFolderPath varchar(255) = ''
     Declare @storageServerSharePath varchar(255)
     Declare @lastSlashReverseText int
@@ -61,9 +63,9 @@ AS
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'RenameDataset', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     --------------------------------------------
     -- Validate the inputs
@@ -104,6 +106,14 @@ AS
         SELECT @datasetID = Dataset_ID
         FROM dbo.T_Dataset
         WHERE Dataset_Num = @datasetNameNew
+
+        If @datasetID > 0
+        Begin
+            -- Lookup the experiment for this dataset (using the new name)
+            SELECT @experiment = Experiment
+            FROM V_Dataset_Export
+            WHERE Dataset = @datasetNameNew
+        End
     End
     Else
     Begin
@@ -115,6 +125,10 @@ AS
             Goto Done
         End
 
+        -- Lookup the experiment for this dataset (using the old name)
+        SELECT @experiment = Experiment
+        FROM V_Dataset_Export
+        WHERE Dataset = @datasetNameOld
     End
 
     If @datasetID = 0
@@ -132,7 +146,7 @@ AS
     Set @lastSlashReverseText = CharIndex('\', Reverse(@datasetFolderPath))
     Set @storageServerSharePath = Substring(@datasetFolderPath, 1, Len(@datasetFolderPath) - @lastSlashReverseText)
 
-    If @InfoOnly = 0 
+    If @infoOnly = 0 
     Begin
         --------------------------------------------
         -- Rename the dataset in T_Dataset
@@ -204,13 +218,15 @@ AS
     End
 
     --------------------------------------------
-    -- Show commands for renaming the dataset directory and .raw file
+    -- Look for Requested Runs that may need to be updated
     --------------------------------------------
+
+    SELECT Request, [Name], [Status], Origin, Campaign, Experiment, Dataset, Instrument
+    FROM V_Requested_Run_List_Report_2
+    WHERE (Dataset In (@datasetNameOld, @datasetNameNew)) OR
+          ([Name] LIKE @experiment + '%')
     --
-    Print 'Pushd ' + @storageServerSharePath
-    Print 'Rename ' + @datasetNameOld + ' ' + @datasetNameNew
-    Print 'cd ' + @datasetNameNew
-    Print 'Move ' + @datasetNameOld + '.raw ' + @datasetNameNew + '.raw'
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     --------------------------------------------
     -- Update jobs in the DMS_Capture database
@@ -232,7 +248,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @InfoOnly = 0 And Exists (Select * From @jobsToUpdate)
+    If @infoOnly = 0 And Exists (Select * From @jobsToUpdate)
     Begin
         Set @continue = 1
         Set @job = 0
@@ -243,7 +259,7 @@ AS
     End
 
     --------------------------------------------
-    -- Update analysis jobs in DMS_Capture if @InfoOnly is 0
+    -- Update analysis jobs in DMS_Capture if @infoOnly is 0
     --------------------------------------------
     --
     While @continue = 1
@@ -260,8 +276,8 @@ AS
         Else
         Begin
         
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Dataset', @datasetNameNew, @infoonly=0
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Folder',  @datasetNameNew, @infoonly=0
+            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Dataset', @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Folder',  @datasetNameNew, @infoOnly=0
             
             UPDATE DMS_Capture.dbo.T_Jobs 
             Set Dataset = @datasetNameNew
@@ -293,7 +309,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @InfoOnly = 0 And Exists (Select * From @jobsToUpdate)
+    If @infoOnly = 0 And Exists (Select * From @jobsToUpdate)
     Begin
         Set @continue = 1
         Set @job = 0
@@ -317,8 +333,8 @@ AS
         Else
         Begin
         
-            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoonly=0
-            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoonly=0
+            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0
+            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
             
             UPDATE DMS_Pipeline.dbo.T_Jobs 
             Set Dataset = @datasetNameNew
@@ -328,6 +344,15 @@ AS
 
         End
     End
+    
+    --------------------------------------------
+    -- Show commands for renaming the dataset directory and .raw file
+    --------------------------------------------
+    --
+    Print 'pushd ' + @storageServerSharePath
+    Print 'move ' + @datasetNameOld + ' ' + @datasetNameNew
+    Print 'cd ' + @datasetNameNew
+    Print 'move ' + @datasetNameOld + '.raw ' + @datasetNameNew + '.raw'
 
     --------------------------------------------
     -- Show example commands for renaming the job files
@@ -366,7 +391,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        Truncate Table #Tmp_Extensions
+        DELETE FROM #Tmp_Extensions
         
         If @myRowCount = 0
         Begin
@@ -476,7 +501,7 @@ AS
     End
     
      ---------------------------------------------------
-    -- Done
+     -- Done
      ---------------------------------------------------
 Done:
 
