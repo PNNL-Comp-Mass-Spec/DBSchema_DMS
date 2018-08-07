@@ -5,12 +5,12 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Scheduled_Run_Export]
-as
+AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_priority AS Priority,
        RR.RDS_instrument_name AS Instrument,
-       DTN.DST_name AS TYPE,
+       DTN.DST_name AS [Type],
        E.Experiment_Num AS Experiment,
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
@@ -38,15 +38,15 @@ FROM T_DatasetTypeName DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
-       ON RR.RDS_Oper_PRN = U.U_PRN
+       ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
      INNER JOIN T_LC_Cart LC
        ON RR.RDS_Cart_ID = LC.ID
      INNER JOIN T_EUS_UsageType EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
-	 LEFT OUTER JOIN T_Active_Requested_Run_Cached_EUS_Users RRCU
-	   ON RR.ID = RRCU.Request_ID
+     LEFT OUTER JOIN T_Active_Requested_Run_Cached_EUS_Users RRCU
+       ON RR.ID = RRCU.Request_ID
 WHERE (RR.RDS_Status = 'Active')
 
 

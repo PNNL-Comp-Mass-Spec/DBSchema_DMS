@@ -82,6 +82,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **
 *****************************************************/
 (
@@ -692,7 +693,7 @@ As
         INSERT INTO T_Requested_Run
         (
             RDS_name, 
-            RDS_Oper_PRN, 
+            RDS_Requestor_PRN, 
             RDS_comment, 
             RDS_created, 
             RDS_instrument_name, 
@@ -805,7 +806,7 @@ As
         UPDATE T_Requested_Run 
         SET 
             RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @reqName ELSE RDS_Name END,
-            RDS_Oper_PRN = @requestorPRN, 
+            RDS_Requestor_PRN = @requestorPRN, 
             RDS_comment = @comment, 
             RDS_instrument_name = @instrumentGroup, 
             RDS_type_ID = @datasetTypeID, 

@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[RDS_Oper_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[RDS_Requestor_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_created] [datetime] NOT NULL,
 	[RDS_instrument_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -254,7 +254,7 @@ REFERENCES [dbo].[T_Separation_Group] ([Sep_Group])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Separation_Group]
 GO
-ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Oper_PRN])
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Users] FOREIGN KEY([RDS_Requestor_PRN])
 REFERENCES [dbo].[T_Users] ([U_PRN])
 ON UPDATE CASCADE
 GO
@@ -355,6 +355,7 @@ After Insert, Update
 **          08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
 **          12/12/2011 mem - Now updating T_Event_Log
 **          06/27/2018 mem - Update the Updated column
+**          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **    
 *****************************************************/
 AS
@@ -365,14 +366,14 @@ AS
 
     If Update(RDS_Name) OR
        Update(RDS_Created) OR
-       Update(RDS_Oper_PRN) OR
+       Update(RDS_Requestor_PRN) OR
        Update(RDS_BatchID) OR
        Update(RDS_NameCode) OR
        Update(RDS_Type_ID) OR
        Update(RDS_Sec_Sep)
     Begin
         UPDATE T_Requested_Run
-        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
+        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
                                                          RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
                                                          RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR

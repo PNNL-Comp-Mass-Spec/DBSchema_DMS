@@ -30,7 +30,7 @@ FROM T_DatasetTypeName DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
-       ON RR.RDS_Oper_PRN = U.U_PRN
+       ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
      INNER JOIN T_EUS_UsageType EUT

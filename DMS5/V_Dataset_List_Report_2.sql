@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Dataset_List_Report_2] AS
+CREATE VIEW [dbo].[V_Dataset_List_Report_2] 
+AS
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        E.Experiment_Num AS Experiment,
@@ -34,7 +35,7 @@ SELECT DS.Dataset_ID AS ID,
        RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
        EPT.Abbreviation AS [EUS Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
-       RR.RDS_Oper_PRN AS Requester,
+       RR.RDS_Requestor_PRN AS Requester,
        DASN.DASN_StateName AS [Archive State],
        T_YesNo.Description AS [Inst. Data Purged],
        Org.OG_name AS Organism,
@@ -75,6 +76,7 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DA.AS_Dataset_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
        ON BTO.Identifier = E.EX_Tissue_ID
+
 
 
 GO

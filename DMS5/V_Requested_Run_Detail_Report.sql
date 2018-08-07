@@ -20,7 +20,7 @@ SELECT RR.ID AS Request,
        DTN.DST_Name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
        U.Name_with_PRN AS Requestor,
-       RR.RDS_Oper_PRN AS [Username],
+       RR.RDS_Requestor_PRN AS [Username],
        RR.RDS_created AS Created,
        QT.[Days In Queue],
        RR.RDS_Origin AS Origin,
@@ -42,15 +42,15 @@ SELECT RR.ID AS Request,
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
-	   EPT.Proposal_Type_Name AS [EUS Proposal Type],
+       EPT.Proposal_Type_Name AS [EUS Proposal Type],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
        RR.RDS_note AS Note,
        RR.RDS_special_instructions AS [Special Instructions],
        Case
            When RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10	-- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
-		   Else CC.Activation_State
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+           Else CC.Activation_State
        End AS #WPActivationState
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
@@ -58,7 +58,7 @@ FROM dbo.T_DatasetTypeName AS DTN
                   ON RR.Exp_ID = E.Exp_ID
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN dbo.T_Users AS U
-       ON RR.RDS_Oper_PRN = U.U_PRN
+       ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN dbo.T_Campaign AS C
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN dbo.T_Requested_Run_Batches AS RRB
@@ -78,9 +78,9 @@ FROM dbo.T_DatasetTypeName AS DTN
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
-	   ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
-	   ON EUP.Proposal_Type = EPT.Proposal_Type
+       ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
 

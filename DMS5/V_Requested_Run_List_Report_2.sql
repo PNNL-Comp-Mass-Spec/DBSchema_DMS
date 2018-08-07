@@ -37,7 +37,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
-	  CartConfig.Cart_Config_Name AS [Cart Config],
+      CartConfig.Cart_Config_Name AS [Cart Config],
        CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
        DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
@@ -50,14 +50,14 @@ SELECT RR.ID AS Request,
        END AS [#DaysInQueue],
        CASE
            WHEN RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10	-- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
            ELSE CC.Activation_State
        END AS #WPActivationState
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users AS U
-       ON RR.RDS_Oper_PRN = U.U_PRN
+       ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN T_Experiments AS E
        ON RR.Exp_ID = E.Exp_ID
      INNER JOIN T_EUS_UsageType AS EUT

@@ -68,37 +68,37 @@ CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Ba
 After Update
 /****************************************************
 **
-**	Desc: 
-**		Updates column RDS_NameCode for requested runs
-**		associated with the updated batches
+**    Desc: 
+**        Updates column RDS_NameCode for requested runs
+**        associated with the updated batches
 **
-**	Auth:	mem
-**	Date:	08/05/2010 mem - Initial version
-**			08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
+**    Auth:    mem
+**    Date:    08/05/2010 mem - Initial version
+**            08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
 **    
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
+    Set NoCount On
 
-	If Update (Batch) OR
-	   Update (Created) OR
-	   Update (Owner)
-	Begin
-		UPDATE T_Requested_Run
-		SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Oper_PRN, 
-														 RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
-														 RR.RDS_type_ID, RR.RDS_Sec_Sep)
-		FROM T_Requested_Run RR
-			 INNER JOIN inserted
-			   ON RR.RDS_BatchID = inserted.ID
-			 INNER JOIN T_Requested_Run_Batches RRB
-			   ON RRB.ID = RR.RDS_BatchID
-			 INNER JOIN T_Users U
-			   ON RRB.Owner = U.ID
-	End
+    If Update (Batch) OR
+       Update (Created) OR
+       Update (Owner)
+    Begin
+        UPDATE T_Requested_Run
+        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+                                                         RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
+                                                         RR.RDS_type_ID, RR.RDS_Sec_Sep)
+        FROM T_Requested_Run RR
+             INNER JOIN inserted
+               ON RR.RDS_BatchID = inserted.ID
+             INNER JOIN T_Requested_Run_Batches RRB
+               ON RRB.ID = RR.RDS_BatchID
+             INNER JOIN T_Users U
+               ON RRB.Owner = U.ID
+    End
 
 
 GO

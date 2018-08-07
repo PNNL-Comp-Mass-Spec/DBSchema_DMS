@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Run_Planning_Report] as
+CREATE VIEW [dbo].[V_Run_Planning_Report] 
+AS
 SELECT  GroupQ.[Inst. Group],
         GroupQ.[DS Type],
         GroupQ.[Run Count],
@@ -21,9 +22,9 @@ SELECT  GroupQ.[Inst. Group],
         RequestLookupQ.RDS_comment AS [Comment],
         GroupQ.[Min Request],
         GroupQ.[Work Package],
-		GroupQ.[WP State],
+        GroupQ.[WP State],
         GroupQ.Proposal,
-		GroupQ.[Proposal Type],
+        GroupQ.[Proposal Type],
         TEUT.Name AS [Usage],
         GroupQ.Locked,
         GroupQ.[Last Ordered],
@@ -36,7 +37,7 @@ SELECT  GroupQ.[Inst. Group],
              THEN 90  -- Request is 60 to 90 days old
              ELSE 120                                                            -- Request is over 90 days old
         END AS #DaysInQueue,
-		WPActivationState AS #WPActivationState
+        WPActivationState AS #WPActivationState
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
                     COUNT(RequestName) AS [Run Count],
@@ -46,16 +47,16 @@ FROM    ( SELECT    [Inst. Group],
                     [Separation Group],
                     [DS Type],
                     [Work Package],
-					[WP State],
-					WPActivationState,
+                    [WP State],
+                    WPActivationState,
                     Proposal,
-					[Proposal Type],
+                    [Proposal Type],
                     Locked,
                     [Last Ordered],
                     [Request Name Code],
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
                     SUM(BlkMissing) AS BlkMissing,
-                    SUM(Blocked) AS Blocked					
+                    SUM(Blocked) AS Blocked                    
           FROM      ( SELECT RR.RDS_instrument_name AS [Inst. Group],
                              RR.RDS_Sec_Sep AS [Separation Group],
                              DTN.DST_Name AS [DS Type],
@@ -95,7 +96,7 @@ FROM    ( SELECT    [Inst. Group],
                            INNER JOIN T_Requested_Run AS RR
                              ON DTN.DST_Type_ID = RR.RDS_type_ID
                            INNER JOIN T_Users AS U
-                             ON RR.RDS_Oper_PRN = U.U_PRN
+                             ON RR.RDS_Requestor_PRN = U.U_PRN
                            INNER JOIN T_Experiments AS E
                              ON RR.Exp_ID = E.Exp_ID
                            INNER JOIN T_EUS_UsageType AS EUT
@@ -121,10 +122,10 @@ FROM    ( SELECT    [Inst. Group],
                     [Request Name Code],
                     Requester,
                     [Work Package],
-					[WP State],
-					WPActivationState,
+                    [WP State],
+                    WPActivationState,
                     Proposal,
-					[Proposal Type],
+                    [Proposal Type],
                     Locked,
                     [Last Ordered],
                     Batch
