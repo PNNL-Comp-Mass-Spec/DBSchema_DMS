@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/03/2018 mem - Rename files in T_Dataset_Files
 **                         - Update commands for renaming the dataset directory and dataset file
+**          08/06/2018 mem - Fix where clause when querying V_Analysis_Job_Export
 **    
 *****************************************************/
 (
@@ -344,8 +345,8 @@ AS
     
     INSERT INTO @jobsToUpdate (Job)
     SELECT Job 
-    FROM V_Analysis_Job_Export 
-    WHERE Dataset = @datasetNameOld
+    FROM V_Analysis_Job_Export
+    WHERE @infoOnly=0 And Dataset = @datasetNameNew Or @infoOnly<>0 And Dataset = @datasetNameOld
     ORDER BY Job
     
     Set @continue = 1
