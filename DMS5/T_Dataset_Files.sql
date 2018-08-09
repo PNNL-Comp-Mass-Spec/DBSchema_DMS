@@ -33,8 +33,3 @@ ALTER TABLE [dbo].[T_Dataset_Files] ADD  CONSTRAINT [DF_T_Dataset_Files_Allow_Du
 GO
 ALTER TABLE [dbo].[T_Dataset_Files] ADD  CONSTRAINT [DF_T_Dataset_Files_Deleted]  DEFAULT ((0)) FOR [Deleted]
 GO
-ALTER TABLE [dbo].[T_Dataset_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Files_T_Dataset] FOREIGN KEY([Dataset_ID])
-REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Files] CHECK CONSTRAINT [FK_T_Dataset_Files_T_Dataset]
-GO
