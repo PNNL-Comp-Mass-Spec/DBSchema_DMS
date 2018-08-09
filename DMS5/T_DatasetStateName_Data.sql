@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetStateName] ******/
-/****** RowCount: 13 ******/
+/****** RowCount: 14 ******/
 /****** Columns: DSS_name, Dataset_state_ID ******/
 INSERT INTO [T_DatasetStateName] VALUES ('New',1)
 INSERT INTO [T_DatasetStateName] VALUES ('Capture In Progress',2)
@@ -14,3 +14,4 @@ INSERT INTO [T_DatasetStateName] VALUES ('Restore Required',10)
 INSERT INTO [T_DatasetStateName] VALUES ('Restore In Progress',11)
 INSERT INTO [T_DatasetStateName] VALUES ('Restore Failed',12)
 INSERT INTO [T_DatasetStateName] VALUES ('Holding',13)
+INSERT INTO [T_DatasetStateName] VALUES ('Capture Failed, Duplicate Dataset Files',14)

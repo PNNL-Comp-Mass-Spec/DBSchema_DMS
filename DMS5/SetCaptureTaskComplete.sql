@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
 **          12/16/2017 mem - If @completionCode is 0, now calling CleanupDatasetComments to remove error messages in the comment field
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          06/13/2018 mem - Add support for @completionCode 101
+**          08/08/2018 mem - Add @completionState 14 (Duplicate Dataset Files)
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ As
         Else
             Set @completionState = 3 -- normal completion
     End    
-    Else If @completionCode In (1, 101)
+    Else If @completionCode = 1
     Begin
         Set @completionState = 5 -- capture failed
     End
@@ -99,6 +100,10 @@ As
     Else If @completionCode = 100
     Begin
         Set @completionState = 3 -- normal completion
+    End
+    Else If @completionCode = 101
+    Begin
+        Set @completionState = 14 -- Duplicate Dataset Files
     End
 
     ---------------------------------------------------
