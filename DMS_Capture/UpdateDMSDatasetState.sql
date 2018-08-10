@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[UpdateDMSDatasetState]
 **          03/16/2011 grk - Now recognizes IMSDatasetCapture
 **          04/04/2012 mem - Now passing @FailureMessage to S_SetCaptureTaskComplete when the job is failed in the broker
 **          06/13/2018 mem - Check for error code 53600 returned by UpdateDMSFileInfoXML to indicate a duplicate dataset
+**          08/09/2018 mem - Set the job state to 14 when the error code is 53600
 **    
 *****************************************************/
 (
@@ -60,11 +61,10 @@ As
                 -- Use special completion code of 101
                 EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 101, @message OUTPUT, @failureMessage = @message
                 
-                -- Fail out the job
+                -- Fail out the job with state 14 (Failed, Ignore Job Step States)
                 Update T_Jobs
-                Set State = 5
+                Set State = 14
                 Where Job = @job
-
             End
             Else
             Begin
