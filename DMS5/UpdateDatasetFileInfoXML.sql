@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
@@ -69,6 +68,8 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          08/01/2017 mem - Use THROW If not authorized
 **          06/13/2018 mem - Store instrument files info in T_Dataset_Files
 **          06/25/2018 mem - Populate the File_Size_Rank column
+**          08/08/2018 mem - Fix null value where clause bug in @DuplicateDatasetsTable
+**          08/09/2018 mem - Use @duplicateEntryHoldoffHours when logging the duplicate dataset error
 **    
 *****************************************************/
 (
@@ -102,9 +103,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoXML', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
     
     -----------------------------------------------------------
     -- Create temp tables to hold the data
@@ -151,7 +152,7 @@ As
     Declare @DuplicateDatasetsTable Table (
         Dataset_ID int NOT NULL,
         MatchingFileCount int NOT NULL,
-        Allow_Duplicates tinyint NULL
+        Allow_Duplicates tinyint NOT NULL
     )
 
     ---------------------------------------------------
@@ -177,14 +178,14 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error extracting the dataset name from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End
         
     If @myRowCount = 0 or IsNull(@DatasetName, '') = ''
     Begin
         set @message = 'XML in @DatasetInfoXML is not in the expected form for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML; Could not match /DatasetInfo/Dataset'
         Set @myError = 50000
-        goto Done
+        Goto Done
     End
     
     ---------------------------------------------------
@@ -240,7 +241,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error extracting data from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -359,7 +360,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error parsing ScanType nodes in @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -378,7 +379,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error parsing InstrumentFile nodes in @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End    
 
     ---------------------------------------------------
@@ -403,7 +404,7 @@ As
 
     ---------------------------------------------------
     -- Check whether this is a duplicate dataset
-    -- Look for an existing dataset with the same file has values but a different dataset ID
+    -- Look for an existing dataset with the same file hash values but a different dataset ID
     ---------------------------------------------------
     
     Declare @instrumentFileCount int = 0
@@ -414,9 +415,11 @@ As
     If @instrumentFileCount > 0
     Begin
         INSERT INTO @DuplicateDatasetsTable( Dataset_ID,
-                                             MatchingFileCount)
+                                             MatchingFileCount,
+                                             Allow_Duplicates)
         SELECT DSFiles.Dataset_ID,
-               Count(*) AS MatchingFiles
+               Count(*) AS MatchingFiles,
+               0 As Allow_Duplicates
         FROM T_Dataset_Files DSFiles
              INNER JOIN @InstrumentFilesTable NewDSFiles
                ON DSFiles.File_Hash = NewDSFiles.InstFileHash
@@ -428,7 +431,7 @@ As
         If @myError <> 0
         Begin
             set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-            goto Done
+            Goto Done
         End
 
         Declare @fileOrFiles varchar(10) = 'file'
@@ -436,8 +439,7 @@ As
             Set @fileOrFiles = 'files'
 
         Declare @duplicateDatasetID int = 0
-        Declare @duplicateDatasetInfo varchar(512) = 
-            ' DatasetID ' + Convert(varchar(12), @duplicateDatasetID) + 
+        Declare @duplicateDatasetInfoSuffix varchar(512) =            
             ' has the same instrument ' + @fileOrFiles + ' as DatasetID ' + Convert(varchar(12), @DatasetID) +                     
             '; see table T_Dataset_Files'
 
@@ -461,13 +463,14 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
-            Set @message = 'Duplicate dataset found:' + @duplicateDatasetInfo
+            Set @message = 'Duplicate dataset found: DatasetID ' + Convert(varchar(12), @duplicateDatasetID) + @duplicateDatasetInfoSuffix
 
-            Exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML'
+            Exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML', @duplicateEntryHoldoffHours=6
 
-            -- This error code is used by stored procedure UpdateContext in the DMS_Capture database
+            -- Error code 53600 is used by stored procedure UpdateDMSDatasetState in the DMS_Capture database
+            -- Call stack: UpdateContext->UpdateJobState->UpdateDMSDatasetState->UpdateDMSFileInfoXML->UpdateDatasetFileInfoXML
             Set @myError = 53600
-            goto Done
+            Goto Done
 
         End
 
@@ -480,7 +483,7 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
-            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' + @duplicateDatasetInfo
+            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: DatasetID ' + Convert(varchar(12), @duplicateDatasetID) + @duplicateDatasetInfoSuffix
 
             Exec PostLogEntry 'Warning', @msg, 'UpdateDatasetFileInfoXML'
         End
@@ -551,7 +554,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error updating T_Dataset for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End    
 
     -----------------------------------------------
@@ -621,7 +624,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error updating T_Dataset_Info for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End    
 
     -----------------------------------------------
@@ -646,7 +649,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End    
 
     -----------------------------------------------
@@ -688,7 +691,7 @@ As
     If @myError <> 0
     Begin
         set @message = 'Error updating T_Dataset_Files for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
-        goto Done
+        Goto Done
     End
 
     -- Look for extra files that need to be deleted
