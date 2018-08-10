@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateMissedDMSFileInfo]
 **          08/02/2016 mem - Continue processing on errors (but log the error)
 **          06/13/2018 mem - Check for error code 53600 returned by UpdateDMSFileInfoXML to indicate a duplicate dataset
 **                         - Add parameter @datasetIDs
+**          08/09/2018 mem - Filter out dataset info XML entries where Ignore is 1
 **
 *****************************************************/
 (
@@ -70,7 +71,8 @@ As
     FROM T_Dataset_Info_XML DI
          LEFT OUTER JOIN S_DMS_T_Dataset
            ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID
-    WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL Or @replaceExistingData <> 0)
+    WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL Or @replaceExistingData <> 0) And 
+          DI.Ignore = 0
     --
     SELECT @myRowCount = @@RowCount
 
@@ -137,9 +139,10 @@ As
                           S_DMS_T_Dataset.Scan_Count AS Scan_Count_Old,
                           S_DMS_T_Dataset.File_Size_Bytes AS File_Size_Bytes_Old
                   FROM T_Dataset_Info_XML DI
-                  INNER JOIN S_DMS_T_Dataset
+                       INNER JOIN S_DMS_T_Dataset
                          ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID AND
                             DI.Cache_Date > S_DMS_T_Dataset.File_Info_Last_Modified 
+                  WHERE DI.Ignore = 0
                   ) InnerQ 
          ) FilterQ
     WHERE (ScanCountNew <> ISNULL(Scan_Count_Old, 0)) OR

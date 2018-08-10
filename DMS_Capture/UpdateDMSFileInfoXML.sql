@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateDMSFileInfoXML]
 **  Auth:   mem
 **  Date:   09/01/2010 mem - Initial Version
 **          06/13/2018 mem - Add comment regarding duplicate datasets
+**          08/09/2018 mem - Set Ignore to 1 when the return code from S_UpdateDatasetFileInfoXML is 53600
 **    
 *****************************************************/
 (
@@ -49,7 +50,7 @@ As
     Set @infoOnly = IsNull(@infoOnly, 0)
     
     SELECT @DatasetInfoXML = DS_Info_XML
-    FROM dbo.T_Dataset_Info_XML
+    FROM T_Dataset_Info_XML
     WHERE Dataset_ID = @DatasetID
     
     If Not @DatasetInfoXML Is Null
@@ -63,8 +64,14 @@ As
         
         If @myError = 0 And @infoOnly = 0 And @DeleteFromTableOnSuccess <> 0
         Begin
-            DELETE FROM dbo.T_Dataset_Info_XML WHERE Dataset_ID = @DatasetID
+            DELETE FROM T_Dataset_Info_XML WHERE Dataset_ID = @DatasetID
         End
+
+        If @myError = 53600 And @infoOnly = 0 And @DeleteFromTableOnSuccess <> 0
+        Begin
+            UPDATE T_Dataset_Info_XML Set Ignore = 1 WHERE Dataset_ID = @DatasetID
+        End
+
     End
 
     Return @myError
