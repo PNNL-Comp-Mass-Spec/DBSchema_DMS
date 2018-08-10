@@ -30,13 +30,14 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          12/04/2017 mem - Rename variables and add logic checks
 **          06/14/2018 mem - Call S_PostEmailAlert if a reporter ion m/z validation error or warning is detected
 **          07/30/2018 mem - Include dataset name when calling S_PostEmailAlert
+**          08/09/2018 mem - Expand @completionMessage to varchar(512)
 **    
 *****************************************************/
 (
     @job int,
     @step int,
     @completionCode int,
-    @completionMessage varchar(256) = '',
+    @completionMessage varchar(512) = '',
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
     @message varchar(512) output
