@@ -430,7 +430,7 @@ As
             ---------------------------------------------------
             -- Make changes to DMS if we are enabled to do so
             -- UpdateDMSDatasetState will also call UpdateDMSFileInfoXML to push the data into T_Dataset_Info
-            -- If a duplicate dataset is found, UpdateDMSDatasetState will change this job's state to 5 in T_Jobs
+            -- If a duplicate dataset is found, UpdateDMSDatasetState will change this job's state to 14 in T_Jobs
             ---------------------------------------------------
             --
             If @bypassDMS = 0 AND @datasetID <> 0
