@@ -7,10 +7,10 @@ GO
 CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
-**  Desc:   Updates the information for the dataset specified by @DatasetID
-**          If @DatasetID is 0, then will use the dataset name defined in @DatasetInfoXML
-**          If @DatasetID is non-zero, then will validate that the Dataset Name in the XML corresponds
-**          to the dataset ID specified by @DatasetID
+**  Desc:   Updates the information for the dataset specified by @datasetID
+**          If @datasetID is 0, then will use the dataset name defined in @datasetInfoXML
+**          If @datasetID is non-zero, then will validate that the Dataset Name in the XML corresponds
+**          to the dataset ID specified by @datasetID
 **
 **      Typical XML file contents:
 **
@@ -55,7 +55,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 ** 
 **  Auth:   mem
 **  Date:   05/03/2010 mem - Initial version
-**          05/13/2010 mem - Added parameter @ValidateDatasetType
+**          05/13/2010 mem - Added parameter @validateDatasetType
 **          05/14/2010 mem - Now updating T_Dataset_Info.Scan_Types
 **          08/03/2010 mem - Removed unneeded fields from the T_Dataset_Info MERGE Source
 **          09/01/2010 mem - Now checking for invalid dates and storing Null in Acq_Time_Start and Acq_Time_End If invalid
@@ -63,38 +63,41 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          09/02/2011 mem - Now calling PostUsageLogEntry
 **          08/21/2012 mem - Now including DatasetID in the error message
 **          04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
-**          02/24/2015 mem - Now validating that @DatasetID exists in T_Dataset
+**          02/24/2015 mem - Now validating that @datasetID exists in T_Dataset
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW If not authorized
 **          06/13/2018 mem - Store instrument files info in T_Dataset_Files
 **          06/25/2018 mem - Populate the File_Size_Rank column
 **          08/08/2018 mem - Fix null value where clause bug in @DuplicateDatasetsTable
 **          08/09/2018 mem - Use @duplicateEntryHoldoffHours when logging the duplicate dataset error
+**          08/10/2018 mem - Update duplicate dataset message and use PostEmailAlert to add to T_Email_Alerts
 **    
 *****************************************************/
 (
-    @DatasetID int = 0,                     -- If this value is 0, will determine the dataset name using the contents of @DatasetInfoXML
-    @DatasetInfoXML xml,                    -- XML describing the properties of a single dataset
+    @datasetID int = 0,                     -- If this value is 0, will determine the dataset name using the contents of @datasetInfoXML
+    @datasetInfoXML xml,                    -- XML describing the properties of a single dataset
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0,
-    @ValidateDatasetType tinyint = 1        -- If non-zero, will call ValidateDatasetType after updating T_Dataset_ScanTypes
+    @validateDatasetType tinyint = 1        -- If non-zero, will call ValidateDatasetType after updating T_Dataset_ScanTypes
 )
 As
     set nocount on
     
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    Declare @DatasetName varchar(128)
-    Declare @DatasetIDCheck int
+    Declare @datasetName varchar(128)
+    Declare @datasetIDCheck int
 
-    Declare @StartTime varchar(32)
-    Declare @EndTime varchar(32)
+    Declare @startTime varchar(32)
+    Declare @endTime varchar(32)
     
-    Declare @AcqTimeStart datetime
-    Declare @AcqTimeEnd datetime
+    Declare @acqTimeStart datetime
+    Declare @acqTimeEnd datetime
 
     Declare @msg varchar(1024)
+    Declare @datasetIdText varchar(12) = Cast(@datasetID as varchar(12))
+    Declare @duplicateDatasetInfoSuffix varchar(512)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -159,37 +162,37 @@ As
     -- Validate the inputs
     ---------------------------------------------------
     
-    Set @DatasetID = IsNull(@DatasetID, 0)
+    Set @datasetID = IsNull(@datasetID, 0)
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
-    Set @ValidateDatasetType = IsNull(@ValidateDatasetType, 1)
+    Set @validateDatasetType = IsNull(@validateDatasetType, 1)
     
     ---------------------------------------------------
-    -- Parse out the dataset name from @DatasetInfoXML
+    -- Parse out the dataset name from @datasetInfoXML
     -- If this parse fails, there is no point in continuing
     ---------------------------------------------------
     
-    SELECT @DatasetName = DSName
-    FROM (SELECT @DatasetInfoXML.value('(/DatasetInfo/Dataset)[1]', 'varchar(128)') AS DSName
+    SELECT @datasetName = DSName
+    FROM (SELECT @datasetInfoXML.value('(/DatasetInfo/Dataset)[1]', 'varchar(128)') AS DSName
          ) LookupQ
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Error extracting the dataset name from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error extracting the dataset name from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
         
-    If @myRowCount = 0 or IsNull(@DatasetName, '') = ''
+    If @myRowCount = 0 or IsNull(@datasetName, '') = ''
     Begin
-        set @message = 'XML in @DatasetInfoXML is not in the expected form for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML; Could not match /DatasetInfo/Dataset'
+        set @message = 'XML in @datasetInfoXML is not in the expected form for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML; Could not match /DatasetInfo/Dataset'
         Set @myError = 50000
         Goto Done
     End
     
     ---------------------------------------------------
-    -- Parse the contents of @DatasetInfoXML to populate @DSInfoTable
+    -- Parse the contents of @datasetInfoXML to populate @DSInfoTable
     -- Skip the StartTime and EndTime values for now since they might have invalid dates
     ---------------------------------------------------
     --
@@ -215,32 +218,32 @@ As
         CentroidScanCount_MS,
         CentroidScanCount_MSn
     )
-    SELECT  @DatasetID AS DatasetID,
-            @DatasetName AS Dataset,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCount)[1]', 'int') AS ScanCount,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMS)[1]', 'int') AS ScanCountMS,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,       
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MS)[1]', 'real') AS BPI_Max_MS,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MSn)[1]', 'real') AS BPI_Max_MSn,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MS)[1]', 'real') AS TIC_Median_MS,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MSn)[1]', 'real') AS TIC_Median_MSn,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MS)[1]', 'real') AS BPI_Median_MS,
-            @DatasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
-            @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
+    SELECT  @datasetID AS DatasetID,
+            @datasetName AS Dataset,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCount)[1]', 'int') AS ScanCount,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMS)[1]', 'int') AS ScanCountMS,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,       
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MS)[1]', 'real') AS BPI_Max_MS,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MSn)[1]', 'real') AS BPI_Max_MSn,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MS)[1]', 'real') AS TIC_Median_MS,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MSn)[1]', 'real') AS TIC_Median_MSn,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MS)[1]', 'real') AS BPI_Median_MS,
+            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Error extracting data from @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
 
@@ -248,7 +251,7 @@ As
     -- Update or Validate Dataset_ID in @DSInfoTable
     ---------------------------------------------------
     --
-    If @DatasetID = 0
+    If @datasetID = 0
     Begin
         UPDATE @DSInfoTable
         SET Dataset_ID = DS.Dataset_ID
@@ -260,25 +263,25 @@ As
         
         If @myRowCount = 0
         Begin
-            Set @message = 'Warning: dataset "' + @DatasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
+            Set @message = 'Warning: dataset "' + @datasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
             Set @myError = 50001
             Goto Done
         End
         
-        -- Update @DatasetID
-        SELECT @DatasetID = Dataset_ID
+        -- Update @datasetID
+        SELECT @datasetID = Dataset_ID
         FROM @DSInfoTable
         
     End
     Else
     Begin
     
-        -- @DatasetID was non-zero
+        -- @datasetID was non-zero
         
-        -- Validate that @DatasetID exists in T_Dataset
-        If Not Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @DatasetID)
+        -- Validate that @datasetID exists in T_Dataset
+        If Not Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @datasetID)
         Begin
-            Set @message = 'Warning: dataset ID "' + Cast(@DatasetID as varchar(12)) + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
+            Set @message = 'Warning: dataset ID "' + @datasetIdText + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
             Set @myError = 50002
             Goto Done
         End
@@ -293,21 +296,23 @@ As
         
         If @myRowCount = 0
         Begin
-            Set @message = 'Warning: dataset "' + @DatasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
+            Set @message = 'Warning: dataset "' + @datasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
             Set @myError = 50003
             Goto Done
         End
         
         -- Validate the dataset name in @DSInfoTable against T_Dataset
     
-        SELECT @DatasetIDCheck = DS.Dataset_ID
+        SELECT @datasetIDCheck = DS.Dataset_ID
         FROM @DSInfoTable Target
              INNER JOIN T_Dataset DS
              ON Target.Dataset_Name = DS.Dataset_Num
                
-        If @DatasetIDCheck <> @DatasetID
+        If @datasetIDCheck <> @datasetID
         Begin
-            Set @message = 'Error: dataset ID values for ' + @DatasetName + ' do not match; expecting ' + Convert(varchar(12), @DatasetIDCheck) + ' but stored procedure param @DatasetID is ' + Convert(varchar(12), @DatasetID)
+            Set @message = 'Error: dataset ID values for ' + @datasetName + ' do not match; ' + 
+                           'expecting ' + Cast(@datasetIDCheck As varchar(12)) + ' but stored procedure param ' + 
+                           '@datasetID is ' + @datasetIdText
             Set @myError = 50004
             Goto Done
         End
@@ -318,14 +323,14 @@ As
     -- Initially extract as strings in case they're out of range for the datetime date type
     ---------------------------------------------------
     --
-    SELECT @StartTime = @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/StartTime)[1]', 'varchar(32)'),
-           @EndTime = @DatasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'varchar(32)')
+    SELECT @startTime = @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/StartTime)[1]', 'varchar(32)'),
+           @endTime = @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'varchar(32)')
 
-    If IsDate(@StartTime) <> 0
-        Set @AcqTimeStart = Convert(datetime, @StartTime)
+    If IsDate(@startTime) <> 0
+        Set @acqTimeStart = Convert(datetime, @startTime)
 
-    If IsDate(@EndTime) <> 0
-        Set @AcqTimeEnd = Convert(datetime, @EndTime)
+    If IsDate(@endTime) <> 0
+        Set @acqTimeEnd = Convert(datetime, @endTime)
     Else
     Begin
         -- End Time is invalid
@@ -333,14 +338,14 @@ As
         -- (though, typically, If one is invalid the other will be invalid too)
         -- IMS .UIMF files acquired in summer 2010 had StartTime values of 0410-08-29 (year 410) due to a bug
                 
-        If Not @AcqTimeStart Is Null
-            SELECT @AcqTimeEnd = DateAdd(minute, AcqTimeMinutes, @AcqTimeStart)
+        If Not @acqTimeStart Is Null
+            SELECT @acqTimeEnd = DateAdd(minute, AcqTimeMinutes, @acqTimeStart)
             FROM @DSInfoTable
     End
         
     UPDATE @DSInfoTable
-    Set Acq_Time_Start = @AcqTimeStart,
-        Acq_Time_End = @AcqTimeEnd
+    Set Acq_Time_Start = @acqTimeStart,
+        Acq_Time_End = @acqTimeEnd
 
     ---------------------------------------------------
     -- Now extract out the ScanType information
@@ -351,7 +356,7 @@ As
     FROM (    SELECT  xmlNode.value('.', 'varchar(64)') AS ScanType,
                     xmlNode.value('@ScanCount', 'int') AS ScanCount,
                     xmlNode.value('@ScanFilterText', 'varchar(256)') AS ScanFilter        
-            FROM   @DatasetInfoXML.nodes('/DatasetInfo/ScanTypes/ScanType') AS R(xmlNode)
+            FROM   @datasetInfoXML.nodes('/DatasetInfo/ScanTypes/ScanType') AS R(xmlNode)
     ) LookupQ
     WHERE Not ScanType IS NULL     
     --
@@ -359,7 +364,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing ScanType nodes in @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
 
@@ -372,13 +377,13 @@ As
            instFiles.InstrumentFile.value('(./@Hash)[1]','varchar(64)') As InstFileHash,
            instFiles.InstrumentFile.value('(./@HashType)[1]','varchar(32)') As InstFileHashType,
            instFiles.InstrumentFile.value('(./@Size)[1]','bigint') As InstFileSize
-    FROM @DatasetInfoXML.nodes('/DatasetInfo/AcquisitionInfo/InstrumentFiles/InstrumentFile') As instFiles(InstrumentFile)
+    FROM @datasetInfoXML.nodes('/DatasetInfo/AcquisitionInfo/InstrumentFiles/InstrumentFile') As instFiles(InstrumentFile)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing InstrumentFile nodes in @DatasetInfoXML for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End    
 
@@ -423,25 +428,18 @@ As
         FROM T_Dataset_Files DSFiles
              INNER JOIN @InstrumentFilesTable NewDSFiles
                ON DSFiles.File_Hash = NewDSFiles.InstFileHash
-        WHERE DSFiles.Dataset_ID <> @DatasetID And DSFiles.Deleted = 0
+        WHERE DSFiles.Dataset_ID <> @datasetID And DSFiles.Deleted = 0
         GROUP BY DSFiles.Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
-            set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+            set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
             Goto Done
         End
 
-        Declare @fileOrFiles varchar(10) = 'file'
-        If @instrumentFileCount > 1
-            Set @fileOrFiles = 'files'
-
         Declare @duplicateDatasetID int = 0
-        Declare @duplicateDatasetInfoSuffix varchar(512) =            
-            ' has the same instrument ' + @fileOrFiles + ' as DatasetID ' + Convert(varchar(12), @DatasetID) +                     
-            '; see table T_Dataset_Files'
 
         If Exists (SELECT * FROM @DuplicateDatasetsTable WHERE MatchingFileCount >= @instrumentFileCount)
         Begin
@@ -462,10 +460,14 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
-            Set @message = 'Duplicate dataset found: DatasetID ' + Convert(varchar(12), @duplicateDatasetID) + @duplicateDatasetInfoSuffix
+            -- Duplicate dataset found: DatasetID 693058 has the same instrument file as DatasetID 692115; see table T_Dataset_Files
+            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' + 
+                                              Cast(@duplicateDatasetID As varchar(12)) + '; see table T_Dataset_Files'
 
-            Exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML', @duplicateEntryHoldoffHours=6
+            -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
+            Set @message = 'Duplicate dataset found: DatasetID ' + @datasetIdText + @duplicateDatasetInfoSuffix
+
+            Exec PostEmailAlert 'Error', @message, 'UpdateDatasetFileInfoXML', @recipients='admins', @postMessageToLogEntries=1, @duplicateEntryHoldoffHours=6
 
             -- Error code 53600 is used by stored procedure UpdateDMSDatasetState in the DMS_Capture database
             -- Call stack: UpdateContext->UpdateJobState->UpdateDMSDatasetState->UpdateDMSFileInfoXML->UpdateDatasetFileInfoXML
@@ -482,8 +484,12 @@ As
             ORDER BY Dataset_ID Desc
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
-            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: DatasetID ' + Convert(varchar(12), @duplicateDatasetID) + @duplicateDatasetInfoSuffix
+
+            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' + 
+                                              Cast(@duplicateDatasetID As varchar(12)) + '; see table T_Dataset_Files'
+                                                          
+            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' + 
+                       'DatasetID ' + Cast(@datasetIdText As varchar(12)) + @duplicateDatasetInfoSuffix
 
             Exec PostLogEntry 'Warning', @msg, 'UpdateDatasetFileInfoXML'
         End
@@ -553,7 +559,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End    
 
@@ -623,7 +629,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Info for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End    
 
@@ -635,12 +641,12 @@ As
     -----------------------------------------------
     --
     DELETE FROM T_Dataset_ScanTypes
-    WHERE Dataset_ID = @DatasetID
+    WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     INSERT INTO T_Dataset_ScanTypes ( Dataset_ID, ScanType, ScanCount, ScanFilter )
-    SELECT @DatasetID AS Dataset_ID, ScanType, ScanCount, ScanFilter
+    SELECT @datasetID AS Dataset_ID, ScanType, ScanCount, ScanFilter
     FROM @ScanTypesTable
     ORDER BY Dataset_ID, ScanType
     --
@@ -648,7 +654,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End    
 
@@ -662,7 +668,7 @@ As
          INNER JOIN T_Dataset_Info DSInfo
            ON DSInfo.Dataset_ID = DS.Dataset_ID
          CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
-    WHERE DS.Dataset_ID = @DatasetID
+    WHERE DS.Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -672,7 +678,7 @@ As
     --
     MERGE T_Dataset_Files As target
     USING 
-        (SELECT @DatasetID, InstFilePath, InstFileSize, InstFileHash
+        (SELECT @datasetID, InstFilePath, InstFileSize, InstFileHash
          FROM @InstrumentFilesTable
         ) AS Source (Dataset_ID, InstFilePath, InstFileSize, InstFileHash)
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath)
@@ -690,7 +696,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Files for DatasetID ' + Convert(varchar(12), @DatasetID) + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
 
@@ -699,9 +705,9 @@ As
     DELETE T_Dataset_Files
     FROM T_Dataset_Files Target
          LEFT OUTER JOIN @InstrumentFilesTable Source
-           ON Target.Dataset_ID = @DatasetID AND
+           ON Target.Dataset_ID = @datasetID AND
               Target.File_Path = Source.InstFilePath
-    WHERE Target.Dataset_ID = @DatasetID AND
+    WHERE Target.Dataset_ID = @datasetID AND
           Source.InstFilePath IS NULL     
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -723,7 +729,7 @@ As
                                 ORDER BY Deleted DESC, File_Size_Bytes DESC 
                                 ) AS Size_Rank
                       FROM T_Dataset_Files
-                      WHERE Dataset_ID = @DatasetID 
+                      WHERE Dataset_ID = @datasetID 
                     ) SrcQ
            ON Target.Dataset_File_ID = SrcQ.Dataset_File_ID
     --
@@ -733,8 +739,8 @@ As
     -- Possibly validate the dataset type defined for this dataset
     -----------------------------------------------
     --
-    If @ValidateDatasetType <> 0
-        exec dbo.ValidateDatasetType @DatasetID, @message=@message output, @infoonly=@infoOnly
+    If @validateDatasetType <> 0
+        exec dbo.ValidateDatasetType @datasetID, @message=@message output, @infoonly=@infoOnly
 
     Set @message = 'Dataset info update successful'
     
@@ -759,14 +765,14 @@ Done:
     -- Log SP usage
     ---------------------------------------------------
 
-    Declare @UsageMessage varchar(512)
-    If IsNull(@DatasetName, '') = ''
-        Set @UsageMessage = 'Dataset ID: ' + Convert(varchar(12), @DatasetID)
+    Declare @usageMessage varchar(512)
+    If IsNull(@datasetName, '') = ''
+        Set @usageMessage = 'Dataset ID: ' + @datasetIdText
     Else
-        Set @UsageMessage = 'Dataset: ' + @DatasetName
+        Set @usageMessage = 'Dataset: ' + @datasetName
 
     If @InfoOnly = 0
-        Exec PostUsageLogEntry 'UpdateDatasetFileInfoXML', @UsageMessage
+        Exec PostUsageLogEntry 'UpdateDatasetFileInfoXML', @usageMessage
 
     Return @myError
 
