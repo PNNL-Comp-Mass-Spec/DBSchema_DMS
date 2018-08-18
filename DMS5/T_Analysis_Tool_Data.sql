@@ -83,5 +83,5 @@ INSERT INTO [T_Analysis_Tool] VALUES (78,'MSGFPlus_DTARefinery_SplitFasta','MSGF
 INSERT INTO [T_Analysis_Tool] VALUES (79,'MSGFPlus_MzML_SplitFasta','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB','G:\DMS_Parameter_Files\MSGFDB','IonTrapDefSettings_MzML_StatCysAlk_6plexTMT_phospho_5Parts_MergeResults_Top1.xml','MSG_Peptide_Hit','no ',1,'',1,'Y','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (80,'MAC_TMT10Plex','Broker_Job',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (81,'Formularity','Formularity',1030,'\\gigasax\dms_parameter_Files\Formularity','G:\DMS_Parameter_Files\Formularity','Formularity_DefSettings.xml','FRM_Search','no ',1,'(na)',0,'N','','',0)
-INSERT INTO [T_Analysis_Tool] VALUES (82,'TopFD','TopFD',1031,'\\gigasax\DMS_Parameter_Files\TopFD','G:\DMS_Parameter_Files\TopFD','??','MSD_HMMA_Peak','no ',1,'mzML',0,'N','n/a','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (82,'TopFD','TopFD',1031,'\\gigasax\DMS_Parameter_Files\TopFD','G:\DMS_Parameter_Files\TopFD','??','MSD_HMMA_Peak','no ',0,'mzML',0,'N','n/a','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (83,'TopPIC','TopPIC',1032,'\\gigasax\DMS_Parameter_Files\TopPIC','G:\DMS_Parameter_Files\TopPIC','??','TPC_Peptide_Hit','no ',1,'msalign',1,'N','n/a','',0)
