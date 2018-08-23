@@ -4,92 +4,69 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.GetSamplePrepRequestEUSUsersList
+CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
 /****************************************************
 **
-**	Desc: 
-**  Builds delimited list of EUS users for given sample prep request
+**  Desc:   Builds delimited list of EUS users for given sample prep request
 **
-**		@mode = 'I' means return integer
-**		@mode = 'N' means return name
-**		@mode = 'V' means return hybrid in the form Person_Name (Person_ID)
+**          @mode = 'I' means return integer
+**          @mode = 'N' means return name
+**          @mode = 'V' means return hybrid in the form Person_Name (Person_ID)
 **
-**	Return value: delimited list
+**  Return value: delimited list
 **
-**	Parameters: 
-**
-**	Auth:	mem
-**	Date:	05/01/2014
-**			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**  Auth:   mem
+**  Date:   05/01/2014
+**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **    
 *****************************************************/
 (
-	@requestID int,
-	@mode char(1) = 'I' -- 'N', 'V'
+    @requestID int,
+    @mode char(1) = 'I'     -- 'I', 'N', or 'V'
 )
 RETURNS varchar(1024)
 AS
 Begin
-	Declare @UserList varchar(1024)
+    Declare @eusUserID int
 
-	declare @list varchar(1024) = ''
+    Declare @list varchar(1024) = ''
 
-	SELECT @UserList = EUS_User_List
-	FROM T_Sample_Prep_Request
-	WHERE (ID = @requestID)
+    SELECT @eusUserID = EUS_User_ID
+    FROM T_Sample_Prep_Request
+    WHERE ID = @requestID
 
-	If IsNull(@UserList, '') = ''
-	Begin
-		Set @list = '(none)'
-	End
-	Else
-	Begin
-		IF @mode = 'I'
-		BEGIN
-			SELECT 
-				@list = @list + CASE 
-									WHEN @list = '' THEN CAST(EU.Person_ID AS varchar(12))
-									ELSE ', ' + CAST(EU.Person_ID AS varchar(12))
-								END
-			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
-				 ) ReqUsers
-			     INNER JOIN T_EUS_Users EU
-			       ON ReqUsers.Person_ID = EU.PERSON_ID		
-		END	
-		
-		IF @mode = 'N'
-		BEGIN
-			SELECT 
-				@list = @list + CASE 
-									WHEN @list = '' THEN EU.NAME_FM
-									ELSE '; ' + EU.NAME_FM
-								End
-			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
-				 ) ReqUsers
-			     INNER JOIN T_EUS_Users EU
-			       ON ReqUsers.Person_ID = EU.PERSON_ID			
-		END	
-		
-		IF @mode = 'V'
-		BEGIN
-			SELECT 
-				@list = @list + CASE 
-									WHEN @list = '' THEN NAME_FM + ' (' + CAST(EU.PERSON_ID AS varchar(12)) + ')'
-									ELSE '; ' + NAME_FM + ' (' + CAST(EU.PERSON_ID AS varchar(12)) + ')'
-								End
-			FROM ( SELECT Value AS Person_ID
-			       FROM dbo.udfParseDelimitedList (@UserList, ',', 'GetSamplePrepRequestEUSUsersList')
-				 ) ReqUsers
-			     INNER JOIN T_EUS_Users EU
-			       ON ReqUsers.Person_ID = EU.PERSON_ID
-		
-			if @list = '' set @list = '(none)'
-		END	
-	End
+    If IsNull(@eusUserID, 0) <= 0
+    Begin
+        Set @list = '(none)'
+    End
+    Else
+    Begin
+        IF @mode = 'I'
+        BEGIN
+            SELECT @list = CAST(EU.Person_ID AS varchar(12))
+            FROM T_EUS_Users EU
+            Where EU.PERSON_ID = @eusUserID
+        END    
+        
+        IF @mode = 'N'
+        BEGIN
+            SELECT @list = EU.NAME_FM
+            FROM T_EUS_Users EU
+            Where EU.PERSON_ID = @eusUserID   
+        END    
+        
+        IF @mode = 'V'
+        BEGIN
+            SELECT @list = NAME_FM + ' (' + CAST(EU.PERSON_ID AS varchar(12)) + ')'
+            FROM T_EUS_Users EU
+            Where EU.PERSON_ID = @eusUserID   
+        
+            if @list = '' set @list = '(none)'
+        END    
+    End
 
-	RETURN @list
+    RETURN @list
 
 END
 

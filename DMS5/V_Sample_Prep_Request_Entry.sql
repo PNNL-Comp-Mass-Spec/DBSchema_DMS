@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Entry]
 AS
 SELECT SPR.Request_Name AS RequestName,
@@ -32,7 +33,7 @@ SELECT SPR.Request_Name AS RequestName,
         SPR.ID,
         SPR.EUS_UsageType AS eusUsageType,
         SPR.EUS_Proposal_ID AS eusProposalID,
-        SPR.EUS_User_List AS eusUsersList,
+        SPR.EUS_User_ID AS eusUserID,
         SPR.Facility,
         SPR.Separation_Type AS SeparationGroup,
         SPR.BlockAndRandomizeSamples,

@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[SyncWithDMS5]
 /****************************************************
 ** 
@@ -25,6 +26,7 @@ CREATE Procedure [dbo].[SyncWithDMS5]
 **          11/29/2017 mem - Remove deprecated fields from T_Cell_Culture
 **                         - Add T_Reference_Compound, T_Cached_Experiment_Components, T_Experiment_Cell_Cultures, and T_Experiment_Reference_Compounds
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **    
 *****************************************************/
 (
@@ -105,7 +107,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             
             MERGE [dbo].[T_Instrument_Class] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Class]) as s
@@ -154,7 +156,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
         
             MERGE [dbo].[T_DatasetTypeName] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_DatasetTypeName]) as s
@@ -196,7 +198,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Instrument_Group] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Group]) as s
@@ -245,7 +247,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Instrument_Group_allowed_DS_Type] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Group_allowed_DS_Type]) as s
@@ -283,7 +285,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Storage_Path] ON;
             ALTER TABLE T_Storage_Path NOCHECK CONSTRAINT FK_t_storage_path_T_Instrument_Name
             
@@ -352,7 +354,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Instrument_Name] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Name]) as s
@@ -456,7 +458,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Param_File_Types] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Param_File_Types]) as s
@@ -494,7 +496,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Analysis_Tool] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Analysis_Tool]) as s
@@ -568,7 +570,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Analysis_Tool_Allowed_Dataset_Type]) as s
@@ -606,7 +608,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
 
             MERGE [dbo].[T_Analysis_Tool_Allowed_Instrument_Class] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Analysis_Tool_Allowed_Instrument_Class]) as s
@@ -644,7 +646,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Param_Files] ON;
             
             MERGE [dbo].[T_Param_Files] AS t
@@ -700,7 +702,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Param_Entries] ON;
             
             MERGE [dbo].[T_Param_Entries] AS t
@@ -758,7 +760,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Mass_Correction_Factors] ON;
             
             MERGE [dbo].[T_Mass_Correction_Factors] AS t
@@ -820,7 +822,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Param_File_Mass_Mods] ON;
             
             MERGE [dbo].[T_Param_File_Mass_Mods] AS t
@@ -871,7 +873,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Settings_Files] ON;
             
             MERGE [dbo].[T_Settings_Files] AS t
@@ -938,7 +940,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Users] ON;
              
             MERGE [dbo].[T_Users] AS t
@@ -1005,7 +1007,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Research_Team] ON;
              
             MERGE [dbo].[T_Research_Team] AS t
@@ -1049,7 +1051,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             
             MERGE [dbo].[T_Research_Team_Membership] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Research_Team_Membership]) as s
@@ -1080,7 +1082,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Campaign] ON;
              
             MERGE [dbo].[T_Campaign] AS t
@@ -1165,7 +1167,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Campaign_Tracking] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Campaign_Tracking]) as s
@@ -1239,7 +1241,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Charge_Code] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Charge_Code]) as s
@@ -1327,7 +1329,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EUS_Users] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EUS_Users]) as s
@@ -1371,7 +1373,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EUS_Proposals] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EUS_Proposals]) as s
@@ -1423,7 +1425,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EUS_Proposal_Users] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EUS_Proposal_Users]) as s
@@ -1463,7 +1465,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EMSL_Instruments] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EMSL_Instruments]) as s
@@ -1520,7 +1522,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EMSL_Instrument_Allocation] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EMSL_Instrument_Allocation]) as s
@@ -1565,7 +1567,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EMSL_Instrument_Usage_Report] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EMSL_Instrument_Usage_Report]) as s
@@ -1642,7 +1644,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_EMSL_DMS_Instrument_Mapping] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_EMSL_DMS_Instrument_Mapping]) as s
@@ -1673,7 +1675,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Instrument_Group_Allocation_Tag] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Group_Allocation_Tag]) as s
@@ -1708,7 +1710,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Instrument_Allocation] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Instrument_Allocation]) as s
@@ -1755,7 +1757,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Instrument_Allocation_Updates] ON;
              
             MERGE [dbo].[T_Instrument_Allocation_Updates] AS t
@@ -1818,7 +1820,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Sample_Labelling] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Sample_Labelling]) as s
@@ -1853,7 +1855,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Enzymes] ON;
              
             MERGE [dbo].[T_Enzymes] AS t
@@ -1917,7 +1919,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Material_Freezers] ON;
              
             MERGE [dbo].[T_Material_Freezers] AS t
@@ -1960,7 +1962,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Material_Locations] ON;
              
             MERGE [dbo].[T_Material_Locations] AS t
@@ -2018,7 +2020,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Material_Containers] ON;
              
             MERGE [dbo].[T_Material_Containers] AS t
@@ -2073,7 +2075,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Sample_Prep_Request] ON;
              
             MERGE [dbo].[T_Sample_Prep_Request] AS t
@@ -2089,7 +2091,7 @@ As
                 t.[Postdigest_internal_std_ID] <> s.[Postdigest_internal_std_ID] OR
                 t.[Facility] <> s.[Facility] OR
                 t.[Number_Of_Biomaterial_Reps_Received] <> s.[Number_Of_Biomaterial_Reps_Received] OR
-              ISNULL( NULLIF(t.[Request_Name], s.[Request_Name]),
+                ISNULL( NULLIF(t.[Request_Name], s.[Request_Name]),
                         NULLIF(s.[Request_Name], t.[Request_Name])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Requester_PRN], s.[Requester_PRN]),
                         NULLIF(s.[Requester_PRN], t.[Requester_PRN])) IS NOT NULL OR
@@ -2149,8 +2151,8 @@ As
                         NULLIF(s.[EUS_UsageType], t.[EUS_UsageType])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[EUS_Proposal_ID], s.[EUS_Proposal_ID]),
                         NULLIF(s.[EUS_Proposal_ID], t.[EUS_Proposal_ID])) IS NOT NULL OR
-                ISNULL( NULLIF(t.[EUS_User_List], s.[EUS_User_List]),
-                        NULLIF(s.[EUS_User_List], t.[EUS_User_List])) IS NOT NULL OR
+                ISNULL( NULLIF(t.[EUS_User_ID], s.[EUS_User_ID]),
+                        NULLIF(s.[EUS_User_ID], t.[EUS_User_ID])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Project_Number], s.[Project_Number]),
                         NULLIF(s.[Project_Number], t.[Project_Number])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Separation_Type], s.[Separation_Type]),
@@ -2222,7 +2224,7 @@ As
                 [Estimated_MS_runs] = s.[Estimated_MS_runs],
                 [EUS_UsageType] = s.[EUS_UsageType],
                 [EUS_Proposal_ID] = s.[EUS_Proposal_ID],
-                [EUS_User_List] = s.[EUS_User_List],
+                [EUS_User_ID] = s.[EUS_User_ID],
                 [Project_Number] = s.[Project_Number],
                 [Facility] = s.[Facility],
                 [Separation_Type] = s.[Separation_Type],
@@ -2242,8 +2244,8 @@ As
                 [Total_Item_Count] = s.[Total_Item_Count],
                 [Material_Container_List] = s.[Material_Container_List]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([ID], [Request_Type], [Request_Name], [Requester_PRN], [Reason], [Cell_Culture_List], [Organism], [Biohazard_Level], [Campaign], [Number_of_Samples], [Sample_Name_List], [Sample_Type], [Prep_Method], [Prep_By_Robot], [Special_Instructions], [Sample_Naming_Convention], [Assigned_Personnel], [Work_Package_Number], [User_Proposal_Number], [Replicates_of_Samples], [Technical_Replicates], [Instrument_Group], [Instrument_Name], [Dataset_Type], [Instrument_Analysis_Specifications], [Comment], [Priority], [Created], [State], [Requested_Personnel], [StateChanged], [UseSingleLCColumn], [Internal_standard_ID], [Postdigest_internal_std_ID], [Estimated_Completion], [Estimated_MS_runs], [EUS_UsageType], [EUS_Proposal_ID], [EUS_User_List], [Project_Number], [Facility], [Separation_Type], [BlockAndRandomizeSamples], [BlockAndRandomizeRuns], [IOPSPermitsCurrent], [Reason_For_High_Priority], [Number_Of_Biomaterial_Reps_Received], [Sample_Submission_Item_Count], [Biomaterial_Item_Count], [Experiment_Item_Count], [Experiment_Group_Item_Count], [Material_Containers_Item_Count], [Requested_Run_Item_Count], [Dataset_Item_Count], [HPLC_Runs_Item_Count], [Total_Item_Count], [Material_Container_List])
-                VALUES(s.[ID], s.[Request_Type], s.[Request_Name], s.[Requester_PRN], s.[Reason], s.[Cell_Culture_List], s.[Organism], s.[Biohazard_Level], s.[Campaign], s.[Number_of_Samples], s.[Sample_Name_List], s.[Sample_Type], s.[Prep_Method], s.[Prep_By_Robot], s.[Special_Instructions], s.[Sample_Naming_Convention], s.[Assigned_Personnel], s.[Work_Package_Number], s.[User_Proposal_Number], s.[Replicates_of_Samples], s.[Technical_Replicates], s.[Instrument_Group], s.[Instrument_Name], s.[Dataset_Type], s.[Instrument_Analysis_Specifications], s.[Comment], s.[Priority], s.[Created], s.[State], s.[Requested_Personnel], s.[StateChanged], s.[UseSingleLCColumn], s.[Internal_standard_ID], s.[Postdigest_internal_std_ID], s.[Estimated_Completion], s.[Estimated_MS_runs], s.[EUS_UsageType], s.[EUS_Proposal_ID], s.[EUS_User_List], s.[Project_Number], s.[Facility], s.[Separation_Type], s.[BlockAndRandomizeSamples], s.[BlockAndRandomizeRuns], s.[IOPSPermitsCurrent], s.[Reason_For_High_Priority], s.[Number_Of_Biomaterial_Reps_Received], s.[Sample_Submission_Item_Count], s.[Biomaterial_Item_Count], s.[Experiment_Item_Count], s.[Experiment_Group_Item_Count], s.[Material_Containers_Item_Count], s.[Requested_Run_Item_Count], s.[Dataset_Item_Count], s.[HPLC_Runs_Item_Count], s.[Total_Item_Count], s.[Material_Container_List])
+                INSERT([ID], [Request_Type], [Request_Name], [Requester_PRN], [Reason], [Cell_Culture_List], [Organism], [Biohazard_Level], [Campaign], [Number_of_Samples], [Sample_Name_List], [Sample_Type], [Prep_Method], [Prep_By_Robot], [Special_Instructions], [Sample_Naming_Convention], [Assigned_Personnel], [Work_Package_Number], [User_Proposal_Number], [Replicates_of_Samples], [Technical_Replicates], [Instrument_Group], [Instrument_Name], [Dataset_Type], [Instrument_Analysis_Specifications], [Comment], [Priority], [Created], [State], [Requested_Personnel], [StateChanged], [UseSingleLCColumn], [Internal_standard_ID], [Postdigest_internal_std_ID], [Estimated_Completion], [Estimated_MS_runs], [EUS_UsageType], [EUS_Proposal_ID], [EUS_User_ID], [Project_Number], [Facility], [Separation_Type], [BlockAndRandomizeSamples], [BlockAndRandomizeRuns], [IOPSPermitsCurrent], [Reason_For_High_Priority], [Number_Of_Biomaterial_Reps_Received], [Sample_Submission_Item_Count], [Biomaterial_Item_Count], [Experiment_Item_Count], [Experiment_Group_Item_Count], [Material_Containers_Item_Count], [Requested_Run_Item_Count], [Dataset_Item_Count], [HPLC_Runs_Item_Count], [Total_Item_Count], [Material_Container_List])
+                VALUES(s.[ID], s.[Request_Type], s.[Request_Name], s.[Requester_PRN], s.[Reason], s.[Cell_Culture_List], s.[Organism], s.[Biohazard_Level], s.[Campaign], s.[Number_of_Samples], s.[Sample_Name_List], s.[Sample_Type], s.[Prep_Method], s.[Prep_By_Robot], s.[Special_Instructions], s.[Sample_Naming_Convention], s.[Assigned_Personnel], s.[Work_Package_Number], s.[User_Proposal_Number], s.[Replicates_of_Samples], s.[Technical_Replicates], s.[Instrument_Group], s.[Instrument_Name], s.[Dataset_Type], s.[Instrument_Analysis_Specifications], s.[Comment], s.[Priority], s.[Created], s.[State], s.[Requested_Personnel], s.[StateChanged], s.[UseSingleLCColumn], s.[Internal_standard_ID], s.[Postdigest_internal_std_ID], s.[Estimated_Completion], s.[Estimated_MS_runs], s.[EUS_UsageType], s.[EUS_Proposal_ID], s.[EUS_User_ID], s.[Project_Number], s.[Facility], s.[Separation_Type], s.[BlockAndRandomizeSamples], s.[BlockAndRandomizeRuns], s.[IOPSPermitsCurrent], s.[Reason_For_High_Priority], s.[Number_Of_Biomaterial_Reps_Received], s.[Sample_Submission_Item_Count], s.[Biomaterial_Item_Count], s.[Experiment_Item_Count], s.[Experiment_Group_Item_Count], s.[Material_Containers_Item_Count], s.[Requested_Run_Item_Count], s.[Dataset_Item_Count], s.[HPLC_Runs_Item_Count], s.[Total_Item_Count], s.[Material_Container_List])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                    Cast(Inserted.[ID] as varchar(12)),
@@ -2268,7 +2270,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Sample_Submission] ON;
              
             MERGE [dbo].[T_Sample_Submission] AS t
@@ -2319,7 +2321,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Organisms] ON;
              
             MERGE [dbo].[T_Organisms] AS t
@@ -2412,7 +2414,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Cell_Culture] ON;
              
             MERGE [dbo].[T_Cell_Culture] AS t
@@ -2494,7 +2496,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Reference_Compound] ON;
 
             MERGE [dbo].[T_Reference_Compound] AS t
@@ -2567,7 +2569,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Experiments] ON;
              
             MERGE [dbo].[T_Experiments] AS t
@@ -2659,7 +2661,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Experiment_Cell_Cultures] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Experiment_Cell_Cultures]) as s
@@ -2690,7 +2692,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Experiment_Reference_Compounds] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Experiment_Reference_Compounds]) as s
@@ -2721,7 +2723,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Cached_Experiment_Components] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Cached_Experiment_Components]) as s
@@ -2769,7 +2771,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
  
             MERGE [dbo].[T_Separation_Group] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Separation_Group]) as s
@@ -2807,7 +2809,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Secondary_Sep] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Secondary_Sep]) as s
@@ -2848,7 +2850,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_LC_Column] ON;
              
             MERGE [dbo].[T_LC_Column] AS t
@@ -2910,7 +2912,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_LC_cart] ON;
              
             MERGE [dbo].[T_LC_cart] AS t
@@ -2953,7 +2955,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Dataset] ON;
              
             MERGE [dbo].[T_Dataset] AS t
@@ -3073,7 +3075,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Dataset_Info] AS t
             USING (SELECT DISource.* 
@@ -3156,7 +3158,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
  
             MERGE [dbo].[T_Dataset_QC] AS t
             USING (SELECT QCSource.* 
@@ -3320,7 +3322,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Archive_Path] ON;
              
             MERGE [dbo].[T_Archive_Path] AS t
@@ -3377,7 +3379,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
  
             MERGE [dbo].[T_Dataset_Archive] AS t
             USING (SELECT DSArchSource.* 
@@ -3461,7 +3463,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Prep_LC_Run_Dataset] AS t
             USING (SELECT PrepLCSource.* 
@@ -3494,7 +3496,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Requested_Run_Batches] ON;
              
             MERGE [dbo].[T_Requested_Run_Batches] AS t
@@ -3562,7 +3564,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Requested_Run] ON;
              
             MERGE [dbo].[T_Requested_Run] AS t
@@ -3704,7 +3706,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
  
             MERGE [dbo].[T_Requested_Run_EUS_Users] AS t
             USING (SELECT RRSource.* 
@@ -3737,7 +3739,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Requested_Run_Status_History] ON;
              
             MERGE [dbo].[T_Requested_Run_Status_History] AS t
@@ -3804,7 +3806,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Analysis_State_Name] AS t
             USING (SELECT * FROM [DMS5].[dbo].[T_Analysis_State_Name]) as s
@@ -3842,7 +3844,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Predefined_Analysis] ON;
              
             MERGE [dbo].[T_Predefined_Analysis] AS t
@@ -3956,7 +3958,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Analysis_Job_Request] ON;
              
             MERGE [dbo].[T_Analysis_Job_Request] AS t
@@ -4030,7 +4032,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Analysis_Job_ID] ON;
              
             MERGE [dbo].[T_Analysis_Job_ID] AS t
@@ -4077,7 +4079,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
             SET IDENTITY_INSERT [dbo].[T_Analysis_Job_Batches] ON;
              
             MERGE [dbo].[T_Analysis_Job_Batches] AS t
@@ -4118,7 +4120,7 @@ As
         Print 'Updating ' + @tableName
         If @infoOnly = 0 and 3 = 4
         Begin
-            Truncate Table #Tmp_SummaryOfChanges
+            DELETE FROM #Tmp_SummaryOfChanges
              
             MERGE [dbo].[T_Analysis_Job] AS t
             USING (SELECT AJSource.* 

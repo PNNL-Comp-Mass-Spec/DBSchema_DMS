@@ -43,7 +43,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Estimated_MS_runs] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_UsageType] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[EUS_User_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EUS_User_ID] [int] NULL,
 	[Project_Number] [varchar](15) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Facility] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Separation_Type] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -88,6 +88,13 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request] ON [dbo].[T_Sample_P
 	[Request_Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Sample_Prep_Request_EUS_User_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_EUS_User_ID] ON [dbo].[T_Sample_Prep_Request]
+(
+	[EUS_User_ID] ASC
+)
+INCLUDE ( 	[ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Request_Type]  DEFAULT ('Default') FOR [Request_Type]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Dataset_Type]  DEFAULT ('Normal') FOR [Dataset_Type]
@@ -120,6 +127,11 @@ REFERENCES [dbo].[T_EUS_UsageType] ([Name])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_UsageType]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Users] FOREIGN KEY([EUS_User_ID])
+REFERENCES [dbo].[T_EUS_Users] ([PERSON_ID])
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_EUS_Users]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Sample_Prep_Request_T_Internal_Standards] FOREIGN KEY([Internal_standard_ID])
 REFERENCES [dbo].[T_Internal_Standards] ([Internal_Std_Mix_ID])
