@@ -14,17 +14,18 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 **  Auth:   mem
 **  Date:   05/19/2014 mem - Initial version
 **          05/20/2014 mem - Switched from InstrumentGroup to InstrumentName
-**          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
 **
 *****************************************************/
 (
     @RequestName varchar(128),
-     @RequesterPRN varchar(32),
+    @RequesterPRN varchar(32),
     @Reason varchar(512),
     @BiomaterialList varchar(1024),
     @Organism varchar(128),
@@ -40,7 +41,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
     @ProjectNumber varchar(15),
     @eusProposalID varchar(10),
     @eusUsageType varchar(50),
-    @eusUsersList varchar(1024),
+    @eusUserID int,                     -- Use Null or 0 if no EUS User ID
     @InstrumentName varchar(128),
     @DatasetType varchar(50),
     @InstrumentAnalysisSpecifications varchar(512),
@@ -54,26 +55,31 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
     
-    DECLARE @msg varchar(512) 
+    Declare @msg varchar(512) 
 
-    declare @currentStateID int
+    Declare @currentStateID int
     
-    DECLARE @retireMaterial INT
-    IF @State = 'Closed (containers and material)'
-    BEGIN
+    Declare @retireMaterial INT
+    If IsNull(@State, '') = 'Closed (containers and material)'
+    Begin
         SET @retireMaterial = 1
         SET @State = 'Closed'
-    END
-    ELSE 
+    End
+    Else 
+    Begin
         SET @retireMaterial = 0
+    End
 
     Declare @RequestType varchar(16) = 'RNA'
     Declare @InstrumentGroup varchar(64) = ''
+
+    If IsNull(@eusUserID, 0) <= 0
+        Set @eusUserID = Null
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -82,11 +88,11 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateRNAPrepRequest', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
-    BEGIN TRY 
+    Begin Try 
 
     ---------------------------------------------------
     -- Validate input fields
@@ -100,8 +106,8 @@ As
     -- Validate dataset type
     ---------------------------------------------------
     --
-    IF NOT (@InstrumentName IN ('', 'none', 'na'))
-    begin
+    If NOT (@InstrumentName IN ('', 'none', 'na'))
+    Begin
         If IsNull(@DatasetType, '') = ''
             RAISERROR ('Dataset type cannot be empty since the Instrument Name is defined', 11, 118)
     
@@ -109,7 +115,7 @@ As
         -- Validate the instrument name
         ---------------------------------------------------
                 
-        IF NOT EXISTS (SELECT * FROM T_Instrument_Name WHERE IN_Name = @InstrumentName)
+        If NOT EXISTS (SELECT * FROM T_Instrument_Name WHERE IN_Name = @InstrumentName)
         Begin
             -- Check whether @InstrumentName actually has an instrument group
             --
@@ -131,28 +137,26 @@ As
         -- validate instrument group and dataset type
         ---------------------------------------------------
         
-        declare @datasetTypeID int
+        Declare @datasetTypeID int
         --
         exec @myError = ValidateInstrumentGroupAndDatasetType
                                 @DatasetType,
                                 @instrumentGroup,
                                 @datasetTypeID output,
                                 @msg output 
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
-    end                
-        
+    End                
                             
     ---------------------------------------------------
     -- Resolve campaign ID
     ---------------------------------------------------
 
-    declare @campaignID int
-    SET @campaignID = 0
+    Declare @campaignID int = 0
     --
     execute @campaignID = GetCampaignID @Campaign
     --
-    if @campaignID = 0
+    If @campaignID = 0
         RAISERROR('Could not find entry in database for campaignNum "%s"', 11, 14, @Campaign)
 
     ---------------------------------------------------
@@ -167,7 +171,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Could not create temporary table for biomaterial list', 11, 78)
 
     -- get biomaterial names from list argument into table
@@ -177,13 +181,13 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Could not populate temporary table for biomaterial list', 11, 79)
 
-    -- verify that biomaterial items exist
+    -- Verify that biomaterial items exist
     --
-    declare @cnt int
-    set @cnt = -1
+    Declare @cnt int = -1
+
     SELECT @cnt = count(*) 
     FROM #Tmp_BioMaterial 
     WHERE [name] not in (
@@ -193,45 +197,45 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Was not able to check for biomaterial in database', 11, 80)
     --
-    if @cnt <> 0 
+    If @cnt <> 0 
         RAISERROR ('One or more biomaterial items was not in database', 11, 81)
 
     ---------------------------------------------------
     -- Resolve organism ID
     ---------------------------------------------------
 
-    declare @organismID int
+    Declare @organismID int
     execute @organismID = GetOrganismID @Organism
-    if @organismID = 0
+    If @organismID = 0
         RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
 
     ---------------------------------------------------
-    -- convert estimated completion date
+    -- Convert estimated completion date
     ---------------------------------------------------
-    declare @EstimatedCompletionDate datetime
+    Declare @EstimatedCompletionDate datetime
 
-    if @EstimatedCompletion <> ''
-    begin
-        set @EstimatedCompletionDate = CONVERT(datetime, @EstimatedCompletion)
-    end
+    If @EstimatedCompletion <> ''
+    Begin
+        Set @EstimatedCompletionDate = CONVERT(datetime, @EstimatedCompletion)
+    End
   
     ---------------------------------------------------
-    -- force values of some properties for add mode
+    -- Force values of some properties for add mode
     ---------------------------------------------------
   
-    if @mode = 'add'
-    begin
-        set @State = 'Pending Approval'        
-    end
+    If @mode = 'add'
+    Begin
+        Set @State = 'Pending Approval'        
+    End
 
     ---------------------------------------------------
     -- Convert state name to ID
     ---------------------------------------------------
-    declare @StateID int
-    set @StateID = 0
+
+    Declare @StateID int = 0
     --
     SELECT  @StateID = State_ID
     FROM  T_Sample_Prep_Request_State_Name
@@ -239,24 +243,45 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-      RAISERROR ('Error trying to resolving state name', 11, 83)
+    If @myError <> 0
+        RAISERROR ('Error trying to resolving state name', 11, 83)
     --
-    if @StateID = 0
+    If @StateID = 0
         RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
     
     ---------------------------------------------------
-    -- validate EUS type, proposal, and user list
+    -- Validate EUS type, proposal, and user list
+    --
+    -- This procedure accepts a list of EUS User IDs, 
+    -- so we convert to a string before calling it, 
+    -- then convert back to an integer afterward
     ---------------------------------------------------
-    declare @eusUsageTypeID int
+
+    Declare @eusUsageTypeID int
+    Declare @eusUsersList varchar(1024) = ''
+
+    If IsNull(@eusUserID, 0) > 0
+    Begin
+        Set @eusUsersList = Cast(@eusUserID As varchar(12))
+        Set @eusUserID = Null
+    End
+
     exec @myError = ValidateEUSUsage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
                         @eusUsageTypeID output,
                         @msg output
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+
+    If Len(IsNull(@eusUsersList, '')) > 0
+    Begin
+        Set @eusUserID = Try_Cast(@eusUsersList As int)
+
+        If IsNull(@eusUserID, 0) <= 0
+            Set @eusUserID = Null
+    End
 
     ---------------------------------------------------
     -- Validate the work package
@@ -279,18 +304,25 @@ As
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
             Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 512)
     End
+
+    -- Make sure the Work Package is capitalized properly
+    --
+    SELECT @workPackageNumber = Charge_Code
+    FROM T_Charge_Code 
+    WHERE Charge_Code = @workPackageNumber
+
     
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
 
-    if @mode = 'update'
-    begin
-        -- cannot update a non-existent entry
+    If @mode = 'update'
+    Begin
+        -- Cannot update a non-existent entry
         --
         Declare @tmp int = 0
         Declare @RequestTypeExisting varchar(16)
-        set @currentStateID = 0        
+        Set @currentStateID = 0        
         --
         SELECT 
             @tmp = ID, 
@@ -304,17 +336,17 @@ As
         If @myError <> 0 OR @tmp = 0
             RAISERROR ('No entry could be found in database for update', 11, 7)
 
-        -- changes not allowed if in "closed" state
+        -- Changes not allowed if in "closed" state
         --
         If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
         If @RequestTypeExisting <> @RequestType
             RAISERROR ('Cannot edit requests of type %s with the rna_prep_request page; use http://dms2.pnl.gov/sample_prep_request/report', 11, 7, @RequestTypeExisting)
-    end
+    End
 
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
         -- name must be unique
         --
         SELECT @myRowCount = count(*)
@@ -323,7 +355,7 @@ As
         --
         SELECT @myError = @@error
         --
-        if @myError <> 0 OR @myRowCount> 0
+        If @myError <> 0 OR @myRowCount> 0
             RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
             
         -- Make sure the work package number is not inactive
@@ -340,13 +372,13 @@ As
 
         If @ActivationState >= 3
             RAISERROR ('Cannot use inactive Work Package "%s" for a new RNA prep request', 11, 8, @WorkPackageNumber)
-    end
+    End
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
-    if @Mode = 'add'
-    begin
+    If @Mode = 'add'
+    Begin
             
         INSERT INTO T_Sample_Prep_Request (
             Request_Name, 
@@ -366,7 +398,7 @@ As
             Project_Number,
             EUS_UsageType, 
             EUS_Proposal_ID, 
-            EUS_User_List,
+            EUS_User_ID,
             Instrument_Analysis_Specifications, 
             State, 
             Instrument_Group,
@@ -392,7 +424,7 @@ As
             @ProjectNumber,
             @eusUsageType,
             @eusProposalID,
-            @eusUsersList,
+            @eusUserID,
             @InstrumentAnalysisSpecifications, 
             @StateID,
             @InstrumentGroup,
@@ -404,37 +436,37 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Insert operation failed:%d', 11, 7, @myError)
 
         -- Return ID of newly created entry
         --
-        set @ID = SCOPE_IDENTITY()
+        Set @ID = SCOPE_IDENTITY()
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
             Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser, 
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
-    end -- add mode
+    End -- Add mode
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
-    if @Mode = 'update' AND @retireMaterial = 1
-    BEGIN
+    If @Mode = 'update' AND @retireMaterial = 1
+    Begin
         EXEC @myError = DoSamplePrepMaterialOperation
                             @ID,
                             'retire_all',
                             @message output,
                             @callingUser
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
-    END 
+    End 
     --
-    if @Mode = 'update' 
-    begin
-        set @myError = 0
+    If @Mode = 'update' 
+    Begin
+        Set @myError = 0
         --
         UPDATE T_Sample_Prep_Request 
         SET 
@@ -455,7 +487,7 @@ As
             Project_Number = @ProjectNumber,
             EUS_Proposal_ID = @eusProposalID,
             EUS_UsageType = @eusUsageType,
-            EUS_User_List = @eusUsersList,
+            EUS_User_ID = @eusUserID,
             Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications, 
             State = @StateID,
             Instrument_Group = @InstrumentGroup,
@@ -466,7 +498,7 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Update operation failed: "%d"', 11, 4, @ID)
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
@@ -474,18 +506,18 @@ As
             Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser, 
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
-    end -- update mode
+    End -- update mode
 
-    END TRY
-    BEGIN CATCH 
+    End Try
+    Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
         
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
             
         Exec PostLogEntry 'Error', @message, 'AddUpdateRNAPrepRequest'
-    END CATCH
+    End Catch
     return @myError
 
 GO
