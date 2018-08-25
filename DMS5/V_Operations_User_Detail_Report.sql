@@ -5,7 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Operations_User_Detail_Report]
-AS
+As
+-- Note that GetOperationDMSUsersNameList only includes Active users
 SELECT Operation,
        Operation_Description AS Description,
        dbo.GetOperationDMSUsersNameList(ID, 1) AS [Assigned Users]
