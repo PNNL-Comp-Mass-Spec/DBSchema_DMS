@@ -20,6 +20,7 @@ CREATE Procedure [dbo].[UpdateMaterialContainers]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Add mode 'unretire_container'
 **                         - Do not allow updating containers of type 'na'
+**          08/27/2018 mem - Rename the view Material Location list report view
 **
 *****************************************************/
 (
@@ -31,8 +32,8 @@ CREATE Procedure [dbo].[UpdateMaterialContainers]
     @callingUser varchar(128) = ''
 )
 As
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -41,9 +42,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'UpdateMaterialContainers', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
     
     ---------------------------------------------------
     -- Validate the inputs
@@ -59,7 +60,7 @@ As
     -- temporary table to hold containers
     ---------------------------------------------------
 
-    declare @material_container_list TABLE (
+    Declare @material_container_list TABLE (
         ID int,
         iName varchar(128),
         iLocation varchar(64),
@@ -103,7 +104,7 @@ As
 
     -- Remember how many containers are in the list
     --
-    declare @numContainers int = @myRowCount
+    Declare @numContainers int = @myRowCount
 
     If @numContainers = 0
     Begin
@@ -138,18 +139,18 @@ As
     -- resolve location to ID (according to mode)
     ---------------------------------------------------
     --
-    declare @location varchar(128) = 'None' -- the null location
+    Declare @location varchar(128) = 'None' -- the null location
     --
-    declare @locID int = 1  -- the null location
+    Declare @locID int = 1  -- the null location
     --
     if @mode = 'move_container'
     begin -- <c>
         set @location = @newValue
         set @locID = 0
         --
-        declare @contCount int
-        declare @locLimit int
-        declare @locStatus varchar(64)
+        Declare @contCount int
+        Declare @locLimit int
+        Declare @locStatus varchar(64)
         --
         set @contCount = 0
         set @locLimit = 0
@@ -160,7 +161,7 @@ As
             @contCount = Containers,
             @locLimit = Limit, 
             @locStatus = [Status]
-        FROM  V_Material_Locations_List_Report
+        FROM  V_Material_Location_List_Report
         WHERE Location = @location
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -198,7 +199,7 @@ As
     ---------------------------------------------------
     -- determine whether or not any containers have contents
     ---------------------------------------------------
-    declare @c int = 1
+    Declare @c int = 1
     --
     SELECT @c = count(*)
     FROM @material_container_list
@@ -264,7 +265,7 @@ return 0
     -- start transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(32) = 'UpdateMaterialContainers'
+    Declare @transName varchar(32) = 'UpdateMaterialContainers'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -295,7 +296,7 @@ return 0
     -- Set up appropriate label for log
     ---------------------------------------------------
 
-    declare @moveType varchar(128) = '??'
+    Declare @moveType varchar(128) = '??'
 
     if @mode = 'retire_container'
         set @moveType = 'Container Retirement'

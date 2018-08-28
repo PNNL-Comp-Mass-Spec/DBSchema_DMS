@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Material_Locations_List_Report] ******/
+/****** Object:  View [dbo].[V_Material_Location_List_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Material_Locations_List_Report]
+CREATE VIEW [dbo].[V_Material_Location_List_Report]
 AS
 SELECT ML.Tag AS [Location],
        T_Material_Freezers.Freezer,
@@ -29,5 +29,5 @@ GROUP BY ML.ID, T_Material_Freezers.Freezer, ML.Shelf, ML.Rack, ML.[Row],
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Material_Locations_List_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Material_Location_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

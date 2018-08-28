@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Locations_Available_List_Report]
 AS
-SELECT Location,
+SELECT [Location],
        Freezer,
        Shelf,
        Rack,
-       Row,
+       [Row],
        Col,
        [Comment],
        Limit,
@@ -18,7 +18,7 @@ SELECT Location,
        Available,
        'New Container' AS [Action],
        [#ID]
-FROM dbo.V_Material_Locations_List_Report
+FROM dbo.V_Material_Location_List_Report
 WHERE Available > 0 AND
       Status = 'Active'
 
