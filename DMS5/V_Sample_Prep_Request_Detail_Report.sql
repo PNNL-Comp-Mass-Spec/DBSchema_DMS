@@ -61,10 +61,11 @@ SELECT  SPR.ID,
         SPR.Dataset_Item_Count AS [Dataset Item Count],
         SPR.HPLC_Runs_Item_Count AS [HPLC Runs Item Count],
         SPR.Total_Item_Count,
-        CASE WHEN SPR.State <> 5
-                  AND CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
-             ELSE CC.Activation_State
-        END AS #WPActivationState 
+        CASE
+        WHEN SPR.State <> 5 AND
+             CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, return 10 for #WPActivationState
+        ELSE CC.Activation_State
+        END AS #WPActivationState
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name AS SN
        ON SPR.State = SN.State_ID
@@ -84,6 +85,7 @@ FROM T_Sample_Prep_Request AS SPR
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON SPR.Tissue_ID = BTO.Identifier
+WHERE SPR.Request_Type = 'Default'
 
 
 GO
