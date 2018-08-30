@@ -24,6 +24,8 @@ SELECT C.Campaign_Num AS Campaign,
        CT.Most_Recent_Activity AS [Most Recent Activity],
        CT.Cell_Culture_Count AS Biomaterial,
        CT.Cell_Culture_Most_Recent AS [Most Recent Biomaterial],
+       CT.Sample_Submission_Count As [Samples Submitted],
+       CT.Sample_Submission_Most_Recent As [Most Recent Sample Submission],
        CT.Sample_Prep_Request_Count AS [Sample Prep Requests],
        CT.Sample_Prep_Request_Most_Recent AS [Most Recent Sample Prep Request],
        CT.Experiment_Count AS Experiments,
@@ -43,7 +45,6 @@ FROM T_Campaign AS C
        ON CT.C_ID = C.Campaign_ID
      INNER JOIN T_Data_Release_Restrictions
        ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
-
 
 
 GO

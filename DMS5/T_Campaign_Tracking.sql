@@ -5,6 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Campaign_Tracking](
 	[C_ID] [int] NOT NULL,
+	[Sample_Submission_Count] [int] NULL,
 	[Cell_Culture_Count] [int] NOT NULL,
 	[Experiment_Count] [int] NOT NULL,
 	[Dataset_Count] [int] NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE [dbo].[T_Campaign_Tracking](
 	[Run_Request_Count] [int] NOT NULL,
 	[Sample_Prep_Request_Count] [int] NOT NULL,
 	[Data_Package_Count] [int] NULL,
+	[Sample_Submission_Most_Recent] [datetime] NULL,
 	[Cell_Culture_Most_Recent] [datetime] NULL,
 	[Experiment_Most_Recent] [datetime] NULL,
 	[Dataset_Most_Recent] [datetime] NULL,
@@ -27,6 +29,8 @@ CREATE TABLE [dbo].[T_Campaign_Tracking](
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Campaign_Tracking] TO [DDL_Viewer] AS [dbo]
+GO
+ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Sample_Submission_Count]  DEFAULT ((0)) FOR [Sample_Submission_Count]
 GO
 ALTER TABLE [dbo].[T_Campaign_Tracking] ADD  CONSTRAINT [DF_T_Campaign_Tracking_Cell_Culture_Count]  DEFAULT ((0)) FOR [Cell_Culture_Count]
 GO
