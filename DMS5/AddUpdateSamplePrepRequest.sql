@@ -46,7 +46,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          04/05/2013 mem - Now requiring that @EstimatedMSRuns be defined.  If it is non-zero, then instrument group, dataset type, and separation group must also be defined
 **          04/08/2013 grk - Added @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent
 **          04/09/2013 grk - disregarding internal standards
-**          04/09/2013 grk - chaged priority to text "Normal/High", added @NumberOfBiomaterialRepsReceived, removed Facility field
+**          04/09/2013 grk - changed priority to text "Normal/High", added @NumberOfBiomaterialRepsReceived, removed Facility field
 **          04/09/2013 mem - Renamed parameter @InstrumentName to @InstrumentGroup
 **                         - Renamed parameter @SeparationType to @SeparationGroup
 **          05/02/2013 mem - Now validating that fields @BlockAndRandomizeSamples, @BlockAndRandomizeRuns, and @IOPSPermitsCurrent are 'Yes', 'No', '', or Null
@@ -78,6 +78,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
+**          08/29/2018 mem - Remove call to DoSamplePrepMaterialOperation since we stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
 **
 *****************************************************/
 (
@@ -106,7 +107,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @InstrumentAnalysisSpecifications varchar(512),
     @Comment varchar(2048),
     @Priority varchar(12),
-    @State varchar(32),
+    @State varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
     @ID int output,
     @SeparationGroup varchar(256),              -- Separation group    
     @BlockAndRandomizeSamples char(3),          -- 'Yes', 'No', or 'na'
@@ -129,15 +130,15 @@ As
 
     Declare @currentStateID int
     
-    Declare @retireMaterial INT
     IF IsNull(@State, '') = 'Closed (containers and material)'
     Begin
-        SET @retireMaterial = 1
+        -- Prior to September 2018, we would also look for biomaterial (cell cultures)
+        -- and would close them if @State was 'Closed (containers and material)'
+        -- by calling DoSamplePrepMaterialOperation
+        --
+        -- We stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017 
+        -- so simply change the state to Closed
         SET @State = 'Closed'
-    End
-    Else
-    Begin
-        SET @retireMaterial = 0
     End
 
     Declare @RequestType varchar(16) = 'Default'
@@ -771,19 +772,6 @@ As
     Begin
         Begin transaction @transName
         
-        If @retireMaterial = 1
-        Begin
-            EXEC @myError = DoSamplePrepMaterialOperation
-                                @ID,
-                                'retire_all',
-                                @message output,
-                                @callingUser
-            If @myError <> 0
-                RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
-        End
-        
-        Set @myError = 0
-        --
         UPDATE T_Sample_Prep_Request 
         SET 
             Request_Name = @RequestName, 
