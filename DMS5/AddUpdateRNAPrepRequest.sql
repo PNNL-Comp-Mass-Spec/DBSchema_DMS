@@ -21,13 +21,14 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
+**          08/29/2018 mem - Remove parameters @BiomaterialList,  @ProjectNumber, and @NumberOfBiomaterialRepsReceived
+**                         - Remove call to DoSamplePrepMaterialOperation
 **
 *****************************************************/
 (
     @RequestName varchar(128),
     @RequesterPRN varchar(32),
     @Reason varchar(512),
-    @BiomaterialList varchar(1024),
     @Organism varchar(128),
     @BiohazardLevel varchar(12),
     @Campaign varchar(128),
@@ -38,17 +39,15 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
     @SampleNamingConvention varchar(128),
     @EstimatedCompletion varchar(32),
     @WorkPackageNumber varchar(64),
-    @ProjectNumber varchar(15),
     @eusProposalID varchar(10),
     @eusUsageType varchar(50),
-    @eusUserID int,                     -- Use Null or 0 if no EUS User ID
+    @eusUserID int,                             -- Use Null or 0 if no EUS User ID
     @InstrumentName varchar(128),
     @DatasetType varchar(50),
     @InstrumentAnalysisSpecifications varchar(512),
-    @State varchar(32),
+    @State varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
     @ID int output,
-    @NumberOfBiomaterialRepsReceived int,
-    @mode varchar(12) = 'add',                -- 'add' or 'update'
+    @mode varchar(12) = 'add',                  -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
@@ -63,17 +62,6 @@ As
     Declare @msg varchar(512) 
 
     Declare @currentStateID int
-    
-    Declare @retireMaterial INT
-    If IsNull(@State, '') = 'Closed (containers and material)'
-    Begin
-        SET @retireMaterial = 1
-        SET @State = 'Closed'
-    End
-    Else 
-    Begin
-        SET @retireMaterial = 0
-    End
 
     Declare @RequestType varchar(16) = 'RNA'
     Declare @InstrumentGroup varchar(64) = ''
@@ -158,50 +146,6 @@ As
     --
     If @campaignID = 0
         RAISERROR('Could not find entry in database for campaignNum "%s"', 11, 14, @Campaign)
-
-    ---------------------------------------------------
-    -- Resolve biomaterial (cell cultures)
-    ---------------------------------------------------
-
-    -- Create tempoary table to hold biomaterial names as input
-    --
-    create table #Tmp_BioMaterial (
-        name varchar(128) not null
-    )
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-        RAISERROR ('Could not create temporary table for biomaterial list', 11, 78)
-
-    -- get biomaterial names from list argument into table
-    --
-    INSERT INTO #Tmp_BioMaterial (name) 
-    SELECT item FROM MakeTableFromListDelim(@BiomaterialList, ';')
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-        RAISERROR ('Could not populate temporary table for biomaterial list', 11, 79)
-
-    -- Verify that biomaterial items exist
-    --
-    Declare @cnt int = -1
-
-    SELECT @cnt = count(*) 
-    FROM #Tmp_BioMaterial 
-    WHERE [name] not in (
-        SELECT CC_Name
-        FROM    T_Cell_Culture
-    )
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-        RAISERROR ('Was not able to check for biomaterial in database', 11, 80)
-    --
-    If @cnt <> 0 
-        RAISERROR ('One or more biomaterial items was not in database', 11, 81)
 
     ---------------------------------------------------
     -- Resolve organism ID
@@ -384,7 +328,6 @@ As
             Request_Name, 
             Requester_PRN, 
             Reason,
-            Cell_Culture_List, 
             Organism, 
             Biohazard_Level, 
             Campaign, 
@@ -395,7 +338,6 @@ As
             Sample_Naming_Convention, 
             Estimated_Completion,
             Work_Package_Number, 
-            Project_Number,
             EUS_UsageType, 
             EUS_Proposal_ID, 
             EUS_User_ID,
@@ -404,13 +346,11 @@ As
             Instrument_Group,
             Instrument_Name, 
             Dataset_Type,
-            Number_Of_Biomaterial_Reps_Received,
             Request_Type                    
         ) VALUES (
             @RequestName, 
             @RequesterPRN, 
             @Reason,
-            @BiomaterialList, 
             @Organism,
             @BiohazardLevel,
             @Campaign, 
@@ -421,7 +361,6 @@ As
             @SampleNamingConvention, 
             @EstimatedCompletionDate,
             @WorkPackageNumber, 
-            @ProjectNumber,
             @eusUsageType,
             @eusProposalID,
             @eusUserID,
@@ -430,7 +369,6 @@ As
             @InstrumentGroup,
             @InstrumentName,
             @DatasetType,
-            @NumberOfBiomaterialRepsReceived,
             @RequestType                    
         )
         --
@@ -453,16 +391,6 @@ As
     ---------------------------------------------------
     -- Action for update mode
     ---------------------------------------------------
-    If @Mode = 'update' AND @retireMaterial = 1
-    Begin
-        EXEC @myError = DoSamplePrepMaterialOperation
-                            @ID,
-                            'retire_all',
-                            @message output,
-                            @callingUser
-        If @myError <> 0
-            RAISERROR ('DoSamplePrepMaterialOperation failed:%d, %s', 11, 7, @myError, @message)
-    End 
     --
     If @Mode = 'update' 
     Begin
@@ -473,7 +401,6 @@ As
             Request_Name = @RequestName, 
             Requester_PRN = @RequesterPRN, 
             Reason = @Reason,
-            Cell_Culture_List = @BiomaterialList, 
             Organism = @Organism, 
             Biohazard_Level = @BiohazardLevel, 
             Campaign = @Campaign, 
@@ -484,7 +411,6 @@ As
             Sample_Naming_Convention = @SampleNamingConvention, 
             Estimated_Completion = @EstimatedCompletionDate,
             Work_Package_Number = @WorkPackageNumber, 
-            Project_Number = @ProjectNumber,
             EUS_Proposal_ID = @eusProposalID,
             EUS_UsageType = @eusUsageType,
             EUS_User_ID = @eusUserID,
@@ -492,8 +418,7 @@ As
             State = @StateID,
             Instrument_Group = @InstrumentGroup,
             Instrument_Name = @InstrumentName, 
-            Dataset_Type = @DatasetType,
-            Number_Of_Biomaterial_Reps_Received = @NumberOfBiomaterialRepsReceived 
+            Dataset_Type = @DatasetType
         WHERE (ID = @ID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
