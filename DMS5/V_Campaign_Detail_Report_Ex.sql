@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Campaign_Detail_Report_Ex] as 
+CREATE view [dbo].[V_Campaign_Detail_Report_Ex]
+AS
 SELECT C.Campaign_Num AS Campaign,
        C.CM_Project_Num AS Project,
        C.CM_State AS State,
@@ -36,8 +37,7 @@ SELECT C.Campaign_Num AS Campaign,
        CT.Dataset_Most_Recent AS [Most Recent Dataset],
        CT.Job_Count AS [Analysis Jobs],
        CT.Job_Most_Recent AS [Most Recent Analysis Job],
-	   CT.Data_Package_Count AS [Data Packages],
-       dbo.GetMyEMSLUrlCampaign(C.Campaign_Num) [MyEMSL URL]
+	   CT.Data_Package_Count AS [Data Packages]
 FROM T_Campaign AS C
      LEFT OUTER JOIN T_Research_Team AS RT
        ON C.CM_Research_Team = RT.ID
