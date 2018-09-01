@@ -8,10 +8,10 @@ CREATE VIEW [dbo].[V_Cell_Culture_Detail_Report]
 AS
 SELECT U.CC_Name AS [Name],
        U.CC_Source_Name AS Supplier,
-       Case When U_Contact.U_Name Is Null 
-            Then U.CC_Contact_PRN 
-            Else U_Contact.Name_with_PRN 
-       End AS [Contact (usually PNNL Staff)],
+       CASE
+           WHEN U_Contact.U_Name IS NULL THEN U.CC_Contact_PRN
+           ELSE U_Contact.Name_with_PRN
+       END AS [Contact (usually PNNL Staff)],
        CTN.Name AS [Type],
        U.CC_Reason AS Reason,
        U.CC_Created AS Created,
@@ -20,8 +20,11 @@ SELECT U.CC_Name AS [Name],
        C.Campaign_Num AS Campaign,
        U.CC_ID AS ID,
        MC.Tag AS Container,
-       L.Tag AS [Location],
-	  dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
+       ML.Tag AS [Location],
+       dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
+       U.Mutation,
+       U.Plasmid,
+       U.Cell_Line As [Cell Line],
        U.CC_Material_Active AS [Material Status]
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
@@ -30,8 +33,8 @@ FROM T_Cell_Culture U
        ON U.CC_Campaign_ID = C.Campaign_ID
      INNER JOIN T_Material_Containers MC
        ON U.CC_Container_ID = MC.ID
-     INNER JOIN T_Material_Locations L
-       ON MC.Location_ID = L.ID
+     INNER JOIN T_Material_Locations ML
+       ON MC.Location_ID = ML.ID
      LEFT OUTER JOIN T_Users U_Contact
        ON U.CC_Contact_PRN = U_Contact.U_PRN
      LEFT OUTER JOIN T_Users U_PI

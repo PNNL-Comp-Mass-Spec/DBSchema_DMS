@@ -15,7 +15,10 @@ SELECT U.CC_Name AS [Name],
        U.CC_Comment,
        C.Campaign_Num,
        MC.Tag AS Container,
-	  dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List
+       dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
+       U.Mutation,
+       U.Plasmid,
+       U.Cell_Line
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

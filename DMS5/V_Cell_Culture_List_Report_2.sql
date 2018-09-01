@@ -18,16 +18,19 @@ SELECT U.CC_ID AS ID,
        C.Campaign_Num AS Campaign,
        MC.Tag AS Container,
        ML.Tag AS Location,
-	   Cached_Organism_List AS Organisms,
-       U.CC_Material_Active AS [Material Status]      
-FROM dbo.T_Cell_Culture U
-     INNER JOIN dbo.T_Cell_Culture_Type_Name CTN
+       Cached_Organism_List AS Organisms,
+       U.Mutation,
+       U.Plasmid,
+       U.Cell_Line As [Cell Line],
+       U.CC_Material_Active AS [Material Status]
+FROM T_Cell_Culture U
+     INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID
-     INNER JOIN dbo.T_Campaign C
+     INNER JOIN T_Campaign C
        ON U.CC_Campaign_ID = C.Campaign_ID
-     INNER JOIN dbo.T_Material_Containers MC
+     INNER JOIN T_Material_Containers MC
        ON U.CC_Container_ID = MC.ID
-     INNER JOIN dbo.T_Material_Locations ML
+     INNER JOIN T_Material_Locations ML
        ON MC.Location_ID = ML.ID
      LEFT OUTER JOIN T_Users U_Contact
        ON U.CC_Contact_PRN = U_Contact.U_PRN

@@ -25,6 +25,9 @@ CREATE TABLE [dbo].[T_Cell_Culture](
 	[Peptide_Purity] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Purchase_Quantity] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Cached_Organism_List] [varchar](1500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Mutation] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Plasmid] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Cell_Line] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Cell_Culture] PRIMARY KEY NONCLUSTERED 
 (
 	[CC_ID] ASC
