@@ -83,6 +83,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @reqName when creating a new requested run
 **
 *****************************************************/
 (
@@ -118,19 +119,19 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
     set @message = ''
 
-    declare @msg varchar(512)
-    declare @InstrumentMatch varchar(64)
+    Declare @msg varchar(512)
+    Declare @InstrumentMatch varchar(64)
         
     -- default priority at which new requests will be created
-    declare @defaultPriority int = 0
+    Declare @defaultPriority int = 0
     
-    declare @debugMsg varchar(512)
-    declare @logErrors tinyint = 0
+    Declare @debugMsg varchar(512)
+    Declare @logErrors tinyint = 0
 
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
     
@@ -141,9 +142,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRun', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY 
 
@@ -151,7 +152,7 @@ As
     -- Preliminary steps
     ---------------------------------------------------
     --
-    DECLARE @requestOrigin CHAR(4) = 'user'
+    Declare @requestOrigin CHAR(4) = 'user'
     --
     If @mode = 'add-auto'
     Begin
@@ -202,8 +203,7 @@ As
     -- Validate name
     ---------------------------------------------------
 
-    declare @badCh varchar(128)
-    set @badCh =  dbo.ValidateChars(@reqName, '')
+    Declare @badCh varchar(128) = dbo.ValidateChars(@reqName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -212,6 +212,15 @@ As
             RAISERROR ('Requested run name may not contain the character(s) "%s"', 11, 1, @badCh)
     End
     
+    Set @reqName = Ltrim(Rtrim(@reqName))
+
+    Declare @nameLength int = Len(@reqName)
+
+    If @nameLength > 64 And @mode IN ('add', 'check_add') And @requestOrigin <> 'auto'
+    Begin
+        RAISERROR ('Requested run name is too long (%d characters); max length is 64 characters', 11, 2, @nameLength)
+    End
+
     ---------------------------------------------------
     -- Is entry already in database?
     -- Note that if a request is recycled, the old and new requests
@@ -221,11 +230,11 @@ As
     -- If a match is not found, then simply look for a request with the same name
     ---------------------------------------------------
 
-    declare @requestID int = 0
-    declare @oldReqName varchar(128) = ''
-    declare @oldEusProposalID varchar(10) = ''
-    declare @oldStatus varchar(24) = ''
-    declare @MatchFound tinyint = 0 
+    Declare @requestID int = 0
+    Declare @oldReqName varchar(128) = ''
+    Declare @oldEusProposalID varchar(10) = ''
+    Declare @oldStatus varchar(24) = ''
+    Declare @MatchFound tinyint = 0 
     
     If @mode IN ('update', 'check_update')
     Begin
@@ -358,7 +367,7 @@ As
     -- if called for
     ---------------------------------------------------
 
-    declare @experimentID int = 0
+    Declare @experimentID int = 0
 
     SELECT 
         @experimentID = Exp_ID, 
@@ -385,7 +394,7 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
-    declare @userID int
+    Declare @userID int
     execute @userID = GetUserID @requestorPRN
     If @userID = 0
     Begin
@@ -453,7 +462,7 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
-    declare @datasetTypeID int
+    Declare @datasetTypeID int
     --
     exec @myError = ValidateInstrumentGroupAndDatasetType
                             @msType,
@@ -474,8 +483,8 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
-    declare @sepID int = 0
-    declare @sepGroup varchar(64) = ''
+    Declare @sepID int = 0
+    Declare @sepGroup varchar(64) = ''
     
     SELECT @sepGroup = Sep_Group
     FROM T_Separation_Group
@@ -510,7 +519,7 @@ As
     -- Resolve ID for MRM attachment
     ---------------------------------------------------
     --
-    declare @mrmAttachmentID int
+    Declare @mrmAttachmentID int
     --
     set @MRMAttachment = ISNULL(@MRMAttachment, '')
     If @MRMAttachment <> ''
@@ -563,7 +572,7 @@ As
     -- Note that if @eusUsersList contains a list of names in the form "Baker, Erin (41136)",
     -- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
     
-    declare @eusUsageTypeID int
+    Declare @eusUsageTypeID int
     exec @myError = ValidateEUSUsage
                         @eusUsageType output,
                         @eusProposalID output,
@@ -678,7 +687,7 @@ As
     ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
-    declare @transName varchar(256) = 'AddUpdateRequestedRun_' + @reqName
+    Declare @transName varchar(256) = 'AddUpdateRequestedRun_' + @reqName
 
     ---------------------------------------------------
     -- action for add mode
