@@ -3,27 +3,27 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateDatasetDispositionsByName
+
+CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
 /****************************************************
 **
-**	Desc:
+**  Desc:
 **      Updates datasets in list according to disposition parameters
 **      Accepts list of dataset names
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters:
-**
-**	Auth:	grk
-**	Date:	10/15/2008 grk -- initial release (Ticket #582)
-**			08/19/2010 grk - try-catch for error handling
-**			09/02/2011 mem - Now calling PostUsageLogEntry
-**			02/20/2013 mem - Expanded @message to varchar(1024)
-**			02/21/2013 mem - Now requiring @recycleRequest to be yes or no
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   10/15/2008 grk - Initial release (Ticket #582)
+**          08/19/2010 grk - Try-catch for error handling
+**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          02/20/2013 mem - Expanded @message to varchar(1024)
+**          02/21/2013 mem - Now requiring @recycleRequest to be yes or no
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          09/03/2018 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **
 *****************************************************/
 (
@@ -33,163 +33,172 @@ CREATE Procedure UpdateDatasetDispositionsByName
     @recycleRequest varchar(32) = '', -- yes/no
     @mode varchar(12) = 'update',
     @message varchar(1024) output,
-   	@callingUser varchar(128) = ''
+    @callingUser varchar(128) = ''
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	Declare @datasetCount int = 0
+    Declare @datasetCount int = 0
+    Declare @logErrors tinyint = 0
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositionsByName', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
-
-	BEGIN TRY 
-
- 	---------------------------------------------------
-	-- Validate input parameters
- 	---------------------------------------------------
- 	
- 	Set @rating = IsNull(@rating, '')
-	Set @recycleRequest = IsNull(@recycleRequest, '')
-	Set @comment = IsNull(@comment, '')
-	
-	If Not @recycleRequest IN ('yes', 'no')
-	Begin
-		set @message = 'RecycleRequest must be Yes or No (currently "' + @recycleRequest + '")'
-		RAISERROR (@message, 11, 11)
-	End
-	
- 	---------------------------------------------------
-	-- convert dataset name list into dataset ID list
-	---------------------------------------------------
-	-- table variable for holding datasets from list
-	--
-  	declare @tbl table (
-		DatasetID varchar(12),
-		DatasetName varchar(128)
-	)
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
    
- 	---------------------------------------------------
-	-- add datasets from input list to table
-	---------------------------------------------------
-	--
-	INSERT INTO @tbl
-	(DatasetName)
-	SELECT Item
-	FROM MakeTableFromList(@datasetList)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error populating temporary dataset table'
-		RAISERROR (@message, 11, 7)
-	end
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositionsByName', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
 
- 	---------------------------------------------------
-	-- look up dataset IDs for datasets
-	---------------------------------------------------
-	--
-	update @tbl
-	set DatasetID = convert(varchar(12), D.Dataset_ID)
-	from @tbl T inner join
-	T_Dataset D on D.Dataset_Num = T.DatasetName
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error finding dataset IDs'
-		RAISERROR (@message, 11, 8)
-	end
+    BEGIN TRY 
 
- 	---------------------------------------------------
-	-- any datasets not found?
-	---------------------------------------------------
-    declare @datasetIDList varchar(6000)
-    set @datasetIDList = ''
+    ---------------------------------------------------
+    -- Validate input parameters
+    ---------------------------------------------------
+     
+    Set @rating = IsNull(@rating, '')
+    Set @recycleRequest = IsNull(@recycleRequest, '')
+    Set @comment = IsNull(@comment, '')
     
-    select @datasetIDList =  @datasetIDList + case when @datasetIDList = '' then '' else ', ' end + DatasetName
-    from @tbl
-    where DatasetID is Null
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error looking for missing datasets'
-		RAISERROR (@message, 11, 10)
-	end
-	--
-	if @myRowCount > 0
-	begin
-		set @message = 'Datasets not found: ' + @datasetIDList
-		RAISERROR (@message, 11, 11)
-	end
+    If Not @recycleRequest IN ('yes', 'no')
+    Begin
+        set @message = 'RecycleRequest must be Yes or No (currently "' + @recycleRequest + '")'
+        RAISERROR (@message, 11, 11)
+    End
+    
+    ---------------------------------------------------
+    -- Create a table variable for holding dataset names and IDs
+    ---------------------------------------------------
+    -- 
+    --
+    Declare @tbl table (
+        DatasetID varchar(12),
+        DatasetName varchar(128)
+    )
+   
+    --------------------------------------------------
+    -- add datasets from input list to table
+    ---------------------------------------------------
+    --
+    INSERT INTO @tbl( DatasetName )
+    SELECT Item
+    FROM MakeTableFromList ( @datasetList )
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error populating temporary dataset table'
+        RAISERROR (@message, 11, 7)
+    end
 
- 	---------------------------------------------------
-	-- make list of dataset IDs
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Look up dataset IDs for datasets
+    ---------------------------------------------------
+    --
+    UPDATE @tbl
+    SET DatasetID = convert(varchar(12), D.Dataset_ID)
+    FROM @tbl T
+         INNER JOIN T_Dataset D
+           ON D.Dataset_Num = T.DatasetName
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error finding dataset IDs'
+        RAISERROR (@message, 11, 8)
+    end
+
+    ---------------------------------------------------
+    -- Any datasets not found?
+    ---------------------------------------------------
+    --
+    Declare @datasetIDList varchar(6000) = ''
+    
+    SELECT @datasetIDList = @datasetIDList + CASE
+                                                 WHEN @datasetIDList = '' THEN ''
+                                                 ELSE ', '
+                                             END + DatasetName
+    FROM @tbl
+    WHERE DatasetID IS NULL
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error looking for missing datasets'
+        RAISERROR (@message, 11, 10)
+    end
+    --
+    if @myRowCount > 0
+    begin
+        set @message = 'Datasets not found: ' + @datasetIDList
+        RAISERROR (@message, 11, 11)
+    end
+
+    ---------------------------------------------------
+    -- Make list of dataset IDs
+    ---------------------------------------------------
 
     set @datasetIDList = ''
     
     select @datasetIDList =  @datasetIDList + case when @datasetIDList = '' then '' else ', ' end + DatasetID
     from @tbl
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error making dataset ID list'
-		RAISERROR (@message, 11, 12)
-	end
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error making dataset ID list'
+        RAISERROR (@message, 11, 12)
+    end
 
-	Set @datasetCount = @myRowCount
+    Set @datasetCount = @myRowCount
 
- 	---------------------------------------------------
-	-- call sproc to update dataset disposition
-	---------------------------------------------------
+    Set @logErrors = 1
 
-	exec @myError = UpdateDatasetDispositions
-						@datasetIDList,
-						@rating,
-						@comment,
-						@recycleRequest,
-						@mode,
-						@message output,
-						@callingUser
-	
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositionsByName'
-	END CATCH
+    ---------------------------------------------------
+    -- Call sproc to update dataset disposition
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Log SP usage
-	---------------------------------------------------
+    exec @myError = UpdateDatasetDispositions
+                        @datasetIDList,
+                        @rating,
+                        @comment,
+                        @recycleRequest,
+                        @mode,
+                        @message output,
+                        @callingUser
+    
+    END TRY
+    BEGIN CATCH 
+        EXEC FormatErrorMessage @message output, @myError output
+        
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+            
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositionsByName'
+        End
+    END CATCH
 
-	Declare @UsageMessage varchar(512)
-	Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
-	Exec PostUsageLogEntry 'UpdateDatasetDispositionsByName', @UsageMessage
+    ---------------------------------------------------
+    -- Log SP usage
+    ---------------------------------------------------
 
-	return @myError
+    Declare @UsageMessage varchar(512)
+    Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
+    Exec PostUsageLogEntry 'UpdateDatasetDispositionsByName', @UsageMessage
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositionsByName] TO [DDL_Viewer] AS [dbo]
