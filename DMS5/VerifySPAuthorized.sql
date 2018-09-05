@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.VerifySPAuthorized
+
+CREATE Procedure [dbo].[VerifySPAuthorized]
 /****************************************************
 **
 **	Desc: 
@@ -20,6 +21,7 @@ CREATE Procedure dbo.VerifySPAuthorized
 **	Auth:	mem
 **	Date:	06/16/2017 mem - Initial version
 **			01/05/2018 mem - Include username and hostname in RAISERROR message
+**          09/04/2018 mem - Include procedure name and database name in the RAISERROR message
 **    
 *****************************************************/
 (
@@ -98,7 +100,8 @@ AS
 				Set @message = 'User ' + @loginName + ' cannot execute procedure ' + @procedureName + ' from host ' + @clientHostName
 				Exec PostLogEntry 'Error', @message, 'VerifySPAuthorized'
 				
-				Declare @msg varchar(128) = 'Access denied for current user (' + @loginName + ' on host ' + @clientHostName + ')'
+				Declare @msg varchar(128) = 'Access denied for current user (' + @loginName + ' on host ' + @clientHostName + '), ' + 
+                                            'procedure ' + @procedureName + ', database ' + Db_Name()
 				RAISERROR (@msg, 11, 4)
 			End
 		End
@@ -111,4 +114,6 @@ AS
 	return @authorized
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[VerifySPAuthorized] TO [Limited_Table_Write] AS [dbo]
 GO
