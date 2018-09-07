@@ -109,7 +109,7 @@ AS
            ON #Tmp_CellCultureStats.CC_ID = S.CC_ID
 
      ----------------------------------------------------------
-    -- Update [T_Cell_Culture_Tracking] using ##Tmp_CellCultureStats
+    -- Update [T_Cell_Culture_Tracking] using #Tmp_CellCultureStats
     ----------------------------------------------------------
     --        
     MERGE T_Cell_Culture_Tracking AS t
