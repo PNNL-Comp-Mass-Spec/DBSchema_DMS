@@ -73,6 +73,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          11/09/2017 mem - Allow job state to be changed from Complete (state 4) to No Export (state 14) if @propagationMode is 1 (aka 'No Export')
 **          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          09/05/2018 mem - When @mode is 'add', if @state is 'hold' or 'holding', create the job, but put it on hold (state 8)
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
     @specialProcessing varchar(512) = null,
     @associatedProcessorGroup varchar(64) = '',     -- Processor group
     @propagationMode varchar(24),                   -- Propagation mode, aka export mode
-    @stateName varchar(32),
+    @stateName varchar(32),                         -- Job state when updating or resetting the job.  When @mode is 'add', if this is 'hold' or 'holding', the job will be created and placed in state holding
     @jobNum varchar(32) = '0' output,               -- New job number if adding a job; existing job number if updating or resetting a job
     @mode varchar(12) = 'add',  -- or 'update' or 'reset'; use 'previewadd' or 'previewupdate' to validate the parameters but not actually make the change (used by the Spreadsheet loader page)
     @message varchar(512) output,
@@ -533,6 +534,9 @@ As
         If IsNull(@SpecialProcessingWaitUntilReady, 0) > 0 And IsNull(@specialProcessing, '') <> ''
             Set @newStateID = 19
         
+        If @stateName Like 'hold%'
+            Set @newStateID = 8
+
         If @infoOnly <> 0
         Begin
             SELECT 'Preview ' + @mode as Mode,
