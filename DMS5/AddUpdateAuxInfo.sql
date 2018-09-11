@@ -3,300 +3,299 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateAuxInfo
+
+
+CREATE Procedure [dbo].[AddUpdateAuxInfo]
 /****************************************************
 **
-**	Desc: 
-**	Adds new or updates existing auxiliary information in database
+**  Desc: 
+**    Adds new or updates existing auxiliary information in database
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth: grk
-**			03/27/2002 -- initial release
-**			12/18/2007 grk - Improved ability to handle target ID if supplied as target name
-**			06/30/2008 jds - Added error message to "Resolve target name and entity name to entity ID" section
-**			05/15/2009 jds - Added a return if just performing a check_add or check_update
-**			08/21/2010 grk - try-catch for error handling
-**			02/20/2012 mem - Now using temporary tables to parse @itemNameList and @itemValueList
-**			02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/06/2016 mem - Now using Try_Convert to convert from text to int
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   03/27/2002 grk - Initial release
+**          12/18/2007 grk - Improved ability to handle target ID if supplied as target name
+**          06/30/2008 jds - Added error message to "Resolve target name and entity name to entity ID" section
+**          05/15/2009 jds - Added a return if just performing a check_add or check_update
+**          08/21/2010 grk - try-catch for error handling
+**          02/20/2012 mem - Now using temporary tables to parse @itemNameList and @itemValueList
+**          02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
 **    
 *****************************************************/
 (
-	@targetName varchar(128) = '',
-	@targetEntityName varchar(128) = '',
-	@categoryName varchar(128) = '', 
-	@subCategoryName varchar(128) = '', 
-	@itemNameList varchar(4000) = '',				-- AuxInfo names to update; delimiter is !
-	@itemValueList varchar(3000) = '',				-- AuxInfo values; delimiter is !
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) = '' output
+    @targetName varchar(128) = '',          -- Experiment, Cell Culture, Dataset, or SamplePrepRequest
+    @targetEntityName varchar(128) = '',    -- Target entity ID or name
+    @categoryName varchar(128) = '',
+    @subCategoryName varchar(128) = '', 
+    @itemNameList varchar(4000) = '',       -- AuxInfo names to update; delimiter is !
+    @itemValueList varchar(3000) = '',      -- AuxInfo values; delimiter is !
+    @mode varchar(12) = 'add',              -- add, update, check_add, check_update, or check_only
+    @message varchar(512) = '' output
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	declare @myError int= 0
-	declare @myRowCount int = 0
-	
-	set @message = ''
-	
-	declare @msg varchar(256)
+    Declare @myError int= 0
+    Declare @myRowCount int = 0
+    
+    Set @message = ''
+    
+    Declare @msg varchar(256)
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfo', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
-	
-	BEGIN TRY 
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfo', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
+    
+    Begin TRY 
 
-	---------------------------------------------------
-	-- what mode are we in
-	---------------------------------------------------
-	
-	if (@mode = 'check_update' or @mode = 'check_add')
-	begin
-		SET @mode = 'check_only'
-	end
+    ---------------------------------------------------
+    -- What mode are we in
+    ---------------------------------------------------
+    
+    If @mode In ('check_update', 'check_add')
+    Begin
+        Set @mode = 'check_only'
+    End
 
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    If Not @mode In ('add', 'update', 'check_only')
+    Begin
+        Set @msg = 'Invalid @mode: ' + @mode
+        RAISERROR (@msg, 11, 1)
+    End
 
-	Set @itemNameList = IsNull(@itemNameList, '')
-	Set @itemValueList = IsNull(@itemValueList, '')
-	
-	---------------------------------------------------
-	-- has ID been supplied as target name?
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
 
-	declare @targetID int
-	set @targetID = 0
+    Set @itemNameList = IsNull(@itemNameList, '')
+    Set @itemValueList = IsNull(@itemValueList, '')
+    
+    ---------------------------------------------------
+    -- Has ID been supplied as target name?
+    ---------------------------------------------------
 
-	set @targetID = Try_Convert(Int, @targetEntityName)
-	If @targetID IS NULL
-	begin --<1>
-		---------------------------------------------------
-		-- Resolve target name to target table criteria
-		---------------------------------------------------
-		declare @tgtTableName varchar(128)
-		declare @tgtTableNameCol varchar(128)
-		declare @tgtTableIDCol varchar(128)
+    Declare @targetID int = 0
 
-		SELECT 
-			@tgtTableName = Target_Table, 
-			@tgtTableIDCol = Target_ID_Col, 
-			@tgtTableNameCol = Target_Name_Col
-		FROM T_AuxInfo_Target
-		WHERE (Name = @targetName)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0 or @myRowCount <> 1
-		begin
-			set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
-			RAISERROR (@msg, 11, 1)
-		end
+    Set @targetID = Try_Convert(Int, @targetEntityName)
+    If @targetID IS NULL
+    Begin -- <a1>
+        ---------------------------------------------------
+        -- Resolve target name to target table criteria
+        ---------------------------------------------------
+        --
+        Declare @tgtTableName varchar(128)
+        Declare @tgtTableNameCol varchar(128)
+        Declare @tgtTableIDCol varchar(128)
 
-		IF @mode <> 'check_only'
-		BEGIN --<a>
-			---------------------------------------------------
-			-- Resolve target name and entity name to entity ID
-			---------------------------------------------------
-			
-			declare @sql nvarchar(1024)
-			
-			set @sql = N'' 
-			set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
-			set @sql = @sql + ' FROM ' + @tgtTableName
-			set @sql = @sql + ' WHERE ' + @tgtTableNameCol
-			set @sql = @sql + ' = ''' + @targetEntityName + ''''
-			
-			exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
-			--
-			if @targetID = 0
-			begin
-				set @msg = 'Could not resolve target name and entity name to entity ID: "' + @targetEntityName + '" '
-				RAISERROR (@msg, 11, 2)
-			end
-		END --<a>
-	end --<1>
+        SELECT 
+            @tgtTableName = Target_Table, 
+            @tgtTableIDCol = Target_ID_Col, 
+            @tgtTableNameCol = Target_Name_Col
+        FROM T_AuxInfo_Target
+        WHERE (Name = @targetName)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0 or @myRowCount <> 1
+        Begin
+            Set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
+            RAISERROR (@msg, 11, 1)
+        End
 
-	---------------------------------------------------
-	-- Adding code to return if just a verification check
-	-- if we got this far, everything must be ok
-	---------------------------------------------------
-	if (@mode = 'check_update' or @mode = 'check_add')
-	begin
-		return 0
-	end
+        If @mode <> 'check_only'
+        Begin --<b1>
+            ---------------------------------------------------
+            -- Resolve target name and entity name to entity ID
+            ---------------------------------------------------
+            
+            Declare @sql nvarchar(1024)
+            
+            Set @sql = N' SELECT @targetID = ' + @tgtTableIDCol +
+                        ' FROM ' + @tgtTableName +
+                        ' WHERE ' + @tgtTableNameCol +
+                          ' = ''' + @targetEntityName + ''''
+            
+            exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
+            --
+            If @targetID = 0
+            Begin
+                Set @msg = 'Could not resolve target name and entity name to entity ID: "' + @targetEntityName + '" '
+                RAISERROR (@msg, 11, 2)
+            End
+        End -- </b1>
+    End -- </a1>
 
+    ---------------------------------------------------
+    -- If list is empty, we are done
+    ---------------------------------------------------
 
-	-- if list is empty, we are done
-	--
-	if LEN(@itemNameList) = 0
-		return 0
+    If LEN(@itemNameList) = 0
+        return 0
+    
+    ---------------------------------------------------
+    -- Populate temorary tables using @itemNameList and @itemValueList
+    ---------------------------------------------------
+    
+    Declare @tblAuxInfoNames Table
+    (
+        EntryID int,
+        ItemName varchar(256)
+    )
 
+    Declare @tblAuxInfoValues Table
+    (
+        EntryID int,
+        ItemValue varchar(256)
+    )
+    
+    INSERT INTO @tblAuxInfoNames (EntryID, ItemName)
+    SELECT EntryID, Value
+    FROM dbo.udfParseDelimitedListOrdered(@itemNameList, '!')
+    ORDER BY EntryID
+    
 
-	
-	---------------------------------------------------
-	-- Populate temorary tables using @itemNameList and @itemValueList
-	---------------------------------------------------
-	
-	Declare @tblAuxInfoNames Table
-	(
-		EntryID int,
-		ItemName varchar(256)
-	)
-
-	Declare @tblAuxInfoValues Table
-	(
-		EntryID int,
-		ItemValue varchar(256)
-	)
-	
-	INSERT INTO @tblAuxInfoNames (EntryID, ItemName)
-	SELECT EntryID, Value
-	FROM dbo.udfParseDelimitedListOrdered(@itemNameList, '!')
-	ORDER BY EntryID
-	
-
-	INSERT INTO @tblAuxInfoValues (EntryID, ItemValue)
-	SELECT EntryID, Value
-	FROM dbo.udfParseDelimitedListOrdered(@itemValueList, '!')
-	ORDER BY EntryID
+    INSERT INTO @tblAuxInfoValues (EntryID, ItemValue)
+    SELECT EntryID, Value
+    FROM dbo.udfParseDelimitedListOrdered(@itemValueList, '!')
+    ORDER BY EntryID
 
 
-	declare @done int = 0
-	declare @count int = 0
-	declare @EntryID int = -1
-		
-	declare @itemID int
-	
-	declare @inFld varchar(128)
-	declare @vFld varchar(128)
-	declare @tVal varchar(128)
-	
-	---------------------------------------------------
-	-- Process @tblAuxInfoNames
-	---------------------------------------------------
+    Declare @done int = 0
+    Declare @count int = 0
+    Declare @EntryID int = -1
+        
+    Declare @itemID int
+    
+    Declare @inFld varchar(128)
+    Declare @vFld varchar(128)
+    Declare @tVal varchar(128)
+    
+    ---------------------------------------------------
+    -- Process @tblAuxInfoNames
+    ---------------------------------------------------
 
-	while @done = 0
-	begin -- <a>
-	
-		SELECT TOP 1 @EntryID = EntryID,
-		             @inFld = ItemName
-		FROM @tblAuxInfoNames
-		WHERE EntryID > @EntryID
-		ORDER BY EntryID
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+    While @done = 0
+    Begin -- <a2>
+    
+        SELECT TOP 1 @EntryID = EntryID,
+                     @inFld = ItemName
+        FROM @tblAuxInfoNames
+        WHERE EntryID > @EntryID
+        ORDER BY EntryID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @myRowCount = 0
-			Set @Done = 1
-		
-		If @myRowCount = 1 And Len(IsNull(@inFld, '')) > 0 
-		Begin -- <b>
-			
-			set @count = @count + 1
-			
-			-- Lookup the value for this aux info entry
-			--		
-			Set @vFld = ''
-			--
-			SELECT @vFld = ItemValue
-			FROM @tblAuxInfoValues
-			WHERE EntryID = @EntryID
+        If @myRowCount = 0
+            Set @Done = 1
+        
+        If @myRowCount = 1 And Len(IsNull(@inFld, '')) > 0 
+        Begin -- <b2>
+            
+            Set @count = @count + 1
+            
+            -- Lookup the value for this aux info entry
+            --        
+            Set @vFld = ''
+            --
+            SELECT @vFld = ItemValue
+            FROM @tblAuxInfoValues
+            WHERE EntryID = @EntryID
 
-			-- resolve item name to item ID
-			--
-			set @itemID = 0
-			SELECT @itemID = Item_ID
-			FROM V_AuxInfo_Definition
-			WHERE 
-				(Target = @targetName) AND 
-				(Category = @categoryName) AND 
-				(Subcategory = @subCategoryName) AND 
-				(Item = @inFld)
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0 or @itemID = 0
-			begin
-				set @msg = 'Could not resolve item to ID: "' + @inFld + '"'
-				RAISERROR (@msg, 11, 1)
-			end
+            -- Resolve item name to item ID
+            --
+            Set @itemID = 0
 
-			IF @mode <> 'check_only'
-			BEGIN --<c>
-				-- if value is blank, delete any existing entry from value table
-				--
-				if @vFld = ''
-				Begin
-					DELETE FROM T_AuxInfo_Value 
-					WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)					
-				End
-				Else
-				Begin -- <d>
-				
-					-- does entry exist in value table?
-					--
-					SELECT @tVal = Value
-					FROM T_AuxInfo_Value
-					WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)		
-					--
-					SELECT @myError = @@error, @myRowCount = @@rowcount
-					--
-					if @myError <> 0
-					begin
-						set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
-						RAISERROR (@msg, 11, 1)
-					end
+            SELECT @itemID = Item_ID
+            FROM V_AuxInfo_Definition
+            WHERE Target = @targetName AND
+                  Category = @categoryName AND
+                  Subcategory = @subCategoryName AND
+                  Item = @inFld
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            --
+            If @myError <> 0 or @itemID = 0
+            Begin
+                Set @msg = 'Could not resolve item to ID: "' + @inFld + '" for category ' + @categoryName + ', subcategory ' + @subCategoryName
+                RAISERROR (@msg, 11, 1)
+            End
 
-					-- if entry exists in value table, update it
-					-- otherwise insert it
-					--
-					if @myRowCount > 0 
-					begin
-						if @tVal <> @vFld
-						begin
-							UPDATE T_AuxInfo_Value
-							SET Value = @vFld
-							WHERE (AuxInfo_ID = @itemID) AND (Target_ID = @targetID)
-						end
-					end
-					else
-					begin
-						INSERT INTO T_AuxInfo_Value
-						(Target_ID, AuxInfo_ID, Value)
-						VALUES (@targetID, @itemID, @vFld)
-					end
-					
-				End -- </d>
-				
-			END -- </c>
-		
-		End -- </b>
-	End -- </a>
+            If @mode <> 'check_only'
+            Begin --<c>
+                -- If value is blank, delete any existing entry from value table
+                --
+                If @vFld = ''
+                Begin
+                    DELETE FROM T_AuxInfo_Value
+                    WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                End
+                Else
+                Begin -- <d>
+                
+                    -- Does entry exist in value table?
+                    --
+                    SELECT @tVal = [Value]
+                    FROM T_AuxInfo_Value
+                    WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+                    --
+                    If @myError <> 0
+                    Begin
+                        Set @msg = 'Error in searching for existing value for item: "' + @inFld + '"'
+                        RAISERROR (@msg, 11, 1)
+                    End
 
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-	END CATCH
-	
-	return @myError
+                    -- If entry exists in value table, update it
+                    -- otherwise insert it
+                    --
+                    If @myRowCount > 0 
+                    Begin
+                        If @tVal <> @vFld
+                        Begin
+                            UPDATE T_AuxInfo_Value
+                            SET [Value] = @vFld
+                            WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                        End
+                    End
+                    Else
+                    Begin
+                        INSERT INTO T_AuxInfo_Value( Target_ID,
+                                                     AuxInfo_ID,
+                                                     [Value] )
+                        VALUES(@targetID, @itemID, @vFld)
+                    End
+                    
+                End -- </d>
+                
+            End -- </c>
+        
+        End -- </b2>
+    End -- </a2>
+
+    End TRY
+    Begin CATCH 
+        EXEC FormatErrorMessage @message output, @myError output
+        
+        -- rollback any open transactions
+        If (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+    End CATCH
+    
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [DDL_Viewer] AS [dbo]
