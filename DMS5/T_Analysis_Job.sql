@@ -485,69 +485,71 @@ CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
 For Update
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the updated analysis job
+**  Desc: 
+**      Makes an entry in T_Event_Log for the updated analysis job
+**      Also updates AJ_Last_Affected, AJ_StateNameCached, Progress, ETA_Minutes, and AJ_ToolNameCached
 **
-**	Auth:	grk
-**	Date:	01/01/2003
-**			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
-**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			11/01/2007 mem - Added Set NoCount statement (Ticket #569)
-**			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
-**			04/03/2014 mem - Now updating AJ_ToolNameCached
-**			09/01/2016 mem - Now updating Progress and ETA_Minutes
-**			10/30/2017 mem - Set progress to 0 for inactive jobs (state 13)
-**						   - Fix StateID bug, switching from 17 to 14
+**  Auth:   grk
+**   Date:  01/01/2003
+**          05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
+**          08/15/2007 mem - Updated to use an Insert query (Ticket #519)
+**          11/01/2007 mem - Added Set NoCount statement (Ticket #569)
+**          12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
+**          04/03/2014 mem - Now updating AJ_ToolNameCached
+**          09/01/2016 mem - Now updating Progress and ETA_Minutes
+**          10/30/2017 mem - Set progress to 0 for inactive jobs (state 13)
+**                         - Fix StateID bug, switching from 17 to 14
+**          09/13/2018 mem - When Started and Finished are non-null, use the larger of Started and Finished for Last_Affected
 **    
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
-	
-	If Update(AJ_StateID)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
-		FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
-		ORDER BY inserted.AJ_jobID
-		
-		UPDATE T_Analysis_Job
-		SET AJ_Last_Affected = GetDate(),
-		    AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
-		    Progress = CASE
-		                   WHEN inserted.AJ_StateID = 5 THEN -1
-		                   WHEN inserted.AJ_StateID IN (1, 8, 13, 19) THEN 0
-		                   WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 100
-		                   ELSE inserted.Progress
-		               END,
-		    ETA_Minutes = CASE
-		                      WHEN inserted.AJ_StateID IN (1, 5, 8, 13, 19) THEN NULL
-		                      WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 0
-		                      ELSE inserted.ETA_Minutes
-		                  END
-		FROM T_Analysis_Job AJ
-		     INNER JOIN inserted
-		       ON AJ.AJ_jobID = inserted.AJ_jobID
-		     INNER JOIN V_Analysis_Job_and_Dataset_Archive_State AJDAS
-		       ON AJ.AJ_jobID = AJDAS.Job
-		
-	End
+    Set NoCount On
+    
+    If Update(AJ_StateID)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
+        FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
+        ORDER BY inserted.AJ_jobID
+        
+        UPDATE T_Analysis_Job
+        SET AJ_Last_Affected = CASE WHEN NOT inserted.AJ_finish Is Null AND inserted.AJ_finish >= inserted.AJ_start THEN inserted.AJ_finish
+                                    WHEN NOT inserted.AJ_start Is Null  AND inserted.AJ_start >= inserted.AJ_finish THEN inserted.AJ_start
+                                    ELSE GetDate() 
+                               END,
+            AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
+            Progress = CASE
+                           WHEN inserted.AJ_StateID = 5 THEN -1
+                           WHEN inserted.AJ_StateID IN (1, 8, 13, 19) THEN 0
+                           WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 100
+                           ELSE inserted.Progress
+                       END,
+            ETA_Minutes = CASE
+                              WHEN inserted.AJ_StateID IN (1, 5, 8, 13, 19) THEN NULL
+                              WHEN inserted.AJ_StateID IN (4, 7, 14) THEN 0
+                              ELSE inserted.ETA_Minutes
+                          END
+        FROM T_Analysis_Job AJ
+             INNER JOIN inserted
+               ON AJ.AJ_jobID = inserted.AJ_jobID
+             INNER JOIN V_Analysis_Job_and_Dataset_Archive_State AJDAS
+               ON AJ.AJ_jobID = AJDAS.Job
+        
+    End
 
-	If Update(AJ_analysisToolID)
-	Begin
-		
-		UPDATE T_Analysis_Job
-		SET AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
-		FROM T_Analysis_Job AJ INNER JOIN
-			 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
-			 T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
+    If Update(AJ_analysisToolID)
+    Begin
+        
+        UPDATE T_Analysis_Job
+        SET AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
+        FROM T_Analysis_Job AJ INNER JOIN
+             inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
+             T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
 
-	End
-
-
-
+    End
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_u_AnalysisJob]
