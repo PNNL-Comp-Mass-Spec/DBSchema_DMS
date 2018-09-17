@@ -1,7 +1,7 @@
 USE [master];
 GO
 
-print 'Get the latest version of sp_Blitz and the related scripts at http://www.brentozar.com/blitz/'
+print 'Get the latest version of sp_Blitz and the related scripts at https://www.brentozar.com/blitz/'
 
 
 /* Example stored procedure calls */

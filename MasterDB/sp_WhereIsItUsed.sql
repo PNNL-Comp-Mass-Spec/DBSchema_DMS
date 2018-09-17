@@ -36,7 +36,8 @@ ALTER PROCEDURE sp_WhereIsItUsed
 **      spWhereIsItUsed  'blog[sg]',100,100 --find blogg or blogs
 **      spWhereIsItUsed  'b_gg',100,100     --find begg, bigg, etc
 **
-**  Original version by Phil Factor (http://www.simple-talk.com/community/blogs/philfactor/archive/2006/06/03/854.aspx)
+**  Original version by Phil Factor
+**  https://www.red-gate.com/simple-talk/blogs/spwhereisitused-leaves-from-a-programmers-notebook/
 **
 **  Auth:   mem
 **  Date:   08/18/2006
