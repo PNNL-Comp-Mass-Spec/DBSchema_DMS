@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE AddUpdateLCCartConfiguration
+CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_LC_Cart_Configuration entry
