@@ -4,34 +4,35 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
        DataQ.Start, DataQ.Finish, DataQ.RunTime_Minutes, DataQ.LastCPUStatus_Minutes, DataQ.Job_Progress, DataQ.RunTime_Predicted_Hours, DataQ.Processor, DataQ.Process_ID, DataQ.ProgRunner_ProcessID, DataQ.ProgRunner_CoreUsage,
-	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
-			ELSE 'Processor Warning'
-			END AS Kill_Manager,
-	   CASE WHEN DataQ.ProcessorWarningFlag = 0 
-	        THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
-			ELSE 'Processor Warning'
-			END AS Kill_ProgRunner,
-	   DataQ.Processor_Warning,
-	   DataQ.Input_Folder, DataQ.Output_Folder, DataQ.Priority, DataQ.Signature, DataQ.Dependencies, DataQ.CPU_Load, DataQ.Actual_CPU_Load, DataQ.Memory_Usage_MB, DataQ.Tool_Version_ID, DataQ.Tool_Version,
+       CASE WHEN DataQ.ProcessorWarningFlag = 0 
+            THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
+            ELSE 'Processor Warning'
+            END AS Kill_Manager,
+       CASE WHEN DataQ.ProcessorWarningFlag = 0 
+            THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
+            ELSE 'Processor Warning'
+            END AS Kill_ProgRunner,
+       DataQ.Processor_Warning,
+       DataQ.Input_Folder, DataQ.Output_Folder, DataQ.Priority, DataQ.Signature, DataQ.Dependencies, DataQ.CPU_Load, DataQ.Actual_CPU_Load, DataQ.Memory_Usage_MB, DataQ.Tool_Version_ID, DataQ.Tool_Version,
        DataQ.Completion_Code, DataQ.Completion_Message, 
-	   DataQ.Evaluation_Code, DataQ.Evaluation_Message, 
-	   DataQ.Next_Try, 
-	   DataQ.Retry_Count,
-	   DataQ.Remote_Info_ID, 
-	   DataQ.Remote_Info, 
-	   DataQ.Remote_Timestamp,
-	   DataQ.Remote_Start,
-	   DataQ.Remote_Finish,
-	   DataQ.Remote_Progress,
-	   DataQ.Dataset_ID,
-	   DataQ.Machine,
-	   DataQ.WorkDirPath,
-	   DataQ.Transfer_Folder_Path, 
+       DataQ.Evaluation_Code, DataQ.Evaluation_Message, 
+       DataQ.Next_Try, 
+       DataQ.Retry_Count,
+       DataQ.Remote_Info_ID, 
+       DataQ.Remote_Info, 
+       DataQ.Remote_Timestamp,
+       DataQ.Remote_Start,
+       DataQ.Remote_Finish,
+       DataQ.Remote_Progress,
+       DataQ.Dataset_ID,
+       DataQ.Machine,
+       DataQ.WorkDirPath,
+       DataQ.Transfer_Folder_Path, 
        ParamQ.Dataset_Storage_Path + DataQ.Dataset AS Dataset_Folder_Path,
        DataQ.LogFilePath + 
          CASE WHEN YEAR(GetDate()) <> YEAR(DataQ.Start) THEN TheYear + '\'
@@ -59,42 +60,38 @@ FROM ( SELECT JS.Job,
               JS.Job_Progress,
               JS.RunTime_Predicted_Hours,
               JS.Processor,
-			  JS.Process_ID,
-			  JS.ProgRunner_ProcessID,
-			  JS.ProgRunner_CoreUsage,
-			  JS.Processor_Warning,
-			  CASE WHEN Len(IsNull(JS.Processor_Warning, '')) = 0 Then 0 Else 1 End as ProcessorWarningFlag,
+              JS.Process_ID,
+              JS.ProgRunner_ProcessID,
+              JS.ProgRunner_CoreUsage,
+              JS.Processor_Warning,
+              CASE WHEN Len(IsNull(JS.Processor_Warning, '')) = 0 Then 0 Else 1 End as ProcessorWarningFlag,
               JS.Input_Folder,
               JS.Output_Folder,
               JS.Priority,
               JS.Signature,
-			  JS.Dependencies, 
+              JS.Dependencies, 
               JS.CPU_Load,
-			  JS.Actual_CPU_Load,
+              JS.Actual_CPU_Load,
               JS.Memory_Usage_MB,
               JS.Tool_Version_ID,
-		      JS.Tool_Version,
+              JS.Tool_Version,
               JS.Completion_Code,
               JS.Completion_Message,
               JS.Evaluation_Code,
               JS.Evaluation_Message,
-			  JS.Next_Try,
-			  JS.Retry_Count,
-			  JS.Remote_Info_ID,
-			  JS.Remote_Info,
-			  JS.Remote_Timestamp,
-			  JS.Remote_Start,
-			  JS.Remote_Finish,
-			  JS.Remote_Progress,
-			  JS.Dataset_ID,
-			  LP.Machine,
-			  LP.WorkDir_AdminShare AS WorkDirPath,
+              JS.Next_Try,
+              JS.Retry_Count,
+              JS.Remote_Info_ID,
+              JS.Remote_Info,
+              JS.Remote_Timestamp,
+              JS.Remote_Start,
+              JS.Remote_Finish,
+              JS.Remote_Progress,
+              JS.Dataset_ID,
+              LP.Machine,
+              LP.WorkDir_AdminShare AS WorkDirPath,
               JS.Transfer_Folder_Path,
-              '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
-                CASE WHEN JS.Processor LIKE '%-[1-9]' 
-                THEN RIGHT(JS.Processor, 1)
-                ELSE ''
-                END + '\Logs\' AS LogFilePath,
+              JS.LogFilePath,
               CONVERT(varchar(2), MONTH(JS.Start)) AS TheMonth,
               CONVERT(varchar(2), DAY(JS.Start)) AS TheDay,
               CONVERT(varchar(4), YEAR(JS.Start)) AS TheYear
