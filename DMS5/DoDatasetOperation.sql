@@ -35,6 +35,7 @@ CREATE Procedure [dbo].[DoDatasetOperation]
 **          08/08/2017 mem - Use function RemoveCaptureErrorsFromString to remove common dataset capture errors when resetting a dataset
 **          09/07/2018 mem - Remove mode 'delete_all'; if you need to delete a dataset, manually call stored procedure DeleteDataset
 **                         - Rename @datasetNum to @datasetNameOrID
+**          09/27/2018 mem - Use named parameter names when calling DeleteDataset
 **    
 *****************************************************/
 (
@@ -206,7 +207,7 @@ As
         -- Delete the dataset
         ---------------------------------------------------
 
-        execute @result = DeleteDataset @datasetName, @message output, @callingUser
+        execute @result = DeleteDataset @datasetName, @message = @message output, @callingUser = @callingUser
         --
         If @result <> 0
         Begin

@@ -12,8 +12,6 @@ CREATE Procedure [dbo].[DeleteDataset]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters: 
-**
 **  Auth:   grk
 **  Date:   01/26/2001
 **          03/01/2004 grk - added unconsume scheduled run
@@ -33,10 +31,14 @@ CREATE Procedure [dbo].[DeleteDataset]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/08/2018 mem - Update T_Dataset_Files
+**          09/27/2018 mem - Added parameter @infoOnly
+**                         - Now showing the unconsumed requested run
+**          09/28/2018 mem - Flag AutoReq requested runs as "To be deleted" instead of "To be marked active"
 **    
 *****************************************************/
 (
     @datasetNum varchar(128),
+    @infoOnly tinyint = 0,
     @message varchar(512)='' output,
     @callingUser varchar(128) = ''
 )
@@ -106,11 +108,74 @@ As
         return 51141
     end
 
+    ---------------------------------------------------
+    -- Get the dataset directory path
+    ---------------------------------------------------
+    --
+    Declare @datasetDirectoryPath varchar(512) = Null
+
+    SELECT @datasetDirectoryPath = Dataset_Folder_Path
+    FROM V_Dataset_Folder_Paths
+    WHERE Dataset_ID = @datasetID
+
     If Exists (SELECT * FROM T_Analysis_Job WHERE AJ_datasetID = @datasetID)
     Begin
         set @msg = 'Cannot delete a dataset with existing analysis jobs'
         RAISERROR (@msg, 10, 1)
         return 51142
+    End
+    
+    If @infoOnly > 0
+    Begin
+        SELECT 'To be deleted' AS [Action], *
+        FROM T_Dataset_Archive
+        WHERE AS_Dataset_ID = @datasetID
+
+        If Exists (SELECT * FROM T_Requested_Run WHERE DatasetID = @datasetID)
+        Begin
+            SELECT CASE WHEN RDS_Name Like 'AutoReq%' 
+                        THEN 'To be deleted' 
+                        ELSE 'To be marked active' 
+                   End AS [Action], *
+            FROM T_Requested_Run
+            WHERE DatasetID = @datasetID
+        End
+
+        SELECT 'To be deleted' AS [Action], *
+        FROM T_Dataset_Info
+        WHERE Dataset_ID = @datasetID
+
+        SELECT 'To be deleted' AS [Action], *
+        FROM T_Dataset_QC
+        WHERE Dataset_ID = @datasetID
+
+        SELECT 'To be deleted' AS [Action], *
+        FROM T_Dataset_ScanTypes
+        WHERE Dataset_ID = @datasetID
+
+        SELECT 'To be flagged as deleted' AS [Action], *
+        FROM T_Dataset_Files
+        WHERE Dataset_ID = @datasetID
+
+        If Exists (SELECT * FROM DMS_Capture.dbo.T_Jobs WHERE Dataset_ID = @datasetID AND State = 5)
+        Begin
+            SELECT 'To be deleted' AS [Action], *
+            FROM DMS_Capture.dbo.T_Jobs
+            WHERE Dataset_ID = @datasetID And State = 5
+        End
+
+        SELECT 'To be deleted' AS [Action], Jobs.*
+        FROM DMS_Capture.dbo.T_Jobs Jobs
+             INNER JOIN DMS_Capture.dbo.T_Jobs_History History
+               ON Jobs.Job = History.Job
+        WHERE Jobs.Dataset_ID = @datasetID AND
+              NOT History.Job IS NULL
+
+        SELECT 'To be deleted' AS [Action], *
+        FROM T_Dataset
+        WHERE Dataset_ID = @datasetID
+
+        Goto Done
     End
     
     ---------------------------------------------------
@@ -155,6 +220,12 @@ As
     -- Restore any consumed requested runs
     ---------------------------------------------------
     --
+    Declare @requestID int = Null
+
+    Select @requestID = ID
+    FROM T_Requested_Run 
+    WHERE DatasetID = @datasetID
+
     exec @result = UnconsumeScheduledRun @datasetNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
     if @result <> 0
     begin
@@ -164,6 +235,12 @@ As
         return 51103
     end
     
+    If Not @requestID Is Null
+    Begin
+        SELECT 'Request updated; verify this action, especially if the deleted dataset was replaced with an identical, renamed dataset' AS [Comment], *
+        FROM T_Requested_Run
+        WHERE ID = @requestID
+    End
     ---------------------------------------------------
     -- Delete any entries in T_Dataset_Info
     ---------------------------------------------------
@@ -296,7 +373,12 @@ As
     End
 
     commit transaction @transName
-    
+
+    SELECT 'Deleted dataset' AS [Action],
+           @datasetID AS Dataset_ID,
+           @datasetDirectoryPath AS Dataset_Directory_Path
+
+Done:
     return 0
 
 GO
