@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DeleteNewAnalysisJob
+
+CREATE Procedure [dbo].[DeleteNewAnalysisJob]
 /****************************************************
 **
 **	Desc: Delete analysis job if it is in "new" or "failed" state
@@ -21,13 +22,14 @@ CREATE Procedure dbo.DeleteNewAnalysisJob
 **			04/21/2017 mem - Added parameter @previewMode
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          09/27/2018 mem - Rename @previewMode to @infoonly
 **    
 *****************************************************/
 (
 	@jobNum varchar(32),
     @message varchar(512) output,
 	@callingUser varchar(128) = '',
-	@previewMode tinyint = 0
+	@infoonly tinyint = 0
 )
 As
 	Set nocount on
@@ -36,7 +38,7 @@ As
 
 	Set @jobNum = IsNull(@jobNum, '')
 	Set @message = ''
-	Set @previewMode = IsNull(@previewMode, 0)	
+	Set @infoonly = IsNull(@infoonly, 0)	
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -45,9 +47,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'DeleteNewAnalysisJob', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 	
 
 	Set @jobID = Try_Cast(@jobNum as int)
@@ -60,7 +62,7 @@ As
 	End
 
 	---------------------------------------------------
-	-- Verify that job exists in job table
+	-- Verify that the job exists
 	---------------------------------------------------
 	--
 	Declare @state int = 0
@@ -71,8 +73,8 @@ As
 	--
 	If @state = 0
 	Begin
-		Set @message = 'Job entry "' + @jobNum + '" not in database'
-		If @previewMode > 0
+		Set @message = 'Job "' + @jobNum + '" not in database'
+		If @infoonly > 0
 			SELECT @message
 		Else
 			return 55322
@@ -88,7 +90,7 @@ As
 	-- Delete the analysis job
 	--
 	Declare @result int
-	execute @result = DeleteAnalysisJob @jobID, @callingUser, @previewMode
+	execute @result = DeleteAnalysisJob @jobID, @callingUser, @infoonly
 	
 	If @result <> 0
 	Begin
