@@ -4,15 +4,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Bionet_Hosts_Export]
 AS
-SELECT 	Host,
-		IP,
-		Alias,		
-		Entered,
-		Last_Online,
-		Instruments,
-		Tag
+Select Host,
+       IP,
+       Alias,        
+       Entered,
+       Last_Online,
+       Comment
+       Instruments,
+       Tag
 FROM T_Bionet_Hosts
 WHERE Active > 0
 

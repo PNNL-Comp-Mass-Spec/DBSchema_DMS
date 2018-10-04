@@ -8,17 +8,18 @@ CREATE VIEW [dbo].[V_Bionet_Detail_Report]
 AS
 SELECT H.Host,
        H.IP,
-	   '255.255.254.0' AS [Subnet Mask],
-	   '(leave blank)' AS [Default Gateway],
-	   '192.168.30.68' AS [DNS Server],
+       '255.255.254.0' AS [Subnet Mask],
+       '(leave blank)' AS [Default Gateway],
+       '192.168.30.68' AS [DNS Server],
        H.Alias,
-	   H.Tag,
+       H.Tag,
        H.Entered,
        H.Last_Online AS [Last Online],
-	   H.Instruments,
-	   H.Instruments AS [Instrument Datasets],
-	   InstName.IN_Room_Number AS [Room],
-	   T_YesNo.Description AS Active
+       H.Comment,
+       H.Instruments,
+       H.Instruments AS [Instrument Datasets],
+       InstName.IN_Room_Number AS [Room],
+       T_YesNo.Description AS Active
 FROM T_Bionet_Hosts H
      INNER JOIN T_YesNo
        ON H.Active = T_YesNo.Flag

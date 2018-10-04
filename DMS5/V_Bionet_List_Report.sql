@@ -9,9 +9,10 @@ AS
 SELECT H.Host,
        H.IP,
        H.Alias,
-	   H.Tag,
+       H.Tag,
        H.Entered,
        H.Last_Online,
+       H.Comment,
        CASE
            WHEN Len(H.Instruments) > 70 THEN Cast(H.Instruments AS varchar(66)) + ' ...'
            ELSE H.Instruments
