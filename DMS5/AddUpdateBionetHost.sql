@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[AddUpdateBionetHost]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/03/2018 mem - Add @comment
+**                         - Use @logErrors to toggle logging errors caught by the try/catch block
 **    
 *****************************************************/
 (
@@ -39,7 +40,9 @@ As
     Set @message = ''
 
     Declare @msg varchar(256)
-    
+
+    Declare @logErrors tinyint = 0
+        
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -102,6 +105,8 @@ As
             return 51005
         End
     
+        Set @logErrors = 1
+
         ---------------------------------------------------
         -- Action for add mode
         ---------------------------------------------------
@@ -167,8 +172,12 @@ As
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
-        Exec PostLogEntry 'Error', @message, 'AddUpdateBionetHost'
+
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'AddUpdateBionetHost'
+        End
+        
     End Catch
 
     return @myError
