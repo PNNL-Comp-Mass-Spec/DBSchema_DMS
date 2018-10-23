@@ -30,6 +30,7 @@ FROM (SELECT YEAR(AJ_start) AS [Year],
              'Datasets' AS Item,
              COUNT(*) AS Items
       FROM T_Dataset
+      WHERE DS_type_ID <> 100   -- Exclude tracking datasets
       GROUP BY YEAR(DS_created)
       UNION
       SELECT YEAR(EX_created) AS [Year],
