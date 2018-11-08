@@ -7,7 +7,7 @@ INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (1
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (19,'DMS_Ops_Administration','Permissions for general DMS admin operations')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (25,'DMS_Guest','Can look, but not touch (Note: PNNL network users who are not listed at http://dms2.pnl.gov/user/report automatically get this permission)')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (26,'DMS_User','Permissions for basic operations (Note: Active DMS users at http://dms2.pnl.gov/user/report automatically get this permission, unless they are tagged with DMS_Guest)')
-INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (32,'DMS_Dataset_Operation','Permission to create and dispositon datasets.  Can also update dataset details.')
+INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (32,'DMS_Dataset_Operation','Permission to create and disposition datasets.  Can also update dataset details.')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (33,'DMS_Analysis_Job_Administration','Permission to add/edit analysis jobs')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (34,'DMS_Instrument_Tracking','Permission for instrument usage tracking admin operations, in particular creating placeholder tracking datasets via http://dms2.pnl.gov/tracking_dataset/create')
 SET IDENTITY_INSERT [T_User_Operations] OFF
