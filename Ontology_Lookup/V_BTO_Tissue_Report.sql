@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_BTO_Tissue_Report]
 AS
 SELECT Term_Name AS Tissue,
@@ -16,6 +15,8 @@ SELECT Term_Name AS Tissue,
        GrandParent_term_ID AS [Grandparent ID],
        [Synonyms] AS [Synonyms],
        Children AS Children,
+       Usage_Last_12_Months [Usage],
+       Usage_All_Time As [Usage (all time)],
        Entry_ID
 FROM T_CV_BTO BTO
 
