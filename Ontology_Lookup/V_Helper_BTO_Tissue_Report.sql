@@ -14,8 +14,8 @@ SELECT Term_Name AS Tissue,
 	   GrandParent_term_name AS [Grandparent Tissue],
 	   GrandParent_term_ID AS [Grandparent ID],
 	   [Synonyms] AS [Synonyms],
-       Usage_Last_12_Months,
-       Usage_All_Time,
+       Usage_Last_12_Months As Usage,
+       Usage_All_Time As [Usage (all time],
 	   Entry_ID	       
 FROM T_CV_BTO
 
