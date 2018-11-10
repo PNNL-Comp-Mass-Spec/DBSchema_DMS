@@ -4,8 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Experiment_Entry] as 
+CREATE VIEW [dbo].[V_Experiment_Entry] as 
 SELECT E.Experiment_Num AS experimentNum,
+       E.Exp_ID,
        C.Campaign_Num AS campaignNum,
        E.EX_researcher_PRN AS researcherPRN,
        Org.OG_name AS organismName,
