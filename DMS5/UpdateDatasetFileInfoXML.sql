@@ -71,6 +71,8 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          08/08/2018 mem - Fix null value where clause bug in @DuplicateDatasetsTable
 **          08/09/2018 mem - Use @duplicateEntryHoldoffHours when logging the duplicate dataset error
 **          08/10/2018 mem - Update duplicate dataset message and use PostEmailAlert to add to T_Email_Alerts
+**          11/09/2018 mem - Set deleted to 0 when updating existing entries
+**                           No longer removed deleted files and sort them last when updating File_Size_Rank
 **    
 *****************************************************/
 (
@@ -353,10 +355,10 @@ As
     --
     INSERT INTO @ScanTypesTable (ScanType, ScanCount, ScanFilter)
     SELECT ScanType, ScanCount, ScanFilter
-    FROM (    SELECT  xmlNode.value('.', 'varchar(64)') AS ScanType,
-                    xmlNode.value('@ScanCount', 'int') AS ScanCount,
-                    xmlNode.value('@ScanFilterText', 'varchar(256)') AS ScanFilter        
-            FROM   @datasetInfoXML.nodes('/DatasetInfo/ScanTypes/ScanType') AS R(xmlNode)
+    FROM ( SELECT xmlNode.value('.', 'varchar(64)') AS ScanType,
+                  xmlNode.value('@ScanCount', 'int') AS ScanCount,
+                  xmlNode.value('@ScanFilterText', 'varchar(256)') AS ScanFilter        
+           FROM @datasetInfoXML.nodes('/DatasetInfo/ScanTypes/ScanType') AS R(xmlNode)
     ) LookupQ
     WHERE Not ScanType IS NULL     
     --
@@ -685,7 +687,8 @@ As
     WHEN Matched 
         THEN UPDATE 
             Set File_Size_Bytes = Source.InstFileSize,
-                File_Hash = Source.InstFileHash
+                File_Hash = Source.InstFileHash,
+                Deleted = 0
     WHEN Not Matched THEN
         INSERT (Dataset_ID, File_Path, 
                 File_Size_Bytes, File_Hash)
@@ -708,6 +711,7 @@ As
            ON Target.Dataset_ID = @datasetID AND
               Target.File_Path = Source.InstFilePath
     WHERE Target.Dataset_ID = @datasetID AND
+          Target.Deleted = 0 AND
           Source.InstFilePath IS NULL     
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -726,7 +730,7 @@ As
                              Dataset_File_ID,
                              Row_Number() OVER ( 
                                 PARTITION BY Dataset_ID 
-                                ORDER BY Deleted DESC, File_Size_Bytes DESC 
+                                ORDER BY Deleted ASC, File_Size_Bytes DESC 
                                 ) AS Size_Rank
                       FROM T_Dataset_Files
                       WHERE Dataset_ID = @datasetID 
