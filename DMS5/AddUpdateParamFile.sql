@@ -7,11 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 /****************************************************
 **
-**  Desc:   Adds new or updates existing parameter file in database
-**
-**          When updating an existing parameter file, the name and type can be changed only if the file is not used with any analysis jobs
-**
-**  Return values: 0: success, otherwise, error code
+**  Adds new or updates existing parameter file in database
+**  When updating an existing parameter file, the name and type can be changed only if the file is not used with any analysis jobs
 **
 **  Auth:   kja
 **  Date:   07/22/2004 kja - Initial version
@@ -23,6 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          08/28/2017 mem - Add @validateUnimod
 **          10/02/2017 mem - Abort adding a new parameter file if @paramfileMassMods does not validate (when @validateUnimod is 1)
 **          08/17/2018 mem - Pass @paramFileType to StoreParamFileMassMods
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **
 *****************************************************/
 (
@@ -217,7 +215,7 @@ As
 
         INSERT INTO #Tmp_Mods_Precheck (EntryID, Value)
         SELECT EntryID, Value
-        FROM dbo.udfParseDelimitedListOrdered ( @paramfileMassMods, @Delimiter )
+        FROM dbo.udfParseDelimitedListOrdered(@paramfileMassMods, @Delimiter, 0)
 
         DELETE FROM #Tmp_Mods_Precheck
         WHERE Value Is Null Or Value Like '#%' or LTrim(RTrim(Value)) = ''

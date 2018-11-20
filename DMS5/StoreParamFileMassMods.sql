@@ -4,39 +4,37 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[StoreParamFileMassMods]
 /****************************************************
 **
-**  Desc: 
-**      Stores (or validates) the dynamic and static mods to associate with a given parameter file
+**  Stores (or validates) the dynamic and static mods to associate with a given parameter file
 **
-**      Mods must be defined in the format used for MSGF+ parameter files or for TopPIC parameter files
+**  Mods must be defined in the format used for MSGF+ parameter files or for TopPIC parameter files
 **
-**      MSGF+ parameter file format:
-**        The mod names listed in the 5th comma-separated column must be Unimod names 
-**        and must match the Original_Source_Name values in T_Mass_Correction_Factors
+**  MSGF+ parameter file format:
+**     The mod names listed in the 5th comma-separated column must be Unimod names 
+**     and must match the Original_Source_Name values in T_Mass_Correction_Factors
 **
-**          StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex           # 4-plex iTraq
-**          StaticMod=144.102063,  K,  fix, any,       iTRAQ4plex           # 4-plex iTraq
-**          StaticMod=C2H3N1O1,    C,  fix, any,       Carbamidomethyl      # Fixed Carbamidomethyl C (alkylation)
+**     StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex           # 4-plex iTraq
+**     StaticMod=144.102063,  K,  fix, any,       iTRAQ4plex           # 4-plex iTraq
+**     StaticMod=C2H3N1O1,    C,  fix, any,       Carbamidomethyl      # Fixed Carbamidomethyl C (alkylation)
 **
-**          DynamicMod=HO3P, STY, opt, any,            Phospho              # Phosphorylation STY
+**     DynamicMod=HO3P, STY, opt, any,            Phospho              # Phosphorylation STY
 **
-**      TopPIC parameter file format:
-**        The format is Unimod Name, Mass, Residues, Position, UnimodID
-**        The UnimodName in the first column should match the Original_Source_Name values in T_Mass_Correction_Factors
+**  TopPIC parameter file format:
+**     The format is Unimod Name, Mass, Residues, Position, UnimodID
+**     The UnimodName in the first column should match the Original_Source_Name values in T_Mass_Correction_Factors
 **
-**          StaticMod=Carbamidomethylation,57.021464,C,any,4
-**          StaticMod=TMT6plex,229.1629,*,N-term,737
-**          StaticMod=TMT6plex,229.1629,K,any,737
+**     StaticMod=Carbamidomethylation,57.021464,C,any,4
+**     StaticMod=TMT6plex,229.1629,*,N-term,737
+**     StaticMod=TMT6plex,229.1629,K,any,737
 **
-**          DynamicMod=Phospho,79.966331,STY,any,21
-**          DynamicMod=Oxidation,15.994915,CPKDNRY,any,35
-**          DynamicMod=Methyl,14.015650,*,N-term,34
+**     DynamicMod=Phospho,79.966331,STY,any,21
+**     DynamicMod=Oxidation,15.994915,CPKDNRY,any,35
+**     DynamicMod=Methyl,14.015650,*,N-term,34
 **
 **
-**      To validate mods without storing them, set @paramFileID to 0 or a negative number
+**  To validate mods without storing them, set @paramFileID to 0 or a negative number
 **
 **  Auth:   mem
 **  Date:   05/16/2013 mem - Initial version
@@ -55,6 +53,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          10/02/2017 mem - If @paramFileID is 0 or negative, validate mods only.  Returns 0 if valid, error code if not valid
 **          08/17/2018 mem - Add support for TopPIC mods
 **                           Add parameter @paramFileType
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **    
 *****************************************************/
 (
@@ -217,7 +216,7 @@ AS
     
     INSERT INTO #Tmp_Mods (EntryID, Value)
     SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered ( @mods, @delimiter )
+    FROM dbo.udfParseDelimitedListOrdered(@mods, @delimiter, 0)
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
     
@@ -294,7 +293,7 @@ AS
             
             INSERT INTO #Tmp_ModDef (EntryID, Value)
             SELECT EntryID, Value
-            FROM dbo.udfParseDelimitedListOrdered ( @row, ',' )
+            FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
             
             If Not Exists (SELECT * FROM #Tmp_ModDef)
             Begin

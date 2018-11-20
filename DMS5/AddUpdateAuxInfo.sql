@@ -4,14 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[AddUpdateAuxInfo]
 /****************************************************
 **
-**  Desc: 
-**    Adds new or updates existing auxiliary information in database
-**
-**  Return values: 0: success, otherwise, error code
+**  Adds new or updates existing auxiliary information in database
 **
 **  Auth:   grk
 **  Date:   03/27/2002 grk - Initial release
@@ -26,6 +22,7 @@ CREATE Procedure [dbo].[AddUpdateAuxInfo]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **    
 *****************************************************/
 (
@@ -163,13 +160,13 @@ As
     
     INSERT INTO @tblAuxInfoNames (EntryID, ItemName)
     SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@itemNameList, '!')
+    FROM dbo.udfParseDelimitedListOrdered(@itemNameList, '!', 0)
     ORDER BY EntryID
     
 
     INSERT INTO @tblAuxInfoValues (EntryID, ItemValue)
     SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@itemValueList, '!')
+    FROM dbo.udfParseDelimitedListOrdered(@itemValueList, '!', 0)
     ORDER BY EntryID
 
 
