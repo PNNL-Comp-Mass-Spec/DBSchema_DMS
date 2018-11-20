@@ -4,11 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Experiment_Plex_Members_Entry]
 As
-Select ExpIDPivotQ.Plex_Exp_ID As Exp_ID,
-       E.Experiment_Num AS Experiment,
+SELECT ExpIDPivotQ.Plex_Exp_ID As Exp_ID,
+       E.Experiment_Num As Experiment,
        dbo.GetExperimentPlexMembersForEntry(ExpIDPivotQ.Plex_Exp_ID) As Plex_Members,
        ExpIDPivotQ.Channel1_ExpID, 
        ExpIDPivotQ.Channel2_ExpID, 
@@ -45,16 +44,19 @@ From (
               [9] As Channel9_ExpID, 
               [10] As Channel10_ExpID, 
               [11] As Channel11_ExpID
-       FROM  ( SELECT Plex_Exp_ID,
-                   Channel,
-                   Exp_ID
-            FROM T_Experiment_Plex_Members) AS SourceTable
-            PIVOT ( Max(Exp_ID)
+       FROM  ( SELECT PlexMembers.Plex_Exp_ID,
+                      PlexMembers.Channel,
+                      Cast(PlexMembers.Exp_ID As varchar(12)) + ': ' + E.Experiment_Num As ChannelExperiment
+            FROM T_Experiment_Plex_Members PlexMembers
+                 INNER JOIN T_Experiments E 
+                   On PlexMembers.Exp_ID = E.Exp_ID) AS SourceTable
+            PIVOT ( Max(ChannelExperiment)
                     FOR Channel
-                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) AS PivotData
+                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11] ) ) AS PivotData
     ) ExpIDPivotQ
-    Inner Join T_Experiments E On ExpIDPivotQ.Plex_Exp_ID = E.Exp_ID
-    Inner JOIN
+    INNER JOIN T_Experiments E 
+      On ExpIDPivotQ.Plex_Exp_ID = E.Exp_ID
+    INNER JOIN
     (
        SELECT Plex_Exp_ID,
               [1] As Channel1_Type, 
@@ -72,12 +74,12 @@ From (
                    PM.Channel,
                    ChannelTypeName.Channel_Type_Name
             FROM T_Experiment_Plex_Members PM
-                 Inner Join T_Experiment_Plex_Channel_Type_Name ChannelTypeName 
+                 INNER JOIN T_Experiment_Plex_Channel_Type_Name ChannelTypeName 
                    On PM.Channel_Type_ID = ChannelTypeName.Channel_Type_ID
                ) AS SourceTable
             PIVOT ( Max(Channel_Type_Name)
                     FOR Channel
-                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) AS PivotData
+                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11] ) ) AS PivotData
     ) ChannelTypePivotQ 
        On ExpIDPivotQ.Plex_Exp_ID = ChannelTypePivotQ.Plex_Exp_ID
 
