@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_ParamValue] 
+CREATE VIEW [dbo].[V_ParamValue]
 AS
 SELECT M.M_Name,
        PT.ParamName,
@@ -15,8 +15,7 @@ SELECT M.M_Name,
        PV.Comment,
        PV.Last_Affected,
        PV.Entered_By,
-       M.M_TypeID,
-	   PT.ParamName as ParamType
+       M.M_TypeID
 FROM T_ParamValue PV
      INNER JOIN T_Mgrs M
        ON PV.MgrID = M.M_ID
