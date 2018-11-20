@@ -36,6 +36,7 @@ CREATE Procedure [dbo].[DoDatasetOperation]
 **          09/07/2018 mem - Remove mode 'delete_all'; if you need to delete a dataset, manually call stored procedure DeleteDataset
 **                         - Rename @datasetNum to @datasetNameOrID
 **          09/27/2018 mem - Use named parameter names when calling DeleteDataset
+**          11/16/2018 mem - Pass @infoOnly to DeleteDataset
 **    
 *****************************************************/
 (
@@ -207,7 +208,7 @@ As
         -- Delete the dataset
         ---------------------------------------------------
 
-        execute @result = DeleteDataset @datasetName, @message = @message output, @callingUser = @callingUser
+        execute @result = DeleteDataset @datasetName, @infoOnly=0, @message = @message output, @callingUser = @callingUser
         --
         If @result <> 0
         Begin

@@ -34,26 +34,29 @@ CREATE Procedure [dbo].[DeleteDataset]
 **          09/27/2018 mem - Added parameter @infoOnly
 **                         - Now showing the unconsumed requested run
 **          09/28/2018 mem - Flag AutoReq requested runs as "To be deleted" instead of "To be marked active"
+**          11/16/2018 mem - Delete dataset file info from DMS_Capture.dbo.T_Dataset_Info_XML
+**                           Change the default for @infoOnly to 1
+**                           Rename the first parameter
 **    
 *****************************************************/
 (
-    @datasetNum varchar(128),
-    @infoOnly tinyint = 0,
+    @datasetName varchar(128),
+    @infoOnly tinyint = 1,
     @message varchar(512)='' output,
     @callingUser varchar(128) = ''
 )
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
-    declare @msg varchar(256)
+    Declare @msg varchar(256)
 
-    declare @datasetID int
-    declare @state int
+    Declare @datasetID int
+    Declare @state int
     
-    declare @result int
+    Declare @result int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -70,12 +73,12 @@ As
     -- Validate the inputs
     ------------------------------------------------
 
-    Set @datasetNum = IsNull(@datasetNum, '')
+    Set @datasetName = IsNull(@datasetName, '')
     Set @message = ''
 
-    If @datasetNum = ''
+    If @datasetName = ''
     Begin
-        set @msg = '@datasetNum parameter is blank; nothing to delete'
+        Set @msg = '@datasetName parameter is blank; nothing to delete'
         RAISERROR (@msg, 10, 1)
         return 51139
     End
@@ -84,26 +87,26 @@ As
     -- Get the datasetID and current state
     ---------------------------------------------------
     --
-    set @datasetID = 0
+    Set @datasetID = 0
     --
     SELECT  
         @state = DS_state_ID,
         @datasetID = Dataset_ID        
     FROM T_Dataset 
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE Dataset_Num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myError <> 0
     begin
-        set @msg = 'Could not get Id or state for dataset "' + @datasetNum + '"'
+        Set @msg = 'Could not get Id or state for dataset "' + @datasetName + '"'
         RAISERROR (@msg, 10, 1)
         return 51140
     end
     --
     If @datasetID = 0
     begin
-        set @msg = 'Dataset does not exist "' + @datasetNum + '"'
+        Set @msg = 'Dataset does not exist "' + @datasetName + '"'
         RAISERROR (@msg, 10, 1)
         return 51141
     end
@@ -120,7 +123,7 @@ As
 
     If Exists (SELECT * FROM T_Analysis_Job WHERE AJ_datasetID = @datasetID)
     Begin
-        set @msg = 'Cannot delete a dataset with existing analysis jobs'
+        Set @msg = 'Cannot delete a dataset with existing analysis jobs'
         RAISERROR (@msg, 10, 1)
         return 51142
     End
@@ -164,6 +167,13 @@ As
             WHERE Dataset_ID = @datasetID And State = 5
         End
 
+        If Exists (SELECT * FROM DMS_Capture.dbo.T_Dataset_Info_XML WHERE Dataset_ID = @datasetID)
+        Begin
+            SELECT 'To be deleted' AS [Action], *
+            FROM DMS_Capture.dbo.T_Dataset_Info_XML
+            WHERE Dataset_ID = @datasetID
+        End
+
         SELECT 'To be deleted' AS [Action], Jobs.*
         FROM DMS_Capture.dbo.T_Jobs Jobs
              INNER JOIN DMS_Capture.dbo.T_Jobs_History History
@@ -182,8 +192,8 @@ As
     -- Start a transaction
     ---------------------------------------------------
 
-    declare @transName varchar(32)
-    set @transName = 'DeleteDataset'
+    Declare @transName varchar(32)
+    Set @transName = 'DeleteDataset'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -206,12 +216,12 @@ As
     -- Delete any auxiliary info associated with dataset
     ---------------------------------------------------
     --    
-    exec @result = DeleteAuxInfo 'Dataset', @datasetNum, @message output
+    exec @result = DeleteAuxInfo 'Dataset', @datasetName, @message output
 
     if @result <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Delete auxiliary information was unsuccessful for dataset: ' + @message
+        Set @msg = 'Delete auxiliary information was unsuccessful for dataset: ' + @message
         RAISERROR (@msg, 10, 1)
         return 51136
     end
@@ -226,11 +236,11 @@ As
     FROM T_Requested_Run 
     WHERE DatasetID = @datasetID
 
-    exec @result = UnconsumeScheduledRun @datasetNum, @retainHistory=0, @message=@message output, @callingUser=@callingUser
+    exec @result = UnconsumeScheduledRun @datasetName, @retainHistory=0, @message=@message output, @callingUser=@callingUser
     if @result <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Unconsume operation was unsuccessful for dataset: ' + @message
+        Set @msg = 'Unconsume operation was unsuccessful for dataset: ' + @message
         RAISERROR (@msg, 10, 1)
         return 51103
     end
@@ -322,7 +332,7 @@ As
     UPDATE DMS_Capture.dbo.T_Log_Entries
     SET [Type] = 'ErrorAutoFixed'
     WHERE ([Type] = 'error') AND
-          message LIKE '%' + @datasetNum + '%'
+          message LIKE '%' + @datasetName + '%'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     
@@ -366,8 +376,7 @@ As
     -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
     If Len(@callingUser) > 0
     Begin
-        Declare @stateID int
-        Set @stateID = 0
+        Declare @stateID int = 0
 
         Exec AlterEventLogEntryUser 4, @datasetID, @stateID, @callingUser
     End
