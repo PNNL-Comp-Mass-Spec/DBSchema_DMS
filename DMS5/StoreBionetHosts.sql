@@ -290,6 +290,7 @@ Done:
     Return @myError
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreBionetHosts] TO [DDL_Viewer] AS [dbo]
 GO

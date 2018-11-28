@@ -294,6 +294,7 @@ As
     
     return @myError
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [DDL_Viewer] AS [dbo]
 GO
