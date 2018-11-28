@@ -63,6 +63,8 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **                           Add argument @referenceCompoundList
 **          01/04/2018 mem - Entries in @referenceCompoundList are now assumed to be in the form Compound_ID:Compound_Name, though we also support only Compound_ID or only Compound_Name
 **          07/30/2018 mem - Expand @reason and @comment to varchar(500)
+**          11/27/2018 mem - Check for @referenceCompoundList having '100:(none)'
+**                           Remove items from #Tmp_ExpToRefCompoundMap that map to the reference compound named (none)
 **
 *****************************************************/
 (
@@ -487,7 +489,7 @@ As
     -- Auto-switch from 'none' or 'na' or '(none)' to ''
     ---------------------------------------------------
     
-    If @referenceCompoundList IN ('none', 'na', '(none)')
+    If @referenceCompoundList IN ('none', 'na', '(none)', '100:(none)')
         Set @referenceCompoundList = ''
     
     -- Replace commas with semicolons
@@ -537,6 +539,15 @@ As
 
     if @myError <> 0
         RAISERROR ('Error resolving reference compound name to ID', 11, 91)
+
+    -- Delete any entries to where the name is '(none)'
+    DELETE #Tmp_ExpToRefCompoundMap
+    FROM #Tmp_ExpToRefCompoundMap Target
+         INNER JOIN T_Reference_Compound Src
+           ON Src.Compound_id = Target.Compound_ID
+    WHERE Src.Compound_Name = '(none)'
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
     -- Look for invalid entries in #Tmp_ExpToRefCompoundMap
