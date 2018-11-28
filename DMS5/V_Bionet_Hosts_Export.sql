@@ -13,9 +13,9 @@ Select Host,
        Last_Online,
        Comment
        Instruments,
-       Tag
+       Tag,
+       Active
 FROM T_Bionet_Hosts
-WHERE Active > 0
 
 
 GO
