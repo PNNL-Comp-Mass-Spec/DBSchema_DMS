@@ -11,11 +11,10 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          Can either provide data via @plexMembers or via channel-specific parameters
 **
 **          @plexMembers is a table listing Experiment ID values by channel or by tag
-**          Supported header names: Channel, Tag, Tag_Name, Exp_ID, Channel_Type, Comment
+**          Supported header names: Channel, Tag, Tag_Name, Exp_ID, Experiment, Channel_Type, Comment
 **
 **          If the header row is missing from the table, will attempt to auto-determine the channel
 **          The first two columns are required; Channel Type and Comment are optional
-
 **
 ** Example 1:
 **     Channel, Exp_ID, Channel Type, Comment
@@ -46,35 +45,62 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **     131N, 212465
 **     131C, 212466, Reference, This is a pooled reference
 **
+** Example 3:
+**     Tag, Experiment, Channel Type, Comment
+**     126, CPTAC_UCEC_Ref, Reference, 
+**     127N, CPTAC_UCEC_C3N-00858, Normal, Aliquot: CPT007832 0004
+**     127C, CPTAC_UCEC_C3N-00858, Normal, Aliquot: CPT007836 0001
+**     128N, CPTAC_UCEC_C3L-01252, Normal, Aliquot: CPT008062 0001
+**     128C, CPTAC_UCEC_C3L-01252, Normal, Aliquot: CPT008061 0003
+**     129N, CPTAC_UCEC_C3L-00947, Normal, Aliquot: CPT002742 0003
+**     129C, CPTAC_UCEC_C3L-00947, Normal, Aliquot: CPT002743 0001
+**     130N, CPTAC_UCEC_C3N-00734, Normal, Aliquot: CPT002603 0004
+**     130C, CPTAC_UCEC_C3L-01248, Normal, Aliquot: CPT008030 0003
+**     131, CPTAC_UCEC_C3N-00850, Normal, Aliquot: CPT002781 0003
+**
 **	Auth:	mem
 **	Date:	11/19/2018 mem - Initial version
+**          11/28/2018 mem - Allow the second column in the plex table to have experiment names instead of IDs
+**                         - Make @expIdChannel and @channelType parameters optional
+**                         - Add @comment parameters
 **    
 *****************************************************/
 (
 	@plexExperimentId int,
     @plexMembers varchar(4000),         -- Table of Channel to Exp_ID mapping (see above for examples)
-    @expIdChannel1 varchar(130),        -- Experiment ID; can optionally also have the experiment name
-    @expIdChannel2 varchar(130),
-    @expIdChannel3 varchar(130),
-    @expIdChannel4 varchar(130),
-    @expIdChannel5 varchar(130),
-    @expIdChannel6 varchar(130),
-    @expIdChannel7 varchar(130),
-    @expIdChannel8 varchar(130),
-    @expIdChannel9 varchar(130),
-    @expIdChannel10 varchar(130),
-    @expIdChannel11 varchar(130),
-    @channelType1 varchar(64),
-    @channelType2 varchar(64),
-    @channelType3 varchar(64),
-    @channelType4 varchar(64),
-    @channelType5 varchar(64),
-    @channelType6 varchar(64),
-    @channelType7 varchar(64),
-    @channelType8 varchar(64),
-    @channelType9 varchar(64),
-    @channelType10 varchar(64),
-    @channelType11 varchar(64),
+    @expIdChannel1 varchar(130)='',     -- Experiment ID or Experiment Name or ExpID:ExperimentName
+    @expIdChannel2 varchar(130)='',
+    @expIdChannel3 varchar(130)='',
+    @expIdChannel4 varchar(130)='',
+    @expIdChannel5 varchar(130)='',
+    @expIdChannel6 varchar(130)='',
+    @expIdChannel7 varchar(130)='',
+    @expIdChannel8 varchar(130)='',
+    @expIdChannel9 varchar(130)='',
+    @expIdChannel10 varchar(130)='',
+    @expIdChannel11 varchar(130)='',
+    @channelType1 varchar(64)='',       -- Normal, Reference, or Empty
+    @channelType2 varchar(64)='',
+    @channelType3 varchar(64)='',
+    @channelType4 varchar(64)='',
+    @channelType5 varchar(64)='',
+    @channelType6 varchar(64)='',
+    @channelType7 varchar(64)='',
+    @channelType8 varchar(64)='',
+    @channelType9 varchar(64)='',
+    @channelType10 varchar(64)='',
+    @channelType11 varchar(64)='',
+    @comment1 varchar(512)='',
+    @comment2 varchar(512)='',
+    @comment3 varchar(512)='',
+    @comment4 varchar(512)='',
+    @comment5 varchar(512)='',
+    @comment6 varchar(512)='',
+    @comment7 varchar(512)='',
+    @comment8 varchar(512)='',
+    @comment9 varchar(512)='',
+    @comment10 varchar(512)='',
+    @comment11 varchar(512)='',
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''		
@@ -155,7 +181,7 @@ As
 
     If @experimentLabel In ('Unknown', 'None')
     Begin
-        Set @message = 'Plex Experiment ID ' + @plexExperimentIdText + ' needs to have its isobaric label properly defined; it is currently ' + @experimentLabel
+        Set @message = 'Plex Experiment ID ' + @plexExperimentIdText + ' needs to have its isobaric label properly defined (as TMT10, TMT11, iTRAQ, etc.); it is currently ' + @experimentLabel
         RAISERROR (@message, 11, 118)
     End
 
@@ -204,10 +230,10 @@ As
         Declare @channelText varchar(32)
         Declare @tagName varchar(32)
         Declare @experimentId int
-        Declare @experimentIdText varchar(32)
+        Declare @experimentIdOrName varchar(128)
         Declare @channelTypeId int
         Declare @channelTypeName varchar(32)
-        Declare @plexMemberComment varchar(32)
+        Declare @plexMemberComment varchar(512)
 
         INSERT INTO #TmpRowData( Entry_ID, [Value])
         SELECT EntryID, [Value]
@@ -235,7 +261,7 @@ As
             Else
             Begin -- <ItemFound>
 
-                Delete From #TmpColData
+                DELETE FROM #TmpColData
 
                 -- Note that udfParseDelimitedListOrdered will replace tabs with commas
 
@@ -253,9 +279,9 @@ As
                 If @parseColData > 0 And @firstLineParsed = 0
                 Begin -- <ParseHeaders>
 
-                    Select Top 1 @channelColNum = Entry_ID
-                    From #TmpColData
-                    Where [Value] In ('Channel', 'Channel Number')
+                    SELECT Top 1 @channelColNum = Entry_ID
+                    FROM #TmpColData
+                    WHERE [Value] In ('Channel', 'Channel Number')
                     Order By Entry_ID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -264,9 +290,9 @@ As
                         Set @headersDefined = 1
                     Else
                     Begin
-                        Select Top 1 @tagColNum = Entry_ID
-                        From #TmpColData
-                        Where [Value] In ('Tag', 'Tag_Name', 'Tag Name', 'Masic_Name', 'Masic Name')
+                        SELECT Top 1 @tagColNum = Entry_ID
+                        FROM #TmpColData
+                        WHERE [Value] In ('Tag', 'Tag_Name', 'Tag Name', 'Masic_Name', 'Masic Name')
                         Order By Entry_ID
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -275,9 +301,9 @@ As
                             Set @headersDefined = 1
                     End
 
-                    Select Top 1 @experimentIdColNum = Entry_ID
-                    From #TmpColData
-                    Where [Value] In ('Exp_ID', 'Exp ID', 'Experiment_ID', 'Experiment ID', 'Experiment')
+                    SELECT Top 1 @experimentIdColNum = Entry_ID
+                    FROM #TmpColData
+                    WHERE [Value] In ('Exp_ID', 'Exp ID', 'Experiment_ID', 'Experiment ID', 'Experiment', 'Exp_ID_or_Name', 'Name')
                     Order By Entry_ID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -285,9 +311,9 @@ As
                     If @myRowCount > 0
                         Set @headersDefined = 1
 
-                    Select Top 1 @channelTypeColNum = Entry_ID
-                    From #TmpColData
-                    Where [Value] In ('Channel_Type', 'Channel Type')
+                    SELECT Top 1 @channelTypeColNum = Entry_ID
+                    FROM #TmpColData
+                    WHERE [Value] In ('Channel_Type', 'Channel Type')
                     Order By Entry_ID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -295,9 +321,9 @@ As
                     If @myRowCount > 0
                         Set @headersDefined = 1
 
-                    Select Top 1 @commentColNum = Entry_ID
-                    From #TmpColData
-                    Where [Value] Like 'Comment%'
+                    SELECT Top 1 @commentColNum = Entry_ID
+                    FROM #TmpColData
+                    WHERE [Value] Like 'Comment%'
                     Order By Entry_ID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -314,10 +340,10 @@ As
 
                         If @experimentIdColNum = 0
                         Begin
-                            RAISERROR ('Plex Members table must have column header Exp_ID', 11, 118)
+                            RAISERROR ('Plex Members table must have column header Exp_ID or Experiment', 11, 118)
                         End
 
-                        Delete From #TmpColData
+                        DELETE FROM #TmpColData
                     End
                     Else
                     Begin
@@ -335,41 +361,41 @@ As
                     Set @channelText = ''
                     Set @tagName = ''
                     Set @experimentId = 0
-                    Set @experimentIdText = ''
+                    Set @experimentIdOrName = ''
                     Set @channelTypeId = 0
                     Set @channelTypeName = ''
                     Set @plexMemberComment = ''
 
                     If @channelColNum > 0
                     Begin
-                        Select @channelText = Value
-                        From #TmpColData
-                        Where Entry_ID = @channelColNum
+                        SELECT @channelText = Value
+                        FROM #TmpColData
+                        WHERE Entry_ID = @channelColNum
                     End
 
                     If @tagColNum > 0
                     Begin
-                        Select @tagName = Value
-                        From #TmpColData
-                        Where Entry_ID = @tagColNum
+                        SELECT @tagName = Value
+                        FROM #TmpColData
+                        WHERE Entry_ID = @tagColNum
                     End
 
-                    Select @experimentIdText = Value
-                    From #TmpColData
-                    Where Entry_ID = @experimentIdColNum
+                    SELECT @experimentIdOrName = [Value]
+                    FROM #TmpColData
+                    WHERE Entry_ID = @experimentIdColNum
 
                     If @channelTypeColNum > 0
                     Begin
-                        Select @channelTypeName = Value
-                        From #TmpColData
-                        Where Entry_ID = @channelTypeColNum
+                        SELECT @channelTypeName = [Value]
+                        FROM #TmpColData
+                        WHERE Entry_ID = @channelTypeColNum
                     End
 
                     If @commentColNum > 0
                     Begin
-                        Select @plexMemberComment = Value
-                        From #TmpColData
-                        Where Entry_ID = @commentColNum
+                        SELECT @plexMemberComment = [Value]
+                        FROM #TmpColData
+                        WHERE Entry_ID = @commentColNum
                     End
 
                     If Len(@channelText) > 0
@@ -386,43 +412,56 @@ As
                     Begin -- <TagName>
                         If Len(@tagName) > 0
                         Begin
+                            If @experimentLabel = 'TMT10' And @tagName = '131'
+                            Begin
+                                Set @tagName = '131N'
+                            End
+
                             Set @channelNum = Null
 
                             SELECT Top 1 @channelNum = Channel      
                             FROM T_Sample_Labelling_Reporter_Ions
-                            Where Label = @experimentLabel And (Tag_Name = @tagName Or [MASIC_Name] = @tagName)
+                            WHERE Label = @experimentLabel And (Tag_Name = @tagName Or [MASIC_Name] = @tagName)
                             --
                             SELECT @myError = @@error, @myRowCount = @@rowcount
 
                             If @myRowCount = 0
                             Begin
-                                SELECT Top 1 @channelNum = Channel      
-                                FROM T_Sample_Labelling_Reporter_Ions
-                                Where Tag_Name = @tagName Or [MASIC_Name] = @tagName
-                                --
-                                SELECT @myError = @@error, @myRowCount = @@rowcount
-                            End
-
-                            If @myRowCount = 0
-                            Begin
-                                Set @message = 'Could not determine the channel number for tag ' + @tagName + '; see https://dms2.pnl.gov/sample_label_reporter_ions/report'
+                                Set @message = 'Could not determine the channel number for tag ' + @tagName + ' and label ' + @experimentLabel + '; see https://dms2.pnl.gov/sample_label_reporter_ions/report/' + @experimentLabel
+                                RAISERROR (@message, 11, 118)
                             End
                         End
                     End -- </TagName>
 
-                    Set @experimentId = Try_Cast(@experimentIdText As integer)
+                    Set @experimentId = Try_Cast(@experimentIdOrName As integer)
                   
                     If @experimentId Is Null
                     Begin
-                        Set @message = 'Could not convert Experiment ID ' + @experimentIdText + ' to an integer in row ' + Cast(@entryID As varchar(12)) + ' of the Plex Members table'
-                        RAISERROR (@message, 11, 118)
+                        -- Not an integer; is it a valid experiment name?
+                        SELECT @experimentId = Exp_ID
+                        FROM T_Experiments
+                        WHERE Experiment_Num = @experimentIdOrName
+                        --
+                        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                        If @myRowCount = 0
+                        Begin
+                            If @tagName = ''
+                                Set @message = 'Experiment not found for channel ' + Cast(@channelNum As varchar(12))
+                            Else
+                                Set @message = 'Experiment not found for tag ' + @tagName
+                            
+                            Set @message = @message + ' (specify an experiment ID or name): ' + @experimentIdOrName + 
+                                                      ' (see row ' + Cast(@entryID As varchar(12)) + ' of the Plex Members table)'
+                            RAISERROR (@message, 11, 118)
+                        End
                     End
 
                     If Len(@channelTypeName) > 0
                     Begin -- <ChannelTypeDefined>
                         SELECT @channelTypeId = Channel_Type_ID
                         FROM T_Experiment_Plex_Channel_Type_Name
-                        Where Channel_Type_Name = @channelTypeName
+                        WHERE Channel_Type_Name = @channelTypeName
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -445,9 +484,14 @@ As
 
                     If IsNull(@channelNum, 0) > 0 And IsNull(@experimentId, 0) > 0
                     Begin
-                        If Exists (Select * From #TmpExperiment_Plex_Members Where Channel = @channelNum)
+                        If Exists (SELECT * FROM #TmpExperiment_Plex_Members WHERE Channel = @channelNum)
                         Begin
                             Set @message = 'Plex Members table has duplicate entries for channel ' + Cast(@channelNum As varchar(12))
+                            If @tagName <> ''
+                            Begin
+                                Set @message = @message + ' (tag ' + @tagName + ')'
+                            End
+
                             RAISERROR (@message, 11, 118)
                         End
                         Else
@@ -479,28 +523,30 @@ As
         CREATE TABLE #TmpExperiment_Plex_Members_From_Params (
 	        [Channel] [tinyint] NOT NULL,
             [ExperimentInfo] varchar(130) NULL,
-            [ChannelType] varchar(64) NULL
+            [ChannelType] varchar(64) NULL,
+            [Comment] varchar(512) NULL
 	    )
         
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (1,  @expIdChannel1,  @channelType1)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (2,  @expIdChannel2,  @channelType2)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (3,  @expIdChannel3,  @channelType3)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (4,  @expIdChannel4,  @channelType4)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (5,  @expIdChannel5,  @channelType5)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (6,  @expIdChannel6,  @channelType6)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (7,  @expIdChannel7,  @channelType7)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (8,  @expIdChannel8,  @channelType8)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (9,  @expIdChannel9,  @channelType9)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (10, @expIdChannel10, @channelType10)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (11, @expIdChannel11, @channelType11)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (1,  @expIdChannel1,  @channelType1,  @comment1)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (2,  @expIdChannel2,  @channelType2,  @comment2)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (3,  @expIdChannel3,  @channelType3,  @comment3)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (4,  @expIdChannel4,  @channelType4,  @comment4)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (5,  @expIdChannel5,  @channelType5,  @comment5)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (6,  @expIdChannel6,  @channelType6,  @comment6)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (7,  @expIdChannel7,  @channelType7,  @comment7)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (8,  @expIdChannel8,  @channelType8,  @comment8)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (9,  @expIdChannel9,  @channelType9,  @comment9)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (10, @expIdChannel10, @channelType10, @comment10)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (11, @expIdChannel11, @channelType11, @comment11)
 
         Set @channelNum = 1
         While @channelNum <= 11
         Begin
-            If Not Exists (Select * From #TmpExperiment_Plex_Members Where [Channel] = @channelNum)
+            If Not Exists (SELECT * FROM #TmpExperiment_Plex_Members WHERE [Channel] = @channelNum)
             Begin -- <ProcessChannelParam>
-                SELECT @experimentIdText = LTrim(RTrim(IsNull(ExperimentInfo, ''))),
-                       @channelTypeName = Ltrim(RTrim(IsNull(ChannelType, '')))
+                SELECT @experimentIdOrName = LTrim(RTrim(IsNull(ExperimentInfo, ''))),
+                       @channelTypeName = Ltrim(RTrim(IsNull(ChannelType, ''))),
+                       @plexMemberComment = Ltrim(RTrim(IsNull(Comment, '')))
                 FROM #TmpExperiment_Plex_Members_From_Params
                 WHERE [Channel] = @channelNum
                 --
@@ -508,22 +554,24 @@ As
 
                 Set @experimentId = 0
 
-                If Len(@experimentIdText) > 0
+                If Len(@experimentIdOrName) > 0
                 Begin -- <ExperimentIdDefined>
 
-                    -- ExerimentIdText can have Experiment ID, or Experiment Name, or both, separated by a colon, comma, space, or tab
-                    Set @experimentIdText = Replace(@experimentIdText, ',', ':')
-                    Set @experimentIdText = Replace(@experimentIdText, char(9), ':')
-                    Set @experimentIdText = Replace(@experimentIdText, ' ', ':')
+                    -- ExperimentIdText can have Experiment ID, or Experiment Name, or both, separated by a colon, comma, space, or tab
+                    -- First assure that the delimiter (if present) is a colon
+                    Set @experimentIdOrName = Replace(@experimentIdOrName, ',', ':')
+                    Set @experimentIdOrName = Replace(@experimentIdOrName, char(9), ':')
+                    Set @experimentIdOrName = Replace(@experimentIdOrName, ' ', ':')
 
-                    Set @charIndex = CharIndex(':', @experimentIdText)
+                    -- Look for a colon
+                    Set @charIndex = CharIndex(':', @experimentIdOrName)
                     If @charIndex > 1
                     Begin
-                        Set @experimentId = Try_Cast(Substring(@experimentIdText, 1, @charIndex-1) As int)
+                        Set @experimentId = Try_Cast(Substring(@experimentIdOrName, 1, @charIndex-1) As int)
 
                         If @experimentId Is Null
                         Begin
-                            Set @message = 'Could not parse out the experiment ID from ' + Substring(@experimentIdText, 1, @charIndex-1) + ' for channel ' + Cast(@channelNum As varchar(12))
+                            Set @message = 'Could not parse out the experiment ID from ' + Substring(@experimentIdOrName, 1, @charIndex-1) + ' for channel ' + Cast(@channelNum As varchar(12))
                             RAISERROR (@message, 11, 118)
                         End
 
@@ -532,20 +580,20 @@ As
                     Begin
                         -- No colon (or the first character is a colon)
                         -- First try to match experiment ID
-                        Set @experimentId = Try_Cast(@experimentIdText As int)
+                        Set @experimentId = Try_Cast(@experimentIdOrName As int)
                     
                         If @experimentId Is Null
                         Begin
                             -- No match; try to match experiment name
                             SELECT @experimentId = Exp_ID
                             FROM T_Experiments
-                            WHERE Experiment_Num = @experimentIdText
+                            WHERE Experiment_Num = @experimentIdOrName
                             --
                             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                            If @experimentId Is Null
+                            If @myRowCount = 0
                             Begin
-                                Set @message = 'Experiment not found for channel ' + Cast(@channelNum As varchar(12)) + ': ' + @experimentIdText
+                                Set @message = 'Experiment not found for channel ' + Cast(@channelNum As varchar(12)) + ': ' + @experimentIdOrName
                                 RAISERROR (@message, 11, 118)
                             End
                         End
@@ -559,7 +607,7 @@ As
                     Begin -- <ChannelTypeDefined>
                         SELECT @channelTypeId = Channel_Type_ID
                         FROM T_Experiment_Plex_Channel_Type_Name
-                        Where Channel_Type_Name = @channelTypeName
+                        WHERE Channel_Type_Name = @channelTypeName
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -578,7 +626,7 @@ As
                     If IsNull(@experimentId, 0) > 0
                     Begin
                         Insert Into #TmpExperiment_Plex_Members (Channel, Exp_ID, Channel_Type_ID, Comment, ValidExperiment)
-                        Values (@channelNum, @experimentId, @channelTypeId, '', 0)
+                        Values (@channelNum, @experimentId, @channelTypeId, @plexMemberComment, 0)
                     End
 
                 End -- </ExperimentIdDefined>
@@ -663,17 +711,6 @@ As
 			Set @msg = 'Update operation failed: "' + @plexExperimentId + '"'
 			RAISERROR (@msg, 11, 18)
 		End
-
-        /*
-		Set @compoundID = SCOPE_IDENTITY()
-		
-		Declare @StateID int = 1
-		
-		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-		If Len(@callingUser) > 0
-			Exec AlterEventLogEntryUser 13, @compoundID, @StateID, @callingUser
-
-        */
 
 	End -- </AddOrUpdate>
 
