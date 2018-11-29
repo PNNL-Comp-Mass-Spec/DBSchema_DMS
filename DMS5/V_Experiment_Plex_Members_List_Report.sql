@@ -19,8 +19,7 @@ SELECT PlexMembers.Plex_Exp_ID AS Plex_Exp_ID,
        C.Campaign_Num AS Campaign,
        BTO.Tissue,
        E.EX_Labelling AS Labelling,
-       ReporterIons.MASIC_Name,
-       E.EX_sample_prep_request_ID AS Request
+       ReporterIons.MASIC_Name
 FROM T_Experiment_Plex_Members PlexMembers
      INNER JOIN dbo.T_Experiment_Plex_Channel_Type_Name ChannelTypeName
        ON PlexMembers.Channel_Type_ID = ChannelTypeName.Channel_Type_ID
@@ -37,6 +36,5 @@ FROM T_Experiment_Plex_Members PlexMembers
      LEFT OUTER JOIN T_Sample_Labelling_Reporter_Ions ReporterIons 
        ON PlexMembers.Channel = ReporterIons.Channel AND
          E.EX_Labelling = ReporterIons.Label
-
 
 GO
