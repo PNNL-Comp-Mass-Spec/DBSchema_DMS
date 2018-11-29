@@ -63,6 +63,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          11/28/2018 mem - Allow the second column in the plex table to have experiment names instead of IDs
 **                         - Make @expIdChannel and @channelType parameters optional
 **                         - Add @comment parameters
+**          11/29/2018 mem - Call AlterEnteredByUser
 **    
 *****************************************************/
 (
@@ -712,6 +713,13 @@ As
 			RAISERROR (@msg, 11, 18)
 		End
 
+        If Len(@callingUser) > 0
+        Begin
+            -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
+            --            
+            Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @plexExperimentId, @CallingUser
+        End
+
 	End -- </AddOrUpdate>
 
 	End TRY
@@ -732,6 +740,7 @@ As
 
 	return @myError
 
+GO
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentPlexMembers] TO [DDL_Viewer] AS [dbo]
 GO
