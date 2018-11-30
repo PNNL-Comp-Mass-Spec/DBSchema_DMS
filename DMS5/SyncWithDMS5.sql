@@ -26,7 +26,7 @@ CREATE Procedure [dbo].[SyncWithDMS5]
 **                         - Add T_Reference_Compound, T_Cached_Experiment_Components, T_Experiment_Cell_Cultures, and T_Experiment_Reference_Compounds
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
-**          11/30/2018 mem - Rename Monoisotopic_Mass field
+**          11/30/2018 mem - Add T_Residues and rename the Monoisotopic_Mass and Average_Mass fields
 **    
 *****************************************************/
 (
@@ -44,12 +44,10 @@ CREATE Procedure [dbo].[SyncWithDMS5]
     @message varchar(255) = '' output
 )
 As
-    set nocount on
+    Set NoCount On
     
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- Make sure we're not running in DMS5
@@ -817,6 +815,65 @@ As
             
         End -- </T_Mass_Correction_Factors>
 
+
+        Set @tableName = 'T_Residues'
+        Print 'Updating ' + @tableName
+        If @infoOnly = 0
+        Begin
+            DELETE FROM #Tmp_SummaryOfChanges
+
+            SET IDENTITY_INSERT [dbo].[T_Residues] ON;
+ 
+            MERGE [dbo].[T_Residues] AS t
+            USING (SELECT * FROM [DMS5].[dbo].[T_Residues]) as s
+            ON ( t.[Residue_ID] = s.[Residue_ID])
+            WHEN MATCHED AND (
+                t.[Residue_Symbol] <> s.[Residue_Symbol] OR
+                t.[Description] <> s.[Description] OR
+                t.[Average_Mass] <> s.[Average_Mass] OR
+                t.[Monoisotopic_Mass] <> s.[Monoisotopic_Mass] OR
+                t.[Num_C] <> s.[Num_C] OR
+                t.[Num_H] <> s.[Num_H] OR
+                t.[Num_N] <> s.[Num_N] OR
+                t.[Num_O] <> s.[Num_O] OR
+                t.[Num_S] <> s.[Num_S] OR
+                ISNULL( NULLIF(t.[Empirical_Formula], s.[Empirical_Formula]),
+                        NULLIF(s.[Empirical_Formula], t.[Empirical_Formula])) IS NOT NULL
+                )
+            THEN UPDATE SET 
+                [Residue_Symbol] = s.[Residue_Symbol],
+                [Description] = s.[Description],
+                [Average_Mass] = s.[Average_Mass],
+                [Monoisotopic_Mass] = s.[Monoisotopic_Mass],
+                [Num_C] = s.[Num_C],
+                [Num_H] = s.[Num_H],
+                [Num_N] = s.[Num_N],
+                [Num_O] = s.[Num_O],
+                [Num_S] = s.[Num_S],
+                [Empirical_Formula] = s.[Empirical_Formula]
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT([Residue_ID], [Residue_Symbol], [Description], [Average_Mass], [Monoisotopic_Mass], [Num_C], [Num_H], [Num_N], [Num_O], [Num_S], [Empirical_Formula])
+                VALUES(s.[Residue_ID], s.[Residue_Symbol], s.[Description], s.[Average_Mass], s.[Monoisotopic_Mass], s.[Num_C], s.[Num_H], s.[Num_N], s.[Num_O], s.[Num_S], s.[Empirical_Formula])
+            WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
+            OUTPUT @tableName, $action,
+                   Cast(Inserted.[Residue_ID] as varchar(12)),
+                   Cast(Deleted.[Residue_ID] as varchar(12))
+                   INTO #Tmp_SummaryOfChanges;
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+ 
+            SET IDENTITY_INSERT [dbo].[T_Residues] OFF;
+
+            If @myError <> 0 
+            Begin
+                Set @message = 'Error updating ' + @tableName
+                Goto Done
+            End
+            
+            If @myRowCount > 0
+                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+            
+        End -- </T_Residues>
 
         Set @tableName = 'T_Param_File_Mass_Mods'
         Print 'Updating ' + @tableName
