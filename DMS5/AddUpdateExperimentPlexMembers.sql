@@ -741,7 +741,6 @@ As
 	return @myError
 
 GO
-GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentPlexMembers] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateExperimentPlexMembers] TO [DMS_User] AS [dbo]

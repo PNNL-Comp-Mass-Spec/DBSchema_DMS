@@ -73,22 +73,31 @@ GO
 
 CREATE Trigger [dbo].[trig_i_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Insert
+/****************************************************
+**
+**  Desc:   Stores the new information in T_Mass_Correction_Factors_Change_History
+**
+**  Auth:   grk
+**  Date:   08/23/2006
+**          11/30/2018 - Renamed the Monoisotopic_Mass and Average_Mass columns
+**
+*****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	INSERT INTO T_Mass_Correction_Factors_Change_History (
-				Mass_Correction_ID, Mass_Correction_Tag, Description, 
-			    Monoisotopic_Mass, Average_Mass, 
-			    Affected_Atom, Original_Source, Original_Source_Name, 
-				Monoisotopic_Mass_Change, Average_Mass_Change, 
-				Entered, Entered_By)
-	SELECT 	Mass_Correction_ID, Mass_Correction_Tag, Description, 
-		    Monoisotopic_Mass, Average_Mass, 
-		    Affected_Atom, Original_Source, Original_Source_Name, 
-			0 AS Monoisotopic_Mass_Change, 0 AS Average_Mass_Change, 
-			GetDate(), SYSTEM_USER
-	FROM inserted
+    INSERT INTO T_Mass_Correction_Factors_Change_History (
+                Mass_Correction_ID, Mass_Correction_Tag, Description, 
+                Monoisotopic_Mass, Average_Mass, 
+                Affected_Atom, Original_Source, Original_Source_Name, 
+                Monoisotopic_Mass_Change, Average_Mass_Change, 
+                Entered, Entered_By)
+    SELECT  Mass_Correction_ID, Mass_Correction_Tag, Description, 
+            Monoisotopic_Mass, Average_Mass, 
+            Affected_Atom, Original_Source, Original_Source_Name, 
+            0 AS Monoisotopic_Mass_Change, 0 AS Average_Mass_Change, 
+            GetDate(), suser_sname()
+    FROM inserted
 
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] ENABLE TRIGGER [trig_i_Mass_Correction_Factors]
@@ -101,28 +110,37 @@ GO
 
 CREATE Trigger [dbo].[trig_u_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Update
+/****************************************************
+**
+**  Desc:   Stores the updated information in T_Mass_Correction_Factors_Change_History
+**
+**  Auth:   grk
+**  Date:   08/23/2006
+**          11/30/2018 - Renamed the Monoisotopic_Mass and Average_Mass columns
+**
+*****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	if update(Mass_Correction_Tag) or 
-	   update(Monoisotopic_Mass) or 
-	   update(Average_Mass) or 
-	   update(Affected_Atom)
-		INSERT INTO T_Mass_Correction_Factors_Change_History (
-					Mass_Correction_ID, Mass_Correction_Tag, Description, 
-				    Monoisotopic_Mass, Average_Mass, 
-				    Affected_Atom, Original_Source, Original_Source_Name, 
-					Monoisotopic_Mass_Change, 
-					Average_Mass_Change,
-					Entered, Entered_By)
-		SELECT 	inserted.Mass_Correction_ID, inserted.Mass_Correction_Tag, inserted.Description, 
-			    inserted.Monoisotopic_Mass, inserted.Average_Mass, 
-			    inserted.Affected_Atom, inserted.Original_Source, inserted.Original_Source_Name, 
-				ROUND(inserted.Monoisotopic_Mass - deleted.Monoisotopic_Mass, 10),
-				ROUND(inserted.Average_Mass - deleted.Average_Mass, 10),
-				GetDate(), SYSTEM_USER
-		FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
+    if update(Mass_Correction_Tag) or 
+       update(Monoisotopic_Mass) or 
+       update(Average_Mass) or 
+       update(Affected_Atom)
+        INSERT INTO T_Mass_Correction_Factors_Change_History (
+                    Mass_Correction_ID, Mass_Correction_Tag, Description, 
+                    Monoisotopic_Mass, Average_Mass, 
+                    Affected_Atom, Original_Source, Original_Source_Name, 
+                    Monoisotopic_Mass_Change, 
+                    Average_Mass_Change,
+                    Entered, Entered_By)
+        SELECT  inserted.Mass_Correction_ID, inserted.Mass_Correction_Tag, inserted.Description, 
+                inserted.Monoisotopic_Mass, inserted.Average_Mass, 
+                inserted.Affected_Atom, inserted.Original_Source, inserted.Original_Source_Name, 
+                ROUND(inserted.Monoisotopic_Mass - deleted.Monoisotopic_Mass, 10),
+                ROUND(inserted.Average_Mass - deleted.Average_Mass, 10),
+                GetDate(), suser_sname()
+        FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
 
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] ENABLE TRIGGER [trig_u_Mass_Correction_Factors]
