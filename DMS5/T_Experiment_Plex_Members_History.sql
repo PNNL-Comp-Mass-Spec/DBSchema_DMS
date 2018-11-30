@@ -14,9 +14,11 @@ CREATE TABLE [dbo].[T_Experiment_Plex_Members_History](
  CONSTRAINT [PK_T_Experiment_Plex_Members_History] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+GRANT UPDATE ON [dbo].[T_Experiment_Plex_Members_History] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Experiment_Plex_Members_History] ADD  CONSTRAINT [DF_T_Experiment_Plex_Members_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
