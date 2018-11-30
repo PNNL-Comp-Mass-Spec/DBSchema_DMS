@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetMassCorrectionName
+
+CREATE PROCEDURE [dbo].[GetMassCorrectionName]
 /****************************************************
 **
 **	Desc: Gets Mass Correction Name for given Mass Correction Factor
@@ -13,6 +14,7 @@ CREATE PROCEDURE GetMassCorrectionName
 **	Auth:	kja
 **	Date:	08/22/2004
 **			08/03/2017 mem - Add Set NoCount On
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -25,7 +27,7 @@ As
 		
 	SELECT @MassCorrectionName = Mass_Correction_Tag
 	FROM T_Mass_Correction_Factors
-	WHERE Monoisotopic_Mass_Correction = @modMass
+	WHERE Monoisotopic_Mass = @modMass
 	
 	return @MassCorrectionName
 

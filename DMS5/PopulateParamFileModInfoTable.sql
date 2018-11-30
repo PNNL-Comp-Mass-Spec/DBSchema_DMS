@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.PopulateParamFileModInfoTable
+CREATE PROCedure [dbo].[PopulateParamFileModInfoTable]
 /****************************************************
 ** 
 **	Desc:	Populates temporary table #TmpParamFileModResults
@@ -16,6 +16,7 @@ CREATE Procedure dbo.PopulateParamFileModInfoTable
 ** 
 **	Date:	12/08/2006 mem - Initial version (Ticket #342)
 **			04/07/2008 mem - Added parameters @MassModFilterTextColumn, @MassModFilterText, and @MassModFilterSql
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -125,7 +126,7 @@ As
 
 	If @ShowModMass <> 0
 	Begin
-		Set @S = @S + ' CONVERT(varchar(19), MCF.Monoisotopic_Mass_Correction)'
+		Set @S = @S + ' CONVERT(varchar(19), MCF.Monoisotopic_Mass)'
 		If @ShowModName <> 0
 			 Set @S = @S + ' + '')'''
 	End

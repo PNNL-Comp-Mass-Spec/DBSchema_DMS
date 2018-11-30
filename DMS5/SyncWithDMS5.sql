@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[SyncWithDMS5]
 /****************************************************
 ** 
@@ -27,6 +26,7 @@ CREATE Procedure [dbo].[SyncWithDMS5]
 **                         - Add T_Reference_Compound, T_Cached_Experiment_Components, T_Experiment_Cell_Cultures, and T_Experiment_Reference_Compounds
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -768,12 +768,12 @@ As
             ON ( t.[Mass_Correction_ID] = s.[Mass_Correction_ID])
             WHEN MATCHED AND (
                 t.[Mass_Correction_Tag] <> s.[Mass_Correction_Tag] OR
-                t.[Monoisotopic_Mass_Correction] <> s.[Monoisotopic_Mass_Correction] OR
+                t.[Monoisotopic_Mass] <> s.[Monoisotopic_Mass] OR
                 t.[Affected_Atom] <> s.[Affected_Atom] OR
                 ISNULL( NULLIF(t.[Description], s.[Description]),
                         NULLIF(s.[Description], t.[Description])) IS NOT NULL OR
-                ISNULL( NULLIF(t.[Average_Mass_Correction], s.[Average_Mass_Correction]),
-                        NULLIF(s.[Average_Mass_Correction], t.[Average_Mass_Correction])) IS NOT NULL OR
+                ISNULL( NULLIF(t.[Average_Mass], s.[Average_Mass]),
+                        NULLIF(s.[Average_Mass], t.[Average_Mass])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Original_Source], s.[Original_Source]),
                         NULLIF(s.[Original_Source], t.[Original_Source])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Original_Source_Name], s.[Original_Source_Name]),
@@ -786,16 +786,16 @@ As
             THEN UPDATE SET 
                 [Mass_Correction_Tag] = s.[Mass_Correction_Tag],
                 [Description] = s.[Description],
-                [Monoisotopic_Mass_Correction] = s.[Monoisotopic_Mass_Correction],
-                [Average_Mass_Correction] = s.[Average_Mass_Correction],
+                [Monoisotopic_Mass] = s.[Monoisotopic_Mass],
+                [Average_Mass] = s.[Average_Mass],
                 [Affected_Atom] = s.[Affected_Atom],
                 [Original_Source] = s.[Original_Source],
                 [Original_Source_Name] = s.[Original_Source_Name],
                 [Alternative_Name] = s.[Alternative_Name],
                 [Empirical_Formula] = s.[Empirical_Formula]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([Mass_Correction_ID], [Mass_Correction_Tag], [Description], [Monoisotopic_Mass_Correction], [Average_Mass_Correction], [Affected_Atom], [Original_Source], [Original_Source_Name], [Alternative_Name], [Empirical_Formula])
-                VALUES(s.[Mass_Correction_ID], s.[Mass_Correction_Tag], s.[Description], s.[Monoisotopic_Mass_Correction], s.[Average_Mass_Correction], s.[Affected_Atom], s.[Original_Source], s.[Original_Source_Name], s.[Alternative_Name], s.[Empirical_Formula])
+                INSERT([Mass_Correction_ID], [Mass_Correction_Tag], [Description], [Monoisotopic_Mass], [Average_Mass], [Affected_Atom], [Original_Source], [Original_Source_Name], [Alternative_Name], [Empirical_Formula])
+                VALUES(s.[Mass_Correction_ID], s.[Mass_Correction_Tag], s.[Description], s.[Monoisotopic_Mass], s.[Average_Mass], s.[Affected_Atom], s.[Original_Source], s.[Original_Source_Name], s.[Alternative_Name], s.[Empirical_Formula])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action, 
                    Cast(Inserted.[Mass_Correction_ID] as varchar(12)), 

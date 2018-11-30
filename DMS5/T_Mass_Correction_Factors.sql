@@ -7,8 +7,8 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 	[Mass_Correction_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Mass_Correction_Tag] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Monoisotopic_Mass_Correction] [float] NOT NULL,
-	[Average_Mass_Correction] [float] NULL,
+	[Monoisotopic_Mass] [float] NOT NULL,
+	[Average_Mass] [float] NULL,
 	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Original_Source] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -20,7 +20,7 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY],
  CONSTRAINT [IX_T_Mass_Correction_Factors_MonoisotopicMass_and_AffectedAtom] UNIQUE CLUSTERED 
 (
-	[Monoisotopic_Mass_Correction] ASC,
+	[Monoisotopic_Mass] ASC,
 	[Affected_Atom] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -70,7 +70,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger trig_i_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
+
+CREATE Trigger [dbo].[trig_i_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Insert
 AS
 	If @@RowCount = 0
@@ -78,12 +79,12 @@ AS
 
 	INSERT INTO T_Mass_Correction_Factors_Change_History (
 				Mass_Correction_ID, Mass_Correction_Tag, Description, 
-			    Monoisotopic_Mass_Correction, Average_Mass_Correction, 
+			    Monoisotopic_Mass, Average_Mass, 
 			    Affected_Atom, Original_Source, Original_Source_Name, 
 				Monoisotopic_Mass_Change, Average_Mass_Change, 
 				Entered, Entered_By)
 	SELECT 	Mass_Correction_ID, Mass_Correction_Tag, Description, 
-		    Monoisotopic_Mass_Correction, Average_Mass_Correction, 
+		    Monoisotopic_Mass, Average_Mass, 
 		    Affected_Atom, Original_Source, Original_Source_Name, 
 			0 AS Monoisotopic_Mass_Change, 0 AS Average_Mass_Change, 
 			GetDate(), SYSTEM_USER
@@ -97,28 +98,29 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger trig_u_Mass_Correction_Factors on dbo.T_Mass_Correction_Factors
+
+CREATE Trigger [dbo].[trig_u_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Update
 AS
 	If @@RowCount = 0
 		Return
 
 	if update(Mass_Correction_Tag) or 
-	   update(Monoisotopic_Mass_Correction) or 
-	   update(Average_Mass_Correction) or 
+	   update(Monoisotopic_Mass) or 
+	   update(Average_Mass) or 
 	   update(Affected_Atom)
 		INSERT INTO T_Mass_Correction_Factors_Change_History (
 					Mass_Correction_ID, Mass_Correction_Tag, Description, 
-				    Monoisotopic_Mass_Correction, Average_Mass_Correction, 
+				    Monoisotopic_Mass, Average_Mass, 
 				    Affected_Atom, Original_Source, Original_Source_Name, 
 					Monoisotopic_Mass_Change, 
 					Average_Mass_Change,
 					Entered, Entered_By)
 		SELECT 	inserted.Mass_Correction_ID, inserted.Mass_Correction_Tag, inserted.Description, 
-			    inserted.Monoisotopic_Mass_Correction, inserted.Average_Mass_Correction, 
+			    inserted.Monoisotopic_Mass, inserted.Average_Mass, 
 			    inserted.Affected_Atom, inserted.Original_Source, inserted.Original_Source_Name, 
-				ROUND(inserted.Monoisotopic_Mass_Correction - deleted.Monoisotopic_Mass_Correction, 10),
-				ROUND(inserted.Average_Mass_Correction - deleted.Average_Mass_Correction, 10),
+				ROUND(inserted.Monoisotopic_Mass - deleted.Monoisotopic_Mass, 10),
+				ROUND(inserted.Average_Mass - deleted.Average_Mass, 10),
 				GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Mass_Correction_ID = inserted.Mass_Correction_ID
 

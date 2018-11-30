@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetMassCorrectionID
+
+CREATE PROCEDURE [dbo].[GetMassCorrectionID]
 /****************************************************
 **
 **	Desc: Gets Mass Correction ID for given ModSymbol
@@ -13,6 +14,7 @@ CREATE PROCEDURE GetMassCorrectionID
 **	Auth:	kja
 **	Date:	08/22/2004
 **			08/03/2017 mem - Add Set NoCount On
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -26,8 +28,8 @@ As
 	
 	SELECT @MassCorrectionID = Mass_Correction_ID
 	FROM T_Mass_Correction_Factors
-	WHERE (Monoisotopic_Mass_Correction < @modMass + @MCVariance AND
-	       Monoisotopic_Mass_Correction > @modMass - @MCVariance)
+	WHERE (Monoisotopic_Mass < @modMass + @MCVariance AND
+	       Monoisotopic_Mass > @modMass - @MCVariance)
 	
 	return @MassCorrectionID
 

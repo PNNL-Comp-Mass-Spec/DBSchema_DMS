@@ -15,7 +15,7 @@ SELECT PF.Param_File_Name,
        PFMM.Mass_Correction_ID,
        MCF.Mass_Correction_Tag,
        MCF.Description,
-       MCF.Monoisotopic_Mass_Correction,
+       MCF.Monoisotopic_Mass,
        ISNULL(MCF.Empirical_Formula, '') AS Empirical_Formula
 FROM dbo.T_Mass_Correction_Factors MCF
      INNER JOIN dbo.T_Param_File_Mass_Mods PFMM

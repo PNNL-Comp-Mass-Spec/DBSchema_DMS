@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.DuplicateParamFileMassMods
+CREATE PROCedure [dbo].[DuplicateParamFileMassMods]
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +21,7 @@ CREATE Procedure dbo.DuplicateParamFileMassMods
 **	Date:	05/04/2009
 **			07/01/2009 mem - Added parameter @DestParamFileID
 **			07/22/2009 mem - Now returning the suggested query for tweaking the newly entered mass mods
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -58,7 +59,7 @@ AS
 
 	Set @S = ''
 	Set @S = @S + ' SELECT PFMM.*, R.Residue_Symbol,'
-	Set @S = @S +        ' MCF.Mass_Correction_Tag, MCF.Monoisotopic_Mass_Correction,'
+	Set @S = @S +        ' MCF.Mass_Correction_Tag, MCF.Monoisotopic_Mass,'
 	Set @S = @S +        ' SLS.Local_Symbol, R.Description AS Residue_Desc'
 	Set @S = @S + ' FROM dbo.T_Param_File_Mass_Mods PFMM'
 	Set @S = @S +      ' INNER JOIN dbo.T_Residues R'
@@ -114,7 +115,7 @@ AS
 	If @InfoOnly <> 0
 	Begin
 		SELECT PFMM.*, R.Residue_Symbol, MCF.Mass_Correction_Tag, 
-			MCF.Monoisotopic_Mass_Correction, SLS.Local_Symbol, 
+			MCF.Monoisotopic_Mass, SLS.Local_Symbol, 
 			R.Description AS Residue_Desc,
 			@DestParamFileID AS Destination_Param_File_ID
 		FROM dbo.T_Param_File_Mass_Mods PFMM INNER JOIN

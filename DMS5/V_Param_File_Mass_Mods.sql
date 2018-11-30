@@ -10,7 +10,7 @@ AS
 SELECT PFMM.*,
        R.Residue_Symbol,
        MCF.Mass_Correction_Tag,
-       MCF.Monoisotopic_Mass_Correction,
+       MCF.Monoisotopic_Mass,
        SLS.Local_Symbol,
        R.Description AS Residue_Desc,
        PF.Param_File_Name,
@@ -27,7 +27,7 @@ SELECT PFMM.*,
 	   ' | ' + R.Description + 
 	   ' | ' + MCF.Mass_Correction_Tag + 
 	   ' | ' + CASE WHEN MCF.Original_Source LIKE '%UniMod%' Then MCF.Original_Source_Name ELSE '' End + 
-	   ' | ' + Cast(MCF.Monoisotopic_Mass_Correction as varchar(12)) + 
+	   ' | ' + Cast(MCF.Monoisotopic_Mass as varchar(12)) + 
 	   ' | ' AS TableCode_Row
 FROM T_Param_File_Mass_Mods PFMM
      INNER JOIN T_Residues R

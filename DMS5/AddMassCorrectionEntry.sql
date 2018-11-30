@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddMassCorrectionEntry
+
+CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
 /****************************************************
 **
 **	Desc: Adds a new or updates an existing global modification
@@ -19,6 +20,7 @@ CREATE PROCEDURE AddMassCorrectionEntry
 **	Auth:	kja
 **	Date:	08/02/2004
 **			10/17/2013 mem - Expanded @modDescription to varchar(128)
+**          11/30/2018 mem - Rename Monoisotopic_Mass field
 **    
 *****************************************************/
 (
@@ -115,7 +117,7 @@ As
 		INSERT INTO T_Mass_Correction_Factors (
 			Mass_Correction_Tag,
 			Description,
-			Monoisotopic_Mass_Correction,
+			Monoisotopic_Mass,
 			Affected_Atom,
 			Original_Source
 		) VALUES (
