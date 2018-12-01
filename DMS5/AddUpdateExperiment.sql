@@ -65,6 +65,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **          07/30/2018 mem - Expand @reason and @comment to varchar(500)
 **          11/27/2018 mem - Check for @referenceCompoundList having '100:(none)'
 **                           Remove items from #Tmp_ExpToRefCompoundMap that map to the reference compound named (none)
+**          11/30/2018 mem - Add output parameter @experimentID
 **
 *****************************************************/
 (
@@ -86,6 +87,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
     @wellplateNum varchar(64),
     @wellNum varchar(8),
     @alkylation varchar(1),
+    @experimentId int = null output,            -- Used by the ExperimentID page family when copying an experiment; this will have the new experiment's ID
     @mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
     @message varchar(512) output,
     @container varchar(128) = 'na', 
@@ -140,9 +142,9 @@ As
     Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, '')))
     Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
-    
+
     if LEN(@experimentNum) < 1
-        RAISERROR ('experiment name must be defined', 11, 30)
+        RAISERROR ('Experiment name must be defined', 11, 30)
     --
     if LEN(@campaignNum) < 1
         RAISERROR ('Campaign name must be defined', 11, 31)
@@ -201,9 +203,9 @@ As
     Declare @errorCode int
 
     EXEC @errorCode = GetTissueID 
-        @tissueNameOrID=@tissue,
-        @tissueIdentifier=@tissueIdentifier output,
-        @tissueName=@tissueName output
+            @tissueNameOrID=@tissue,
+            @tissueIdentifier=@tissueIdentifier output,
+            @tissueName=@tissueName output
     
     If @errorCode = 100
         RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
@@ -214,11 +216,11 @@ As
     -- Is entry already in database?
     ---------------------------------------------------
 
-    Declare @experimentID int = 0
+    Declare @existingExperimentID int = 0
     Declare @curContainerID int = 0
     --
     SELECT 
-        @experimentID = Exp_ID,
+        @existingExperimentID = Exp_ID,
         @curContainerID = EX_Container_ID
     FROM T_Experiments 
     WHERE (Experiment_Num = @experimentNum)
@@ -226,17 +228,17 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
-        RAISERROR ('Error trying to resolve experiment ID', 11, 38)
+        RAISERROR ('Error trying to resolve experiment name to ID', 11, 38)
 
-    -- cannot create an entry that already exists
+    -- Cannot create an entry that already exists
     --
-    if @experimentID <> 0 and (@mode In ('add', 'check_add'))
-        RAISERROR ('Cannot add: Experiment "%s" already in database', 11, 39, @experimentNum)
+    if @existingExperimentID <> 0 and (@mode In ('add', 'check_add'))
+        RAISERROR ('Cannot add: Experiment "%s" already in database; cannot add', 11, 39, @experimentNum)
 
-    -- cannot update a non-existent entry
+    -- Cannot update a non-existent entry
     --
-    if @experimentID = 0 and (@mode In ('update', 'check_update'))
-        RAISERROR ('Cannot update: Experiment "%s" is not in database', 11, 40, @experimentNum)
+    if @existingExperimentID = 0 and (@mode In ('update', 'check_update'))
+        RAISERROR ('Cannot update: Experiment "%s" is not in database; cannot update (to rename an experiment, contact a DMS Admin)', 11, 40, @experimentNum)
 
     ---------------------------------------------------
     -- Resolve campaign ID
@@ -258,15 +260,15 @@ As
         -- Could not find entry in database for PRN @researcherPRN
         -- Try to auto-resolve the name
 
-        Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @matchCount int
+        Declare @newPRN varchar(64)
 
-        exec AutoResolveNameToPRN @researcherPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @researcherPRN, @matchCount output, @newPRN output, @userID output
 
-        If @MatchCount = 1
+        If @matchCount = 1
         Begin
             -- Single match found; update @researcherPRN
-            Set @researcherPRN = @NewPRN
+            Set @researcherPRN = @newPRN
         End
         Else
         Begin
@@ -663,24 +665,23 @@ As
         Set @experimentID = SCOPE_IDENTITY()        
 
         -- As a precaution, query T_Experiments using Experiment name to make sure we have the correct Exp_ID
-        Declare @ExpIDConfirm int = 0
+        Declare @expIDConfirm int = 0
         
-        SELECT @ExpIDConfirm = Exp_ID
+        SELECT @expIDConfirm = Exp_ID
         FROM T_Experiments
         WHERE Experiment_Num = @experimentNum
         
-        If @experimentID <> IsNull(@ExpIDConfirm, @experimentID)
+        If @experimentID <> IsNull(@expIDConfirm, @experimentID)
         Begin
-            Declare @DebugMsg varchar(512)
-            Set @DebugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentNum + ': Found ID ' +
-                            Cast(@ExpIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+            Declare @debugMsg varchar(512)
+            Set @debugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentNum + ': Found ID ' +
+                            Cast(@expIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
                             Cast(@experimentID as varchar(12))
                             
-            exec postlogentry 'Error', @DebugMsg, 'AddUpdateExperiment'
+            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateExperiment'
             
-            Set @experimentID = @ExpIDConfirm
+            Set @experimentID = @expIDConfirm
         End
-
 
         Declare @StateID int = 1
         

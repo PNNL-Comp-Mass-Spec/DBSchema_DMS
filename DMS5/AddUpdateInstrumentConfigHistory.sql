@@ -23,7 +23,6 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int,
 	@Instrument varchar(24),
 	@DateOfChange varchar(24),
 	@PostedBy VARCHAR(64),
@@ -32,6 +31,7 @@ CREATE PROCEDURE AddUpdateInstrumentConfigHistory
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
+    @id int output,             -- Input/output parameter
 )
 As
 	Set XACT_ABORT, nocount on

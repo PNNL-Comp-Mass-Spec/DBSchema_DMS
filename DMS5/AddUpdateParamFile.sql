@@ -21,10 +21,11 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          10/02/2017 mem - Abort adding a new parameter file if @paramfileMassMods does not validate (when @validateUnimod is 1)
 **          08/17/2018 mem - Pass @paramFileType to StoreParamFileMassMods
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          11/30/2018 mem - Make @paramFileID an input/output parameter
 **
 *****************************************************/
 (
-    @paramFileID int, 
+    @paramFileID int output,
     @paramFileName varchar(255), 
     @paramFileDesc varchar(1024),
     @paramFileType varchar(50),
@@ -226,7 +227,7 @@ As
         If @paramfileMassMods <> '' And (
             @Mode = 'add' OR 
             @Mode = 'update' And @replaceExistingMassMods = 1 OR
-            @Mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @ParamFileID))
+            @Mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID))
         Begin -- <b>
         
             ---------------------------------------------------
@@ -288,7 +289,7 @@ As
             RAISERROR (@msg, 11, 1)
         End
         
-        Set @ParamFileID = SCOPE_IDENTITY()
+        Set @paramFileID = SCOPE_IDENTITY()
         
         Set @updateMassMods = 1
         
@@ -302,12 +303,12 @@ As
     Begin -- <update>
     
         UPDATE T_Param_Files
-        Set Param_File_Name = @paramFileName,
+        SET Param_File_Name = @paramFileName,
             Param_File_Description = @ParamFileDesc,
             Param_File_Type_ID = @ParamFileTypeID,
             Valid = @paramfileValid,
             Date_Modified = GETDATE()
-        WHERE Param_File_ID = @ParamFileID
+        WHERE Param_File_ID = @paramFileID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -321,9 +322,9 @@ As
         
     End -- </update>
 
-    If @ParamFileID > 0 And @paramfileMassMods <> '' And @updateMassMods = 1
+    If @paramFileID > 0 And @paramfileMassMods <> '' And @updateMassMods = 1
     Begin
-        If @replaceExistingMassMods = 0 And Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @ParamFileID)
+        If @replaceExistingMassMods = 0 And Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID)
         Begin
             Set @updateMassMods = 0
             Set @message = 'Warning: existing mass mods were not updated because @updateMassMods was 0'
@@ -333,7 +334,7 @@ As
         Begin
             -- Store the param file mass mods in T_Param_File_Mass_Mods
             exec @myError = StoreParamFileMassMods 
-                @ParamFileID, 
+                @paramFileID, 
                 @mods=@paramfileMassMods, 
                 @InfoOnly=0, 
                 @ReplaceExisting=@ReplaceExistingMassMods, 

@@ -64,10 +64,11 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **                         - Make @expIdChannel and @channelType parameters optional
 **                         - Add @comment parameters
 **          11/29/2018 mem - Call AlterEnteredByUser
+**          11/30/2018 mem - Make @plexExperimentId an output parameter
 **    
 *****************************************************/
 (
-	@plexExperimentId int,
+	@plexExperimentId int output,       -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID
     @plexMembers varchar(4000),         -- Table of Channel to Exp_ID mapping (see above for examples)
     @expIdChannel1 varchar(130)='',     -- Experiment ID or Experiment Name or ExpID:ExperimentName
     @expIdChannel2 varchar(130)='',
