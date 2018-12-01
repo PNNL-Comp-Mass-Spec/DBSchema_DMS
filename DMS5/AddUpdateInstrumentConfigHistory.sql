@@ -61,6 +61,15 @@ As
     BEGIN 
         Set @postedBy = @callingUser
     END 
+
+    Declare @validatedDate datetime = Try_Cast(@dateOfChange As datetime)
+    If @validatedDate Is Null
+    Begin
+        Set @message = 'Date Of Change is not a valid date'
+        RAISERROR (@message, 10, 1)
+        return 51006
+    End
+
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
