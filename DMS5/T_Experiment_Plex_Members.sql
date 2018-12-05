@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_Experiment_Plex_Members](
 	[Exp_ID] [int] NOT NULL,
 	[Channel_Type_ID] [tinyint] NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Entered] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Experiment_Plex_Members] PRIMARY KEY CLUSTERED 
 (
 	[Plex_Exp_ID] ASC,
@@ -16,6 +17,8 @@ CREATE TABLE [dbo].[T_Experiment_Plex_Members](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
+GO
+ALTER TABLE [dbo].[T_Experiment_Plex_Members] ADD  CONSTRAINT [DF_T_Experiment_Plex_Members_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Experiment_Plex_Members]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Plex_Members_T_Experiment_Plex_Channel_Type_Name] FOREIGN KEY([Channel_Type_ID])
 REFERENCES [dbo].[T_Experiment_Plex_Channel_Type_Name] ([Channel_Type_ID])
