@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          12/03/2018 mem - Add parameter @suffix
 **                         - Add support for @mode = 'Preview'
 **          12/04/2018 mem - Insert plex member info into T_Experiment_Plex_Members if defined for the parent experiment
+**          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **
 *****************************************************/
 (
@@ -467,7 +468,7 @@ AS
     Declare @wn varchar(8) = @wellNum
     
     While @fractionCount < @totalCount And @myError = 0
-    Begin -- <a>
+    Begin -- <AddFractions>
         -- Build name for new experiment fraction
         --
         Set @fullFractionCount = @startingIndex + @fractionCount
@@ -496,7 +497,7 @@ AS
         End
         
         If @mode LIKE '%preview%'
-        Begin
+        Begin -- <Preview>
             If @fractionsCreated < 4
             Begin
                 If LEN(@fractionNamePreviewList) = 0
@@ -511,9 +512,10 @@ AS
                     Set @fractionNamePreviewList = @fractionNamePreviewList + ', ... ' + @newExpName
                 End
             End
-        End
+        End -- </Preview>
         Else
-        Begin
+        Begin -- <AddFraction>
+
             -- Insert new experiment into database
             --
             INSERT INTO [T_Experiments] (
@@ -637,7 +639,7 @@ AS
             ---------------------------------------------------
 
             If Exists (SELECT * FROM T_Experiment_Plex_Members WHERE Plex_Exp_ID = @parentExperimentID)
-            Begin
+            Begin -- <CopyPlexInfo>
                 INSERT INTO T_Experiment_Plex_Members( Plex_Exp_ID,
                                                        Channel,
                                                        Exp_ID,
@@ -660,7 +662,17 @@ AS
                     Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @newExpID, @CallingUser
                 End
 
-            End
+            End -- </CopyPlexInfo>
+        End -- </AddFraction>
+
+        If Not @mode LIKE '%preview%'
+        Begin
+            ---------------------------------------------------
+            -- Update the MemberCount field in T_Experiment_Groups
+            -- Note that the count includes the parent experiment
+            ---------------------------------------------------
+            --
+            Exec UpdateExperimentGroupMemberCount @groupID = @groupID
         End
 
         ---------------------------------------------------
@@ -673,14 +685,14 @@ AS
             Set @wn = dbo.GetWellNum(@wellIndex)
         End
 
-    End -- </a>
+    End -- </AddFractions>
 
     If @mode LIKE '%Preview%'
     Begin
         SET @message = 'Preview of new fraction names: ' + @fractionNamePreviewList
     End
     Else
-    Begin
+    Begin -- <AddToContainer>
     
         ---------------------------------------------------
         -- Resolve parent container name
@@ -742,7 +754,7 @@ AS
             Set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
             RAISERROR (@message, 11, 23)
         End
-    End
+    End -- </AddToContainer>
 
     ---------------------------------------------------
     -- Commit transaction if there were no errors
