@@ -3,190 +3,157 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddUpdateInstrumentClass
+
+CREATE Procedure [dbo].[AddUpdateInstrumentClass]
 /****************************************************
 **
-**	Desc: Adds new or updates existing Instrument Class in database
+**  Desc:   Updates existing Instrument Class in database
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**		@InstrumentClass      Instrument class
-**		@isPurgable           Determines if the instrument class is purgable 
-**		@rawDataType	      Specifies the raw data type for the instrument class
-**		@requiresPreparation  Determines if the instrument class requires preparation
-**
-**	Auth:	jds
-**	Date:	07/06/2006
-**			07/25/2007 mem - Added parameter @allowedDatasetTypes
-**			09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
-**			06/21/2010 mem - Added parameter @Params
-**			11/16/2010 mem - Added parameter @Comment
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   jds
+**  Date:   07/06/2006
+**          07/25/2007 mem - Added parameter @allowedDatasetTypes
+**          09/17/2009 mem - Removed parameter @allowedDatasetTypes (Ticket #748)
+**          06/21/2010 mem - Added parameter @params
+**          11/16/2010 mem - Added parameter @comment
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          12/06/2018 mem - Add try/catch handling and disallow @mode = 'add'
 **    
 *****************************************************/
 (
-	@InstrumentClass varchar(32), 
-	@isPurgable varchar(1), 
-	@rawDataType varchar(32), 
-	@requiresPreparation varchar(1), 
-	@Params text,
-	@Comment varchar(255),
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output
+    @instrumentClass varchar(32), 
+    @isPurgable varchar(1), 
+    @rawDataType varchar(32), 
+    @requiresPreparation varchar(1), 
+    @params text,
+    @comment varchar(255),
+    @mode varchar(12) = 'update',       -- Note that 'add' is not allowed in this procedure; instead directly edit table T_Instrument_Class
+    @message varchar(512) output
 )
 As
-	set nocount on
+    Set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
-	
-	declare @msg varchar(256)
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    
+    Declare @msg varchar(256)
 
-	declare @xmlParams xml
+    Declare @xmlParams xml
 
-	set @xmlParams = @Params
-	set @message = ''
+    Set @message = ''
+    
+    Declare @logErrors tinyint = 0
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentClass', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
-	
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentClass', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
+          
+    BEGIN TRY
 
-	set @myError = 0
-	if LEN(@InstrumentClass) < 1
-	begin
-		set @myError = 51000
-		RAISERROR ('Instrument Class was blank',
-			10, 1)
-	end
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
 
-	if LEN(@isPurgable) < 1
-	begin
-		set @myError = 51001
-		RAISERROR ('Is Purgable was blank',
-			10, 1)
-	end
-	--
-	if LEN(@rawDataType) < 1
-	begin
-		set @myError = 51002
-		RAISERROR ('Raw Data Type was blank',
-			10, 1)
-	end
-	--
-	if LEN(@requiresPreparation) < 1
-	begin
-		set @myError = 51003
-		RAISERROR ('Requires Preparation was blank',
-			10, 1)
-	end
-	--
-	if @myError <> 0
-		return @myError
+    Set @myError = 0
+    If LEN(@instrumentClass) < 1
+    Begin;
+        THROW 51000, 'Instrument Class Name cannot be blank', 1;
+    End;
 
-	---------------------------------------------------
-	-- Is entry already in database?
-	---------------------------------------------------
+    If LEN(@isPurgable) < 1
+    Begin;
+        THROW 51001, 'Is Purgable cannot be blank', 1;
+    End;
+    --
+    If LEN(@rawDataType) < 1
+    Begin;
+        THROW 51002, 'Raw Data Type cannot be blank', 1;
+    End;
+    --
+    If LEN(@requiresPreparation) < 1
+    Begin;
+        THROW 51003, 'Requires Preparation cannot be blank', 1;
+    End;
+    --
+    If @myError <> 0
+        return @myError
 
---	declare @tempInstrumentClass varchar(32)
---	set @tempInstrumentClass = ''
-	--
---	execute @tempInstrumentClass = GetInstrumentClass @InstrumentClass
+    
+    Set @params = IsNull(@params, '')
+    If DataLength(@params) > 0
+    Begin
+        Set @xmlParams = Try_Cast(@params As Xml)
+        If @xmlParams Is Null
+        Begin;
+            Set @message = 'Could not convert Params to XML';
+            THROW 51004, @message, 1;
+        End;
+    End
 
-	-- cannot create an entry that already exists
-	--
---	if @tempInstrumentClass <> '' and @mode = 'add'
---	begin
---		set @msg = 'Cannot add: Instrument Class "' + @InstrumentClass + '" already in database '
---		RAISERROR (@msg, 10, 1)
---		return 51004
---	end
+    ---------------------------------------------------
+    -- Note: the add mode is not enabled in this stored procedure
+    ---------------------------------------------------
+    If @mode = 'add'
+    Begin;
+        THROW 51005, 'The "add" instrument class mode is disabled for this page; instead directly edit table T_Instrument_Class', 1;
+    End;
 
-	-- cannot update a non-existent entry
-	--
---	if @tempInstrumentClass = '' and @mode = 'update'
---	begin
---		set @msg = 'Cannot update: Instrument Class "' + @InstrumentClass + '" is not in database '
---		RAISERROR (@msg, 10, 1)
---		return 51004
---	end
+    ---------------------------------------------------
+    -- action for update mode
+    ---------------------------------------------------
+    --
+    If @mode = 'update' 
+    Begin
+        Set @logErrors = 1
 
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+        Set @myError = 0
+        --
+        UPDATE T_Instrument_Class
+        SET 
+            is_purgable = @isPurgable, 
+            raw_data_type = @rawDataType, 
+            requires_preparation = @requiresPreparation,
+            Params = @xmlParams,
+            Comment = @comment
+        WHERE (IN_class = @instrumentClass)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin;
+            Set @message = 'Update operation failed: "' + @instrumentClass + '"';
+            THROW 51004, @message, 1;
+            return 51004
+        End;
 
-		INSERT INTO T_Instrument_Class (
-			IN_class,
-			is_purgable,
-			raw_data_type,
-			requires_preparation,
-			Params,
-			Comment
-		) VALUES (
-			@InstrumentClass,
-			@isPurgable,
-			@rawDataType,
-			@requiresPreparation,
-			@xmlParams,
-			@Comment
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Insert operation failed: "' + @InstrumentClass + '"'
-			RAISERROR (@msg, 15, 1)
-			return 51007
-		end
-	end -- add mode
+    End -- update mode
+    
+    END Try
+    BEGIN CATCH
+        EXEC FormatErrorMessage @message output, @myError Output
+        
+        -- Rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
 
+        If @logErrors > 0
+        Begin
+            Declare @logMessage varchar(1024) = @message + '; Instrument class ' + @instrumentClass
+            exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrumentClass'
+        End
 
+    END Catch
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
-		--
-		UPDATE T_Instrument_Class
-		SET 
-			is_purgable = @isPurgable, 
-			raw_data_type = @rawDataType, 
-			requires_preparation = @requiresPreparation,
-			Params = @xmlParams,
-			Comment = @Comment
-		WHERE (IN_class = @InstrumentClass)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @msg = 'Update operation failed: "' + @InstrumentClass + '"'
-			RAISERROR (@msg, 15, 1)
-			return 51004
-		end
-	end -- update mode
-
-
-	return 0
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [DDL_Viewer] AS [dbo]
