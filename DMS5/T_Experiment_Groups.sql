@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Experiment_Groups](
 	[Prep_LC_Run_ID] [int] NULL,
 	[Researcher] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Tab] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[MemberCount] [int] NOT NULL,
  CONSTRAINT [PK_T_Experiment_Groups] PRIMARY KEY CLUSTERED 
 (
 	[Group_ID] ASC
@@ -43,6 +44,8 @@ INCLUDE ( 	[EG_Group_Type],
 	[EG_Description]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT ((0)) FOR [Parent_Exp_ID]
+GO
+ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_MemberCount]  DEFAULT ((0)) FOR [MemberCount]
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Groups_T_Experiments] FOREIGN KEY([Parent_Exp_ID])
 REFERENCES [dbo].[T_Experiments] ([Exp_ID])
