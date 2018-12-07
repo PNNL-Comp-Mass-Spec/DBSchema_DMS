@@ -13,9 +13,10 @@ SELECT PlexMembers.Plex_Exp_ID AS Plex_Exp_ID,
        Count(*) As Channels, 
        Sum(Case When ChannelTypeName.Channel_Type_Name = 'Reference' Then 1 Else 0 End) As Ref_Channels,
        E.EX_Labelling AS Labelling,
-       E.Ex_Created AS Created,
+       Min(PlexMembers.Entered) AS Created,
        BTO.Tissue,
-       E.EX_sample_prep_request_ID AS Request
+       E.EX_sample_prep_request_ID AS Request,
+       E.Ex_Created AS [Plex Exp Created]
 FROM T_Experiment_Plex_Members PlexMembers
      INNER JOIN dbo.T_Experiment_Plex_Channel_Type_Name ChannelTypeName
        ON PlexMembers.Channel_Type_ID = ChannelTypeName.Channel_Type_ID
