@@ -84,6 +84,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @reqName when creating a new requested run
+**          12/10/2018 mem - Report an error if the comment contains 'experiment_group/show/0000'
 **
 *****************************************************/
 (
@@ -195,6 +196,12 @@ As
     set @comment = IsNull(@comment, '')
     If @comment LIKE '%&quot;%'
         Set @comment = Replace(@comment, '&quot;', '"')
+
+    If @comment like '%experiment_group/show/0000%'
+        RAISERROR ('Please reference a valid experient group ID, not 0000', 11, 116)
+
+    If @comment like '%experiment_group/show/0%'
+        RAISERROR ('Please reference a valid experient group ID', 11, 116)
 
     If @myError <> 0
         return @myError
