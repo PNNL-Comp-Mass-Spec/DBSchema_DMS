@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
 /****************************************************
 **
-**  Desc:   Duplicates an analysis job by alling AddUpdateAnalysisJob
+**  Desc:   Duplicates an analysis job by calling AddUpdateAnalysisJob
 **
 **  Return values: 0: success, otherwise, error code
 **
