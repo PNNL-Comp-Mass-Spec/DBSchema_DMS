@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetJobParamTable
+
+CREATE PROCEDURE [dbo].[GetJobParamTable]
 /****************************************************
 **
 **	Desc:	Returns a table filled with the parameters for the
@@ -12,18 +13,13 @@ CREATE PROCEDURE GetJobParamTable
 **	Note:	This table of parameters comes from the DMS5 database, and
 **			not from the T_Job_Parameters table local to this DB
 **
-**	Return values: 
-**
-**	Parameters:
-**	
-**
 **	Auth:	grk
 **	Date:	08/21/2008 grk - Initial release
 **			01/14/2009 mem - Increased maximum parameter length to 2000 characters (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **			04/10/2009 grk - Added DTA folder name override (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **			06/02/2009 mem - Updated to run within the DMS_Pipeline DB and to use view V_DMS_PipelineJobParameters (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **			07/29/2009 mem - Updated to look in T_Jobs.Comment for the 'DTA:' tag when 'ExternalDTAFolderName' is defined in the script
-**			01/05/2010 mem - Added parameter @SettingsFileOverride
+**			01/05/2010 mem - Added parameter @settingsFileOverride
 **			02/23/2010 mem - Updated to not return any debug info using SELECT statements; required since CreateParametersForJob calls this SP using the notation: INSERT INTO ... exec GetJobParamTable ...
 **			04/04/2011 mem - Updated to support V_DMS_SettingsFiles returning true XML for the Contents column (using S_DMS_V_GetPipelineSettingsFiles)
 **						   - Added support for field Special_Processing
@@ -36,24 +32,22 @@ CREATE PROCEDURE GetJobParamTable
 **			04/23/2013 mem - Now including Instrument and InstrumentGroup
 **			01/30/2014 mem - Now using S_DMS_V_Settings_File_Lookup when a match is not found in V_DMS_SettingsFiles for the given settings file and analysis tool
 **			03/14/2014 mem - Added InstrumentDataPurged
+**          12/12/2018 mem - Update comments and capitalization
 **    
 *****************************************************/
 (
 	@job int,
-	@SettingsFileOverride varchar(256) = '',	-- When defined, then will use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters
-	@DebugMode tinyint = 0						-- When non-zero, then will print "debug" statements
+	@settingsFileOverride varchar(256) = '',	-- When defined, use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters
+	@debugMode tinyint = 0						-- When non-zero, prints debug statements
 )
 AS
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError Int = 0
+	Declare @myRowCount int = 0
 
-	declare @message varchar(512)
-	set @message  = ''
+	Declare @message varchar(512) = ''
 
-	Set @SettingsFileOverride = IsNull(@SettingsFileOverride, '')
-	Set @DebugMode = IsNull(@DebugMode, 0)
+	Set @settingsFileOverride = IsNull(@settingsFileOverride, '')
+	Set @debugMode = IsNull(@debugMode, 0)
 	
 	---------------------------------------------------
 	-- Table variable to hold job parameters
@@ -87,7 +81,7 @@ AS
 		  CONVERT(VarChar(2000),ParamFileName)                  AS ParmFileName,
 		  CONVERT(VarChar(2000),SettingsFileName)               AS SettingsFileName,
 		  CONVERT(VarChar(2000),Special_Processing)             AS Special_Processing,
-		  CONVERT(VarChar(2000),ParamFileStoragePath)           AS ParmFileStoragePath,
+		  CONVERT(VarChar(2000),ParamFileStoragePath)           AS ParmFileStoragePath,     -- Storage path for the primary tool of the script
 		  CONVERT(VarChar(2000),OrganismDBName)                 AS legacyFastaFileName,
 		  CONVERT(VarChar(2000),ProteinCollectionList)          AS ProteinCollectionList,
 		  CONVERT(VarChar(2000),ProteinOptionsList)             AS ProteinOptions,
@@ -138,7 +132,6 @@ AS
   	---------------------------------------------------
 	-- Simulate section association for step tool
 	---------------------------------------------------
-	-- FUTURE: Do tool also <section name="Search" tool="Sequest" category="basic">'
 	--
 	UPDATE #T_Tmp_ParamTab
 	SET [Section] = 'PeptideSearch'
@@ -148,18 +141,18 @@ AS
 	-- Possibly override the settings file name
 	---------------------------------------------------
 	--
-	If @SettingsFileOverride <> ''
+	If @settingsFileOverride <> ''
 	Begin
 		UPDATE #T_Tmp_ParamTab
-		SET [Value] = @SettingsFileOverride
+		SET [Value] = @settingsFileOverride
 		WHERE [Name] = 'SettingsFileName'
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 		If @myRowCount >= 1
 		Begin
-			If @DebugMode <> 0
-				Print 'Updated settings file to be "' + @SettingsFileOverride
+			If @debugMode <> 0
+				Print 'Updated settings file to be "' + @settingsFileOverride
 		End
 		Else
 		Begin
@@ -167,10 +160,10 @@ AS
 			SELECT	NULL as Step_Number, 
 					'JobParameters' AS [Section], 
 					'SettingsFileName' AS Name, 
-					@SettingsFileOverride AS Value
+					@settingsFileOverride AS Value
 
-			If @DebugMode <> 0
-				Print 'Settings file was not defined; defined it to be "' + @SettingsFileOverride
+			If @debugMode <> 0
+				Print 'Settings file was not defined; defined it to be "' + @settingsFileOverride
 		End
 	End
 	
@@ -178,13 +171,14 @@ AS
 	-- Get settings file parameters from DMS
 	---------------------------------------------------
 	--
-	declare @paramXML xml
-	declare @settingsFileName varchar(128)
-	declare @AnalysisToolName varchar(128)
+	Declare @paramXML xml
+	Declare @settingsFileName varchar(128)
+	Declare @AnalysisToolName varchar(128)
 	
 	-- Lookup the settings file name
 	--
-	set @settingsFileName = ''
+	Set @settingsFileName = ''
+
 	SELECT @settingsFileName = [Value] 
 	FROM #T_Tmp_ParamTab 
 	WHERE [Name] = 'SettingsFileName'
@@ -195,13 +189,14 @@ AS
 	Begin
 		Set @settingsFileName = 'na'
 		
-		If @DebugMode <> 0
+		If @debugMode <> 0
 			Print 'Warning: Settings file was not defined in the job parameters; assuming "na"'
 	End
 	
 	-- Lookup the analysis tool name
 	--
-	set @AnalysisToolName = ''
+	Set @AnalysisToolName = ''
+
 	SELECT @AnalysisToolName = [Value] 
 	FROM #T_Tmp_ParamTab 
 	WHERE [Name] = 'ToolName'
@@ -212,7 +207,7 @@ AS
 	Begin
 		Set @AnalysisToolName = ''
 		
-		If @DebugMode <> 0
+		If @debugMode <> 0
 			Print 'Warning: Analysis tool was not defined in the job parameters; may choose the wrong settings file (if files for different tools have the same name)'
 	End
 	
@@ -231,7 +226,7 @@ AS
 		-- Try relaxing the tool name specification
 		
 		Declare @settingsFileNameMappedTool varchar(128)
-		declare @AnalysisToolNameMappedTool varchar(128)
+		Declare @AnalysisToolNameMappedTool varchar(128)
 		
 		SELECT Top 1 @settingsFileNameMappedTool = File_Name,
 		             @AnalysisToolNameMappedTool = Mapped_Tool
@@ -258,12 +253,12 @@ AS
 	
 	If @myRowCount = 0
 	Begin
-		If @DebugMode <> 0
+		If @debugMode <> 0
 			Print 'Warning: Settings file "' + @settingsFileName + '" not defined in V_DMS_SettingsFiles'
 	End
 	Else
 	Begin
-		If @DebugMode <> 0
+		If @debugMode <> 0
 			Print 'XML for settings file "' + @settingsFileName + '": ' + Convert(varchar(max), @paramXML)
 			
 		INSERT INTO #T_Tmp_ParamTab
@@ -272,11 +267,11 @@ AS
 			xmlNode.value('../@name', 'nvarchar(256)') [Section],
 			xmlNode.value('@key', 'nvarchar(256)') [Name], 
 			xmlNode.value('@value', 'nvarchar(4000)') [Value]
-		FROM   @paramXML.nodes('//item') AS R(xmlNode)
+		From @paramXML.nodes('//item') AS R(xmlNode)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @DebugMode <> 0
+		If @debugMode <> 0
 			Print 'Added ' + Convert(varchar(12), @myRowCount) + ' new entries using settings file "' + @settingsFileName + '"'
 	End
 
@@ -300,52 +295,6 @@ AS
 */	
 
 
-/*
-  	-- Old code to backfill any missing parameters from global set
-	set @settingsFileName = 'global_defaults'
-	--
-	SELECT @paramXML = Contents
-	FROM V_DMS_SettingsFiles 
-	WHERE File_Name = @settingsFileName
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-
-	If @myRowCount = 0
-	Begin
-		If @DebugMode <> 0
-			Print 'Note: the global defaults settings file ("' + @settingsFileName + '") is not defined in V_DMS_SettingsFiles'
-	End
-	Else
-	Begin
-		If @DebugMode <> 0
-			Print 'XML for settings file "' + @settingsFileName + '": ' + Convert(varchar(max), @paramXML)
-
-		INSERT INTO #T_Tmp_ParamTab
-		SELECT * FROM
-		(
-		SELECT 
-			xmlNode.value('../@id', 'nvarchar(50)') [Step_Number],
-			xmlNode.value('../@name', 'nvarchar(256)') [Section],
-			xmlNode.value('@key', 'nvarchar(256)') [Name], 
-			xmlNode.value('@value', 'nvarchar(2000)') [Value]
-		FROM   @paramXML.nodes('//item') AS R(xmlNode)
-		) VG
-		WHERE NOT EXISTS
-		(
-			SELECT *
-			FROM   
-				#T_Tmp_ParamTab VS
-			WHERE 
-				VS.Section = VG.Section AND VS.Name = VG.Name
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-
-		If @DebugMode <> 0
-			Print 'Added ' + Convert(varchar(12), @myRowCount) + ' new entries using the global defaults settings file ("' + @settingsFileName + '")'
-	End
-*/
-
   	---------------------------------------------------
 	-- Check whether the settings file has an
 	-- External DTA folder defined
@@ -355,14 +304,13 @@ AS
 	begin
 		---------------------------------------------------
 		-- Look for a Special_Processing entry in the job parameters
-		-- If one exists, then look for the DTA: tag
+		-- If one exists, look for the DTA: tag
 		-- Otherwise, look in the job's comment for the DTA: tag
 		-- If the DTA: tag is found, the name after the column represents an external DTA folder name
 		--  to override the external DTA folder name defined in the settings file
 		---------------------------------------------------
 		--
-		declare @extDTA varchar(128)
-		set @extDTA = ''
+		Declare @extDTA varchar(128) = ''
 
 		SELECT @extDTA = dbo.ExtractTaggedName('DTA:', Value) 
 		FROM #T_Tmp_ParamTab 
@@ -379,7 +327,7 @@ AS
 			SET [Value] = @extDTA
 			WHERE [Name] = 'ExternalDTAFolderName'
 			
-			If @DebugMode <> 0
+			If @debugMode <> 0
 				Print 'External DTA Folder Name parameter has been overridden to "' + @extDTA + '" using the DTA: tag in the job comment'
 		End
 		Else
@@ -388,19 +336,19 @@ AS
 			FROM #T_Tmp_ParamTab
 			WHERE [Name] = 'ExternalDTAFolderName'
 			
-			If @DebugMode <> 0
+			If @debugMode <> 0
 				Print 'Note: ExternalDTAFolderName is  "' + @extDTA + '", as defined in the settings file'
 		End
-	end
+	End
 
   	---------------------------------------------------
 	-- Check whether the Special_Processing field has an AMT DB defined
-	-- If it does, then add this as a new parameter in the JobParameters section
+	-- If it does, add this as a new parameter in the JobParameters section
 	---------------------------------------------------
 	--		
 	exec CheckAddSpecialProcessingParam 'AMTDB'
 	
-	-- If AMTDB is defined, then we need to lookup the name of the server on which the MT DB resides
+	-- If AMTDB is defined, we need to lookup the name of the server on which the MT DB resides
 	Declare @AMTDB varchar(256) = ''
 	
 	SELECT @AMTDB = Value
@@ -429,7 +377,7 @@ AS
 		Begin
 			Set @message = 'Unable to resolve MTS server for database ' + @AMTDB + '; not listed in DMS5.dbo.S_MTS_MT_DBs'
 			exec PostLogEntry 'Error', @message, 'GetJobParamTable'
-			set @message = ''
+			Set @message = ''
 		End
 		
 		-- Add entry 'AMTDBServer' to #T_Tmp_ParamTab
@@ -438,14 +386,13 @@ AS
 	
 	--------------------------------------------------
 	-- Check whether the Special_Processing field has a Data Import Folder defined
-	-- If it does, then add this as a new parameter in the JobParameters section
+	-- If it does, add this as a new parameter in the JobParameters section
 	---------------------------------------------------
 	--		
 	exec CheckAddSpecialProcessingParam 'DataImportFolder'
 	
-
   	---------------------------------------------------
-	-- output the table of parameters
+	-- Output the table of parameters
 	---------------------------------------------------
 
 	SELECT @job AS Job,
