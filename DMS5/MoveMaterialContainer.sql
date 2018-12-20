@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainer]
 **
 **  Auth:   mem
 **  Date:   12/19/2018 mem - Initial release
+**          12/20/2018 mem - Include container name in warnings
 **    
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
     --
     if @myError <> 0
     begin
-        set @message = 'Error looking for existing entry'
+        set @message = 'Error looking for existing entry for ' + @container
         Select @message As Warning
         return 51008
     end
@@ -126,14 +127,14 @@ As
 
     If Len(@oldLocation) > 0 And @oldLocation <> @curLocation
     Begin
-        Set @message = 'Current container location does not match the expected location: ' + @curLocation + ' vs. expected ' + @oldLocation
+        Set @message = 'Current container location does not match the expected location: ' + @curLocation + ' vs. expected ' + @oldLocation + ' for ' + @container
         Select @message As Warning
         Return 51010
     End
 
     If @newLocation = @curLocation And (Len(@newResearcher) = 0 Or @researcher = @newResearcher)
     Begin
-        Set @message = 'Container is already at ' + @newLocation + ' (and not changing the researcher name)'
+        Set @message = 'Container is already at ' + @newLocation + ' (and not changing the researcher name): ' + @container
         Select @message As Warning
         Return 51011
     End
