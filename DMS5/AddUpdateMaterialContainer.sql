@@ -22,28 +22,29 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Validate inputs
+**          12/19/2018 mem - Standardize the researcher name
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Container varchar(128) output,
-    @Type varchar(32),          -- Box, bag, or Wellplate
-    @Location varchar(24),
-    @Comment varchar(1024),
-    @Barcode varchar(32),
-    @Researcher VARCHAR(128),
-    @mode varchar(12) = 'add', -- or 'update'
+    @container varchar(128) output,
+    @type varchar(32),              -- Box, Bag, or Wellplate
+    @location varchar(24),
+    @comment varchar(1024),
+    @barcode varchar(32),
+    @researcher varchar(128),       -- Supports 'Zink, Erika M (D3P704)' or simply 'D3P704'
+    @mode varchar(12) = 'add',      -- 'Add', 'update', or 'preview'
     @message varchar(512) output, 
     @callingUser varchar(128) = ''
 )
 As
-    set nocount on
+    Set NoCount On
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @Status varchar(32) = 'Active'
 
@@ -54,29 +55,29 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateMaterialContainer', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
     -- Make sure the inputs are not null
     -- Additional validation occurs later
     ---------------------------------------------------
 
-    Set @Container = LTrim(RTrim(IsNull(@Container, '')))
-    Set @Type = LTrim(RTrim(IsNull(@Type, 'Box')))
-    Set @Location = LTrim(RTrim(IsNull(@Location, '')))
-    Set @Comment = LTrim(RTrim(IsNull(@Comment, '')))
-    Set @Barcode = LTrim(RTrim(IsNull(@Barcode, '')))
-    Set @Researcher = LTrim(RTrim(IsNull(@Researcher, '')))
+    Set @container = LTrim(RTrim(IsNull(@container, '')))
+    Set @type = LTrim(RTrim(IsNull(@type, 'Box')))
+    Set @location = LTrim(RTrim(IsNull(@location, '')))
+    Set @comment = LTrim(RTrim(IsNull(@comment, '')))
+    Set @barcode = LTrim(RTrim(IsNull(@barcode, '')))
+    Set @researcher = LTrim(RTrim(IsNull(@researcher, '')))
     Set @mode = IsNull(@mode, '')
 
     ---------------------------------------------------
-    -- optionally generate name
+    -- Optionally generate a container name
     ---------------------------------------------------
 
-    if @Container = '(generate name)' OR @mode = 'add'
-    begin
+    If @container = '(generate name)' OR @mode = 'add'
+    Begin
         Declare @tmp int
         --
         SELECT @tmp = MAX(ID) + 1
@@ -84,48 +85,82 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Error trying to auto-generate the container name'
-            return 51000
-        end
+        If @myError <> 0
+        Begin
+            Set @message = 'Error trying to auto-generate the container name'
+            Return 51000
+        End
         
-        set @Container = 'MC-' + cast(@tmp as varchar(12))
-    end
+        Set @container = 'MC-' + cast(@tmp as varchar(12))
+    End
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
         
-    If Len(@Container) = 0
+    If Len(@container) = 0
     Begin
-        set @message = 'Container name cannot be empty'
-        return 51002
+        Set @message = 'Container name cannot be empty'
+        Return 51002
     End
 
-    If @Container In ('na', 'Staging', '-80_Staging', 'Met_Staging')
+    If @container In ('na', 'Staging', '-80_Staging', 'Met_Staging')
     Begin
-        set @message = 'The "' + @Container + '" container cannot be updated via the website; contact a DMS admin (see AddUpdateMaterialContainer)'
-        return 51003
+        Set @message = 'The "' + @container + '" container cannot be updated via the website; contact a DMS admin (see AddUpdateMaterialContainer)'
+        Return 51003
     End
 
-    If @mode = 'add' And Not @Type In ('Box', 'Bag', 'Wellplate')
+    If @mode = 'add' And Not @type In ('Box', 'Bag', 'Wellplate')
     Begin
-        Set @Type = 'Box'
+        Set @type = 'Box'
     End
     
-    If Not @Type In ('Box', 'Bag', 'Wellplate')
+    If Not @type In ('Box', 'Bag', 'Wellplate')
     Begin
-        set @message = 'Container type must be Box, Bag, or Wellplate'
-        return 51004
+        Set @message = 'Container type must be Box, Bag, or Wellplate, not ' + @type
+        Return 51004
     End
     
-    If @Type = 'na'
+    If @type = 'na'
     Begin
-        set @message = 'Containers of type "na" cannot be updated via the website; contact a DMS admin'
-        return 51006
+        Set @message = 'Containers of type "na" cannot be updated via the website; contact a DMS admin'
+        Return 51006
     End
+        
+    ---------------------------------------------------
+    -- Validate the researcher name
+    ---------------------------------------------------        
 
+    Declare @matchCount int
+    Declare @researcherPRN varchar(64)
+    Declare @userID Int
+
+    exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
+
+    If @matchCount = 1
+    Begin
+        -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
+        
+        SELECT @researcher = Name_with_PRN
+        FROM T_Users
+        WHERE U_PRN = @researcherPRN
+
+    End
+    Else
+    Begin
+        -- Single match not found; use the @researcher name as-is but log an error
+        If @matchCount = 0
+            Set @message = 'Unrecognized researcher ' + @Researcher + ' for material container ' + @container
+        Else
+            Set @message = 'Ambiguous researcher ' + @Researcher + ' for material container ' + @container
+
+        Exec PostLogEntry @type = 'Error'
+                         ,@message = @message
+                         ,@postedBy = 'AddUpdateMaterialContainer'
+
+        Set @message = ''
+    End
+    
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -141,80 +176,81 @@ As
         @curType = Type, 
         @curStatus = Status
     FROM  T_Material_Containers
-    WHERE (Tag = @Container)
+    WHERE (Tag = @container)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error looking for existing entry'
-        return 51008
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error looking for existing entry for container ' + @container
+        Return 51008
+    End
 
-    if @mode = 'add' and @containerID <> 0
-    begin
-        set @message = 'Cannot add container with same name as existing container: ' + @Container
-        return 51010
-    end
+    If @mode = 'add' and @containerID <> 0
+    Begin
+        Set @message = 'Cannot add container with same name as existing container: ' + @container
+        Return 51010
+    End
 
-    if @mode = 'update' and @containerID = 0
-    begin
-        set @message = 'No entry could be found in database for updating ' + @Container
-        return 51012
-    end
+    If @mode In ('update', 'preview') and @containerID = 0
+    Begin
+        Set @message = 'No entry could be found in database for updating ' + @container
+        Return 51012
+    End
 
     ---------------------------------------------------
     -- Resolve input location name to ID and get limit
     ---------------------------------------------------
 
-    Declare @LocationID int = 0
+    Declare @locationID int = 0
     Declare @limit int = 0
     --
     SELECT 
-        @LocationID = ID, 
+        @locationID = ID, 
         @limit = Container_Limit
     FROM T_Material_Locations
-    WHERE Tag = @Location    
+    WHERE Tag = @location    
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error resolving location ID'
-        return 51014
-    end
-
-    If @LocationID = 0
+    If @myError <> 0
     Begin
-        set @message = 'Invalid location: ' + @Location
-        return 51016
+        Set @message = 'Error resolving location ID for location ' + @location
+        Return 51014
+    End
+
+    If @locationID = 0
+    Begin
+        Set @message = 'Invalid location: ' + @location + ' (for container ' + @container + ')'
+        Return 51016
     End
 
     ---------------------------------------------------
     -- If moving a container, verify that there is room in destination location
     ---------------------------------------------------
 
-    if @curLocationID <> @LocationID
-    begin --<n>
+    If @curLocationID <> @locationID
+    Begin
         Declare @cnt int = 0
         --
         SELECT @cnt = COUNT(*)
         FROM T_Material_Containers
-        WHERE Location_ID = @LocationID
+        WHERE Location_ID = @locationID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Error getting container count'
-            return 51020
-        end
-        if @limit <= @cnt
-        begin
-            set @message = 'Destination location does not have room for another container'
-            return 51022
-        end
-    end --<n>
+        If @myError <> 0
+        Begin
+            Set @message = 'Error getting container count for location ' + @location
+            Return 51020
+        End
+
+        If @limit <= @cnt
+        Begin
+            Set @message = 'Destination location does not have room for another container (moving ' + @container + ' to ' + @location + ')'
+            Return 51022
+        End
+    End
     
     ---------------------------------------------------
     -- Resolve current Location id to name
@@ -228,99 +264,90 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error resolving name of current Location'
-        return 510027
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error resolving name of current Location, ' + @curLocationName
+        Return 510027
+    End
     
     ---------------------------------------------------
-    -- action for add mode
-    ---------------------------------------------------
-    if @Mode = 'add'
-    begin -- <add>
-        -- future: accept '<next bag>' or '<next box> and generate container name
-            
-        INSERT INTO T_Material_Containers
-        (
-            Tag ,
-            Type ,
-            Comment ,
-            Barcode ,
-            Location_ID ,
-            Status ,
-            Researcher
-        ) VALUES (
-            @Container ,
-            @Type ,
-            @Comment ,
-            @Barcode ,
-            @LocationID ,
-            @Status ,
-            @Researcher
-        )
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            set @message = 'Insert operation failed'
-            return 510028
-        end
-
-        --  material movement logging
-        --    
-        exec PostMaterialLogEntry
-            'Container Creation',
-            @Container,
-            'na',
-            @Location,
-            @callingUser,
-            ''
-
-    end -- </add>
-
-    ---------------------------------------------------
-    -- action for update mode
+    -- Action for add mode
     ---------------------------------------------------
     --
-    if @Mode = 'update' 
-    begin -- <update>
-        set @myError = 0
-        --
-        UPDATE  T_Material_Containers
-        SET     Type = @Type ,
-                Comment = @Comment ,
-                Barcode = @Barcode ,
-                Location_ID = @LocationID ,
-                Status = @Status ,
-                Researcher = @Researcher
-        WHERE   ( Tag = @Container )
+    If @mode = 'add'
+    Begin -- <add>
+        -- future: accept '<next bag>' or '<next box> and generate container name
+            
+        INSERT INTO T_Material_Containers( Tag,
+                                           [Type],
+                                           [Comment],
+                                           Barcode,
+                                           Location_ID,
+                                           [Status],
+                                           Researcher )
+        VALUES(@container, @type, @comment, @barcode, @locationID, @Status, @researcher)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Update operation failed: "' + @Container + '"'
-            return 510029
-        end
+        If @myError <> 0
+        Begin
+            Set @message = 'Insert operation failed for container ' + @container
+            Return 510028
+        End
 
-        --  material movement logging
+        -- Material movement logging
         --    
-        if @curLocationName <> @Location
-        begin
+        exec PostMaterialLogEntry
+             'Container Creation',
+             @container,
+             'na',
+             @location,
+             @callingUser,
+             ''
+
+    End -- </add>
+
+    ---------------------------------------------------
+    -- Action for update mode
+    ---------------------------------------------------
+    --
+    If @mode = 'update' 
+    Begin -- <update>
+        Set @myError = 0
+        --
+        UPDATE T_Material_Containers
+        SET [Type] = @type,
+            [Comment] = @comment,
+            Barcode = @barcode,
+            Location_ID = @locationID,
+            [Status] = @Status,
+            Researcher = @researcher
+        WHERE Tag = @container
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin
+            Set @message = 'Update operation failed for container ' + @container
+            Return 510029
+        End
+
+        -- Material movement logging
+        --    
+        If @curLocationName <> @location
+        Begin
             exec PostMaterialLogEntry
-                'Container Move',
-                @Container,
-                @curLocationName,
-                @Location,
-                @callingUser,
-                ''
-        end
+                 'Container Move',
+                 @container,
+                 @curLocationName,
+                 @location,
+                 @callingUser,
+                 ''
+        End
 
-    end -- </update>
+    End -- </update>
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateMaterialContainer] TO [DDL_Viewer] AS [dbo]
