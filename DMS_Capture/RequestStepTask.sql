@@ -583,7 +583,7 @@ AS
         Begin
             SELECT 'Candidate Job Steps for ' + @processorName AS Information,
                    @machine AS Machine,
-                   'No candidate job stepsfound (jobs with step tools ' + @machineLockedStepTools + 
+                   'No candidate job steps found (jobs with step tools ' + @machineLockedStepTools + 
                    ' only assigned if dataset stored on ' + @machine + ')' AS Message,
                    CASE
                        WHEN @processorLockedToInstrument > 0 THEN 'Processor locked to instrument'
