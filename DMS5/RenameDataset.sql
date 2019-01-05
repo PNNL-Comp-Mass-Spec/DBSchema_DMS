@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **                         - Update commands for renaming the dataset directory and dataset file
 **          08/06/2018 mem - Fix where clause when querying V_Analysis_Job_Export
 **                         - Look for requested runs that may need to be updated
+**          01/04/2019 mem - Add sed command for updating the index.html file in the QC directory
 **    
 *****************************************************/
 (
@@ -368,10 +369,13 @@ AS
 
     DELETE FROM @jobsToUpdate
     
+    -- Find jobs associated with this dataset
+    -- Only shows jobs that would be exported to MTS
+    -- If the dataset has rating Not Released, no jobs will appear in V_Analysis_Job_Export
     INSERT INTO @jobsToUpdate (Job)
     SELECT Job 
     FROM V_Analysis_Job_Export
-    WHERE @infoOnly=0 And Dataset = @datasetNameNew Or @infoOnly<>0 And Dataset = @datasetNameOld
+    WHERE @infoOnly=0 And Dataset = @datasetNameNew Or @infoOnly <> 0 And Dataset = @datasetNameOld
     ORDER BY Job
     
     Set @continue = 1
@@ -379,9 +383,6 @@ AS
     
     Declare @jobFileUpdateCount int = 0
     
-    Print ''
-    Print 'Note: given the prevalence of the dataset name in result files, it is often easier to just delete the result folders and re-run the jobs'
-
     While @continue > 0
     Begin
         SELECT TOP 1 @job = Job
@@ -396,7 +397,7 @@ AS
         If @myRowCount = 0
         Begin
             --------------------------------------------
-            -- Show example commands for renaming QC files
+            -- No more jobs; show example commands for renaming QC files
             --------------------------------------------
             --
             Set @continue = 0
@@ -453,8 +454,8 @@ AS
             End
         End
         
-        If @jobFileUpdateCount = 0
-            Print 'Example commands for renaming job files'
+        If @jobFileUpdateCount = 0 And Exists (Select * From @jobsToUpdate)
+            Print 'rem Example commands for renaming job files'
 
         Print ''
         Print 'cd ' + @resultsFolder
@@ -487,6 +488,16 @@ AS
 
         End
         
+        If @resultsFolder = 'QC'
+        Begin
+            Print ''
+            print 'rem Use sed to change the dataset names in index.html'
+            Print 'cat index.html | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > index_new.html'
+            Print 'move index.html index_old.html'
+            Print 'move index_new.html index.html'
+
+        End
+
         Print 'cd ..'
         
     End
