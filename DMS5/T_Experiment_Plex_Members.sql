@@ -18,6 +18,12 @@ CREATE TABLE [dbo].[T_Experiment_Plex_Members](
 ) ON [PRIMARY]
 
 GO
+/****** Object:  Index [IX_T_Experiment_Plex_Members_Exp_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Experiment_Plex_Members_Exp_ID] ON [dbo].[T_Experiment_Plex_Members]
+(
+	[Exp_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Experiment_Plex_Members] ADD  CONSTRAINT [DF_T_Experiment_Plex_Members_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Experiment_Plex_Members]  WITH CHECK ADD  CONSTRAINT [FK_T_Experiment_Plex_Members_T_Experiment_Plex_Channel_Type_Name] FOREIGN KEY([Channel_Type_ID])
