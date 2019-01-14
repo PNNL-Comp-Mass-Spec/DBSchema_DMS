@@ -11,6 +11,7 @@ CREATE TABLE [dbo].[T_Instrument_Group](
 	[Default_Dataset_Type] [int] NULL,
 	[Allocation_Tag] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Prep_Visible] [tinyint] NOT NULL,
+	[Requested_Run_Visible] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Instrument_Group] PRIMARY KEY CLUSTERED 
 (
 	[IN_Group] ASC
@@ -27,6 +28,8 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Active]  DEFAULT ((1)) FOR [Active]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Sample_Prep_Visible]  DEFAULT ((1)) FOR [Sample_Prep_Visible]
+GO
+ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Requested_Run_Visible]  DEFAULT ((1)) FOR [Requested_Run_Visible]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_T_DatasetTypeName] FOREIGN KEY([Default_Dataset_Type])
 REFERENCES [dbo].[T_DatasetTypeName] ([DST_Type_ID])
