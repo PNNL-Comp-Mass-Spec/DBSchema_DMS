@@ -9,11 +9,16 @@ AS
 SELECT T.ID AS ID,
        T.Cart_Name AS [Cart Name],
        T.Cart_Description AS Descripton,
-       S.Name AS State
-       -- Deprecated: dbo.GetLCConfigDocsPath(T.Cart_Name, '_config.xls') AS [Configuration]
+       S.Name AS State,
+       IsNull(CartConfigQ.ConfigCount, 0) AS [Configuration Count]
 FROM T_LC_Cart T
      INNER JOIN T_LC_Cart_State_Name S
        ON T.Cart_State_ID = S.ID
+     LEFT OUTER JOIN ( SELECT Cart_ID,
+                         Count(*) AS ConfigCount
+                  FROM T_LC_Cart_Configuration
+                  GROUP BY Cart_ID ) AS CartConfigQ
+       ON CartConfigQ.Cart_ID = T.ID
 
 
 GO

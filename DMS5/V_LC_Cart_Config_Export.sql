@@ -14,11 +14,13 @@ SELECT Config.Cart_Config_ID,
        Config.Pumps,
 	   Dataset_Usage_Count,
 	   Dataset_Usage_Last_Year,
-       Config.Cart_Config_State
+       Config.Cart_Config_State,
+       CartState.Name AS Cart_State
 FROM T_LC_Cart_Configuration Config
      INNER JOIN T_LC_Cart Cart
        ON Config.Cart_ID = Cart.ID
-
+     INNER JOIN dbo.T_LC_Cart_State_Name AS CartState
+       ON Cart.Cart_State_ID = CartState.ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_Export] TO [DDL_Viewer] AS [dbo]
