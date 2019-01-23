@@ -7,6 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Experiment_Group_Members_List_Report]
 AS
 SELECT E.Experiment_Num AS Experiment,
+       E.Exp_ID As ID,
        CASE
            WHEN EG.Parent_Exp_ID = E.Exp_ID THEN 'Parent'
            ELSE 'Child'
