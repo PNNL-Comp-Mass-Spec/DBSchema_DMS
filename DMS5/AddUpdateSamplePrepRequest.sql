@@ -80,12 +80,13 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
 **          08/29/2018 mem - Remove call to DoSamplePrepMaterialOperation since we stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
 **          11/30/2018 mem - Make @reason an input/output parameter
+**          01/23/2019 mem - Switch @reason back to a normal input parameter since view V_Sample_Prep_Request_Entry now appends the __NoCopy__ flag to several fields
 **
 *****************************************************/
 (
     @requestName varchar(128),
     @requesterPRN varchar(32),
-    @reason varchar(512) output,                -- Input/output parameter; required to be output since this field is cleared when you make a new sample prep request.  If the call to this procedure fails with a validation error, the field is cleared again when this is only an input parameter
+    @reason varchar(512),
     @materialContainerList varchar(2048),
     @organism varchar(128),
     @biohazardLevel varchar(12),
@@ -177,6 +178,9 @@ As
     
     If IsNull(@blockAndRandomizeRuns, '') NOT IN ('Yes', 'No')
         RAISERROR ('Block And Randomize Runs must be Yes or No', 11, 116)
+
+    If Len(IsNull(@reason, '')) < 1
+        RAISERROR ('The reason field is required', 11, 116)
 
     ---------------------------------------------------
     -- Validate priority
