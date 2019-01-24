@@ -26,7 +26,6 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_batchID AS Batch,
        AJ.AJ_requestID AS [RequestID],
        DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder,
-       DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS ResultsFolder_Archive,
        Convert(decimal(9,2), AJ.AJ_ProcessingTimeMinutes) AS Runtime,
 	   DS.Dataset_ID
 FROM dbo.T_Analysis_Job AJ
