@@ -45,16 +45,20 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **                         - Add support for @mode = 'Preview'
 **          12/04/2018 mem - Insert plex member info into T_Experiment_Plex_Members if defined for the parent experiment
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          01/24/2019 mem - Add parameters @nameSearch, @nameReplace, and @addUnderscore
 **
 *****************************************************/
 (
     @parentExperiment varchar(128),             -- Parent experiment for group (must already exist)
     @groupType varchar(20) = 'Fraction',        -- Must be 'Fraction'
     @suffix varchar(20) = '',                   -- Text to append to the parent experiment name, prior to adding the fraction number
+    @nameSearch  varchar(128) = '',             -- Text to find in the parent experiment name, to be replaced by @nameReplace
+    @nameReplace varchar(128) = '',             -- Replacement text
     @tab varchar(128),                          -- User-defined name for this fraction group, aka tag
     @description varchar(512),                  -- Purpose of group
     @totalCount int,                            -- Number of new experiments to automatically create
-    @groupID INT output,                        -- ID of newly created experiment group
+    @addUnderscore varchar(12) = 'Yes',         -- When Yes (or 1 or ''), add an underscore before the fraction number; when @suffix is defined, it is helpful to set this to 'No'
+    @groupID int output,                        -- ID of newly created experiment group
     @requestOverride varchar(12) = 'parent',    -- ID of sample prep request for fractions (if different than parent experiment)
     @internalStandard varchar(50) = 'parent',
     @postdigestIntStd varchar(50) = 'parent',
@@ -121,6 +125,12 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
     
+    If IsNull(@totalCount, 0) <= 0
+    Begin
+        Set @message = 'Number of child experments cannot be 0'
+        RAISERROR (@message, 11, 4)
+    End
+
     -- Don't allow too many child experiments to be created
     --
     If @totalCount > @maxCount
@@ -149,7 +159,12 @@ AS
             RAISERROR (@message, 11, 6)
         End
     End
+
     Set @suffix = IsNull(@suffix, '')
+    Set @nameSearch = IsNull(@nameSearch, '')
+    Set @nameReplace = IsNull(@nameReplace, '')
+
+    Set @addUnderscore = IsNull(@addUnderscore, 'Yes')
 
     -- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
     --
@@ -199,6 +214,12 @@ AS
 
     -- Make sure @parentExperiment is capitalized properly
     Set @parentExperiment = @baseFractionName
+    
+    -- Search/replace, if defined
+    If Len(@nameSearch) > 0
+    Begin
+        Set @baseFractionName = Replace(@baseFractionName, @nameSearch, @nameReplace)
+    End
 
     -- Append the suffix, if defined
     If Len(@suffix) > 0
@@ -466,7 +487,13 @@ AS
     Declare @xID int
     Declare @result int
     Declare @wn varchar(8) = @wellNum
-    
+    Declare @nameFractionLinker varchar(1)
+
+    If @addUnderscore In ('No', 'N', '0')
+        Set @nameFractionLinker = ''
+    Else
+        Set @nameFractionLinker = '_'
+
     While @fractionCount < @totalCount And @myError = 0
     Begin -- <AddFractions>
         -- Build name for new experiment fraction
@@ -480,7 +507,7 @@ AS
 
         Set @fractionCount = @fractionCount + @step
         Set @newComment = '(Fraction ' + CAST(@fullfractioncount as varchar(3)) + ' of ' + CAST(@totalcount as varchar(3)) + ')'
-        Set @newExpName = @baseFractionName + '_' + @fractionNumberText
+        Set @newExpName = @baseFractionName + @nameFractionLinker + @fractionNumberText
         Set @fractionsCreated = @fractionsCreated + 1
 
         -- Verify that experiment name is not duplicated in table
@@ -652,7 +679,7 @@ AS
                        [Comment]
                 FROM T_Experiment_Plex_Members
                 WHERE Plex_Exp_ID = @parentExperimentID
-    		    --
+                --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 If Len(@callingUser) > 0
