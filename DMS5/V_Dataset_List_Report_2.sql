@@ -32,6 +32,7 @@ SELECT DS.Dataset_ID AS ID,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        RR.ID AS Request,
+       RR.RDS_BatchID AS Batch,
        RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
        EPT.Abbreviation AS [EUS Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
@@ -76,7 +77,6 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DA.AS_Dataset_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
        ON BTO.Identifier = E.EX_Tissue_ID
-
 
 
 GO
