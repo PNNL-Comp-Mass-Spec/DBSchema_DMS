@@ -16,7 +16,8 @@ SELECT Residue_ID,
        Num_H,
        Num_N,
        Num_O,
-       Num_S
+       Num_S,
+       Amino_Acid_Name
 FROM dbo.T_Residues
 
 
