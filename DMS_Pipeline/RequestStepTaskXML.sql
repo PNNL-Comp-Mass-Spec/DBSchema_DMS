@@ -94,6 +94,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          03/14/2018 mem - When finding job steps to assign, prevent multiple managers on a given machine from analyzing the same dataset simultaneously (filtering on job started within the last 10 minutes)
 **          03/29/2018 mem - Ignore CPU checks when the manager runs jobs remotely (@remoteInfoID is greater than 1 because @remoteInfo is non-blank)
 **                         - Update Remote_Info_ID when assigning a new job, both in T_Job_Steps and in T_Job_Step_Processing_Log
+**          02/21/2019 mem - Reset Completion_Code and Completion_Message when a job is assigned
 **
 *****************************************************/
 (
@@ -114,10 +115,10 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 As
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
-    declare @jobAssigned tinyint = 0
+    Declare @jobAssigned tinyint = 0
 
     Declare @CandidateJobStepsToRetrieve int = 15
     
@@ -190,15 +191,15 @@ As
     -- Make sure this is a valid processor (and capitalize it according to T_Local_Processors)
     ---------------------------------------------------
     --
-    declare @machine varchar(64)
-    declare @availableCPUs smallint
-    declare @availableMemoryMB int
-    declare @ProcessorState char
-    declare @ProcessorID int
-    declare @Enabled smallint
-    declare @ProcessToolGroup varchar(128)
+    Declare @machine varchar(64)
+    Declare @availableCPUs smallint
+    Declare @availableMemoryMB int
+    Declare @ProcessorState char
+    Declare @ProcessorID int
+    Declare @Enabled smallint
+    Declare @ProcessToolGroup varchar(128)
     --
-    declare @processorDoesGP int = -1
+    Declare @processorDoesGP int = -1
     --
     SELECT 
         @processorDoesGP = 1,        -- Prior to May 2015 used: @processorDoesGP = GP_Groups
@@ -814,7 +815,7 @@ As
         -- Not using the Big-bang query
 
         /*    
-        declare @ProcessorGP int
+        Declare @ProcessorGP int
 
         ---------------------------------------------------
         -- Deprecated in May 2015: 
@@ -1088,7 +1089,7 @@ As
         FROM #Tmp_CandidateJobSteps CJS
             INNER JOIN ( -- Look for Storage Servers with too many recently started tasks
                         SELECT Storage_Server
-                        FROM ( -- Look for running steps that started within the last @HoldoffWindow minutes
+                        FROM (  -- Look for running steps that started within the last @HoldoffWindow minutes
                                 -- Group by storage server
                                 -- Only examine steps <= @maxStepNumToThrottle
                                 SELECT T_Jobs.Storage_Server,
@@ -1287,25 +1288,29 @@ As
             Start = GetDate(),
             Finish = Null,
             Actual_CPU_Load = CASE WHEN @remoteInfoId > 1 THEN 0 ELSE CPU_Load END,
-            Next_Try = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Next_Try
-                            ELSE DateAdd(second, 30, GetDate())
-                       END,
-            Remote_Info_ID = CASE WHEN @remoteInfoID <= 1 THEN 1 ELSE @remoteInfoID END,
-		  Retry_Count = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Retry_Count
-                               ELSE 0
-                          END,
-            Remote_Start = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
-                                WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
-                                ELSE NULL
-                           END,            
-            Remote_Finish = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Null
-                                 WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Finish
-                                 ELSE NULL
-                            END,
+            Next_Try =        CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Next_Try
+                                   ELSE DateAdd(second, 30, GetDate())
+                              END,
+            Remote_Info_ID =  CASE WHEN @remoteInfoID <= 1 THEN 1 ELSE @remoteInfoID END,
+            Retry_Count =     CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Retry_Count
+                              ELSE 0
+                              END,
+            Remote_Start =    CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
+                                   WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
+                                   ELSE NULL
+                              END,            
+            Remote_Finish =   CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Null
+                                   WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Finish
+                                   ELSE NULL
+                              END,
             Remote_Progress = CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN 0
                                    WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Progress
                                    ELSE NULL
-                              END
+                              END,
+            Completion_Code = 0,
+            Completion_Message = CASE WHEN IsNull(Completion_Code, 0) > 0 THEN '' ELSE Null END,
+            Evaluation_Code =    CASE WHEN Evaluation_Code Is Null THEN Null ELSE 0 END,
+            Evaluation_Message = CASE WHEN Evaluation_Code Is Null THEN Null ELSE '' END
         WHERE Job = @jobNumber AND
               Step_Number = @stepNumber
         --
@@ -1340,8 +1345,7 @@ As
                                          WHEN @jobIsRunningRemote > 0 AND
                                               JS.Step_Number = @stepNumber THEN 0
                                          WHEN Tools.Uses_All_Cores > 0 AND
-                                              JS.Actual_CPU_Load = JS.CPU_Load THEN 
-                                           IsNull(M.Total_CPUs, JS.CPU_Load)
+                                              JS.Actual_CPU_Load = JS.CPU_Load THEN IsNull(M.Total_CPUs, JS.CPU_Load)
                                          ELSE JS.Actual_CPU_Load
                                      END) AS CPUs_Busy
                           FROM T_Job_Steps JS
@@ -1426,13 +1430,13 @@ As
         SELECT TOP ( @jobCountToPreview ) 
                CJS.Seq,
                CASE CJS.Association_Type
-                   WHEN 1 THEN 'Exclusive Association'
-                   WHEN 2 THEN 'Specific Association'
-                   WHEN 3 THEN 'Non-associated'
-                   WHEN 4 THEN 'Non-associated Generic'
-                   WHEN 5 THEN 'Results_Transfer task (specific to this processor''s server)'
-                   WHEN 6 THEN 'Results_Transfer task (null storage_server)'
-                   WHEN 20 THEN 'Time earlier than Next_Try value'
+                   WHEN 1 Then   'Exclusive Association'
+                   WHEN 2 Then   'Specific Association'
+                   WHEN 3 THEN   'Non-associated'
+                   WHEN 4 THEN   'Non-associated Generic'
+                   WHEN 5 THEN   'Results_Transfer task (specific to this processor''s server)'
+                   WHEN 6 THEN   'Results_Transfer task (null storage_server)'
+                   WHEN 20 THEN  'Time earlier than Next_Try value'
                    WHEN 99 THEN  'Logic error: this should have been updated to 103'
                    WHEN 100 THEN 'Invalid: Not recognized'
                    WHEN 101 THEN 'Invalid: CPUs all busy'
@@ -1444,7 +1448,7 @@ As
                    WHEN 107 THEN 'Invalid: Remote server already running ' + Cast(@maxSimultaneousRunningRemoteSteps as varchar(9)) + ' job steps; limit reached'
                    WHEN 108 THEN 'Invalid: Manager not configured to access remote server for running job step'
                    WHEN 109 THEN 'Invalid: Another manager on this processor''s server recently started processing this dataset'
-                   ELSE 'Warning: Unknown association type'
+                   ELSE          'Warning: Unknown association type'
                END AS Association_Type,
                CJS.Tool_Priority,
                CJS.Job_Priority,
