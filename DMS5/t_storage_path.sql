@@ -43,6 +43,11 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_t_storage_path_T_Instrument_Name]
 GO
+ALTER TABLE [dbo].[T_Storage_Path]  WITH CHECK ADD  CONSTRAINT [FK_T_Storage_Path_T_Storage_Path_Hosts] FOREIGN KEY([SP_machine_name])
+REFERENCES [dbo].[T_Storage_Path_Hosts] ([SP_machine_name])
+GO
+ALTER TABLE [dbo].[T_Storage_Path] CHECK CONSTRAINT [FK_T_Storage_Path_T_Storage_Path_Hosts]
+GO
 /****** Object:  Trigger [dbo].[trig_u_Storage_Path] ******/
 SET ANSI_NULLS ON
 GO
