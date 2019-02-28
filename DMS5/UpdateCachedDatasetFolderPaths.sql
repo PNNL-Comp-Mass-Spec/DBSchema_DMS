@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
 **          11/15/2013 mem - Added parameter
 **          11/19/2013 mem - Tweaked logging
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          02/27/2019 mem - Use T_Storage_Path_Hosts instead of SP_URL
 **    
 *****************************************************/
 (
@@ -28,11 +29,9 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
 As
     Set nocount on
     
-    Declare @myRowCount int
-    Declare @myError int
-    Set @myRowCount = 0
-    Set @myError = 0
-    
+    Declare @myRowCount int = 0
+    Declare @myError int = 0
+
     Declare @MinimumDatasetID int = 0
     
     ------------------------------------------------
@@ -151,7 +150,14 @@ As
                                                                ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                                   END,
             MyEMSL_Path_Flag = '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)),
-            Dataset_URL = SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
+            -- Old: Dataset_URL =             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
+            Dataset_URL = CASE WHEN SPath.SP_function Like '%inbox%'
+                          THEN ''
+                          ELSE SPH.URL_Prefix + 
+                               SPH.Host_Name + SPH.DNS_Suffix + '/' + 
+                               Replace([SP_path], '\', '/')
+                          END + 
+                          ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
             UpdateRequired = 0,
             Last_Affected = GetDate()
         FROM T_Dataset DS
@@ -159,6 +165,8 @@ As
                ON DFP.Dataset_ID = DS.Dataset_ID
              LEFT OUTER JOIN T_Storage_Path SPath
                ON SPath.SP_path_ID = DS.DS_storage_path_ID
+             LEFT OUTER JOIN T_Storage_Path_Hosts SPH
+               ON SPath.SP_machine_name = SPH.SP_machine_name
              LEFT OUTER JOIN T_Dataset_Archive DA
                              INNER JOIN T_Archive_Path AP
                                ON DA.AS_storage_path_ID = AP.AP_path_ID
@@ -190,12 +198,21 @@ As
                                                 ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                    END AS Archive_Folder_Path,
                    '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)) AS MyEMSL_Path_Flag,
-                   SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
+                   -- Old:             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
+                   CASE WHEN SPath.SP_function Like '%inbox%'
+                        THEN ''
+                        ELSE SPH.URL_Prefix + 
+                             SPH.Host_Name + SPH.DNS_Suffix + '/' + 
+                             Replace([SP_path], '\', '/')
+                        END + 
+                        ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
             FROM T_Dataset DS
                  INNER JOIN T_Cached_Dataset_Folder_Paths DFP
                    ON DFP.Dataset_ID = DS.Dataset_ID
                  LEFT OUTER JOIN T_Storage_Path SPath
                    ON SPath.SP_path_ID = DS.DS_storage_path_ID
+                 LEFT OUTER JOIN T_Storage_Path_Hosts SPH
+                   ON SPath.SP_machine_name = SPH.SP_machine_name
                  LEFT OUTER JOIN T_Dataset_Archive DA
                                  INNER JOIN T_Archive_Path AP
                                    ON DA.AS_storage_path_ID = AP.AP_path_ID
@@ -203,7 +220,7 @@ As
         ) AS Source (Dataset_ID, DS_RowVersion, SPath_RowVersion, Dataset_Folder_Path, Archive_Folder_Path, MyEMSL_Path_Flag, Dataset_URL)
         ON (target.Dataset_ID = source.Dataset_ID)
         WHEN Matched AND 
-                        (    IsNull(target.DS_RowVersion,        0) <> IsNull(source.DS_RowVersion,        0) OR
+                        (   IsNull(target.DS_RowVersion,        0) <> IsNull(source.DS_RowVersion,        0) OR
                             IsNull(target.SPath_RowVersion,     0) <> IsNull(source.SPath_RowVersion,     0) OR
                             IsNull(target.Dataset_Folder_Path, '') <> IsNull(source.Dataset_Folder_Path, '') OR
                             IsNull(target.Archive_Folder_Path, '') <> IsNull(source.Archive_Folder_Path, '') OR
