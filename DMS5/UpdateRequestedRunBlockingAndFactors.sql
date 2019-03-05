@@ -3,130 +3,130 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateRequestedRunBlockingAndFactors
+
+CREATE Procedure [dbo].[UpdateRequestedRunBlockingAndFactors]
 /****************************************************
 **
-**	Desc: 
-**		Update requested run factors and blocking from input XML lists 
-**		Called from http://dmsdev.pnl.gov/requested_run_batch_blocking/param
+**  Desc: 
+**      Update requested run factors and blocking from input XML lists 
+**      Called from https://dms2.pnl.gov/requested_run_batch_blocking/param
 **
-**		Example contents of @blockingList:
-**		<r i="545496" t="Run_Order" v="2" /><r i="545496" t="Block" v="2" />
-**		<r i="545497" t="Run_Order" v="1" /><r i="545497" t="Block" v="1" />
+**      Example contents of @blockingList:
+**      <r i="545496" t="Run_Order" v="2" /><r i="545496" t="Block" v="2" />
+**      <r i="545497" t="Run_Order" v="1" /><r i="545497" t="Block" v="1" />
 **
-**		Example contents of @factorList: 
-**		<id type="Request" /><r i="545496" f="TempFactor" v="a" /><r i="545497" f="TempFactor" v="b" />
+**      Example contents of @factorList: 
+**      <id type="Request" /><r i="545496" f="TempFactor" v="a" /><r i="545497" f="TempFactor" v="b" />
 **
-**		@blockingList can be empty if @factorList is defined
-**		Conversely, @factorList may be simply '<id type="Request" />' if updating run order and blocking
+**      @blockingList can be empty if @factorList is defined
+**      Conversely, @factorList may be simply '<id type="Request" />' if updating run order and blocking
 **
-**	Return values: 0: success, otherwise, error code
+**    Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	Auth: 	grk
-**	Date: 	02/21/2010
-**			09/02/2011 mem - Now calling PostUsageLogEntry
-**			11/07/2016 mem - Add optional logging via PostLogEntry
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   02/21/2010
+**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          11/07/2016 mem - Add optional logging via PostLogEntry
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          03/04/2019 mem - Tabs to spaces
 **    
 *****************************************************/
 (
-	@blockingList text,
-	@factorList text,
-	@message varchar(512) OUTPUT,
-	@callingUser varchar(128) = ''
+    @blockingList text,
+    @factorList text,
+    @message varchar(512) OUTPUT,
+    @callingUser varchar(128) = ''
 )
 As
-	SET NOCOUNT ON 
+    SET NOCOUNT ON 
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	DECLARE @xml AS xml
-	SET CONCAT_NULL_YIELDS_NULL ON
-	SET ANSI_PADDING ON
+    Declare @xml AS xml
+    SET CONCAT_NULL_YIELDS_NULL ON
+    SET ANSI_PADDING ON
 
-	Set @message = ''
+    Set @message = ''
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBlockingAndFactors', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBlockingAndFactors', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
 
-	Declare @debugEnabled tinyint = 0
-	
-	If @debugEnabled > 0
-	Begin
-		Declare @logMessage varchar(4096)
-		
-		Set @logMessage = Cast(@blockingList as varchar(4000))
-		If IsNull(@logMessage, '') = ''
-			Set @logMessage = '@blockingList is empty'
-		Else
-			Set @logMessage = '@blockingList: ' + @logMessage
-		
-		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
-			
-		Set @logMessage = Cast(@factorList as varchar(4000))
-		If IsNull(@logMessage, '') = ''
-			Set @logMessage = '@factorList is empty'
-		Else
-			Set @logMessage = '@factorList: ' + @logMessage
-		
-		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
-	End
-		
-	-----------------------------------------------------------
-	-- Update the blocking and run order
-	-----------------------------------------------------------
-	--
-	IF DATALENGTH(@blockingList) > 0
-	BEGIN
-		EXEC @myError = UpdateRequestedRunBatchParameters
-							@blockingList,
-							'update',
-							@message OUTPUT,
-							@callingUser
-		IF @myError <> 0
-		BEGIN
-			GOTO Done
-		END
-	END
+    Declare @debugEnabled tinyint = 0
+    
+    If @debugEnabled > 0
+    Begin
+        Declare @logMessage varchar(4096)
+        
+        Set @logMessage = Cast(@blockingList as varchar(4000))
+        If IsNull(@logMessage, '') = ''
+            Set @logMessage = '@blockingList is empty'
+        Else
+            Set @logMessage = '@blockingList: ' + @logMessage
+        
+        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+            
+        Set @logMessage = Cast(@factorList as varchar(4000))
+        If IsNull(@logMessage, '') = ''
+            Set @logMessage = '@factorList is empty'
+        Else
+            Set @logMessage = '@factorList: ' + @logMessage
+        
+        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+    End
+        
+    -----------------------------------------------------------
+    -- Update the blocking and run order
+    -----------------------------------------------------------
+    --
+    IF DATALENGTH(@blockingList) > 0
+    BEGIN
+        EXEC @myError = UpdateRequestedRunBatchParameters
+                            @blockingList,
+                            'update',
+                            @message OUTPUT,
+                            @callingUser
+        IF @myError <> 0
+        BEGIN
+            GOTO Done
+        END
+    END
 
 
-	-----------------------------------------------------------
-	-- Update the factors
-	-----------------------------------------------------------
-	--
+    -----------------------------------------------------------
+    -- Update the factors
+    -----------------------------------------------------------
+    --
 
-	EXEC @myError = UpdateRequestedRunFactors
-							@factorList,
-							@message  OUTPUT,
-							@callingUser 
-	IF @myError <> 0
-	BEGIN
-		GOTO Done
-	END
+    EXEC @myError = UpdateRequestedRunFactors
+                            @factorList,
+                            @message  OUTPUT,
+                            @callingUser 
+    IF @myError <> 0
+    BEGIN
+        GOTO Done
+    END
 
 Done:
-	---------------------------------------------------
-	-- Log SP usage
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Log SP usage
+    ---------------------------------------------------
 
-	Declare @UsageMessage varchar(512) = ''
-	Set @UsageMessage = ''
-	Exec PostUsageLogEntry 'UpdateRequestedRunBlockingAndFactors', @UsageMessage
+    Declare @UsageMessage varchar(512) = ''
+    Set @UsageMessage = ''
+    Exec PostUsageLogEntry 'UpdateRequestedRunBlockingAndFactors', @UsageMessage
 
 
-	return @myError
+    return @myError
 
 
 GO

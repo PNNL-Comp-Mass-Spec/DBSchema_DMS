@@ -6,327 +6,325 @@ GO
 CREATE PROCEDURE dbo.UpdateRequestedRunBatchParameters
 /****************************************************
 **
-**	Desc: 
-**	Change run blocking parameters given by lists
+**  Desc: 
+**      Change run blocking parameters given by lists
 **
-**	Example XML for @blockingList
-**		<r i="481295" t="Run_Order" v="1" />
-**		<r i="481295" t="Block" v="2" />
-**		<r i="481296" t="Run_Order" v="1" />
-**		<r i="481296" t="Block" v="1" />
-**		<r i="481297" t="Run_Order" v="2" />
-**		<r i="481297" t="Block" v="1" />
+**      Example XML for @blockingList
+**        <r i="481295" t="Run_Order" v="1" />
+**        <r i="481295" t="Block" v="2" />
+**        <r i="481296" t="Run_Order" v="1" />
+**        <r i="481296" t="Block" v="1" />
+**        <r i="481297" t="Run_Order" v="2" />
+**        <r i="481297" t="Block" v="1" />
 **
-**	Valid values for type (t) are:
-**		'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
+**      Valid values for type (t) are:
+**        'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	Auth: 	grk
-**	Date: 	02/09/2010
-**			02/16/2010 grk - eliminated batchID from arg list
-**			09/02/2011 mem - Now calling PostUsageLogEntry
-**			12/15/2011 mem - Now updating @callingUser to SUSER_SNAME() if empty
-**			03/28/2013 grk - added handling for cart, instrument
-**			11/07/2016 mem - Add optional logging via PostLogEntry
-**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
-**			11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   02/09/2010
+**          02/16/2010 grk - eliminated batchID from arg list
+**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          12/15/2011 mem - Now updating @callingUser to SUSER_SNAME() if empty
+**          03/28/2013 grk - added handling for cart, instrument
+**          11/07/2016 mem - Add optional logging via PostLogEntry
+**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
 **    
 *****************************************************/
 (
-	@blockingList text,			-- XML (see above)
-	@mode varchar(32),			-- 'update'
-	@message varchar(512) OUTPUT,
-	@callingUser varchar(128) = ''
+    @blockingList text,             -- XML (see above)
+    @mode varchar(32),              -- 'update'
+    @message varchar(512) OUTPUT,
+    @callingUser varchar(128) = ''
 )
 As
-	SET NOCOUNT ON 
+    SET NOCOUNT ON 
 
-	DECLARE @myError INT = 0
-	DECLARE @myRowCount INT = 0
+    DECLARE @myError INT = 0
+    DECLARE @myRowCount INT = 0
 
-	DECLARE @xml AS XML
-	SET CONCAT_NULL_YIELDS_NULL ON
-	SET ANSI_PADDING ON
+    DECLARE @xml AS XML
+    SET CONCAT_NULL_YIELDS_NULL ON
+    SET ANSI_PADDING ON
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBatchParameters', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBatchParameters', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	-----------------------------------------------------------
-	-- Validate the inputs
-	-----------------------------------------------------------
-	
-	SET @message = ''
+    -----------------------------------------------------------
+    -- Validate the inputs
+    -----------------------------------------------------------
+    
+    SET @message = ''
 
-	If IsNull(@callingUser, '') = ''
-		SET @callingUser = dbo.GetUserLoginWithoutDomain('')
-		
-	DECLARE @batchID int = 0
+    If IsNull(@callingUser, '') = ''
+        SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+        
+    DECLARE @batchID int = 0
 
-	-- Set to 1 to log the contents of @blockingList
-	Declare @debugEnabled tinyint = 0
-	
-	If @debugEnabled > 0
-	Begin
-		Declare @logMessage varchar(4096)		
-		Set @logMessage = Cast(@blockingList as varchar(4000))
-		
-		exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBatchParameters'
-	End
-	
-	
-	-----------------------------------------------------------
-	-----------------------------------------------------------
-	BEGIN TRY 
-		-----------------------------------------------------------
-		-- temp table to hold new parameters
-		-----------------------------------------------------------
-		--
-		CREATE TABLE #TMP (
-			Parameter VARCHAR(32),
-			Request INT,
-			Value VARCHAR(128),
-			ExistingValue VARCHAR(128) NULL
-		)
+    -- Set to 1 to log the contents of @blockingList
+    Declare @debugEnabled tinyint = 0
+    
+    If @debugEnabled > 0
+    Begin
+        Declare @logMessage varchar(4096)        
+        Set @logMessage = Cast(@blockingList as varchar(4000))
+        
+        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBatchParameters'
+    End
+    
+    
+    -----------------------------------------------------------
+    -----------------------------------------------------------
+    BEGIN TRY 
+        -----------------------------------------------------------
+        -- temp table to hold new parameters
+        -----------------------------------------------------------
+        --
+        CREATE TABLE #TMP (
+            Parameter VARCHAR(32),
+            Request INT,
+            Value VARCHAR(128),
+            ExistingValue VARCHAR(128) NULL
+        )
 
-		IF @mode = 'update' OR @mode = 'debug'
-		BEGIN --<a>
-			-----------------------------------------------------------
-			-- populate temp table with new parameters
-			-----------------------------------------------------------
-			--
-			SET @xml = @blockingList
-			--
-			INSERT INTO #TMP
-				( Parameter, Request, Value )
-			SELECT
-				xmlNode.value('@t', 'nvarchar(256)') Parameter,		-- Valid values are 'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
-				xmlNode.value('@i', 'nvarchar(256)') Request,		-- Request ID
-				xmlNode.value('@v', 'nvarchar(256)') Value
-			FROM @xml.nodes('//r') AS R(xmlNode)
+        IF @mode = 'update' OR @mode = 'debug'
+        BEGIN --<a>
+            -----------------------------------------------------------
+            -- populate temp table with new parameters
+            -----------------------------------------------------------
+            --
+            SET @xml = @blockingList
+            --
+            INSERT INTO #TMP
+                ( Parameter, Request, Value )
+            SELECT
+                xmlNode.value('@t', 'nvarchar(256)') Parameter,        -- Valid values are 'BK', 'RO', 'Block', 'Run Order', 'Status', 'Instrument', or 'Cart'
+                xmlNode.value('@i', 'nvarchar(256)') Request,        -- Request ID
+                xmlNode.value('@v', 'nvarchar(256)') Value
+            FROM @xml.nodes('//r') AS R(xmlNode)
 
-			-----------------------------------------------------------
-			-- normalize parameter names
-			-----------------------------------------------------------
-			--
-			UPDATE #TMP SET Parameter = 'Block' WHERE Parameter = 'BK'
-			UPDATE #TMP SET Parameter = 'Run Order' WHERE Parameter ='RO'
-			UPDATE #TMP SET Parameter = 'Run Order' WHERE Parameter ='Run_Order'
+            -----------------------------------------------------------
+            -- normalize parameter names
+            -----------------------------------------------------------
+            --
+            UPDATE #TMP SET Parameter = 'Block' WHERE Parameter = 'BK'
+            UPDATE #TMP SET Parameter = 'Run Order' WHERE Parameter ='RO'
+            UPDATE #TMP SET Parameter = 'Run Order' WHERE Parameter ='Run_Order'
 
-			IF @mode = 'debug'
-			BEGIN 
-				SELECT * FROM #TMP
-			END 
+            IF @mode = 'debug'
+            BEGIN 
+                SELECT * FROM #TMP
+            END 
 
-			-----------------------------------------------------------
-			-- add current values for parameters to temp table
-			-----------------------------------------------------------
-			--
-			UPDATE #TMP
-			SET ExistingValue = CASE 
-								WHEN #tmp.Parameter = 'Block' THEN CONVERT(VARCHAR(128), RDS_Block)
-								WHEN #tmp.Parameter = 'Run Order' THEN CONVERT(VARCHAR(128), RDS_Run_Order)
-								WHEN #tmp.Parameter = 'Status' THEN CONVERT(VARCHAR(128), RDS_Status)
-								WHEN #tmp.Parameter = 'Instrument' THEN RDS_instrument_name
-								ELSE ''
-								END 
-			FROM #TMP
-			     INNER JOIN T_Requested_Run
-			       ON #TMP.Request = dbo.T_Requested_Run.ID
+            -----------------------------------------------------------
+            -- add current values for parameters to temp table
+            -----------------------------------------------------------
+            --
+            UPDATE #TMP
+            SET ExistingValue = CASE 
+                                WHEN #tmp.Parameter = 'Block' THEN CONVERT(VARCHAR(128), RDS_Block)
+                                WHEN #tmp.Parameter = 'Run Order' THEN CONVERT(VARCHAR(128), RDS_Run_Order)
+                                WHEN #tmp.Parameter = 'Status' THEN CONVERT(VARCHAR(128), RDS_Status)
+                                WHEN #tmp.Parameter = 'Instrument' THEN RDS_instrument_name
+                                ELSE ''
+                                END 
+            FROM #TMP
+                 INNER JOIN T_Requested_Run
+                   ON #TMP.Request = dbo.T_Requested_Run.ID
 
-			-- LC cart (requires a join)
-			UPDATE #TMP
-			SET ExistingValue = dbo.T_LC_Cart.Cart_Name
-			FROM 
-				#TMP INNER JOIN
-				T_Requested_Run ON #TMP.Request = dbo.T_Requested_Run.ID INNER JOIN 
-				T_LC_Cart ON T_Requested_Run.RDS_Cart_ID = dbo.T_LC_Cart.ID
-			WHERE 
-				#TMP.Parameter = 'Cart'
-
-
-			IF @mode = 'debug'
-			BEGIN 
-				SELECT * FROM #TMP
-			END 
-
-			-----------------------------------------------------------
-			-- and remove entries that are unchanged
-			-----------------------------------------------------------
-			--
-			DELETE FROM #TMP WHERE (#TMP.Value = #TMP.ExistingValue)
+            -- LC cart (requires a join)
+            UPDATE #TMP
+            SET ExistingValue = dbo.T_LC_Cart.Cart_Name
+            FROM 
+                #TMP INNER JOIN
+                T_Requested_Run ON #TMP.Request = dbo.T_Requested_Run.ID INNER JOIN 
+                T_LC_Cart ON T_Requested_Run.RDS_Cart_ID = dbo.T_LC_Cart.ID
+            WHERE 
+                #TMP.Parameter = 'Cart'
 
 
-			-----------------------------------------------------------
-			-- validate
-			-----------------------------------------------------------
+            IF @mode = 'debug'
+            BEGIN 
+                SELECT * FROM #TMP
+            END 
 
-			DECLARE @misnamedCarts VARCHAR(4096) = ''
-			SELECT 
-				@misnamedCarts = @misnamedCarts + #TMP.Value + ', ' 
-			FROM 
-				#TMP 
-			WHERE 
-				#TMP.Parameter = 'Cart' 
-				AND NOT (#TMP.Value IN (SELECT Cart_Name FROM dbo.T_LC_Cart ))
-			--
-			IF @misnamedCarts != ''
-				RAISERROR ('Cart(s) %s are incorrect', 11, 20, @misnamedCarts)
+            -----------------------------------------------------------
+            -- and remove entries that are unchanged
+            -----------------------------------------------------------
+            --
+            DELETE FROM #TMP WHERE (#TMP.Value = #TMP.ExistingValue)
 
-		END --<a>
 
-		IF @mode = 'debug'
-		BEGIN 
-			SELECT * FROM #TMP
-		END 
-		
-		-----------------------------------------------------------
-		-- anything left to update?
-		-----------------------------------------------------------
-		--
-		IF NOT EXISTS (SELECT * FROM #TMP)
-		BEGIN
-			SET @message = 'No run parameters to update'
-			RETURN 0	
-		END
+            -----------------------------------------------------------
+            -- validate
+            -----------------------------------------------------------
 
-		-----------------------------------------------------------
-		-- Actually do the update
-		-----------------------------------------------------------
-		--
-		IF @mode = 'update'
-		BEGIN --<c>
-			DECLARE @transName VARCHAR(32)
-			SET @transName = 'UpdateRequestedRunBatchParameters'
-			BEGIN TRANSACTION @transName
+            DECLARE @misnamedCarts VARCHAR(4096) = ''
+            SELECT 
+                @misnamedCarts = @misnamedCarts + #TMP.Value + ', ' 
+            FROM 
+                #TMP 
+            WHERE 
+                #TMP.Parameter = 'Cart' 
+                AND NOT (#TMP.Value IN (SELECT Cart_Name FROM dbo.T_LC_Cart ))
+            --
+            IF @misnamedCarts != ''
+                RAISERROR ('Cart(s) %s are incorrect', 11, 20, @misnamedCarts)
 
-			UPDATE T_Requested_Run
-			SET RDS_Block = #TMP.Value
-			FROM 
-				T_Requested_Run INNER JOIN
-				#TMP ON #TMP.Request = dbo.T_Requested_Run.ID
-			WHERE 
-				#TMP.Parameter = 'Block'
-			
-			UPDATE T_Requested_Run
-			SET RDS_Run_Order = #TMP.Value
-			FROM 
-				T_Requested_Run INNER JOIN
-				#TMP ON #TMP.Request = dbo.T_Requested_Run.ID
-			WHERE 
-				#TMP.Parameter = 'Run Order'
+        END --<a>
 
-			UPDATE T_Requested_Run
-			SET RDS_Status = #TMP.Value
-			FROM 
-				T_Requested_Run INNER JOIN
-				#TMP ON #TMP.Request = dbo.T_Requested_Run.ID
-			WHERE 
-				#TMP.Parameter = 'Status'
+        IF @mode = 'debug'
+        BEGIN 
+            SELECT * FROM #TMP
+        END 
+        
+        -----------------------------------------------------------
+        -- anything left to update?
+        -----------------------------------------------------------
+        --
+        IF NOT EXISTS (SELECT * FROM #TMP)
+        BEGIN
+            SET @message = 'No run parameters to update'
+            RETURN 0    
+        END
 
-			UPDATE T_Requested_Run
-			SET RDS_Cart_ID = dbo.T_LC_Cart.ID
-			FROM 
-				T_Requested_Run INNER JOIN
-				#TMP ON #TMP.Request = dbo.T_Requested_Run.ID INNER JOIN 
-				dbo.T_LC_Cart ON #TMP.Value = dbo.T_LC_Cart.Cart_Name
-			WHERE 
-				#TMP.Parameter = 'Cart'
+        -----------------------------------------------------------
+        -- Actually do the update
+        -----------------------------------------------------------
+        --
+        IF @mode = 'update'
+        BEGIN --<c>
+            DECLARE @transName VARCHAR(32)
+            SET @transName = 'UpdateRequestedRunBatchParameters'
+            BEGIN TRANSACTION @transName
 
-			UPDATE T_Requested_Run
-			SET RDS_instrument_name = #TMP.Value
-			FROM 
-				T_Requested_Run INNER JOIN
-				#TMP ON #TMP.Request = dbo.T_Requested_Run.ID
-			WHERE 
-				#TMP.Parameter = 'Instrument'
+            UPDATE T_Requested_Run
+            SET RDS_Block = #TMP.Value
+            FROM 
+                T_Requested_Run INNER JOIN
+                #TMP ON #TMP.Request = dbo.T_Requested_Run.ID
+            WHERE 
+                #TMP.Parameter = 'Block'
+            
+            UPDATE T_Requested_Run
+            SET RDS_Run_Order = #TMP.Value
+            FROM 
+                T_Requested_Run INNER JOIN
+                #TMP ON #TMP.Request = dbo.T_Requested_Run.ID
+            WHERE 
+                #TMP.Parameter = 'Run Order'
 
-			COMMIT TRANSACTION @transName
+            UPDATE T_Requested_Run
+            SET RDS_Status = #TMP.Value
+            FROM 
+                T_Requested_Run INNER JOIN
+                #TMP ON #TMP.Request = dbo.T_Requested_Run.ID
+            WHERE 
+                #TMP.Parameter = 'Status'
 
-			If Exists (SELECT * FROM #TMP WHERE Parameter = 'Status')
-			Begin
-				-- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
-				--
-				Declare @continue tinyint = 1
-				Declare @requestId int = -100000
-				
-				While @continue = 1
-				Begin
-					SELECT TOP 1 @requestId = Request
-					FROM #TMP
-					WHERE Request > @requestId AND Parameter = 'Status'
-					ORDER BY Request
-					--
-					SELECT @myError = @@error, @myRowCount = @@rowcount
-					
-					If @myRowCount = 0
-					Begin
-						Set @continue = 0
-					End
-					Else
-					Begin
-						Exec UpdateCachedRequestedRunEUSUsers @requestId
-					End
-					
-				End
-			End
-			
-			-----------------------------------------------------------
-			-- convert changed items to XML for logging
-			-----------------------------------------------------------
-			--
-			DECLARE @changeSummary VARCHAR(max)
-			SET @changeSummary = ''
-			--
-			SELECT @changeSummary = @changeSummary + '<r i="' + CONVERT(varchar(12), Request) + '" t="' + Parameter + '" v="' + Value + '" />'
-			FROM #TMP
-			
-			-----------------------------------------------------------
-			-- log changes
-			-----------------------------------------------------------
-			--
-			IF @changeSummary <> ''
-			BEGIN
-				INSERT INTO T_Factor_Log
-					(changed_by, changes)
-				VALUES
-					(@callingUser, @changeSummary)
-			END
+            UPDATE T_Requested_Run
+            SET RDS_Cart_ID = dbo.T_LC_Cart.ID
+            FROM 
+                T_Requested_Run INNER JOIN
+                #TMP ON #TMP.Request = dbo.T_Requested_Run.ID INNER JOIN 
+                dbo.T_LC_Cart ON #TMP.Value = dbo.T_LC_Cart.Cart_Name
+            WHERE 
+                #TMP.Parameter = 'Cart'
 
-			---------------------------------------------------
-			-- Log SP usage
-			---------------------------------------------------
+            UPDATE T_Requested_Run
+            SET RDS_instrument_name = #TMP.Value
+            FROM 
+                T_Requested_Run INNER JOIN
+                #TMP ON #TMP.Request = dbo.T_Requested_Run.ID
+            WHERE 
+                #TMP.Parameter = 'Instrument'
 
-			DECLARE @UsageMessage VARCHAR(512) = ''
-			SET @UsageMessage = 'Batch: ' + Convert(varchar(12), @batchID)
-			EXEC PostUsageLogEntry 'UpdateRequestedRunBatchParameters', @UsageMessage
-		END --<c>
+            COMMIT TRANSACTION @transName
 
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT                           
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunBatchParameters'
-	END CATCH
-	RETURN @myError
+            If Exists (SELECT * FROM #TMP WHERE Parameter = 'Status')
+            Begin
+                -- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
+                --
+                Declare @continue tinyint = 1
+                Declare @requestId int = -100000
+                
+                While @continue = 1
+                Begin
+                    SELECT TOP 1 @requestId = Request
+                    FROM #TMP
+                    WHERE Request > @requestId AND Parameter = 'Status'
+                    ORDER BY Request
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+                    
+                    If @myRowCount = 0
+                    Begin
+                        Set @continue = 0
+                    End
+                    Else
+                    Begin
+                        Exec UpdateCachedRequestedRunEUSUsers @requestId
+                    End
+                    
+                End
+            End
+            
+            -----------------------------------------------------------
+            -- convert changed items to XML for logging
+            -----------------------------------------------------------
+            --
+            DECLARE @changeSummary VARCHAR(max)
+            SET @changeSummary = ''
+            --
+            SELECT @changeSummary = @changeSummary + '<r i="' + CONVERT(varchar(12), Request) + '" t="' + Parameter + '" v="' + Value + '" />'
+            FROM #TMP
+            
+            -----------------------------------------------------------
+            -- log changes
+            -----------------------------------------------------------
+            --
+            IF @changeSummary <> ''
+            BEGIN
+                INSERT INTO T_Factor_Log
+                    (changed_by, changes)
+                VALUES
+                    (@callingUser, @changeSummary)
+            END
+
+            ---------------------------------------------------
+            -- Log SP usage
+            ---------------------------------------------------
+
+            DECLARE @UsageMessage VARCHAR(512) = ''
+            SET @UsageMessage = 'Batch: ' + Convert(varchar(12), @batchID)
+            EXEC PostUsageLogEntry 'UpdateRequestedRunBatchParameters', @UsageMessage
+        END --<c>
+
+    END TRY
+    BEGIN CATCH 
+        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT                           
+        
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+            
+        Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunBatchParameters'
+    END CATCH
+    RETURN @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [DDL_Viewer] AS [dbo]
