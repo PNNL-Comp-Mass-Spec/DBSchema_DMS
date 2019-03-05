@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          03/04/2019 mem - Update Last_Ordered if the run order changes
 **    
 *****************************************************/
 (
@@ -250,7 +251,49 @@ As
 
             COMMIT TRANSACTION @transName
 
+            If Exists (SELECT * FROM #TmpNewBatchParams WHERE Parameter = 'Run Order')
             Begin
+                -- If all of the updated requests come from the same batch,
+                -- update Last_Ordered in T_Requested_Run_Batches
+
+                Declare @minBatchID Int = 0
+                Declare @maxBatchID int = 0
+
+                SELECT @minBatchID = Min(RDS_BatchID),
+                       @maxBatchID = Max(RDS_BatchID)
+                FROM #TmpNewBatchParams Src
+                     INNER JOIN T_Requested_Run RR
+                       ON Src.Request = RR.ID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If (@minBatchID > 0 Or @maxBatchID > 0)
+                Begin
+                    If @minBatchID = @maxBatchID
+                    Begin
+                        UPDATE T_Requested_Run_Batches
+                        SET Last_Ordered = GetDate()
+                        WHERE ID = @minBatchID
+                        --
+                        SELECT @myError = @@error, @myRowCount = @@rowcount
+                    End
+                    Else
+                    Begin
+                        Declare @requestedRunList Varchar(1024) = null
+
+                        SELECT @requestedRunList = Coalesce(@requestedRunList + ', ' + Cast(Request AS varchar(12)), 
+                                                            Cast(Request AS varchar(12)))
+                        FROM #TmpNewBatchParams
+                        ORDER BY Request
+
+                        Set @logMessage = 'Requested runs do not all belong to the same batch:  ' + 
+                                          Cast(@minBatchID As varchar(12)) + ' vs. ' + Cast(@maxBatchID As varchar(12)) +
+                                          '; see requested runs ' + @requestedRunList
+
+                        exec PostLogEntry 'Warning', @logMessage, 'UpdateRequestedRunBatchParameters'
+                    End
+                End
+            End
 
             If Exists (SELECT * FROM #TmpNewBatchParams WHERE Parameter = 'Status')
             Begin
