@@ -66,6 +66,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **          11/27/2018 mem - Check for @referenceCompoundList having '100:(none)'
 **                           Remove items from #Tmp_ExpToRefCompoundMap that map to the reference compound named (none)
 **          11/30/2018 mem - Add output parameter @experimentID
+**          03/27/2019 mem - Update @experimentId using @existingExperimentID
 **
 *****************************************************/
 (
@@ -232,13 +233,22 @@ As
 
     -- Cannot create an entry that already exists
     --
-    if @existingExperimentID <> 0 and (@mode In ('add', 'check_add'))
+    If @existingExperimentID <> 0 and (@mode In ('add', 'check_add'))
+    Begin
         RAISERROR ('Cannot add: Experiment "%s" already in database; cannot add', 11, 39, @experimentNum)
+    End
 
-    -- Cannot update a non-existent entry
-    --
-    if @existingExperimentID = 0 and (@mode In ('update', 'check_update'))
-        RAISERROR ('Cannot update: Experiment "%s" is not in database; cannot update (to rename an experiment, contact a DMS Admin)', 11, 40, @experimentNum)
+    If @mode In ('update', 'check_update')
+    Begin
+        -- Cannot update a non-existent entry
+        If @existingExperimentID = 0
+        Begin
+            RAISERROR ('Cannot update: Experiment "%s" is not in database; cannot update (to rename an experiment, contact a DMS Admin)', 11, 40, @experimentNum)
+        End
+
+        -- Assure that experiment ID is up to date
+        Set @experimentId = @existingExperimentID
+    End
 
     ---------------------------------------------------
     -- Resolve campaign ID
