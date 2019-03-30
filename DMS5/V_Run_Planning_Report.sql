@@ -11,7 +11,10 @@ SELECT  GroupQ.[Inst. Group],
         GroupQ.[Run Count],
         GroupQ.Blocked,
         GroupQ.BlkMissing,
-        GroupQ.[Request Name],
+        Case When RequestLookupQ.RDS_BatchID > 0 
+             Then GroupQ.Batch_Prefix 
+             Else GroupQ.Request_Prefix 
+        End As [Request or Batch Name],
         RequestLookupQ.RDS_BatchID AS Batch,
         GroupQ.Requester,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue],
@@ -40,8 +43,8 @@ SELECT  GroupQ.[Inst. Group],
         WPActivationState AS #WPActivationState
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
-                    COUNT(RequestName) AS [Run Count],
-                    MIN(Request_Prefix) AS [Request Name],
+                    COUNT(RequestID) AS [Run Count],
+                    MIN(Request_Prefix) AS Request_Prefix,
                     Requester,
                     MIN(Request_Created) AS [Date Created],
                     [Separation Group],
@@ -52,6 +55,7 @@ FROM    ( SELECT    [Inst. Group],
                     Proposal,
                     [Proposal Type],
                     Locked,
+                    Batch_Prefix,
                     [Last Ordered],
                     [Request Name Code],
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
@@ -61,11 +65,9 @@ FROM    ( SELECT    [Inst. Group],
                              RR.RDS_Sec_Sep AS [Separation Group],
                              DTN.DST_Name AS [DS Type],
                              RR.ID AS RequestID,
-                             RR.RDS_Name AS RequestName,
-                             LEFT(RR.RDS_Name, 20) + CASE
-                                                         WHEN LEN(RR.RDS_Name) > 20 THEN '...'
-                                                         ELSE ''
-                                                     END AS [Request_Prefix],
+                             LEFT(RR.RDS_Name, 20) + CASE WHEN LEN(RR.RDS_Name) > 20 THEN '...'
+                                                          ELSE ''
+                                                     END AS Request_Prefix,
                              RR.RDS_NameCode AS [Request Name Code],
                              U.U_Name AS Requester,
                              RR.RDS_created AS Request_Created,
@@ -76,6 +78,9 @@ FROM    ( SELECT    [Inst. Group],
                              EPT.Abbreviation AS [Proposal Type],
                              RRB.Locked,
                              RR.RDS_BatchID AS Batch,
+                             LEFT(RRB.Batch, 20) + CASE WHEN LEN(RRB.Batch) > 20 THEN '...'
+                                                        ELSE ''
+                                                   END AS Batch_Prefix,
                              CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) AS [Last Ordered],
                              CASE
                                  WHEN SPR.ID = 0 THEN NULL
@@ -128,7 +133,8 @@ FROM    ( SELECT    [Inst. Group],
                     [Proposal Type],
                     Locked,
                     [Last Ordered],
-                    Batch
+                    Batch,
+                    Batch_Prefix
         ) AS GroupQ
         INNER JOIN T_Requested_Run AS RequestLookupQ ON GroupQ.[Min Request] = RequestLookupQ.ID
         INNER JOIN T_EUS_UsageType AS TEUT ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID

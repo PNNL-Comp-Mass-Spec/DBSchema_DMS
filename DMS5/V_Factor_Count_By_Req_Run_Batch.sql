@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Factor_Count_By_Req_Run_Batch]
 AS
 SELECT Batch_ID,
@@ -16,7 +15,9 @@ FROM ( SELECT DISTINCT RRB.ID AS Batch_ID,
               ON RRFactor.TargetID = RR.ID AND
                  RRFactor.TYPE = 'Run_Request'
             INNER JOIN T_Requested_Run_Batches RRB
-              ON RR.RDS_BatchID = RRB.ID ) FactorQ
+              ON RR.RDS_BatchID = RRB.ID 
+       WHERE RRB.ID <> 0
+     ) FactorQ
 GROUP BY Batch_ID
 
 
