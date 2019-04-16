@@ -94,6 +94,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          08/29/2017 mem - Allow updating EUS info for existing datasets (calls AddUpdateRequestedRun)
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **                         - Expand @warning to varchar(512)
+**          04/15/2019 mem - Add call to UpdateCachedDatasetInstruments
 **    
 *****************************************************/
 (
@@ -1018,7 +1019,7 @@ As
     End -- </AddTrigger>
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
     
     If @mode = 'add' 
@@ -1136,7 +1137,6 @@ As
             
             Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
         End
-
     
         ---------------------------------------------------
         -- If scheduled run is not specified, create one
@@ -1244,11 +1244,14 @@ As
             Set @debugMsg = '@@trancount is 0; this is unexpected'
             exec PostLogEntry 'Error', @debugMsg, 'AddUpdateDataset'
         End
-                
+
+        -- Update T_Cached_Dataset_Instruments
+        Exec dbo.UpdateCachedDatasetInstruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
+
     End -- </AddMode>
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
     --
     If @mode = 'update' 
@@ -1419,8 +1422,10 @@ As
             End
         End
 
-    End -- </UpdateMode>
+        -- Update T_Cached_Dataset_Instruments
+        Exec dbo.UpdateCachedDatasetInstruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
+    End -- </UpdateMode>
 
     -- Update @message if @warning is not empty    
     If IsNull(@warning, '') <> ''
