@@ -11,7 +11,7 @@ SELECT DS.Dataset_ID AS ID,
        E.Experiment_Num AS Experiment,
        C.Campaign_Num AS Campaign,
        DSN.DSS_name AS State,
-       InstName.IN_name AS Instrument,
+       DSInst.Instrument,
        DS.DS_created AS Created,
        DS.DS_comment AS [Comment],
        DSRating.DRN_name AS Rating,
@@ -28,17 +28,17 @@ SELECT DS.Dataset_ID AS ID,
        CartConfig.Cart_Config_Name AS [Cart Config],
        LC.SC_Column_Number AS [LC Column],
        DS.DS_sec_sep AS [Separation Type],
-       RR.RDS_Blocking_Factor AS [Blocking Factor],
-       RR.RDS_Block AS [Block],
-       RR.RDS_Run_Order AS [Run Order],
+       -- Deprecated: RR.RDS_Blocking_Factor AS [Blocking Factor],
+       -- Deprecated: RR.RDS_Block AS [Block],
+       -- Deprecated: RR.RDS_Run_Order AS [Run Order],
        RR.ID AS Request,
        RR.RDS_BatchID AS Batch,
        RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
-       EPT.Abbreviation AS [EUS Proposal Type],
+       -- Deprecated to improve performance: EPT.Abbreviation AS [EUS Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
        RR.RDS_Requestor_PRN AS Requester,
-       DASN.DASN_StateName AS [Archive State],
-       T_YesNo.Description AS [Inst. Data Purged],
+       -- Deprecated: DASN.DASN_StateName AS [Archive State],
+       -- Deprecated: T_YesNo.Description AS [Inst. Data Purged],
        Org.OG_name AS Organism,
        BTO.Tissue,
        DS.DateSortKey AS #DateSortKey
@@ -47,8 +47,8 @@ FROM T_DatasetStateName DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID
      INNER JOIN T_DatasetTypeName DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
-     INNER JOIN T_Instrument_Name InstName
-       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     LEFT OUTER JOIN T_Cached_Dataset_Instruments DSInst
+       ON DS.Dataset_ID = DSInst.Dataset_ID
      INNER JOIN T_DatasetRatingName DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_Experiments E
@@ -65,6 +65,8 @@ FROM T_DatasetStateName DSN
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
+     /*
+      * Deprecated to improve performance: 
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
@@ -75,6 +77,7 @@ FROM T_DatasetStateName DSN
                      INNER JOIN T_YesNo
                        ON DA.AS_instrument_data_purged = T_YesNo.Flag
        ON DS.Dataset_ID = DA.AS_Dataset_ID
+       */
      LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
        ON BTO.Identifier = E.EX_Tissue_ID
 
