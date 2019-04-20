@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 194 ******/
+/****** RowCount: 196 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -195,4 +195,6 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (21
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (213,'TopPICProgLoc','','Directory with toppic.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (214,'BrukerSpectraExportMethodDir','','Directory with method .m subdirectories for use by the Bruker_DA_Export step tool (part of the Formularity script)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (215,'ThermoPeakDataExporterProgLoc','','Directory with ThermoPeakDataExporter.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (216,'MSFraggerProgLoc','','Directory with MSFragger.jar')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (217,'PhilosopherProgLoc','','Directory with Philosoper exe, typically philosopher_windows_amd64.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
