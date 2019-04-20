@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[DeleteDataset]
 /****************************************************
 **
@@ -37,6 +38,7 @@ CREATE Procedure [dbo].[DeleteDataset]
 **          11/16/2018 mem - Delete dataset file info from DMS_Capture.dbo.T_Dataset_Info_XML
 **                           Change the default for @infoOnly to 1
 **                           Rename the first parameter
+**          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
 **    
 *****************************************************/
 (
@@ -232,7 +234,7 @@ As
     --
     Declare @requestID int = Null
 
-    Select @requestID = ID
+    SELECT @requestID = ID
     FROM T_Requested_Run 
     WHERE DatasetID = @datasetID
 
@@ -305,6 +307,15 @@ As
     --
     UPDATE T_Dataset_Files
     SET Deleted = 1
+    WHERE Dataset_ID = @datasetID
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    ---------------------------------------------------
+    -- Delete rows in T_Cached_Dataset_Instruments
+    ---------------------------------------------------
+    --
+    DELETE T_Cached_Dataset_Instruments
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

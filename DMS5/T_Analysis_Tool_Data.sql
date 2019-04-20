@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 88 ******/
+/****** RowCount: 90 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)','','no ',0,'(na)',0,'N','(none)','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest','G:\DMS_Parameter_Files\Sequest','LCQDefSettings.txt','Peptide_Hit','no ',1,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
@@ -89,3 +89,5 @@ INSERT INTO [T_Analysis_Tool] VALUES (84,'ThermoPeakDataExporter','ThermoPeakDat
 INSERT INTO [T_Analysis_Tool] VALUES (85,'Formularity_Thermo','Formularity',1030,'\\gigasax\DMS_Parameter_Files\Formularity','G:\DMS_Parameter_Files\Formularity','Formularity_DefSettings.xml','FRM_Search','no ',1,'(na)',0,'N','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (86,'MSGFPlus_DeconMSn_MzRefinery','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFDB','G:\DMS_Parameter_Files\MSGFDB','IonTrapDefSettings_DeconMSN_MzRefinery_StatCysAlk_6plexTMT.xml','MSG_Peptide_Hit','no ',1,'mzML',1,'Y','','',0)
 INSERT INTO [T_Analysis_Tool] VALUES (87,'Formularity_Bruker_Decon','Formularity',1030,'\\gigasax\DMS_Parameter_Files\Formularity','G:\DMS_Parameter_Files\Formularity','Formularity_DefSettings.xml','FRM_Search','no ',1,'',0,'N','','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (88,'MSFragger','MSFragger',1033,'\\gigasax\DMS_Parameter_Files\MSFragger','G:\DMS_Parameter_Files\MSFragger','??','MSF_Peptide_Hit','no ',1,'mzML',1,'N','n/a','',0)
+INSERT INTO [T_Analysis_Tool] VALUES (89,'PepProtProphet','PepProtProphet',1,'(na)','(na)','??','TSV','no ',0,'(na)',1,'N','','',0)

@@ -79,6 +79,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobParameters
 **          05/23/2018 mem - Do not allow @requestorPRN to be the autouser (login H09090911)
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          04/17/2019 mem - Auto-change @protCollOptionsList to "seq_direction=forward,filetype=fasta" when running TopPIC
 **
 *****************************************************/
 (
@@ -351,20 +352,24 @@ As
     WHERE AJT_toolName = @toolName
 
     ---------------------------------------------------
-    -- Assure that we are not running a decoy search if using MSGFPlus
-    -- However, if the parameter file contains _NoDecoy in the name, then we'll allow @protCollOptionsList to contain Decoy
+    -- Assure that we are not running a decoy search if using MSGFPlus or TopPIC
+    -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
-        If IsNull(@message, '') = ''
+
+        If IsNull(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
             Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter files typically have tda=1'
+
+        If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
+            Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
     End
 
     ---------------------------------------------------
     -- Assure that we are running a decoy search if using MODa
-    -- However, if the parameter file contains _NoDecoy in the name, then we'll allow @protCollOptionsList to contain Decoy
+    -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
     If @toolName LIKE 'MODa%' And @protCollOptionsList Not Like '%decoy%' 
@@ -445,7 +450,7 @@ As
     End
     
     ---------------------------------------------------
-    -- If mode is add, then force @state to 'new'
+    -- If mode is add, force @state to 'new'
     ---------------------------------------------------
     IF @mode IN ('add', 'PreviewAdd')
     BEGIN
