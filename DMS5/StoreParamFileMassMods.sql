@@ -54,6 +54,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          08/17/2018 mem - Add support for TopPIC mods
 **                           Add parameter @paramFileType
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          04/23/2019 mem - Add support for MSFragger mod defs
 **    
 *****************************************************/
 (
@@ -62,7 +63,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
     @infoOnly tinyint = 0,
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
-    @paramFileType varchar(50) = '',    -- MSGFDB or TopPIC; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MSGF+)
+    @paramFileType varchar(50) = '',    -- MSGFDB, TopPIC, or MSFragger; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MSGF+)
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -154,7 +155,7 @@ AS
         End
     End
     
-    If Not @paramFileType In ('MSGFDB', 'TopPIC')
+    If Not @paramFileType In ('MSGFDB', 'TopPIC', 'MSFragger')
     Begin
         Set @paramFileType = 'MSGFDB'
     End
@@ -169,7 +170,6 @@ AS
     )
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_Mods ON #Tmp_Mods (EntryID)
-
     
     CREATE TABLE #Tmp_ModDef (
         EntryID int NOT NULL,
@@ -195,7 +195,8 @@ AS
         Residue_Symbol varchar(12) NULL,
         Residue_ID int NULL,
         Local_Symbol_ID int NULL,
-        Residue_Desc varchar(64) NULL
+        Residue_Desc varchar(64) Null,
+        Monoisotopic_Mass float NULL
     )
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_ModsToStore ON #Tmp_ModsToStore (Entry_ID)
@@ -203,7 +204,7 @@ AS
     Set @tempTablesCreated = 1
     
     -----------------------------------------
-    -- Split @mods on carriage returns
+    -- Split @mods on carriage returns (or line feeds)
     -- Store the data in #Tmp_Mods
     -----------------------------------------
 
@@ -234,14 +235,22 @@ AS
     
     Declare @charIndex int
     Declare @colCount int
+    Declare @validRow tinyint
     
     Declare @row varchar(2048)
+    Declare @rowKey varchar(1000)
+    Declare @rowValue varchar(2048)
+
     Declare @field varchar(512)
+    Declare @affectedResidues varchar(512)
+
     Declare @modType varchar(128)
     Declare @modTypeSymbol varchar(1)
     Declare @massCorrectionID int
     
     Declare @modName varchar(255)
+    Declare @modMass float
+    Declare @modMassToFind float
     Declare @location varchar(128)
     
     Declare @localSymbolID int = 0
@@ -267,18 +276,28 @@ AS
         SELECT @myRowCount = @@rowcount, @myError = @@error
         
         -- @row show now be empty, or contain something like the following:
-        -- StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex             # 4-plex iTraq
+
+        -- For MSGF+
+        -- StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex         # 4-plex iTraq
         --   or
         -- DynamicMod=HO3P, STY, opt, any,            Phospho            # Phosphorylation STY
-        --   or 
+        
+        -- For TopPIC: 
         -- StaticMod=Carbamidomethylation,57.021464,C,any,4
         --   or 
         -- DynamicMod=Phospho,79.966331,STY,any,21
+
+        -- For MSFragger:
+        -- variable_mod_01 = 15.9949 M
+        --   or
+        -- add_C_cysteine = 57.021464             # added to C - avg. 103.1429, mono. 103.00918
         
+        -- Remove any text after the comment character, #
         Set @charIndex = CharIndex('#', @row)
         If @charIndex > 0
-            Set @row= SubString(@row, 1, @charIndex-1)
+            Set @row = SubString(@row, 1, @charIndex-1)
         
+        -- Remove unwanted whitespace characters
         Set @row = Replace (@row, CHAR(10), '')
         Set @row = Replace (@row, CHAR(13), '')
         Set @row = Replace (@row, CHAR(9), ' ')
@@ -291,10 +310,90 @@ AS
 
             DELETE FROM #Tmp_ModDef
             
-            INSERT INTO #Tmp_ModDef (EntryID, Value)
-            SELECT EntryID, Value
-            FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
-            
+            If @paramFileType = 'MSFragger'
+            Begin
+                If @row Like 'variable[_]mod%'
+                Begin
+                    Set @charIndex = CharIndex('=', @row)
+                    If @charIndex > 0
+                    Begin
+                        Set @rowValue = Ltrim(Rtrim(Substring(@row, @charIndex+1, Len(@row))))
+
+                        INSERT INTO #Tmp_ModDef (EntryID, Value)
+                        SELECT EntryID, Value
+                        FROM dbo.udfParseDelimitedListOrdered(@rowValue, ' ', 0)
+
+                        Update #Tmp_ModDef 
+                        Set Value = 'DynamicMod=' + Value
+                        Where EntryID = 1
+                    End
+                End
+
+                If @row Like 'add[_]%'
+                Begin
+                    Set @charIndex = CharIndex('=', @row)
+                    If @charIndex > 0
+                    Begin
+                        Set @rowKey = Ltrim(Rtrim(Substring(@row, 1, @charIndex-1)))
+                        Set @rowValue = Ltrim(Rtrim(Substring(@row, @charIndex+1, Len(@row))))
+
+                        INSERT INTO #Tmp_ModDef (EntryID, Value)
+                        SELECT EntryID, Value
+                        FROM dbo.udfParseDelimitedListOrdered(@rowValue, ' ', 0)
+
+                        Update #Tmp_ModDef 
+                        Set Value = 'StaticMod=' + Value
+                        Where EntryID = 1
+
+                        -- @rowKey is similar to add_C_cysteine or add_Cterm_peptide
+                        -- Remove "add_"
+                        Set @rowKey = Substring(@rowKey, 5, 100)
+
+                        -- Add the affected mod symbol as the second column
+                        If @rowKey Like 'Nterm[_]peptide%'
+                        Begin
+                            Set @residueSymbol = '<'
+                        End
+                        Else If @rowKey Like 'Cterm[_]peptide%'
+                        Begin
+                            Set @residueSymbol = '>'
+                        End 
+                        Else If @rowKey Like 'Nterm[_]protein%'
+                        Begin
+                            Set @residueSymbol = '['
+                        End
+                        Else If @rowKey Like 'Cterm[_]protein%'
+                        Begin
+                            Set @residueSymbol = ']'
+                        End 
+                        Else
+                        Begin
+                            -- @rowKey is similar to C_cysteine
+                            Set @residueSymbol = Substring(@rowKey, 1, 1)
+                        End
+
+                        If Exists (Select * From #Tmp_ModDef Where EntryID = 2)
+                        Begin
+                            Update #Tmp_ModDef 
+                            Set Value = @residueSymbol
+                            Where EntryID = 2
+                        End
+                        Else
+                        Begin
+                            Insert Into #Tmp_ModDef (EntryID, Value)
+                            Values (2, @residueSymbol)
+                        End
+                    End
+                End
+
+            End
+            Else
+            Begin
+                INSERT INTO #Tmp_ModDef (EntryID, Value)
+                SELECT EntryID, Value
+                FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
+            End
+
             If Not Exists (SELECT * FROM #Tmp_ModDef)
             Begin
                 Print 'Skipping row since #Tmp_ModDef is empty: ' + @row
@@ -305,7 +404,7 @@ AS
                 -- Look for an equals sign in the first entry of #Tmp_ModDef
                 -----------------------------------------
                 --
-                Set @field = 1
+                Set @field = ''
                 SELECT @field = LTrim(RTrim(Value))
                 FROM #Tmp_ModDef
                 WHERE EntryID = 1
@@ -314,6 +413,7 @@ AS
                 -- StaticMod=None
                 -- DynamicMod=None
                 -- DynamicMod=O1
+                -- DynamicMod=15.9949
                 --
                 -- Look for an equals sign in @field
                 
@@ -342,19 +442,24 @@ AS
                         Set Value = Substring(Value, @charIndex+1, 2048)
                         Where EntryID = 1
 
-                        -- Assure that #Tmp_ModDef has at least 5 columns
+                        -- Assure that #Tmp_ModDef has at least 5 columns for MSGF+ or TopPIC
+                        -- For MSFragger, require at least 2 columns
                         --
                         SELECT @colCount = COUNT(*) 
                         FROM #Tmp_ModDef
                 
-                        If @colCount < 5
+                        Set @validRow = 1
+
+                        If @paramFileType In ('MSGFDB', 'TopPIC') And @colCount < 5
                         Begin
+                            Set @validRow = 0
+
                             If CharIndex(Char(9), @row) > 0
                             Begin
                                 If CharIndex(',', @row) > 0
-                                    Set @message = 'Row has a mix of tabs and commas; should only be comma-separated: ' + @row
+                                    Set @message = 'Aborting since row has a mix of tabs and commas; should only be comma-separated: ' + @row
                                 Else
-                                    Set @message = 'Row appears to be tab separated instead of comma-separated: ' + @row
+                                    Set @message = 'Aborting since row appears to be tab separated instead of comma-separated: ' + @row
                                     
                                 Set @myError = 53011
                                 If @infoOnly = 0
@@ -366,22 +471,28 @@ AS
                                 -- TopPIC uses 'StaticMod=None' and 'DynamicMod=Defaults' to indicate no static or dynamic mods
                                 If Not @field in ('StaticMod=None', 'DynamicMod=None', 'DynamicMod=Defaults')
                                 Begin
-                                    Set @message = 'Skipping row since it has ' + Cast(@colCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
+                                    Set @message = 'Aborting since row has ' + Cast(@colCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
                                     Set @myError = 53012
                                     
                                     If @infoOnly = 0
                                         Goto Done
                                 End
-                            End
-                            
+                            End                            
                         End
-                        Else
+                        
+                        If @paramFileType In ('MSFragger') And @colCount < 2
+                        Begin
+                            Set @validRow = 0
+                            Print 'Skipping row since not enough columns in #Tmp_ModDef: ' + @row
+                        End
+
+                        If @validRow > 0
                         Begin
 
                             Set @field = ''
-                            If @paramFileType = 'TopPIC'
+                            If @paramFileType In ('TopPIC', 'MSFragger')
                             Begin
-                                -- TopPIC mod defs don't include 'opt' or 'fix, so we update @field based on @modType
+                                -- TopPIC and MSFragger mod defs don't include 'opt' or 'fix, so we update @field based on @modType
                                 If @modType = 'DynamicMod'
                                     Set @field = 'opt'
                                 If @modType = 'StaticMod'
@@ -417,234 +528,327 @@ AS
                                     Goto Done
                                 End
                             End
-                            
-                            -----------------------------------------
-                            -- Determine the Mass_Correction_ID based on the Unimod name
-                            -----------------------------------------                        
-                            --
+
                             Set @modName = ''
-
-                            SELECT @modName = LTrim(RTrim(Value))
-                            FROM #Tmp_ModDef
-                            WHERE @paramFileType = 'MSGFDB' And EntryID = 5 Or
-                                  @paramFileType = 'TopPIC' And EntryID = 1
-                            
-                            -- Auto change Glu->pyro-Glu to Dehydrated
-                            -- Both have empirical formula H(-2) O(-1) but DMS can only associate one Unimod name with each unique empirical formula and Dehydrated is associated with H(-2) O(-1)                        
-                            If @modName = 'Glu->pyro-Glu'
-                                Set @modName = 'Dehydrated'
-                                
+                            Set @modMass = 0
+                            Set @modMassToFind = 0
                             Set @massCorrectionID = 0
-                            --
-                            SELECT @massCorrectionID = Mass_Correction_ID
-                            FROM T_Mass_Correction_Factors
-                            WHERE Original_Source_Name = @modName AND
-                                 (Original_Source = 'UniMod' OR @modName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose') Or @validateUnimod = 0)
-                            --
-                            SELECT @myRowCount = @@rowcount, @myError = @@error
+                            Set @location = ''
+                            Set @terminalMod = 0
+                            Set @affectedResidues = ''
+                                                        
+                            DELETE FROM #Tmp_Residues
 
-                            If (@myRowCount = 0 Or @massCorrectionID = 0) And @validateUnimod = 0
+                            If @paramFileType In ('MSGFDB', 'TopPIC')
                             Begin
-                                -- No match, try matching the DMS name (Mass_Correction_Tag)
+                                -----------------------------------------
+                                -- Determine the Mass_Correction_ID based on the Unimod name
+                                -----------------------------------------                        
                                 --
-                                SELECT @massCorrectionID = Mass_Correction_ID
+                                SELECT @modName = LTrim(RTrim(Value))
+                                FROM #Tmp_ModDef
+                                WHERE @paramFileType = 'MSGFDB' And EntryID = 5 Or
+                                      @paramFileType = 'TopPIC' And EntryID = 1
+                            
+                                -- Auto change Glu->pyro-Glu to Dehydrated
+                                -- Both have empirical formula H(-2) O(-1) but DMS can only associate one Unimod name with each unique empirical formula and Dehydrated is associated with H(-2) O(-1)                        
+                                If @modName = 'Glu->pyro-Glu'
+                                    Set @modName = 'Dehydrated'                                
+                                --
+                                SELECT @massCorrectionID = Mass_Correction_ID, @modMass = Monoisotopic_Mass
                                 FROM T_Mass_Correction_Factors
-                                WHERE Mass_Correction_Tag = @modName
+                                WHERE Original_Source_Name = @modName AND
+                                     (Original_Source = 'UniMod' OR @modName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose') Or @validateUnimod = 0)
                                 --
                                 SELECT @myRowCount = @@rowcount, @myError = @@error
-                            End
-                            
-                            If @myRowCount = 0 Or @massCorrectionID = 0
-                            Begin
-                                If @validateUnimod > 0
-                                    Set @message = 'UniMod modification not found in T_Mass_Correction_Factors.Original_Source_Name for mod "' + @modName + '"; see row: ' + @row
-                                else
-                                    Set @message = 'Modification name not found in T_Mass_Correction_Factors.Original_Source_Name or T_Mass_Correction_Factors.Mass_Correction_Tag for mod "' + @modName + '"; see row: ' + @row
-                                    
-                                Set @myError = 53007
-                                Goto Done
-                            End
-                            
-                            -----------------------------------------
-                            -- Determine the affected residues
-                            -----------------------------------------
-                            --
-                            Set @location = ''
 
-                            SELECT @location = LTrim(RTrim(Value))
-                            FROM #Tmp_ModDef
-                            WHERE @paramFileType = 'MSGFDB' And EntryID = 4 Or
-                                  @paramFileType = 'TopPIC' And EntryID = 4
-                            
-                            If @paramFileType = 'MSGFDB' And @location Not In ('any', 'N-term', 'C-term', 'Prot-N-term', 'Prot-C-term')
-                            Begin
-                                Set @message = 'Invalid location "' + @location + '"; should be "any", "N-term", "C-term", "Prot-N-term", or "Prot-C-term"; see row: ' + @row
-                                Set @myError = 53008
-                                Goto Done
-                            End
-
-                            If @paramFileType = 'TopPIC' And @location Not In ('any', 'N-term', 'C-term')
-                            Begin
-                                Set @message = 'Invalid location "' + @location + '"; should be "any", "N-term", or "C-term"; see row: ' + @row
-                                Set @myError = 53008
-                                Goto Done
-                            End
-                            
-                            DELETE FROM #Tmp_Residues
-                            Set @terminalMod = 0
-                            
-                            If @location = 'Prot-N-term'
-                            Begin
-                                Set @terminalMod = 1
-                                INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('[', 1)
-                            End
-                                                            
-                            If @location = 'Prot-C-term'
-                            Begin
-                                Set @terminalMod = 1
-                                INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (']', 1)
-                            End
-                            
-                            If @location = 'N-term'
-                            Begin
-                                Set @terminalMod = 1
-                                INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('<', 1)
-                            End
-                                
-                            If @location = 'C-term'
-                            Begin
-                                Set @terminalMod = 1
-                                INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('>', 1)
-                            End
-                            
-                            -- Parse out the affected residue (or residues)
-                            -- N- or C-terminal mods use * for any residue at a terminus
-                            --                        
-                            SELECT @field = LTrim(RTrim(Value))
-                            FROM #Tmp_ModDef
-                            WHERE @paramFileType = 'MSGFDB' And EntryID = 2 Or
-                                  @paramFileType = 'TopPIC' And EntryID = 3
-                            
-                            If @field = 'any'
-                            Begin
-                                Set @message = 'Use * to match all residues, not the word "any"; see row: ' + @row
-                                Set @myError = 53010
-                                Goto Done
-                            End
-                            
-                            -- Parse each character in @field
-                            Set @charIndex = 0
-                            While @charIndex < Len(@field)
-                            Begin
-                                Set @charIndex = @charIndex + 1
-
-                                Set @residueSymbol = SubString(@field, @charIndex, 1)
-                                
-                                If @terminalMod = 1
+                                If (@myRowCount = 0 Or @massCorrectionID = 0) And @validateUnimod = 0
                                 Begin
-                                    If @residueSymbol <> '*'
+                                    -- No match, try matching the DMS name (Mass_Correction_Tag)
+                                    --
+                                    SELECT @massCorrectionID = Mass_Correction_ID
+                                    FROM T_Mass_Correction_Factors
+                                    WHERE Mass_Correction_Tag = @modName
+                                    --
+                                    SELECT @myRowCount = @@rowcount, @myError = @@error
+                                End
+                            
+                                If @myRowCount = 0 Or IsNull(@massCorrectionID, 0) = 0
+                                Begin
+                                    If @validateUnimod > 0
+                                        Set @message = 'UniMod modification not found in T_Mass_Correction_Factors.Original_Source_Name for mod "' + @modName + '"; see row: ' + @row
+                                    else
+                                        Set @message = 'Modification name not found in T_Mass_Correction_Factors.Original_Source_Name or T_Mass_Correction_Factors.Mass_Correction_Tag for mod "' + @modName + '"; see row: ' + @row
+                                    
+                                    Set @myError = 53007
+                                    Goto Done
+                                End
+                            
+                                -----------------------------------------
+                                -- Determine the affected residues
+                                -----------------------------------------
+                                --
+                                SELECT @location = LTrim(RTrim(Value))
+                                FROM #Tmp_ModDef
+                                WHERE @paramFileType = 'MSGFDB' And EntryID = 4 Or
+                                      @paramFileType = 'TopPIC' And EntryID = 4
+                            
+                                If @paramFileType = 'MSGFDB' And @location Not In ('any', 'N-term', 'C-term', 'Prot-N-term', 'Prot-C-term')
+                                Begin
+                                    Set @message = 'Invalid location "' + @location + '"; should be "any", "N-term", "C-term", "Prot-N-term", or "Prot-C-term"; see row: ' + @row
+                                    Set @myError = 53008
+                                    Goto Done
+                                End
+
+                                If @paramFileType = 'TopPIC' And @location Not In ('any', 'N-term', 'C-term')
+                                Begin
+                                    Set @message = 'Invalid location "' + @location + '"; should be "any", "N-term", or "C-term"; see row: ' + @row
+                                    Set @myError = 53008
+                                    Goto Done
+                                End
+                            
+                                If @location = 'Prot-N-term'
+                                Begin
+                                    Set @terminalMod = 1
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('[', 1)
+                                End
+                                                            
+                                If @location = 'Prot-C-term'
+                                Begin
+                                    Set @terminalMod = 1
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (']', 1)
+                                End
+                            
+                                If @location = 'N-term'
+                                Begin
+                                    Set @terminalMod = 1
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('<', 1)
+                                End
+                                
+                                If @location = 'C-term'
+                                Begin
+                                    Set @terminalMod = 1
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('>', 1)
+                                End
+                            
+                                -- Parse out the affected residue (or residues)
+                                -- N- or C-terminal mods use * for any residue at a terminus
+                                --                        
+                                SELECT @field = LTrim(RTrim(Value))
+                                FROM #Tmp_ModDef
+                                WHERE @paramFileType = 'MSGFDB' And EntryID = 2 Or
+                                      @paramFileType = 'TopPIC' And EntryID = 3
+                            
+                                If @field = 'any'
+                                Begin
+                                    Set @message = 'Use * to match all residues, not the word "any"; see row: ' + @row
+                                    Set @myError = 53010
+                                    Goto Done
+                                End
+
+                                Set @affectedResidues = @field
+                            End
+
+                            If @paramFileType In ('MSFragger')
+                            Begin
+                                -----------------------------------------
+                                -- Determine the Mass_Correction_ID based on the mod mass
+                                -----------------------------------------                        
+                                --
+                                SELECT @field = LTrim(RTrim(Value))
+                                FROM #Tmp_ModDef
+                                WHERE EntryID = 1
+
+                                Set @modMassToFind = Try_Parse(@field As float)
+
+                                If @modMassToFind Is Null
+                                Begin
+                                    Set @message = 'Mod mass "' + @field + '"is not a number; see row: ' + @row
+                                    Set @myError = 53012
+                                    Goto Done
+                                End
+
+                                If Abs(@modMassToFind) < 0.01
+                                Begin
+                                    -- Likely an undefined static mod, e.g. add_T_threonine = 0.0000
+                                    -- Skip it
+                                    Set @validRow = 0
+                                End
+                                Else
+                                Begin
+                                    SELECT Top 1 @massCorrectionID = Mass_Correction_ID, @modName = Mass_Correction_Tag, @modMass = Monoisotopic_Mass
+                                    FROM T_Mass_Correction_Factors
+                                    WHERE Abs(Monoisotopic_Mass - @modMassToFind) < 0.25
+                                    Order By Abs(Monoisotopic_Mass - @modMassToFind)
+                                     --
+                                    SELECT @myRowCount = @@rowcount, @myError = @@error
+
+                                    If @myRowCount < 1 Or IsNull(@massCorrectionID, 0) = 0
                                     Begin
-                                        -- Terminal mod that targets specific residues
-                                        -- Store this as a dynamic terminal mod
-                                        UPDATE #Tmp_Residues 
-                                        SET Terminal_AnyAA = 0
-                                        
-                                        Set @charIndex = Len(@field)
+                                        Set @message = 'Matching modification not found for mass ' + Cast(@modMassToFind As Varchar(20)) + 
+                                                       ' in T_Mass_Correction_Factors; see row: ' + @row
+                                        Set @myError = 53007
+                                        Goto Done
+                                    End
+
+                                    SELECT @affectedResidues = LTrim(RTrim(Value))
+                                    FROM #Tmp_ModDef
+                                    WHERE EntryID = 2
+
+                                    If @affectedResidues In ('<','>','[',']')
+                                    Begin
+                                        -- N or C terminal static mod 
+                                        -- (specified with add_Cterm_peptide or similar, 
+                                        --  but we replaced that with a symbol earlier in this procedure)
+                                        Set @terminalMod = 1
+                                        INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
+                                        Set @affectedResidues= '*'
+                                    End
+                                    Else If @affectedResidues In ('[^',']^')
+                                    Begin
+                                        -- N or C terminal dynamic mod 
+                                        Set @terminalMod = 1
+                                        INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (Substring(@affectedResidues, 1, 1), 1)
+                                        Set @affectedResidues= '*'
                                     End
                                 End
-                                Else
-                                Begin
-                                    -- Not matching an N or C-Terminus
-                                    INSERT INTO #Tmp_Residues (Residue_Symbol) 
-                                    Values (@residueSymbol)
-                                End
-                                
                             End
 
-                            -----------------------------------------
-                            -- Determine the residue IDs for the entries in #Tmp_Residues
-                            -----------------------------------------
-                            --
-                            UPDATE #Tmp_Residues
-                            SET Residue_ID = R.Residue_ID,
-                                Residue_Desc = R.Description
-                            FROM #Tmp_Residues
-                                 INNER JOIN T_Residues R
-                                   ON R.Residue_Symbol = #Tmp_Residues.Residue_Symbol
-
-                            -- Look for symbols that did not resolve
-                            IF EXISTS (SELECT * FROM #Tmp_Residues WHERE Residue_ID IS NULL)
+                            If @validRow > 0
                             Begin
-                                Set @msgAddon = Null
+                                -- Parse each character in @affectedResidues
+                                Set @charIndex = 0
+                                While @charIndex < Len(@affectedResidues)
+                                Begin
+                                    Set @charIndex = @charIndex + 1
+
+                                    Set @residueSymbol = SubString(@affectedResidues, @charIndex, 1)
                                 
-                                SELECT @msgAddon = @msgAddon + Coalesce(@msgAddon + ', ', '') + Residue_Symbol
+                                    If @terminalMod = 1
+                                    Begin
+                                        If @residueSymbol <> '*'
+                                        Begin
+                                            -- Terminal mod that targets specific residues
+                                            -- Store this as a dynamic terminal mod
+                                            UPDATE #Tmp_Residues 
+                                            SET Terminal_AnyAA = 0
+                                        
+                                            Set @charIndex = Len(@affectedResidues)
+                                        End
+                                    End
+                                    Else
+                                    Begin
+                                        -- Not matching an N or C-Terminus
+                                        If @paramFileType In ('MSFragger')
+                                        Begin
+                                            If ASCII(@residueSymbol) In (110, 99)
+                                            Begin
+                                                -- Lowercase n or c indicates peptide N- or C-terminus
+                                                If @charIndex = Len(@affectedResidues)
+                                                Begin
+                                                    Set @message = 'Lowercase n or c should be followed by a residue or *; see row: ' + @row
+                                                    Set @myError = 53013
+                                                    Goto Done
+                                                End
+
+                                                Set @charIndex = @charIndex + 1
+                                                Set @residueSymbol = SubString(@affectedResidues, @charIndex, 1)
+                                            End
+                                        End
+
+                                        INSERT INTO #Tmp_Residues (Residue_Symbol) 
+                                        Values (@residueSymbol)
+                                    End
+                                
+                                End
+
+                                -----------------------------------------
+                                -- Determine the residue IDs for the entries in #Tmp_Residues
+                                -----------------------------------------
+                                --
+                                UPDATE #Tmp_Residues
+                                SET Residue_ID = R.Residue_ID,
+                                    Residue_Desc = R.Description
                                 FROM #Tmp_Residues
-                                WHERE Residue_ID Is Null
-                                
-                                Set @message = 'Unrecognized residue symbol(s)s "' + @msgAddon + '"; symbols not found in T_Residues; see row: ' + @row
-                                Set @myError = 53009
-                                Goto Done
-                            End
-                            
-                            -----------------------------------------
-                            -- Check for N-terminal or C-terminal static mods that do not use *
-                            -----------------------------------------
-                            --
-                            If @modTypeSymbol = 'S' And Exists (Select * From #Tmp_Residues Where Residue_Symbol In ('<', '>') AND Terminal_AnyAA = 0)
-                            Begin
-                                -- Auto-switch to tracking as a dynamic mod (required for PHRP)
-                                Set @modTypeSymbol = 'D'
-                            End
-                            
-                            -----------------------------------------
-                            -- Determine the Local_Symbol_ID to store for dynamic mods
-                            -----------------------------------------
-                            --
-                            If @modTypeSymbol = 'D'
-                            Begin
-                                If Exists (SELECT * FROM #Tmp_ModsToStore WHERE Mod_Name = @modName AND Mod_Type_Symbol = 'D')
+                                     INNER JOIN T_Residues R
+                                       ON R.Residue_Symbol = #Tmp_Residues.Residue_Symbol
+
+                                -- Look for symbols that did not resolve
+                                IF EXISTS (SELECT * FROM #Tmp_Residues WHERE Residue_ID IS NULL)
                                 Begin
-                                    -- This DynamicMod entry uses the same mod name as a previous one; re-use it
-                                    SELECT TOP 1 @localSymbolIDToStore = Local_Symbol_ID
-                                    FROM #Tmp_ModsToStore
-                                    WHERE Mod_Name = @modName AND Mod_Type_Symbol = 'D'
+                                    Set @msgAddon = Null
+                                
+                                    SELECT @msgAddon = @msgAddon + Coalesce(@msgAddon + ', ', '') + Residue_Symbol
+                                    FROM #Tmp_Residues
+                                    WHERE Residue_ID Is Null
+                                
+                                    Set @message = 'Unrecognized residue symbol(s)s "' + @msgAddon + '"; symbols not found in T_Residues; see row: ' + @row
+                                    Set @myError = 53009
+                                    Goto Done
+                                End
+                            
+                                -----------------------------------------
+                                -- Check for N-terminal or C-terminal static mods that do not use *
+                                -----------------------------------------
+                                --
+                                If @modTypeSymbol = 'S' And Exists (Select * From #Tmp_Residues Where Residue_Symbol In ('<', '>') AND Terminal_AnyAA = 0)
+                                Begin
+                                    -- Auto-switch to tracking as a dynamic mod (required for PHRP)
+                                    Set @modTypeSymbol = 'D'
+                                End
+                            
+                                -----------------------------------------
+                                -- Determine the Local_Symbol_ID to store for dynamic mods
+                                -----------------------------------------
+                                --
+                                If @modTypeSymbol = 'D'
+                                Begin
+                                    If Exists (SELECT * FROM #Tmp_ModsToStore WHERE Mod_Name = @modName AND Mod_Type_Symbol = 'D')
+                                    Begin
+                                        -- This DynamicMod entry uses the same mod name as a previous one; re-use it
+                                        SELECT TOP 1 @localSymbolIDToStore = Local_Symbol_ID
+                                        FROM #Tmp_ModsToStore
+                                        WHERE Mod_Name = @modName AND Mod_Type_Symbol = 'D'
+                                    End
+                                    Else
+                                    Begin
+                                        -- New dynamic mod
+                                        Set @localSymbolID = @localSymbolID + 1
+                                        Set @localSymbolIDToStore = @localSymbolID
+                                    End                                
+                                
                                 End
                                 Else
                                 Begin
-                                    -- New dynamic mod
-                                    Set @localSymbolID = @localSymbolID + 1
-                                    Set @localSymbolIDToStore = @localSymbolID
-                                End                                
-                                
-                            End
-                            Else
-                            Begin
-                                -- Static mod; store 0
-                                Set @localSymbolIDToStore = 0
-                            End
+                                    -- Static mod; store 0
+                                    Set @localSymbolIDToStore = 0
+                                End
                             
-                            -----------------------------------------
-                            -- Append the mod defs to #Tmp_ModsToStore
-                            -----------------------------------------
-                            --
-                            INSERT INTO #Tmp_ModsToStore (
-                                    Mod_Name,
-                                    Mass_Correction_ID,
-                                    Mod_Type_Symbol,
-                                    Residue_Symbol,
-                                    Residue_ID,
-                                    Local_Symbol_ID,
-                                    Residue_Desc
-                                )
-                            SELECT @modName AS Mod_Name,
-                                   @massCorrectionID AS MassCorrectionID,
-                                   CASE WHEN @modTypeSymbol = 'S' And Residue_Symbol IN ('<', '>') Then 'T' Else @modTypeSymbol End AS Mod_Type,
-                                   Residue_Symbol,
-                                   Residue_ID,
-                                   @localSymbolIDToStore as Local_Symbol_ID,
-                                   Residue_Desc
-                            FROM #Tmp_Residues
+                                -----------------------------------------
+                                -- Append the mod defs to #Tmp_ModsToStore
+                                -----------------------------------------
+                                --
+                                INSERT INTO #Tmp_ModsToStore (
+                                        Mod_Name,
+                                        Mass_Correction_ID,
+                                        Mod_Type_Symbol,
+                                        Residue_Symbol,
+                                        Residue_ID,
+                                        Local_Symbol_ID,
+                                        Residue_Desc,
+                                        Monoisotopic_Mass
+                                    )
+                                SELECT @modName AS Mod_Name,
+                                       @massCorrectionID AS MassCorrectionID,
+                                       CASE WHEN @modTypeSymbol = 'S' And Residue_Symbol IN ('<', '>') Then 'T' Else @modTypeSymbol End AS Mod_Type,
+                                       Residue_Symbol,
+                                       Residue_ID,
+                                       @localSymbolIDToStore as Local_Symbol_ID,
+                                       Residue_Desc,
+                                       @modMass
+                                FROM #Tmp_Residues
 
+                            End
                         End
                     End
                 End
@@ -688,11 +892,18 @@ AS
     
 Done:
 
-    If @infoOnly <> 0 And Len(@message) > 0
-        SELECT @message As Message
+    If @infoOnly <> 0 
+    Begin
+        If Len(@message) > 0
+            SELECT @message As Message
+
+        If @myError > 0
+            SELECT * From #Tmp_ModDef
+    End
 
     If @infoOnly = 0 And @myError > 0
         Print @message
+
 
     If @tempTablesCreated > 0
     Begin

@@ -80,6 +80,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          05/23/2018 mem - Do not allow @requestorPRN to be the autouser (login H09090911)
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          04/17/2019 mem - Auto-change @protCollOptionsList to "seq_direction=forward,filetype=fasta" when running TopPIC
+**          04/23/2019 mem - Auto-change @protCollOptionsList to "seq_direction=decoy,filetype=fasta" when running MSFragger
 **
 *****************************************************/
 (
@@ -368,15 +369,15 @@ As
     End
 
     ---------------------------------------------------
-    -- Assure that we are running a decoy search if using MODa
+    -- Assure that we are running a decoy search if using MODa or MSFragger
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If @toolName LIKE 'MODa%' And @protCollOptionsList Not Like '%decoy%' 
+    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Not Like '%decoy%' 
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         If IsNull(@message, '') = ''
-            Set @message = 'Note: changed protein options to decoy since MODa requires decoy proteins to perform FDR-based filtering'
+            Set @message = 'Note: changed protein options to decoy since ' + @toolName + ' requires decoy proteins to perform FDR-based filtering'
     End
 
     /*
