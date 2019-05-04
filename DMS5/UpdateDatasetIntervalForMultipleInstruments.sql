@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
+
+CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 /****************************************************
 **
 **  Desc: 
@@ -33,6 +34,7 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 **			04/11/2017 mem - Now passing @infoOnly to UpdateEMSLInstrumentUsageReport
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          05/03/2019 mem - Pass @eusInstrumentId to UpdateEMSLInstrumentUsageReport for select instruments
 **    
 *****************************************************/
 (
@@ -45,8 +47,8 @@ CREATE PROCEDURE dbo.UpdateDatasetIntervalForMultipleInstruments
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -55,9 +57,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateDatasetIntervalForMultipleInstruments', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -72,19 +74,19 @@ As
 	-- Set up date interval and key values
 	---------------------------------------------------
 	
-	DECLARE @endDate DATETIME =  GETDATE()
-	DECLARE @startDate DATETIME = DATEADD(DAY, -@DaysToProcess, @endDate)
-	DECLARE @currentYear INT = DATEPART(YEAR, @endDate)
-	DECLARE @currentMonth INT = DATEPART(MONTH, @endDate)
-	DECLARE @day INT = DATEPART(DAY, @endDate)
-	DECLARE @hour INT = DATEPART(HOUR, @endDate)
-	DECLARE @prevDate DATETIME = DATEADD(MONTH, -1, @endDate)						
-	DECLARE @prevMonth INT = DATEPART(MONTH, @prevDate)
-	DECLARE @prevYear INT = DATEPART(YEAR, @prevDate)
+	Declare @endDate DATETIME =  GETDATE()
+	Declare @startDate DATETIME = DATEADD(DAY, -@DaysToProcess, @endDate)
+	Declare @currentYear INT = DATEPART(YEAR, @endDate)
+	Declare @currentMonth INT = DATEPART(MONTH, @endDate)
+	Declare @day INT = DATEPART(DAY, @endDate)
+	Declare @hour INT = DATEPART(HOUR, @endDate)
+	Declare @prevDate DATETIME = DATEADD(MONTH, -1, @endDate)						
+	Declare @prevMonth INT = DATEPART(MONTH, @prevDate)
+	Declare @prevYear INT = DATEPART(YEAR, @prevDate)
 
-	DECLARE @nextMonth INT = DATEPART(MONTH, DATEADD(MONTH, 1, @endDate))
-	DECLARE @nextYear INT = DATEPART(YEAR, DATEADD(MONTH, 1, @endDate))
-	DECLARE @bonm DATETIME = CONVERT(VARCHAR(12), @nextMonth) + '/1/' + CONVERT(VARCHAR(12), @nextYear)
+	Declare @nextMonth INT = DATEPART(MONTH, DATEADD(MONTH, 1, @endDate))
+	Declare @nextYear INT = DATEPART(YEAR, DATEADD(MONTH, 1, @endDate))
+	Declare @bonm DATETIME = CONVERT(varchar(12), @nextMonth) + '/1/' + CONVERT(varchar(12), @nextYear)
 	
 	---------------------------------------------------
 	-- Temp table to hold list of production instruments
@@ -92,15 +94,21 @@ As
 	
 	CREATE TABLE #Tmp_Instruments (
 		Seq INT IDENTITY(1,1) NOT NULL,
-		Instrument VARCHAR(65),
+		Instrument varchar(65),
 		EMSL CHAR(1),
-		Tracked TINYINT
+		Tracked tinyint,
+        EUS_Instrument_ID Int Null,
+        Use_EUS_ID tinyint Not Null
 	)
 
 	CREATE TABLE #Tmp_InstrumentFilter (
 		Instrument varchar(65)
 	)
-	
+
+    Create Table #Tmp_EUS_IDs_Processed (
+        EUS_Instrument_ID Int Not Null,
+    )
+
 	---------------------------------------------------
 	-- Process updates for all instruments, one at a time
 	-- Filter on @instrumentsToProcess if not-blank
@@ -127,13 +135,18 @@ As
 			
 			INSERT INTO #Tmp_Instruments( Instrument,
 			                              EMSL,
-			                              Tracked )
+			                              Tracked,
+                                          EUS_Instrument_ID,
+                                          Use_EUS_ID )
 			SELECT InstList.[Name],
 			       InstList.EUS_Primary_Instrument AS EMSL,
-			       InstList.Tracked
+			       InstList.Tracked,
+                   InstList.EUS_Instrument_ID,
+                   0
 			FROM V_Instrument_Tracked InstList
 			     INNER JOIN #Tmp_InstrumentFilter InstFilter
 			       ON InstList.[Name] = InstFilter.Instrument
+            Order By IsNull(InstList.EUS_Instrument_ID, 0), InstList.[Name]
 			--
 			SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -147,30 +160,66 @@ As
 
 			INSERT INTO #Tmp_Instruments( Instrument,
 			                              EMSL,
-			                              Tracked )
+			                              Tracked,
+                                          EUS_Instrument_ID,
+                                          Use_EUS_ID )
 			SELECT [Name],
 			       EUS_Primary_Instrument AS EMSL,
-			       Tracked
+			       Tracked,
+                   EUS_Instrument_ID, 
+                   0
 			FROM V_Instrument_Tracked
+            Order By IsNull(EUS_Instrument_ID, 0), [Name]
 			--
 			SELECT @myError = @@Error, @myRowCount = @@RowCount
 
 		End
 
 		---------------------------------------------------
-		-- Update intervals for given instrument
+        -- Flag instruments where we need to use EUS instrument ID 
+        -- instead of instrument name when calling UpdateEMSLInstrumentUsageReport
+		---------------------------------------------------
+
+        UPDATE #Tmp_Instruments
+        SET Use_EUS_ID = 1
+        FROM #Tmp_Instruments
+                INNER JOIN ( SELECT InstName.IN_name,
+                                    InstMapping.EUS_Instrument_ID
+                            FROM T_Instrument_Name InstName
+                                INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+                                    ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+                                INNER JOIN ( SELECT EUS_Instrument_ID
+                                             FROM T_Instrument_Name InstName
+                                                    INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+                                                    ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+                                             WHERE Not EUS_Instrument_ID Is Null
+                                             GROUP BY EUS_Instrument_ID
+                                             HAVING Count(*) > 1 ) LookupQ
+                                    ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID ) FilterQ
+                ON #Tmp_Instruments.EUS_Instrument_ID = FilterQ.EUS_Instrument_ID
+
+		---------------------------------------------------
+		-- Update intervals for each instrument
 		---------------------------------------------------
 		
-		DECLARE @instrument VARCHAR(64)
-		DECLARE @emslInstrument CHAR(1)
-		DECLARE @tracked TINYINT
-		DECLARE @index INT = 0
-		DECLARE @done TINYINT = 0
+		Declare @instrument varchar(64)
+		Declare @emslInstrument char(1)
+		Declare @tracked tinyint
+        Declare @useEUSid tinyint
+        Declare @eusInstrumentId Int
 
-		WHILE @done = 0
+		Declare @index int = 0
+		Declare @continue tinyint = 1
+        Declare @skipInstrument tinyint = 0
+
+		WHILE @continue = 1
 		BEGIN -- <a>
 			SET @instrument = NULL 
-			SELECT TOP 1 @instrument = Instrument, @emslInstrument = EMSL, @tracked = Tracked
+			SELECT TOP 1 @instrument = Instrument, 
+                         @emslInstrument = EMSL, 
+                         @tracked = Tracked,
+                         @useEUSid = Use_EUS_ID,
+                         @eusInstrumentId = EUS_Instrument_ID
 			FROM #Tmp_Instruments 
 			WHERE Seq > @index
 			
@@ -178,32 +227,59 @@ As
 			
 			IF @instrument IS NULL 
 			BEGIN 
-				SET @done = 1
+				SET @continue = 0
 			END 
 			ELSE 
 			BEGIN -- <b>
-				EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
-				
-				If @UpdateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
-				Begin
-					If @infoOnly > 0
-						Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
+                Set @skipInstrument = 0
 
-					EXEC UpdateEMSLInstrumentUsageReport @instrument, @endDate, @message output, @infoonly=@infoonly
-					
-					If @infoOnly > 0
-						Print ''
+                If @useEUSid > 0
+                Begin
+                    If Exists (Select * From #Tmp_EUS_IDs_Processed Where EUS_Instrument_ID = @eusInstrumentId)
+                    Begin
+                        Set @skipInstrument = 1
+                    End
+                    Else
+                    Begin
+                        Insert Into #Tmp_EUS_IDs_Processed (EUS_Instrument_ID)
+                        Values (@eusInstrumentId)
+                    End
+                End
+                 
+                If @skipInstrument = 0
+                Begin -- <c> 
+
+				    EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
+				
+				    If @UpdateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
+				    Begin -- <d> 
+					    If @infoOnly > 0
+                        Begin
+						    Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
+                        End
+
+                        If @useEUSid > 0
+                        Begin
+                            EXEC UpdateEMSLInstrumentUsageReport '', @eusInstrumentId, @endDate, @message output, @infoonly=@infoonly
+                        End
+                        Else
+                        Begin
+                            EXEC UpdateEMSLInstrumentUsageReport @instrument, 0, @endDate, @message output, @infoonly=@infoonly
+                        End
+										
+					    If @infoOnly > 0
+						    Print ''
 						
-				End
-				Else
-				Begin
-					If @infoOnly > 0
-					Begin
-						Print 'Skip call to UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
-						Print ''
-					End
-				End
-					
+				    End -- </d> 
+				    Else
+				    Begin
+					    If @infoOnly > 0
+					    Begin
+						    Print 'Skip call to UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
+						    Print ''
+					    End
+				    End
+				End -- </c>
 			END  -- </b>
 		END -- </a>
 

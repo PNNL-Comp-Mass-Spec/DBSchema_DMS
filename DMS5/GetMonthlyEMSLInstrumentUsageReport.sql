@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetMonthlyEMSLInstrumentUsageReport
+
+CREATE PROCEDURE [dbo].[GetMonthlyEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -18,24 +19,23 @@ CREATE PROCEDURE GetMonthlyEMSLInstrumentUsageReport
 **  Date:	03/16/2012 
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**          05/03/2019 mem - Add support for DMS instruments that share a single eusInstrumentId
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@year VARCHAR(12),
-	@month VARCHAR(12),
+	@year varchar(12),
+	@month varchar(12),
 	@message varchar(512) output
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError Int = 0
+	Declare @myRowCount int = 0
 	
-	DECLARE @infoOnly tinyint = 0
+	Declare @infoOnly tinyint = 0
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -49,14 +49,14 @@ As
 	---------------------------------------------------
 	
 	CREATE TABLE #ZR (
-		EMSL_Inst_ID INT,
-		Instrument VARCHAR(64),
-		[Type] VARCHAR(128),
-		Start DATETIME,
-		Minutes INT,
+		EMSL_Inst_ID int,
+		Instrument varchar(64),
+		[Type] varchar(128),
+		[Start] datetime,
+		[Minutes] int,
 		Proposal varchar(32) NULL,
 		[Usage] varchar(32) NULL,
-		Comment VARCHAR(4096) NULL,
+		Comment varchar(4096) NULL,
 		[Year] INT,
 		[Month] INT,
 		ID INT
@@ -67,62 +67,125 @@ As
 	---------------------------------------------------
 	
 	CREATE TABLE #Tmp_Instruments (
-		Seq INT IDENTITY(1,1) NOT NULL,
+		EntryID int IDENTITY(1,1) NOT NULL,
 		Instrument varchar(65)
 	)
 
+    ---------------------------------------------------
+    -- Temp table to track DMS instruments that share the same EUS ID
+    ---------------------------------------------------
+    Create Table #Tmp_InstrumentsToProcessByID (
+        EUS_Instrument_ID int NOT NULL,
+		Instrument varchar(65) NOT NULL
+	)
+
 	---------------------------------------------------
-	-- accumulate data for all instruments, one at a time
+	-- Accumulate data for all instruments, one at a time
 	---------------------------------------------------
 	BEGIN TRY 
+    
+		---------------------------------------------------
+		-- Find production instruments that we need to process by EUS_Instrument_ID 
+        -- because two (or more) DMS Instruments have the same EUS_Instrument_ID
+		---------------------------------------------------
+
+        INSERT INTO #Tmp_InstrumentsToProcessByID ( EUS_Instrument_ID, Instrument )
+		SELECT InstMapping.EUS_Instrument_ID,
+		       InstName.IN_name
+		FROM T_Instrument_Name InstName
+		     INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+		       ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+		     INNER JOIN ( SELECT EUS_Instrument_ID
+		                  FROM T_Instrument_Name InstName
+		                       INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+		                         ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+		                  GROUP BY EUS_Instrument_ID
+		                  HAVING Count(*) > 1 ) LookupQ
+		       ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID
+		WHERE InstName.IN_status = 'active' AND
+		      InstName.IN_operations_role = 'Production'
 
 		---------------------------------------------------
-		-- get list of production instruments
+		-- Get list of active production instruments
 		---------------------------------------------------
 
-		INSERT INTO #Tmp_Instruments (Instrument)
+		INSERT INTO #Tmp_Instruments( Instrument )
 		SELECT IN_name
 		FROM T_Instrument_Name
-		WHERE (IN_status = 'active') AND (IN_operations_role = 'Production')
+		WHERE IN_status = 'active' And 
+              IN_operations_role = 'Production' And
+		      NOT IN_Name IN ( SELECT Instrument
+		                       FROM #Tmp_InstrumentsToProcessByID )
 		
-		DECLARE @instrument VARCHAR(64)
-		DECLARE @index INT = 0
-		DECLARE @done TINYINT = 0
+		DECLARE @instrument varchar(64)
+		DECLARE @entryID int = -1
+		DECLARE @continue tinyint = 1
 		
 		---------------------------------------------------
-		-- get usage data for given instrument
+		-- Get usage data for instruments, by name
 		---------------------------------------------------
 
-		WHILE @done = 0
-		BEGIN -- <a>
-			SET @instrument = NULL 
-			SELECT TOP 1 @instrument = Instrument 
+		WHILE @continue > 0
+		BEGIN -- <a1>
+			
+			SELECT TOP 1 @instrument = Instrument, 
+                         @entryID = EntryID
 			FROM #Tmp_Instruments 
-			WHERE Seq > @index
+			WHERE EntryID > @entryID
+            ORDER BY EntryID
+			--
+		    SELECT @myError = @@error, @myRowCount = @@rowcount
 			
-			SET @index = @index + 1
-			
-			IF @instrument IS NULL 
+			If @myRowCount = 0
 			BEGIN 
-				SET @done = 1
+				SET @continue = 0
 			END 
 			ELSE 
-			BEGIN -- <b>
-				INSERT INTO #ZR (Instrument, EMSL_Inst_ID, Start, Type, Minutes, Proposal, Usage, Comment, Year, Month, ID)
-				EXEC GetMonthlyInstrumentUsageReport @instrument, @year, @month, 'report', @message output
-			END  -- </b>
-		END -- </a>
-		
+			BEGIN
+				INSERT INTO #ZR (Instrument, EMSL_Inst_ID, [Start], Type, [Minutes], Proposal, Usage, Comment, [Year], [Month], ID)
+				EXEC GetMonthlyInstrumentUsageReport @instrument, 0, @year, @month, 'report', @message output
+			END
+		END -- </a1>
+
 		---------------------------------------------------
-		-- return accumulated report
+		-- Get usage data for instruments, by EUS Instrument ID
+		---------------------------------------------------
+
+        DECLARE @eusInstrumentId As Int = -1
+		Set @continue = 1
+
+		WHILE @continue > 0
+		BEGIN -- <a2>
+			
+			SELECT TOP 1 @instrument = Instrument, 
+                         @eusInstrumentId = EUS_Instrument_ID
+			FROM #Tmp_InstrumentsToProcessByID 
+			WHERE EUS_Instrument_ID > @eusInstrumentId
+            ORDER BY EUS_Instrument_ID
+			--
+		    SELECT @myError = @@error, @myRowCount = @@rowcount
+			
+			If @myRowCount = 0
+			BEGIN 
+				SET @continue = 0
+			END 
+			ELSE 
+			BEGIN
+				INSERT INTO #ZR (Instrument, EMSL_Inst_ID, [Start], Type, [Minutes], Proposal, Usage, Comment, [Year], [Month], ID)
+				EXEC GetMonthlyInstrumentUsageReport '', @eusInstrumentId, @year, @month, 'report', @message output
+			END
+		END -- </a2>
+        		
+		---------------------------------------------------
+		-- Return accumulated report
 		---------------------------------------------------
 
 		SELECT
 			EMSL_Inst_ID, 
 			Instrument AS DMS_Instrument, 
 			[Type], 
-			CONVERT(VARCHAR(24), Start, 100) AS Start, 
-			Minutes, 
+			CONVERT(varchar(24), [Start], 100) AS [Start], 
+			[Minutes], 
 			Proposal, 
 			[Usage], 
 			Comment

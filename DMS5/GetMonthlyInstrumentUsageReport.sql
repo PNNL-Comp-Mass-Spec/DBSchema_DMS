@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetMonthlyInstrumentUsageReport
+
+CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -29,30 +30,64 @@ CREATE PROCEDURE dbo.GetMonthlyInstrumentUsageReport
 **			09/18/2012 grk - handling "Operator" and "PropUser" prorata comment fields
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
+**          05/03/2019 mem - Add parameter @eusInstrumentId, which is sent to GetRunTrackingMonthlyInfoByID if non-zero
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@instrument VARCHAR(64),
-	@year VARCHAR(12),
-	@month VARCHAR(12),
+	@instrument varchar(64),
+    @eusInstrumentId Int,          -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
+	@year varchar(12),
+	@month varchar(12),
 	@outputFormat varchar(12) = 'details', -- 'details', 'rollup', 'check', 'report' 
 	@message varchar(512) output
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+    Set @instrument = IsNull(@instrument, '')
+    Set @eusInstrumentId = IsNull(@eusInstrumentId, 0)
+   
+	Set @message = ''
+                
+    Declare @processByEUS Tinyint = 0
+
+    If @eusInstrumentId > 0
+    Begin
+        Set @processByEUS = 1
+    End
 
 	---------------------------------------------------
 	---------------------------------------------------
 	BEGIN TRY 
+
+        If @processByEUS = 0
+        Begin
+            -- Auto switch to @eusInstrumentId if needed
+
+            SELECT @eusInstrumentId = InstMapping.EUS_Instrument_ID
+            FROM T_Instrument_Name InstName
+                 INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+                   ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+                 INNER JOIN ( SELECT EUS_Instrument_ID
+                              FROM T_Instrument_Name InstName
+                                   INNER JOIN T_EMSL_DMS_Instrument_Mapping InstMapping
+                                     ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+                              GROUP BY EUS_Instrument_ID
+                              HAVING Count(*) > 1 ) LookupQ
+                   ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID
+            WHERE InstName.IN_name = @instrument
+            
+            If @eusInstrumentId > 0
+            Begin
+                Set @processByEUS = 1
+            End
+
+		End
 
 		---------------------------------------------------
 		-- get maximum time available in month
@@ -85,31 +120,64 @@ As
 			Operator VARCHAR(128) NULL
 		)
 
-		INSERT INTO #TR (
-			ID ,
-			[Type],
-			Start,
-			Duration ,
-			[Interval] ,
-			Proposal ,
-			[UsageID],
-			[Usage],
-			[Normal]
-		)
-		SELECT  
-			GRTMI.ID ,
-			'Dataset' AS [Type],
-			GRTMI.Time_Start AS Start,
-			GRTMI.Duration ,
-			ISNULL(GRTMI.Interval, 0) AS [Interval],
-			ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
-			TRR.RDS_EUS_UsageType AS UsageID,
-			TEUT.Name AS [Usage],
-			1
-		FROM
-			dbo.GetRunTrackingMonthlyInfo(@instrument, @year, @month, '') AS GRTMI
-			LEFT OUTER JOIN T_Requested_Run AS TRR ON GRTMI.ID = TRR.DatasetID 
-			INNER JOIN T_EUS_UsageType TEUT ON TRR.RDS_EUS_UsageType = TEUT.ID;
+        If @processByEUS > 0
+        Begin;
+          
+		    INSERT INTO #TR (
+			    ID ,
+			    [Type],
+			    Start,
+			    Duration ,
+			    [Interval] ,
+			    Proposal ,
+			    [UsageID],
+			    [Usage],
+			    [Normal]
+		    )
+		    SELECT GRTMI.ID,
+		           'Dataset' AS [Type],
+		           GRTMI.Time_Start AS Start,
+		           GRTMI.Duration,
+		           ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
+		           ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
+		           TRR.RDS_EUS_UsageType AS UsageID,
+		           TEUT.Name AS [Usage],
+		           1
+		    FROM dbo.GetRunTrackingMonthlyInfoByID ( @eusInstrumentId, @year, @month, '' ) AS GRTMI
+		         LEFT OUTER JOIN T_Requested_Run AS TRR
+		           ON GRTMI.ID = TRR.DatasetID
+		         INNER JOIN T_EUS_UsageType TEUT
+		           ON TRR.RDS_EUS_UsageType = TEUT.ID;
+        End;
+        Else
+        Begin;
+        
+		    INSERT INTO #TR (
+			    ID ,
+			    [Type],
+			    Start,
+			    Duration ,
+			    [Interval] ,
+			    Proposal ,
+			    [UsageID],
+			    [Usage],
+			    [Normal]
+		    )
+		    SELECT GRTMI.ID,
+		           'Dataset' AS [Type],
+		           GRTMI.Time_Start AS Start,
+		           GRTMI.Duration,
+		           ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
+		           ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
+		           TRR.RDS_EUS_UsageType AS UsageID,
+		           TEUT.Name AS [Usage],
+		           1
+		    FROM dbo.GetRunTrackingMonthlyInfo ( @instrument, @year, @month, '' ) AS GRTMI
+		         LEFT OUTER JOIN T_Requested_Run AS TRR
+		           ON GRTMI.ID = TRR.DatasetID
+		         INNER JOIN T_EUS_UsageType TEUT
+		           ON TRR.RDS_EUS_UsageType = TEUT.ID;
+        End;
 
 		---------------------------------------------------
 		-- Pull comments from datasets
@@ -169,15 +237,13 @@ As
 		FROM  T_Run_Interval TRI
 				INNER JOIN #TR ON TRI.ID = #TR.ID
 
-
 		---------------------------------------------------
-		-- mark datasets in temp report table 
+		-- Mark datasets in temp report table 
 		-- that have long intervals 
 		---------------------------------------------------
 
 		UPDATE #TR
-		SET 
-			[Normal] = 0
+		SET [Normal] = 0
 		WHERE #TR.ID IN (SELECT ID FROM #TI)
 
 		---------------------------------------------------
@@ -396,54 +462,77 @@ As
 		END
 
 		---------------------------------------------------
-		-- provide output report according to mode
-		---------------------------------------------------
-
-		---------------------------------------------------
-		-- provide report format
+		-- Provide output report according to mode
 		---------------------------------------------------
 
 		IF @outputFormat = 'report'
 		BEGIN 
-			-- look up EMSL instrument ID
-			DECLARE @emsl_instrument_id INT 
-			SELECT   @emsl_instrument_id = TEDIM.EUS_Instrument_ID
-			FROM     T_Instrument_Name AS TIN
-					LEFT OUTER JOIN T_EMSL_DMS_Instrument_Mapping AS TEDIM ON TIN.Instrument_ID = TEDIM.DMS_Instrument_ID
-			WHERE    ( TIN.IN_name = @instrument )
+            ---------------------------------------------------
+            -- Return results as a report
+            ---------------------------------------------------
 
-			-- get user lists for datasets
-			UPDATE #TR SET Users = '', Operator = ''
+            If @eusInstrumentId = 0
+            Begin
+			    -- Look up EMSL instrument ID for this instrument (will be null if not an EMSL tracked instrument)
+			    SELECT @eusInstrumentId = InstMapping.EUS_Instrument_ID
+			    FROM T_Instrument_Name AS InstName
+			         LEFT OUTER JOIN T_EMSL_DMS_Instrument_Mapping AS InstMapping
+			           ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+			    WHERE InstName.IN_name = @instrument
+            End
+            Else
+            Begin
+			    -- Look up DMS Instrument Name for this EUSInstrumentID
+			    SELECT TOP 1 @instrument = InstName.IN_name
+			    FROM T_Instrument_Name AS InstName
+			         INNER JOIN T_EMSL_DMS_Instrument_Mapping AS InstMapping
+			           ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
+			    WHERE InstMapping.EUS_Instrument_ID = @eusInstrumentID
+                ORDER BY InstName.IN_name
+            End
+
+			-- Get user lists for datasets
+			UPDATE #TR
+			SET Users = '',
+			    Operator = ''
 			WHERE #TR.[Type] = 'Dataset'
-			--
+
 			UPDATE #TR
 			SET Operator = TEU.PERSON_ID
-			FROM #TR 
-			INNER JOIN T_Dataset AS TD ON #TR.ID = TD.Dataset_ID
-					INNER JOIN T_Users AS TU ON TD.DS_Oper_PRN = TU.U_PRN
-					INNER JOIN T_EUS_Users AS TEU ON TU.U_HID = TEU.HID
+			FROM #TR
+			     INNER JOIN T_Dataset AS TD
+			       ON #TR.ID = TD.Dataset_ID
+			     INNER JOIN T_Users AS TU
+			       ON TD.DS_Oper_PRN = TU.U_PRN
+			     INNER JOIN T_EUS_Users AS TEU
+			       ON TU.U_HID = TEU.HID
 			WHERE #TR.[Type] = 'Dataset'
 
-			-- get operator user ID for datasets
-			UPDATE  #TR
-			SET Users =  dbo.GetRequestedRunEUSUsersList(TRR.ID, 'I')
+			-- Get operator user ID for datasets
+			UPDATE #TR
+			SET Users = dbo.GetRequestedRunEUSUsersList(TRR.ID, 'I')
 			FROM #TR
-			INNER JOIN dbo.T_Requested_Run TRR ON #TR.ID = TRR.DatasetID
+			     INNER JOIN dbo.T_Requested_Run TRR
+			       ON #TR.ID = TRR.DatasetID
 			WHERE #TR.[Type] = 'Dataset'
 
-			-- get operator user ID for ONSITE intervals
-			UPDATE  #TR
-			SET Operator =  TEU.PERSON_ID
+			-- Get operator user ID for ONSITE intervals
+			UPDATE #TR
+			SET Operator = TEU.PERSON_ID
 			FROM #TR
-			INNER JOIN dbo.T_Run_Interval TRI ON TRI.ID = #TR.ID
-					INNER JOIN T_Users AS TU ON TRI.Entered_By = TU.U_PRN
-					INNER JOIN T_EUS_Users AS TEU ON TU.U_HID = TEU.HID			
-			WHERE #TR.[Type] = 'Interval' AND #TR.[Usage] = 'ONSITE'
+			     INNER JOIN dbo.T_Run_Interval TRI
+			       ON TRI.ID = #TR.ID
+			     INNER JOIN T_Users AS TU
+			       ON TRI.Entered_By = TU.U_PRN
+			     INNER JOIN T_EUS_Users AS TEU
+			       ON TU.U_HID = TEU.HID
+			WHERE #TR.[Type] = 'Interval' AND
+			      #TR.[Usage] = 'ONSITE'
 
 			-- output report rows
 			SELECT 
 				@instrument AS Instrument,
-				@emsl_instrument_id AS EMSL_Inst_ID,
+				@eusInstrumentId AS EMSL_Inst_ID,
 				CONVERT(VARCHAR(32), [Start], 100) AS [Start],
 				[Type],
 				CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
@@ -459,12 +548,12 @@ As
 			 ORDER BY Start
 		END 
 
-		---------------------------------------------------
-		-- provide all the details
-		---------------------------------------------------
-
 		IF @outputFormat = 'details' OR @outputFormat = '' -- default mode
 		BEGIN 
+            ---------------------------------------------------
+            -- Return usage details
+            ---------------------------------------------------
+
 			SELECT 
 				CONVERT(VARCHAR(32), [Start], 100) AS [Start],
 				[Type],
@@ -476,12 +565,12 @@ As
 			 FROM #TR ORDER BY Start
 		END 
 
-		---------------------------------------------------
-		-- rollup by type, category, and propsal
-		---------------------------------------------------
-
 		IF @outputFormat = 'rollup'
 		BEGIN 
+            ---------------------------------------------------
+            -- Rollup by type, category, and proposal
+            ---------------------------------------------------
+
 			SELECT  
 				[Type],
 				[Minutes],
@@ -501,12 +590,12 @@ As
 			ORDER BY [Type], [Usage], Proposal
 		END	
 
-		---------------------------------------------------
-		-- check grand totals against available
-		---------------------------------------------------
-
 		IF @outputFormat = 'check'
 		BEGIN 
+            ---------------------------------------------------
+            -- Check grand totals against available
+            ---------------------------------------------------
+
 			SELECT 
 				@minutesInMonth AS 'Available',
 				SUM(Duration) AS Duration,
