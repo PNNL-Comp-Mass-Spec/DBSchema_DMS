@@ -3,42 +3,42 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure AddNewInstrument
+
+CREATE Procedure [dbo].[AddNewInstrument]
 /****************************************************
 **
-**    Desc: Adds new instrument to database
-**        and new storage paths to storage table
+**  Desc:   Adds new instrument to database
+**          and new storage paths to storage table
 **
-**    Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**    Parameters: 
-**
-**    Auth:    grk
-**    Date:    01/26/2001
-**            07/24/2001 - Added Archive Path setup
-**            03/12/2003 - Modified to call AddUpdateStorage: 
-**            11/06/2003 - Modified to handle new ID for archive path independent of instrument id
-**            01/30/2004 - Modified to return message (grk)
-**            02/24/2004 - Fixed problem inserting first entry into empty tables
-**            07/01/2004 - Modified the function to add records to T_Archive_Path table 
-**            12/14/2005 - Added check for existing instrument
-**            04/07/2006 - Got rid of CDBurn stuff
-**            06/28/2006 - Added support for Usage and Operations Role fields
-**            12/11/2008 grk - Fixed problem with NULL @Usage
-**            12/14/2008 grk - Fixed problem with select result being inadvertently returned
-**            01/05/2009 grk - added @archiveNetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/709)
-**            01/05/2010 grk - added @allowedDatasetTypes (http://prismtrac.pnl.gov/trac/ticket/752)
-**            02/12/2010 mem - Now calling UpdateInstrumentAllowedDatasetType for each dataset type in @allowedDatasetTypes
-**            05/25/2010 dac - Updated archive paths for switch from nwfs to aurora
-**            08/30/2010 mem - Replaced parameter @allowedDatasetTypes with @InstrumentGroup
-**            05/12/2011 mem - Added @AutoDefineStoragePath
-**                           - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
-**            05/13/2011 mem - Now calling ValidateAutoStoragePathParams
-**            11/30/2011 mem - Added parameter @PercentEMSLOwned
-**            06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
-**            04/06/2016 mem - Now using Try_Convert to convert from text to int
-**            07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
-**            09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
+**  Auth:   grk
+**  Date:   01/26/2001
+**          07/24/2001 grk - Added Archive Path setup
+**          03/12/2003 grk - Modified to call AddUpdateStorage: 
+**          11/06/2003 grk - Modified to handle new ID for archive path independent of instrument id
+**          01/30/2004 grk - Modified to return message (grk)
+**          02/24/2004 grk - Fixed problem inserting first entry into empty tables
+**          07/01/2004 grk - Modified the function to add records to T_Archive_Path table 
+**          12/14/2005 grk - Added check for existing instrument
+**          04/07/2006 grk - Got rid of CDBurn stuff
+**          06/28/2006 grk - Added support for Usage and Operations Role fields
+**          12/11/2008 grk - Fixed problem with NULL @Usage
+**          12/14/2008 grk - Fixed problem with select result being inadvertently returned
+**          01/05/2009 grk - added @archiveNetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/709)
+**          01/05/2010 grk - added @allowedDatasetTypes (http://prismtrac.pnl.gov/trac/ticket/752)
+**          02/12/2010 mem - Now calling UpdateInstrumentAllowedDatasetType for each dataset type in @allowedDatasetTypes
+**          05/25/2010 dac - Updated archive paths for switch from nwfs to aurora
+**          08/30/2010 mem - Replaced parameter @allowedDatasetTypes with @InstrumentGroup
+**          05/12/2011 mem - Added @AutoDefineStoragePath
+**                         - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
+**          05/13/2011 mem - Now calling ValidateAutoStoragePathParams
+**          11/30/2011 mem - Added parameter @PercentEMSLOwned
+**          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
+**          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
+**          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
+**          05/03/2019 mem - Add the source machine to T_Storage_Path_Hosts
 **    
 *****************************************************/
 (
@@ -249,6 +249,39 @@ As
         return 51131
     end
 
+    
+    ---------------------------------------------------
+    -- Make sure the source machine exists in T_Storage_Path_Hosts
+    ---------------------------------------------------
+    --
+    Declare @sourceMachineNameToFind varchar(128) =  replace(@sourceMachineName, '\', '')
+    Declare @hostName Varchar(128)
+    Declare @suffix Varchar(128)
+    Declare @periodLoc Int
+    Declare @logMessage Varchar(256)
+
+    If Not Exists (Select * From T_Storage_Path_Hosts Where SP_machine_name = @sourceMachineNameToFind)
+    Begin
+        Set @periodLoc = CharIndex('.', @sourceMachineNameToFind)
+        If @periodLoc > 1
+        Begin
+            Set @hostName = Substring(@sourceMachineNameToFind, 1, @periodLoc-1)
+            Set @suffix= Substring(@sourceMachineNameToFind, @periodLoc, Len(@sourceMachineNameToFind))
+        End
+        Else
+        Begin
+            Set @hostName = @sourceMachineNameToFind
+            Set @suffix = '.pnl.gov'
+        End
+
+        Insert Into T_Storage_Path_Hosts ( SP_machine_name, Host_Name, DNS_Suffix, URL_Prefix)
+        Values (@sourceMachineNameToFind, @hostName, @suffix, 'http://')
+
+        Set @logMessage = 'Added machine ' + @sourceMachineNameToFind + ' to T_Storage_Path_Hosts with host name ' + @hostName
+
+        Exec PostLogEntry 'Normal', @logMessage, 'AddNewInstrument'
+    End
+
     If @valAutoDefineStoragePath <> 0
         Set @result = 0
     Else
@@ -285,7 +318,7 @@ As
     exec @result = AddUpdateStorage
             @sourcePath, 
             '(na)',
-            @sourceMachineName,
+            @sourceMachineName,     -- Note that AddUpdateStorage will remove '\' characters from @sourceMachineName since @storFunction = 'inbox'
             'inbox',
             @iName,
             '(na)',
@@ -301,7 +334,7 @@ As
             10, 1)
         return 51133
     end
-
+    
     If @valAutoDefineStoragePath = 0
     Begin -- <a>
         ---------------------------------------------------
