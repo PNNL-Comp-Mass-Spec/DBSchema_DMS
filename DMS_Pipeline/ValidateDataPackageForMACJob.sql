@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset
 **          04/06/2018 mem - Allow Phospho_FDR_Aggregator jobs to have multiple MSGF+ jobs for each dataset
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          05/01/2019 mem - Fix typo counting Sequest jobs
 **
 *****************************************************/
 (
@@ -128,7 +129,7 @@ AS
         
         SELECT @SequestCountExactlyOne = COUNT(*) FROM #TX WHERE Sequest = 1
         SELECT @SequestCountNotOne = COUNT(*) FROM #TX WHERE Sequest <> 1
-        SELECT @SequestCountOneOrMore = COUNT(*) FROM #TX WHERE MSGFPlus >= 1
+        SELECT @SequestCountOneOrMore = COUNT(*) FROM #TX WHERE Sequest >= 1
 
         DROP TABLE #TX
 
