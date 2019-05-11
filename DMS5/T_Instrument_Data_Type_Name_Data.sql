@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Data_Type_Name] ******/
-/****** RowCount: 16 ******/
+/****** RowCount: 17 ******/
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] ON
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (1,'dot_raw_files',0,'.Raw','')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (2,'dot_wiff_files',0,'.Wiff','')
@@ -17,4 +17,5 @@ INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name,
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (15,'dot_mzml_files',0,'.mzML','.mzML file')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (16,'ab_sequencing_folder',1,'','')
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (17,'illumina_folder',1,'','')
+INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (18,'dot_qgd_files',0,'.qgd','')
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] OFF
