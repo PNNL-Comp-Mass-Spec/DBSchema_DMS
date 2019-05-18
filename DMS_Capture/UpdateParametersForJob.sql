@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 /****************************************************
 **
@@ -28,6 +29,7 @@ CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          01/30/2018 mem - Always update instrument settings using data in DMS (Storage_Server, Instrument, Instrument_Class, Max_Simultaneous_Captures, Capture_Subfolder)
+**          05/17/2019 mem - Switch from folder to directory
 **  
 *****************************************************/
 (
@@ -85,7 +87,7 @@ As
            ON J.Job = #Tmp_Jobs.Job
         
     ---------------------------------------------------
-    -- create temp table for jobs that are being updated
+    -- Create temp table for jobs that are being updated
     -- and populate it
     -- (needed by call to GetJobParamTable which CreateParametersForJob calls)
     ---------------------------------------------------
@@ -97,12 +99,12 @@ As
         [State] int NOT NULL,
         [Dataset] varchar(128) NULL,
         [Dataset_ID] int NULL,
-        [Results_Folder_Name] varchar(128) NULL,
+        [Results_Directory_Name] varchar(128) NULL,
         Storage_Server varchar(64) NULL,
         Instrument varchar(24) NULL,
         Instrument_Class VARCHAR(32),
         Max_Simultaneous_Captures int NULL,
-        Capture_Subfolder varchar(255) NULL
+        Capture_Subdirectory varchar(255) NULL
     )
     --
     INSERT INTO #Jobs ( 
@@ -112,12 +114,12 @@ As
         [State],
         [Dataset],
         [Dataset_ID],
-        [Results_Folder_Name],
+        [Results_Directory_Name],
         Storage_Server,
         Instrument,
         Instrument_Class,
         Max_Simultaneous_Captures,
-        Capture_Subfolder
+        Capture_Subdirectory
     )
     SELECT J.Job,
            J.Priority,

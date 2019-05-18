@@ -4,40 +4,42 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 /****************************************************
 **
 **  Desc: 
-**  Creates a new archive update job for the specified dataset and results folder
+**  Creates a new archive update job for the specified dataset and results directory
 **    
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   05/07/2010 mem - Initial version
-**          09/08/2010 mem - Added parameter @AllowBlankResultsFolder
-**          05/31/2013 mem - Added parameter @PushDatasetToMyEMSL
-**          07/11/2013 mem - Added parameter @PushDatasetRecursive
-**          10/24/2014 mem - Changed priority to 2 when @ResultsFolderName = ''
+**          09/08/2010 mem - Added parameter @allowBlankResultsDirectory
+**          05/31/2013 mem - Added parameter @pushDatasetToMyEMSL
+**          07/11/2013 mem - Added parameter @pushDatasetRecursive
+**          10/24/2014 mem - Changed priority to 2 when @resultsDirectoryName = ''
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/28/2017 mem - Update status messages
-**          03/06/2018 mem - Also look for archiveupdate jobs on hold when checking for an existing archive update task
+**          03/06/2018 mem - Also look for ArchiveUpdate jobs on hold when checking for an existing archive update task
+**          05/17/2019 mem - Switch from folder to directory
 **    
 *****************************************************/
 (
-    @DatasetName varchar(128),
-    @ResultsFolderName varchar(128) = '',
-    @AllowBlankResultsFolder tinyint = 0,       -- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset folder and all subfolders
-    @PushDatasetToMyEMSL tinyint = 0,           -- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\aurora.emsl.pnl.gov\archive\dmsarch
-    @PushDatasetRecursive tinyint = 0,          -- Set to 1 to recursively push a folder and all subfolders into MyEMSL
+    @datasetName varchar(128),
+    @resultsDirectoryName varchar(128) = '',
+    @allowBlankResultsDirectory tinyint = 0,       -- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset directory and all subdirectories
+    @pushDatasetToMyEMSL tinyint = 0,           -- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\aurora.emsl.pnl.gov\archive\dmsarch
+    @pushDatasetRecursive tinyint = 0,          -- Set to 1 to recursively push a directory and all subdirectories into MyEMSL
     @infoOnly tinyint = 0,                      -- 0 To perform the update, 1 preview job that would be created
     @message varchar(512)='' output
 )
 As
     Set nocount on
     
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @DatasetID int
     Declare @JobID int
@@ -58,23 +60,23 @@ As
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @ResultsFolderName = IsNull(@ResultsFolderName, '') 
-    Set @AllowBlankResultsFolder = IsNull(@AllowBlankResultsFolder, 0)
-    Set @PushDatasetToMyEMSL = IsNull(@PushDatasetToMyEMSL, 0)
-    Set @PushDatasetRecursive = IsNull(@PushDatasetRecursive, 0)
+    Set @resultsDirectoryName = IsNull(@resultsDirectoryName, '') 
+    Set @allowBlankResultsDirectory = IsNull(@allowBlankResultsDirectory, 0)
+    Set @pushDatasetToMyEMSL = IsNull(@pushDatasetToMyEMSL, 0)
+    Set @pushDatasetRecursive = IsNull(@pushDatasetRecursive, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
         
-    If @DatasetName Is Null
+    If @datasetName Is Null
     Begin
         Set @message = 'Dataset name not defined'
         Set @myError = 50000
         Goto Done
     End
         
-    If @ResultsFolderName = '' And @AllowBlankResultsFolder = 0
+    If @resultsDirectoryName = '' And @allowBlankResultsDirectory = 0
     Begin
-        Set @message = 'Results folder name is blank; to update the Dataset file and all subfolders, set @AllowBlankResultsFolder to 1'
+        Set @message = 'Results directory name is blank; to update the Dataset file and all subdirectories, set @allowBlankResultsDirectory to 1'
         Set @myError = 50001
         Goto Done
     End
@@ -87,13 +89,13 @@ As
     
     SELECT @DatasetID = Dataset_ID
     FROM V_DMS_Get_Dataset_Info
-    WHERE Dataset_num = @DatasetName
+    WHERE Dataset_num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount = 0
     Begin
-        Set @message = 'Dataset not found: ' + @DatasetName + '; unable to continue'
+        Set @message = 'Dataset not found: ' + @datasetName + '; unable to continue'
         Set @myError = 50002
         Goto Done
     End
@@ -108,22 +110,22 @@ As
     FROM T_Jobs
     WHERE (Script = 'ArchiveUpdate') AND
           (Dataset_ID = @DatasetID) AND
-          (ISNULL(Results_Folder_Name, '') = @ResultsFolderName) AND
+          (ISNULL(Results_Folder_Name, '') = @resultsDirectoryName) AND
           (State In (1,2,4,7))
 
     If @JobID > 0 
     Begin
-        if @ResultsFolderName = ''
-            Set @message = 'Existing pending job already exists for ' + @DatasetName + ' and subfolder ' + @ResultsFolderName + '; job ' + Convert(varchar(12), @JobID)
+        if @resultsDirectoryName = ''
+            Set @message = 'Existing pending job already exists for ' + @datasetName + ' and subdirectory ' + @resultsDirectoryName + '; job ' + Convert(varchar(12), @JobID)
         else
-            Set @message = 'Existing pending job already exists for ' + @DatasetName + '; job ' + Convert(varchar(12), @JobID)
+            Set @message = 'Existing pending job already exists for ' + @datasetName + '; job ' + Convert(varchar(12), @JobID)
         Set @myError = 0
         Goto Done
     End
 
-    If @PushDatasetToMyEMSL <> 0
+    If @pushDatasetToMyEMSL <> 0
     Begin
-        If @PushDatasetRecursive <> 0
+        If @pushDatasetRecursive <> 0
             Set @Script = 'MyEMSLDatasetPushRecursive'
         Else
             Set @Script = 'MyEMSLDatasetPush'
@@ -139,9 +141,9 @@ As
     Begin
         SELECT
             @Script AS Script,
-            @DatasetName AS Dataset,
+            @datasetName AS Dataset,
             @DatasetID AS Dataset_ID,
-            @ResultsFolderName AS Results_Folder_Name,
+            @resultsDirectoryName AS Results_Folder_Name,
             'Manually created using MakeNewArchiveUpdateJob' AS Comment
     End
     Else
@@ -154,12 +156,12 @@ As
                             [Comment],
                             Priority )
         SELECT @Script AS Script,
-               @DatasetName AS Dataset,
+               @datasetName AS Dataset,
                @DatasetID AS Dataset_ID,
-               @ResultsFolderName AS Results_Folder_Name,
+               @resultsDirectoryName AS Results_Folder_Name,
                'Created manually using MakeNewArchiveUpdateJob' AS [Comment],
                CASE
-                   WHEN @ResultsFolderName = '' THEN 2
+                   WHEN @resultsDirectoryName = '' THEN 2
                    ELSE 3
                END AS Priority
         --
@@ -173,12 +175,12 @@ As
         
         Set @JobID = SCOPE_IDENTITY()
         
-        Set @message = 'Created Job ' + Convert(varchar(12), @JobID) + ' for dataset ' + @DatasetName
+        Set @message = 'Created Job ' + Convert(varchar(12), @JobID) + ' for dataset ' + @datasetName
         
-        if @ResultsFolderName = ''
-            Set @message = @message + ' and all subfolders'
+        if @resultsDirectoryName = ''
+            Set @message = @message + ' and all subdirectories'
         else
-            Set @message = @message + ' and results folder ' + @ResultsFolderName
+            Set @message = @message + ' and results directory ' + @resultsDirectoryName
 
     End
     
