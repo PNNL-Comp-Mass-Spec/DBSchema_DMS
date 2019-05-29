@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 /****************************************************
 **
@@ -32,6 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 **          04/10/2018 mem - Add parameter @scanSourceDir
 **          12/06/2018 mem - Change variable names to camelCase
 **                         - Use Try_Cast instead of Try_Convert
+**          05/28/2019 mem - Add parameter @trackUsageWhenInactive
 **    
 *****************************************************/
 (
@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @description varchar(255),
     @usage varchar(50),
     @operationsRole varchar(50),
+    @trackUsageWhenInactive varchar(32) = 'No', 
     @scanSourceDir varchar(32) = 'Yes',         -- Set to No to skip this instrument when the DMS_InstDirScanner looks for files and directories on the instrument's source share
     @percentEMSLOwned varchar(24),              -- % of instrument owned by EMSL; number between 0 and 100
     @autoDefineStoragePath varchar(32) = 'No',  -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
@@ -123,14 +124,9 @@ As
     -- Resolve Yes/No parameters to 0 or 1
     ---------------------------------------------------
     --
-    Declare @valScanSourceDir tinyint = 0
-    Declare @valAutoDefineStoragePath tinyint = 0
-
-    If @scanSourceDir = 'Yes' Or @scanSourceDir = 'Y' OR @scanSourceDir = '1'
-        Set @valScanSourceDir = 1
-
-    If @autoDefineStoragePath = 'Yes' Or @autoDefineStoragePath = 'Y' OR @autoDefineStoragePath = '1'
-        Set @valAutoDefineStoragePath = 1
+    Declare @valTrackUsageWhenInactive tinyint = dbo.BooleanTextToTinyint(@trackUsageWhenInactive)
+    Declare @valScanSourceDir tinyint = dbo.BooleanTextToTinyint(@scanSourceDir)
+    Declare @valAutoDefineStoragePath tinyint = dbo.BooleanTextToTinyint(@autoDefineStoragePath)
     
     ---------------------------------------------------
     -- Validate the @autoSP parameteres
@@ -169,6 +165,7 @@ As
             IN_Description = @description,
             IN_usage = @usage,
             IN_operations_role = @operationsRole,
+            IN_Tracking = @valTrackUsageWhenInactive,
             Scan_SourceDir = @valScanSourceDir,
             Percent_EMSL_Owned = @percentEMSLOwnedVal,
             Auto_Define_Storage_Path = @valAutoDefineStoragePath,
