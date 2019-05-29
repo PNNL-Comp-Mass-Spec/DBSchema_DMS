@@ -20,6 +20,7 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_status AS Status,
        InstName.IN_usage AS [Usage],
        InstName.IN_operations_role AS [Ops Role],
+       TrackingYesNo.Description As [Track Usage When Inactive],
        Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS [Scan Source],
        InstGroup.Allocation_Tag AS Allocation_Tag,
        InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
@@ -34,7 +35,6 @@ SELECT InstName.Instrument_ID AS ID,
        EUSMapping.EUS_Display_Name,
        EUSMapping.EUS_Instrument_Name,
        EUSMapping.Local_Instrument_Name,
-       TrackingYesNo.Description As [Track Usage When Inactive],
        Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
             When InstTracking.Reporting Like '%P%' Then 'Production operations role'
             When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'

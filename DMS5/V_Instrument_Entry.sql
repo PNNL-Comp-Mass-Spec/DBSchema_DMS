@@ -17,6 +17,10 @@ SELECT Instrument_ID AS ID,
        IN_usage AS [Usage],
        IN_operations_role AS OperationsRole,
        CASE
+           WHEN ISNULL(IN_Tracking, 0) = 0 THEN 'N'
+           ELSE 'Y'
+       END AS TrackUsageWhenInactive,
+       CASE
            WHEN ISNULL(Scan_SourceDir, 0) = 0 THEN 'N'
            ELSE 'Y'
        END AS Scan_SourceDir,

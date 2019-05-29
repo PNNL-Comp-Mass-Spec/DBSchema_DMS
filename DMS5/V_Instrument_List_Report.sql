@@ -33,7 +33,8 @@ SELECT InstName.Instrument_ID AS ID,
             When InstTracking.Reporting Like '%P%' Then 'Production operations role'
             When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
             Else ''
-       End As [Usage Tracking Status]
+       End As [Usage Tracking Status],
+       TrackingYesNo.Description AS [Track When Inactive]
 FROM dbo.T_Instrument_Name InstName
      INNER JOIN T_YesNo DefineStorageYesNo
        ON InstName.Auto_Define_Storage_Path = DefineStorageYesNo.Flag
@@ -41,6 +42,8 @@ FROM dbo.T_Instrument_Name InstName
        ON InstName.Scan_SourceDir = ScanSourceYesNo.Flag
      INNER JOIN dbo.T_Instrument_Group InstGroup
        ON InstName.IN_Group = InstGroup.IN_Group
+     INNER JOIN dbo.T_YesNo TrackingYesNo
+       ON InstName.IN_Tracking = TrackingYesNo.Flag       
      LEFT OUTER JOIN dbo.t_storage_path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
      LEFT OUTER JOIN ( SELECT SP_path_ID,
