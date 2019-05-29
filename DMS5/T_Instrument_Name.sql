@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_Description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_usage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_operations_role] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[IN_Tracking] [tinyint] NULL,
+	[IN_Tracking] [tinyint] NOT NULL,
 	[Percent_EMSL_Owned] [int] NOT NULL,
 	[IN_max_simultaneous_captures] [smallint] NOT NULL,
 	[IN_Capture_Exclusion_Window] [real] NOT NULL,
