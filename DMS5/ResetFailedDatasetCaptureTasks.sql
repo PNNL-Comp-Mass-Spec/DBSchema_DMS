@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 **          08/16/2017 mem - Look for failed Openchrom conversion tasks
 **                         - Prevent dataset from being automatically reset more than 4 times
 **          08/16/2017 mem - Look for 'Authentication failure: The user name or password is incorrect'
+**          05/28/2019 mem - Use a holdoff of 15 minutes for authentication errors
 **  
 *****************************************************/
 (
@@ -86,9 +87,17 @@ As
               (DS_comment LIKE '%Exception validating constant%' OR
                DS_comment LIKE '%File size changed%' OR
                DS_comment LIKE '%Folder size changed%' OR
-               DS_comment LIKE '%Error running OpenChrom%' Or
-               DS_comment Like '%Authentication failure%password is incorrect%') AND
+               DS_comment LIKE '%Error running OpenChrom%') AND
                DS_Last_Affected < DateAdd(Minute, -@resetHoldoffHours * 60, GetDate())
+        UNION
+        SELECT TOP ( @maxDatasetsToReset ) 
+               Dataset_ID,
+               Dataset_Num AS Dataset,
+               '' as Reset_Comment
+        FROM T_Dataset
+        WHERE DS_state_ID = 5 AND
+              (DS_comment Like '%Authentication failure%password is incorrect%') AND
+               DS_Last_Affected < DateAdd(Minute, -15, GetDate())
         ORDER BY Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
