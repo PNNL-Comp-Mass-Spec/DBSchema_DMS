@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_GetPipelineJobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -44,8 +43,8 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
 		-- If the archive state is "Purge in Progress" or "Purge failed" for over 180 minutes, let the job start
 		(DA.AS_state_ID IN (7, 8) And DA.AS_state_Last_Affected < DateAdd(minute, -120, GetDate()))
 		Or
-		-- Lastly, let QC_Shew datasets start if they have been dispositioned (DS_Rating >= 1),
-		-- but not if a purge is in progress
+		-- Lastly, let QC_Shew datasets start if they have been dispositioned (DS_Rating >= 1) and the archive state changed more than 15 minutes ago
+		-- However, exclude QC_Shew datasets with an archive state of 6 (Operation Failed) or 7 (Purge In Progress)
 		(Dataset_Num Like 'QC_Shew%' AND DS.DS_Rating >= 1 AND NOT DA.AS_state_ID IN (6,7) And DA.AS_state_Last_Affected < DateAdd(minute, -15, GetDate()))
       )
 
