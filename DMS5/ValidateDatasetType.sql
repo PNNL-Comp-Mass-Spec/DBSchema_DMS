@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[ValidateDatasetType]
 /****************************************************
 ** 
@@ -16,7 +15,7 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **  Auth:   mem
 **  Date:   05/13/2010 mem - Initial version
 **          05/14/2010 mem - Added support for the generic scan types MSn and HMSn
-**          05/17/2010 mem - Updated @AutoDefineOnAllMismatches to default to 1
+**          05/17/2010 mem - Updated @autoDefineOnAllMismatches to default to 1
 **          08/30/2011 mem - Updated to prevent MS-HMSn from getting auto-defined
 **          03/27/2012 mem - Added support for GC-MS
 **          08/15/2012 mem - Added support for IMS-HMS-HMSn
@@ -29,87 +28,88 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **                         - Do not update the dataset comment when auto-changing an HMS dataset
 **          04/28/2017 mem - Do not update the dataset comment when auto-changing an IMS dataset
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/03/2019 mem - Check for 'IMS' in ScanFilter
 **    
 *****************************************************/
 (
-    @DatasetID int,
+    @datasetID int,
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0,
-    @AutoDefineOnAllMismatches tinyint = 1
+    @autoDefineOnAllMismatches tinyint = 1
 )
 As
     set nocount on
     
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
 
-    Declare @Dataset varchar(256)    
-    Declare @DSComment varchar(512)
+    Declare @dataset varchar(256)    
+    Declare @datasetComment varchar(512)
     Declare @WarnMessage varchar(512)
     
-    Declare @CurrentDatasetType varchar(64)
-    Declare @DSTypeAutoGen varchar(64)
-    Declare @NewDatasetType varchar(64)
+    Declare @currentDatasetType varchar(64)
+    Declare @datasetTypeAutoGen varchar(64)
+    Declare @newDatasetType varchar(64)
     
-    Declare @AutoDefineDSType tinyint
+    Declare @autoDefineDSType tinyint
 
-    Declare @ActualCountMS int
-    Declare @ActualCountHMS int
-    Declare @ActualCountGCMS int
+    Declare @actualCountMS int
+    Declare @actualCountHMS int
+    Declare @actualCountGCMS int
     
-    Declare @ActualCountCIDMSn int
-    Declare @ActualCountCIDHMSn int
-    Declare @ActualCountETDMSn int
-    Declare @ActualCountETDHMSn int
+    Declare @actualCountCIDMSn int
+    Declare @actualCountCIDHMSn int
+    Declare @actualCountETDMSn int
+    Declare @actualCountETDHMSn int
 
-    Declare @ActualCountETciDMSn int
-    Declare @ActualCountETciDHMSn int
-    Declare @ActualCountEThcDMSn int
-    Declare @ActualCountEThcDHMSn int
+    Declare @actualCountETciDMSn int
+    Declare @actualCountETciDHMSn int
+    Declare @actualCountEThcDMSn int
+    Declare @actualCountEThcDHMSn int
 
-    Declare @ActualCountMRM int
-    Declare @ActualCountHCD int
-    Declare @ActualCountPQD int
+    Declare @actualCountMRM int
+    Declare @actualCountHCD int
+    Declare @actualCountPQD int
 
-    Declare @NewDSTypeID int
+    Declare @newDSTypeID int
     
+    Declare @hasIMS Tinyint = 0
+
     -----------------------------------------------------------
     -- Validate the inputs
     -----------------------------------------------------------
 
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
-    Set @AutoDefineOnAllMismatches = IsNull(@AutoDefineOnAllMismatches, 0)
+    Set @autoDefineOnAllMismatches = IsNull(@autoDefineOnAllMismatches, 0)
 
     -----------------------------------------------------------
     -- Lookup the dataset type for the given Dataset ID
     -----------------------------------------------------------
 
-    Set @CurrentDatasetType = ''
+    Set @currentDatasetType = ''
     
-    SELECT @Dataset = Dataset_Num,
-           @DSComment = IsNull(DS.DS_comment, ''),
-           -- @DSTypeIDCurrent = DS.DS_type_ID, 
-           @CurrentDatasetType = DST.DST_name
+    SELECT @dataset = Dataset_Num,
+           @datasetComment = IsNull(DS.DS_comment, ''),
+           -- @datasetTypeIDCurrent = DS.DS_type_ID, 
+           @currentDatasetType = DST.DST_name
     FROM T_Dataset DS
          LEFT OUTER JOIN T_DatasetTypeName DST
            ON DS.DS_type_ID = DST.DST_Type_ID
-    WHERE (DS.Dataset_ID = @DatasetID)
+    WHERE (DS.Dataset_ID = @datasetID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     
     If @myRowCount = 0
     Begin
-        Set @message = 'Dataset ID not found in T_Dataset: ' + Convert(varchar(12), @DatasetID)
+        Set @message = 'Dataset ID not found in T_Dataset: ' + Convert(varchar(12), @datasetID)
         Set @myError = 50000
         Goto Done
     End
     
-    IF Not Exists (SELECT * FROM T_Dataset_ScanTypes WHERE Dataset_ID = @DatasetID)
+    IF Not Exists (SELECT * FROM T_Dataset_ScanTypes WHERE Dataset_ID = @datasetID)
     Begin
-        Set @message = 'Warning: Scan type info not found in T_Dataset_ScanTypes for dataset ' + @Dataset
+        Set @message = 'Warning: Scan type info not found in T_Dataset_ScanTypes for dataset ' + @dataset
         Set @myError = 0
         Goto Done
     End
@@ -124,45 +124,45 @@ As
     -----------------------------------------------------------
 
     SELECT 
-           @ActualCountMS = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
-           @ActualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
-           @ActualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
+           @actualCountMS = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
+           @actualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
+           @actualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
     
-           @ActualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then 1 Else 0 End),
-           @ActualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then 1 Else 0 End),
+           @actualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then 1 Else 0 End),
+           @actualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then 1 Else 0 End),
 
-           @ActualCountETDMSn  = SUM(CASE WHEN ScanType LIKE '%ETD-MSn'  Then 1 Else 0 End),
-           @ActualCountETDHMSn = SUM(CASE WHEN ScanType LIKE '%ETD-HMSn' Then 1 Else 0 End),
+           @actualCountETDMSn  = SUM(CASE WHEN ScanType LIKE '%ETD-MSn'  Then 1 Else 0 End),
+           @actualCountETDHMSn = SUM(CASE WHEN ScanType LIKE '%ETD-HMSn' Then 1 Else 0 End),
 
-           @ActualCountETciDMSn  = SUM(CASE WHEN ScanType LIKE '%ETciD-MSn'  Then 1 Else 0 End),
-           @ActualCountETciDHMSn = SUM(CASE WHEN ScanType LIKE '%ETciD-HMSn' Then 1 Else 0 End),
-           @ActualCountEThcDMSn  = SUM(CASE WHEN ScanType LIKE '%EThcD-MSn'  Then 1 Else 0 End),
-           @ActualCountEThcDHMSn = SUM(CASE WHEN ScanType LIKE '%EThcD-HMSn' Then 1 Else 0 End),
+           @actualCountETciDMSn  = SUM(CASE WHEN ScanType LIKE '%ETciD-MSn'  Then 1 Else 0 End),
+           @actualCountETciDHMSn = SUM(CASE WHEN ScanType LIKE '%ETciD-HMSn' Then 1 Else 0 End),
+           @actualCountEThcDMSn  = SUM(CASE WHEN ScanType LIKE '%EThcD-MSn'  Then 1 Else 0 End),
+           @actualCountEThcDHMSn = SUM(CASE WHEN ScanType LIKE '%EThcD-HMSn' Then 1 Else 0 End),
             
-           @ActualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' or ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then 1 Else 0 End),
-           @ActualCountHCD = SUM(CASE WHEN ScanType LIKE '%HCD%' Then 1 Else 0 End),
-           @ActualCountPQD = SUM(CASE WHEN ScanType LIKE '%PQD%' Then 1 Else 0 End)
-    
+           @actualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' or ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then 1 Else 0 End),
+           @actualCountHCD = SUM(CASE WHEN ScanType LIKE '%HCD%' Then 1 Else 0 End),
+           @actualCountPQD = SUM(CASE WHEN ScanType LIKE '%PQD%' Then 1 Else 0 End)
+           
     FROM T_Dataset_ScanTypes
-    WHERE Dataset_ID = @DatasetID
+    WHERE Dataset_ID = @datasetID
     GROUP BY Dataset_ID
     
     If @InfoOnly <> 0
     Begin
-           SELECT @ActualCountMS AS ActualCountMS,
-                  @ActualCountHMS AS ActualCountHMS,
-                  @ActualCountGCMS AS ActualCountGCMS,
-                  @ActualCountCIDMSn AS ActualCountCIDMSn,
-                  @ActualCountCIDHMSn AS ActualCountCIDHMSn,
-                  @ActualCountETDMSn AS ActualCountETDMSn,
-                  @ActualCountETDHMSn AS ActualCountETDHMSn,
-                  @ActualCountETciDMSn AS ActualCountETciDMSn,
-                  @ActualCountETciDHMSn AS ActualCountETciDHMSn,
-                  @ActualCountEThcDMSn AS ActualCountEThcDMSn,
-                  @ActualCountEThcDHMSn AS ActualCountEThcDHMSn,
-                  @ActualCountMRM AS ActualCountMRM,
-                  @ActualCountHCD AS ActualCountHCD,
-                  @ActualCountPQD AS ActualCountPQD
+           SELECT @actualCountMS AS ActualCountMS,
+                  @actualCountHMS AS ActualCountHMS,
+                  @actualCountGCMS AS ActualCountGCMS,
+                  @actualCountCIDMSn AS ActualCountCIDMSn,
+                  @actualCountCIDHMSn AS ActualCountCIDHMSn,
+                  @actualCountETDMSn AS ActualCountETDMSn,
+                  @actualCountETDHMSn AS ActualCountETDHMSn,
+                  @actualCountETciDMSn AS ActualCountETciDMSn,
+                  @actualCountETciDHMSn AS ActualCountETciDHMSn,
+                  @actualCountEThcDMSn AS ActualCountEThcDMSn,
+                  @actualCountEThcDHMSn AS ActualCountEThcDHMSn,
+                  @actualCountMRM AS ActualCountMRM,
+                  @actualCountHCD AS ActualCountHCD,
+                  @actualCountPQD AS ActualCountPQD
 
     End
 
@@ -170,224 +170,236 @@ As
     -- Compare the actual scan type counts to the current dataset type
     -----------------------------------------------------------
 
-    Set @DSTypeAutoGen = ''
-    Set @NewDatasetType = ''
-    Set @AutoDefineDSType = 0
+    Set @datasetTypeAutoGen = ''
+    Set @newDatasetType = ''
+    Set @autoDefineDSType = 0
     Set @WarnMessage = ''
     
-    If @ActualCountMRM > 0
+    If @actualCountMRM > 0
     Begin
         -- Auto switch to MRM if not MRM or SRM
     
-        If Not (@CurrentDatasetType LIKE '%SRM' OR
-                @CurrentDatasetType LIKE '%MRM' OR
-                @CurrentDatasetType LIKE '%SIM')
+        If Not (@currentDatasetType LIKE '%SRM' OR
+                @currentDatasetType LIKE '%MRM' OR
+                @currentDatasetType LIKE '%SIM')
         Begin
-            Set @NewDatasetType = 'MRM'
+            Set @newDatasetType = 'MRM'
         End
     
         Goto FixDSType
     End
     
+    If Exists (Select * FROM T_Dataset_ScanTypes WHERE Dataset_ID = @datasetID And ScanFilter = 'IMS')
+    Begin
+        Set @hasIMS = 1
+    End
 
-    If @ActualCountHMS > 0 AND Not (@CurrentDatasetType LIKE 'HMS%' Or @CurrentDatasetType LIKE '%-HMS' OR @CurrentDatasetType LIKE 'IMS-HMS%')
+    If @hasIMS > 0 And @currentDatasetType Like 'HMS%'
+    Begin
+        Set @newDatasetType = 'IMS-' + @currentDatasetType
+        Goto FixDSType
+    End
+
+    If @hasIMS = 0 And @currentDatasetType Like 'IMS-%MS%'
+    Begin
+        Set @newDatasetType = Substring(@currentDatasetType, 5, 100)
+        Goto FixDSType
+    End
+
+    If @actualCountHMS > 0 AND Not (@currentDatasetType LIKE 'HMS%' OR @currentDatasetType LIKE '%-HMS' OR @currentDatasetType LIKE 'IMS-HMS%')
     Begin
         -- Dataset contains HMS spectra, but the current dataset type doesn't reflect that this is an HMS dataset
 
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because @ActualCountHMS > 0 AND Not (@CurrentDatasetType LIKE ''HMS%'' Or @CurrentDatasetType LIKE ''%-HMS'')'
+                Print 'Set @autoDefineDSType=1 because @actualCountHMS > 0 AND Not (@currentDatasetType LIKE ''HMS%'' Or @currentDatasetType LIKE ''%-HMS'')'
         End
         Else
-            Set @NewDatasetType = ' an HMS-based dataset type'    
+            Set @newDatasetType = ' an HMS-based dataset type'    
 
         Goto AutoDefineDSType
     End
     
 
-    If (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) > 0 AND Not @CurrentDatasetType LIKE '%-HMSn%'
+    If (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0 AND Not @currentDatasetType LIKE '%-HMSn%'
     Begin
         -- Dataset contains CID or ETD HMSn spectra, but the current dataset type doesn't reflect that this is an HMSn dataset
 
-        If @CurrentDatasetType IN ('IMS-HMS', 'IMS-HMS-MSn')
+        If @currentDatasetType IN ('IMS-HMS', 'IMS-HMS-MSn')
         Begin
-            Set @NewDatasetType = 'IMS-HMS-HMSn'
+            Set @newDatasetType = 'IMS-HMS-HMSn'
         End
         Else
         Begin
-            If Not @CurrentDatasetType LIKE 'IMS%'
+            If Not @currentDatasetType LIKE 'IMS%'
             Begin
-                Set @AutoDefineDSType = 1
+                Set @autoDefineDSType = 1
                 If @InfoOnly = 1
-                    Print 'Set @AutoDefineDSType=1 because (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) > 0 AND Not @CurrentDatasetType LIKE ''%-HMSn%'''
+                    Print 'Set @autoDefineDSType=1 because (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0 AND Not @currentDatasetType LIKE ''%-HMSn%'''
 
             End
             Else
-                Set @NewDatasetType = ' an HMS-based dataset type'    
+                Set @newDatasetType = ' an HMS-based dataset type'    
         End
         
         Goto AutoDefineDSType
     End
 
-
-    If (@ActualCountCIDMSn + @ActualCountETDMSn + @ActualCountETciDMSn + @ActualCountEThcDMSn) > 0 AND Not @CurrentDatasetType LIKE '%-MSn%'
+    If (@actualCountCIDMSn + @actualCountETDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) > 0 AND Not @currentDatasetType LIKE '%-MSn%'
     Begin
         -- Dataset contains CID or ETD MSn spectra, but the current dataset type doesn't reflect that this is an MSn dataset
-        If @CurrentDatasetType = 'IMS-HMS'
+        If @currentDatasetType = 'IMS-HMS'
         Begin
-            Set @NewDatasetType = 'IMS-HMS-MSn'
+            Set @newDatasetType = 'IMS-HMS-MSn'
         End
         Else
         Begin
-            If Not @CurrentDatasetType LIKE 'IMS%'
+            If Not @currentDatasetType LIKE 'IMS%'
             Begin
-                Set @AutoDefineDSType = 1
+                Set @autoDefineDSType = 1
                 If @InfoOnly = 1
-                    Print 'Set @AutoDefineDSType=1 because (@ActualCountCIDMSn + @ActualCountETDMSn + @ActualCountETciDMSn + @ActualCountEThcDMSn) > 0 AND Not @CurrentDatasetType LIKE ''%-MSn%'''
+                    Print 'Set @autoDefineDSType=1 because (@actualCountCIDMSn + @actualCountETDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) > 0 AND Not @currentDatasetType LIKE ''%-MSn%'''
 
             End
             Else
-                Set @NewDatasetType = ' an MSn-based dataset type'
+                Set @newDatasetType = ' an MSn-based dataset type'
         End
             
         Goto AutoDefineDSType
     End
 
-    If (@ActualCountETDMSn + @ActualCountETDHMSn) > 0 AND Not @CurrentDatasetType LIKE '%ETD%'
+    If (@actualCountETDMSn + @actualCountETDHMSn) > 0 AND Not @currentDatasetType LIKE '%ETD%'
     Begin
         -- Dataset has ETD scans, but current dataset type doesn't reflect this
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because (@ActualCountETDMSn + @ActualCountETDHMSn) > 0 AND Not @CurrentDatasetType LIKE ''%ETD%'''
+                Print 'Set @autoDefineDSType=1 because (@actualCountETDMSn + @actualCountETDHMSn) > 0 AND Not @currentDatasetType LIKE ''%ETD%'''
         End
         Else
-            Set @NewDatasetType = ' an ETD-based dataset type'    
+            Set @newDatasetType = ' an ETD-based dataset type'    
 
         Goto AutoDefineDSType
     End
 
-    If @ActualCountHCD > 0 AND Not @CurrentDatasetType LIKE '%HCD%'
+    If @actualCountHCD > 0 AND Not @currentDatasetType LIKE '%HCD%'
     Begin
         -- Dataset has HCD scans, but current dataset type doesn't reflect this
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because @ActualCountHCD > 0 AND Not @CurrentDatasetType LIKE ''%HCD%'''
+                Print 'Set @autoDefineDSType=1 because @actualCountHCD > 0 AND Not @currentDatasetType LIKE ''%HCD%'''
         End
         Else
-            Set @NewDatasetType = ' an HCD-based dataset type'
+            Set @newDatasetType = ' an HCD-based dataset type'
         
         Goto AutoDefineDSType
     End
 
-    If @ActualCountPQD > 0 AND Not @CurrentDatasetType LIKE '%PQD%'
+    If @actualCountPQD > 0 AND Not @currentDatasetType LIKE '%PQD%'
     Begin
         -- Dataset has PQD scans, but current dataset type doesn't reflect this
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because @ActualCountPQD > 0 AND Not @CurrentDatasetType LIKE ''%PQD%'''
+                Print 'Set @autoDefineDSType=1 because @actualCountPQD > 0 AND Not @currentDatasetType LIKE ''%PQD%'''
         End
         Else
-            Set @NewDatasetType = ' a PQD-based dataset type'
+            Set @newDatasetType = ' a PQD-based dataset type'
         
         Goto AutoDefineDSType
     End
 
 
-    If @ActualCountHCD = 0 AND @CurrentDatasetType LIKE '%HCD%'
+    If @actualCountHCD = 0 AND @currentDatasetType LIKE '%HCD%'
     Begin
         -- Dataset does not have HCD scans, but current dataset type says it does
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because @ActualCountHCD = 0 AND @CurrentDatasetType LIKE ''%HCD%'''
+                Print 'Set @autoDefineDSType=1 because @actualCountHCD = 0 AND @currentDatasetType LIKE ''%HCD%'''
         End
         Else
-            Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' but no HCD scans are present'
+            Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no HCD scans are present'
         
         Goto AutoDefineDSType
     End
 
-    If (@ActualCountETDMSn + @ActualCountETDHMSn) = 0 AND @CurrentDatasetType LIKE '%ETD%'
+    If (@actualCountETDMSn + @actualCountETDHMSn) = 0 AND @currentDatasetType LIKE '%ETD%'
     Begin
         -- Dataset does not have ETD scans, but current dataset type says it does
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because (@ActualCountETDMSn + @ActualCountETDHMSn) = 0 AND @CurrentDatasetType LIKE ''%ETD%'''
+                Print 'Set @autoDefineDSType=1 because (@actualCountETDMSn + @actualCountETDHMSn) = 0 AND @currentDatasetType LIKE ''%ETD%'''
         End
         Else
-            Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' but no ETD scans are present'
+            Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no ETD scans are present'
         
         Goto AutoDefineDSType
     End
         
-    If (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountHCD + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) = 0 AND @CurrentDatasetType LIKE '%-HMSn%'
+    If (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) = 0 AND @currentDatasetType LIKE '%-HMSn%'
     Begin
         -- Dataset does not have HMSn scans, but current dataset type says it does
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountHCD + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) = 0 AND @CurrentDatasetType LIKE ''%-HMSn%'''
+                Print 'Set @autoDefineDSType=1 because (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) = 0 AND @currentDatasetType LIKE ''%-HMSn%'''
         End
         Else
-            Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' but no high res MSn scans are present'
+            Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no high res MSn scans are present'
         
         Goto AutoDefineDSType
     End
 
-    If (@ActualCountCIDMSn + @ActualCountETDMSn + @ActualCountETciDMSn + @ActualCountEThcDMSn) = 0 AND @CurrentDatasetType LIKE '%-MSn%'
+    If (@actualCountCIDMSn + @actualCountETDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) = 0 AND @currentDatasetType LIKE '%-MSn%'
     Begin
         -- Dataset does not have MSn scans, but current dataset type says it does
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because (@ActualCountCIDMSn + @ActualCountETDMSn + @ActualCountETciDMSn + @ActualCountEThcDMSn) = 0 AND @CurrentDatasetType LIKE ''%-MSn%'''
+                Print 'Set @autoDefineDSType=1 because (@actualCountCIDMSn + @actualCountETDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) = 0 AND @currentDatasetType LIKE ''%-MSn%'''
         End
         Else
-            Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' but no low res MSn scans are present'
+            Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no low res MSn scans are present'
         
         Goto AutoDefineDSType
     End
 
-
-    If @ActualCountHMS = 0 AND (@CurrentDatasetType LIKE 'HMS%' Or @CurrentDatasetType LIKE '%-HMS')
+    If @actualCountHMS = 0 AND (@currentDatasetType LIKE 'HMS%' Or @currentDatasetType LIKE '%-HMS')
     Begin
         -- Dataset does not have HMS scans, but current dataset type says it does        
-        If Not @CurrentDatasetType LIKE 'IMS%'
+        If Not @currentDatasetType LIKE 'IMS%'
         Begin
-            Set @AutoDefineDSType = 1
+            Set @autoDefineDSType = 1
             If @InfoOnly = 1
-                Print 'Set @AutoDefineDSType=1 because @ActualCountHMS = 0 AND (@CurrentDatasetType LIKE ''HMS%'' Or @CurrentDatasetType LIKE ''%-HMS'')'
+                Print 'Set @autoDefineDSType=1 because @actualCountHMS = 0 AND (@currentDatasetType LIKE ''HMS%'' Or @currentDatasetType LIKE ''%-HMS'')'
         End
         Else
-            Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' but no HMS scans are present'
+            Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no HMS scans are present'
         
         Goto AutoDefineDSType
     End
-
-
 
     -----------------------------------------------------------
     -- Possibly auto-generate the dataset type 
-    -- If @AutoDefineDSType is non-zero then will update the dataset type to this value
+    -- If @autoDefineDSType is non-zero then will update the dataset type to this value
     -- Otherwise, will compare to the actual dataset type and post a warning if they differ
     -----------------------------------------------------------
 
 AutoDefineDSType:
     
-    If Not @CurrentDatasetType LIKE 'IMS%' AND NOT @CurrentDatasetType IN ('MALDI-HMS', 'C60-SIMS-HMS')
+    If Not @currentDatasetType LIKE 'IMS%' AND NOT @currentDatasetType IN ('MALDI-HMS', 'C60-SIMS-HMS')
     Begin
         -- Auto-define the dataset type based on the scan type counts
         -- The auto-defined types will be one of the following:
@@ -401,139 +413,139 @@ AutoDefineDSType:
         -- Furthermore, if ETD scans are present, -ETD or -CID/ETD will be in the middle
         -- And finally, if ETciD or EThcD scans are present, -ETciD or -EThcD will be in the middle
         
-        If @ActualCountHMS > 0
-            Set @DSTypeAutoGen = 'HMS'
+        If @actualCountHMS > 0
+            Set @datasetTypeAutoGen = 'HMS'
         Else
         Begin
-            Set @DSTypeAutoGen = 'MS'
+            Set @datasetTypeAutoGen = 'MS'
             
-            If @ActualCountMS = 0 And (@ActualCountCIDHMSn + @ActualCountETDHMSn + @ActualCountHCD + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) > 0
+            If @actualCountMS = 0 And (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0
             Begin
                 -- Dataset only has fragmentation spectra and no MS1 spectra
                 -- Since all of the fragmentation spectra are high res, use 'HMS'
-                Set @DSTypeAutoGen = 'HMS'
+                Set @datasetTypeAutoGen = 'HMS'
             End
             
-            If @ActualCountGCMS > 0
+            If @actualCountGCMS > 0
             Begin
-                Set @DSTypeAutoGen = 'GC-MS'
+                Set @datasetTypeAutoGen = 'GC-MS'
             End
         End
         
-        If (@ActualCountETciDMSn + @ActualCountEThcDMSn + @ActualCountETciDHMSn + @ActualCountEThcDHMSn) > 0
+        If (@actualCountETciDMSn + @actualCountEThcDMSn + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0
         Begin
             -- Has ETciD or EThcD spectra
             
-            If (@ActualCountETciDMSn + @ActualCountETciDHMSn) > 0 AND (@ActualCountEThcDMSn + @ActualCountEThcDHMSn) > 0
+            If (@actualCountETciDMSn + @actualCountETciDHMSn) > 0 AND (@actualCountEThcDMSn + @actualCountEThcDHMSn) > 0
             Begin
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-ETciD-EThcD'
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-ETciD-EThcD'
             End
             Else
             Begin
                 
-                If (@ActualCountETciDMSn + @ActualCountETciDHMSn) > 0
+                If (@actualCountETciDMSn + @actualCountETciDHMSn) > 0
                 Begin
-                    Set @DSTypeAutoGen = @DSTypeAutoGen + '-ETciD'
+                    Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-ETciD'
                 End
 
-                If (@ActualCountEThcDMSn + @ActualCountEThcDHMSn) > 0
+                If (@actualCountEThcDMSn + @actualCountEThcDHMSn) > 0
                 Begin
-                    Set @DSTypeAutoGen = @DSTypeAutoGen + '-EThcD'
+                    Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-EThcD'
                 End
 
             End
                             
-            If (@ActualCountETciDHMSn + @ActualCountEThcDHMSn) > 0
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-HMSn'
+            If (@actualCountETciDHMSn + @actualCountEThcDHMSn) > 0
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-HMSn'
             Else
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-MSn'
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-MSn'
             
         End
         Else
         Begin
             -- No ETciD or EThcD spectra
             
-            If @ActualCountHCD > 0
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-HCD'
+            If @actualCountHCD > 0
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-HCD'
 
-            IF @ActualCountPQD > 0
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-PQD'
+            IF @actualCountPQD > 0
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-PQD'
             
-            If (@ActualCountCIDHMSn + @ActualCountETDHMSn) > 0
+            If (@actualCountCIDHMSn + @actualCountETDHMSn) > 0
             Begin
                 -- One or more High res CID or ETD MSn spectra
-                If (@ActualCountETDMSn + @ActualCountETDHMSn) > 0
+                If (@actualCountETDMSn + @actualCountETDHMSn) > 0
                 Begin
                     -- One or more ETD spectra
-                    If (@ActualCountCIDMSn + @ActualCountCIDHMSn) > 0
-                        Set @DSTypeAutoGen = @DSTypeAutoGen + '-CID/ETD'
+                    If (@actualCountCIDMSn + @actualCountCIDHMSn) > 0
+                        Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-CID/ETD'
                     Else
-                        Set @DSTypeAutoGen = @DSTypeAutoGen + '-ETD'        
+                        Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-ETD'        
                 End
                 Else
                 Begin
                     -- No ETD spectra
-                    If @ActualCountHCD > 0 OR @ActualCountPQD > 0
-                        Set @DSTypeAutoGen = @DSTypeAutoGen + '-CID'
+                    If @actualCountHCD > 0 OR @actualCountPQD > 0
+                        Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-CID'
                     Else
-                        Set @DSTypeAutoGen = @DSTypeAutoGen
+                        Set @datasetTypeAutoGen = @datasetTypeAutoGen
                 End
             
-                Set @DSTypeAutoGen = @DSTypeAutoGen + '-HMSn'
+                Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-HMSn'
             End
             Else
             Begin
                 -- No high res MSn spectra
                 
-                If (@ActualCountCIDMSn + @ActualCountETDMSn) > 0
+                If (@actualCountCIDMSn + @actualCountETDMSn) > 0
                 Begin
                     -- One or more Low res CID or ETD MSn spectra
-                    If (@ActualCountETDMSn + @ActualCountETDHMSn) > 0
+                    If (@actualCountETDMSn + @actualCountETDHMSn) > 0
                     Begin
                         -- One or more ETD spectra
-                        If @ActualCountCIDMSn > 0
-                            Set @DSTypeAutoGen = @DSTypeAutoGen + '-CID/ETD'
+                        If @actualCountCIDMSn > 0
+                            Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-CID/ETD'
                         Else
-                            Set @DSTypeAutoGen = @DSTypeAutoGen + '-ETD'
+                            Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-ETD'
                     End
                     Else
                     Begin
                         -- No ETD spectra
-                        If @ActualCountHCD > 0 OR @ActualCountPQD > 0
-                            Set @DSTypeAutoGen = @DSTypeAutoGen + '-CID'
+                        If @actualCountHCD > 0 OR @actualCountPQD > 0
+                            Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-CID'
                         Else
-                            Set @DSTypeAutoGen = @DSTypeAutoGen
+                            Set @datasetTypeAutoGen = @datasetTypeAutoGen
                     End
 
-                    Set @DSTypeAutoGen = @DSTypeAutoGen + '-MSn'
+                    Set @datasetTypeAutoGen = @datasetTypeAutoGen + '-MSn'
                 End
             
             End
                     
             -- Possibly auto-fix the auto-generated dataset type
-            If @DSTypeAutoGen = 'HMS-HCD'
-                Set @DSTypeAutoGen = 'HMS-HCD-HMSn'
+            If @datasetTypeAutoGen = 'HMS-HCD'
+                Set @datasetTypeAutoGen = 'HMS-HCD-HMSn'
         End
     End
 
-    If @DSTypeAutoGen <> '' AND @AutoDefineOnAllMismatches <> 0
+    If @datasetTypeAutoGen <> '' AND @autoDefineOnAllMismatches <> 0
     Begin
-        Set @AutoDefineDSType = 1    
+        Set @autoDefineDSType = 1    
         If @InfoOnly = 1
-            Print 'Set @AutoDefineDSType=1 because @DSTypeAutoGen <> '''' (it is ' + @DSTypeAutoGen + ') AND @AutoDefineOnAllMismatches <> 0'
+            Print 'Set @autoDefineDSType=1 because @datasetTypeAutoGen <> '''' (it is ' + @datasetTypeAutoGen + ') AND @autoDefineOnAllMismatches <> 0'
     End
     
-    If @AutoDefineDSType <> 0
+    If @autoDefineDSType <> 0
     Begin
-        If @DSTypeAutoGen <> @CurrentDatasetType And @DSTypeAutoGen <> ''
-            Set @NewDatasetType = @DSTypeAutoGen
+        If @datasetTypeAutoGen <> @currentDatasetType And @datasetTypeAutoGen <> ''
+            Set @newDatasetType = @datasetTypeAutoGen
     End
     Else
     Begin
-        If @NewDatasetType = '' And @WarnMessage = ''
+        If @newDatasetType = '' And @WarnMessage = ''
         Begin
-            If @DSTypeAutoGen <> @CurrentDatasetType And @DSTypeAutoGen <> ''
-                Set @WarnMessage = 'Warning: Dataset type is ' + @CurrentDatasetType + ' while auto-generated type is ' + @DSTypeAutoGen
+            If @datasetTypeAutoGen <> @currentDatasetType And @datasetTypeAutoGen <> ''
+                Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' while auto-generated type is ' + @datasetTypeAutoGen
         End
     End
 
@@ -544,17 +556,17 @@ FixDSType:
     -- If a warning message was defined, display it
     -----------------------------------------------------------
     --
-    If @WarnMessage <> '' And Not (@CurrentDatasetType Like 'IMS%' and @DSTypeAutoGen Like 'IMS%')
+    If @WarnMessage <> '' And Not (@currentDatasetType Like 'IMS%' and @datasetTypeAutoGen Like 'IMS%')
     Begin
         Set @message = @WarnMessage
 
-        Set @DSComment = dbo.AppendToText(@DSComment, @message, 0, '; ', 512)
+        Set @datasetComment = dbo.AppendToText(@datasetComment, @message, 0, '; ', 512)
     
         If @infoOnly = 0
         Begin
             UPDATE T_Dataset
-            SET DS_Comment = @DSComment
-            WHERE Dataset_ID = @DatasetID
+            SET DS_Comment = @datasetComment
+            WHERE Dataset_ID = @datasetID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
@@ -563,28 +575,28 @@ FixDSType:
     End
 
     -----------------------------------------------------------
-    -- If a new dataset is defined, then update the dataset type
+    -- If a new dataset is defined, update the dataset type
     -----------------------------------------------------------
     --
-    If @NewDatasetType <> ''
+    If @newDatasetType <> ''
     Begin
-        Set @NewDSTypeID = 0
+        Set @newDSTypeID = 0
     
-        SELECT @NewDSTypeID = DST_Type_ID
+        SELECT @newDSTypeID = DST_Type_ID
         FROM T_DatasetTypeName
-        WHERE (DST_name = @NewDatasetType)
+        WHERE (DST_name = @newDatasetType)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     
-        If @NewDSTypeID <> 0
+        If @newDSTypeID <> 0
         Begin
         
-            If @NewDatasetType = 'HMS' And @CurrentDatasetType = 'EI-HMS'
+            If @newDatasetType = 'HMS' And @currentDatasetType = 'EI-HMS'
             Begin
                 -- Leave the dataset type as 'EI-HMS'
                 If @infoOnly <> 0
                 Begin
-                    Select 'Leaving dataset type unchanged as ' + @CurrentDatasetType AS Comment
+                    Select 'Leaving dataset type unchanged as ' + @currentDatasetType AS Comment
                 End
                 Goto Done                
             End
@@ -594,13 +606,13 @@ FixDSType:
             -- Also, do not append any change that includes ETciD or EThcD because those are commonly auto-added
             -- Additionally, do not update the comment when changing from HMS to HMS-HMSn (happens quite often, and is a fairly harmless change)
             --
-            Set @message = 'Auto-switched dataset type from ' + @CurrentDatasetType + ' to ' + @NewDatasetType
+            Set @message = 'Auto-switched dataset type from ' + @currentDatasetType + ' to ' + @newDatasetType
             
             Declare @messageAppend varchar(128)
             
-            If @CurrentDatasetType Like 'HMS%' And @NewDatasetType Like 'HMS%MSn' Or            
-               @NewDatasetType LIKE '%ETciD%' Or
-               @NewDatasetType LIKE '%EThcD%'               
+            If @currentDatasetType Like 'HMS%' And @newDatasetType Like 'HMS%MSn' Or            
+               @newDatasetType LIKE '%ETciD%' Or
+               @newDatasetType LIKE '%EThcD%'               
             Begin
                 -- Switching from HMS, HMS-MSn, HMS-HCD-HMSn, or similar to a more specific HMS-xxx-MSn type; do not update the dataset comment
                 Set @messageAppend = @message
@@ -608,25 +620,25 @@ FixDSType:
             Else
             Begin
                 Set @messageAppend = @message + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
-                Set @DSComment = dbo.AppendToText(@DSComment, @messageAppend, 0, '; ', 512)
+                Set @datasetComment = dbo.AppendToText(@datasetComment, @messageAppend, 0, '; ', 512)
                 Set @messageAppend = ''
             End
             
             If @infoOnly = 0
             Begin
                 UPDATE T_Dataset
-                SET DS_Type_ID = @NewDSTypeID,
-                    DS_Comment = @DSComment
-                WHERE Dataset_ID = @DatasetID
+                SET DS_Type_ID = @newDSTypeID,
+                    DS_Comment = @datasetComment
+                WHERE Dataset_ID = @datasetID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
             End
             Else
             Begin
-                SELECT @NewDatasetType AS NewDatasetType,
-                       @NewDSTypeID AS NewDSTypeID,
+                SELECT @newDatasetType AS NewDatasetType,
+                       @newDSTypeID AS NewDSTypeID,
                        CASE
-                           WHEN @messageAppend = '' THEN @DSComment
+                           WHEN @messageAppend = '' THEN @datasetComment
                            ELSE @messageAppend
                        END AS [Comment]
             End
@@ -634,15 +646,15 @@ FixDSType:
         End        
         Else
         Begin
-            Set @message = 'Unrecognized dataset type based on actual scan types; need to auto-switch from ' + @CurrentDatasetType + ' to ' + @NewDatasetType
+            Set @message = 'Unrecognized dataset type based on actual scan types; need to auto-switch from ' + @currentDatasetType + ' to ' + @newDatasetType
 
-            Set @DSComment = dbo.AppendToText(@DSComment, @message, 0, '; ', 512)
+            Set @datasetComment = dbo.AppendToText(@datasetComment, @message, 0, '; ', 512)
 
             If @infoOnly = 0
             Begin
                 UPDATE T_Dataset
-                SET DS_Comment = @DSComment
-                WHERE Dataset_ID = @DatasetID
+                SET DS_Comment = @datasetComment
+                WHERE Dataset_ID = @datasetID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
             End
@@ -655,10 +667,10 @@ Done:
     If @InfoOnly <> 0
     Begin
         If Len(@message) = 0
-            Set @message = 'Dataset type is valid: ' + @CurrentDatasetType
+            Set @message = 'Dataset type is valid: ' + @currentDatasetType
             
-        Print @message
-        SELECT @message as Message
+        Print @message + ' (' + @dataset + ')'
+        SELECT @message as Message, @dataset As Dataset
     End
             
     return @myError
