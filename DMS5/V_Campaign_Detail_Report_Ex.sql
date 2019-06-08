@@ -37,7 +37,8 @@ SELECT C.Campaign_Num AS Campaign,
        CT.Dataset_Most_Recent AS [Most Recent Dataset],
        CT.Job_Count AS [Analysis Jobs],
        CT.Job_Most_Recent AS [Most Recent Analysis Job],
-	   CT.Data_Package_Count AS [Data Packages]
+	   CT.Data_Package_Count AS [Data Packages],
+       dbo.GetCampaignWorkPackageList(C.Campaign_Num) AS [Work Packages]
 FROM T_Campaign AS C
      LEFT OUTER JOIN T_Research_Team AS RT
        ON C.CM_Research_Team = RT.ID
