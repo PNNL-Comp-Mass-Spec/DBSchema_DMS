@@ -31,6 +31,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Default_Purge_Policy] [tinyint] NOT NULL,
 	[Perform_Calibration] [tinyint] NOT NULL,
 	[Scan_SourceDir] [tinyint] NOT NULL,
+	[Building]  AS (case when charindex(' ',[IN_Room_Number])>(1) then substring([IN_Room_Number],(1),charindex(' ',[IN_Room_Number])-(1)) else [IN_Room_Number] end) PERSISTED,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
