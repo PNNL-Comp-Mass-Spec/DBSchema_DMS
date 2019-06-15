@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
 **          03/07/2017 mem - Append _Recycled to new requests created when @recycleRequest is yes
 **                         - Remove leading space in message ' (recycled from dataset ...'
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/14/2019 mem - Change cart to Unknown when making the request active again
 **    
 *****************************************************/
 (
@@ -64,17 +65,15 @@ CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount int = 0
     
     set @message = IsNull(@message, '')
 
     ---------------------------------------------------
     -- get datasetID
     ---------------------------------------------------
-    declare @datasetID int = 0
+    Declare @datasetID int = 0
     --
     SELECT @datasetID = Dataset_ID
     FROM T_Dataset 
@@ -97,13 +96,13 @@ As
     ---------------------------------------------------
     -- Look for associated request for dataset
     ---------------------------------------------------    
-    declare @requestComment varchar(1024)
-    declare @requestID int
-    declare @requestOrigin char(4)
+    Declare @requestComment varchar(1024)
+    Declare @requestID int
+    Declare @requestOrigin char(4)
     
-    declare @requestIDOriginal int = 0
-    declare @CopyRequestedRun tinyint = 0
-    declare @RecycleOriginalRequest tinyint = 0
+    Declare @requestIDOriginal int = 0
+    Declare @CopyRequestedRun tinyint = 0
+    Declare @RecycleOriginalRequest tinyint = 0
     
     set @requestComment = ''
     set @requestID = 0
@@ -134,11 +133,30 @@ As
     -- Was request automatically created by dataset entry?
     ---------------------------------------------------    
     --
-    declare @autoCreatedRequest int = 0
+    Declare @autoCreatedRequest int = 0
     
     If @requestOrigin = 'auto'
     Begin
         set @autoCreatedRequest = 1
+    End
+
+    ---------------------------------------------------
+    -- Determine the ID of the "unknown" cart
+    ---------------------------------------------------    
+
+    Declare @newCartID Int = null
+    Declare @warningMessage Varchar(128)
+
+    SELECT @newCartID = ID
+    FROM   T_LC_Cart
+    WHERE Cart_Name = 'unknown'
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount < 1
+    Begin
+        Set @warningMessage = 'Could not find the cart named "unknown" in T_LC_Cart; the Cart ID of the recycled requested run will be left unchanged'
+        Exec PostLogEntry 'Error', @warningMessage, 'UnconsumeScheduledRun'
     End
 
     ---------------------------------------------------
@@ -147,7 +165,7 @@ As
     Declare @notation varchar(256)
     Declare @AddnlText varchar(1024)
     
-    declare @transName varchar(32)
+    Declare @transName varchar(32)
     set @transName = 'UnconsumeScheduledRun'
     begin transaction @transName
 
@@ -340,7 +358,7 @@ As
         -- Do not update RDS_Created; we want to keep it as the original date for planning purposes
         --
         Declare @newStatus varchar(24) = 'Active'
-        
+
         UPDATE
             T_Requested_Run
         SET
@@ -348,7 +366,8 @@ As
             RDS_Run_Start = NULL,
             RDS_Run_Finish = NULL,
             DatasetID = NULL,
-            RDS_comment = CASE WHEN IsNull(RDS_Comment, '') = '' THEN @notation ELSE RDS_comment + ' ' + @notation END
+            RDS_comment = CASE WHEN IsNull(RDS_Comment, '') = '' THEN @notation ELSE RDS_comment + ' ' + @notation End,
+            RDS_Cart_ID = IsNull(@newCartID, RDS_Cart_ID)
         WHERE 
             ID = @requestIDOriginal
         --
