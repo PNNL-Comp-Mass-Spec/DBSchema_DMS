@@ -3,416 +3,419 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddNewDataset
+
+CREATE Procedure [dbo].[AddNewDataset]
 /****************************************************
 **
-**	Desc: 
-**		Adds new dataset entry to DMS database from contents of XML.
+**  Desc: 
+**      Adds new dataset entry to DMS database from contents of XML.
 **
-**		This is for use by sample automation software
-**		associated with the mass spec instrument to
-**		create new datasets automatically following
-**		an instrument run.
+**      This is for use by sample automation software
+**      associated with the mass spec instrument to
+**      create new datasets automatically following
+**      an instrument run.
 **
-**		This procedure is called by the DataImportManager (DIM)
+**      This procedure is called by the DataImportManager (DIM)
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 ** 
-**	Auth:	grk
-**			05/04/2007 grk - Ticket #434
-**			10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
-**			10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
-**			10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
-**			01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
-**			02/13/2008 mem - Increased size of @Dataset_Name to varchar(128) (Ticket #602)
-**			02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
-**			09/09/2010 mem - Now always looking up the request number associated with the new dataset
-**			03/04/2011 mem - Now validating that @Run_Finish is not a future date
-**			03/07/2011 mem - Now auto-defining experiment name if empty for QC_Shew and Blank datasets
-**						   - Now auto-defining EMSL usage type to Maintenance for QC_Shew and Blank datasets
-**			05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
-**			01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
-**			11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
-**			06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
-**			12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
-**			03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
-**			05/29/2015 mem - Added support for "Capture Subfolder"
-**			06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
-**			11/21/2016 mem - Added parameter @logDebugMessages
-**			02/23/2017 mem - Added support for "LC Cart Config"
-**			08/18/2017 mem - Change @CaptureSubfolder to '' if it is the same as @Dataset_Name
+**  Auth:   grk
+**          05/04/2007 grk - Ticket #434
+**          10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
+**          10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
+**          10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
+**          01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
+**          02/13/2008 mem - Increased size of @datasetName to varchar(128) (Ticket #602)
+**          02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**          09/09/2010 mem - Now always looking up the request number associated with the new dataset
+**          03/04/2011 mem - Now validating that @runFinish is not a future date
+**          03/07/2011 mem - Now auto-defining experiment name if empty for QC_Shew and Blank datasets
+**                         - Now auto-defining EMSL usage type to Maintenance for QC_Shew and Blank datasets
+**          05/12/2011 mem - Now excluding Blank%-bad datasets when auto-setting rating to 'Released'
+**          01/25/2013 mem - Now converting @xmlDoc to an XML variable instead of using sp_xml_preparedocument and OpenXML
+**          11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
+**          06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
+**          12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
+**          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
+**          05/29/2015 mem - Added support for "Capture Subfolder"
+**          06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
+**          11/21/2016 mem - Added parameter @logDebugMessages
+**          02/23/2017 mem - Added support for "LC Cart Config"
+**          08/18/2017 mem - Change @captureSubfolder to '' if it is the same as @datasetName
+**          06/13/2019 mem - Leave the dataset rating as 'Not Released', 'No Data (Blank/Bad)', or 'No Interest' for QC datasets
 **    
 *****************************************************/
 (
-	@xmlDoc varchar(4000),
-	@mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
+    @xmlDoc varchar(4000),
+    @mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
     @message varchar(512) output,
     @logDebugMessages tinyint = 0
 )
 AS
-	Set nocount on
+    Set nocount on
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
 
-	Declare @hDoc int
-	Declare @dsid int
+    Declare @hDoc int
+    Declare @dsid int
 
-	Declare @tmp int
+    Declare @tmp int
 
-	Declare @internalStandards varchar(64)
-	Declare @AddUpdateTimeStamp datetime
-	
-	Declare @RunStartDate datetime
-	Declare @RunFinishDate datetime
-	
-	Set @message = ''
-	Set @logDebugMessages = IsNull(@logDebugMessages, 0)
-	
-	Declare
-		@Dataset_Name       varchar(128)  = '',
-		@Experiment_Name    varchar(64)   = '',
-		@Instrument_Name    varchar(64)   = '',
-		@CaptureSubfolder   varchar(255)  = '',
-		@Separation_Type    varchar(64)   = '',
-		@LC_Cart_Name       varchar(128)  = '',
-		@LC_Cart_Config     varchar(128)  = '',
-		@LC_Column          varchar(64)   = '',
-		@Wellplate_Number   varchar(64)   = '',
-		@Well_Number        varchar(64)   = '',
-		@Dataset_Type       varchar(64)   = '',
-		@Operator_PRN       varchar(64)   = '',
-		@Comment            varchar(512)  = '',
-		@Interest_Rating    varchar(32)   = '',
-		@Request            int           = '',      -- @requestID; this might get updated by AddUpdateDataset
-		@EMSL_Usage_Type    varchar(50)   = '',
-		@EMSL_Proposal_ID   varchar(10)   = '',
-		@EMSL_Users_List    varchar(1024) = '',
-		@Run_Start          varchar(64)   = '',
-		@Run_Finish         varchar(64)   = '',
-		@DatasetCreatorPRN  varchar(128)  = ''
-		
-		-- Note that @DatasetCreatorPRN is the PRN of the person that created the dataset; 
-		-- It is typically only present in trigger files created due to a dataset manually being created by a user
+    Declare @internalStandards varchar(64)
+    Declare @addUpdateTimeStamp datetime
+    
+    Declare @runStartDate datetime
+    Declare @runFinishDate datetime
+    
+    Set @message = ''
+    Set @logDebugMessages = IsNull(@logDebugMessages, 0)
+    
+    Declare
+        @datasetName        varchar(128)  = '',
+        @experimentName     varchar(64)   = '',
+        @instrumentName     varchar(64)   = '',
+        @captureSubfolder   varchar(255)  = '',
+        @separationType     varchar(64)   = '',
+        @lcCartName         varchar(128)  = '',
+        @lcCartConfig       varchar(128)  = '',
+        @lcColumn           varchar(64)   = '',
+        @wellplateNumber    varchar(64)   = '',
+        @wellNumber         varchar(64)   = '',
+        @datasetType        varchar(64)   = '',
+        @operatorPRN        varchar(64)   = '',
+        @comment            varchar(512)  = '',
+        @interestRating     varchar(32)   = '',
+        @requestID          int           = 0,      -- Request ID; this might get updated by AddUpdateDataset
+        @emslUsageType      varchar(50)   = '',
+        @emslProposalID     varchar(10)   = '',
+        @emslUsersList      varchar(1024) = '',
+        @runStart           varchar(64)   = '',
+        @runFinish          varchar(64)   = '',
+        @datasetCreatorPRN  varchar(128)  = ''
+        
+        -- Note that @datasetCreatorPRN is the PRN of the person that created the dataset; 
+        -- It is typically only present in trigger files created due to a dataset manually being created by a user
 
-	---------------------------------------------------
-	--  Create temporary table to hold list of parameters
-	---------------------------------------------------
+    ---------------------------------------------------
+    --  Create temporary table to hold list of parameters
+    ---------------------------------------------------
  
- 	CREATE TABLE #TPAR (
-		paramName varchar(128),
-		paramValue varchar(512)
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	If @myError <> 0
-	Begin
-		Set @message = 'Failed to create temporary parameter table'
-		goto DONE
-	End
+     CREATE TABLE #TPAR (
+        paramName varchar(128),
+        paramValue varchar(512)
+    )
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed to create temporary parameter table'
+        goto DONE
+    End
 
-	---------------------------------------------------
-	-- Convert @xmlDoc to XML
-	---------------------------------------------------
-	
-	Declare @xml xml = Convert(xml, @xmlDoc)
-	
- 	---------------------------------------------------
-	-- Populate parameter table from XML parameter description  
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Convert @xmlDoc to XML
+    ---------------------------------------------------
+    
+    Declare @xml xml = Convert(xml, @xmlDoc)
+    
+     ---------------------------------------------------
+    -- Populate parameter table from XML parameter description  
+    ---------------------------------------------------
 
-	INSERT INTO #TPAR (paramName, paramValue)
-	SELECT [Name], IsNull([Value], '')
-	FROM ( SELECT  xmlNode.value('@Name', 'varchar(128)') AS [Name], 
-	               xmlNode.value('@Value', 'varchar(512)') AS [Value]
-	       FROM @xml.nodes('/Dataset/Parameter') AS R(xmlNode)
-	) LookupQ
-	WHERE NOT [Name] IS NULL
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	If @myError <> 0
-	Begin
-		Set @message = 'Error populating temporary parameter table'
-		goto DONE
-	End
+    INSERT INTO #TPAR (paramName, paramValue)
+    SELECT [Name], IsNull([Value], '')
+    FROM ( SELECT  xmlNode.value('@Name', 'varchar(128)') AS [Name], 
+                   xmlNode.value('@Value', 'varchar(512)') AS [Value]
+           FROM @xml.nodes('/Dataset/Parameter') AS R(xmlNode)
+    ) LookupQ
+    WHERE NOT [Name] IS NULL
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        Set @message = 'Error populating temporary parameter table'
+        goto DONE
+    End
 
-	---------------------------------------------------
-	-- Trap 'parse_only' mode here
-	---------------------------------------------------
-	If @mode = 'parse_only'
-	Begin
-		--
-		SELECT CONVERT(char(24), paramName) AS Name, paramValue FROM #TPAR
-		goto DONE
-	End
+    ---------------------------------------------------
+    -- Trap 'parse_only' mode here
+    ---------------------------------------------------
+    If @mode = 'parse_only'
+    Begin
+        --
+        SELECT CONVERT(char(24), paramName) AS Name, paramValue FROM #TPAR
+        goto DONE
+    End
 
- 	---------------------------------------------------
-	-- Get agruments from parsed parameters
- 	---------------------------------------------------
+     ---------------------------------------------------
+    -- Get agruments from parsed parameters
+     ---------------------------------------------------
 
-	SELECT	@Dataset_Name        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
-	SELECT	@Experiment_Name     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
-	SELECT	@Instrument_Name     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
-	SELECT  @CaptureSubfolder    = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder' 
-	SELECT	@Separation_Type     = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
-	SELECT	@LC_Cart_Name        = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
-	SELECT	@LC_Cart_Config      = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
-	SELECT	@LC_Column           = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
-	SELECT	@Wellplate_Number    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number' 
-	SELECT	@Well_Number         = paramValue FROM #TPAR WHERE paramName = 'Well Number' 
-	SELECT	@Dataset_Type        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type' 
-	SELECT	@Operator_PRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)' 
-	SELECT	@Comment             = paramValue FROM #TPAR WHERE paramName = 'Comment' 
-	SELECT	@Interest_Rating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating' 
-	SELECT	@Request             = paramValue FROM #TPAR WHERE paramName = 'Request' 
-	SELECT	@EMSL_Usage_Type     = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type' 
-	SELECT	@EMSL_Proposal_ID    = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID' 
-	SELECT	@EMSL_Users_List     = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
-	SELECT	@Run_Start           = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
-	SELECT	@Run_Finish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
-	SELECT  @DatasetCreatorPRN   = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
+    SELECT    @datasetName        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
+    SELECT    @experimentName     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
+    SELECT    @instrumentName     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
+    SELECT    @captureSubfolder   = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder' 
+    SELECT    @separationType     = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
+    SELECT    @lcCartName         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
+    SELECT    @lcCartConfig       = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
+    SELECT    @lcColumn           = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
+    SELECT    @wellplateNumber    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number' 
+    SELECT    @wellNumber         = paramValue FROM #TPAR WHERE paramName = 'Well Number' 
+    SELECT    @datasetType        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type' 
+    SELECT    @operatorPRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)' 
+    SELECT    @comment            = paramValue FROM #TPAR WHERE paramName = 'Comment' 
+    SELECT    @interestRating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating' 
+    SELECT    @requestID          = paramValue FROM #TPAR WHERE paramName = 'Request' 
+    SELECT    @emslUsageType      = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type' 
+    SELECT    @emslProposalID     = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID' 
+    SELECT    @emslUsersList      = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
+    SELECT    @runStart           = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
+    SELECT    @runFinish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
+    SELECT    @datasetCreatorPRN  = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
-	
- 	---------------------------------------------------
-	-- Check for QC or Blank datasets
- 	---------------------------------------------------
+    
+     ---------------------------------------------------
+    -- Check for QC or Blank datasets
+     ---------------------------------------------------
 
-	If dbo.DatasetPreference(@Dataset_Name) <> 0 OR 
-	   dbo.DatasetPreference(@Experiment_Name) <> 0 OR
-	   (@Dataset_Name LIKE 'Blank%' AND Not @Dataset_Name LIKE '%-bad')
-	Begin
-		-- Auto set interest rating to 5
-		-- Initially set @Interest_Rating to the text 'Released' but then query
-		--  T_DatasetRatingName for rating 5 in case the rating name has changed
-		
-		Set @Interest_Rating = 'Released'
+    If dbo.DatasetPreference(@datasetName) <> 0 OR 
+       dbo.DatasetPreference(@experimentName) <> 0 OR
+       (@datasetName LIKE 'Blank%' AND Not @datasetName LIKE '%-bad')
+    Begin
+        If @interestRating Not In ('Not Released', 'No Interest') And @interestRating Not Like 'No Data%'
+        Begin
+            -- Auto set interest rating to 5
+            -- Initially set @interestRating to the text 'Released' but then query
+            -- T_DatasetRatingName for rating 5 in case the rating name has changed
+        
+            Set @interestRating = 'Released'
 
-		SELECT @Interest_Rating = DRN_name
-		FROM T_DatasetRatingName
-		WHERE (DRN_state_ID = 5)
-	End
+            SELECT @interestRating = DRN_name
+            FROM T_DatasetRatingName
+            WHERE (DRN_state_ID = 5)
+        End
+    End
 
- 	---------------------------------------------------
-	-- Possibly auto-define the experiment
- 	---------------------------------------------------
- 	--
-	If @Experiment_Name = ''
-	Begin
-		If @Dataset_Name Like 'Blank%'
-			Set @Experiment_Name = 'Blank'
-		Else
-		If @Dataset_Name Like 'QC_Shew[_-][0-9][0-9][_-][0-9][0-9]%'
-			Set @Experiment_Name = Substring(@Dataset_Name, 1, 13)
-		
-	End
-	
- 	---------------------------------------------------
-	-- Possibly auto-define the @EMSL_Usage_Type
- 	---------------------------------------------------
- 	--
-	If @EMSL_Usage_Type = ''
-	Begin
-		If @Dataset_Name Like 'Blank%' OR @Dataset_Name Like 'QC_Shew%'
-			Set @EMSL_Usage_Type = 'MAINTENANCE'
-	End
+     ---------------------------------------------------
+    -- Possibly auto-define the experiment
+     ---------------------------------------------------
+     --
+    If @experimentName = ''
+    Begin
+        If @datasetName Like 'Blank%'
+            Set @experimentName = 'Blank'
+        Else
+        If @datasetName Like 'QC_Shew[_-][0-9][0-9][_-][0-9][0-9]%'
+            Set @experimentName = Substring(@datasetName, 1, 13)
+        
+    End
+    
+     ---------------------------------------------------
+    -- Possibly auto-define the @emslUsageType
+     ---------------------------------------------------
+     --
+    If @emslUsageType = ''
+    Begin
+        If @datasetName Like 'Blank%' OR @datasetName Like 'QC_Shew%'
+            Set @emslUsageType = 'MAINTENANCE'
+    End
 
- 	---------------------------------------------------
-	-- Establish default parameters
- 	---------------------------------------------------
+     ---------------------------------------------------
+    -- Establish default parameters
+     ---------------------------------------------------
 
-	Set @internalStandards  = 'none'
-	Set @AddUpdateTimeStamp = GetDate()
-	
-	---------------------------------------------------
-	-- Check for the comment ending in "Buzzard:"
-	---------------------------------------------------
-	
-	Set @Comment = LTrim(RTrim(@Comment))
-	If @Comment Like '%Buzzard:'
-		Set @Comment = Substring(@Comment, 1, Len(@Comment) - 8)
-	
-	If @CaptureSubfolder LIKE '[C-Z]:\%'
-	Begin
-		Set @message = 'Capture subfolder is not a relative path for dataset ' + @Dataset_Name + '; ignoring'
-		
-		exec PostLogEntry 'Error', @message, 'AddNewDataset'
-	   
-        Set @CaptureSubfolder = ''
-	End
+    Set @internalStandards  = 'none'
+    Set @addUpdateTimeStamp = GetDate()
+    
+    ---------------------------------------------------
+    -- Check for the comment ending in "Buzzard:"
+    ---------------------------------------------------
+    
+    Set @comment = LTrim(RTrim(@comment))
+    If @comment Like '%Buzzard:'
+        Set @comment = Substring(@comment, 1, Len(@comment) - 8)
+    
+    If @captureSubfolder LIKE '[C-Z]:\%'
+    Begin
+        Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring'
+        
+        exec PostLogEntry 'Error', @message, 'AddNewDataset'
+       
+        Set @captureSubfolder = ''
+    End
  
-	If @CaptureSubfolder = @Dataset_Name
-	Begin
-		Set @message = 'Capture subfolder is identical to the dataset name for ' + @Dataset_Name + '; changing to an empty string'
+    If @captureSubfolder = @datasetName
+    Begin
+        Set @message = 'Capture subfolder is identical to the dataset name for ' + @datasetName + '; changing to an empty string'
 
-		-- Post this message to the log every 3 days
-		If Not Exists (
-		   SELECT * FROM T_Log_Entries 
-		   WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND 
-		         posting_time > DATEADD(day, -3, GETDATE()) )
-		Begin
-			exec PostLogEntry 'Debug', @message, 'AddNewDataset'
-		End
-	   
-        Set @CaptureSubfolder = ''
-	End
-	
-	---------------------------------------------------
-	-- Create new dataset
-	---------------------------------------------------
-	exec @myError = AddUpdateDataset
-						@Dataset_Name,
-						@Experiment_Name,
-						@Operator_PRN,
-						@Instrument_Name,
-						@Dataset_Type,
-						@LC_Column,
-						@Wellplate_Number,
-						@Well_Number,
-						@Separation_Type,
-						@internalStandards,
-						@Comment,
-						@Interest_Rating,
-						@LC_Cart_Name,
-						@EMSL_Proposal_ID,
-						@EMSL_Usage_Type,
-						@EMSL_Users_List,
-						@Request,
-						@mode,
-						@message output,
-						@CaptureSubfolder=@CaptureSubfolder,
-						@lcCartConfig=@LC_Cart_Config,
-						@logDebugMessages=@logDebugMessages
-	If @myError <> 0
-	Begin
-		RAISERROR (@message, 10, 1)
-		return 51032
-	End
+        -- Post this message to the log every 3 days
+        If Not Exists (
+           SELECT * FROM T_Log_Entries 
+           WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND 
+                 posting_time > DATEADD(day, -3, GETDATE()) )
+        Begin
+            exec PostLogEntry 'Debug', @message, 'AddNewDataset'
+        End
+       
+        Set @captureSubfolder = ''
+    End
+    
+    ---------------------------------------------------
+    -- Create new dataset
+    ---------------------------------------------------
+    exec @myError = AddUpdateDataset
+                        @datasetName,
+                        @experimentName,
+                        @operatorPRN,
+                        @instrumentName,
+                        @datasetType,
+                        @lcColumn,
+                        @wellplateNumber,
+                        @wellNumber,
+                        @separationType,
+                        @internalStandards,
+                        @comment,
+                        @interestRating,
+                        @lcCartName,
+                        @emslProposalID,
+                        @emslUsageType,
+                        @emslUsersList,
+                        @requestID,
+                        @mode,
+                        @message output,
+                        @captureSubfolder=@captureSubfolder,
+                        @lcCartConfig=@lcCartConfig,
+                        @logDebugMessages=@logDebugMessages
+    If @myError <> 0
+    Begin
+        RAISERROR (@message, 10, 1)
+        return 51032
+    End
 
-	---------------------------------------------------
-	-- Trap 'check' modes here
-	---------------------------------------------------
-	If @mode = 'check_add' OR @mode = 'check_update'
-		goto DONE
+    ---------------------------------------------------
+    -- Trap 'check' modes here
+    ---------------------------------------------------
+    If @mode = 'check_add' OR @mode = 'check_update'
+        goto DONE
 
 
-	---------------------------------------------------
-	-- It's possible that @Request got updated by AddUpdateDataset
-	-- Lookup the current value
-	---------------------------------------------------
-	
-	-- First use Dataset Name to lookup the Dataset ID
-	--		
-	Set @dsid = 0
-	--
-	SELECT @dsid = Dataset_ID
-	FROM T_Dataset
-	WHERE (Dataset_Num = @Dataset_Name)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	If @myError <> 0
-	Begin
-		Set @message = 'Error trying to resolve dataset ID'
-		RAISERROR (@message, 10, 1)
-		return 51034
-	End
-	If @dsid = 0
-	Begin
-		Set @message = 'Could not resolve dataset ID'
-		RAISERROR (@message, 10, 1)
-		return 51035
-	End
-	
-	---------------------------------------------------
-	-- Find request associated with dataset
-	---------------------------------------------------
-	
-	Set @tmp = 0
-	--
-	SELECT @tmp = ID
-	FROM T_Requested_Run
-	WHERE (DatasetID = @dsid)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	If @myError <> 0
-	Begin
-		Set @message = 'Error trying to resolve request ID'
-		RAISERROR (@message, 10, 1)
-		return 51036
-	End
-	
-	If @tmp <> 0
-		Set @Request = @tmp
-	
-	
-	If Len(@DatasetCreatorPRN) > 0
-	Begin -- <a>
-		---------------------------------------------------
-		-- Update T_Event_Log to reflect @DatasetCreatorPRN creating this dataset
-		---------------------------------------------------
-		
-		UPDATE T_Event_Log
-		SET Entered_By = @DatasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
-		FROM T_Event_Log
-		WHERE Target_ID = @dsid AND
-				Target_State = 1 AND 
-				Target_Type = 4 AND 
-				Entered Between @AddUpdateTimeStamp AND DateAdd(minute, 1, @AddUpdateTimeStamp)
-			
-	End -- </a>
-		
+    ---------------------------------------------------
+    -- It's possible that @requestID got updated by AddUpdateDataset
+    -- Lookup the current value
+    ---------------------------------------------------
+    
+    -- First use Dataset Name to lookup the Dataset ID
+    --        
+    Set @dsid = 0
+    --
+    SELECT @dsid = Dataset_ID
+    FROM T_Dataset
+    WHERE (Dataset_Num = @datasetName)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        Set @message = 'Error trying to resolve dataset ID'
+        RAISERROR (@message, 10, 1)
+        return 51034
+    End
+    If @dsid = 0
+    Begin
+        Set @message = 'Could not resolve dataset ID'
+        RAISERROR (@message, 10, 1)
+        return 51035
+    End
+    
+    ---------------------------------------------------
+    -- Find request associated with dataset
+    ---------------------------------------------------
+    
+    Set @tmp = 0
+    --
+    SELECT @tmp = ID
+    FROM T_Requested_Run
+    WHERE (DatasetID = @dsid)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        Set @message = 'Error trying to resolve request ID'
+        RAISERROR (@message, 10, 1)
+        return 51036
+    End
+    
+    If @tmp <> 0
+        Set @requestID = @tmp
+    
+    
+    If Len(@datasetCreatorPRN) > 0
+    Begin -- <a>
+        ---------------------------------------------------
+        -- Update T_Event_Log to reflect @datasetCreatorPRN creating this dataset
+        ---------------------------------------------------
+        
+        UPDATE T_Event_Log
+        SET Entered_By = @datasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
+        FROM T_Event_Log
+        WHERE Target_ID = @dsid AND
+                Target_State = 1 AND 
+                Target_Type = 4 AND 
+                Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
+            
+    End -- </a>
+        
 
-	---------------------------------------------------
-	-- Update the associated request with run start/finish values
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Update the associated request with run start/finish values
+    ---------------------------------------------------
 
-	If @Request <> 0
-	Begin
-	
-		If @Run_Start <> ''
-			Set @RunStartDate = Convert(datetime, @Run_Start)
-		Else
-			Set @RunStartDate = Null
-			
-		If @Run_Finish <> ''
-			Set @RunFinishDate = Convert(datetime, @Run_Finish)
-		Else
-			Set @RunFinishDate = Null
-			
-		If Not @RunStartDate Is Null and Not @RunFinishDate Is Null
-		Begin
-			-- Check whether the @RunFinishDate value is in the future
-			-- If it is, update it to match @RunStartDate
-			If DateDiff(day, GetDate(), @RunFinishDate) > 1
-				Set @RunFinishDate = @RunStartDate
-		End
-		
-		UPDATE T_Requested_Run
-		SET
-			RDS_Run_Start = @RunStartDate, 
-			RDS_Run_Finish = @RunFinishDate
-		WHERE (ID = @Request)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		If @myError <> 0
-		Begin
-			set @message = 'Error trying to update run times'
-			RAISERROR (@message, 10, 1)
-			return 51033
-		End
-	End
+    If @requestID <> 0
+    Begin
+    
+        If @runStart <> ''
+            Set @runStartDate = Convert(datetime, @runStart)
+        Else
+            Set @runStartDate = Null
+            
+        If @runFinish <> ''
+            Set @runFinishDate = Convert(datetime, @runFinish)
+        Else
+            Set @runFinishDate = Null
+            
+        If Not @runStartDate Is Null and Not @runFinishDate Is Null
+        Begin
+            -- Check whether the @runFinishDate value is in the future
+            -- If it is, update it to match @runStartDate
+            If DateDiff(day, GetDate(), @runFinishDate) > 1
+                Set @runFinishDate = @runStartDate
+        End
+        
+        UPDATE T_Requested_Run
+        SET
+            RDS_Run_Start = @runStartDate, 
+            RDS_Run_Finish = @runFinishDate
+        WHERE (ID = @requestID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin
+            set @message = 'Error trying to update run times'
+            RAISERROR (@message, 10, 1)
+            return 51033
+        End
+    End
 
- 	---------------------------------------------------
-	-- Done
- 	---------------------------------------------------
+     ---------------------------------------------------
+    -- Done
+     ---------------------------------------------------
 Done:
-	return @myError
+    return @myError
 
 
 GO
