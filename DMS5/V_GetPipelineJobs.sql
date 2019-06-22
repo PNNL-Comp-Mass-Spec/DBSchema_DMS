@@ -34,14 +34,14 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
 		-- or purged (states 4, 9, 14, 15) or NonPurgeable (10)
 		(DA.AS_state_ID IN (3, 4, 9, 10, 14, 15))
 		Or
-		-- But if the archive state is "New" for over 180 minutes, let the job start
-		(DA.AS_state_ID IN (1) And DA.AS_state_Last_Affected < DateAdd(minute, -180, GetDate()))
+		-- But if the archive state is "New" for over 60 minutes, let the job start
+		(DA.AS_state_ID IN (1) And DA.AS_state_Last_Affected < DateAdd(minute, -60, GetDate()))
 		OR
-		-- and if the dataset has been in state "Archive in progress" or "Operation Failed" for over 60 minutes, let the job start
+		-- And if the dataset has been in state "Archive in progress" or "Operation Failed" for over 60 minutes, let the job start
 		(DA.AS_state_ID IN (2, 6) And DA.AS_state_Last_Affected < DateAdd(minute, -60, GetDate()))
 		OR
-		-- If the archive state is "Purge in Progress" or "Purge failed" for over 180 minutes, let the job start
-		(DA.AS_state_ID IN (7, 8) And DA.AS_state_Last_Affected < DateAdd(minute, -120, GetDate()))
+		-- If the archive state is "Purge in Progress" or "Purge failed" for over 60 minutes, let the job start
+		(DA.AS_state_ID IN (7, 8) And DA.AS_state_Last_Affected < DateAdd(minute, -60, GetDate()))
 		Or
 		-- Lastly, let QC_Shew and QC_Mam datasets start if they have been dispositioned (DS_Rating >= 1) and the archive state changed more than 15 minutes ago
 		-- However, exclude QC datasets with an archive state of 6 (Operation Failed) or 7 (Purge In Progress)
