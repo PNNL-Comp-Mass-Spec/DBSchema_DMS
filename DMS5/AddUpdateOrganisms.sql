@@ -27,21 +27,21 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          08/01/2012 mem - Now calling RefreshCachedOrganisms in MT_Main on ProteinSeqs
 **          09/25/2012 mem - Expanded @orgName and @orgDBName to varchar(128)
 **          11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta' 
-**          05/10/2013 mem - Added @NEWTIdentifier
-**          05/13/2013 mem - Now validating @NEWTIdentifier against S_V_CV_NEWT
-**          05/24/2013 mem - Added @NEWTIDList
+**          05/10/2013 mem - Added @newtIdentifier
+**          05/13/2013 mem - Now validating @newtIdentifier against S_V_CV_NEWT
+**          05/24/2013 mem - Added @newtIDList
 **          10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
 **          06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
 **          09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          02/26/2016 mem - Check for @orgName containing a space
-**          03/01/2016 mem - Added @NCBITaxonomyID
-**          03/02/2016 mem - Added @AutoDefineTaxonomy
-**                         - Removed parameter @NEWTIdentifier since superseded by @NCBITaxonomyID
-**          03/03/2016 mem - Now storing @AutoDefineTaxonomy in column Auto_Define_Taxonomy
+**          03/01/2016 mem - Added @ncbiTaxonomyID
+**          03/02/2016 mem - Added @autoDefineTaxonomy
+**                         - Removed parameter @newtIdentifier since superseded by @ncbiTaxonomyID
+**          03/03/2016 mem - Now storing @autoDefineTaxonomy in column Auto_Define_Taxonomy
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
-**          02/06/2017 mem - Auto-update @NEWTIDList to match @NCBITaxonomyID if @NEWTIDList is null or empty
+**          02/06/2017 mem - Auto-update @newtIDList to match @ncbiTaxonomyID if @newtIDList is null or empty
 **          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
@@ -70,10 +70,10 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
     @orgDNATransTabID varchar(6), 
     @orgMitoDNATransTabID varchar(6),
     @orgActive varchar(3),
-    @NEWTIDList varchar(255),               -- If blank, this is auto-populated using @NCBITaxonomyID
-    @NCBITaxonomyID int,                    -- This is the preferred way to define the taxonomy ID for the organism.  NEWT ID is typically identical to taxonomy ID
-    @AutoDefineTaxonomy varchar(12),        -- 'Yes' or 'No'
-    @ID int output,
+    @newtIDList varchar(255),               -- If blank, this is auto-populated using @ncbiTaxonomyID
+    @ncbiTaxonomyID int,                    -- This is the preferred way to define the taxonomy ID for the organism.  NEWT ID is typically identical to taxonomy ID
+    @autoDefineTaxonomy varchar(12),        -- 'Yes' or 'No'
+    @id int output,
     @mode varchar(12) = 'add',              -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -87,8 +87,8 @@ As
     Set @message = ''
 
     Declare @msg varchar(256)
-    Declare @DuplicateTaxologyMsg varchar(512)
-    Declare @MatchCount int
+    Declare @duplicateTaxologyMsg varchar(512)
+    Declare @matchCount int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -197,13 +197,13 @@ As
     Set @orgSpecies = IsNull(@orgSpecies, '')
     Set @orgStrain = IsNull(@orgStrain, '')
     
-    Set @AutoDefineTaxonomy = IsNull(@AutoDefineTaxonomy, 'Yes')
+    Set @autoDefineTaxonomy = IsNull(@autoDefineTaxonomy, 'Yes')
     
     -- Organism ID
-    Set @ID = IsNull(@ID, 0)
+    Set @id = IsNull(@id, 0)
     
-    Set @NEWTIDList = ISNULL(@NEWTIDList, '')
-    If LEN(@NEWTIDList) > 0
+    Set @newtIDList = ISNULL(@newtIDList, '')
+    If LEN(@newtIDList) > 0
     Begin
         CREATE TABLE #NEWTIDs (
             NEWT_ID_Text varchar(24),
@@ -212,13 +212,13 @@ As
         
         INSERT INTO #NEWTIDs (NEWT_ID_Text)
         SELECT Cast(Value as varchar(24))
-        FROM dbo.udfParseDelimitedList(@NEWTIDList, ',', 'AddUpdateOrganisms')
+        FROM dbo.udfParseDelimitedList(@newtIDList, ',', 'AddUpdateOrganisms')
         WHERE IsNull(Value, '') <> ''
         
         -- Look for non-numeric values
         IF Exists (Select * from #NEWTIDs Where Try_Convert(int, NEWT_ID_Text) IS NULL)
         Begin
-            Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @NEWTIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
+            Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @newtIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
             RAISERROR (@msg, 11, 3)
         End
         
@@ -226,51 +226,51 @@ As
         UPDATE #NEWTIDs
         Set NEWT_ID = Try_Convert(int, NEWT_ID_Text)
         
-        Declare @InvalidNEWTIDs varchar(255) = null
+        Declare @invalidNEWTIDs varchar(255) = null
         
-        SELECT @InvalidNEWTIDs = COALESCE(@InvalidNEWTIDs + ', ', '') + #NEWTIDs.NEWT_ID_Text
+        SELECT @invalidNEWTIDs = COALESCE(@invalidNEWTIDs + ', ', '') + #NEWTIDs.NEWT_ID_Text
         FROM #NEWTIDs
              LEFT OUTER JOIN S_V_CV_NEWT
                ON #NEWTIDs.NEWT_ID = S_V_CV_NEWT.identifier
         WHERE S_V_CV_NEWT.identifier IS NULL
 
-        If LEN(ISNULL(@InvalidNEWTIDs, '')) > 0
+        If LEN(ISNULL(@invalidNEWTIDs, '')) > 0
         Begin
-            Set @msg = 'Invalid NEWT ID(s) "' + @InvalidNEWTIDs + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
+            Set @msg = 'Invalid NEWT ID(s) "' + @invalidNEWTIDs + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
             RAISERROR (@msg, 11, 3)
         End
         
     End 
     Else
     Begin
-        -- Auto-define @NEWTIDList using @NCBITaxonomyID though only if the NEWT table has the ID 
+        -- Auto-define @newtIDList using @ncbiTaxonomyID though only if the NEWT table has the ID 
         -- (there are numerous organisms that nave an NCBI Taxonomy ID but not a NEWT ID)
         --
-        If Exists (SELECT * FROM S_V_CV_NEWT WHERE Identifier = Cast(@NCBITaxonomyID as varchar(24)))
+        If Exists (SELECT * FROM S_V_CV_NEWT WHERE Identifier = Cast(@ncbiTaxonomyID as varchar(24)))
         Begin
-            Set @NEWTIDList = Cast(@NCBITaxonomyID as varchar(24))
+            Set @newtIDList = Cast(@ncbiTaxonomyID as varchar(24))
         End
     End
 
-    If IsNull(@NCBITaxonomyID, 0) = 0
-        Set @NCBITaxonomyID = null
+    If IsNull(@ncbiTaxonomyID, 0) = 0
+        Set @ncbiTaxonomyID = null
     Else
     Begin
-        If Not Exists (Select * From [S_V_NCBI_Taxonomy_Cached] Where Tax_ID = @NCBITaxonomyID)
+        If Not Exists (Select * From [S_V_NCBI_Taxonomy_Cached] Where Tax_ID = @ncbiTaxonomyID)
         Begin
-            Set @msg = 'Invalid NCBI Taxonomy ID "' + Convert(varchar(24), @NCBITaxonomyID) + '"; see http://dms2.pnl.gov/ncbi_taxonomy/report'
+            Set @msg = 'Invalid NCBI Taxonomy ID "' + Convert(varchar(24), @ncbiTaxonomyID) + '"; see http://dms2.pnl.gov/ncbi_taxonomy/report'
             RAISERROR (@msg, 11, 3)
         End
     End
     
-    Declare @AutoDefineTaxonomyFlag tinyint
+    Declare @autoDefineTaxonomyFlag tinyint
     
-    If @AutoDefineTaxonomy Like 'Y%'
-        Set @AutoDefineTaxonomyFlag = 1
+    If @autoDefineTaxonomy Like 'Y%'
+        Set @autoDefineTaxonomyFlag = 1
     Else
-        Set @AutoDefineTaxonomyFlag = 0
+        Set @autoDefineTaxonomyFlag = 0
     
-    If @AutoDefineTaxonomyFlag = 1 And IsNull(@NCBITaxonomyID, 0) > 0
+    If @autoDefineTaxonomyFlag = 1 And IsNull(@ncbiTaxonomyID, 0) > 0
     Begin
     
         ---------------------------------------------------
@@ -279,7 +279,7 @@ As
         ---------------------------------------------------
         
         EXEC GetTaxonomyValueByTaxonomyID 
-                @NCBITaxonomyID,
+                @ncbiTaxonomyID,
                 @orgDomain=@orgDomain output,
                 @orgKingdom=@orgKingdom output,
                 @orgPhylum=@orgPhylum output,
@@ -297,15 +297,14 @@ As
     -- Is entry already in database?
     ---------------------------------------------------
 
-    Declare @returnVal int
-    Set @returnVal = 0
+    Declare @existingOrganismID Int = 0
 
     -- cannot create an entry that already exists
     --
     If @mode = 'add'
     Begin
-        execute @returnVal = GetOrganismID @orgName
-        If @returnVal <> 0 
+        execute @existingOrganismID = GetOrganismID @orgName
+        If @existingOrganismID <> 0 
         Begin
             Set @msg = 'Cannot add: Organism "' + @orgName + '" already in database '
             RAISERROR (@msg, 11, 5)
@@ -314,27 +313,26 @@ As
 
     -- cannot update a non-existent entry
     --
-    Declare @ExistingOrgName varchar(128)
-    Declare @ExistingOrgID int
+    Declare @existingOrgName varchar(128)
     
     If @mode = 'update'
     Begin
         --
-        SELECT @ExistingOrgID = Organism_ID, @ExistingOrgName = OG_name
+        SELECT @existingOrganismID = Organism_ID, @existingOrgName = OG_name
         FROM  T_Organisms
-        WHERE (Organism_ID = @ID)
+        WHERE (Organism_ID = @id)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        If @ExistingOrgID = 0 
+        If @existingOrganismID = 0 
         Begin
             Set @msg = 'Cannot update: Organism "' + @orgName + '" is not in database '
             RAISERROR (@msg, 11, 6)
         End
         --
-        If @ExistingOrgName <> @orgName 
+        If @existingOrgName <> @orgName 
         Begin
-            Set @msg = 'Cannot update: Organism name may not be changed from "' + @ExistingOrgName + '"'
+            Set @msg = 'Cannot update: Organism name may not be changed from "' + @existingOrgName + '"'
             RAISERROR (@msg, 11, 7)
         End
     End
@@ -380,41 +378,41 @@ As
     -- with the specified Genus, Species, and Strain
     ---------------------------------------------------
 
-    Set @DuplicateTaxologyMsg = 'Another organism was found with Genus "' + @orgGenus + '", Species "' + @orgSpecies + '", and Strain "' + @orgStrain + '"; if unknown, use "na" for these values'
+    Set @duplicateTaxologyMsg = 'Another organism was found with Genus "' + @orgGenus + '", Species "' + @orgSpecies + '", and Strain "' + @orgStrain + '"; if unknown, use "na" for these values'
 
     If Not (@orgGenus = 'na' AND @orgSpecies = 'na' AND @orgStrain = 'na')
     Begin
-        If @Mode = 'add'
+        If @mode = 'add'
         Begin
             -- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain
-            Set @MatchCount = 0
-            SELECT @MatchCount = COUNT(*) 
+            Set @matchCount = 0
+            SELECT @matchCount = COUNT(*) 
             FROM T_Organisms
             WHERE IsNull(OG_Genus, '') = @orgGenus AND
                   IsNull(OG_Species, '') = @orgSpecies AND
                   IsNull(OG_Strain, '') = @orgStrain
             
-            If @MatchCount <> 0
+            If @matchCount <> 0
             Begin
-                Set @msg = 'Cannot add: ' + @DuplicateTaxologyMsg
+                Set @msg = 'Cannot add: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 8)
             End
         End
         
-        If @Mode = 'update'
+        If @mode = 'update'
         Begin
-            -- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain (ignoring Organism_ID = @ID)
-            Set @MatchCount = 0
-            SELECT @MatchCount = COUNT(*)
+            -- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain (ignoring Organism_ID = @id)
+            Set @matchCount = 0
+            SELECT @matchCount = COUNT(*)
             FROM T_Organisms
             WHERE IsNull(OG_Genus, '') = @orgGenus AND
                   IsNull(OG_Species, '') = @orgSpecies AND
                   IsNull(OG_Strain, '') = @orgStrain AND
-                  Organism_ID <> @ID
+                  Organism_ID <> @id
             
-            If @MatchCount <> 0
+            If @matchCount <> 0
             Begin
-                Set @msg = 'Cannot update: ' + @DuplicateTaxologyMsg
+                Set @msg = 'Cannot update: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 9)
             End
         End
@@ -443,7 +441,7 @@ As
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    If @Mode = 'add'
+    If @mode = 'add'
     Begin
         INSERT INTO T_Organisms (
             OG_name, 
@@ -486,9 +484,9 @@ As
             @iOrgDNATransTabID, 
             @iOrgMitoDNATransTabID,
             @orgActive,
-            @NEWTIDList,
-            @NCBITaxonomyID,
-            @AutoDefineTaxonomyFlag
+            @newtIDList,
+            @ncbiTaxonomyID,
+            @autoDefineTaxonomyFlag
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -501,11 +499,11 @@ As
 
         -- Return ID of newly created entry
         --
-        Set @ID = SCOPE_IDENTITY()
+        Set @id = SCOPE_IDENTITY()
 
         -- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @ID, @CallingUser
+            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
 
     End -- add mode
 
@@ -513,7 +511,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @mode = 'update' 
     Begin
         UPDATE T_Organisms 
         Set 
@@ -534,22 +532,22 @@ As
             OG_DNA_Translation_Table_ID = @iOrgDNATransTabID, 
             OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,            
             OG_Active = @orgActive,
-            NEWT_ID_List = @NEWTIDList,
-            NCBI_Taxonomy_ID = @NCBITaxonomyID,
-            Auto_Define_Taxonomy = @AutoDefineTaxonomyFlag
-        WHERE (Organism_ID = @ID)
+            NEWT_ID_List = @newtIDList,
+            NCBI_Taxonomy_ID = @ncbiTaxonomyID,
+            Auto_Define_Taxonomy = @autoDefineTaxonomyFlag
+        WHERE (Organism_ID = @id)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
-            Set @message = 'Update operation failed: "' + @ID + '"'
+            Set @message = 'Update operation failed: "' + @id + '"'
             RAISERROR (@message, 11, 11)
         End
         
         -- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @ID, @CallingUser
+            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
 
     End -- update mode
 
@@ -573,10 +571,10 @@ As
 
     End Try
     Begin Catch
-        Declare @LogMessage varchar(256)
-        EXEC FormatErrorMessage @message=@LogMessage output, @myError=@myError output
+        Declare @logMessage varchar(256)
+        EXEC FormatErrorMessage @message=@logMessage output, @myError=@myError output
         
-        exec PostLogEntry 'Error', @LogMessage, 'AddUpdateOrganisms'
+        exec PostLogEntry 'Error', @logMessage, 'AddUpdateOrganisms'
         
     End Catch
     
