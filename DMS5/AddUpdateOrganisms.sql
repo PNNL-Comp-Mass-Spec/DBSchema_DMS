@@ -48,6 +48,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/23/2017 mem - Check for the protein collection specified by @orgDBName being a valid name, but inactive
 **          04/09/2018 mem - Auto-define @orgStorageLocation if empty
+**          06/26/2019 mem - Remove DNA translation table arguments since unused
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -67,8 +68,6 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
     @orgGenus varchar(128),
     @orgSpecies varchar(128),
     @orgStrain varchar(128),
-    @orgDNATransTabID varchar(6), 
-    @orgMitoDNATransTabID varchar(6),
     @orgActive varchar(3),
     @newtIDList varchar(255),               -- If blank, this is auto-populated using @ncbiTaxonomyID
     @ncbiTaxonomyID int,                    -- This is the preferred way to define the taxonomy ID for the organism.  NEWT ID is typically identical to taxonomy ID
@@ -179,18 +178,6 @@ As
     If Len(@orgActive) = 0 Or Try_Convert(Int, @orgActive) Is Null
     Begin
         RAISERROR ('Organism active state must be 0 or 1', 11, 1)
-    End
-
-    Set @orgDNATransTabID = IsNull(@orgDNATransTabID, '0')
-    If Len(@orgDNATransTabID) = 0 Or Try_Convert(Int, @orgDNATransTabID) Is Null
-    Begin
-        RAISERROR ('DNA Translation Table ID must be an integer', 11, 2)
-    End
-
-    Set @orgMitoDNATransTabID = IsNull(@orgMitoDNATransTabID, '0')
-    If Len(@orgMitoDNATransTabID) = 0 Or Try_Convert(Int, @orgMitoDNATransTabID) Is Null
-    Begin
-        RAISERROR ('Mito DNA Translation Table ID must be an integer', 11, 3)
     End
 
     Set @orgGenus = IsNull(@orgGenus, '')
@@ -336,24 +323,6 @@ As
             RAISERROR (@msg, 11, 7)
         End
     End
-    
-    ---------------------------------------------------
-    -- resolve DNA translation table IDs
-    ---------------------------------------------------
-    Declare @iOrgDNATransTabID int
-    Set @iOrgDNATransTabID = Null
-    If @orgDNATransTabID <> ''
-    Begin
-        Set @iOrgDNATransTabID = convert(int, @orgDNATransTabID)
-    End
-    --
-    Declare @iOrgMitoDNATransTabID int
-    Set @iOrgMitoDNATransTabID = null
-    If @orgMitoDNATransTabID <> ''
-    Begin
-        Set @iOrgMitoDNATransTabID = convert(int, @orgMitoDNATransTabID)
-    End
-
 
     ---------------------------------------------------
     -- If Genus, Species, and Strain are unknown, na, or none,
@@ -459,8 +428,6 @@ As
             OG_Genus, 
             OG_Species, 
             OG_Strain,
-            OG_DNA_Translation_Table_ID, 
-            OG_Mito_DNA_Translation_Table_ID,
             OG_Active,
             NEWT_ID_List,
             NCBI_Taxonomy_ID,
@@ -481,8 +448,6 @@ As
             @orgGenus, 
             @orgSpecies, 
             @orgStrain,
-            @iOrgDNATransTabID, 
-            @iOrgMitoDNATransTabID,
             @orgActive,
             @newtIDList,
             @ncbiTaxonomyID,
@@ -529,8 +494,6 @@ As
             OG_Genus = @orgGenus, 
             OG_Species = @orgSpecies, 
             OG_Strain = @orgStrain,
-            OG_DNA_Translation_Table_ID = @iOrgDNATransTabID, 
-            OG_Mito_DNA_Translation_Table_ID = @iOrgMitoDNATransTabID,            
             OG_Active = @orgActive,
             NEWT_ID_List = @newtIDList,
             NCBI_Taxonomy_ID = @ncbiTaxonomyID,
