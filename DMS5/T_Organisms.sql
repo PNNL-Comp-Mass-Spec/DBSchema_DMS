@@ -65,6 +65,10 @@ CREATE NONCLUSTERED INDEX [IX_T_Organisms_OG_Created] ON [dbo].[T_Organisms]
 GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_created]  DEFAULT (getdate()) FOR [OG_created]
 GO
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_DNA_Translation_Table_ID]  DEFAULT ((0)) FOR [OG_DNA_Translation_Table_ID]
+GO
+ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Mito_DNA_Translation_Table_ID]  DEFAULT ((0)) FOR [OG_Mito_DNA_Translation_Table_ID]
+GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_OG_Active]  DEFAULT ((1)) FOR [OG_Active]
 GO
 ALTER TABLE [dbo].[T_Organisms] ADD  CONSTRAINT [DF_T_Organisms_Auto_Define_Taxonomy]  DEFAULT ((1)) FOR [Auto_Define_Taxonomy]
