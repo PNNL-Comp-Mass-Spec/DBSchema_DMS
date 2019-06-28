@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[UpdateExperimentNameForQCDatasets]
 /****************************************************
 **
@@ -28,7 +27,6 @@ As
 
     -- Format the date in the form 2018-08-09
     Declare @dateStamp varchar(32) = Substring(Convert(varchar(32), GetDate(), 120), 1, 10)
-
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -61,10 +59,10 @@ As
     
     ---------------------------------------------------
     -- Find the QC experiments to process
-    -- This list is modelled after the list in UDF DatasetPreference
+    -- This list is modelled after the list in UDF GetDatasetPriority
     ---------------------------------------------------
 
-    INSERT INTO #Tmp_QCExperiments( ExpID, Experiment )
+    INSERT INTO #Tmp_QCExperiments (ExpID, Experiment )
     SELECT Exp_ID, Experiment_Num
     FROM T_Experiments
     WHERE (Experiment_Num LIKE 'QC[_-]Shew[_-][0-9][0-9][_-][0-9][0-9]' OR
@@ -72,10 +70,7 @@ As
            Experiment_Num LIKE 'QC[_]Shew[_]TEDDY%' OR
            Experiment_Num LIKE 'QC[_]Mam%' OR
            Experiment_Num LIKE 'QC[_]PP[_]MCF-7%'
-          ) AND Ex_Created >= '1/1/2016' 
-            AND Experiment_Num <> 'QC_ShewIntact_17' 
-          OR
-          Experiment_Num = 'QC_Mam_Intact_Test';
+          ) AND Ex_Created >= '1/1/2018'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount;
 
