@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakePrepLCCaptureJob
+
+CREATE PROCEDURE [dbo].[MakePrepLCCaptureJob]
 /****************************************************
 **
 **	Desc: 
@@ -18,6 +19,7 @@ CREATE PROCEDURE MakePrepLCCaptureJob
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          06/27/2019 mem - Change priority from 1 to 4
 **
 *****************************************************/
 (
@@ -33,12 +35,12 @@ CREATE PROCEDURE MakePrepLCCaptureJob
 AS
 	set nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
-	DECLARE @priority int = 1
+	Declare @priority int = 4
 
-	declare @DebugMode tinyint = 0
+	Declare @DebugMode tinyint = 0
 
 	BEGIN TRY
 
@@ -49,22 +51,22 @@ AS
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'MakePrepLCCaptureJob', @raiseError = 1;
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- get canonical name for storage folder
 	---------------------------------------------------
 	--
-	DECLARE @storageFolderName VARCHAR(128)
+	Declare @storageFolderName VARCHAR(128)
 	SET @storageFolderName = dbo.S_GetDMSFileStoragePath('', @ID, 'prep_lc')
 
 	---------------------------------------------------
 	-- Table variable to hold job parameters
 	---------------------------------------------------
 	--
-	DECLARE @paramTab TABLE
+	Declare @paramTab TABLE
     (
       [Section] VARCHAR(128),
       [Name] VARCHAR(128),
@@ -114,7 +116,7 @@ AS
 	---------------------------------------------------
 	-- get xml for contents of temp table
 	---------------------------------------------------
-	DECLARE @jobParamXML xml
+	Declare @jobParamXML xml
 	--
 	SET @jobParamXML = (SELECT * FROM @paramTab Param ORDER BY [Name], [Value] FOR XML AUTO )
 
@@ -123,11 +125,11 @@ AS
 	---------------------------------------------------
 	IF @DebugMode = 0
 	BEGIN 
-		declare @scriptName varchar(64)
+		Declare @scriptName varchar(64)
 		SET @scriptName = 'HPLCSequenceCapture'
 		--
-		DECLARE @resultsFolderName varchar(128)
-		/**/
+		Declare @resultsFolderName varchar(128)
+
 		exec @myError = MakeLocalJobInBroker
 					@scriptName,
 					@priority,

@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 /****************************************************
 **
@@ -24,6 +23,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 **          08/28/2017 mem - Update status messages
 **          03/06/2018 mem - Also look for ArchiveUpdate jobs on hold when checking for an existing archive update task
 **          05/17/2019 mem - Switch from folder to directory
+**          06/27/2019 mem - Default job priority is now 4; higher priority is now 3
 **    
 *****************************************************/
 (
@@ -161,8 +161,8 @@ As
                @resultsDirectoryName AS Results_Folder_Name,
                'Created manually using MakeNewArchiveUpdateJob' AS [Comment],
                CASE
-                   WHEN @resultsDirectoryName = '' THEN 2
-                   ELSE 3
+                   WHEN @resultsDirectoryName = '' THEN 3
+                   ELSE 4
                END AS Priority
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
 **
 **  Auth:   grk
 **  Date:   01/08/2010 grk - Initial release 
-**          10/24/2014 mem - Changed priority to 2
+**          10/24/2014 mem - Changed priority to 2 (since we want archive jobs to have priority over non-archive jobs)
 **          09/17/2015 mem - Added parameter @infoOnly
 **          06/13/2018 mem - Remove unused parameter @debugMode
+**          06/27/2019 mem - Changed priority to 3 (since default job priority is now 4)
 **    
 *****************************************************/
 (
@@ -104,7 +105,7 @@ As
                    'Created by import from DMS' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   2 AS Priority
+                   3 AS Priority
             FROM V_DMS_Get_New_Archive_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID AND
@@ -127,7 +128,7 @@ As
                    'Created by import from DMS' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   2 AS Priority
+                   3 AS Priority
             FROM V_DMS_Get_New_Archive_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID AND
