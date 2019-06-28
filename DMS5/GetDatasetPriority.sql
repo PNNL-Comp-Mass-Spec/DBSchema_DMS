@@ -1,23 +1,21 @@
-/****** Object:  UserDefinedFunction [dbo].[DatasetPreference] ******/
+/****** Object:  UserDefinedFunction [dbo].[GetDatasetPriority] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[DatasetPreference]
+CREATE FUNCTION [dbo].[GetDatasetPriority]
 /****************************************************
 **
 **  Desc: 
-**       Determines if dataset name warrants preferential processing priority
+**       Determines if the dataset name warrants preferential processing priority
 **       This procedure is used by AddNewDataset to auto-release QC_Shew datasets
 **
 **       If either the dataset name or the experiment name matches one of the
 **       filters below, the Interest_Rating is set to 5 (Released)
 **
-**  Return values: 1 if preferred, 0 if not
-**
-**  Parameters:
-**    
+**  Return values: 1 if highest priority; 3 if medium priority, 5 if low priority
+**                 0 to use the default priority
 **
 **  Auth:   grk
 **  Date:   02/10/2006
@@ -28,6 +26,7 @@ CREATE FUNCTION [dbo].[DatasetPreference]
 **          12/18/2014 mem - Replace [_] with [_-]
 **          05/07/2015 mem - Added QC_Shew_TEDDY
 **          08/08/2018 mem - Added QC_Mam and QC_PP_MCF-7
+**          06/27/2019 mem - Renamed from DatasetPreference to GetDatasetPriority
 **    
 *****************************************************/
 (
@@ -58,7 +57,7 @@ END
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DatasetPreference] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetDatasetPriority] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DatasetPreference] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[GetDatasetPriority] TO [public] AS [dbo]
 GO

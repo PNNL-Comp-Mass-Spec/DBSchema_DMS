@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[AddNewDataset]
 /****************************************************
 **
@@ -36,7 +37,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
 **          06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
 **          12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
-**          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.DatasetPreference() to see if we should auto-release the dataset
+**          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.GetDatasetPriority() to see if we should auto-release the dataset
 **          05/29/2015 mem - Added support for "Capture Subfolder"
 **          06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
 **          11/21/2016 mem - Added parameter @logDebugMessages
@@ -181,8 +182,8 @@ AS
     -- Check for QC or Blank datasets
      ---------------------------------------------------
 
-    If dbo.DatasetPreference(@datasetName) <> 0 OR 
-       dbo.DatasetPreference(@experimentName) <> 0 OR
+    If dbo.GetDatasetPriority(@datasetName) > 0 OR 
+       dbo.GetDatasetPriority(@experimentName) > 0 OR
        (@datasetName LIKE 'Blank%' AND Not @datasetName LIKE '%-bad')
     Begin
         If @interestRating Not In ('Not Released', 'No Interest') And @interestRating Not Like 'No Data%'
