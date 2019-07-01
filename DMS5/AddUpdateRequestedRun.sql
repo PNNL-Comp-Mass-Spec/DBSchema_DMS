@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
@@ -86,6 +85,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @reqName when creating a new requested run
 **          12/10/2018 mem - Report an error if the comment contains 'experiment_group/show/0000'
+**          07/01/2019 mem - Allow @workPackage to be none if the Request is not active and either the Usage Type is Maintenance or the name starts with "AutoReq_"
 **
 *****************************************************/
 (
@@ -93,7 +93,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @experimentNum varchar(64),
     @requestorPRN varchar(64),
     @instrumentName varchar(64),                -- Instrument group; could also contain "(lookup)"
-    @workPackage varchar(50),                    -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
+    @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
     @msType varchar(20),
     @instrumentSettings varchar(512) = 'na',
     @wellplateNum varchar(64) = 'na',
@@ -102,20 +102,20 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @comment varchar(1024) = 'na',
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50),
-    @eusUsersList varchar(1024) = '',            -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
-    @mode varchar(12) = 'add',                    -- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
+    @eusUsersList varchar(1024) = '',           -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
+    @mode varchar(12) = 'add',                  -- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
     @request int output,
     @message varchar(512) output,
-    @secSep varchar(64) = 'LC-Formic_100min',    -- Separation group
+    @secSep varchar(64) = 'LC-Formic_100min',   -- Separation group
     @MRMAttachment varchar(128),
-    @status VARCHAR(24) = 'Active',                -- 'Active', 'Inactive', 'Completed'
-    @SkipTransactionRollback tinyint = 0,        -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
-    @AutoPopulateUserListIfBlank tinyint = 0,    -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
+    @SkipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
+    @AutoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
     @callingUser varchar(128) = '',
     @VialingConc varchar(32) = null,
     @VialingVol varchar(32) = null,
     @stagingLocation varchar(64) = null,
-    @requestIDForUpdate int = null,                -- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
+    @requestIDForUpdate int = null,             -- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
     @logDebugMessages tinyint = 0
 )
 As
@@ -658,6 +658,11 @@ As
         Set @allowNoneWP = 1
     End
     
+    If @status <> ('Active') And (@eusUsageType = 'Maintenance' Or @reqName Like 'AutoReq[_]%')
+    Begin
+        Set @allowNoneWP = 1
+    End
+
     exec @myError = ValidateWP
                         @workPackage,
                         @allowNoneWP,
