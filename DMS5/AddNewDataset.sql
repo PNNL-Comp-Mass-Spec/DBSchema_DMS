@@ -61,7 +61,7 @@ AS
     Declare @hDoc int
     Declare @dsid int
 
-    Declare @tmp int
+    Declare @existingRequestID int
 
     Declare @internalStandards varchar(64)
     Declare @addUpdateTimeStamp datetime
@@ -151,30 +151,30 @@ AS
         goto DONE
     End
 
-     ---------------------------------------------------
-    -- Get agruments from parsed parameters
-     ---------------------------------------------------
+    ---------------------------------------------------
+    -- Get arguments from parsed parameters
+    ---------------------------------------------------
 
-    SELECT    @datasetName        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name' 
-    SELECT    @experimentName     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name' 
-    SELECT    @instrumentName     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name' 
-    SELECT    @captureSubfolder   = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder' 
-    SELECT    @separationType     = paramValue FROM #TPAR WHERE paramName = 'Separation Type' 
-    SELECT    @lcCartName         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name' 
+    SELECT    @datasetName        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name'
+    SELECT    @experimentName     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name'
+    SELECT    @instrumentName     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name'
+    SELECT    @captureSubfolder   = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder'
+    SELECT    @separationType     = paramValue FROM #TPAR WHERE paramName = 'Separation Type'
+    SELECT    @lcCartName         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
     SELECT    @lcCartConfig       = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
-    SELECT    @lcColumn           = paramValue FROM #TPAR WHERE paramName = 'LC Column' 
-    SELECT    @wellplateNumber    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number' 
-    SELECT    @wellNumber         = paramValue FROM #TPAR WHERE paramName = 'Well Number' 
-    SELECT    @datasetType        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type' 
-    SELECT    @operatorPRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)' 
-    SELECT    @comment            = paramValue FROM #TPAR WHERE paramName = 'Comment' 
-    SELECT    @interestRating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating' 
-    SELECT    @requestID          = paramValue FROM #TPAR WHERE paramName = 'Request' 
-    SELECT    @emslUsageType      = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type' 
-    SELECT    @emslProposalID     = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID' 
-    SELECT    @emslUsersList      = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List' 
-    SELECT    @runStart           = paramValue FROM #TPAR WHERE paramName = 'Run Start' 
-    SELECT    @runFinish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish' 
+    SELECT    @lcColumn           = paramValue FROM #TPAR WHERE paramName = 'LC Column'
+    SELECT    @wellplateNumber    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
+    SELECT    @wellNumber         = paramValue FROM #TPAR WHERE paramName = 'Well Number'
+    SELECT    @datasetType        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
+    SELECT    @operatorPRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)'
+    SELECT    @comment            = paramValue FROM #TPAR WHERE paramName = 'Comment'
+    SELECT    @interestRating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
+    SELECT    @requestID          = paramValue FROM #TPAR WHERE paramName = 'Request'
+    SELECT    @emslUsageType      = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
+    SELECT    @emslProposalID     = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
+    SELECT    @emslUsersList      = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
+    SELECT    @runStart           = paramValue FROM #TPAR WHERE paramName = 'Run Start'
+    SELECT    @runFinish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
     SELECT    @datasetCreatorPRN  = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
     
@@ -335,9 +335,9 @@ AS
     -- Find request associated with dataset
     ---------------------------------------------------
     
-    Set @tmp = 0
+    Set @existingRequestID = 0
     --
-    SELECT @tmp = ID
+    SELECT @existingRequestID = ID
     FROM T_Requested_Run
     WHERE (DatasetID = @dsid)
     --
@@ -350,9 +350,8 @@ AS
         return 51036
     End
     
-    If @tmp <> 0
-        Set @requestID = @tmp
-    
+    If @existingRequestID <> 0
+        Set @requestID = @existingRequestID
     
     If Len(@datasetCreatorPRN) > 0
     Begin -- <a>
