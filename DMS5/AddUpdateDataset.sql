@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[AddUpdateDataset]
 /****************************************************
 **
@@ -115,6 +116,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @eusUsageType varchar(50),
     @eusUsersList varchar(1024) = '',
     @requestID int = 0,                         -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'; ignored if @mode is 'update' or 'check_update'
+    @workPackage varchar(50) = 'none',          -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'
     @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
     @message varchar(512) output,
     @callingUser varchar(128) = '',
@@ -140,7 +142,6 @@ As
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
 
-    Declare @workPackage varchar(12) = 'none'            
     Declare @reqName varchar(128)
     Declare @reqRunInstSettings varchar(512)
     Declare @reqRunComment varchar(1024)
@@ -158,9 +159,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateDataset', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY 
 
@@ -265,9 +266,10 @@ As
     If IsNull(@wellNum, '') IN ('', 'na')
         Set @wellNum = NULL
 
+    Set @workPackage   = IsNull(@workPackage, '') 
     Set @eusProposalID = IsNull(@eusProposalID, '')
-    Set @eusUsageType = IsNull(@eusUsageType, '')
-    Set @eusUsersList = IsNull(@eusUsersList, '')
+    Set @eusUsageType  = IsNull(@eusUsageType, '')
+    Set @eusUsersList  = IsNull(@eusUsersList, '')
     
     Set @requestID = IsNull(@requestID, 0)
     Set @AggregationJobDataset = IsNull(@AggregationJobDataset, 0)    
@@ -864,8 +866,7 @@ As
 
             -- get experiment ID from scheduled run
             --
-            Declare @reqExperimentID int
-            Set @reqExperimentID = 0
+            Declare @reqExperimentID int = 0
             --
             SELECT @reqExperimentID = Exp_ID
             FROM T_Requested_Run
@@ -999,6 +1000,7 @@ As
             @comment,
             @rating,
             @requestID,
+            @workPackage,
             @eusUsageType,
             @eusProposalID,
             @eusUsersList,
@@ -1148,7 +1150,10 @@ As
             If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
                 Set @warning = @message
 
-            EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+            If @workPackage In ('', 'none', 'na', '(lookup)')
+            Begin
+                EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+            End
 
             Set @reqName = 'AutoReq_' + @datasetNum
             

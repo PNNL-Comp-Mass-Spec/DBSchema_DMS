@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[AddNewDataset]
 /****************************************************
 **
@@ -44,6 +43,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          02/23/2017 mem - Added support for "LC Cart Config"
 **          08/18/2017 mem - Change @captureSubfolder to '' if it is the same as @datasetName
 **          06/13/2019 mem - Leave the dataset rating as 'Not Released', 'No Data (Blank/Bad)', or 'No Interest' for QC datasets
+**          07/02/2019 mem - Add support for parameter "Work Package" in the XML file
 **    
 *****************************************************/
 (
@@ -88,6 +88,7 @@ AS
         @comment            varchar(512)  = '',
         @interestRating     varchar(32)   = '',
         @requestID          int           = 0,      -- Request ID; this might get updated by AddUpdateDataset
+        @workPackage        varchar(50)   = '',
         @emslUsageType      varchar(50)   = '',
         @emslProposalID     varchar(10)   = '',
         @emslUsersList      varchar(1024) = '',
@@ -170,6 +171,7 @@ AS
     SELECT    @comment            = paramValue FROM #TPAR WHERE paramName = 'Comment'
     SELECT    @interestRating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
     SELECT    @requestID          = paramValue FROM #TPAR WHERE paramName = 'Request'
+    SELECT    @workPackage        = paramValue FROM #TPAR WHERE paramName = 'Work Package'
     SELECT    @emslUsageType      = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
     SELECT    @emslProposalID     = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
     SELECT    @emslUsersList      = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
@@ -285,6 +287,7 @@ AS
                         @emslUsageType,
                         @emslUsersList,
                         @requestID,
+                        @workPackage,
                         @mode,
                         @message output,
                         @captureSubfolder=@captureSubfolder,
