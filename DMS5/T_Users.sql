@@ -63,9 +63,10 @@ ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_U_comment]  DEFAULT ('')
 GO
 ALTER TABLE [dbo].[T_Users] ADD  CONSTRAINT [DF_T_Users_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
-ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_User_Status] CHECK  (([U_Status]='Inactive' OR [U_Status]='Active'))
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_Users_T_User_Status] FOREIGN KEY([U_Status])
+REFERENCES [dbo].[T_User_Status] ([User_Status])
 GO
-ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_User_Status]
+ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [FK_T_Users_T_User_Status]
 GO
 ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Active] CHECK  (([U_Active]='N' OR [U_Active]='Y'))
 GO
