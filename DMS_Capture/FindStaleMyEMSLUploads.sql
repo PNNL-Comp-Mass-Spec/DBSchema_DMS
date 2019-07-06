@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 **
 **  Auth:   mem
 **  Date:   05/20/2019 mem - Initial version
+**          07/01/2019 mem - Log details of entries over 1 year old that will have ErrorCode set to 101
 **    
 *****************************************************/
 (
@@ -153,6 +154,71 @@ As
             DELETE FROM #Tmp_StaleUploads
             WHERE RetrySucceeded = 1
         End
+
+        -- We keep seeing really old uploads that should already have a non-zero error code
+        -- getting inserted into #Tmp_StaleUploads and then being logged into T_Log_Entries
+        -- There should not be any records that are old, unverified, and have an ErrorCode of zero
+
+        -- Log details of the first five uploads that were entered over 1 year ago and yet are in #Tmp_StaleUploads
+
+        Declare @iteration Int = 0
+        Declare @entryCountToLog Int = 5
+
+        Declare @subFolder varchar(255)
+        Declare @fileCountNew Int
+        Declare @fileCountUpdated Int 
+        Declare @bytes bigint
+        Declare @verifed int
+        Declare @ingestStepsCompleted int
+        Declare @errorCode int
+        Declare @entered Datetime
+        Declare @logMessage Varchar(500)
+
+        While @iteration < @entryCountToLog
+        Begin -- <a>
+            Select Top 1 @entryID = Entry_ID
+            From #Tmp_StaleUploads
+            Where Entry_ID > @entryID And Entered < DateAdd(Day, -365, GetDate())
+            Order By Entry_ID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+            Begin
+                Set @iteration = @entryCountToLog + 1
+            End
+            Else
+            Begin -- <b>
+                SELECT @job = Job,
+                       @subFolder = Subfolder,
+                       @fileCountNew = FileCountNew,
+                       @fileCountUpdated = FileCountUpdated,
+                       @bytes = Bytes,
+                       @verifed = Verified,
+                       @ingestStepsCompleted = Ingest_Steps_Completed,
+                       @errorCode = ErrorCode,
+                       @entered = Entered
+                FROM T_MyEMSL_Uploads
+                WHERE Entry_ID = @entryID
+
+                Set @logMessage = 
+                        'Details of an old MyEMSL upload entry to be marked stale; ' + 
+                        'Entry ID: ' + Cast(@entryID As Varchar(12)) + 
+                        ', Job: ' +  Cast(@job As Varchar(12)) +
+                        ', Subfolder: ' + @subFolder +
+                        ', FileCountNew: ' +  Cast(@fileCountNew as varchar(12)) +
+                        ', FileCountUpdated: ' +  Cast(@fileCountUpdated  as varchar(12)) +
+                        ', Bytes: ' +  Cast(@bytes as varchar(12)) +
+                        ', Verified: ' +  Cast(@verifed as varchar(12)) +
+                        ', IngestStepsCompleted: ' + Coalesce(Cast(@ingestStepsCompleted as varchar(12)), 'Null') +
+                        ', ErrorCode: ' +  Cast(@errorCode as varchar(12)) +
+                        ', Entered: ' +  Convert(Varchar(32), @entered, 120)
+
+                Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
+
+                Set @iteration = @iteration + 1
+            End -- </b>    
+        End -- </a>
 
         -- Update uploads where a successful retry does not exist
         --
