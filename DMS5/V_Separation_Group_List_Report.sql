@@ -4,12 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Separation_Group_List_Report] as
-SELECT Sep_Group AS Separation_Group,
-       Comment,
-       Active,
-	   Sample_Prep_Visible
-FROM T_Separation_Group
+CREATE View [dbo].[V_Separation_Group_List_Report] as
+SELECT SG.Sep_Group AS Separation_Group,
+       SG.[Comment],
+       SG.Active,
+       SG.Sample_Prep_Visible,
+       Count(SS.SS_ID) AS Separation_Types
+FROM T_Separation_Group SG
+     LEFT OUTER JOIN T_Secondary_Sep SS
+       ON SG.Sep_Group = SS.Sep_Group
+GROUP BY SG.Sep_Group, SG.[Comment], SG.Active, SG.Sample_Prep_Visible
 
 
 GO
