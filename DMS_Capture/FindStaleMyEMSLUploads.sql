@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 /****************************************************
 **
@@ -16,6 +17,8 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 **  Auth:   mem
 **  Date:   05/20/2019 mem - Initial version
 **          07/01/2019 mem - Log details of entries over 1 year old that will have ErrorCode set to 101
+**          07/08/2019 mem - Fix bug updating RetrySucceeded
+**                         - Pass @logMessage to PostLogEntry
 **    
 *****************************************************/
 (
@@ -104,7 +107,6 @@ As
                              INNER JOIN T_MyEMSL_Uploads Uploads
                                ON Stale.Dataset_ID = Uploads.Dataset_ID AND
                                   Stale.Subdirectory = Uploads.Subfolder AND
-                                  Uploads.Job > Stale.Job AND
                                   Uploads.Verified > 0 )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -174,6 +176,7 @@ As
         Declare @entered Datetime
         Declare @logMessage Varchar(500)
 
+        Set @entryID = 0
         While @iteration < @entryCountToLog
         Begin -- <a>
             Select Top 1 @entryID = Entry_ID
@@ -214,7 +217,8 @@ As
                         ', ErrorCode: ' +  Cast(@errorCode as varchar(12)) +
                         ', Entered: ' +  Convert(Varchar(32), @entered, 120)
 
-                Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
+
+                Exec PostLogEntry 'Error', @logMessage, 'FindStaleMyEMSLUploads'
 
                 Set @iteration = @iteration + 1
             End -- </b>    
