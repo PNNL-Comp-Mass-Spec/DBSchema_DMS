@@ -62,7 +62,7 @@ As
         Entry_ID Int Not Null,
         Job Int Not Null,
         Dataset_ID Int Not Null,
-        Subdirectory Varchar(255) Not Null,
+        Subdirectory varchar(255) Not Null,
         Entered Datetime,
         RetrySucceeded tinyint
     )
@@ -123,7 +123,7 @@ As
         -- Preview tasks to update
         ---------------------------------------------------
 
-        SELECT 'Stale: ' + Cast(DateDiff(Day, Stale.Entered, GetDate()) As Varchar(12)) + ' days old' As Message,
+        SELECT 'Stale: ' + Cast(DateDiff(Day, Stale.Entered, GetDate()) As varchar(12)) + ' days old' As Message,
                Stale.RetrySucceeded As [Retry Succeeded],
                Uploads.*
         FROM V_MyEMSL_Uploads Uploads
@@ -174,7 +174,7 @@ As
         Declare @ingestStepsCompleted int
         Declare @errorCode int
         Declare @entered Datetime
-        Declare @logMessage Varchar(500)
+        Declare @logMessage varchar(500)
 
         Set @entryID = 0
         While @iteration < @entryCountToLog
@@ -206,17 +206,16 @@ As
 
                 Set @logMessage = 
                         'Details of an old MyEMSL upload entry to be marked stale; ' + 
-                        'Entry ID: ' + Cast(@entryID As Varchar(12)) + 
-                        ', Job: ' +  Cast(@job As Varchar(12)) +
-                        ', Subfolder: ' + @subFolder +
-                        ', FileCountNew: ' +  Cast(@fileCountNew as varchar(12)) +
-                        ', FileCountUpdated: ' +  Cast(@fileCountUpdated  as varchar(12)) +
-                        ', Bytes: ' +  Cast(@bytes as varchar(12)) +
-                        ', Verified: ' +  Cast(@verifed as varchar(12)) +
-                        ', IngestStepsCompleted: ' + Coalesce(Cast(@ingestStepsCompleted as varchar(12)), 'Null') +
-                        ', ErrorCode: ' +  Cast(@errorCode as varchar(12)) +
-                        ', Entered: ' +  Convert(Varchar(32), @entered, 120)
-
+                        'Entry ID: ' + Cast(@entryID As varchar(12)) + 
+                        ', Job: ' +  Cast(@job As varchar(12)) +
+                        ', Subfolder: ' + Coalesce(@subFolder, 'Null') +
+                        ', FileCountNew: ' +  Cast(@fileCountNew As varchar(12)) +
+                        ', FileCountUpdated: ' +  Cast(@fileCountUpdated As varchar(12)) +
+                        ', Bytes: ' +  Cast(@bytes As varchar(12)) +
+                        ', Verified: ' +  Cast(@verifed As varchar(12)) +
+                        ', IngestStepsCompleted: ' + Coalesce(Cast(@ingestStepsCompleted As varchar(12)), 'Null') +
+                        ', ErrorCode: ' +  Cast(@errorCode As varchar(12)) +
+                        ', Entered: ' +  Convert(varchar(32), @entered, 120)
 
                 Exec PostLogEntry 'Error', @logMessage, 'FindStaleMyEMSLUploads'
 
@@ -241,8 +240,8 @@ As
             FROM #Tmp_StaleUploads
 
             -- MyEMSL upload task 1625978 for job 3773650 has been unverified for over 45 days; ErrorCode set to 101
-            Set @message = 'MyEMSL upload task ' + Cast(@entryID As Varchar(12)) + 
-                           ' for job '  + Cast(@job As Varchar(12)) + ' has been'
+            Set @message = 'MyEMSL upload task ' + Cast(@entryID As varchar(12)) + 
+                           ' for job '  + Cast(@job As varchar(12)) + ' has been'
         End
         
         If @myRowCount > 1
@@ -262,7 +261,7 @@ As
 
         If @myRowCount > 0
         Begin
-            Set @message = @message + ' unverified for over ' + Cast(@staleUploadDays As Varchar(12)) + ' days; ErrorCode set to 101' 
+            Set @message = @message + ' unverified for over ' + Cast(@staleUploadDays As varchar(12)) + ' days; ErrorCode set to 101' 
             Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
         End
 
