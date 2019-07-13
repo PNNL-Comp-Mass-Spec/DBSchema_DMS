@@ -75,6 +75,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          04/19/2017 mem - Validate the settings file for SplitFasta tools
 **          12/06/2017 mem - Add parameter @allowNewDatasets
 **          07/19/2018 mem - Increase the threshold for requiring SplitFASTA searches from 400 MB to 600 MB
+**          07/11/2019 mem - Auto-change parameter file names from MSGFDB_ to MSGFPlus_
 **
 *****************************************************/
 (
@@ -323,7 +324,12 @@ As
     set @result = 0
     --
     if @parmFileName <> 'na'
-    begin
+    Begin
+        If @parmFileName Like 'MSGFDB[_]%'
+        Begin
+            Set @parmFileName = 'MSGFPlus_' + Substring(@parmFileName, 8, 500)
+        End
+
         if Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid <> 0))
         Begin
             -- The specified parameter file is valid
