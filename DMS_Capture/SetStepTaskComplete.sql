@@ -59,9 +59,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
     
     ---------------------------------------------------
     -- Get current state of this job step
@@ -226,8 +226,8 @@ As
 
     If @stepTool In ('ArchiveUpdate', 'ArchiveUpdateTest', 'DatasetArchive') AND @evaluationCode IN (6, 7)
     Begin
-        -- If @evaluationCode = 6 then we copied data to Aurora via FTP but did not upload to MyEMSL
-        -- If @evaluationCode = 7 then we uploaded data to MyEMSL, but there were no new files to upload, so there is nothing to verify
+        -- If @evaluationCode = 6, we copied data to Aurora via FTP but did not upload to MyEMSL
+        -- If @evaluationCode = 7, we uploaded data to MyEMSL, but there were no new files to upload, so there is nothing to verify
         -- In either case, skip the ArchiveVerify and ArchiveStatusCheck steps for this job (if they exist)
         
         UPDATE T_Job_Steps
