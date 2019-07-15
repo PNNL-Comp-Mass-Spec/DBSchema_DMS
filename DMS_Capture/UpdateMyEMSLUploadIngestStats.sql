@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          07/12/2017 mem - Update TransactionId if null yet Ingest_Steps_Completed and ErrorCode are unchanged
 **          08/01/2017 mem - Use THROW instead of RAISERROR
+**          07/15/2019 mem - Filter on both StatusNum and Dataset_ID when updating T_MyEMSL_Uploads
 **    
 *****************************************************/
 (
@@ -28,13 +29,13 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
     @ingestStepsCompleted tinyint,          -- Number of ingest steps that were completed for this entry
     @fatalError tinyint = 0,                -- Set to 1 if the ingest failed and the ErrorCode column needs to be set to -1 (if currently 0 or null)
     @transactionId int = 0,                 -- Transaction ID (null or 0 if unknown); starting in July 2017, transactionId and StatusNum should match
-    @message varchar(512)='' output
+    @message varchar(512) = '' output
 )
 As
     set nocount on
     
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
     Declare @errorCode int = 0
 
@@ -116,6 +117,7 @@ As
         ErrorCode = @errorCode,
         TransactionID = CASE WHEN @transactionId = 0 THEN TransactionID ELSE @transactionId END
     WHERE StatusNum = @statusNum AND
+          Dataset_ID = @datasetID AND
           (IsNull(Ingest_Steps_Completed, 0) <> @ingestStepsCompleted OR
            IsNull(ErrorCode, 0) <> IsNull(@errorCode, 0) OR
            IsNull(TransactionID, 0) <> IsNull(@transactionId, 0) )
@@ -124,7 +126,7 @@ As
 
     If @myError > 0
     Begin
-        Set @message = 'Error updating T_MyEMSL_Uploads for StatusNum ' + Cast(@statusNum as varchar(12))
+        Set @message = 'Error updating T_MyEMSL_Uploads for Dataset_ID ' + Cast(@datasetID As varchar(12)) + ' and StatusNum ' + Cast(@statusNum as varchar(12))
         Set @myError = 60006
         Goto Done
     End
