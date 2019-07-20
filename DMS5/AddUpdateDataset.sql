@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[AddUpdateDataset]
 /****************************************************
 **
@@ -96,6 +95,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **                         - Expand @warning to varchar(512)
 **          04/15/2019 mem - Add call to UpdateCachedDatasetInstruments
+**          07/19/2019 mem - Change @eusUsageType to 'maintenance' if empty for _Tune_ or TuneMix datasets
 **    
 *****************************************************/
 (
@@ -816,9 +816,15 @@ As
     If @requestID = 0 AND @AddingDataset = 1
     Begin
         -- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
-        If @datasetNum Like 'Blank%' And @eusProposalID = '' And @eusUsageType = ''
+        If (@datasetNum Like 'Blank%' Or
+            @datasetNum Like '%[_]Tune[_]%' Or
+            @datasetNum Like '%TuneMix%'
+           ) And 
+           @eusProposalID = '' And 
+           @eusUsageType = ''
+        Begin
             Set @eusUsageType = 'MAINTENANCE'
-
+        End
     End
 
     ---------------------------------------------------
@@ -1187,7 +1193,15 @@ As
             --
             If @myError <> 0
             Begin
-                Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+                If @eusProposalID = '' And @eusUsageType = '' and @eusUsersList = ''
+                Begin
+                    Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + '; EUS Proposal ID, Usage Type, and  Users list cannot all be blank ->' + @message
+                End
+                Else
+                Begin
+                    Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+                End
+
                 RAISERROR (@msg, 11, 24)
             End
         End -- </b3>
