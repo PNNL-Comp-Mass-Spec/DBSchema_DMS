@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **      CREATE TABLE #TPI(
 **          DataPackageID int not null,         -- Data package ID
 **          [Type] varchar(50) null,            -- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
-**          Identifier varchar(256) null        -- Job ID, Dataset ID, Experiment ID, Cell_Culture ID, or EUSProposal ID
+**          Identifier varchar(256) null        -- Job ID, Dataset Name or ID, Experiment Name, Cell_Culture Name, or EUSProposal ID
 **      )
 **
 **  Return values: 0: success, otherwise, error code
@@ -42,12 +42,13 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          04/25/2018 mem - Populate column Dataset_ID in T_Data_Package_Analysis_Jobs
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          07/17/2019 mem - Remove .raw and .d from the end of dataset names
 **
 *****************************************************/
 (
     @comment varchar(512),
     @mode varchar(12) = 'update',            -- 'add', 'update', 'comment', 'delete'
-    @removeParents tinyint = 0,                -- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
+    @removeParents tinyint = 0,              -- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
     @message varchar(512) = '' output,
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0
@@ -113,6 +114,17 @@ As
             WHERE Not Job Is Null
         End
         
+        If Exists ( SELECT * FROM #TPI WHERE [Type] = 'Dataset' )
+        Begin
+            -- Auto-remove .raw and .d from the end of dataset names
+            Update #TPI
+            Set Identifier = Substring(Identifier, 1, Len(Identifier) - 4)
+            Where [Type] = 'Dataset' And #TPI.Identifier Like '%.raw'
+
+            Update #TPI
+            Set Identifier = Substring(Identifier, 1, Len(Identifier) - 2)
+            Where [Type] = 'Dataset' And #TPI.Identifier Like '%.d'
+        End
 
         -- Add parent items and associated items to list for items in the list
         -- This process cascades up the DMS hierarchy of tracking entities, but not down
@@ -149,7 +161,7 @@ As
 
             -- Add datasets to list that are parents of jobs in the list
             -- (and are not already in the list)
-             INSERT INTO #TPI (DataPackageID, [Type], Identifier)
+            INSERT INTO #TPI (DataPackageID, [Type], Identifier)
             SELECT DISTINCT
                 J.DataPackageID, 
                 'Dataset', 
@@ -167,7 +179,7 @@ As
 
             -- Add experiments to list that are parents of datasets in the list
             -- (and are not already in the list)
-             INSERT INTO #TPI (DataPackageID, [Type], Identifier)
+            INSERT INTO #TPI (DataPackageID, [Type], Identifier)
             SELECT DISTINCT
                 TP.DataPackageID, 
                 'Experiment',
@@ -186,7 +198,7 @@ As
 
             -- Add EUS Proposals to list that are parents of datasets in the list
             -- (and are not already in the list)
-             INSERT INTO #TPI (DataPackageID, [Type], Identifier)
+            INSERT INTO #TPI (DataPackageID, [Type], Identifier)
             SELECT DISTINCT
                 TP.DataPackageID, 
                 'EUSProposal',
@@ -205,7 +217,7 @@ As
 
             -- Add biomaterial items to list that are associated with experiments in the list
             -- (and are not already in the list)
-             INSERT INTO #TPI (DataPackageID, [Type], Identifier)
+            INSERT INTO #TPI (DataPackageID, [Type], Identifier)
             SELECT DISTINCT
                 TP.DataPackageID, 
                 'Biomaterial',
@@ -482,7 +494,7 @@ As
             Else
             Begin
                 
-                -- add new items
+                -- Add new items
                 INSERT INTO T_Data_Package_Biomaterial(
                     Data_Package_ID,
                     Biomaterial_ID,
@@ -611,7 +623,7 @@ As
             End
             Else
             Begin
-                -- add new items
+                -- Add new items
                 INSERT INTO T_Data_Package_EUS_Proposals( Data_Package_ID,
                                                           Proposal_ID,
                                                           [Package Comment] )
@@ -735,7 +747,7 @@ As
             End
             Else
             Begin
-                -- add new items
+                -- Add new items
                 INSERT INTO T_Data_Package_Experiments(
                     Data_Package_ID,
                     Experiment_ID,
@@ -866,7 +878,7 @@ As
             End
             Else
             Begin
-                -- add new items
+                -- Add new items
                 INSERT INTO T_Data_Package_Datasets( Data_Package_ID,
                                                      Dataset_ID,
                                                      [Package Comment],

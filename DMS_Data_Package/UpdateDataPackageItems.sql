@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateDataPackageItems
+
+CREATE PROCEDURE [dbo].[UpdateDataPackageItems]
 /****************************************************
 **
 **	Desc:
@@ -92,7 +93,7 @@ As
 		CREATE TABLE #TPI(
 			DataPackageID int not null,				-- Data package ID
 			Type varchar(50) null,					-- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
-			Identifier varchar(256) null			-- Job ID, Dataset ID, Experiment Id, Cell_Culture ID, or EUSProposal ID
+			Identifier varchar(256) null			-- Job ID, Dataset Name or ID, Experiment Name, Cell_Culture Name, or EUSProposal ID
 		)
 		INSERT INTO #TPI(DataPackageID, Type, Identifier) 
 		SELECT @packageID, @entityName, Value
