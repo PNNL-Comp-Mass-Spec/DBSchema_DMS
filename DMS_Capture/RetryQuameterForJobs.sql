@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
 **
 **  Auth:   mem
 **  Date:   07/11/2019 mem - Initial version
+**          07/22/2019 mem - When @infoOnly is 0, return a table listing the jobs that were reset
 **    
 *****************************************************/
 (
@@ -153,7 +154,8 @@ As
                    JS.Finish
             FROM V_Job_Steps JS
                  INNER JOIN #Tmp_JobStepsToReset JR
-                   ON JS.Job = JR.Job And JS.Step = JR.Step
+                   ON JS.Job = JR.Job AND
+                      JS.Step = JR.Step
             
             Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @jobList
             print @execMsg
@@ -168,14 +170,15 @@ As
             -- Reset the DatasetQuality step
             --
             UPDATE V_Job_Steps
-            Set State = 2,
-                Completion_Code = 0, 
-                Completion_Message = Null, 
-                Evaluation_Code = Null, 
-                Evaluation_Message = Null
+            SET State = 2,
+                Completion_Code = 0,
+                Completion_Message = NULL,
+                Evaluation_Code = NULL,
+                Evaluation_Message = NULL
             FROM V_Job_Steps JS
                  INNER JOIN #Tmp_JobStepsToReset JR
-                   ON JS.Job = JR.Job And JS.Step = JR.Step
+                   ON JS.Job = JR.Job AND
+                      JS.Step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
@@ -184,7 +187,18 @@ As
             exec ResetDependentJobSteps @jobList, @infoOnly=0
                         
             Commit Tran @jobResetTran
-                        
+
+             SELECT JS.Job,
+                    JS.Step,
+                    JS.Tool,
+                    'Job step has been reset' AS Message,
+                    JS.State,
+                    JS.Start,
+                    JS.Finish
+             FROM V_Job_Steps JS
+                  INNER JOIN #Tmp_JobStepsToReset JR
+                    ON JS.Job = JR.Job AND
+                       JS.Step = JR.Step
         End    
         
     END TRY
