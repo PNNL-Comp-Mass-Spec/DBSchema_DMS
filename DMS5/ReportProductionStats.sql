@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[ReportProductionStats]
 /****************************************************
 **
-**  Desc: Generates dataset statistics for production instruments
+**  Desc:   Generates dataset statistics for production instruments
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -28,15 +28,15 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **          02/03/2011 mem - Now using Dataset Acq Time (Acq_Time_Start) instead of Dataset Created (DS_Created), provided Acq_Time_Start is not null
 **          03/30/2011 mem - Now reporting number of Unreviewed datasets
 **                         - Removed the Troubleshooting column since datasets are no longer being updated that start with TS or MD
-**          11/30/2011 mem - Added parameter @CampaignIDFilterList
+**          11/30/2011 mem - Added parameter @campaignIDFilterList
 **                         - Added column "% EMSL Owned"
 **                         - Added new columns, including "% EMSL Owned", "EMSL-Funded Study Specific Datasets", and "EF Study Specific Datasets per day"
-**          03/15/2012 mem - Added parameter @EUSUsageFilterList
+**          03/15/2012 mem - Added parameter @eusUsageFilterList
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          04/05/2017 mem - Determine whether a dataset is EMSL funded using EUS usage type (previously used CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
 **                         - No longer differentiate reruns or unreviewed
-**                         - Added parameter @InstrumentFilterList
+**                         - Added parameter @instrumentFilterList
 **                         - Changed [% EF Study Specific] to be based on [Total] instead of [EF_Total]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **                         - Report AcqTimeDay, columns [Total AcqTimeDays], [Study Specific AcqTimeDays], [EF Total AcqTimeDays], [EF Study Specific AcqTimeDays], and [Hours AcqTime per Day]
@@ -44,15 +44,16 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **                         - If the campaign for a dataset has Fraction_EMSL_Funded of 0.75 or more, flag the dataset as EMSL Funded
 **          04/20/2018 mem - Allow Request_ID to be null
 **          04/27/2018 mem - Add column [% EF Study Specific by AcqTime]
+**          07/22/2019 mem - Refactor code into PopulateCampaignFilterTable, PopulateInstrumentFilterTable, and ResolveStartAndEndDates
 **
 *****************************************************/
 (
     @startDate varchar(24),
     @endDate varchar(24),
     @productionOnly tinyint = 1,                -- When 0 then shows all instruments; otherwise limits the report to production instruments only
-    @CampaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
-    @EUSUsageFilterList varchar(2000) = '',     -- Comma separate list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER
-    @InstrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed)
+    @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
+    @eusUsageFilterList varchar(2000) = '',     -- Comma separate list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER
+    @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed)
     @message varchar(256) = '' output    
 )
 AS
@@ -60,12 +61,13 @@ AS
 
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+    Declare @result Int
+
     Declare @daysInRange float
     Declare @stDate datetime
     Declare @eDate datetime
 
-    Declare @msg varchar(256)
+    Declare @msg varchar(512)
 
     Declare @eDateAlternate datetime
 
@@ -76,9 +78,9 @@ AS
     --------------------------------------------------------------------
     --
     Set @productionOnly = IsNull(@productionOnly, 1)
-    Set @CampaignIDFilterList = LTrim(RTrim(IsNull(@CampaignIDFilterList, '')))
-    Set @EUSUsageFilterList = LTrim(RTrim(IsNull(@EUSUsageFilterList, '')))
-    Set @InstrumentFilterList = LTrim(RTrim(IsNull(@InstrumentFilterList, '')))
+    Set @campaignIDFilterList = LTrim(RTrim(IsNull(@campaignIDFilterList, '')))
+    Set @eusUsageFilterList = LTrim(RTrim(IsNull(@eusUsageFilterList, '')))
+    Set @instrumentFilterList = LTrim(RTrim(IsNull(@instrumentFilterList, '')))
     
     Set @message = ''
 
@@ -93,44 +95,12 @@ AS
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_CampaignFilter ON #Tmp_CampaignFilter (Campaign_ID)
     
-    If @CampaignIDFilterList <> ''
-    Begin    
-        INSERT INTO #Tmp_CampaignFilter (Campaign_ID)
-        SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@CampaignIDFilterList, ',')
-        ORDER BY Value
-        
-        -- Look for invalid Campaign ID values
-        Set @msg = ''
-        SELECT @msg = Convert(varchar(12), CF.Campaign_ID) + ',' + @msg
-        FROM #Tmp_CampaignFilter CF
-             LEFT OUTER JOIN T_Campaign C
-               ON CF.Campaign_ID = C.Campaign_ID
-        WHERE C.Campaign_ID IS NULL
-        --
-        SELECT @myRowCount = @@RowCount
-        
-        If @myRowCount > 0 
-        Begin
-            -- Remove the trailing comma
-            Set @msg = Substring(@msg, 1, Len(@msg)-1)
-            
-            If @myRowCount = 1
-                set @msg = 'Invalid Campaign ID: ' + @msg
-            Else
-                set @msg = 'Invalid Campaign IDs: ' + @msg
+    Exec @result = PopulateCampaignFilterTable @campaignIDFilterList, @message=@message output
 
-            print @msg
-            RAISERROR (@msg, 11, 15)
-        End
-
-    End
-    Else
+    If @result <> 0
     Begin
-        INSERT INTO #Tmp_CampaignFilter (Campaign_ID)
-        SELECT Campaign_ID
-        FROM T_Campaign
-        ORDER BY Campaign_ID
+        print @message
+        RAISERROR (@message, 11, 15)
     End
 
     --------------------------------------------------------------------
@@ -143,72 +113,12 @@ AS
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_InstrumentFilter ON #Tmp_InstrumentFilter (Instrument_ID)
     
-    If @InstrumentFilterList <> ''
+    Exec @result = PopulateInstrumentFilterTable @instrumentFilterList, @message=@message output
+
+    If @result <> 0
     Begin
-        
-        CREATE TABLE #Tmp_MatchSpec (
-            Match_Spec_ID int NOT NULL identity(1,1),
-            Match_Spec varchar(2048)
-        )
-        
-        INSERT INTO #Tmp_MatchSpec (Match_Spec)
-        SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedList(@InstrumentFilterList, ',', 'ReportProductionStats')
-        ORDER BY Value
-
-        Declare @matchSpecID int = 0
-        Declare @matchSpec varchar(2048)
-        
-        While @matchSpecID >= 0
-        Begin
-            SELECT TOP 1 @matchSpecID = Match_Spec_ID,
-                         @matchSpec = Match_Spec
-            FROM #Tmp_MatchSpec
-            WHERE Match_Spec_ID > @matchSpecID
-            ORDER BY Match_Spec_ID
-            --
-            SELECT @myRowCount = @@RowCount
-
-            If @myRowCount = 0
-            Begin
-                Set @matchSpecID = -1
-            End
-            Else
-            Begin
-                Set @matchSpec = Replace(@matchSpec, '*', '%')
-                
-                If CharIndex('%', @matchSpec) > 0
-                Begin
-                    INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
-                    SELECT FilterQ.Instrument_ID
-                    FROM ( SELECT Instrument_ID
-                           FROM T_Instrument_Name
-                           WHERE IN_name LIKE @matchSpec ) FilterQ
-                         LEFT OUTER JOIN #Tmp_InstrumentFilter Target
-                           ON FilterQ.Instrument_ID = Target.Instrument_ID
-                    WHERE Target.Instrument_ID IS NULL
-
-                End
-                Else
-                Begin
-                    INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
-                    SELECT FilterQ.Instrument_ID
-                    FROM ( SELECT Instrument_ID
-                           FROM T_Instrument_Name
-                           WHERE IN_name = @matchSpec ) FilterQ
-                         LEFT OUTER JOIN #Tmp_InstrumentFilter Target
-                           ON FilterQ.Instrument_ID = Target.Instrument_ID
-                    WHERE Target.Instrument_ID IS NULL
-                End
-            End
-        End
-        
-    End
-    Else
-    Begin
-        INSERT INTO #Tmp_InstrumentFilter( Instrument_ID )
-        SELECT DISTINCT Instrument_ID
-        FROM T_Instrument_Name
+        print @message
+        RAISERROR (@message, 11, 15)
     End
     
     --------------------------------------------------------------------
@@ -222,11 +132,11 @@ AS
     
     CREATE CLUSTERED INDEX #IX_Tmp_EUSUsageFilter ON #Tmp_EUSUsageFilter (Usage_ID)
     
-    If @EUSUsageFilterList <> ''
+    If @eusUsageFilterList <> ''
     Begin    
         INSERT INTO #Tmp_EUSUsageFilter (Usage_Name, Usage_ID)
         SELECT DISTINCT Value AS Usage_Name, 0 AS ID
-        FROM dbo.udfParseDelimitedList(@EUSUsageFilterList, ',', 'ReportProductionStats')
+        FROM dbo.udfParseDelimitedList(@eusUsageFilterList, ',', 'ReportProductionStats')
         ORDER BY Value
         
         -- Look for invalid Usage_Name values
@@ -277,70 +187,24 @@ AS
         SELECT ID, Name
         FROM T_EUS_UsageType
         ORDER BY ID
-    End
+    End    
     
     --------------------------------------------------------------------
-    -- If @endDate is empty, auto-set to the end of the current day
+    -- Determine the start and end dates
     --------------------------------------------------------------------
-    --
-    If IsNull(@endDate, '') = ''
-    Begin
-        Set @eDateAlternate = Convert(datetime, Convert(varchar(32), GETDATE(), 101))
-        Set @eDateAlternate = DateAdd(second, 86399, @eDateAlternate)
-        Set @eDateAlternate = DateAdd(millisecond, 995, @eDateAlternate)
-        Set @endDate = Convert(varchar(32), @eDateAlternate, 121)
-    End
-    Else
-    Begin
-        If IsDate(@endDate) = 0
-        Begin
-            set @msg = 'End date "' + @endDate + '" is not a valid date'
-            RAISERROR (@msg, 11, 15)
-        End
-    End
-        
-    --------------------------------------------------------------------
-    -- Check whether @endDate only contains year, month, and day
-    --------------------------------------------------------------------
-    --
-    set @eDate = Convert(DATETIME, @endDate, 102) 
 
-    set @eDateAlternate = Convert(datetime, Floor(Convert(float, @eDate)))
-    
-    If @eDate = @eDateAlternate
-    Begin
-        -- @endDate only specified year, month, and day
-        -- Update @eDateAlternate to span thru 23:59:59.997 on the given day,
-        --  then copy that value to @eDate
-        
-        set @eDateAlternate = DateAdd(second, 86399, @eDateAlternate)
-        set @eDateAlternate = DateAdd(millisecond, 995, @eDateAlternate)
-        set @eDate = @eDateAlternate
-    End
-    
-    --------------------------------------------------------------------
-    -- If @startDate is empty, auto-set to 2 weeks before @eDate
-    --------------------------------------------------------------------
-    --
-    If IsNull(@startDate, '') = ''
-        Set @stDate = DateAdd(day, -14, Convert(datetime, Floor(Convert(float, @eDate))))
-    Else
-    Begin
-        If IsDate(@startDate) = 0
-        Begin
-            set @msg = 'Start date "' + @startDate + '" is not a valid date'
-            RAISERROR (@msg, 11, 16)
-        End
+    Exec @result = ResolveStartAndEndDates @startDate, @endDate, @stDate Output, @eDate Output, @message=@message output
 
-        Set @stDate = Convert(DATETIME, @startDate, 102) 
+    If @result <> 0
+    Begin
+        RAISERROR (@message, 11, 15)
     End
-    
+
     --------------------------------------------------------------------
     -- Compute the number of days to be examined
     --------------------------------------------------------------------
     --
     set @daysInRange = DateDiff(dd, @stDate, @eDate)
-
     
     --------------------------------------------------------------------
     -- Populate a temporary table with the datasets to use
@@ -357,7 +221,7 @@ AS
     
     CREATE INDEX #IX_Tmp_Datasets_RequestID ON #Tmp_Datasets (Request_ID)
     
-    If @EUSUsageFilterList <> ''
+    If @eusUsageFilterList <> ''
     Begin
         -- Filter on the EMSL usage types defined in #Tmp_EUSUsageFilter
         --
