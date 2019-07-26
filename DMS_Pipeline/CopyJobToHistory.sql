@@ -27,22 +27,21 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/13/2017 mem - Add Remote_Info_Id
 **          01/19/2018 mem - Add Runtime_Minutes
+**          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **    
 *****************************************************/
 (
     @job int,
-    @JobState int,
+    @jobState int,
     @message varchar(512) output,
-    @OverrideSaveTime tinyint = 0,        -- Set to 1 to use @SaveTimeOverride for the SaveTime instead of GetDate()
-    @SaveTimeOverride datetime = Null
+    @overrideSaveTime tinyint = 0,        -- Set to 1 to use @saveTiemOverride for the SaveTime instead of GetDate()
+    @saveTiemOverride datetime = Null
 )
 As
     set nocount on
     
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
     
     set @message = ''
     
@@ -57,7 +56,7 @@ As
     -- Bail if not a state we save for
     ---------------------------------------------------
     --
-    if not @JobState in (4,5)
+    if not @jobState in (4,5)
     Begin
           Set @message = 'Job state not 4 or 5; aborting'
           Print @message
@@ -68,10 +67,10 @@ As
     -- Define a common timestamp for all history entries
     ---------------------------------------------------
     --
-    declare @saveTime datetime
+    Declare @saveTime datetime
     
-    If IsNull(@OverrideSaveTime, 0) <> 0
-        Set @SaveTime = IsNull(@saveTimeOverride, GetDate())
+    If IsNull(@overrideSaveTime, 0) <> 0
+        Set @SaveTime = IsNull(@saveTiemOverride, GetDate())
     Else
         set @saveTime = GetDate()
 
@@ -79,8 +78,7 @@ As
     -- Start transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(64)
-    set @transName = 'MoveJobsToHistory'
+    Declare @transName varchar(64) = 'MoveJobsToHistory'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -161,7 +159,9 @@ As
         Evaluation_Message,
         Saved,
         Tool_Version_ID,
-        Remote_Info_Id
+        Remote_Info_Id,
+        Remote_Start,
+        Remote_Finish
     )
     SELECT 
         Job,
@@ -182,7 +182,9 @@ As
         Evaluation_Message,
         @saveTime,
         Tool_Version_ID,
-        Remote_Info_Id
+        Remote_Info_Id,
+        Remote_Start,
+        Remote_Finish
     FROM T_Job_Steps
     WHERE Job = @job
     --
@@ -196,18 +198,15 @@ As
     end
 
     ---------------------------------------------------
-    -- copy parameters
+    -- Copy parameters
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Parameters_History (
-        Job, 
-        Parameters, 
-        Saved
-    )
-    SELECT
-        Job, 
-        Parameters, 
-        @saveTime
+    INSERT INTO T_Job_Parameters_History( Job,
+                                          [Parameters],
+                                          Saved )
+    SELECT Job,
+           [Parameters],
+           @saveTime
     FROM T_Job_Parameters
     WHERE Job = @job
     --

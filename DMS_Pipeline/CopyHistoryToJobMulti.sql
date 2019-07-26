@@ -26,11 +26,12 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
 **          06/20/2018 mem - Move rollback transaction to before the call to LocalErrorHandler
+**          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **    
 *****************************************************/
 (
-    @JobList varchar(max),
-    @InfoOnly tinyint = 0,
+    @jobList varchar(max),
+    @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
 As
@@ -44,7 +45,7 @@ As
     Declare @JobsCopied int = 0
     
     ---------------------------------------------------
-    -- Populate a temporary table with the jobs in @JobList
+    -- Populate a temporary table with the jobs in @jobList
     ---------------------------------------------------
     --
     CREATE TABLE #Tmp_JobsToCopy (
@@ -62,7 +63,7 @@ As
         
         INSERT INTO #Tmp_JobsToCopy (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
+        FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
         
         ---------------------------------------------------
         -- Bail if no candidates found
@@ -70,7 +71,7 @@ As
         --
         If Not exists (SELECT * FROM #Tmp_JobsToCopy)
         Begin
-            Set @message = '@JobList was empty or contained no jobs'
+            Set @message = '@jobList was empty or contained no jobs'
             print @message
             Goto Done
         End
@@ -88,7 +89,7 @@ As
         --
         If not exists (SELECT * FROM #Tmp_JobsToCopy)
         Begin
-            Set @message = 'All jobs in @JobList already exist in T_Jobs'
+            Set @message = 'All jobs in @jobList already exist in T_Jobs'
             print @message
             Goto Done
         End
@@ -106,13 +107,13 @@ As
         --
         If not exists (SELECT * FROM #Tmp_JobsToCopy)
         Begin
-            Set @message = 'None of the jobs in @JobList exists in T_Jobs_History'
+            Set @message = 'None of the jobs in @jobList exists in T_Jobs_History'
             print @message
             Goto Done
         End
 
         ---------------------------------------------------
-        -- Lookup the max Saved date for each job    
+        -- Lookup the max saved date for each job    
         ---------------------------------------------------
         --
         Set @CurrentLocation = 'Update #Tmp_JobsToCopy.DateStamp'
@@ -148,10 +149,10 @@ As
         --
         If @myRowCount > 0
         Begin
-            Print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' job(s) from @JobList because they do not exist in T_Jobs_History with state 4'
+            Print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' job(s) from @jobList because they do not exist in T_Jobs_History with state 4'
         End
          
-        If @InfoOnly <> 0
+        If @infoOnly <> 0
         Begin
             SELECT *
             FROM #Tmp_JobsToCopy
@@ -164,8 +165,7 @@ As
         -- Start transaction
         ---------------------------------------------------
         --
-        declare @transName varchar(64)
-        Set @transName = 'CopyHistoryToJob'
+        Declare @transName varchar(64) = 'CopyHistoryToJob'
         Begin transaction @transName
 
         ---------------------------------------------------
@@ -253,7 +253,9 @@ As
             Completion_Message,
             Evaluation_Code,
             Evaluation_Message,
-            Remote_Info_ID
+            Remote_Info_ID,
+            Remote_Start,
+            Remote_Finish
         )
         SELECT H.Job,
             H.Step_Number,
@@ -274,7 +276,9 @@ As
             H.Completion_Message,
             H.Evaluation_Code,
             H.Evaluation_Message,
-            H.Remote_Info_ID
+            H.Remote_Info_ID,
+            H.Remote_Start,
+            H.Remote_Finish
         FROM T_Job_Steps_History H
              INNER JOIN T_Step_Tools ST
                ON H.Step_Tool = ST.Name
@@ -297,18 +301,14 @@ As
         --
         Set @CurrentLocation = 'Populate T_Job_Parameters'
         --
-        INSERT INTO T_Job_Parameters (
-            Job, 
-            Parameters
-        )
-        SELECT
-            JPH.Job, 
-            JPH.Parameters
-        FROM
-            T_Job_Parameters_History JPH
-            INNER JOIN #Tmp_JobsToCopy Src
-              ON JPH.Job = Src.Job AND
-                 JPH.Saved = Src.DateStamp
+        INSERT INTO T_Job_Parameters( Job,
+                                      [Parameters] )
+        SELECT JPH.Job,
+               JPH.[Parameters]
+        FROM T_Job_Parameters_History JPH
+             INNER JOIN #Tmp_JobsToCopy Src
+               ON JPH.Job = Src.Job AND
+                  JPH.Saved = Src.DateStamp
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --

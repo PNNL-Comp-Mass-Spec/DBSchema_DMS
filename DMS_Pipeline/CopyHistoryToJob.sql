@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 **          11/18/2015 mem - Add Actual_CPU_Load
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
+**          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **    
 *****************************************************/
 (
@@ -45,10 +46,8 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 As
     set nocount on
     
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount int = 0
     
     set @message = ''
     
@@ -72,9 +71,9 @@ As
     -- Get job status from most recent completed historic job
     ---------------------------------------------------
     --
-    declare @dateStamp datetime
+    Declare @dateStamp datetime
     
-    -- find most recent successful historic job
+    -- Find most recent successful historic job
     --
     SELECT @dateStamp = MAX(Saved)
     FROM T_Jobs_History
@@ -93,7 +92,7 @@ As
     Begin
         Print 'No successful jobs found in T_Jobs_History for job ' + Convert(varchar(12), @job) + '; will look for a failed job'
         
-        -- find most recent historic job, regardless of job state
+        -- Find most recent historic job, regardless of job state
         --
         SELECT @dateStamp = MAX(Saved)
         FROM T_Jobs_History
@@ -116,8 +115,7 @@ As
     -- Start transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(64)
-    set @transName = 'CopyHistoryToJob'
+    Declare @transName varchar(64) = 'CopyHistoryToJob'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -200,7 +198,9 @@ As
         Completion_Message,
         Evaluation_Code,
         Evaluation_Message,
-        Remote_Info_ID
+        Remote_Info_ID,
+        Remote_Start,
+        Remote_Finish
     )
     SELECT H.Job,
            H.Step_Number,
@@ -221,7 +221,9 @@ As
            H.Completion_Message,
            H.Evaluation_Code,
            H.Evaluation_Message,
-           H.Remote_Info_ID
+           H.Remote_Info_ID,
+           H.Remote_Start,
+           H.Remote_Finish
     FROM T_Job_Steps_History H
          INNER JOIN T_Step_Tools ST
            ON H.Step_Tool = ST.Name
@@ -251,18 +253,13 @@ As
     -- Copy parameters
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Parameters (
-        Job, 
-        Parameters
-    )
-    SELECT
-        Job, 
-        Parameters
-    FROM
-        T_Job_Parameters_History
-    WHERE 
-        Job = @job AND
-        Saved = @dateStamp
+    INSERT INTO T_Job_Parameters( Job,
+                                  [Parameters] )
+    SELECT Job,
+           [Parameters]
+    FROM T_Job_Parameters_History
+    WHERE Job = @job AND
+          Saved = @dateStamp
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -324,9 +321,22 @@ As
         If @myRowCount > 0
         Begin
             
-            INSERT INTO T_Job_Step_Dependencies(Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
-                                                Evaluated, Triggered, Enable_Only)
-            SELECT @job As Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 0 AS Evaluated, 0 AS Triggered, Enable_Only
+            INSERT INTO T_Job_Step_Dependencies( Job,
+                                                 Step_Number,
+                                                 Target_Step_Number,
+                                                 Condition_Test,
+                                                 Test_Value,
+                                                 Evaluated,
+                                                 Triggered,
+                                                 Enable_Only )
+            SELECT @job AS Job,
+                   Step_Number,
+                   Target_Step_Number,
+                   Condition_Test,
+                   Test_Value,
+                   0 AS Evaluated,
+                   0 AS Triggered,
+                   Enable_Only
             FROM T_Job_Step_Dependencies_History H
             WHERE Job = @SimilarJob
 
