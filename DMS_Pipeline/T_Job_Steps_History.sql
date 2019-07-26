@@ -25,7 +25,9 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
-	[Remote_Info_ID] [int] NULL
+	[Remote_Info_ID] [int] NULL,
+	[Remote_Start] [smalldatetime] NULL,
+	[Remote_Finish] [smalldatetime] NULL
 ) ON [PRIMARY]
 
 GO
