@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[FindExistingJobsForRequest]
 **          09/03/2008 mem - Fixed bug that returned Entered_By from T_Analysis_Job_Processor_Group instead of from T_Analysis_Job_Processor_Group_Associations
 **          05/28/2015 mem - Removed reference to T_Analysis_Job_Processor_Group
 **          07/30/2019 mem - After obtaining the actual matching jobs using GetRunRequestExistingJobListTab, compare to the cached values in T_Analysis_Job_Request_Existing_Jobs; call UpdateCachedJobRequestExistingJobs if a mismatch
+**          07/31/2019 mem - Use new function name, GetExistingJobsMatchingJobRequest
 **    
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
 
     INSERT INTO #Tmp_ExistingJobs( Job )
     SELECT Job
-    FROM dbo.GetRunRequestExistingJobListTab ( @requestID )
+    FROM dbo.GetExistingJobsMatchingJobRequest ( @requestID )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 

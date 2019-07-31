@@ -70,7 +70,7 @@ As
         Begin
             MERGE T_Analysis_Job_Request_Existing_Jobs AS t
             USING (SELECT DISTINCT @requestId As Request_ID, Job
-                   FROM GetRunRequestExistingJobListTab(@requestId)) as s
+                   FROM GetExistingJobsMatchingJobRequest(@requestId)) as s
             ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
             -- Note: all of the columns in table T_Analysis_Job_Request_Existing_Jobs are primary keys or identity columns; there are no updatable columns
             WHEN NOT MATCHED BY TARGET THEN
@@ -189,8 +189,8 @@ As
                 Else
                 Begin -- <d>
                     MERGE T_Analysis_Job_Request_Existing_Jobs AS t
-                    USING (SELECT DISTINCT @currentRequestId As Request_ID, GetRunRequestExistingJobListTab.Job
-                           FROM GetRunRequestExistingJobListTab(@currentRequestId)) as s
+                    USING (SELECT DISTINCT @currentRequestId As Request_ID, Job
+                           FROM GetExistingJobsMatchingJobRequest(@currentRequestId)) as s
                     ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
                     WHEN NOT MATCHED BY TARGET THEN
                         INSERT(Request_ID, Job)
@@ -262,15 +262,16 @@ As
             --
             INSERT INTO T_Analysis_Job_Request_Existing_Jobs( Request_ID, Job )
             SELECT DISTINCT LookupQ.Request_ID,
-                            GetRunRequestExistingJobListTab.Job
+                            GetExistingJobsMatchingJobRequest.Job
             FROM ( SELECT AJR.AJR_requestID AS Request_ID
                    FROM T_Analysis_Job_Request AJR
                         LEFT OUTER JOIN T_Analysis_Job_Request_Existing_Jobs CachedJobs
                           ON AJR.AJR_requestID = CachedJobs.Request_ID
                    WHERE AJR.AJR_requestID > 1 AND
                          AJR.AJR_created > DateAdd(Day, -30, GetDate()) AND
-                         CachedJobs.Request_ID IS NULL ) LookupQ
-                 CROSS APPLY GetRunRequestExistingJobListTab ( LookupQ.Request_ID )
+                         CachedJobs.Request_ID IS NULL 
+                 ) LookupQ
+                 CROSS APPLY GetExistingJobsMatchingJobRequest ( LookupQ.Request_ID )
             ORDER BY LookupQ.Request_ID, Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -319,8 +320,8 @@ As
             ------------------------------------------------
             --
             MERGE T_Analysis_Job_Request_Existing_Jobs AS t
-            USING (SELECT DISTINCT AJR.AJR_requestID As Request_ID, GetRunRequestExistingJobListTab.Job
-                    FROM T_Analysis_Job_Request AJR CROSS APPLY GetRunRequestExistingJobListTab(AJR.AJR_requestID)
+            USING (SELECT DISTINCT AJR.AJR_requestID As Request_ID, MatchingJobs.Job
+                    FROM T_Analysis_Job_Request AJR CROSS APPLY GetExistingJobsMatchingJobRequest(AJR.AJR_requestID) MatchingJobs
                     WHERE AJR.AJR_requestID > 1) as s
             ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
             WHEN NOT MATCHED BY TARGET THEN
