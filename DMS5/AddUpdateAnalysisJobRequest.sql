@@ -58,7 +58,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          11/20/2012 mem - Removed parameter @workPackage
 **          12/13/2013 mem - Updated @mode to support 'PreviewAdd'
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
+**          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
 **          03/26/2013 mem - Added parameter @callingUser
 **          04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **          05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
@@ -81,6 +81,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          04/17/2019 mem - Auto-change @protCollOptionsList to "seq_direction=forward,filetype=fasta" when running TopPIC
 **          04/23/2019 mem - Auto-change @protCollOptionsList to "seq_direction=decoy,filetype=fasta" when running MSFragger
+**          07/30/2019 mem - Store dataset info in T_Analysis_Job_Request_Datasets instead of AJR_datasets
 **
 *****************************************************/
 (
@@ -101,7 +102,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @requestID int output,
     @mode varchar(12) = 'add',                    -- 'add', 'update', or 'PreviewAdd'
     @message varchar(512) output,
-    @AutoRemoveNotReleasedDatasets tinyint = 0,
+    @autoRemoveNotReleasedDatasets tinyint = 0,
     @callingUser varchar(128)=''
 )
 As
@@ -115,7 +116,9 @@ As
     Declare @AutoSupersedeName varchar(255) = ''
     Declare @MsgToAppend varchar(255)
     Declare @logErrors tinyint = 0
-    
+    Declare @datasetMin varchar(128) = null
+    Declare @datasetMax varchar(128) = null
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -123,9 +126,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobRequest', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
     
     BEGIN TRY 
 
@@ -166,24 +169,24 @@ As
 
     -- cannot create an entry with a duplicate name
     --
-    if @mode IN ('add', 'PreviewAdd')
-    begin
+    If @mode IN ('add', 'PreviewAdd')
+    Begin
         IF Exists (SELECT AJR_requestID FROM T_Analysis_Job_Request WHERE AJR_requestName = @requestName)
             RAISERROR ('Cannot add: request with same name already in database', 11, 4)
-    end
+    End
 
     -- Cannot update a non-existent entry
     -- If the entry already exists and has jobs associated with it, only allow for updating the comment field
     --
-    if @mode = 'update'
-    begin
+    If @mode = 'update'
+    Begin
         set @hit = 0
         SELECT @hit = AJR_requestID,
                @curState = AJR_state
         FROM T_Analysis_Job_Request
         WHERE (AJR_requestID = @requestID)
         --
-        if @hit = 0
+        If @hit = 0
             RAISERROR ('Cannot update: entry is not in database', 11, 5)
         
         If Exists (Select * From T_Analysis_Job Where AJ_RequestID = @requestID)
@@ -223,16 +226,18 @@ As
                 RAISERROR ('Entry has analysis jobs associated with it; only the comment and name can be updated', 11, 24)
             End
         End
-    end
+    End
 
     ---------------------------------------------------
     -- dataset list shouldn't be empty
     ---------------------------------------------------
-    if @datasets = ''
+    If @datasets = ''
         RAISERROR ('Dataset list is empty', 11, 1)
 
     ---------------------------------------------------
     -- Create temporary table to hold list of datasets
+    -- This procedure populates column Dataset_Num
+    -- Procedure ValidateAnalysisJobRequestDatasets (called by ValidateAnalysisJobParameters) will populate the remaining columns
     ---------------------------------------------------
 
     CREATE TABLE #TD (
@@ -247,7 +252,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Failed to create temporary table', 11, 10)
 
     ---------------------------------------------------
@@ -261,7 +266,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error populating temporary table', 11, 8)
 
     ---------------------------------------------------
@@ -272,48 +277,81 @@ As
     WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
 
     ---------------------------------------------------
-    -- Regenerate the dataset list, sorting by dataset name
+    -- Find the first and last dataset in #td
     ---------------------------------------------------
     --
-    Set @datasets = ''
-    
-    SELECT @datasets = @datasets + Dataset_Num + ', '
+    SELECT @myRowCount = Count(*)
     FROM #TD
-    ORDER BY Dataset_Num
-    
-    -- Remove the trailing comma
-    If Len(@datasets) > 0
-    Set @datasets = SubString(@datasets, 1, Len(@datasets)-1)
 
+    If @myRowCount = 1
+    Begin
+        SELECT @datasetMin = Min(Dataset_Num)
+        FROM #TD   
+    End
+
+    If @myRowCount > 1
+    Begin
+        SELECT @datasetMin = Min(Dataset_Num),
+               @datasetMax = Max(Dataset_Num)
+        FROM #TD
+    End
+
+    ---------------------------------------------------
+    -- Create and populate the temporary table used by ValidateProteinCollectionListForDatasetTable
+    ---------------------------------------------------
+    --
+    CREATE TABLE #TmpDatasets (
+        Dataset_Num varchar(128) Not NULL
+    )
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        Set @msg = 'Failed to create temporary table #TmpDatasets'
+        RAISERROR (@msg, 11, 1)
+        return 51007
+    End
     
+    CREATE UNIQUE CLUSTERED INDEX #IX_TmpDatasets ON #TmpDatasets
+    (
+	    Dataset_Num
+    )
+
+    INSERT INTO #TmpDatasets( Dataset_Num )
+    SELECT Dataset_Num
+    FROM #TD
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
     ---------------------------------------------------
     -- Validate @protCollNameList
-    -- Note that ValidateProteinCollectionListForDatasets
+    -- Note that ValidateProteinCollectionListForDatasetTable
     --  will populate @message with an explanatory note
     --  if @protCollNameList is updated
     ---------------------------------------------------
     --
-    Declare @CollectionCountAdded int
+    Declare @collectionCountAdded int
     Declare @result int
     set @result = 0
     
     Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
     If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
     Begin
-        exec @result = ValidateProteinCollectionListForDatasets 
-                            @datasets, 
+        exec @result = ValidateProteinCollectionListForDatasetTable 
                             @protCollNameList=@protCollNameList output, 
-                            @CollectionCountAdded=@CollectionCountAdded output, 
-                            @ShowMessages=1, 
+                            @collectionCountAdded=@collectionCountAdded output, 
+                            @showMessages=1, 
                             @message=@message output
 
-        if @result <> 0
+        If @result <> 0
             return @result
     End
     
     ---------------------------------------------------
     -- Validate job parameters
     -- Note that ValidateAnalysisJobParameters calls ValidateAnalysisJobRequestDatasets
+    -- and that ValidateAnalysisJobRequestDatasets populates Dataset_ID, etc. in #TD
     ---------------------------------------------------
     --
     Declare @userID int
@@ -336,11 +374,11 @@ As
                             @analysisToolID = @analysisToolID output, 
                             @organismID = @organismID output,
                             @message = @msg output,
-                            @AutoRemoveNotReleasedDatasets = @AutoRemoveNotReleasedDatasets,
-                            @AutoUpdateSettingsFileToCentroided = 0,
+                            @autoRemoveNotReleasedDatasets = @autoRemoveNotReleasedDatasets,
+                            @autoUpdateSettingsFileToCentroided = 0,
                             @allowNewDatasets = 1
     --
-    if @result <> 0
+    If @result <> 0
         RAISERROR (@msg, 11, 8)
 
 
@@ -478,13 +516,13 @@ As
     ---------------------------------------------------
     -- Resolve state name to ID
     ---------------------------------------------------
-    Declare @stateID int
-    set @stateID = -1
+    Declare @stateID int = -1
+
     SELECT @stateID = ID
-    FROM         T_Analysis_Job_Request_State
-    WHERE     (StateName = @state)
+    FROM T_Analysis_Job_Request_State
+    WHERE StateName = @state
     
-    if @stateID = -1
+    If @stateID = -1
         RAISERROR ('Could not resolve state name to ID', 11, 221)
 
     Set @logErrors = 1
@@ -493,20 +531,29 @@ As
     -- action for add mode
     ---------------------------------------------------
     
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
         Declare @newRequestNum int
-        --
+
+        Begin Tran
+
         INSERT INTO T_Analysis_Job_Request
         (
             AJR_requestName,
             AJR_created, 
             AJR_analysisToolName, 
             AJR_parmFileName, 
-            AJR_settingsFileName, AJR_organismDBName, AJR_organism_ID, 
-            AJR_proteinCollectionList, AJR_proteinOptionsList,
-            AJR_datasets, AJR_comment, AJR_specialProcessing,
-            AJR_state, AJR_requestor
+            AJR_settingsFileName,
+            AJR_organismDBName, 
+            AJR_organism_ID, 
+            AJR_proteinCollectionList, 
+            AJR_proteinOptionsList,
+            AJR_comment, 
+            AJR_specialProcessing,
+            AJR_state, 
+            AJR_requestor,
+            Dataset_Min,
+            Dataset_Max
         )
         VALUES
         (
@@ -514,20 +561,39 @@ As
             getdate(), 
             @toolName, 
             @parmFileName, 
-            @settingsFileName, @organismDBName, @organismID, 
-            @protCollNameList, @protCollOptionsList,
-            @datasets, @comment, @specialProcessing,
-            @stateID, @userID
+            @settingsFileName, 
+            @organismDBName, 
+            @organismID, 
+            @protCollNameList, 
+            @protCollOptionsList,
+            @comment, 
+            @specialProcessing,
+            @stateID,
+            @userID,
+            @datasetMin,
+            @datasetMax
         )        
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-            RAISERROR ('Insert new job operation failed', 11, 9)
+        If @myError <> 0
+            RAISERROR ('Insert operation failed for T_Analysis_Job_Request', 11, 9)
         --
         set @newRequestNum = SCOPE_IDENTITY()
 
-        -- return job number of newly created request
+        INSERT INTO T_Analysis_Job_Request_Datasets( Request_ID,
+                                                     Dataset_ID )
+        SELECT @newRequestNum, #TD.Dataset_ID
+        FROM #TD
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Insert operation failed for T_Analysis_Job_Request_Datasets', 11, 9)
+
+        Commit Tran
+
+        -- return ID of the newly created request
         --
         set @requestID = cast(@newRequestNum as varchar(32))
 
@@ -539,25 +605,27 @@ As
             Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
         End
                 
-    end -- add mode
+    End -- add mode
 
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    if @mode = 'PreviewAdd'
-    begin
+    If @mode = 'PreviewAdd'
+    Begin
         Set @message = 'Would create request "' + @requestName + '" with parameter file "' + @parmFileName + '" and settings file "' + @settingsFileName + '"'
-    end
+    End
     
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
     --
-    if @mode = 'update' 
-    begin
+    If @mode = 'update' 
+    Begin
         -- Update the request
         set @myError = 0
-        --
+        
+        Begin Tran
+
         UPDATE T_Analysis_Job_Request
         SET AJR_requestName = @requestName,
             AJR_analysisToolName = @toolName,
@@ -567,18 +635,36 @@ As
             AJR_organism_ID = @organismID,
             AJR_proteinCollectionList = @protCollNameList,
             AJR_proteinOptionsList = @protCollOptionsList,
-            AJR_datasets = @datasets,
             AJR_comment = @comment,
             AJR_specialProcessing = @specialProcessing,
             AJR_state = @stateID,
-            AJR_requestor = @userID
+            AJR_requestor = @userID,
+            Dataset_Min = @datasetMin,
+            Dataset_Max = @datasetMax
         WHERE (AJR_requestID = @requestID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-            RAISERROR ('Update operation failed: "%d"', 11, 4, @requestID)
-            
+        If @myError <> 0
+            RAISERROR ('Update operation failed for T_Analysis_Job_Request, RequestID "%d"', 11, 4, @requestID)
+        ;
+
+        MERGE T_Analysis_Job_Request_Datasets AS t
+        USING (SELECT @requestID As Request_ID, Dataset_ID FROM #TD) AS s
+        ON ( t.Dataset_ID = s.Dataset_ID AND t.Request_ID = s.Request_ID)
+        -- Note: all of the columns in table T_Analysis_Job_Request_Datasets are primary keys or identity columns; there are no updatable columns
+        WHEN NOT MATCHED BY TARGET THEN
+            INSERT(Request_ID, Dataset_ID)
+            VALUES(s.Request_ID, s.Dataset_ID)
+        WHEN NOT MATCHED BY SOURCE AND t.Request_ID = @requestID THEN Delete;
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Update operation failed for T_Analysis_Job_Request_Datasets, RequestID "%d"', 11, 4, @requestID)
+
+        Commit Tran
+
         If Len(@callingUser) > 0
         Begin
             -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -587,7 +673,7 @@ As
             Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
         End
         
-    end -- update mode
+    End -- update mode
 
     END TRY
     BEGIN CATCH 
