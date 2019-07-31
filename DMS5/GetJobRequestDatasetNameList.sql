@@ -41,3 +41,5 @@ AS
 	END
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[GetJobRequestDatasetNameList] TO [DDL_Viewer] AS [dbo]
+GO
