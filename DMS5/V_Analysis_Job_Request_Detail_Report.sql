@@ -23,7 +23,7 @@ SELECT AR.AJR_requestID AS Request,
        U.U_PRN AS Requestor,
        ARS.StateName AS State,
        dbo.GetRunRequestInstrList(AR.AJR_requestID) AS Instruments,
-       dbo.GetRunRequestExistingJobList(AR.AJR_requestID) AS [Pre-existing Jobs],
+       dbo.GetJobRequestExistingJobList(AR.AJR_requestID) AS [Pre-existing Jobs],
        IsNull(JobsQ.Jobs, 0) AS Jobs
 FROM dbo.T_Analysis_Job_Request AS AR
      INNER JOIN dbo.T_Users AS U
