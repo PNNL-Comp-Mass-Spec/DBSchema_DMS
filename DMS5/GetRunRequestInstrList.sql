@@ -1,10 +1,10 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobRequestInstrList] ******/
+/****** Object:  UserDefinedFunction [dbo].[GetRunRequestInstrList] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetJobRequestInstrList]
+CREATE FUNCTION [dbo].[GetRunRequestInstrList]
 /****************************************************
 **
 **	Desc: 
@@ -47,5 +47,5 @@ AS
 	END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobRequestInstrList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetRunRequestInstrList] TO [DDL_Viewer] AS [dbo]
 GO

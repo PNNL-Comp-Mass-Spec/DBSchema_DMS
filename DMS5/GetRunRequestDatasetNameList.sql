@@ -1,10 +1,10 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobRequestDatasetNameList] ******/
+/****** Object:  UserDefinedFunction [dbo].[GetRunRequestDatasetNameList] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetJobRequestDatasetNameList]
+CREATE FUNCTION [dbo].[GetRunRequestDatasetNameList]
 /****************************************************
 **
 **	Desc: 
