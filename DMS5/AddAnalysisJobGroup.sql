@@ -64,6 +64,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
 **          05/11/2018 mem - When the settings file is Decon2LS_DefSettings.xml, also match jobs with a settings file of 'na'
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          07/30/2019 mem - Call UpdateCachedJobRequestExistingJobs after creating new jobs
 **
 *****************************************************/
 (
@@ -90,10 +91,8 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 As
     Set XACT_ABORT, nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
     Set @message = ''
 
@@ -116,9 +115,9 @@ As
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddAnalysisJobGroup', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY 
 
@@ -421,10 +420,11 @@ As
             --
             Set @batchID = SCOPE_IDENTITY()
         End
+
         ---------------------------------------------------
         -- Deal with request
         ---------------------------------------------------
-        
+        --
         If @requestID = 0
         Begin
             Set @requestID = 1 -- for the default request
@@ -433,9 +433,9 @@ As
         Begin
             -- make sure @requestID is in state 1=new or state 5=new (Review Required)
                     
-            SELECT    @requestStateID = AJR_State
-            FROM    T_Analysis_Job_Request
-            WHERE    (AJR_RequestID = @requestID)
+            SELECT @requestStateID = AJR_State
+            FROM T_Analysis_Job_Request
+            WHERE AJR_RequestID = @requestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -443,18 +443,18 @@ As
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
             
             Set @requestStateID = IsNull(@requestStateID, 0)
-            
+
             If @requestStateID IN (1, 5)
             Begin
                 If @mode in ('add', 'update')
                 Begin
-                    -- mark request as used
+                    -- Mark request as used
                     --
                     Set @requestStateID = 2
                     
-                    UPDATE    T_Analysis_Job_Request
-                    SET        AJR_state = @requestStateID
-                    WHERE    (AJR_requestID = @requestID)    
+                    UPDATE T_Analysis_Job_Request
+                    SET AJR_state = @requestStateID
+                    WHERE AJR_requestID = @requestID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
                     --
@@ -476,6 +476,7 @@ As
                 RAISERROR ('Request is not in state New; cannot create jobs for request %d', 11, 9, @requestID)
             End
         End
+
         ---------------------------------------------------
         -- Get new job number for every dataset 
         -- in temporary table
@@ -667,8 +668,11 @@ As
                 ON AJR.AJR_requestID = StatQ.AJR_requestID
             --    
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
+            
+            Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+
         End
+
         If Len(@callingUser) > 0
         Begin
             -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID

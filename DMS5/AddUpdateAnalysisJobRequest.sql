@@ -82,6 +82,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          04/17/2019 mem - Auto-change @protCollOptionsList to "seq_direction=forward,filetype=fasta" when running TopPIC
 **          04/23/2019 mem - Auto-change @protCollOptionsList to "seq_direction=decoy,filetype=fasta" when running MSFragger
 **          07/30/2019 mem - Store dataset info in T_Analysis_Job_Request_Datasets instead of AJR_datasets
+**                         - Call UpdateCachedJobRequestExistingJobs after creating / updating an analysis job request
 **
 *****************************************************/
 (
@@ -604,7 +605,9 @@ As
             --
             Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
         End
-                
+
+        Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+
     End -- add mode
 
     ---------------------------------------------------
@@ -651,7 +654,7 @@ As
 
         MERGE T_Analysis_Job_Request_Datasets AS t
         USING (SELECT @requestID As Request_ID, Dataset_ID FROM #TD) AS s
-        ON ( t.Dataset_ID = s.Dataset_ID AND t.Request_ID = s.Request_ID)
+        ON (t.Dataset_ID = s.Dataset_ID AND t.Request_ID = s.Request_ID)
         -- Note: all of the columns in table T_Analysis_Job_Request_Datasets are primary keys or identity columns; there are no updatable columns
         WHEN NOT MATCHED BY TARGET THEN
             INSERT(Request_ID, Dataset_ID)
@@ -673,6 +676,8 @@ As
             Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
         End
         
+        Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+
     End -- update mode
 
     END TRY
