@@ -1,10 +1,10 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRunRequestExistingJobListTab] ******/
+/****** Object:  UserDefinedFunction [dbo].[GetExistingJobsMatchingJobRequest] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetRunRequestExistingJobListTab]
+CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
 /****************************************************
 **
 **  Desc: 
@@ -128,5 +128,5 @@ END
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRunRequestExistingJobListTab] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[GetExistingJobsMatchingJobRequest] TO [DDL_Viewer] AS [dbo]
 GO
