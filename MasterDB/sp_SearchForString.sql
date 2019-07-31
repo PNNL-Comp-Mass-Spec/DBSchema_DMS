@@ -10,11 +10,11 @@ GO
 CREATE PROCEDURE [dbo].[sp_WhereIsItUsed]
 /****************************************************
 **
-**   Desc: 
+**   Desc:
 **      This procedure searches through the code in the database for
 **      whatever string you care to specify and displays the name of
-**      each routine that the string is in, and its context (up to 
-**      255 characters around it) of EVERY occurence so you can see, 
+**      each routine that the string is in, and its context (up to
+**      255 characters around it) of EVERY occurence so you can see,
 **      for example, whereabouts an object is being called. It is not
 **      not really the same as having the build script in the Query
 **      Analyser. This procedure makes it a lot quicker to find a problem.
@@ -23,8 +23,8 @@ CREATE PROCEDURE [dbo].[sp_WhereIsItUsed]
 **      as you end up with a table of all the routines in the database
 **      with the routine name and all the text.
 **
-**      This procedure was written originally written for SQL Server 2000 though 
-**      it runs on newer versions.  In SQL Server 2005 or newer you can use 
+**      This procedure was written originally written for SQL Server 2000 though
+**      it runs on newer versions.  In SQL Server 2005 or newer you can use
 **      SELECT * FROM Information_Schema.Routines WHERE Routine_Definition like '%SearchText%'
 **      to search for text in Stored Procedures
 **
@@ -45,7 +45,7 @@ CREATE PROCEDURE [dbo].[sp_WhereIsItUsed]
 **
 *****************************************************/
 (
-    @searchString varchar(1024) ='',    -- Text to search for 
+    @searchString varchar(1024) ='',    -- Text to search for
     @backSpan int=10,                   -- When a match is found, number of characters back to show
     @forwardSpan int=25,                -- When a match is found, number of characters forward to show
     @dbName varchar(255) = ''           -- Optional database name (if empty, use the current databse)
@@ -74,7 +74,7 @@ As
 
     SET nocount ON
 
-    IF @BackSpan + @ForwardSpan > 255 
+    IF @BackSpan + @ForwardSpan > 255
     BEGIN
         If @BackSpan > 100
             Set @BackSpan = 100
@@ -110,7 +110,7 @@ As
         FROM master.dbo.sysdatabases
         WHERE [Name] = @DBName
     End
-    
+
     If @hitCount = 0
     Begin
         Select 'Database not found: ' + @DBName AS Message
@@ -122,8 +122,8 @@ As
     -- one row at a time in the correct order
     CREATE TABLE #Tmp_Raw_Text (
         UniqueID INT IDENTITY(1,1), --
-        colid INT, 
-        [ObjectID] INT, 
+        colid INT,
+        [ObjectID] INT,
         chunk NVARCHAR(4000)
     )
 
@@ -147,60 +147,60 @@ As
     -- Now we create the table of all the routines with their
     -- text source in the correct order.
     CREATE TABLE #Tmp_Routine (
-        UniqueID INT IDENTITY(1,1), 
-        [ObjectID] INT, 
+        UniqueID INT IDENTITY(1,1),
+        [ObjectID] INT,
         Definition text
     )
 
-    -- Start the loop, adding all the nvarchar(4000) chunks 
+    -- Start the loop, adding all the nvarchar(4000) chunks
     SELECT @ii=MIN(UniqueID), @iiMax=MAX(UniqueID)
     FROM #Tmp_Raw_Text
 
-    WHILE @ii<=@iiMax 
-    BEGIN 
-        SELECT 
-            @colid=colid, 
-            @objectID=ObjectID, 
-            @chunk=chunk 
-        FROM #Tmp_Raw_Text 
+    WHILE @ii<=@iiMax
+    BEGIN
+        SELECT
+            @colid=colid,
+            @objectID=ObjectID,
+            @chunk=chunk
+        FROM #Tmp_Raw_Text
         WHERE UniqueID=@ii
-        
+
         IF @Colid=1
         BEGIN
-            INSERT INTO #Tmp_Routine (ObjectID, Definition) 
-            SELECT @objectID, @chunk     -- get the pointer for the current procedure name / colid 
+            INSERT INTO #Tmp_Routine (ObjectID, Definition)
+            SELECT @objectID, @chunk     -- get the pointer for the current procedure name / colid
             --
-            SELECT @currentProcedureID=@@Identity 
+            SELECT @currentProcedureID=@@Identity
 
-            SELECT @pointerValue = TEXTPTR(Definition) 
-            FROM #Tmp_Routine 
+            SELECT @pointerValue = TEXTPTR(Definition)
+            FROM #Tmp_Routine
             WHERE UniqueID=@currentProcedureID
         END
         ELSE
         BEGIN
-            -- find out where to append the #temp table's value 
-            SELECT @EndOfText = DATALENGTH(Definition) 
+            -- find out where to append the #temp table's value
+            SELECT @EndOfText = DATALENGTH(Definition)
             FROM #Tmp_Routine
             WHERE UniqueID=@currentProcedureID
-            
+
             --Take a deep breath. We are dealing with text here
-            UPDATETEXT #Tmp_Routine.definition @pointerValue @EndOfText 0 @chunk 
+            UPDATETEXT #Tmp_Routine.definition @pointerValue @EndOfText 0 @chunk
         END
-        
+
         SELECT @ii=@ii+1
-    END 
+    END
     --select ObjectID,datalength(definition) from #Tmp_Routine
 
     CREATE TABLE #Tmp_Results (
-        UniqueID INT IDENTITY(1,1), 
-        [ObjectID] INT, 
+        UniqueID INT IDENTITY(1,1),
+        [ObjectID] INT,
         ObjectType varchar(64) NULL,
-        ObjectName VARCHAR(128), 
+        ObjectName VARCHAR(128),
         Offset INT,
         Context VARCHAR(255)
     )
 
-    SELECT @ii=MIN(UniqueID), @iiMax=MAX(UniqueID) 
+    SELECT @ii=MIN(UniqueID), @iiMax=MAX(UniqueID)
     FROM #Tmp_Routine
 
     WHILE @ii<=@iiMax -- avoid cursors. Do we look like amateurs?
@@ -208,33 +208,33 @@ As
 
         SELECT  @pos=1,
                 @size=DATALENGTH(definition),
-                @WhereWeAre=1  
-        FROM #Tmp_Routine 
+                @WhereWeAre=1
+        FROM #Tmp_Routine
         WHERE UniqueID=@ii--find all occurences of the string in the current text
-        
+
         WHILE @WhereWeAre<@size
         BEGIN
             SELECT    @pos=PATINDEX('%'+@SearchString+'%',
                     SUBSTRING(definition,@whereWeAre,8000))
             FROM #Tmp_Routine
             WHERE UniqueID=@ii
-            
-            IF @pos>0 
+
+            IF @pos>0
             BEGIN
-                SELECT @context = CASE WHEN @whereWeAre+@pos-@backspan<=1              
-                                  THEN 1              
-                                  ELSE @whereWeAre+@pos-@backspan 
+                SELECT @context = CASE WHEN @whereWeAre+@pos-@backspan<=1
+                                  THEN 1
+                                  ELSE @whereWeAre+@pos-@backspan
                                   END
 
                 INSERT INTO #Tmp_Results (objectID, Offset, Context)
                 SELECT ObjectID, @whereWeAre+@pos,
-                        SUBSTRING(definition,@context,@BackSpan+@ForwardSpan) 
-                FROM #Tmp_Routine 
+                        SUBSTRING(definition,@context,@BackSpan+@ForwardSpan)
+                FROM #Tmp_Routine
                 WHERE UniqueID=@ii
-                
+
                 SELECT @WhereWeAre=@WhereWeAre+@pos
             END
-            ELSE 
+            ELSE
                 SELECT @WhereWeAre=@WhereWeAre+6000
         END
         SELECT @ii=@ii+1
@@ -263,8 +263,8 @@ As
     --
     Select @myRowCount = @@RowCount, @myError = @@Error
 
-    SELECT    ObjectName, 
-            Offset, '...'+ Context + '...' As Context, 
+    SELECT    ObjectName,
+            Offset, '...'+ Context + '...' As Context,
             RTrim(ObjectType) As ObjectType,
             @DBName as [DBName]
     FROM #Tmp_Results
@@ -287,8 +287,8 @@ GO
 CREATE PROCEDURE [dbo].[sp_SearchForString]
 /****************************************************
 **
-**  Desc: 
-**      Searches for the given search text in the given database.  
+**  Desc:
+**      Searches for the given search text in the given database.
 **      If @dbName is '', will search this database.
 **
 **  Based on procedure WhereAmI written by Kenneth Cluff
@@ -300,6 +300,7 @@ CREATE PROCEDURE [dbo].[sp_SearchForString]
 **  Date:   12/15/2004
 **          07/25/2006 mem - Added brackets around @dbName as needed to allow for DBs with dashes in the name
 **          09/17/2018 mem - Show the syntax if @searchText is empty or whitespace
+**          07/31/2019 mem - Increase default value for @forwardSpan from 25 to 50
 **
 *****************************************************/
 (
@@ -307,7 +308,7 @@ CREATE PROCEDURE [dbo].[sp_SearchForString]
     @dbName varchar(255) = '',          -- Optional database name (if empty, use the current databse)
     @includeContext tinyint=1,          -- If 1, calls spWhereIsItUsed to do the work
     @backSpan int=10,                   -- Number of characters back to display when @includeContext is 1
-    @forwardSpan int=25                 -- Number of characters forward to display when @includeContext is 1
+    @forwardSpan int=50                 -- Number of characters forward to display when @includeContext is 1
 )
 AS
     set nocount on
@@ -316,9 +317,9 @@ AS
     Declare @myError int = 0
 
     Declare @hitCount int = 0
-    
+
     Declare @S varchar(2048)
-    
+
     Set @searchText = Ltrim(Rtrim(IsNull(@searchText, '')))
     If @searchText = ''
     Begin
@@ -331,7 +332,7 @@ AS
         Print '@dbName:         Database to search; if empty, use the current database'
         Print '@includeContext: 1 to include context, 0 to only show the object name and number of occurrences (default 1)'
         Print '@backSpan:       Number of characters back to display when including context (default 10)'
-        Print '@forwardSpan:    Number of characters forward to display when including context (default 25)'
+        Print '@forwardSpan:    Number of characters forward to display when including context (default 50)'
 
         Goto Done
     End
@@ -349,7 +350,7 @@ AS
         FROM master.dbo.sysdatabases
         WHERE [Name] = @dbName
     End
-    
+
     If @hitCount = 0
     Begin
         Select 'Database not found: ' + @dbName AS Message
@@ -357,7 +358,7 @@ AS
     End
 
     If @includeContext <> 0
-        exec sp_WhereIsItUsed @searchText, @dbName = @dbName, @BackSpan = @BackSpan, @ForwardSpan = @ForwardSpan 
+        exec sp_WhereIsItUsed @searchText, @dbName = @dbName, @BackSpan = @backSpan, @ForwardSpan = @forwardSpan
     Else
     Begin
         Set @S = ''
@@ -391,7 +392,7 @@ AS
         Select @myRowCount = @@RowCount, @myError = @@Error
     End
 
-Done:        
+Done:
     Return @myError
 
 GO
