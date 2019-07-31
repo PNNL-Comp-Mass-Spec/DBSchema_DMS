@@ -28,6 +28,7 @@ CREATE FUNCTION [dbo].[GetRunRequestExistingJobListTab]
 **          05/03/2012 mem - Now comparing the special processing field
 **          09/25/2012 mem - Expanded @organismDBName to varchar(128)
 **          07/30/2019 mem - Get dataset ID from T_Analysis_Job_Request_Datasets
+**          07/31/2019 mem - Remove unused table from query join list
 **    
 *****************************************************/
 (
@@ -92,10 +93,8 @@ BEGIN
         FROM ( SELECT Dataset_ID
                FROM T_Analysis_Job_Request_Datasets
                WHERE Request_ID = @requestID ) DSList
-             INNER JOIN T_Dataset DS
-               ON DSList.Dataset_ID = DS.Dataset_ID
              INNER JOIN T_Analysis_Job AJ
-               ON AJ.AJ_datasetID = DS.Dataset_ID
+               ON AJ.AJ_datasetID = DSList.Dataset_ID
              INNER JOIN T_Analysis_Tool AJT
                ON AJ.AJ_analysisToolID = AJT.AJT_toolID
              INNER JOIN T_Organisms Org
@@ -105,7 +104,7 @@ BEGIN
               AJ.AJ_settingsFileName = @settingsFileName AND
               ISNULL(AJ.AJ_specialProcessing, '') = ISNULL(@specialProcessing, '') AND
               (@resultType NOT LIKE '%Peptide_Hit%' OR
-               @resultType LIKE '%Peptide_Hit%' And 
+               @resultType LIKE '%Peptide_Hit%' AND 
                (
                    (    @proteinCollectionList <> 'na' AND
                         AJ.AJ_proteinCollectionList = @proteinCollectionList AND
