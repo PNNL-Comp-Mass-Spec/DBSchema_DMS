@@ -23,8 +23,8 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **      AS_state_ID int NULL,
 **      Dataset_Type varchar(64) NULL,
 **      DS_rating smallint NULL,
-**      Job int NULL,
-**      Dataset_Unreviewed tinyint NULL
+**      Job int NULL,                       -- Only in the temp table created by AddAnalysisJobGroup; unused here
+**      Dataset_Unreviewed tinyint NULL     -- Only in the temp table created by AddAnalysisJobGroup; unused here
 **  )
 **
 **  Return values: 0: success, otherwise, error code
@@ -57,7 +57,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
 **          11/28/2012 mem - Added candidate code to validate that high res MSn datasets are centroided if using MSGFDB
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/05/2013 mem - Added parameter @AutoRemoveNotReleasedDatasets
+**          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets
 **          04/02/2013 mem - Now updating @message if it is blank yet @result is non-zero
 **          02/28/2014 mem - Now throwing an error if trying to search a large Fasta file with a parameter file that will result in a very slow search
 **          03/13/2014 mem - Added custom message to be displayed when trying to reset a MAC job
@@ -65,7 +65,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          07/18/2014 mem - Now validating that files over 400 MB in size are using MSGFPlus_SplitFasta
 **          03/02/2015 mem - Now validating that files over 500 MB in size are using MSGFPlus_SplitFasta
 **          04/08/2015 mem - Now validating that profile mode high res MSn datasets are centroided if using MSGFPlus
-**                         - Added optional parameters @AutoUpdateSettingsFileToCentroided and @Warning
+**                         - Added optional parameters @autoUpdateSettingsFileToCentroided and @Warning
 **          04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
 **          05/01/2015 mem - Now preventing the use of parameter files with more than one dynamic mod when the fasta file is over 2 GB in size
 **          06/24/2015 mem - Added parameter @showDebugMessages
@@ -76,6 +76,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          12/06/2017 mem - Add parameter @allowNewDatasets
 **          07/19/2018 mem - Increase the threshold for requiring SplitFASTA searches from 400 MB to 600 MB
 **          07/11/2019 mem - Auto-change parameter file names from MSGFDB_ to MSGFPlus_
+**          07/30/2019 mem - Update comments and capitalization
 **
 *****************************************************/
 (
@@ -92,9 +93,9 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
     @analysisToolID int output, 
     @organismID int output,
     @message varchar(512) output,
-    @AutoRemoveNotReleasedDatasets tinyint = 0,
+    @autoRemoveNotReleasedDatasets tinyint = 0,
     @Job int = 0,
-    @AutoUpdateSettingsFileToCentroided tinyint = 1,
+    @autoUpdateSettingsFileToCentroided tinyint = 1,
     @allowNewDatasets tinyint = 0,                -- When 0, all datasets must have state 3 (Complete); when 1, will also allow datasets with state 1 or 2 (New or Capture In Progress)
     @Warning varchar(255) = '' output,
     @priority int = 2 output,
@@ -103,20 +104,18 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount int = 0
     
-    set @message = ''
-    set @Warning = ''
+    Set @message = ''
+    Set @Warning = ''
     
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
     
-    declare @list varchar(1024)
-    declare @ParamFileTool varchar(128) = '??NoMatch??'
-    declare @SettingsFileTool varchar(128)
-    declare @result int
+    Declare @list varchar(1024)
+    Declare @ParamFileTool varchar(128) = '??NoMatch??'
+    Declare @SettingsFileTool varchar(128)
+    Declare @result int
     
     ---------------------------------------------------
     -- Validate the datasets in #TD
@@ -124,7 +123,7 @@ As
     
     exec @result = ValidateAnalysisJobRequestDatasets 
                         @message output,
-                        @AutoRemoveNotReleasedDatasets=@AutoRemoveNotReleasedDatasets,
+                        @autoRemoveNotReleasedDatasets=@autoRemoveNotReleasedDatasets,
                         @toolName=@toolName,
                         @allowNewDatasets=@allowNewDatasets,
                         @showDebugMessages=@showDebugMessages
@@ -146,8 +145,8 @@ As
 
     execute @userID = GetUserID @ownerPRN
     
-    if @userID = 0
-    begin
+    If @userID = 0
+    Begin
         ---------------------------------------------------
         -- @ownerPRN did not resolve to a User_ID
         -- In case a name was entered (instead of a PRN),
@@ -165,65 +164,65 @@ As
         End
         Else
         Begin
-            set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
+            Set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
             If @showDebugMessages <> 0
                 print @message
 
             return 51019
         End
-    end
+    End
 
     ---------------------------------------------------
     -- get analysis tool ID from tool name 
     ---------------------------------------------------
     --            
     execute @analysisToolID = GetAnalysisToolID @toolName
-    if @analysisToolID = 0
-    begin
-        set @message = 'Could not find entry in database for analysis tool "' + @toolName + '"'
+    If @analysisToolID = 0
+    Begin
+        Set @message = 'Could not find entry in database for analysis tool "' + @toolName + '"'
             If @showDebugMessages <> 0
                 print @message
 
         return 53102
-    end
+    End
 
     ---------------------------------------------------
     -- Make sure the analysis tool is active
     ---------------------------------------------------
     If Not Exists (SELECT * FROM T_Analysis_Tool WHERE (AJT_toolID = @analysisToolID) AND (AJT_active > 0))
-    begin
+    Begin
         If @mode = 'reset' And @toolName LIKE 'MAC[_]%'
         Begin
-            set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
+            Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0
-                set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/show/' + Convert(varchar(12), @Job)
+                Set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/show/' + Convert(varchar(12), @Job)
             Else
-                set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
+                Set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
         End
         Else
         Begin
-            set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
+            Set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
         End
         
         If @showDebugMessages <> 0
             print @message
 
         return 53103
-    end
+    End
     
     ---------------------------------------------------
     -- get organism ID using organism name
     ---------------------------------------------------
     --
     execute @organismID = GetOrganismID @organismName
-    if @organismID = 0
-    begin
-        set @message = 'Could not find entry in database for organism "' + @organismName + '"'
+    If @organismID = 0
+    Begin
+        Set @message = 'Could not find entry in database for organism "' + @organismName + '"'
         If @showDebugMessages <> 0
             print @message
 
         return 53105
-    end
+    End
 
     ---------------------------------------------------
     -- Check tool/instrument compatibility for datasets
@@ -231,7 +230,7 @@ As
 
     -- find datasets that are not compatible with tool 
     --
-    set @list = ''
+    Set @list = ''
     --
     SELECT 
         @list = @list + CASE 
@@ -249,23 +248,23 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error checking dataset instrument classes against tool'
+    If @myError <> 0
+    Begin
+        Set @message = 'Error checking dataset instrument classes against tool'
         If @showDebugMessages <> 0
             print @message
 
         return 51007
-    end
+    End
 
-    if @list <> ''
-    begin
-        set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+    If @list <> ''
+    Begin
+        Set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @list + '"'
         If @showDebugMessages <> 0
             print @message
 
         return 51007
-    end
+    End
 
     ---------------------------------------------------
     -- Check tool/dataset type compatibility for datasets
@@ -273,7 +272,7 @@ As
     
     -- find datasets that are not compatible with tool 
     --
-    set @list = ''
+    Set @list = ''
     --
     SELECT 
         @list = @list + CASE 
@@ -289,23 +288,23 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error checking dataset types against tool'
+    If @myError <> 0
+    Begin
+        Set @message = 'Error checking dataset types against tool'
         If @showDebugMessages <> 0
             print @message
 
         return 51008
-    end
+    End
 
-    if @list <> ''
-    begin
-        set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+    If @list <> ''
+    Begin
+        Set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @list + '"'
         If @showDebugMessages <> 0
             print @message
 
         return 51008
-    end
+    End
     
     
     ---------------------------------------------------
@@ -321,16 +320,16 @@ As
     -- Validate param file for tool
     ---------------------------------------------------
     --
-    set @result = 0
+    Set @result = 0
     --
-    if @parmFileName <> 'na'
+    If @parmFileName <> 'na'
     Begin
         If @parmFileName Like 'MSGFDB[_]%'
         Begin
             Set @parmFileName = 'MSGFPlus_' + Substring(@parmFileName, 8, 500)
         End
 
-        if Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid <> 0))
+        If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid <> 0))
         Begin
             -- The specified parameter file is valid
             -- Make sure the parameter file tool corresponds to @toolName
@@ -351,28 +350,28 @@ As
                 WHERE (PF.Param_File_Name = @parmFileName)
                 ORDER BY ToolList.AJT_toolID
 
-                set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@ParamFileTool, '??') + '; not ' + IsNull(@toolName, '??')
+                Set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@ParamFileTool, '??') + '; not ' + IsNull(@toolName, '??')
                 If @showDebugMessages <> 0
                     print @message
 
                 return 53111
             End
         End
-        else
-        begin
+        Else
+        Begin
             -- Parameter file either does not exist or is inactive
             --
             If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid = 0))
-                set @message = 'Parameter file is inactive and cannot be used' + ':"' + @parmFileName + '"'
+                Set @message = 'Parameter file is inactive and cannot be used' + ':"' + @parmFileName + '"'
             Else
-                set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+                Set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
 
             If @showDebugMessages <> 0
                 print @message
                 
             return 53109
-        end
-    end
+        End
+    End
 
     ---------------------------------------------------
     -- Validate settings file for tool
@@ -388,9 +387,9 @@ As
             -- Settings file either does not exist or is inactive
             --
             If Exists (SELECT * FROM dbo.T_Settings_Files WHERE (File_Name = @settingsFileName) AND (Active = 0))
-                set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
+                Set @message = 'Settings file is inactive and cannot be used' + ':"' + @settingsFileName + '"'
             Else
-                set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
+                Set @message = 'Settings file could not be found' + ':"' + @settingsFileName + '"'
 
             If @showDebugMessages <> 0
                 print @message
@@ -416,7 +415,7 @@ As
             WHERE (SFP.File_Name = @settingsFileName)
             ORDER BY ToolList.AJT_toolID
 
-            set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
+            Set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
             If @showDebugMessages <> 0
                 print @message
 
@@ -424,9 +423,9 @@ As
         End
 
         If @showDebugMessages <> 0
-            print '  @AutoUpdateSettingsFileToCentroided=' + Cast(@AutoUpdateSettingsFileToCentroided as varchar(12))
+            print '  @autoUpdateSettingsFileToCentroided=' + Cast(@autoUpdateSettingsFileToCentroided as varchar(12))
                         
-        If IsNull(@AutoUpdateSettingsFileToCentroided, 1) <> 0
+        If IsNull(@autoUpdateSettingsFileToCentroided, 1) <> 0
         Begin
             ---------------------------------------------------
             -- If the dataset has profile mode MS/MS spectra and the search tool is MSGFPlus, we must centroid the spectra
@@ -552,7 +551,7 @@ As
                     @message output,
                     @debugMode=@showDebugMessages
 
-    if @result <> 0
+    If @result <> 0
     Begin
         If IsNull(@message, '') = ''
         Begin
@@ -585,7 +584,7 @@ As
             
             If @FileSizeGB < 1
                 Set @SizeDescription = Cast(Cast(@FileSizeMB As int) As varchar(12)) + ' MB'
-            else
+            Else
                 Set @SizeDescription = Cast(Cast(@FileSizeGB As decimal(9,1)) As varchar(12)) + ' GB'
         End
         
@@ -693,7 +692,7 @@ As
         --
         If @myRowCount = 0
         Begin
-            set @message = 'Settings file not found: ' + @settingsFileName
+            Set @message = 'Settings file not found: ' + @settingsFileName
             If @showDebugMessages <> 0
                 print @message
             return 53114
@@ -710,7 +709,7 @@ As
         --
         If @myRowCount = 0 Or IsNull(@splitFasta, 'False') <> 'True'
         Begin
-            set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
+            Set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
             If @showDebugMessages <> 0
                 print @message
             return 53115
@@ -727,7 +726,7 @@ As
         --
         If @myRowCount = 0 Or IsNull(@numberOfClonedSteps, 0) < 1
         Begin
-            set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
+            Set @message = 'Search tool ' + @toolName + ' requires a SplitFasta settings file'
             If @showDebugMessages <> 0
                 print @message
             return 53116
