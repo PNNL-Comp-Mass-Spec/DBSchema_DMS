@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasetTable]
 **          10/23/2017 mem - Do not add any enzyme-related protein collections if any of the protein collections in @protCollNameList already include contaminants
 **                           - Place auto-added protein collections at the end of @protCollNameList, which is more consistent with the order we get after calling ValidateAnalysisJobParameters
 **          07/30/2019 mem - Renamed from ValidateProteinCollectionListForDatasets to ValidateProteinCollectionListForDatasetTable
+**          07/31/2019 mem - Prevent @protCollNameList from containing both HumanContam and Tryp_Pig_Bov
 **    
 *****************************************************/
 (
@@ -50,18 +51,18 @@ As
     Declare @msg varchar(512)
 
     Declare @continue int
-    Declare @UniqueID int
-    Declare @ProteinCollectionName varchar(128)
+    Declare @uniqueID int
+    Declare @proteinCollectionName varchar(128)
     
     Declare @matchCount int
     Declare @collectionWithContaminants varchar(128)
     
-    Declare @DatasetCount int
-    Declare @ExperimentCount int
-    Declare @DatasetCountTotal int
-    Declare @ExperimentCountTotal int
+    Declare @datasetCount int
+    Declare @experimentCount int
+    Declare @datasetCountTotal int
+    Declare @experimentCountTotal int
     
-    Declare @EnzymeContaminantCollection tinyint
+    Declare @enzymeContaminantCollection tinyint
 
     --------------------------------------------------------------
     -- Validate the inputs
@@ -301,7 +302,36 @@ As
         SELECT '#IntStds' as Table_Name, *
         FROM #IntStds
     End
-        
+
+    --------------------------------------------------------------
+    -- If #IntStds contains 'HumanContam' but #ProteinCollections contains 'Tryp_Pig_Bov', 
+    -- remove 'HumanContam' from #IntStds since every protein in 'HumanContam' is also in 'Tryp_Pig_Bov'
+    --------------------------------------------------------------
+    --
+    If EXISTS ( SELECT *
+                FROM #ProteinCollections
+                WHERE Protein_Collection_Name = 'Tryp_Pig_Bov' ) AND
+       EXISTS ( SELECT *
+                FROM #IntStds
+                WHERE Protein_Collection_Name = 'HumanContam' )
+    Begin
+        DELETE FROM #IntStds
+        WHERE Protein_Collection_Name = 'HumanContam'
+
+        If @showDebug > 0
+        Begin
+            If Exists (Select * From #IntStds)
+            Begin
+                SELECT '#IntStds' as Table_Name, *, 'After removing HumanContam' As Comment
+                FROM #IntStds
+            End
+            Else
+            Begin
+                SELECT '#IntStds is empty after removing HumanContam' As Comment
+            End
+        End
+    End
+
     --------------------------------------------------------------
     -- Make sure @protCollNameList contains each of the 
     -- Protein_Collection_Name values in #IntStds
@@ -332,8 +362,15 @@ As
 
     If @showDebug > 0
     Begin
-        SELECT '#ProteinCollectionsToAdd' as Table_Name, *
-        FROM #ProteinCollectionsToAdd
+        If Exists (Select * From #ProteinCollectionsToAdd)
+        Begin
+            SELECT '#ProteinCollectionsToAdd' as Table_Name, *
+            FROM #ProteinCollectionsToAdd
+        End
+        Else
+        Begin
+            SELECT '#ProteinCollectionsToAdd is empty ' As Comment
+        End
     End
     
     If @myRowCount > 0 
@@ -377,6 +414,24 @@ As
             
             Set @collectionCountAdded = @collectionCountAdded - 1
         End
+
+        -- Check for the presence of both Tryp_Pig_Bov and Human_Contam in #ProteinCollections
+        --
+        Set @myRowCount = 0
+        
+        SELECT @myRowCount = COUNT(*)
+        FROM #ProteinCollections 
+        WHERE Protein_Collection_Name IN ('Tryp_Pig_Bov', 'HumanContam')
+        
+        If @myRowCount = 2
+        Begin
+            -- The list has two overlapping contaminant collections; remove one of them
+            -- 
+            DELETE FROM #ProteinCollections 
+            WHERE Protein_Collection_Name = 'HumanContam'
+            
+            Set @collectionCountAdded = @collectionCountAdded - 1
+        End
         
         --------------------------------------------------------------
         -- Collapse #ProteinCollections into @protCollNameList
@@ -402,11 +457,11 @@ As
         
         -- Remove the trailing comma from @protCollNameList
         If Len(@protCollNameList) > 0
-            Set @protCollNameList = Left(@protCollNameList, Len(@protCollNameList)-1)
+            Set @protCollNameList = Left(@protCollNameList, Len(@protCollNameList) - 1)
 
         -- Count the total number of datasets and experiments in #TmpDatasets
-        SELECT @DatasetCountTotal = COUNT(*), 
-               @ExperimentCountTotal = COUNT(DISTINCT E.Exp_ID)
+        SELECT @datasetCountTotal = COUNT(*), 
+               @experimentCountTotal = COUNT(DISTINCT E.Exp_ID)
         FROM #TmpDatasets INNER JOIN 
             T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
             T_Experiments E ON DS.Exp_ID = E.Exp_ID
@@ -414,17 +469,17 @@ As
         If @showMessages <> 0
         Begin --<b>
             -- Display messages listing the collections added
-            Set @UniqueID = 0
+            Set @uniqueID = 0
             Set @continue = 1
             While @continue = 1
             Begin -- <c>
-                SELECT TOP 1 @UniqueID = UniqueID, 
-                            @ProteinCollectionName = Protein_Collection_Name, 
-                            @DatasetCount = Dataset_Count, 
-                            @ExperimentCount = Experiment_Count,
-                            @EnzymeContaminantCollection = Enzyme_Contaminant_Collection
+                SELECT TOP 1 @uniqueID = UniqueID, 
+                            @proteinCollectionName = Protein_Collection_Name, 
+                            @datasetCount = Dataset_Count, 
+                            @experimentCount = Experiment_Count,
+                            @enzymeContaminantCollection = Enzyme_Contaminant_Collection
                 FROM #ProteinCollectionsToAdd 
-                WHERE UniqueID > @UniqueID
+                WHERE UniqueID > @uniqueID
                 ORDER BY UniqueID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -433,32 +488,32 @@ As
                     Set @continue = 0
                 Else
                 Begin -- <d>
-                    If @EnzymeContaminantCollection <> 0
+                    If @enzymeContaminantCollection <> 0
                     Begin
-                        Set @msg = 'Added enzyme contaminant collection ' + @ProteinCollectionName
+                        Set @msg = 'Added enzyme contaminant collection ' + @proteinCollectionName
                     End
                     Else
                     Begin
-                        Set @msg = 'Added protein collection ' + @ProteinCollectionName + ' since it is present in '
-                        If @DatasetCount > 0
+                        Set @msg = 'Added protein collection ' + @proteinCollectionName + ' since it is present in '
+                        If @datasetCount > 0
                         Begin -- <e1>
-                            Set @msg = @msg + Convert(varchar(12), @DatasetCount) + ' of '
-                            Set @msg = @msg + Convert(varchar(12), @DatasetCountTotal) + ' dataset'
-                            If @DatasetCountTotal <> 1
+                            Set @msg = @msg + Convert(varchar(12), @datasetCount) + ' of '
+                            Set @msg = @msg + Convert(varchar(12), @datasetCountTotal) + ' dataset'
+                            If @datasetCountTotal <> 1
                                 Set @msg = @msg + 's'
                         End -- </e1>
                         Else
                         Begin -- <e2>
-                            If @ExperimentCount > 0
+                            If @experimentCount > 0
                             Begin
-                                Set @msg = @msg + Convert(varchar(12), @ExperimentCount) + ' of '
-                                Set @msg = @msg + Convert(varchar(12), @ExperimentCountTotal) + ' experiment'
-                                If @ExperimentCountTotal <> 1
+                                Set @msg = @msg + Convert(varchar(12), @experimentCount) + ' of '
+                                Set @msg = @msg + Convert(varchar(12), @experimentCountTotal) + ' experiment'
+                                If @experimentCountTotal <> 1
                                     Set @msg = @msg + 's'
                             End
                             Else
                             Begin
-                                -- Both @DatasetCount and @ExperimentCount are 0
+                                -- Both @datasetCount and @experimentCount are 0
                                 -- This code should not be reached
                                 Set @msg = @msg + '? datasets and/or ? experiments (unexpected stats)'
                             End 

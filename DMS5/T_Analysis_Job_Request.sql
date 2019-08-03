@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organism_ID] [int] NOT NULL,
-	[AJR_datasets] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AJR_datasets] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_requestor] [int] NOT NULL,
 	[AJR_comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_state] [int] NOT NULL,
@@ -90,7 +90,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 create Trigger [dbo].[trig_d_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Delete
 /****************************************************
@@ -124,7 +123,6 @@ AS
 	FROM deleted	   
 	ORDER BY deleted.AJR_requestID
 
-
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_d_AnalysisJobRequest]
 GO
@@ -133,7 +131,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Insert
 /****************************************************
@@ -156,7 +153,6 @@ AS
 	FROM inserted
 	ORDER BY inserted.AJR_requestID
 
-
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_i_AnalysisJobRequest]
 GO
@@ -165,7 +161,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_AnalysisJobRequest] on [dbo].[T_Analysis_Job_Request]
 For Update
 /****************************************************
@@ -192,7 +187,6 @@ AS
 		ORDER BY inserted.AJR_requestID
 
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ENABLE TRIGGER [trig_u_AnalysisJobRequest]
