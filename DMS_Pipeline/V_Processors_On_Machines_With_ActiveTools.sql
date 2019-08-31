@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Processors_On_Machines_With_ActiveTools
+
+CREATE VIEW [dbo].[V_Processors_On_Machines_With_ActiveTools]
 AS
 SELECT ST.Processor_Name,
        ST.Tool_Name,
@@ -11,7 +12,7 @@ SELECT ST.Processor_Name,
        ST.Enabled,
        ST.[Comment],
        ST.Latest_Request,
-       ST.ID,
+       ST.Proc_ID,
        ST.Processor_State,
        ST.Machine,
        ST.Total_CPUs,
@@ -35,7 +36,7 @@ FROM V_Processor_Step_Tools_List_Report ST
        ON ST.Machine = BusyProcessorsQ.Machine AND
           ST.Tool_Name = BusyProcessorsQ.Tool
 GROUP BY ST.Processor_Name, ST.Tool_Name, ST.Priority, ST.Enabled, ST.[Comment], 
-         ST.Latest_Request, ST.ID, ST.Processor_State, ST.Machine, ST.Total_CPUs, 
+         ST.Latest_Request, ST.Proc_ID, ST.Processor_State, ST.Machine, ST.Total_CPUs, 
 		 ST.Group_ID, ST.Group_Name, ST.Group_Enabled
 
 
