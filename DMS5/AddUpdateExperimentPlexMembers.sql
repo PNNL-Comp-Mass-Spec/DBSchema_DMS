@@ -65,6 +65,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **                         - Add @comment parameters
 **          11/29/2018 mem - Call AlterEnteredByUser
 **          11/30/2018 mem - Make @plexExperimentId an output parameter
+**          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
 **    
 *****************************************************/
 (
@@ -130,6 +131,9 @@ As
     Declare @value varchar(2048)
 	
     Declare @charIndex int
+    
+    Declare @experimentGroupID Int = 0
+    Declare @plexExperimentName Varchar(128) = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -721,13 +725,96 @@ As
             Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @plexExperimentId, @CallingUser
         End
 
+        ---------------------------------------------------
+        -- Check whether this experiment is the parent experiment of an experiment group
+        ---------------------------------------------------
+
+        SELECT @experimentGroupID = Group_ID
+        FROM   T_Experiment_Groups
+        WHERE Parent_Exp_ID = @plexExperimentId
+		--
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If IsNull(@experimentGroupID, 0) > 0
+        Begin
+            -- Lookup the experiment name for @plexExperimentId
+            SELECT @plexExperimentName = Experiment_Num
+            FROM T_Experiments
+            WHERE Exp_ID = @plexExperimentId
+            
+            If IsNull(@plexExperimentName, '') = 'Placeholder'
+            Begin
+                -- The parent experiment is named 'Placeholder'
+                -- Do not propagate plex info to experiment group members
+                Set @experimentGroupID = 0
+            End
+        End
+
+        If IsNull(@experimentGroupID, 0) > 0
+        Begin -- <CopyPlexInfo>
+
+            -- Create a temporary table to track the experiment IDs that we will add plex info to
+            -- This table is used by AlterEnteredByUserMultiID
+            CREATE TABLE #TmpIDUpdateList (
+			    TargetID int NOT NULL
+			)
+
+            CREATE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+
+            ---------------------------------------------------
+            -- Find the members of the experiment group
+            -- Filter out any that already have plex info defined
+            ---------------------------------------------------
+
+            INSERT INTO #TmpIDUpdateList( TargetID )
+            SELECT EGM.Exp_ID
+            FROM T_Experiment_Group_Members AS EGM
+                 LEFT OUTER JOIN T_Experiment_Plex_Members AS EPM
+                   ON EGM.Exp_ID = EPM.Plex_Exp_ID
+            WHERE EGM.Group_ID = @experimentGroupID AND
+                  EPM.Plex_Exp_ID IS NULL
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount > 0
+            Begin
+                ---------------------------------------------------
+                -- Copy the plex info to the other experiments in this experiment group
+                -- However, only do this if the target experiments do not yet have plex info defined
+                ---------------------------------------------------
+
+                INSERT INTO T_Experiment_Plex_Members( [Plex_Exp_ID],
+                                                       [Channel],
+                                                       [Exp_ID],
+                                                       [Channel_Type_ID],
+                                                       [Comment] )
+                SELECT MissingPlexQ.TargetID As Plex_Exp_ID,
+                       Channel,
+                       Exp_ID,
+                       Channel_Type_ID,
+                       [Comment]
+                FROM #TmpExperiment_Plex_Members
+                     CROSS JOIN #TmpIDUpdateList As MissingPlexQ
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If @myRowCount > 0 And Len(@callingUser) > 0
+                Begin
+                    -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
+                    --            
+                    Exec AlterEnteredByUserMultiID 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @CallingUser
+                End
+            End
+
+        End -- </CopyPlexInfo>
+
 	End -- </AddOrUpdate>
 
 	End TRY
 	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
-		-- rollback any open transactions
+		-- Rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
 
