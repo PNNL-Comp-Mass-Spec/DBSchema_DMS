@@ -66,6 +66,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          11/29/2018 mem - Call AlterEnteredByUser
 **          11/30/2018 mem - Make @plexExperimentId an output parameter
 **          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
+**          09/06/2019 mem - When updating a plex experiment that is a parent experiment of an experiment group, also update the members (fractions) of the experiment group
 **    
 *****************************************************/
 (
@@ -132,8 +133,9 @@ As
 	
     Declare @charIndex int
     
-    Declare @experimentGroupID Int = 0
     Declare @plexExperimentName Varchar(128) = ''
+
+    Declare @currentPlexExperimentId Int
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -690,123 +692,116 @@ As
 	
 	If @mode IN ('add', 'update')
 	Begin -- <AddOrUpdate>
+    
+        ---------------------------------------------------
+        -- Create a temporary table to hold the experiment IDs that will be updated with the plex info in #TmpExperiment_Plex_Members
+        ---------------------------------------------------
 
-        MERGE [dbo].[T_Experiment_Plex_Members] AS t
-        USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment] 
-               FROM #TmpExperiment_Plex_Members) as s
-        ON ( t.[Channel] = s.[Channel] AND t.[Plex_Exp_ID] = @plexExperimentId)
-        WHEN MATCHED AND (
-            t.[Exp_ID] <> s.[Exp_ID] OR
-            t.[Channel_Type_ID] <> s.[Channel_Type_ID] OR
-            ISNULL( NULLIF(t.[Comment], s.[Comment]),
-                    NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
-            )
-        THEN UPDATE SET 
-            [Exp_ID] = s.[Exp_ID],
-            [Channel_Type_ID] = s.[Channel_Type_ID],
-            [Comment] = s.[Comment]
-        WHEN NOT MATCHED BY TARGET THEN
-            INSERT([Plex_Exp_ID], [Channel], [Exp_ID], [Channel_Type_ID], [Comment])
-            VALUES(@plexExperimentId, s.[Channel], s.[Exp_ID], s.[Channel_Type_ID], s.[Comment])
-        WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @plexExperimentId THEN DELETE;
-		--
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-		If @myError <> 0
-		Begin
-			Set @msg = 'Update operation failed: "' + @plexExperimentId + '"'
-			RAISERROR (@msg, 11, 18)
-		End
+        CREATE TABLE #Tmp_ExperimentsToUpdate (plexExperimentId Int Not Null)
 
-        If Len(@callingUser) > 0
+        CREATE INDEX #IX_Tmp_ExperimentsToUpdate On #Tmp_ExperimentsToUpdate (plexExperimentId)
+
+        INSERT INTO #Tmp_ExperimentsToUpdate (plexExperimentId )
+        VALUES(@plexExperimentId)
+
+        ---------------------------------------------------
+        -- Check whether this experiment is the parent experiment of any experiment groups
+        -- An experiment can be the parent experiment for more than one group, for example
+        -- StudyName4_TB_Plex11 could be the parent experiment for group ID 6846, with members:
+        --   StudyName4_TB_Plex11_G_f01
+        --   StudyName4_TB_Plex11_G_f02
+        --   StudyName4_TB_Plex11_G_f03
+        --   StudyName4_TB_Plex11_G_f04
+        -- and also the parent experiment for group ID 6847 with members:
+        --   StudyName4_TB_Plex11_P_f01
+        --   StudyName4_TB_Plex11_P_f02
+        --   StudyName4_TB_Plex11_P_f03
+        --   StudyName4_TB_Plex11_P_f04
+        ---------------------------------------------------
+
+        If Exists (SELECT * From T_Experiment_Groups WHERE Parent_Exp_ID = @plexExperimentId)
         Begin
-            -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
-            --            
-            Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @plexExperimentId, @CallingUser
+            ---------------------------------------------------
+            -- Add experiments that are associated with parent experiment @plexExperimentId
+            -- Assure that the parent experiment is not the 'Placeholder' experiment
+            ---------------------------------------------------
+            --
+            INSERT INTO #Tmp_ExperimentsToUpdate (plexExperimentId )
+            SELECT DISTINCT EGM.Exp_ID
+            FROM T_Experiment_Groups EG
+                 INNER JOIN T_Experiment_Group_Members EGM
+                   ON EGM.Group_ID = EG.Group_ID
+                 INNER JOIN T_Experiments E
+                   ON EG.Parent_Exp_ID = E.Exp_ID
+            WHERE EG.Parent_Exp_ID = @plexExperimentId AND
+                  E.Experiment_Num <> 'Placeholder'
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount        
         End
 
         ---------------------------------------------------
-        -- Check whether this experiment is the parent experiment of an experiment group
+        -- Process each experiment in #Tmp_ExperimentsToUpdate
+        -- We're processing the experiments one at a time due to the use of the following condition for deleting extra rows:
+        --   WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @currentPlexExperimentId
+        -- This method only works if comparing T.Plex_exp_id to a constant
         ---------------------------------------------------
 
-        SELECT @experimentGroupID = Group_ID
-        FROM   T_Experiment_Groups
-        WHERE Parent_Exp_ID = @plexExperimentId
-		--
-        SELECT @myError = @@error, @myRowCount = @@rowcount
+        Set @currentPlexExperimentId = 0
+        Set @continue = 1
+        
+        While @continue = 1
+        Begin -- <WhileLoop>
 
-        If IsNull(@experimentGroupID, 0) > 0
-        Begin
-            -- Lookup the experiment name for @plexExperimentId
-            SELECT @plexExperimentName = Experiment_Num
-            FROM T_Experiments
-            WHERE Exp_ID = @plexExperimentId
-            
-            If IsNull(@plexExperimentName, '') = 'Placeholder'
-            Begin
-                -- The parent experiment is named 'Placeholder'
-                -- Do not propagate plex info to experiment group members
-                Set @experimentGroupID = 0
-            End
-        End
-
-        If IsNull(@experimentGroupID, 0) > 0
-        Begin -- <CopyPlexInfo>
-
-            -- Create a temporary table to track the experiment IDs that we will add plex info to
-            -- This table is used by AlterEnteredByUserMultiID
-            CREATE TABLE #TmpIDUpdateList (
-			    TargetID int NOT NULL
-			)
-
-            CREATE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
-
-            ---------------------------------------------------
-            -- Find the members of the experiment group
-            -- Filter out any that already have plex info defined
-            ---------------------------------------------------
-
-            INSERT INTO #TmpIDUpdateList( TargetID )
-            SELECT EGM.Exp_ID
-            FROM T_Experiment_Group_Members AS EGM
-                 LEFT OUTER JOIN T_Experiment_Plex_Members AS EPM
-                   ON EGM.Exp_ID = EPM.Plex_Exp_ID
-            WHERE EGM.Group_ID = @experimentGroupID AND
-                  EPM.Plex_Exp_ID IS NULL
+            SELECT TOP 1 @currentPlexExperimentId = plexExperimentId
+            FROM #Tmp_ExperimentsToUpdate
+            WHERE plexExperimentId > @currentPlexExperimentId
+            ORDER BY plexExperimentId
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            If @myRowCount > 0
+            If @myRowCount = 0
             Begin
-                ---------------------------------------------------
-                -- Copy the plex info to the other experiments in this experiment group
-                -- However, only do this if the target experiments do not yet have plex info defined
-                ---------------------------------------------------
+                Set @continue = 0                
+            End
+            Else
+            Begin -- <CopyPlexInfo>
 
-                INSERT INTO T_Experiment_Plex_Members( [Plex_Exp_ID],
-                                                       [Channel],
-                                                       [Exp_ID],
-                                                       [Channel_Type_ID],
-                                                       [Comment] )
-                SELECT MissingPlexQ.TargetID As Plex_Exp_ID,
-                       Channel,
-                       Exp_ID,
-                       Channel_Type_ID,
-                       [Comment]
-                FROM #TmpExperiment_Plex_Members
-                     CROSS JOIN #TmpIDUpdateList As MissingPlexQ
-                --
+                MERGE [dbo].[T_Experiment_Plex_Members] AS t
+                USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment] 
+                       FROM #TmpExperiment_Plex_Members) as s
+                ON ( t.[Channel] = s.[Channel] AND t.[Plex_Exp_ID] = @currentPlexExperimentId)
+                WHEN MATCHED AND (
+                    t.[Exp_ID] <> s.[Exp_ID] OR
+                    t.[Channel_Type_ID] <> s.[Channel_Type_ID] OR
+                    ISNULL( NULLIF(t.[Comment], s.[Comment]),
+                            NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
+                    )
+                THEN UPDATE SET 
+                    [Exp_ID] = s.[Exp_ID],
+                    [Channel_Type_ID] = s.[Channel_Type_ID],
+                    [Comment] = s.[Comment]
+                WHEN NOT MATCHED BY TARGET THEN
+                    INSERT([Plex_Exp_ID], [Channel], [Exp_ID], [Channel_Type_ID], [Comment])
+                    VALUES(@currentPlexExperimentId, s.[Channel], s.[Exp_ID], s.[Channel_Type_ID], s.[Comment])
+                WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @currentPlexExperimentId THEN DELETE;
+		        --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
+                --
+		        If @myError <> 0
+		        Begin
+			        Set @msg = 'Update operation failed: "' + @currentPlexExperimentId + '"'
+			        RAISERROR (@msg, 11, 18)
+		        End
 
-                If @myRowCount > 0 And Len(@callingUser) > 0
+                If Len(@callingUser) > 0
                 Begin
                     -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
                     --            
-                    Exec AlterEnteredByUserMultiID 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @CallingUser
+                    Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
                 End
-            End
+            End -- </CopyPlexInfo>
 
-        End -- </CopyPlexInfo>
+        End -- </WhileLoop>
 
 	End -- </AddOrUpdate>
 
