@@ -1,5 +1,5 @@
 /****** Object:  Table [T_ParamType] ******/
-/****** RowCount: 196 ******/
+/****** RowCount: 197 ******/
 SET IDENTITY_INSERT [T_ParamType] ON
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (1,'connectionstring','','Connection string to the DMS database for requesting tasks or updating status (DMS_Capture, DMS_Pipeline, or DMS5)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (2,'username','','')
@@ -85,7 +85,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (83
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (89,'MultiAlignprogloc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (96,'ReAdWProgLoc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (97,'InspectDir','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (98,'pythonprogloc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (98,'PythonProgLoc','','Full path to python.exe (python 2.x)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (99,'ManagerUpdateRequired','TrueFalsePickList','When True, then the manager will stop picking up new jobs and will exit.  However, prior to exiting, it will call SP AckManagerUpdateRequired')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (100,'LogMemoryUsage','TrueFalsePickList','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (101,'MinimumMemoryUsageLogInterval','','')
@@ -110,7 +110,7 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (12
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (124,'formatdbprogloc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (125,'OMSSAprogloc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (126,'dtatoxmlprogloc','','')
-INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (127,'dtarefineryloc','','')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (127,'DtaRefineryLoc','','Full path to  dta_refinery.py (previously dta_refinery.exe)')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (128,'omssa2pepprogloc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (129,'puttyprogloc','','')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (130,'puttysftpprogloc','','')
@@ -197,4 +197,5 @@ INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (21
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (215,'ThermoPeakDataExporterProgLoc','','Directory with ThermoPeakDataExporter.exe')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (216,'MSFraggerProgLoc','','Directory with MSFragger.jar')
 INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (217,'PhilosopherProgLoc','','Directory with Philosoper exe, typically philosopher_windows_amd64.exe')
+INSERT INTO [T_ParamType] (ParamID, ParamName, PicklistName, Comment) VALUES (218,'Python3ProgLoc','','Directory wity python.exe')
 SET IDENTITY_INSERT [T_ParamType] OFF
