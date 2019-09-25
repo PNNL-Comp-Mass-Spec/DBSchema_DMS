@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[DeleteExperiment]
 /****************************************************
 **
@@ -25,10 +24,14 @@ CREATE Procedure [dbo].[DeleteExperiment]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          09/10/2019 mem - Delete from T_Experiment_Plex_Members if mapped to Plex_Exp_ID
+**                         - Prevent deletion if the experiment is a plex channel in T_Experiment_Plex_Members
+**                         - Add @infoOnly
 **    
 *****************************************************/
 (
-    @ExperimentNum varchar(128),
+    @experimentNum varchar(128),
+    @infoOnly tinyint = 0,
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
@@ -40,10 +43,13 @@ As
     
     set @message = ''
     
-    Declare @ExperimentID int
+    Declare @experimentId int
     Declare @state int
     
     Declare @result int
+
+    Set @experimentNum = IsNull(@experimentNum, '')
+    Set @infoOnly = IsNull(@infoonly, 0)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -60,17 +66,17 @@ As
     -- Get ExperimentID and current state
     ---------------------------------------------------
 
-    Set @ExperimentID = 0
+    Set @experimentId = 0
     --
-    SELECT @ExperimentID = Exp_ID
+    SELECT @experimentId = Exp_ID
     FROM T_Experiments
-    WHERE (Experiment_Num = @ExperimentNum)
+    WHERE (Experiment_Num = @experimentNum)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 or @ExperimentID = 0
+    If @myError <> 0 or @experimentId = 0
     Begin
-        set @message = 'Could not get Id for Experiment "' + @ExperimentNum + '"'
+        set @message = 'Could not get Id for Experiment "' + @experimentNum + '"'
         RAISERROR (@message, 10, 1)
         return 51140
     End
@@ -83,13 +89,13 @@ As
     --
     SELECT @dsCount = COUNT(*)
     FROM T_Dataset
-    WHERE (Exp_ID = @ExperimentID)
+    WHERE (Exp_ID = @experimentId)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get dataset count for Experiment "' + @ExperimentNum + '"'
+        set @message = 'Could not get dataset count for Experiment "' + @experimentNum + '"'
         RAISERROR (@message, 10, 1)
         return 51141
     End
@@ -109,13 +115,13 @@ As
     --
     SELECT @rrCount = COUNT(*)
     FROM T_Requested_Run
-    WHERE (Exp_ID = @ExperimentID)
+    WHERE (Exp_ID = @experimentId)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get requested run count for Experiment "' + @ExperimentNum + '"'
+        set @message = 'Could not get requested run count for Experiment "' + @experimentNum + '"'
         RAISERROR (@message, 10, 1)
         return 51142
     End
@@ -135,13 +141,13 @@ As
     --
     SELECT @rrhCount = COUNT(*)
     FROM T_Requested_Run
-    WHERE (Exp_ID = @ExperimentID) AND NOT (DatasetID IS NULL)
+    WHERE (Exp_ID = @experimentId) AND NOT (DatasetID IS NULL)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get requested run history count for Experiment "' + @ExperimentNum + '"'
+        set @message = 'Could not get requested run history count for Experiment "' + @experimentNum + '"'
         RAISERROR (@message, 10, 1)
         return 51143
     End
@@ -151,6 +157,32 @@ As
         set @message = 'Cannot delete experiment that has associated requested run history'
         RAISERROR (@message, 10, 1)
         return 51143
+    End
+
+    ---------------------------------------------------
+    -- Can't delete experiment that is mapped to a channel in a plex
+    ---------------------------------------------------
+
+    Declare @plexMemberCount Int = 0
+    --
+    SELECT @plexMemberCount = COUNT(*)
+    FROM T_Experiment_Plex_Members
+    WHERE (Exp_ID = @experimentId)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
+    Begin
+        set @message = 'Could not get plex member count for Experiment "' + @experimentNum + '"'
+        RAISERROR (@message, 10, 1)
+        return 51144
+    End
+    --
+    If @plexMemberCount > 0
+    Begin
+        set @message = 'Cannot delete experiment that is mapped to a plex channel; see https://dms2.pnl.gov/experiment_plex_members_tsv/report/-/-/-/' + @experimentNum + '/-/-/-'
+        RAISERROR (@message, 10, 1)
+        return 51144
     End
 
     ---------------------------------------------------
@@ -166,8 +198,17 @@ As
     -- cell culture map table
     ---------------------------------------------------
     
-    DELETE FROM T_Experiment_Cell_Cultures
-    WHERE (Exp_ID = @ExperimentID)
+    If @infoonly > 0
+    Begin
+        SELECT *
+        FROM T_Experiment_Cell_Cultures
+        WHERE Exp_ID = @experimentId
+    End
+    Else
+    Begin
+        DELETE FROM T_Experiment_Cell_Cultures
+        WHERE Exp_ID = @experimentId
+    End
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -188,14 +229,23 @@ As
 
     SELECT @groupID = Group_ID
     FROM T_Experiment_Group_Members
-    WHERE Exp_ID = @ExperimentID
+    WHERE Exp_ID = @experimentId
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @groupID > 0
     Begin
-        DELETE FROM T_Experiment_Group_Members
-        WHERE Exp_ID = @ExperimentID
+        If @infoonly > 0
+        Begin
+            SELECT *
+            FROM T_Experiment_Group_Members
+            WHERE Exp_ID = @experimentId
+        End
+        Else
+        Begin
+            DELETE FROM T_Experiment_Group_Members
+            WHERE Exp_ID = @experimentId
+        End
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -207,26 +257,38 @@ As
             return 51131
         End
         
-         -- Update MemberCount
-        --
-        Exec @myError = UpdateExperimentGroupMemberCount @groupID = @groupID
-
-        If @myError <> 0
+        If @infoonly = 0
         Begin
-            rollback transaction @transName
-            RAISERROR ('Failed trying to update MemberCount', 10, 1)
-            return 51132
+            -- Update MemberCount
+            --
+            Exec @myError = UpdateExperimentGroupMemberCount @groupID = @groupID
+
+            If @myError <> 0
+            Begin
+                rollback transaction @transName
+                RAISERROR ('Failed trying to update MemberCount', 10, 1)
+                return 51132
+            End
         End
     End
 
     ---------------------------------------------------
-    -- Remove any reference to this eperiment as parent
-    -- experiment from experiment group table
+    -- Remove any reference to this experiment as a
+    -- parent experiment in the experiment groups table
     ---------------------------------------------------
     
-    UPDATE T_Experiment_Groups
-    SET Parent_Exp_ID = 15
-    WHERE (Parent_Exp_ID = @ExperimentID)    
+    If @infoonly > 0
+    Begin
+        SELECT *
+        FROM T_Experiment_Groups
+        WHERE Parent_Exp_ID = @experimentId
+    End
+    Else
+    Begin
+        UPDATE T_Experiment_Groups
+        SET Parent_Exp_ID = 15
+        WHERE Parent_Exp_ID = @experimentId
+    End
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -239,25 +301,67 @@ As
     End
 
     ---------------------------------------------------
-    -- Delete any auxiliary info associated with Experiment
+    -- Delete experiment plex info
     ---------------------------------------------------
-        
-    exec @result = DeleteAuxInfo 'Experiment', @ExperimentNum, @message output
-
-    If @result <> 0
+       
+    If @infoonly > 0
+    Begin
+        SELECT *
+        FROM T_Experiment_Plex_Members
+        WHERE Plex_Exp_ID = @experimentId
+    End
+    Else
+    Begin
+        DELETE FROM T_Experiment_Plex_Members
+        WHERE Plex_Exp_ID = @experimentId
+    End
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    If @myError <> 0
     Begin
         rollback transaction @transName
-        set @message = 'Delete auxiliary information was unsuccessful for Experiment: ' + @message
-        RAISERROR (@message, 10, 1)
-        return 51136
+        RAISERROR ('Delete from experiment plex members table was unsuccessful',
+            10, 1)
+        return 51135
+    End
+
+    If @infoonly > 0
+    Begin
+        Select 'exec DeleteAuxInfo for ' + @experimentNum
+    End
+    Else
+    Begin
+        ---------------------------------------------------
+        -- Delete any auxiliary info associated with Experiment
+        ---------------------------------------------------
+        
+        exec @result = DeleteAuxInfo 'Experiment', @experimentNum, @message output
+
+        If @result <> 0
+        Begin
+            rollback transaction @transName
+            set @message = 'Delete auxiliary information was unsuccessful for Experiment: ' + @message
+            RAISERROR (@message, 10, 1)
+            return 51136
+        End
     End
     
     ---------------------------------------------------
     -- Delete experiment from experiment table
     ---------------------------------------------------
 
-    DELETE FROM T_Experiments
-    WHERE (Exp_ID = @ExperimentID)
+    If @infoonly > 0
+    Begin
+        SELECT *
+        FROM T_Experiments
+        WHERE Exp_ID = @experimentId
+    End
+    Else
+    Begin
+        DELETE FROM T_Experiments
+        WHERE Exp_ID = @experimentId
+    End
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -270,11 +374,11 @@ As
     End
 
     -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
-    If Len(@callingUser) > 0
+    If @infoonly = 0 And Len(@callingUser) > 0
     Begin
         Declare @stateID Int = 0
 
-        Exec AlterEventLogEntryUser 3, @ExperimentID, @stateID, @callingUser
+        Exec AlterEventLogEntryUser 3, @experimentId, @stateID, @callingUser
     End
 
     commit transaction @transName
