@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 /****************************************************
 **
@@ -23,7 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **  Date:   10/07/2012 
 **          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
 **          11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
-**          01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 10 days
+**          01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 45 days
 **          04/03/2013 grk - Made Usage editable
 **          04/04/2013 grk - Clearing Usage on reload
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -33,6 +34,8 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/03/2019 mem - Pass 0 to UpdateEMSLInstrumentUsageReport for @eusInstrumentID
+**          09/10/2019 mem - Extended cutoff for 'update' to be 365 days instead of 90 days
+**                         - Changed the cutoff for reload to 60 days
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -48,22 +51,23 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 )
 As
     Set XACT_ABORT, nocount on
-    SET CONCAT_NULL_YIELDS_NULL ON
-    SET ANSI_PADDING ON
+    Set CONCAT_NULL_YIELDS_NULL ON
+    Set ANSI_PADDING ON
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
      
-    DECLARE @msg VARCHAR(512) 
+    Declare @msg VARCHAR(512) 
 
-    DECLARE @startOfMonth DATETIME 
-    DECLARE @startOfNextMonth DATETIME
-    DECLARE @endOfMonth DATETIME
-     DECLARE @lockDate DATETIME
-   
-    DECLARE @xml AS xml
+    Declare @startOfMonth Datetime 
+    Declare @startOfNextMonth Datetime
+    Declare @endOfMonth Datetime
+    Declare @lockDateReload Datetime
+    Declare @lockDateUpdate Datetime
+
+    Declare @xml AS xml
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -81,7 +85,7 @@ As
     ---------------------------------------------------
     
     If IsNull(@callingUser, '') = ''
-        SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+        Set @callingUser = dbo.GetUserLoginWithoutDomain('')
 
     Declare @instrumentID int = 0
     
@@ -101,13 +105,46 @@ As
         End
     End
 
+    Set @operation = Ltrim(Rtrim(IsNull(@operation, '')))
+    If Len(@operation) = 0
+    Begin
+        RAISERROR ('Operation must be defined', 11, 4)
+    End
+
+    Set @month = Ltrim(Rtrim(IsNull(@month, '')))
+    Set @year  = Ltrim(Rtrim(IsNull(@year, '')))
+
+    If Len(@month) = 0
+    Begin
+        RAISERROR ('Month must be defined', 11, 4)
+    End
+
+    If Len(@year) = 0
+    Begin
+        RAISERROR ('Year must be defined', 11, 4)
+    End
+    
+    Declare @monthValue Int = Try_Cast(@month As Int)
+    Declare @yearValue Int = Try_Cast(@year As Int)
+
+    If @monthValue Is Null 
+    Begin
+        RAISERROR ('Month must be an integer, not: "%s"', 11, 4, @month)
+    End
+
+    If Len(@year) = 0
+    Begin
+        RAISERROR ('Year must be an integer, not: "%s"', 11, 4, @year)
+    End
+
     -- Uncomment to debug
-    -- Exec PostLogEntry 'Debug', @factorList, 'UpdateInstrumentUsageReport'
+    -- Declare @debugMessage Varchar(1024) = 'Operation: ' + @operation + '; Instrument: ' + @instrument + '; ' + @year + '-' + @month + '; ' + Cast(@factorList As Varchar(1024))
+    -- Exec PostLogEntry 'Debug', @debugMessage, 'UpdateInstrumentUsageReport'
     
     -----------------------------------------------------------
     -- Copy @factorList text variable into the XML variable
     -----------------------------------------------------------
-    SET @xml = @factorList
+    Set @xml = @factorList
     
     ---------------------------------------------------
     ---------------------------------------------------
@@ -116,13 +153,17 @@ As
         ---------------------------------------------------
         -- get boundary dates
         ---------------------------------------------------
-        SET @startOfMonth = @month + '/1/' + @year                    -- Beginning of the month that we are updating
-        SET @startOfNextMonth = DATEADD(MONTH, 1, @startOfMonth)    -- Beginning of the next month after @startOfMonth
-        SET @endOfMonth = DATEADD(MINUTE, -1, @startOfNextMonth)    -- End of the month that we are editing
-        SET @lockDate = DATEADD(DAY, 90, @startOfNextMonth)            -- Date threshold, afterwhich users can no longer make changes to this month's data
-        
-        IF GETDATE() > @lockDate
-            RAISERROR ('Changes are not allowed to prior months after 90 days into the next month', 11, 13)
+        Set @startOfMonth = @month + '/1/' + @year                  -- Beginning of the month that we are updating
+        Set @startOfNextMonth = DATEADD(MONTH, 1, @startOfMonth)    -- Beginning of the next month after @startOfMonth
+        Set @endOfMonth = DATEADD(MINUTE, -1, @startOfNextMonth)    -- End of the month that we are editing
+        Set @lockDateReload = DATEADD(DAY, 60, @startOfNextMonth)   -- Date threshold, afterwhich users can no longer reload this month's data
+        Set @lockDateUpdate = DATEADD(DAY, 365, @startOfNextMonth)  -- Date threshold, afterwhich users can no longer update this month's data
+
+        If @operation In ('update') And GETDATE() > @lockDateUpdate
+            RAISERROR ('Changes are not allowed to instrument usage data over 365 days old', 11, 13)
+
+        If Not @operation In ('update') And GETDATE() > @lockDateReload
+            RAISERROR ('Instrument usage data over 60 days old cannot be reloaded or refreshed', 11, 13)
 
         -----------------------------------------------------------
         -- foundational actions for various operations
@@ -162,7 +203,7 @@ As
             -- make sure changed fields are allowed
             -----------------------------------------------------------
             
-            DECLARE @badFields VARCHAR(4096) = ''
+            Declare @badFields VARCHAR(4096) = ''
             SELECT DISTINCT @badFields = @badFields + Field + ',' FROM #TMP WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users', 'Usage')
             --                                   
             IF @badFields <> ''        
@@ -170,7 +211,7 @@ As
 
         END --<a>
   
-          IF @operation in ('reload', 'refresh')
+        IF @operation in ('reload', 'refresh')
         BEGIN --<b>
             -----------------------------------------------------------
             -- validation    
@@ -186,7 +227,7 @@ As
             IF ISNULL(@instrument, '') = '' 
             BEGIN 
                 ---------------------------------------------------
-                -- get list of EMSL instruments
+                -- Get list of EMSL instruments
                 ---------------------------------------------------
                 --
                 CREATE TABLE #Tmp_Instruments (
@@ -265,17 +306,17 @@ As
 
         IF @operation = 'refresh'
         BEGIN
-            IF ISNULL(@instrument, '') != ''
+            IF Len(ISNULL(@instrument, '')) > 0
             BEGIN                     
                 EXEC @myError = UpdateEMSLInstrumentUsageReport @instrument, 0, @endOfMonth, @msg output
-                IF(@myError != 0)          
+                IF(@myError <> 0)          
                     RAISERROR (@msg, 11, 6)
             END
             ELSE 
             BEGIN --<m>
-                DECLARE @inst VARCHAR(64)
-                DECLARE @index INT = 0
-                DECLARE @done TINYINT = 0
+                Declare @inst VARCHAR(64)
+                Declare @index INT = 0
+                Declare @done TINYINT = 0
 
                 WHILE @done = 0
                 BEGIN --<x>
@@ -298,8 +339,6 @@ As
             END --<m>                                                    
         END 
 
-    ---------------------------------------------------
-    ---------------------------------------------------
     END TRY
     BEGIN CATCH 
         EXEC FormatErrorMessage @message output, @myError output
