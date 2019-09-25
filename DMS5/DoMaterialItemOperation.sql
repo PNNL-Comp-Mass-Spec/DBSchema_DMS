@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DoMaterialItemOperation
+
+CREATE Procedure [dbo].[DoMaterialItemOperation]
 /****************************************************
 **
 **  Desc: Do an operation on an item, using the item name
@@ -13,17 +14,18 @@ CREATE Procedure DoMaterialItemOperation
 **  Auth: grk
 **  Date: 07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **        10/01/2009 mem - Expanded error message
-**        08/19/2010 grk - try-catch for error handling
-**        02/23/2016 mem - Add set XACT_ABORT on
+**        08/19/2010 grk - Add try-catch for error handling
+**        02/23/2016 mem - Add Set XACT_ABORT on
 **        04/12/2017 mem - Log exceptions to T_Log_Entries
 **        06/16/2017 mem - Restrict access using VerifySPAuthorized
 **        08/01/2017 mem - Use THROW if not authorized
+**        09/25/2019 mem - Allow @name to be an experiment ID, which happens if "Retire Experiment" is clicked at https://dms2.pnl.gov/experimentid/show/123456
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
 (
-    @name varchar(128),                    -- Item name (either biomaterial or an experiment)
+    @name varchar(128),                    -- Item name (either biomaterial or an experiment); or experiment ID
     @mode varchar(32),                    -- 'retire_biomaterial', 'retire_experiment'
     @message varchar(512) output,
     @callingUser varchar (128) = ''
@@ -31,11 +33,13 @@ CREATE Procedure DoMaterialItemOperation
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
-    declare @msg varchar(512)
+    Declare @msg varchar(512)
+    Declare @experimentID int
+
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -44,82 +48,88 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoMaterialItemOperation', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
-    BEGIN TRY
+    Begin TRY
 
     ---------------------------------------------------
     -- convert name to ID
     ---------------------------------------------------
-    declare @tmpID int
-    set @tmpID = 0
-    --
-    declare @type_tag varchar(2)
-    set @type_tag = ''
-    --
+    Declare @tmpID Int = 0
+    Declare @type_tag varchar(2) = ''
 
-    if @mode = 'retire_biomaterial'
-    begin
-        -- look up ID from name from cell culture
-        set @type_tag = 'B'
+    If @mode = 'retire_biomaterial'
+    Begin
+        -- Look up cell culture ID from the name
+        Set @type_tag = 'B'
         --
         SELECT @tmpID = CC_ID
         FROM T_Cell_Culture
         WHERE CC_Name = @name
-    end
-    if @mode = 'retire_experiment'
-    begin
-        -- look up ID from name from experiment
-        set @type_tag = 'E'
-        --
-        SELECT @tmpID = Exp_ID
-        FROM T_Experiments
-        WHERE Experiment_Num = @name
-    end
+    End
 
-    ---------------------------------------------------
-    -- call the material update function
-    ---------------------------------------------------
-    --
-    if @tmpID = 0
-    begin
-        set @msg = 'Could not find the material item for @mode="' + @mode + '" and @name="' + @name + '"'
+    If @mode = 'retire_experiment'
+    Begin
+        -- Look up experiment ID from the name or ID
+        Set @type_tag = 'E'
+
+        Set @experimentID = Try_Cast(@name as Int)
+
+        If IsNull(@experimentID, 0) > 0 And Not Exists (SELECT * FROM T_Experiments WHERE Experiment_Num = @name)
+        Begin
+            Set @tmpID = @experimentID
+        End
+        Else
+        Begin
+            SELECT @tmpID = Exp_ID
+            FROM T_Experiments
+            WHERE Experiment_Num = @name
+        End
+    End
+
+    If @tmpID = 0
+    Begin
+        Set @msg = 'Could not find the material item for @mode="' + @mode + '" and @name="' + @name + '"'
         RAISERROR (@msg, 11, 1)
-    end
-    else
-    begin
-        declare
+    End
+    Else
+    Begin
+        ---------------------------------------------------
+        -- Call the material update function
+        ---------------------------------------------------
+        --
+        Declare
             @iMode varchar(32),
             @itemList varchar(4096),
             @itemType varchar(128),
             @newValue varchar(128),
             @comment varchar(512)
 
-            set @iMode = 'retire_items'
-            set @itemList  = @type_tag + ':' + convert(varchar, @tmpID)
-            set @itemType  = 'mixed_material'
-            set @newValue  = ''
-            set @comment  = ''
+            Set @iMode = 'retire_items'
+            Set @itemList  = @type_tag + ':' + convert(varchar, @tmpID)
+            Set @itemType  = 'mixed_material'
+            Set @newValue  = ''
+            Set @comment  = ''
 
         exec @myError = UpdateMaterialItems
-                @iMode,            -- 'retire_item'
+                @iMode,         -- 'retire_item'
                 @itemList,
-                @itemType,        -- 'mixed_material'
+                @itemType,      -- 'mixed_material'
                 @newValue,
                 @comment,
                 @msg output,
-                   @callingUser
+                @callingUser
 
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             RAISERROR (@msg, 11, 1)
-        end
-    end
+        End
+    End
 
-    END TRY
-    BEGIN CATCH
+    End TRY
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
         -- rollback any open transactions
@@ -127,7 +137,8 @@ As
             ROLLBACK TRANSACTION;
 
         Exec PostLogEntry 'Error', @message, 'DoMaterialItemOperation'
-    END CATCH
+    End Catch
+
     return @myError
 
 GO
