@@ -12,10 +12,11 @@ GO
 
 
 
+
 /****** Object:  View dbo.V_DatasetDetails ******/
 
 /****** Object:  View dbo.V_DatasetDetails    Script Date: 1/17/2001 2:15:34 PM ******/
-CREATE VIEW dbo.V_DatasetDetails
+CREATE VIEW [dbo].[V_DatasetDetails]
 AS
 SELECT T_Dataset.Dataset_Num, T_Dataset.DS_created, 
    T_Instrument_Name.IN_name, T_DatasetStateName.DSS_name, 
@@ -37,6 +38,7 @@ FROM T_DatasetStateName INNER JOIN
     JOIN
    T_Instrument_Name ON 
    T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DatasetDetails] TO [DDL_Viewer] AS [dbo]
 GO

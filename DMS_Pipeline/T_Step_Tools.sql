@@ -31,16 +31,12 @@ CREATE TABLE [dbo].[T_Step_Tools](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Step_Tools] TO [DDL_Viewer] AS [dbo]
 GO
-SET ANSI_PADDING ON
-
-GO
 /****** Object:  Index [IX_T_Step_Tools_Shared_Result_Version] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Step_Tools_Shared_Result_Version] ON [dbo].[T_Step_Tools]
 (
 	[Shared_Result_Version] ASC
 )
-INCLUDE ( 	[Name],
-	[Disable_Output_Folder_Name_Override_on_Skip]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+INCLUDE([Name],[Disable_Output_Folder_Name_Override_on_Skip]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Step_Tools] ADD  CONSTRAINT [DF_T_Step_Tools_Shared_Result]  DEFAULT ((0)) FOR [Shared_Result_Version]
 GO

@@ -33,8 +33,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_Updates_EndStateID_BeginStat
 	[End_State_ID] ASC,
 	[Beginning_State_ID] ASC
 )
-INCLUDE ( 	[Request_ID],
-	[Date_of_Change]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE([Request_ID],[Date_of_Change]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Sample_Prep_Request_Updates_Request_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_Updates_Request_ID] ON [dbo].[T_Sample_Prep_Request_Updates]

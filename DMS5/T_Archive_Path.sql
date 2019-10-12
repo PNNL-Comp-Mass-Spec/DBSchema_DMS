@@ -32,9 +32,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Archive_Path_AP_Function] ON [dbo].[T_Archive_Pa
 (
 	[AP_Function] ASC
 )
-INCLUDE ( 	[AP_instrument_name_ID],
-	[AP_archive_path],
-	[AP_network_share_path]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE([AP_instrument_name_ID],[AP_archive_path],[AP_network_share_path]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Archive_Path] ADD  CONSTRAINT [DF_T_Archive_Path_AP_created]  DEFAULT (getdate()) FOR [AP_created]
 GO

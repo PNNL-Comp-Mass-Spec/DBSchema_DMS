@@ -19,16 +19,12 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Cached](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_NCBI_Taxonomy_Cached] TO [DDL_Viewer] AS [dbo]
 GO
-SET ANSI_PADDING ON
-
-GO
 /****** Object:  Index [IX_T_NCBI_Taxonomy_Cached_Tax_ID_include_NameAndSynomyms] ******/
 CREATE NONCLUSTERED INDEX [IX_T_NCBI_Taxonomy_Cached_Tax_ID_include_NameAndSynomyms] ON [dbo].[T_NCBI_Taxonomy_Cached]
 (
 	[Tax_ID] ASC
 )
-INCLUDE ( 	[Name],
-	[Synonyms]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+INCLUDE([Name],[Synonyms]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_NCBI_Taxonomy_Cached] ADD  DEFAULT ((0)) FOR [Synonyms]
 GO
