@@ -2,10 +2,8 @@
 CREATE DATABASE [Manager_Control] ON  PRIMARY 
 ( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 38656KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 13568KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
+( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 29952KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
-GO
-ALTER DATABASE [Manager_Control] SET COMPATIBILITY_LEVEL = 100
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
 begin

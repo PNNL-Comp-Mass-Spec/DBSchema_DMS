@@ -7,8 +7,6 @@ CREATE DATABASE [Ontology_Lookup]
 ( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 273216KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
-ALTER DATABASE [Ontology_Lookup] SET COMPATIBILITY_LEVEL = 120
-GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
 begin
 EXEC [Ontology_Lookup].[dbo].[sp_fulltext_database] @action = 'enable'
