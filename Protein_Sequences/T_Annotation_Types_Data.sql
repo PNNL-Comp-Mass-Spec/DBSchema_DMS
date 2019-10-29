@@ -3,7 +3,7 @@
 SET IDENTITY_INSERT [T_Annotation_Types] ON
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (1,'Locus','TIGR Locus','DR0001',1)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (2,'Gene Symbol','NCBI Gene Symbol','dnaN',2)
-INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (3,'Common Name','NCBI Common Name','',2)
+INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (3,'Common Name','NCBI Common Name',null,2)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (6,'GI Number','Genbank ID Number','gi|7471825',2)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (7,'UniParc ID','UniProt Archive ID','Q9RYE8_DEIRA',8)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (8,'UniProtKB/SwissProt','UniProt Knowledgebase/SwissProt','Q9RYE8_DEIRA',8)
@@ -11,7 +11,7 @@ INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Exa
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (11,'RefSeq ID','GenBank RefSeq','ref|YP_463220.1',2)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (12,'PIR ID','Protein Information Resource ID','D75571',8)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (13,'IPI Number','International Protein Index Number','IPI00015171',4)
-INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (14,'Other','Oddball things that don''t really fit a major category','',6)
+INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (14,'Other','Oddball things that don''t really fit a major category',null,6)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (16,'IPR Number','Interpro IPR ID','IPR001001',17)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (17,'Wormpep Accession','Wormpep Accession Number','CE00011',3)
 INSERT INTO [T_Annotation_Types] (Annotation_Type_ID, TypeName, Description, Example, Authority_ID) VALUES (18,'Mixed','Name contains multiple annotation types','',7)
