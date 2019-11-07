@@ -14,7 +14,8 @@ SELECT DISTINCT EUP.Proposal_ID AS ID,
                 EUP.Proposal_Type AS [Proposal Type],
                 EPT.Proposal_Type_Name AS [Type Name],
                 EPT.Abbreviation,
-                EUP.Numeric_ID
+                EUP.Numeric_ID,
+                EUP.Proposal_ID_AutoSupersede As [Superseded By]
 FROM T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
        ON EUP.State_ID = S.ID

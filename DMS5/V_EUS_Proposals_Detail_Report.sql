@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE  VIEW [dbo].[V_EUS_Proposals_Detail_Report]
+CREATE VIEW [dbo].[V_EUS_Proposals_Detail_Report]
 AS
 SELECT EUP.Proposal_ID AS ID,
        S.Name AS State,
@@ -16,6 +16,7 @@ SELECT EUP.Proposal_ID AS ID,
        EUP.Proposal_End_Date AS [Proposal End Date],
        EUP.Import_Date AS [Import Date],
        EUP.Last_Affected,
+       EUP.Proposal_ID_AutoSupersede As [Superseded By],
        dbo.GetProposalEUSUsersList(EUP.Proposal_ID, 'V', 1000) AS [EUS Users]
 FROM dbo.T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
