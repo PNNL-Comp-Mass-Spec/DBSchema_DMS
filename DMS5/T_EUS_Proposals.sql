@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_EUS_Proposals](
 	[Proposal_End_Date] [datetime] NULL,
 	[Last_Affected] [datetime] NULL,
 	[Numeric_ID]  AS ([dbo].[ExtractInteger]([Proposal_ID])) PERSISTED,
+	[Proposal_ID_AutoSupersede] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_EUS_Proposals] PRIMARY KEY CLUSTERED 
 (
 	[Proposal_ID] ASC
