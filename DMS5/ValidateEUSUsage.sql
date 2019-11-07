@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 /****************************************************
 **
@@ -30,6 +31,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          03/17/2017 mem - Only call MakeTableFromList if @eusUsersList contains a semicolon
 **          04/10/2017 mem - Auto-change USER_UNKNOWN to CAP_DEV
 **          07/19/2019 mem - Custom error message if @eusUsageType is blank
+**          11/06/2019 mem - Auto-change @eusProposalID if a value is defined for Proposal_ID_AutoSupersede
 **
 *****************************************************/
 (
@@ -50,7 +52,8 @@ As
     Declare @UserCount int
     Declare @PersonID int
     Declare @NewUserList varchar(1024)
-    
+    Declare @autoSupersedeProposalID varchar(10) = ''
+
     set @message = ''
     Set @eusUsersList = IsNull(@eusUsersList, '')
     Set @AutoPopulateUserListIfBlank = IsNull(@AutoPopulateUserListIfBlank, 0)
@@ -135,55 +138,69 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Error trying to resolve EUS usage type: "' + @eusUsageType + '"'
         return 51070
-    end
+    End
     --
-    if @eusUsageTypeID = 0
-    begin
+    If @eusUsageTypeID = 0
+    Begin
         set @message = 'Could not resolve EUS usage type: "' + @eusUsageType + '"'
         return 51071
-    end
+    End
 
     ---------------------------------------------------
     -- Validate EUS proposal and user
     -- if EUS usage type requires them
     ---------------------------------------------------
     --
-    if @eusUsageType <> 'USER'
-    begin
+    If @eusUsageType <> 'USER'
+    Begin
         -- Make sure no proposal ID or users are specified
-        if IsNull(@eusProposalID, '') <> '' OR @eusUsersList <> ''
+        If IsNull(@eusProposalID, '') <> '' OR @eusUsersList <> ''
             Set @message = 'Warning: Cleared proposal ID and/or users since usage type is "' + @eusUsageType + '"'
 
         set @eusProposalID = NULL
         set @eusUsersList = ''
-    end
+    End
     
-    if @eusUsageType = 'USER'
-    begin -- <a>
+    If @eusUsageType = 'USER'
+    Begin -- <a>
 
         ---------------------------------------------------
         -- Proposal and user list cannot be blank when the usage type is 'USER'
         ---------------------------------------------------
-        if IsNull(@eusProposalID, '') = ''
-        begin
+        If IsNull(@eusProposalID, '') = ''
+        Begin
             set @message = 'A Proposal ID must be selected for usage type "' + @eusUsageType + '"'
             return 51073
-        end
+        End
 
         ---------------------------------------------------
         -- Verify EUS proposal ID
         ---------------------------------------------------
-        
-        IF NOT EXISTS (SELECT * FROM T_EUS_Proposals WHERE PROPOSAL_ID = @eusProposalID)    
-        begin
+
+        If NOT EXISTS (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @eusProposalID)
+        Begin
             set @message = 'Unknown EUS proposal ID: "' + @eusProposalID + '"'
             return 51075
-        end
-        
+        End
+
+        SELECT @autoSupersedeProposalID = Proposal_ID_AutoSupersede
+        FROM T_EUS_Proposals 
+        WHERE Proposal_ID = @eusProposalID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If IsNull(@autoSupersedeProposalID, '') <> ''
+        Begin
+            IF EXISTS (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @autoSupersedeProposalID)
+            Begin
+                Set @eusProposalID = @autoSupersedeProposalID
+            End
+        End
+
         If @eusUsersList = ''
         Begin
             -- Blank user list
@@ -201,8 +218,8 @@ As
             SELECT @PersonID = MIN(EUSU.Person_ID)
             FROM T_EUS_Proposals EUSP
                 INNER JOIN T_EUS_Proposal_Users EUSU
-                ON EUSP.PROPOSAL_ID = EUSU.Proposal_ID
-            WHERE (EUSP.PROPOSAL_ID = @eusProposalID)
+                ON EUSP.Proposal_ID = EUSU.Proposal_ID
+            WHERE (EUSP.Proposal_ID = @eusProposalID)
             
             If IsNull(@PersonID, 0) > 0
             Begin
@@ -271,13 +288,13 @@ As
             WHERE Try_Convert(INT, item) IS NULL
 
             If @n > 0
-            begin
+            Begin
                 If @n = 1
                     set @message = 'EMSL User ID is not numeric'
                 else
                     set @message = Cast(@n as varchar(12)) + ' EMSL User IDs are not numeric'
                 return 51077
-            end
+            End
             
             -- Look for entries that are not in T_EUS_Proposal_Users
             --
@@ -294,14 +311,14 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
-            if @myError <> 0
-            begin
+            If @myError <> 0
+            Begin
                 set @message = 'Error trying to verify that all users are associated with proposal'
                 return 51078
-            end
+            End
 
-            if @n <> 0
-            begin -- <c>
+            If @n <> 0
+            Begin -- <c>
             
                 -- Invalid users were found
                 --
@@ -343,7 +360,7 @@ As
                     FROM @tmpUsers
                     
                     -- Remove the first two characters
-                    if IsNull(@NewUserList, '') <> ''
+                    If IsNull(@NewUserList, '') <> ''
                         Set @NewUserList = SubString(@NewUserList, 3, Len(@NewUserList))
                 End
                 
@@ -355,8 +372,8 @@ As
                     SELECT @PersonID = MIN(EUSU.Person_ID)
                     FROM T_EUS_Proposals EUSP
                         INNER JOIN T_EUS_Proposal_Users EUSU
-                        ON EUSP.PROPOSAL_ID = EUSU.Proposal_ID
-                    WHERE (EUSP.PROPOSAL_ID = @eusProposalID)
+                        ON EUSP.Proposal_ID = EUSU.Proposal_ID
+                    WHERE (EUSP.Proposal_ID = @eusProposalID)
                     
                     If IsNull(@PersonID, 0) > 0
                         Set @NewUserList = Convert(varchar(12), @PersonID)
@@ -369,7 +386,7 @@ As
             
         End -- </b>
 
-    end -- </a>
+    End -- </a>
 
     return 0
 
