@@ -17,6 +17,7 @@ CREATE Procedure [dbo].[GenerateMergeStatement]
 **  Date:   10/26/2015 mem - Initial version
 **          10/27/2015 mem - Add @includeCreateTableSql
 **          11/30/2018 mem - Use DELETE FROM instead of Truncate
+**          11/06/2019 mem - Add an additional test to the WHEN NOT MATCHED BY SOURCE clause
 **    
 *****************************************************/
 (
@@ -333,10 +334,15 @@ As
     -- SQL for deleting extra rows
     ---------------------------------------------------
     --
+    Declare @firstPrimaryKeyColumn Varchar(255)
+
+    Select Top 1 @firstPrimaryKeyColumn = ColumnName
+    From @PrimaryKeyColumns
+
     If @includeDeleteTest = 0
-        PRINT 'WHEN NOT MATCHED BY SOURCE THEN DELETE'
+        PRINT 'WHEN NOT MATCHED BY SOURCE And t.[' + @firstPrimaryKeyColumn + '] = @targetItemID THEN DELETE'
     Else
-        PRINT 'WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE'
+        PRINT 'WHEN NOT MATCHED BY SOURCE And t.[' + @firstPrimaryKeyColumn + '] = @targetItemID And @DeleteExtras <> 0 THEN DELETE'
 
     If @includeActionSummary = 0
         PRINT ';'
@@ -428,7 +434,6 @@ As
         
     If @TableHasIdentity = 1 
         PRINT 'SET IDENTITY_INSERT [dbo].[' + @tableName + '] OFF;' + @newLine
-
     
 Done:
     return 0
