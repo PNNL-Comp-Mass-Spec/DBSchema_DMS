@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Validate inputs
 **          12/19/2018 mem - Standardize the researcher name
+**          11/11/2019 mem - If @researcher is 'na' or 'none', store an empty string in the Researcher column of T_Material_Containers
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -135,32 +136,39 @@ As
     Declare @researcherPRN varchar(64)
     Declare @userID Int
 
-    exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
-
-    If @matchCount = 1
+    If @researcher In ('', 'na', 'none')
     Begin
-        -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
-        
-        SELECT @researcher = Name_with_PRN
-        FROM T_Users
-        WHERE U_PRN = @researcherPRN
-
+        Set @researcher = ''
     End
     Else
     Begin
-        -- Single match not found; use the @researcher name as-is but log an error
-        If @matchCount = 0
-            Set @message = 'Unrecognized researcher ' + @Researcher + ' for material container ' + @container
+        exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
+
+        If @matchCount = 1
+        Begin
+            -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
+        
+            SELECT @researcher = Name_with_PRN
+            FROM T_Users
+            WHERE U_PRN = @researcherPRN
+
+        End
         Else
-            Set @message = 'Ambiguous researcher ' + @Researcher + ' for material container ' + @container
+        Begin
+            -- Single match not found; use the @researcher name as-is but log an error
+            If @matchCount = 0
+                Set @message = 'Unrecognized researcher ' + @researcher + ' for material container ' + @container
+            Else
+                Set @message = 'Ambiguous researcher ' + @researcher + ' for material container ' + @container
 
-        Exec PostLogEntry @type = 'Error'
-                         ,@message = @message
-                         ,@postedBy = 'AddUpdateMaterialContainer'
+            Exec PostLogEntry @type = 'Error'
+                             ,@message = @message
+                             ,@postedBy = 'AddUpdateMaterialContainer'
 
-        Set @message = ''
+            Set @message = ''
+        End
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
