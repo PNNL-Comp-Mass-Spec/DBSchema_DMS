@@ -10,10 +10,14 @@ SELECT U.PERSON_ID AS [User ID],
        U.NAME_FM AS [User Name],
        PU.Proposal_ID AS [#Proposal],
        IsNull(UsageQ.Prep_Requests, 0) AS [Prep Requests],
-       PU.Last_Affected AS [Last_Affected]
+       PU.Last_Affected AS [Last_Affected],
+       P.Proposal_Start_Date,
+       P.Proposal_End_Date
 FROM T_EUS_Proposal_Users PU
      INNER JOIN T_EUS_Users U
-       ON PU.Person_ID = U.PERSON_ID
+       ON PU.Person_ID = U.Person_ID
+     Inner Join T_EUS_Proposals P
+       On PU.Proposal_ID = P.Proposal_ID
      LEFT OUTER JOIN ( SELECT EUS_User_ID AS Person_ID,
                               Count(*) AS Prep_Requests
                        FROM T_Sample_Prep_Request
