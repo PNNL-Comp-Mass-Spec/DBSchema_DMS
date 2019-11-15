@@ -56,7 +56,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
 **          12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
 **          12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
-**          01/11/2012 mem - Added parameter @AggregationJobDataset
+**          01/11/2012 mem - Added parameter @aggregationJobDataset
 **          02/29/2012 mem - Now auto-updating the @eus parameters if null
 **                         - Now raising an error if other key parameters are null/empty
 **          09/12/2012 mem - Now auto-changing HMS-HMSn to IMS-HMS-HMSn for IMS datasets
@@ -65,7 +65,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          01/22/2013 mem - Now updating the dataset comment if the default dataset type is invalid for the instrument group
 **          04/02/2013 mem - Now updating @LCCartName (if not blank) when updating an existing dataset
 **          05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null if they are blank or 'na'
-**          02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @AggregationJobDataset is non-zero
+**          02/27/2014 mem - Now skipping check for name ending in Raw or Wiff if @aggregationJobDataset is non-zero
 **          05/07/2015 mem - Now showing URL http://dms2.pnl.gov/dataset_disposition/search if the user tries to change the rating from Unreleased to something else (previously showed http://dms2.pnl.gov/dataset_disposition/report)
 **          05/29/2015 mem - Added parameter @captureSubfolder (only used if @mode is 'add' or 'bad')
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
@@ -96,11 +96,12 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **                         - Expand @warning to varchar(512)
 **          04/15/2019 mem - Add call to UpdateCachedDatasetInstruments
 **          07/19/2019 mem - Change @eusUsageType to 'maintenance' if empty for _Tune_ or TuneMix datasets
+**          11/11/2019 mem - Auto change 'Blank-' and 'blank_' to 'Blank'
 **    
 *****************************************************/
 (
     @datasetNum varchar(128),                   -- Dataset name
-    @experimentNum varchar(64),
+    @experimentNum varchar(64),                 -- Experiment name
     @operPRN varchar(64),
     @instrumentName varchar(64),
     @msType varchar(50),                        -- Dataset Type
@@ -120,7 +121,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
     @message varchar(512) output,
     @callingUser varchar(128) = '',
-    @AggregationJobDataset tinyint = 0,      -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
+    @aggregationJobDataset tinyint = 0,      -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
     @captureSubfolder varchar(255) = '',     -- Only used when @mode is 'add' or 'bad'
     @lcCartConfig varchar(128) = '',
     @logDebugMessages tinyint = 0
@@ -133,7 +134,7 @@ As
     
     Declare @msg varchar(256)
     Declare @folderName varchar(128)
-    Declare @AddingDataset tinyint = 0
+    Declare @addingDataset tinyint = 0
     
     Declare @result int
     Declare @warning varchar(512)
@@ -235,7 +236,7 @@ As
     --
     Set @msType = IsNull(@msType, '')
     
-    -- Allow @msType to be blank If @mode is Add or Bad but not if check_add or add_trigger or update
+    -- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_trigger or update
     If @msType = '' And NOT @mode In ('Add', 'Bad')
     Begin
         Set @msg = 'Dataset type was blank'
@@ -272,13 +273,15 @@ As
     Set @eusUsersList  = IsNull(@eusUsersList, '')
     
     Set @requestID = IsNull(@requestID, 0)
-    Set @AggregationJobDataset = IsNull(@AggregationJobDataset, 0)    
+    Set @aggregationJobDataset = IsNull(@aggregationJobDataset, 0)    
     Set @captureSubfolder = LTrim(RTrim(IsNull(@captureSubfolder, '')))
     
     Set @lcCartConfig = LTrim(RTrim(IsNull(@lcCartConfig, '')))
     If @lcCartConfig = ''
+    Begin
         Set @lcCartConfig = null
-        
+    End
+
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
     
     ---------------------------------------------------
@@ -286,9 +289,9 @@ As
     ---------------------------------------------------
     --
     If @mode IN ('add', 'check_add', 'add_trigger')
-        Set @AddingDataset = 1
+        Set @addingDataset = 1
     Else
-        Set @AddingDataset = 0
+        Set @addingDataset = 0
 
     If @logDebugMessages > 0
     Begin
@@ -317,7 +320,7 @@ As
         RAISERROR (@msg, 11, 1)
     End
 
-    If @AggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
+    If @aggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff') 
     Begin
         Set @msg = 'Dataset name may not end in raw or wiff'
         RAISERROR (@msg, 11, 2)
@@ -354,7 +357,7 @@ As
     Begin
         Set @ratingID = -1 -- "No Data"
         Set @mode = 'add'
-        Set @AddingDataset = 1
+        Set @addingDataset = 1
     End
     else
     Begin
@@ -385,7 +388,7 @@ As
         @curDSStateID = DS_state_ID,
         @curDSRatingID = DS_Rating
     FROM T_Dataset 
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE Dataset_Num = @datasetNum
 
     Set @datasetID = IsNull(@datasetID, 0)
     
@@ -403,7 +406,7 @@ As
     Begin
         -- cannot create an entry that already exists
         --
-        If @AddingDataset = 1
+        If @addingDataset = 1
         Begin
             Set @msg = 'Cannot add dataset ' + @datasetNum + ' since already in database'
             RAISERROR (@msg, 11, 5)
@@ -426,7 +429,7 @@ As
     --
     SELECT @columnID = ID
     FROM T_LC_Column
-    WHERE (SC_Column_Number = @LCColumnNum)
+    WHERE SC_Column_Number = @LCColumnNum
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -435,6 +438,7 @@ As
         Set @msg = 'Error trying to look up column ID'
         RAISERROR (@msg, 11, 93)
     End
+
     If @columnID = -1
     Begin
         Set @msg = 'Unknown LC column name: ' + @LCColumnNum
@@ -456,7 +460,7 @@ As
         
         SELECT @cartConfigID = Cart_Config_ID
         FROM T_LC_Cart_Configuration
-        WHERE (Cart_Config_Name = @lcCartConfig)
+        WHERE Cart_Config_Name = @lcCartConfig
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -489,6 +493,7 @@ As
         Set @msg = 'Error trying to look up separation type ID'
         RAISERROR (@msg, 11, 98)
     End
+
     If @sepID = 0
     Begin
         Set @msg = 'Unknown separation type: ' + @secSep
@@ -512,6 +517,7 @@ As
         Set @msg = 'Error trying to look up internal standards ID'
         RAISERROR (@msg, 11, 95)
     End
+
     If @intStdID = -1
     Begin
         Set @msg = 'Unknown internal standard name: ' + @internalStandards
@@ -519,13 +525,20 @@ As
     End
 
     ---------------------------------------------------
-    -- If Dataset starts with "Blank", then make sure @experimentNum contains "Blank"
+    -- If Dataset starts with "Blank", make sure @experimentNum contains "Blank"
     ---------------------------------------------------
     
-    If @datasetNum Like 'Blank%' And @AddingDataset = 1
+    If @datasetNum Like 'Blank%' And @addingDataset = 1
     Begin
-        If NOT @ExperimentNum LIKE '%blank%'
-            Set @ExperimentNum = 'blank'        
+        If NOT @experimentNum LIKE '%blank%'
+        Begin
+            Set @experimentNum = 'blank'    
+        End
+
+        If @experimentNum In ('Blank-', 'Blank_')
+        Begin
+            Set @experimentNum = 'blank'
+        End
     End
     
     ---------------------------------------------------
@@ -544,7 +557,7 @@ As
         Begin
             SELECT @experimentNum = Experiment_Num
             FROM T_Experiments
-            WHERE (Exp_ID = @experimentID)
+            WHERE Exp_ID = @experimentID
         End
     End
 
@@ -606,7 +619,7 @@ As
         -- Could not resolve @msType to a dataset type
         -- If @mode is Add, we will auto-update @msType to the default
         --
-        If @AddingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
+        If @addingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
         Begin
             -- Use the default dataset type
             Set @datasetTypeID = @DefaultDatasetTypeID
@@ -616,7 +629,7 @@ As
             -- Update @msType            
             SELECT @msType = DST_name
             FROM T_DatasetTypeName
-            WHERE (DST_Type_ID = @datasetTypeID)
+            WHERE DST_Type_ID = @datasetTypeID
 
             If @comment = 'na'
                 Set @comment = ''
@@ -658,7 +671,7 @@ As
         
     exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 
-    If @result <> 0 And @AddingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
+    If @result <> 0 And @addingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
     Begin
         -- Dataset type is not valid for this instrument group
         -- However, @mode is Add, so we will auto-update @msType
@@ -697,7 +710,7 @@ As
             -- Update @msType            
             SELECT @msType = DST_name
             FROM T_DatasetTypeName
-            WHERE (DST_Type_ID = @datasetTypeID)
+            WHERE DST_Type_ID = @datasetTypeID
             
             If @msTypeOld = 'GC-MS' And @msType = 'EI-HMS'
             Begin
@@ -770,7 +783,7 @@ As
     -- Verify acceptable combination of EUS fields
     ---------------------------------------------------
     
-    If @requestID <> 0 AND @AddingDataset = 1
+    If @requestID <> 0 AND @addingDataset = 1
     Begin       
         If (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
         Begin
@@ -796,15 +809,15 @@ As
         ---------------------------------------------------
         If @datasetNum Like 'Blank%'
         Begin
-            -- See If the experiment matches for this request; if it doesn't, change @requestID to 0
+            -- See if the experiment matches for this request; if it doesn't, change @requestID to 0
             Set @ExperimentCheck = ''
             
             SELECT @ExperimentCheck = E.Experiment_Num
             FROM T_Experiments E INNER JOIN
                 T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
-            WHERE (RR.ID = @requestID)
+            WHERE RR.ID = @requestID
             
-            If @ExperimentCheck <> @ExperimentNum
+            If @ExperimentCheck <> @experimentNum
                 Set @RequestID = 0
         End
     End
@@ -813,7 +826,7 @@ As
     -- If the dataset starts with "blank" and @requestID is zero, perform some additional checks
     ---------------------------------------------------
     --
-    If @requestID = 0 AND @AddingDataset = 1
+    If @requestID = 0 AND @addingDataset = 1
     Begin
         -- If the EUS information is not defined, auto-define the EUS usage type as 'MAINTENANCE'
         If (@datasetNum Like 'Blank%' Or
@@ -831,7 +844,7 @@ As
     -- Possibly look for an active requested run that we can auto-associate with this dataset
     ---------------------------------------------------
     --
-    If @requestID = 0 AND @AddingDataset = 1
+    If @requestID = 0 AND @addingDataset = 1
     Begin
         Declare @requestInstGroup varchar(128)
         
@@ -904,7 +917,7 @@ As
         --
         SELECT @cartID = ID
         FROM T_LC_Cart
-        WHERE (Cart_Name = @LCCartName)
+        WHERE Cart_Name = @LCCartName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -1062,7 +1075,7 @@ As
 
         Begin transaction @transName
 
-        If IsNull(@AggregationJobDataset, 0) = 1
+        If IsNull(@aggregationJobDataset, 0) = 1
             Set @newDSStateID = 3
         Else
             Set @newDSStateID = 1
@@ -1239,7 +1252,7 @@ As
         Set @datasetID = 0
         SELECT @datasetID = Dataset_ID
         FROM T_Dataset 
-        WHERE (Dataset_Num = @datasetNum)
+        WHERE Dataset_Num = @datasetNum
 
         If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
             Set @warning = @message
@@ -1413,7 +1426,7 @@ As
         --
         If @ratingID >= 2 and IsNull(@curDSRatingID, -1000) IN (-5, -6, -7)
         Begin
-            If Not Exists (SELECT * FROM T_Analysis_Job WHERE (AJ_datasetID = @datasetID) AND AJ_DatasetUnreviewed = 0 )
+            If Not Exists (SELECT * FROM T_Analysis_Job WHERE AJ_datasetID = @datasetID AND AJ_DatasetUnreviewed = 0 )
             Begin
                 Exec SchedulePredefinedAnalyses @datasetNum, @callingUser=@callingUser
                 
@@ -1431,7 +1444,7 @@ As
                     INSERT INTO #TmpIDUpdateList (TargetID)
                     SELECT AJ_JobID
                     FROM T_Analysis_Job
-                    WHERE (AJ_datasetID = @datasetID)
+                    WHERE AJ_datasetID = @datasetID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -1484,7 +1497,7 @@ As
 
     End CATCH
     
-    return @myError
+    Return @myError
 
 
 GO
