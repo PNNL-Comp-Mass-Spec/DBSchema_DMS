@@ -4,11 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE View [dbo].[V_MgrParamDefaults]
-As
-select MgrTypeID, MT_TypeName as ManagerType, ParamTypeID as [Param ID], ParamName as Param, DefaultValue as Value, isnull(dbo.T_ParamType.PicklistName, '') as PicklistName
-from T_MgrType_ParamType_Map 
-     join T_ParamType on ParamTypeID = ParamID
-     join T_MgrTypes on MgrTypeID = MT_TypeID
+CREATE VIEW [dbo].[V_MgrParamDefaults]
+AS
+SELECT MTPM.MgrTypeID,
+       MT.MT_TypeName AS ManagerType,
+       MTPM.ParamTypeID AS [Param ID],
+       PT.ParamName AS Param,
+       MTPM.DefaultValue AS Value,
+       IsNull(PT.PicklistName, '') AS PicklistName
+FROM T_MgrType_ParamType_Map MTPM
+     INNER JOIN T_ParamType PT
+       ON MTPM.ParamTypeID = PT.ParamID
+     INNER JOIN T_MgrTypes MT
+       ON MTPM.MgrTypeID = MT.MT_TypeID
 
 GO

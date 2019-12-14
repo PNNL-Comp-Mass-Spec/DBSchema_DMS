@@ -6,11 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_AllMgrParamsByMgrType]
 AS
-SELECT DISTINCT TPT.MT_TypeID as ID, CASE WHEN PM.MgrTypeID IS NOT NULL THEN 'TRUE' ELSE '' END as Selected, TPT.ParamID, TPT.ParamName, TPT.Comment 
-FROM (
-		SELECT DISTINCT ParamID, ParamName, Comment, MT_TypeID, MT_TypeName
-		FROM T_ParamType, T_MgrTypes
-	 ) TPT
-	left join T_MgrType_ParamType_Map PM on TPT.ParamID = PM.ParamTypeID and TPT.MT_TypeID = PM.MgrTypeID
+SELECT DISTINCT TPT.MT_TypeID AS ID,
+                CASE
+                    WHEN PM.MgrTypeID IS NOT NULL THEN 'TRUE'
+                    ELSE ''
+                END AS Selected,
+                TPT.ParamID,
+                TPT.ParamName,
+                TPT.Comment
+FROM ( SELECT DISTINCT ParamID,
+                       ParamName,
+                       Comment,
+                       MT_TypeID,
+                       MT_TypeName
+       FROM T_ParamType,
+            T_MgrTypes ) TPT
+     LEFT JOIN T_MgrType_ParamType_Map PM
+       ON TPT.ParamID = PM.ParamTypeID AND
+          TPT.MT_TypeID = PM.MgrTypeID
 
 GO

@@ -6,22 +6,22 @@ GO
 
 CREATE VIEW [dbo].[V_MgrParams]
 AS
-SELECT dbo.T_ParamValue.MgrID AS ManagerID,
-       dbo.T_Mgrs.M_Name AS ManagerName,
-       dbo.T_MgrTypes.MT_TypeName AS ManagerType,
-       dbo.T_ParamType.ParamName AS ParameterName,
-       dbo.T_ParamValue.Value AS ParameterValue,
-       dbo.T_ParamValue.Comment,
-       dbo.T_ParamValue.Entry_ID,
-       dbo.T_ParamValue.Last_Affected,
-       dbo.T_ParamValue.Entered_By
-FROM dbo.T_Mgrs
-     INNER JOIN dbo.T_MgrTypes
-       ON dbo.T_Mgrs.M_TypeID = dbo.T_MgrTypes.MT_TypeID
-     INNER JOIN dbo.T_ParamValue
-       ON dbo.T_Mgrs.M_ID = dbo.T_ParamValue.MgrID
-     INNER JOIN dbo.T_ParamType
-       ON dbo.T_ParamValue.TypeID = dbo.T_ParamType.ParamID
+SELECT PV.MgrID AS ManagerID,
+       M.M_Name AS ManagerName,
+       MT.MT_TypeName AS ManagerType,
+       PT.ParamName AS ParameterName,
+       PV.Value AS ParameterValue,
+       PV.Comment,
+       PV.Entry_ID,
+       PV.Last_Affected,
+       PV.Entered_By
+FROM T_Mgrs M
+     INNER JOIN T_MgrTypes MT
+       ON M.M_TypeID = MT.MT_TypeID
+     INNER JOIN T_ParamValue PV
+       ON M.M_ID = PV.MgrID
+     INNER JOIN T_ParamType PT
+       ON PV.TypeID = PT.ParamID
 
 
 GO

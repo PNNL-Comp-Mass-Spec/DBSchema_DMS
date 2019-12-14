@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Manager_Update_Required]
 AS
-SELECT dbo.T_Mgrs.M_Name,
-       dbo.T_ParamType.ParamName,
-       dbo.T_ParamValue.Value
-FROM dbo.T_Mgrs
-     INNER JOIN dbo.T_ParamValue
-       ON dbo.T_Mgrs.M_ID = dbo.T_ParamValue.MgrID
-     INNER JOIN dbo.T_ParamType
-       ON dbo.T_ParamValue.TypeID = dbo.T_ParamType.ParamID
-WHERE (dbo.T_ParamType.ParamName = 'ManagerUpdateRequired')
+SELECT M.M_Name,
+       PT.ParamName,
+       PV.Value
+FROM T_Mgrs As M
+     INNER JOIN T_ParamValue PV
+       ON M.M_ID = PV.MgrID
+     INNER JOIN T_ParamType PT
+       ON PV.TypeID = PT.ParamID
+WHERE PT.ParamName = 'ManagerUpdateRequired'
 
 
 GO
