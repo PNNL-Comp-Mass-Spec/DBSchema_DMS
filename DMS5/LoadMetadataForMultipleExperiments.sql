@@ -230,6 +230,7 @@ As
 
 
 	return @myError
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleExperiments] TO [DDL_Viewer] AS [dbo]
 GO
