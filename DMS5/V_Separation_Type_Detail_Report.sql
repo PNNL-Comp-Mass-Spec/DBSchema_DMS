@@ -1,13 +1,12 @@
-/****** Object:  View [dbo].[V_Separation_Type_List_Report] ******/
+/****** Object:  View [dbo].[V_Separation_Type_Detail_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE VIEW [dbo].[V_Separation_Type_List_Report]
+CREATE VIEW [dbo].[V_Separation_Type_Detail_Report]
 AS
-
 SELECT SS.SS_name AS [Separation Type],
        SS.Sep_Group AS [Separation Group],
        SS.SS_comment AS [Separation Type Comment],
@@ -15,7 +14,7 @@ SELECT SS.SS_name AS [Separation Type],
        U.Usage_Last12Months AS [Usage Last 12 Months],
        U.Usage_AllYears AS [Dataset Usage All Years],
        U.Most_Recent_Use AS [Most Recent Use],
-       SS.SS_active As Active,
+       CASE WHEN SS.SS_active = 1 THEN 'Active' ELSE 'Inactive' END AS State,
        SS.SS_ID As ID,
 	   SS.Created As Created
 FROM T_Secondary_Sep SS

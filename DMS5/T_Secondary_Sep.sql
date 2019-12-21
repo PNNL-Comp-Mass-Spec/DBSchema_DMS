@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Secondary_Sep](
 	[SS_active] [tinyint] NOT NULL,
 	[Sep_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SampleType_ID] [int] NOT NULL,
+	[Created] [datetime] NULL,
  CONSTRAINT [PK_T_Secondary_Sep] PRIMARY KEY NONCLUSTERED 
 (
 	[SS_ID] ASC
