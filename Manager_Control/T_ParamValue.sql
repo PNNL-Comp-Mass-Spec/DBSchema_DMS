@@ -96,6 +96,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE TRIGGER [dbo].[trig_i_T_ParamValue] ON [dbo].[T_ParamValue] 
 FOR INSERT
 AS
@@ -107,13 +108,14 @@ AS
 **	Auth:	mem
 **	Date:	04/23/2008
 **			04/27/2009 mem - Removed If Update() tests since not required for an Insert trigger
+**          01/10/2020 mem - Fix typo checking for TypeID = 17
 **    
 *****************************************************/
 	
 	If @@RowCount = 0
 		Return
 
-	IF EXISTS (SELECT * FROM inserted WHERE TypeID = 117)
+	IF EXISTS (SELECT * FROM inserted WHERE TypeID = 17)
 		-- Add a new row to T_Event_Log
 		INSERT INTO T_Event_Log( Target_Type,
 								 Target_ID,
@@ -126,7 +128,7 @@ AS
 				END AS Target_State,
 				-1 AS Prev_Target_State
 		FROM inserted
-		WHERE inserted.TypeID = 117
+		WHERE inserted.TypeID = 17
 		ORDER BY inserted.MgrID
 
 GO
