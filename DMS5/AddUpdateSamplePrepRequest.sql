@@ -81,6 +81,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          08/29/2018 mem - Remove call to DoSamplePrepMaterialOperation since we stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
 **          11/30/2018 mem - Make @reason an input/output parameter
 **          01/23/2019 mem - Switch @reason back to a normal input parameter since view V_Sample_Prep_Request_Entry now appends the __NoCopy__ flag to several fields
+**          01/13/2020 mem - Require @requestedPersonnel to include a sample prep staff member (no longer allow 'na' or 'any')
 **
 *****************************************************/
 (
@@ -395,20 +396,11 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         
-        -- Allow personnel to be 'na'
+        -- Use User_ID of 0 if the name is 'na'
         -- Set User_ID to 0
         UPDATE #Tmp_UserInfo
         SET [User_ID] = 0
         WHERE Name_and_PRN IN ('na')
-        
-        If @nameValidationIteration = 1
-        Begin
-            -- Allow requested personnel to be "any"
-            -- Set User_ID to 0
-            UPDATE #Tmp_UserInfo
-            SET [User_ID] = 0
-            WHERE Name_and_PRN IN ('any')
-        End
         
         ---------------------------------------------------
         -- Look for entries in #Tmp_UserInfo where Name_and_PRN did not resolve to a User_ID
@@ -460,9 +452,15 @@ As
             FROM #Tmp_UserInfo
             WHERE [USER_ID] IS NULL
             
-            RAISERROR ('Invalid username for %s (use "na" if unspecified): "%s"', 11, 37, @userFieldName, @firstInvalidUser)
+            RAISERROR ('Invalid username for %s: "%s"', 11, 37, @userFieldName, @firstInvalidUser)
         End
-        
+                
+        If @nameValidationIteration = 1 And Not Exists (Select * From #Tmp_UserInfo Where User_ID > 0)
+        Begin
+            -- Requested personnel person must be a specific person (or list of people)
+            RAISERROR ('The Requested Personnel person must be a specific DMS user; "%s" is invalid', 11, 41, @requestedPersonnel)
+        End
+
         -- Make sure names are capitalized properly
         --
         UPDATE #Tmp_UserInfo
