@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[RenameDataset]
 /****************************************************
 **
@@ -25,6 +26,9 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          08/06/2018 mem - Fix where clause when querying V_Analysis_Job_Export
 **                         - Look for requested runs that may need to be updated
 **          01/04/2019 mem - Add sed command for updating the index.html file in the QC directory
+**          01/20/2020 mem - Show the File_Hash in T_Dataset_Files when previewing updates
+**                         - Add commands for updating the DatasetInfo.xml file with sed
+**                         - Switch from Folder to Directory when calling AddUpdateJobParameter
 **    
 *****************************************************/
 (
@@ -171,7 +175,7 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Set @message = 'Renamed dataset "' + @datasetNameOld + '" to "' + @datasetNameNew + '"'
+            Set @message = 'rem Renamed dataset "' + @datasetNameOld + '" to "' + @datasetNameNew + '"'
             print @message
                 
             Exec PostLogEntry 'Normal', @message, 'RenameDataset'
@@ -211,8 +215,12 @@ AS
 
         If Exists (Select * from T_Dataset_Files WHERE Dataset_ID = @datasetID)
         Begin
-            SELECT Dataset_File_ID, Dataset_ID, File_Path, REPLACE(File_Path, @datasetNameOld, @datasetNameNew) AS File_Path_New
-            FROM   T_Dataset_Files
+            SELECT Dataset_File_ID,
+                   Dataset_ID,
+                   File_Path,
+                   REPLACE(File_Path, @datasetNameOld, @datasetNameNew) AS File_Path_New,
+                   File_Hash
+            FROM T_Dataset_Files
             WHERE Dataset_ID = @datasetID
         End        
 
@@ -277,8 +285,8 @@ AS
         Else
         Begin
         
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Dataset', @datasetNameNew, @infoOnly=0
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Folder',  @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
             
             UPDATE DMS_Capture.dbo.T_Jobs 
             Set Dataset = @datasetNameNew
@@ -496,6 +504,13 @@ AS
             Print 'move index.html index_old.html'
             Print 'move index_new.html index.html'
 
+            Declare @datasetInfoFile Varchar(250) = @datasetNameNew + '_DatasetInfo.xml'
+
+            Print ''
+            Print 'rem Use sed to change the dataset names in DatsetName_DatasetInfo.xml'
+            Print 'cat ' + @datasetInfoFile + ' | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > DatasetInfo_new.xml'
+            Print 'move ' + @datasetInfoFile + ' DatasetInfo_old.xml'
+            Print 'move DatasetInfo_new.xml ' + @datasetInfoFile
         End
 
         Print 'cd ..'
