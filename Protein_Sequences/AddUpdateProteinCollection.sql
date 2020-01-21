@@ -11,7 +11,6 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **
 **  Return values: The new Protein Collection ID if success; otherwise, 0
 **
-**
 **  Auth:   kja
 **  Date:   09/29/2004
 **          11/23/2005 KJA
@@ -20,11 +19,12 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **                         - Now returns 0 if an error occurs; returns the protein collection ID if no errors
 **          11/24/2015 mem - Added @collectionSource
 **          06/26/2019 mem - Add comments and convert tabs to spaces
+**          01/20/2020 mem - Replace < and > with ( and ) in the source and description
 **    
 *****************************************************/
 (
-    @fileName varchar(128),     -- This is actually protein collection name, not the original .fasta file name
-    @Description varchar(900),
+    @fileName varchar(128),         -- This is actually protein collection name, not the original .fasta file name
+    @description varchar(900),
     @collectionSource varchar(900) = '',
     @collection_type int = 1,
     @collection_state int,
@@ -68,7 +68,11 @@ As
         -- Return zero, since we did not create a protein collection
         Return 0
     End
-        
+
+    -- Make sure the Source and Description do not have text surrounded by < and >, since web browsers will treat that as an HTML tag
+    Set @collectionSource = REPLACE(REPLACE(Coalesce(@collectionSource, ''), '<', '('), '>', ')')
+    Set @description =      REPLACE(REPLACE(Coalesce(@description,      ''), '<', '('), '>', ')')
+
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
@@ -124,7 +128,7 @@ As
             Uploaded_By
         ) VALUES (
             @fileName, 
-            @Description,
+            @description,
             @collectionSource,
             @collection_type,
             @collection_state,
@@ -135,7 +139,6 @@ As
             GETDATE(),
             SYSTEM_USER
         )
-
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -165,16 +168,15 @@ As
         
         UPDATE T_Protein_Collections
         SET
-            Description = @Description,
-            Source = Case When IsNull(@collectionSource, '') = '' and IsNull(Source, '') <> '' Then Source Else @collectionSource End,
+            Description = @description,
+            Source = Case When @collectionSource = '' and IsNull(Source, '') <> '' Then Source Else @collectionSource End,
             Collection_State_ID = @collection_state,
             Collection_Type_ID = @collection_type,
             NumProteins = @numProteins,
             NumResidues = @numResidues,
             DateModified = GETDATE()        
-        WHERE (FileName = @fileName)
-        
-            
+        WHERE FileName = @fileName
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
@@ -201,12 +203,12 @@ As
             Protein_Collection_ID,
             Annotation_Group,
             Annotation_Type_ID
-            ) VALUES (
+        ) VALUES (
             @Collection_ID,
             0,
             @primary_annotation_type_id
-            )
-
+        )
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
@@ -220,7 +222,6 @@ As
         
         commit transaction @transName
     end
-    
         
     return @Collection_ID
 
