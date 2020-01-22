@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processors] ******/
-/****** RowCount: 857 ******/
+/****** RowCount: 873 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processors] ON
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1242,'E','Andesite-1','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1243,'E','Andesite-2','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
@@ -9,6 +9,22 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1247,'E','Andesite-6','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1248,'E','Andesite-7','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1249,'E','Andesite-8','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1307,'E','Bornite-1','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1308,'E','Bornite-2','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1309,'E','Bornite-3','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1310,'E','Bornite-4','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1311,'E','Bornite-5','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1312,'E','Bornite-6','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1313,'E','Bornite-7','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1314,'E','Bornite-8','Bornite','','1/21/2020 10:44:16 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1315,'E','Calcite-1','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1316,'E','Calcite-2','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1317,'E','Calcite-3','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1318,'E','Calcite-4','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1319,'E','Calcite-5','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1320,'E','Calcite-6','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1321,'E','Calcite-7','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1322,'E','Calcite-8','Calcite','','1/21/2020 10:44:23 AM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (210,'D','Chemstation1326','Chemstation1326','Analysis Manager v2.0','9/15/2009 1:04:06 PM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (756,'E','Crowell_Analysis','WE17195','Kevin Crowell development machine','11/16/2009 11:14:10 AM','pnl\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (284,'D','Daffy-1','Daffy','Analysis Manager v2.0','12/7/2009 8:12:12 PM','pnl\D3L243')
