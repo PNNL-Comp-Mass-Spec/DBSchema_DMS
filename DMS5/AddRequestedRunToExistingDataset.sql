@@ -37,14 +37,15 @@ CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
 **          05/22/2017 mem - If necessary, change the prefix from AutoReq_ to AutoReq2_ or AutoReq3 to avoid conflicts
 **          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          01/24/2020 mem - Add mode 'preview'
 **    
 *****************************************************/
 (
-    @datasetID INT = 0,        -- Can supply ID for dataset or name for dataset (but not both)
-    @datasetNum varchar(128),  -- 
-    @templateRequestID INT,    -- existing request to use for looking up some parameters for new one
-    @mode varchar(12) = 'add', -- compatibility with web entry page and possible future use
-    @message varchar(512) output,
+    @datasetID INT = 0,                 -- Can supply ID for dataset or name for dataset (but not both)
+    @datasetNum varchar(128),           -- 
+    @templateRequestID INT,             -- existing request to use for looking up some parameters for new one
+    @mode varchar(12) = 'add',          -- compatibility with web entry page and possible future use; supports 'add' and 'preview'
+    @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
 AS
@@ -65,11 +66,12 @@ AS
     ---------------------------------------------------
 
     Declare @dID INT = 0
-    Declare @dName VARCHAR(128) = ''
+    Declare @dName varchar(128) = ''
     
     SET @datasetID = ISNULL(@datasetID, 0)
     SET @datasetNum = ISNULL(@datasetNum, '')
-    
+    Set @mode = Ltrim(Rtrim(@mode))
+
     If @datasetID <> 0 AND @datasetNum <> ''
         RAISERROR ('Cannot specify both datasetID "%d" and datasetNum "%s"', 11, 3, @datasetID, @datasetNum)
     
@@ -142,8 +144,8 @@ AS
     Declare @eusUsageType varchar(50)
     Declare @eusUsersList varchar(1024) = ''
     Declare @request int = 0
-    Declare @secSep varchar(64) = 'LC-ISCO-Standard'
-    Declare @msg VARCHAR(512) = ''
+    Declare @secSep varchar(64) = 'LC-Formic_1hr'
+    Declare @msg varchar(512) = ''
 
     ---------------------------------------------------
     -- Fill in some requested run parameters from dataset
@@ -200,7 +202,7 @@ AS
     End 
 
     ---------------------------------------------------
-    -- set up EUS parameters
+    -- Set up EUS parameters
     ---------------------------------------------------
     
     IF ISNULL(@templateRequestID, 0) = 0
@@ -210,9 +212,16 @@ AS
         Set @requestorPRN = @callingUser
         
     ---------------------------------------------------
-    -- create requested run and attach it to dataset
+    -- Create requested run and attach it to dataset
     ---------------------------------------------------    
     
+    Declare @addUpdateMode varchar(12)
+
+    If @mode = 'preview'
+        Set @addUpdateMode = 'check-add'
+    Else
+        Set @addUpdateMode = 'add-auto'
+
     EXEC @myError = dbo.AddUpdateRequestedRun 
                             @reqName = @reqName,
                             @experimentNum = @experimentNum,
@@ -228,7 +237,7 @@ AS
                             @eusProposalID = @eusProposalID,
                             @eusUsageType = @eusUsageType,
                             @eusUsersList = @eusUsersList,
-                            @mode = 'add-auto',
+                            @mode = @addUpdateMode,
                             @request = @request output,
                             @message = @msg output,
                             @secSep = @secSep,
@@ -244,13 +253,16 @@ AS
     IF @request = 0
         RAISERROR('Created request with ID = 0', 11, 7)
 
-    ---------------------------------------------------
-    -- consume the requested run 
-    ---------------------------------------------------
+    If @mode = 'add-auto'
+    Begin
+        ---------------------------------------------------
+        -- Consume the requested run 
+        ---------------------------------------------------
             
-    exec @myError = ConsumeScheduledRun @dID, @request, @msg output, @callingUser
-    if @myError <> 0
-        RAISERROR (@msg, 11, 8)
+        exec @myError = ConsumeScheduledRun @dID, @request, @msg output, @callingUser
+        if @myError <> 0
+            RAISERROR (@msg, 11, 8)
+    End
 
     ---------------------------------------------------
     -- Errors end up here
@@ -263,8 +275,13 @@ AS
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
-        Exec PostLogEntry 'Error', @message, 'AddRequestedRunToExistingDataset'
+       
+        Print @message
+
+        If @mode <> 'preview'
+        Begin
+            Exec PostLogEntry 'Error', @message, 'AddRequestedRunToExistingDataset'
+        End
     End CATCH
     
     return @myError
