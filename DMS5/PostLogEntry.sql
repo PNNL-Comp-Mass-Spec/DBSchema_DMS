@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.PostLogEntry
+
+CREATE Procedure [dbo].[PostLogEntry]
 /****************************************************
 **
 **	Desc: Put new entry into the main log table or the
@@ -24,6 +25,7 @@ CREATE Procedure dbo.PostLogEntry
 **			09/13/2010 mem - Eliminate analysis log
 **						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
 **			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter (512 characters in DMS); disable ANSI Warnings before inserting into the table
+**          01/28/2020 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
 **    
 *****************************************************/
 (
@@ -40,13 +42,14 @@ As
 
 	Declare @duplicateRowCount int = 0
 	
-	If (@postedBy Like 'Space%') And @type In ('Health', 'Normal')
+	If @postedBy Like 'Space%' And @type In ('Health', 'Normal')
 	Begin
 		-- Auto-update @duplicateEntryHoldoffHours to be 24 if it is zero
 		-- Otherwise we get way too many health/status log entries
 		
 		If @duplicateEntryHoldoffHours = 0
 			Set @duplicateEntryHoldoffHours = 24
+
 	End
 	
 	
@@ -54,7 +57,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Log_Entries
-		WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		WHERE Message = @message AND Type = @type AND Posting_Time >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount = 0
