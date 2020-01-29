@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ArchiveOldManagersAndParams
+
+CREATE PROCEDURE [dbo].[ArchiveOldManagersAndParams]
 /****************************************************
 ** 
 **	Desc:	Moves managers from T_Mgrs to T_OldManagers
@@ -17,6 +18,7 @@ CREATE PROCEDURE ArchiveOldManagersAndParams
 **	Date:	05/14/2015 mem - Initial version
 **			02/25/2016 mem - Add Set XACT_ABORT On
 **			04/22/2016 mem - Now updating M_Comment in T_OldManagers
+**          01/28/2020 mem - Fix bug warning of unknown managers
 **    
 *****************************************************/
 (
@@ -73,10 +75,11 @@ As
 	--	
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	If Exists (Select * from #TmpManagerList where M_ID Is Null)
+	If Exists (Select * from #TmpManagerList WHERE M_ID Is Null)
 	Begin
 		SELECT 'Unknown manager (not in T_Mgrs)' AS Warning, Manager_Name
 		FROM #TmpManagerList
+        WHERE M_ID Is Null
 		ORDER BY Manager_Name			
 	End
 
