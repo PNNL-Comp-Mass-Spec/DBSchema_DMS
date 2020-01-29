@@ -25,6 +25,7 @@ CREATE Procedure [dbo].[GetPSMJobDefaults]
 **          06/13/2017 mem - Exclude logging some try/catch errors
 **          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **          06/04/2018 mem - Change default tool to MSGFPlus_MzML
+**          01/28/2020 mem - Use '%TMT1%' instead of '%TMT10' so we can match TMT10, TMT11, and TMT16
 **    
 *****************************************************/
 (
@@ -323,7 +324,7 @@ As
             Set @jobTypeName = 'iTRAQ 4-plex'
         End
 
-        If @jobTypeName = '' And (@TopLabeling Like '%TMT6%' OR @TopLabeling Like '%TMT10%') And @TopDatasetType Like '%HCD%'
+        If @jobTypeName = '' And (@TopLabeling Like '%TMT6%' OR @TopLabeling Like '%TMT1%') And @TopDatasetType Like '%HCD%'
         Begin
             Set @jobTypeName = 'TMT 6-plex'
         End
