@@ -38,6 +38,7 @@ CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
 **          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          01/24/2020 mem - Add mode 'preview'
+**          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview
 **    
 *****************************************************/
 (
@@ -218,9 +219,35 @@ AS
     Declare @addUpdateMode varchar(12)
 
     If @mode = 'preview'
+    Begin
         Set @addUpdateMode = 'check-add'
+
+        Print 'Request_Name: ' + @reqName
+        Print 'Experiment: ' + @experimentNum
+        Print 'RequestorPRN: ' + @requestorPRN
+        Print 'InstrumentName: ' + @instrumentName
+        Print 'WorkPackage: ' + @workPackage
+        Print 'MsType: ' + @msType
+        Print 'InstrumentSettings: ' + 'na'
+        Print 'WellplateNum: Null'
+        Print 'WellNum: Null'
+        Print 'InternalStandard: ' + 'na'
+        Print 'Comment: ' + @comment
+        Print 'EusProposalID: ' + @eusProposalID
+        Print 'EusUsageType: ' + @eusUsageType
+        Print 'EusUsersList: ' + @eusUsersList
+        Print 'Mode: ' + @addUpdateMode
+        Print 'SecSep: ' + @secSep
+        Print 'MRMAttachment: ' + ''
+        Print 'Status: ' + 'Completed'
+        Print 'SkipTransactionRollback: 1'
+        Print 'AutoPopulateUserListIfBlank: 1'
+        Print 'CallingUser: ' + @callingUser
+    End
     Else
+    Begin
         Set @addUpdateMode = 'add-auto'
+    End
 
     EXEC @myError = dbo.AddUpdateRequestedRun 
                             @reqName = @reqName,
