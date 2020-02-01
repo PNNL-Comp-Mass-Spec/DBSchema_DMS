@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskToolVersion]
 (
     @job int,
     @step int,
-    @ToolVersionInfo varchar(900)
+    @toolVersionInfo varchar(900),
     @returnCode varchar(64) = '' output
 )
 As
@@ -43,9 +43,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'SetStepTaskToolVersion', @raiseError = 1;
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -53,18 +53,18 @@ As
 	--
 	Set @job = IsNull(@job, 0)
 	Set @step = IsNull(@step, 0)
-	Set @ToolVersionInfo = IsNull(@ToolVersionInfo, '')
+	Set @toolVersionInfo = IsNull(@toolVersionInfo, '')
 	
-	If @ToolVersionInfo = ''
-		Set @ToolVersionInfo = 'Unknown'
+	If @toolVersionInfo = ''
+		Set @toolVersionInfo = 'Unknown'
 	
 	---------------------------------------------------
-	-- Look for @ToolVersionInfo in T_Step_Tool_Versions	
+	-- Look for @toolVersionInfo in T_Step_Tool_Versions	
 	---------------------------------------------------
 	--
-	SELECT @ToolVersionID = Tool_Version_ID
+	SELECT @toolVersionID = Tool_Version_ID
 	FROM T_Step_Tool_Versions
-	WHERE Tool_Version = @ToolVersionInfo
+	WHERE Tool_Version = @toolVersionInfo
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
@@ -77,7 +77,7 @@ As
 		--
 		MERGE T_Step_Tool_Versions AS target
 		USING 
-			(SELECT @ToolVersionInfo AS Tool_Version
+			(SELECT @toolVersionInfo AS Tool_Version
 			) AS Source ( Tool_Version)
 		ON (target.Tool_Version = source.Tool_Version)
 		WHEN Not Matched THEN
@@ -85,16 +85,16 @@ As
 			VALUES (source.Tool_Version, GetDate());
 
 
-		SELECT @ToolVersionID = Tool_Version_ID
+		SELECT @toolVersionID = Tool_Version_ID
 		FROM T_Step_Tool_Versions
-		WHERE Tool_Version = @ToolVersionInfo
+		WHERE Tool_Version = @toolVersionInfo
 		
 	End
 	
-	If @ToolVersionID = 0
+	If @toolVersionID = 0
 	Begin
 		---------------------------------------------------
-		-- Something went wrong; @ToolVersionInfo wasn't found in T_Step_Tool_Versions 
+		-- Something went wrong; @toolVersionInfo wasn't found in T_Step_Tool_Versions 
 		-- and we were unable to add it with the Merge statement
 		---------------------------------------------------
 		
@@ -110,14 +110,14 @@ As
 		If @Job > 0
 		Begin		
 			UPDATE T_Job_Steps
-			SET Tool_Version_ID = @ToolVersionID
+			SET Tool_Version_ID = @toolVersionID
 			WHERE Job = @job AND
 			      Step_Number = @step
 			
 			UPDATE T_Step_Tool_Versions
 			SET Most_Recent_Job = @Job,
 			    Last_Used = GetDate()
-			WHERE Tool_Version_ID = @ToolVersionID
+			WHERE Tool_Version_ID = @toolVersionID
 		End
 				
 	End
