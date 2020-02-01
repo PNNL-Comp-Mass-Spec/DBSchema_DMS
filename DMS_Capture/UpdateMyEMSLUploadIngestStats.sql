@@ -21,7 +21,8 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
 **          07/12/2017 mem - Update TransactionId if null yet Ingest_Steps_Completed and ErrorCode are unchanged
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          07/15/2019 mem - Filter on both StatusNum and Dataset_ID when updating T_MyEMSL_Uploads
-**    
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**
 *****************************************************/
 (
     @datasetID int,
@@ -29,7 +30,8 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
     @ingestStepsCompleted tinyint,          -- Number of ingest steps that were completed for this entry
     @fatalError tinyint = 0,                -- Set to 1 if the ingest failed and the ErrorCode column needs to be set to -1 (if currently 0 or null)
     @transactionId int = 0,                 -- Transaction ID (null or 0 if unknown); starting in July 2017, transactionId and StatusNum should match
-    @message varchar(512) = '' output
+    @message varchar(512) = '' output,
+    @returnCode varchar(64) = '' output
 )
 As
     set nocount on
@@ -38,6 +40,8 @@ As
     Declare @myRowCount int = 0
     
     Declare @errorCode int = 0
+
+    Set @returnCode = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -143,6 +147,7 @@ Done:
         Exec PostLogEntry 'Error', @message, 'UpdateMyEMSLUploadIngestStats'
     End    
 
+    Set @returnCode = Cast(@myError As varchar(64))
     Return @myError
 
 

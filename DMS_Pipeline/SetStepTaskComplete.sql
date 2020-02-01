@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          04/25/2018 mem - Stop setting Remote_Finish to the current date since @remoteFinish provides that info
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          10/18/2018 mem - Add output parameter @message
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **
 *****************************************************/
 (
@@ -66,7 +67,8 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @remoteStart datetime = null,           -- Time the remote processor actually started processing the job
     @remoteFinish datetime = null,          -- Time the remote processor actually finished processing the job
     @processorName varchar(128) = '',        -- Name of the processor setting the job as complete
-    @message varchar(512) = '' output
+    @message varchar(512) = '' output,
+    @returnCode varchar(64) = '' output
 
 )
 As
@@ -75,8 +77,9 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
     
-    Set @message = ''
-    
+    Set @message = ''    
+    Set @returnCode = ''
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -543,6 +546,7 @@ CommitTran:
     ---------------------------------------------------
     --
 Done:
+    Set @returnCode = Cast(@myError As varchar(64))
     return @myError
 
 

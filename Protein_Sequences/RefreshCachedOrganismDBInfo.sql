@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.RefreshCachedOrganismDBInfo
+CREATE Procedure [dbo].[RefreshCachedOrganismDBInfo]
 /****************************************************
 **
 **	Desc: 
@@ -17,19 +17,20 @@ CREATE Procedure dbo.RefreshCachedOrganismDBInfo
 **
 **	Auth:	mem
 **	Date:	01/24/2014
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **    
 *****************************************************/
 (
-	@message varchar(255) = '' OUTPUT
+	@message varchar(255) = '' output,
+    @returnCode varchar(64) = '' output
 )
 AS
-
 	set nocount on
 
-	declare @myRowCount int	
-	declare @myError int
-	set @myRowCount = 0
-	set @myError = 0
+	declare @myRowCount int	= 0
+	declare @myError int	= 0
+
+    Set @returnCode = ''
 
 	---------------------------------------------------
 	-- Use a MERGE Statement to synchronize T_DMS_Organism_DB_Info with V_Protein_Collection_List_Export
@@ -61,7 +62,7 @@ AS
 		        Source.NumProteins, Source.NumResidues, Source.Organism_ID, Source.OrgFile_RowVersion, GetDate())
 	;
 
-
+    Set @returnCode = Cast(@myError As varchar(64))
 	Return @myError
 
 

@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          06/14/2018 mem - Call S_PostEmailAlert if a reporter ion m/z validation error or warning is detected
 **          07/30/2018 mem - Include dataset name when calling S_PostEmailAlert
 **          08/09/2018 mem - Expand @completionMessage to varchar(512)
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **    
 *****************************************************/
 (
@@ -40,7 +41,8 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @completionMessage varchar(512) = '',
     @evaluationCode int = 0,
     @evaluationMessage varchar(256) = '',
-    @message varchar(512) output
+    @message varchar(512) = '' output,
+    @returnCode varchar(64) = '' output
 )
 As
     set nocount on
@@ -48,9 +50,10 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
     
-    set @message = ''
-
     Declare @msg varchar(1024)
+
+    Set @message = ''    
+    Set @returnCode = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -297,6 +300,7 @@ As
     ---------------------------------------------------
     --
 Done:
+    Set @returnCode = Cast(@myError As varchar(64))
     return @myError
 
 GO

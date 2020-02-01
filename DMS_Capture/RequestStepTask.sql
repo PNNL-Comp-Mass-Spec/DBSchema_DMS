@@ -45,16 +45,18 @@ CREATE PROCEDURE [dbo].[RequestStepTask]
 **          07/01/2017 mem - Improve info displayed when @infoOnly > 0 and no jobs are available
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/12/2018 mem - Update code formatting
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **
 *****************************************************/
 (
     @processorName varchar(128),
     @jobNumber int = 0 OUTPUT,            -- Job number assigned; 0 if no job available
     @message varchar(512) OUTPUT,
-    @infoOnly TINYINT = 0,                -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
+    @infoOnly tinyint = 0,                -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
     @ManagerVersion varchar(128) = '',
     @JobCountToPreview int = 10,
-    @serverPerspectiveEnabled tinyint = 0
+    @serverPerspectiveEnabled tinyint = 0,
+    @returnCode varchar(64) = '' output
 )
 AS
     set nocount on
@@ -68,6 +70,8 @@ AS
 
     Declare @excludeCaptureTasks tinyint = 0
 
+    Set @returnCode = ''
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -75,9 +79,9 @@ AS
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
     -- Validate the inputs; clear the outputs
@@ -616,9 +620,8 @@ AS
     -- Exit
     ---------------------------------------------------
     --
-    Done:
-
-
+Done:
+    Set @returnCode = Cast(@myError As varchar(64))
     RETURN @myError
 
 

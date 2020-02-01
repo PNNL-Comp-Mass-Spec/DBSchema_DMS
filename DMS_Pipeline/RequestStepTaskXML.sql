@@ -95,6 +95,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          03/29/2018 mem - Ignore CPU checks when the manager runs jobs remotely (@remoteInfoID is greater than 1 because @remoteInfo is non-blank)
 **                         - Update Remote_Info_ID when assigning a new job, both in T_Job_Steps and in T_Job_Step_Processing_Log
 **          02/21/2019 mem - Reset Completion_Code and Completion_Message when a job is assigned
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **
 *****************************************************/
 (
@@ -110,7 +111,8 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
     @throttleByStartTime tinyint = 0,           -- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
     @maxStepNumToThrottle int = 10,             -- Only used if @throttleByStartTime is non-zero
     @throttleAllStepTools tinyint = 0,          -- Only used if @throttleByStartTime is non-zero; when 0, will not throttle Sequest or Results_Transfer steps
-    @logSPUsage tinyint = 0
+    @logSPUsage tinyint = 0,
+    @returnCode varchar(64) = '' output
 )
 As
     set nocount on
@@ -128,6 +130,8 @@ As
     Declare @remoteInfoID int = 0
     Declare @maxSimultaneousRunningRemoteSteps int = 0
     Declare @runningRemoteLimitReached tinyint = 0
+
+    Set @returnCode = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -1477,6 +1481,7 @@ As
     ---------------------------------------------------
     --
 Done:
+    Set @returnCode = Cast(@myError As varchar(64))
     return @myError
 
 

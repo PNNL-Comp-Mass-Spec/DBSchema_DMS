@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ReportManagerIdle
+
+CREATE PROCEDURE [dbo].[ReportManagerIdle]
 /****************************************************
 **
 **	Desc: 
@@ -15,12 +16,14 @@ CREATE PROCEDURE dbo.ReportManagerIdle
 **	
 **	Auth:	mem
 **	Date:	08/01/2017 mem - Initial release
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **
 *****************************************************/
 (
 	@managerName varchar(128) = '',
 	@infoOnly tinyint = 0,
-	@message varchar(256) = '' output
+	@message varchar(256) = '' output,
+    @returnCode varchar(64) = '' output
 )
 As
 	Set nocount on
@@ -32,6 +35,8 @@ As
 	Declare @remoteInfoId int = 0
 	Declare @newJobState int
 	
+    Set @returnCode = ''
+
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
@@ -39,9 +44,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'ReportManagerIdle', @raiseError = 1;
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -122,6 +127,7 @@ Done:
 	If @message <> ''
 		Print @message
 		
+    Set @returnCode = Cast(@myError As varchar(64))
 	return @myError
 
 GO

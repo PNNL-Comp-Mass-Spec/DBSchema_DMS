@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateOrganismDBFile
+
+CREATE PROCEDURE [dbo].[AddUpdateOrganismDBFile]
 /****************************************************
 **
 **  Desc: Adds new or edits existing Legacy Organism DB File in T_Organism_DB_File
@@ -17,6 +18,7 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 **			01/15/2015 mem - Added parameter @FileSizeKB
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **    
 *****************************************************/
 (
@@ -25,15 +27,17 @@ CREATE PROCEDURE AddUpdateOrganismDBFile
 	@NumProteins int,
 	@NumResidues bigint,
 	@FileSizeKB int=0,
-	@message varchar(512)='' output	
+	@message varchar(512) = '' output,
+    @returnCode varchar(64) = '' output
 )
 As
 	set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''    
+    Set @returnCode = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -42,9 +46,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'AddUpdateOrganismDBFile', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -128,8 +132,8 @@ As
 	Else
 		Set @Message = 'Added ' + @FastaFileName + ' to T_Organism_DB_File'
 
-
 Done:
+    Set @returnCode = Cast(@myError As varchar(64))
 	return @myError
 
 

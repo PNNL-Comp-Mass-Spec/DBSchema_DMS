@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SetStepTaskToolVersion
+
+CREATE PROCEDURE [dbo].[SetStepTaskToolVersion]
 /****************************************************
 **
 **	Desc: 
@@ -16,20 +17,24 @@ CREATE PROCEDURE SetStepTaskToolVersion
 **	Date:	03/12/2012 mem - Initial version (ported from DMS_Pipeline DB)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **    
 *****************************************************/
 (
     @job int,
     @step int,
     @ToolVersionInfo varchar(900)
+    @returnCode varchar(64) = '' output
 )
 As
 	set nocount on
 	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @ToolVersionID int = 0
+	Declare @toolVersionID int = 0
+    
+    Set @returnCode = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -122,6 +127,7 @@ As
 	---------------------------------------------------
 	--
 
+    Set @returnCode = Cast(@myError As varchar(64))
 	return @myError
 
 GO
