@@ -38,27 +38,33 @@ CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
 **          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          01/24/2020 mem - Add mode 'preview'
-**          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview
+**          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview'
+**          02/04/2020 mem - Add mode 'add-debug', which will associate the requested run with the dataset, but will also print out debug statements
 **    
 *****************************************************/
 (
     @datasetID INT = 0,                 -- Can supply ID for dataset or name for dataset (but not both)
     @datasetNum varchar(128),           -- 
     @templateRequestID INT,             -- existing request to use for looking up some parameters for new one
-    @mode varchar(12) = 'add',          -- compatibility with web entry page and possible future use; supports 'add' and 'preview'
+    @mode varchar(12) = 'add',          -- compatibility with web entry page and possible future use; supports 'add', 'add-debug', and 'preview'
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
 AS
     Set XACT_ABORT, nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    set @myRowCount = 0
-    
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
+    Declare @showDebugStatements Tinyint = 0
+
     Set @message = ''
-            
+
+    If @mode Like 'add%debug'
+    Begin
+        Set @showDebugStatements = 1
+        Set @mode = 'add'
+    End
+
     Begin TRY 
 
     ---------------------------------------------------
@@ -123,6 +129,9 @@ AS
     
     While @checkForDuplicates > 0
     Begin
+        If @showDebugStatements > 0
+            Print 'Looking for existing requested run named ' + @reqName
+
         If Exists (SELECT * FROM T_Requested_Run WHERE RDS_Name = @reqName)
         Begin
             -- Requested run already exists; bump up @iteration and try again
@@ -152,6 +161,9 @@ AS
     -- Fill in some requested run parameters from dataset
     ---------------------------------------------------
 
+    If @showDebugStatements > 0
+        Print 'Querying T_Dataset, T_Instrument_Name, etc. for Dataset_ID ' + Cast(@dID As Varchar(12))
+
     SELECT @experimentNum = E.Experiment_Num,
            @instrumentName = InstName.IN_name,
            @msType = DTN.DST_name,
@@ -177,6 +189,9 @@ AS
     
     If ISNULL(@templateRequestID, 0) <> 0
     Begin 
+        If @showDebugStatements > 0
+            Print 'Querying T_Requested_Run AND T_EUS_UsageType for request ID  ' + Cast(@templateRequestID As Varchar(12))
+
         SELECT @workPackage = RDS_WorkPackage,
                @requestorPRN = RDS_Requestor_PRN,
                @eusProposalID = RDS_EUS_Proposal_ID,
@@ -192,13 +207,27 @@ AS
         If @myRowCount <> 1
         Begin
             Set @message = 'Template request ID ' + Convert(varchar(12), @templateRequestID) + ' not found'
+            If @showDebugStatements > 0
+                Print @message
+
             RAISERROR (@message, 11, 10)
         End
         
         Set @comment = @comment + ' using request ' + Convert(varchar(12), @templateRequestID)
-        
-        If IsNull(@workPackage, 'none') = 'none'            
-            EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+
+        If @showDebugStatements > 0
+            Print @comment
+
+        If IsNull(@workPackage, 'none') = 'none'
+        Begin
+            If @showDebugStatements > 0
+                Print 'Calling GetWPforEUSProposal with proposal ' + @eusProposalID
+
+            EXEC GetWPforEUSProposal @eusProposalID, @workPackage Output
+
+            If @showDebugStatements > 0
+                Print 'GetWPforEUSProposal returned work package' + @workPackage
+        End
 
     End 
 
@@ -249,6 +278,9 @@ AS
         Set @addUpdateMode = 'add-auto'
     End
 
+    If @showDebugStatements > 0
+        Print 'Calling AddUpdateRequestedRun with mode ' + @addUpdateMode
+
     EXEC @myError = dbo.AddUpdateRequestedRun 
                             @reqName = @reqName,
                             @experimentNum = @experimentNum,
@@ -279,16 +311,26 @@ AS
         
     IF @request = 0
         RAISERROR('Created request with ID = 0', 11, 7)
+        
+    If @showDebugStatements > 0
+        Print 'AddUpdateRequestedRun reported that it created Request ID ' + Cast(@request As Varchar(12))
 
-    If @mode = 'add-auto'
+    If @addUpdateMode = 'add-auto'
     Begin
         ---------------------------------------------------
         -- Consume the requested run 
         ---------------------------------------------------
+
+        If @showDebugStatements > 0
+            Print 'Calling ConsumeScheduledRun with DatasetID ' + Cast(@dID As Varchar(12)) + ' and RequestID ' + Cast(@request As Varchar(12))
             
         exec @myError = ConsumeScheduledRun @dID, @request, @msg output, @callingUser
         if @myError <> 0
             RAISERROR (@msg, 11, 8)
+
+        If @showDebugStatements > 0
+            Print 'ConsumeScheduledRun returned message "' + @msg + '"'
+
     End
 
     ---------------------------------------------------
