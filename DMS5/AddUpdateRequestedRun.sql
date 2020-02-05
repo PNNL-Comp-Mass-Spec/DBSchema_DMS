@@ -86,6 +86,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @reqName when creating a new requested run
 **          12/10/2018 mem - Report an error if the comment contains 'experiment_group/show/0000'
 **          07/01/2019 mem - Allow @workPackage to be none if the Request is not active and either the Usage Type is Maintenance or the name starts with "AutoReq_"
+**          02/03/2020 mem - Raise an error if @eusUsersList contains multiple user IDs (since ERS only allows for a single user to be associated with a dataset)
 **
 *****************************************************/
 (
@@ -102,7 +103,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @comment varchar(1024) = 'na',
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50),
-    @eusUsersList varchar(1024) = '',           -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
+    @eusUsersList varchar(1024) = '',           -- EUS User ID (integer); also supports the form "Baker, Erin (41136)". Prior to February 2020, supported a comma separated list of EUS user IDs
     @mode varchar(12) = 'add',                  -- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
     @request int output,
     @message varchar(512) output,
@@ -134,6 +135,7 @@ As
     
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
+    Declare @raiseErrorOnMultipleEUSUsers tinyint = 1
 
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
     
@@ -580,6 +582,11 @@ As
     -- Note that if @eusUsersList contains a list of names in the form "Baker, Erin (41136)",
     -- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
     
+    If Len(@eusUsersList) = 0 And @autoPopulateUserListIfBlank > 0
+    Begin
+        Set @raiseErrorOnMultipleEUSUsers = 0
+    End
+
     Declare @eusUsageTypeID int
     exec @myError = ValidateEUSUsage
                         @eusUsageType output,
@@ -594,7 +601,18 @@ As
 
     If IsNull(@msg, '') <> ''
         Set @message = @msg
+    
+    Declare @commaPosition Int = CharIndex(',', @eusUsersList)
+    If @commaPosition > 1
+    Begin            
+        Set @message = dbo.AppendToText('Requested runs can only have a single EUS user associated with them', @message, 0, '; ', 1024)
 
+        If @raiseErrorOnMultipleEUSUsers > 0
+            RAISERROR ('ValidateEUSUsage: %s', 11, 1, @message)
+
+        -- Only keep the first user
+        Set @eusUsersList = Left(@eusUsersList, @commaPosition - 1)
+    End
 
     ---------------------------------------------------
     -- Lookup misc fields (only applies to experiments with sample prep requests)
