@@ -50,7 +50,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @requestorPRN contains a person's real name rather than their username
 **          08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **          09/01/2010 mem - Added parameter @SkipTransactionRollback
-**          09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
+**          09/09/2010 mem - Added parameter @autoPopulateUserListIfBlank
 **          07/29/2011 mem - Now querying T_Requested_Run with both @reqName and @status when the mode is update or check_update
 **          11/29/2011 mem - Tweaked warning messages when checking for existing request
 **          12/05/2011 mem - Updated @transName to use a custom transaction name
@@ -94,7 +94,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @experimentNum varchar(64),
     @requestorPRN varchar(64),
     @instrumentName varchar(64),                -- Instrument group; could also contain "(lookup)"
-    @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @AutoPopulateUserListIfBlank=1)
+    @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @autoPopulateUserListIfBlank=1)
     @msType varchar(20),
     @instrumentSettings varchar(512) = 'na',
     @wellplateNum varchar(64) = 'na',
@@ -111,7 +111,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @MRMAttachment varchar(128),
     @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
     @SkipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
-    @AutoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
     @callingUser varchar(128) = '',
     @VialingConc varchar(32) = null,
     @VialingVol varchar(32) = null,
@@ -594,7 +594,7 @@ As
                         @eusUsersList output,
                         @eusUsageTypeID output,
                         @msg output,
-                        @AutoPopulateUserListIfBlank
+                        @autoPopulateUserListIfBlank
                         
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
@@ -664,7 +664,7 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
-    Declare @allowNoneWP tinyint = @AutoPopulateUserListIfBlank
+    Declare @allowNoneWP tinyint = @autoPopulateUserListIfBlank
     Declare @requireWP tinyint = 1
     
     SELECT @requireWP = Value 
@@ -695,7 +695,7 @@ As
     FROM T_Charge_Code 
     WHERE Charge_Code = @workPackage
     
-    If @AutoPopulateUserListIfBlank = 0
+    If @autoPopulateUserListIfBlank = 0
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')       
             Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 512)

@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **
 **  Auth:   grk
 **  Date:   07/11/2007 grk - Initial Version
-**          09/09/2010 mem - Added parameter @AutoPopulateUserListIfBlank
+**          09/09/2010 mem - Added parameter @autoPopulateUserListIfBlank
 **                         - Now auto-clearing @eusProposalID and @eusUsersList if @eusUsageType is not 'USER'
 **          12/12/2011 mem - Now auto-fixing @eusUsageType if it is an abbreviated form of Cap_Dev, Maintenance, or Broken
 **          11/20/2013 mem - Now automatically extracting the integers from @eusUsersList if it instead has user names and integers
@@ -40,7 +39,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
     @eusUsersList varchar(1024) output,         -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
     @eusUsageTypeID int output,
     @message varchar(512) output,
-    @AutoPopulateUserListIfBlank tinyint = 0    -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @autoPopulateUserListIfBlank tinyint = 0    -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
 )
 As
     set nocount on
@@ -56,7 +55,7 @@ As
 
     set @message = ''
     Set @eusUsersList = IsNull(@eusUsersList, '')
-    Set @AutoPopulateUserListIfBlank = IsNull(@AutoPopulateUserListIfBlank, 0)
+    Set @autoPopulateUserListIfBlank = IsNull(@autoPopulateUserListIfBlank, 0)
 
     ---------------------------------------------------
     -- Remove leading and trailing spaces, and check for nulls
@@ -205,7 +204,7 @@ As
         Begin
             -- Blank user list
             --
-            If @AutoPopulateUserListIfBlank = 0
+            If @autoPopulateUserListIfBlank = 0
             Begin
                 set @message = 'Associated users must be selected for usage type "' + @eusUsageType + '"'
                 return 51074
@@ -322,7 +321,7 @@ As
             
                 -- Invalid users were found
                 --
-                If @AutoPopulateUserListIfBlank = 0
+                If @autoPopulateUserListIfBlank = 0
                 Begin
                     set @message = Convert(varchar(12), @n)
                     If @n = 1
@@ -385,7 +384,6 @@ As
             End -- </c>
             
         End -- </b>
-
     End -- </a>
 
     return 0
