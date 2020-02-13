@@ -18,13 +18,14 @@ CREATE PROCEDURE [dbo].[EnableDisableManagers]
 **                         - Now allowing @ManagerNameList to be All when @Enable = 1
 **          10/12/2017 mem - Allow @ManagerTypeID to be 0 if @ManagerNameList is provided
 **          03/28/2018 mem - Use different messages when updating just one manager
+**          02/12/2020 mem - Rename parameter to @infoOnly
 **    
 *****************************************************/
 (
     @Enable tinyint,                        -- 0 to disable, 1 to enable
     @ManagerTypeID int=11,                  -- Defined in table T_MgrTypes.  8=Space, 9=DataImport, 11=Analysis Tool Manager, 15=CaptureTaskManager
     @ManagerNameList varchar(4000) = '',    -- Required when @Enable = 1.  Only managers specified here will be enabled, though you can use "All" to enable All managers.  When @Enable = 0, if this parameter is blank (or All) then all managers of the given type will be disabled; supports the % wildcard
-    @PreviewUpdates tinyint = 0,
+    @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
 As
@@ -46,7 +47,7 @@ As
     -----------------------------------------------
     --
     Set @ManagerNameList = IsNull(@ManagerNameList, '')
-    Set @PreviewUpdates = IsNull(@PreviewUpdates, 0)
+    Set @infoOnly = IsNull(@infoOnly, 0)
 
     If @Enable Is Null
     Begin
@@ -239,7 +240,7 @@ As
     End
     Else
     Begin
-        If @PreviewUpdates <> 0
+        If @infoOnly <> 0
         Begin
             SELECT Convert(varchar(32), PV.Value + '-->' + @NewValue) AS State_Change_Preview,
                    PT.ParamName AS Parameter_Name,

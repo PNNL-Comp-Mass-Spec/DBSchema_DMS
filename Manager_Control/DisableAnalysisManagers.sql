@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.DisableAnalysisManagers
+CREATE PROCEDURE [dbo].[DisableAnalysisManagers]
 /****************************************************
 ** 
 **	Desc:	Disables all analysis managers
@@ -15,10 +15,11 @@ CREATE PROCEDURE dbo.DisableAnalysisManagers
 **	Date:	05/09/2008
 **			10/09/2009 mem - Changed @ManagerTypeIDList to 11
 **			06/09/2011 mem - Now calling EnableDisableAllManagers
+**          02/12/2020 mem - Rename parameter to @infoOnly
 **    
 *****************************************************/
 (
-	@PreviewUpdates tinyint = 0,
+	@infoOnly tinyint = 0,
 	@message varchar(512)='' output
 )
 As
@@ -27,7 +28,7 @@ As
 	Declare @myError int
 
 	exec @myerror = EnableDisableAllManagers @ManagerTypeIDList='11', @ManagerNameList='', @enable=0, 
-	                                         @PreviewUpdates=@PreviewUpdates, @message = @message output
+	                                         @infoOnly=@infoOnly, @message = @message output
 
 	Return @myError
 

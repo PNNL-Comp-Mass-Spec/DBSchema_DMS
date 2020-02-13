@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.EnableDisableAllManagers
+
+CREATE PROCEDURE [dbo].[EnableDisableAllManagers]
 /****************************************************
 ** 
 **	Desc:	Enables or disables all managers, optionally filtering by manager type ID or manager name
@@ -14,13 +15,14 @@ CREATE PROCEDURE dbo.EnableDisableAllManagers
 **	Date:	05/09/2008
 **			06/09/2011 - Created by extending code in DisableAllManagers
 **					   - Now filtering on MT_Active > 0 in T_MgrTypes
+**          02/12/2020 mem - Rename parameter to @infoOnly
 **    
 *****************************************************/
 (
 	@ManagerTypeIDList varchar(1024) = '',	-- Optional: list of manager type IDs to disable, e.g. "1, 2, 3"
 	@ManagerNameList varchar(4000) = '',	-- Optional: if defined, then only managers specified here will be enabled; supports the % wildcard
 	@Enable tinyint = 1,					-- 1 to enable, 0 to disable
-	@PreviewUpdates tinyint = 0,
+	@infoOnly tinyint = 0,
 	@message varchar(512)='' output
 )
 As
@@ -41,7 +43,7 @@ As
 	Set @Enable = IsNull(@Enable, 0)
 	Set @ManagerTypeIDList = IsNull(@ManagerTypeIDList, '')
 	Set @ManagerNameList = IsNull(@ManagerNameList, '')
-	Set @PreviewUpdates = IsNull(@PreviewUpdates, 0)
+	Set @infoOnly = IsNull(@infoOnly, 0)
 	Set @message = ''
 
 	CREATE TABLE #TmpManagerTypeIDs (
@@ -97,7 +99,7 @@ As
 			Set @Continue = 0
 		Else
 		Begin
-			exec @myError = EnableDisableManagers @Enable=@Enable, @ManagerTypeID=@MgrTypeID, @ManagerNameList=@ManagerNameList, @PreviewUpdates = @PreviewUpdates, @message = @message output
+			exec @myError = EnableDisableManagers @Enable=@Enable, @ManagerTypeID=@MgrTypeID, @ManagerNameList=@ManagerNameList, @infoOnly = @infoOnly, @message = @message output
 		End		
 	End
 	

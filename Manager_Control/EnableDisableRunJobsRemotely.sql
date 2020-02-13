@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 **  Auth:   mem
 **  Date:   03/28/2018 mem - Initial version
 **          03/29/2018 mem - Add parameter @addMgrParamsIfMissing
+**          02/12/2020 mem - Rename parameter to @infoOnly
 **    
 *****************************************************/
 (
     @enable tinyint,                        -- 0 to disable running jobs remotely, 1 to enable running jobs remotely
     @managerNameList varchar(4000) = '',    -- Manager(s) to update; supports % for wildcards
-    @previewUpdates tinyint = 0,
+    @infoOnly tinyint = 0,
     @addMgrParamsIfMissing tinyint = 0,      -- When 1, if manger(s) are missing parameters RunJobsRemotely or RemoteHostName, will auto-add those parameters
     @message varchar(512) = '' output
 )
@@ -41,7 +42,7 @@ As
     -----------------------------------------------
     --
     Set @managerNameList = IsNull(@managerNameList, '')
-    Set @previewUpdates = IsNull(@previewUpdates, 0)
+    Set @infoOnly = IsNull(@infoOnly, 0)
     Set @addMgrParamsIfMissing = IsNull(@addMgrParamsIfMissing, 0)
 
     If @enable Is Null
@@ -147,7 +148,7 @@ As
                     End
                     Else
                     Begin
-                        If @previewUpdates > 0
+                        If @infoOnly > 0
                         Begin
                             Print 'Create parameter RunJobsRemotely for Manager ' + @mgrName + ', value ' + @newValue
 
@@ -177,7 +178,7 @@ As
                     End
                     Else
                     Begin
-                        If @previewUpdates > 0
+                        If @infoOnly > 0
                         Begin
                             Print 'Create parameter RemoteHostName for Manager ' + @mgrName + ', value PrismWeb2'
                         End
@@ -248,7 +249,7 @@ As
     End
     Else
     Begin
-        If @previewUpdates <> 0
+        If @infoOnly <> 0
         Begin
             SELECT Convert(varchar(32), PV.Value + '-->' + @NewValue) AS State_Change_Preview,
                    PT.ParamName AS Parameter_Name,
