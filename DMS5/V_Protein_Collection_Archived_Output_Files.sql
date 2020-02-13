@@ -14,7 +14,8 @@ SELECT Archived_File_ID,
        Archived_File_Type,
        Archived_File_Creation_Date,
        File_Modification_Date,
-       Creation_Options
+       Creation_Options,
+       File_Size_MB
 FROM S_ProteinSeqs_V_Archived_Output_Files
 
 GO
