@@ -73,6 +73,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          08/10/2018 mem - Update duplicate dataset message and use PostEmailAlert to add to T_Email_Alerts
 **          11/09/2018 mem - Set deleted to 0 when updating existing entries
 **                           No longer removed deleted files and sort them last when updating File_Size_Rank
+**          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
 **    
 *****************************************************/
 (
@@ -430,7 +431,7 @@ As
         FROM T_Dataset_Files DSFiles
              INNER JOIN @InstrumentFilesTable NewDSFiles
                ON DSFiles.File_Hash = NewDSFiles.InstFileHash
-        WHERE DSFiles.Dataset_ID <> @datasetID And DSFiles.Deleted = 0
+        WHERE DSFiles.Dataset_ID <> @datasetID And DSFiles.Deleted = 0 And DSFiles.File_Size_Bytes > 0
         GROUP BY DSFiles.Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -464,7 +465,9 @@ As
 
             -- Duplicate dataset found: DatasetID 693058 has the same instrument file as DatasetID 692115; see table T_Dataset_Files
             Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' + 
-                                              Cast(@duplicateDatasetID As varchar(12)) + '; see table T_Dataset_Files'
+                                              Cast(@duplicateDatasetID As varchar(12)) + '; ' + 
+                                              'to allow this duplicate, set Allow_Duplicates to true for DatasetID ' + 
+                                              Cast(@duplicateDatasetID As varchar(12)) + ' in table T_Dataset_Files'
 
             -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
             Set @message = 'Duplicate dataset found: DatasetID ' + @datasetIdText + @duplicateDatasetInfoSuffix
