@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetJobStepParamsAsTable
+
+CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
 /****************************************************
 **
 **	Desc:
@@ -16,6 +17,7 @@ CREATE PROCEDURE dbo.GetJobStepParamsAsTable
 **	Auth:	mem
 **			12/04/2009 mem - Initial release
 **			01/05/2018 mem - Add parameters @section, @paramName, and @firstParameterValue
+**          02/12/2020 mem - Allow @section and @paramName to have wildcards
 **    
 *****************************************************/
 (
@@ -70,13 +72,13 @@ AS
 	If @section <> ''
 	Begin
 		DELETE FROM #Tmp_JobParamsTable
-		WHERE [Section] <> @section
+		WHERE Not [Section] Like @section
 	End
 
 	If @paramName <> ''
 	Begin
 		DELETE FROM #Tmp_JobParamsTable
-		WHERE [Name] <> @paramName
+		WHERE Not [Name] Like @paramName
 	End
 	
 	---------------------------------------------------

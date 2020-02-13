@@ -14,23 +14,27 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**          05/05/2010 mem - initial release
+**          05/05/2010 mem - Initial release
+**          02/12/2020 mem - Add argument @paramName, which can be used to filter the results
 **    
 *****************************************************/
 (
     @jobNumber int,
     @stepNumber int,
+    @paramName varchar(512) = '',           -- Optional parameter name to filter on (supports wildcards)
     @message varchar(512) = '' output,
     @DebugMode tinyint = 0
 )
 AS
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     --
     set @message = ''
     
+    Set @paramName = Ltrim(Rtrim(Coalesce(@ParamName, '')))
+
     ---------------------------------------------------
     -- Temporary table to hold job parameters
     ---------------------------------------------------
@@ -53,12 +57,22 @@ AS
     -- Return the contents of #Tmp_JobParamsTable
     ---------------------------------------------------
     
-    SELECT *
-    FROM #ParamTab
-    ORDER BY [Section], [Name], [Value]
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+    If @ParamName = '' Or @ParamName = '%'
+    Begin
+        SELECT *
+        FROM #ParamTab
+        ORDER BY [Section], [Name], [Value]
+    End
+    Else
+    Begin
+        SELECT *
+        FROM #ParamTab
+        Where Name Like @ParamName
+        ORDER BY [Section], [Name], [Value]
+
+        Print 'Only showing parameters match ' + @ParamName
+    End
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
