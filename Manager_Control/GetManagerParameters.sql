@@ -95,3 +95,5 @@ Done:
 
 
 GO
+GRANT EXECUTE ON [dbo].[GetManagerParameters] TO [DMSReader] AS [dbo]
+GO
