@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateSingleMgrTypeControlParam
+
+CREATE Procedure [dbo].[UpdateSingleMgrTypeControlParam]
 /****************************************************
 **
 **	Desc: 
@@ -19,10 +20,11 @@ CREATE Procedure dbo.UpdateSingleMgrTypeControlParam
 **			07/31/2007 grk - changed for 'controlfromwebsite' no longer a parameter
 **			03/30/2009 mem - Added optional parameter @callingUser; if provided, then will call AlterEnteredByUserMultiID and possibly AlterEventLogEntryUserMultiID
 **			04/16/2009 mem - Now calling UpdateSingleMgrParamWork to perform the updates
+**          02/15/2020 mem - Rename the first parameter to @paramName
 **    
 *****************************************************/
 (
-	@paramValue varchar(32),			-- The parameter name
+	@paramName varchar(32),			-- The parameter name
 	@newValue varchar(128),				-- The new value to assign for this parameter
 	@managerTypeIDList varchar(2048),
 	@callingUser varchar(128) = ''
@@ -46,7 +48,7 @@ As
 
 	
 	---------------------------------------------------
-	-- Find the @paramValue entries for the Manager Types in @managerTypeIDList
+	-- Find the @paramName entries for the Manager Types in @managerTypeIDList
 	---------------------------------------------------
 	--
 	INSERT INTO #TmpParamValueEntriesToUpdate (EntryID)
@@ -56,7 +58,7 @@ As
 	       ON dbo.T_ParamValue.TypeID = dbo.T_ParamType.ParamID
 	     INNER JOIN T_Mgrs
 	       ON MgrID = M_ID
-	WHERE ParamName = @paramValue AND
+	WHERE ParamName = @paramName AND
 	      M_TypeID IN ( SELECT Item
 	                    FROM MakeTableFromList ( @managerTypeIDList ) 
 	                  ) AND
@@ -78,7 +80,7 @@ As
 	-- AlterEnteredByUserMultiID and AlterEventLogEntryUserMultiID for @callingUser
 	---------------------------------------------------
 	--
-	exec @myError = UpdateSingleMgrParamWork @paramValue, @newValue, @callingUser
+	exec @myError = UpdateSingleMgrParamWork @paramName, @newValue, @callingUser
 
 	return @myError
 
