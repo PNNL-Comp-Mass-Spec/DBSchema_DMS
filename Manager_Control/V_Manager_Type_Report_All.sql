@@ -4,9 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Manager_Type_Report_All]
 AS
-SELECT DISTINCT MT.MT_TypeName AS [Manager Type],
+SELECT DISTINCT MT.MT_TypeName AS Manager_Type,
                 MT.MT_TypeID AS ID
 FROM T_MgrTypes MT
      JOIN T_Mgrs M

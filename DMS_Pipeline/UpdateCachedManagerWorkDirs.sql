@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateCachedManagerWorkDirs
+
+CREATE PROCEDURE [dbo].[UpdateCachedManagerWorkDirs]
 /****************************************************
 **
 **	Desc:
@@ -15,6 +16,7 @@ CREATE PROCEDURE UpdateCachedManagerWorkDirs
 **
 **	Auth:	mem
 **	Date:	10/05/2016 mem - Initial release
+**          02/17/2020 mem - Update the Mgr_Name column in S_Manager_Control_V_MgrWorkDir
 **
 *****************************************************/
 (    
@@ -63,7 +65,7 @@ As
 		       Replace(MgrWorkDirs.WorkDir_AdminShare, '\\ServerName\', '\\' + Machine + '\') AS MgrWorkDir
 		FROM [S_Manager_Control_V_MgrWorkDir] MgrWorkDirs
 		     INNER JOIN T_Local_Processors LP
-		       ON MgrWorkDirs.M_Name = LP.Processor_Name
+		       ON MgrWorkDirs.Mgr_Name = LP.Processor_Name
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	
