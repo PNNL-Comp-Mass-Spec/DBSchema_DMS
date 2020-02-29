@@ -34,6 +34,12 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **              QC_Shew_17_01_Run_2_7Jun18_Oak_18-03-08.raw
 **            </InstrumentFile>
 **          </InstrumentFiles>
+**          <DeviceList>
+**            <Device Type="MS" Number="1" Name="Q Exactive Plus Orbitrap" Model="Q Exactive Plus" 
+**                    SerialNumber="Exactive Series slot #300" SoftwareVersion="2.8-280502/2.8.1.2806">
+**              Mass Spectrometer
+**            </Device>
+**          </DeviceList>
 **          <ProfileScanCountMS1>10573</ProfileScanCountMS1>
 **          <ProfileScanCountMS2>42658</ProfileScanCountMS2>
 **          <CentroidScanCountMS1>1</CentroidScanCountMS1>
@@ -74,6 +80,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          11/09/2018 mem - Set deleted to 0 when updating existing entries
 **                           No longer removed deleted files and sort them last when updating File_Size_Rank
 **          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
+**          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
 **    
 *****************************************************/
 (
@@ -171,26 +178,18 @@ As
     Set @validateDatasetType = IsNull(@validateDatasetType, 1)
     
     ---------------------------------------------------
-    -- Parse out the dataset name from @datasetInfoXML
-    -- If this parse fails, there is no point in continuing
+    -- Examine the XML to determine the dataset name and update or validate @datasetID
     ---------------------------------------------------
-    
-    SELECT @datasetName = DSName
-    FROM (SELECT @datasetInfoXML.value('(/DatasetInfo/Dataset)[1]', 'varchar(128)') AS DSName
-         ) LookupQ
     --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+    Exec GetDatasetDetailsFromDatasetInfoXML 
+        @datasetInfoXML, 
+        @datasetID = @datasetID Output, 
+        @datasetName = @datasetName Output, 
+        @message = @message Output, 
+        @returnCode = @myError Output
+
     If @myError <> 0
     Begin
-        set @message = 'Error extracting the dataset name from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
-        Goto Done
-    End
-        
-    If @myRowCount = 0 or IsNull(@datasetName, '') = ''
-    Begin
-        set @message = 'XML in @datasetInfoXML is not in the expected form for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML; Could not match /DatasetInfo/Dataset'
-        Set @myError = 50000
         Goto Done
     End
     
@@ -249,80 +248,16 @@ As
         set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
-
+    
     ---------------------------------------------------
-    -- Update or Validate Dataset_ID in @DSInfoTable
+    -- Make sure Dataset_ID is up-to-date in @DSInfoTable
     ---------------------------------------------------
     --
-    If @datasetID = 0
-    Begin
-        UPDATE @DSInfoTable
-        SET Dataset_ID = DS.Dataset_ID
-        FROM @DSInfoTable Target
-             INNER JOIN T_Dataset DS
-               ON Target.Dataset_Name = DS.Dataset_Num
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        If @myRowCount = 0
-        Begin
-            Set @message = 'Warning: dataset "' + @datasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
-            Set @myError = 50001
-            Goto Done
-        End
-        
-        -- Update @datasetID
-        SELECT @datasetID = Dataset_ID
-        FROM @DSInfoTable
-        
-    End
-    Else
-    Begin
-    
-        -- @datasetID was non-zero
-        
-        -- Validate that @datasetID exists in T_Dataset
-        If Not Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @datasetID)
-        Begin
-            Set @message = 'Warning: dataset ID "' + @datasetIdText + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
-            Set @myError = 50002
-            Goto Done
-        End
-        
-        UPDATE @DSInfoTable
-        SET Dataset_ID = DS.Dataset_ID
-        FROM @DSInfoTable Target
-             INNER JOIN T_Dataset DS
-               ON Target.Dataset_Name = DS.Dataset_Num
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        If @myRowCount = 0
-        Begin
-            Set @message = 'Warning: dataset "' + @datasetName + '" not found in table T_Dataset by SP UpdateDatasetFileInfoXML'
-            Set @myError = 50003
-            Goto Done
-        End
-        
-        -- Validate the dataset name in @DSInfoTable against T_Dataset
-    
-        SELECT @datasetIDCheck = DS.Dataset_ID
-        FROM @DSInfoTable Target
-             INNER JOIN T_Dataset DS
-             ON Target.Dataset_Name = DS.Dataset_Num
-               
-        If @datasetIDCheck <> @datasetID
-        Begin
-            Set @message = 'Error: dataset ID values for ' + @datasetName + ' do not match; ' + 
-                           'expecting ' + Cast(@datasetIDCheck As varchar(12)) + ' but stored procedure param ' + 
-                           '@datasetID is ' + @datasetIdText
-            Set @myError = 50004
-            Goto Done
-        End
-    End
-    
+    UPDATE @DSInfoTable
+    SET Dataset_ID = @datasetID
+
     ---------------------------------------------------
-    -- Now parse out the start and End times
+    -- Parse out the start and End times
     -- Initially extract as strings in case they're out of range for the datetime date type
     ---------------------------------------------------
     --
@@ -351,7 +286,8 @@ As
         Acq_Time_End = @acqTimeEnd
 
     ---------------------------------------------------
-    -- Now extract out the ScanType information
+    -- Extract out the ScanType information
+    -- There could be multiple scan types defined in the XML
     ---------------------------------------------------
     --
     INSERT INTO @ScanTypesTable (ScanType, ScanCount, ScanFilter)
@@ -753,7 +689,7 @@ As
     
 Done:
 
-    -- Note: ignore error code 53600; a log message has already ben made
+    -- Note: ignore error code 53600; a log message has already been made
     If @myError Not In (0, 53600)
     Begin
         If @message = ''
