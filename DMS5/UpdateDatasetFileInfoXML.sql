@@ -81,6 +81,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **                           No longer removed deleted files and sort them last when updating File_Size_Rank
 **          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
 **          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
+**          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
 **    
 *****************************************************/
 (
@@ -451,6 +452,8 @@ As
         SELECT *
         FROM @InstrumentFilesTable
         
+        Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
+
         Goto Done
     End
 
@@ -578,7 +581,7 @@ As
     -- Cannot use a Merge statement on T_Dataset_ScanTypes
     --  since some datasets (e.g. MRM) will have multiple entries 
     --  of the same scan type but different ScanFilter values
-    -- Thus, simply delete existing rows then add new ones
+    -- Instead, delete existing rows then add new ones
     -----------------------------------------------
     --
     DELETE FROM T_Dataset_ScanTypes
@@ -683,7 +686,15 @@ As
     -----------------------------------------------
     --
     If @validateDatasetType <> 0
+    Begin
         exec dbo.ValidateDatasetType @datasetID, @message=@message output, @infoonly=@infoOnly
+    End
+    
+    -----------------------------------------------
+    -- Add/update T_Dataset_Device_Map
+    -----------------------------------------------
+    --
+    Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=0, @skipValidation=1
 
     Set @message = 'Dataset info update successful'
     
