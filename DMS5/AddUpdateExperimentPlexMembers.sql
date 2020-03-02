@@ -67,6 +67,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          11/30/2018 mem - Make @plexExperimentId an output parameter
 **          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
 **          09/06/2019 mem - When updating a plex experiment that is a parent experiment of an experiment group, also update the members (fractions) of the experiment group
+**          03/02/2020 mem - Update to support TMT 16 by adding channels 12-16
 **    
 *****************************************************/
 (
@@ -83,6 +84,11 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @expIdChannel9 varchar(130)='',
     @expIdChannel10 varchar(130)='',
     @expIdChannel11 varchar(130)='',
+    @expIdChannel12 varchar(130)='',
+    @expIdChannel13 varchar(130)='',
+    @expIdChannel14 varchar(130)='',
+    @expIdChannel15 varchar(130)='',
+    @expIdChannel16 varchar(130)='',
     @channelType1 varchar(64)='',       -- Normal, Reference, or Empty
     @channelType2 varchar(64)='',
     @channelType3 varchar(64)='',
@@ -94,6 +100,11 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @channelType9 varchar(64)='',
     @channelType10 varchar(64)='',
     @channelType11 varchar(64)='',
+    @channelType12 varchar(64)='',
+    @channelType13 varchar(64)='',
+    @channelType14 varchar(64)='',
+    @channelType15 varchar(64)='',
+    @channelType16 varchar(64)='',
     @comment1 varchar(512)='',
     @comment2 varchar(512)='',
     @comment3 varchar(512)='',
@@ -105,6 +116,11 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @comment9 varchar(512)='',
     @comment10 varchar(512)='',
     @comment11 varchar(512)='',
+    @comment12 varchar(512)='',
+    @comment13 varchar(512)='',
+    @comment14 varchar(512)='',
+    @comment15 varchar(512)='',
+    @comment16 varchar(512)='',
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''		
@@ -546,9 +562,14 @@ As
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (9,  @expIdChannel9,  @channelType9,  @comment9)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (10, @expIdChannel10, @channelType10, @comment10)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (11, @expIdChannel11, @channelType11, @comment11)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (12, @expIdChannel12, @channelType12, @comment12)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (13, @expIdChannel13, @channelType13, @comment13)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (14, @expIdChannel14, @channelType14, @comment14)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (15, @expIdChannel15, @channelType15, @comment15)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (16, @expIdChannel16, @channelType16, @comment16)
 
         Set @channelNum = 1
-        While @channelNum <= 11
+        While @channelNum <= 16
         Begin
             If Not Exists (SELECT * FROM #TmpExperiment_Plex_Members WHERE [Channel] = @channelNum)
             Begin -- <ProcessChannelParam>
