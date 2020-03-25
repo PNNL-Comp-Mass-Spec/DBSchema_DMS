@@ -14,18 +14,20 @@ CREATE PROCEDURE [dbo].[GetDatasetStatsByCampaign]
 **  Auth:   mem
 **  Date:   06/07/2019 mem - Initial release
 **          06/10/2019 mem - Add parameters @excludeQCAndBlankWithoutWP, @campaignNameExclude, and @instrumentBuilding
+**          03/24/2020 mem - Add parameter @excludeAllQCAndBlank
 **    
 *****************************************************/
 (
-    @mostRecentWeeks Int = 20,
-    @startDate Datetime = null,     -- Ignored if @mostRecentWeeks is non-zero
-    @endDate Datetime = null,       -- Ignored if @mostRecentWeeks is non-zero
-    @includeInstrument Tinyint = 0,
-    @excludeQCAndBlankWithoutWP Tinyint = 1,
-    @campaignNameFilter Varchar(128) = '',
-    @campaignNameExclude Varchar(128) = '',
-    @instrumentBuilding Varchar(64) = '',
-    @previewSql Tinyint = 0,
+    @mostRecentWeeks int = 20,
+    @startDate datetime = null,     -- Ignored if @mostRecentWeeks is non-zero
+    @endDate datetime = null,       -- Ignored if @mostRecentWeeks is non-zero
+    @includeInstrument tinyint = 0,
+    @excludeQCAndBlankWithoutWP tinyint = 1,
+    @excludeAllQCAndBlank tinyint = 0,
+    @campaignNameFilter varchar(128) = '',
+    @campaignNameExclude varchar(128) = '',
+    @instrumentBuilding varchar(64) = '',
+    @previewSql tinyint = 0,
     @message varchar(512) ='' OUTPUT
 )
 AS
@@ -52,6 +54,7 @@ AS
     Set @mostRecentWeeks = IsNull(@mostRecentWeeks, 0)
     Set @includeInstrument = IsNull(@includeInstrument, 0)
     Set @excludeQCAndBlankWithoutWP = IsNull(@excludeQCAndBlankWithoutWP, 1)
+    SET @excludeAllQCAndBlank = IsNull(@excludeAllQCAndBlank, 0)
     Set @campaignNameFilter = IsNull(@campaignNameFilter, '')
     Set @campaignNameExclude = IsNull(@campaignNameExclude, '')
     Set @instrumentBuilding = IsNull(@instrumentBuilding, '')
@@ -182,6 +185,12 @@ AS
         Set @sql = @sql +   ' AND NOT (C.Campaign_Num LIKE ''QC[-_]%'' AND RR.RDS_WorkPackage = ''None'') '
         Set @sql = @sql +   ' AND NOT (C.Campaign_Num IN (''Blank'', ''DataUpload'', ''DMS_Pipeline_Jobs'', ''Tracking'') AND RR.RDS_WorkPackage = ''None'') '
         Set @sql = @sql +   ' AND NOT (InstName.IN_Name LIKE ''External%'' AND RR.RDS_WorkPackage = ''None'') '
+    End
+
+    If @excludeAllQCAndBlank > 0
+    Begin
+        Set @sql = @sql +   ' AND NOT C.Campaign_Num LIKE ''QC[-_]%'' '
+        Set @sql = @sql +   ' AND NOT C.Campaign_Num IN (''Blank'', ''DataUpload'', ''DMS_Pipeline_Jobs'', ''Tracking'') '
     End
 
     Set @sql = @sql + ' GROUP BY Campaign_Num, RR.RDS_WorkPackage, C.CM_Fraction_EMSL_FUnded, InstName.Building'
