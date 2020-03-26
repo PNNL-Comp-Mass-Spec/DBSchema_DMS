@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.AddMissingPredefinedJobs
+CREATE Procedure [dbo].[AddMissingPredefinedJobs]
 /****************************************************
 **
 **  Desc:   Looks for Datasets that don't have predefined analysis jobs
@@ -15,89 +15,92 @@ CREATE Procedure dbo.AddMissingPredefinedJobs
 **  Auth:   mem
 **  Date:   05/23/2008 mem - Ticket #675
 **          10/30/2008 mem - Updated to only create jobs for datasets in state 3=Complete
-**          05/14/2009 mem - Added parameters @AnalysisToolNameFilter and @ExcludeDatasetsNotReleased
-**          10/25/2010 mem - Added parameter @DatasetNameIgnoreExistingJobs
-**          11/18/2010 mem - Now skipping datasets with a rating of -6 (Rerun, good data) when @ExcludeDatasetsNotReleased is non-zero
-**          02/10/2011 mem - Added parameters @ExcludeUnreviewedDatasets and @InstrumentSkipList
-**          05/24/2011 mem - Added parameter @IgnoreJobsCreatedBeforeDisposition
+**          05/14/2009 mem - Added parameters @analysisToolNameFilter and @excludeDatasetsNotReleased
+**          10/25/2010 mem - Added parameter @datasetNameIgnoreExistingJobs
+**          11/18/2010 mem - Now skipping datasets with a rating of -6 (Rerun, good data) when @excludeDatasetsNotReleased is non-zero
+**          02/10/2011 mem - Added parameters @excludeUnreviewedDatasets and @instrumentSkipList
+**          05/24/2011 mem - Added parameter @ignoreJobsCreatedBeforeDisposition
 **                         - Added support for rating -7
-**          08/05/2013 mem - Now passing @AnalysisToolNameFilter to EvaluatePredefinedAnalysisRules when @InfoOnly is non-zero
-**                         - Added parameter @CampaignFilter
-**          01/08/2014 mem - Now returning additional debug information when @InfoOnly > 0
+**          08/05/2013 mem - Now passing @analysisToolNameFilter to EvaluatePredefinedAnalysisRules when @infoOnly is non-zero
+**                         - Added parameter @campaignFilter
+**          01/08/2014 mem - Now returning additional debug information when @infoOnly > 0
 **          06/18/2014 mem - Now passing default to udfParseDelimitedList
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/03/2017 mem - Exclude datasets associated with the Tracking experiment
 **                         - Exclude datasets of type Tracking
 **          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/25/2020 mem - Add parameter @datasetIDFilterList and add support for @infoOnly = 2
 **
 *****************************************************/
 (
-    @InfoOnly tinyint = 0,
-    @MaxDatasetsToProcess int = 0,
-    @DayCountForRecentDatasets int = 30,                        -- Will examine datasets created within this many days of the present
-    @PreviewOutputType varchar(12) = 'Show Jobs',               -- Used if @InfoOnly = 1; options are 'Show Rules' or 'Show Jobs'
-    @AnalysisToolNameFilter varchar(128) = '',                  -- Optional: if not blank, then only considers predefines and jobs that match the given tool name (can contain wildcards)
-    @ExcludeDatasetsNotReleased tinyint = 1,                    -- When non-zero, then excludes datasets with a rating of -5 (we always exclude datasets with a rating of -1, -2, and -10)
-    @ExcludeUnreviewedDatasets tinyint = 1,                     -- When non-zero, then excludes datasets with a rating of -10
-    @InstrumentSkipList varchar(1024) = 'Agilent_GC_MS_01, TSQ_1, TSQ_3',        -- Comma-separated list of instruments to skip
+    @infoOnly tinyint = 0,                                      -- 0 to create jobs, 1 to preview jobs that would be created, 2 include additional debug information
+    @maxDatasetsToProcess int = 0,
+    @dayCountForRecentDatasets int = 30,                        -- Will examine datasets created within this many days of the present
+    @previewOutputType varchar(12) = 'Show Jobs',               -- Used if @infoOnly = 1; options are 'Show Rules' or 'Show Jobs'
+    @analysisToolNameFilter varchar(128) = '',                  -- Optional: if not blank, only considers predefines and jobs that match the given tool name (can contain wildcards)
+    @excludeDatasetsNotReleased tinyint = 1,                    -- When non-zero, excludes datasets with a rating of -5, -6, or -7 (we always exclude datasets with a rating of -1, and -2)
+    @excludeUnreviewedDatasets tinyint = 1,                     -- When non-zero, excludes datasets with a rating of -10
+    @instrumentSkipList varchar(1024) = 'Agilent_GC_MS_01, TSQ_1, TSQ_3',        -- Comma-separated list of instruments to skip
     @message varchar(512) = '' output,
-    @DatasetNameIgnoreExistingJobs varchar(128) = '',           -- If defined, then we'll create predefined jobs for this dataset even if it has existing jobs
-    @IgnoreJobsCreatedBeforeDisposition tinyint = 1,            -- When non-zero, then ignore jobs created before the dataset was dispositioned
-    @CampaignFilter varchar(128) = '',                          -- Optional: if not blank, then filters on the given campaign name
+    @datasetNameIgnoreExistingJobs varchar(128) = '',           -- If defined, we'll create predefined jobs for this dataset even if it has existing jobs
+    @ignoreJobsCreatedBeforeDisposition tinyint = 1,            -- When non-zero, ignore jobs created before the dataset was dispositioned
+    @campaignFilter varchar(128) = '',                          -- Optional: if not blank, filters on the given campaign name
+    @datasetIDFilterList varchar(1024) = ''                     -- Comma-separated list of Dataset IDs to process
 )
 As
     Set XACT_ABORT, nocount on
 
-    Declare @myError int = 0
-    Declare @myRowCount int = 0
+    Declare @myError INT = 0
+    Declare @myRowCount INT = 0
 
     Declare @continue tinyint
-    Declare @DatasetsProcessed int
-    Declare @DatasetsWithNewJobs int
+    Declare @datasetsProcessed int
+    Declare @datasetsWithNewJobs int
 
-    Declare @EntryID int
-    Declare @DatasetID int
-    Declare @DatasetName varchar(256)
+    Declare @entryID int
+    Declare @datasetID int
+    Declare @datasetName varchar(256)
 
-    Declare @JobCountAdded int
-    Declare @StartDate datetime
+    Declare @jobCountAdded int
+    Declare @startDate datetime
 
-    Declare @CallingProcName varchar(128)
-    Declare @CurrentLocation varchar(128)
-    Set @CurrentLocation = 'Start'
+    Declare @callingProcName varchar(128)
+    Declare @currentLocation varchar(128)
+    Set @currentLocation = 'Start'
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
     --
-    Set @InfoOnly = IsNull(@InfoOnly, 0)
-    Set @MaxDatasetsToProcess = IsNull(@MaxDatasetsToProcess, 0)
-    Set @DayCountForRecentDatasets = IsNull(@DayCountForRecentDatasets, 30)
-    Set @PreviewOutputType = IsNull(@PreviewOutputType, 'Show Rules')
-    Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
-    Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
-    Set @ExcludeUnreviewedDatasets = IsNull(@ExcludeUnreviewedDatasets, 1)
-    Set @InstrumentSkipList = IsNull(@InstrumentSkipList, '')
+    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @maxDatasetsToProcess = IsNull(@maxDatasetsToProcess, 0)
+    Set @dayCountForRecentDatasets = IsNull(@dayCountForRecentDatasets, 30)
+    Set @previewOutputType = IsNull(@previewOutputType, 'Show Rules')
+    Set @analysisToolNameFilter = IsNull(@analysisToolNameFilter, '')
+    Set @excludeDatasetsNotReleased = IsNull(@excludeDatasetsNotReleased, 1)
+    Set @excludeUnreviewedDatasets = IsNull(@excludeUnreviewedDatasets, 1)
+    Set @instrumentSkipList = IsNull(@instrumentSkipList, '')
     set @message = ''
-    Set @DatasetNameIgnoreExistingJobs = IsNull(@DatasetNameIgnoreExistingJobs, '')
-    Set @IgnoreJobsCreatedBeforeDisposition = IsNull(@IgnoreJobsCreatedBeforeDisposition, 1)
-    Set @CampaignFilter = IsNull(@CampaignFilter, '')
+    Set @datasetNameIgnoreExistingJobs = IsNull(@datasetNameIgnoreExistingJobs, '')
+    Set @ignoreJobsCreatedBeforeDisposition = IsNull(@ignoreJobsCreatedBeforeDisposition, 1)
+    Set @campaignFilter = IsNull(@campaignFilter, '')
+    Set @datasetIDFilterList = IsNull(@datasetIDFilterList, '')
 
-    If @DayCountForRecentDatasets < 1
-        Set @DayCountForRecentDatasets = 1
+    If @dayCountForRecentDatasets < 1
+        Set @dayCountForRecentDatasets = 1
 
-    If @InfoOnly <> 0 And (Not @PreviewOutputType IN ('Show Rules', 'Show Jobs'))
+    If @infoOnly <> 0 And (Not @previewOutputType IN ('Show Rules', 'Show Jobs'))
     Begin
-        set @message = 'Unknown value for @PreviewOutputType (' + @PreviewOutputType + '); should be "Show Rules" or "Show Jobs"'
+        set @message = 'Unknown value for @previewOutputType (' + @previewOutputType + '); should be "Show Rules" or "Show Jobs"'
 
-        SELECT @Message as Message
+        SELECT @message as Message
 
         set @myError = 51001
         Goto Done
     End
 
     ---------------------------------------------------
-    -- Create two temporary tables
+    -- Create some temporary tables
     ---------------------------------------------------
 
     CREATE TABLE #Tmp_DatasetsToProcess (
@@ -110,25 +113,38 @@ As
         Rating int
     )
 
+    CREATE TABLE #TmpDatasetIDFilterList (
+        Dataset_ID int
+    )
+
     -- Populate #TmpDSRatingExclusionList
     INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-1)        -- No Data (Blank/Bad)
     INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-2)        -- Data Files Missing
 
-    If @ExcludeUnreviewedDatasets <> 0
+    If @excludeUnreviewedDatasets <> 0
+    Begin
         INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-10)        -- Unreviewed
+    END
 
-    If @ExcludeDatasetsNotReleased <> 0
+    If @excludeDatasetsNotReleased <> 0
     Begin
         INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-5)    -- Not Released
         INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-6)    -- Rerun (Good Data)
         INSERT INTO #TmpDSRatingExclusionList (Rating) Values (-7)    -- Rerun (Superseded)
     End
 
+    IF LEN(@datasetIDFilterList) > 0
+    BEGIN
+        INSERT INTO #TmpDatasetIDFilterList (Dataset_ID)
+        SELECT Value
+        FROM dbo.udfParseDelimitedIntegerList(@datasetIDFilterList, ',')
+    END
+
     ---------------------------------------------------
-    -- Find datasets that were created within the last @DayCountForRecentDatasets days
+    -- Find datasets that were created within the last @dayCountForRecentDatasets days
     -- (but over 12 hours ago) that do not have analysis jobs
     -- Also excludes datasets with an undesired state or undesired rating
-    -- Optionally only matches analysis tools with names matching @AnalysisToolNameFilter
+    -- Optionally only matches analysis tools with names matching @analysisToolNameFilter
     ---------------------------------------------------
     --
     -- First construct a list of all recent datasets that have an instrument class
@@ -148,18 +164,18 @@ As
            ON E.EX_campaign_ID = C.Campaign_ID
     WHERE (NOT DS.DS_rating IN (SELECT Rating FROM #TmpDSRatingExclusionList)) AND
           (DS.DS_state_ID = 3) AND
-          (@CampaignFilter = '' Or C.Campaign_Num Like @CampaignFilter) AND
+          (@campaignFilter = '' Or C.Campaign_Num Like @campaignFilter) AND
           (NOT DSType.DST_name IN ('Tracking')) AND
           (NOT E.Experiment_Num in ('Tracking')) AND
-          (DS.DS_created BETWEEN DATEADD(day, -@DayCountForRecentDatasets, GETDATE()) AND
-                                 DATEADD(hour, - 12, GETDATE())) AND
+          (DS.DS_created BETWEEN DATEADD(day, -@dayCountForRecentDatasets, GETDATE()) AND
+                                 DATEADD(hour, -12, GETDATE())) AND
           InstName.IN_Class IN ( SELECT DISTINCT InstClass.IN_class
                                  FROM T_Predefined_Analysis PA
                                       INNER JOIN T_Instrument_Class InstClass
                                         ON PA.AD_instrumentClassCriteria = InstClass.IN_class
                                  WHERE (PA.AD_enabled <> 0) AND
-                                       (@AnalysisToolNameFilter = '' OR
-                                        PA.AD_analysisToolName LIKE @AnalysisToolNameFilter) )
+                                       (@analysisToolNameFilter = '' OR
+                                        PA.AD_analysisToolName LIKE @analysisToolNameFilter) )
     ORDER BY DS.Dataset_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -169,32 +185,124 @@ As
         Set @message = 'Error populating #Tmp_DatasetsToProcess'
         Goto Done
     End
+    
+    IF @infoOnly > 1 AND EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
+    Begin
+        SELECT 'Debug_Output #1' AS Status,
+               InstName.IN_name,
+               DS.Dataset_ID,
+               DS.Dataset_Num,
+               DS.DS_created,
+               DS.DS_comment,
+               DS.DS_state_ID,
+               DS.DS_rating,
+               DTP.Process_Dataset
+        FROM #Tmp_DatasetsToProcess DTP
+             INNER JOIN T_Dataset DS
+               ON DTP.Dataset_ID = DS.Dataset_ID
+             INNER JOIN T_Instrument_Name InstName
+               ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+             INNER JOIN #TmpDatasetIDFilterList FilterList
+               ON FilterList.Dataset_ID = DTP.Dataset_ID
+        ORDER BY DS.Dataset_ID
+    End
 
     -- Now exclude any datasets that have analysis jobs in T_Analysis_Job
-    -- Filter on @AnalysisToolNameFilter if not empty
+    -- Filter on @analysisToolNameFilter if not empty
     --
     UPDATE #Tmp_DatasetsToProcess
     Set Process_Dataset = 0
-    FROM #Tmp_DatasetsToProcess DS
+    FROM #Tmp_DatasetsToProcess DTP
          INNER JOIN ( SELECT AJ.AJ_datasetID AS Dataset_ID
                       FROM T_Analysis_Job AJ
                            INNER JOIN T_Analysis_Tool Tool
                              ON AJ.AJ_analysisToolID = Tool.AJT_toolID
-        WHERE (@AnalysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @AnalysisToolNameFilter) AND
-                            (@IgnoreJobsCreatedBeforeDisposition = 0 OR AJ.AJ_DatasetUnreviewed = 0 )
+                      WHERE (@analysisToolNameFilter = '' OR Tool.AJT_toolName LIKE @analysisToolNameFilter) AND
+                            (@ignoreJobsCreatedBeforeDisposition = 0 OR AJ.AJ_DatasetUnreviewed = 0 )
                      ) JL
-           ON DS.Dataset_ID = JL.Dataset_ID
+           ON DTP.Dataset_ID = JL.Dataset_ID
+    WHERE DTP.Process_Dataset > 0
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    
+    If @myError <> 0
+    BEGIN
+        Set @message = 'Error setting Process_Dataset to 0 in #Tmp_DatasetsToProcess for datasets that have existing jobs'
+        Goto Done
+    END
+
+    IF @infoOnly > 1 AND EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
+    Begin
+        SELECT 'Debug_Output #2' AS Status,
+               InstName.IN_name,
+               DS.Dataset_ID,
+               DS.Dataset_Num,
+               DS.DS_created,
+               DS.DS_comment,
+               DS.DS_state_ID,
+               DS.DS_rating,
+               DTP.Process_Dataset
+        FROM #Tmp_DatasetsToProcess DTP
+             INNER JOIN T_Dataset DS
+               ON DTP.Dataset_ID = DS.Dataset_ID
+             INNER JOIN T_Instrument_Name InstName
+               ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+             INNER JOIN #TmpDatasetIDFilterList FilterList
+               ON FilterList.Dataset_ID = DTP.Dataset_ID
+        ORDER BY DS.Dataset_ID
+    End
+
+    -- Next, exclude any datasets that have been processed by SchedulePredefinedAnalyses
+    -- This check also compares the dataset's current rating to the rating it had when previously processed
+    --
+    UPDATE #Tmp_DatasetsToProcess
+    Set Process_Dataset = 0
+    FROM #Tmp_DatasetsToProcess DTP INNER JOIN
+         T_Dataset DS ON DTP.Dataset_ID =DS.Dataset_ID INNER JOIN
+         T_Predefined_Analysis_Scheduling_Queue_History QH
+         ON DS.Dataset_ID = QH.Dataset_ID AND DS.DS_rating = QH.DS_rating
+    WHERE DTP.Process_Dataset > 0
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myError <> 0
     Begin
-        Set @message = 'Error excluding unwanted datasets from #Tmp_DatasetsToProcess'
+        Set @message = 'Error setting Process_Dataset to 0 in #Tmp_DatasetsToProcess for datasets in T_Predefined_Analysis_Scheduling_Queue_History'
         Goto Done
+    END
+    
+    IF @infoOnly > 1 AND EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
+    Begin
+        SELECT 'Debug_Output #3' AS Status,
+               InstName.IN_name,
+               DS.Dataset_ID,
+               DS.Dataset_Num,
+               DS.DS_created,
+               DS.DS_comment,
+               DS.DS_state_ID,
+               DS.DS_rating,
+               DTP.Process_Dataset
+        FROM #Tmp_DatasetsToProcess DTP
+             INNER JOIN T_Dataset DS
+               ON DTP.Dataset_ID = DS.Dataset_ID
+             INNER JOIN T_Instrument_Name InstName
+               ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+             INNER JOIN #TmpDatasetIDFilterList FilterList
+               ON FilterList.Dataset_ID = DTP.Dataset_ID
+        ORDER BY DS.Dataset_ID
     End
 
-    -- Exclude datasets from instruments in @InstrumentSkipList
-    If @InstrumentSkipList <> ''
+    IF EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
+    BEGIN
+        -- Exclude datasets not in #TmpDatasetIDFilterList
+        UPDATE #Tmp_DatasetsToProcess
+        Set Process_Dataset = 0
+        WHERE Process_Dataset > 0 And
+              NOT Dataset_ID IN (SELECT Dataset_ID FROM #TmpDatasetIDFilterList)
+    END
+
+    -- Exclude datasets from instruments in @instrumentSkipList
+    If @instrumentSkipList <> ''
     Begin
         UPDATE #Tmp_DatasetsToProcess
         SET Process_Dataset = 0
@@ -203,58 +311,60 @@ As
                ON Target.Dataset_ID = DS.Dataset_ID
              INNER JOIN T_Instrument_Name InstName
              ON InstName.Instrument_ID = DS.DS_instrument_name_ID
-             INNER JOIN udfParseDelimitedList(@InstrumentSkipList, default, 'AddMissingPredefinedJobs') AS ExclusionList
+             INNER JOIN udfParseDelimitedList(@instrumentSkipList, default, 'AddMissingPredefinedJobs') AS ExclusionList
                ON InstName.IN_name = ExclusionList.Value
     End
 
-    -- Add dataset @DatasetNameIgnoreExistingJobs
-    If @DatasetNameIgnoreExistingJobs <> ''
+    -- Add dataset @datasetNameIgnoreExistingJobs
+    If @datasetNameIgnoreExistingJobs <> ''
     Begin
         UPDATE #Tmp_DatasetsToProcess
         SET Process_Dataset = 1
         FROM #Tmp_DatasetsToProcess Target
              INNER JOIN T_Dataset DS
           ON Target.Dataset_ID = DS.Dataset_ID
-        WHERE DS.Dataset_Num = @DatasetNameIgnoreExistingJobs
+        WHERE DS.Dataset_Num = @datasetNameIgnoreExistingJobs
     End
 
-    If @InfoOnly <> 0
+    If @infoOnly <> 0
     Begin
         SELECT InstName.IN_name,
-                DS.Dataset_ID,
-                DS.Dataset_Num,
-                DS.DS_created,
-                DS.DS_comment,
-                DS.DS_state_ID,
-                DS.DS_rating,
-                DTP.Process_Dataset
+               DS.Dataset_ID,
+               DS.Dataset_Num,
+               DS.DS_created,
+               DS.DS_comment,
+               DS.DS_state_ID,
+               DS.DS_rating,
+               DTP.Process_Dataset
         FROM #Tmp_DatasetsToProcess DTP
-                INNER JOIN T_Dataset DS
-                ON DTP.Dataset_ID = DS.Dataset_ID
-                INNER JOIN T_Instrument_Name InstName
-                ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+             INNER JOIN T_Dataset DS
+               ON DTP.Dataset_ID = DS.Dataset_ID
+             INNER JOIN T_Instrument_Name InstName
+               ON DS.DS_instrument_name_ID = InstName.Instrument_ID
         WHERE DTP.Process_Dataset = 1
         ORDER BY InstName.IN_name, DS.Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        IF @InfoOnly > 1
-            SELECT 'Ignored' As Comment,
-                    InstName.IN_name,
-                    DS.Dataset_ID,
-                    DS.Dataset_Num,
-                    DS.DS_created,
-                    DS.DS_comment,
-                    DS.DS_state_ID,
-                    DS.DS_rating,
-                    DTP.Process_Dataset
+        IF @infoOnly > 1
+        Begin
+            SELECT 'Ignored' AS Status,
+                   InstName.IN_name,
+                   DS.Dataset_ID,
+                   DS.Dataset_Num,
+                   DS.DS_created,
+                   DS.DS_comment,
+                   DS.DS_state_ID,
+                   DS.DS_rating,
+                   DTP.Process_Dataset
             FROM #Tmp_DatasetsToProcess DTP
-                    INNER JOIN T_Dataset DS
-                    ON DTP.Dataset_ID = DS.Dataset_ID
-                    INNER JOIN T_Instrument_Name InstName
-                    ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+                 INNER JOIN T_Dataset DS
+                   ON DTP.Dataset_ID = DS.Dataset_ID
+                 INNER JOIN T_Instrument_Name InstName
+                   ON DS.DS_instrument_name_ID = InstName.Instrument_ID
             WHERE DTP.Process_Dataset = 0
             ORDER BY InstName.IN_name, DS.Dataset_ID
+        End
     End
 
     -- Count the number of entries with Process_Dataset = 1 in #Tmp_DatasetsToProcess
@@ -265,7 +375,7 @@ As
     If @myRowCount = 0
     Begin
         Set @message = 'All recent (valid) datasets with potential predefined jobs already have existing analysis jobs'
-        If @InfoOnly <> 0
+        If @infoOnly <> 0
             SELECT @message AS Message
     End
     Else
@@ -283,21 +393,21 @@ As
         -- Call EvaluatePredefinedAnalysisRules or SchedulePredefinedAnalyses for each one
         ---------------------------------------------------
 
-        Set @DatasetsProcessed = 0
-        Set @DatasetsWithNewJobs = 0
+        Set @datasetsProcessed = 0
+        Set @datasetsWithNewJobs = 0
 
-        Set @EntryID = 0
+        Set @entryID = 0
         Set @continue = 1
 
         While @continue = 1
         Begin -- <b>
-            SELECT TOP 1 @EntryID = DTP.Entry_ID,
-                         @DatasetID = DTP.Dataset_ID,
-                         @DatasetName = DS.Dataset_Num
+            SELECT TOP 1 @entryID = DTP.Entry_ID,
+                         @datasetID = DTP.Dataset_ID,
+                         @datasetName = DS.Dataset_Num
             FROM #Tmp_DatasetsToProcess DTP
                  INNER JOIN T_Dataset DS
                    ON DTP.Dataset_ID = DS.Dataset_ID
-            WHERE Entry_ID > @EntryID
+            WHERE Entry_ID > @entryID
             ORDER BY Entry_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -308,56 +418,56 @@ As
             Begin -- <c>
                 Begin Try
 
-                    If @InfoOnly <> 0
+                    If @infoOnly <> 0
                     Begin
-                        Set @CurrentLocation = 'Calling SchedulePredefinedAnalyses for ' + @DatasetName
+                        Set @currentLocation = 'Calling SchedulePredefinedAnalyses for ' + @datasetName
 
-                        Exec EvaluatePredefinedAnalysisRules @DatasetName, @PreviewOutputType, @message = @message output, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased, @AnalysisToolNameFilter=@AnalysisToolNameFilter
+                        Exec EvaluatePredefinedAnalysisRules @datasetName, @previewOutputType, @message = @message output, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @analysisToolNameFilter=@analysisToolNameFilter
                     End
 
 
-                    Set @CurrentLocation = 'Calling SchedulePredefinedAnalyses for ' + @DatasetName
-                    Set @StartDate = GetDate()
+                    Set @currentLocation = 'Calling SchedulePredefinedAnalyses for ' + @datasetName
+                    Set @startDate = GetDate()
 
-                    Exec @myError = SchedulePredefinedAnalyses @DatasetName, @AnalysisToolNameFilter=@AnalysisToolNameFilter, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased, @infoOnly=@infoOnly
+                    Exec @myError = SchedulePredefinedAnalyses @datasetName, @analysisToolNameFilter=@analysisToolNameFilter, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @infoOnly=@infoOnly
 
                     If @myError = 0 And @infoOnly = 0
                     Begin -- <e1>
                         -- See if jobs were actually added by querying T_Analysis_Job
 
-                        Set @JobCountAdded = 0
+                        Set @jobCountAdded = 0
 
-                        SELECT @JobCountAdded = COUNT(*)
+                        SELECT @jobCountAdded = COUNT(*)
                         FROM T_Analysis_Job
-                        WHERE AJ_DatasetID = @DatasetID AND
-                                AJ_Created >= @StartDate
+                        WHERE AJ_DatasetID = @datasetID AND
+                                AJ_Created >= @startDate
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                        If @JobCountAdded > 0
+                        If @jobCountAdded > 0
                         Begin -- <f>
                             UPDATE T_Analysis_Job
                             SET AJ_Comment = IsNull(AJ_Comment, '') + ' (missed predefine)'
-                            WHERE AJ_DatasetID = @DatasetID AND
-                                    AJ_Created >= @StartDate
+                            WHERE AJ_DatasetID = @datasetID AND
+                                    AJ_Created >= @startDate
                             --
                             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                            If @myRowCount <> @JobCountAdded
+                            If @myRowCount <> @jobCountAdded
                             Begin
-                                Set @message = 'Added ' + Convert(varchar(12), @JobCountAdded) + ' missing predefined analysis job(s) for dataset ' + @DatasetName + ', but updated the comment for ' + convert(varchar(12), @myRowCount) + ' job(s); mismatch is unexpected'
+                                Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job(s) for dataset ' + @datasetName + ', but updated the comment for ' + convert(varchar(12), @myRowCount) + ' job(s); mismatch is unexpected'
                                 Exec PostLogEntry 'Error', @message, 'AddMissingPredefinedJobs'
                             End
 
-                            Set @message = 'Added ' + Convert(varchar(12), @JobCountAdded) + ' missing predefined analysis job'
-                            If @JobCountAdded <> 1
+                            Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job'
+                            If @jobCountAdded <> 1
                                 Set @message = @message + 's'
 
-                            Set @message = @message + ' for dataset ' + @DatasetName
+                            Set @message = @message + ' for dataset ' + @datasetName
 
                             Exec PostLogEntry 'Warning', @message, 'AddMissingPredefinedJobs'
 
-                            Set @DatasetsWithNewJobs = @DatasetsWithNewJobs + 1
+                            Set @datasetsWithNewJobs = @datasetsWithNewJobs + 1
                         End
                     End -- </e1>
                     Else
@@ -367,7 +477,7 @@ As
 
                         If @myError <> 1 And @infoOnly = 0
                         Begin
-                            Set @message = 'Error calling SchedulePredefinedAnalyses for dataset ' + @DatasetName + '; error code ' + Convert(varchar(12), @myError)
+                            Set @message = 'Error calling SchedulePredefinedAnalyses for dataset ' + @datasetName + '; error code ' + Convert(varchar(12), @myError)
                             Exec PostLogEntry 'Error', @message, 'AddMissingPredefinedJobs'
                             Set @message = ''
                         End
@@ -377,32 +487,32 @@ As
                 End Try
                 Begin Catch
                     -- Error caught; log the error then abort processing
-                    Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'AddMissingPredefinedJobs')
-                    exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
-                                            @ErrorNum = @myError output, @message = @message output
+                    Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'AddMissingPredefinedJobs')
+                    exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
+                                            @errorNum = @myError output, @message = @message output
 
                 End Catch
 
-                Set @DatasetsProcessed = @DatasetsProcessed + 1
+                Set @datasetsProcessed = @datasetsProcessed + 1
             End -- </c>
 
-            If @MaxDatasetsToProcess > 0 And @DatasetsProcessed >= @MaxDatasetsToProcess
+            If @maxDatasetsToProcess > 0 And @datasetsProcessed >= @maxDatasetsToProcess
                 Set @continue = 0
         End -- </b>
 
-        If @DatasetsProcessed > 0 And @infoOnly = 0
+        If @datasetsProcessed > 0 And @infoOnly = 0
         Begin
-            Set @message = 'Added predefined analysis jobs for ' + Convert(varchar(12), @DatasetsWithNewJobs) + ' dataset'
-            If @DatasetsWithNewJobs <> 1
+            Set @message = 'Added predefined analysis jobs for ' + Convert(varchar(12), @datasetsWithNewJobs) + ' dataset'
+            If @datasetsWithNewJobs <> 1
                 Set @message = @message + 's'
 
-            Set @message = @message + ' (processed ' + Convert(varchar(12), @DatasetsProcessed) + ' dataset'
-            If @DatasetsProcessed <> 1
+            Set @message = @message + ' (processed ' + Convert(varchar(12), @datasetsProcessed) + ' dataset'
+            If @datasetsProcessed <> 1
                 Set @message = @message + 's'
 
             Set @message = @message + ')'
 
-            If @DatasetsWithNewJobs > 0 And @InfoOnly = 0
+            If @datasetsWithNewJobs > 0 And @infoOnly = 0
                 Exec PostLogEntry 'Normal', @message, 'AddMissingPredefinedJobs'
 
         End
@@ -411,6 +521,7 @@ As
 
 Done:
     return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddMissingPredefinedJobs] TO [D3L243] AS [dbo]
