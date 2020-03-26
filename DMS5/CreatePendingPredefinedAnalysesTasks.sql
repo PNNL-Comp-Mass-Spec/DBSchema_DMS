@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 **          03/27/2013 mem - Now obtaining Dataset name from T_Dataset
 **          07/21/2016 mem - Fix logic error examining @myError
 **          05/30/2018 mem - Do not create predefined jobs for inactive datasets
+**          03/25/2020 mem - Append a row to T_Predefined_Analysis_Scheduling_Queue_History for each dataset processed
 **    
 *****************************************************/
 (
@@ -30,15 +31,14 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 AS
     Set nocount on
     
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError INT = 0
+    Declare @myRowCount INT = 0
 
     Declare @message varchar(max) = ''
 
-    Declare @datasetNum varchar(128)
     Declare @datasetID int
+    Declare @datasetName varchar(128)
+    Declare @datasetRatingID smallint
     Declare @datasetStateId int
     Declare @callingUser varchar(128)
     Declare @AnalysisToolNameFilter varchar(128)
@@ -65,21 +65,23 @@ AS
     Set @currentItemID = 0
     Set @DatasetsProcessed = 0
      
-    WHILE @done = 0
+    While @done = 0
     Begin
-        SET @datasetNum = ''
+        SET @datasetName = ''
         Set @datasetStateId = 0
 
         SELECT TOP 1 @currentItemID = SQ.Item,
-                     @datasetNum = D.Dataset_Num,
-                     @datasetStateId = D.DS_state_ID,
+                     @datasetID = SQ.Dataset_ID,
+                     @datasetName = DS.Dataset_Num,
+                     @datasetRatingID = DS.DS_Rating,
+                     @datasetStateId = DS.DS_state_ID,
                      @callingUser = SQ.CallingUser,
                      @AnalysisToolNameFilter = SQ.AnalysisToolNameFilter,
                      @ExcludeDatasetsNotReleased = SQ.ExcludeDatasetsNotReleased,
                      @PreventDuplicateJobs = SQ.PreventDuplicateJobs
         FROM T_Predefined_Analysis_Scheduling_Queue SQ
-             INNER JOIN T_Dataset D
-               ON SQ.Dataset_ID = D.Dataset_ID
+             INNER JOIN T_Dataset DS
+               ON SQ.Dataset_ID = DS.Dataset_ID
         WHERE SQ.State = 'New' AND
               SQ.Item > @currentItemID
         ORDER BY SQ.Item ASC
@@ -90,14 +92,14 @@ AS
         Begin
             SET @done = 1
         End
-        ELSE 
+        Else
         Begin
             If @InfoOnly <> 0
             Begin
-                PRINT 'Process Item ' + Convert(varchar(12), @currentItemID) + ': ' + @datasetNum
+                PRINT 'Process Item ' + Convert(varchar(12), @currentItemID) + ': ' + @datasetName
             End
 
-            If IsNull(@datasetNum, '') = ''
+            If IsNull(@datasetName, '') = ''
             Begin
                 -- Dataset not defined; skip this entry
                 Set @myError = 50
@@ -113,7 +115,7 @@ AS
             Begin
                     
                 EXEC @myError = dbo.CreatePredefinedAnalysesJobs 
-                                                @datasetNum,
+                                                @datasetName,
                                                 @callingUser,
                                                 @AnalysisToolNameFilter,
                                                 @ExcludeDatasetsNotReleased,
@@ -125,6 +127,7 @@ AS
             End
         
             If @InfoOnly = 0
+            Begin
                 UPDATE dbo.T_Predefined_Analysis_Scheduling_Queue
                 SET Message = @message,
                     Result_Code = @myError,
@@ -136,7 +139,13 @@ AS
                     Jobs_Created = ISNULL(@JobsCreated, 0),
                     Last_Affected = GetDate()
                 WHERE Item = @currentItemID
-            
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                
+                INSERT INTO T_Predefined_Analysis_Scheduling_Queue_History( Dataset_ID, DS_Rating, Jobs_Created )
+                VALUES(@datasetID, @datasetRatingID, ISNULL(@JobsCreated, 0))
+            END
+
             Set @DatasetsProcessed = @DatasetsProcessed + 1
         End 
         
@@ -160,7 +169,7 @@ AS
         Print @message
     End
 
-    RETURN 0
+    REturn 0
 
 
 GO
