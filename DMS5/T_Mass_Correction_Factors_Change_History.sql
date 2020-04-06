@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Mass_Correction_Factors_Change_History](
 	[Event_ID] [int] IDENTITY(1,1) NOT NULL,
 	[Mass_Correction_ID] [int] NOT NULL,
-	[Mass_Correction_Tag] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Mass_Correction_Tag] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Monoisotopic_Mass] [float] NOT NULL,
 	[Average_Mass] [float] NULL,

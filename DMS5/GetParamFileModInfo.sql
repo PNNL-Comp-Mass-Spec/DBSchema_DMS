@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetParamFileModInfo
+
+CREATE PROCEDURE [dbo].[GetParamFileModInfo]
 /****************************************************
 ** 
 **	Desc:
@@ -23,6 +24,7 @@ CREATE PROCEDURE GetParamFileModInfo
 **			08/20/2004 grk - Major change to support consolidated mod description
 **			08/22/2004 grk - added @paramFileID
 **			02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
+**          04/02/2020 mem - Remove cast of Mass_Correction_Tag to varchar since no longer char(8)
 **    
 *****************************************************/
 (
@@ -75,7 +77,7 @@ As
 	--
 
 	SELECT @PM_TargetSymbolList = @PM_TargetSymbolList + Local_Symbol + ',',
-	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + Mass_Correction_Tag + ','
 	FROM V_Param_File_Mass_Mod_Info
 	WHERE Mod_Type_Symbol = 'D' AND
 	      Param_File_Name = @parameterFileName
@@ -95,7 +97,7 @@ As
 	-----------------------------------------------------------
 
 	SELECT @PM_TargetSymbolList = @PM_TargetSymbolList + Residue_Symbol + ',',
-	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	       @PM_MassCorrectionTagList = @PM_MassCorrectionTagList + Mass_Correction_Tag + ','
 	FROM V_Param_File_Mass_Mod_Info
 	WHERE Mod_Type_Symbol IN ('T', 'P', 'S') AND
 	      Param_File_Name = @parameterFileName
@@ -114,7 +116,7 @@ As
 	-- isotopic mods
 	-----------------------------------------------------------
 
-	SELECT @NP_MassCorrectionTagList = @NP_MassCorrectionTagList + cast(Mass_Correction_Tag AS varchar(12)) + ','
+	SELECT @NP_MassCorrectionTagList = @NP_MassCorrectionTagList + Mass_Correction_Tag + ','
 	FROM V_Param_File_Mass_Mod_Info
 	WHERE Mod_Type_Symbol = 'I' AND
 	      Param_File_Name = @parameterFileName

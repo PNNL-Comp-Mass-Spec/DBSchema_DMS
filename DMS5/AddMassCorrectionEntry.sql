@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
 **  Date:   08/02/2004
 **          10/17/2013 mem - Expanded @modDescription to varchar(128)
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          04/02/2020 mem - Expand @modName to varchar(32)
 **    
 *****************************************************/
 (
-    @modName char(8),
+    @modName varchar(32),
     @modDescription varchar(128),
     @modMassChange float(8),
     @modAffectedAtom char(1) = '-',
@@ -41,8 +42,7 @@ As
     if LEN(@modName) < 1
     begin
         set @myError = 51000
-        RAISERROR ('modName was blank',
-            10, 1)
+        RAISERROR ('modName was blank', 10, 1)
     end
 
     --
@@ -50,12 +50,8 @@ As
     if LEN(@modDescription) < 1
     begin
         set @myError = 51001
-        RAISERROR ('modDescription was blank',
-            10, 1)
+        RAISERROR ('modDescription was blank', 10, 1)
     end
-    
-    
---
     
     if @myError <> 0
         return @myError
@@ -64,12 +60,11 @@ As
     -- Is entry already in database?
     ---------------------------------------------------
 
-    Declare @MassCorrectionID int
-    set @MassCorrectionID = 0
+    Declare @MassCorrectionID int = 0
     --
     execute @MassCorrectionID = GetMassCorrectionID @modMassChange
     
-    -- cannot create an entry that already exists
+    -- Cannot create an entry that already exists
 
     if @MassCorrectionID <> 0
     begin
