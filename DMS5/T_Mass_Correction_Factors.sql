@@ -79,7 +79,8 @@ For Insert
 **
 **  Auth:   grk
 **  Date:   08/23/2006
-**          11/30/2018 - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          04/02/2020 mem - Add columns Alternative_Name and Empirical_Formula
 **
 *****************************************************/
 AS
@@ -90,11 +91,13 @@ AS
                 Mass_Correction_ID, Mass_Correction_Tag, Description, 
                 Monoisotopic_Mass, Average_Mass, 
                 Affected_Atom, Original_Source, Original_Source_Name, 
+                Alternative_Name, Empirical_Formula,
                 Monoisotopic_Mass_Change, Average_Mass_Change, 
                 Entered, Entered_By)
     SELECT  Mass_Correction_ID, Mass_Correction_Tag, Description, 
             Monoisotopic_Mass, Average_Mass, 
             Affected_Atom, Original_Source, Original_Source_Name, 
+            Alternative_Name, Empirical_Formula,
             0 AS Monoisotopic_Mass_Change, 0 AS Average_Mass_Change, 
             GetDate(), suser_sname()
     FROM inserted
@@ -116,7 +119,8 @@ For Update
 **
 **  Auth:   grk
 **  Date:   08/23/2006
-**          11/30/2018 - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          04/02/2020 mem - Add columns Alternative_Name and Empirical_Formula
 **
 *****************************************************/
 AS
@@ -131,12 +135,14 @@ AS
                     Mass_Correction_ID, Mass_Correction_Tag, Description, 
                     Monoisotopic_Mass, Average_Mass, 
                     Affected_Atom, Original_Source, Original_Source_Name, 
+                    Alternative_Name, Empirical_Formula,
                     Monoisotopic_Mass_Change, 
                     Average_Mass_Change,
                     Entered, Entered_By)
         SELECT  inserted.Mass_Correction_ID, inserted.Mass_Correction_Tag, inserted.Description, 
                 inserted.Monoisotopic_Mass, inserted.Average_Mass, 
                 inserted.Affected_Atom, inserted.Original_Source, inserted.Original_Source_Name, 
+                inserted.Alternative_Name, inserted.Empirical_Formula,
                 ROUND(inserted.Monoisotopic_Mass - deleted.Monoisotopic_Mass, 10),
                 ROUND(inserted.Average_Mass - deleted.Average_Mass, 10),
                 GetDate(), suser_sname()
