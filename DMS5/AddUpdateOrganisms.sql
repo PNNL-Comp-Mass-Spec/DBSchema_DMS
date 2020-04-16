@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          08/04/2010 grk - try-catch for error handling
 **          08/01/2012 mem - Now calling RefreshCachedOrganisms in MT_Main on ProteinSeqs
 **          09/25/2012 mem - Expanded @orgName and @orgDBName to varchar(128)
-**          11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta' 
+**          11/20/2012 mem - No longer allowing @orgDBName to contain '.fasta'
 **          05/10/2013 mem - Added @newtIdentifier
 **          05/13/2013 mem - Now validating @newtIdentifier against S_V_CV_NEWT
 **          05/24/2013 mem - Added @newtIDList
@@ -92,15 +92,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateOrganisms', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin Try 
+    Begin Try
 
     ---------------------------------------------------
     -- Validate input fields
@@ -111,7 +111,7 @@ As
     Begin
         If Not @orgStorageLocation LIKE '\\%'
             RAISERROR ('Org. Storage Path must start with \\', 11, 8)
-        
+
         -- Make sure @orgStorageLocation does not End in \FASTA or \FASTA\
         -- That text gets auto-appended via computed column OG_organismDBPath
         If @orgStorageLocation Like '%\FASTA'
@@ -119,10 +119,10 @@ As
 
         If @orgStorageLocation Like '%\FASTA\'
             Set @orgStorageLocation = Substring(@orgStorageLocation, 1, Len(@orgStorageLocation) - 7)
-            
+
         If Not @orgStorageLocation Like '%\'
             Set @orgStorageLocation = @orgStorageLocation + '\'
-        
+
     End
 
     Set @orgName = LTrim(RTrim(IsNull(@orgName, '')))
@@ -167,13 +167,13 @@ As
             RAISERROR ('Organism Short Name cannot contain commas', 11, 0)
         End
     End
-    
+
     Set @orgDBName = IsNull(@orgDBName, '')
     If @orgDBName Like '%.fasta'
     Begin
         RAISERROR ('Default Protein Collection cannot contain ".fasta"', 11, 0)
     End
-        
+
     Set @orgActive = IsNull(@orgActive, '')
     If Len(@orgActive) = 0 Or Try_Convert(Int, @orgActive) Is Null
     Begin
@@ -183,12 +183,12 @@ As
     Set @orgGenus = IsNull(@orgGenus, '')
     Set @orgSpecies = IsNull(@orgSpecies, '')
     Set @orgStrain = IsNull(@orgStrain, '')
-    
+
     Set @autoDefineTaxonomy = IsNull(@autoDefineTaxonomy, 'Yes')
-    
+
     -- Organism ID
     Set @id = IsNull(@id, 0)
-    
+
     Set @newtIDList = ISNULL(@newtIDList, '')
     If LEN(@newtIDList) > 0
     Begin
@@ -196,25 +196,25 @@ As
             NEWT_ID_Text varchar(24),
             NEWT_ID int NULL
         )
-        
+
         INSERT INTO #NEWTIDs (NEWT_ID_Text)
         SELECT Cast(Value as varchar(24))
         FROM dbo.udfParseDelimitedList(@newtIDList, ',', 'AddUpdateOrganisms')
         WHERE IsNull(Value, '') <> ''
-        
+
         -- Look for non-numeric values
         IF Exists (Select * from #NEWTIDs Where Try_Convert(int, NEWT_ID_Text) IS NULL)
         Begin
             Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @newtIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
             RAISERROR (@msg, 11, 3)
         End
-        
+
         -- Make sure all of the NEWT IDs are Valid
         UPDATE #NEWTIDs
         Set NEWT_ID = Try_Convert(int, NEWT_ID_Text)
-        
+
         Declare @invalidNEWTIDs varchar(255) = null
-        
+
         SELECT @invalidNEWTIDs = COALESCE(@invalidNEWTIDs + ', ', '') + #NEWTIDs.NEWT_ID_Text
         FROM #NEWTIDs
              LEFT OUTER JOIN S_V_CV_NEWT
@@ -226,11 +226,11 @@ As
             Set @msg = 'Invalid NEWT ID(s) "' + @invalidNEWTIDs + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
             RAISERROR (@msg, 11, 3)
         End
-        
-    End 
+
+    End
     Else
     Begin
-        -- Auto-define @newtIDList using @ncbiTaxonomyID though only if the NEWT table has the ID 
+        -- Auto-define @newtIDList using @ncbiTaxonomyID though only if the NEWT table has the ID
         -- (there are numerous organisms that nave an NCBI Taxonomy ID but not a NEWT ID)
         --
         If Exists (SELECT * FROM S_V_CV_NEWT WHERE Identifier = Cast(@ncbiTaxonomyID as varchar(24)))
@@ -249,23 +249,23 @@ As
             RAISERROR (@msg, 11, 3)
         End
     End
-    
+
     Declare @autoDefineTaxonomyFlag tinyint
-    
+
     If @autoDefineTaxonomy Like 'Y%'
         Set @autoDefineTaxonomyFlag = 1
     Else
         Set @autoDefineTaxonomyFlag = 0
-    
+
     If @autoDefineTaxonomyFlag = 1 And IsNull(@ncbiTaxonomyID, 0) > 0
     Begin
-    
+
         ---------------------------------------------------
         -- Try to auto-update the taxonomy information
         -- Existing values are preserved if matches are not found
         ---------------------------------------------------
-        
-        EXEC GetTaxonomyValueByTaxonomyID 
+
+        EXEC GetTaxonomyValueByTaxonomyID
                 @ncbiTaxonomyID,
                 @orgDomain=@orgDomain output,
                 @orgKingdom=@orgKingdom output,
@@ -279,7 +279,7 @@ As
                 @previewResults = 0
 
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -291,7 +291,7 @@ As
     If @mode = 'add'
     Begin
         execute @existingOrganismID = GetOrganismID @orgName
-        If @existingOrganismID <> 0 
+        If @existingOrganismID <> 0
         Begin
             Set @msg = 'Cannot add: Organism "' + @orgName + '" already in database '
             RAISERROR (@msg, 11, 5)
@@ -301,7 +301,7 @@ As
     -- cannot update a non-existent entry
     --
     Declare @existingOrgName varchar(128)
-    
+
     If @mode = 'update'
     Begin
         --
@@ -311,13 +311,13 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        If @existingOrganismID = 0 
+        If @existingOrganismID = 0
         Begin
             Set @msg = 'Cannot update: Organism "' + @orgName + '" is not in database '
             RAISERROR (@msg, 11, 6)
         End
         --
-        If @existingOrgName <> @orgName 
+        If @existingOrgName <> @orgName
         Begin
             Set @msg = 'Cannot update: Organism name may not be changed from "' + @existingOrgName + '"'
             RAISERROR (@msg, 11, 7)
@@ -328,11 +328,11 @@ As
     -- If Genus, Species, and Strain are unknown, na, or none,
     --  then make sure all three are "na"
     ---------------------------------------------------
-    
+
     Set @orgGenus =   dbo.ValidateNAParameter(@orgGenus, 1)
     Set @orgSpecies = dbo.ValidateNAParameter(@orgSpecies, 1)
     Set @orgStrain =  dbo.ValidateNAParameter(@orgStrain, 1)
-        
+
     If @orgGenus   IN ('unknown', 'na', 'none') AND
        @orgSpecies IN ('unknown', 'na', 'none') AND
        @orgStrain  IN ('unknown', 'na', 'none')
@@ -343,7 +343,7 @@ As
     End
 
     ---------------------------------------------------
-    -- Check whether an organism already exists 
+    -- Check whether an organism already exists
     -- with the specified Genus, Species, and Strain
     ---------------------------------------------------
 
@@ -355,19 +355,19 @@ As
         Begin
             -- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain
             Set @matchCount = 0
-            SELECT @matchCount = COUNT(*) 
+            SELECT @matchCount = COUNT(*)
             FROM T_Organisms
             WHERE IsNull(OG_Genus, '') = @orgGenus AND
                   IsNull(OG_Species, '') = @orgSpecies AND
                   IsNull(OG_Strain, '') = @orgStrain
-            
+
             If @matchCount <> 0
             Begin
                 Set @msg = 'Cannot add: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 8)
             End
         End
-        
+
         If @mode = 'update'
         Begin
             -- Make sure that an existing entry doesn't exist with the same values for Genus, Species, and Strain (ignoring Organism_ID = @id)
@@ -378,75 +378,76 @@ As
                   IsNull(OG_Species, '') = @orgSpecies AND
                   IsNull(OG_Strain, '') = @orgStrain AND
                   Organism_ID <> @id
-            
+
             If @matchCount <> 0
             Begin
                 Set @msg = 'Cannot update: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 9)
             End
         End
-    End    
+    End
 
     ---------------------------------------------------
     -- Validate the default protein collection
     ---------------------------------------------------
-    
+
     If @orgDBName <> ''
     Begin
         -- Protein collections in S_V_Protein_Collection_Picker are those with state 1, 2, or 3
         -- In contrast, S_V_Protein_Collections_by_Organism has all protein collections
-        
+
         If Not Exists (SELECT * FROM S_V_Protein_Collection_Picker WHERE [Name] = @orgDBName)
         Begin
             If Exists (SELECT * FROM S_V_Protein_Collections_by_Organism WHERE Filename = @orgDBName AND Collection_State_ID = 4)
                 Set @msg = 'Default protein collection is invalid because it is inactive: ' + @orgDBName
-            Else            
+            Else
                 Set @msg = 'Protein collection not found: ' + @orgDBName
 
             RAISERROR (@msg, 11, 9)
         End
     End
-    
+
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
     If @mode = 'add'
     Begin
         INSERT INTO T_Organisms (
-            OG_name, 
-            OG_organismDBName, 
-            OG_created, 
-            OG_description, 
-            OG_Short_Name, 
             OG_Storage_Location, 
-            OG_Domain, 
-            OG_Kingdom, 
-            OG_Phylum, 
-            OG_Class, 
-            OG_Order, 
-            OG_Family, 
-            OG_Genus, 
-            OG_Species, 
+            OG_name,
+            OG_organismDBName,
+            OG_created,
+            OG_description,
+            OG_Short_Name,
+            OG_Storage_URL,
+            OG_Domain,
+            OG_Kingdom,
+            OG_Phylum,
+            OG_Class,
+            OG_Order,
+            OG_Family,
+            OG_Genus,
+            OG_Species,
             OG_Strain,
             OG_Active,
             NEWT_ID_List,
             NCBI_Taxonomy_ID,
             Auto_Define_Taxonomy
         ) VALUES (
-            @orgName, 
-            @orgDBName, 
-            getdate(), 
-            @orgDescription, 
-            @orgShortName, 
-            @orgStorageLocation, 
-            @orgDomain, 
-            @orgKingdom, 
-            @orgPhylum, 
-            @orgClass, 
-            @orgOrder, 
-            @orgFamily, 
-            @orgGenus, 
-            @orgSpecies, 
+            @orgName,
+            @orgDBName,
+            getdate(),
+            @orgDescription,
+            @orgShortName,
+            @orgStorageLocation,
+            @orgDomain,
+            @orgKingdom,
+            @orgPhylum,
+            @orgClass,
+            @orgOrder,
+            @orgFamily,
+            @orgGenus,
+            @orgSpecies,
             @orgStrain,
             @orgActive,
             @newtIDList,
@@ -476,23 +477,23 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
-        UPDATE T_Organisms 
-        Set 
-            OG_name = @orgName, 
-            OG_organismDBName = @orgDBName, 
-            OG_description = @orgDescription, 
-            OG_Short_Name = @orgShortName, 
-            OG_Storage_Location = @orgStorageLocation, 
-            OG_Domain = @orgDomain, 
-            OG_Kingdom = @orgKingdom, 
-            OG_Phylum = @orgPhylum, 
-            OG_Class = @orgClass, 
-            OG_Order = @orgOrder, 
-            OG_Family = @orgFamily, 
-            OG_Genus = @orgGenus, 
-            OG_Species = @orgSpecies, 
+        UPDATE T_Organisms
+        Set
+            OG_name = @orgName,
+            OG_organismDBName = @orgDBName,
+            OG_description = @orgDescription,
+            OG_Short_Name = @orgShortName,
+            OG_Storage_Location = @orgStorageLocation,
+            OG_Domain = @orgDomain,
+            OG_Kingdom = @orgKingdom,
+            OG_Phylum = @orgPhylum,
+            OG_Class = @orgClass,
+            OG_Order = @orgOrder,
+            OG_Family = @orgFamily,
+            OG_Genus = @orgGenus,
+            OG_Species = @orgSpecies,
             OG_Strain = @orgStrain,
             OG_Active = @orgActive,
             NEWT_ID_List = @newtIDList,
@@ -507,7 +508,7 @@ As
             Set @message = 'Update operation failed: "' + @id + '"'
             RAISERROR (@message, 11, 11)
         End
-        
+
         -- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
         If Len(@callingUser) > 0
             Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
@@ -517,30 +518,30 @@ As
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     End Catch
 
-    Begin Try 
+    Begin Try
 
         -- Update the cached organism info in MT_Main on ProteinSeqs
         -- This table is used by the Protein_Sequences database and we want to assure that it is up-to-date
         -- Note that the table is auto-updated once per hour by a Sql Server Agent job running on ProteinSeqs
         -- This hourly update captures any changes manually made to table T_Organisms
-        
+
         Exec dbo.S_MT_Main_RefreshCachedOrganisms
 
     End Try
     Begin Catch
         Declare @logMessage varchar(256)
         EXEC FormatErrorMessage @message=@logMessage output, @myError=@myError output
-        
+
         exec PostLogEntry 'Error', @logMessage, 'AddUpdateOrganisms'
-        
+
     End Catch
-    
+
     return @myError
 
 
