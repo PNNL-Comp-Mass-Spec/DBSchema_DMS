@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Short_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Storage_Location] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[OG_Storage_URL] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Domain] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Kingdom] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Phylum] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -95,7 +96,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_T_Organisms] on [dbo].[T_Organisms]
 For Insert
 AS
@@ -115,8 +115,6 @@ AS
 			OG_Active, GetDate(), SYSTEM_USER
 	FROM inserted
 
-
-
 GO
 ALTER TABLE [dbo].[T_Organisms] ENABLE TRIGGER [trig_i_T_Organisms]
 GO
@@ -125,7 +123,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_T_Organisms] on [dbo].[T_Organisms]
 For Update
 AS
@@ -158,7 +155,6 @@ AS
 				inserted.NEWT_ID_List, inserted.NCBI_Taxonomy_ID,
 				inserted.OG_Active, GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Organism_ID = inserted.Organism_ID
-
 
 GO
 ALTER TABLE [dbo].[T_Organisms] ENABLE TRIGGER [trig_u_T_Organisms]

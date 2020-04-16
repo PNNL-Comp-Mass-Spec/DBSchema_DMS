@@ -49,7 +49,8 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          10/23/2017 mem - Check for the protein collection specified by @orgDBName being a valid name, but inactive
 **          04/09/2018 mem - Auto-define @orgStorageLocation if empty
 **          06/26/2019 mem - Remove DNA translation table arguments since unused
-**    
+**          04/15/2020 mem - Populate OG_Storage_URL using @orgStorageLocation
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -87,7 +88,12 @@ As
 
     Declare @msg varchar(256)
     Declare @duplicateTaxologyMsg varchar(512)
-    Declare @matchCount int
+    Declare @matchCount INT
+
+    Declare @serverNameEndSlash int
+    Declare @serverName varchar(64)
+    Declare @pathForURL varchar(256)
+    Declare @orgStorageURL varchar(256) = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -123,6 +129,18 @@ As
         If Not @orgStorageLocation Like '%\'
             Set @orgStorageLocation = @orgStorageLocation + '\'
 
+        -- Auto-define @orgStorageURL
+
+        -- Find the next slash after the 3rd character
+        Set @serverNameEndSlash = CharIndex('\', @orgStorageLocation, 3)
+
+        If @serverNameEndSlash > 3
+        Begin
+            Set @serverName = Substring(@orgStorageLocation, 3, @serverNameEndSlash - 3)
+            Set @pathForURL = Substring(@orgStorageLocation, @serverNameEndSlash + 1, LEN(@orgStorageLocation))
+            Set @orgStorageURL= 'http://' + @serverName + '/' + REPLACE(@pathForURL, '\', '/')
+        End
+
     End
 
     Set @orgName = LTrim(RTrim(IsNull(@orgName, '')))
@@ -156,7 +174,7 @@ As
     If Len(IsNull(@orgShortName, '')) > 0
     Begin
         Set @orgShortName = LTrim(RTrim(IsNull(@orgShortName, '')))
-        
+
         If @orgShortName Like '% %'
         Begin
             RAISERROR ('Organism Short Name cannot contain spaces', 11, 0)
@@ -413,12 +431,12 @@ As
     If @mode = 'add'
     Begin
         INSERT INTO T_Organisms (
-            OG_Storage_Location, 
             OG_name,
             OG_organismDBName,
             OG_created,
             OG_description,
             OG_Short_Name,
+            OG_Storage_Location,
             OG_Storage_URL,
             OG_Domain,
             OG_Kingdom,
@@ -440,6 +458,7 @@ As
             @orgDescription,
             @orgShortName,
             @orgStorageLocation,
+            @orgStorageURL,
             @orgDomain,
             @orgKingdom,
             @orgPhylum,
@@ -486,6 +505,7 @@ As
             OG_description = @orgDescription,
             OG_Short_Name = @orgShortName,
             OG_Storage_Location = @orgStorageLocation,
+            OG_Storage_URL = @orgStorageURL,
             OG_Domain = @orgDomain,
             OG_Kingdom = @orgKingdom,
             OG_Phylum = @orgPhylum,

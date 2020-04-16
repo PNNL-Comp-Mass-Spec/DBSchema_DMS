@@ -28,7 +28,8 @@ SELECT O.Organism_ID AS ID,
        O.NEWT_ID_List AS [NEWT ID List],
        O.OG_created AS Created,
        COUNT(PC.Name) AS [Protein Collections],
-       O.OG_Storage_Location AS [Org. Storage Path],
+       O.OG_Storage_Location AS [Organism Storage Path],
+       O.OG_Storage_URL AS [Organism Storage Link],
        O.OG_organismDBName AS [Default Protein Collection],
        FASTALookupQ.Legacy_FASTA_Files AS [Legacy FASTA Files],
        O.OG_Active AS Active,
@@ -51,10 +52,9 @@ FROM dbo.T_Organisms O
 GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description,
          O.OG_Short_Name, O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, 
          O.OG_Family, O.NEWT_ID_List, NEWT.Term_Name, O.OG_created, O.OG_Active,
-         O.OG_Storage_Location, O.OG_organismDBName, FASTALookupQ.Legacy_FASTA_Files,
+         O.OG_Storage_Location, O.OG_Storage_URL, O.OG_organismDBName, FASTALookupQ.Legacy_FASTA_Files,
          O.NCBI_Taxonomy_ID, NCBI.Name, NCBI.Synonyms, NCBI.Synonym_List,
          T_YesNo.Description
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_Detail_Report] TO [DDL_Viewer] AS [dbo]
