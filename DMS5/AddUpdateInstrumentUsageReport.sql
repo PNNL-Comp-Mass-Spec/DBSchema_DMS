@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
+
+CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -23,6 +24,7 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			01/05/2018 mem - Assure that @comment does not contain LF or CR
+**          04/17/2020 mem - Use Dataset_ID instead of ID
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -36,7 +38,7 @@ CREATE PROCEDURE dbo.AddUpdateInstrumentUsageReport
 	@Minutes int,						-- Unused (not updatable)
 	@Year int,							-- Unused (not updatable)
 	@Month int,							-- Unused (not updatable)
-	@ID int,							-- Unused (not updatable)
+	@ID int,							-- Unused (not updatable)     -- Dataset_ID
 	@Proposal varchar(32),				-- Proposal for update
 	@Usage varchar(32),					-- Usage name for update
 	@Users varchar(1024),				-- Users forupdate
@@ -61,9 +63,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentUsageReport', @raiseError = 1
 	If @authorized = 0
-	Begin
+	BEGIN;
 		THROW 51000, 'Access denied', 1;
-	End
+	END;
 
 	BEGIN TRY 
 
@@ -101,7 +103,7 @@ As
 		--
 		declare @tmp int = 0
 		--
-		SELECT @tmp = ID
+		SELECT @tmp = Dataset_ID
 		FROM  T_EMSL_Instrument_Usage_Report
 		WHERE (Seq = @Seq)
 		--

@@ -1,28 +1,28 @@
-/****** Object:  UserDefinedFunction [dbo].[GetEMSLInstrumentUsageDaily] ******/
+/****** Object:  UserDefinedFunction [dbo].[GetEMSLInstrumentUsageDailyDetails] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
+CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 /****************************************************
 **  Desc: 
-**      Outputs contents of EMSL instrument usage report table as rollup
+**      Outputs contents of EMSL instrument usage report table as a rollup
 **      This UDF is used by the CodeIgniter instance at http://prismsupport.pnl.gov/dms2ws/
 **
 **      Example URL:
-**      https://prismsupport.pnl.gov/dms2ws/instrument_usage_report/daily/2019/03
+**      https://prismsupport.pnl.gov/dms2ws/instrument_usage_report/daily/2020/03
 **
 **      See also /file1/www/html/prismsupport/dms2ws/application/controllers/instrument_usage_report.php
 **
 **  Auth:   grk   
-**  Date:   09/15/2015 grk - initial release
+**  Date:   09/15/2015 grk - initial release, modeled after GetEMSLInstrumentUsageDaily
 **          10/20/2015 grk - added users to output
 **          02/10/2016 grk - added rollup of comments and operators
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/09/2020 mem - Truncate the concatenated comment if over 4090 characters long
-**          04/17/2020 mem - Use Dataset_ID instead of ID
+**          04/17/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
+**                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
 **    
 *****************************************************/ 
 (
@@ -33,7 +33,7 @@ RETURNS @T_Report_Output TABLE
     (
       [EMSL_Inst_ID] [int] NULL,
       [Instrument] [varchar](64) NULL,
-      [Type] [varchar](128) NULL,
+      [Type] [varchar](128) NULL,       -- Dataset or Interval
       [Start] [datetime],
       [Minutes] [int],
       [Proposal] [varchar](32) NULL,
@@ -56,7 +56,7 @@ AS
               [Dataset_ID] INT NULL,
               [EMSL_Inst_ID] INT NULL,
               [DMS_Instrument] VARCHAR(64) NULL,
-              [Type] VARCHAR(128) NULL,
+              [Type] VARCHAR(128) NULL,         -- Dataset or Interval
               [Proposal] VARCHAR(32) NULL,
               [Users] [varchar](1024) NULL,
               [Usage] VARCHAR(32) NULL,
@@ -76,13 +76,15 @@ AS
               [Operator] [varchar](64) NULL
             )
 
-        -- Intermediate storage for report entries 
+        -- Intermediate storage for report entries
+        -- 
         DECLARE @T_Report_Accumulation TABLE
             (
               [Start] DATETIME,
               [DurationSeconds] INT,
               [Month] INT,
               [Day] INT,
+              [Dataset_ID] INT,
               [EMSL_Inst_ID] INT,
               [DMS_Instrument] VARCHAR(64),
               [Proposal] VARCHAR(32),
@@ -91,16 +93,18 @@ AS
               [Type] [varchar](128),
               [Users] [varchar](1024) NULL,
               [Operator] [varchar](64) NULL,
-              [Comment] [varchar](4096) NULL
+              [Comment] [varchar](4096) NULL,
+              [Comment_List] [varchar](4096) NULL   -- Comma separated list of comments; for non-maintenance datasets, will simply be the single comment
             )
-        
+
+
         -- Import entries from EMSL instrument usage table
         -- for given month and year into working table
         INSERT  INTO @T_Working
                 ( Dataset_ID,
                   EMSL_Inst_ID,
                   [DMS_Instrument],
-                  Type,
+                  Type,             -- Dataset or Interval
                   Proposal,
                   Usage,
                   Users,
@@ -168,6 +172,7 @@ AS
                       [Year],
                       [Month],
                       [Day],
+                      [Dataset_ID],
                       [Type],
                       Comment,
                       Operator
@@ -182,6 +187,7 @@ AS
                             [Year],
                             [Month],
                             [Day],
+                            Dataset_ID,
                             [Type],
                             Comment,
                             Operator
@@ -199,7 +205,7 @@ AS
             -- remaining durations (cross daily boundaries) 
             -- using only duration time contained inside daily boundary
             INSERT INTO @T_Report_Accumulation
-                    ( EMSL_Inst_ID,
+                    (   EMSL_Inst_ID,
                         DMS_Instrument,
                         Proposal,
                         Usage,
@@ -249,7 +255,12 @@ AS
 
         END -- </loop>
 
+        ----------------------------------------------------
         -- Rollup comments and add to the accumulation table
+        ----------------------------------------------------
+
+        -- First add non-maintenance datasets
+        --
         UPDATE @T_Report_Accumulation
         SET Comment = CASE WHEN LEN(TZ.Comment) > 4090 THEN SUBSTRING(TZ.Comment, 1, 4090) + ' ...' ELSE TZ.Comment End
         FROM @T_Report_Accumulation AS TA
@@ -346,6 +357,7 @@ AS
                                       TA.[Day] = TZ.[Day]
 
         -- Copy report entries from accumulation table to report output table
+        -- First add non-maintenance datasets
         INSERT  INTO @T_Report_Output
                 ( [EMSL_Inst_ID],
                   [Instrument],
@@ -376,11 +388,68 @@ AS
                         Comment,
                         Year,
                         Month,
-                        NULL AS ID,
+                        Dataset_ID,
                         NULL AS Seq,
                         NULL AS Updated,
                         NULL AS UpdatedBy
                 FROM @T_Report_Accumulation
+                WHERE NOT Usage IN ('AVAILABLE', 'BROKEN', 'MAINTENANCE')
+                GROUP BY EMSL_Inst_ID,
+                        DMS_Instrument,
+                        [Type],
+                        Proposal,
+                        Usage,
+                        Users,
+                        Operator,
+                        Comment,
+                        [Year],
+                        [Month],
+                        [Day],
+                        Dataset_ID
+                ORDER BY EMSL_Inst_ID DESC,
+                        DMS_Instrument DESC,
+                        [Month] DESC,
+                        [Day] ASC,
+                        [Start] ASC
+
+
+        -- Next, add maintenance datasets, where we report one entry per day
+        INSERT  INTO @T_Report_Output
+                ( [EMSL_Inst_ID],
+                  [Instrument],
+                  [Type],
+                  [Start],
+                  [Minutes],
+                  [Proposal],
+                  [Usage],
+                  [Users],
+                  [Operator],
+                  [Comment],
+                  [Year],
+                  [Month],
+                  [ID],
+                  [Seq],
+                  [Updated],
+                  [UpdatedBy] 
+                )
+                SELECT  EMSL_Inst_ID,
+                        DMS_Instrument AS Instrument,
+                        [Type],
+                        MIN([Start]) AS [Start],
+                        CEILING(CONVERT(FLOAT, SUM([DurationSeconds])) / 60) AS [Minutes],
+                        Proposal,
+                        Usage,
+                        Users,
+                        Operator,
+                        Comment,
+                        Year,
+                        Month,
+                        NULL AS Dataset_ID,
+                        NULL AS Seq,
+                        NULL AS Updated,
+                        NULL AS UpdatedBy
+                FROM @T_Report_Accumulation
+                WHERE Usage IN ('AVAILABLE', 'BROKEN', 'MAINTENANCE')
                 GROUP BY EMSL_Inst_ID,
                         DMS_Instrument,
                         [Type],
@@ -402,6 +471,4 @@ AS
     END
 
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDaily] TO [DDL_Viewer] AS [dbo]
 GO

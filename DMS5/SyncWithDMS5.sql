@@ -27,6 +27,7 @@ CREATE Procedure [dbo].[SyncWithDMS5]
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          11/30/2018 mem - Add T_Residues and rename the Monoisotopic_Mass and Average_Mass fields
+**          04/17/2020 mem - Rename columns in T_EMSL_Instrument_Usage_Report
 **    
 *****************************************************/
 (
@@ -1655,8 +1656,8 @@ As
                         NULLIF(s.[Year], t.[Year])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Month], s.[Month]),
                         NULLIF(s.[Month], t.[Month])) IS NOT NULL OR
-                ISNULL( NULLIF(t.[ID], s.[ID]),
-                        NULLIF(s.[ID], t.[ID])) IS NOT NULL OR
+                ISNULL( NULLIF(t.[Dataset_ID], s.[Dataset_ID]),
+                        NULLIF(s.[Dataset_ID], t.[Dataset_ID])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[UpdatedBy], s.[UpdatedBy]),
                         NULLIF(s.[UpdatedBy], t.[UpdatedBy])) IS NOT NULL
                 )
@@ -1673,12 +1674,12 @@ As
                 [Comment] = s.[Comment],
                 [Year] = s.[Year],
                 [Month] = s.[Month],
-                [ID] = s.[ID],
+                [Dataset_ID] = s.[Dataset_ID],
                 [Updated] = s.[Updated],
                 [UpdatedBy] = s.[UpdatedBy]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([EMSL_Inst_ID], [DMS_Inst_ID], [Type], [Start], [Minutes], [Proposal], [Usage_Type], [Users], [Operator], [Comment], [Year], [Month], [ID], [Seq], [Updated], [UpdatedBy])
-                VALUES(s.[EMSL_Inst_ID], s.[DMS_Inst_ID], s.[Type], s.[Start], s.[Minutes], s.[Proposal], s.[Usage_Type], s.[Users], s.[Operator], s.[Comment], s.[Year], s.[Month], s.[ID], s.[Seq], s.[Updated], s.[UpdatedBy])
+                INSERT([EMSL_Inst_ID], [DMS_Inst_ID], [Type], [Start], [Minutes], [Proposal], [Usage_Type], [Users], [Operator], [Comment], [Year], [Month], [Dataset_ID], [Seq], [Updated], [UpdatedBy])
+                VALUES(s.[EMSL_Inst_ID], s.[DMS_Inst_ID], s.[Type], s.[Start], s.[Minutes], s.[Proposal], s.[Usage_Type], s.[Users], s.[Operator], s.[Comment], s.[Year], s.[Month], s.[Dataset_ID], s.[Seq], s.[Updated], s.[UpdatedBy])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                 Cast(Inserted.[Seq] as varchar(12)),

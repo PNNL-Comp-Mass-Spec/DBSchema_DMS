@@ -18,7 +18,7 @@ SELECT InstUsage.EMSL_Inst_ID,
        InstUsage.[Comment],
        InstUsage.[Year],
        InstUsage.[Month],
-       InstUsage.ID,
+       InstUsage.Dataset_ID,
 	   InstUsage.Seq,       
        InstUsage.Updated,
 	   InstUsage.UpdatedBy

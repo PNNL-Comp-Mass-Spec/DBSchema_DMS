@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
+CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
 /****************************************************
 **	Desc: 
 **  Outputs contents of EMSL instrument usage report table as rollup
@@ -22,6 +22,7 @@ CREATE FUNCTION dbo.GetEMSLInstrumentUsageRollup
 **	Auth:	grk   
 **	Date:	09/11/2012 grk - initial release
 **			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
+**          04/17/2020 mem - Use Dataset_ID instead of ID
 **    
 *****************************************************/ 
 ( 
@@ -43,7 +44,7 @@ AS
 		-- table for processing runs and intervals for reporting month
 		DECLARE @T_Working TABLE
 		(
-			[ID] INT NULL,
+			[Dataset_ID] INT NULL,
 			[EMSL_Inst_ID] INT NULL,
 			[DMS_Instrument] VARCHAR(64) NULL,
 			[Type] VARCHAR(128) NULL,
@@ -80,7 +81,7 @@ AS
 		-- for given month and year
 		-- into working table
 		INSERT INTO @T_Working (
-			ID,
+			Dataset_ID,
 			EMSL_Inst_ID,
 			[DMS_Instrument],
 			Type,
@@ -91,7 +92,7 @@ AS
 			Year,
 			Month
 		)
-		SELECT InstUsage.ID,
+		SELECT InstUsage.Dataset_ID,
 		       InstUsage.EMSL_Inst_ID,
 		       InstName.IN_Name AS [DMS_Instrument],
 		       InstUsage.[Type],
@@ -207,7 +208,7 @@ AS
 			IF @cnt = 0 SET @done = 1
 		END --<loop>					
 		
-		-- copy report entries from accumuation table to report output table
+		-- copy report entries from accumulation table to report output table
 		INSERT INTO @T_Report_Output ( 
 				EMSL_Inst_ID ,
 				DMS_Instrument,

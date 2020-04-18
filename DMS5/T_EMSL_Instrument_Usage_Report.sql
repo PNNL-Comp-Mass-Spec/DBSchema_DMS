@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 	[Comment] [varchar](4096) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Year] [int] NULL,
 	[Month] [int] NULL,
-	[ID] [int] NOT NULL,
+	[Dataset_ID] [int] NOT NULL,
 	[Seq] [int] NOT NULL,
 	[Updated] [datetime] NOT NULL,
 	[UpdatedBy] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

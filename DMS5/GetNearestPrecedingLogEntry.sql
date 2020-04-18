@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetNearestPrecedingLogEntry
+
+CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
 /****************************************************
 **
 **	Desc: 
@@ -15,6 +16,7 @@ CREATE FUNCTION dbo.GetNearestPrecedingLogEntry
 **	Auth:	grk
 **	Date:	08/28/2012
 **			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
+**          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **    
 *****************************************************/
 (
@@ -38,7 +40,7 @@ AS
 			@Comment VARCHAR(4096) ,
 			@Year INT ,
 			@Month INT ,
-			@ID INT 
+			@DatasetID INT 
 
 		SELECT @EMSLInstID = InstUsage.EMSL_Inst_ID,
 		       @Instrument = InstName.IN_Name,
@@ -52,7 +54,7 @@ AS
 		       @Comment = InstUsage.[Comment],
 		       @Year = InstUsage.[Year],
 		       @Month = InstUsage.[Month],
-		       @ID = InstUsage.ID
+		       @DatasetID = InstUsage.Dataset_ID
 		FROM    T_EMSL_Instrument_Usage_Report InstUsage
 		     INNER JOIN T_Instrument_Name InstName
 		       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID

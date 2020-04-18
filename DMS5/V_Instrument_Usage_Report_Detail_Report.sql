@@ -17,7 +17,7 @@ CREATE VIEW [dbo].[V_Instrument_Usage_Report_Detail_Report] AS
 	       InstUsage.[Comment],
 	       InstUsage.[Year],
 	       InstUsage.[Month],
-	       InstUsage.ID,
+	       InstUsage.Dataset_ID,
 	       InstUsage.Seq
 	FROM T_EMSL_Instrument_Usage_Report InstUsage
 	     INNER JOIN T_Instrument_Name InstName

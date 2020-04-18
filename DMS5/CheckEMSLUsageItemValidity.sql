@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
+CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 /****************************************************
 **
 **	Desc: 
@@ -22,6 +22,7 @@ CREATE FUNCTION dbo.CheckEMSLUsageItemValidity
 **			10/05/2016 mem - Add one day to the proposal end date
 **			03/17/2017 mem - Only call MakeTableFromList if @Users is a comma separated list
 **			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
+**          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
 			@Comment VARCHAR(4096) ,
 			@Year INT ,
 			@Month INT ,
-			@ID INT 
+			@DatasetID INT 
 
 		DECLARE @ProposalId VARCHAR(10) ,
 			@Title VARCHAR(2048) ,
@@ -68,7 +69,7 @@ AS
 		       @Comment = InstUsage.[Comment],
 		       @Year = InstUsage.[Year],
 		       @Month = InstUsage.[Month],
-		       @ID = InstUsage.ID
+		       @DatasetID = InstUsage.Dataset_ID
 		FROM T_EMSL_Instrument_Usage_Report InstUsage
 		     INNER JOIN T_Instrument_Name InstName
 		       ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
