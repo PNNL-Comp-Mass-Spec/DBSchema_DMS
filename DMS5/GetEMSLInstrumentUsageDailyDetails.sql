@@ -21,7 +21,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 **          02/10/2016 grk - added rollup of comments and operators
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/09/2020 mem - Truncate the concatenated comment if over 4090 characters long
-**          04/17/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
+**          04/18/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
 **                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
 **    
 *****************************************************/ 
@@ -43,7 +43,7 @@ RETURNS @T_Report_Output TABLE
       [Comment] [varchar](4096) NULL,
       [Year] [int],
       [Month] [int],
-      [ID] [int] NULL,
+      [ID] [int] NULL,              -- Dataset_ID
       [Seq] [int] NULL,
       [Updated] [datetime] NULL,
       [UpdatedBy] [varchar](32) NULL
@@ -66,8 +66,8 @@ AS
               [Year] INT NULL,
               [Month] INT NULL,
               [Day] INT NULL,
-              [NextDay] INT NULL,
-              [NextMonth] INT NULL,
+              [DayAtRunEnd] INT NULL,
+              [MonthAtRunEnd] INT NULL,
               [BeginningOfNextDay] DATETIME NULL,
               [DurationSeconds] INT NULL,
               [DurationSecondsInCurrentDay] INT NULL,
@@ -93,8 +93,7 @@ AS
               [Type] [varchar](128),
               [Users] [varchar](1024) NULL,
               [Operator] [varchar](64) NULL,
-              [Comment] [varchar](4096) NULL,
-              [Comment_List] [varchar](4096) NULL   -- Comma separated list of comments; for non-maintenance datasets, will simply be the single comment
+              [Comment] [varchar](4096) NULL
             )
 
 
@@ -138,19 +137,27 @@ AS
 
 
         -- Repetitive process to pull records out of working table
-        -- into accumulation table, allowing for durations that
-        -- cross daily boundaries
-        DECLARE @cnt INT = 1
+        -- into accumulation table
+        --
+        -- For datasets that start on one day and end on another day (i.e. are mid-acquisition at midnight)
+        -- we will copy those datasets into @T_Report_Accumulation twice (or three times if the run lasts 3 days)
+        -- This is done so that we can accurately record instrument usage time on the first day, plus the additional time used on the second day
+        --
+        -- For example, if a dataset is 30 minutes long and is started at 11:40 pm on April 17,
+        -- this dataset will be listed in @T_Report_Accumulation as:
+        --  a. starting at 11:40 pm on April 17 and lasting 20 minutes
+        --  b. starting at 12:00 am on April 18 and lasting 10 minutes
+
         DECLARE @done INT = 0
         WHILE @done = 0 
         BEGIN -- <loop>
 
             -- Update working table with end times
             UPDATE  @T_Working
-            SET     [Day] = DATEPART(DAY, [Start]),
+            SET     [Day] = DATEPART(day, [Start]),
                     [End] = DATEADD(second, [DurationSeconds], [Start]),
-                    [NextDay] = DATEPART(Day,     DATEADD(second, [DurationSeconds], [Start])),
-                    [NextMonth] = DATEPART(Month, DATEADD(second, [DurationSeconds], [Start])),
+                    [DayAtRunEnd] = DATEPART(day,     DATEADD(second, [DurationSeconds], [Start])),
+                    [MonthAtRunEnd] = DATEPART(month, DATEADD(second, [DurationSeconds], [Start])),
                     [EndOfDay] = DATEADD(ms, -2, DATEADD(dd, 1,DATEDIFF(dd, 0, [Start]))),
                     [BeginningOfNextDay] = DATEADD(day, 1, CAST([Start] AS DATE))
             -- 
@@ -159,7 +166,7 @@ AS
                     [RemainingDurationSeconds] = [DurationSeconds] - DATEDIFF(second, [Start], EndOfDay)
                 
             -- Copy usage records that do not span more than one day
-            -- from working table to accumulation table, they are ready for report
+            -- from working table to accumulation table
             INSERT INTO @T_Report_Accumulation
                     ( EMSL_Inst_ID,
                       DMS_Instrument,
@@ -192,18 +199,23 @@ AS
                             Comment,
                             Operator
                     FROM @T_Working
-                    WHERE [Day] = [NextDay] AND
-                          [Month] = [NextMonth]
-
+                    WHERE [Day] = [DayAtRunEnd] AND
+                          [Month] = [MonthAtRunEnd]
             
-            -- Remove report entries from working table 
-            -- whose duration does not cross daily boundary
+            -- Remove the usage records that we just copied into @T_Report_Accumulation
+            DELETE  FROM @T_Working
+            WHERE   [Day] = [DayAtRunEnd] AND
+                    [Month] = [MonthAtRunEnd]
+
+            -- Also remove any rows that have a negative value for RemainingDurationSeconds
+            -- This will be true for any datasets that were started in the evening on the last day of the month 
+            -- and were still acquiring data when we reached midnight and entered a new month
             DELETE  FROM @T_Working
             WHERE   RemainingDurationSeconds < 0 
-            
+
             -- Copy report entries into accumulation table for
-            -- remaining durations (cross daily boundaries) 
-            -- using only duration time contained inside daily boundary
+            -- remaining durations (datasets that cross daily boundaries) 
+            -- using only duration time contained inside the daily boundary
             INSERT INTO @T_Report_Accumulation
                     (   EMSL_Inst_ID,
                         DMS_Instrument,
@@ -215,6 +227,7 @@ AS
                         [Year],
                         [Month],
                         [Day],
+                        [Dataset_ID],
                         [Type],
                         Comment,
                         Operator
@@ -229,6 +242,7 @@ AS
                             [Year],
                             [Month],
                             [Day],
+                            [Dataset_ID],
                             [Type],
                             Comment,
                             Operator
@@ -240,27 +254,26 @@ AS
                     [DurationSeconds] = RemainingDurationSeconds,
                     [Day] = NULL,
                     [End] = NULL,
-                    [NextDay] = NULL,
+                    [DayAtRunEnd] = NULL,
+                    [MonthAtRunEnd] = NULL,
                     [EndOfDay] = NULL,
                     [BeginningOfNextDay] = NULL,
                     [DurationSecondsInCurrentDay] = NULL,
                     [RemainingDurationSeconds] = NULL
             
             -- We are done when there is nothing left to process in working table
-            SELECT @cnt = COUNT(*)
-            FROM @T_Working
-
-            IF @cnt = 0 
+            IF NOT EXISTS (SELECT * FROM @T_Working)
+            Begin
                 SET @done = 1
+            End
 
         END -- </loop>
 
         ----------------------------------------------------
-        -- Rollup comments and add to the accumulation table
+        -- Rollup comments and update the accumulation table
+        -- Only do this rollup for rows where the usage is 'AVAILABLE', 'BROKEN', or 'MAINTENANCE'
         ----------------------------------------------------
 
-        -- First add non-maintenance datasets
-        --
         UPDATE @T_Report_Accumulation
         SET Comment = CASE WHEN LEN(TZ.Comment) > 4090 THEN SUBSTRING(TZ.Comment, 1, 4090) + ' ...' ELSE TZ.Comment End
         FROM @T_Report_Accumulation AS TA
@@ -272,7 +285,7 @@ AS
                                     Users,
                                     Year,
                                     Month,
-                                    DAY,
+                                    Day,
                                     STUFF(( SELECT DISTINCT
                                                     ',' + Comment AS [text()]
                                             FROM    @T_Report_Accumulation TS
@@ -289,6 +302,7 @@ AS
                                             XML PATH('')
                                           ), 1, 1, '') AS [Comment]
                              FROM   @T_Report_Accumulation TX
+                             WHERE TX.Usage IN ('AVAILABLE', 'BROKEN', 'MAINTENANCE')
                              GROUP BY EMSL_Inst_ID,
                                     DMS_Instrument,
                                     [Type],
@@ -337,6 +351,7 @@ AS
                                             XML PATH('')
                                           ), 1, 1, '') AS Operator
                              FROM   @T_Report_Accumulation TX
+                             WHERE TX.Usage IN ('AVAILABLE', 'BROKEN', 'MAINTENANCE')
                              GROUP BY EMSL_Inst_ID,
                                     DMS_Instrument,
                                     [Type],
@@ -356,8 +371,14 @@ AS
                                       TA.[Month] = TZ.[Month] AND
                                       TA.[Day] = TZ.[Day]
 
+                                      
+        ----------------------------------------------------
         -- Copy report entries from accumulation table to report output table
+        ----------------------------------------------------
+
         -- First add non-maintenance datasets
+        -- Include each dataset as a separate row
+        --
         INSERT  INTO @T_Report_Output
                 ( [EMSL_Inst_ID],
                   [Instrument],
@@ -371,7 +392,7 @@ AS
                   [Comment],
                   [Year],
                   [Month],
-                  [ID],
+                  [ID],         -- Dataset_ID
                   [Seq],
                   [Updated],
                   [UpdatedBy] 
@@ -414,6 +435,7 @@ AS
 
 
         -- Next, add maintenance datasets, where we report one entry per day
+        --
         INSERT  INTO @T_Report_Output
                 ( [EMSL_Inst_ID],
                   [Instrument],
@@ -444,7 +466,7 @@ AS
                         Comment,
                         Year,
                         Month,
-                        NULL AS Dataset_ID,
+                        NULL AS Dataset_ID,   -- Store null since we're rolling up multiple rows
                         NULL AS Seq,
                         NULL AS Updated,
                         NULL AS UpdatedBy
@@ -462,10 +484,10 @@ AS
                         [Month],
                         [Day]
                 ORDER BY EMSL_Inst_ID DESC,
-                        DMS_Instrument DESC,
-                        [Month] DESC,
-                        [Day] ASC,
-                        [Start] ASC
+                         DMS_Instrument DESC,
+                         [Month] DESC,
+                         [Day] ASC,
+                         [Start] ASC
 
         RETURN
     END
