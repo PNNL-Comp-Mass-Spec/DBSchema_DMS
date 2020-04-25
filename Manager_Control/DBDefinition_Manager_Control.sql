@@ -1,8 +1,10 @@
 /****** Object:  Database [Manager_Control] ******/
-CREATE DATABASE [Manager_Control] ON  PRIMARY 
+CREATE DATABASE [Manager_Control]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
 ( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 38656KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 29952KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
+( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 17664KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -61,6 +63,12 @@ GO
 ALTER DATABASE [Manager_Control] SET PAGE_VERIFY CHECKSUM  
 GO
 ALTER DATABASE [Manager_Control] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [Manager_Control] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [Manager_Control] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
+ALTER DATABASE [Manager_Control] SET DELAYED_DURABILITY = DISABLED 
 GO
 USE [Manager_Control]
 GO
