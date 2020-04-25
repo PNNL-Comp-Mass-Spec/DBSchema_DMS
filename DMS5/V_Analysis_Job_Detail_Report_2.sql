@@ -45,7 +45,7 @@ SELECT AJ.AJ_jobID AS JobNum,
            ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
        END AS [Results Folder Path],
        CASE
-           WHEN AJ.AJ_MyEMSLState > 0 THEN ''
+           WHEN AJ.AJ_MyEMSLState > 0 OR ISNULL(DA.MyEmslState, 0) > 1 THEN ''
            ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName) 
        END AS [Archive Results Folder Path],
        CASE 
