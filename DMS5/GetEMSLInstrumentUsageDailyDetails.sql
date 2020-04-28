@@ -23,6 +23,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 **          04/09/2020 mem - Truncate the concatenated comment if over 4090 characters long
 **          04/18/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
 **                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
+**          04/27/2020 mem - Populate the Seq column using Seq values in T_EMSL_Instrument_Usage_Report
 **    
 *****************************************************/ 
 (
@@ -73,7 +74,8 @@ AS
               [DurationSecondsInCurrentDay] INT NULL,
               [RemainingDurationSeconds] INT NULL,
               Comment VARCHAR(MAX) NULL,
-              [Operator] [varchar](64) NULL
+              [Operator] [varchar](64) NULL,
+              [Seq] INT NULL
             )
 
         -- Intermediate storage for report entries
@@ -93,7 +95,8 @@ AS
               [Type] [varchar](128),
               [Users] [varchar](1024) NULL,
               [Operator] [varchar](64) NULL,
-              [Comment] [varchar](4096) NULL
+              [Comment] [varchar](4096) NULL,
+              [Seq] INT NULL
             )
 
 
@@ -112,7 +115,8 @@ AS
                   Year,
                   Month,
                   Comment,
-                  Operator
+                  Operator,
+                  [Seq]
                 )
                 SELECT InstUsage.Dataset_ID,
                        InstUsage.EMSL_Inst_ID,
@@ -126,7 +130,8 @@ AS
                        InstUsage.[Year],
                        InstUsage.[Month],
                        InstUsage.[Comment],
-                       InstUsage.Operator
+                       InstUsage.Operator,
+                       InstUsage.Seq
                 FROM T_EMSL_Instrument_Usage_Report InstUsage
                      INNER JOIN T_Instrument_Name InstName
                        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
@@ -182,7 +187,8 @@ AS
                       [Dataset_ID],
                       [Type],
                       Comment,
-                      Operator
+                      Operator,
+                      [Seq]
                     )
                     SELECT  EMSL_Inst_ID,
                             DMS_Instrument,
@@ -197,7 +203,8 @@ AS
                             Dataset_ID,
                             [Type],
                             Comment,
-                            Operator
+                            Operator,
+                            [Seq]
                     FROM @T_Working
                     WHERE [Day] = [DayAtRunEnd] AND
                           [Month] = [MonthAtRunEnd]
@@ -230,7 +237,8 @@ AS
                         [Dataset_ID],
                         [Type],
                         Comment,
-                        Operator
+                        Operator,
+                        [Seq]
                     )
                     SELECT  EMSL_Inst_ID,
                             DMS_Instrument,
@@ -245,7 +253,8 @@ AS
                             [Dataset_ID],
                             [Type],
                             Comment,
-                            Operator
+                            Operator,
+                            [Seq]
                     FROM @T_Working 
 
             -- Update start time and duration of entries in working table
@@ -323,7 +332,7 @@ AS
                                       TA.[Day] = TZ.[Day]
 
         -- Rollup operators and add to the accumulation table
-        UPDATE  TA
+        UPDATE  @T_Report_Accumulation
         SET     Operator = TZ.Operator
         FROM    @T_Report_Accumulation AS TA
                 INNER JOIN ( SELECT EMSL_Inst_ID,
@@ -410,7 +419,7 @@ AS
                         Year,
                         Month,
                         Dataset_ID,
-                        NULL AS Seq,
+                        MIN([Seq]),
                         NULL AS Updated,
                         NULL AS UpdatedBy
                 FROM @T_Report_Accumulation
@@ -467,7 +476,7 @@ AS
                         Year,
                         Month,
                         NULL AS Dataset_ID,   -- Store null since we're rolling up multiple rows
-                        NULL AS Seq,
+                        MIN([Seq]),
                         NULL AS Updated,
                         NULL AS UpdatedBy
                 FROM @T_Report_Accumulation
