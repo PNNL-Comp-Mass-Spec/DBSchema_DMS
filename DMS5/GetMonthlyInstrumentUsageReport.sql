@@ -33,6 +33,8 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **          05/03/2019 mem - Add parameter @eusInstrumentId, which is sent to GetRunTrackingMonthlyInfoByID if non-zero
 **          04/17/2020 mem - Add defaults for parameters @eusInstrumentId and @message
 **                           Use Dataset_ID instead of ID
+**          04/27/2020 mem - Update data validation checks
+**                         - Make several columns in the output table nullable
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -121,10 +123,29 @@ As
             Users VARCHAR(1024) NULL,
             Operator VARCHAR(128) NULL
         )
+        
+        If @instrument = '' AND @eusInstrumentId = 0
+        Begin
+            INSERT INTO #TR (
+                Dataset_ID ,
+                [Type],
+                Start,
+                Duration ,
+                [Interval] ,
+                Proposal ,
+                [UsageID],
+                [Usage],
+                [Normal],
+                [Comment]
+            )
+            VALUES (1, 'Error', NULL, 0, 0, '', 0, '', 0, 'Must define @instrument or @eusInstrumentId');
+
+            SELECT * FROM #TR
+            RETURN 1
+        End
 
         If @processByEUS > 0
         Begin;
-          
             INSERT INTO #TR (
                 Dataset_ID ,
                 [Type],
@@ -137,19 +158,19 @@ As
                 [Normal]
             )
             SELECT GRTMI.ID,
-                   'Dataset' AS [Type],
-                   GRTMI.Time_Start AS Start,
-                   GRTMI.Duration,
-                   ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
-                   ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
-                   TRR.RDS_EUS_UsageType AS UsageID,
-                   TEUT.Name AS [Usage],
-                   1
+                    'Dataset' AS [Type],
+                    GRTMI.Time_Start AS Start,
+                    GRTMI.Duration,
+                    ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
+                    ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
+                    TRR.RDS_EUS_UsageType AS UsageID,
+                    TEUT.Name AS [Usage],
+                    1
             FROM dbo.GetRunTrackingMonthlyInfoByID ( @eusInstrumentId, @year, @month, '' ) AS GRTMI
-                 LEFT OUTER JOIN T_Requested_Run AS TRR
-                   ON GRTMI.ID = TRR.DatasetID
-                 INNER JOIN T_EUS_UsageType TEUT
-                   ON TRR.RDS_EUS_UsageType = TEUT.ID;
+                    LEFT OUTER JOIN T_Requested_Run AS TRR
+                    ON GRTMI.ID = TRR.DatasetID
+                    INNER JOIN T_EUS_UsageType TEUT
+                    ON TRR.RDS_EUS_UsageType = TEUT.ID;
         End;
         Else
         Begin;
@@ -213,7 +234,7 @@ As
              DSCommentClean ON DSCommentClean.Dataset_ID = #TR.Dataset_ID;
 
         ---------------------------------------------------
-        -- make a temp table to work with long intervals
+        -- Make a temp table to work with long intervals
         -- and populate it with long intervals for the datasets 
         -- that were added to the temp report table
         ---------------------------------------------------

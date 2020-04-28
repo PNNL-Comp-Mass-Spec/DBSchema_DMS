@@ -12,6 +12,8 @@ CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfoByID]
 **    
 **  Auth:   mem
 **  Date:   02/14/2012 mem - Initial release
+**          04/27/2020 mem - Update data validation checks
+**                         - Make several columns in the output table nullable
 **    
 *****************************************************/
 (
@@ -22,16 +24,16 @@ CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfoByID]
 )
 RETURNS @TX TABLE (
     Seq INT primary key,
-    ID INT ,
+    ID INT NULL,
     Dataset varchar(128) ,
-    [Day] INT,
+    [Day] INT NULL,
     Duration int NULL,
     Interval INT NULL,
-    Time_Start datetime ,
-    Time_End datetime ,
-    Instrument varchar(128) ,
-    CommentState varchar(24),
-    Comment varchar(256)
+    Time_Start datetime NULL,
+    Time_End datetime NULL,
+    Instrument varchar(128) NULL,
+    CommentState varchar(24) NULL,
+    Comment varchar(256) NULL
 )
 AS
     BEGIN
@@ -44,7 +46,7 @@ AS
 
         IF ISNULL(@year, 0) = 0 OR ISNULL(@month, 0) = 0 OR ISNULL(@eusInstrumentId, 0) = 0
         BEGIN
-            INSERT INTO @TX (Dataset) VALUES ('Bad arguments')
+            INSERT INTO @TX (Seq, Dataset) VALUES (1, 'Bad arguments')
             RETURN 
         END
 
@@ -63,7 +65,7 @@ AS
 
         IF ISNULL(@instrumentIDFirst, 0) = 0
         BEGIN
-            INSERT INTO @TX (Dataset) VALUES ('Unrecognized EUS ID; no DMS instruments are mapped to EUS Instrument ID ' + Cast(@eusInstrumentId As Varchar(12)))
+            INSERT INTO @TX (Seq, Dataset) VALUES (1, 'Unrecognized EUS ID; no DMS instruments are mapped to EUS Instrument ID ' + Cast(@eusInstrumentId As Varchar(12)))
             RETURN 
         END
 
