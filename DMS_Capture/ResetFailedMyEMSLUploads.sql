@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 /****************************************************
 **
@@ -23,6 +24,7 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 **          08/01/2017 mem - Reset steps with message 'Connection aborted.', error(32, 'Broken pipe')
 **          12/15/2017 mem - Reset steps with message 'ingest/backend/tasks.py'
 **          03/07/2018 mem - Do not reset the same job/subfolder ingest task more than once
+**          04/29/2020 bcg - Reset steps with message 'ingest/backend/tasks.py'
 **
 *****************************************************/
 (
@@ -81,7 +83,8 @@ As
                Completion_Message LIKE '%Internal Server Error%' OR
                Completion_Message LIKE '%Connection aborted%BadStatusLine%' OR
                Completion_Message LIKE '%Connection aborted%Broken pipe%' OR
-               Completion_Message LIKE '%ingest/backend/tasks.py%') AND
+               Completion_Message LIKE '%ingest/backend/tasks.py%' OR
+               Completion_Message LIKE '%pacifica/ingest/tasks.py%') AND
               Job_State = 5 AND
               Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
         GROUP BY Job, Dataset_ID, Output_Folder, Input_Folder
