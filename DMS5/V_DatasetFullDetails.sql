@@ -17,6 +17,9 @@ SELECT DS.Dataset_Num,
        SPath.SP_vol_name_client,
        DTN.DST_name,
        DS.DS_sec_sep,
+       LCCart.Cart_Name AS LC_Cart_Name,
+       CartConfig.Cart_Config_Name AS LC_Cart_Config,
+       LCCol.SC_Column_Number AS LC_Column,
        ISNULL(DS.DS_well_num, 'na') AS DS_Well_num,
        DS.DS_Oper_PRN,
        DS.Dataset_ID,
@@ -52,8 +55,16 @@ FROM T_Dataset DS
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN T_Sample_Labelling L
        ON E.EX_Labelling = L.Label
+     LEFT OUTER JOIN T_LC_Column AS LCCol
+      ON DS.DS_LC_column_ID = LCCol.ID
      LEFT OUTER JOIN T_Cached_Experiment_Components CCE
        ON E.Exp_ID = CCE.Exp_ID
+     LEFT OUTER JOIN T_LC_Cart AS LCCart
+                     INNER JOIN T_Requested_Run AS RR
+                       ON LCCart.ID = RR.RDS_Cart_ID
+       ON DS.Dataset_ID = RR.DatasetID
+     LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
+       ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
 
 
 GO

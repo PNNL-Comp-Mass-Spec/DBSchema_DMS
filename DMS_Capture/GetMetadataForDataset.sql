@@ -24,6 +24,8 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **  Date:   10/29/2009 grk - Initial release
 **          11/03/2009 dac - Corrected name of dataset number column in global metadata
 **          06/12/2018 mem - Now including Experiment_Labelling, Reporter_MZ_Min, and Reporter_MZ_Max
+**          05/04/2020 mem - Add fields LC_Cart_Name, LC_Cart_Config, and LC_Column
+**                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
 **    
 *****************************************************/
 (
@@ -54,6 +56,11 @@ AS
     Declare @instrumentName varchar(50)
     Declare @datasetComment varchar(500)
     Declare @datasetSecSep varchar(64)
+
+    Declare @lcCartName varchar(128)
+    Declare @lcCartConfig varchar(128)
+    Declare @lcColumn varchar(128)
+
     Declare @datasetWellNum varchar(64)
     Declare @experimentName varchar(64)
     Declare @experimentResearcherPRN varchar(64)
@@ -75,7 +82,10 @@ AS
     SELECT @datasetCreated = DS_created,
            @instrumentName = IN_name,
            @datasetComment = DS_comment,
-           @datasetSecSep = DS_sec_sep,
+           @datasetSecSep = DS_sec_sep,           
+           @lcCartName = LC_Cart_Name,
+           @lcCartConfig = LC_Cart_Config,
+           @lcColumn = LC_Column,
            @datasetWellNum = DS_well_num,
            @experimentName = Experiment_Num,
            @experimentResearcherPRN = EX_researcher_PRN,
@@ -103,10 +113,15 @@ AS
         Return 20000
     End
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_created', @datasetCreated)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_created', CONVERT(VARCHAR(32), @datasetCreated, 120))
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Instrument_name', @instrumentName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_comment', @datasetComment)
+
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_sec_sep', @datasetSecSep)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Cart_Name', @lcCartName)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Cart_Config', @lcCartConfig)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Column', @lcColumn)
+
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_well_num', @datasetWellNum)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Num', @experimentName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_researcher_PRN', @experimentResearcherPRN)
@@ -130,7 +145,7 @@ AS
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Num', @campaignName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Project_Num', @campaignProject)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_comment', @campaignComment)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_created', @campaignCreated)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_created', CONVERT(VARCHAR(32), @campaignCreated, 120))
 
     ---------------------------------------------------
     -- Insert auxiliary metadata for the dataset's experiment
