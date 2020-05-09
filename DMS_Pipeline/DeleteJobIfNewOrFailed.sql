@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/01/2017 mem - Fix preview bug
 **          09/27/2018 mem - Rename @previewMode to @infoonly
+**          05/04/2020 mem - Add additional debug messages
 **
 *****************************************************/
 (
@@ -34,6 +35,9 @@ As
     
     Declare @myError int= 0
     Declare @myRowCount int = 0
+
+    Declare @jobState int = 0
+    Declare @skipMessage varchar(64) = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -59,19 +63,40 @@ As
                                       WHERE JS.Job = @job AND
                                             JS.State IN (4, 9) AND
                                             JS.Start >= DateAdd(hour, -48, GetDate())) )
-        Begin
-            SELECT 'To be deleted' as Action, *
+        BEGIN            
+            ---------------------------------------------------
+            -- Preview deletion of jobs that are new, failed, or holding (job state 1, 5, or 8)
+            ---------------------------------------------------
+            --
+            SELECT 'DMS_Pipeline job to be deleted' as Action, *
             FROM T_Jobs
             WHERE Job = @job
         End
         Else
         Begin
             If Exists (SELECT * FROM T_Jobs WHERE Job = @job)
-                SELECT 'Will not be deleted; wrong job state or running job steps' As Action, *
+            Begin
+                SELECT @jobState = State
+                FROM T_Jobs 
+                WHERE Job = @job
+
+                IF @jobState IN (2,3,9)
+                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
+                ELSE IF @jobState IN (2,3,9)
+                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
+                ELSE IF @jobState IN (4,7,14)
+                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job completed successfully'
+                ELSE
+                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job state is not New, Failed, or Successful'
+
+                SELECT @skipMessage As Action, *
                 FROM T_Jobs
                 WHERE Job = @job
+            End
             Else
+            Begin
                 SELECT 'Job not found in T_Jobs: ' + Cast(@job as Varchar(9)) As Action
+            End
         End
             
     End
@@ -79,7 +104,8 @@ As
     Begin
         
         ---------------------------------------------------
-        -- Delete the job, provided it's not active
+        -- Delete the jobs that are new, failed, or holding (job state 1, 5, or 8)
+        -- Skip any jobs with running job steps that started within the last 2 days
         ---------------------------------------------------
         --
         DELETE FROM T_Jobs
@@ -95,14 +121,14 @@ As
         --
         if @myError <> 0
         begin
-            set @message = 'Error deleting job ' + Cast(@job as varchar(9)) + ' from T_Jobs'
+            set @message = 'Error deleting DMS_Pipeline job ' + Cast(@job as varchar(9)) + ' from T_Jobs'
             goto Done
         End
 
-        Print 'Deleted job ' + Cast(@job As varchar(12)) + ' from T_Jobs in DMS_Pipeline'
+        Print 'Deleted analysis job ' + Cast(@job As varchar(12)) + ' from T_Jobs in DMS_Pipeline'
     End
     
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
