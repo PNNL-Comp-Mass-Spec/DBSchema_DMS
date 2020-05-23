@@ -45,3 +45,5 @@ BEGIN
 END
 
 GO
+GRANT EXECUTE ON [dbo].[udfGetFileNameFromPath] TO [MTUser] AS [dbo]
+GO
