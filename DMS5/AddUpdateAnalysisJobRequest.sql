@@ -83,6 +83,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          04/23/2019 mem - Auto-change @protCollOptionsList to "seq_direction=decoy,filetype=fasta" when running MSFragger
 **          07/30/2019 mem - Store dataset info in T_Analysis_Job_Request_Datasets instead of AJR_datasets
 **                         - Call UpdateCachedJobRequestExistingJobs after creating / updating an analysis job request
+**          05/28/2020 mem - Auto-update the settings file if the samples used TMTpro
 **
 *****************************************************/
 (
@@ -109,17 +110,17 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 As
     Set XACT_ABORT, nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError INT = 0
+    Declare @myRowCount INT = 0
 
     Declare @AutoSupersedeName varchar(255) = ''
     Declare @MsgToAppend varchar(255)
     Declare @logErrors tinyint = 0
     Declare @datasetMin varchar(128) = null
-    Declare @datasetMax varchar(128) = null
+    Declare @datasetMax varchar(128) = NULL
 
+    Declare @tmtProDatasets int = 0
+    Declare @datasetCount int = 0
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -266,6 +267,7 @@ As
     FROM MakeTableFromList ( @datasets )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
+    SET @datasetCount = @myRowCount
     --
     If @myError <> 0
         RAISERROR ('Error populating temporary table', 11, 8)
@@ -489,6 +491,33 @@ As
         End
     End
     
+    ---------------------------------------------------
+    -- Auto-change the settings file if TMTpro samples
+    ---------------------------------------------------
+    --
+    If (@toolName LIKE 'MSGFPlus%' AND @settingsFileName LIKE '%TMT%')
+    Begin
+        SELECT @tmtProDatasets = Count(Distinct DS.Dataset_ID)
+        FROM #TD
+            INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+            INNER JOIN T_Experiments E ON DS.Exp_ID = E.Exp_ID
+        WHERE E.EX_Labelling = 'TMT16' OR DS.Dataset_Num LIKE '%TMTpro%'
+
+        If @tmtProDatasets > @datasetCount / 2.0
+        Begin
+            -- At least half of the datasets are 16-plex TMT; auto-update the settings file name, if necessary
+            If @settingsFileName = 'IonTrapDefSettings_MzML_StatCysAlk_6plexTMT.xml'
+            Begin
+                Set @settingsFileName = 'IonTrapDefSettings_MzML_StatCysAlk_16plexTMT.xml'
+            End
+
+            IF @settingsFileName = 'IonTrapDefSettings_MzML_6plexTMT.xml'
+            Begin
+                Set @settingsFileName = 'IonTrapDefSettings_MzML_16plexTMT.xml'
+            End
+        End
+    End
+
     ---------------------------------------------------
     -- If mode is add, force @state to 'new'
     ---------------------------------------------------
