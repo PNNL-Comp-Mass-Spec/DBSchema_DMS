@@ -24,11 +24,11 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **    -----               -------                                     ---------    
 **    New or Busy         One or more steps failed                    Failed
 ** 
-**    New or Busy         All steps complete                          Complete
+**    New or Busy         All steps complete (or skipped)             Complete
 ** 
 **    New,Busy,Resuming   One or more steps busy                      In Progress
 **
-**    Failed              All steps complete                          Complete, though only if max Job Step completion time is greater than Finish time in T_Jobs
+**    Failed              All steps complete (or skipped)             Complete, though only if max Job Step completion time is greater than Finish time in T_Jobs
 ** 
 **    Failed              All steps waiting/enabled/In Progress       In Progress
 ** 
@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **                         - No longer computing @ProcessingTimeMinutes since not stored in any table
 **          01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
 **          06/13/2018 mem - Add comments regarding UpdateDMSFileInfoXML and T_Dataset_Info
+**          06/01/2020 mem - Add support for step state 13 (Inactive)
 **    
 *****************************************************/
 (
@@ -159,9 +160,9 @@ As
           J.Results_Folder_Name,
           J.Storage_Server,
           CASE 
-            WHEN JS_Stats.Failed > 0 THEN 5                     -- Failed
-            WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- Complete
-            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- In Progress
+            WHEN JS_Stats.Failed > 0 THEN 5                     -- New job state: Failed
+            WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- New job state: Complete
+            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- New job state: In Progress
             Else J.State
           End AS NewState,
           J.Dataset,
@@ -175,7 +176,7 @@ As
                 JS.Job,
                 COUNT(*) AS Total,
                 SUM(CASE 
-                    WHEN JS.State IN (3,4,5) THEN 1
+                    WHEN JS.State IN (3, 4, 5, 13) THEN 1
                     Else 0
                     End) AS StartedFinishedOrSkipped,
                 SUM(CASE 
@@ -183,13 +184,13 @@ As
                     Else 0
                     End) AS Failed,
                 SUM(CASE 
-                    WHEN JS.State IN (3,5) THEN 1
+                    WHEN JS.State IN (3, 5, 13) THEN 1
                     Else 0
                     End) AS FinishedOrSkipped
             FROM T_Job_Steps JS
                  INNER JOIN T_Jobs J
                    ON JS.Job = J.Job
-            WHERE (J.State IN (1,2,5,20))    -- New, in progress, failed, or resuming state
+            WHERE (J.State IN (1,2,5,20))    -- Current job state: New, in progress, failed, or resuming
             GROUP BY JS.Job, J.State
            ) AS JS_Stats 
            INNER JOIN T_Jobs AS J
@@ -262,7 +263,7 @@ As
            Storage_Server
     FROM T_Jobs
     WHERE State = 5 AND
-          (Job IN ( SELECT Job FROM T_Job_Steps WHERE State IN (2, 3, 4, 5))) AND
+          (Job IN ( SELECT Job FROM T_Job_Steps WHERE State IN (2, 3, 4, 5, 13))) AND
           (NOT Job IN (SELECT Job FROM T_Job_Steps WHERE State = 6)) AND
           (NOT Job In (SELECT Job FROM #Tmp_ChangedJobs))
      --
@@ -285,7 +286,7 @@ As
         @storageServerName VARCHAR(128)
     --
     While @done = 0
-    Begin --<a>
+    Begin -- <a>
         Set @job = 0
         --
         SELECT TOP 1 @job = Job,
@@ -306,7 +307,7 @@ As
         If @job = 0
             Set @done = 1
         Else
-        Begin --<b>
+        Begin -- <b>
 
             ---------------------------------------------------
             -- Examine the steps for this job to determine actual start/End times
@@ -392,7 +393,7 @@ As
                         END,
                     Finish_New = 
                         CASE
-                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- 3=Complete, 5=Failed
+                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- Job state is 3=Complete or 5=Failed
                         ELSE Src.Finish
                         END
                 FROM #Tmp_ChangedJobs Target
@@ -419,7 +420,7 @@ As
                         End,
                     Finish = 
                         CASE 
-                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- 3=Complete, 5=Failed
+                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- Job state is 3=Complete or 5=Failed
                         Else Finish
                         End
                 WHERE Job = @job
@@ -434,7 +435,7 @@ As
             ---------------------------------------------------
             --
             If @bypassDMS = 0 AND @datasetID <> 0
-            Begin --<c>
+            Begin -- <c>
 
                 If @infoOnly > 0
                 Begin
@@ -455,10 +456,10 @@ As
                         Exec PostLogEntry 'Error', @message, 'UpdateJobState'
                 End
                 
-            End --</c>
+            End -- </c>
 
             If @bypassDMS = 0 AND @datasetID = 0
-            Begin --<d>
+            Begin -- <d>
 
                 If @infoOnly > 0
                 Begin
@@ -475,13 +476,13 @@ As
                     If @myError <> 0
                         Exec PostLogEntry 'Error', @message, 'UpdateJobState'
                 End
-            End --<d>
+            End -- </d>
 
             ---------------------------------------------------
             -- Save job history
             ---------------------------------------------------
             --
-            If @newJobStateInBroker IN (3,5) AND
+            If @newJobStateInBroker IN (3, 5) AND
                Not (@oldJobStateInBroker = 2 And @newJobStateInBroker = 2) AND
                Not (@oldJobStateInBroker = 5 And @newJobStateInBroker = 2)
             Begin
@@ -496,7 +497,7 @@ As
             End
 
             Set @JobsProcessed = @JobsProcessed + 1
-        End --</b>
+        End -- </b>
         
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
@@ -508,7 +509,7 @@ As
         If @MaxJobsToProcess > 0 And @JobsProcessed >= @MaxJobsToProcess
             Set @done = 1
             
-    End --</a>
+    End -- </a>
 
     If @infoOnly > 0
     Begin

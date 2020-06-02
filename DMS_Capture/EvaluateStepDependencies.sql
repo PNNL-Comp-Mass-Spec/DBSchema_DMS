@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 **  Date:   09/05/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
+**          06/01/2020 mem - Add support for step state 13 (Inactive)
 **
 *****************************************************/
 (
@@ -99,7 +100,7 @@ As
            ON JSD.Job = JS_B.Job AND
               JSD.Step_Number = JS_B.Step_Number
     WHERE (JSD.Evaluated = 0) AND
-          (JS.State IN (3, 5)) AND
+          (JS.State IN (3, 5, 13)) AND
           (JS_B.State = 1)
     -- 
     SELECT @myError = @@error, @myRowCount = @@rowcount
