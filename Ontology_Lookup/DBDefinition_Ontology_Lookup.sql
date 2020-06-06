@@ -87,6 +87,12 @@ GO
 /****** Object:  User [RBAC-DMS_Developer] ******/
 CREATE USER [RBAC-DMS_Developer] FOR LOGIN [PNL\EMSL-Prism.Users.Developers]
 GO
+/****** Object:  User [RBAC-DMS_Guest] ******/
+CREATE USER [RBAC-DMS_Guest] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_Guest]
+GO
+/****** Object:  User [RBAC-DMS_User] ******/
+CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
+GO
 /****** Object:  User [svc-dms] ******/
 CREATE USER [svc-dms] FOR LOGIN [PNL\svc-dms] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -103,6 +109,10 @@ GO
 GRANT CONNECT TO [PNL\D3M578] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_Developer] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_Guest] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_User] AS [dbo]
 GO
 GRANT CONNECT TO [svc-dms] AS [dbo]
 GO
