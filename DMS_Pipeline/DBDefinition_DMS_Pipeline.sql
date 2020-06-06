@@ -2,9 +2,9 @@
 CREATE DATABASE [DMS_Pipeline]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'DMS_Pipeline_T3', FILENAME = N'J:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 12681472KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'DMS_Pipeline_T3', FILENAME = N'J:\SQLServerData\DMS_Pipeline.mdf' , SIZE = 13205760KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'H:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 12414080KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
+( NAME = N'DMS_Pipeline_T3_log', FILENAME = N'H:\SQLServerData\DMS_Pipeline_log.ldf' , SIZE = 519296KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -102,6 +102,9 @@ GO
 /****** Object:  User [RBAC-DMS_Developer] ******/
 CREATE USER [RBAC-DMS_Developer] FOR LOGIN [PNL\EMSL-Prism.Users.Developers]
 GO
+/****** Object:  User [RBAC-DMS_Guest] ******/
+CREATE USER [RBAC-DMS_Guest] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_Guest]
+GO
 /****** Object:  User [RBAC-DMS_User] ******/
 CREATE USER [RBAC-DMS_User] FOR LOGIN [PNL\EMSL-Prism.Users.DMS_User]
 GO
@@ -136,6 +139,8 @@ GO
 GRANT CONNECT TO [pnl\mtsproc] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_Developer] AS [dbo]
+GO
+GRANT CONNECT TO [RBAC-DMS_Guest] AS [dbo]
 GO
 GRANT CONNECT TO [RBAC-DMS_User] AS [dbo]
 GO
