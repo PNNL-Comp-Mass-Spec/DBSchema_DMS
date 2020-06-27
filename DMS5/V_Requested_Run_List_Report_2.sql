@@ -26,6 +26,8 @@ SELECT RR.ID AS Request,
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS Proposal,
        EPT.Abbreviation AS [Proposal Type],
+       -- Deprecated 2020-06-26: EPT.Proposal_Type_Name AS [EUS Proposal Type],
+       PSN.Name AS [Proposal State],
        RR.RDS_comment AS [Comment],
        DTN.DST_name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
@@ -37,7 +39,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
-      CartConfig.Cart_Config_Name AS [Cart Config],
+       CartConfig.Cart_Config_Name AS [Cart Config],
        CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
        DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
@@ -80,6 +82,8 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
        ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
+       ON EUP.State_ID = PSN.ID
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
 

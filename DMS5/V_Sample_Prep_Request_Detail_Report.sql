@@ -40,6 +40,8 @@ SELECT  SPR.ID,
         SPR.EUS_UsageType AS [EUS Usage Type],
         SPR.EUS_Proposal_ID AS [EUS Proposal],
         EPT.Proposal_Type_Name AS [EUS Proposal Type],
+        CAST(EUP.Proposal_End_Date AS DATE) AS [EUS Proposal End Date],
+        PSN.Name AS [EUS Proposal State],
         dbo.GetSamplePrepRequestEUSUsersList(SPR.ID, 'V') AS [EUS User],
         SPR.Requested_Personnel AS [Requested Personnel],
         SPR.Assigned_Personnel AS [Assigned Personnel],
@@ -83,6 +85,8 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
+       ON EUP.State_ID = PSN.ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON SPR.Tissue_ID = BTO.Identifier
 WHERE SPR.Request_Type = 'Default'

@@ -43,6 +43,8 @@ SELECT RR.ID AS Request,
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
        EPT.Proposal_Type_Name AS [EUS Proposal Type],
+       CAST(EUP.Proposal_End_Date AS DATE) AS [EUS Proposal End Date],
+       PSN.Name AS [EUS Proposal State],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
        dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
        RR.RDS_note AS Note,
@@ -81,6 +83,8 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
+     LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
+       ON EUP.State_ID = PSN.ID
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
 
