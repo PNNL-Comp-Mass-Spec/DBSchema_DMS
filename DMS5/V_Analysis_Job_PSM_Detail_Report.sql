@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_Detail_Report]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -35,6 +33,8 @@ SELECT AJ.AJ_jobID AS Job,
 	   CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS [Pct Missed Cleavage],
 	   PSM.Keratin_Peptides_FDR AS [Unique Keratin Peptides],
 	   PSM.Trypsin_Peptides_FDR AS [Unique Trypsin Peptides],
+       Convert(decimal(9,2), PSM.Percent_PSMs_Missing_NTermReporterIon) AS [Pct Missing NTerm Reporter Ions],
+       Convert(decimal(9,2), PSM.Percent_PSMs_Missing_ReporterIon) AS [Pct Missing Reporter Ions],
        PSM.Last_Affected AS [PSM Stats Date],       
        PhosphoPSM.PhosphoPeptides AS PhosphoPep,
        PhosphoPSM.CTermK_Phosphopeptides AS [CTermK PhosphoPep],
@@ -108,7 +108,6 @@ FROM dbo.T_Analysis_Job AS AJ
        ON AJ.AJ_JobID = PSM.Job
 	 LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM 
 	   ON PSM.Job = PhosphoPSM.Job
-
 
 
 GO

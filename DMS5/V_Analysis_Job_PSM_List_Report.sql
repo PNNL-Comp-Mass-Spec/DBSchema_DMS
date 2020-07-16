@@ -4,8 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report] as
 SELECT  AJ.AJ_jobID AS Job,
         AJ.AJ_StateNameCached AS State,
@@ -31,6 +29,8 @@ SELECT  AJ.AJ_jobID AS Job,
 		CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS PctMissedClvg,
 	    PSM.Keratin_Peptides_FDR AS [KeratinPep],
 	    PSM.Trypsin_Peptides_FDR AS [TrypsinPep],
+        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_NTermReporterIon) AS [Pct Missing NTermRepIon],
+        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_ReporterIon) AS [Pct Missing RepIon],
         PSM.Last_Affected AS [PSM Stats Date],
 	    PhosphoPSM.PhosphoPeptides AS PhosphoPep,
 		PhosphoPSM.CTermK_Phosphopeptides AS [CTermK PhosphoPep],
@@ -76,9 +76,6 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR 
 								      AJT_resultType = 'Gly_ID')
-
-
-
 
 
 GO

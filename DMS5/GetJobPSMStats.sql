@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.GetJobPSMStats
+CREATE FUNCTION [dbo].[GetJobPSMStats]
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +19,7 @@ CREATE FUNCTION dbo.GetJobPSMStats
 **			05/08/2012 mem - Now showing FDR-based stats if Total_PSMs_FDR_Filter > 0
 **			05/11/2012 mem - Now displaying FDR as a percentage
 **			01/17/2014 mem - Added support for MSGF_Threshold_Is_EValue = 1
+**          07/15/2020 mem - Report % PSMs without TMT or iTRAQ
 **    
 *****************************************************/
 (
@@ -32,9 +33,13 @@ AS
 		Set @stats = ''
 		
 		SELECT @stats = 
-		         CASE WHEN Total_PSMs_FDR_Filter > 0 Then
+		         CASE WHEN Total_PSMs_FDR_Filter > 0 THEN
 		           'Spectra Searched: ' + CONVERT(varchar(12), Spectra_Searched) + ', ' + 
-		           'Total PSMs: ' +       CONVERT(varchar(12), Total_PSMs_FDR_Filter) + ', ' + 
+		           'Total PSMs: ' +       CONVERT(varchar(12), Total_PSMs_FDR_Filter) + 
+                   CASE WHEN Dynamic_Reporter_Ion > 0 
+                        THEN ' (' + CONVERT(VARCHAR(12), Percent_PSMs_Missing_NTermReporterIon) + '% missing N-Terminal reporter ion), ' 
+                        ELSE ', ' 
+                   END + 
 		           'Unique Peptides: ' +  CONVERT(varchar(12), Unique_Peptides_FDR_Filter) + ', ' + 
 		           'Unique Proteins: ' +  CONVERT(varchar(12), Unique_Proteins_FDR_Filter) + 
 		           '  (FDR < ' + CONVERT(varchar(12), Convert(decimal(9,2), FDR_Threshold*100.0)) + '%)'

@@ -3,158 +3,172 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure StoreJobPSMStats
+
+CREATE Procedure [dbo].[StoreJobPSMStats]
 /****************************************************
-** 
-**	Desc:	Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
 **
-**	Return values: 0: success, otherwise, error code
-** 
-**	Parameters:
+**    Desc: Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
 **
-**	Auth:	mem
-**	Date:	02/21/2012 mem - Initial version
-**			05/08/2012 mem - Added @FDRThreshold, @TotalPSMsFDRFilter, @UniquePeptidesFDRFilter, and @UniqueProteinsFDRFilter
-**			01/17/2014 mem - Added @MSGFThresholdIsEValue
-**			01/21/2016 mem - Added @PercentMSnScansNoPSM and @MaximumScanGapAdjacentMSn
-**			09/28/2016 mem - Added three @UniquePhosphopeptide parameters, two @MissedCleavageRatio parameters, and @TrypticPeptides, @KeratinPeptides, and @TrypsinPeptides
-**    
+**    Return values: 0: success, otherwise, error code
+**
+**    Parameters:
+**
+**    Auth: mem
+**    Date: 02/21/2012 mem - Initial version
+**          05/08/2012 mem - Added @fdrThreshold, @totalPSMsFDRFilter, @uniquePeptidesFDRFilter, and @uniqueProteinsFDRFilter
+**          01/17/2014 mem - Added @msgfThresholdIsEValue
+**          01/21/2016 mem - Added @percentMSnScansNoPSM and @maximumScanGapAdjacentMSn
+**          09/28/2016 mem - Added three @uniquePhosphopeptide parameters, two @missedCleavageRatio parameters, and @trypticPeptides, @keratinPeptides, and @trypsinPeptides
+**          07/15/2020 mem - Added @dynamicReporterIon, @percentPSMsMissingNTermReporterIon, and @percentPSMsMissingReporterIon
+**
 *****************************************************/
 (
-	@Job int = 0,
-	@MSGFThreshold float,
-	@FDRThreshold float = 1,
-	@SpectraSearched int,						-- Number of spectra that were searched
-	@TotalPSMs int,								-- Stats based on @MSGFThreshold (Number of identified spectra)
-	@UniquePeptides int,						-- Stats based on @MSGFThreshold
-	@UniqueProteins int,						-- Stats based on @MSGFThreshold
-	@TotalPSMsFDRFilter int = 0,				-- Stats based on @FDRThreshold  (Number of identified spectra)
-	@UniquePeptidesFDRFilter int = 0,			-- Stats based on @FDRThreshold
-	@UniqueProteinsFDRFilter int = 0,			-- Stats based on @FDRThreshold
-	@MSGFThresholdIsEValue tinyint = 0,			-- Set to 1 if @MSGFThreshold is actually an EValue
-	@PercentMSnScansNoPSM real = 0,				-- Percent (between 0 and 100) measuring the percent of MSn scans that did not have a filter passing PSM
-	@MaximumScanGapAdjacentMSn int = 0,			-- Maximum number of scans separating two MS2 spectra with search results; large gaps indicates that a processing thread in MSGF+ crashed and the results may be incomplete
-	@UniquePhosphopeptideCountFDR int = 0,		-- Number of Phosphopeptides; filtered using @FDRThreshold
-	@UniquePhosphopeptidesCTermK int = 0,		-- Number of Phosphopeptides with K on the C-terminus
-	@UniquePhosphopeptidesCTermR int = 0,		-- Number of Phosphopeptides with R on the C-terminus
-	@MissedCleavageRatio real = 0,				-- Value between 0 and 1; computed as the number of unique peptides with a missed cleavage / number of unique peptides
-	@MissedCleavageRatioPhospho real = 0,		-- Value between 0 and 1; like @MissedCleavageRatio but for phosphopeptides
-	@TrypticPeptides int = 0,					-- Number of tryptic peptides (partially or fully tryptic)
-	@KeratinPeptides int = 0,					-- Number of peptides from Keratin
-	@TrypsinPeptides int = 0,					-- Number of peptides from Trypsin
-	@message varchar(255) = '' output,
-	@infoOnly tinyint = 0
+    @job int = 0,
+    @msgfThreshold float,
+    @fdrThreshold float = 1,
+    @spectraSearched int,                         -- Number of spectra that were searched
+    @totalPSMs int,                               -- Stats based on @msgfThreshold (Number of identified spectra)
+    @uniquePeptides int,                          -- Stats based on @msgfThreshold
+    @uniqueProteins int,                          -- Stats based on @msgfThreshold
+    @totalPSMsFDRFilter int = 0,                  -- Stats based on @fdrThreshold  (Number of identified spectra)
+    @uniquePeptidesFDRFilter int = 0,             -- Stats based on @fdrThreshold
+    @uniqueProteinsFDRFilter int = 0,             -- Stats based on @fdrThreshold
+    @msgfThresholdIsEValue tinyint = 0,           -- Set to 1 if @msgfThreshold is actually an EValue
+    @percentMSnScansNoPSM real = 0,               -- Percent (between 0 and 100) measuring the percent of MSn scans that did not have a filter passing PSM
+    @maximumScanGapAdjacentMSn int = 0,           -- Maximum number of scans separating two MS2 spectra with search results; large gaps indicates that a processing thread in MSGF+ crashed and the results may be incomplete
+    @uniquePhosphopeptideCountFDR int = 0,        -- Number of Phosphopeptides; filtered using @fdrThreshold
+    @uniquePhosphopeptidesCTermK int = 0,         -- Number of Phosphopeptides with K on the C-terminus
+    @uniquePhosphopeptidesCTermR int = 0,         -- Number of Phosphopeptides with R on the C-terminus
+    @missedCleavageRatio real = 0,                -- Value between 0 and 1; computed as the number of unique peptides with a missed cleavage / number of unique peptides
+    @missedCleavageRatioPhospho real = 0,         -- Value between 0 and 1; like @missedCleavageRatio but for phosphopeptides
+    @trypticPeptides int = 0,                     -- Number of tryptic peptides (partially or fully tryptic)
+    @keratinPeptides int = 0,                     -- Number of peptides from Keratin
+    @trypsinPeptides int = 0,                     -- Number of peptides from Trypsin
+    @dynamicReporterIon tinyint = 0,              -- Set to 1 if TMT (or iTRAQ) was a dynamic modification, e.g. MSGFPlus_PartTryp_DynMetOx_TMT_6Plex_Stat_CysAlk_20ppmParTol.txt
+    @percentPSMsMissingNTermReporterIon real = 0, -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus without TMT; value between 0 and 100
+    @percentPSMsMissingReporterIon real = 0,      -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus or a K without TMT; value between 0 and 100
+    @message varchar(255) = '' output,
+    @infoOnly tinyint = 0
 )
 As
-	set nocount on
-	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    set nocount on
 
-	---------------------------------------------------
-	-- Validate the inputs
-	---------------------------------------------------
-	
-	Set @Job = IsNull(@Job, 0)
-	Set @message = ''
-	Set @infoOnly = IsNull(@infoOnly, 0)	
-	Set @FDRThreshold = IsNull(@FDRThreshold, 1)
-	Set @MSGFThresholdIsEValue = IsNull(@MSGFThresholdIsEValue, 0)
-	
-	Set @PercentMSnScansNoPSM = IsNull(@PercentMSnScansNoPSM, 0)
-	Set @MaximumScanGapAdjacentMSn = IsNull(@MaximumScanGapAdjacentMSn,0)
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	Set @UniquePhosphopeptideCountFDR = IsNull(@UniquePhosphopeptideCountFDR, 0)
-	Set @UniquePhosphopeptidesCTermK = IsNull(@UniquePhosphopeptidesCTermK, 0)
-	Set @UniquePhosphopeptidesCTermR = IsNull(@UniquePhosphopeptidesCTermR, 0)
-	Set @MissedCleavageRatio = IsNull(@MissedCleavageRatio, 0)
-	Set @MissedCleavageRatioPhospho = IsNull(@MissedCleavageRatioPhospho, 0)
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
 
-	Set @TrypticPeptides = IsNull(@TrypticPeptides, 0)
-	Set @KeratinPeptides = IsNull(@KeratinPeptides, 0)
-	Set @TrypsinPeptides = IsNull(@TrypsinPeptides, 0)
+    Set @job = IsNull(@job, 0)
+    Set @message = ''
+    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @fdrThreshold = IsNull(@fdrThreshold, 1)
+    Set @msgfThresholdIsEValue = IsNull(@msgfThresholdIsEValue, 0)
 
-	---------------------------------------------------
-	-- Make sure @Job is defined in T_Analysis_Job
-	---------------------------------------------------
-	
-	IF NOT EXISTS (SELECT * FROM T_Analysis_Job where AJ_jobID = @Job)
-	Begin
-		Set @message = 'Job not found in T_Analysis_Job: ' + CONVERT(varchar(12), @job)
-		return 50000
-	End
-	
-	If @infoOnly <> 0
-	Begin
-		-----------------------------------------------
-		-- Preview the data, then exit
-		-----------------------------------------------
-		
-		SELECT @Job AS Job,
-		       @MSGFThreshold AS MSGF_Threshold,
-		       @FDRThreshold AS FDR_Threshold,
-		       @MSGFThresholdIsEValue AS MSGF_Threshold_Is_EValue,
-		       @SpectraSearched AS Spectra_Searched,
-		       @TotalPSMs AS Total_PSMs_MSGF,
-		       @UniquePeptides AS Unique_Peptides_MSGF,
-		       @UniqueProteins AS Unique_Proteins_MSGF,
-		       @TotalPSMsFDRFilter AS Total_PSMs_FDR,
-		       @UniquePeptidesFDRFilter AS Unique_Peptides_FDR,
-		       @UniqueProteinsFDRFilter AS Unique_Proteins_FDR,	       
-		       @PercentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
-		       @MaximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn,
-		       @UniquePhosphopeptideCountFDR AS Phosphopeptides,
-		       @UniquePhosphopeptidesCTermK AS CTermK_Phosphopeptides,
-		       @UniquePhosphopeptidesCTermR AS CTermR_Phosphopeptides,
-		       @MissedCleavageRatio AS Missed_Cleavage_Ratio_FDR,
-		       @MissedCleavageRatioPhospho AS MissedCleavageRatioPhospho,
-		       @TrypticPeptides AS Tryptic_Peptides,
-		       @KeratinPeptides AS Keratin_Peptides,
-		       @TrypsinPeptides AS Trypsin_Peptides
-		
-		Goto Done
-	End
+    Set @percentMSnScansNoPSM = IsNull(@percentMSnScansNoPSM, 0)
+    Set @maximumScanGapAdjacentMSn = IsNull(@maximumScanGapAdjacentMSn,0)
 
-	
-	-----------------------------------------------
-	-- Add/Update T_Analysis_Job_PSM_Stats using a MERGE statement
-	-----------------------------------------------
-	--
-	;
-	MERGE T_Analysis_Job_PSM_Stats AS target
-	USING 
-		(SELECT @Job AS Job,
-                @MSGFThreshold AS MSGF_Threshold,
-                @FDRThreshold AS FDR_Threshold,
-                @MSGFThresholdIsEValue AS MSGF_Threshold_Is_EValue,
-                @SpectraSearched AS Spectra_Searched,
-                @TotalPSMs AS Total_PSMs_MSGF,
-                @UniquePeptides AS Unique_Peptides_MSGF,
-                @UniqueProteins AS Unique_Proteins_MSGF,
-                @TotalPSMsFDRFilter AS Total_PSMs_FDR,
-		        @UniquePeptidesFDRFilter AS Unique_Peptides_FDR,
-		        @UniqueProteinsFDRFilter AS Unique_Proteins_FDR,
-		        @PercentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
-		        @MaximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn,
-		        @MissedCleavageRatio AS Missed_Cleavage_Ratio_FDR,
-		        @TrypticPeptides AS Tryptic_Peptides_FDR,
-		        @KeratinPeptides AS Keratin_Peptides_FDR,
-		        @TrypsinPeptides AS Trypsin_Peptides_FDR		        
-		) AS Source (Job, MSGF_Threshold, FDR_Threshold, MSGF_Threshold_Is_EValue, Spectra_Searched,
+    Set @uniquePhosphopeptideCountFDR = IsNull(@uniquePhosphopeptideCountFDR, 0)
+    Set @uniquePhosphopeptidesCTermK = IsNull(@uniquePhosphopeptidesCTermK, 0)
+    Set @uniquePhosphopeptidesCTermR = IsNull(@uniquePhosphopeptidesCTermR, 0)
+    Set @missedCleavageRatio = IsNull(@missedCleavageRatio, 0)
+    Set @missedCleavageRatioPhospho = IsNull(@missedCleavageRatioPhospho, 0)
+
+    Set @trypticPeptides = IsNull(@trypticPeptides, 0)
+    Set @keratinPeptides = IsNull(@keratinPeptides, 0)
+    Set @trypsinPeptides = IsNull(@trypsinPeptides, 0)
+
+    Set @dynamicReporterIon = IsNull(@dynamicReporterIon, 0)
+    Set @percentPSMsMissingNTermReporterIon = IsNull(@percentPSMsMissingNTermReporterIon, 0)
+    Set @percentPSMsMissingReporterIon = IsNull(@percentPSMsMissingReporterIon, 0)
+
+    ---------------------------------------------------
+    -- Make sure @job is defined in T_Analysis_Job
+    ---------------------------------------------------
+
+    IF NOT EXISTS (SELECT * FROM T_Analysis_Job where AJ_jobID = @job)
+    Begin
+        Set @message = 'Job not found in T_Analysis_Job: ' + CONVERT(varchar(12), @job)
+        return 50000
+    End
+
+    If @infoOnly <> 0
+    Begin
+        -----------------------------------------------
+        -- Preview the data, then exit
+        -----------------------------------------------
+
+        SELECT @job AS Job,
+               @msgfThreshold AS MSGF_Threshold,
+               @fdrThreshold AS FDR_Threshold,
+               @msgfThresholdIsEValue AS MSGF_Threshold_Is_EValue,
+               @spectraSearched AS Spectra_Searched,
+               @totalPSMs AS Total_PSMs_MSGF,
+               @uniquePeptides AS Unique_Peptides_MSGF,
+               @uniqueProteins AS Unique_Proteins_MSGF,
+               @totalPSMsFDRFilter AS Total_PSMs_FDR,
+               @uniquePeptidesFDRFilter AS Unique_Peptides_FDR,
+               @uniqueProteinsFDRFilter AS Unique_Proteins_FDR,
+               @percentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
+               @maximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn,
+               @uniquePhosphopeptideCountFDR AS Phosphopeptides,
+               @uniquePhosphopeptidesCTermK AS CTermK_Phosphopeptides,
+               @uniquePhosphopeptidesCTermR AS CTermR_Phosphopeptides,
+               @missedCleavageRatio AS Missed_Cleavage_Ratio_FDR,
+               @missedCleavageRatioPhospho AS MissedCleavageRatioPhospho,
+               @trypticPeptides AS Tryptic_Peptides,
+               @keratinPeptides AS Keratin_Peptides,
+               @trypsinPeptides AS Trypsin_Peptides,
+               @dynamicReporterIon AS Dynamic_Reporter_Ion,
+               @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
+               @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
+
+        Goto Done
+    End
+
+
+    -----------------------------------------------
+    -- Add/Update T_Analysis_Job_PSM_Stats using a MERGE statement
+    -----------------------------------------------
+    --
+    ;
+    MERGE T_Analysis_Job_PSM_Stats AS target
+    USING
+        (SELECT @job AS Job,
+                @msgfThreshold AS MSGF_Threshold,
+                @fdrThreshold AS FDR_Threshold,
+                @msgfThresholdIsEValue AS MSGF_Threshold_Is_EValue,
+                @spectraSearched AS Spectra_Searched,
+                @totalPSMs AS Total_PSMs_MSGF,
+                @uniquePeptides AS Unique_Peptides_MSGF,
+                @uniqueProteins AS Unique_Proteins_MSGF,
+                @totalPSMsFDRFilter AS Total_PSMs_FDR,
+                @uniquePeptidesFDRFilter AS Unique_Peptides_FDR,
+                @uniqueProteinsFDRFilter AS Unique_Proteins_FDR,
+                @percentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
+                @maximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn,
+                @missedCleavageRatio AS Missed_Cleavage_Ratio_FDR,
+                @trypticPeptides AS Tryptic_Peptides_FDR,
+                @keratinPeptides AS Keratin_Peptides_FDR,
+                @trypsinPeptides AS Trypsin_Peptides_FDR,
+                @dynamicReporterIon AS Dynamic_Reporter_Ion,
+                @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
+                @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
+        ) AS Source (Job, MSGF_Threshold, FDR_Threshold, MSGF_Threshold_Is_EValue, Spectra_Searched,
                      Total_PSMs_MSGF, Unique_Peptides_MSGF, Unique_Proteins_MSGF,
                      Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR,
                      Percent_MSn_Scans_NoPSM, Maximum_ScanGap_Adjacent_MSn, Missed_Cleavage_Ratio_FDR,
-                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR
+                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR, 
+                     Dynamic_Reporter_Ion, Percent_PSMs_Missing_NTermReporterIon, Percent_PSMs_Missing_ReporterIon
                     )
-	    ON (target.Job = Source.Job)
-	
-	WHEN Matched 
-		THEN UPDATE 
-			Set MSGF_Threshold = Source.MSGF_Threshold,
-			    FDR_Threshold = Source.FDR_Threshold,
-			    MSGF_Threshold_Is_EValue = Source.MSGF_Threshold_Is_EValue,
+        ON (target.Job = Source.Job)
+
+    WHEN Matched
+        THEN UPDATE
+            Set MSGF_Threshold = Source.MSGF_Threshold,
+                FDR_Threshold = Source.FDR_Threshold,
+                MSGF_Threshold_Is_EValue = Source.MSGF_Threshold_Is_EValue,
                 Spectra_Searched = Source.Spectra_Searched,
                 Total_PSMs = Source.Total_PSMs_MSGF,
                 Unique_Peptides = Source.Unique_Peptides_MSGF,
@@ -164,22 +178,25 @@ As
                 Unique_Proteins_FDR_Filter = Source.Unique_Proteins_FDR,
                 Percent_MSn_Scans_NoPSM = Source.Percent_MSn_Scans_NoPSM,
                 Maximum_ScanGap_Adjacent_MSn = Source.Maximum_ScanGap_Adjacent_MSn,
-       Missed_Cleavage_Ratio_FDR = Source.Missed_Cleavage_Ratio_FDR,
+                Missed_Cleavage_Ratio_FDR = Source.Missed_Cleavage_Ratio_FDR,
                 Tryptic_Peptides_FDR = Source.Tryptic_Peptides_FDR,
                 Keratin_Peptides_FDR = Source.Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR = Source.Trypsin_Peptides_FDR,
+                Dynamic_Reporter_Ion = Source.Dynamic_Reporter_Ion,
+                Percent_PSMs_Missing_NTermReporterIon = Source.Percent_PSMs_Missing_NTermReporterIon,
+                Percent_PSMs_Missing_ReporterIon = Source.Percent_PSMs_Missing_ReporterIon,
                 Last_Affected = GetDate()
-				
-	WHEN Not Matched THEN
-		INSERT (Job,
-		        MSGF_Threshold,
-		        FDR_Threshold,
-		        MSGF_Threshold_Is_EValue,
-		        Spectra_Searched,
-		        Total_PSMs,
-		        Unique_Peptides,
-		        Unique_Proteins,
-		        Total_PSMs_FDR_Filter,
+
+    WHEN Not Matched THEN
+        INSERT (Job,
+                MSGF_Threshold,
+                FDR_Threshold,
+                MSGF_Threshold_Is_EValue,
+                Spectra_Searched,
+                Total_PSMs,
+                Unique_Peptides,
+                Unique_Proteins,
+                Total_PSMs_FDR_Filter,
                 Unique_Peptides_FDR_Filter,
                 Unique_Proteins_FDR_Filter,
                 Percent_MSn_Scans_NoPSM,
@@ -188,13 +205,16 @@ As
                 Tryptic_Peptides_FDR,
                 Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR,
-				Last_Affected 
-			   )
-		VALUES ( Source.Job,
-		         Source.MSGF_Threshold,
-		         Source.FDR_Threshold,
-		         Source.MSGF_Threshold_Is_EValue,
-		         Source.Spectra_Searched,
+                Dynamic_Reporter_Ion,
+                Percent_PSMs_Missing_NTermReporterIon,
+                Percent_PSMs_Missing_ReporterIon,
+                Last_Affected
+               )
+        VALUES ( Source.Job,
+                 Source.MSGF_Threshold,
+                 Source.FDR_Threshold,
+                 Source.MSGF_Threshold_Is_EValue,
+                 Source.Spectra_Searched,
                  Source.Total_PSMs_MSGF,
                  Source.Unique_Peptides_MSGF,
                  Source.Unique_Proteins_MSGF,
@@ -207,102 +227,104 @@ As
                  Source.Tryptic_Peptides_FDR,
                  Source.Keratin_Peptides_FDR,
                  Source.Trypsin_Peptides_FDR,
-				 GetDate()
-			   )
-	;
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error updating T_Analysis_Job_PSM_Stats'
-		goto Done
-	end	
-	
-	If @UniquePhosphopeptideCountFDR = 0
-	Begin
-		-----------------------------------------------
-		-- No phosphopeptide results for this job
-		-- Make sure T_Analysis_Job_PSM_Stats_Phospho does not have this job
-		-----------------------------------------------
-		--
-		DELETE FROM T_Analysis_Job_PSM_Stats_Phospho
-		WHERE Job = @Job
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-	End
-	Else
-	Begin
-		-----------------------------------------------
-		-- Add/Update T_Analysis_Job_PSM_Stats_Phospho using a MERGE statement
-		-----------------------------------------------
-		--
-		;
-		MERGE T_Analysis_Job_PSM_Stats_Phospho AS target
-		USING 
-			(SELECT @Job AS Job,
-					@UniquePhosphopeptideCountFDR AS Phosphopeptides,
-					@UniquePhosphopeptidesCTermK AS CTermK_Phosphopeptides,
-					@UniquePhosphopeptidesCTermR AS CTermR_Phosphopeptides,
-					@MissedCleavageRatioPhospho AS MissedCleavageRatio
-			) AS Source (Job, Phosphopeptides, CTermK_Phosphopeptides, CTermR_Phosphopeptides, MissedCleavageRatio)
-			ON (target.Job = Source.Job)
-		
-		WHEN Matched 
-			THEN UPDATE 
-				Set Phosphopeptides = Source.Phosphopeptides,
-					CTermK_Phosphopeptides = Source.CTermK_Phosphopeptides,
-					CTermR_Phosphopeptides = Source.CTermR_Phosphopeptides,
-					MissedCleavageRatio = Source.MissedCleavageRatio,				 
-					Last_Affected = GetDate()
-					
-		WHEN Not Matched THEN
-			INSERT (Job,
-					Phosphopeptides, 
-					CTermK_Phosphopeptides, 
-					CTermR_Phosphopeptides,
-					MissedCleavageRatio,
-					Last_Affected 
-				)
-			VALUES ( Source.Job,
-					Source.Phosphopeptides,
-					Source.CTermK_Phosphopeptides,
-					Source.CTermR_Phosphopeptides,
-					Source.MissedCleavageRatio,
-					GetDate()
-				)
-		;
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error updating T_Analysis_Job_PSM_Stats'
-			goto Done
-		end	
-	End
+                 Source.Dynamic_Reporter_Ion,
+                 Source.Percent_PSMs_Missing_NTermReporterIon,
+                 Source.Percent_PSMs_Missing_ReporterIon,
+                 GetDate()
+               )
+    ;
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error updating T_Analysis_Job_PSM_Stats'
+        goto Done
+    end
 
-		
-	Set @message = 'PSM stats storage successful'
-	
+    If @uniquePhosphopeptideCountFDR = 0
+    Begin
+        -----------------------------------------------
+        -- No phosphopeptide results for this job
+        -- Make sure T_Analysis_Job_PSM_Stats_Phospho does not have this job
+        -----------------------------------------------
+        --
+        DELETE FROM T_Analysis_Job_PSM_Stats_Phospho
+        WHERE Job = @job
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+    End
+    Else
+    Begin
+        -----------------------------------------------
+        -- Add/Update T_Analysis_Job_PSM_Stats_Phospho using a MERGE statement
+        -----------------------------------------------
+        --
+        ;
+        MERGE T_Analysis_Job_PSM_Stats_Phospho AS target
+        USING
+            (SELECT @job AS Job,
+                    @uniquePhosphopeptideCountFDR AS Phosphopeptides,
+                    @uniquePhosphopeptidesCTermK AS CTermK_Phosphopeptides,
+                    @uniquePhosphopeptidesCTermR AS CTermR_Phosphopeptides,
+                    @missedCleavageRatioPhospho AS MissedCleavageRatio
+            ) AS Source (Job, Phosphopeptides, CTermK_Phosphopeptides, CTermR_Phosphopeptides, MissedCleavageRatio)
+            ON (target.Job = Source.Job)
+
+        WHEN Matched
+            THEN UPDATE
+                Set Phosphopeptides = Source.Phosphopeptides,
+                    CTermK_Phosphopeptides = Source.CTermK_Phosphopeptides,
+                    CTermR_Phosphopeptides = Source.CTermR_Phosphopeptides,
+                    MissedCleavageRatio = Source.MissedCleavageRatio,
+                    Last_Affected = GetDate()
+
+        WHEN Not Matched THEN
+            INSERT (Job,
+                    Phosphopeptides,
+                    CTermK_Phosphopeptides,
+                    CTermR_Phosphopeptides,
+                    MissedCleavageRatio,
+                    Last_Affected
+                )
+            VALUES ( Source.Job,
+                    Source.Phosphopeptides,
+                    Source.CTermK_Phosphopeptides,
+                    Source.CTermR_Phosphopeptides,
+                    Source.MissedCleavageRatio,
+                    GetDate()
+                )
+        ;
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            set @message = 'Error updating T_Analysis_Job_PSM_Stats'
+            goto Done
+        end
+    End
+
+    Set @message = 'PSM stats storage successful'
+
 Done:
 
-	If @myError <> 0
-	Begin
-		If @message = ''
-			Set @message = 'Error in StoreJobPSMStats'
-		
-		Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-		
-		If @InfoOnly = 0
-			Exec PostLogEntry 'Error', @message, 'StoreJobPSMStats'
-	End
-	
-	If Len(@message) > 0 AND @InfoOnly <> 0
-		Print @message
+    If @myError <> 0
+    Begin
+        If @message = ''
+            Set @message = 'Error in StoreJobPSMStats'
+
+        Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
+
+        If @infoOnly = 0
+            Exec PostLogEntry 'Error', @message, 'StoreJobPSMStats'
+    End
+
+    If Len(@message) > 0 AND @infoOnly <> 0
+        Print @message
 
 
-	Return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreJobPSMStats] TO [DDL_Viewer] AS [dbo]
