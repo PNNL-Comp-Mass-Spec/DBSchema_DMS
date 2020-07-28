@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 /****************************************************
 **
-**	Desc:   Populate a temporary table with metadata for the given dataset
+**  Desc:   Populate a temporary table with metadata for the given dataset
 **
 **  The calling procedure must create this temporary table:
 **
@@ -26,6 +25,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **          06/12/2018 mem - Now including Experiment_Labelling, Reporter_MZ_Min, and Reporter_MZ_Max
 **          05/04/2020 mem - Add fields LC_Cart_Name, LC_Cart_Config, and LC_Column
 **                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
+**          07/28/2020 mem - Add Dataset_ID
 **    
 *****************************************************/
 (
@@ -53,6 +53,7 @@ AS
     ---------------------------------------------------
 
     Declare @datasetCreated datetime
+    Declare @datasetId int
     Declare @instrumentName varchar(50)
     Declare @datasetComment varchar(500)
     Declare @datasetSecSep varchar(64)
@@ -80,6 +81,7 @@ AS
 
     --
     SELECT @datasetCreated = DS_created,
+           @datasetId = Dataset_ID,
            @instrumentName = IN_name,
            @datasetComment = DS_comment,
            @datasetSecSep = DS_sec_sep,           
@@ -113,7 +115,9 @@ AS
         Return 20000
     End
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_created', CONVERT(VARCHAR(32), @datasetCreated, 120))
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_created', CONVERT(varchar(32), @datasetCreated, 120))
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_ID', CAST(@datasetId AS varchar(12)))
+
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Instrument_name', @instrumentName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_comment', @datasetComment)
 
