@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Enzymes] ******/
-/****** RowCount: 18 ******/
+/****** RowCount: 19 ******/
 SET IDENTITY_INSERT [T_Enzymes] ON
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (0,'na','Not a real value','na','na','na','na','na',0,null,'',null)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (1,'No_Enzyme','no digestive enzyme was used','na','na','na','na','na',0,0,'HumanContam',null)
@@ -19,4 +19,5 @@ INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, 
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (23,'LysN','LysN metalloendopeptidase','K-','na','K-','na','Standard',0,19,'HumanContam',null)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (24,'Pepsin','Pepsin','FLWY','na','FLWY','na','Standard',1,null,'HumanContam','Promega Pepsin, Cleaves at the C-Terminus of Phe, Leu, Tyr, Trp; https://www.promega.com/products/mass-spectrometry/proteases-and-surfactants/pepsin/?catNum=V1959')
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (25,'Elastase','Elastase','AVSGLI','na','AVSGLI','na','Standard',1,null,'HumanContam','Promega Elastase, Cleaves at C-Terminus of Ala, Val, Ser, Gly, Leu and Ile; https://www.promega.com/products/mass-spectrometry/proteases-and-surfactants/elastase/?catNum=V1891')
+INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (26,'LysC_plus_Trypsin','LysC and Trypsin; cleave after K or R if not followed by P, or cleave after K','KR-','na','KR-','na','Standard',1,null,'Tryp_Pig_Bov',null)
 SET IDENTITY_INSERT [T_Enzymes] OFF
