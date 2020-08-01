@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Cached_Dataset_Links](
 	[QC_Link] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[QC_2D] [varchar](385) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[QC_Metric_Stats] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[MASIC_Directory_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[UpdateRequired] [tinyint] NOT NULL,
 	[Last_Affected] [datetime] NOT NULL,
  CONSTRAINT [PK_Cached_Dataset_Links] PRIMARY KEY CLUSTERED 
