@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 **  Auth:   mem
 **  Date:   07/25/2017 mem - Initial version
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          07/31/2020 mem - Update MASIC_Directory_Name
 **    
 *****************************************************/
 (
@@ -27,10 +28,8 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 As
     Set nocount on
     
-    Declare @myRowCount int
-    Declare @myError int
-    Set @myRowCount = 0
-    Set @myError = 0
+    Declare @myRowCount int = 0
+    Declare @myError int = 0
     
     Declare @MinimumDatasetID int = 0
     
@@ -111,9 +110,120 @@ As
                                             0, '; ', 512)
                                             
     End
-    
-    IF @ProcessingMode < 3
-    Begin
+
+    If @ProcessingMode < 1
+    Begin -- <a1>
+        ------------------------------------------------
+        -- Iterate over datasets with UpdateRequired > 0  (since there should not be many)
+        -- For each, make sure they have an up-to-date MASIC_Directory_Name 
+        -- 
+        -- This query should be kept in sync with the bulk update query below
+        ------------------------------------------------
+
+        Declare @continue tinyint = 1
+        Declare @datasetID int = 0
+        Declare @masicDirectoryName varchar(128)
+
+        While @continue > 0
+        Begin -- <b1>
+            SELECT TOP 1 @datasetID = Dataset_ID
+            FROM T_Cached_Dataset_Links
+            WHERE UpdateRequired > 0 AND Dataset_ID > @datasetID
+            ORDER BY Dataset_ID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+            Begin
+                Set @continue = 0
+            End
+            Else
+            Begin -- <c1>
+                Set @masicDirectoryName = ''
+
+                SELECT @masicDirectoryName = MasicDirectoryName
+                FROM ( SELECT OrderQ.DatasetID,
+                              OrderQ.Job,
+                              OrderQ.MasicDirectoryName,
+                              Row_Number() OVER ( PARTITION BY OrderQ.DatasetID 
+                                                  ORDER BY OrderQ.JobStateRank ASC, OrderQ.Job DESC ) AS JobRank
+                       FROM ( SELECT J.AJ_DatasetID AS DatasetID,
+                                     J.AJ_jobID AS Job,
+                                     J.AJ_resultsFolderName AS MasicDirectoryName,
+                                     CASE
+                                         WHEN J.AJ_StateID = 4 THEN 1
+                                         WHEN J.AJ_StateID = 14 THEN 2
+                                         ELSE 3
+                                     END AS JobStateRank
+                              FROM T_Analysis_Job J
+                                   INNER JOIN T_Analysis_Tool T
+                                     ON J.AJ_analysisToolID = T.AJT_toolID
+                              WHERE J.AJ_datasetID = @datasetID AND
+                                    T.AJT_toolName LIKE 'MASIC%' AND
+                                    NOT J.AJ_resultsFolderName IS NULL 
+                            ) OrderQ 
+                     ) RankQ
+                WHERE JobRank = 1
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If @myRowCount > 0 And LEN(@masicDirectoryName) > 0
+                Begin
+                    UPDATE T_Cached_Dataset_Links
+                    SET MASIC_Directory_Name = @masicDirectoryName
+                    WHERE Dataset_ID = @datasetID
+                End
+
+            End -- </c1>
+        End -- </b1>
+
+    End -- </a1>
+    Else
+    Begin -- <a2>
+        ------------------------------------------------
+        -- Make sure that entries with UpdateRequired > 0 have an up-to-date MASIC_Directory_Name
+        -- This is a bulk update query, which can take some time to run
+        -- It should be kept in sync with the above query that includes Row_Number()
+        ------------------------------------------------
+        --
+        UPDATE T_Cached_Dataset_Links
+        SET MASIC_Directory_Name = JobDirectoryQ.MasicDirectoryName
+        FROM T_Cached_Dataset_Links Target
+             INNER JOIN ( SELECT DatasetID,
+                                 MasicDirectoryName
+                          FROM ( SELECT OrderQ.DatasetID,
+                                        OrderQ.Job,
+                                        OrderQ.MasicDirectoryName,
+                                        Row_Number() OVER ( PARTITION BY OrderQ.DatasetID 
+                                                            ORDER BY OrderQ.JobStateRank ASC, OrderQ.Job DESC ) AS JobRank
+                                 FROM ( SELECT J.AJ_DatasetID AS DatasetID,
+                                               J.AJ_jobID AS Job,
+                                               J.AJ_resultsFolderName AS MasicDirectoryName,
+                                               CASE
+                                                   WHEN J.AJ_StateID = 4 THEN 1
+                                                   WHEN J.AJ_StateID = 14 THEN 2
+                                                   ELSE 3
+                                               END AS JobStateRank
+                                        FROM T_Analysis_Job J
+                                             INNER JOIN T_Analysis_Tool T
+                                               ON J.AJ_analysisToolID = T.AJT_toolID
+                                        WHERE T.AJT_toolName LIKE 'MASIC%' AND
+                                              NOT J.AJ_resultsFolderName IS NULL 
+                                      ) OrderQ 
+                                ) RankQ
+                          WHERE JobRank = 1 
+                       ) JobDirectoryQ
+               ON Target.Dataset_ID = JobDirectoryQ.DatasetID
+        WHERE (Target.UpdateRequired > 0 OR
+               @ProcessingMode >= 3) AND
+              ISNULL(Target.MASIC_Directory_Name, '') <> JobDirectoryQ.MasicDirectoryName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    END -- </a2>
+
+    If @ProcessingMode < 3
+    Begin    
         ------------------------------------------------
         -- Update entries with UpdateRequired > 0
         -- Note that this query runs 2x faster than the merge statement below
@@ -254,6 +364,7 @@ As
         ;
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
+
     End
     
     If @myRowCount > 0
