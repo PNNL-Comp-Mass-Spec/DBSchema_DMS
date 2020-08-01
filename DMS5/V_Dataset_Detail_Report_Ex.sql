@@ -35,6 +35,10 @@ SELECT DS.Dataset_Num AS Dataset,
        DFP.Dataset_URL AS [Data Folder Link],
        DL.QC_Link AS [QC Link],
        DL.QC_2D AS [QC 2D],
+       CASE
+         WHEN IsNull(DL.MASIC_Directory_Name, '') = '' THEN ''
+         ELSE DFP.Dataset_URL + MASIC_Directory_Name
+       END AS [MASIC QC Link],
        DL.QC_Metric_Stats AS [QC Metric Stats],
        ISNULL(JobCountQ.Jobs, 0) AS Jobs,
        ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
@@ -119,7 +123,7 @@ FROM S_V_BTO_ID_to_Name AS BTO
                             INNER JOIN T_Analysis_Job AS J
                               ON PSMs.Job = J.AJ_jobID
                        GROUP BY J.AJ_datasetID ) AS PSMJobsQ
-       ON PSMJobsQ.DatasetID = DS.Dataset_ID
+       ON PSMJobsQ.DatasetID = DS.Dataset_ID    
      LEFT OUTER JOIN T_Dataset_Archive AS DA
                      INNER JOIN T_MyEMSLState
                        ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState
@@ -137,6 +141,7 @@ FROM S_V_BTO_ID_to_Name AS BTO
      LEFT OUTER JOIN T_Dataset_Files DF
        ON DF.Dataset_ID = DS.Dataset_ID AND
           DF.File_Size_Rank = 1
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]
