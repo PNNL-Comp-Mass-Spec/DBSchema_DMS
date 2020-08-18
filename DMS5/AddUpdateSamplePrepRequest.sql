@@ -82,6 +82,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          11/30/2018 mem - Make @reason an input/output parameter
 **          01/23/2019 mem - Switch @reason back to a normal input parameter since view V_Sample_Prep_Request_Entry now appends the __NoCopy__ flag to several fields
 **          01/13/2020 mem - Require @requestedPersonnel to include a sample prep staff member (no longer allow 'na' or 'any')
+**          08/12/2020 mem - Check for ValidateEUSUsage returning a message, even if it returns 0
 **
 *****************************************************/
 (
@@ -118,7 +119,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @reasonForHighPriority varchar(1024),
     @tissue varchar(128) = '',
     @mode varchar(12) = 'add',                  -- 'add' or 'update'
-    @message varchar(512) output,
+    @message varchar(1024) output,
     @callingUser varchar(128) = ''
 )
 As
@@ -538,6 +539,9 @@ As
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
+    If LEN(IsNull(@msg, '')) > 0
+        Set @message = @msg
+
     If Len(IsNull(@eusUsersList, '')) > 0
     Begin
         Set @eusUserID = Try_Cast(@eusUsersList As int)
@@ -561,11 +565,11 @@ As
         RAISERROR ('ValidateWP: %s', 11, 1, @msg)
 
     If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')       
-        Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 512)
+        Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 1024)
     Else
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 512)
+            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 1024)
     End
 
     -- Make sure the Work Package is capitalized properly

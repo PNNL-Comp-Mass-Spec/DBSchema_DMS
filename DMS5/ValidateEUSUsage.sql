@@ -31,6 +31,8 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          04/10/2017 mem - Auto-change USER_UNKNOWN to CAP_DEV
 **          07/19/2019 mem - Custom error message if @eusUsageType is blank
 **          11/06/2019 mem - Auto-change @eusProposalID if a value is defined for Proposal_ID_AutoSupersede
+**          08/12/2020 mem - Add support for a series of superseded proposals
+**          08/14/2020 mem - Add safety check in case of a circular references (proposal 1 superseded by proposal 2, which is superseded by proposal 1)
 **
 *****************************************************/
 (
@@ -38,7 +40,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
     @eusProposalID varchar(10) output,
     @eusUsersList varchar(1024) output,         -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
     @eusUsageTypeID int output,
-    @message varchar(512) output,
+    @message varchar(1024) output,
     @autoPopulateUserListIfBlank tinyint = 0    -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
 )
 As
@@ -51,9 +53,13 @@ As
     Declare @UserCount int
     Declare @PersonID int
     Declare @NewUserList varchar(1024)
-    Declare @autoSupersedeProposalID varchar(10) = ''
+    Declare @autoSupersedeProposalID varchar(10)
+    Declare @checkSuperseded tinyint
+    Declare @iterations tinyint
 
-    set @message = ''
+    Declare @logMessage varchar(255)
+
+    Set @message = ''
     Set @eusUsersList = IsNull(@eusUsersList, '')
     Set @autoPopulateUserListIfBlank = IsNull(@autoPopulateUserListIfBlank, 0)
 
@@ -186,24 +192,70 @@ As
             return 51075
         End
 
-        SELECT @autoSupersedeProposalID = Proposal_ID_AutoSupersede
-        FROM T_EUS_Proposals 
-        WHERE Proposal_ID = @eusProposalID
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
+        ---------------------------------------------------
+        -- Check for a superseded proposal
+        ---------------------------------------------------
 
-        If IsNull(@autoSupersedeProposalID, '') <> ''
-        Begin
-            IF EXISTS (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @autoSupersedeProposalID)
+        Set @checkSuperseded = 1
+        Set @iterations = 0
+
+        While @checkSuperseded = 1 AND @iterations < 30
+        Begin -- <b>
+            Set @autoSupersedeProposalID = ''
+            Set @iterations = @iterations + 1
+
+            SELECT @autoSupersedeProposalID = Proposal_ID_AutoSupersede
+            FROM T_EUS_Proposals 
+            WHERE Proposal_ID = @eusProposalID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If IsNull(@autoSupersedeProposalID, '') = ''            
             Begin
-                Set @eusProposalID = @autoSupersedeProposalID
+                Set @checkSuperseded = 0
             End
-        End
+            Begin -- <c>
+                If @eusProposalID = @autoSupersedeProposalID
+                Begin
+                    Set @logMessage = 'Proposal ' + @eusProposalID + ' in T_EUS_Proposals ' + 
+                                      'has Proposal_ID_AutoSupersede set to itself; this is invalid'
+
+                    exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                    Set @checkSuperseded = 0
+                End
+                Else
+                Begin -- <d>
+                    IF Not Exists (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @autoSupersedeProposalID)
+                    Begin
+                        Set @logMessage = 'Proposal ' + @eusProposalID + ' in T_EUS_Proposals ' + 
+                                          'has Proposal_ID_AutoSupersede set to ' + @autoSupersedeProposalID + ', ' + 
+                                          'but that proposal does not exist in T_EUS_Proposals'
+
+                        exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+
+                        Set @checkSuperseded = 0
+                    End
+                    Else
+                    Begin                        
+                        Set @message = dbo.AppendToText(
+                                @message, 
+                                'Proposal ' + @eusProposalID + ' is superseded by ' + @autoSupersedeProposalID, 
+                                0, '; ', 1024)
+
+                        Set @eusProposalID = @autoSupersedeProposalID
+                    End
+                End -- </d>
+            End -- </c>
+        End -- </b>
+        
+        ---------------------------------------------------
+        -- Check for a blank user list
+        ---------------------------------------------------
 
         If @eusUsersList = ''
         Begin
             -- Blank user list
-            --
+            --           
             If @autoPopulateUserListIfBlank = 0
             Begin
                 set @message = 'Associated users must be selected for usage type "' + @eusUsageType + '"'
@@ -223,17 +275,20 @@ As
             If IsNull(@PersonID, 0) > 0
             Begin
                 Set @eusUsersList = Convert(varchar(12), @PersonID)
-                Set @message = 'Warning: EUS User list was empty; auto-selected user "' + @eusUsersList + '"'
+                Set @message = dbo.AppendToText(
+                                @message, 
+                                'Warning: EUS User list was empty; auto-selected user "' + @eusUsersList + '"',
+                                0, '; ', 1024)
             End
         End
  
+        ---------------------------------------------------
+        -- Verify that all users in list have access to
+        -- given proposal
+        ---------------------------------------------------
         
         If @eusUsersList <> ''
-        Begin -- <b>
-            ---------------------------------------------------
-            -- Verify that all users in list have access to
-            -- given proposal
-            ---------------------------------------------------
+        Begin -- <e>
             
             If @eusUsersList Like '%[A-Z]%' And @eusUsersList Like '%([0-9]%' And @eusUsersList Like '%[0-9])%'
             Begin 
@@ -317,7 +372,7 @@ As
             End
 
             If @n <> 0
-            Begin -- <c>
+            Begin -- <f>
             
                 -- Invalid users were found
                 --
@@ -345,7 +400,7 @@ As
                         WHERE Proposal_ID = @eusProposalID
                     )
 
-                set @UserCount = 0            
+                Set @UserCount = 0            
                 SELECT @UserCount = COUNT(*)
                 FROM @tmpUsers
             
@@ -379,11 +434,13 @@ As
                 End
                 
                 Set @eusUsersList = IsNull(@NewUserList, '')
-                Set @message = 'Warning: Removed users from EUS User list that are not associated with proposal "' + @eusProposalID + '"'
+                Set @message = dbo.AppendToText(
+                        @message, 
+                        'Warning: Removed users from EUS User list that are not associated with proposal "' + @eusProposalID + '"', 
+                        0, '; ', 1024)
                                 
-            End -- </c>
-            
-        End -- </b>
+            End -- </f>           
+        End -- </e>
     End -- </a>
 
     return 0
