@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessingStats]
 **          04/18/2012 mem - Now preventing addition of @JobCommentAddnl to the comment field if it already contains @JobCommentAddnl
 **          06/15/2015 mem - Use function AppendToText to concatenate @JobCommentAddnl to AJ_Comment
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          08/03/2020 mem - Update T_Cached_Dataset_Links.MASIC_Directory_Name when a MASIC job finishes successfully
 **    
 *****************************************************/
 (
@@ -40,21 +41,20 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessingStats]
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
     set @message = ''
 
-    Declare @DatasetName varchar(128)
-    Set @DatasetName = ''
+    Declare @datasetID int = 0
+    Declare @datasetName varchar(128) = ''
+    Declare @toolName varchar(64) = ''
     
-    Declare @UpdateCodeExpected int
+    Declare @updateCodeExpected int
     
     Set @JobCommentAddnl = LTrim(RTrim(IsNull(@JobCommentAddnl, '')))
     
-       ---------------------------------------------------
+    ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
     --
@@ -74,11 +74,11 @@ As
     
     -- Confirm that @UpdateCode is valid for this job
     If @Job % 2 = 0
-        Set @UpdateCodeExpected = (@Job % 220) + 14
+        Set @updateCodeExpected = (@Job % 220) + 14
     Else
-        Set @UpdateCodeExpected = (@Job % 125) + 11
+        Set @updateCodeExpected = (@Job % 125) + 11
     
-    If IsNull(@UpdateCode, 0) <> @UpdateCodeExpected
+    If IsNull(@UpdateCode, 0) <> @updateCodeExpected
     Begin
         Set @message = 'Invalid Update Code'
         Set @myError = 50002
@@ -169,23 +169,43 @@ As
     End
     
     -------------------------------------------------------------------
-    -- If Job is Complete or No Export, then schedule an archive update
+    -- If Job is Complete or No Export, do some additional tasks
     -------------------------------------------------------------------
-    If @NewDMSJobState in (4, 14)
-    Begin                
-        SELECT @DatasetName = DS.Dataset_Num
-        FROM dbo.T_Analysis_Job AJ
+    --
+    If @NewDMSJobState in (4, 14) AND @infoOnly = 0
+    Begin
+        -- Get the dataset ID, dataset name, and tool name
+        --
+        SELECT @datasetID   = DS.Dataset_ID,
+               @datasetName = DS.Dataset_Num,
+               @toolName    = T.AJT_toolName
+        FROM dbo.T_Analysis_Job J
              INNER JOIN dbo.T_Dataset DS
-               ON AJ.AJ_datasetID = DS.Dataset_ID
-        WHERE (AJ.AJ_jobID = @job)
+               ON J.AJ_datasetID = DS.Dataset_ID 
+             INNER JOIN T_Analysis_Tool T 
+               ON J.AJ_analysisToolID = T.AJT_toolID
+        WHERE J.AJ_jobID = @job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         
         If @myRowCount > 0
+        Begin
+            -- Schedule an archive update
             Exec SetArchiveUpdateRequired @DatasetName, @Message output
+            
+            If @toolName LIKE 'Masic%'
+            Begin
+                -- Update the cached MASIC Directory Name
+                UPDATE T_Cached_Dataset_Links
+                Set MASIC_Directory_Name= @ResultsFolderName
+                WHERE Dataset_ID = @datasetID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+            End
+        End        
     End
 
-       ---------------------------------------------------
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
