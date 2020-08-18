@@ -15,14 +15,15 @@ CREATE Procedure [dbo].[StoreReporterIonObsStats]
 **    Date: 07/30/2020 mem - Initial version
 **          07/31/2020 mem - Use "WITH EXECUTE AS OWNER" to allow for inserting data into T_Reporter_Ion_Observation_Rates using sp_executesql
 **                         - Without this, svc-dms reports "INSERT permission was denied"
+**          08/12/2020 mem - Replace @observationStatsAll with @medianIntensitiesTopNPct
 **
 *****************************************************/
 (
     @job int,
     @reporterIon varchar(64),                   -- Reporter ion name, corresponding to T_Sample_Labelling_Reporter_Ions
     @topNPct int,
-    @observationStatsAll varchar(4000),         -- Comma separated list of observation stats, by channel
     @observationStatsTopNPct varchar(4000),     -- Comma separated list of observation stats, by channel
+    @medianIntensitiesTopNPct varchar(4000),    -- Comma separated list of median intensity values, by channel
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
@@ -46,7 +47,7 @@ AS
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     Set @topNPct = ISNULL(@topNPct, 0)
-    Set @observationStatsAll = ISNULL(@observationStatsAll, '')
+    Set @medianIntensitiesTopNPct = ISNULL(@medianIntensitiesTopNPct, '')
     Set @observationStatsTopNPct = ISNULL(@observationStatsTopNPct, '')
 
     ---------------------------------------------------
@@ -73,19 +74,13 @@ AS
     IF NOT EXISTS (SELECT * FROM T_Sample_Labelling_Reporter_Ions WHERE Label = @reporterIon)
     BEGIN
         Set @message = 'Unrecognized reporter ion name: ' + @reporterIon + '; for standard reporter ion names, see https://dms2.pnl.gov/sample_label_reporter_ions/report'
+        exec PostLogEntry 'Error', @message, 'StoreReporterIonObsStats', 1
         return 50002
     END
 
     -----------------------------------------------
-    -- Populate a temporary table with the data in @observationStatsAll and @observationStatsTopNPct
+    -- Populate temporary tables with the data in @observationStatsTopNPct and @medianIntensitiesTopNPct
     -----------------------------------------------
-    
-    CREATE TABLE #TmpRepIonObsStatsAll
-    (
-        Channel int Not Null,
-		Observation_Rate varchar(2048),
-        Observation_Rate_Value float Null,
-    )
     
     CREATE TABLE #TmpRepIonObsStatsTopNPct
     (
@@ -93,14 +88,25 @@ AS
 		Observation_Rate varchar(2048),
         Observation_Rate_Value float Null,
     )
-
-    INSERT INTO #TmpRepIonObsStatsAll (Channel, Observation_Rate)
-    SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@observationStatsAll, ',', 0)
-
+    
+    CREATE TABLE #TmpRepIonIntensities
+    (
+        Channel int Not Null,
+		Median_Intensity varchar(2048),
+        Median_Intensity_Value int Null,
+    )
+    
     INSERT INTO #TmpRepIonObsStatsTopNPct (Channel, Observation_Rate)
     SELECT EntryID, Value
     FROM dbo.udfParseDelimitedListOrdered(@observationStatsTopNPct, ',', 0)
+    
+    INSERT INTO #TmpRepIonIntensities (Channel, Median_Intensity)
+    SELECT EntryID, Value
+    FROM dbo.udfParseDelimitedListOrdered(@medianIntensitiesTopNPct, ',', 0)
+
+    -----------------------------------------------
+    -- Construct the SQL insert statements
+    -----------------------------------------------
 
     Set @sqlInsert = 'Insert Into T_Reporter_Ion_Observation_Rates (Job,Dataset_ID,Reporter_Ion,TopNPct'
 
@@ -113,57 +119,51 @@ AS
     Declare @channel int = 1
     Declare @channelName varchar(16)
 
-    Declare @rowCountAll int = 0
-    Declare @rowCountTopNPct int = 0
+    Declare @rowCountObsRates int = 0
+    Declare @rowCountIntensities int = 0
     Declare @continue tinyint = 1
 
-    Declare @observationRateAllText varchar(2048)
     Declare @observationRateTopNPctText varchar(2048)
+    Declare @medianIntensityText varchar(2048)
 
-    Declare @observationRateAll float
     Declare @observationRateTopNPct float
+    Declare @medianIntensity int
 
     While @continue > 0
     Begin
-        SELECT TOP 1 @observationRateAllText = Observation_Rate
-        FROM #TmpRepIonObsStatsAll
-        WHERE Channel = @channel
-        --
-        SELECT @myError = @@error, @rowCountAll = @@rowcount
-
         SELECT TOP 1 @observationRateTopNPctText = Observation_Rate
         FROM #TmpRepIonObsStatsTopNPct
         WHERE Channel = @channel
         --
-        SELECT @myError = @@error, @rowCountTopNPct = @@rowcount
+        SELECT @myError = @@error, @rowCountObsRates = @@rowcount
 
-        If @rowCountAll = 0 And @rowCountTopNPct = 0
+        SELECT TOP 1 @medianIntensityText = Median_Intensity
+        FROM #TmpRepIonIntensities
+        WHERE Channel = @channel
+        --
+        SELECT @myError = @@error, @rowCountIntensities = @@rowcount
+
+        If @rowCountObsRates = 0 AND @rowCountIntensities = 0
         Begin
             Set @continue = 0
         End
         Else
         Begin
-            If @rowCountAll = 0
+            If @rowCountObsRates = 0
             Begin
-                Set @message = '@observationStatsTopNPct has more values than @observationStatsAll; aborting'
-                return 50004
-            End
-
-            If @rowCountTopNPct = 0
-            Begin
-                Set @message = '@observationStatsAll has more values than @observationStatsTopNPct; aborting'
+                Set @message = '@medianIntensitiesTopNPct has more values than @observationStatsTopNPct; aborting'
                 return 50003
             End
 
-            -- Verify that observation rates are numeric
-            Set @observationRateAll = try_Cast(@observationRateAllText as float)
-            Set @observationRateTopNPct = try_Cast(@observationRateTopNPctText as float)
-
-            If @observationRateAll is Null
+            If @rowCountIntensities = 0
             Begin
-                Set @message = 'Observation rate ' + @observationRateAllText + ' is not numeric (#TmpRepIonObsStatsAll); aborting'
-                return 50006
+                Set @message = '@observationStatsTopNPct has more values than @medianIntensitiesTopNPct; aborting'
+                return 50004
             End
+
+            -- Verify that observation rates are numeric
+            Set @observationRateTopNPct = try_Cast(@observationRateTopNPctText as float)
+            Set @medianIntensity = try_Cast(@medianIntensityText as int)
 
             If @observationRateTopNPct is Null
             Begin
@@ -171,30 +171,35 @@ AS
                 return 50005
             End
 
+            If @medianIntensity is Null
+            Begin
+                Set @message = 'Intensity value ' + @medianIntensityText + ' is not an integer (#TmpRepIonIntensities); aborting'
+                return 50006
+            End
             -- Append the channel column names to @sqlInsert, for example:
-            -- , Channel3, Channel3_All
+            -- , Channel3, Channel3_Median_Intensity
             --
             Set @channelName = 'Channel' + Cast(@channel as varchar(9))
-            Set @sqlInsert = @sqlInsert + ', ' + @channelName + '_All' + ', ' + @channelName
+            Set @sqlInsert = @sqlInsert +  ', ' + @channelName + ', ' + @channelName + '_Median_Intensity'
 
-            -- Append the observation rates
+            -- Append the observation rate and median intensity values
             --
             If @channel > 1
             Begin
                 Set @sqlValues = @sqlValues + ', '
             End
 
-            Set @sqlValues = @sqlValues + @observationRateAllText + ', ' + @observationRateTopNPctText
+            Set @sqlValues = @sqlValues + @observationRateTopNPctText + ', ' + @medianIntensityText
 
             -- Store the values (only required if @infoOnly is nonzero)
             If @infoOnly > 0
             Begin
-                UPDATE #TmpRepIonObsStatsAll
-                SET Observation_Rate_Value = @observationRateAll
-                WHERE Channel = @channel
-
                 UPDATE #TmpRepIonObsStatsTopNPct
                 SET Observation_Rate_Value = @observationRateTopNPct
+                WHERE Channel = @channel
+
+                UPDATE #TmpRepIonIntensities
+                SET Median_Intensity_Value = @medianIntensity
                 WHERE Channel = @channel
             End
         End
@@ -213,13 +218,13 @@ AS
 
         SELECT @job AS Job,
                @reporterIon AS Reporter_Ion,
-               TopNPct.Channel,
-               StatsAll.Observation_Rate_Value AS Observation_Rate_Value_All,
-               TopNPct.Observation_Rate_Value AS Observation_Rate_Value_TopNPct
-        FROM #TmpRepIonObsStatsTopNPct TopNPct
-             INNER JOIN #TmpRepIonObsStatsAll StatsAll
-               ON TopNPct.Channel = StatsAll.Channel
-        ORDER BY topNPct.Channel
+               ObsStats.Channel,
+               ObsStats.Observation_Rate_Value AS Observation_Rate_Value_TopNPct,
+               Intensities.Median_Intensity_Value AS Median_Intensity
+        FROM #TmpRepIonObsStatsTopNPct ObsStats
+             INNER JOIN #TmpRepIonIntensities Intensities
+               ON ObsStats.Channel = Intensities.Channel
+        ORDER BY ObsStats.Channel
 
         Print @sqlInsert
         Print @sqlValues
@@ -264,7 +269,6 @@ Done:
 
     If Len(@message) > 0 AND @infoOnly <> 0
         Print @message
-
 
     Return @myError
 

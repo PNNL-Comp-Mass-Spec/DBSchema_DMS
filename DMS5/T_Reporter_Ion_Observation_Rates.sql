@@ -40,11 +40,27 @@ CREATE TABLE [dbo].[T_Reporter_Ion_Observation_Rates](
 	[Channel14_All] [real] NULL,
 	[Channel15_All] [real] NULL,
 	[Channel16_All] [real] NULL,
+	[Channel1_Median_Intensity] [int] NULL,
+	[Channel2_Median_Intensity] [int] NULL,
+	[Channel3_Median_Intensity] [int] NULL,
+	[Channel4_Median_Intensity] [int] NULL,
+	[Channel5_Median_Intensity] [int] NULL,
+	[Channel6_Median_Intensity] [int] NULL,
+	[Channel7_Median_Intensity] [int] NULL,
+	[Channel8_Median_Intensity] [int] NULL,
+	[Channel9_Median_Intensity] [int] NULL,
+	[Channel10_Median_Intensity] [int] NULL,
+	[Channel11_Median_Intensity] [int] NULL,
+	[Channel12_Median_Intensity] [int] NULL,
+	[Channel13_Median_Intensity] [int] NULL,
+	[Channel14_Median_Intensity] [int] NULL,
+	[Channel15_Median_Intensity] [int] NULL,
+	[Channel16_Median_Intensity] [int] NULL,
 	[Entered] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Reporter_Ion_Observation_Rates] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
