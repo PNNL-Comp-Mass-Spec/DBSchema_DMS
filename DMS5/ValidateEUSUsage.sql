@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          11/06/2019 mem - Auto-change @eusProposalID if a value is defined for Proposal_ID_AutoSupersede
 **          08/12/2020 mem - Add support for a series of superseded proposals
 **          08/14/2020 mem - Add safety check in case of a circular references (proposal 1 superseded by proposal 2, which is superseded by proposal 1)
+**          08/18/2020 mem - Add missing Else keyword
 **
 *****************************************************/
 (
@@ -214,10 +215,11 @@ As
             Begin
                 Set @checkSuperseded = 0
             End
+            Else
             Begin -- <c>
                 If @eusProposalID = @autoSupersedeProposalID
                 Begin
-                    Set @logMessage = 'Proposal ' + @eusProposalID + ' in T_EUS_Proposals ' + 
+                    Set @logMessage = 'Proposal ' + Coalesce(@eusProposalID, '??') + ' in T_EUS_Proposals ' + 
                                       'has Proposal_ID_AutoSupersede set to itself; this is invalid'
 
                     exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
@@ -227,8 +229,8 @@ As
                 Begin -- <d>
                     IF Not Exists (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @autoSupersedeProposalID)
                     Begin
-                        Set @logMessage = 'Proposal ' + @eusProposalID + ' in T_EUS_Proposals ' + 
-                                          'has Proposal_ID_AutoSupersede set to ' + @autoSupersedeProposalID + ', ' + 
+                        Set @logMessage = 'Proposal ' + Coalesce(@eusProposalID, '??') + ' in T_EUS_Proposals ' + 
+                                          'has Proposal_ID_AutoSupersede set to ' + Coalesce(@autoSupersedeProposalID, '??') + ', ' + 
                                           'but that proposal does not exist in T_EUS_Proposals'
 
                         exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
