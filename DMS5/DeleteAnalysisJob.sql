@@ -27,6 +27,7 @@ CREATE Procedure [dbo].[DeleteAnalysisJob]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/27/2018 mem - Rename @previewMode to @infoonly
+**          08/18/2020 mem - Delete jobs from T_Reporter_Ion_Observation_Rates
 **
 *****************************************************/
 (
@@ -97,8 +98,18 @@ As
         Declare @transName varchar(32) = 'DeleteAnalysisJob'
         Begin transaction @transName    
 
+        
         -------------------------------------------------------    
-        -- Delete the analysis job
+        -- Delete the job from T_Reporter_Ion_Observation_Rates (if it exists)
+        -------------------------------------------------------
+        --
+        DELETE FROM T_Reporter_Ion_Observation_Rates
+        WHERE Job = @jobID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        -------------------------------------------------------    
+        -- Delete the job from T_Analysis_Job 
         -------------------------------------------------------
         --
         DELETE FROM T_Analysis_Job 
@@ -116,7 +127,7 @@ As
         Print 'Deleted analysis job ' + Cast(@jobID As varchar(12)) + ' from T_Analysis_Job in DMS5'
 
         -------------------------------------------------------
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         -------------------------------------------------------
         --
         If Len(@callingUser) > 0
