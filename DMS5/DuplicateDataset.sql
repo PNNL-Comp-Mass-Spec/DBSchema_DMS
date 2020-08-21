@@ -13,6 +13,8 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 **
 **  Auth:   mem
 **  Date:   12/12/2018 mem - Initial version
+**          08/19/2020 mem - Add @newOperatorPRN
+**                         - Add call to UpdateCachedDatasetInstruments
 **    
 *****************************************************/
 (
@@ -20,6 +22,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
     @newDataset varchar(128),                   -- New dataset name
     @newComment varchar(512) = '',              -- New dataset comment; use source dataset's comment if blank; use a blank comment if '.' or '<blank>' or '<empty>'
     @newCaptureSubfolder varchar(255) = '',     -- Capture subfolder name; use source dataset's capture subfolder if blank
+    @newOperatorPRN varchar(64) = '',           -- Operator username
     @datasetStateID int = 1,                    -- 1 for a new dataset, which will create a dataset capture job; 3=Complete; 4=Inactive; 13=Holding
     @infoOnly tinyint = 1,                      -- 0 to create the dataset, 1 to preview
     @message varchar(512) = '' output           -- Output message
@@ -27,10 +30,8 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 As
     Set nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @datasetID int = 0
     Declare @workPackage varchar(12) = 'none'            
@@ -56,6 +57,7 @@ As
     Set @newDataset = IsNull(@newDataset, '')
     Set @newComment = IsNull(@newComment, '')
     Set @newCaptureSubfolder = IsNull(@newCaptureSubfolder, '')
+    Set @newOperatorPRN = ISNULL(@newOperatorPRN, '')
     Set @datasetStateID = IsNull(@datasetStateID, 1)
     Set @infoOnly  = IsNull(@infoOnly, 1)
     
@@ -185,6 +187,43 @@ As
     End
 
     Set @eusUsersList = dbo.GetRequestedRunEUSUsersList(@sourceDatasetRequestID, 'I')
+
+    If @newOperatorPRN <> ''
+    Begin    
+        ---------------------------------------------------
+        -- Resolve user ID for operator PRN
+        ---------------------------------------------------
+
+        Declare @userID int
+        execute @userID = GetUserID @newOperatorPRN
+
+        If @userID = 0
+        Begin
+            -- Could not find entry in database for PRN @newOperatorPRN
+            -- Try to auto-resolve the name
+
+            Declare @matchCount int
+            Declare @newPRN varchar(64)
+
+            exec AutoResolveNameToPRN @newOperatorPRN, @matchCount output, @newPRN output, @userID output
+
+            If @MatchCount = 1
+            Begin
+                -- Single match found; update @operPRN
+                Set @operPRN = @newPRN
+            End
+            Else
+            Begin
+                Set @message = 'Could not find entry in database for operator PRN ' + @newOperatorPRN
+                Select @message as Error        
+                Goto Done
+            End
+        End
+        Else
+        Begin
+            Set @operPRN = @newOperatorPRN            
+        End
+    End
 
     If @infoOnly <> 0
     Begin
@@ -353,6 +392,9 @@ As
         End
 
         Commit transaction @transName
+
+        -- Update T_Cached_Dataset_Instruments
+        Exec dbo.UpdateCachedDatasetInstruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
         Select @newDataset As Dataset_New, @datasetID As Dataset_ID, @requestID As RequestedRun_ID, 'Duplicated dataset ' + @sourceDataset As Status
 
