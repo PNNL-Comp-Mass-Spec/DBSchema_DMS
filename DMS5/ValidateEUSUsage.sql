@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          08/12/2020 mem - Add support for a series of superseded proposals
 **          08/14/2020 mem - Add safety check in case of a circular references (proposal 1 superseded by proposal 2, which is superseded by proposal 1)
 **          08/18/2020 mem - Add missing Else keyword
+**          08/20/2020 mem - When a circular reference exists, choose the proposal with the highest numeric ID
 **
 *****************************************************/
 (
@@ -42,7 +43,8 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
     @eusUsersList varchar(1024) output,         -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
     @eusUsageTypeID int output,
     @message varchar(1024) output,
-    @autoPopulateUserListIfBlank tinyint = 0    -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @infoOnly tinyint = 0                       -- When 1, show debug info
 )
 As
     set nocount on
@@ -54,6 +56,9 @@ As
     Declare @UserCount int
     Declare @PersonID int
     Declare @NewUserList varchar(1024)
+
+    DECLARE @originalProposalID varchar(10)
+    Declare @numericID int
     Declare @autoSupersedeProposalID varchar(10)
     Declare @checkSuperseded tinyint
     Declare @iterations tinyint
@@ -63,6 +68,7 @@ As
     Set @message = ''
     Set @eusUsersList = IsNull(@eusUsersList, '')
     Set @autoPopulateUserListIfBlank = IsNull(@autoPopulateUserListIfBlank, 0)
+    Set @infoOnly = IsNull(@infoOnly, 0)
 
     ---------------------------------------------------
     -- Remove leading and trailing spaces, and check for nulls
@@ -184,10 +190,16 @@ As
         End
 
         ---------------------------------------------------
-        -- Verify EUS proposal ID
+        -- Verify EUS proposal ID and get the Numeric_ID value
         ---------------------------------------------------
 
-        If NOT EXISTS (SELECT * FROM T_EUS_Proposals WHERE Proposal_ID = @eusProposalID)
+        SELECT @numericID = Numeric_ID
+        FROM T_EUS_Proposals 
+        WHERE Proposal_ID = @eusProposalID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
         Begin
             set @message = 'Unknown EUS proposal ID: "' + @eusProposalID + '"'
             return 51075
@@ -196,7 +208,16 @@ As
         ---------------------------------------------------
         -- Check for a superseded proposal
         ---------------------------------------------------
+        --
+        -- Create a table to track superseded proposals in the case of a circular reference
+        -- E.g. two proposals with the same name, but different IDs (and likely different start or end dates)
+        CREATE TABLE #Tmp_Proposal_Stack (
+            Entry_ID int identity(1,1),
+            Proposal_ID varchar(24),
+            Numeric_ID int Not Null
+        )
 
+        Set @originalProposalID = @eusProposalID
         Set @checkSuperseded = 1
         Set @iterations = 0
 
@@ -222,7 +243,11 @@ As
                     Set @logMessage = 'Proposal ' + Coalesce(@eusProposalID, '??') + ' in T_EUS_Proposals ' + 
                                       'has Proposal_ID_AutoSupersede set to itself; this is invalid'
 
-                    exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                    If @infoOnly = 0
+                        exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                    Else
+                        Print @logMessage
+
                     Set @checkSuperseded = 0
                 End
                 Else
@@ -233,23 +258,72 @@ As
                                           'has Proposal_ID_AutoSupersede set to ' + Coalesce(@autoSupersedeProposalID, '??') + ', ' + 
                                           'but that proposal does not exist in T_EUS_Proposals'
 
-                        exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                        If @infoOnly = 0
+                            exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                        Else
+                            Print @logMessage
 
                         Set @checkSuperseded = 0
                     End
                     Else
-                    Begin                        
-                        Set @message = dbo.AppendToText(
-                                @message, 
-                                'Proposal ' + @eusProposalID + ' is superseded by ' + @autoSupersedeProposalID, 
-                                0, '; ', 1024)
+                    Begin
+                        If NOT EXISTS (SELECT * FROM #Tmp_Proposal_Stack)
+                        Begin
+                            INSERT INTO #Tmp_Proposal_Stack (Proposal_ID, Numeric_ID)
+                            Values (@eusProposalID, Coalesce(@numericID, 0))
+                        End
+                        
+                        SELECT @numericID = Numeric_ID
+                        FROM T_EUS_Proposals 
+                        WHERE Proposal_ID = @autoSupersedeProposalID
 
-                        Set @eusProposalID = @autoSupersedeProposalID
+                        If EXISTS (SELECT * FROM #Tmp_Proposal_Stack WHERE Proposal_ID = @autoSupersedeProposalID)
+                        Begin
+                            -- Circular reference
+                            If @infoOnly > 0
+                            Begin
+                                Print 'Circular reference found; choosing the one with the highest ID'
+                            END
+
+                            SELECT TOP 1 @eusProposalID = Proposal_ID
+                            FROM #Tmp_Proposal_Stack
+                            ORDER BY Numeric_ID Desc, Proposal_ID Desc
+
+                            If @originalProposalID = @eusProposalID
+                            Begin
+                                Set @message = ''
+                            End
+                            Else
+                            Begin
+                                Set @message = 'Proposal ' + @originalProposalID + ' is superseded by ' + @eusProposalID
+                            End
+
+                            Set @checkSuperseded = 0
+                        End
+                        Else
+                        Begin
+                            INSERT INTO #Tmp_Proposal_Stack (Proposal_ID, Numeric_ID)
+                            Values (@autoSupersedeProposalID, Coalesce(@numericID, 0))
+
+                            Set @message = dbo.AppendToText(
+                                    @message, 
+                                    'Proposal ' + @eusProposalID + ' is superseded by ' + @autoSupersedeProposalID, 
+                                    0, '; ', 1024)
+
+                            Set @eusProposalID = @autoSupersedeProposalID
+                        End
                     End
                 End -- </d>
             End -- </c>
         End -- </b>
         
+        If @infoOnly > 0 AND EXISTS (SELECT * from #Tmp_Proposal_Stack)
+        Begin
+            SELECT *
+            FROM #Tmp_Proposal_Stack
+            ORDER BY Entry_ID
+        End
+
         ---------------------------------------------------
         -- Check for a blank user list
         ---------------------------------------------------
