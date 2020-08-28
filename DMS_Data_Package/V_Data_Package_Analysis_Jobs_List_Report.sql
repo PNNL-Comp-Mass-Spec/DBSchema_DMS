@@ -27,6 +27,7 @@ SELECT DPJ.Data_Package_ID AS ID,
        AJL.[Job Request],
        AJL.[Results Folder],
        AJL.[Results Folder Path],
+       AJL.[Results URL],
        DPJ.[Item Added],
        AJL.Comment AS [Comment]
 FROM dbo.T_Data_Package_Analysis_Jobs AS DPJ

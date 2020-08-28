@@ -35,6 +35,10 @@ SELECT AJ.AJ_jobID AS Job,
        THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName 
        ELSE 'Purged'
        END AS [Results Folder Path],
+       CASE 
+           WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
+           ELSE DFP.Dataset_URL
+       END AS [Results URL],
        AJ.AJ_Last_Affected AS Last_Affected,
        DR.DRN_name AS Rating
 FROM T_Analysis_Job AJ
@@ -54,6 +58,8 @@ FROM T_Analysis_Job AJ
        ON E.EX_organism_ID = ExpOrg.Organism_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
+     LEFT OUTER JOIN T_Cached_Dataset_Folder_Paths DFP
+       ON DS.Dataset_ID = DFP.Dataset_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON BTO.Identifier = E.EX_Tissue_ID
 
