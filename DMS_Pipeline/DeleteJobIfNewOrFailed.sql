@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 **          09/01/2017 mem - Fix preview bug
 **          09/27/2018 mem - Rename @previewMode to @infoonly
 **          05/04/2020 mem - Add additional debug messages
+**          08/08/2020 mem - Customize message shown when @infoOnly = 0
 **
 *****************************************************/
 (
@@ -38,6 +39,7 @@ As
 
     Declare @jobState int = 0
     Declare @skipMessage varchar(64) = ''
+    Declare @jobText varchar(24)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -53,6 +55,8 @@ As
     Set @message = ''
     Set @infoonly = IsNull(@infoonly, 0)
     
+    Set @jobText = 'job ' + Coalesce(Cast(@job As varchar(12)), '??')
+
     If @infoonly > 0
     Begin
         If Exists (SELECT * FROM T_Jobs    
@@ -80,13 +84,13 @@ As
                 FROM T_Jobs 
                 WHERE Job = @job
 
-                IF @jobState IN (2,3,9)
+                If @jobState IN (2,3,9)
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
-                ELSE IF @jobState IN (2,3,9)
+                Else If @jobState IN (2,3,9)
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
-                ELSE IF @jobState IN (4,7,14)
+                Else If @jobState IN (4,7,14)
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job completed successfully'
-                ELSE
+                Else
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job state is not New, Failed, or Successful'
 
                 SELECT @skipMessage As Action, *
@@ -121,11 +125,26 @@ As
         --
         if @myError <> 0
         begin
-            set @message = 'Error deleting DMS_Pipeline job ' + Cast(@job as varchar(9)) + ' from T_Jobs'
+            set @message = 'Error deleting DMS_Pipeline ' + @jobText + ' from T_Jobs'
             goto Done
         End
 
-        Print 'Deleted analysis job ' + Cast(@job As varchar(12)) + ' from T_Jobs in DMS_Pipeline'
+        If @myRowCount > 0
+        Begin
+            Print 'Deleted analysis ' + @jobText + ' from T_Jobs in DMS_Pipeline'
+        End
+        Else
+        Begin            
+            If @jobState IN (2,3,9)
+                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job is in progress'
+            Else If @jobState IN (2,3,9)
+                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job is in progress'
+            Else If @jobState IN (4,7,14)
+                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job completed successfully'
+            Else
+                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job state is not New, Failed, or Successful'
+        End
+        
     End
     
     ---------------------------------------------------
