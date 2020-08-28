@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          07/30/2018 mem - Include dataset name when calling S_PostEmailAlert
 **          08/09/2018 mem - Expand @completionMessage to varchar(512)
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          08/21/2020 mem - Set @HoldoffIntervalMinutes to 60 (or higher) if @retryCount is 0
 **    
 *****************************************************/
 (
@@ -165,7 +166,7 @@ As
             End
             Else
             Begin
-                If @StepTool = 'ArchiveVerify'
+                If @StepTool = 'ArchiveVerify' AND @retryCount > 0
                 Begin
                     SET @HoldoffIntervalMinutes = CASE
                             WHEN @HoldoffIntervalMinutes < 5 THEN 5
@@ -175,8 +176,11 @@ As
                                                       ELSE @HoldoffIntervalMinutes
                                                   END
                 End
+
+                If @retryCount = 0 AND @HoldoffIntervalMinutes < 60
+                    Set @HoldoffIntervalMinutes = 60
                 
-                If @newStepState <> 5 And @retryCount > 0
+                If @newStepState <> 5
                     set @nextTry = DATEADD(minute, @HoldoffIntervalMinutes, GETDATE())
             End
                 
