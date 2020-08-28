@@ -20,6 +20,7 @@ CREATE Procedure [dbo].[StoreJobPSMStats]
 **          01/21/2016 mem - Added @percentMSnScansNoPSM and @maximumScanGapAdjacentMSn
 **          09/28/2016 mem - Added three @uniquePhosphopeptide parameters, two @missedCleavageRatio parameters, and @trypticPeptides, @keratinPeptides, and @trypsinPeptides
 **          07/15/2020 mem - Added @dynamicReporterIon, @percentPSMsMissingNTermReporterIon, and @percentPSMsMissingReporterIon
+**          07/15/2020 mem - Added @uniqueAcetylPeptidesFDR
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE Procedure [dbo].[StoreJobPSMStats]
     @msgfThresholdIsEValue tinyint = 0,           -- Set to 1 if @msgfThreshold is actually an EValue
     @percentMSnScansNoPSM real = 0,               -- Percent (between 0 and 100) measuring the percent of MSn scans that did not have a filter passing PSM
     @maximumScanGapAdjacentMSn int = 0,           -- Maximum number of scans separating two MS2 spectra with search results; large gaps indicates that a processing thread in MSGF+ crashed and the results may be incomplete
-    @uniquePhosphopeptideCountFDR int = 0,        -- Number of Phosphopeptides; filtered using @fdrThreshold
+    @uniquePhosphopeptideCountFDR int = 0,        -- Number of Phosphopeptides (any S, T, or Y that is phosphorylated); filtered using @fdrThreshold
     @uniquePhosphopeptidesCTermK int = 0,         -- Number of Phosphopeptides with K on the C-terminus
     @uniquePhosphopeptidesCTermR int = 0,         -- Number of Phosphopeptides with R on the C-terminus
     @missedCleavageRatio real = 0,                -- Value between 0 and 1; computed as the number of unique peptides with a missed cleavage / number of unique peptides
@@ -47,6 +48,7 @@ CREATE Procedure [dbo].[StoreJobPSMStats]
     @dynamicReporterIon tinyint = 0,              -- Set to 1 if TMT (or iTRAQ) was a dynamic modification, e.g. MSGFPlus_PartTryp_DynMetOx_TMT_6Plex_Stat_CysAlk_20ppmParTol.txt
     @percentPSMsMissingNTermReporterIon real = 0, -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus without TMT; value between 0 and 100
     @percentPSMsMissingReporterIon real = 0,      -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus or a K without TMT; value between 0 and 100
+    @uniqueAcetylPeptidesFDR int = 0,             -- Number of peptides with any acetylated K; filtered using @fdrThreshold
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
@@ -82,6 +84,8 @@ As
     Set @dynamicReporterIon = IsNull(@dynamicReporterIon, 0)
     Set @percentPSMsMissingNTermReporterIon = IsNull(@percentPSMsMissingNTermReporterIon, 0)
     Set @percentPSMsMissingReporterIon = IsNull(@percentPSMsMissingReporterIon, 0)
+    
+    Set @uniqueAcetylPeptidesFDR = IsNull(@uniqueAcetylPeptidesFDR, 0)
 
     ---------------------------------------------------
     -- Make sure @job is defined in T_Analysis_Job
@@ -120,6 +124,7 @@ As
                @trypticPeptides AS Tryptic_Peptides,
                @keratinPeptides AS Keratin_Peptides,
                @trypsinPeptides AS Trypsin_Peptides,
+               @uniqueAcetylPeptidesFDR as Acetyl_Peptides,
                @dynamicReporterIon AS Dynamic_Reporter_Ion,
                @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
                @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
@@ -152,6 +157,7 @@ As
                 @trypticPeptides AS Tryptic_Peptides_FDR,
                 @keratinPeptides AS Keratin_Peptides_FDR,
                 @trypsinPeptides AS Trypsin_Peptides_FDR,
+                @uniqueAcetylPeptidesFDR AS Acetyl_Peptides_FDR,
                 @dynamicReporterIon AS Dynamic_Reporter_Ion,
                 @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
                 @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
@@ -159,7 +165,7 @@ As
                      Total_PSMs_MSGF, Unique_Peptides_MSGF, Unique_Proteins_MSGF,
                      Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR,
                      Percent_MSn_Scans_NoPSM, Maximum_ScanGap_Adjacent_MSn, Missed_Cleavage_Ratio_FDR,
-                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR, 
+                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR, Acetyl_Peptides_FDR,
                      Dynamic_Reporter_Ion, Percent_PSMs_Missing_NTermReporterIon, Percent_PSMs_Missing_ReporterIon
                     )
         ON (target.Job = Source.Job)
@@ -182,6 +188,7 @@ As
                 Tryptic_Peptides_FDR = Source.Tryptic_Peptides_FDR,
                 Keratin_Peptides_FDR = Source.Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR = Source.Trypsin_Peptides_FDR,
+                Acetyl_Peptides_FDR = Source.Acetyl_Peptides_FDR,
                 Dynamic_Reporter_Ion = Source.Dynamic_Reporter_Ion,
                 Percent_PSMs_Missing_NTermReporterIon = Source.Percent_PSMs_Missing_NTermReporterIon,
                 Percent_PSMs_Missing_ReporterIon = Source.Percent_PSMs_Missing_ReporterIon,
@@ -205,6 +212,7 @@ As
                 Tryptic_Peptides_FDR,
                 Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR,
+                Acetyl_Peptides_FDR,
                 Dynamic_Reporter_Ion,
                 Percent_PSMs_Missing_NTermReporterIon,
                 Percent_PSMs_Missing_ReporterIon,
@@ -227,6 +235,7 @@ As
                  Source.Tryptic_Peptides_FDR,
                  Source.Keratin_Peptides_FDR,
                  Source.Trypsin_Peptides_FDR,
+                 Source.Acetyl_Peptides_FDR,
                  Source.Dynamic_Reporter_Ion,
                  Source.Percent_PSMs_Missing_NTermReporterIon,
                  Source.Percent_PSMs_Missing_ReporterIon,

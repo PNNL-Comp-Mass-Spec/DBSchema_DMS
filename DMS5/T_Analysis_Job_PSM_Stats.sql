@@ -19,6 +19,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_PSM_Stats](
 	[Tryptic_Peptides_FDR] [int] NULL,
 	[Keratin_Peptides_FDR] [int] NULL,
 	[Trypsin_Peptides_FDR] [int] NULL,
+	[Acetyl_Peptides_FDR] [int] NULL,
 	[Percent_MSn_Scans_NoPSM] [real] NULL,
 	[Maximum_ScanGap_Adjacent_MSn] [int] NULL,
 	[Dynamic_Reporter_Ion] [tinyint] NOT NULL,
