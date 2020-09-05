@@ -44,6 +44,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          08/18/2017 mem - Change @captureSubfolder to '' if it is the same as @datasetName
 **          06/13/2019 mem - Leave the dataset rating as 'Not Released', 'No Data (Blank/Bad)', or 'No Interest' for QC datasets
 **          07/02/2019 mem - Add support for parameter "Work Package" in the XML file
+**          09/04/2020 mem - Rename variable and match both 'Capture Subfolder' and 'Capture Subdirectory' in @xmlDoc
 **    
 *****************************************************/
 (
@@ -73,28 +74,28 @@ AS
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
     
     Declare
-        @datasetName        varchar(128)  = '',
-        @experimentName     varchar(64)   = '',
-        @instrumentName     varchar(64)   = '',
-        @captureSubfolder   varchar(255)  = '',
-        @separationType     varchar(64)   = '',
-        @lcCartName         varchar(128)  = '',
-        @lcCartConfig       varchar(128)  = '',
-        @lcColumn           varchar(64)   = '',
-        @wellplateNumber    varchar(64)   = '',
-        @wellNumber         varchar(64)   = '',
-        @datasetType        varchar(64)   = '',
-        @operatorPRN        varchar(64)   = '',
-        @comment            varchar(512)  = '',
-        @interestRating     varchar(32)   = '',
-        @requestID          int           = 0,      -- Request ID; this might get updated by AddUpdateDataset
-        @workPackage        varchar(50)   = '',
-        @emslUsageType      varchar(50)   = '',
-        @emslProposalID     varchar(10)   = '',
-        @emslUsersList      varchar(1024) = '',
-        @runStart           varchar(64)   = '',
-        @runFinish          varchar(64)   = '',
-        @datasetCreatorPRN  varchar(128)  = ''
+        @datasetName          varchar(128)  = '',
+        @experimentName       varchar(64)   = '',
+        @instrumentName       varchar(64)   = '',
+        @captureSubdirectory  varchar(255)  = '',
+        @separationType       varchar(64)   = '',
+        @lcCartName           varchar(128)  = '',
+        @lcCartConfig         varchar(128)  = '',
+        @lcColumn             varchar(64)   = '',
+        @wellplateNumber      varchar(64)   = '',
+        @wellNumber           varchar(64)   = '',
+        @datasetType          varchar(64)   = '',
+        @operatorPRN          varchar(64)   = '',
+        @comment              varchar(512)  = '',
+        @interestRating       varchar(32)   = '',
+        @requestID            int           = 0,      -- Request ID; this might get updated by AddUpdateDataset
+        @workPackage          varchar(50)   = '',
+        @emslUsageType        varchar(50)   = '',
+        @emslProposalID       varchar(10)   = '',
+        @emslUsersList        varchar(1024) = '',
+        @runStart             varchar(64)   = '',
+        @runFinish            varchar(64)   = '',
+        @datasetCreatorPRN    varchar(128)  = ''
         
         -- Note that @datasetCreatorPRN is the PRN of the person that created the dataset; 
         -- It is typically only present in trigger files created due to a dataset manually being created by a user
@@ -156,28 +157,28 @@ AS
     -- Get arguments from parsed parameters
     ---------------------------------------------------
 
-    SELECT    @datasetName        = paramValue FROM #TPAR WHERE paramName = 'Dataset Name'
-    SELECT    @experimentName     = paramValue FROM #TPAR WHERE paramName = 'Experiment Name'
-    SELECT    @instrumentName     = paramValue FROM #TPAR WHERE paramName = 'Instrument Name'
-    SELECT    @captureSubfolder   = paramValue FROM #TPAR WHERE paramName = 'Capture Subfolder'
-    SELECT    @separationType     = paramValue FROM #TPAR WHERE paramName = 'Separation Type'
-    SELECT    @lcCartName         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
-    SELECT    @lcCartConfig       = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
-    SELECT    @lcColumn           = paramValue FROM #TPAR WHERE paramName = 'LC Column'
-    SELECT    @wellplateNumber    = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
-    SELECT    @wellNumber         = paramValue FROM #TPAR WHERE paramName = 'Well Number'
-    SELECT    @datasetType        = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
-    SELECT    @operatorPRN        = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)'
-    SELECT    @comment            = paramValue FROM #TPAR WHERE paramName = 'Comment'
-    SELECT    @interestRating     = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
-    SELECT    @requestID          = paramValue FROM #TPAR WHERE paramName = 'Request'
-    SELECT    @workPackage        = paramValue FROM #TPAR WHERE paramName = 'Work Package'
-    SELECT    @emslUsageType      = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
-    SELECT    @emslProposalID     = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
-    SELECT    @emslUsersList      = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
-    SELECT    @runStart           = paramValue FROM #TPAR WHERE paramName = 'Run Start'
-    SELECT    @runFinish          = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
-    SELECT    @datasetCreatorPRN  = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
+    SELECT    @datasetName          = paramValue FROM #TPAR WHERE paramName = 'Dataset Name'
+    SELECT    @experimentName       = paramValue FROM #TPAR WHERE paramName = 'Experiment Name'
+    SELECT    @instrumentName       = paramValue FROM #TPAR WHERE paramName = 'Instrument Name'
+    SELECT    @captureSubdirectory  = paramValue FROM #TPAR WHERE paramName IN ('Capture Subfolder', 'Capture Subdirectory')
+    SELECT    @separationType       = paramValue FROM #TPAR WHERE paramName = 'Separation Type'
+    SELECT    @lcCartName           = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
+    SELECT    @lcCartConfig         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
+    SELECT    @lcColumn             = paramValue FROM #TPAR WHERE paramName = 'LC Column'
+    SELECT    @wellplateNumber      = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
+    SELECT    @wellNumber           = paramValue FROM #TPAR WHERE paramName = 'Well Number'
+    SELECT    @datasetType          = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
+    SELECT    @operatorPRN          = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)'
+    SELECT    @comment              = paramValue FROM #TPAR WHERE paramName = 'Comment'
+    SELECT    @interestRating       = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
+    SELECT    @requestID            = paramValue FROM #TPAR WHERE paramName = 'Request'
+    SELECT    @workPackage          = paramValue FROM #TPAR WHERE paramName = 'Work Package'
+    SELECT    @emslUsageType        = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
+    SELECT    @emslProposalID       = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
+    SELECT    @emslUsersList        = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
+    SELECT    @runStart             = paramValue FROM #TPAR WHERE paramName = 'Run Start'
+    SELECT    @runFinish            = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
+    SELECT    @datasetCreatorPRN    = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
     
      ---------------------------------------------------
@@ -241,16 +242,16 @@ AS
     If @comment Like '%Buzzard:'
         Set @comment = Substring(@comment, 1, Len(@comment) - 8)
     
-    If @captureSubfolder LIKE '[C-Z]:\%'
+    If @captureSubdirectory LIKE '[C-Z]:\%'
     Begin
         Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring'
         
         exec PostLogEntry 'Error', @message, 'AddNewDataset'
        
-        Set @captureSubfolder = ''
+        Set @captureSubdirectory = ''
     End
  
-    If @captureSubfolder = @datasetName
+    If @captureSubdirectory = @datasetName
     Begin
         Set @message = 'Capture subfolder is identical to the dataset name for ' + @datasetName + '; changing to an empty string'
 
@@ -263,7 +264,7 @@ AS
             exec PostLogEntry 'Debug', @message, 'AddNewDataset'
         End
        
-        Set @captureSubfolder = ''
+        Set @captureSubdirectory = ''
     End
     
     ---------------------------------------------------
@@ -290,7 +291,7 @@ AS
                         @workPackage,
                         @mode,
                         @message output,
-                        @captureSubfolder=@captureSubfolder,
+                        @captureSubfolder=@captureSubdirectory,
                         @lcCartConfig=@lcCartConfig,
                         @logDebugMessages=@logDebugMessages
     If @myError <> 0

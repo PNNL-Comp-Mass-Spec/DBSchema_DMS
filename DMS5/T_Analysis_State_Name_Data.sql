@@ -15,7 +15,7 @@ INSERT INTO [T_Analysis_State_Name] VALUES (10,'Spectra Required','No longer use
 INSERT INTO [T_Analysis_State_Name] VALUES (11,'Spectra Req. In Progress','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (12,'Spectra Req. Failed','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (13,'Inactive','Job aborted or failed, and we do not plan to re-run this job')
-INSERT INTO [T_Analysis_State_Name] VALUES (14,'No Export','Completed, but don''t put in MTS')
+INSERT INTO [T_Analysis_State_Name] VALUES (14,'No Export','Jobs where the data is of no interest; the job completed, but results shouldn''t be used elsewhere (including MTS)')
 INSERT INTO [T_Analysis_State_Name] VALUES (15,'SpecialClusterFailed','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (16,'Data Extraction Required','No longer used')
 INSERT INTO [T_Analysis_State_Name] VALUES (17,'Data Extraction In Progress','No longer used')
