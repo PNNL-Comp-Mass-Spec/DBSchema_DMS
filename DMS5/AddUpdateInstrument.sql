@@ -49,9 +49,9 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @scanSourceDir varchar(32) = 'Yes',         -- Set to No to skip this instrument when the DMS_InstDirScanner looks for files and directories on the instrument's source share
     @percentEMSLOwned varchar(24),              -- % of instrument owned by EMSL; number between 0 and 100
     @autoDefineStoragePath varchar(32) = 'No',  -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
-    @autoSPVolNameClient varchar(128),
-    @autoSPVolNameServer varchar(128),
-    @autoSPPathRoot varchar(128),
+    @autoSPVolNameClient varchar(128),          -- Example: \\proto-8\
+    @autoSPVolNameServer varchar(128),          -- Example: F:\
+    @autoSPPathRoot varchar(128),               -- Example: Lumos01\
     @autoSPArchiveServerName varchar(64),
     @autoSPArchivePathRoot varchar(128),
     @autoSPArchiveSharePathRoot varchar(128),    

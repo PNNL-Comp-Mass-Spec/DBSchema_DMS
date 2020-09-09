@@ -42,35 +42,33 @@ CREATE Procedure [dbo].[AddNewInstrument]
 **    
 *****************************************************/
 (
-    @iName varchar(24),                    -- name of new instrument
+    @iName varchar(24),                 -- name of new instrument
     @iClass varchar(32),                -- class of instrument
-    @iMethod varchar(10),                -- capture method of instrument
-    @iRoomNum varchar(50),                -- where new instrument is located
-    @iDescription varchar(50),            -- description of instrument
+    @iMethod varchar(10),               -- capture method of instrument
+    @iRoomNum varchar(50),              -- where new instrument is located
+    @iDescription varchar(50),          -- description of instrument
 
     @sourceMachineName varchar(128),    -- Source Machine to capture data from
-    @sourcePath varchar(255),            -- transfer directory on source machine
+    @sourcePath varchar(255),           -- transfer directory on source machine
     
-    @spPath varchar(255),                -- storage path on Storage Server
-    @spVolClient  varchar(128),            -- Storage server name (UNC)
-    @spVolServer  varchar(128),            -- Drive letter on storage server (local to server itself)
+    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @AutoDefineStoragePath is yes (e.g. Lumos01\)
+    @spVolClient  varchar(128),         -- Storage server name, e.g. \\proto-8\
+    @spVolServer  varchar(128),         -- Drive letter on storage server (local to server itself), e.g. F:\
     
-    @archivePath varchar(128),            -- storage path on EMSL archive
-    @archiveServer varchar(64),            -- archive server name
-    @archiveNote varchar(128),            -- note describing archive path 
-    @Usage varchar(50),                    -- optional description of instrument usage
+    @archivePath varchar(128),          -- storage path on EMSL archive, e.g. 
+    @archiveServer varchar(64),         -- archive server name
+    @archiveNote varchar(128),          -- note describing archive path 
+    @Usage varchar(50),                 -- optional description of instrument usage
     @OperationsRole varchar(50),        -- Production, QC, Research, or Unused
-    @InstrumentGroup varchar(64),        -- Item in T_Instrument_Group
-    @PercentEMSLOwned varchar(24),        -- % of instrument owned by EMSL; number between 0 and 100
+    @InstrumentGroup varchar(64),       -- Item in T_Instrument_Group
+    @PercentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
     
     @AutoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
     @message varchar(512) output
 )
 As
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    declare @myError int = 0
+    declare @myRowCount int = 0
     
     set @message = ''
 
