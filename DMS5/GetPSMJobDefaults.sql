@@ -25,7 +25,8 @@ CREATE Procedure [dbo].[GetPSMJobDefaults]
 **          06/13/2017 mem - Exclude logging some try/catch errors
 **          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **          06/04/2018 mem - Change default tool to MSGFPlus_MzML
-**          01/28/2020 mem - Use '%TMT1%' instead of '%TMT10' so we can match TMT10, TMT11, and TMT16
+**          01/28/2020 mem - Use '%TMT1%' instead of '%TMT10' so we can match TMT10 and TMT11
+**          09/10/2020 mem - Add job types 'TMT Zero' and 'TMT 16-plex'
 **    
 *****************************************************/
 (
@@ -314,19 +315,29 @@ As
 
         Set @jobTypeName = ''
         
-        If @jobTypeName = '' And @TopLabeling Like '%itraq8%' And @TopDatasetType Like '%HCD%'
+        If @jobTypeName = '' And @TopLabeling = 'iTRAQ8' And @TopDatasetType Like '%HCD%'
         Begin
             Set @jobTypeName = 'iTRAQ 8-plex'
         End
         
-        If @jobTypeName = '' And @TopLabeling Like '%itraq%' And @TopDatasetType Like '%HCD%'
+        If @jobTypeName = '' And @TopLabeling = 'iTRAQ' And @TopDatasetType Like '%HCD%'
         Begin
             Set @jobTypeName = 'iTRAQ 4-plex'
         End
 
-        If @jobTypeName = '' And (@TopLabeling Like '%TMT6%' OR @TopLabeling Like '%TMT1%') And @TopDatasetType Like '%HCD%'
+        If @jobTypeName = '' And @TopLabeling = 'TMT16' And @TopDatasetType Like '%HCD%'
+        Begin
+            Set @jobTypeName = 'TMT 16-plex'
+        End
+
+        If @jobTypeName = '' And @TopLabeling IN ('TMT6', 'TMT10', 'TMT11') And @TopDatasetType Like '%HCD%'
         Begin
             Set @jobTypeName = 'TMT 6-plex'
+        End
+
+        If @jobTypeName = '' And @TopLabeling = 'TMT0' And @TopDatasetType Like '%HCD%'
+        Begin
+            Set @jobTypeName = 'TMT Zero'
         End
         
         If @jobTypeName = '' And @TopDatasetType Like 'MS-%MSn'

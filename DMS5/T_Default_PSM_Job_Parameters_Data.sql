@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Default_PSM_Job_Parameters] ******/
-/****** RowCount: 69 ******/
+/****** RowCount: 74 ******/
 SET IDENTITY_INSERT [T_Default_PSM_Job_Parameters] ON
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (60,'High Res MS1','MODa',0,0,0,'MODa_PartTryp_Par20ppm_Frag0pt6Da.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (76,'High Res MS1','MODa',0,0,1,'MODa_PartTryp_Par20ppm_Frag0pt6Da.txt',1)
@@ -63,6 +63,9 @@ INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, 
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (5,'Low Res MS1','Sequest',0,1,0,'sequest_N14_PartTryp_Stat_C_Iodo.params',0)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (9,'Low Res MS1','Sequest',1,0,0,'sequest_N14_PartTryp_Dyn_M_Ox.params',0)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (12,'Low Res MS1','Sequest',1,1,0,'sequest_N14_PartTryp_Dyn_M_Ox_Stat_Cys_Alk.params',0)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (114,'TMT 16-plex','MSGFPlus',0,1,1,'MSGFPlus_PartTryp_DynSTYPhos_Stat_CysAlk_TMT_16Plex_Protocol1_20ppmParTol.txt',1)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (112,'TMT 16-plex','MSGFPlus',1,1,0,'MSGFPlus_PartTryp_DynMetOx_Stat_CysAlk_TMT_16Plex_20ppmParTol.txt',1)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (113,'TMT 16-plex','MSGFPlus',1,1,1,'MSGFPlus_PartTryp_Dyn_MetOx_STYPhos_Stat_CysAlk_TMT_16Plex_Protocol1_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (92,'TMT 6-plex','MSGFPlus',0,0,0,'MSGFDB_PartTryp_TMT_6Plex_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (107,'TMT 6-plex','MSGFPlus',0,0,1,'MSGFDB_PartTryp_DynSTYPhos_Stat_TMT_6Plex_Protocol1_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (105,'TMT 6-plex','MSGFPlus',0,1,0,'MSGFDB_PartTryp_Stat_CysAlk_TMT_6Plex_20ppmParTol.txt',1)
@@ -70,4 +73,6 @@ INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, 
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (96,'TMT 6-plex','MSGFPlus',1,0,0,'MSGFDB_PartTryp_DynMetOx_Stat_TMT_6Plex_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (97,'TMT 6-plex','MSGFPlus',1,1,0,'MSGFDB_PartTryp_DynMetOx_Stat_CysAlk_TMT_6Plex_20ppmParTol.txt',1)
 INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (104,'TMT 6-plex','MSGFPlus',1,1,1,'MSGFDB_PartTryp_Dyn_MetOx_STYPhos_Stat_CysAlk_TMT_6Plex_Protocol1_20ppmParTol.txt',1)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (111,'TMT Zero','MSGFPlus',0,1,1,'MSGFPlus_PartTryp_DynSTYPhos_Stat_CysAlk_TMT_Zero_Protocol1_20ppmParTol.txt',1)
+INSERT INTO [T_Default_PSM_Job_Parameters] (Entry_ID, Job_Type_Name, Tool_Name, DynMetOx, StatCysAlk, DynSTYPhos, Parameter_File_Name, Enabled) VALUES (110,'TMT Zero','MSGFPlus',1,1,0,'MSGFPlus_PartTryp_DynMetOx_Stat_CysAlk_TMT_Zero_10ppmParTol.txt',1)
 SET IDENTITY_INSERT [T_Default_PSM_Job_Parameters] OFF
