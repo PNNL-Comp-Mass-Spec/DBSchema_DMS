@@ -19,6 +19,7 @@ CREATE Procedure [dbo].[AutoResolveNameToPRN]
 **          01/20/2017 mem - Now checking for names of the form "Last, First (D3P704)" or "Last, First Middle (D3P704)" and auto-fixing those
 **          06/12/2017 mem - Check for @nameSearchSpec being a username
 **          11/11/2019 mem - Return no matches if @nameSearchSpec is null or an empty string
+**          09/11/2020 mem - Use TrimWhitespaceAndPunctuation to remove trailing whitespace and punctuation
 **    
 *****************************************************/
 (
@@ -35,11 +36,14 @@ As
 
     Set @matchCount = 0
 
-    Set @NameSearchSpec= Ltrim(Rtrim(IsNull(@NameSearchSpec, 0)))
-    If Len(@NameSearchSpec) = 0
+    -- Trim leading and trailing whitespace
+    Set @nameSearchSpec= dbo.TrimWhitespaceAndPunctuation(IsNull(@nameSearchSpec, ''))
+    If Len(@nameSearchSpec) = 0
     Begin
         Goto Done
     End
+
+    -- Trim leading and trailing punctuation
 
     If @nameSearchSpec Like '%,%(%)'
     Begin
