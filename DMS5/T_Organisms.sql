@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Organisms](
 	[OG_organismDBPath]  AS (case when isnull([OG_Storage_Location],'')='' then NULL else [dbo].[udfCombinePaths]([OG_Storage_Location],'FASTA\') end),
 	[OG_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_created] [datetime] NULL,
-	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[OG_description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Short_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Storage_Location] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Storage_URL] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

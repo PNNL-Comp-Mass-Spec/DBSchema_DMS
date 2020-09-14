@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          04/09/2018 mem - Auto-define @orgStorageLocation if empty
 **          06/26/2019 mem - Remove DNA translation table arguments since unused
 **          04/15/2020 mem - Populate OG_Storage_URL using @orgStorageLocation
+**          09/14/2020 mem - Expand the description field to 512 characters
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -59,7 +60,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
     @orgShortName varchar(128),
     @orgStorageLocation varchar(256),
     @orgDBName varchar(128),                -- Default protein collection name (prior to 2012 was default fasta file)
-    @orgDescription varchar(256),
+    @orgDescription varchar(512),
     @orgDomain varchar(64),
     @orgKingdom varchar(64),
     @orgPhylum varchar(64),

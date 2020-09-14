@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Organisms_Change_History](
 	[Event_ID] [int] IDENTITY(1,1) NOT NULL,
 	[Organism_ID] [int] NOT NULL,
 	[OG_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[OG_description] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[OG_description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Short_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Domain] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_Kingdom] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
