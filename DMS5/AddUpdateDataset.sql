@@ -9,7 +9,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **
 **  Desc:   Adds new dataset entry to DMS database
 **
-**          This is called from the Dataset Entry page (http://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
+**          This is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
 **          It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
 **
 **  Return values: 0: success, otherwise, error code
@@ -97,6 +97,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          04/15/2019 mem - Add call to UpdateCachedDatasetInstruments
 **          07/19/2019 mem - Change @eusUsageType to 'maintenance' if empty for _Tune_ or TuneMix datasets
 **          11/11/2019 mem - Auto change 'Blank-' and 'blank_' to 'Blank'
+**          09/15/2020 mem - Now showing 'https://dms2.pnl.gov/dataset_disposition/search' instead of http://
 **    
 *****************************************************/
 (
@@ -416,7 +417,7 @@ As
         --
         If @curDSRatingID = -10 And @rating <> 'Unreviewed'
         Begin
-            Set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("http://dms2.pnl.gov/dataset_disposition/search" or SP UpdateDatasetDispositions)'
+            Set @msg = 'Cannot change dataset rating from Unreviewed with this mechanism; use the Dataset Disposition process instead ("https://dms2.pnl.gov/dataset_disposition/search" or SP UpdateDatasetDispositions)'
             RAISERROR (@msg, 11, 6)
         End        
     End

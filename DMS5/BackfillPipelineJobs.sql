@@ -7,9 +7,8 @@ GO
 CREATE Procedure [dbo].[BackfillPipelineJobs]
 /****************************************************
 **
-**  Desc: 
-**      Creates jobs in DMS5 for jobs that were originally 
-**      created in the DMS_Pipeline database
+**  Desc:   Creates jobs in DMS5 for jobs that were originally 
+**          created in the DMS_Pipeline database
 **
 **  Return values: 0 if no error; otherwise error code
 **
@@ -21,6 +20,7 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/31/2018 mem - Truncate dataset name at 80 characters if too long
 **          07/25/2018 mem - Replace brackets with underscores
+**          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **    
 *****************************************************/
 (
@@ -329,7 +329,7 @@ AS
                             
                         End
                         
-                        Set @DatasetComment = 'http://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @DataPackageID)
+                        Set @DatasetComment = 'https://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @DataPackageID)
                         
                     End -- </d2>
                     

@@ -83,6 +83,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          01/23/2019 mem - Switch @reason back to a normal input parameter since view V_Sample_Prep_Request_Entry now appends the __NoCopy__ flag to several fields
 **          01/13/2020 mem - Require @requestedPersonnel to include a sample prep staff member (no longer allow 'na' or 'any')
 **          08/12/2020 mem - Check for ValidateEUSUsage returning a message, even if it returns 0
+**          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **
 *****************************************************/
 (
@@ -632,7 +633,7 @@ As
             RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
     
         If @requestTypeExisting <> @requestType
-            RAISERROR ('Cannot edit requests of type %s with the sample_prep_request page; use http://dms2.pnl.gov/rna_prep_request/report', 11, 7, @requestTypeExisting)
+            RAISERROR ('Cannot edit requests of type %s with the sample_prep_request page; use https://dms2.pnl.gov/rna_prep_request/report', 11, 7, @requestTypeExisting)
     End
 
     If @mode = 'add'

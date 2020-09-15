@@ -7,8 +7,8 @@ GO
 CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 /****************************************************
 **
-**  Desc: Validates analysis job parameters and returns internal
-**        values converted from external values (input arguments)
+**  Desc:   Validates analysis job parameters and returns internal
+**          values converted from external values (input arguments)
 **
 **  Note: This procedure depends upon the caller having created
 **        temporary table #TD and populating it with the dataset names
@@ -77,6 +77,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          07/19/2018 mem - Increase the threshold for requiring SplitFASTA searches from 400 MB to 600 MB
 **          07/11/2019 mem - Auto-change parameter file names from MSGFDB_ to MSGFPlus_
 **          07/30/2019 mem - Update comments and capitalization
+**          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **
 *****************************************************/
 (
@@ -195,9 +196,9 @@ As
         Begin
             Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0
-                Set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/show/' + Convert(varchar(12), @Job)
+                Set @message = @message + '; see https://dms2.pnl.gov/pipeline_jobs/show/' + Convert(varchar(12), @Job)
             Else
-                Set @message = @message + '; see http://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
+                Set @message = @message + '; see https://dms2.pnl.gov/pipeline_jobs/report/-/-/~Aggregation'
         End
         Else
         Begin
