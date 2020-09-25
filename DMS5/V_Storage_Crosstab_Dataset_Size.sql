@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Storage_Crosstab_Dataset_Size
+CREATE VIEW [dbo].[V_Storage_Crosstab_Dataset_Size]
 AS
 SELECT PivotData.VolClient,
 		IsNull([LTQ], 0) AS [LTQ],
-		IsNull([Micromass_TOF], 0) AS [Micromass_TOF],
+		IsNull([Waters_TOF], 0) AS [Waters_TOF],
 		IsNull([VelosOrbi], 0) AS [VelosOrbi],
 		IsNull([FT_ZippedSFolders], 0) AS [FT_ZippedSFolders],
 		IsNull([LTQ-ETD], 0) AS [LTQ-ETD],
@@ -44,7 +44,7 @@ FROM (
 				[LTQ-ETD],
 				[Agilent_TOF],
 				[FT_ZippedSFolders],
-				[Micromass_TOF]
+				[Waters_TOF]
 				)
 	) AS PivotData
 
