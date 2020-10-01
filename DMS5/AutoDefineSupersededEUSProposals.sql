@@ -1,10 +1,10 @@
-/****** Object:  StoredProcedure [dbo].[AutoDefineSupersededEUSProposoals] ******/
+/****** Object:  StoredProcedure [dbo].[AutoDefineSupersededEUSProposals] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[AutoDefineSupersededEUSProposoals]
+CREATE PROCEDURE [dbo].[AutoDefineSupersededEUSProposals]
 /****************************************************
 **
 **	Desc:	Looks for proposals in T_EUS_Proposals with the same name
@@ -130,7 +130,7 @@ AS
 
 	        Set @message = 'Auto-set Proposal_ID_AutoSupersede for ' + CAST(@myRowCount AS VARCHAR(12)) + ' proposal(s) in T_EUS_Proposals: ' + @proposalList
 
-		    EXEC PostLogEntry 'Normal', @message, 'AutoDefineSupersededEUSProposoals'
+		    EXEC PostLogEntry 'Normal', @message, 'AutoDefineSupersededEUSProposals'
         End
 
         Print @message
