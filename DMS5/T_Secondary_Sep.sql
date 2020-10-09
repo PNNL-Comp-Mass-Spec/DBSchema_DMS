@@ -58,6 +58,7 @@ ALTER TABLE [dbo].[T_Secondary_Sep] CHECK CONSTRAINT [FK_T_Secondary_Sep_T_Secon
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep]  WITH CHECK ADD  CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group] FOREIGN KEY([Sep_Group])
 REFERENCES [dbo].[T_Separation_Group] ([Sep_Group])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep] CHECK CONSTRAINT [FK_T_Secondary_Sep_T_Separation_Group]
 GO

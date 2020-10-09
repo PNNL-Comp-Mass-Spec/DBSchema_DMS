@@ -239,6 +239,7 @@ ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Reque
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Separation_Group] FOREIGN KEY([RDS_Sec_Sep])
 REFERENCES [dbo].[T_Separation_Group] ([Sep_Group])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Separation_Group]
 GO
