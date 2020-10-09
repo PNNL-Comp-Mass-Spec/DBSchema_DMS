@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Processor_Tool_Groups] ******/
-/****** RowCount: 30 ******/
+/****** RowCount: 31 ******/
 /****** Columns: Group_ID, Group_Name, Enabled, Comment ******/
 INSERT INTO [T_Processor_Tool_Groups] VALUES (0,'Disabled Processors',0,'')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (1,'Proto_Storage_Servers',1,'')
@@ -29,5 +29,6 @@ INSERT INTO [T_Processor_Tool_Groups] VALUES (26,'Proto_Storage_Servers with MSG
 INSERT INTO [T_Processor_Tool_Groups] VALUES (27,'Supermicro 2022TG',1,'Supermicro Pubs 02-09 with AMD chips, 32 cores, 128 GB of ram, and a single hard drive; also supports MSXML_Bruker; have R 3.2.3')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (28,'Supermicro 6028TR',1,'Supermicro Pubs 14-17 with Intel chips, 16 cores, 64 GB of ram, a 128 GB SSD, and two 1 TB drives; also supports MSXML_Bruker; have R 3.2.3.  AnalysisManager2 on each box pushes jobs to PrismWeb2 to be processed by offline AnalysisManagers. AnalysisManager2 instances also monitor jobs running remotely and retrieve results.')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (29,'Proto_Storage_Servers with MSGF+, 2x',1,'Proto-3, Proto-4, Proto-7, Proto-8; can run two copies of MSGF+; each has at least 32 GB of ram and at least 12 cores')
-INSERT INTO [T_Processor_Tool_Groups] VALUES (30,'Supermicro 6028TP',1,'Supermicro Pubs 18-21 with Intel chips, 16 cores, 64 GB of ram, a 256 GB SSD, and two 1 TB drives; also supports MSXML_Bruker; have R 3.4.0. AnalysisManager2 on each box pushes jobs to PrismWeb3 to be processed by offline AnalysisManagers. AnalysisManager2 instances also monitor jobs running remotely and retrieve results.')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (30,'Supermicro 6028TP',1,'Supermicro Pubs 18-21 with Intel chips, 24 cores, 96 GB of ram, a 256 GB SSD, and two 1 TB drives; also supports MSXML_Bruker; have R 3.6.1. AnalysisManager2 on each box pushes jobs to PrismWeb3 to be processed by offline AnalysisManagers. AnalysisManager2 instances also monitor jobs running remotely and retrieve results.')
 INSERT INTO [T_Processor_Tool_Groups] VALUES (31,'Pub-1000',1,'EMSLMQ01')
+INSERT INTO [T_Processor_Tool_Groups] VALUES (32,'SuperMicro 6029TP',1,'SuperMicro Pubs 22-33 with Intel chips, 24 cores, 96 GB of ram, a 256 GB SSD, and two 1 TB drives; also supports MSXML_Bruker; have R 3.6.1.')
