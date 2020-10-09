@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Separation_Group](
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active] [tinyint] NOT NULL,
 	[Sample_Prep_Visible] [tinyint] NOT NULL,
+	[Fraction_Count] [smallint] NOT NULL,
  CONSTRAINT [PK_T_Separation_Group] PRIMARY KEY CLUSTERED 
 (
 	[Sep_Group] ASC
@@ -22,4 +23,6 @@ GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Active]  DEFAULT ((1)) FOR [Active]
 GO
 ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Sample_Prep_Visible]  DEFAULT ((1)) FOR [Sample_Prep_Visible]
+GO
+ALTER TABLE [dbo].[T_Separation_Group] ADD  CONSTRAINT [DF_T_Separation_Group_Fraction_Count]  DEFAULT ((0)) FOR [Fraction_Count]
 GO
