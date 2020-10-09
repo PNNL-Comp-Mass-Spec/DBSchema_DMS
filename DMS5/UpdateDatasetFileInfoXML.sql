@@ -8,8 +8,8 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
 **  Desc:   Updates the information for the dataset specified by @datasetID
-**          If @datasetID is 0, then will use the dataset name defined in @datasetInfoXML
-**          If @datasetID is non-zero, then will validate that the Dataset Name in the XML corresponds
+**          If @datasetID is 0, will use the dataset name defined in @datasetInfoXML
+**          If @datasetID is non-zero, will validate that the Dataset Name in the XML corresponds
 **          to the dataset ID specified by @datasetID
 **
 **      Typical XML file contents:
@@ -82,6 +82,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
 **          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
 **          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
+**          10/09/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
 **    
 *****************************************************/
 (
@@ -105,6 +106,10 @@ As
     
     Declare @acqTimeStart datetime
     Declare @acqTimeEnd datetime
+    Declare @acqLengthMinutes int
+
+    Declare @separationType varchar(64)
+    Declare @optimalSeparationType varchar(64) = ''
 
     Declare @msg varchar(1024)
     Declare @datasetIdText varchar(12) = Cast(@datasetID as varchar(12))
@@ -266,10 +271,14 @@ As
            @endTime = @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'varchar(32)')
 
     If IsDate(@startTime) <> 0
+    Begin
         Set @acqTimeStart = Convert(datetime, @startTime)
+    End
 
     If IsDate(@endTime) <> 0
+    Begin
         Set @acqTimeEnd = Convert(datetime, @endTime)
+    End
     Else
     Begin
         -- End Time is invalid
@@ -278,8 +287,10 @@ As
         -- IMS .UIMF files acquired in summer 2010 had StartTime values of 0410-08-29 (year 410) due to a bug
                 
         If Not @acqTimeStart Is Null
+        Begin
             SELECT @acqTimeEnd = DateAdd(minute, AcqTimeMinutes, @acqTimeStart)
             FROM @DSInfoTable
+        End
     End
         
     UPDATE @DSInfoTable
@@ -436,6 +447,40 @@ As
             Exec PostLogEntry 'Warning', @msg, 'UpdateDatasetFileInfoXML'
         End
     End
+    
+    -----------------------------------------------
+    -- Possibly update the separation type for the dataset
+    -----------------------------------------------
+
+    SELECT @separationType = DS_sec_sep
+    FROM T_Dataset
+    WHERE Dataset_ID = @datasetID
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    Select @acqLengthMinutes = AcqTimeMinutes
+    From @DSInfoTable
+
+    If @acqLengthMinutes > 1 AND ISNULL(@separationType, '') <> ''
+    Begin
+        -- Possibly update the separation type
+        -- Note that UpdateDatasetFileInfoXML will also call UpdateDatasetFileInfoXML when the MSFileInfoScanner tool runs
+        EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
+
+        If @optimalSeparationType <> @separationType AND @infoOnly <> 0
+        Begin
+            UPDATE T_Dataset
+            SET DS_sec_sep = @optimalSeparationType
+            WHERE Dataset_ID = @datasetID
+
+            If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Posting_Time >= DateAdd(hour, -2, getdate()))
+            Begin
+                Set @msg = 'Auto-updated separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
+                Exec PostLogEntry 'Normal', @msg, 'UpdateDatasetFileInfoXML'
+            End
+
+        End
+    End
 
     If @infoOnly <> 0
     Begin
@@ -443,7 +488,7 @@ As
         -- Preview the data, then exit
         -----------------------------------------------
         
-        SELECT *
+        SELECT *, @separationType As Separation_Type, @optimalSeparationType as Optimal_Separation_Type
         FROM @DSInfoTable
 
         SELECT *

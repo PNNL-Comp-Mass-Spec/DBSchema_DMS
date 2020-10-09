@@ -45,6 +45,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          06/13/2019 mem - Leave the dataset rating as 'Not Released', 'No Data (Blank/Bad)', or 'No Interest' for QC datasets
 **          07/02/2019 mem - Add support for parameter "Work Package" in the XML file
 **          09/04/2020 mem - Rename variable and match both 'Capture Subfolder' and 'Capture Subdirectory' in @xmlDoc
+**          10/09/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length (provided @requestID is non-zero)
 **    
 *****************************************************/
 (
@@ -60,7 +61,7 @@ AS
     Declare @myRowCount Int = 0
 
     Declare @hDoc int
-    Declare @dsid int
+    Declare @datasetId int
 
     Declare @existingRequestID int
 
@@ -69,7 +70,10 @@ AS
     
     Declare @runStartDate datetime
     Declare @runFinishDate datetime
-    
+
+    Declare @acqLengthMinutes int
+    Declare @optimalSeparationType varchar(64)
+
     Set @message = ''
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
     
@@ -314,9 +318,9 @@ AS
     
     -- First use Dataset Name to lookup the Dataset ID
     --        
-    Set @dsid = 0
+    Set @datasetId = 0
     --
-    SELECT @dsid = Dataset_ID
+    SELECT @datasetId = Dataset_ID
     FROM T_Dataset
     WHERE (Dataset_Num = @datasetName)
     --
@@ -328,7 +332,8 @@ AS
         RAISERROR (@message, 10, 1)
         return 51034
     End
-    If @dsid = 0
+
+    If @datasetId = 0
     Begin
         Set @message = 'Could not resolve dataset ID'
         RAISERROR (@message, 10, 1)
@@ -343,7 +348,7 @@ AS
     --
     SELECT @existingRequestID = ID
     FROM T_Requested_Run
-    WHERE (DatasetID = @dsid)
+    WHERE DatasetID = @datasetId
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -366,10 +371,10 @@ AS
         UPDATE T_Event_Log
         SET Entered_By = @datasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
         FROM T_Event_Log
-        WHERE Target_ID = @dsid AND
-                Target_State = 1 AND 
-                Target_Type = 4 AND 
-                Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
+        WHERE Target_ID = @datasetId AND
+              Target_State = 1 AND 
+              Target_Type = 4 AND 
+              Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
             
     End -- </a>
         
@@ -396,7 +401,33 @@ AS
             -- Check whether the @runFinishDate value is in the future
             -- If it is, update it to match @runStartDate
             If DateDiff(day, GetDate(), @runFinishDate) > 1
+            Begin
                 Set @runFinishDate = @runStartDate
+            End
+            Else
+            Begin
+                Set @acqLengthMinutes = DATEDIFF(minute, @runStartDate, @runFinishDate)
+                If @acqLengthMinutes > 1 AND ISNULL(@separationType, '') <> ''
+                Begin
+                    -- Possibly update the separation type
+                    -- Note that UpdateDatasetFileInfoXML will also call UpdateDatasetFileInfoXML when the MSFileInfoScanner tool runs
+                    EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
+
+                    If @optimalSeparationType <> @separationType
+                    Begin
+                        UPDATE T_Dataset
+                        SET DS_sec_sep = @optimalSeparationType
+                        WHERE Dataset_ID = @datasetID
+
+                        If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Posting_Time >= DateAdd(hour, -2, getdate()))
+                        Begin
+                            Set @message = 'Auto-updated separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
+                            Exec PostLogEntry 'Normal', @message, 'AddNewDataset'
+                            Set @message = ''
+                        End
+                    End
+                End
+            End
         End
         
         UPDATE T_Requested_Run
@@ -415,9 +446,9 @@ AS
         End
     End
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Done
-     ---------------------------------------------------
+    ---------------------------------------------------
 Done:
     return @myError
 
