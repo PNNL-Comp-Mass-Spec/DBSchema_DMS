@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[T_Secondary_Sep](
 	[SS_active] [tinyint] NOT NULL,
 	[Sep_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SampleType_ID] [int] NOT NULL,
-	[Created] [datetime] NULL,
+	[Created] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Secondary_Sep] PRIMARY KEY NONCLUSTERED 
 (
 	[SS_ID] ASC
@@ -48,6 +48,8 @@ GO
 ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_SS_active]  DEFAULT (1) FOR [SS_active]
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_SS_SampleType]  DEFAULT ((0)) FOR [SampleType_ID]
+GO
+ALTER TABLE [dbo].[T_Secondary_Sep] ADD  CONSTRAINT [DF_T_Secondary_Sep_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Secondary_Sep]  WITH CHECK ADD  CONSTRAINT [FK_T_Secondary_Sep_T_Secondary_Sep_SampleType] FOREIGN KEY([SampleType_ID])
 REFERENCES [dbo].[T_Secondary_Sep_SampleType] ([SampleType_ID])
