@@ -98,6 +98,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          07/19/2019 mem - Change @eusUsageType to 'maintenance' if empty for _Tune_ or TuneMix datasets
 **          11/11/2019 mem - Auto change 'Blank-' and 'blank_' to 'Blank'
 **          09/15/2020 mem - Now showing 'https://dms2.pnl.gov/dataset_disposition/search' instead of http://
+**          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **    
 *****************************************************/
 (
@@ -111,7 +112,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @wellNum varchar(64) = 'na',
     @secSep varchar(64) = 'na',
     @internalStandards varchar(64) = 'none',
-    @comment varchar(512) = 'na',
+    @comment varchar(512) = '',
     @rating varchar(32) = 'Unknown',
     @LCCartName varchar(128),
     @eusProposalID varchar(10) = 'na',
@@ -631,30 +632,6 @@ As
             SELECT @msType = DST_name
             FROM T_DatasetTypeName
             WHERE DST_Type_ID = @datasetTypeID
-
-            If @comment = 'na'
-                Set @comment = ''
-            
-            If @msTypeOld <> ''
-            Begin
-                -- Update the comment since we changed the dataset type from @msTypeOld to @msType
-                If @comment <> ''
-                    Set @comment = @comment + '; '
-                
-                Set @comment = @comment + 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType
-            End
-            Else
-            Begin
-                -- @msTypeOld was blank
-                -- Update the comment only if this is not an IMS dataset
-                If Not @instrumentName Like 'IMS%'
-                Begin
-                    If @comment <> ''
-                        Set @comment = @comment + '; '
-                    
-                    Set @comment = @comment + 'Auto-defined dataset type using default: ' + @msType
-                End
-            End                        
         End
         Else
         Begin
@@ -676,10 +653,7 @@ As
     Begin
         -- Dataset type is not valid for this instrument group
         -- However, @mode is Add, so we will auto-update @msType
-        --
-        If @comment = 'na'
-            Set @comment = ''
-        
+        --        
         If @msType IN ('HMS-MSn', 'HMS-HMSn') And Exists (
             SELECT IGADST.Dataset_Type
             FROM T_Instrument_Group ING
@@ -693,8 +667,6 @@ As
             -- This is an IMS MS/MS dataset
             Set @msType = 'IMS-HMS-HMSn'
             execute @datasetTypeID = GetDatasetTypeID @msType
-            
-            Set @comment = dbo.AppendToText(@comment, 'Auto-switched dataset type from HMS-HMSn to ' + @msType, 0, '; ', 512)
         End
         Else
         Begin
@@ -717,10 +689,6 @@ As
             Begin
                 -- This happens for most datasets from instrument GCQE01; do not update the comment
                 Set @result = 0
-            End
-            Else
-            Begin
-                Set @comment = dbo.AppendToText(@comment, 'Auto-switched invalid dataset type from ' + @msTypeOld + ' to default: ' + @msType, 0, '; ', 512)
             End
         End
         

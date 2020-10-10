@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **          04/28/2017 mem - Do not update the dataset comment when auto-changing an IMS dataset
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          06/03/2019 mem - Check for 'IMS' in ScanFilter
+**          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **    
 *****************************************************/
 (
@@ -44,7 +45,6 @@ As
     Declare @myRowCount Int = 0
 
     Declare @dataset varchar(256)    
-    Declare @datasetComment varchar(512)
     Declare @WarnMessage varchar(512)
     
     Declare @currentDatasetType varchar(64)
@@ -90,8 +90,6 @@ As
     Set @currentDatasetType = ''
     
     SELECT @dataset = Dataset_Num,
-           @datasetComment = IsNull(DS.DS_comment, ''),
-           -- @datasetTypeIDCurrent = DS.DS_type_ID, 
            @currentDatasetType = DST.DST_name
     FROM T_Dataset DS
          LEFT OUTER JOIN T_DatasetTypeName DST
@@ -326,8 +324,10 @@ As
                 Print 'Set @autoDefineDSType=1 because @actualCountHCD = 0 AND @currentDatasetType LIKE ''%HCD%'''
         End
         Else
+        Begin
             Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no HCD scans are present'
-        
+        End
+
         Goto AutoDefineDSType
     End
 
@@ -341,8 +341,10 @@ As
                 Print 'Set @autoDefineDSType=1 because (@actualCountETDMSn + @actualCountETDHMSn) = 0 AND @currentDatasetType LIKE ''%ETD%'''
         End
         Else
+        Begin
             Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no ETD scans are present'
-        
+        End
+
         Goto AutoDefineDSType
     End
         
@@ -356,8 +358,10 @@ As
                 Print 'Set @autoDefineDSType=1 because (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) = 0 AND @currentDatasetType LIKE ''%-HMSn%'''
         End
         Else
+        Begin
             Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no high res MSn scans are present'
-        
+        End
+
         Goto AutoDefineDSType
     End
 
@@ -371,8 +375,10 @@ As
                 Print 'Set @autoDefineDSType=1 because (@actualCountCIDMSn + @actualCountETDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) = 0 AND @currentDatasetType LIKE ''%-MSn%'''
         End
         Else
+        Begin
             Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no low res MSn scans are present'
-        
+        End
+
         Goto AutoDefineDSType
     End
 
@@ -386,8 +392,10 @@ As
                 Print 'Set @autoDefineDSType=1 because @actualCountHMS = 0 AND (@currentDatasetType LIKE ''HMS%'' Or @currentDatasetType LIKE ''%-HMS'')'
         End
         Else
+        Begin
             Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' but no HMS scans are present'
-        
+        End
+
         Goto AutoDefineDSType
     End
 
@@ -545,10 +553,11 @@ AutoDefineDSType:
         If @newDatasetType = '' And @WarnMessage = ''
         Begin
             If @datasetTypeAutoGen <> @currentDatasetType And @datasetTypeAutoGen <> ''
+            Begin
                 Set @WarnMessage = 'Warning: Dataset type is ' + @currentDatasetType + ' while auto-generated type is ' + @datasetTypeAutoGen
+            End
         End
     End
-
 
 FixDSType:
     
@@ -559,18 +568,6 @@ FixDSType:
     If @WarnMessage <> '' And Not (@currentDatasetType Like 'IMS%' and @datasetTypeAutoGen Like 'IMS%')
     Begin
         Set @message = @WarnMessage
-
-        Set @datasetComment = dbo.AppendToText(@datasetComment, @message, 0, '; ', 512)
-    
-        If @infoOnly = 0
-        Begin
-            UPDATE T_Dataset
-            SET DS_Comment = @datasetComment
-            WHERE Dataset_ID = @datasetID
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-        End
-
         Goto Done
     End
 
@@ -600,35 +597,13 @@ FixDSType:
                 End
                 Goto Done                
             End
-            
-            -- Append a message to the dataset comment
-            -- However, do not append "Auto-switched dataset type from HMS-HMSn to HMS-HCD-HMSn" since this happens for nearly every Q-Exactive dataset
-            -- Also, do not append any change that includes ETciD or EThcD because those are commonly auto-added
-            -- Additionally, do not update the comment when changing from HMS to HMS-HMSn (happens quite often, and is a fairly harmless change)
-            --
+
             Set @message = 'Auto-switched dataset type from ' + @currentDatasetType + ' to ' + @newDatasetType
-            
-            Declare @messageAppend varchar(128)
-            
-            If @currentDatasetType Like 'HMS%' And @newDatasetType Like 'HMS%MSn' Or            
-               @newDatasetType LIKE '%ETciD%' Or
-               @newDatasetType LIKE '%EThcD%'               
-            Begin
-                -- Switching from HMS, HMS-MSn, HMS-HCD-HMSn, or similar to a more specific HMS-xxx-MSn type; do not update the dataset comment
-                Set @messageAppend = @message
-            End
-            Else
-            Begin
-                Set @messageAppend = @message + ' on ' + SUBSTRING(CONVERT(varchar(32), GETDATE(), 121), 1, 10)
-                Set @datasetComment = dbo.AppendToText(@datasetComment, @messageAppend, 0, '; ', 512)
-                Set @messageAppend = ''
-            End
-            
+
             If @infoOnly = 0
             Begin
                 UPDATE T_Dataset
-                SET DS_Type_ID = @newDSTypeID,
-                    DS_Comment = @datasetComment
+                SET DS_Type_ID = @newDSTypeID
                 WHERE Dataset_ID = @datasetID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -636,39 +611,24 @@ FixDSType:
             Else
             Begin
                 SELECT @newDatasetType AS NewDatasetType,
-                       @newDSTypeID AS NewDSTypeID,
-                       CASE
-                           WHEN @messageAppend = '' THEN @datasetComment
-                           ELSE @messageAppend
-                       END AS [Comment]
+                       @newDSTypeID AS NewDSTypeID
             End
-
         End        
         Else
         Begin
             Set @message = 'Unrecognized dataset type based on actual scan types; need to auto-switch from ' + @currentDatasetType + ' to ' + @newDatasetType
-
-            Set @datasetComment = dbo.AppendToText(@datasetComment, @message, 0, '; ', 512)
-
-            If @infoOnly = 0
-            Begin
-                UPDATE T_Dataset
-                SET DS_Comment = @datasetComment
-                WHERE Dataset_ID = @datasetID
-                --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
-            End
         End
     End
 
- 
 Done:
 
     If @InfoOnly <> 0
     Begin
         If Len(@message) = 0
+        Begin
             Set @message = 'Dataset type is valid: ' + @currentDatasetType
-            
+        End
+
         Print @message + ' (' + @dataset + ')'
         SELECT @message as Message, @dataset As Dataset
     End
