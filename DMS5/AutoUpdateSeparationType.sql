@@ -10,7 +10,8 @@ CREATE PROCEDURE [dbo].[AutoUpdateSeparationType]
 **  Desc:   Update the separation type based on the name and acquisition length
 ** 
 **  Auth:   mem
-**  Date:   10/09/2020
+**  Date:   10/09/2020 mem - Initial version
+**          10/10/2020 mem - Adjust threshold for LC-Dionex-Formic_30min
 **    
 *****************************************************/
 (
@@ -27,7 +28,10 @@ As
     Set @acqLengthMinutes = ISNULL(@acqLengthMinutes, 0)
     Set @optimalSeparationType = ''
 
+    ---------------------------------------------------
     -- Update the separation type name if it matches certain conditions
+    ---------------------------------------------------
+
     If @separationType Like 'LC-Waters-Formic%' AND @acqLengthMinutes > 5
     Begin
         If @acqLengthMinutes < 35
@@ -50,7 +54,7 @@ As
 
     If @separationType Like 'LC-Dionex-Formic%' AND @acqLengthMinutes > 5
     Begin
-        If @acqLengthMinutes < 35
+        If @acqLengthMinutes < 50
            Set @optimalSeparationType = 'LC-Dionex-Formic_30min'
         Else If @acqLengthMinutes < 107
            Set @optimalSeparationType = 'LC-Dionex-Formic_100min'
