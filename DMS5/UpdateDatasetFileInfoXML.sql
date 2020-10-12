@@ -82,7 +82,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
 **          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
 **          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
-**          10/09/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
+**          10/10/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
 **    
 *****************************************************/
 (
@@ -467,7 +467,7 @@ As
         -- Note that UpdateDatasetFileInfoXML will also call UpdateDatasetFileInfoXML when the MSFileInfoScanner tool runs
         EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
 
-        If @optimalSeparationType <> @separationType AND @infoOnly <> 0
+        If @optimalSeparationType <> @separationType AND @infoOnly = 0
         Begin
             UPDATE T_Dataset
             SET DS_sec_sep = @optimalSeparationType
