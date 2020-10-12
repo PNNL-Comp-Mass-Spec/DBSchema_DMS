@@ -45,7 +45,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          06/13/2019 mem - Leave the dataset rating as 'Not Released', 'No Data (Blank/Bad)', or 'No Interest' for QC datasets
 **          07/02/2019 mem - Add support for parameter "Work Package" in the XML file
 **          09/04/2020 mem - Rename variable and match both 'Capture Subfolder' and 'Capture Subdirectory' in @xmlDoc
-**          10/09/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length (provided @requestID is non-zero)
+**          10/10/2020 mem - Rename variables
 **    
 *****************************************************/
 (
@@ -70,9 +70,6 @@ AS
     
     Declare @runStartDate datetime
     Declare @runFinishDate datetime
-
-    Declare @acqLengthMinutes int
-    Declare @optimalSeparationType varchar(64)
 
     Set @message = ''
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
@@ -403,30 +400,6 @@ AS
             If DateDiff(day, GetDate(), @runFinishDate) > 1
             Begin
                 Set @runFinishDate = @runStartDate
-            End
-            Else
-            Begin
-                Set @acqLengthMinutes = DATEDIFF(minute, @runStartDate, @runFinishDate)
-                If @acqLengthMinutes > 1 AND ISNULL(@separationType, '') <> ''
-                Begin
-                    -- Possibly update the separation type
-                    -- Note that UpdateDatasetFileInfoXML will also call UpdateDatasetFileInfoXML when the MSFileInfoScanner tool runs
-                    EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
-
-                    If @optimalSeparationType <> @separationType
-                    Begin
-                        UPDATE T_Dataset
-                        SET DS_sec_sep = @optimalSeparationType
-                        WHERE Dataset_ID = @datasetID
-
-                        If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Posting_Time >= DateAdd(hour, -2, getdate()))
-                        Begin
-                            Set @message = 'Auto-updated separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
-                            Exec PostLogEntry 'Normal', @message, 'AddNewDataset'
-                            Set @message = ''
-                        End
-                    End
-                End
             End
         End
         
