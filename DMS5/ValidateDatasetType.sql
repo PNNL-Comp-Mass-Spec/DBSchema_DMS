@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          06/03/2019 mem - Check for 'IMS' in ScanFilter
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
+**          10/13/2020 mem - Add support for datasets that only have MS2 spectra (they will be assigned dataset type HMS or MS, despite the fact that they have no MS1 spectra; this is by design)
 **    
 *****************************************************/
 (
@@ -56,7 +57,7 @@ As
     Declare @actualCountMS int
     Declare @actualCountHMS int
     Declare @actualCountGCMS int
-    
+
     Declare @actualCountCIDMSn int
     Declare @actualCountCIDHMSn int
     Declare @actualCountETDMSn int
@@ -66,6 +67,9 @@ As
     Declare @actualCountETciDHMSn int
     Declare @actualCountEThcDMSn int
     Declare @actualCountEThcDHMSn int
+
+    Declare @actualCountAnyMSn int
+    Declare @actualCountAnyHMSn int
 
     Declare @actualCountMRM int
     Declare @actualCountHCD int
@@ -126,6 +130,9 @@ As
            @actualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
            @actualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
     
+           @actualCountAnyMSn  = SUM(CASE WHEN ScanType LIKE '%-MSn'    OR ScanType = 'MSn'  Then 1 Else 0 End),
+           @actualCountAnyHMSn = SUM(CASE WHEN ScanType LIKE '%-HMSn'   OR ScanType = 'HMSn'  Then 1 Else 0 End),
+
            @actualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then 1 Else 0 End),
            @actualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then 1 Else 0 End),
 
@@ -150,6 +157,8 @@ As
            SELECT @actualCountMS AS ActualCountMS,
                   @actualCountHMS AS ActualCountHMS,
                   @actualCountGCMS AS ActualCountGCMS,
+                  @actualCountAnyMSn As ActualCountAnyMSn,
+                  @actualCountAnyHMSn As ActualCountAnyHMSn,
                   @actualCountCIDMSn AS ActualCountCIDMSn,
                   @actualCountCIDHMSn AS ActualCountCIDHMSn,
                   @actualCountETDMSn AS ActualCountETDMSn,
@@ -347,7 +356,29 @@ As
 
         Goto AutoDefineDSType
     End
-        
+    
+    If @actualCountAnyMSn > 0 AND Not @currentDatasetType LIKE '%-MSn%'
+    Begin
+        -- Dataset contains MSn spectra, but the current dataset type doesn't reflect that this is an MSn dataset
+        If @currentDatasetType = 'IMS-HMS'
+        Begin
+            Set @newDatasetType = 'IMS-HMS-MSn'
+        End
+        Else
+        Begin
+            If Not @currentDatasetType LIKE 'IMS%'
+            Begin
+                Set @autoDefineDSType = 1
+                If @InfoOnly = 1
+                    Print 'Set @autoDefineDSType=1 because @actualCountAnyMSn > 0 AND Not @currentDatasetType LIKE ''%-MSn%'''
+            End
+            Else
+                Set @newDatasetType = ' an MSn-based dataset type'
+        End
+            
+        Goto AutoDefineDSType
+    End
+
     If (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) = 0 AND @currentDatasetType LIKE '%-HMSn%'
     Begin
         -- Dataset does not have HMSn scans, but current dataset type says it does
@@ -399,6 +430,28 @@ As
         Goto AutoDefineDSType
     End
 
+    If @actualCountAnyHMSn > 0 AND Not @currentDatasetType LIKE '%-HMSn%'
+    Begin
+        -- Dataset contains HMSn spectra, but the current dataset type doesn't reflect that this is an HMSn dataset
+        If @currentDatasetType = 'IMS-HMS'
+        Begin
+            Set @newDatasetType = 'IMS-HMS-HMSn'
+        End
+        Else
+        Begin
+            If Not @currentDatasetType LIKE 'IMS%'
+            Begin
+                Set @autoDefineDSType = 1
+                If @InfoOnly = 1
+                    Print 'Set @autoDefineDSType=1 because @actualCountAnyHMSn > 0 AND Not @currentDatasetType LIKE ''%-HMSn%'''
+            End
+            Else
+                Set @newDatasetType = ' an HMSn-based dataset type'
+        End
+            
+        Goto AutoDefineDSType
+    End
+
     -----------------------------------------------------------
     -- Possibly auto-generate the dataset type 
     -- If @autoDefineDSType is non-zero then will update the dataset type to this value
@@ -427,7 +480,7 @@ AutoDefineDSType:
         Begin
             Set @datasetTypeAutoGen = 'MS'
             
-            If @actualCountMS = 0 And (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0
+            If @actualCountMS = 0 And (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCD + @actualCountETciDHMSn + @actualCountEThcDHMSn + @actualCountAnyHMSn) > 0
             Begin
                 -- Dataset only has fragmentation spectra and no MS1 spectra
                 -- Since all of the fragmentation spectra are high res, use 'HMS'
