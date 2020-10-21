@@ -132,6 +132,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Proposal_ID_WorkPackage_Entered] O
 	[Entered] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Requested_Run_Queue_State_include_RDS_Type_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Queue_State_include_RDS_Type_ID] ON [dbo].[T_Requested_Run]
+(
+	[Queue_State] ASC
+)
+INCLUDE([RDS_type_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
 /****** Object:  Index [IX_T_Requested_Run_RDS_Block_include_ID] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_RDS_Block_include_ID] ON [dbo].[T_Requested_Run]
 (
