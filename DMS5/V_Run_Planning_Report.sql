@@ -19,6 +19,8 @@ SELECT  GroupQ.[Inst. Group],
         GroupQ.Requester,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue],
         GroupQ.[Days in Prep Queue],
+        GroupQ.[Queue State],
+        GroupQ.[Queued Instrument],
         Convert(decimal(10, 1), TAC.Actual_Hours) As Actual_Hours,
         TIGA.Allocated_Hours,
         GroupQ.[Separation Group],
@@ -57,6 +59,8 @@ FROM    ( SELECT    [Inst. Group],
                     Locked,
                     Batch_Prefix,
                     [Last Ordered],
+                    [Queue State],
+                    [Queued Instrument],
                     [Request Name Code],
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
                     SUM(BlkMissing) AS BlkMissing,
@@ -78,6 +82,8 @@ FROM    ( SELECT    [Inst. Group],
                              EPT.Abbreviation AS [Proposal Type],
                              RRB.Locked,
                              RR.RDS_BatchID AS Batch,
+                             QS.Queue_State_Name AS [Queue State],
+                             CASE WHEN RR.Queue_State = 2 THEN ISNULL(AssignedInstrument.IN_name, '') ELSE '' END AS [Queued Instrument],
                              LEFT(RRB.Batch, 20) + CASE WHEN LEN(RRB.Batch) > 20 THEN '...'
                                                         ELSE ''
                                                    END AS Batch_Prefix,
@@ -104,6 +110,8 @@ FROM    ( SELECT    [Inst. Group],
                              ON RR.RDS_Requestor_PRN = U.U_PRN
                            INNER JOIN T_Experiments AS E
                              ON RR.Exp_ID = E.Exp_ID
+                           INNER JOIN T_Requested_Run_Queue_State QS 
+                             ON RR.Queue_State = QS.Queue_State
                            INNER JOIN T_EUS_UsageType AS EUT
                              ON RR.RDS_EUS_UsageType = EUT.ID
                            INNER JOIN T_Requested_Run_Batches AS RRB
@@ -118,6 +126,8 @@ FROM    ( SELECT    [Inst. Group],
                              ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
                            LEFT OUTER JOIN T_EUS_Proposal_Type EPT
                              ON EUP.Proposal_Type = EPT.Proposal_Type
+                           LEFT OUTER JOIN T_Instrument_Name AS AssignedInstrument
+                             ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
                       WHERE RR.RDS_Status = 'Active' AND
                             RR.DatasetID IS NULL
                     ) AS RequestQ
@@ -133,6 +143,8 @@ FROM    ( SELECT    [Inst. Group],
                     [Proposal Type],
                     Locked,
                     [Last Ordered],
+                    [Queue State],
+                    [Queued Instrument],
                     Batch,
                     Batch_Prefix
         ) AS GroupQ

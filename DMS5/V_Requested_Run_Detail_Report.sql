@@ -36,6 +36,9 @@ SELECT RR.ID AS Request,
        RR.RDS_Blocking_Factor AS [Blocking Factor],
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
+       LC.Cart_Name AS Cart,
+       CartConfig.Cart_Config_Name AS [Cart Config],
+       RR.RDS_Cart_Col AS [Column Number],
        RR.RDS_WorkPackage [Work Package],
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
             ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
@@ -63,6 +66,8 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN dbo.T_Campaign AS C
        ON E.EX_campaign_ID = C.Campaign_ID
+     INNER JOIN T_LC_Cart AS LC
+       ON RR.RDS_Cart_ID = LC.ID
      INNER JOIN dbo.T_Requested_Run_Batches AS RRB
        ON RR.RDS_BatchID = RRB.ID
      INNER JOIN dbo.T_EUS_UsageType AS EUT
@@ -71,6 +76,8 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.RDS_MRM_Attachment = dbo.T_Attachments.ID
      LEFT OUTER JOIN dbo.T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
+     LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
+       ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times QT

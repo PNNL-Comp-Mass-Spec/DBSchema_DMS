@@ -42,7 +42,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
        CartConfig.Cart_Config_Name AS [Cart Config],
-       CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
+       -- Deprecated 2020-10-21: CONVERT(varchar(12), RR.RDS_Cart_Col) AS Col,
        DS.DS_Comment AS [Dataset Comment],
        RR.RDS_NameCode AS [Request Name Code],
        CASE
