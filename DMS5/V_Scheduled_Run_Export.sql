@@ -9,7 +9,7 @@ AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_priority AS Priority,
-       RR.RDS_instrument_name AS Instrument,
+       RR.RDS_instrument_group AS Instrument,
        DTN.DST_name AS [Type],
        E.Experiment_Num AS Experiment,
        U.U_Name AS Requester,

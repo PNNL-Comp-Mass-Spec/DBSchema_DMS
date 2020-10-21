@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 **  Date:   12/12/2018 mem - Initial version
 **          08/19/2020 mem - Add @newOperatorPRN
 **                         - Add call to UpdateCachedDatasetInstruments
+**          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -162,7 +163,7 @@ As
     ---------------------------------------------------
     --
     SELECT @sourceDatasetRequestID = RR.ID,
-           @instrumentName = RR.RDS_instrument_name,
+           @instrumentName = RR.RDS_instrument_group,
            @workPackage = RR.RDS_WorkPackage,
            @instrumentSettings = RR.RDS_instrument_setting,
            @msType = DTN.DST_name,

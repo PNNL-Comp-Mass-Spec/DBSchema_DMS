@@ -11,8 +11,8 @@ SELECT RR.ID AS Request,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,
-       ISNULL(InstName.IN_name, '') AS Instrument,
-       RR.RDS_instrument_name AS [Inst. Group],
+       ISNULL(DatasetInstrument.IN_name, '') AS Instrument,
+       RR.RDS_instrument_group AS [Inst. Group],
        DTN.DST_name AS [Type],
        RR.RDS_Sec_Sep AS [Separation Group],
        RR.RDS_Origin AS Origin,
@@ -37,8 +37,8 @@ FROM T_Requested_Run AS RR
        ON E.EX_campaign_ID = C.Campaign_ID
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
-     LEFT OUTER JOIN T_Instrument_Name AS InstName
-       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     LEFT OUTER JOIN T_Instrument_Name AS DatasetInstrument
+       ON DS.DS_instrument_name_ID = DatasetInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC

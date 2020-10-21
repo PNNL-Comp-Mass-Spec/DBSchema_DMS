@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.FindActiveRequestedRunForDataset
+CREATE PROCEDURE [dbo].[FindActiveRequestedRunForDataset]
 /****************************************************
 **
 **	Desc: 
@@ -20,6 +20,7 @@ CREATE Procedure dbo.FindActiveRequestedRunForDataset
 **
 **	Auth:	mem
 **	Date:	06/10/2016 mem - Initial version
+**			10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -114,9 +115,10 @@ AS
 
 			If @requestMatchCount = 1
 			Begin
-				-- Match found; lookup the requested run's instrument group (stored in field RDS_instrument_name)
+				-- Match found; lookup the requested run's instrument group
 				--
-				SELECT @requestInstGroup = RDS_instrument_name, @requestName = RDS_Name
+				SELECT @requestInstGroup = RDS_instrument_group, 
+				       @requestName = RDS_Name
 				FROM T_Requested_Run
 				WHERE ID = @requestID
 

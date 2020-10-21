@@ -9,7 +9,7 @@ AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        E.Experiment_Num AS Experiment,
-       RR.RDS_instrument_name AS Instrument,
+       RR.RDS_instrument_group AS Instrument,
        U.U_Name AS Requestor,
        RR.RDS_created AS Created,
        RR.RDS_WorkPackage AS [Work Package],

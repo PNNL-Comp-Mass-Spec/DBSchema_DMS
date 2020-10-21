@@ -4,14 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Requested_Run_Unified_List_Ex]  as
+CREATE VIEW [dbo].[V_Requested_Run_Unified_List_Ex]  as
 SELECT  T_Requested_Run.ID AS Request ,
         T_Requested_Run.RDS_Name AS Name ,
         T_Requested_Run.RDS_Status AS Status ,
         T_Requested_Run.RDS_BatchID AS Batch ,
         T_Experiments.Experiment_Num AS Experiment ,
         T_Requested_Run.Exp_ID AS Experiment_ID ,
-        T_Requested_Run.RDS_instrument_name AS Instrument ,
+        T_Requested_Run.RDS_instrument_group AS Instrument ,
         T_Dataset.Dataset_Num AS Dataset ,
         T_Requested_Run.DatasetID AS Dataset_ID ,
         T_Requested_Run.RDS_Block AS Block ,

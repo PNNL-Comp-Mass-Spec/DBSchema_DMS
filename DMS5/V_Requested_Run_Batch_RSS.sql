@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Requested_Run_Batch_RSS AS
+
+CREATE VIEW [dbo].[V_Requested_Run_Batch_RSS] AS
 SELECT     TS.ID AS url_title, CONVERT(VARCHAR(12), TS.ID) + ' - ' + TS.Batch AS post_title, TS.post_date, CONVERT(VARCHAR(12), TS.ID) 
                       + '_' + CONVERT(VARCHAR(12), TS.num) AS guid, TU.U_Name + '|' + TS.Description + '|' + CONVERT(VARCHAR(12), TS.num) + ' datasets' AS post_body, 
                       TU.U_PRN
@@ -17,6 +18,7 @@ FROM         (SELECT     TB.ID, TB.Batch, MAX(TD.DS_created) AS post_date, COUNT
                        GROUP BY TB.ID, TB.Batch, TB.Description, TB.Owner
                        HAVING      (MAX(TD.DS_created) > DATEADD(DAY, - 30, GETDATE()))) AS TS INNER JOIN
                       T_Users AS TU ON TS.Owner = TU.ID
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_RSS] TO [DDL_Viewer] AS [dbo]
 GO

@@ -9,7 +9,7 @@ AS
 SELECT RR.ID AS RR_Request,
        RR.RDS_Name AS RR_Name,
        E.Experiment_Num AS RR_Experiment,
-       RR.RDS_instrument_name AS RR_Instrument,
+       RR.RDS_instrument_group AS RR_Instrument,
        DTN.DST_Name AS RR_Type,
        RR.RDS_Sec_Sep AS RR_SecSep,
        RR.RDS_Requestor_PRN AS RR_Requestor,

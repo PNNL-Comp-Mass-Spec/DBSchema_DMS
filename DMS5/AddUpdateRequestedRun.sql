@@ -87,6 +87,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          12/10/2018 mem - Report an error if the comment contains 'experiment_group/show/0000'
 **          07/01/2019 mem - Allow @workPackage to be none if the Request is not active and either the Usage Type is Maintenance or the name starts with "AutoReq_"
 **          02/03/2020 mem - Raise an error if @eusUsersList contains multiple user IDs (since ERS only allows for a single user to be associated with a dataset)
+**          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **
 *****************************************************/
 (
@@ -736,7 +737,7 @@ As
             RDS_Requestor_PRN, 
             RDS_comment, 
             RDS_created, 
-            RDS_instrument_name, 
+            RDS_instrument_group, 
             RDS_type_ID, 
             RDS_instrument_setting, 
             RDS_priority, 
@@ -848,7 +849,7 @@ As
             RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @reqName ELSE RDS_Name END,
             RDS_Requestor_PRN = @requestorPRN, 
             RDS_comment = @comment, 
-            RDS_instrument_name = @instrumentGroup, 
+            RDS_instrument_group = @instrumentGroup, 
             RDS_type_ID = @datasetTypeID, 
             RDS_instrument_setting = @instrumentSettings, 
             Exp_ID = @experimentID,

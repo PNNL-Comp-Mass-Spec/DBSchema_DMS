@@ -61,7 +61,7 @@ FROM    ( SELECT    [Inst. Group],
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
                     SUM(BlkMissing) AS BlkMissing,
                     SUM(Blocked) AS Blocked                    
-          FROM      ( SELECT RR.RDS_instrument_name AS [Inst. Group],
+          FROM      ( SELECT RR.RDS_instrument_group AS [Inst. Group],
                              RR.RDS_Sec_Sep AS [Separation Group],
                              DTN.DST_Name AS [DS Type],
                              RR.ID AS RequestID,

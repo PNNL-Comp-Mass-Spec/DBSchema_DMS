@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Requested_Run_Batch_List_Report] as
+CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report] as
 SELECT RRB.ID,
        RRB.Batch AS Name,
        ActiveReqSepTypes.Requests,      -- Active requests
@@ -29,7 +29,7 @@ SELECT RRB.ID,
             THEN CompletedRequests.MaxDaysInQueue    -- No active requested runs for this batch
             ELSE DATEDIFF(DAY, ISNULL(ActiveReqStats.Oldest_Request_Created, CompletedRequests.Oldest_Request_Created), GETDATE())
        END AS [Days In Queue],
-	   Cast(RRB.Requested_Completion_Date as date) AS [Complete By],
+       Cast(RRB.Requested_Completion_Date as date) AS [Complete By],
        SPQ.[Days in Prep Queue],
        RRB.Justification_for_High_Priority,
        RRB.[Comment],
@@ -38,7 +38,7 @@ SELECT RRB.ID,
             ELSE ActiveReqSepTypes.SeparationTypeFirst + ' - ' + ActiveReqSepTypes.SeparationTypeLast
        END AS [Separation Type],        -- Separation group
        CASE
-           WHEN ActiveReqSepTypes.Requests IS NULL THEN 0	-- No active requested runs for this batch
+           WHEN ActiveReqSepTypes.Requests IS NULL THEN 0    -- No active requested runs for this batch
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 30 THEN 30    -- Oldest active request in batch is 0 to 30 days old
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 60 THEN 60    -- Oldest active request is 30 to 60 days old
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 90 THEN 90    -- Oldest active request is 60 to 90 days old
@@ -46,11 +46,11 @@ SELECT RRB.ID,
        END AS [#DaysInQueue],
        CASE
            WHEN ActiveReqSepTypes.Requests IS NULL OR
-                CompletedRequests.MinDaysInQueue IS NULL THEN 0  -- No active requested runs for this batch
-           WHEN CompletedRequests.MinDaysInQueue <= 30   THEN 30 -- Oldest request in batch is 0 to 30 days old
-           WHEN CompletedRequests.MinDaysInQueue <= 60   THEN 60	-- Oldest request is 30 to 60 days old
-           WHEN CompletedRequests.MinDaysInQueue <= 90   THEN 90	-- Oldest request is 60 to 90 days old
-           ELSE 120								        -- Oldest request is over 90 days old
+                CompletedRequests.MinDaysInQueue IS NULL THEN 0   -- No active requested runs for this batch
+           WHEN CompletedRequests.MinDaysInQueue <= 30   THEN 30  -- Oldest request in batch is 0 to 30 days old
+           WHEN CompletedRequests.MinDaysInQueue <= 60   THEN 60  -- Oldest request is 30 to 60 days old
+           WHEN CompletedRequests.MinDaysInQueue <= 90   THEN 90  -- Oldest request is 60 to 90 days old
+           ELSE 120                                               -- Oldest request is over 90 days old
        END AS [#MinDaysInQueue]
 FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users

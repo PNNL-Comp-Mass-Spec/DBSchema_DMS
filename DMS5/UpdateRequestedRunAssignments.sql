@@ -4,12 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateRequestedRunAssignments]
+CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 /****************************************************
 **
 **	Desc: 
-**	Changes assignment properties (priority, instrument)
-**	to given new value for given list of requested runs
+**	    Changes assignment properties (priority, instrument group)
+**	    to given new value for given list of requested runs
+**
+**      This procedure is called via POST calls to requested_run/operation/
+**      The POST calls originate from https://dms2.pnl.gov/requested_run_admin/report
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -37,6 +40,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunAssignments]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Change argument @reqRunIDList from varchar(2048) to varchar(max)
+**			10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -333,7 +337,7 @@ As
 	Begin
 		
 		UPDATE T_Requested_Run
-		SET	RDS_instrument_name = @NewInstrumentGroup
+		SET	RDS_instrument_group = @newInstrumentGroup
 		FROM T_Requested_Run RR INNER JOIN
 			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
 		--	

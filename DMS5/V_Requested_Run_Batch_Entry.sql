@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Requested_Run_Batch_Entry
+
+CREATE VIEW [dbo].[V_Requested_Run_Batch_Entry]
 AS
 SELECT     R.ID, R.Batch AS Name, R.Description, dbo.GetBatchRequestedRunList(R.ID) AS RequestedRunList, U.U_PRN AS OwnerPRN, 
                       R.Requested_Batch_Priority AS RequestedBatchPriority, R.Requested_Completion_Date AS RequestedCompletionDate, 

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[SyncWithDMS5]
+CREATE PROCEDURE [dbo].[SyncWithDMS5]
 /****************************************************
 ** 
 **  Desc:   Synchronize data with database DMS5
@@ -28,6 +28,7 @@ CREATE Procedure [dbo].[SyncWithDMS5]
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          11/30/2018 mem - Add T_Residues and rename the Monoisotopic_Mass and Average_Mass fields
 **          04/17/2020 mem - Rename columns in T_EMSL_Instrument_Usage_Report
+**          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -3650,8 +3651,8 @@ As
                 t.[RDS_Status] <> s.[RDS_Status] OR
                 ISNULL( NULLIF(t.[RDS_comment], s.[RDS_comment]),
                         NULLIF(s.[RDS_comment], t.[RDS_comment])) IS NOT NULL OR
-                ISNULL( NULLIF(t.[RDS_instrument_name], s.[RDS_instrument_name]),
-                        NULLIF(s.[RDS_instrument_name], t.[RDS_instrument_name])) IS NOT NULL OR
+                ISNULL( NULLIF(t.[RDS_instrument_group], s.[RDS_instrument_group]),
+                        NULLIF(s.[RDS_instrument_group], t.[RDS_instrument_group])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[RDS_type_ID], s.[RDS_type_ID]),
                         NULLIF(s.[RDS_type_ID], t.[RDS_type_ID])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[RDS_instrument_setting], s.[RDS_instrument_setting]),
@@ -3706,7 +3707,7 @@ As
                 [RDS_Requestor_PRN] = s.[RDS_Requestor_PRN],
                 [RDS_comment] = s.[RDS_comment],
                 [RDS_created] = s.[RDS_created],
-                [RDS_instrument_name] = s.[RDS_instrument_name],
+                [RDS_instrument_group] = s.[RDS_instrument_group],
                 [RDS_type_ID] = s.[RDS_type_ID],
                 [RDS_instrument_setting] = s.[RDS_instrument_setting],
                 [RDS_special_instructions] = s.[RDS_special_instructions],
@@ -3738,8 +3739,8 @@ As
                 [Vialing_Conc] = s.[Vialing_Conc],
                 [Vialing_Vol] = s.[Vialing_Vol]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([RDS_Name], [RDS_Requestor_PRN], [RDS_comment], [RDS_created], [RDS_instrument_name], [RDS_type_ID], [RDS_instrument_setting], [RDS_special_instructions], [RDS_Well_Plate_Num], [RDS_Well_Num], [RDS_priority], [RDS_note], [Exp_ID], [RDS_Run_Start], [RDS_Run_Finish], [RDS_internal_standard], [ID], [RDS_WorkPackage], [RDS_BatchID], [RDS_Blocking_Factor], [RDS_Block], [RDS_Run_Order], [RDS_EUS_Proposal_ID], [RDS_EUS_UsageType], [RDS_Cart_ID], [RDS_Cart_Config_ID], [RDS_Cart_Col], [RDS_Sec_Sep], [RDS_MRM_Attachment], [DatasetID], [RDS_Origin], [RDS_Status], [RDS_NameCode], [Entered], [Vialing_Conc], [Vialing_Vol])
-                VALUES(s.[RDS_Name], s.[RDS_Requestor_PRN], s.[RDS_comment], s.[RDS_created], s.[RDS_instrument_name], s.[RDS_type_ID], s.[RDS_instrument_setting], s.[RDS_special_instructions], s.[RDS_Well_Plate_Num], s.[RDS_Well_Num], s.[RDS_priority], s.[RDS_note], s.[Exp_ID], s.[RDS_Run_Start], s.[RDS_Run_Finish], s.[RDS_internal_standard], s.[ID], s.[RDS_WorkPackage], s.[RDS_BatchID], s.[RDS_Blocking_Factor], s.[RDS_Block], s.[RDS_Run_Order], s.[RDS_EUS_Proposal_ID], s.[RDS_EUS_UsageType], s.[RDS_Cart_ID], s.[RDS_Cart_Config_ID], s.[RDS_Cart_Col], s.[RDS_Sec_Sep], s.[RDS_MRM_Attachment], s.[DatasetID], s.[RDS_Origin], s.[RDS_Status], s.[RDS_NameCode], s.[Entered], s.[Vialing_Conc], s.[Vialing_Vol])
+                INSERT([RDS_Name], [RDS_Requestor_PRN], [RDS_comment], [RDS_created], [RDS_instrument_group], [RDS_type_ID], [RDS_instrument_setting], [RDS_special_instructions], [RDS_Well_Plate_Num], [RDS_Well_Num], [RDS_priority], [RDS_note], [Exp_ID], [RDS_Run_Start], [RDS_Run_Finish], [RDS_internal_standard], [ID], [RDS_WorkPackage], [RDS_BatchID], [RDS_Blocking_Factor], [RDS_Block], [RDS_Run_Order], [RDS_EUS_Proposal_ID], [RDS_EUS_UsageType], [RDS_Cart_ID], [RDS_Cart_Config_ID], [RDS_Cart_Col], [RDS_Sec_Sep], [RDS_MRM_Attachment], [DatasetID], [RDS_Origin], [RDS_Status], [RDS_NameCode], [Entered], [Vialing_Conc], [Vialing_Vol])
+                VALUES(s.[RDS_Name], s.[RDS_Requestor_PRN], s.[RDS_comment], s.[RDS_created], s.[RDS_instrument_group], s.[RDS_type_ID], s.[RDS_instrument_setting], s.[RDS_special_instructions], s.[RDS_Well_Plate_Num], s.[RDS_Well_Num], s.[RDS_priority], s.[RDS_note], s.[Exp_ID], s.[RDS_Run_Start], s.[RDS_Run_Finish], s.[RDS_internal_standard], s.[ID], s.[RDS_WorkPackage], s.[RDS_BatchID], s.[RDS_Blocking_Factor], s.[RDS_Block], s.[RDS_Run_Order], s.[RDS_EUS_Proposal_ID], s.[RDS_EUS_UsageType], s.[RDS_Cart_ID], s.[RDS_Cart_Config_ID], s.[RDS_Cart_Col], s.[RDS_Sec_Sep], s.[RDS_MRM_Attachment], s.[DatasetID], s.[RDS_Origin], s.[RDS_Status], s.[RDS_NameCode], s.[Entered], s.[Vialing_Conc], s.[Vialing_Vol])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                    Cast(Inserted.[ID] as varchar(12)),

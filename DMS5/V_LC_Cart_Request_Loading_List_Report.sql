@@ -4,14 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_LC_Cart_Request_Loading_List_Report]
+CREATE VIEW [dbo].[V_LC_Cart_Request_Loading_List_Report]
 AS
 SELECT RR.RDS_BatchID AS BatchID,
        RRB.Locked,
        RR.ID AS Request,
        RR.RDS_Name AS [Name],
        RR.RDS_Status AS [Status],
-       RR.RDS_instrument_name AS Instrument,
+       RR.RDS_instrument_group AS Instrument,
        RR.RDS_Sec_Sep AS Separation_Type,
        E.Experiment_Num AS Experiment,
        RR.RDS_Block AS [Block],

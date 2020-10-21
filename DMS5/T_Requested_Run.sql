@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Requestor_PRN] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_created] [datetime] NOT NULL,
-	[RDS_instrument_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RDS_instrument_group] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_type_ID] [int] NULL,
 	[RDS_instrument_setting] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_special_instructions] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

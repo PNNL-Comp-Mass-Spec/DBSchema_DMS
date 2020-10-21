@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
 /****************************************************
 **
@@ -14,8 +13,9 @@ CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
 **
 **	Auth:	grk
 **	Date:	01/13/2013
-**	01/13/2013 grk - initial release
-**	03/14/2013 grk - removed "Active" status filter
+**			01/13/2013 grk - initial release
+**			03/14/2013 grk - removed "Active" status filter
+**			10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -73,7 +73,7 @@ Run_Order varchar(8)
 		TRR.RDS_Name AS Name ,
 		TRR.RDS_Status AS Status ,
 			TRR.RDS_BatchID AS BatchID ,
-		TRR.RDS_instrument_name AS Instrument ,
+		TRR.RDS_instrument_group AS Instrument ,
 		TRR.RDS_Sec_Sep AS Separation_Type ,
 		TEX.Experiment_Num AS Experiment ,
 		T_LC_Cart.Cart_Name AS Cart ,

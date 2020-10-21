@@ -16,15 +16,15 @@ SELECT RequestedRun_ID,
        Dataset_AcqTimeStart,
        CASE
            WHEN [Days From Requested Run Create To Dataset Acquired] IS NULL THEN 
-				CASE WHEN RDS_Status = 'Active' 
-				     THEN DATEDIFF(DAY, RequestedRun_Created, GETDATE())
-				     ELSE NULL
-				END
-		   WHEN [Days From Requested Run Create To Dataset Acquired] <= 0 Then
-		        CASE WHEN RDS_Origin = 'Auto'
-		             THEN NULL
-		             ELSE [Days From Requested Run Create To Dataset Acquired]
-		        END
+                CASE WHEN RDS_Status = 'Active' 
+                     THEN DATEDIFF(DAY, RequestedRun_Created, GETDATE())
+                     ELSE NULL
+                END
+           WHEN [Days From Requested Run Create To Dataset Acquired] <= 0 Then
+                CASE WHEN RDS_Origin = 'Auto'
+                     THEN NULL
+                     ELSE [Days From Requested Run Create To Dataset Acquired]
+                END
            ELSE [Days From Requested Run Create To Dataset Acquired]
        END AS [Days In Queue]
 FROM ( SELECT RR.ID AS RequestedRun_ID,

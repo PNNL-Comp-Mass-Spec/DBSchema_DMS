@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/04/2019 mem - Update Last_Ordered if the run order changes
+**          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **    
 *****************************************************/
 (
@@ -141,7 +142,7 @@ As
                                 WHEN #TmpNewBatchParams.Parameter = 'Block' THEN CONVERT(VARCHAR(128), RDS_Block)
                                 WHEN #TmpNewBatchParams.Parameter = 'Run Order' THEN CONVERT(VARCHAR(128), RDS_Run_Order)
                                 WHEN #TmpNewBatchParams.Parameter = 'Status' THEN CONVERT(VARCHAR(128), RDS_Status)
-                                WHEN #TmpNewBatchParams.Parameter = 'Instrument' THEN RDS_instrument_name
+                                WHEN #TmpNewBatchParams.Parameter = 'Instrument' THEN RDS_instrument_group
                                 ELSE ''
                                 END 
             FROM #TmpNewBatchParams
@@ -243,7 +244,7 @@ As
             WHERE #TmpNewBatchParams.Parameter = 'Cart'
 
             UPDATE T_Requested_Run
-            SET RDS_instrument_name = #TmpNewBatchParams.Value
+            SET RDS_instrument_group = #TmpNewBatchParams.Value
             FROM T_Requested_Run
                  INNER JOIN #TmpNewBatchParams
                    ON #TmpNewBatchParams.Request = dbo.T_Requested_Run.ID

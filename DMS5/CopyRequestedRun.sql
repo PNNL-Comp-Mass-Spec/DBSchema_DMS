@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[CopyRequestedRun]
 **          03/07/2017 mem - Add parameter @requestNameAppendText
 **                         - Assure that the newly created request has a unique name
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **
 *****************************************************/
 (
@@ -116,7 +117,7 @@ As
         RDS_Name,
         RDS_Requestor_PRN,
         RDS_created,
-        RDS_instrument_name,
+        RDS_instrument_group,
         RDS_type_ID,
         RDS_instrument_setting,
         RDS_special_instructions,
@@ -151,7 +152,7 @@ As
         @newReqName,
         RDS_Requestor_PRN,
         RDS_created,                -- Pass along the original request's "created" date into the new entry
-        RDS_instrument_name,
+        RDS_instrument_group,
         RDS_type_ID,
         RDS_instrument_setting,
         RDS_special_instructions,
