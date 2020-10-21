@@ -9,14 +9,18 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
 **
 **  Desc: 
 **      Requested run admin operations 
+**      Will only update Active and Inactive requests
 **
-**      Example contents of @requestList
-**
+**      Example contents of @requestList:
 **      <r i="545499" /><r i="545498" /><r i="545497" /><r i="545496" /><r i="545495" />
 **
-**  Return values: 0: success, otherwise, error code
+**      Description of the modes
+**        'Active'    sets the requests to the Active state
+**        'Inactive'  sets the requests to the Inactive state
+**        'Delete'    deletes the requests
+**        'UnassignInstrument' will change the Queue_State to 1 for requests that have a Queue_State of 2 ("Assigned"); skips any with a Queue_State of 3 ("Analyzed")
 **
-**  Parameters: 
+**  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   03/09/2010
@@ -26,11 +30,12 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Add additional debug logging
+**          10/20/2020 mem - Add mode 'UnassignInstrument'
 **    
 *****************************************************/
 (
     @requestList text,                -- XML describing list of Requested Run IDs
-    @mode varchar(32),                -- 'Active', 'Inactive', or 'delete'
+    @mode varchar(32),                -- 'Active', 'Inactive', 'Delete', or 'UnassignInstrument'
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
@@ -108,7 +113,7 @@ As
     End
 
     -----------------------------------------------------------
-    -- validate request list
+    -- Validate the request list
     -----------------------------------------------------------
     --
      UPDATE #TMP
@@ -140,7 +145,7 @@ As
         GOTO DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE not Origin = 'user')
+    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin = 'user')
     Begin
         SET @myError = 51013
         set @message = 'Cannot change requests that were not entered by user'
@@ -179,7 +184,7 @@ As
         UPDATE T_Requested_Run
         SET RDS_Status = @mode
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP )
+                      FROM #TMP ) AND RDS_Status <> 'Completed'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -189,7 +194,7 @@ As
             GOTO done
         End
 
-        Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' requests'
+        Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests')
 
         If Len(@callingUser) > 0
         Begin
@@ -202,7 +207,6 @@ As
             WHERE (State_Name = @mode)
             
             Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
-
         End
         
         -- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
@@ -237,11 +241,11 @@ As
     -- Delete requests
     -----------------------------------------------------------
     --
-    If @mode = 'delete'
+    If @mode = 'Delete'
     Begin
         DELETE FROM T_Requested_Run
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP )
+                      FROM #TMP ) AND RDS_Status <> 'Completed'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -251,7 +255,7 @@ As
             GOTO done
         End
 
-        Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' requests'
+        Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests')
 
         If Len(@callingUser) > 0
         Begin
@@ -259,10 +263,9 @@ As
             -- to alter the Entered_By field in T_Event_Log
             -- This procedure uses #TmpIDUpdateList
             --
-            set @stateID = 0
+            Set @stateID = 0
             
             Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
-
         End
         
         -- Remove any cached EUS user lists
@@ -274,7 +277,33 @@ As
 
         GOTO Done
     END
-    
+        
+    -----------------------------------------------------------
+    -- Unassign requests
+    -----------------------------------------------------------
+    --
+    If @mode = 'UnassignInstrument'
+    Begin
+        UPDATE T_Requested_Run
+        SET Queue_State = 1
+        WHERE ID IN ( SELECT ItemID
+                      FROM #TMP ) AND 
+              RDS_Status <> 'Completed' AND
+              Queue_State = 2
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+        Begin
+            set @message = 'Error trying to unassign requests'
+            GOTO done
+        End
+
+        Set @UsageMessage = 'Unassigned ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests') + ' from the queued instrument'
+
+        GOTO Done
+    END
+
 Done:
     ---------------------------------------------------
     -- Log SP usage

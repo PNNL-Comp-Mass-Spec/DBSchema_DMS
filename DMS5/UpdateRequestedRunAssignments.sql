@@ -41,10 +41,13 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **			08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Change argument @reqRunIDList from varchar(2048) to varchar(max)
 **			10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
+**			10/20/2020 mem - Rename mode 'instrument' to 'instrumentGroup'
+**                         - Rename mode 'instrumentIgnoreType' to 'instrumentGroupIgnoreType'
+**                         - Add mode 'assignedInstrument'
 **    
 *****************************************************/
 (
-	@mode varchar(32), -- 'priority', 'instrument', 'instrumentIgnoreType', 'datasetType', 'delete', 'separationGroup'
+	@mode varchar(32), -- 'priority', 'instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument', 'datasetType', 'delete', 'separationGroup'
 	@newValue varchar(512),
 	@reqRunIDList varchar(max),
 	@message varchar(512)='' output,
@@ -59,22 +62,25 @@ As
 
 	Declare @msg varchar(512)
 	Declare @continue int
-	Declare @RequestID int
+	Declare @requestID int
 
-	Declare @NewInstrumentGroup varchar(64) = ''
-	Declare @NewSeparationGroup varchar(64) = ''
+	Declare @newInstrumentGroup varchar(64) = ''
+	Declare @newSeparationGroup varchar(64) = ''
 
-	Declare @NewDatasetType varchar(64) = ''
-	Declare @NewDatasetTypeID int = 0
+    Declare @newAssignedInstrumentID int = 0;
+    Declare @newQueueState int = 0
+
+	Declare @newDatasetType varchar(64) = ''
+	Declare @newDatasetTypeID int = 0
 	
 	Declare @datasetTypeID int
 	Declare @datasetTypeName varchar(64)
 	
-	Declare @RequestIDCount int
-	Declare @RequestIDFirst int
+	Declare @requestIDCount int
+	Declare @requestIDFirst int
 
 	Declare @allowedDatasetTypes varchar(255) = ''
-	Declare @RequestCount int = 0
+	Declare @requestCount int = 0
 
 	Declare @logErrors tinyint = 0
 
@@ -114,27 +120,28 @@ As
 		-- @reqRunIDList was empty; nothing to do
 		RAISERROR ('Request ID list was empty; nothing to do', 11, 2)
 
-	Set @RequestCount = @myRowCount
+	Set @requestCount = @myRowCount
 
 	-- Initial validation checks are complete; now enable @logErrors	
 	Set @logErrors = 1
 
-	If @mode IN ('instrument', 'instrumentIgnoreType')
+	If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType')
 	Begin -- <a>
 		
 		---------------------------------------------------
 		-- Validate the instrument group
 		-- Note that as of 6/26/2013 mode 'instrument' does not appear to be used by the DMS website
-		-- Mode 'instrumentIgnoreType' is used by http://dms2.pnl.gov/requested_run_admin/report
+        -- This unused mode was renamed to 'instrumentGroup' in October 2020
+		-- Mode 'instrumentGroupIgnoreType' is used by http://dms2.pnl.gov/requested_run_admin/report
 		---------------------------------------------------
 		--
 		-- Set the instrument group to @newValue for now
-		Set @NewInstrumentGroup = @newValue
+		Set @newInstrumentGroup = @newValue
 		
-		IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @NewInstrumentGroup)
+		IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @newInstrumentGroup)
 		Begin
 			-- Try to update instrument group using T_Instrument_Name
-			SELECT @NewInstrumentGroup = IN_Group
+			SELECT @newInstrumentGroup = IN_Group
 			FROM T_Instrument_Name
 			WHERE IN_Name = @newValue
 		End
@@ -144,9 +151,9 @@ As
 		-- This also assures the text is properly capitalized
 		---------------------------------------------------
 
-		SELECT @NewInstrumentGroup = IN_Group
+		SELECT @newInstrumentGroup = IN_Group
 		FROM T_Instrument_Group
-		WHERE IN_Group = @NewInstrumentGroup
+		WHERE IN_Group = @newInstrumentGroup
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -156,7 +163,7 @@ As
 			RAISERROR ('Could not find entry in database for instrument group (or instrument) "%s"', 11, 3, @newValue)
 		End
 		
-		If @mode = 'instrument'
+		If @mode = 'instrumentGroup'
 		Begin -- <b>
 		
 			---------------------------------------------------
@@ -194,18 +201,18 @@ As
 			-- Step through the entries in #TmpDatasetTypeList and verify each
 			--  Dataset Type against T_Instrument_Group_Allowed_DS_Type
 			
-			SELECT @DatasetTypeID = Min(DatasetTypeID)-1
+			SELECT @datasetTypeID = Min(DatasetTypeID)-1
 			FROM #TmpDatasetTypeList
 			
 			Set @continue = 1
 			While @continue = 1
 			Begin -- <c>
-				SELECT TOP 1 @DatasetTypeID = DatasetTypeID,
-							@DatasetTypeName = DatasetTypeName,
-							@RequestIDCount = RequestIDCount,
-							@RequestIDFirst = RequestIDFirst						 
+				SELECT TOP 1 @datasetTypeID = DatasetTypeID,
+							 @datasetTypeName = DatasetTypeName,
+							 @requestIDCount = RequestIDCount,
+							 @requestIDFirst = RequestIDFirst						 
 				FROM #TmpDatasetTypeList
-				WHERE DatasetTypeID > @DatasetTypeID
+				WHERE DatasetTypeID > @datasetTypeID
 				ORDER BY DatasetTypeID
 				--	
 				SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -218,15 +225,15 @@ As
 					-- Verify that dataset type is valid for given instrument group
 					---------------------------------------------------				
 
-					If Not Exists (SELECT * FROM T_Instrument_Group_Allowed_DS_Type WHERE IN_Group = @NewInstrumentGroup AND Dataset_Type = @DatasetTypeName)
+					If Not Exists (SELECT * FROM T_Instrument_Group_Allowed_DS_Type WHERE IN_Group = @newInstrumentGroup AND Dataset_Type = @datasetTypeName)
 					Begin
-						SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@NewInstrumentGroup)
+						SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@newInstrumentGroup)
 
-						Set @msg = 'Dataset Type "' + @DatasetTypeName + '" is invalid for instrument group "' + @NewInstrumentGroup + '"; valid types are "' + @allowedDatasetTypes + '"'
-						If @RequestIDCount > 1
-							Set @msg = @msg + '; ' + Convert(varchar(12), @RequestIDCount) + ' conflicting Request IDs, starting with ID ' + Convert(varchar(12), @RequestIDFirst)
+						Set @msg = 'Dataset Type "' + @datasetTypeName + '" is invalid for instrument group "' + @newInstrumentGroup + '"; valid types are "' + @allowedDatasetTypes + '"'
+						If @requestIDCount > 1
+							Set @msg = @msg + '; ' + Convert(varchar(12), @requestIDCount) + ' conflicting Request IDs, starting with ID ' + Convert(varchar(12), @requestIDFirst)
 						Else
-							Set @msg = @msg + '; conflicting Request ID is ' + Convert(varchar(12), @RequestIDFirst)
+							Set @msg = @msg + '; conflicting Request ID is ' + Convert(varchar(12), @requestIDFirst)
 						
 						Set @logErrors = 0
 						RAISERROR (@msg, 11, 4)
@@ -237,6 +244,36 @@ As
 		End -- </b>
 	End -- </a>
 
+    
+	If @mode IN ('assignedInstrument')
+	Begin
+        If ISNULL(@newValue, '') = ''
+        Begin
+            -- Unassign the instrument
+            Set @newQueueState = 1
+        End
+        Else
+        Begin
+		    ---------------------------------------------------
+		    -- Determine the Instrument ID of the selected instrument
+		    ---------------------------------------------------
+		    --
+		    SELECT @newAssignedInstrumentID = Instrument_ID
+		    FROM T_Instrument_Name
+		    WHERE IN_Name = @newValue
+		    --	
+		    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+		    If @myRowCount = 0
+		    Begin
+			    Set @logErrors = 0
+			    RAISERROR ('Could not find entry in database for instrument "%s"', 11, 3, @newValue)
+		    End
+
+            Set @newQueueState = 2
+        End
+    End
+
 	If @mode IN ('separationGroup')
 	Begin
 		
@@ -246,12 +283,12 @@ As
 		---------------------------------------------------
 		--
 		-- Set the separation group to @newValue for now
-		Set @NewSeparationGroup = @newValue
+		Set @newSeparationGroup = @newValue
 		
-		IF NOT EXISTS (SELECT * FROM T_Separation_Group WHERE Sep_Group = @NewSeparationGroup)
+		IF NOT EXISTS (SELECT * FROM T_Separation_Group WHERE Sep_Group = @newSeparationGroup)
 		Begin
 			-- Try to update Separation group using T_Secondary_Sep
-			SELECT @NewSeparationGroup = Sep_Group
+			SELECT @newSeparationGroup = Sep_Group
 			FROM T_Secondary_Sep
 			WHERE SS_name = @newValue
 		End
@@ -261,9 +298,9 @@ As
 		-- This also assures the text is properly capitalized
 		---------------------------------------------------
 
-		SELECT @NewSeparationGroup = Sep_Group
+		SELECT @newSeparationGroup = Sep_Group
 		FROM T_Separation_Group
-		WHERE Sep_Group = @NewSeparationGroup
+		WHERE Sep_Group = @newSeparationGroup
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -285,16 +322,16 @@ As
 		---------------------------------------------------
 		--
 		-- Set the dataset type to @newValue for now
-		Set @NewDatasetType = @newValue
+		Set @newDatasetType = @newValue
 				
 		---------------------------------------------------
 		-- Make sure a valid dataset type was chosen
 		---------------------------------------------------
 
-		SELECT @NewDatasetType = DST_name, 
-		       @NewDatasetTypeID = DST_Type_ID
+		SELECT @newDatasetType = DST_name, 
+		       @newDatasetTypeID = DST_Type_ID
 		FROM T_DatasetTypeName
-		WHERE (DST_name = @NewDatasetType)
+		WHERE (DST_name = @newDatasetType)
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -333,7 +370,7 @@ As
 	End
 
 	-------------------------------------------------
-	If @mode IN ('instrument', 'instrumentIgnoreType')
+	If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType')
 	Begin
 		
 		UPDATE T_Requested_Run
@@ -343,9 +380,44 @@ As
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		Set @message = 'Changed the instrument group to ' + @NewInstrumentGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		Set @message = 'Changed the instrument group to ' + @newInstrumentGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
+	End
+
+    ------------------------------------------------
+	If @mode IN ('assignedInstrument')
+	Begin		
+		UPDATE T_Requested_Run
+		SET	Queue_Instrument_ID = CASE WHEN @newQueueState > 1 THEN @newAssignedInstrumentID ELSE Queue_Instrument_ID END, 
+            Queue_State = @newQueueState,
+            Queue_Date = CASE WHEN @newQueueState > 1 THEN GetDate() ELSE Queue_Date END
+		FROM T_Requested_Run RR INNER JOIN
+			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
+        WHERE RR.RDS_Status = 'Active'
+		--	
+		SELECT @myError = @@error, @myRowCount = @@rowcount
+		
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Can only update the assigned instrument for Active requested runs; all of the selected items are Completed or Inactive'
+        End
+        Else
+        Begin
+		    Set @message = 'Changed the assigned instrument to ' + @newValue + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		    If @myRowcount > 1
+			    Set @message = @message + 's'
+
+            SELECT @myRowCount = COUNT(*)
+            FROM T_Requested_Run RR INNER JOIN
+			     #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
+            WHERE RR.RDS_Status <> 'Active'
+
+            If @myRowCount > 0
+            Begin
+                Set @message = @message + '; skipped ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests') + ' since not Active'
+            End
+        End
 	End
 
 	-------------------------------------------------
@@ -353,13 +425,13 @@ As
 	Begin
 		
 		UPDATE T_Requested_Run
-		SET	RDS_Sec_Sep = @NewSeparationGroup
+		SET	RDS_Sec_Sep = @newSeparationGroup
 		FROM T_Requested_Run RR INNER JOIN
 			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		Set @message = 'Changed the separation group to ' + @NewSeparationGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		Set @message = 'Changed the separation group to ' + @newSeparationGroup + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	End
@@ -369,13 +441,13 @@ As
 	Begin
 		
 		UPDATE T_Requested_Run
-		SET	RDS_type_ID = @NewDatasetTypeID
+		SET	RDS_type_ID = @newDatasetTypeID
 		FROM T_Requested_Run RR INNER JOIN
 			 #TmpRequestIDs ON RR.ID = #TmpRequestIDs.RequestID
 		--	
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
-		Set @message = 'Changed the dataset type to ' + @NewDatasetType + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
+		Set @message = 'Changed the dataset type to ' + @newDatasetType + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	End
@@ -384,18 +456,18 @@ As
 	If @mode = 'delete'
 	Begin -- <a>
 		-- Step through the entries in #TmpRequestIDs and delete each
-		SELECT @RequestID = Min(RequestID)-1
+		SELECT @requestID = Min(RequestID)-1
 		FROM #TmpRequestIDs
 		
-		Declare @CountDeleted int
-		Set @CountDeleted = 0
+		Declare @countDeleted int
+		Set @countDeleted = 0
 		
 		Set @continue = 1
 		While @continue = 1
 		Begin -- <b>
-			SELECT TOP 1 @RequestID = RequestID
+			SELECT TOP 1 @requestID = RequestID
 			FROM #TmpRequestIDs
-			WHERE RequestID > @RequestID
+			WHERE RequestID > @requestID
 			ORDER BY RequestID
 			--	
 			SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -405,7 +477,7 @@ As
 			Else
 			Begin -- <c>
 				exec @myError = DeleteRequestedRun
-									@RequestID,
+									@requestID,
 									@skipDatasetCheck=0,
 									@message=@message OUTPUT,
 									@callingUser=@callingUser
@@ -419,17 +491,17 @@ As
 						Set @logErrors = 0
 					End
 					
-					Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @RequestID) + ': ' + @message
+					Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @requestID) + ': ' + @message
 					RAISERROR (@msg, 11, 5)
 					
 					Set @logErrors = 1
 				End	-- </d>
 				
-				Set @CountDeleted = @CountDeleted + 1
+				Set @countDeleted = @countDeleted + 1
 			End -- </c>
 		End -- </b>
 	
-		Set @message = 'Deleted ' + Convert(varchar(12), @CountDeleted) + ' requested run'
+		Set @message = 'Deleted ' + Convert(varchar(12), @countDeleted) + ' requested run'
 		If @myRowcount > 1
 			Set @message = @message + 's'
 	End -- </a>
@@ -459,11 +531,11 @@ As
 	-- Log SP usage
 	---------------------------------------------------
 
-	Declare @UsageMessage varchar(512)
-	Set @UsageMessage = 'Updated ' + Convert(varchar(12), @RequestCount) + ' requested run'
-	If @RequestCount <> 1
-		Set @UsageMessage = @UsageMessage + 's'
-	Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @UsageMessage
+	Declare @usageMessage varchar(512)
+	Set @usageMessage = 'Updated ' + Convert(varchar(12), @requestCount) + ' requested run'
+	If @requestCount <> 1
+		Set @usageMessage = @usageMessage + 's'
+	Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @usageMessage
 
 	return 0
 
