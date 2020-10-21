@@ -37,10 +37,13 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Origin] [char](4) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_NameCode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Entered] [datetime] NULL,
 	[Vialing_Conc] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Vialing_Vol] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Location_ID] [int] NULL,
+	[Queue_State] [tinyint] NOT NULL,
+	[Queue_Instrument_ID] [int] NULL,
+	[Queue_Date] [smalldatetime] NULL,
+	[Entered] [datetime] NULL,
 	[Updated] [smalldatetime] NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
@@ -178,6 +181,8 @@ ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Sec_
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Status]  DEFAULT ('Active') FOR [RDS_Status]
 GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Queue_State]  DEFAULT ((1)) FOR [Queue_State]
+GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Updated]  DEFAULT (getdate()) FOR [Updated]
@@ -231,6 +236,11 @@ ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_
 REFERENCES [dbo].[T_Requested_Run_Batches] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Batches]
+GO
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Queue_State] FOREIGN KEY([Queue_State])
+REFERENCES [dbo].[T_Requested_Run_Queue_State] ([Queue_State])
+GO
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_Queue_State]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Requested_Run_State_Name] FOREIGN KEY([RDS_Status])
 REFERENCES [dbo].[T_Requested_Run_State_Name] ([State_Name])
@@ -345,6 +355,7 @@ After Insert, Update
 **          12/12/2011 mem - Now updating T_Event_Log
 **          06/27/2018 mem - Update the Updated column
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          10/20/2020 mem - Change Queue_State to 3 (Analyzed) if the requested run status is Completed
 **    
 *****************************************************/
 AS
@@ -390,11 +401,11 @@ AS
     End
 
     UPDATE T_Requested_Run
-    SET Updated = GetDate()
+    SET Updated = GetDate(), 
+        Queue_State = CASE WHEN inserted.RDS_Status = 'Completed' THEN 3 ELSE inserted.Queue_State END
     FROM T_Requested_Run RR
          INNER JOIN inserted
            ON RR.ID = inserted.ID
-
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_u_Requested_Run]

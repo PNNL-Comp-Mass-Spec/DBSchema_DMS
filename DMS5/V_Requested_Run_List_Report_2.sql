@@ -21,6 +21,8 @@ SELECT RR.ID AS Request,
        U.U_Name AS Requestor,
        RR.RDS_created AS Created,
        QT.[Days In Queue],
+       QS.Queue_State_Name AS [Queue State],
+       ISNULL(AssignedInstrument.IN_name, '') AS [Queued Instrument],
        RR.RDS_WorkPackage AS [Work Package],
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
        EUT.Name AS [Usage],
@@ -68,12 +70,16 @@ FROM T_Requested_Run AS RR
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_LC_Cart AS LC
        ON RR.RDS_Cart_ID = LC.ID
+     INNER JOIN T_Requested_Run_Queue_State QS 
+       ON RR.Queue_State = QS.Queue_State
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
        ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     LEFT OUTER JOIN T_Instrument_Name AS AssignedInstrument
+       ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
