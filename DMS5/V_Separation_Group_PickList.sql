@@ -4,8 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Separation_Group_PickList] as
-SELECT Sep_Group, Sample_Prep_Visible
+CREATE VIEW [dbo].[V_Separation_Group_PickList] AS
+SELECT Sep_Group, Sample_Prep_Visible, Fraction_Count
 FROM T_Separation_Group 
 WHERE Active > 0
 

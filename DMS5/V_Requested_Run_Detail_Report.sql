@@ -23,6 +23,8 @@ SELECT RR.ID AS Request,
        RR.RDS_Requestor_PRN AS [Username],
        RR.RDS_created AS Created,
        QT.[Days In Queue],
+       QS.Queue_State_Name AS [Queue State],
+       ISNULL(AssignedInstrument.IN_name, '') AS [Queued Instrument],
        RR.RDS_Origin AS Origin,
        RR.RDS_instrument_setting AS [Instrument Settings],       
        RR.RDS_Well_Plate_Num AS [Well Plate],
@@ -68,6 +70,8 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_LC_Cart AS LC
        ON RR.RDS_Cart_ID = LC.ID
+     INNER JOIN T_Requested_Run_Queue_State QS 
+       ON RR.Queue_State = QS.Queue_State
      INNER JOIN dbo.T_Requested_Run_Batches AS RRB
        ON RR.RDS_BatchID = RRB.ID
      INNER JOIN dbo.T_EUS_UsageType AS EUT
@@ -80,6 +84,8 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON RR.RDS_Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     LEFT OUTER JOIN T_Instrument_Name AS AssignedInstrument
+       ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times QT
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run FC
