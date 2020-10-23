@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **
 **  Auth:   mem
 **  Date:   10/22/2020 mem - Initial Version
+**          10/23/2020 mem - Set the Origin of the new requested runs to "Fraction"
 **
 *****************************************************/
 (
@@ -658,7 +659,7 @@ As
                 @eusUsageTypeID,
                 @separationGroup,
                 @mrmAttachmentID,
-                'user',
+                'fraction',
                 @status,
                 @vialingConc,
                 @vialingVol,

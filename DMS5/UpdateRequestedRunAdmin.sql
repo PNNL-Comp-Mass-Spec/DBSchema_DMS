@@ -32,6 +32,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
 **          07/01/2019 mem - Add additional debug logging
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
 **          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
+**          10/23/2020 mem - Allow updating 'fraction' based requests
 **    
 *****************************************************/
 (
@@ -146,7 +147,7 @@ As
         GOTO DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin = 'user')
+    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction'))
     Begin
         SET @myError = 51013
         set @message = 'Cannot change requests that were not entered by user'
