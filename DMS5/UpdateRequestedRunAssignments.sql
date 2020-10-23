@@ -7,12 +7,15 @@ GO
 CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 /****************************************************
 **
-**	Desc: 
-**	    Changes assignment properties (priority, instrument group)
-**	    to given new value for given list of requested runs
+**	Desc:
+**      Update the specified requested runs to change priority, instrument group, separation group, dataset type, or assigned instrument
 **
-**      This procedure is called via POST calls to requested_run/operation/
-**      The POST calls originate from https://dms2.pnl.gov/requested_run_admin/report
+**      This procedure is called via two mechanisms:
+**      1) Via POST calls to requested_run/operation/ , originating from https://dms2.pnl.gov/requested_run_admin/report
+**         - See file requested_run_admin_cmds.php at https://github.com/PNNL-Comp-Mass-Spec/DMS-Website/blob/master/application/views/cmd/requested_run_admin_cmds.php
+**           and file lcmd.js at https://github.com/PNNL-Comp-Mass-Spec/DMS-Website/blob/d2eab881133cfe4c71f17b06b09f52fc4e61c8fb/javascript/lcmd.js#L225
+**      2) When the user clicks "Delete this request" or "Convert Request Into Fractions" at the bottom of a Requested Run Detail report
+**         - See the detail_report_commands and sproc_args sections at https://dms2.pnl.gov/config_db/show_db/requested_run.db
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -47,9 +50,9 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **    
 *****************************************************/
 (
-	@mode varchar(32), -- 'priority', 'instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument', 'datasetType', 'delete', 'separationGroup'
+	@mode varchar(32),                  -- 'priority', 'instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument', 'datasetType', 'delete', 'separationGroup'
 	@newValue varchar(512),
-	@reqRunIDList varchar(max),
+	@reqRunIDList varchar(max),         -- Comma separated list of requested run IDs
 	@message varchar(512)='' output,
 	@callingUser varchar(128) = ''
 )
@@ -117,8 +120,10 @@ As
 		RAISERROR ('Error parsing Request ID List', 11, 1)
 	
 	If @myRowCount = 0
+    Begin
 		-- @reqRunIDList was empty; nothing to do
 		RAISERROR ('Request ID list was empty; nothing to do', 11, 2)
+    End
 
 	Set @requestCount = @myRowCount
 
@@ -459,8 +464,7 @@ As
 		SELECT @requestID = Min(RequestID)-1
 		FROM #TmpRequestIDs
 		
-		Declare @countDeleted int
-		Set @countDeleted = 0
+		Declare @countDeleted int = 0
 		
 		Set @continue = 1
 		While @continue = 1
