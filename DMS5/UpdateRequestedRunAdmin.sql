@@ -31,6 +31,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Add additional debug logging
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
+**          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
 **    
 *****************************************************/
 (
@@ -285,11 +286,12 @@ As
     If @mode = 'UnassignInstrument'
     Begin
         UPDATE T_Requested_Run
-        SET Queue_State = 1
+        SET Queue_State = 1, 
+            Queue_Instrument_ID = Null
         WHERE ID IN ( SELECT ItemID
                       FROM #TMP ) AND 
               RDS_Status <> 'Completed' AND
-              Queue_State = 2
+              (Queue_State = 2 OR Not Queue_Instrument_ID Is NULL)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
