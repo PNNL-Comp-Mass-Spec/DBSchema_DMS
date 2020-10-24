@@ -34,7 +34,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_Sec_Sep] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_MRM_Attachment] [int] NULL,
 	[DatasetID] [int] NULL,
-	[RDS_Origin] [char](4) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RDS_Origin] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_Status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[RDS_NameCode] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Vialing_Conc] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
