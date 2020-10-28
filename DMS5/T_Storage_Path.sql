@@ -14,6 +14,8 @@ CREATE TABLE [dbo].[T_Storage_Path](
 	[SP_code] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_URL]  AS (case when [sp_function] like '%inbox' then NULL else (('http://'+[SP_machine_name])+'/')+replace([SP_path],'\','/') end) PERSISTED,
+	[SP_URL_HTTPS]  AS (case when [sp_function] like '%inbox' then NULL else ((('https://'+[SP_machine_name])+case when [SP_URL_Domain]='' then '' else '.'+[SP_URL_Domain] end)+'/')+replace([SP_path],'\','/') end) PERSISTED,
+	[SP_URL_Domain] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[SP_created] [datetime] NULL,
 	[SPath_RowVersion] [timestamp] NOT NULL,
  CONSTRAINT [PK_t_storage_path] PRIMARY KEY CLUSTERED 
@@ -34,6 +36,8 @@ CREATE NONCLUSTERED INDEX [IX_t_storage_path_Machine_Name_Path_ID] ON [dbo].[T_S
 	[SP_machine_name] ASC,
 	[SP_path_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Storage_Path] ADD  CONSTRAINT [DF_T_Storage_Path_SP_URL_Domain]  DEFAULT ('') FOR [SP_URL_Domain]
 GO
 ALTER TABLE [dbo].[T_Storage_Path] ADD  CONSTRAINT [DF_T_Storage_Path_SP_created]  DEFAULT (getdate()) FOR [SP_created]
 GO
