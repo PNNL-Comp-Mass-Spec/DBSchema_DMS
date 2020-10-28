@@ -392,6 +392,8 @@ As
                         NULLIF(s.[Auto_SP_Vol_Name_Server], t.[Auto_SP_Vol_Name_Server])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Auto_SP_Path_Root], s.[Auto_SP_Path_Root]),
                         NULLIF(s.[Auto_SP_Path_Root], t.[Auto_SP_Path_Root])) IS NOT NULL OR
+                ISNULL( NULLIF(t.[Auto_SP_URL_Domain], s.[Auto_SP_URL_Domain]),
+                        NULLIF(s.[Auto_SP_URL_Domain], t.[Auto_SP_URL_Domain])) IS NOT NULL OR                        
                 ISNULL( NULLIF(t.[Auto_SP_Archive_Server_Name], s.[Auto_SP_Archive_Server_Name]),
                         NULLIF(s.[Auto_SP_Archive_Server_Name], t.[Auto_SP_Archive_Server_Name])) IS NOT NULL OR
                 ISNULL( NULLIF(t.[Auto_SP_Archive_Path_Root], s.[Auto_SP_Archive_Path_Root]),
@@ -420,14 +422,15 @@ As
                 [Auto_SP_Vol_Name_Client] = s.[Auto_SP_Vol_Name_Client],
                 [Auto_SP_Vol_Name_Server] = s.[Auto_SP_Vol_Name_Server],
                 [Auto_SP_Path_Root] = s.[Auto_SP_Path_Root],
+                [Auto_SP_URL_Domain] = s.[Auto_SP_URL_Domain],
                 [Auto_SP_Archive_Server_Name] = s.[Auto_SP_Archive_Server_Name],
                 [Auto_SP_Archive_Path_Root] = s.[Auto_SP_Archive_Path_Root],
                 [Auto_SP_Archive_Share_Path_Root] = s.[Auto_SP_Archive_Share_Path_Root],
                 [Default_Purge_Policy] = s.[Default_Purge_Policy],
                 [Perform_Calibration] = s.[Perform_Calibration]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([IN_name], [Instrument_ID], [IN_class], [IN_Group], [IN_source_path_ID], [IN_storage_path_ID], [IN_capture_method], [IN_status], [IN_Room_Number], [IN_Description], [IN_usage], [IN_operations_role], [IN_Tracking], [Percent_EMSL_Owned], [IN_max_simultaneous_captures], [IN_Capture_Exclusion_Window], [IN_Created], [Auto_Define_Storage_Path], [Auto_SP_Vol_Name_Client], [Auto_SP_Vol_Name_Server], [Auto_SP_Path_Root], [Auto_SP_Archive_Server_Name], [Auto_SP_Archive_Path_Root], [Auto_SP_Archive_Share_Path_Root], [Default_Purge_Policy], [Perform_Calibration])
-                VALUES(s.[IN_name], s.[Instrument_ID], s.[IN_class], s.[IN_Group], s.[IN_source_path_ID], s.[IN_storage_path_ID], s.[IN_capture_method], s.[IN_status], s.[IN_Room_Number], s.[IN_Description], s.[IN_usage], s.[IN_operations_role], s.[IN_Tracking], s.[Percent_EMSL_Owned], s.[IN_max_simultaneous_captures], s.[IN_Capture_Exclusion_Window], s.[IN_Created], s.[Auto_Define_Storage_Path], s.[Auto_SP_Vol_Name_Client], s.[Auto_SP_Vol_Name_Server], s.[Auto_SP_Path_Root], s.[Auto_SP_Archive_Server_Name], s.[Auto_SP_Archive_Path_Root], s.[Auto_SP_Archive_Share_Path_Root], s.[Default_Purge_Policy], s.[Perform_Calibration])
+                INSERT([IN_name], [Instrument_ID], [IN_class], [IN_Group], [IN_source_path_ID], [IN_storage_path_ID], [IN_capture_method], [IN_status], [IN_Room_Number], [IN_Description], [IN_usage], [IN_operations_role], [IN_Tracking], [Percent_EMSL_Owned], [IN_max_simultaneous_captures], [IN_Capture_Exclusion_Window], [IN_Created], [Auto_Define_Storage_Path], [Auto_SP_Vol_Name_Client], [Auto_SP_Vol_Name_Server], [Auto_SP_Path_Root], [Auto_SP_URL_Domain], [Auto_SP_Archive_Server_Name], [Auto_SP_Archive_Path_Root], [Auto_SP_Archive_Share_Path_Root], [Default_Purge_Policy], [Perform_Calibration])
+                VALUES(s.[IN_name], s.[Instrument_ID], s.[IN_class], s.[IN_Group], s.[IN_source_path_ID], s.[IN_storage_path_ID], s.[IN_capture_method], s.[IN_status], s.[IN_Room_Number], s.[IN_Description], s.[IN_usage], s.[IN_operations_role], s.[IN_Tracking], s.[Percent_EMSL_Owned], s.[IN_max_simultaneous_captures], s.[IN_Capture_Exclusion_Window], s.[IN_Created], s.[Auto_Define_Storage_Path], s.[Auto_SP_Vol_Name_Client], s.[Auto_SP_Vol_Name_Server], s.[Auto_SP_Path_Root], s.[Auto_SP_URL_Domain], s.[Auto_SP_Archive_Server_Name], s.[Auto_SP_Archive_Path_Root], s.[Auto_SP_Archive_Share_Path_Root], s.[Default_Purge_Policy], s.[Perform_Calibration])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action, 
                    Cast(Inserted.[Instrument_ID] as varchar(12)), 

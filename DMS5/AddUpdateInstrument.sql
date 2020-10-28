@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @autoSPVolNameClient varchar(128),          -- Example: \\proto-8\
     @autoSPVolNameServer varchar(128),          -- Example: F:\
     @autoSPPathRoot varchar(128),               -- Example: Lumos01\
+    @autoSPUrlDomain varchar(64),               -- Example: pnl.gov
     @autoSPArchiveServerName varchar(64),
     @autoSPArchivePathRoot varchar(128),
     @autoSPArchiveSharePathRoot varchar(128),    
@@ -172,6 +173,7 @@ As
             Auto_SP_Vol_Name_Client = @autoSPVolNameClient,
             Auto_SP_Vol_Name_Server = @autoSPVolNameServer,
             Auto_SP_Path_Root = @autoSPPathRoot,
+            Auto_SP_URL_Domain = @autoSPUrlDomain,
             Auto_SP_Archive_Server_Name = @autoSPArchiveServerName,
             Auto_SP_Archive_Path_Root = @autoSPArchivePathRoot,
             Auto_SP_Archive_Share_Path_Root = @autoSPArchiveSharePathRoot

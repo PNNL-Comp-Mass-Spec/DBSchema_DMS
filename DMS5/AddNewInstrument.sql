@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddNewInstrument]
+CREATE PROCEDURE [dbo].[AddNewInstrument]
 /****************************************************
 **
 **  Desc:   Adds new instrument to database
@@ -30,7 +30,7 @@ CREATE Procedure [dbo].[AddNewInstrument]
 **          02/12/2010 mem - Now calling UpdateInstrumentAllowedDatasetType for each dataset type in @allowedDatasetTypes
 **          05/25/2010 dac - Updated archive paths for switch from nwfs to aurora
 **          08/30/2010 mem - Replaced parameter @allowedDatasetTypes with @InstrumentGroup
-**          05/12/2011 mem - Added @AutoDefineStoragePath
+**          05/12/2011 mem - Added @autoDefineStoragePath
 **                         - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
 **          05/13/2011 mem - Now calling ValidateAutoStoragePathParams
 **          11/30/2011 mem - Added parameter @PercentEMSLOwned
@@ -39,6 +39,8 @@ CREATE Procedure [dbo].[AddNewInstrument]
 **          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **          05/03/2019 mem - Add the source machine to T_Storage_Path_Hosts
+**          10/27/2020 mem - Populate Auto_SP_URL_Domain and store https:// in T_Storage_Path_Hosts.URL_Prefix
+**                           Pass @urlDomain to AddUpdateStorage
 **    
 *****************************************************/
 (
@@ -51,7 +53,7 @@ CREATE Procedure [dbo].[AddNewInstrument]
     @sourceMachineName varchar(128),    -- Source Machine to capture data from
     @sourcePath varchar(255),           -- transfer directory on source machine
     
-    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @AutoDefineStoragePath is yes (e.g. Lumos01\)
+    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
     @spVolClient  varchar(128),         -- Storage server name, e.g. \\proto-8\
     @spVolServer  varchar(128),         -- Drive letter on storage server (local to server itself), e.g. F:\
     
@@ -63,43 +65,43 @@ CREATE Procedure [dbo].[AddNewInstrument]
     @InstrumentGroup varchar(64),       -- Item in T_Instrument_Group
     @PercentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
     
-    @AutoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
+    @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
     @message varchar(512) output
 )
 As
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
-    set @message = ''
+    Set @message = ''
 
-    declare @result int
+    Declare @result int
 
-    declare @spSourcePathID int
-    declare @spStoragePathID int
-    set @spSourcePathID = 2 -- valid reference to 'na' storage path for initial entry
-    set @spStoragePathID = 2 -- valid reference to 'na' storage path for initial entry
+    Declare @spSourcePathID int
+    Declare @spStoragePathID int
+    Set @spSourcePathID = 2 -- valid reference to 'na' storage path for initial entry
+    Set @spStoragePathID = 2 -- valid reference to 'na' storage path for initial entry
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    Set @AutoDefineStoragePath = IsNull(@AutoDefineStoragePath, 'No')
+    Set @autoDefineStoragePath = IsNull(@autoDefineStoragePath, 'No')
 
     Declare @Value int = Try_Convert(Int, @PercentEMSLOwned)
     If @Value Is Null
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
 
     Declare @PercentEMSLOwnedVal int
-    set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
+    Set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
     
-    if @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
+    If @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
         
     ---------------------------------------------------
     -- Make sure instrument is not already in instrument table
     ---------------------------------------------------
     --
-    declare @hit int
-    set @hit = -1
+    Declare @hit int
+    Set @hit = -1
     --
     SELECT @hit = Instrument_ID 
     FROM T_Instrument_Name 
@@ -107,16 +109,16 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
-        set @message = 'Failed to look for existing instrument'
+        Set @message = 'Failed to look for existing instrument'
         RAISERROR (@message, 10, 1)
         return 51007
     end
 
-    if @myRowCount <> 0
+    If @myRowCount <> 0
     begin
-        set @message = 'Instrument name already in use'
+        Set @message = 'Instrument name already in use'
         RAISERROR (@message, 10, 1)
         return 51008
     end
@@ -125,8 +127,8 @@ As
     -- Derive shared path name
     ---------------------------------------------------
     --
-    declare @archiveNetworkSharePath varchar(128)
-    set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'adms.emsl.pnl.gov'), '/', '\')
+    Declare @archiveNetworkSharePath varchar(128)
+    Set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'adms.emsl.pnl.gov'), '/', '\')
 
     ---------------------------------------------------
     -- Resolve Yes/No parameters to 0 or 1
@@ -134,45 +136,46 @@ As
     --
     Declare @valAutoDefineStoragePath tinyint = 0
 
-    If @AutoDefineStoragePath = 'Yes' Or @AutoDefineStoragePath = 'Y' OR @AutoDefineStoragePath = '1'
+    If @autoDefineStoragePath = 'Yes' Or @autoDefineStoragePath = 'Y' OR @autoDefineStoragePath = '1'
         Set @valAutoDefineStoragePath = 1
 
     ---------------------------------------------------
-    -- Define the @AutoSP variables
+    -- Define the @autoSP variables
     -- Auto-populate if @valAutoDefineStoragePath is non-zero
     ---------------------------------------------------
     --    
-    Declare @AutoSPVolNameClient varchar(128)
-    Declare @AutoSPVolNameServer varchar(128)
-    Declare @AutoSPPathRoot varchar(128)
-    Declare @AutoSPArchiveServerName varchar(64)
-    Declare @AutoSPArchivePathRoot varchar(128)
-    Declare @AutoSPArchiveSharePathRoot varchar(128)
+    Declare @autoSPVolNameClient varchar(128)
+    Declare @autoSPVolNameServer varchar(128)
+    Declare @autoSPPathRoot varchar(128)
+    Declare @autoSPUrlDomain varchar(64) = 'pnl.gov'
+    Declare @autoSPArchiveServerName varchar(64)
+    Declare @autoSPArchivePathRoot varchar(128)
+    Declare @autoSPArchiveSharePathRoot varchar(128)
     
     If @valAutoDefineStoragePath <> 0
     Begin
-        Set @AutoSPVolNameClient = @spVolClient
-        Set @AutoSPVolNameServer = @spVolServer
-        Set @AutoSPPathRoot = @spPath
-        Set @AutoSPArchiveServerName = @archiveServer
-        Set @AutoSPArchivePathRoot = @archivePath
-        Set @AutoSPArchiveSharePathRoot = @archiveNetworkSharePath    
+        Set @autoSPVolNameClient = @spVolClient
+        Set @autoSPVolNameServer = @spVolServer
+        Set @autoSPPathRoot = @spPath
+        Set @autoSPArchiveServerName = @archiveServer
+        Set @autoSPArchivePathRoot = @archivePath
+        Set @autoSPArchiveSharePathRoot = @archiveNetworkSharePath    
 
-        If IsNull(@AutoSPVolNameClient, '') <> '' AND @AutoSPVolNameClient NOT LIKE '%\'
+        If IsNull(@autoSPVolNameClient, '') <> '' AND @autoSPVolNameClient NOT LIKE '%\'
             -- Auto-add a slash
-            Set @AutoSPVolNameClient = @AutoSPVolNameClient + '\'
+            Set @autoSPVolNameClient = @autoSPVolNameClient + '\'
 
-        If IsNull(@AutoSPVolNameServer, '') <> '' AND @AutoSPVolNameServer NOT LIKE '%\'
+        If IsNull(@autoSPVolNameServer, '') <> '' AND @autoSPVolNameServer NOT LIKE '%\'
             -- Auto-add a slash
-            Set @AutoSPVolNameServer = @AutoSPVolNameServer + '\'
+            Set @autoSPVolNameServer = @autoSPVolNameServer + '\'
                 
         ---------------------------------------------------
-        -- Validate the @AutoSP parameteres
+        -- Validate the @autoSP parameteres
         ---------------------------------------------------
 
-        exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @AutoSPVolNameClient, @AutoSPVolNameServer,
-                                                       @AutoSPPathRoot, @AutoSPArchiveServerName, 
-                                                       @AutoSPArchivePathRoot, @AutoSPArchiveSharePathRoot
+        exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
+                                                       @autoSPPathRoot, @autoSPArchiveServerName, 
+                                                       @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
     End
     
@@ -180,8 +183,8 @@ As
     -- Start transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(32)
-    set @transName = 'AddNewInstrument'
+    Declare @transName varchar(32)
+    Set @transName = 'AddNewInstrument'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -190,7 +193,7 @@ As
 
     -- get new instrument ID
     --
-    declare @iID int
+    Declare @iID int
     SELECT @iID = isnull(MAX(Instrument_ID), 0) + 1 FROM T_Instrument_Name
 
     -- make entry into instrument table
@@ -211,7 +214,8 @@ As
         Auto_Define_Storage_Path,
         Auto_SP_Vol_Name_Client,
         Auto_SP_Vol_Name_Server,
-        Auto_SP_Path_Root,        
+        Auto_SP_Path_Root,
+        Auto_SP_URL_Domain,
         Auto_SP_Archive_Server_Name,
         Auto_SP_Archive_Path_Root,
         Auto_SP_Archive_Share_Path_Root
@@ -229,25 +233,25 @@ As
         @OperationsRole,
         @PercentEMSLOwnedVal,
         @valAutoDefineStoragePath,
-        @AutoSPVolNameClient,
-        @AutoSPVolNameServer,
-        @AutoSPPathRoot,        
-        @AutoSPArchiveServerName,
-        @AutoSPArchivePathRoot,
-        @AutoSPArchiveSharePathRoot
+        @autoSPVolNameClient,
+        @autoSPVolNameServer,
+        @autoSPPathRoot,
+        @autoSPUrlDomain,
+        @autoSPArchiveServerName,
+        @autoSPArchivePathRoot,
+        @autoSPArchiveSharePathRoot
     )
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
     
-    if @myError <> 0
+    If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Insert into x table was unsuccessful for add instrument',
             10, 1)
         return 51131
     end
-
-    
+        
     ---------------------------------------------------
     -- Make sure the source machine exists in T_Storage_Path_Hosts
     ---------------------------------------------------
@@ -264,7 +268,7 @@ As
         If @periodLoc > 1
         Begin
             Set @hostName = Substring(@sourceMachineNameToFind, 1, @periodLoc-1)
-            Set @suffix= Substring(@sourceMachineNameToFind, @periodLoc, Len(@sourceMachineNameToFind))
+            Set @suffix = Substring(@sourceMachineNameToFind, @periodLoc, Len(@sourceMachineNameToFind))
         End
         Else
         Begin
@@ -272,8 +276,8 @@ As
             Set @suffix = '.pnl.gov'
         End
 
-        Insert Into T_Storage_Path_Hosts ( SP_machine_name, Host_Name, DNS_Suffix, URL_Prefix)
-        Values (@sourceMachineNameToFind, @hostName, @suffix, 'http://')
+        INSERT INTO T_Storage_Path_Hosts ( SP_machine_name, Host_Name, DNS_Suffix, URL_Prefix)
+        VALUES (@sourceMachineNameToFind, @hostName, @suffix, 'https://')
 
         Set @logMessage = 'Added machine ' + @sourceMachineNameToFind + ' to T_Storage_Path_Hosts with host name ' + @hostName
 
@@ -281,7 +285,9 @@ As
     End
 
     If @valAutoDefineStoragePath <> 0
+    Begin
         Set @result = 0
+    End
     Else
     Begin
         ---------------------------------------------------
@@ -295,13 +301,14 @@ As
                 'raw-storage',
                 @iName,
                 '(na)',
+                @autoSPUrlDomain,
                 @spStoragePathID output,
                 'add',
                 @message output
     End
     
     --
-    if @result <> 0
+    If @result <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Creating storage path was unsuccessful for add instrument',
@@ -320,12 +327,13 @@ As
             'inbox',
             @iName,
             '(na)',
+            '',
             @spSourcePathID output,
             'add',
             @message output
 
     --
-    if @result <> 0
+    If @result <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Creating source path was unsuccessful for add instrument',
@@ -341,7 +349,7 @@ As
         --
         -- get new archive ID
         --
-        declare @aID int
+        Declare @aID int
         --
         -- insert new archive path
         --
@@ -365,12 +373,12 @@ As
         
         If @myError = 0
         Begin
-            set @aID = SCOPE_IDENTITY()
+            Set @aID = SCOPE_IDENTITY()
             --
             SELECT @myRowCount = @@rowcount, @myError = @@error
         End
         
-        if @myError <> 0
+        If @myError <> 0
         begin
             rollback transaction @transName
             RAISERROR ('Insert into archive path table was unsuccessful for add instrument',
