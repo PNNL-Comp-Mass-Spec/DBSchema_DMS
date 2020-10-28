@@ -34,6 +34,7 @@ SELECT Instrument_ID AS ID,
        Auto_SP_Vol_Name_Client AS AutoSPVolNameClient,
        Auto_SP_Vol_Name_Server AS AutoSPVolNameServer,
        Auto_SP_Path_Root AS AutoSPPathRoot,
+       Auto_SP_URL_Domain AS AutoSPUrlDomain,
        Auto_SP_Archive_Server_Name AS AutoSPArchiveServerName,
        Auto_SP_Archive_Path_Root AS AutoSPArchivePathRoot,
        Auto_SP_Archive_Share_Path_Root AS AutoSPArchiveSharePathRoot

@@ -25,6 +25,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Auto_SP_Vol_Name_Client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Vol_Name_Server] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auto_SP_URL_Domain] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Auto_SP_Archive_Server_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_SP_Archive_Share_Path_Root] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -80,6 +81,8 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Created]  DEFAULT (getdate()) FOR [IN_Created]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Auto_Define_Storage_Path]  DEFAULT ((0)) FOR [Auto_Define_Storage_Path]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Auto_SP_URL_Domain]  DEFAULT ('') FOR [Auto_SP_URL_Domain]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Default_Purge_Policy]  DEFAULT ((0)) FOR [Default_Purge_Policy]
 GO
