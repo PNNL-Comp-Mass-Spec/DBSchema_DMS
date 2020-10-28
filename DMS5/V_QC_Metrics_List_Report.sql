@@ -4,9 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -15,7 +12,7 @@ SELECT DS.Dataset_Num AS Dataset,
        PM.AMT_Count_50pct_FDR AS [AMTs 50pct FDR],
        PM.Refine_Mass_Cal_PPMShift AS PPM_Shift,
        PM.Results_URL,
-       SPath.SP_URL + DS.Dataset_Num + '/QC/' + DS.Dataset_Num + '_BPI_MS.png'  AS [QC Link],
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS [QC Link],
        PM.Task_Database,
        AJ.AJ_parmFileName AS [Parm File],
        AJ.AJ_settingsFileName AS Settings_File,
@@ -89,8 +86,6 @@ FROM T_Dataset DS
 --       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Storage_Path SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
-
-
 
 
 GO

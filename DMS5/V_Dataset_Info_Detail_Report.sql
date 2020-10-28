@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report]
+CREATE VIEW [dbo].[V_Dataset_Info_Detail_Report] 
 AS
 SELECT DS.Dataset_Num AS Dataset,
        TE.Experiment_Num AS Experiment,
@@ -56,8 +55,8 @@ SELECT DS.Dataset_Num AS Dataset,
            WHEN ISNULL(DSA.AS_state_ID, 0) IN (3, 4, 10, 14, 15) THEN DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num)
            ELSE '(not available)'
        END AS [Archive Folder Path],
-	   SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS [Data Folder Link],
-       SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/index.html' AS [QC Link],
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS [Data Folder Link],
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/index.html' AS [QC Link],
        DSInfo.Last_Affected AS [DSInfo Updated]
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS

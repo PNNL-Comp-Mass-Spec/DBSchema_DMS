@@ -4,12 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Dataset_QC_List_Report] As
-Select DS.Dataset_ID AS ID,
+CREATE VIEW [dbo].[V_Dataset_QC_List_Report] 
+AS
+SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
-       SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
-       SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_HighAbu_LCMS.png' AS QC_2D,
-	   SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' + J.AJ_resultsFolderName + '/' + DS.Dataset_Num + '_HighAbu_LCMS_zoom.png' AS QC_DeconTools,
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_HighAbu_LCMS.png' AS QC_2D,
+       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' + J.AJ_resultsFolderName + '/' + DS.Dataset_Num + '_HighAbu_LCMS_zoom.png' AS QC_DeconTools,
        Exp.Experiment_Num AS Experiment,
        C.Campaign_Num AS Campaign,
        InstName.IN_name AS Instrument,
@@ -45,7 +46,8 @@ FROM T_DatasetStateName AS DSN
      LEFT OUTER JOIN T_Requested_Run AS RRH
        ON DS.Dataset_ID = RRH.DatasetID
      LEFT OUTER Join T_Analysis_Job As J
-	   On DS.DeconTools_Job_for_QC = J.AJ_jobID
+       ON DS.DeconTools_Job_for_QC = J.AJ_jobID
+
 
 
 GO
