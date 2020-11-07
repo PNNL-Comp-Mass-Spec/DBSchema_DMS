@@ -11,8 +11,8 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 	[Created] [datetime] NOT NULL,
 	[Locked] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Last_Ordered] [datetime] NULL,
-	[Requested_Batch_Priority] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Actual_Batch_Priority] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Requested_Batch_Priority] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Actual_Batch_Priority] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Requested_Completion_Date] [smalldatetime] NULL,
 	[Justification_for_High_Priority] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -51,6 +51,8 @@ ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Batch_Priority]  DEFAULT ('Normal') FOR [Requested_Batch_Priority]
 GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Actual_Batch_Priority]  DEFAULT ('Normal') FOR [Actual_Batch_Priority]
+GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Instrument]  DEFAULT ('na') FOR [Requested_Instrument]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
@@ -63,7 +65,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
 After Update
 /****************************************************
@@ -99,7 +100,6 @@ AS
              INNER JOIN T_Users U
                ON RRB.Owner = U.ID
     End
-
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ENABLE TRIGGER [trig_u_Requested_Run_Batches]

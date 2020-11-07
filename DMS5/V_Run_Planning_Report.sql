@@ -42,7 +42,8 @@ SELECT  GroupQ.[Inst. Group],
              THEN 90  -- Request is 60 to 90 days old
              ELSE 120                                                            -- Request is over 90 days old
         END AS #DaysInQueue,
-        WPActivationState AS #WPActivationState
+        GroupQ.WPActivationState AS #WPActivationState,
+        GroupQ.Requested_Batch_Priority AS #BatchPriority
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
                     COUNT(RequestID) AS [Run Count],
@@ -58,6 +59,7 @@ FROM    ( SELECT    [Inst. Group],
                     [Proposal Type],
                     Locked,
                     Batch_Prefix,
+                    Requested_Batch_Priority,
                     [Last Ordered],
                     [Queue State],
                     [Queued Instrument],
@@ -81,6 +83,7 @@ FROM    ( SELECT    [Inst. Group],
                              RR.RDS_EUS_Proposal_ID AS Proposal,
                              EPT.Abbreviation AS [Proposal Type],
                              RRB.Locked,
+                             RRB.Requested_Batch_Priority,
                              RR.RDS_BatchID AS Batch,
                              QS.Queue_State_Name AS [Queue State],
                              CASE WHEN RR.Queue_State = 2 THEN ISNULL(AssignedInstrument.IN_name, '') ELSE '' END AS [Queued Instrument],
@@ -146,7 +149,8 @@ FROM    ( SELECT    [Inst. Group],
                     [Queue State],
                     [Queued Instrument],
                     Batch,
-                    Batch_Prefix
+                    Batch_Prefix,
+                    Requested_Batch_Priority
         ) AS GroupQ
         INNER JOIN T_Requested_Run AS RequestLookupQ ON GroupQ.[Min Request] = RequestLookupQ.ID
         INNER JOIN T_EUS_UsageType AS TEUT ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
