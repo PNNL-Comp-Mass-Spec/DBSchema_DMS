@@ -22,6 +22,7 @@ CREATE Procedure [dbo].[HandleDatasetCaptureValidationFailure]
 **          11/05/2012 mem - Added additional Print statement
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          08/10/2018 mem - Call UpdateDMSFileInfoXML to push the dataset info into DMS5.T_Dataset_Info
+**          11/02/2020 mem - Fix bug validating the dataset name
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ As
         WHERE Dataset = @datasetName AND 
               Script IN ('DatasetCapture', 'IMSDatasetCapture')
         
-        If @datasetName = ''
+        If @datasetID = 0
         Begin
             set @message = 'Dataset not found: ' + @datasetName
             Set @myError = 50001
