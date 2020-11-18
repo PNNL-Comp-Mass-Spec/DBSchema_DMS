@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateRequestedRunWP
+
+CREATE Procedure [dbo].[UpdateRequestedRunWP]
 /****************************************************
 **
 **	Desc: 
@@ -26,6 +27,7 @@ CREATE Procedure dbo.UpdateRequestedRunWP
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			11/17/2020 mem - Fix typo in error message
 **    
 *****************************************************/
 (
@@ -51,9 +53,9 @@ AS
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunWP', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	Begin TRY 
 
@@ -75,7 +77,7 @@ AS
 			RAISERROR ('Old work package cannot be blank', 11, 16)
 		
 		If @NewWorkPackage = ''
-			RAISERROR ('Oew work package cannot be blank', 11, 16)
+			RAISERROR ('New work package cannot be blank', 11, 16)
 
 		----------------------------------------------------------
 		-- Create some temporary tables
