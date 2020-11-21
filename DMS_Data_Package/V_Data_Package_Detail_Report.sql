@@ -30,6 +30,8 @@ SELECT DP.ID,
        CampaignStats.Campaigns AS [Campaign Count],
        DP.Total_Item_Count AS [Total Item Count],
        DP.Wiki_Page_Link AS [PRISM Wiki],
+       DP.Data_DOI AS [Data DOI],
+       DP.Manuscript_DOI AS [Manuscript DOI],
 	   DP.EUS_Person_ID AS [EUS User ID],
 	   DP.EUS_Proposal_ID AS [EUS Proposal ID]
 FROM dbo.T_Data_Package AS DP
