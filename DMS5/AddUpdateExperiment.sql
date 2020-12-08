@@ -4,12 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateExperiment]
+CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 /****************************************************
 **
 **  Desc:   Adds a new experiment to DB
 **
-**          Note that the Experiment Detail Report web page 
+**          Note that the Experiment Detail Report web page
 **          uses DoMaterialItemOperation to retire an experiment
 **
 **  Return values: 0: success, otherwise, error code
@@ -67,6 +67,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
 **                           Remove items from #Tmp_ExpToRefCompoundMap that map to the reference compound named (none)
 **          11/30/2018 mem - Add output parameter @experimentID
 **          03/27/2019 mem - Update @experimentId using @existingExperimentID
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -91,7 +92,7 @@ CREATE Procedure [dbo].[AddUpdateExperiment]
     @experimentId int = null output,            -- Used by the ExperimentID page family when copying an experiment; this will have the new experiment's ID
     @mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
     @message varchar(512) output,
-    @container varchar(128) = 'na', 
+    @container varchar(128) = 'na',
     @barcode varchar(64) = '',
     @tissue varchar(128) = '',
     @callingUser varchar(128) = ''
@@ -101,24 +102,24 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Declare @result int
-    
+
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 0
 
     Declare @invalidCCList varchar(512) = null
     Declare @invalidRefCompoundList varchar(512)
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateExperiment', @raiseError = 1
     If @authorized = 0
     Begin
@@ -164,7 +165,7 @@ As
 
     If Not @alkylation IN ('Y', 'N')
         RAISERROR ('Alkylation must be Y or N', 11, 35)
-        
+
     -- Assure that @comment is not null and assure that it doesn't have &quot;
     If @comment LIKE '%&quot;%'
         Set @comment = Replace(@comment, '&quot;', '"')
@@ -198,21 +199,21 @@ As
     ---------------------------------------------------
     -- Resolve @tissue to BTO identifier
     ---------------------------------------------------
-    
+
     Declare @tissueIdentifier varchar(24)
     Declare @tissueName varchar(128)
     Declare @errorCode int
 
-    EXEC @errorCode = GetTissueID 
+    EXEC @errorCode = GetTissueID
             @tissueNameOrID=@tissue,
             @tissueIdentifier=@tissueIdentifier output,
             @tissueName=@tissueName output
-    
+
     If @errorCode = 100
         RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
     Else If @errorCode > 0
         RAISERROR ('Could not resolve tissue name or id: "%s"', 11, 41, @tissue)
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -220,10 +221,10 @@ As
     Declare @existingExperimentID int = 0
     Declare @curContainerID int = 0
     --
-    SELECT 
+    SELECT
         @existingExperimentID = Exp_ID,
         @curContainerID = EX_Container_ID
-    FROM T_Experiments 
+    FROM T_Experiments
     WHERE (Experiment_Num = @experimentNum)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -265,8 +266,18 @@ As
 
     Declare @userID int
     execute @userID = GetUserID @researcherPRN
-    if @userID = 0
-    begin
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @researcherPRN contains simply the username
+        --
+        SELECT @researcherPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
+    Begin
         -- Could not find entry in database for PRN @researcherPRN
         -- Try to auto-resolve the name
 
@@ -286,7 +297,7 @@ As
             return 51037
         End
 
-    end
+    End
 
     ---------------------------------------------------
     -- Resolve organism ID
@@ -335,7 +346,7 @@ As
         Else
             RAISERROR ('Could not find entry in database for enzyme "%s"', 11, 47, @enzymeName)
     End
-    
+
     ---------------------------------------------------
     -- Resolve labelling ID
     ---------------------------------------------------
@@ -350,7 +361,7 @@ As
     --
     if @myRowCount = 0
         RAISERROR ('Could not find entry in database for labelling "%s"; use "none" if unlabeled', 11, 48, @labelling)
-    
+
     ---------------------------------------------------
     -- Resolve predigestion internal standard ID
     -- If creating a new experiment, make sure the internal standard is active
@@ -373,7 +384,7 @@ As
     ---------------------------------------------------
     -- Resolve postdigestion internal standard ID
     ---------------------------------------------------
-    -- 
+    --
     Declare @postdigestIntStdID int = 0
     Set @internalStandardState = 'I'
     --
@@ -408,15 +419,15 @@ As
         RAISERROR ('Invalid container name "%s"', 11, 51, @container)
 
     ---------------------------------------------------
-    -- Resolve current container id to name 
+    -- Resolve current container id to name
     -- (skip if adding experiment)
     ---------------------------------------------------
     Declare @curContainerName varchar(125) = ''
     --
     If Not @mode In ('add', 'check_add')
     Begin
-        SELECT @curContainerName = Tag 
-        FROM T_Material_Containers 
+        SELECT @curContainerName = Tag
+        FROM T_Material_Containers
         WHERE ID = @curContainerID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -424,11 +435,11 @@ As
         if @myError <> 0
             RAISERROR ('Error resolving name of current container', 11, 53)
     End
-    
+
     ---------------------------------------------------
     -- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_ExpToCCMap (
         CC_Name varchar(128) not null,
         CC_ID int null
@@ -439,30 +450,30 @@ As
         Colon_Pos int null,
         Compound_ID int null
     )
-    
+
     ---------------------------------------------------
     -- Resolve cell cultures
     -- Auto-switch from 'none' or 'na' or '(none)' to ''
     ---------------------------------------------------
-    
+
     If @cellCultureList IN ('none', 'na', '(none)')
         Set @cellCultureList = ''
-    
+
     -- Replace commas with semicolons
     If @cellCultureList Like '%,%'
         Set @cellCultureList = Replace(@cellCultureList, ',', ';')
-    
+
     -- Get names of cell cultures from list argument into table
     --
     If @cellCultureList Like '%;%'
     Begin
-        INSERT INTO #Tmp_ExpToCCMap (CC_Name) 
+        INSERT INTO #Tmp_ExpToCCMap (CC_Name)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@cellCultureList, ';', 'AddUpdateExperiment')        
+        FROM dbo.udfParseDelimitedList(@cellCultureList, ';', 'AddUpdateExperiment')
     End
     Else If @cellCultureList <> ''
     Begin
-        INSERT INTO #Tmp_ExpToCCMap (CC_Name) 
+        INSERT INTO #Tmp_ExpToCCMap (CC_Name)
         VALUES (@cellCultureList)
     End
     --
@@ -470,7 +481,7 @@ As
     --
     if @myError <> 0
         RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
-    
+
     -- Verify that cell cultures exist
     --
     UPDATE #Tmp_ExpToCCMap
@@ -483,7 +494,7 @@ As
 
     if @myError <> 0
         RAISERROR ('Error resolving cell culture name to ID', 11, 80)
-    
+
     SELECT @invalidCCList = Coalesce(@invalidCCList + ', ' + CC_Name, CC_Name)
     FROM #Tmp_ExpToCCMap
     WHERE CC_ID IS NULL
@@ -492,7 +503,7 @@ As
     --
     if @myError <> 0
         RAISERROR ('Error looking for unresolved cell culture names', 11, 80)
-    
+
     if IsNull(@invalidCCList, '') <> ''
         RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @invalidCCList)
 
@@ -500,25 +511,25 @@ As
     -- Resolve reference compounds
     -- Auto-switch from 'none' or 'na' or '(none)' to ''
     ---------------------------------------------------
-    
+
     If @referenceCompoundList IN ('none', 'na', '(none)', '100:(none)')
         Set @referenceCompoundList = ''
-    
+
     -- Replace commas with semicolons
     If @referenceCompoundList Like '%,%'
         Set @referenceCompoundList = Replace(@referenceCompoundList, ',', ';')
-    
+
     -- Get names of reference compounds from list argument into table
     --
     If @referenceCompoundList Like '%;%'
     Begin
-        INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos) 
+        INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos)
         SELECT Value, CharIndex(':', Value)
-        FROM dbo.udfParseDelimitedList(@referenceCompoundList, ';', 'AddUpdateExperiment')        
+        FROM dbo.udfParseDelimitedList(@referenceCompoundList, ';', 'AddUpdateExperiment')
     End
     Else If @referenceCompoundList <> ''
     Begin
-        INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos) 
+        INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos)
         VALUES (@referenceCompoundList, CharIndex(':', @referenceCompoundList))
     End
     --
@@ -526,17 +537,17 @@ As
     --
     if @myError <> 0
         RAISERROR ('Could not populate temporary table for reference compound list', 11, 90)
-    
+
     -- Update entries in #Tmp_ExpToRefCompoundMap to remove extra text that may be present
     -- For example, switch from 3311:ANFTSQETQGAGK to 3311
     UPDATE #Tmp_ExpToRefCompoundMap
     SET Compound_IDName = Substring(Compound_IDName, 1, Colon_Pos - 1)
     WHERE Not Colon_Pos Is Null And Colon_Pos > 0
-    
+
     -- Populate the Compound_ID column using any integers in Compound_IDName
     UPDATE #Tmp_ExpToRefCompoundMap
     SET Compound_ID = Try_Cast(Compound_IDName as Int)
-    
+
     -- If any entries still have a null Compound_ID value, try matching via reference compound name
     -- We have numerous reference compounds with identical names, so matches found this way will be ambiguous
     --
@@ -565,11 +576,11 @@ As
     -- Look for invalid entries in #Tmp_ExpToRefCompoundMap
     ---------------------------------------------------
     --
-    
+
     -- First look for entries without a Compound_ID
     --
     Set @invalidRefCompoundList = null
-    
+
     SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
     FROM #Tmp_ExpToRefCompoundMap
     WHERE Compound_ID IS NULL
@@ -578,7 +589,7 @@ As
 
     if @myError <> 0
         RAISERROR ('Error looking for unresolved reference compound names', 11, 92)
-    
+
     If Len(IsNull(@invalidRefCompoundList, '')) > 0
     Begin
         RAISERROR ('Invalid reference compound name(s): %s', 11, 93, @invalidRefCompoundList)
@@ -587,7 +598,7 @@ As
     -- Next look for entries with an invalid Compound_ID
     --
     Set @invalidRefCompoundList = null
-    
+
     SELECT @invalidRefCompoundList = Coalesce(@invalidRefCompoundList + ', ' + Compound_IDName, Compound_IDName)
     FROM #Tmp_ExpToRefCompoundMap Src
          LEFT OUTER JOIN T_Reference_Compound RC
@@ -608,50 +619,50 @@ As
 
     Declare @transName varchar(32)
     Set @logErrors = 1
-    
+
     if @Mode = 'add'
     begin
         ---------------------------------------------------
         -- Action for add mode
         ---------------------------------------------------
-    
+
         -- Start transaction
         --
         Set @transName = 'AddNewExperiment'
         begin transaction @transName
 
         INSERT INTO T_Experiments (
-                Experiment_Num, 
-                EX_researcher_PRN, 
-                EX_organism_ID, 
-                EX_reason, 
-                EX_comment, 
-                EX_created, 
-                EX_sample_concentration, 
-                EX_enzyme_ID, 
-                EX_Labelling, 
-                EX_lab_notebook_ref, 
+                Experiment_Num,
+                EX_researcher_PRN,
+                EX_organism_ID,
+                EX_reason,
+                EX_comment,
+                EX_created,
+                EX_sample_concentration,
+                EX_enzyme_ID,
+                EX_Labelling,
+                EX_lab_notebook_ref,
                 EX_campaign_ID,
                 EX_sample_prep_request_ID,
                 EX_internal_standard_ID,
                 EX_postdigest_internal_std_ID,
                 EX_Container_ID,
-                EX_wellplate_num, 
+                EX_wellplate_num,
                 EX_well_num,
                 EX_Alkylation,
                 EX_Barcode,
                 EX_Tissue_ID,
                 Last_Used
             ) VALUES (
-                @experimentNum, 
-                @researcherPRN, 
-                @organismID, 
-                @reason, 
-                @comment, 
-                GETDATE(), 
-                @sampleConcentration, 
+                @experimentNum,
+                @researcherPRN,
+                @organismID,
+                @reason,
+                @comment,
+                GETDATE(),
+                @sampleConcentration,
                 @enzymeID,
-                @labelling, 
+                @labelling,
                 @labNotebookRef,
                 @campaignID,
                 @samplePrepRequest,
@@ -672,29 +683,29 @@ As
             RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
 
         -- Get the ID of newly created experiment
-        Set @experimentID = SCOPE_IDENTITY()        
+        Set @experimentID = SCOPE_IDENTITY()
 
         -- As a precaution, query T_Experiments using Experiment name to make sure we have the correct Exp_ID
         Declare @expIDConfirm int = 0
-        
+
         SELECT @expIDConfirm = Exp_ID
         FROM T_Experiments
         WHERE Experiment_Num = @experimentNum
-        
+
         If @experimentID <> IsNull(@expIDConfirm, @experimentID)
         Begin
             Declare @debugMsg varchar(512)
             Set @debugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentNum + ': Found ID ' +
-                            Cast(@expIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+                            Cast(@expIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@experimentID as varchar(12))
-                            
+
             exec PostLogEntry 'Error', @debugMsg, 'AddUpdateExperiment'
-            
+
             Set @experimentID = @expIDConfirm
         End
 
         Declare @StateID int = 1
-        
+
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
             Exec AlterEventLogEntryUser 3, @experimentID, @StateID, @callingUser
@@ -720,9 +731,9 @@ As
         --
         if @result <> 0
             RAISERROR ('Could not add experiment reference compounds to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
-            
+
         -- Material movement logging
-        --    
+        --
         if @curContainerID != @contID
         begin
             exec PostMaterialLogEntry
@@ -740,7 +751,7 @@ As
 
     end -- add mode
 
-    if @Mode = 'update' 
+    if @Mode = 'update'
     begin
         ---------------------------------------------------
         -- Action for update mode
@@ -751,21 +762,21 @@ As
         Set @transName = 'UpdateExperiment'
         begin transaction @transName
 
-        UPDATE T_Experiments Set 
-            EX_researcher_PRN = @researcherPRN, 
-            EX_organism_ID = @organismID, 
-            EX_reason = @reason, 
-            EX_comment = @comment, 
-            EX_sample_concentration = @sampleConcentration, 
+        UPDATE T_Experiments Set
+            EX_researcher_PRN = @researcherPRN,
+            EX_organism_ID = @organismID,
+            EX_reason = @reason,
+            EX_comment = @comment,
+            EX_sample_concentration = @sampleConcentration,
             EX_enzyme_ID = @enzymeID,
-            EX_Labelling = @labelling, 
-            EX_lab_notebook_ref = @labNotebookRef, 
+            EX_Labelling = @labelling,
+            EX_lab_notebook_ref = @labNotebookRef,
             EX_campaign_ID = @campaignID,
             EX_sample_prep_request_ID = @samplePrepRequest,
             EX_internal_standard_ID = @internalStandardID,
             EX_postdigest_internal_std_ID = @postdigestIntStdID,
             EX_Container_ID = @contID,
-            EX_wellplate_num = @wellplateNum, 
+            EX_wellplate_num = @wellplateNum,
             EX_well_num = @wellNum,
             EX_Alkylation = @alkylation,
             EX_Barcode = @barcode,
@@ -778,8 +789,8 @@ As
                                   EX_campaign_ID <> @campaignID OR
                                   EX_sample_prep_request_ID <> @samplePrepRequest OR
                                   EX_Alkylation <> @alkylation
-                             Then Cast(GetDate() as Date) 
-                             Else Last_Used 
+                             Then Cast(GetDate() as Date)
+                             Else Last_Used
                         End
         WHERE Experiment_Num = @experimentNum
         --
@@ -811,7 +822,7 @@ As
             RAISERROR ('Could not update experiment reference compound mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
         -- Material movement logging
-        --    
+        --
         if @curContainerID != @contID
         begin
             exec PostMaterialLogEntry
@@ -830,21 +841,21 @@ As
     end -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum        
+            Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
         End
-        
+
     END CATCH
-    
+
     return @myError
 
 

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
+CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 /****************************************************
 **
 **  Desc:   Validates analysis job parameters and returns internal
@@ -18,8 +18,8 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **  CREATE TABLE #TD (
 **      Dataset_Num varchar(128),
 **      Dataset_ID int NULL,
-**      IN_class varchar(64) NULL, 
-**      DS_state_ID int NULL, 
+**      IN_class varchar(64) NULL,
+**      DS_state_ID int NULL,
 **      AS_state_ID int NULL,
 **      Dataset_Type varchar(64) NULL,
 **      DS_rating smallint NULL,
@@ -33,9 +33,9 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **
 **  Auth:   grk
 **  Date:   04/04/2006 grk - supersedes MakeAnalysisJobX
-**          05/01/2006 grk - modified to conditionally call 
+**          05/01/2006 grk - modified to conditionally call
 **                          Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
-**          06/01/2006 grk - removed dataset archive state restriction 
+**          06/01/2006 grk - removed dataset archive state restriction
 **          08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (http://prismtrac.pnl.gov/trac/ticket/219)
 **          11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)
 **          12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
@@ -78,6 +78,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
 **          07/11/2019 mem - Auto-change parameter file names from MSGFDB_ to MSGFPlus_
 **          07/30/2019 mem - Update comments and capitalization
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -91,7 +92,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobParameters]
     @ownerPRN varchar(64) output,
     @mode varchar(12),                            -- Used to tweak the warning if @analysisToolID is not found in T_Analysis_Tool
     @userID int output,
-    @analysisToolID int output, 
+    @analysisToolID int output,
     @organismID int output,
     @message varchar(512) output,
     @autoRemoveNotReleasedDatasets tinyint = 0,
@@ -107,28 +108,28 @@ As
 
     Declare @myError Int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
     Set @Warning = ''
-    
+
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
-    
+
     Declare @list varchar(1024)
     Declare @ParamFileTool varchar(128) = '??NoMatch??'
     Declare @SettingsFileTool varchar(128)
     Declare @result int
-    
+
     ---------------------------------------------------
     -- Validate the datasets in #TD
     ---------------------------------------------------
-    
-    exec @result = ValidateAnalysisJobRequestDatasets 
+
+    exec @result = ValidateAnalysisJobRequestDatasets
                         @message output,
                         @autoRemoveNotReleasedDatasets=@autoRemoveNotReleasedDatasets,
                         @toolName=@toolName,
                         @allowNewDatasets=@allowNewDatasets,
                         @showDebugMessages=@showDebugMessages
-        
+
     If @result <> 0
     Begin
         If IsNull(@message, '') = ''
@@ -139,14 +140,23 @@ As
         End
         return @result
     End
-    
+
     ---------------------------------------------------
     -- Resolve user ID for operator PRN
     ---------------------------------------------------
 
     execute @userID = GetUserID @ownerPRN
-    
-    If @userID = 0
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @ownerPRN contains simply the username
+        --
+        SELECT @ownerPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
     Begin
         ---------------------------------------------------
         -- @ownerPRN did not resolve to a User_ID
@@ -157,7 +167,7 @@ As
         Declare @NewPRN varchar(64)
 
         exec AutoResolveNameToPRN @ownerPRN, @MatchCount output, @NewPRN output, @userID output
-                    
+
         If @MatchCount = 1
         Begin
             -- Single match was found; update @ownerPRN
@@ -174,9 +184,9 @@ As
     End
 
     ---------------------------------------------------
-    -- get analysis tool ID from tool name 
+    -- get analysis tool ID from tool name
     ---------------------------------------------------
-    --            
+    --
     execute @analysisToolID = GetAnalysisToolID @toolName
     If @analysisToolID = 0
     Begin
@@ -204,13 +214,13 @@ As
         Begin
             Set @message = 'Analysis tool "' + @toolName + '" is not active and thus cannot be used for this operation (ToolID ' + Convert(varchar(12), @analysisToolID) + ')'
         End
-        
+
         If @showDebugMessages <> 0
             print @message
 
         return 53103
     End
-    
+
     ---------------------------------------------------
     -- get organism ID using organism name
     ---------------------------------------------------
@@ -229,21 +239,21 @@ As
     -- Check tool/instrument compatibility for datasets
     ---------------------------------------------------
 
-    -- find datasets that are not compatible with tool 
+    -- find datasets that are not compatible with tool
     --
     Set @list = ''
     --
-    SELECT 
-        @list = @list + CASE 
+    SELECT
+        @list = @list + CASE
         WHEN @list = '' THEN Dataset_Num
         ELSE ', ' + Dataset_Num
         END
     FROM
-        #TD 
-    WHERE 
+        #TD
+    WHERE
         IN_class NOT IN ( SELECT AIC.Instrument_Class
                           FROM T_Analysis_Tool AnTool INNER JOIN
-                               T_Analysis_Tool_Allowed_Instrument_Class AIC ON 
+                               T_Analysis_Tool_Allowed_Instrument_Class AIC ON
                                  AnTool.AJT_toolID = AIC.Analysis_Tool_ID
                           WHERE AnTool.AJT_toolName = @toolName)
     --
@@ -270,13 +280,13 @@ As
     ---------------------------------------------------
     -- Check tool/dataset type compatibility for datasets
     ---------------------------------------------------
-    
-    -- find datasets that are not compatible with tool 
+
+    -- find datasets that are not compatible with tool
     --
     Set @list = ''
     --
-    SELECT 
-        @list = @list + CASE 
+    SELECT
+        @list = @list + CASE
         WHEN @list = '' THEN Dataset_Num
         ELSE ', ' + Dataset_Num
         END
@@ -306,17 +316,17 @@ As
 
         return 51008
     End
-    
-    
+
+
     ---------------------------------------------------
     -- Make sure settings for which 'na' is acceptable truly have lowercase 'na' and not 'NA' or 'n/a'
     -- Note that Sql server string comparisons are not case-sensitive, but VB.NET string comparisons are
     --  Therefore, @settingsFileName needs to be lowercase 'na' for compatibility with the analysis manager
     ---------------------------------------------------
-    --    
+    --
     Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
     Set @parmFileName =        dbo.ValidateNAParameter(@parmFileName, 1)
-    
+
     ---------------------------------------------------
     -- Validate param file for tool
     ---------------------------------------------------
@@ -334,7 +344,7 @@ As
         Begin
             -- The specified parameter file is valid
             -- Make sure the parameter file tool corresponds to @toolName
-            
+
             If Not Exists (
                 SELECT *
                 FROM T_Param_Files PF
@@ -369,7 +379,7 @@ As
 
             If @showDebugMessages <> 0
                 print @message
-                
+
             return 53109
         End
     End
@@ -394,10 +404,10 @@ As
 
             If @showDebugMessages <> 0
                 print @message
-                
+
             return 53108
         end
-        
+
         -- The specified settings file is valid
         -- Make sure the settings file tool corresponds to @toolName
 
@@ -420,22 +430,22 @@ As
             If @showDebugMessages <> 0
                 print @message
 
-            return 53112            
+            return 53112
         End
 
         If @showDebugMessages <> 0
             print '  @autoUpdateSettingsFileToCentroided=' + Cast(@autoUpdateSettingsFileToCentroided as varchar(12))
-                        
+
         If IsNull(@autoUpdateSettingsFileToCentroided, 1) <> 0
         Begin
             ---------------------------------------------------
             -- If the dataset has profile mode MS/MS spectra and the search tool is MSGFPlus, we must centroid the spectra
             ---------------------------------------------------
-            
+
             Declare @ProfileModeMSn tinyint = 0
-            
-            If Exists (SELECT * 
-                    FROM #TD INNER JOIN T_Dataset_Info DI ON DI.Dataset_ID = #TD.Dataset_ID 
+
+            If Exists (SELECT *
+                    FROM #TD INNER JOIN T_Dataset_Info DI ON DI.Dataset_ID = #TD.Dataset_ID
                     WHERE DI.ProfileScanCount_MSn > 0)
             Begin
                 Set @ProfileModeMSn = 1
@@ -446,14 +456,14 @@ As
                 print '  @ProfileModeMSn=' + Cast(@ProfileModeMSn as varchar(12))
                 print '  @toolName=' + @toolName
             End
-            
+
             If @ProfileModeMSn > 0 AND @toolName IN ('MSGFPlus', 'MSGFPlus_DTARefinery', 'MSGFPlus_SplitFasta')
             Begin
                 -- The selected settings file must use MSConvert with Centroiding enabled
                 -- DeconMSn potentially works, but it can cause more harm than good
-                
+
                 Declare @AutoCentroidName varchar(255) = ''
-                        
+
                 SELECT @AutoCentroidName = SF.MSGFPlus_AutoCentroid
                 FROM T_Settings_Files SF
                      INNER JOIN T_Analysis_Tool AnTool
@@ -466,36 +476,36 @@ As
                     print '  @settingsFileName=' + @settingsFileName
                     print '  @AutoCentroidName=' + IsNull(@AutoCentroidName, '<< Not Defined >>')
                 End
-                    
+
                 If IsNull(@AutoCentroidName, '') <> ''
                 Begin
                     Set @settingsFileName = @AutoCentroidName
-                    
+
                     Set @Warning = 'Note: Auto-updated the settings file to ' + @AutoCentroidName + ' because this job has a profile-mode MSn dataset'
 
                     If @showDebugMessages <> 0
                         print @Warning
 
                 End
-                
+
                 Declare @DtaGenerator varchar(512)
                 Declare @CentroidSetting varchar(512) = ''
-                
+
                 CREATE TABLE #Tmp_SettingsFile_Values (
                     KeyName varchar(512) NULL,
                     Value varchar(512) NULL
                 )
-                
+
                 INSERT INTO #Tmp_SettingsFile_Values (KeyName, Value)
                 SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
                     xmlNode.value('@value', 'nvarchar(512)') AS Value
                 FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
                 WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
-                
+
                 SELECT @DtaGenerator = Value
                 FROM #Tmp_SettingsFile_Values
                 WHERE KeyName = 'DtaGenerator'
-                
+
                 If IsNull(@DtaGenerator, '') = ''
                 Begin
                     Set @message = 'Settings file "' + @settingsFileName + '" does not have DtaGenerator defined; unable to verify that centroiding is enabled'
@@ -504,44 +514,44 @@ As
 
                     return 53113
                 End
-                
+
                 If @DtaGenerator = 'MSConvert.exe'
                 Begin
                     SELECT @CentroidSetting = Value
                     FROM #Tmp_SettingsFile_Values
                     WHERE KeyName = 'CentroidMGF'
-                    
+
                     Set @CentroidSetting = IsNull(@CentroidSetting, 'False')
                 End
-                
+
                 If @DtaGenerator = 'DeconMSN.exe'
                 Begin
                     SELECT @CentroidSetting = Value
                     FROM #Tmp_SettingsFile_Values
                     WHERE KeyName = 'CentroidDTAs'
-                    
+
                     Set @CentroidSetting = IsNull(@CentroidSetting, 'False')
                 End
-                
+
                 If @CentroidSetting <> 'True'
                 Begin
                     If IsNull(@CentroidSetting, '') = ''
                         Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not use MSConvert or DeconMSn for DTA Generation; unable to determine if centroiding is enabled'
                     Else
                         Set @message = 'MSGF+ requires that HMS-HMSn spectra be centroided; settings file "' + @settingsFileName + '" does not appear to have centroiding enabled'
-                        
+
                     If @showDebugMessages <> 0
                         print @message
                 End
             End
         End
-            
+
     End
 
     ---------------------------------------------------
     -- Check protein parameters
     ---------------------------------------------------
-    
+
     exec @result = ValidateProteinCollectionParams
                     @toolName,
                     @organismDBName output,
@@ -564,7 +574,7 @@ As
 
         return @result
     End
-    
+
     ---------------------------------------------------
     -- Make sure the user is not scheduling an extremely long MSGF+ search
     -- Also possibly alter @priority
@@ -573,29 +583,29 @@ As
     Begin
         Declare @FileSizeKB real = 0
         Declare @SizeDescription varchar(24) = ''
-        
+
         SELECT @FileSizeKB = File_Size_KB
         FROM T_Organism_DB_File
         WHERE FileName = @organismDBName
-        
+
         If @FileSizeKB > 0
         Begin
             Declare @FileSizeMB real = @FileSizeKB/1024.0
             Declare @FileSizeGB real = @FileSizeMB/1024.0
-            
+
             If @FileSizeGB < 1
                 Set @SizeDescription = Cast(Cast(@FileSizeMB As int) As varchar(12)) + ' MB'
             Else
                 Set @SizeDescription = Cast(Cast(@FileSizeGB As decimal(9,1)) As varchar(12)) + ' GB'
         End
-        
+
         -- Bump priority if the file is over 400 MB in size
         If IsNull(@FileSizeKB, 0) > 400*1024
         Begin
             If @priority < 4
                 Set @priority = 4
         End
-        
+
         If @toolName Like '%MSGFPlus%'
         Begin
             -- Check for a file over 500 MB in size
@@ -618,20 +628,20 @@ As
                     @parmFileName Like '%PartTryp_StatCysAlk_[0-9]%ppm%' Or
                     @parmFileName Like '%[_]Tryp[_]%'
                 )
-                Begin            
+                Begin
                     Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
                     Set @result = 65350
 
                     If @showDebugMessages <> 0
                         print @message
-                    
+
                     return @result
                 End
             End
-            
+
             -- Check for a file over 2 GB in size
             If IsNull(@FileSizeKB, 0) > 2*1024*1024 Or
-               @organismDBName In (            
+               @organismDBName In (
                 'uniprot_2012_1_combined_bacterial_sprot_trembl_2012-02-20.fasta',
                 'uniprot2012_7_ArchaeaBacteriaFungiSprotTrembl_2012-07-11.fasta',
                 'uniref90_2013-02-14.fasta',
@@ -640,12 +650,12 @@ As
                 'HoplandAll_assembled_Tryp_Pig_Bov_2015-04-06.fasta')
             Begin
                 Declare @DynModCount int = 0
-                
+
                 SELECT @DynModCount = Count(*)
                 FROM V_Param_File_Mass_Mods
                 WHERE Param_File_Name = @parmFileName AND
                     Mod_Type_Symbol = 'D'
-            
+
                 If IsNull(@DynModCount, 0) > 1
                 Begin
                     -- Parameter has more than one dynamic mod; this search will take too long
@@ -654,11 +664,11 @@ As
 
                     If @showDebugMessages <> 0
                         print @message
-                    
+
                     return @result
-                End            
+                End
             End
-            
+
             -- If using MSGF+ and the file is over 600 MB, then you must use MSGFPlus_SplitFasta
             If IsNull(@FileSizeKB, 0) > 600*1024
             Begin
@@ -669,25 +679,25 @@ As
 
                     If @showDebugMessages <> 0
                         print @message
-                    
+
                     return @result
                 End
             End
         End
-        
-    End    
+
+    End
 
     If @toolName Like '%SplitFasta%'
     Begin
         -- Assure that the settings file has SplitFasta=True and NumberOfClonedSteps > 1
-        
+
         Declare @xml xml
         Declare @numberOfClonedSteps int = 0
         Declare @splitFasta varchar(128) = ''
-        
+
         SELECT @xml = Contents
         FROM T_Settings_Files
-        WHERE [File_Name] = @settingsFileName 
+        WHERE [File_Name] = @settingsFileName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -698,12 +708,12 @@ As
                 print @message
             return 53114
         End
-        
-        SELECT @splitFasta = SettingValue 
-        FROM ( SELECT b.value('@key', 'varchar(128)') as SettingName, 
+
+        SELECT @splitFasta = SettingValue
+        FROM ( SELECT b.value('@key', 'varchar(128)') as SettingName,
                       b.value('@value', 'varchar(128)') as SettingValue
-               FROM @xml.nodes('/sections/section/item') as a(b) 
-             ) ParseQ 
+               FROM @xml.nodes('/sections/section/item') as a(b)
+             ) ParseQ
         WHERE SettingName = 'SplitFasta'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -716,11 +726,11 @@ As
             return 53115
         End
 
-        Select @numberOfClonedSteps = SettingValue 
-        From ( SELECT b.value('@key', 'varchar(128)') as SettingName, 
+        Select @numberOfClonedSteps = SettingValue
+        From ( SELECT b.value('@key', 'varchar(128)') as SettingName,
                       b.value('@value', 'int') as SettingValue
-               FROM @xml.nodes('/sections/section/item') as a(b) 
-             ) ParseQ 
+               FROM @xml.nodes('/sections/section/item') as a(b)
+             ) ParseQ
         WHERE SettingName = 'NumberOfClonedSteps'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -732,12 +742,12 @@ As
                 print @message
             return 53116
         End
-        
+
     End
-    
+
     If @result <> 0 And @showDebugMessages <> 0 And IsNull(@message, '') <> ''
         print @message
-    
+
     return @result
 
 GO

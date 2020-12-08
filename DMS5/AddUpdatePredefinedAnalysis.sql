@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdatePredefinedAnalysis]
+CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
 /****************************************************
-** 
-**  Desc: Adds a new default analysis to DB 
+**
+**  Desc: Adds a new default analysis to DB
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Parameters:
 **
 **  Auth:   grk
@@ -42,6 +42,7 @@ CREATE Procedure [dbo].[AddUpdatePredefinedAnalysis]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/10/2018 mem - Validate the settings file name
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ As
     declare @allowedDatasetTypes varchar(255)
     declare @AllowedDSTypesForTool varchar(1024)
     declare @AllowedInstClassesForTool varchar(1024)
-    
+
     declare @UniqueID int
     declare @continue int
     declare @MatchCount int
@@ -98,7 +99,7 @@ As
     declare @InstrumentID int
     declare @instrumentClass varchar(128)
     declare @analysisToolID int
-    
+
     declare @msg varchar(512) = ''
 
     set @message = ''
@@ -106,15 +107,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdatePredefinedAnalysis', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
     End
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -125,7 +126,7 @@ As
         set @myError = 51033
         RAISERROR ('Analysis tool name was blank', 11, 1)
     end
-    
+
     if LEN(IsNull(@parmFileName,'')) < 1
     begin
         set @myError = 51033
@@ -152,7 +153,7 @@ As
 
     If @myError <> 0
         return @myError
-        
+
     ---------------------------------------------------
     -- Update any null filter criteria
     ---------------------------------------------------
@@ -172,16 +173,16 @@ As
     Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria    , '')))
     Set @datasetTypeCriteria     = LTrim(RTrim(IsNull(@datasetTypeCriteria    , '')))
     Set @SpecialProcessing       = LTrim(RTrim(IsNull(@SpecialProcessing      , '')))
-    
+
     ---------------------------------------------------
-    -- Resolve propagation mode 
+    -- Resolve propagation mode
     ---------------------------------------------------
     declare @propMode tinyint
     set @propMode = CASE IsNull(@PropagationMode, '')
-                        WHEN 'Export' THEN 0 
-                        WHEN 'No Export' THEN 1 
-                        ELSE 0 
-                    END 
+                        WHEN 'Export' THEN 0
+                        WHEN 'No Export' THEN 1
+                        ELSE 0
+                    END
 
     ---------------------------------------------------
     -- Validate @sequence and @nextLevel
@@ -196,7 +197,7 @@ As
     if @nextLevel <> ''
     begin
     set @nextLevelVal = convert(int, @nextLevel)
-    if @nextLevelVal <= @level 
+    if @nextLevelVal <= @level
         begin
             set @msg = 'Next level must be greater than current level'
             RAISERROR (@msg, 11, 2)
@@ -206,7 +207,7 @@ As
     --------------------------------------------------
     -- Validate the analysis tool name
     --------------------------------------------------
-    
+
     SELECT @analysisToolID = AJT_toolID
     FROM dbo.T_Analysis_Tool
     WHERE (AJT_toolName = @analysisToolName)
@@ -221,13 +222,13 @@ As
 
     ---------------------------------------------------
     -- If @instrumentClassCriteria or @instrumentNameCriteria or @instrumentExclCriteria are defined,
-    -- determine the associated Dataset Types and make sure they are 
+    -- determine the associated Dataset Types and make sure they are
     -- valid for @analysisToolName
     ---------------------------------------------------
-    
+
     If Len(@instrumentClassCriteria) > 0 Or Len(@instrumentNameCriteria) > 0 Or Len(@instrumentExclCriteria) > 0
     Begin -- <a>
-            
+
         If Not Exists (
             SELECT ADT.Dataset_Type
             FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
@@ -239,7 +240,7 @@ As
             Set @msg = 'Analysis tool "' + @analysisToolName + '" does not have any allowed dataset types; unable to continue'
             RAISERROR (@msg, 11, 4)
         End
-        
+
         If Not Exists (
             SELECT AIC.Instrument_Class
             FROM T_Analysis_Tool_Allowed_Instrument_Class AIC
@@ -251,19 +252,19 @@ As
             Set @msg = 'Analysis tool "' + @analysisToolName + '" does not have any allowed instrument classes; unable to continue'
             RAISERROR (@msg, 11, 5)
         End
-                
+
         ---------------------------------------------------
         -- Populate a temporary table with allowed dataset types
         -- associated with the matching instruments
         ---------------------------------------------------
-        
+
         CREATE TABLE #TmpMatchingInstruments (
             UniqueID int Identity(1,1),
             InstrumentName varchar(128),
             InstrumentClass varchar(128),
             InstrumentID int
         )
-        
+
         INSERT INTO #TmpMatchingInstruments( InstrumentName,
                                              InstrumentClass,
                                              InstrumentID )
@@ -273,8 +274,8 @@ As
         FROM T_Instrument_Name InstName
              INNER JOIN T_Instrument_Class InstClass
                ON InstName.IN_class = InstClass.IN_class
-             INNER JOIN T_Instrument_Group_Allowed_DS_Type InstGroupDSType 
-               ON InstName.IN_Group = InstGroupDSType.IN_Group AND 
+             INNER JOIN T_Instrument_Group_Allowed_DS_Type InstGroupDSType
+               ON InstName.IN_Group = InstGroupDSType.IN_Group AND
                   (InstGroupDSType.Dataset_Type LIKE @datasetTypeCriteria OR @datasetTypeCriteria = '')
         WHERE (InstClass.IN_Class LIKE @instrumentClassCriteria OR @instrumentClassCriteria = '') AND
               (InstName.IN_name LIKE @instrumentNameCriteria OR @instrumentNameCriteria = '') AND
@@ -309,7 +310,7 @@ As
             ORDER BY UniqueID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
                 Set @continue = 0
             Else
@@ -324,16 +325,16 @@ As
                                       FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
                                            INNER JOIN T_Analysis_Tool Tool
                                              ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
-                                      WHERE (Tool.AJT_toolName = @analysisToolName) 
+                                      WHERE (Tool.AJT_toolName = @analysisToolName)
                                     ) ToolQ
                            ON IGADT.Dataset_Type = ToolQ.Dataset_Type
                     WHERE (InstName.IN_name = @instrumentName)
                     )
                 Begin -- <d1>
                     -- Example criteria that will result in this message: Instrument Criteria=Agilent_TOF%, Tool=AgilentSequest
-                    
+
                     Set @allowedDatasetTypes = dbo.GetInstrumentDatasetTypeList(@InstrumentID)
-                    
+
                     Set @AllowedDSTypesForTool = ''
                     SELECT @AllowedDSTypesForTool = AllowedDatasetTypes
                     FROM dbo.GetAnalysisToolAllowedDSTypeList(@analysisToolID)
@@ -341,20 +342,20 @@ As
                     set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
                     set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these dataset types "' + @AllowedDSTypesForTool + '"'
                     RAISERROR (@msg, 11, 7)
-                End     -- </d1>            
+                End     -- </d1>
 
                 If Not Exists (
                     SELECT AIC.Instrument_Class
                     FROM T_Analysis_Tool_Allowed_Instrument_Class AIC
                         INNER JOIN T_Analysis_Tool Tool
                         ON AIC.Analysis_Tool_ID = Tool.AJT_toolID
-                    WHERE Tool.AJT_toolName = @analysisToolName AND 
-                        AIC.Instrument_Class = @instrumentClass                
+                    WHERE Tool.AJT_toolName = @analysisToolName AND
+                        AIC.Instrument_Class = @instrumentClass
                     )
                 Begin -- <d2>
                     -- Example criteria that will result in this message: Instrument Class=BRUKERFTMS, Tool=XTandem
                     -- 2nd example: Instrument Criteria=Agilent_TOF%, Tool=Decon2LS
-                    
+
                     Set @AllowedInstClassesForTool = ''
                     SELECT @AllowedInstClassesForTool = AllowedInstrumentClasses
                     FROM dbo.GetAnalysisToolAllowedInstClassList (@analysisToolID)
@@ -362,14 +363,14 @@ As
                     set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
                     set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these instrument classes "' + @AllowedInstClassesForTool + '"'
                     RAISERROR (@msg, 11, 8)
-                End     -- </d2>        
-                
+                End     -- </d2>
+
             End -- </c>
         End -- </b2>
-        
+
     End -- </a>
 
-    
+
     ---------------------------------------------------
     -- Resolve organism ID
     ---------------------------------------------------
@@ -411,13 +412,13 @@ As
     ---------------------------------------------------
     -- Check protein parameters
     ---------------------------------------------------
-    
+
     Declare @result int
     Declare @ownerPRN varchar(64)
-    
+
     set @result = 0
     Set @ownerPRN = ''
-    
+
     exec @result = ValidateProteinCollectionParams
                     @analysisToolName,
                     @organismDBName output,
@@ -433,17 +434,27 @@ As
         set @msg = @message
         RAISERROR (@msg, 11, 11)
     End
-    
+
     ---------------------------------------------------
     -- @creator should be a userPRN
     -- Auto-capitalize it or auto-resolve it from a name to a PRN
     ---------------------------------------------------
 
     Declare @userID int
-    
+
     execute @userID = GetUserID @creator
-    if @userID = 0
-    begin
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @creator contains simply the username
+        --
+        SELECT @creator = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
+    Begin
         ---------------------------------------------------
         -- @creator did not resolve to a User_ID
         -- In case a name was entered (instead of a PRN),
@@ -452,20 +463,14 @@ As
         Declare @NewPRN varchar(64)
 
         exec AutoResolveNameToPRN @creator, @MatchCount output, @NewPRN output, @userID output
-                    
+
         If @MatchCount = 1
         Begin
             -- Single match was found; update @creator
             Set @creator = @NewPRN
         End
-    end
-    Else
-    Begin
-        -- Make sure U_Prn is capitalized
-        SELECT @creator = U_PRN 
-        FROM T_Users WHERE ID = @userID 
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
@@ -498,67 +503,67 @@ As
 
         INSERT INTO T_Predefined_Analysis (
             AD_level,
-            AD_sequence, 
-            AD_instrumentClassCriteria, 
-            AD_campaignNameCriteria, 
-            AD_campaignExclCriteria, 
-            AD_experimentNameCriteria, 
-            AD_experimentExclCriteria, 
-            AD_instrumentNameCriteria, 
-            AD_instrumentExclCriteria, 
-            AD_organismNameCriteria, 
-            AD_datasetNameCriteria, 
+            AD_sequence,
+            AD_instrumentClassCriteria,
+            AD_campaignNameCriteria,
+            AD_campaignExclCriteria,
+            AD_experimentNameCriteria,
+            AD_experimentExclCriteria,
+            AD_instrumentNameCriteria,
+            AD_instrumentExclCriteria,
+            AD_organismNameCriteria,
+            AD_datasetNameCriteria,
             AD_datasetExclCriteria,
             AD_datasetTypeCriteria,
-            AD_expCommentCriteria, 
-            AD_labellingInclCriteria, 
-            AD_labellingExclCriteria, 
-            AD_separationTypeCriteria, 
-            AD_analysisToolName, 
-            AD_parmFileName, 
-            AD_settingsFileName, 
-            AD_organism_ID, 
-            AD_organismDBName, 
+            AD_expCommentCriteria,
+            AD_labellingInclCriteria,
+            AD_labellingExclCriteria,
+            AD_separationTypeCriteria,
+            AD_analysisToolName,
+            AD_parmFileName,
+            AD_settingsFileName,
+            AD_organism_ID,
+            AD_organismDBName,
             AD_proteinCollectionList,
             AD_proteinOptionsList,
-            AD_priority, 
+            AD_priority,
             AD_specialProcessing,
-            AD_enabled, 
-            AD_description, 
+            AD_enabled,
+            AD_description,
             AD_creator,
             AD_nextLevel,
             Trigger_Before_Disposition,
             Propagation_Mode,
             Last_Affected
         ) VALUES (
-            @level, 
-            @seqVal, 
-            @instrumentClassCriteria, 
-            @campaignNameCriteria, 
+            @level,
+            @seqVal,
+            @instrumentClassCriteria,
+            @campaignNameCriteria,
             @campaignExclCriteria,
-            @experimentNameCriteria, 
+            @experimentNameCriteria,
             @experimentExclCriteria,
-            @instrumentNameCriteria, 
-            @instrumentExclCriteria, 
-            @organismNameCriteria, 
-            @datasetNameCriteria, 
+            @instrumentNameCriteria,
+            @instrumentExclCriteria,
+            @organismNameCriteria,
+            @datasetNameCriteria,
             @datasetExclCriteria,
             @datasetTypeCriteria,
-            @expCommentCriteria, 
-            @labellingInclCriteria, 
-            @labellingExclCriteria, 
+            @expCommentCriteria,
+            @labellingInclCriteria,
+            @labellingExclCriteria,
             @separationTypeCriteria,
-            @analysisToolName, 
-            @parmFileName, 
-            @settingsFileName, 
-            @organismID, 
-            @organismDBName, 
+            @analysisToolName,
+            @parmFileName,
+            @settingsFileName,
+            @organismID,
+            @organismDBName,
             @protCollNameList,
             @protCollOptionsList,
-            @priority, 
+            @priority,
             @SpecialProcessing,
-            @enabled, 
-            @description, 
+            @enabled,
+            @description,
             @creator,
             @nextLevelVal,
             IsNull(@TriggerBeforeDisposition, 0),
@@ -584,40 +589,40 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update' 
+    if @Mode = 'update'
     begin
         set @myError = 0
         --
-        UPDATE T_Predefined_Analysis 
-        SET 
-            AD_level = @level, 
-            AD_sequence = @seqVal, 
-            AD_instrumentClassCriteria = @instrumentClassCriteria, 
-            AD_campaignNameCriteria = @campaignNameCriteria, 
+        UPDATE T_Predefined_Analysis
+        SET
+            AD_level = @level,
+            AD_sequence = @seqVal,
+            AD_instrumentClassCriteria = @instrumentClassCriteria,
+            AD_campaignNameCriteria = @campaignNameCriteria,
             AD_campaignExclCriteria = @campaignExclCriteria,
-            AD_experimentNameCriteria = @experimentNameCriteria, 
+            AD_experimentNameCriteria = @experimentNameCriteria,
             AD_experimentExclCriteria = @experimentExclCriteria,
-            AD_instrumentNameCriteria = @instrumentNameCriteria, 
-            AD_instrumentExclCriteria = @instrumentExclCriteria, 
-            AD_organismNameCriteria = @organismNameCriteria, 
-            AD_datasetNameCriteria = @datasetNameCriteria, 
+            AD_instrumentNameCriteria = @instrumentNameCriteria,
+            AD_instrumentExclCriteria = @instrumentExclCriteria,
+            AD_organismNameCriteria = @organismNameCriteria,
+            AD_datasetNameCriteria = @datasetNameCriteria,
             AD_datasetExclCriteria = @datasetExclCriteria,
             AD_datasetTypeCriteria = @datasetTypeCriteria,
-            AD_expCommentCriteria = @expCommentCriteria, 
-            AD_labellingInclCriteria = @labellingInclCriteria, 
-            AD_labellingExclCriteria = @labellingExclCriteria, 
+            AD_expCommentCriteria = @expCommentCriteria,
+            AD_labellingInclCriteria = @labellingInclCriteria,
+            AD_labellingExclCriteria = @labellingExclCriteria,
             AD_separationTypeCriteria = @separationTypeCriteria,
-            AD_analysisToolName = @analysisToolName, 
-            AD_parmFileName = @parmFileName, 
-            AD_settingsFileName = @settingsFileName, 
-            AD_organism_ID = @organismID, 
-            AD_organismDBName = @organismDBName, 
+            AD_analysisToolName = @analysisToolName,
+            AD_parmFileName = @parmFileName,
+            AD_settingsFileName = @settingsFileName,
+            AD_organism_ID = @organismID,
+            AD_organismDBName = @organismDBName,
             AD_proteinCollectionList = @protCollNameList,
             AD_proteinOptionsList = @protCollOptionsList,
-            AD_priority = @priority, 
+            AD_priority = @priority,
             AD_specialProcessing = @SpecialProcessing,
-            AD_enabled = @enabled, 
-            AD_description = @description, 
+            AD_enabled = @enabled,
+            AD_description = @description,
             AD_creator = @creator,
             AD_nextLevel = @nextLevelVal,
             Trigger_Before_Disposition = IsNull(@TriggerBeforeDisposition, 0),
@@ -635,13 +640,13 @@ As
     end -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AddUpdatePredefinedAnalysis'
     END CATCH
 

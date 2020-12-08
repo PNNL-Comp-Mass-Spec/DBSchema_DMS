@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateCellCulture]
+CREATE PROCEDURE [dbo].[AddUpdateCellCulture]
 /****************************************************
 **
 **  Desc: Adds new or updates existing cell culture in database
@@ -38,49 +38,50 @@ CREATE Procedure [dbo].[AddUpdateCellCulture]
 **          11/28/2017 mem - Deprecate old fields that are now tracked by Reference Compounds
 **          08/31/2018 mem - Add @mutation, @plasmid, and @cellLine
 **                         - Remove deprecated parameters that are now tracked in T_Reference_Compound
-**    
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**
 *****************************************************/
 (
     @cellCultureName varchar(64),       -- Name of biomaterial (or peptide sequence if tracking an MRM peptide)
     @sourceName varchar(64),            -- Source that the material came from; can be a person (onsite or offsite) or a company
     @contactPRN varchar(64),            -- Contact for the Source; typically PNNL staff, but can be offsite person
     @piPRN varchar(32),                 -- Project lead
-    @cultureType varchar(32), 
+    @cultureType varchar(32),
     @reason varchar(500),
     @comment varchar(500),
-    @campaignNum varchar(64), 
+    @campaignNum varchar(64),
     @mode varchar(12) = 'add',          -- 'add', 'update', 'check_add', 'check_update'
     @message varchar(512) output,
-    @container varchar(128) = 'na', 
+    @container varchar(128) = 'na',
     @organismList varchar(max),         -- List of one or more organisms to associate with this biomaterial; stored in T_Biomaterial_Organisms; if null, T_Biomaterial_Organisms is unchanged
-    @mutation varchar(64) = '', 
-    @plasmid varchar(64) = '', 
+    @mutation varchar(64) = '',
+    @plasmid varchar(64) = '',
     @cellLine varchar(64) = '',
-    @callingUser varchar(128) = ''        
+    @callingUser varchar(128) = ''
 )
 As
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 0
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateCellCulture', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -89,13 +90,13 @@ As
     Set @cellCultureName = LTrim(RTrim(IsNull(@cellCultureName, '')))
     Set @sourceName = LTrim(RTrim(IsNull(@sourceName, '')))
     Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
-    Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))    
+    Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
     Set @cultureType = LTrim(RTrim(IsNull(@cultureType, '')))
     Set @reason = LTrim(RTrim(IsNull(@reason, '')))
     Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
 
     Set @container = LTrim(RTrim(IsNull(@container, '')))
-    
+
     -- Note: leave @organismList null
     -- Procedure UpdateOrganismListForBiomaterial will leave T_Biomaterial_Organisms unchanged if @organismList is null
 
@@ -108,7 +109,7 @@ As
     If LEN(@campaignNum) < 1
     Begin
         RAISERROR ('Campaign Name must be defined', 11, 1)
-    End    
+    End
     If LEN(@contactPRN) < 1
     Begin
         RAISERROR ('Contact Name must be defined', 11, 3)
@@ -144,7 +145,7 @@ As
     Begin
         RAISERROR ('Campaign Name must be defined', 11, 8)
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -152,10 +153,10 @@ As
     Declare @cellCultureID int = 0
     Declare @curContainerID int = 0
     --
-    SELECT 
-        @cellCultureID = CC_ID, 
+    SELECT
+        @cellCultureID = CC_ID,
         @curContainerID = CC_Container_ID
-    FROM T_Cell_Culture 
+    FROM T_Cell_Culture
     WHERE CC_Name = @cellCultureName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -195,7 +196,7 @@ As
         Set @msg = 'Could not resolve campaign name "' + @campaignNum + '" to ID"'
         RAISERROR (@msg, 11, 13)
     End
-    
+
     ---------------------------------------------------
     -- Resolve type name to ID
     ---------------------------------------------------
@@ -240,11 +241,11 @@ As
     ---------------------------------------------------
     -- Resolve current container id to name
     ---------------------------------------------------
-    
+
     Declare @curContainerName varchar(125) = ''
     --
-    SELECT @curContainerName = Tag 
-    FROM T_Material_Containers 
+    SELECT @curContainerName = Tag
+    FROM T_Material_Containers
     WHERE ID = @curContainerID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -259,7 +260,7 @@ As
     -- Resolve PRNs to user number
     ---------------------------------------------------
 
-    -- Verify that Owner PRN  is valid 
+    -- Verify that Owner PRN  is valid
     -- and get its id number
     --
     Declare @userID int
@@ -269,11 +270,20 @@ As
 
     execute @userID = GetUserID @contactPRN
 
-    If @userID = 0
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @contactPRN contains simply the username
+        --
+        SELECT @contactPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
     Begin
         -- Could not find entry in database for PRN @contactPRN
         -- Try to auto-resolve the name
-        
+
         exec AutoResolveNameToPRN @contactPRN, @MatchCount output, @NewPRN output, @userID output
 
         If @MatchCount = 1
@@ -281,14 +291,24 @@ As
             -- Single match found; update @contactPRN
             Set @contactPRN = @NewPRN
         End
-        
+
     End
 
-    -- Verify that principle investigator PRN is valid 
+    -- Verify that principle investigator PRN is valid
     -- and get its id number
     --
     execute @userID = GetUserID @piPRN
-    If @userID = 0
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @piPRN contains simply the username
+        --
+        SELECT @piPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
     Begin
         ---------------------------------------------------
         -- @piPRN did not resolve to a User_ID
@@ -297,7 +317,7 @@ As
         ---------------------------------------------------
 
         exec AutoResolveNameToPRN @piPRN, @MatchCount output, @NewPRN output, @userID output
-                    
+
         If @MatchCount = 1
         Begin
             -- Single match was found; update @piPRN
@@ -311,7 +331,7 @@ As
     End
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
@@ -319,13 +339,13 @@ As
     If @Mode = 'add'
     Begin -- <add>
         INSERT INTO T_Cell_Culture (
-            CC_Name, 
-            CC_Source_Name, 
-            CC_Contact_PRN, 
-            CC_PI_PRN, 
-            CC_Type, 
-            CC_Reason, 
-            CC_Comment, 
+            CC_Name,
+            CC_Source_Name,
+            CC_Contact_PRN,
+            CC_PI_PRN,
+            CC_Type,
+            CC_Reason,
+            CC_Comment,
             CC_Campaign_ID,
             CC_Container_ID,
             Mutation,
@@ -345,7 +365,7 @@ As
             @mutation,
             @plasmid ,
             @cellLine,
-            GETDATE()            
+            GETDATE()
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -357,34 +377,34 @@ As
         End
 
         Set @cellCultureID = SCOPE_IDENTITY()
-        
+
         -- As a precaution, query T_Cell_Culture using Biomaterial name to make sure we have the correct CC_ID
         Declare @IDConfirm int = 0
-        
+
         SELECT @IDConfirm = CC_ID
         FROM T_Cell_Culture
         WHERE CC_Name = @cellCultureName
-        
+
         If @cellCultureID <> IsNull(@IDConfirm, @cellCultureID)
         Begin
             Declare @DebugMsg varchar(512)
             Set @DebugMsg = 'Warning: Inconsistent identity values when adding biomaterial ' + @cellCultureName + ': Found ID ' +
-                            Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+                            Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@cellCultureID as varchar(12))
-                            
+
             exec postlogentry 'Error', @DebugMsg, 'AddUpdateCellCulture'
-            
+
             Set @cellCultureID = @IDConfirm
-        End        
-        
+        End
+
         Declare @StateID int = 1
-        
+
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
             Exec AlterEventLogEntryUser 2, @cellCultureID, @StateID, @callingUser
 
         -- Material movement logging
-        --         
+        --
         If @curContainerID != @contID
         Begin
             exec PostMaterialLogEntry
@@ -401,25 +421,25 @@ As
             -- Update the associated organism(s)
             exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
         End
-        
+
     End -- </add>
 
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin -- <update>
         Set @myError = 0
         --
         UPDATE T_Cell_Culture
-        Set 
-            CC_Source_Name    = @sourceName, 
-            CC_Contact_PRN    = @contactPRN, 
-            CC_PI_PRN         = @piPRN, 
-            CC_Type           = @typeID, 
-            CC_Reason         = @reason, 
-            CC_Comment        = @comment, 
+        Set
+            CC_Source_Name    = @sourceName,
+            CC_Contact_PRN    = @contactPRN,
+            CC_PI_PRN         = @piPRN,
+            CC_Type           = @typeID,
+            CC_Reason         = @reason,
+            CC_Comment        = @comment,
             CC_Campaign_ID    = @campaignID,
             CC_Container_ID   = @contID,
             Mutation          = @mutation,
@@ -436,7 +456,7 @@ As
         End
 
         -- Material movement logging
-        --         
+        --
         If @curContainerID != @contID
         Begin
             exec PostMaterialLogEntry
@@ -451,13 +471,13 @@ As
         -- Update the associated organism(s)
         Set @organismList = IsNull(@organismList, '')
         exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
-        
+
     End -- </update>
 
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

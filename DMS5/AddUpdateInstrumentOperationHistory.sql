@@ -3,11 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateInstrumentOperationHistory
+
+CREATE PROCEDURE [dbo].[AddUpdateInstrumentOperationHistory]
 /****************************************************
 **
-**  Desc: 
-**    Adds new or edits existing item in 
+**  Desc:
+**    Adds new or edits existing item in
 **    T_Instrument_Operation_History
 **
 **  Return values: 0: success, otherwise, error code
@@ -21,7 +22,8 @@ CREATE PROCEDURE AddUpdateInstrumentOperationHistory
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/02/2017 mem - Assure that the username is properly capitalized
-**    
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -45,19 +47,19 @@ As
 	Set @message = ''
 
 	Declare @logErrors tinyint = 0
-		
+
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentOperationHistory', @raiseError = 1
 	If @authorized = 0
 	Begin
 		THROW 51000, 'Access denied', 1;
 	End
 
-	BEGIN TRY 
+	BEGIN TRY
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -66,17 +68,17 @@ As
 	If IsNull(@Instrument, '') = ''
 	Begin
 		RAISERROR ('Instrument name not defined', 11, 16)
-	End 
+	End
 
 	If @Note Is Null
 	Begin
 		RAISERROR ('Note cannot be blank', 11, 16)
-	End 
+	End
 
 	If @mode = 'update' and @ID is null
 	Begin
 		RAISERROR ('ID cannot be null when updating a note', 11, 16)
-	End 
+	End
 
 	---------------------------------------------------
 	-- Resolve poster PRN
@@ -85,8 +87,17 @@ As
 	Declare @userID int
 	execute @userID = GetUserID @postedBy
 
-	If @userID = 0
-	Begin
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @postedBy contains simply the username
+        --
+        SELECT @postedBy = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
+    Begin
 		-- Could not find entry in database for PRN @postedBy
 		-- Try to auto-resolve the name
 
@@ -100,13 +111,6 @@ As
 			-- Single match found; update @postedBy
 			Set @postedBy = @NewPRN
 		End
-	End
-	Else
-	Begin
-		-- Assure that @postedBy is properly capitalized
-		SELECT @postedBy = U_Prn
-		FROM T_Users
-		WHERE ID = @userID
 	End
 
 	Set @logErrors = 1
@@ -142,8 +146,8 @@ As
 			EnteredBy,
 			Note
 		) VALUES (
-			@Instrument, 
-			@postedBy, 
+			@Instrument,
+			@postedBy,
 			@Note
 		)
 		--
@@ -162,7 +166,7 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	If @Mode = 'update' 
+	If @Mode = 'update'
 	Begin
 		set @myError = 0
 		--
@@ -179,9 +183,9 @@ As
 	End -- update mode
 
 	END TRY
-	BEGIN CATCH 
+	BEGIN CATCH
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
@@ -191,7 +195,7 @@ As
 			Declare @logMessage varchar(1024) = @message + '; Instrument ' + @Instrument
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrumentOperationHistory'
 		End
-			
+
 	END CATCH
 
 	return @myError

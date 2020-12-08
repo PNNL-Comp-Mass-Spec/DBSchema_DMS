@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **  Auth:   mem
 **  Date:   10/22/2020 mem - Initial Version
 **          10/23/2020 mem - Set the Origin of the new requested runs to "Fraction"
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -43,19 +44,19 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @msg varchar(512)
     Declare @instrumentMatch varchar(64)
-        
+
     -- Default priority at which new requests will be created
     Declare @defaultPriority int = 0
-    
+
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
     Declare @raiseErrorOnMultipleEUSUsers tinyint = 1
-    
+
     Declare @sourceRequestName varchar(128) = ''
     Declare @instrumentGroup varchar(64)
     Declare @msType varchar(20)
@@ -65,7 +66,7 @@ As
 
     Declare @status varchar(24) = 'Active'
     Declare @experimentName varchar(128)
-    
+
     Declare @fractionCount int = 0
     Declare @targetGroupFractionCount int = 0
 
@@ -82,20 +83,20 @@ As
     Declare @continue tinyint = 0
 
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddRequestedRunFractions', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -113,11 +114,11 @@ As
         RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
     --
     If IsNull(@separationGroup, '') = ''
-        RAISERROR ('Separation group was blank', 11, 114)    
+        RAISERROR ('Separation group was blank', 11, 114)
     --
     If IsNull(@workPackage, '') = ''
         RAISERROR ('Work package was blank', 11, 116)
-     
+
     Set @mode = ISNULL(@mode, '')
 
     -- Assure that @comment is not null and assure that it doesn't have &quot;
@@ -127,7 +128,7 @@ As
 
     If IsNull(@wellplateName, '') IN ('', 'na')
         Set @wellplateName = null
-    
+
     If IsNull(@wellNumber, '') IN ('', 'na')
         Set @wellNumber = null
 
@@ -153,7 +154,7 @@ As
            @experimentID = RR.Exp_ID,
            @sourceSeparationGroup = RR.RDS_Sec_Sep,
            @sourceStatus = RR.RDS_Status
-    FROM T_Requested_Run RR INNER JOIN T_DatasetTypeName 
+    FROM T_Requested_Run RR INNER JOIN T_DatasetTypeName
            ON RR.RDS_type_ID = T_DatasetTypeName.DST_Type_ID
     WHERE RR.ID = @sourceRequestID
     --
@@ -172,7 +173,7 @@ As
         Else
             RAISERROR ('Source requested run name may not contain the character(s) "%s"', 11, 118, @badCh)
     End
-    
+
     If @sourceStatus <> 'Active'
     Begin
         Set @requestName = @sourceRequestName + '_f01%'
@@ -191,7 +192,7 @@ As
     Begin
         RAISERROR ('Requested run name is too long (%d characters); max length is 64 characters', 11, 119, @nameLength)
     End
-    
+
     If ISNULL(@instrumentGroup, '') = ''
     Begin
         RAISERROR ('Source request does not have an instrument group defined', 11, 120)
@@ -205,9 +206,9 @@ As
     ---------------------------------------------------
     -- Lookup StatusID
     ---------------------------------------------------
-    --    
+    --
     Declare @statusID int = 0
-    
+
     SELECT @statusID = State_ID
     FROM T_Requested_Run_State_Name
     WHERE State_Name = @status
@@ -248,7 +249,16 @@ As
     Declare @userID int
     execute @userID = GetUserID @requestorPRN
 
-    If @userID = 0
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @requestorPRN contains simply the username
+        --
+        SELECT @requestorPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
     Begin
         -- Could not find entry in database for PRN @requestorPRN
         -- Try to auto-resolve the name
@@ -269,18 +279,7 @@ As
             return 51019
         End
     End
-    Else
-    Begin
-        ---------------------------------------------------
-        -- Make sure @requestorPRN is up-to-date
-        -- This is required since GetUserID will resolve 'LastName, FirstName (Username)' to UserID
-        ---------------------------------------------------
 
-        SELECT @requestorPRN = U_PRN
-        FROM T_Users
-        WHERE T_Users.ID = @userID
-    End
-   
     ---------------------------------------------------
     -- Validate instrument group and dataset type
     ---------------------------------------------------
@@ -297,7 +296,7 @@ As
                             @msType,
                             @instrumentGroup output,
                             @datasetTypeID output,
-                            @msg output 
+                            @msg output
     If @myError <> 0
         RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
 
@@ -312,27 +311,27 @@ As
     End
 
     SELECT @fractionCount = Fraction_Count
-    FROM T_Separation_Group 
+    FROM T_Separation_Group
     WHERE Sep_Group = @sourceSeparationGroup
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     IF @myRowCount = 0
     Begin
         RAISERROR ('Separation group of the source request not found: %s', 11, 99, @sourceSeparationGroup)
     End
-    
+
     If @fractionCount = 0
     Begin
         RAISERROR ('Source request separation group has a fraction count of 0; cannot continue: %s', 11, 99, @sourceSeparationGroup)
     End
-    
+
     ---------------------------------------------------
     -- Examine the fraction count of the separation group for the new requested runs
     ---------------------------------------------------
     --
     SELECT @targetGroupFractionCount = Fraction_Count
-    FROM T_Separation_Group 
+    FROM T_Separation_Group
     WHERE Sep_Group = @separationGroup
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -362,7 +361,7 @@ As
         If @myError <> 0
             RAISERROR ('Error trying to look up attachement ID', 11, 73)
     End
-    
+
     ---------------------------------------------------
     -- Lookup EUS field (only effective for experiments that have associated sample prep requests)
     -- This will update the data in @eusUsageType, @eusProposalID, or @eusUserID if it is "(lookup)"
@@ -374,13 +373,13 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
     End
     --
-    exec @myError = LookupEUSFromExperimentSamplePrep    
+    exec @myError = LookupEUSFromExperimentSamplePrep
                         @myRowCount,
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUserID output,
                         @msg output
-                        
+
     If @myError <> 0
         RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
@@ -390,7 +389,7 @@ As
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call ValidateEUSUsage with ' + 
+        Set @debugMsg = 'Call ValidateEUSUsage with ' +
             'type ' + IsNull(@eusUsageType, '?Null?') + ', ' +
             'proposal ' + IsNull(@eusProposalID, '?Null?') + ', and ' +
             'user list ' + IsNull(@eusUserID, '?Null?')
@@ -400,7 +399,7 @@ As
 
     -- Note that if @eusUserID contains a list of names in the form "Baker, Erin (41136)",
     -- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
-    
+
     If Len(@eusUserID) = 0 And @autoPopulateUserListIfBlank > 0
     Begin
         Set @raiseErrorOnMultipleEUSUsers = 0
@@ -414,16 +413,16 @@ As
                         @eusUsageTypeID output,
                         @msg output,
                         @autoPopulateUserListIfBlank
-                        
+
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
         Set @message = @msg
-    
+
     Declare @commaPosition Int = CharIndex(',', @eusUserID)
     If @commaPosition > 1
-    Begin            
+    Begin
         Set @message = dbo.AppendToText('Requested runs can only have a single EUS user associated with them', @message, 0, '; ', 1024)
 
         If @raiseErrorOnMultipleEUSUsers > 0
@@ -443,20 +442,20 @@ As
         exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
     End
 
-    exec @myError = LookupOtherFromExperimentSamplePrep 
-                        @experimentName, 
-                        @workPackage output, 
+    exec @myError = LookupOtherFromExperimentSamplePrep
+                        @experimentName,
+                        @workPackage output,
                         @msg output
-                        
+
     If @myError <> 0
-        RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)    
-        
+        RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)
+
     ---------------------------------------------------
     -- Resolve staging location name to location ID
     ---------------------------------------------------
-    
+
     Declare @locationID int = null
-    
+
     If IsNull(@stagingLocation, '') <> ''
     Begin
         SELECT @locationID = ID
@@ -470,9 +469,9 @@ As
         --
         If IsNull(@locationID, 0) = 0
             RAISERROR ('Staging location not recognized', 11, 99)
-        
+
     End
-        
+
     ---------------------------------------------------
     -- Validate the work package
     ---------------------------------------------------
@@ -485,11 +484,11 @@ As
 
     Declare @allowNoneWP tinyint = @autoPopulateUserListIfBlank
     Declare @requireWP tinyint = 1
-    
-    SELECT @requireWP = Value 
-    FROM T_MiscOptions 
+
+    SELECT @requireWP = Value
+    FROM T_MiscOptions
     WHERE Name = 'RequestedRunRequireWorkpackage'
-    
+
     If @requireWP = 0
     Begin
         Set @allowNoneWP = 1
@@ -506,23 +505,23 @@ As
     -- Make sure the Work Package is capitalized properly
     --
     SELECT @workPackage = Charge_Code
-    FROM T_Charge_Code 
+    FROM T_Charge_Code
     WHERE Charge_Code = @workPackage
-    
+
     If @autoPopulateUserListIfBlank = 0
     Begin
-        If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')       
+        If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
             Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 512)
         Else
         Begin
-            If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0) 
+            If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
             Begin
                 Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 512)
             End
         End
     End
-    
-    -- Validation checks are complete; now enable @logErrors    
+
+    -- Validation checks are complete; now enable @logErrors
     Set @logErrors = 1
 
     If @logDebugMessages > 0
@@ -539,7 +538,7 @@ As
     ---------------------------------------------------
     -- Make sure none of the new requested runs will conflict with an existing requested run
     ---------------------------------------------------
-    -- 
+    --
     Set @fractionNumber = 1
     While @fractionNumber <= @fractionCount
     Begin
@@ -562,13 +561,13 @@ As
         Begin
             RAISERROR ('Name conflict: a requested run named %s already exists, ID %d', 11, 99, @requestName, @requestID)
         End
-        
+
         INSERT INTO #Tmp_NewRequests (Fraction_Number, Request_Name)
         VALUES (@fractionNumber, @requestName)
 
         SET @fractionNumber = @fractionNumber + 1
     End
-    
+
     ---------------------------------------------------
     -- Action for preview mode
     ---------------------------------------------------
@@ -608,7 +607,7 @@ As
         -- Start transaction
         --
         Begin transaction
-        
+
         Set @fractionNumber = 1
 
         While @fractionNumber <= @fractionCount
@@ -619,16 +618,16 @@ As
 
             INSERT INTO T_Requested_Run
             (
-                RDS_name, 
-                RDS_Requestor_PRN, 
-                RDS_comment, 
-                RDS_created, 
-                RDS_instrument_group, 
-                RDS_type_ID, 
-                RDS_instrument_setting, 
-                RDS_priority, 
+                RDS_name,
+                RDS_Requestor_PRN,
+                RDS_comment,
+                RDS_created,
+                RDS_instrument_group,
+                RDS_type_ID,
+                RDS_instrument_setting,
+                RDS_priority,
                 Exp_ID,
-                RDS_WorkPackage, 
+                RDS_WorkPackage,
                 RDS_Well_Plate_Num,
                 RDS_Well_Num,
                 RDS_internal_standard,
@@ -642,13 +641,13 @@ As
                 Vialing_Vol,
                 Location_Id
             ) VALUES (
-                @requestName, 
-                @requestorPRN, 
-                @comment, 
+                @requestName,
+                @requestorPRN,
+                @comment,
                 GETDATE(),
-                @instrumentGroup, 
-                @datasetTypeID, 
-                @instrumentSettings, 
+                @instrumentGroup,
+                @datasetTypeID,
+                @instrumentSettings,
                 @defaultPriority, -- priority
                 @experimentID,
                 @workPackage,
@@ -670,7 +669,7 @@ As
             --
             If @myError <> 0
                 RAISERROR ('Insert operation failed: "%s"', 11, 7, @requestName)
-        
+
             Set @requestID = SCOPE_IDENTITY()
 
             UPDATE #Tmp_NewRequests
@@ -758,7 +757,7 @@ As
                 exec UpdateCachedRequestedRunEUSUsers @requestID
             End
         End
-        
+
         Set @message = 'Created new requested runs based on source request ' + CAST(@sourceRequestID as varchar(12)) + ', creating: ' + @requestIdList
 
         EXEC PostLogEntry 'Normal', @message, 'AddRequestedRunFractions'
@@ -766,9 +765,9 @@ As
     End -- </add>
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

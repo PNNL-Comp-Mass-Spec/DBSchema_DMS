@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AddExperimentFractions]
 /****************************************************
 **
-**  Desc:   Creates a group of new experiments in DMS, 
+**  Desc:   Creates a group of new experiments in DMS,
 **          linking back to the parent experiment
 **
 **  Return values: 0: success, otherwise, error code
@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          12/04/2018 mem - Insert plex member info into T_Experiment_Plex_Members if defined for the parent experiment
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **          01/24/2019 mem - Add parameters @nameSearch, @nameReplace, and @addUnderscore
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -73,18 +74,18 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @fractionCount int = 0
     Declare @maxCount smallint = 200
-    
+
     Declare @fractionNumberText varchar(2)
-    
+
     Declare @fullFractionCount int
     Declare @newExpID int
-    
+
     Declare @msg varchar(512)
 
     Declare @startingIndex int = 1      -- Initial index for automatic naming of new experiments
@@ -111,7 +112,7 @@ AS
     Declare @parentContainerID int = 0
     Declare @alkylation char(1)
     Declare @tissueID varchar(24)
-    
+
     Declare @experimentIDList varchar(8000) = ''
 
     Declare @materialIDList varchar(8000) = ''
@@ -120,11 +121,11 @@ AS
     Declare @wellPlateMode varchar(12)
 
     Begin TRY
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     If IsNull(@totalCount, 0) <= 0
     Begin
         Set @message = 'Number of child experments cannot be 0'
@@ -178,11 +179,11 @@ AS
         Colon_Pos int null,
         Compound_ID int null
     )
-    
+
     ---------------------------------------------------
     -- Get information for parent experiment
     ---------------------------------------------------
-    
+
     SELECT @parentExperimentID = Exp_ID,
            @baseFractionName = Experiment_Num,
            @researcherPRN = EX_researcher_PRN,
@@ -214,7 +215,7 @@ AS
 
     -- Make sure @parentExperiment is capitalized properly
     Set @parentExperiment = @baseFractionName
-    
+
     -- Search/replace, if defined
     If Len(@nameSearch) > 0
     Begin
@@ -312,17 +313,17 @@ AS
     ---------------------------------------------------
 
     Declare @prepRequestTissueID varchar(24) = Null
-    
+
     If @requestOverride <> 'parent'
     Begin
         Set @samplePrepRequest = Try_Cast(@requestOverride as int)
-        
+
         If @samplePrepRequest Is Null
         Begin
             Set @message = 'Prep request ID is not an integer: ' + @requestOverride
             RAISERROR (@message, 11, 9)
         End
-        
+
         SELECT @prepRequestTissueID = Tissue_ID
         FROM T_Sample_Prep_Request
         WHERE ID = @samplePrepRequest
@@ -360,7 +361,7 @@ AS
     ---------------------------------------------------
     -- Resolve postdigestion internal standard ID
     ---------------------------------------------------
-    -- 
+    --
     If @postdigestIntStd <> 'parent'
     Begin
         Set @tmpID = Null
@@ -382,12 +383,22 @@ AS
     ---------------------------------------------------
     -- Resolve researcher
     ---------------------------------------------------
-    -- 
+    --
     If @researcher <> 'parent'
     Begin
         Declare @userID int
         execute @userID = GetUserID @researcher
-        If @userID = 0
+
+        If @userID > 0
+        Begin
+            -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+            -- Assure that @researcher contains simply the username
+            --
+            SELECT @researcher = U_PRN
+            FROM T_Users
+    	    WHERE ID = @userID
+        End
+        Else
         Begin
             -- Could not find entry in database for PRN @researcher
             -- Try to auto-resolve the name
@@ -414,11 +425,11 @@ AS
     ---------------------------------------------------
     -- Set up transaction around multiple table modifications
     ---------------------------------------------------
-    
+
 --RAISERROR ('Researcher:%s', 11, 40, @researcherPRN)
 
     Declare @transName varchar(32) = 'AddBatchExperimentEntry'
-    
+
     Begin transaction @transName
 
     If @mode LIKE '%preview%'
@@ -430,7 +441,7 @@ AS
         ---------------------------------------------------
         -- Make Experiment group entry
         ---------------------------------------------------
-        INSERT INTO T_Experiment_Groups ( 
+        INSERT INTO T_Experiment_Groups (
             EG_Group_Type ,
             Parent_Exp_ID ,
             EG_Description ,
@@ -438,7 +449,7 @@ AS
             EG_Created ,
             Researcher,
             Tab
-        ) VALUES ( 
+        ) VALUES (
             @groupType ,
             @parentExperimentID ,
             @description ,
@@ -446,7 +457,7 @@ AS
             GETDATE() ,
             @researcherPRN,
             @tab
-        )    
+        )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -455,18 +466,18 @@ AS
             Set @message = 'Failed to insert new group entry into database'
             RAISERROR (@message, 11, 14)
         End
-    
+
         Set @groupID = SCOPE_IDENTITY()
 
         ---------------------------------------------------
         -- Add parent experiment to reference group
         ---------------------------------------------------
-    
+
         INSERT INTO T_Experiment_Group_Members (
-            Group_ID, 
+            Group_ID,
             Exp_ID
         ) VALUES (
-            @groupID, 
+            @groupID,
             @parentExperimentID
         )
         --
@@ -518,11 +529,11 @@ AS
         If @xID <> 0
         Begin
             rollback transaction @transName
-            Set @message = 'Failed to add new fraction experiment since existing experiment already exists named: ' + @newExpName 
+            Set @message = 'Failed to add new fraction experiment since existing experiment already exists named: ' + @newExpName
             Set @myError = 51002
             RAISERROR (@message, 11, 16)
         End
-        
+
         If @mode LIKE '%preview%'
         Begin -- <Preview>
             If @fractionsCreated < 4
@@ -546,33 +557,33 @@ AS
             -- Insert new experiment into database
             --
             INSERT INTO [T_Experiments] (
-                Experiment_Num, 
-                EX_researcher_PRN, 
-                EX_organism_ID, 
-                EX_reason, 
+                Experiment_Num,
+                EX_researcher_PRN,
+                EX_organism_ID,
+                EX_reason,
                 EX_comment,
-                EX_created, 
-                EX_sample_concentration, 
-                EX_lab_notebook_ref, 
+                EX_created,
+                EX_sample_concentration,
+                EX_lab_notebook_ref,
                 EX_campaign_ID,
                 EX_Labelling,
                 EX_enzyme_ID,
                 EX_sample_prep_request_ID,
                 EX_internal_standard_ID,
                 EX_postdigest_internal_std_ID,
-                EX_wellplate_num, 
+                EX_wellplate_num,
                 EX_well_num,
                 EX_Alkylation,
                 EX_Tissue_ID
             ) VALUES (
-                @newExpName, 
-                @researcherPRN, 
-                @organismID, 
-                @reason, 
+                @newExpName,
+                @researcherPRN,
+                @organismID,
+                @reason,
                 @newComment,
-                GETDATE(), 
-                @sampleConc, 
-                @labNotebook, 
+                GETDATE(),
+                @sampleConc,
+                @labNotebook,
                 @campaignID,
                 @labelling,
                 @enzymeID,
@@ -593,7 +604,7 @@ AS
                 Set @message = 'Insert operation failed!'
                 RAISERROR (@message, 11, 17)
             End
-        
+
             Set @newExpID = SCOPE_IDENTITY()
 
             -- Add the experiment to cell culture mapping
@@ -629,12 +640,12 @@ AS
             ---------------------------------------------------
             -- Add fractionated experiment reference to experiment group
             ---------------------------------------------------
-        
+
             INSERT INTO T_Experiment_Group_Members (
-                Group_ID, 
+                Group_ID,
                 Exp_ID
             ) VALUES (
-                @groupID, 
+                @groupID,
                 @newExpID
             )
             --
@@ -646,7 +657,7 @@ AS
                 Set @message = 'Failed to update group reference for new experiment'
                 RAISERROR (@message, 11, 20)
             End
-    
+
             ---------------------------------------------------
             -- Append Experiment ID to @experimentIDList and @materialIDList
             ---------------------------------------------------
@@ -658,8 +669,8 @@ AS
 
             If Len(@materialIDList) > 0
                 Set @materialIDList = @materialIDList + ','
-            
-            Set @materialIDList = @materialIDList + 'E:' + Convert(varchar(12), @newExpID) 
+
+            Set @materialIDList = @materialIDList + 'E:' + Convert(varchar(12), @newExpID)
 
             ---------------------------------------------------
             -- Copy experiment plex info, if defined
@@ -685,7 +696,7 @@ AS
                 If Len(@callingUser) > 0
                 Begin
                     -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
-                    --            
+                    --
                     Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @newExpID, @CallingUser
                 End
 
@@ -720,7 +731,7 @@ AS
     End
     Else
     Begin -- <AddToContainer>
-    
+
         ---------------------------------------------------
         -- Resolve parent container name
         ---------------------------------------------------
@@ -759,17 +770,17 @@ AS
                 rollback transaction @transName
             RAISERROR (@message, 11, 22)
         End
-    
+
         ---------------------------------------------------
-        -- Now copy the aux info from the parent experiment 
+        -- Now copy the aux info from the parent experiment
         -- into the fractionated experiments
         ---------------------------------------------------
-    
-        exec @result = CopyAuxInfoMultiID 
+
+        exec @result = CopyAuxInfoMultiID
                         @targetName = 'Experiment',
                         @targetEntityIDList = @experimentIDList,
-                        @categoryName = '', 
-                        @subCategoryName = '', 
+                        @categoryName = '',
+                        @subCategoryName = '',
                         @sourceEntityID = @parentExperimentID,
                         @mode = 'copyAll',
                         @message = @message output
@@ -786,20 +797,20 @@ AS
     ---------------------------------------------------
     -- Commit transaction if there were no errors
     ---------------------------------------------------
-        
+
     commit transaction @transName
 
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
     End CATCH
 

@@ -22,7 +22,8 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
-**    
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -50,8 +51,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateExperimentGroup', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -131,7 +132,7 @@ As
     End
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Create temporary table for experiments in list
     ---------------------------------------------------
@@ -221,7 +222,7 @@ As
         -- Remove the trailing comma
         If @InvalidExperiments Like '%,'
             Set @InvalidExperiments = Substring(@InvalidExperiments, 1, Len(@InvalidExperiments)-1)
-        
+
         Set @logErrors = 0
         Set @message = 'Experiment run list contains experiments that do not exist: ' + @InvalidExperiments
         RAISERROR (@message, 10, 1)
@@ -234,7 +235,17 @@ As
 
     Declare @userID int
     execute @userID = GetUserID @researcher
-    If @userID = 0
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @researcher contains simply the username
+        --
+        SELECT @researcher = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
     Begin
         -- Could not find entry in database for PRN @researcher
         -- Try to auto-resolve the name
@@ -281,11 +292,11 @@ As
             Researcher,
             Tab
         ) VALUES (
-            @GroupType, 
-            getdate(), 
-            @Description, 
-            @ParentExpID, 
-            @Researcher, 
+            @GroupType,
+            getdate(),
+            @Description,
+            @ParentExpID,
+            @Researcher,
             @Tab
         )
         --
@@ -309,7 +320,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin -- <update>
         Set @myError = 0
         --
@@ -334,10 +345,10 @@ As
     End -- </update>
 
     ---------------------------------------------------
-    -- Update member experiments 
+    -- Update member experiments
     ---------------------------------------------------
 
-    If @mode = 'add' OR @mode = 'update' 
+    If @mode = 'add' OR @mode = 'update'
     Begin -- <AddUpdateMembers>
 
         -- Remove any existing group members that are not in the temporary table
@@ -355,12 +366,12 @@ As
             RAISERROR (@message, 10, 1)
         return 51004
         End
-            
+
         -- Add group members from temporary table that are not already members
         --
         INSERT INTO T_Experiment_Group_Members(
             Group_ID,
-            Exp_ID 
+            Exp_ID
         )
         SELECT @ID,
                #XR.Exp_ID
@@ -382,7 +393,7 @@ As
         -- Update MemberCount
         --
         Exec @myError = UpdateExperimentGroupMemberCount @groupID = @ID
-         
+
         If @myError <> 0
         Begin
             rollback transaction @transName
@@ -393,7 +404,7 @@ As
     End -- </AddUpdateMembers>
 
     commit transaction @transName
-    
+
     return @myError
 
 

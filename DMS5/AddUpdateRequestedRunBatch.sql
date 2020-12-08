@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateRequestedRunBatch
+
+CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 /****************************************************
 **
 **  Desc: Adds new or edits existing requested run batch
@@ -14,7 +15,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **
 **    Auth: grk
 **    Date: 01/11/2006
-**    
+**
 **    jds 9/15/06 Added support for five new variables and fields
 **        @RequestedBatchPriority, @ActualBathPriority,
 **        @RequestedCompletionDate, @JustificationHighPriority, @Comment
@@ -34,6 +35,7 @@ CREATE PROCEDURE AddUpdateRequestedRunBatch
 **			06/23/2017 mem - Check for @RequestedRunList containing request names instead of IDs
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/18/2017 mem - Log additional errors to T_Log_Entries
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **
 *****************************************************/
 (
@@ -59,29 +61,29 @@ As
 	set @message = ''
 
 	Declare @logErrors tinyint = 0
-	
+
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatch', @raiseError = 1
 	If @authorized = 0
 	Begin
 		THROW 51000, 'Access denied', 1;
 	End
 
-	BEGIN TRY 
+	BEGIN TRY
 
 	---------------------------------------------------
 	-- Validate input fields
 	---------------------------------------------------
 
-	if len(@RequestedCompletionDate) < 1 
+	if len(@RequestedCompletionDate) < 1
 	begin
 		set @RequestedCompletionDate = null
 	end
-	else 
+	else
 		if (SELECT ISDATE(@RequestedCompletionDate)) = 0
 		begin
 			RAISERROR ('Requested completion date is not a valid date: %s', 11, 1, @RequestedCompletionDate)
@@ -93,10 +95,10 @@ As
 	---------------------------------------------------
 
 	Declare @InstrumentGroup varchar(64) = ''
-	
+
 	-- Set the instrument group to @RequestedInstrument for now
 	set @InstrumentGroup = @RequestedInstrument
-	
+
 	IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
 	Begin
 		-- Try to update instrument group using T_Instrument_Name
@@ -117,9 +119,9 @@ As
 	END
 
 	-- future: this could get more complicated
-	
+
 	---------------------------------------------------
-	-- Is entry already in database? 
+	-- Is entry already in database?
 	---------------------------------------------------
 	declare @tmp int
 
@@ -171,7 +173,7 @@ As
 			set @message = 'Cannot update: entry does not exist in database'
 			RAISERROR (@message, 11, 19)
 		end
-		
+
 		if @lock = 'yes'
 		begin
 			set @message = 'Cannot update: batch is locked'
@@ -185,8 +187,18 @@ As
 
 	declare @userID int
 	execute @userID = GetUserID @OwnerPRN
-	if @userID = 0
-	begin
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @OwnerPRN contains simply the username
+        --
+        SELECT @OwnerPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
+    Begin
 		-- Could not find entry in database for PRN @OwnerPRN
 		-- Try to auto-resolve the name
 
@@ -205,10 +217,10 @@ As
 			set @message = 'Could not find entry in database for operator PRN "' + @OwnerPRN + '"'
 			RAISERROR (@message, 11, 21)
 		End
-	end
-	
+	End
+
 	Set @logErrors = 1
-	
+
 	---------------------------------------------------
 	-- create temporary table for requests in list
 	---------------------------------------------------
@@ -216,7 +228,7 @@ As
 	CREATE TABLE #XR (
 		RequestIDText varchar(128) NULL,
 		Request_ID [int] NULL
-	) 
+	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -225,7 +237,7 @@ As
 		set @message = 'Failed to create temporary table for requests'
 		RAISERROR (@message, 11, 22)
 	end
-	
+
 	---------------------------------------------------
 	-- Populate temporary table from list
 	---------------------------------------------------
@@ -248,32 +260,32 @@ As
 	--
 	UPDATE #XR
 	SET Request_ID = try_cast(RequestIDText as int)
-	
+
 	If Exists (Select * FROM #XR WHERE Request_ID Is Null)
 	Begin
 		Declare @firstInvalid varchar(128)
-		
+
 		SELECT TOP 1 @firstInvalid = RequestIDText
-		FROM #XR 
+		FROM #XR
 		WHERE Request_ID Is Null
 
 		Set @logErrors = 0
 		Set @message = 'Requested runs must be integers, not names; first invalid item: ' + IsNull(@firstInvalid, '')
 		RAISERROR (@message, 11, 30)
 	End
-	
+
 	---------------------------------------------------
 	-- check status of prospective member requests
 	---------------------------------------------------
 	declare @count int
-	
+
 	-- do all requests in list actually exist?
 	--
 	set @count = 0
 	--
-	SELECT @count = count(*) 
+	SELECT @count = count(*)
 	FROM #XR
-	WHERE NOT (Request_ID IN 
+	WHERE NOT (Request_ID IN
 	(
 		SELECT ID
 		FROM T_Requested_Run)
@@ -289,12 +301,12 @@ As
 
 	if @count <> 0
 	begin
-		
+
 		Declare @invalidIDs varchar(64) = null
-			
+
 		SELECT @invalidIDs = Coalesce(@invalidIDs + ', ', '') + RequestIDText
 		FROM #XR
-		WHERE NOT (Request_ID IN 
+		WHERE NOT (Request_ID IN
 		(
 			SELECT ID
 			FROM T_Requested_Run)
@@ -302,7 +314,7 @@ As
 
 		Set @logErrors = 0
 		set @message = 'Requested run list contains requests that do not exist: ' + @invalidIDs
-		RAISERROR (@message, 11, 25)	
+		RAISERROR (@message, 11, 25)
 
 	end
 
@@ -319,26 +331,26 @@ As
 	begin
 
 		INSERT INTO T_Requested_Run_Batches (
-			Batch, 
-			Description, 
-			Owner, 
+			Batch,
+			Description,
+			Owner,
 			Locked,
 			Requested_Batch_Priority,
 			Actual_Batch_Priority,
 			Requested_Completion_Date,
 			Justification_for_High_Priority,
-			Requested_Instrument, 
+			Requested_Instrument,
 			Comment
 		) VALUES (
-			@Name, 
-			@Description, 
-			@userID, 
+			@Name,
+			@Description,
+			@userID,
 			'No',
 			@RequestedBatchPriority,
 			'Normal',
 			@RequestedCompletionDate,
 			@JustificationHighPriority,
-			@InstrumentGroup, 
+			@InstrumentGroup,
 			@Comment
 		)
 		--
@@ -349,38 +361,38 @@ As
 			set @message = 'Insert operation failed'
 			RAISERROR (@message, 11, 26)
 		end
-	    
+
 		-- return ID of newly created entry
 		--
-		Set @ID = SCOPE_IDENTITY()		
+		Set @ID = SCOPE_IDENTITY()
 
 		-- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Exp_ID
 		Declare @BatchIDConfirm int = 0
-		
+
 		SELECT @BatchIDConfirm = ID
 		FROM T_Requested_Run_Batches
 		WHERE Batch = @Name
-		
+
 		If @ID <> IsNull(@BatchIDConfirm, @ID)
 		Begin
 			Declare @DebugMsg varchar(512)
 			Set @DebugMsg = 'Warning: Inconsistent identity values when adding batch ' + @Name + ': Found ID ' +
-			                Cast(@BatchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' + 
+			                Cast(@BatchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
 			                Cast(@ID as varchar(12))
-			                
+
 			exec postlogentry 'Error', @DebugMsg, 'AddUpdateRequestedRunBatch'
-			
+
 			Set @ID = @BatchIDConfirm
 		End
-		
-		
+
+
   end -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @Mode = 'update'
 	begin
 		set @myError = 0
 		--
@@ -403,12 +415,12 @@ As
 			RAISERROR (@message, 11, 27)
 		end
 	end -- update mode
-  
+
   ---------------------------------------------------
-  -- update member requests 
+  -- update member requests
   ---------------------------------------------------
-  
-  	if @Mode = 'add' OR @Mode = 'update' 
+
+  	if @Mode = 'add' OR @Mode = 'update'
 	begin
 		-- remove any existing references to the batch
 		-- from requested runs
@@ -424,7 +436,7 @@ As
 			set @message = 'Failed trying to remove batch reference from existing requests'
 			RAISERROR (@message, 11, 28)
 		end
-		  
+
 		-- add reference to this batch to the requests in the list
 		--
  		UPDATE T_Requested_Run
@@ -439,21 +451,21 @@ As
 			RAISERROR (@message, 11, 29)
 		end
 	end
-  
+
 	commit transaction @transName
 
 	END TRY
-	BEGIN CATCH 
+	BEGIN CATCH
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-		
+
 		If @logErrors > 0
 			Exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRunBatch'
 	END CATCH
-	
+
 	return @myError
 
 

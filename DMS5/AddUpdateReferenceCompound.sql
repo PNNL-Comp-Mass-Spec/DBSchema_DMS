@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateReferenceCompound
+
+CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 /****************************************************
 **
 **	Desc: Adds new or updates existing reference compound in database
@@ -17,7 +18,8 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 **			               - No longer require that @compoundName be unique in T_Reference_Compound
 **			               - Allow @description to be empty
 **			               - Properly handle float-based dates (resulting from Excel copy / paste-value issues)
-**    
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**
 *****************************************************/
 (
 	@compoundID int,
@@ -25,11 +27,11 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 	@description varchar(500),
 	@compoundTypeName varchar(64),
 	@geneName varchar(128),			-- Gene or Protein name
-	@modifications varchar(500),	
+	@modifications varchar(500),
 	@organismName varchar(128),
 	@pubChemID varchar(30),			-- Will be converted to an integer; empty strings are stored as null
-	@campaignName varchar(64), 
-	@containerName varchar(128) = 'na', 
+	@campaignName varchar(64),
+	@containerName varchar(128) = 'na',
 	@wellplateName varchar(64),
 	@wellNumber varchar(64),
 	@contactPRN varchar(64),	    -- Contact for the Source; typically PNNL staff, but can be offsite person
@@ -42,32 +44,32 @@ CREATE Procedure dbo.AddUpdateReferenceCompound
 	@active varchar(3),				-- Can be: Yes, No, Y, N, 1, 0
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
 	@message varchar(512) output,
-	@callingUser varchar(128) = ''		
+	@callingUser varchar(128) = ''
 )
 As
 	Set XACT_ABORT, nocount on
 
 	Declare @myError int = 0
 	Declare @myRowCount int = 0
-	
+
 	Set @message = ''
 
 	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
 	Declare @compoundIdAndName varchar(128) = Cast(IsNull(@compoundID, 0) as varchar(12)) + ': ' + IsNull(@compoundName, '??')
-	
+
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'AddUpdateReferenceCompound', @raiseError = 1
 	If @authorized = 0
 	Begin
 		THROW 51000, 'Access denied', 1;
 	End
 
-	BEGIN TRY 
+	BEGIN TRY
 
 	---------------------------------------------------
 	-- Validate input fields
@@ -80,16 +82,16 @@ As
 	Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
 	Set @pubChemID = LTrim(RTrim(IsNull(@pubChemID, '')))
 	Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
-	Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))	
+	Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
 	Set @supplier = LTrim(RTrim(IsNull(@supplier, '')))
-	Set @productId = LTrim(RTrim(IsNull(@productId, '')))	
+	Set @productId = LTrim(RTrim(IsNull(@productId, '')))
 	Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
 	Set @mass = LTrim(RTrim(IsNull(@mass, '')))
 	set @active = LTrim(RTrim(IsNull(@active, '1')))
 	Set @callingUser = IsNull(@callingUser, '')
 
 	Set @myError = 0
-	
+
 	If @compoundID Is Null AND NOT @mode IN ('add', 'check_add')
 	Begin
 		RAISERROR ('Compound ID cannot be null', 11, 1)
@@ -98,7 +100,7 @@ As
 	If LEN(@compoundName) < 1
 	Begin
 		RAISERROR ('Compound Name must be defined', 11, 1)
-	End	
+	End
 
 	Set @compoundIdAndName = Cast(IsNull(@compoundID, 0) as varchar(12)) + ': ' + IsNull(@compoundName, '??')
 
@@ -111,17 +113,17 @@ As
 	Begin
 		Set @organismName = 'None'
 	End
-	
+
 	If LEN(@campaignName) < 1
 	Begin
 		RAISERROR ('Campaign Name must be defined', 11, 1)
 	End
-	
+
 	If LEN(@contactPRN) < 1
 	Begin
 		RAISERROR ('Contact Name cannot be blank', 11, 3)
 	End
-	
+
 	If LEN(@supplier) < 1
 	Begin
 		RAISERROR ('Supplier cannot be blank', 11, 5)
@@ -131,7 +133,7 @@ As
 	Declare @massValue float
 	Declare @purchaseDateValue datetime
 	Declare @activeValue tinyint
-	
+
 	If @pubChemID = ''
 		Set @pubChemIdValue = null
 	Else
@@ -140,7 +142,7 @@ As
 		If @pubChemIdValue Is Null
 			RAISERROR ('Error, PubChemID is not an integer: %s', 11, 9, @pubChemID)
 	End
-	
+
 	If @mass = ''
 		Set @massValue = 0
 	Else
@@ -149,7 +151,7 @@ As
 		If @massValue Is Null
 			RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
 	End
-	
+
 	If @active in ('Y', 'Yes', '1')
 		Set @activeValue = 1
 	Else If @active in ('N', 'No', '0')
@@ -177,20 +179,20 @@ As
 				RAISERROR ('Error, invalid purchase date: %s', 11, 9, @purchaseDate)
 			End
 		End
-	End		
-	
+	End
+
 	---------------------------------------------------
 	-- Resolve compound type name to ID
 	---------------------------------------------------
-	
+
 	Declare @compoundTypeID int = 0
-	
+
 	SELECT @compoundTypeID = Compound_Type_ID
 	FROM T_Reference_Compound_Type_Name
 	WHERE Compound_Type_Name = @compoundTypeName
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
+
 	If @compoundTypeID = 0
 	Begin
 		RAISERROR ('Invalid compound type name', 11, 5)
@@ -199,16 +201,16 @@ As
 	---------------------------------------------------
 	-- Resolve organism name to ID
 	---------------------------------------------------
-	
+
 	Declare @organismID int = 0
-	
+
 	exec @organismID = GetOrganismID @organismName
-	
+
 	If @organismID = 0
 	Begin
 		RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
 	End
-	
+
 	---------------------------------------------------
 	-- Is entry already in database?
 	---------------------------------------------------
@@ -224,9 +226,9 @@ As
 			Set @msg = 'Cannot update: Reference compound ID ' + Cast(@compoundID as varchar(12)) + ' is not in database '
 			RAISERROR (@msg, 11, 12)
 		End
-		
+
 		SELECT @curContainerID = Container_ID
-		FROM T_Reference_Compound 
+		FROM T_Reference_Compound
 		WHERE Compound_ID = @compoundID
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -246,7 +248,7 @@ As
 		Set @msg = 'Could not resolve campaign name "' + @campaignName + '" to ID"'
 		RAISERROR (@msg, 11, 13)
 	End
-	
+
 	---------------------------------------------------
 	-- Resolve container name to ID
 	---------------------------------------------------
@@ -271,11 +273,11 @@ As
 	---------------------------------------------------
 	-- Resolve current container id to name
 	---------------------------------------------------
-	
+
 	Declare @curContainerName varchar(125) = ''
 	--
-	SELECT @curContainerName = Tag 
-	FROM T_Material_Containers 
+	SELECT @curContainerName = Tag
+	FROM T_Material_Containers
 	WHERE ID = @curContainerID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -298,11 +300,21 @@ As
 	Declare @NewPRN varchar(64)
 
 	execute @userID = GetUserID @contactPRN
-	If @userID = 0
-	Begin
+
+    If @userID > 0
+    Begin
+        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @contactPRN contains simply the username
+        --
+        SELECT @contactPRN = U_PRN
+        FROM T_Users
+	    WHERE ID = @userID
+    End
+    Else
+    Begin
 		-- Could not find entry in database for PRN @contactPRN
 		-- Try to auto-resolve the name
-		
+
 		exec AutoResolveNameToPRN @contactPRN, @MatchCount output, @NewPRN output, @userID output
 
 		If @MatchCount = 1
@@ -310,15 +322,15 @@ As
 			-- Single match found; update @contactPRN
 			Set @contactPRN = @NewPRN
 		End
-		
+
 	End
 
 	Set @logErrors = 1
-	
+
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	
+
 	If @mode = 'add'
 	Begin -- <add>
 		INSERT INTO T_Reference_Compound (
@@ -330,7 +342,7 @@ As
 			PubChem_CID,
 			Campaign_ID,
 			Container_ID,
-			Wellplate_Name, 
+			Wellplate_Name,
 			Well_Number,
 			Contact_PRN,
 			Supplier,
@@ -351,14 +363,14 @@ As
 			@pubChemIdValue,
 			@campaignID,
 			@containerID,
-			@wellplateName, 
+			@wellplateName,
 			@wellNumber,
-			@contactPRN,			
+			@contactPRN,
 			@supplier,
 			@productId,
 			@purchaseDateValue,
 			@purity,
-			@purchaseQuantity,			
+			@purchaseQuantity,
 			@massValue,
 			@modifications,
 			GETDATE(),
@@ -374,15 +386,15 @@ As
 		End
 
 		Set @compoundID = SCOPE_IDENTITY()
-		
+
 		Declare @StateID int = 1
-		
+
 		-- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 		If Len(@callingUser) > 0
 			Exec AlterEventLogEntryUser 13, @compoundID, @StateID, @callingUser
 
 		-- Material movement logging
-		-- 		
+		--
 		If @curContainerID != @containerID
 		Begin
 			exec PostMaterialLogEntry
@@ -390,7 +402,7 @@ As
 				@compoundIdAndName,         -- Item
 				'na',                       -- Initial State (aka Old container)
 				@containerName,             -- Final State   (aka New container
-				@callingUser,               
+				@callingUser,
 				'Reference Compound added'
 
 		End
@@ -401,12 +413,12 @@ As
 	-- action for update mode
 	---------------------------------------------------
 	--
-	If @mode = 'update' 
+	If @mode = 'update'
 	Begin -- <update>
 		Set @myError = 0
 		--
 		UPDATE T_Reference_Compound
-		Set 
+		Set
 			Compound_Name = @compoundName,
 			Description = @description,
 			Compound_Type_ID = @compoundTypeID,
@@ -415,7 +427,7 @@ As
 			PubChem_CID = @pubChemIdValue,
 			Campaign_ID = @campaignID,
 			Container_ID = @containerID,
-			Wellplate_Name = @wellplateName, 
+			Wellplate_Name = @wellplateName,
 			Well_Number = @wellNumber,
 			Contact_PRN = @contactPRN,
 			Supplier = @supplier,
@@ -437,7 +449,7 @@ As
 		End
 
 		-- Material movement logging
-		-- 		
+		--
 		If @curContainerID != @containerID
 		Begin
 			exec PostMaterialLogEntry
@@ -445,16 +457,16 @@ As
 				@compoundIdAndName,         -- Item
 				@curContainerName,          -- Initial State (aka Old container)
 				@containerName,             -- Final State   (aka New container
-				@callingUser,               
+				@callingUser,
 				'Reference Compound updated'
 		End
 
 	End -- </update>
 
 	End TRY
-	Begin CATCH 
+	Begin CATCH
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		-- rollback any open transactions
 		If (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;

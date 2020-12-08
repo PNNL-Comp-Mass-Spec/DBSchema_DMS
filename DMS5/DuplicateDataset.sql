@@ -16,7 +16,8 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 **          08/19/2020 mem - Add @newOperatorPRN
 **                         - Add call to UpdateCachedDatasetInstruments
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
-**    
+**          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**
 *****************************************************/
 (
     @sourceDataset varchar(128),                -- Existing dataset to copy
@@ -35,7 +36,7 @@ As
     Declare @myRowCount int = 0
 
     Declare @datasetID int = 0
-    Declare @workPackage varchar(12) = 'none'            
+    Declare @workPackage varchar(12) = 'none'
 
     Declare @sourceDatasetRequestID int
     Declare @reqName varchar(128)
@@ -61,14 +62,14 @@ As
     Set @newOperatorPRN = ISNULL(@newOperatorPRN, '')
     Set @datasetStateID = IsNull(@datasetStateID, 1)
     Set @infoOnly  = IsNull(@infoOnly, 1)
-    
+
     Set @message = ''
-    
+
     If @sourceDataset = ''
     Begin
         Set @message = '@sourceDataset is empty'
         Select @message as Error
-        
+
         Goto Done
     End
 
@@ -76,7 +77,7 @@ As
     Begin
         Set @message = '@newDataset is empty'
         Select @message as Error
-        
+
         Goto Done
     End
 
@@ -84,7 +85,7 @@ As
     Begin
         Set @message = 'Source dataset not found in T_Dataset: ' + @sourceDataset
         Select @message as Error
-        
+
         Goto Done
     End
 
@@ -92,7 +93,7 @@ As
     Begin
         Set @message = 'T_Dataset already has dataset: ' + @newDataset
         Select @message as Error
-        
+
         Goto Done
     End
 
@@ -143,10 +144,10 @@ As
     Begin
         Set @message = 'Dataset not found: ' + @sourceDataset
         Select @message as Error
-        
+
         Goto Done
     End
-    
+
     If @newComment <> ''
     Begin
         Set @comment = Ltrim(Rtrim(@newComment))
@@ -183,14 +184,14 @@ As
     Begin
         Set @message = 'Source dataset does not have a requested run; use AddMissingRequestedRun to add one'
         Select @message as Error
-        
+
         Goto Done
     End
 
     Set @eusUsersList = dbo.GetRequestedRunEUSUsersList(@sourceDatasetRequestID, 'I')
 
     If @newOperatorPRN <> ''
-    Begin    
+    Begin
         ---------------------------------------------------
         -- Resolve user ID for operator PRN
         ---------------------------------------------------
@@ -198,7 +199,16 @@ As
         Declare @userID int
         execute @userID = GetUserID @newOperatorPRN
 
-        If @userID = 0
+        If @userID > 0
+        Begin
+            -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+            -- Assure that @operPRN contains simply the username
+            --
+            SELECT @operPRN = U_PRN
+            FROM T_Users
+    	    WHERE ID = @userID
+        End
+        Else
         Begin
             -- Could not find entry in database for PRN @newOperatorPRN
             -- Try to auto-resolve the name
@@ -216,13 +226,9 @@ As
             Else
             Begin
                 Set @message = 'Could not find entry in database for operator PRN ' + @newOperatorPRN
-                Select @message as Error        
+                Select @message as Error
                 Goto Done
             End
-        End
-        Else
-        Begin
-            Set @operPRN = @newOperatorPRN            
         End
     End
 
@@ -247,7 +253,7 @@ As
                @captureSubfolder AS Capture_SubFolder,
                @cartConfigID AS CartConfigID
 
-        
+
         Select 'AutoReq_' + @newDataset As Requested_Run,
                                 @experimentNum As Experiment,
                                 @operPRN As Operator_PRN,
@@ -271,7 +277,7 @@ As
     End
     Else
     Begin
-        
+
         Declare @transName varchar(32) = 'AddNewDataset'
 
         Begin transaction @transName
@@ -281,21 +287,21 @@ As
         ---------------------------------------------------
         --
         INSERT INTO T_Dataset (
-            Dataset_Num, 
-            DS_Oper_PRN, 
-            DS_comment, 
-            DS_created, 
-            DS_instrument_name_ID, 
-            DS_type_ID, 
-            DS_well_num, 
-            DS_sec_sep, 
-            DS_state_ID, 
-            DS_folder_name, 
-            DS_storage_path_ID, 
+            Dataset_Num,
+            DS_Oper_PRN,
+            DS_comment,
+            DS_created,
+            DS_instrument_name_ID,
+            DS_type_ID,
+            DS_well_num,
+            DS_sec_sep,
+            DS_state_ID,
+            DS_folder_name,
+            DS_storage_path_ID,
             Exp_ID,
             DS_rating,
-            DS_LC_column_ID, 
-            DS_wellplate_num, 
+            DS_LC_column_ID,
+            DS_wellplate_num,
             DS_internal_standard_ID,
             Capture_Subfolder,
             Cart_Config_ID
@@ -318,7 +324,7 @@ As
             @intStdID,
             @captureSubfolder,
             @cartConfigID
-        ) 
+        )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -328,20 +334,20 @@ As
 
             Set @message = 'Insert operation failed for dataset ' + @newDataset
             Select @message as Error
-        
+
             Goto Done
         End
-        
+
         -- Get the ID of newly created dataset
-        Set @datasetID = SCOPE_IDENTITY()        
+        Set @datasetID = SCOPE_IDENTITY()
 
         ---------------------------------------------------
         -- Create a requested run
         ---------------------------------------------------
         --
         Set @reqName = 'AutoReq_' + @newDataset
-            
-        EXEC @myError = dbo.AddUpdateRequestedRun 
+
+        EXEC @myError = dbo.AddUpdateRequestedRun
                                 @reqName = @reqName,
                                 @experimentNum = @experimentNum,
                                 @requestorPRN = @operPRN,
@@ -372,14 +378,14 @@ As
 
             Set @message = 'Create AutoReq run request failed: dataset ' + @newDataset + ' with Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
             Select @message as Error
-        
+
             Goto Done
         End
 
         ---------------------------------------------------
-        -- Consume the scheduled run 
+        -- Consume the scheduled run
         ---------------------------------------------------
-                
+
         exec @myError = ConsumeScheduledRun @datasetID, @requestID, @message output
         --
         If @myError <> 0
@@ -388,7 +394,7 @@ As
 
             Set @message = 'Consume operation failed: dataset ' + @newDataset + ' -> ' + @message
             Select @message as Error
-        
+
             Goto Done
         End
 
@@ -404,9 +410,9 @@ As
         WHERE ID = @datasetID
 
     End
-    
+
 Done:
-    
+
     return @myError
 
 GO
