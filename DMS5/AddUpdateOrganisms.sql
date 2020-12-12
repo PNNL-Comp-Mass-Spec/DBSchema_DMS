@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          06/26/2019 mem - Remove DNA translation table arguments since unused
 **          04/15/2020 mem - Populate OG_Storage_URL using @orgStorageLocation
 **          09/14/2020 mem - Expand the description field to 512 characters
+**          12/11/2020 mem - Allow duplicate metagenome organisms
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -362,8 +363,8 @@ As
     End
 
     ---------------------------------------------------
-    -- Check whether an organism already exists
-    -- with the specified Genus, Species, and Strain
+    -- Check whether an organism already exists with the specified Genus, Species, and Strain
+    -- Allow exceptions for metagenome organisms
     ---------------------------------------------------
 
     Set @duplicateTaxologyMsg = 'Another organism was found with Genus "' + @orgGenus + '", Species "' + @orgSpecies + '", and Strain "' + @orgStrain + '"; if unknown, use "na" for these values'
@@ -380,7 +381,7 @@ As
                   IsNull(OG_Species, '') = @orgSpecies AND
                   IsNull(OG_Strain, '') = @orgStrain
 
-            If @matchCount <> 0
+            If @matchCount <> 0 AND Not @orgSpecies LIKE '%metagenome'
             Begin
                 Set @msg = 'Cannot add: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 8)
@@ -398,7 +399,7 @@ As
                   IsNull(OG_Strain, '') = @orgStrain AND
                   Organism_ID <> @id
 
-            If @matchCount <> 0
+            If @matchCount <> 0 AND Not @orgSpecies LIKE '%metagenome'
             Begin
                 Set @msg = 'Cannot update: ' + @duplicateTaxologyMsg
                 RAISERROR (@msg, 11, 9)
