@@ -100,6 +100,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          09/15/2020 mem - Now showing 'https://dms2.pnl.gov/dataset_disposition/search' instead of http://
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          12/17/2020 mem - Verify that @captureSubfolder is a relative path and add debug messages
 **
 *****************************************************/
 (
@@ -279,12 +280,19 @@ As
     Set @aggregationJobDataset = IsNull(@aggregationJobDataset, 0)
     Set @captureSubfolder = LTrim(RTrim(IsNull(@captureSubfolder, '')))
 
+    If @captureSubfolder LIKE '\\%' OR @captureSubfolder LIKE '[A-Z]:\%'
+    Begin
+     Set @msg = 'Capture subfolder should be a subdirectory name below the source share for this instrument; it is currently a full path'
+        RAISERROR (@msg, 11, 15)
+    End
+
     Set @lcCartConfig = LTrim(RTrim(IsNull(@lcCartConfig, '')))
     If @lcCartConfig = ''
     Begin
         Set @lcCartConfig = null
     End
 
+    Set @callingUser = IsNull(@callingUser, '')
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 
     ---------------------------------------------------
@@ -298,7 +306,7 @@ As
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = '@mode=' + @mode + ', @dataset=' + @datasetNum + ', @requestID=' + Cast(@requestID    as varchar(9)) + ', @callingUser=' + @callingUser
+        Set @debugMsg = '@mode=' + @mode + ', @dataset=' + @datasetNum + ', @requestID=' + Cast(@requestID as varchar(9)) + ', @callingUser=' + @callingUser
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
     End
 
@@ -648,10 +656,22 @@ As
 
     Declare @allowedDatasetTypes varchar(255)
 
+    If @logDebugMessages > 0
+    Begin
+        Set @debugMsg = 'Call ValidateInstrumentGroupAndDatasetType with type = ' + @msType + ' and group = ' + @InstrumentGroup
+        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+    End
+
     exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
 
     If @result <> 0 And @addingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
     Begin
+        If @logDebugMessages > 0
+        Begin
+            Set @debugMsg = 'Dataset type is not valid for this instrument group, however, @mode is Add, so auto-update @msType'
+            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+        End
+
         -- Dataset type is not valid for this instrument group
         -- However, @mode is Add, so we will auto-update @msType
         --
@@ -725,6 +745,12 @@ As
     -- Resolve user ID for operator PRN
     ---------------------------------------------------
 
+    If @logDebugMessages > 0
+    Begin
+        Set @debugMsg = 'Call GetUserID with @operPRN = ' + @operPRN
+        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+    End
+
     Declare @userID int
     execute @userID = GetUserID @operPRN
 
@@ -744,6 +770,12 @@ As
 
         Declare @MatchCount int
         Declare @NewPRN varchar(64)
+        
+        If @logDebugMessages > 0
+        Begin
+            Set @debugMsg = 'Call AutoResolveNameToPRN with @operPRN = ' + @operPRN
+            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+        End
 
         exec AutoResolveNameToPRN @operPRN, @MatchCount output, @NewPRN output, @userID output
 
@@ -781,6 +813,11 @@ As
             Set @eusProposalID = ''
             Set @eusUsageType = ''
             Set @eusUsersList = ''
+                    
+            If @logDebugMessages > 0
+            Begin
+                exec PostLogEntry 'Debug', @warning, 'AddUpdateDataset'
+            End
         End
 
         ---------------------------------------------------
@@ -827,6 +864,12 @@ As
     If @requestID = 0 AND @addingDataset = 1
     Begin
         Declare @requestInstGroup varchar(128)
+                
+        If @logDebugMessages > 0
+        Begin
+            Set @debugMsg = 'Call FindActiveRequestedRunForDataset with @datasetNum = ' + @datasetNum
+            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+        End
 
         EXEC FindActiveRequestedRunForDataset @datasetNum, @experimentID, @requestID out, @requestInstGroup OUT, @showDebugMessages=0
 
@@ -1032,7 +1075,13 @@ As
         --
         Declare @storagePathID int = 0
         Declare @RefDate datetime = GetDate()
-        --
+
+        If @logDebugMessages > 0
+        Begin
+            Set @debugMsg = 'Call GetInstrumentStoragePathForNewDatasets with @instrumentID = ' + Cast(@instrumentID as varchar(12))
+            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
+        End
+
         Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @RefDate, @AutoSwitchActiveStorage=1, @infoOnly=0
         --
         If @storagePathID = 0
@@ -1059,6 +1108,11 @@ As
             Set @newDSStateID = 3
         Else
             Set @newDSStateID = 1
+            
+        If @logDebugMessages > 0
+        Begin
+            Print 'Insert into T_Dataset'
+        End
 
         -- insert values into a new row
         --
@@ -1110,6 +1164,11 @@ As
             RAISERROR (@msg, 11, 7)
         End
 
+        If @logDebugMessages > 0
+        Begin
+            Print 'Get ID using SCOPE_IDENTITY()'
+        End
+
         -- Get the ID of newly created dataset
         Set @datasetID = SCOPE_IDENTITY()
 
@@ -1134,6 +1193,11 @@ As
         -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
+            If @logDebugMessages > 0
+            Begin
+                Print 'Call AlterEventLogEntryUser'
+            End
+
             Exec AlterEventLogEntryUser 4, @datasetID, @newDSStateID, @callingUser
 
             Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
@@ -1151,10 +1215,20 @@ As
 
             If @workPackage In ('', 'none', 'na', '(lookup)')
             Begin
+                If @logDebugMessages > 0
+                Begin
+                    Print 'Call GetWPforEUSProposal'
+                End
+
                 EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
             End
 
             Set @reqName = 'AutoReq_' + @datasetNum
+
+            If @logDebugMessages > 0
+            Begin
+                Print 'Call AddUpdateRequestedRun'
+            End
 
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
@@ -1210,6 +1284,11 @@ As
             If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
                 Set @warning = @message
 
+            If @logDebugMessages > 0
+            Begin
+                Print 'Call UpdateCartParameters'
+            End
+
             exec @result = UpdateCartParameters
                                 'CartName',
                                 @requestID,
@@ -1230,12 +1309,18 @@ As
         ---------------------------------------------------
 
         Set @datasetID = 0
+
         SELECT @datasetID = Dataset_ID
         FROM T_Dataset
         WHERE Dataset_Num = @datasetNum
 
         If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
             Set @warning = @message
+
+        If @logDebugMessages > 0
+        Begin
+            Print 'Call ConsumeScheduledRun'
+        End
 
         exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser, @logDebugMessages
         --
@@ -1255,6 +1340,12 @@ As
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
             exec PostLogEntry 'Error', @debugMsg, 'AddUpdateDataset'
+        End
+
+        If @logDebugMessages > 0
+        Begin
+            Set @debugMsg = 'Call UpdateCachedDatasetInstruments with @datasetId = ' + CAST(@datasetId as varchar(12))
+            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
         End
 
         -- Update T_Cached_Dataset_Instruments

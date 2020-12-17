@@ -38,7 +38,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
 **          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.GetDatasetPriority() to see if we should auto-release the dataset
 **          05/29/2015 mem - Added support for "Capture Subfolder"
-**          06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path
+**          06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path to a local drive (e.g. D:\ProteomicsData)
 **          11/21/2016 mem - Added parameter @logDebugMessages
 **          02/23/2017 mem - Added support for "LC Cart Config"
 **          08/18/2017 mem - Change @captureSubfolder to '' if it is the same as @datasetName
@@ -46,6 +46,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          07/02/2019 mem - Add support for parameter "Work Package" in the XML file
 **          09/04/2020 mem - Rename variable and match both 'Capture Subfolder' and 'Capture Subdirectory' in @xmlDoc
 **          10/10/2020 mem - Rename variables
+**          12/17/2020 mem - Ignore @captureSubfolder if it is an absolute path to a network share (e.g. \\proto-2\External_Orbitrap_Xfer)
 **    
 *****************************************************/
 (
@@ -243,9 +244,9 @@ AS
     If @comment Like '%Buzzard:'
         Set @comment = Substring(@comment, 1, Len(@comment) - 8)
     
-    If @captureSubdirectory LIKE '[C-Z]:\%'
+    If @captureSubdirectory LIKE '[A-Z]:\%' OR @captureSubdirectory LIKE '\\%'
     Begin
-        Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring'
+        Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring ' + @captureSubdirectory
         
         exec PostLogEntry 'Error', @message, 'AddNewDataset'
        
