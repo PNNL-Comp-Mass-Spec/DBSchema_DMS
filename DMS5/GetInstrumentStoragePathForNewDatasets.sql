@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[GetInstrumentStoragePathForNewDatasets]
 **          05/12/2011 mem - Added @RefDate and @autoSwitchActiveStorage
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          10/27/2020 mem - Pass Auto_SP_URL_Domain to AddUpdateStorage
+**          12/17/2020 mem - Rollback any open transactions before calling LocalErrorHandler
 **    
 *****************************************************/
 (
@@ -184,6 +185,10 @@ AS
     Begin Catch                    
         -- Error caught; log the error and Set @StoragePathID to 0
         
+        -- rollback any open transactions
+        If (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'GetInstrumentStoragePathForNewDatasets')
         exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
                             @ErrorNum = @myError output, @message = @message output
