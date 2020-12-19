@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Job_Processors] ******/
-/****** RowCount: 918 ******/
+/****** RowCount: 926 ******/
 SET IDENTITY_INSERT [T_Analysis_Job_Processors] ON
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1242,'E','Andesite-1','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1243,'E','Andesite-2','Andesite','','11/18/2017 2:40:38 AM','PNL\gibb713')
@@ -54,6 +54,14 @@ INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Not
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1240,'E','Granite-7','Granite','','11/18/2017 2:40:25 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1241,'E','Granite-8','Granite','','11/18/2017 2:40:25 AM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1029,'D','GRK_Analysis','Kiebel','GRK Development Machine','11/16/2017 2:59:53 PM','PNL\D3L243')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1368,'E','Hematite-1','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1369,'E','Hematite-2','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1370,'E','Hematite-3','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1371,'E','Hematite-4','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1372,'E','Hematite-5','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1373,'E','Hematite-6','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1374,'E','Hematite-7','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
+INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1375,'E','Hematite-8','Hematite','','12/17/2020 3:20:02 PM','PNL\gibb713')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (1030,'D','Kiebel_Analysis','Kiebel','GRK Development Box','11/16/2017 2:58:48 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (773,'E','Mallard-1','Mallard','','9/26/2012 4:32:12 PM','PNL\D3L243')
 INSERT INTO [T_Analysis_Job_Processors] (ID, State, Processor_Name, Machine, Notes, Last_Affected, Entered_By) VALUES (774,'E','Mallard-2','Mallard','','9/26/2012 4:32:14 PM','PNL\D3L243')
