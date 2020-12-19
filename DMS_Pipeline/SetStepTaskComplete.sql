@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          10/18/2018 mem - Add output parameter @message
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          12/14/2020 mem - Added support for completion code 18 (SKIPPED_MZ_REFINERY)
 **
 *****************************************************/
 (
@@ -209,6 +210,13 @@ As
             Set @stepState = 3 -- skipped
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Unable to use MZ_Refinery'
+        End
+
+        If @completionCode = 18  -- SKIPPED_MZ_REFINERY
+        Begin
+            Set @stepState = 3 -- skipped
+            Set @handleSkippedStep = 1
+            Set @completionCodeDescription = 'Skipped MZ_Refinery'
         End
 
         If @completionCode = 20  -- CLOSEOUT_NO_DATA
