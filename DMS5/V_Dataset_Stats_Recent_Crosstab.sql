@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Stats_Recent_Crosstab]
 AS
 SELECT PivotData.State,
@@ -15,7 +14,8 @@ SELECT PivotData.State,
        IsNull([BRUKERFTMS], 0) AS [BRUKERFTMS],
        IsNull([Triple_Quad], 0) AS [Triple_Quad],
        IsNull([Finnigan_FTICR], 0) AS [Finnigan_FTICR],
-       IsNull([IMS_Agilent_TOF], 0) AS [IMS_Agilent_TOF]
+       IsNull([IMS_Agilent_TOF_UIMF], 0) AS [IMS_Agilent_TOF_UIMF],
+       IsNull([IMS_Agilent_TOF_DotD], 0) AS [IMS_Agilent_TOF_DotD]
 FROM ( SELECT DSN.Dataset_state_ID AS State,
               DSN.DSS_name AS StateName,
               Instrument.IN_class AS Instrument_Class,
@@ -30,7 +30,7 @@ FROM ( SELECT DSN.Dataset_state_ID AS State,
      PIVOT ( SUM(Dataset_Count)
              FOR Instrument_Class
              IN ( [BRUKERFTMS], [Finnigan_Ion_Trap], [LTQ_FT], [Thermo_Exactive], [Triple_Quad], 
-             [Finnigan_FTICR], [IMS_Agilent_TOF] ) ) AS PivotData
+             [Finnigan_FTICR], [IMS_Agilent_TOF_UIMF], [IMS_Agilent_TOF_DotD] ) ) AS PivotData
 
 
 GO
