@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
 **          10/31/2017 mem - Look for job states with state 4 or 5 and a null Finish time, but a start time later than a Results_Transfer step
 **          02/17/2018 mem - Treat Results_Cleanup steps the same as Results_Transfer steps
 **          04/27/2018 mem - Use T_Job_Steps instead of V_Job_Steps so we can see the Start and Finish times for the job step (and not Remote_Start or Remote_Finish)
+**          01/04/2021 mem - Add support for PRIDE_Converter jobs
 **    
 *****************************************************/
 (
@@ -130,7 +131,21 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     
+    ---------------------------------------------------
+    -- Look for PRIDE_Converter job steps
+    --
+    INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
+    SELECT JS.Job, JS.Step_Number
+    FROM #Tmp_Jobs
+         INNER JOIN T_Job_Steps JS
+           ON #Tmp_Jobs.Job = JS.Job
+    WHERE JS.Step_Tool = 'PRIDE_Converter'
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
+    ---------------------------------------------------
+    -- Update the job list table using #Tmp_JobStepsToUpdate
+    --
     UPDATE #Tmp_Jobs
     SET UpdateRequired = 1
     WHERE Job IN ( SELECT DISTINCT Job
