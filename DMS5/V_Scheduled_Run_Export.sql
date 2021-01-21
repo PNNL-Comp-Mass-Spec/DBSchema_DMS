@@ -6,6 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Scheduled_Run_Export]
 AS
+-- This view was superseded by V_Requested_Run_Active_Export in January 2021
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
        RR.RDS_priority AS Priority,
