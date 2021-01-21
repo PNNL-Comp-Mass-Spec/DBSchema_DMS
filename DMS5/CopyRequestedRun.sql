@@ -25,34 +25,39 @@ CREATE PROCEDURE [dbo].[CopyRequestedRun]
 **                         - Assure that the newly created request has a unique name
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
+**          01/19/2021 mem - Add parameters @requestNameOverride and @infoOnly
 **
 *****************************************************/
 (
     @requestID int,
     @datasetID int,
-    @status varchar(24),
-    @notation varchar(256),
-    @requestNameAppendText varchar(128),        -- Text appended to the name of the newly created request; append nothing if null or ''
-    @message varchar(255) output,
-    @callingUser varchar(128) = ''
+    @status varchar(24),                        -- Active, Completed, or Inactive
+    @notation varchar(256),                     -- Requested run comment
+    @requestNameAppendText varchar(128)='',     -- Text appended to the name of the newly created request; append nothing if null or ''
+    @requestNameOverride varchar(128)='',       -- New request name to use; if blank, will be based on the existing request name, but will append @requestNameAppendText
+    @message varchar(255)='' output,
+    @callingUser varchar(128) = '',
+    @infoOnly tinyint = 0
 )
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
-    
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+
+    Declare @stateID int = 0    
     Declare @newReqID int
     Declare @oldReqName varchar(128)
     Declare @newReqName varchar(128)
     
-    set @message = ''
+    Set @message = ''
 
     Set @requestNameAppendText = LTrim(RTrim(IsNull(@requestNameAppendText, '')))
+    Set @requestNameOverride = LTrim(RTrim(IsNull(@requestNameOverride, '')))
+
     Set @callingUser = IsNull(@callingUser, '')
-    
+    Set @infoOnly = IsNull(@infoOnly, 0)
+
     ---------------------------------------------------
     -- We are done if there is no associated request
     ---------------------------------------------------
@@ -60,9 +65,9 @@ As
     Set @requestID = IsNull(@requestID, 0)
     if @requestID = 0
     begin
+        set @message = 'Source request ID is 0; nothing to do'
         goto Done
     end
-
 
     ---------------------------------------------------
     -- Make sure the source request exists
@@ -82,6 +87,29 @@ As
     end
 
     ---------------------------------------------------
+    -- Validate @status
+    ---------------------------------------------------
+    --
+    If Not Exists (Select * from T_Requested_Run_State_Name Where State_Name = @status)
+    begin
+        DECLARE @stateNameList varchar(128) = NULL
+
+        SELECT @stateNameList = COALESCE(@stateNameList + ', ' + State_name, State_Name)
+        FROM T_Requested_Run_State_Name
+        ORDER BY State_ID
+
+        set @message = 'Invalid status: ' + @status + '; valid states are ' + @stateNameList
+        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        goto Done
+    end
+
+    SELECT @stateID = State_ID
+    FROM T_Requested_Run_State_Name
+    WHERE State_Name = @status
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    ---------------------------------------------------
     -- Determine the name for the new request
     -- Note that @requestNameAppendText may be blank
     ---------------------------------------------------
@@ -89,7 +117,14 @@ As
     Declare @continue tinyint = 1
     Declare @iteration int = 1
     
-    Set @newReqName = @oldReqName + @requestNameAppendText
+    If @requestNameOverride = ''
+    Begin
+        Set @newReqName = @oldReqName + @requestNameAppendText
+    End
+    Else
+    Begin
+        Set @newReqName = @requestNameOverride
+    End
     
     While @continue = 1
     Begin
@@ -105,6 +140,50 @@ As
         
     End
     
+    If @infoOnly <> 0
+    Begin
+        SELECT
+            ID As Source_Request_ID,
+            RDS_Name As Source_Request_Name,
+            @newReqName as New_Request_Name,
+            @notation as Comment,
+            RDS_Requestor_PRN,
+            RDS_created,                -- Pass along the original request's "created" date into the new entry
+            RDS_instrument_group,
+            RDS_type_ID,
+            RDS_instrument_setting,
+            RDS_special_instructions,
+            RDS_Well_Plate_Num,
+            RDS_Well_Num,
+            Vialing_Conc,
+            Vialing_Vol,
+            RDS_priority,
+            RDS_note,
+            Exp_ID,
+            RDS_Run_Start,
+            RDS_Run_Finish,
+            RDS_internal_standard,
+            RDS_WorkPackage,
+            RDS_BatchID,
+            RDS_Blocking_Factor,
+            RDS_Block,
+            RDS_Run_Order,
+            RDS_EUS_Proposal_ID,
+            RDS_EUS_UsageType,
+            RDS_Cart_ID,
+            RDS_Cart_Config_ID,
+            RDS_Cart_Col,
+            RDS_Sec_Sep,
+            RDS_MRM_Attachment,
+            @status,
+            'auto',
+            CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END 
+        FROM T_Requested_Run
+        WHERE ID = @requestID
+
+        Goto Done
+    End
+
     ---------------------------------------------------
     -- Make copy
     ---------------------------------------------------
@@ -208,12 +287,6 @@ As
     
     If Len(@callingUser) > 0
     Begin
-        Declare @stateID int = 0
-
-        SELECT @stateID = State_ID
-        FROM T_Requested_Run_State_Name
-        WHERE (State_Name = @status)
-
         Exec AlterEventLogEntryUser 11, @newReqID, @stateID, @callingUser
     End
 
