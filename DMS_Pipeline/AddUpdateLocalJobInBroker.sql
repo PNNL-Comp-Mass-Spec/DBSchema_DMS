@@ -18,7 +18,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          08/31/2010 grk - reset job
 **          10/06/2010 grk - check @jobParam against parameters for script
 **          10/25/2010 grk - Removed creation prohibition all jobs except aggregation jobs
-**          11/25/2010 mem - Added parameter @DebugMode
+**          11/25/2010 mem - Added parameter @debugMode
 **          07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
 **          01/09/2012 mem - Added parameter @ownerPRN
 **          01/19/2012 mem - Added parameter @dataPackageID
@@ -40,6 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          11/15/2017 mem - Call ValidateDataPackageForMACJob
 **          03/07/2018 mem - Call AlterEnteredByUser
 **          04/06/2018 mem - Allow updating comment, priority, and owner regardless of job state
+**          01/21/2021 mem - Log @jobParam to T_Log_Entries when @debugMode is 2
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
     @mode varchar(12) = 'add', -- or 'update' or 'reset'
     @message varchar(512) output,
     @callingUser varchar(128) = '',
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0              -- Set to 1 to print debug messages; set to 2 to log debug messages in T_Log_Entries
 )
 AS
     Set XACT_ABORT, nocount on
@@ -274,8 +275,14 @@ AS
 
             Set @jobParamXML = CONVERT(XML, @jobParam)
             
-            If @DebugMode <> 0
+            If @debugMode <> 0
+            Begin
                 Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
+                If @debugMode > 1
+                Begin
+                    EXEC PostLogEntry 'Debug', @jobParam, 'AddUpdateLocalJobInBroker'
+                End
+            End
 
             exec MakeLocalJobInBroker
                     @scriptName,
@@ -285,7 +292,7 @@ AS
                     @comment,
                     @ownerPRN,
                     @dataPackageID,
-                    @DebugMode,
+                    @debugMode,
                     @job OUTPUT,
                     @resultsFolderName OUTPUT,
                     @message output,

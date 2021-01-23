@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeLocalJobInBroker
+
+CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 /****************************************************
 **
 **	Desc: 
@@ -21,8 +22,8 @@ CREATE PROCEDURE MakeLocalJobInBroker
 **			10/17/2011 mem - Added column Memory_Usage_MB
 **			11/14/2011 mem - Now populating column Transfer_Folder_Path in T_Jobs
 **			01/09/2012 mem - Added parameter @ownerPRN
-**			01/19/2012 mem - Added parameter @DataPackageID
-**			02/07/2012 mem - Now validating that @DataPackageID is > 0 when @scriptName is MultiAlign_Aggregator
+**			01/19/2012 mem - Added parameter @dataPackageID
+**			02/07/2012 mem - Now validating that @dataPackageID is > 0 when @scriptName is MultiAlign_Aggregator
 **			03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
 **			08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
 **			04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
@@ -36,8 +37,8 @@ CREATE PROCEDURE MakeLocalJobInBroker
 	@jobParamXML xml,
 	@comment varchar(512),
 	@ownerPRN varchar(64),
-	@DataPackageID int,
-	@DebugMode tinyint = 0,			-- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job	declare @job int
+	@dataPackageID int,
+	@debugMode tinyint = 0,			-- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
 	@job int OUTPUT,
 	@resultsFolderName varchar(128) OUTPUT,
 	@message varchar(512) output,
@@ -53,7 +54,7 @@ AS
 
 	declare @msg varchar(255) = ''
 	
-	Set @DataPackageID = IsNull(@DataPackageID, 0)
+	Set @dataPackageID = IsNull(@dataPackageID, 0)
 	Set @scriptName = LTrim(RTrim(IsNull(@scriptName, '')))
 	
 	---------------------------------------------------
@@ -136,7 +137,7 @@ AS
 		return @myError
 	End
 
-	If @scriptName IN ('MultiAlign_Aggregator') And @DataPackageID = 0
+	If @scriptName IN ('MultiAlign_Aggregator') And @dataPackageID = 0
 	Begin
 		Set @myError = 50015
 		Set @msg = '"Data Package ID" must be positive when using script ' + @scriptName
@@ -208,7 +209,7 @@ AS
 	EXEC AdjustParamsForLocalJob
 		@scriptName ,
 		@datasetNum ,
-		@DataPackageID ,
+		@dataPackageID ,
 		@jobParamXML OUTPUT,
 		@message output
 
@@ -217,7 +218,7 @@ AS
 	-- Details are stored in #Job_Steps
 	---------------------------------------------------
 	--
-	exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @datasetID, @message output, @DebugMode = @DebugMode
+	exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @datasetID, @message output, @debugMode = @debugMode
 	if @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CreateSignaturesForJobSteps: ' + Convert(varchar(12), @myError)
@@ -289,7 +290,7 @@ AS
 	-- move temp tables to main tables
 	---------------------------------------------------
 	
-	If @DebugMode = 0
+	If @debugMode = 0
 	begin	
 		-- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
 		--	
@@ -307,7 +308,7 @@ AS
 		VALUES(@job, @priority, @scriptName, 1, 
 		       @datasetNum, @datasetID, NULL, 
 		       @comment, NULL, @ownerPRN,
-		       IsNull(@DataPackageID, 0))
+		       IsNull(@dataPackageID, 0))
 
 		exec @myError = MoveJobsToMainTables @message output
 		
@@ -316,7 +317,7 @@ AS
 	end
 
 
-	If @DebugMode = 0
+	If @debugMode = 0
 	Begin	
 		---------------------------------------------------
 		-- Populate column Transfer_Folder_Path in T_Jobs
@@ -340,9 +341,9 @@ AS
 		-- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
 		---------------------------------------------------
 		--
-		If @DataPackageID > 0
+		If @dataPackageID > 0
 		Begin
-			Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @DataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+			Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
 		End
 		
 	End
@@ -359,12 +360,19 @@ Done:
 	End
 
 
-	If @DebugMode <> 0
+	If @debugMode <> 0
 	begin
 		SELECT * FROM #Jobs
 		SELECT * FROM #Job_Steps
 		SELECT * FROM #Job_Step_Dependencies
 		SELECT * FROM #Job_Parameters
+
+        Declare @jobParams varchar(8000) = Cast(@jobParamXML as varchar(8000))
+
+        If @debugMode > 1
+        Begin
+            EXEC PostLogEntry 'Debug', @jobParams, 'MakeLocalJobInBroker'
+        End
 	end
 
 	return @myError

@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[MapMACJobParameters]
 **                         - Added support for the Ape_Workflow_FDR parameter
 **          08/30/2013 mem - Now using Ape_Workflow_FDR to update ApeWorkflowStepList (previously updated ApeWorkflowName)
 **          01/11/2013 mem - Add TMT10Plex and mention MasterWorkflowSyn.xml
+**          01/22/2021 mem - Add support for script MAC_TMT10Plex
 **
 *****************************************************/
 (
@@ -49,7 +50,7 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @DebugMode tinyint = 0
+    Declare @debugMode tinyint = 0
     Declare @msg varchar(256)
 
     ---------------------------------------------------
@@ -76,7 +77,9 @@ AS
     -- and mapping for template
     ---------------------------------------------------
     
-    IF @scriptName IN ('Isobaric_Labeling', 'MAC_iTRAQ')
+    IF @scriptName LIKE 'Isobaric_Labeling%' OR
+       @scriptName LIKE 'MAC_iTRAQ%' OR
+       @scriptName LIKE 'MAC_TMT%Plex'
     BEGIN 
         -- The user will have defined @experimentLabelling using the drop-down box at http://dms2.pnl.gov/mac_jobs/create
         -- The options are: 4plex (4-Plex Itraq), 6plex (6-Plex TMT), 8plex (8-plex Itraq), and TMT10Plex (10-plex TMT)
