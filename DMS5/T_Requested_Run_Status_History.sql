@@ -7,7 +7,7 @@ CREATE TABLE [dbo].[T_Requested_Run_Status_History](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
 	[Posting_Time] [datetime] NOT NULL,
 	[State_ID] [tinyint] NOT NULL,
-	[Origin] [varchar](4) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Origin] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Request_Count] [int] NOT NULL,
 	[QueueTime_0Days] [int] NULL,
 	[QueueTime_1to6Days] [int] NULL,
