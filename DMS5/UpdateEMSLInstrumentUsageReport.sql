@@ -44,8 +44,8 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 (
     @instrument varchar(64),        -- Instrument name to process; leave this blank if processing by EMSL instrument ID
     @eusInstrumentId Int,           -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
-    @endDate datetime,
-    @message varchar(512) output,    -- Optionally specify debug reports to show, for example '1' or '1,2,3'
+    @endDate datetime,              -- This is used to determine the current year and month; the day of the month does not really matter
+    @message varchar(512) output,   -- Optionally specify debug reports to show, for example '1' or '1,2,3'
     @infoonly tinyint = 0
 )
 AS
