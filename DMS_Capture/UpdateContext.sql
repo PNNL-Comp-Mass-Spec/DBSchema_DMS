@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateContext]
 **                         - Added call to RetryCaptureForDMSResetJobs
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          06/13/2018 mem - No longer pass @debugMode to MakeNewArchiveJobsFromDMS
+**          01/29/2021 mem - No longer pass @maxJobsToProcess to MakeNewAutomaticJobs
 **    
 *****************************************************/
 (
@@ -106,7 +107,7 @@ AS
         
         Set @CurrentLocation = 'Call MakeNewAutomaticJobs'
         if @result <> 0
-            exec MakeNewAutomaticJobs @bypassDMS, @message output, @maxJobsToProcess = @maxJobsToProcess
+            exec MakeNewAutomaticJobs @bypassDMS, @message output
 
 
         -- MakeNewJobsFromAnalysisBroker
@@ -277,6 +278,7 @@ AS
         Set @CurrentLocation = 'Call UpdateJobState'
         if @result <> 0
             exec UpdateJobState @bypassDMS, @message output, @maxJobsToProcess = @maxJobsToProcess, @loopingUpdateInterval=@loopingUpdateInterval, @infoOnly=@infoOnly
+
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
