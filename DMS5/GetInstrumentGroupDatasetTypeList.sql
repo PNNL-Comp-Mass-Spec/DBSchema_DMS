@@ -8,31 +8,33 @@ CREATE FUNCTION [dbo].[GetInstrumentGroupDatasetTypeList]
 /****************************************************
 **
 **	Desc: 
-**  Builds delimited list of allowed dataset types
-**  for given instrument group
+**      Builds delimited list of allowed dataset types
+**      for given instrument group
 **
 **	Return value: delimited list
 **
-**	Parameters: 
-**
 **	Auth:	grk
 **	Date:	08/28/2010 grk - Initial version
+**          02/04/2021 mem - Add argument @delimiter
 **    
 *****************************************************/
 (
-	@InstrumentGroup VARCHAR(64)
+	@instrumentGroup varchar(64),
+    @delimiter varchar(12) = ', '
 )
 RETURNS varchar(4000)
 AS
 	BEGIN
-		declare @list varchar(4000)
+		Declare @list varchar(4000)
 		
 		Set @list = ''
 		
-		SELECT @list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + Dataset_Type
-		FROM            T_Instrument_Group_Allowed_DS_Type
-		WHERE        (IN_Group = @InstrumentGroup)
-		ORDER BY Dataset_Type	
+		SELECT @list = @list + 
+                       CASE WHEN @list = '' THEN '' ELSE @delimiter END + 
+                       Dataset_Type
+		FROM T_Instrument_Group_Allowed_DS_Type
+		WHERE IN_Group = @InstrumentGroup
+		ORDER BY Dataset_Type
 		
 		RETURN @list
 	END

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.GetInstrumentDatasetTypeList
+CREATE FUNCTION [dbo].[GetInstrumentDatasetTypeList]
 /****************************************************
 **
 **	Desc: 
@@ -18,6 +18,7 @@ CREATE FUNCTION dbo.GetInstrumentDatasetTypeList
 **	Auth:	mem
 **	Date:	09/17/2009 mem - Initial version (Ticket #748)
 **			08/28/2010 mem - Updated to use GetInstrumentGroupDatasetTypeList
+**          02/04/2021 mem - Provide a delimiter when calling GetInstrumentGroupDatasetTypeList
 **    
 *****************************************************/
 (
@@ -36,7 +37,7 @@ AS
 		WHERE Instrument_ID = @InstrumentID
 		
 		IF @InstrumentGroup <> ''
-			SELECT @list = dbo.GetInstrumentGroupDatasetTypeList(@InstrumentGroup)
+			SELECT @list = dbo.GetInstrumentGroupDatasetTypeList(@InstrumentGroup, ', ')
 
 		RETURN @list
 	END

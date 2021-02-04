@@ -20,7 +20,7 @@ From (  SELECT I.IN_Group AS Instrument_Group,
                I.Usage,
                dbo.GetInstrumentGroupMembershipList(I.IN_Group, 1, 64) AS Instruments,
                I.Comment,
-               dbo.GetInstrumentGroupDatasetTypeList(I.IN_Group) AS Allowed_Dataset_Types,
+               dbo.GetInstrumentGroupDatasetTypeList(I.IN_Group, ', ') AS Allowed_Dataset_Types,
                I.Sample_Prep_Visible,
                I.Requested_Run_Visible
         FROM dbo.T_Instrument_Group I

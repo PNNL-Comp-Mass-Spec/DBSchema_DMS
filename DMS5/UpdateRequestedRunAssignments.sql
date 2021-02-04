@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **			10/20/2020 mem - Rename mode 'instrument' to 'instrumentGroup'
 **                         - Rename mode 'instrumentIgnoreType' to 'instrumentGroupIgnoreType'
 **                         - Add mode 'assignedInstrument'
+**          02/04/2021 mem - Provide a delimiter when calling GetInstrumentGroupDatasetTypeList
 **    
 *****************************************************/
 (
@@ -232,7 +233,7 @@ As
 
 					If Not Exists (SELECT * FROM T_Instrument_Group_Allowed_DS_Type WHERE IN_Group = @newInstrumentGroup AND Dataset_Type = @datasetTypeName)
 					Begin
-						SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@newInstrumentGroup)
+						SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@newInstrumentGroup, ', ')
 
 						Set @msg = 'Dataset Type "' + @datasetTypeName + '" is invalid for instrument group "' + @newInstrumentGroup + '"; valid types are "' + @allowedDatasetTypes + '"'
 						If @requestIDCount > 1
