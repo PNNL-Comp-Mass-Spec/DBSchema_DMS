@@ -47,6 +47,8 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **          01/24/2019 mem - Add parameters @nameSearch, @nameReplace, and @addUnderscore
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/15/2021 mem - If the parent experiment has a TissueID defined, use it, even if the Sample Prep Request is not "parent" (for @requestOverride)
+**                         - No longer copy the parent experiment concentration to the fractions
 **
 *****************************************************/
 (
@@ -166,6 +168,13 @@ AS
     Set @nameReplace = IsNull(@nameReplace, '')
 
     Set @addUnderscore = IsNull(@addUnderscore, 'Yes')
+        
+    Set @requestOverride = LTrim(RTrim(IsNull(@requestOverride, 'parent')))
+    Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, 'parent')))
+    Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, 'parent')))
+    Set @researcher = LTrim(RTrim(IsNull(@researcher, 'parent')))
+
+    Set @message = ''
 
     -- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
     --
@@ -191,7 +200,6 @@ AS
            @reason = EX_reason,
            @comment = EX_comment,
            @created = EX_created,
-           @sampleConc = EX_sample_concentration,
            @labNotebook = EX_lab_notebook_ref,
            @campaignID = EX_campaign_ID,
            @labelling = EX_Labelling,
@@ -309,7 +317,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Override request ID
+    -- Possibly override prep request ID 
     ---------------------------------------------------
 
     Declare @prepRequestTissueID varchar(24) = Null
@@ -334,6 +342,11 @@ AS
         Begin
             Set @message = 'Could not find sample prep request: ' + @requestOverride
             RAISERROR (@message, 11, 10)
+        End
+
+        If IsNull(@tissueID, '') = '' AND IsNull(@prepRequestTissueID, '') <> ''
+        Begin
+            Set @tissueID = @prepRequestTissueID
         End
     End
 
@@ -534,24 +547,22 @@ AS
             RAISERROR (@message, 11, 16)
         End
 
-        If @mode LIKE '%preview%'
-        Begin -- <Preview>
-            If @fractionsCreated < 4
-            Begin
-                If LEN(@fractionNamePreviewList) = 0
-                    Set @fractionNamePreviewList = @newExpName
-                Else
-                    Set @fractionNamePreviewList = @fractionNamePreviewList + ', ' + @newExpName
-            End
+        If @fractionsCreated < 4
+        Begin
+            If LEN(@fractionNamePreviewList) = 0
+                Set @fractionNamePreviewList = @newExpName
             Else
-            Begin
-                If @fractionCount = @totalCount
-                Begin
-                    Set @fractionNamePreviewList = @fractionNamePreviewList + ', ... ' + @newExpName
-                End
-            End
-        End -- </Preview>
+                Set @fractionNamePreviewList = @fractionNamePreviewList + ', ' + @newExpName
+        End
         Else
+        Begin
+            If @fractionCount = @totalCount
+            Begin
+                Set @fractionNamePreviewList = @fractionNamePreviewList + ', ... ' + @newExpName
+            End
+        End
+
+        If Not @mode LIKE '%preview%'
         Begin -- <AddFraction>
 
             -- Insert new experiment into database
@@ -582,7 +593,7 @@ AS
                 @reason,
                 @newComment,
                 GETDATE(),
-                @sampleConc,
+                '? ug/uL',
                 @labNotebook,
                 @campaignID,
                 @labelling,
@@ -593,7 +604,7 @@ AS
                 @wellplateNum,
                 @wn,
                 @alkylation,
-                Case When IsNull(@prepRequestTissueID, '') <> '' Then @prepRequestTissueID Else @tissueID End
+                @tissueID
             )
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -763,7 +774,7 @@ AS
                         @container,
                         '',
                         @message output,
-                           @callingUser
+                        @callingUser
         If @result <> 0
         Begin
             If @@TRANCOUNT > 0
@@ -792,6 +803,12 @@ AS
             Set @message = 'Error copying Aux Info from parent Experiment to fractionated experiments'
             RAISERROR (@message, 11, 23)
         End
+
+        If @message = ''
+        Begin
+            Set @message = 'New fraction names: ' + @fractionNamePreviewList
+        End
+
     End -- </AddToContainer>
 
     ---------------------------------------------------
