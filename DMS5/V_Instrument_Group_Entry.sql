@@ -11,6 +11,7 @@ SELECT
     I.Comment,
 	I.Active,
 	I.Sample_Prep_Visible,
+    I.Requested_Run_Visible,
 	I.Allocation_Tag,
 	ISNULL(DT.DST_name, '') AS DefaultDatasetTypeName
 FROM T_Instrument_Group I 
