@@ -13,7 +13,7 @@ SELECT I.IN_Group AS Instrument_Group,
        I.Requested_Run_Visible,
        I.Allocation_Tag,
        ISNULL(DT.DST_name, '') AS [Default Dataset Type],
-       dbo.GetInstrumentGroupMembershipList(I.IN_Group, 0, 0) AS Instruments,
+       '!Headers!Instrument Name:Instrument ID|' + dbo.GetInstrumentGroupMembershipList(I.IN_Group, 2, 0) AS Instruments,
        dbo.GetInstrumentGroupDatasetTypeList(I.IN_Group, ', ') AS Allowed_Dataset_Types
 FROM T_Instrument_Group I
      LEFT OUTER JOIN dbo.T_DatasetTypeName DT
