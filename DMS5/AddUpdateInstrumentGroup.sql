@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateInstrumentGroup
+
+CREATE PROCEDURE [dbo].[AddUpdateInstrumentGroup]
 /****************************************************
 **
 **  Desc: 
@@ -15,26 +16,28 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 **
 **	Auth:	grk
 **	Date:	08/28/2010 grk - Initial version
-**			08/30/2010 mem - Added parameters @Usage and @Comment
-**			09/02/2010 mem - Added parameter @DefaultDatasetType
-**			10/18/2012 mem - Added parameter @AllocationTag
+**			08/30/2010 mem - Added parameters @usage and @comment
+**			09/02/2010 mem - Added parameter @defaultDatasetType
+**			10/18/2012 mem - Added parameter @allocationTag
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/12/2017 mem - Added parameter @SamplePrepVisible
+**			06/12/2017 mem - Added parameter @samplePrepVisible
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**			02/18/2021 mem - Added parameter @requestedRunVisible
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@InstrumentGroup varchar(64),
-	@Usage varchar(64),
-	@Comment varchar(512),
-	@Active tinyint,
-	@SamplePrepVisible tinyint,
-	@AllocationTag varchar(24),
-	@DefaultDatasetTypeName varchar(64),			-- This is allowed to be blank
+	@instrumentGroup varchar(64),
+	@usage varchar(64),
+	@comment varchar(512),
+	@active tinyint,
+	@samplePrepVisible tinyint,
+    @requestedRunVisible tinyint,
+	@allocationTag varchar(24),
+	@defaultDatasetTypeName varchar(64),			-- This is allowed to be blank
 	@mode varchar(12) = 'add', -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
@@ -42,10 +45,10 @@ CREATE PROCEDURE AddUpdateInstrumentGroup
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @datasetTypeID int
+	Declare @datasetTypeID int
 	
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -54,9 +57,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentGroup', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	BEGIN TRY 
 
@@ -64,15 +67,16 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	Set @Comment = IsNull(@comment, '')
-	Set @Active = IsNull(@active, 0)
-	Set @SamplePrepVisible = IsNull(@samplePrepVisible, 0)
+	Set @comment = IsNull(@comment, '')
+	Set @active = IsNull(@active, 0)
+	Set @samplePrepVisible = IsNull(@samplePrepVisible, 0)
+    Set @requestedRunVisible= IsNull(@requestedRunVisible, 0)
 
 	Set @message = ''
-	Set @DefaultDatasetTypeName = IsNull(@DefaultDatasetTypeName, '')
+	Set @defaultDatasetTypeName = IsNull(@defaultDatasetTypeName, '')
 
-	If @DefaultDatasetTypeName <> ''
-		execute @datasetTypeID = GetDatasetTypeID @DefaultDatasetTypeName
+	If @defaultDatasetTypeName <> ''
+		execute @datasetTypeID = GetDatasetTypeID @defaultDatasetTypeName
 	Else
 		Set @datasetTypeID = 0
 	
@@ -80,8 +84,8 @@ As
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 
-	if @mode = 'update'
-	begin
+	If @mode = 'update'
+	Begin
 		-- cannot update a non-existent entry
 		--
 		declare @tmp varchar(64)
@@ -89,32 +93,35 @@ As
 		--
 		SELECT @tmp = IN_Group
 		FROM  T_Instrument_Group		
-		WHERE (IN_Group = @InstrumentGroup)
+		WHERE (IN_Group = @instrumentGroup)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0 OR @tmp = ''
 			RAISERROR ('No entry could be found in database for update', 11, 16)
-	end
+	End
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+	If @mode = 'add'
+	Begin
 
 		INSERT INTO T_Instrument_Group( IN_Group,
 		                                [Usage],
 		                                [Comment],
 		                                Active,
 		                                Sample_Prep_Visible,
+                                        Requested_Run_Visible,
 		                                Allocation_Tag,
 		                                Default_Dataset_Type )
-		VALUES(@InstrumentGroup, @Usage, @Comment, @Active, @SamplePrepVisible, @AllocationTag, 
-		         CASE
-		             WHEN @datasetTypeID > 0 THEN @datasetTypeID
-		             ELSE NULL
-		         END)
+		VALUES(@instrumentGroup, @usage, @comment, 
+               @active, @samplePrepVisible, @requestedRunVisible, 
+               @allocationTag, 
+		       CASE
+		           WHEN @datasetTypeID > 0 THEN @datasetTypeID
+		           ELSE NULL
+		       END)
 
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -122,31 +129,32 @@ As
 		if @myError <> 0
 			RAISERROR ('Insert operation failed', 11, 7)
 
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
+	If @mode = 'update' 
+	Begin
 		set @myError = 0
 		--
 		UPDATE T_Instrument_Group
-		SET Usage = @Usage,
-		    Comment = @Comment,
-		    Active = @Active,
-		    Sample_Prep_Visible = @SamplePrepVisible,
-		    Allocation_Tag = @AllocationTag,
+		SET Usage = @usage,
+		    Comment = @comment,
+		    Active = @active,
+		    Sample_Prep_Visible = @samplePrepVisible,
+            Requested_Run_Visible = @requestedRunVisible,
+		    Allocation_Tag = @allocationTag,
 		    Default_Dataset_Type = CASE WHEN @datasetTypeID > 0 Then @datasetTypeID Else Null End 
-		WHERE (IN_Group = @InstrumentGroup)
+		WHERE (IN_Group = @instrumentGroup)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Update operation failed: "%s"', 11, 4, @InstrumentGroup)
+			RAISERROR ('Update operation failed: "%s"', 11, 4, @instrumentGroup)
 
-	end -- update mode
+	End -- update mode
 
 	END TRY
 	BEGIN CATCH 
