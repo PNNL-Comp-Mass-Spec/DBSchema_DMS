@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[RenameDataset]
 /****************************************************
 **
@@ -29,6 +28,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          01/20/2020 mem - Show the File_Hash in T_Dataset_Files when previewing updates
 **                         - Add commands for updating the DatasetInfo.xml file with sed
 **                         - Switch from Folder to Directory when calling AddUpdateJobParameter
+**          02/19/2021 mem - Validate the characters in the new dataset name
 **    
 *****************************************************/
 (
@@ -94,6 +94,23 @@ AS
     If Len(@datasetNameNew) > 80
     Begin
         Set @message = 'New dataset name cannot be more than 80 characters in length'
+        Goto Done
+    End
+
+    Declare @badCh varchar(128)
+    Set @badCh =  dbo.ValidateChars(@datasetNameNew, '')
+    If @badCh <> ''
+    Begin
+        If @badCh = '[space]'
+            Set @message = 'New dataset name may not contain spaces'
+        Else
+        Begin
+            If Len(@badCh) = 1
+                Set @message = 'New dataset name may not contain the character ' + @badCh
+            else
+                Set @message = 'New dataset name may not contain the characters ' + @badCh
+        End
+
         Goto Done
     End
     
