@@ -101,6 +101,8 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          12/17/2020 mem - Verify that @captureSubfolder is a relative path and add debug messages
+**                         - Use ReplaceCharacterCodes to replace character codes with punctuation marks
+**                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
 *****************************************************/
 (
@@ -253,12 +255,12 @@ As
         RAISERROR (@msg, 11, 15)
     End
 
-    -- Assure that @comment is not null and assure that it doesn't have &quot;
-    Set @comment = IsNull(@comment, '')
-    If @comment LIKE '%&quot;%'
-        Set @comment = Replace(@comment, '&quot;', '"')
+    -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
+    Set @comment = dbo.ReplaceCharacterCodes(@comment)
 
-    --
+    -- Replace instances of CRLF (or LF) with semicolons
+    Set @comment = dbo.RemoveCrLf(@comment)
+
     If IsNull(@rating, '') = ''
     Begin
         Set @msg = 'Rating was blank'
@@ -770,7 +772,7 @@ As
 
         Declare @MatchCount int
         Declare @NewPRN varchar(64)
-        
+
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Call AutoResolveNameToPRN with @operPRN = ' + @operPRN

@@ -25,6 +25,8 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
+**                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -80,9 +82,9 @@ As
 	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'AddUpdateTrackingDataset', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	BEGIN TRY
 
@@ -139,10 +141,11 @@ As
 		RAISERROR (@msg, 11, 14)
 	end
 
-	-- Assure that @comment is not null and assure that it doesn't have &quot;
-	set @comment = IsNull(@comment, '')
-	If @comment LIKE '%&quot;%'
-		Set @comment = Replace(@comment, '&quot;', '"')
+    -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
+    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+
+    -- Replace instances of CRLF (or LF) with semicolons
+    Set @comment = dbo.RemoveCrLf(@comment)
 
 	Set @eusProposalID = IsNull(@eusProposalID, '')
 	Set @eusUsageType = IsNull(@eusUsageType, '')

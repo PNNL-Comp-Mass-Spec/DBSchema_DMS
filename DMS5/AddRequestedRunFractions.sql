@@ -15,6 +15,8 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **  Date:   10/22/2020 mem - Initial Version
 **          10/23/2020 mem - Set the Origin of the new requested runs to "Fraction"
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
+**                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
 *****************************************************/
 (
@@ -121,10 +123,11 @@ As
 
     Set @mode = ISNULL(@mode, '')
 
-    -- Assure that @comment is not null and assure that it doesn't have &quot;
-    set @comment = IsNull(@comment, '')
-    If @comment LIKE '%&quot;%'
-        Set @comment = Replace(@comment, '&quot;', '"')
+    -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
+    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+
+    -- Replace instances of CRLF (or LF) with semicolons
+    Set @comment = dbo.RemoveCrLf(@comment)
 
     If IsNull(@wellplateName, '') IN ('', 'na')
         Set @wellplateName = null

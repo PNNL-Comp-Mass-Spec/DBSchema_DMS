@@ -68,6 +68,8 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          11/30/2018 mem - Add output parameter @experimentID
 **          03/27/2019 mem - Update @experimentId using @existingExperimentID
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
+**                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
 *****************************************************/
 (
@@ -166,10 +168,12 @@ As
     If Not @alkylation IN ('Y', 'N')
         RAISERROR ('Alkylation must be Y or N', 11, 35)
 
-    -- Assure that @comment is not null and assure that it doesn't have &quot;
-    If @comment LIKE '%&quot;%'
-        Set @comment = Replace(@comment, '&quot;', '"')
+    -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
+    Set @comment = dbo.ReplaceCharacterCodes(@comment)
 
+    -- Replace instances of CRLF (or LF) with semicolons
+    Set @comment = dbo.RemoveCrLf(@comment)
+    
     -- Auto change empty internal standards to "none" since now rarely used
     If @internalStandard = ''
         Set @internalStandard = 'none'

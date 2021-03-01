@@ -89,6 +89,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          02/03/2020 mem - Raise an error if @eusUsersList contains multiple user IDs (since ERS only allows for a single user to be associated with a dataset)
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
+**                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
 *****************************************************/
 (
@@ -196,17 +198,18 @@ As
         RAISERROR ('Work package was blank', 11, 116)
 
     Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
+        
+    -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
+    Set @comment = dbo.ReplaceCharacterCodes(@comment)
 
-    -- Assure that @comment is not null and assure that it doesn't have &quot;
-    set @comment = IsNull(@comment, '')
-    If @comment LIKE '%&quot;%'
-        Set @comment = Replace(@comment, '&quot;', '"')
-
+    -- Replace instances of CRLF (or LF) with semicolons
+    Set @comment = dbo.RemoveCrLf(@comment)
+    
     If @comment like '%experiment_group/show/0000%'
-        RAISERROR ('Please reference a valid experient group ID, not 0000', 11, 116)
+        RAISERROR ('Please reference a valid experiment group ID, not 0000', 11, 116)
 
     If @comment like '%experiment_group/show/0%'
-        RAISERROR ('Please reference a valid experient group ID', 11, 116)
+        RAISERROR ('Please reference a valid experiment group ID', 11, 116)
 
     If @myError <> 0
         return @myError
