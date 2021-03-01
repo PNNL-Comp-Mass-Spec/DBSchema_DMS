@@ -101,6 +101,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          12/17/2020 mem - Verify that @captureSubfolder is a relative path and add debug messages
+**          02/25/2021 mem - Remove the requested run comment from the dataset comment if the dataset comment starts with the requested run comment
 **                         - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **
@@ -794,11 +795,15 @@ As
     End
 
     ---------------------------------------------------
-    -- Verify acceptable combination of EUS fields
+    -- Perform additional steps if a requested run ID was provided
     ---------------------------------------------------
 
     If @requestID <> 0 AND @addingDataset = 1
     Begin
+        ---------------------------------------------------
+        -- Verify acceptable combination of EUS fields
+        ---------------------------------------------------
+
         If (@eusProposalID <> '' OR @eusUsageType <> '' OR @eusUsersList <> '')
         Begin
             If (@eusUsageType = '(lookup)' AND @eusProposalID = '(lookup)' AND @eusUsersList = '(lookup)') OR (@eusUsageType = '(ignore)')
@@ -815,7 +820,7 @@ As
             Set @eusProposalID = ''
             Set @eusUsageType = ''
             Set @eusUsersList = ''
-                    
+
             If @logDebugMessages > 0
             Begin
                 exec PostLogEntry 'Debug', @warning, 'AddUpdateDataset'
@@ -823,9 +828,10 @@ As
         End
 
         ---------------------------------------------------
-        -- If the dataset starts with "blank" but @requestID is non-zero, then this is likely incorrect
+        -- If the dataset starts with "blank" but @requestID is non-zero, this is likely incorrect
         -- Auto-update things if this is the case
         ---------------------------------------------------
+
         If @datasetNum Like 'Blank%'
         Begin
             -- See if the experiment matches for this request; if it doesn't, change @requestID to 0
@@ -866,7 +872,7 @@ As
     If @requestID = 0 AND @addingDataset = 1
     Begin
         Declare @requestInstGroup varchar(128)
-                
+
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Call FindActiveRequestedRunForDataset with @datasetNum = ' + @datasetNum
@@ -884,7 +890,36 @@ As
                     'Instrument group for requested run (' + @requestInstGroup + ') ' +
                     'does not match instrument group for ' + @instrumentName + ' (' + @InstrumentGroup + ')', 0, '; ', 512)
             End
+        End
+    End
 
+    ---------------------------------------------------
+    -- Update the dataset comment if it starts with the requested run's comment
+    ---------------------------------------------------
+    --
+    If @requestID <> 0 AND @addingDataset = 1
+    Begin
+        Set @reqRunComment = ''
+
+        SELECT @reqRunComment = RDS_comment
+        FROM T_Requested_Run
+        WHERE ID = @requestID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        -- Assure that @reqRunComment doesn't have &quot; or &#34; or &amp;
+        Set @reqRunComment = dbo.ReplaceCharacterCodes(@reqRunComment)
+
+        If LEN(@reqRunComment) > 0 And (@comment = @reqRunComment Or @comment LIKE @reqRunComment + '%')
+        Begin
+            If LEN(@comment) = LEN(@reqRunComment)
+            Begin
+                Set @comment = ''
+            End
+            Else
+            Begin
+                Set @comment = LTrim(Substring(@comment, LEN(@reqRunComment) + 1, LEN(@comment)))
+            End
         End
     End
 
@@ -924,7 +959,7 @@ As
                 RAISERROR (@message, 11, 86)
             End
 
-            -- validate that experiments match
+            -- Validate that experiments match
             --
             If @experimentID <> @reqExperimentID
             Begin
@@ -1110,7 +1145,7 @@ As
             Set @newDSStateID = 3
         Else
             Set @newDSStateID = 1
-            
+
         If @logDebugMessages > 0
         Begin
             Print 'Insert into T_Dataset'
