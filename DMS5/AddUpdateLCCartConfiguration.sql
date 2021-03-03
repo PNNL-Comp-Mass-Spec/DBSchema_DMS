@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
 **                         - Validate that @configName starts with a valid cart name
 **          03/03/2017 mem - Add parameter @entryUser
 **          09/17/2018 mem - Update cart config name error message
+**          03/03/2021 mem - Update admin-required message
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -295,7 +296,7 @@ As
             End
 
             Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with ' + @datasetDescription + 
-                           ', most recently ' + @datasetName + '; contact a DMS admin to update the configuration'
+                           ', most recently ' + @datasetName + '; contact a DMS admin to update the configuration (using special state Override)'
 
             RAISERROR (@message, 10, 1)
             Return 51010
