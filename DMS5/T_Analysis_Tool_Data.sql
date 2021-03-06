@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool] ******/
-/****** RowCount: 91 ******/
+/****** RowCount: 92 ******/
 /****** Columns: AJT_toolID, AJT_toolName, AJT_toolBasename, AJT_paramFileType, AJT_parmFileStoragePath, AJT_parmFileStoragePathLocal, AJT_defaultSettingsFileName, AJT_resultType, AJT_autoScanFolderFlag, AJT_active, AJT_searchEngineInputFileFormats, AJT_orgDbReqd, AJT_extractionRequired, x_Unused_AJT_toolTag, AJT_description, Use_SpecialProcWaiting ******/
 INSERT INTO [T_Analysis_Tool] VALUES (0,'(none)','(none)',1,'(na)','(na)','(na)',null,'no ',0,'(na)',0,'N','(none)',null,0)
 INSERT INTO [T_Analysis_Tool] VALUES (1,'Sequest','Sequest',1000,'\\gigasax\DMS_Parameter_Files\Sequest','G:\DMS_Parameter_Files\Sequest','LCQDefSettings.txt','Peptide_Hit','no ',0,'Individual_DTA',1,'Y','Sequest','Search MS/MS spectra with Sequest',0)
@@ -92,3 +92,4 @@ INSERT INTO [T_Analysis_Tool] VALUES (87,'Formularity_Bruker_Decon','Formularity
 INSERT INTO [T_Analysis_Tool] VALUES (88,'MSFragger','MSFragger',1033,'\\gigasax\DMS_Parameter_Files\MSFragger','G:\DMS_Parameter_Files\MSFragger','??','MSF_Peptide_Hit','no ',0,'mzML',1,'N','n/a',null,0)
 INSERT INTO [T_Analysis_Tool] VALUES (89,'PepProtProphet','PepProtProphet',1,'(na)','(na)','??','TSV','no ',0,'(na)',1,'N',null,null,0)
 INSERT INTO [T_Analysis_Tool] VALUES (90,'MSGFPlus_MzML_SplitFasta_NoRefine','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFPlus','G:\DMS_Parameter_Files\MSGFPlus','IonTrapDefSettings_MzML_5Parts_MergeResults_Top1.xml','MSG_Peptide_Hit','no ',1,null,1,'Y',null,null,0)
+INSERT INTO [T_Analysis_Tool] VALUES (91,'MaxQuant','MaxQuant',1034,'\\gigasax\DMS_Parameter_Files\MaxQuant','G:\DMS_Parameter_Files\MaxQuant','??','MXQ_Peptide_Hit','no ',0,null,1,'N',null,null,0)
