@@ -13,6 +13,8 @@ CREATE TABLE [dbo].[T_Scripts](
 	[Parameters] [xml] NULL,
 	[Fields] [xml] NULL,
 	[Backfill_to_DMS] [tinyint] NOT NULL,
+	[Pipeline_Job_Enabled] [tinyint] NOT NULL,
+	[Pipeline_MAC_Job_Enabled] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Scripts] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -34,6 +36,10 @@ GO
 ALTER TABLE [dbo].[T_Scripts] ADD  CONSTRAINT [DF_T_Scripts_Enabled]  DEFAULT ('N') FOR [Enabled]
 GO
 ALTER TABLE [dbo].[T_Scripts] ADD  CONSTRAINT [DF_T_Scripts_Backfill_to_DMS]  DEFAULT ((0)) FOR [Backfill_to_DMS]
+GO
+ALTER TABLE [dbo].[T_Scripts] ADD  CONSTRAINT [DF_T_Scripts_Pipeline_Job_Enabled]  DEFAULT ((0)) FOR [Pipeline_Job_Enabled]
+GO
+ALTER TABLE [dbo].[T_Scripts] ADD  CONSTRAINT [DF_T_Scripts_Pipeline_MAC_Job_Enabled]  DEFAULT ((0)) FOR [Pipeline_MAC_Job_Enabled]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Scripts] ******/
 SET ANSI_NULLS ON
