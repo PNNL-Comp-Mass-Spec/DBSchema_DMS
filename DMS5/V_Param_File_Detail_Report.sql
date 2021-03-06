@@ -18,7 +18,8 @@ SELECT PF.Param_File_ID AS ID,
        PF.Job_Usage_Last_Year AS [Job Usage Last Year],
        dbo.udfCombinePaths(Tool.AJT_parmFileStoragePath, PF.Param_File_Name) AS File_Path,
        PF.Valid,
-       dbo.GetParamFileMassModsTableCode(PF.Param_File_ID) AS Mass_Mods
+       dbo.GetParamFileMassModsTableCode(PF.Param_File_ID) AS Mass_Mods,
+       dbo.GetMaxQuantMassModsList(PF.Param_File_ID) AS MaxQuant_Mods
 FROM T_Param_Files PF
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID
