@@ -9,9 +9,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **
 **  Stores (or validates) the dynamic and static mods to associate with a given parameter file
 **
-**  Mods must be defined in the format used for MSGF+ parameter files or for TopPIC parameter files
-**
-**  MSGF+ parameter file format:
+**  Format for MS-GF+, MSPathFinder, mzRefinery:
 **     The mod names listed in the 5th comma-separated column must be Unimod names 
 **     and must match the Original_Source_Name values in T_Mass_Correction_Factors
 **
@@ -21,7 +19,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **
 **     DynamicMod=HO3P, STY, opt, any,            Phospho              # Phosphorylation STY
 **
-**  TopPIC parameter file format:
+**  Format for TopPIC:
 **     The format is Unimod Name, Mass, Residues, Position, UnimodID
 **     The UnimodName in the first column should match the Original_Source_Name values in T_Mass_Correction_Factors
 **
@@ -33,6 +31,18 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **     DynamicMod=Oxidation,15.994915,CPKDNRY,any,35
 **     DynamicMod=Methyl,14.015650,*,N-term,34
 **
+**  Format for MSFragger:
+**     variable_mod_01 = 15.9949 M
+**     add_C_cysteine = 57.021464             # added to C - avg. 103.1429, mono. 103.00918
+**
+**  Format for MaxQuant:
+**     <fixedModifications>
+**        <string>Carbamidomethyl (C)</string>
+**     </fixedModifications>
+**     <variableModifications>
+**        <string>Oxidation (M)</string>
+**        <string>Acetyl (Protein N-term)</string>
+**     </variableModifications>
 **
 **  To validate mods without storing them, set @paramFileID to 0 or a negative number
 **
@@ -55,6 +65,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **                           Add parameter @paramFileType
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          04/23/2019 mem - Add support for MSFragger mod defs
+**          03/05/2021 mem - Add support for MaxQuant mod defs
 **    
 *****************************************************/
 (
@@ -63,7 +74,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
     @infoOnly tinyint = 0,
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
-    @paramFileType varchar(50) = '',    -- MSGFDB, TopPIC, or MSFragger; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MSGF+)
+    @paramFileType varchar(50) = '',    -- MSGFDB, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MS-GF+)
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -79,7 +90,7 @@ AS
     Declare @tempTablesCreated tinyint = 0
     
     Declare @paramFileTypeID int = 0
-
+        
     -----------------------------------------
     -- Validate the input parameters
     -----------------------------------------
@@ -155,7 +166,7 @@ AS
         End
     End
     
-    If Not @paramFileType In ('MSGFDB', 'TopPIC', 'MSFragger')
+    If Not @paramFileType In ('MSGFDB', 'TopPIC', 'MSFragger', 'MaxQuant')
     Begin
         Set @paramFileType = 'MSGFDB'
     End
@@ -163,6 +174,14 @@ AS
     -----------------------------------------
     -- Create some temporary tables
     -----------------------------------------
+
+    CREATE TABLE #Tmp_MaxQuant_Mods (
+        EntryID int NOT NULL IDENTITY(1,1),
+        ModType varchar(24) NOT NULL,
+        ModName varchar(128) NULL
+    )
+    
+    CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_MaxQuant_Mods ON #Tmp_MaxQuant_Mods (EntryID)
     
     CREATE TABLE #Tmp_Mods (
         EntryID int NOT NULL,
@@ -196,7 +215,8 @@ AS
         Residue_ID int NULL,
         Local_Symbol_ID int NULL,
         Residue_Desc varchar(64) Null,
-        Monoisotopic_Mass float NULL
+        Monoisotopic_Mass float NULL,
+        MaxQuant_Mod_ID int NULL
     )
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_ModsToStore ON #Tmp_ModsToStore (Entry_ID)
@@ -210,40 +230,82 @@ AS
 
     Declare @delimiter varchar(1) = ''
 
-    If CHARINDEX(CHAR(10), @mods) > 0
-        Set @delimiter = CHAR(10)
-    Else
-        Set @delimiter = CHAR(13)
-    
-    INSERT INTO #Tmp_Mods (EntryID, Value)
-    SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@mods, @delimiter, 0)
-    --
-    SELECT @myRowCount = @@rowcount, @myError = @@error
-    
-    If Not Exists (SELECT * FROM #Tmp_Mods)
+    If @paramFileType = 'MaxQuant'
     Begin
-        Set @message = 'Nothing returned when splitting the Mods on CR or LF'
-        Set @myError = 53004
-        Goto Done
-    End
-    
+        -- Parse the text as XML
+        DECLARE @xml XML = @mods
+     
+        INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
+        SELECT 'fixed' as ModType,
+               Mods.ModInfo.value('.', 'varchar(128)')
+        FROM   @xml.nodes('/fixedModifications/string') AS Mods(ModInfo)
+        UNION
+        SELECT 'fixed' as ModType,
+               Mods.ModInfo.value('.', 'varchar(128)')
+        FROM   @xml.nodes('/MaxQuantParams/parameterGroups/parameterGroup/fixedModifications/string') AS Mods(ModInfo)
+        UNION
+        SELECT 'variable' as ModType,
+               Mods.ModInfo.value('.', 'varchar(128)')
+        FROM   @xml.nodes('/variableModifications/string') AS Mods(ModInfo)
+        UNION
+        SELECT 'variable' as ModType,
+               Mods.ModInfo.value('.', 'varchar(128)')
+        FROM   @xml.nodes('/MaxQuantParams/parameterGroups/parameterGroup/variableModifications/string') AS Mods(ModInfo)
 
-    Declare @continue tinyint = 1
+        If Not Exists (SELECT * FROM #Tmp_MaxQuant_Mods)
+        Begin
+            Set @message = 'Did not find any XML nodes matching <fixedModifications> <string></string> </fixedModifications> or <variableModifications> <string></string> </variableModifications>'
+            Set @myError = 53004
+            Goto Done
+        End
+
+        -- Populate the Tmp_Mods table with entries of the form:
+        --   fixed=Carbamidomethyl (C)
+        --   variable=Oxidation (M)
+
+        INSERT INTO #Tmp_Mods (EntryID, Value)
+        SELECT EntryID, ModType + '=' + ModName
+        FROM #Tmp_MaxQuant_Mods
+        ORDER BY EntryID
+        --
+        SELECT @myRowCount = @@rowcount, @myError = @@error
+    End
+    Else
+    Begin
+        If CHARINDEX(CHAR(10), @mods) > 0
+            Set @delimiter = CHAR(10)
+        Else
+            Set @delimiter = CHAR(13)
+    
+        INSERT INTO #Tmp_Mods (EntryID, Value)
+        SELECT EntryID, Value
+        FROM dbo.udfParseDelimitedListOrdered(@mods, @delimiter, 0)
+        --
+        SELECT @myRowCount = @@rowcount, @myError = @@error
+        
+        If Not Exists (SELECT * FROM #Tmp_Mods)
+        Begin
+            Set @message = 'Nothing returned when splitting the Mods on CR or LF'
+            Set @myError = 53004
+            Goto Done
+        End
+    End
+
     Declare @entryID int = 0
     Declare @entryIDEnd int = 0
-    
+
     Declare @charIndex int
-    Declare @colCount int
+    Declare @rowCount int
     Declare @validRow tinyint
     
     Declare @row varchar(2048)
     Declare @rowKey varchar(1000)
     Declare @rowValue varchar(2048)
+    Declare @rowParsed tinyint
 
     Declare @field varchar(512)
     Declare @affectedResidues varchar(512)
-
+        
     Declare @modType varchar(128)
     Declare @modTypeSymbol varchar(1)
     Declare @massCorrectionID int
@@ -252,7 +314,9 @@ AS
     Declare @modMass float
     Declare @modMassToFind float
     Declare @location varchar(128)
-    
+
+    Declare @maxQuantModID int
+
     Declare @localSymbolID int = 0
     Declare @localSymbolIDToStore int
     
@@ -266,6 +330,9 @@ AS
     -- Parse the modification definitions
     -----------------------------------------
     --
+
+    Set @entryID = 0
+
     While @entryID < @entryIDEnd
     Begin
         SELECT TOP 1 @entryID = EntryID, @row = Value
@@ -275,9 +342,9 @@ AS
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
         
-        -- @row show now be empty, or contain something like the following:
+        -- @row should now be empty, or contain something like the following:
 
-        -- For MSGF+
+        -- For MS-GF+
         -- StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex         # 4-plex iTraq
         --   or
         -- DynamicMod=HO3P, STY, opt, any,            Phospho            # Phosphorylation STY
@@ -291,6 +358,11 @@ AS
         -- variable_mod_01 = 15.9949 M
         --   or
         -- add_C_cysteine = 57.021464             # added to C - avg. 103.1429, mono. 103.00918
+
+        -- For MaxQuant:
+        -- variable=Oxidation (M)
+        --   or
+        -- fixed=Carbamidomethyl (C)
         
         -- Remove any text after the comment character, #
         Set @charIndex = CharIndex('#', @row)
@@ -309,9 +381,12 @@ AS
                 Print @row
 
             DELETE FROM #Tmp_ModDef
-            
+            Set @rowParsed = 0
+
             If @paramFileType = 'MSFragger'
             Begin
+                Set @rowParsed = 1;
+
                 If @row Like 'variable[_]mod%'
                 Begin
                     Set @charIndex = CharIndex('=', @row)
@@ -387,8 +462,33 @@ AS
                 End
 
             End
-            Else
+
+            If @paramFileType = 'MaxQuant'
             Begin
+                Set @rowParsed = 1;
+                
+                If @row Like 'variable=%'
+                Begin
+                    Set @charIndex = CharIndex('=', @row)
+                    Set @rowValue = Ltrim(Rtrim(Substring(@row, @charIndex+1, Len(@row))))
+
+                    INSERT INTO #Tmp_ModDef (EntryID, Value)
+                    VALUES (1, 'DynamicMod=' + @rowValue)
+                End
+
+                If @row Like 'fixed=%'
+                Begin
+                    Set @charIndex = CharIndex('=', @row)
+                    Set @rowValue = Ltrim(Rtrim(Substring(@row, @charIndex+1, Len(@row))))
+
+                    INSERT INTO #Tmp_ModDef (EntryID, Value)
+                    VALUES (1, 'StaticMod=' + @rowValue)
+                End
+            End
+
+            If @rowParsed = 0
+            Begin
+                -- MS-GF+ style mod
                 INSERT INTO #Tmp_ModDef (EntryID, Value)
                 SELECT EntryID, Value
                 FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
@@ -414,6 +514,7 @@ AS
                 -- DynamicMod=None
                 -- DynamicMod=O1
                 -- DynamicMod=15.9949
+                -- DynamicMod=Oxidation (M)
                 --
                 -- Look for an equals sign in @field
                 
@@ -442,15 +543,16 @@ AS
                         Set Value = Substring(Value, @charIndex+1, 2048)
                         Where EntryID = 1
 
-                        -- Assure that #Tmp_ModDef has at least 5 columns for MSGF+ or TopPIC
-                        -- For MSFragger, require at least 2 columns
+                        -- Assure that #Tmp_ModDef has at least 5 rows for MS-GF+ or TopPIC
+                        -- For MSFragger, require at least 2 row
+                        -- For MaxQuant, there will just be 1 row, which has the MaxQuant-tracked mod name
                         --
-                        SELECT @colCount = COUNT(*) 
+                        SELECT @rowCount = COUNT(*) 
                         FROM #Tmp_ModDef
                 
                         Set @validRow = 1
 
-                        If @paramFileType In ('MSGFDB', 'TopPIC') And @colCount < 5
+                        If @paramFileType In ('MSGFDB', 'TopPIC') And @rowCount < 5
                         Begin
                             Set @validRow = 0
 
@@ -467,11 +569,11 @@ AS
                             End
                             Else
                             Begin
-                                -- MSGF+ uses  'StaticMod=None' and 'DynamicMod=None' to indicate no static or dynamic mods
+                                -- MS-GF+ uses 'StaticMod=None' and 'DynamicMod=None' to indicate no static or dynamic mods
                                 -- TopPIC uses 'StaticMod=None' and 'DynamicMod=Defaults' to indicate no static or dynamic mods
                                 If Not @field in ('StaticMod=None', 'DynamicMod=None', 'DynamicMod=Defaults')
                                 Begin
-                                    Set @message = 'Aborting since row has ' + Cast(@colCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
+                                    Set @message = 'Aborting since row has ' + Cast(@rowCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
                                     Set @myError = 53012
                                     
                                     If @infoOnly = 0
@@ -480,19 +582,19 @@ AS
                             End                            
                         End
                         
-                        If @paramFileType In ('MSFragger') And @colCount < 2
+                        If @paramFileType In ('MSFragger') And @rowCount < 2
                         Begin
                             Set @validRow = 0
-                            Print 'Skipping row since not enough columns in #Tmp_ModDef: ' + @row
+                            Print 'Skipping row since not enough rows in #Tmp_ModDef: ' + @row
                         End
 
                         If @validRow > 0
                         Begin
 
                             Set @field = ''
-                            If @paramFileType In ('TopPIC', 'MSFragger')
+                            If @paramFileType In ('TopPIC', 'MSFragger', 'MaxQuant')
                             Begin
-                                -- TopPIC and MSFragger mod defs don't include 'opt' or 'fix, so we update @field based on @modType
+                                -- Mod defs for these tools don't include 'opt' or 'fix, so we update @field based on @modType
                                 If @modType = 'DynamicMod'
                                     Set @field = 'opt'
                                 If @modType = 'StaticMod'
@@ -500,7 +602,7 @@ AS
                             End
                             Else
                             Begin
-                                -- MSGF+
+                                -- MS-GF+
                                 SELECT @field = LTrim(RTrim(Value))
                                 FROM #Tmp_ModDef
                                 WHERE EntryID = 3
@@ -536,7 +638,8 @@ AS
                             Set @location = ''
                             Set @terminalMod = 0
                             Set @affectedResidues = ''
-                                                        
+                            Set @maxQuantModID = NULL
+                            
                             DELETE FROM #Tmp_Residues
 
                             If @paramFileType In ('MSGFDB', 'TopPIC')
@@ -647,7 +750,7 @@ AS
                                 End
 
                                 Set @affectedResidues = @field
-                            End
+                            End -- MS-GF+ and TopPIC
 
                             If @paramFileType In ('MSFragger')
                             Begin
@@ -680,7 +783,7 @@ AS
                                     FROM T_Mass_Correction_Factors
                                     WHERE Abs(Monoisotopic_Mass - @modMassToFind) < 0.25
                                     Order By Abs(Monoisotopic_Mass - @modMassToFind)
-                                     --
+                                    --
                                     SELECT @myRowCount = @@rowcount, @myError = @@error
 
                                     If @myRowCount < 1 Or IsNull(@massCorrectionID, 0) = 0
@@ -712,7 +815,91 @@ AS
                                         Set @affectedResidues= '*'
                                     End
                                 End
-                            End
+                            End -- MSFragger
+
+                            If @paramFileType In ('MaxQuant')
+                            Begin
+                                -----------------------------------------
+                                -- Determine the Mass_Correction_ID and affected residues based on the mod name
+                                -----------------------------------------                        
+                                --
+                                SELECT @field = LTrim(RTrim(Value))
+                                FROM #Tmp_ModDef
+                                WHERE EntryID = 1
+
+                                SELECT @maxQuantModID = Mod_ID,
+                                       @location = Mod_Position,
+                                       @massCorrectionID = Mass_Correction_ID
+                                FROM T_MaxQuant_Mods
+                                WHERE Mod_Title = @field
+                                --
+                                SELECT @myRowCount = @@rowcount, @myError = @@error
+
+                                If @myRowCount = 0
+                                Begin
+                                    Set @message = 'MaxQuant modification not found in T_MaxQuant_Mods: ' + @field
+                                    Set @myError = 53015
+                                    Goto Done
+                                End
+
+                                If IsNull(@massCorrectionID, 0) = 0
+                                Begin                                
+                                    Set @message = 'Mass Correction ID not defined for MaxQuant modification "' + @field + '"; either update table T_MaxQuant_Mods or delete this mod from the XML'
+                                    Set @myError = 53015
+                                    Goto Done
+                                End
+
+                                SELECT TOP 1 @massCorrectionID = Mass_Correction_ID,
+                                                @modName = Mass_Correction_Tag,
+                                                @modMass = Monoisotopic_Mass
+                                FROM T_Mass_Correction_Factors
+                                WHERE Mass_Correction_ID = @massCorrectionID
+                                --
+                                SELECT @myRowCount = @@rowcount, @myError = @@error                                                                       
+
+                                -- Lookup the affected residues
+                                Set @affectedResidues= ''
+
+                                SELECT @affectedResidues = @affectedResidues + R.Residue_Symbol
+                                FROM T_MaxQuant_Mod_Residues M
+                                     INNER JOIN T_Residues R
+                                       ON M.Residue_ID = R.Residue_ID
+                                WHERE Mod_ID = @maxQuantModID
+                                --
+                                SELECT @myRowCount = @@rowcount, @myError = @@error
+                                
+                                If @location = 'proteinNterm'
+                                Begin
+                                    Set @terminalMod = 1
+                                    Set @affectedResidues = '*'
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values ('[', 1)
+                                End
+                                                            
+                                If @location = 'proteinCterm'
+                                Begin
+                                    Set @terminalMod = 1
+                                    Set @affectedResidues = '*'
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (']', 1)
+                                End
+                            
+                                If @location in ('anyNterm', 'notNterm')
+                                Begin
+                                    Set @terminalMod = 1
+                                    If IsNull(@affectedResidues, '') = '' Or Not @affectedResidues LIKE '[A-Z]'
+                                        Set @affectedResidues = '*'
+
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
+                                End
+                                
+                                If @location in ('anyCterm', 'notCterm')
+                                Begin
+                                    Set @terminalMod = 1
+                                    If IsNull(@affectedResidues, '') = '' Or Not @affectedResidues LIKE '[A-Z]'
+                                        Set @affectedResidues = '*'
+
+                                    INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
+                                End                            
+                            End -- MaxQuant
 
                             If @validRow > 0
                             Begin
@@ -782,7 +969,7 @@ AS
                                     FROM #Tmp_Residues
                                     WHERE Residue_ID Is Null
                                 
-                                    Set @message = 'Unrecognized residue symbol(s)s "' + @msgAddon + '"; symbols not found in T_Residues; see row: ' + @row
+                                    Set @message = 'Unrecognized residue symbol(s) "' + @msgAddon + '"; symbols not found in T_Residues; see row: ' + @row
                                     Set @myError = 53009
                                     Goto Done
                                 End
@@ -836,7 +1023,8 @@ AS
                                         Residue_ID,
                                         Local_Symbol_ID,
                                         Residue_Desc,
-                                        Monoisotopic_Mass
+                                        Monoisotopic_Mass,
+                                        MaxQuant_Mod_ID
                                     )
                                 SELECT @modName AS Mod_Name,
                                        @massCorrectionID AS MassCorrectionID,
@@ -845,7 +1033,8 @@ AS
                                        Residue_ID,
                                        @localSymbolIDToStore as Local_Symbol_ID,
                                        Residue_Desc,
-                                       @modMass
+                                       @modMass,
+                                       @maxQuantModID
                                 FROM #Tmp_Residues
 
                             End
@@ -855,8 +1044,7 @@ AS
             End
         End
     End
-    
-    
+        
     If @infoOnly <> 0
     Begin
         -- Preview the mod defs
@@ -877,8 +1065,8 @@ AS
             DELETE T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID
         End
         
-        INSERT INTO T_Param_File_Mass_Mods (Residue_ID, Local_Symbol_ID, Mass_Correction_ID, Param_File_ID, Mod_Type_Symbol)
-        SELECT Residue_ID, Local_Symbol_ID, Mass_Correction_ID, @paramFileID, Mod_Type_Symbol
+        INSERT INTO T_Param_File_Mass_Mods (Residue_ID, Local_Symbol_ID, Mass_Correction_ID, Param_File_ID, Mod_Type_Symbol, MaxQuant_Mod_ID)
+        SELECT Residue_ID, Local_Symbol_ID, Mass_Correction_ID, @paramFileID, Mod_Type_Symbol, MaxQuant_Mod_ID
         FROM #Tmp_ModsToStore
     
         Commit Tran @storeMods
@@ -888,7 +1076,6 @@ AS
         WHERE Param_File_ID = @paramFileID
 
     End
-
     
 Done:
 

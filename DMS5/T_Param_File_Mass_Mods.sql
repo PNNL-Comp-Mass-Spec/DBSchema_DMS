@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Param_File_Mass_Mods](
 	[Mass_Correction_ID] [int] NOT NULL,
 	[Param_File_ID] [int] NULL,
 	[Mod_Type_Symbol] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[MaxQuant_Mod_ID] [int] NULL,
  CONSTRAINT [PK_T_Peptide_Mod_Param_File_List_Ex] PRIMARY KEY CLUSTERED 
 (
 	[Mod_Entry_ID] ASC
@@ -40,6 +41,11 @@ ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Par
 REFERENCES [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID])
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Mass_Correction_Factors]
+GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_MaxQuant_Mods] FOREIGN KEY([MaxQuant_Mod_ID])
+REFERENCES [dbo].[T_MaxQuant_Mods] ([Mod_ID])
+GO
+ALTER TABLE [dbo].[T_Param_File_Mass_Mods] CHECK CONSTRAINT [FK_T_Param_File_Mass_Mods_T_MaxQuant_Mods]
 GO
 ALTER TABLE [dbo].[T_Param_File_Mass_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_File_Mass_Mods_T_Modification_Types] FOREIGN KEY([Mod_Type_Symbol])
 REFERENCES [dbo].[T_Modification_Types] ([Mod_Type_Symbol])
