@@ -7,16 +7,28 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 /****************************************************
 **
-**  Desc: 
-**  Create or edit analysis job directly in broker database 
+**  Desc:   Create or edit analysis job directly in broker database 
 **    
-**  Return values: 0: success, otherwise, error code
+**  Example contents of @jobParam
+**  Note that element and attribute names are case sensitive (use Value= and not value=)
+**  Default parameters for each job script are defined in the Parameters column of table T_Scripts
 **
+**     <Param Section="JobParameters" Name="CreateMzMLFiles" Value="False" />
+**     <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\MaxQuant_Staging" />
+**     <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
+**     <Param Section="PeptideSearch" Name="ParmFileName" Value="MaxQuant_Tryp_Stat_CysAlk_Dyn_MetOx_NTermAcet_20ppmParTol.xml" />
+**     <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="\\gigasax\DMS_Parameter_Files\MaxQuant" />
+**     <Param Section="PeptideSearch" Name="OrganismName" Value="Homo_Sapiens" />
+**     <Param Section="PeptideSearch" Name="ProteinCollectionList" Value="TBD" />
+**     <Param Section="PeptideSearch" Name="ProteinOptions" Value="seq_direction=forward,filetype=fasta" />
+**     <Param Section="PeptideSearch" Name="LegacyFastaFileName" Value="na" />
+**
+**  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   08/29/2010 grk - Initial release
 **          08/31/2010 grk - reset job
-**          10/06/2010 grk - check @jobParam against parameters for script
+**          10/06/2010 grk - Check @jobParam against parameters for script
 **          10/25/2010 grk - Removed creation prohibition all jobs except aggregation jobs
 **          11/25/2010 mem - Added parameter @debugMode
 **          07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
@@ -41,6 +53,8 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          03/07/2018 mem - Call AlterEnteredByUser
 **          04/06/2018 mem - Allow updating comment, priority, and owner regardless of job state
 **          01/21/2021 mem - Log @jobParam to T_Log_Entries when @debugMode is 2
+**          03/10/2021 mem - Make @jobParam an input/output variable when calling VerifyJobParameters
+**                         - Send @dataPackageID and @debugMode to VerifyJobParameters
 **
 *****************************************************/
 (
@@ -48,15 +62,15 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
     @scriptName varchar(64),
     @datasetNum varchar(128) = 'na',
     @priority int,
-    @jobParam varchar(8000),
+    @jobParam varchar(8000),             -- XML (as text)
     @comment varchar(512),
     @ownerPRN varchar(64),
     @dataPackageID int,
     @resultsFolderName varchar(128) OUTPUT,
-    @mode varchar(12) = 'add', -- or 'update' or 'reset'
+    @mode varchar(12) = 'add',          -- or 'update' or 'reset' or 'previewAdd'
     @message varchar(512) output,
     @callingUser varchar(128) = '',
-    @debugMode tinyint = 0              -- Set to 1 to print debug messages; set to 2 to log debug messages in T_Log_Entries
+    @debugMode tinyint = 0              -- Set to 1 to print debug messages (the new job will not actually be created); set to 2 to log debug messages in T_Log_Entries
 )
 AS
     Set XACT_ABORT, nocount on
@@ -66,7 +80,8 @@ AS
     
     Declare @jobParamXML XML
     Declare @logErrors tinyint = 1
-    
+    Declare @result int = 0
+
     Set @dataPackageID = IsNull(@dataPackageID, 0)
     
     Declare @reset CHAR(1) = 'N'
@@ -74,7 +89,12 @@ AS
     Begin 
         Set @mode = 'update'
         Set @reset = 'Y'
-    END 
+    End
+
+    If @mode = 'previewAdd' AND @debugMode= 0
+    Begin
+        Set @debugMode = 1
+    End
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -84,7 +104,7 @@ AS
     Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
     If @authorized = 0
     Begin;
-        THROW 51000, 'Access denied', 1;;
+        THROW 51000, 'Access denied', 1;
     End;
     
     Begin TRY
@@ -94,7 +114,7 @@ AS
         ---------------------------------------------------
         
         Declare 
-            @id INT = 0,
+            @id int = 0,
             @state int = 0
         --
         SELECT
@@ -110,7 +130,7 @@ AS
             RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
             
         ---------------------------------------------------
-        -- verify parameters
+        -- Verify parameters
         ---------------------------------------------------
 
         If @jobParam Is Null
@@ -118,8 +138,13 @@ AS
 
         If @jobParam = ''
             RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
-        
-        exec @myError = VerifyJobParameters @jobParam, @scriptName, @message output
+
+        -- Uncomment to log the job parameters to T_Log_Entries
+        -- exec PostLogEntry 'Debug', @jobParam, 'AddUpdateLocalJobInBroker'
+        -- goto done
+
+        exec @myError = VerifyJobParameters @jobParam output, @scriptName, @dataPackageID, @message output, @debugMode
+
         If @myError > 0
         Begin
             Set @message = 'Error message for job ' + Cast(@job as varchar(9)) + ' from VerifyJobParameters: ' + @message
@@ -132,7 +157,7 @@ AS
             Set @ownerPRN = dbo.GetUserLoginWithoutDomain(@callingUser)
         End
 
-        If @mode = 'add'
+        If @mode in ('add', 'previewAdd')
         Begin
             ---------------------------------------------------
             -- Is data package set up correctly for the job?
@@ -140,17 +165,16 @@ AS
             
             Declare 
                 @tool VARCHAR(64) = '',            -- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-                @msg VARCHAR(512) = '',                     
-                @valid INT = 0
+                @msg VARCHAR(512) = ''
 
-            EXEC @valid = dbo.ValidateDataPackageForMACJob
+            EXEC @result = dbo.ValidateDataPackageForMACJob
                                     @dataPackageID,
                                     @scriptName,                        
                                     @tool output,
                                     'validate', 
                                     @msg output
             
-            If @valid <> 0
+            If @result <> 0
             Begin
                 -- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
                 Set @logErrors = 0
@@ -184,7 +208,7 @@ AS
 
             If @state IN (1, 4, 5) And @dataPackageID > 0
             Begin
-                CREATE TABLE #PARAMS (
+                 CREATE TABLE #PARAMS (
                     [Section] varchar(128),
                     [Name] varchar(128),
                     [Value] varchar(max)
@@ -202,7 +226,7 @@ AS
 
                 ---------------------------------------------------
                 -- If this job has a 'DataPackageID' defined, update parameters
-                --     'CacheFolderPath'
+                --   'CacheFolderPath'
                 --   'transferFolderPath'
                 ---------------------------------------------------
                                 
@@ -270,7 +294,7 @@ AS
         -- add mode
         ---------------------------------------------------
 
-        If @mode = 'add'
+        If @mode in ('add', 'previewAdd')
         Begin --<add>
 
             Set @jobParamXML = CONVERT(XML, @jobParam)

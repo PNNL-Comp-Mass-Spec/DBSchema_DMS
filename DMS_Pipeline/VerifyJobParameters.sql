@@ -3,44 +3,58 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE VerifyJobParameters
+
+CREATE PROCEDURE [dbo].[VerifyJobParameters]
 /****************************************************
 **
-**  Desc: 
-**  Check input parameters against the definition for the script
-**	
-**  Return values: 0: success, otherwise, error code
+**  Desc: Check input parameters against the definition for the script
 **
+**  Return values: 0: success, otherwise, error code
 **
 **  Auth:	grk
 **  Date:	10/06/2010 grk - Initial release
 **			11/25/2010 mem - Now validating that the script exists in T_Scripts
 **			12/10/2013 grk - problem inserting null values into #TPD
 **			04/08/2016 mem - Clear @message if null
+**          03/10/2021 mem - Validate protein collection (or FASTA file) options for MaxQuant jobs
+**                         - Rename the XML job parameters argument and make it an input/output argument
+**                         - Add arguments @dataPackageID and @debugMode
 **
 *****************************************************/
 (
-	@ParamInput varchar(max),
+	@jobParam varchar(8000) output,      -- Input / output parameter
 	@scriptName varchar(64),
-	@message varchar(512) output
+    @dataPackageID int,
+	@message varchar(512) output,
+    @debugMode tinyint = 0
 )
 AS
-	set nocount on
+	Set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @myError = 0
-	set @myRowCount = 0
-	
 	Set @message = IsNull(@message, '')
-	
+	Set @scriptName = IsNull(@scriptName, '')
+    Set @dataPackageID = IsNull(@dataPackageID, 0)
+
+    Declare @parameterFileName varchar(255)
+    Declare @protCollNameList varchar(2000) = ''
+    Declare @protCollOptionsList varchar(256) = ''
+    Declare @organismName varchar(128) = ''
+    Declare @organismDBName varchar(255) = ''    -- Aka legacy FASTA file
+
+    Declare @paramFileType varchar(64) = ''
+    Declare @paramFileValid tinyint
+
+    Declare @collectionCountAdded int
+
 	---------------------------------------------------
 	-- Get parameter definition
 	-- This is null for most scripts
 	---------------------------------------------------
 	
-	DECLARE @ParamDefinition xml
+	Declare @ParamDefinition xml
 	--
 	SELECT @ParamDefinition = Parameters
 	FROM   dbo.T_Scripts
@@ -50,8 +64,8 @@ AS
 	
 	If @myRowCount= 0
 	Begin
-		SET @message = 'Script not found in T_Scripts: ' + IsNull(@scriptName, '??')
-		SET @myError = 50
+		Set @message = 'Script not found in T_Scripts: ' + IsNull(@scriptName, '??')
+		Set @myError = 50100
 		Print @message
 		return @myError
 	End
@@ -77,17 +91,17 @@ AS
 		@ParamDefinition.nodes('//Param') AS R(xmlNode)
 
 	---------------------------------------------------
-	-- extract input parameters into temp table
+	-- Extract input parameters into temp table
 	---------------------------------------------------
-		--
+	--
 	CREATE TABLE #TJP (
 		[Section] Varchar(128),
 		[Name] Varchar(128),
 		[Value] Varchar(max)
 	)
 
-	DECLARE @ParamValue XML
-	SET @ParamValue = CONVERT(XML, @ParamInput)
+	Declare @jobParamXML XML
+	Set @jobParamXML = CONVERT(XML, @jobParam)
 	
 	INSERT INTO #TJP ([Section], [Name], [Value])	
 	SELECT
@@ -95,13 +109,13 @@ AS
 		xmlNode.value('@Name', 'nvarchar(256)') Name,
 		xmlNode.value('@Value', 'nvarchar(4000)') Value
 	FROM
-		@ParamValue.nodes('//Param') AS R(xmlNode)
+		@jobParamXML.nodes('//Param') AS R(xmlNode)
 
 	---------------------------------------------------
-	-- Cross check to make sure required parameters are defined in #TJP (populated using @ParamInput)
+	-- Cross check to make sure required parameters are defined in #TJP (populated using @paramInput)
 	---------------------------------------------------
-	DECLARE @s VARCHAR(8000)
-	SET @s = ''
+    --
+	Declare @s varchar(8000) = ''
 
 	SELECT 
 		@s = @s + #TPD.Section + '/' + #TPD.Name + ','
@@ -115,12 +129,142 @@ AS
 		
 	IF @s <> ''
 	BEGIN
-		SET @message = 'Missing required parameters:' + @s
-		SET @myError = 52
+		Set @message = 'Missing required parameters:' + @s
+		Set @myError = 50101
 		Print @message
 		return @myError
 	END
-	
+
+	---------------------------------------------------
+	-- Cross check to make sure required parameters are defined in #TJP (populated using @paramInput)
+	---------------------------------------------------
+    --	
+    If @scriptName LIKE 'MaxQuant%'
+    Begin
+        -- Verify the MaxQuant parameter file name
+        -- Also verify the protein collection (or legacy FASTA file)
+        -- For protein collections, will auto-add contaminants if needed
+
+        SELECT @parameterFileName = Value
+        FROM #TJP
+        WHERE Name = 'ParmFileName'
+        --
+	    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        SELECT @protCollNameList = Value
+        FROM #TJP
+        WHERE Name = 'ProteinCollectionList'
+
+        SELECT @protCollOptionsList = Value
+        FROM #TJP
+        WHERE Name = 'ProteinOptions'
+        
+        SELECT @organismName = Value
+        FROM #TJP
+        WHERE Name = 'OrganismName'
+
+        SELECT @organismDBName = Value
+        FROM #TJP
+        WHERE Name = 'LegacyFastaFileName'
+
+        Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
+        
+        If ISNULL(@protCollOptionsList, '') = ''
+        Begin
+            Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
+        End
+
+        If @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
+        Begin
+            Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for MaxQuant jobs'
+		    Set @myError = 50103
+		    Print @message
+		    return @myError
+        End
+
+        SELECT @paramFileType = Param_File_Type, @paramFileValid = Valid
+        FROM dbo.[S_DMS_V_Param_File_Export]
+        WHERE Param_File_Name = @parameterFileName
+        --
+	    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Parameter file not found: ' + @parameterFileName
+		    Set @myError = 50104
+		    Print @message
+		    return @myError
+        End
+        
+        If @paramFileValid = 0
+        Begin
+            Set @message = 'Parameter file is not active: ' + @parameterFileName
+		    Set @myError = 50105
+		    Print @message
+		    return @myError
+        End
+                
+        If @paramFileType <> 'MaxQuant'
+        Begin
+            Set @message = 'Parameter file is for ' + @paramFileType + ', and not MaxQuant: ' + @parameterFileName
+		    Set @myError = 50106
+		    Print @message
+		    return @myError
+        End
+
+        exec @myError = dbo.S_ValidateProteinCollectionParams
+                        'MaxQuant',
+                        @organismDBName output,
+                        @organismName,
+                        @protCollNameList output,
+                        @protCollOptionsList output,
+                        @ownerPRN = '',
+                        @message = @message output,
+                        @debugMode = @debugMode
+
+        If @myError = 0 AND Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList) <> 'na'
+        Begin
+            ---------------------------------------------------
+            -- Validate @protCollNameList
+            -- Note that ValidateProteinCollectionListForDatasetTable
+            --  will populate @message with an explanatory note
+            --  if @protCollNameList is updated
+            ---------------------------------------------------
+            --
+            exec @myError = dbo.ValidateProteinCollectionListForDataPackage
+                                @dataPackageID,
+                                @protCollNameList=@protCollNameList output, 
+                                @collectionCountAdded=@collectionCountAdded output, 
+                                @showMessages=1, 
+                                @message=@message output
+        End
+
+        If @myError = 0
+        Begin
+            -- Make sure values in #TJP are up-to-date, then re-generate @jobParamXML
+
+            UPDATE #TJP
+            SET Value = @protCollNameList
+            WHERE Name = 'ProteinCollectionList'
+
+            UPDATE #TJP
+            SET Value = @protCollOptionsList
+            WHERE Name = 'ProteinOptions'
+
+            UPDATE #TJP
+            SET Value = @organismName
+            WHERE Name = 'OrganismName'
+
+            UPDATE #TJP
+            SET Value = @organismDBName
+            WHERE Name = 'LegacyFastaFileName'
+
+            Set @jobParamXML = ( SELECT * FROM #TJP AS Param FOR XML AUTO, TYPE)
+
+            Set @jobParam = CAST(@jobParamXML as varchar(8000))
+        End
+    End
+
 	return @myError
 
 GO
