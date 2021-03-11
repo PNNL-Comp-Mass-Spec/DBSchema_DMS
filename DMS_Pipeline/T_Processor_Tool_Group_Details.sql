@@ -39,6 +39,7 @@ ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Proces
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details]  WITH CHECK ADD  CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools] FOREIGN KEY([Tool_Name])
 REFERENCES [dbo].[T_Step_Tools] ([Name])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Processor_Tool_Group_Details] CHECK CONSTRAINT [FK_T_Processor_Tool_Group_Details_T_Step_Tools]
 GO
