@@ -20,9 +20,11 @@ SELECT AJR.AJR_requestID AS Request,
        AJR.AJR_proteinCollectionList AS ProteinCollectionList,
        AJR.AJR_proteinOptionsList AS ProteinOptions,
        CASE
+           WHEN IsNull(AJR.Data_Package_ID, 0) > 0 Then ''
            WHEN AJR.Dataset_Min = AJR.Dataset_Max THEN AJR.Dataset_Min
            ELSE Coalesce(AJR.Dataset_Min + ', ' + AJR.Dataset_Max, AJR.Dataset_Min, AJR.Dataset_Max)
        END AS Datasets,
+       AJR.Data_Package_ID as [Data Package],
        AJR.AJR_comment AS [Comment]
 FROM dbo.T_Analysis_Job_Request AS AJR
      INNER JOIN dbo.T_Users AS U

@@ -23,6 +23,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_specialProcessing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_Min] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_Max] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Data_Package_ID] [int] NULL,
  CONSTRAINT [T_Analysis_Job_Request_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJR_requestID] ASC
