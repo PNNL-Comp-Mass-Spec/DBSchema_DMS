@@ -534,3 +534,7 @@ Done:
     return @myError
 
 GO
+GRANT EXECUTE ON [dbo].[ValidateProteinCollectionListForDatasetTable] TO [DMS_SP_User] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[ValidateProteinCollectionListForDatasetTable] TO [DMS2_SP_User] AS [dbo]
+GO

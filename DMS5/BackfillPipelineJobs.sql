@@ -21,56 +21,59 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          01/31/2018 mem - Truncate dataset name at 80 characters if too long
 **          07/25/2018 mem - Replace brackets with underscores
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
+**          03/09/2021 mem - Auto change script MaxQuant_DataPkg to MaxQuant
+**          03/10/2021 mem - Add argument @startJob
 **    
 *****************************************************/
 (
     @infoOnly tinyint = 0,
-    @JobsToProcess int = 0,                    -- Set to a positive number to process a finite number of jobs
+    @jobsToProcess int = 0,                    -- Set to a positive number to process a finite number of jobs
+    @startJob int = 0,                         -- Set to a positive number to start with the given job number (useful if we know that a job was just created in the Pipeline database)
     @message varchar(255) = '' OUTPUT
 )
 AS
 
     Set XACT_ABORT, nocount on
 
-    declare @myRowCount int = 0 
-    declare @myError int = 0
+    Declare @myRowCount int = 0 
+    Declare @myError int = 0
     
-    Declare @Job int
-    Declare @Priority int
-    Declare @Script varchar(64)
-    Declare @State int
-    Declare @Dataset varchar(128)
-    Declare @Results_Folder_Name varchar(128)
-    Declare @Imported datetime
-    Declare @Start datetime
-    Declare @Finish datetime
-    Declare @TransferFolderPath varchar(512)
-    Declare @Comment varchar(512)
-    Declare @Owner varchar(64)
-    Declare @ProcessingTimeMinutes real
+    Declare @job int
+    Declare @priority int
+    Declare @script varchar(64)
+    Declare @state int
+    Declare @dataset varchar(128)
+    Declare @results_Folder_Name varchar(128)
+    Declare @imported datetime
+    Declare @start datetime
+    Declare @finish datetime
+    Declare @transferFolderPath varchar(512)
+    Declare @comment varchar(512)
+    Declare @owner varchar(64)
+    Declare @processingTimeMinutes real
     
-    Declare @Continue tinyint
-    Declare @JobsProcessed int = 0
-    Declare @PeptideAtlasStagingTask tinyint = 0
+    Declare @continue tinyint
+    Declare @jobsProcessed int = 0
+    Declare @peptideAtlasStagingTask tinyint = 0
     
-    Declare @AnalysisToolID int
-    Declare @OrganismID int
+    Declare @analysisToolID int
+    Declare @organismID int
     
-    Declare @DatasetID int
-    Declare @DatasetComment varchar(128)
+    Declare @datasetID int
+    Declare @datasetComment varchar(128)
     Declare @jobStr varchar(12)
     
-    Declare @DataPackageID int
-    Declare @DataPackageName varchar(128)
-    Declare @DataPackageFolder varchar(256)
-    Declare @StoragePathRelative varchar(256)
+    Declare @dataPackageID int
+    Declare @dataPackageName varchar(128)
+    Declare @dataPackageFolder varchar(256)
+    Declare @storagePathRelative varchar(256)
     
     Declare @mode varchar(12)
     Declare @msg varchar(256)
     
-    declare @CallingProcName varchar(128)
-    declare @CurrentLocation varchar(128)
-    Set @CurrentLocation = 'Start'
+    declare @callingProcName varchar(128)
+    declare @currentLocation varchar(128)
+    Set @currentLocation = 'Start'
 
 
     ---------------------------------------------------
@@ -78,7 +81,7 @@ AS
     ---------------------------------------------------
 
     Set @infoOnly = IsNull(@infoOnly, 1)
-    Set @JobsToProcess = IsNull(@JobsToProcess, 0)
+    Set @jobsToProcess = IsNull(@jobsToProcess, 0)
     Set @message = ''
     
     
@@ -139,40 +142,40 @@ AS
         WHERE J.AJ_JobID IS NULL
         ORDER BY PJ.Job
         --
-        Select @myRowCount = @@RowCount, @myError = @@Error
+        Select @myRowCount = @@rowCount, @myError = @@error
     End
     
     ---------------------------------------------------
     -- Process each job present in S_V_Pipeline_Jobs_Backfill that is not present in T_Analysis_Job
     ---------------------------------------------------
     
-    Set @Job = 0
-    Set @Continue = 1
-    While @Continue <> 0
+    Set @job = @startJob - 1
+    Set @continue = 1
+    While @continue <> 0
     Begin -- <a>
 
-        SELECT TOP 1 @Job = PJ.Job,
-                     @Priority = PJ.Priority,
-                     @Script = PJ.Script,
-                     @State = PJ.State,
-                     @Dataset = PJ.Dataset,
-                     @Results_Folder_Name = PJ.Results_Folder_Name,
-                     @Imported = PJ.Imported,
-                     @Start = PJ.Start,
-                     @Finish = PJ.Finish,
-                     @TransferFolderPath = PJ.Transfer_Folder_Path,
-                     @Comment = PJ.[Comment],
-                     @Owner = PJ.Owner,
-                     @ProcessingTimeMinutes = PJ.ProcessingTimeMinutes,
-                     @DataPackageID = PJ.DataPkgID
+        SELECT TOP 1 @job = PJ.Job,
+                     @priority = PJ.Priority,
+                     @script = PJ.Script,
+                     @state = PJ.State,
+                     @dataset = PJ.Dataset,
+                     @results_Folder_Name = PJ.Results_Folder_Name,
+                     @imported = PJ.Imported,
+                     @start = PJ.Start,
+                     @finish = PJ.Finish,
+                     @transferFolderPath = PJ.Transfer_Folder_Path,
+                     @comment = PJ.[Comment],
+                     @owner = PJ.Owner,
+                     @processingTimeMinutes = PJ.ProcessingTimeMinutes,
+                     @dataPackageID = PJ.DataPkgID
         FROM S_V_Pipeline_Jobs_Backfill PJ
              LEFT OUTER JOIN T_Analysis_Job J
                ON PJ.Job = J.AJ_jobID
-        WHERE PJ.Job > @Job AND
+        WHERE PJ.Job > @job AND
               J.AJ_JobID IS NULL
         ORDER BY PJ.Job
         --
-        Select @myRowCount = @@RowCount, @myError = @@Error
+        Select @myRowCount = @@rowCount, @myError = @@error
         
         If @myRowCount = 0
             Set @continue = 0
@@ -183,21 +186,25 @@ AS
             
             BEGIN TRY 
             
-                Set @CurrentLocation = 'Validate settings required to backfill job ' + @jobStr
+                Set @currentLocation = 'Validate settings required to backfill job ' + @jobStr
                 
                 ---------------------------------------------------
-                -- Lookup AnalysisToolID for @Script
+                -- Lookup AnalysisToolID for @script
                 ---------------------------------------------------
                 --
-                Set @AnalysisToolID = -1
-                
-                SELECT @AnalysisToolID = AJT_toolID
-                FROM T_Analysis_Tool
-                WHERE (AJT_toolName = @Script)
-                
-                If @AnalysisToolID < 0
+                Set @analysisToolID = -1
+                If @script Like 'MaxQuant[_]%'
                 Begin
-                    Set @message = 'Script not found in T_Analysis_Tool: ' + @Script + '; unable to backfill DMS Pipeline job ' + @jobStr
+                    Set @script = 'MaxQuant'
+                END
+
+                SELECT @analysisToolID = AJT_toolID
+                FROM T_Analysis_Tool
+                WHERE (AJT_toolName = @script)
+                
+                If @analysisToolID < 0
+                Begin
+                    Set @message = 'Script not found in T_Analysis_Tool: ' + @script + '; unable to backfill DMS Pipeline job ' + @jobStr
                     
                     If @infoOnly > 0
                         print @message
@@ -207,181 +214,181 @@ AS
                     Goto NextJob
                 End
                 
-                If @Script = 'PeptideAtlas'
-                    Set @PeptideAtlasStagingTask = 1
+                If @script = 'PeptideAtlas'
+                    Set @peptideAtlasStagingTask = 1
                 Else
-                    Set @PeptideAtlasStagingTask = 0
+                    Set @peptideAtlasStagingTask = 0
                 
                 ---------------------------------------------------
                 -- Lookup OrganismID for organism 'None'
                 ---------------------------------------------------
                 --
-                Set @OrganismID = -1
+                Set @organismID = -1
                 
-                SELECT @OrganismID = Organism_ID
+                SELECT @organismID = Organism_ID
                 FROM T_Organisms
                 WHERE (OG_name = 'None')
             
-                If @OrganismID < 0
+                If @organismID < 0
                 Begin
-                    Set @message = 'Organism "None" not found in T_Organisms -- this is unexpected; will set @OrganismID to 1'
+                    Set @message = 'Organism "None" not found in T_Organisms -- this is unexpected; will set @organismID to 1'
                     
                     If @infoOnly > 0
                         print @message
                     Else
                         Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'                    
                         
-                    Set @OrganismID = 1
+                    Set @organismID = 1
                 End
                 
                 ---------------------------------------------------
-                -- Validate @Owner; update if not valid
+                -- Validate @owner; update if not valid
                 ---------------------------------------------------
                 --
-                If Not Exists (SELECT * FROM T_Users WHERE U_PRN = IsNull(@Owner, ''))
-                    Set @Owner = 'H09090911'
+                If Not Exists (SELECT * FROM T_Users WHERE U_PRN = IsNull(@owner, ''))
+                    Set @owner = 'H09090911'
                 
                 ---------------------------------------------------
-                -- Validate @State; update if not valid
+                -- Validate @state; update if not valid
                 ---------------------------------------------------
                 --
-                If Not Exists (SELECT * FROM T_Analysis_State_Name WHERE AJS_stateID = @State)
+                If Not Exists (SELECT * FROM T_Analysis_State_Name WHERE AJS_stateID = @state)
                 Begin
-                    Set @message = 'State ' + Convert(varchar(12), @State) + 'not found in T_Analysis_State_Name -- this is unexpected; will set @State to 4'
+                    Set @message = 'State ' + Convert(varchar(12), @state) + 'not found in T_Analysis_State_Name -- this is unexpected; will set @state to 4'
                     
                     If @infoOnly > 0
                         print @message
                     Else
                         Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'                    
                         
-                    Set @State = 4
+                    Set @state = 4
                 End
                 
                 ------------------------------------------------
-                -- Check whether dataset @Dataset exists if @dataset is <> 'Aggregation'
+                -- Check whether dataset @dataset exists if @dataset is <> 'Aggregation'
                 ------------------------------------------------
                 --
-                Set @DatasetID = -1
-                Set @DatasetComment = ''
+                Set @datasetID = -1
+                Set @datasetComment = ''
                 
-                If IsNull(@Dataset, 'Aggregation') <> 'Aggregation'
+                If IsNull(@dataset, 'Aggregation') <> 'Aggregation'
                 Begin
                     
-                    SELECT @DatasetID = Dataset_ID
+                    SELECT @datasetID = Dataset_ID
                     FROM T_Dataset
-                    WHERE Dataset_Num = @Dataset
+                    WHERE Dataset_Num = @dataset
                     --
-                    Select @myRowCount = @@RowCount, @myError = @@Error
+                    Select @myRowCount = @@rowCount, @myError = @@error
                     
                 END
                 
-                If @DatasetID < 0
+                If @datasetID < 0
                 Begin -- <c>
                     ------------------------------------------------
                     -- Dataset does not exist; auto-define the dataset to associate with this job
                     -- First lookup the data package ID associated with this job
                     ------------------------------------------------
                     
-                    Set @CurrentLocation = 'Auto-define the dataset to associate with job ' + @jobStr
+                    Set @currentLocation = 'Auto-define the dataset to associate with job ' + @jobStr
                     
-                    If @DataPackageID <= 0
+                    If @dataPackageID <= 0
                     Begin -- <d1>
                         ------------------------------------------------
                         -- Job doesn't have a data package ID
-                        -- Simply set @Dataset to DP_Aggregation
+                        -- Simply set @dataset to DP_Aggregation
                         ------------------------------------------------
-                        Set @Dataset = 'DP_Aggregation'
+                        Set @dataset = 'DP_Aggregation'
                         
                     End -- </d1>
                     Else
                     Begin -- <d2>
                     
                         ------------------------------------------------
-                        -- Lookup the Data Package name for @DataPackageID
+                        -- Lookup the Data Package name for @dataPackageID
                         ------------------------------------------------
                         
-                        Set @DataPackageName = ''
-                        Set @DataPackageFolder = ''
-                        Set @StoragePathRelative = ''
+                        Set @dataPackageName = ''
+                        Set @dataPackageFolder = ''
+                        Set @storagePathRelative = ''
                         
-                        SELECT @DataPackageName = [Name],
-                               @DataPackageFolder = Package_File_Folder,
-                               @StoragePathRelative = Storage_Path_Relative
+                        SELECT @dataPackageName = [Name],
+                               @dataPackageFolder = Package_File_Folder,
+                               @storagePathRelative = Storage_Path_Relative
                         FROM S_V_Data_Package_Export
-                        WHERE ID = @DataPackageID
+                        WHERE ID = @dataPackageID
                         --
-                        Select @myRowCount = @@RowCount, @myError = @@Error
+                        Select @myRowCount = @@rowCount, @myError = @@error
                     
-                        If @myRowCount = 0 Or IsNull(@DataPackageFolder, '') = ''
+                        If @myRowCount = 0 Or IsNull(@dataPackageFolder, '') = ''
                         Begin
                             -- Data Package not found (or Package_File_Folder is not defined)
-                            Set @Dataset = 'DataPackage_' + Convert(varchar(12), @DataPackageID)
+                            Set @dataset = 'DataPackage_' + Convert(varchar(12), @dataPackageID)
                         End
                         Else
                         Begin
                             -- Data Package found
-                            Set @Dataset = 'DataPackage_' + @DataPackageFolder
+                            Set @dataset = 'DataPackage_' + @dataPackageFolder
                                                         
-                            If @PeptideAtlasStagingTask <> 0
+                            If @peptideAtlasStagingTask <> 0
                             Begin
-                                Set @Dataset = @Dataset + '_Staging'
+                                Set @dataset = @dataset + '_Staging'
                             End
                             
                         End
                         
-                        Set @DatasetComment = 'https://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @DataPackageID)
+                        Set @datasetComment = 'https://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @dataPackageID)
                         
                     End -- </d2>
                     
-                    If Len(@Dataset) > 80
+                    If Len(@dataset) > 80
                     Begin
                         -- Truncate the dataset name to avoid triggering an error in AddUpdateDataset
-                        Set @Dataset = Substring(@Dataset, 1, 80)
+                        Set @dataset = Substring(@dataset, 1, 80)
                     End
                     
-                    -- Make sure there are no spaces, periods, brackets, braces, or parentheses in @Dataset
-                    Set @Dataset = Replace(@Dataset, ' ', '_')
-                    Set @Dataset = Replace(@Dataset, '.', '_')
-                    Set @Dataset = Replace(@Dataset, '[', '_')
-                    Set @Dataset = Replace(@Dataset, ']', '_')
-                    Set @Dataset = Replace(@Dataset, '{', '_')
-                    Set @Dataset = Replace(@Dataset, '}', '_')
-                    Set @Dataset = Replace(@Dataset, '(', '_')
-                    Set @Dataset = Replace(@Dataset, ')', '_')
+                    -- Make sure there are no spaces, periods, brackets, braces, or parentheses in @dataset
+                    Set @dataset = Replace(@dataset, ' ', '_')
+                    Set @dataset = Replace(@dataset, '.', '_')
+                    Set @dataset = Replace(@dataset, '[', '_')
+                    Set @dataset = Replace(@dataset, ']', '_')
+                    Set @dataset = Replace(@dataset, '{', '_')
+                    Set @dataset = Replace(@dataset, '}', '_')
+                    Set @dataset = Replace(@dataset, '(', '_')
+                    Set @dataset = Replace(@dataset, ')', '_')
                     
                     ------------------------------------------------
                     -- Now that we have constructed the name of the dataset to auto-create, see if it already exists
                     ------------------------------------------------
                     
-                    SELECT @DatasetID = Dataset_ID
+                    SELECT @datasetID = Dataset_ID
                     FROM T_Dataset
-                    WHERE Dataset_Num = @Dataset
+                    WHERE Dataset_Num = @dataset
                     --
-                    Select @myRowCount = @@RowCount, @myError = @@Error
+                    Select @myRowCount = @@rowCount, @myError = @@error
                     
                     If @myRowCount = 0
-                        Set @DatasetID = -1
+                        Set @datasetID = -1
 
                 
-                    If @DatasetID < 0
+                    If @datasetID < 0
                     Begin -- <d3>
                         
                         ------------------------------------------------
                         -- Dataset does not exist; create it
                         ------------------------------------------------
                         
-                        Set @CurrentLocation = 'Call AddUpdateDataset to create dataset ' + @Dataset
+                        Set @currentLocation = 'Call AddUpdateDataset to create dataset ' + @dataset
                          
                         If @infoOnly > 0
                         Begin
                             Set @mode = 'check_add'
-                            Print 'Check_add dataset ' + @Dataset
+                            Print 'Check_add dataset ' + @dataset
                         End
                         Else
                             Set @mode = 'add'
                             
                         Exec @myError = AddUpdateDataset
-                                            @Dataset,               -- Dataset
+                                            @dataset,               -- Dataset
                                             'DMS_Pipeline_Data',    -- Experiment
                                             'MSDADMIN',             -- Operator PRN
                                             'DMS_Pipeline_Data',    -- Instrument
@@ -391,7 +398,7 @@ AS
                                             'na',                   -- Well number
                                             'none',                 -- Secondary Sep
                                             'none',                 -- Internal Standard
-                                            @DatasetComment,        -- Comment
+                                            @datasetComment,        -- Comment
                                             'Released',             -- Rating
                                             'No_Cart',              -- LC Cart
                                             '',                     -- EUS Proposal
@@ -400,7 +407,7 @@ AS
                                             @requestID = 0,
                                             @mode = @mode,
                                             @message = @msg output,
-                                            @AggregationJobDataset = 1
+                                            @aggregationJobDataset = 1
                                                                                             
                         If @myError <> 0
                         Begin                        
@@ -408,7 +415,7 @@ AS
                             -- Error creating dataset
                             ------------------------------------------------
                             
-                            Set @message = 'Error creating dataset ' + @Dataset + ' for DMS Pipeline job ' + @jobStr
+                            Set @message = 'Error creating dataset ' + @dataset + ' for DMS Pipeline job ' + @jobStr
                             If IsNull(@msg, '') <> ''
                                 Set @message = @message + ': ' + @msg
                             
@@ -417,13 +424,13 @@ AS
                             Else                            
                                 Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
                                 
-                            Set @DatasetID = -1
+                            Set @datasetID = -1
                         End
                         Else
                         Begin -- <e>
                             If @infoOnly > 0
                             Begin
-                                Set @DatasetID = 1
+                                Set @datasetID = 1
                             End
                             Else
                             Begin
@@ -431,49 +438,49 @@ AS
                                 -- Determine the DatasetID for the newly-created dataset
                                 ------------------------------------------------
                                 
-                                Set @CurrentLocation = 'Determine DatasetID for newly created dataset ' + @Dataset
+                                Set @currentLocation = 'Determine DatasetID for newly created dataset ' + @dataset
                                         
-                                SELECT @DatasetID = Dataset_ID
+                                SELECT @datasetID = Dataset_ID
                                 FROM T_Dataset
-                                WHERE Dataset_Num = @Dataset
+                                WHERE Dataset_Num = @dataset
                                 --
-                                Select @myRowCount = @@RowCount, @myError = @@Error
+                                Select @myRowCount = @@rowCount, @myError = @@error
                                 
                                 If @myRowCount = 0
                                 Begin
-                                    Set @message = 'Error creating dataset ' + @Dataset + ' for DMS Pipeline job ' + @jobStr + '; call to AddUpdateDataset succeeded but dataset not found in T_Dataset'
+                                    Set @message = 'Error creating dataset ' + @dataset + ' for DMS Pipeline job ' + @jobStr + '; call to AddUpdateDataset succeeded but dataset not found in T_Dataset'
                                     Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
-                                    Set @DatasetID = -1                        
+                                    Set @datasetID = -1                        
                                 End
                                 
-                                If IsNull(@StoragePathRelative, '') <> ''
+                                If IsNull(@storagePathRelative, '') <> ''
                                 Begin
-                                    If @PeptideAtlasStagingTask <> 0
+                                    If @peptideAtlasStagingTask <> 0
                                     Begin
                                         -- The data files will be stored at a path of the form:
                                         --   \\protoapps\PeptideAtlas_Staging\829_Organelle_Targeting_ABPP
                                         -- Need to determine the path ID
                                         
-                                        Declare @PeptideAtlasStagingPathID int = 0
+                                        Declare @peptideAtlasStagingPathID int = 0
                                         
-                                        SELECT @PeptideAtlasStagingPathID = SP_path_ID
+                                        SELECT @peptideAtlasStagingPathID = SP_path_ID
                                         FROM T_Storage_Path
                                         WHERE (SP_path IN ('PeptideAtlas_Staging', 'PeptideAtlas_Staging\'))
 
-                                        If IsNull(@PeptideAtlasStagingPathID, 0) > 0
+                                        If IsNull(@peptideAtlasStagingPathID, 0) > 0
                                         Begin
                                             UPDATE T_Dataset
-                                            SET DS_Storage_Path_ID = @PeptideAtlasStagingPathID
-                                            WHERE Dataset_ID = @DatasetID
+                                            SET DS_Storage_Path_ID = @peptideAtlasStagingPathID
+                                            WHERE Dataset_ID = @datasetID
                                             
-                                            Set @StoragePathRelative = @DataPackageFolder
+                                            Set @storagePathRelative = @dataPackageFolder
                                         End
                                     End
                                     
                                     -- Update the Dataset Folder for the newly-created dataset
                                     UPDATE T_Dataset
-                                    SET DS_folder_name = @StoragePathRelative
-                                    WHERE Dataset_ID = @DatasetID
+                                    SET DS_folder_name = @storagePathRelative
+                                    WHERE Dataset_ID = @datasetID
                                 End
 
                             End
@@ -482,7 +489,7 @@ AS
                         
                     End -- </d3>
 
-                    If @DatasetID > 0
+                    If @datasetID > 0
                     Begin -- <d4>
                     
                         ------------------------------------------------
@@ -490,39 +497,39 @@ AS
                         -- Add a new row to #Tmp_Job_Backfill_Details
                         ------------------------------------------------
 
-                        Set @CurrentLocation = 'Add job ' + @jobStr + ' to #Tmp_Job_Backfill_Details'
+                        Set @currentLocation = 'Add job ' + @jobStr + ' to #Tmp_Job_Backfill_Details'
 
                         INSERT INTO #Tmp_Job_Backfill_Details
                                 (DataPackageID, Job, BatchID, Priority, Created, Start, Finish, AnalysisToolID, 
                                 ParmFileName, SettingsFileName, OrganismDBName, OrganismID, DatasetID, Comment, Owner, 
                                 StateID, AssignedProcessorName, ResultsFolderName, ProteinCollectionList, ProteinOptionsList, 
                                 RequestID, PropagationMode, ProcessingTimeMinutes, Purged)
-                        SELECT @DataPackageID,
-                               @Job,
+                        SELECT @dataPackageID,
+                               @job,
                                0,                       -- batchID
-                               @Priority,               -- priority
-                               @Imported,               -- created
-                               @Start,                  -- start
-                               @Finish,                 -- finish
-                               @AnalysisToolID,         -- analysisToolID
+                               @priority,               -- priority
+                               @imported,               -- created
+                               @start,                  -- start
+                               @finish,                 -- finish
+                               @analysisToolID,         -- analysisToolID
                                'na',                    -- parmFileName
                                'na',                    -- settingsFileName
                                'na',                    -- organismDBName
-                               @OrganismID,             -- organismID
-                               @DatasetID,              -- datasetID
-                               IsNull(@Comment, ''),    -- comment
-                               @Owner,                  -- owner
-                               @State,                  -- StateID
+                               @organismID,             -- organismID
+                               @datasetID,              -- datasetID
+                               IsNull(@comment, ''),    -- comment
+                               @owner,                  -- owner
+                               @state,                  -- StateID
                                'Job_Broker',            -- assignedProcessorName
-                               @Results_Folder_Name,    -- resultsFolderName
+                               @results_Folder_Name,    -- resultsFolderName
                                'na',                    -- proteinCollectionList
                                'na',                    -- proteinOptionsList
                                1,                       -- requestID
                                0,                       -- propagationMode                                
-                               @ProcessingTimeMinutes,  -- ProcessingTimeMinutes
+                               @processingTimeMinutes,  -- ProcessingTimeMinutes
                                0                        -- Purged                               
                         --
-                        Select @myRowCount = @@RowCount, @myError = @@Error
+                        Select @myRowCount = @@rowCount, @myError = @@error
                         
                         If @myRowCount = 0
                         Begin
@@ -541,7 +548,7 @@ AS
                             -- Append the job to T_Analysis_Job
                             ------------------------------------------------
 
-                            Set @CurrentLocation = 'Add job ' + @jobStr + ' to T_Analysis_Job using #Tmp_Job_Backfill_Details'
+                            Set @currentLocation = 'Add job ' + @jobStr + ' to T_Analysis_Job using #Tmp_Job_Backfill_Details'
                                                     
                             INSERT INTO T_Analysis_Job
                                    (AJ_jobID, AJ_batchID, AJ_priority, AJ_created, AJ_start, AJ_finish, AJ_analysisToolID, 
@@ -553,9 +560,9 @@ AS
                                 StateID, AssignedProcessorName, ResultsFolderName, ProteinCollectionList, ProteinOptionsList, 
                                 RequestID, PropagationMode, ProcessingTimeMinutes, Purged
                             FROM #Tmp_Job_Backfill_Details
-                            WHERE Job = @Job
+                            WHERE Job = @job
                             --
-                            Select @myRowCount = @@RowCount, @myError = @@Error
+                            Select @myRowCount = @@rowCount, @myError = @@error
                             
                             If @myRowCount = 0
                             Begin
@@ -572,19 +579,19 @@ AS
             END TRY
             BEGIN CATCH 
                 -- Error caught; log the error then continue with the next job to backfill
-                    Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
-                    exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
-                                            @ErrorNum = @myError output, @message = @message output
+                    Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
+                    exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1, 
+                                            @errorNum = @myError output, @message = @message output
             END CATCH
                 
         End -- </b>
 
 NextJob:
 
-        Set @JobsProcessed = @JobsProcessed + 1
+        Set @jobsProcessed = @jobsProcessed + 1
         
-        If @JobsToProcess > 0 And @JobsProcessed >= @JobsToProcess
-            Set @Continue = 0
+        If @jobsToProcess > 0 And @jobsProcessed >= @jobsToProcess
+            Set @continue = 0
             
     End -- </a>
 
@@ -609,7 +616,7 @@ NextJob:
             -- Do not change a job from State 14 to a State > 4
             ------------------------------------------------
             
-            Set @CurrentLocation = 'Synchronize T_Analysis_Job with back-filled DMS_Pipeline jobs'
+            Set @currentLocation = 'Synchronize T_Analysis_Job with back-filled DMS_Pipeline jobs'
             
             MERGE T_Analysis_Job AS target
             USING 
@@ -637,7 +644,7 @@ NextJob:
                     AJ_ProcessingTimeMinutes = source.ProcessingTimeMinutes
             ;
 
-            Select @myRowCount = @@RowCount, @myError = @@Error
+            Select @myRowCount = @@rowCount, @myError = @@error
 
             If @myError <> 0
             Begin
@@ -650,9 +657,9 @@ NextJob:
         END TRY
         BEGIN CATCH 
             -- Error caught; log the error then continue with the next job to backfill
-                Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
-                exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
-                                        @ErrorNum = @myError output, @message = @message output
+                Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
+                exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1, 
+                                        @errorNum = @myError output, @message = @message output
         END CATCH
         
     End -- </f>

@@ -65,15 +65,17 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          05/11/2018 mem - When the settings file is Decon2LS_DefSettings.xml, also match jobs with a settings file of 'na'
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          07/30/2019 mem - Call UpdateCachedJobRequestExistingJobs after creating new jobs
+**          03/10/2021 mem - Add @dataPackageID
+**          03/11/2021 mem - Associate new pipeline-based jobs with their analysis job request
 **
 *****************************************************/
 (
-    @datasetList varchar(max),
+    @datasetList varchar(max),                      -- Ignored if @dataPackageID is a positive integer
     @priority int = 2,
     @toolName varchar(64),
     @parmFileName varchar(255),
     @settingsFileName varchar(255),
-    @organismDBName varchar(128),                   -- 'na' if using protein collections
+    @organismDBName varchar(128),                   -- Legacy FASTA name; 'na' if using protein collections
     @organismName varchar(128),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
@@ -81,10 +83,11 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @requestID int,                                 -- 0 if not associated with a request; otherwise, Request ID in T_Analysis_Job_Request
+    @dataPackageID int = 0,
     @associatedProcessorGroup varchar(64) = '',     -- Processor group; deprecated in May 2015
     @propagationMode varchar(24) = 'Export',        -- 'Export', 'No Export'
     @removeDatasetsWithJobs VARCHAR(12) = 'Y',
-    @mode varchar(12),                              -- 'add', 'update', 'preview'
+    @mode varchar(12),                              -- 'add' or 'preview'
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
@@ -105,9 +108,10 @@ As
     Declare @jobStateID int
     Declare @requestStateID int = 0
     
-    Declare @jobsCreated INT
-    Set @jobsCreated = 0
-
+    Declare @jobCountToBeCreated int = 0
+    Declare @msgForLog varchar(2000)
+    Declare @backfillError int
+    
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -120,12 +124,32 @@ As
     End;
 
     BEGIN TRY 
+    
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
+
+    Set @requestID = IsNull(@requestID, 0)
+
+    Set @dataPackageID = IsNull(@dataPackageID, 0)
+    If @dataPackageID < 0
+        Set @dataPackageID = 0
+
+    Set @datasetList = LTrim(RTrim(IsNull(@datasetList, '')))
 
     ---------------------------------------------------
-    -- list shouldn't be empty
+    -- We either need datasets or a data package
     ---------------------------------------------------
-    If @datasetList = ''
+
+    If @dataPackageID > 0
+    Begin
+        Set @datasetList = ''
+    End
+    Else If @datasetList = ''
+    Begin
         RAISERROR ('Dataset list is empty for request %d', 11, 1, @requestID)
+    End
+
 
     /*
     ---------------------------------------------------
@@ -174,46 +198,86 @@ As
 
     CREATE CLUSTERED INDEX #IX_TD_Dataset_Num ON #TD (Dataset_Num)
 
-    ---------------------------------------------------
-    -- Populate table from dataset list  
-    -- Using Select Distinct to make sure any duplicates are removed
-    ---------------------------------------------------
-    --
-    INSERT INTO #TD
-        (Dataset_Num)
-    SELECT
-        DISTINCT LTrim(RTrim(Item))
-    FROM
-        MakeTableFromList(@datasetList)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-        RAISERROR ('Error populating temporary table for request %d', 11, 7, @requestID)
-    --
-    Set @jobsCreated = @myRowCount
+    If @dataPackageID > 0
+    Begin
+        If @toolName <> 'MaxQuant'
+            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tool is MaxQuant', 11, 7, @toolName)
 
-    -- Make sure the Dataset names do not have carriage returns or line feeds
+        If @requestID <= 0
+            RAISERROR ('Data-package based jobs must be associated with an analysis job request', 11, 7)
+
+        ---------------------------------------------------
+        -- Populate table using the datasets currently associated with the data package
+        -- Remove any duplicates that may be present
+        ---------------------------------------------------
+        --
+        INSERT INTO #TD ( Dataset_Num )
+        SELECT DISTINCT Dataset
+        FROM S_V_Data_Package_Datasets_Export
+        WHERE Data_Package_ID = @dataPackageID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
         
-    UPDATE #td
-    SET Dataset_Num = Replace(Dataset_Num, char(13), '')
-    WHERE Dataset_Num LIKE '%' + char(13) + '%'
+        Set @jobCountToBeCreated = @myRowCount
+        --
+        If @myError <> 0
+            RAISERROR ('Error populating temporary table', 11, 8)
+
+        If @jobCountToBeCreated = 0
+            RAISERROR ('Data package does not have any datasets associated with it', 11, 10)
+    End
+    Else
+    Begin
+        ---------------------------------------------------
+        -- Populate table from dataset list  
+        -- Using Select Distinct to make sure any duplicates are removed
+        ---------------------------------------------------
+        --
+        INSERT INTO #TD
+            (Dataset_Num)
+        SELECT
+            DISTINCT LTrim(RTrim(Item))
+        FROM
+            MakeTableFromList(@datasetList)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Error populating temporary table for request %d', 11, 7, @requestID)
+        --
+        Set @jobCountToBeCreated = @myRowCount
+
+        -- Make sure the Dataset names do not have carriage returns or line feeds
+        
+        UPDATE #td
+        SET Dataset_Num = Replace(Dataset_Num, char(13), '')
+        WHERE Dataset_Num LIKE '%' + char(13) + '%'
     
-    UPDATE #td
-    SET Dataset_Num = Replace(Dataset_Num, char(10), '')
-    WHERE Dataset_Num LIKE '%' + char(10) + '%'
+        UPDATE #td
+        SET Dataset_Num = Replace(Dataset_Num, char(10), '')
+        WHERE Dataset_Num LIKE '%' + char(10) + '%'
+    End
 
-
-    ---------------------------------------------------
-    -- Auto-update @protCollOptionsList if it specifies a decoy search, but we're running MSGFPlus and the parameter file does not contain "NoDecoy"
+     ---------------------------------------------------
+    -- Assure that we are not running a decoy search if using MSGFPlus, TopPIC, or MaxQuant (since those tools auto-add decoys)
+    -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
-        If IsNull(@message, '') = ''
-            Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter file should have tda=1'
+
+        If IsNull(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
+            Set @message = 'Note: changed protein options to forward-only since MS-GF+ parameter files typically have tda=1'
+
+        If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
+            Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
+            
+        If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
+            Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
+
+
     ---------------------------------------------------
     -- Auto-update @ownerPRN to @callingUser if possible
     ---------------------------------------------------
@@ -228,18 +292,19 @@ As
         If Exists (SELECT * FROM T_Users Where U_PRN = @newPRN)
             Set @ownerPRN = @newPRN
     End
+
     ---------------------------------------------------
-    -- If @removeDatasetsWithJobs is not "N" then
+    -- If @removeDatasetsWithJobs is not "N",
     --  find datasets from temp table that have existing
     --  jobs that match criteria from request
-    -- If AJT_orgDbReqd = 0, then we ignore organism, protein collection, and organism DB
+    -- If AJT_orgDbReqd = 0, we ignore organism, protein collection, and organism DB
     ---------------------------------------------------
     --
-    Declare @numMatchingDatasets INT = 0
+    Declare @datasetCountToRemove INT = 0
     
     Declare @removedDatasets VARCHAR(4096) = ''
     --
-    If @removeDatasetsWithJobs <> 'N'
+    If @dataPackageID = 0 And @removeDatasetsWithJobs <> 'N'
     Begin --<remove>
         Declare @matchingJobDatasets Table (
             Dataset varchar(128)
@@ -280,9 +345,9 @@ As
         If @myError <> 0
             RAISERROR ('Error trying to find datasets with existing jobs for request %d', 11, 97, @requestID)
         
-        Set @numMatchingDatasets = @myRowCount
+        Set @datasetCountToRemove = @myRowCount
         
-        If @numMatchingDatasets > 0
+        If @datasetCountToRemove > 0
         Begin --<remove-a>
             -- remove datasets from list that have existing jobs
             --
@@ -291,15 +356,15 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
-            Set @jobsCreated = @jobsCreated - @myRowCount
+            Set @jobCountToBeCreated = @jobCountToBeCreated - @myRowCount
             
             -- make list of removed datasets
             --
             Declare @threshold SMALLINT
             Set @threshold = 5
-            Set @removedDatasets = CONVERT(varchar(12), @numMatchingDatasets) + ' skipped datasets that had existing jobs:'
+            Set @removedDatasets = CONVERT(varchar(12), @datasetCountToRemove) + ' skipped datasets that had existing jobs:'
             SELECT TOP(@threshold) @removedDatasets =  @removedDatasets + Dataset + ', ' FROM @matchingJobDatasets
-            If @numMatchingDatasets > @threshold
+            If @datasetCountToRemove > @threshold
             Begin
                 Set @removedDatasets = @removedDatasets + ' (more datasets not shown)'
             End
@@ -354,6 +419,7 @@ As
     Begin
         Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
     End
+
     ---------------------------------------------------
     -- New jobs typically have state 1
     -- Update @jobStateID to 19="Special Proc. Waiting" if necessary
@@ -366,6 +432,7 @@ As
     Begin
         Set @jobStateID = 19
     End
+
     ---------------------------------------------------
     -- Populate the Dataset_Unreviewed column in #TD
     ---------------------------------------------------
@@ -378,14 +445,193 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    
+    If @dataPackageID > 0
+    Begin        
+        If @mode = 'add'
+        Begin
+            ---------------------------------------------------
+            -- Deal with request
+            ---------------------------------------------------
+            --
+            -- Make sure @requestID is in state 1=new or state 5=new (Review Required)
+                    
+            SELECT @requestStateID = AJR_State
+            FROM T_Analysis_Job_Request
+            WHERE AJR_RequestID = @requestID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            --
+            If @myError <> 0
+                RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
+            
+            Set @requestStateID = IsNull(@requestStateID, 0)
+
+            If @requestStateID IN (1, 5)
+            Begin
+                -- Mark request as used
+                --
+                Set @requestStateID = 2
+                    
+                UPDATE T_Analysis_Job_Request
+                SET AJR_state = @requestStateID
+                WHERE AJR_requestID = @requestID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                --
+                If @myError <> 0
+                    RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
+                        
+                If Len(@callingUser) > 0
+                Begin
+                    -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                    -- to alter the Entered_By field in T_Event_Log
+                    --
+                    Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+                End
+            End
+            Else
+            Begin
+                -- Request ID is non-zero and request is not in state 1 or state 5
+                RAISERROR ('Request is not in state New; cannot create an aggregation job for request %d', 11, 9, @requestID)
+            End
+        End
+
+        If @toolName = 'MaxQuant'
+        Begin
+            Declare @parmFileStoragePath varchar(128)
+
+            SELECT @parmFileStoragePath = AJT_parmFileStoragePath
+            FROM T_analysis_tool
+            WHERE AJT_toolName = @toolName
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+                RAISERROR ('Tool %s not found in T_analysis_tool', 11, 9, @toolName)
+                
+            CREATE TABLE #Tmp_SettingsFile_Values_DataPkgJob (
+                KeyName varchar(512) NULL,
+                Value varchar(512) NULL
+            )
+
+            INSERT INTO #Tmp_SettingsFile_Values_DataPkgJob (KeyName, Value)
+            SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
+                xmlNode.value('@value', 'nvarchar(512)') AS Value
+            FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
+            WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
+
+            Declare @createMzMLFilesFlag varchar(12) = 'False'
+            Declare @msXmlGenerator varchar(64) = ''
+            Declare @msXMLOutputType varchar(32) = ''
+            Declare @centroidMSXML varchar(12) = ''
+            Declare @centroidPeakCountToRetain varchar(12) = ''
+
+            SELECT @msXmlGenerator = Value
+            FROM #Tmp_SettingsFile_Values_DataPkgJob
+            WHERE KeyName = 'MSXMLGenerator'
+
+            SELECT @msXMLOutputType = Value
+            FROM #Tmp_SettingsFile_Values_DataPkgJob
+            WHERE KeyName = 'MSXMLOutputType'
+            
+            SELECT @centroidMSXML = Value
+            FROM #Tmp_SettingsFile_Values_DataPkgJob
+            WHERE KeyName = 'CentroidMSXML'
+                        
+            SELECT @centroidPeakCountToRetain = Value
+            FROM #Tmp_SettingsFile_Values_DataPkgJob
+            WHERE KeyName = 'CentroidPeakCountToRetain'
+
+            If Len(@msXmlGenerator) > 0 And Len(@msXMLOutputType) > 0
+                Set @createMzMLFilesFlag= 'True'
+
+            ---------------------------------------------------
+            -- Add (or preview) a new aggregation job
+            ---------------------------------------------------
+            --
+            Declare @pipelineJob int = 0
+            Declare @resultsFolderName varchar(128)
+            Declare @jobParam varchar(8000) = '
+                <Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
+                <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\' + @toolName + '_Staging" />
+                <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
+                <Param Section="MSXMLGenerator" Name="MSXMLGenerator" Value="' + @msXmlGenerator + '" />
+                <Param Section="MSXMLGenerator" Name="MSXMLOutputType" Value="' + @msXMLOutputType + '" />
+                <Param Section="MSXMLGenerator" Name="CentroidMSXML" Value="' + @centroidMSXML + '" />
+                <Param Section="MSXMLGenerator" Name="CentroidPeakCountToRetain" Value="' + @centroidPeakCountToRetain + '" />
+                <Param Section="PeptideSearch" Name="ParmFileName" Value="' + @parmFileName + ' " />
+                <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="' + @parmFileStoragePath + '" />
+                <Param Section="PeptideSearch" Name="OrganismName" Value="' + @organismName + ' " />
+                <Param Section="PeptideSearch" Name="ProteinCollectionList" Value="' + @protCollNameList + '" />
+                <Param Section="PeptideSearch" Name="ProteinOptions" Value="' +  @protCollOptionsList + '" />
+                <Param Section="PeptideSearch" Name="LegacyFastaFileName" Value="' + @organismDBName + '" />'
+
+            if @mode <> 'add'
+                Set @mode = 'previewAdd'
+
+            -- Call AddUpdateLocalJobInBroker
+            exec @myError = dbo.S_Pipeline_AddUpdateLocalJob
+                                @job = @pipelineJob output,
+                                @scriptName = 'MaxQuant_DataPkg',
+                                @datasetNum = 'Aggregation',
+                                @priority = @priority,
+                                @jobParam = @jobParam,
+                                @comment = @comment,
+                                @ownerPRN = @ownerPRN,
+                                @dataPackageID = @dataPackageID,
+                                @resultsFolderName = @resultsFolderName output,
+                                @mode = @mode,
+                                @message = @message output,
+                                @callingUser = @callingUser,
+                                @debugMode = 0
+
+            if @myError <> 0
+            Begin
+                Set @msgForLog = 'Error code ' + Cast(@myError as varchar(12)) + ' S_Pipeline_AddUpdateLocalJob: ' + IsNull(@message, '??')
+                exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+            End
+
+            If @pipelineJob > 0
+            Begin
+                -- Insert details for the job into T_Analysis_Job
+                exec @backfillError = dbo.BackfillPipelineJobs @infoOnly = 0, @jobsToProcess = 0, @startJob = @pipelineJob, @message = @msgForLog output
+
+                If @backfillError = 0
+                Begin
+                    -- Associate the new job with this job request
+                    --
+                    UPDATE T_Analysis_Job
+                    SET AJ_requestID = @requestID
+                    WHERE AJ_jobID = @pipelineJob
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+                End
+                Else
+                Begin
+                    Set @msgForLog = 'Error code ' + Cast(@backfillError as varchar(12)) + ' calling BackfillPipelineJobs: ' + IsNull(@msgForLog, '??')
+                    exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+                End
+            End
+
+        End
+
+        If @mode = 'add'
+            Set @message = ' Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
+        Else
+            Set @message = ' Would create an aggregation job for '
+
+        Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' datasets'
+
+        Return @myError
+    End
+
     If @mode = 'add'
     Begin
-        If @jobsCreated = 0 AND @numMatchingDatasets > 0
+        If @jobCountToBeCreated = 0 AND @datasetCountToRemove > 0
             RAISERROR ('No jobs were made for request %d because there were existing jobs for all datasets in the list', 11, 94, @requestID)
 
         ---------------------------------------------------
-        -- start transaction
+        -- Start transaction
         ---------------------------------------------------
         --
         Declare @transName varchar(32)
@@ -395,11 +641,10 @@ As
         ---------------------------------------------------
         -- create a new batch if multiple jobs being created
         ---------------------------------------------------
-        Declare @batchID int
-        Set @batchID = 0
+        Declare @batchID int = 0
         --
-        Declare @numDatasets int
-        Set @numDatasets = 0
+        Declare @numDatasets int = 0
+
         SELECT @numDatasets = count(*) FROM #TD
         --
         If @numDatasets = 0
@@ -446,28 +691,25 @@ As
 
             If @requestStateID IN (1, 5)
             Begin
-                If @mode in ('add', 'update')
-                Begin
-                    -- Mark request as used
-                    --
-                    Set @requestStateID = 2
+                -- Mark request as used
+                --
+                Set @requestStateID = 2
                     
-                    UPDATE T_Analysis_Job_Request
-                    SET AJR_state = @requestStateID
-                    WHERE AJR_requestID = @requestID
-                    --
-                    SELECT @myError = @@error, @myRowCount = @@rowcount
-                    --
-                    If @myError <> 0
-                        RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
+                UPDATE T_Analysis_Job_Request
+                SET AJR_state = @requestStateID
+                WHERE AJR_requestID = @requestID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                --
+                If @myError <> 0
+                    RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
                         
-                    If Len(@callingUser) > 0
-                    Begin
-                        -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
-                        -- to alter the Entered_By field in T_Event_Log
-                        --
-                        Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
-                    End
+                If Len(@callingUser) > 0
+                Begin
+                    -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                    -- to alter the Entered_By field in T_Event_Log
+                    --
+                    Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
                 End
             End
             Else
@@ -588,7 +830,7 @@ As
             RAISERROR ('Insert new job operation failed', 11, 7)
         End
         --
-        Set @jobsCreated = @myRowCount
+        Set @jobCountToBeCreated = @myRowCount
 
         If @batchID = 0 AND @myRowCount = 1
         Begin
@@ -707,9 +949,10 @@ Explain:
         Set @message = ' There were '
     Else
         Set @message = ' There would be '
-    Set @message = @message + CONVERT(varchar(12), @jobsCreated) + ' jobs created. '
+
+    Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' jobs created. '
     --
-    If @numMatchingDatasets > 0
+    If @datasetCountToRemove > 0
     Begin
         If @mode = 'add'
             Set @removedDatasets = ' Jobs were not made for ' + @removedDatasets
@@ -717,11 +960,12 @@ Explain:
             Set @removedDatasets = ' Jobs would not be made for ' + @removedDatasets
         Set @message = @message + @removedDatasets
     End
+
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
         
-        Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+        Set @msgForLog = ERROR_MESSAGE()
         
         -- rollback any open transactions
         If (XACT_STATE()) <> 0

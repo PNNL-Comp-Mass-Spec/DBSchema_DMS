@@ -79,6 +79,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          07/30/2019 mem - Update comments and capitalization
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          03/10/2021 mem - Add logic for MaxQuant
 **
 *****************************************************/
 (
@@ -202,7 +203,7 @@ As
     ---------------------------------------------------
     If Not Exists (SELECT * FROM T_Analysis_Tool WHERE (AJT_toolID = @analysisToolID) AND (AJT_active > 0))
     Begin
-        If @mode = 'reset' And @toolName LIKE 'MAC[_]%'
+        If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg')
         Begin
             Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0
@@ -222,7 +223,7 @@ As
     End
 
     ---------------------------------------------------
-    -- get organism ID using organism name
+    -- Get organism ID using organism name
     ---------------------------------------------------
     --
     execute @organismID = GetOrganismID @organismName
@@ -239,23 +240,19 @@ As
     -- Check tool/instrument compatibility for datasets
     ---------------------------------------------------
 
-    -- find datasets that are not compatible with tool
+    -- Find datasets that are not compatible with tool
     --
     Set @list = ''
     --
-    SELECT
-        @list = @list + CASE
-        WHEN @list = '' THEN Dataset_Num
-        ELSE ', ' + Dataset_Num
-        END
-    FROM
-        #TD
-    WHERE
-        IN_class NOT IN ( SELECT AIC.Instrument_Class
-                          FROM T_Analysis_Tool AnTool INNER JOIN
-                               T_Analysis_Tool_Allowed_Instrument_Class AIC ON
-                                 AnTool.AJT_toolID = AIC.Analysis_Tool_ID
-                          WHERE AnTool.AJT_toolName = @toolName)
+    SELECT @list = @list + CASE WHEN @list = '' THEN Dataset_Num
+                                ELSE ', ' + Dataset_Num
+                           END
+    FROM #TD
+    WHERE IN_class NOT IN ( SELECT AIC.Instrument_Class
+                            FROM T_Analysis_Tool AnTool
+                                 INNER JOIN T_Analysis_Tool_Allowed_Instrument_Class AIC
+                                   ON AnTool.AJT_toolID = AIC.Analysis_Tool_ID
+                            WHERE AnTool.AJT_toolName = @toolName )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -285,11 +282,10 @@ As
     --
     Set @list = ''
     --
-    SELECT
-        @list = @list + CASE
-        WHEN @list = '' THEN Dataset_Num
-        ELSE ', ' + Dataset_Num
-        END
+    SELECT @list = @list + CASE WHEN @list = '' THEN Dataset_Num
+                                ELSE ', ' + Dataset_Num
+                           END
+
     FROM #TD
     WHERE Dataset_Type NOT IN ( SELECT ADT.Dataset_Type
                                 FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
@@ -576,9 +572,10 @@ As
     End
 
     ---------------------------------------------------
-    -- Make sure the user is not scheduling an extremely long MSGF+ search
+    -- Make sure the user is not scheduling an extremely long MS-GF+ search (with non-compatible settings)
     -- Also possibly alter @priority
     ---------------------------------------------------
+
     If @organismDBName <> 'na' And @organismDBName <> ''
     Begin
         Declare @FileSizeKB real = 0

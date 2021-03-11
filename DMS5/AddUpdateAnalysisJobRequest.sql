@@ -84,6 +84,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          07/30/2019 mem - Store dataset info in T_Analysis_Job_Request_Datasets instead of AJR_datasets
 **                         - Call UpdateCachedJobRequestExistingJobs after creating / updating an analysis job request
 **          05/28/2020 mem - Auto-update the settings file if the samples used TMTpro
+**          03/10/2021 mem - Add @dataPackageID and remove @adminReviewReqd
 **
 *****************************************************/
 (
@@ -99,7 +100,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @requestorPRN varchar(32),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
-    @adminReviewReqd VARCHAR(32) = 'No',        -- Legacy parameter; no longer used
+    @dataPackageID int = 0,
     @state varchar(32),
     @requestID int output,
     @mode varchar(12) = 'add',                    -- 'add', 'update', or 'PreviewAdd'
@@ -121,6 +122,7 @@ As
 
     Declare @tmtProDatasets int = 0
     Declare @datasetCount int = 0
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -153,14 +155,12 @@ As
     If @requestorPRN = 'H09090911' Or @requestorPRN = 'Autouser'
         RAISERROR ('Cannot add: the "Requested by" PRN cannot be the Autouser', 11, 4)
     
-    ---------------------------------------------------
-    -- Validate @adminReviewReqd
-    ---------------------------------------------------
-    
-    Set @adminReviewReqd = LTrim(RTrim(IsNull(@adminReviewReqd, 'No')))
-    If @adminReviewReqd = 'Y' OR @adminReviewReqd = '1'
-        Set @adminReviewReqd = 'Yes'
-    
+    Set @dataPackageID = IsNull(@dataPackageID, 0)
+    If @dataPackageID < 0
+        Set @dataPackageID = 0
+
+    Set @datasets = LTrim(RTrim(IsNull(@datasets, '')))
+
     ---------------------------------------------------
     -- Resolve mode against presence or absence 
     -- of request in database, and its current state
@@ -231,9 +231,13 @@ As
     End
 
     ---------------------------------------------------
-    -- dataset list shouldn't be empty
+    -- We either need datasets or a data package
     ---------------------------------------------------
-    If @datasets = ''
+
+    If @dataPackageID > 0 And @datasets <> ''
+        RAISERROR ('Dataset list must be empty when a Data Package ID is defined', 11, 1)
+        
+    If @dataPackageID = 0 And @datasets = ''
         RAISERROR ('Dataset list is empty', 11, 1)
 
     ---------------------------------------------------
@@ -257,27 +261,51 @@ As
     If @myError <> 0
         RAISERROR ('Failed to create temporary table', 11, 10)
 
-    ---------------------------------------------------
-    -- Populate table from dataset list
-    -- Remove any duplicates that may be present
-    ---------------------------------------------------
-    --
-    INSERT INTO #TD ( Dataset_Num )
-    SELECT DISTINCT Item
-    FROM MakeTableFromList ( @datasets )
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    SET @datasetCount = @myRowCount
-    --
-    If @myError <> 0
-        RAISERROR ('Error populating temporary table', 11, 8)
+    If @dataPackageID > 0
+    Begin
+        ---------------------------------------------------
+        -- Populate table using the datasets currently associated with the data package
+        -- Remove any duplicates that may be present
+        ---------------------------------------------------
+        --
+        INSERT INTO #TD ( Dataset_Num )
+        SELECT DISTINCT Dataset
+        FROM S_V_Data_Package_Datasets_Export
+        WHERE Data_Package_ID = @dataPackageID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        SET @datasetCount = @myRowCount
+        --
+        If @myError <> 0
+            RAISERROR ('Error populating temporary table', 11, 8)
 
-    ---------------------------------------------------
-    -- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
-    ---------------------------------------------------
-    --
-    DELETE FROM #TD
-    WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
+        If @datasetCount = 0
+            RAISERROR ('Data package does not have any datasets associated with it', 11, 10)
+    End
+    Else
+    Begin
+        ---------------------------------------------------
+        -- Populate table from dataset list
+        -- Remove any duplicates that may be present
+        ---------------------------------------------------
+        --
+        INSERT INTO #TD ( Dataset_Num )
+        SELECT DISTINCT Item
+        FROM MakeTableFromList ( @datasets )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        SET @datasetCount = @myRowCount
+        --
+        If @myError <> 0
+            RAISERROR ('Error populating temporary table', 11, 8)
+
+        ---------------------------------------------------
+        -- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
+        ---------------------------------------------------
+        --
+        DELETE FROM #TD
+        WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
+    End
 
     ---------------------------------------------------
     -- Find the first and last dataset in #td
@@ -394,19 +422,22 @@ As
     WHERE AJT_toolName = @toolName
 
     ---------------------------------------------------
-    -- Assure that we are not running a decoy search if using MSGFPlus or TopPIC
+    -- Assure that we are not running a decoy search if using MSGFPlus, TopPIC, or MaxQuant (since those tools auto-add decoys)
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
         If IsNull(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
-            Set @message = 'Note: changed protein options to forward-only since MSGF+ parameter files typically have tda=1'
+            Set @message = 'Note: changed protein options to forward-only since MS-GF+ parameter files typically have tda=1'
 
         If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
             Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
+            
+        If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
+            Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
 
     ---------------------------------------------------
@@ -521,31 +552,19 @@ As
     ---------------------------------------------------
     -- If mode is add, force @state to 'new'
     ---------------------------------------------------
+    --
     IF @mode IN ('add', 'PreviewAdd')
     BEGIN
-        IF @adminReviewReqd = 'Yes' 
-            -- Lookup the name for state "New (Review Required)"
-            SELECT @state = StateName
-            FROM T_Analysis_Job_Request_State
-            WHERE (ID = 5)
-        ELSE 
-            -- Lookup the name for state "New"
-            SELECT @state = StateName
-            FROM T_Analysis_Job_Request_State
-            WHERE (ID = 1)
-    END
-
-    IF @mode = 'Update' And @adminReviewReqd='Yes' AND @State = 'New'
-    BEGIN
-        -- Change the state to  "New (Review Required)"
+        -- Lookup the name for state "New"
         SELECT @state = StateName
         FROM T_Analysis_Job_Request_State
-        WHERE (ID = 5)
+        WHERE (ID = 1)
     END
 
     ---------------------------------------------------
     -- Resolve state name to ID
     ---------------------------------------------------
+    --
     Declare @stateID int = -1
 
     SELECT @stateID = ID
@@ -583,7 +602,8 @@ As
             AJR_state, 
             AJR_requestor,
             Dataset_Min,
-            Dataset_Max
+            Dataset_Max,
+            Data_Package_ID
         )
         VALUES
         (
@@ -601,7 +621,8 @@ As
             @stateID,
             @userID,
             @datasetMin,
-            @datasetMax
+            @datasetMax,
+            Case When @dataPackageId > 0 Then @dataPackageId Else Null End
         )        
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -672,7 +693,8 @@ As
             AJR_state = @stateID,
             AJR_requestor = @userID,
             Dataset_Min = @datasetMin,
-            Dataset_Max = @datasetMax
+            Dataset_Max = @datasetMax,
+            Data_Package_ID = Case When @dataPackageId > 0 Then @dataPackageId Else Null End
         WHERE (AJR_requestID = @requestID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

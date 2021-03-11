@@ -31,7 +31,8 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset
 **          04/06/2018 mem - Allow Phospho_FDR_Aggregator jobs to have multiple MSGF+ jobs for each dataset
 **          06/12/2018 mem - Send @maxLength to AppendToText
-**          05/01/2019 mem - Fix typo counting Sequest jobs
+**          05/01/2019 mem - Fix typo counting SEQUEST jobs
+**          03/09/2021 mem - Add support for MaxQuant
 **
 *****************************************************/
 (
@@ -58,50 +59,49 @@ AS
         -- and job counts
         ---------------------------------------------------
 
-        CREATE TABLE #TX (
+        CREATE TABLE #Tmp_DataPackageItems (
               Dataset_ID INT ,
               Dataset varchar(256) ,
               Decon2LS_V2 INT NULL ,
               MASIC INT NULL ,
               MSGFPlus INT NULL ,
-              Sequest INT NULL 
+              SEQUEST INT NULL 
             )
 
         ---------------------------------------------------
-        -- populate with package datasets
+        -- Populate with package datasets
         ---------------------------------------------------
 
-        INSERT INTO #TX
-        (Dataset_ID, Dataset)
-        SELECT  DISTINCT 
-            Dataset_ID ,
-            Dataset
-        FROM    S_Data_Package_Datasets AS TPKG
-        WHERE   ( TPKG.Data_Package_ID = @dataPackageID )
+        INSERT INTO #Tmp_DataPackageItems( Dataset_ID,
+                                           Dataset )
+        SELECT DISTINCT Dataset_ID,
+                        Dataset
+        FROM S_Data_Package_Datasets AS TPKG
+        WHERE (TPKG.Data_Package_ID = @dataPackageID)
 
         ---------------------------------------------------
         -- Determine job counts per dataset for required tools
         ---------------------------------------------------
 
-        UPDATE #TX
+        UPDATE #Tmp_DataPackageItems
         Set 
-            Decon2LS_V2 = TZ.Decon2LS_V2,
-            MASIC = Tz.MASIC,
-            MSGFPlus = Tz.MSGFPlus,
-            Sequest = Tz.Sequest
-        FROM #TX INNER JOIN 
+            Decon2LS_V2 = TargetTable.Decon2LS_V2,
+            MASIC = TargetTable.MASIC,
+            MSGFPlus = TargetTable.MSGFPlus,
+            SEQUEST = TargetTable.SEQUEST
+        FROM #Tmp_DataPackageItems INNER JOIN 
         (
             SELECT  
                 TPKG.Dataset,
                 SUM(CASE WHEN TPKG.Tool = 'Decon2LS_V2' THEN 1 ELSE 0 END) AS Decon2LS_V2,
                 SUM(CASE WHEN TPKG.Tool = 'MASIC_Finnigan' AND TD.[Parm File] LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC,
                 SUM(CASE WHEN TPKG.Tool LIKE 'MSGFPlus%' THEN 1 ELSE 0 END) AS MSGFPlus,
-                SUM(CASE WHEN TPKG.Tool LIKE 'Sequest%' THEN 1 ELSE 0 END) AS Sequest
+                SUM(CASE WHEN TPKG.Tool LIKE 'SEQUEST%' THEN 1 ELSE 0 END) AS SEQUEST
             FROM    S_Data_Package_Analysis_Jobs AS TPKG
                     INNER JOIN S_DMS_V_Analysis_Job_Info AS TD ON TPKG.Job = TD.Job
             WHERE   ( TPKG.Data_Package_ID = @dataPackageID )
             GROUP BY TPKG.Dataset
-        ) TZ ON #TX.Dataset = TZ.Dataset
+        ) TargetTable ON #Tmp_DataPackageItems.Dataset = TargetTable.Dataset
 
         
         ---------------------------------------------------
@@ -110,42 +110,53 @@ AS
 
         Declare 
             @errMsg varchar(1024) = '',
-            @DeconToolsCountNotOne int,
-            @MasicCountNotOne int,
-            @MSGFPlusCountExactlyOne int,
-            @MSGFPlusCountNotOne int,
-            @MSGFPlusCountOneOrMore int,
-            @SequestCountExactlyOne int,
-            @SequestCountNotOne int,
-            @SequestCountOneOrMore int
+            @datasetCount int,
+            @deconToolsCountNotOne int,
+            @masicCountNotOne int,
+            @msgfPlusCountExactlyOne int,
+            @msgfPlusCountNotOne int,
+            @msgfPlusCountOneOrMore int,
+            @sequestCountExactlyOne int,
+            @sequestCountNotOne int,
+            @sequestCountOneOrMore int
 
-        SELECT @DeconToolsCountNotOne = COUNT(*) FROM #TX WHERE Decon2LS_V2 <> 1
-        
-        SELECT @MasicCountNotOne = COUNT(*) FROM #TX WHERE MASIC <> 1
-        
-        SELECT @MSGFPlusCountExactlyOne = COUNT(*) FROM #TX WHERE MSGFPlus = 1
-        SELECT @MSGFPlusCountNotOne = COUNT(*) FROM #TX WHERE MSGFPlus <> 1
-        SELECT @MSGFPlusCountOneOrMore = COUNT(*) FROM #TX WHERE MSGFPlus >= 1
-        
-        SELECT @SequestCountExactlyOne = COUNT(*) FROM #TX WHERE Sequest = 1
-        SELECT @SequestCountNotOne = COUNT(*) FROM #TX WHERE Sequest <> 1
-        SELECT @SequestCountOneOrMore = COUNT(*) FROM #TX WHERE Sequest >= 1
+        SELECT @datasetCount = COUNT(*) FROM #Tmp_DataPackageItems
 
-        DROP TABLE #TX
+        SELECT @deconToolsCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE Decon2LS_V2 <> 1
+        
+        SELECT @masicCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MASIC <> 1
+        
+        SELECT @msgfPlusCountExactlyOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus = 1
+        SELECT @msgfPlusCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus <> 1
+        SELECT @msgfPlusCountOneOrMore = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus >= 1
+        
+        SELECT @sequestCountExactlyOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST = 1
+        SELECT @sequestCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST <> 1
+        SELECT @sequestCountOneOrMore = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST >= 1
 
-        If @scriptName Not In ('Global_Label-Free_AMT_Tag')
+        DROP TABLE #Tmp_DataPackageItems
+
+        If @scriptName LIKE ('MaxQuant%')
+        Begin
+            If @datasetCount = 0
+            Begin
+                Set @errMsg = 'Data package currently does not have any datasets'
+            End
+        End
+
+        If Not @scriptName In ('Global_Label-Free_AMT_Tag') AND Not @scriptName LIKE ('MaxQuant%')
         Begin
             If @scriptName = 'PRIDE_Converter'
             Begin
-                If @MSGFPlusCountOneOrMore > 0
+                If @msgfPlusCountOneOrMore > 0
                     Set @tool = 'msgfplus'
-                Else If @SequestCountOneOrMore > 0
+                Else If @sequestCountOneOrMore > 0
                     Set @tool = 'sequest'
             End
    
-            If @tool = '' And @MSGFPlusCountOneOrMore > 0
+            If @tool = '' And @msgfPlusCountOneOrMore > 0
             Begin
-                If @MSGFPlusCountNotOne = 0 And @MSGFPlusCountExactlyOne = @MSGFPlusCountOneOrMore
+                If @msgfPlusCountNotOne = 0 And @msgfPlusCountExactlyOne = @msgfPlusCountOneOrMore
                     Set @tool = 'msgfplus'
                 Else
                 Begin
@@ -153,13 +164,13 @@ AS
                         -- Allow multiple MSGF+ jobs for each dataset
                         Set @tool = 'msgfplus'
                     Else
-                        Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @MSGFPlusCountNotOne) + ' invalid datasets)' 
+                        Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @msgfPlusCountNotOne) + ' invalid datasets)' 
                 End
             End
 
-            If @tool = '' And @SequestCountOneOrMore > 0
+            If @tool = '' And @sequestCountOneOrMore > 0
             Begin
-                If @SequestCountNotOne = 0 And @SequestCountExactlyOne = @SequestCountOneOrMore
+                If @sequestCountNotOne = 0 And @sequestCountExactlyOne = @sequestCountOneOrMore
                     Set @tool = 'sequest'
                 Else
                 Begin
@@ -167,7 +178,7 @@ AS
                         -- Allow multiple Sequest jobs for each dataset
                         Set @tool = 'sequest'
                     Else
-                        Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @SequestCountNotOne) + ' invalid datasets)' 
+                        Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @sequestCountNotOne) + ' invalid datasets)' 
                 End
             End
 
@@ -184,16 +195,16 @@ AS
         
         If @scriptName IN ('Isobaric_Labeling', 'MAC_iTRAQ')
         Begin 
-            If @DeconToolsCountNotOne > 0 
+            If @deconToolsCountNotOne > 0 
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
             
-            If @MasicCountNotOne > 0
+            If @masicCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
         End 
 
         If @scriptName IN ('Global_Label-Free_AMT_Tag')
         Begin 
-            If @DeconToolsCountNotOne > 0
+            If @deconToolsCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
         End
         
