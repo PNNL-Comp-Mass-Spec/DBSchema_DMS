@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 **			08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
 **			04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          03/10/2021 mem - Do not call S_GetNewJobID when @debugMode is non-zero
 **
 *****************************************************/
 (
@@ -47,20 +48,18 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 AS
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @msg varchar(255) = ''
+	Declare @msg varchar(255) = ''
 	
 	Set @dataPackageID = IsNull(@dataPackageID, 0)
 	Set @scriptName = LTrim(RTrim(IsNull(@scriptName, '')))
-	
+	Set @debugMode = IsNull(@debugMode, 0)
+
 	---------------------------------------------------
-	-- create temporary tables to accumulate job steps
-	-- job step dependencies, and job parameters for
-	-- jobs being created
+	-- Create temporary tables to accumulate job steps,
+	-- job step dependencies, and job parameters for jobs being created
 	---------------------------------------------------
 
 	CREATE TABLE #Jobs (
@@ -105,16 +104,15 @@ AS
 	)
 
 	---------------------------------------------------
-	-- script
+	-- Script
 	---------------------------------------------------
 	--
-	declare @pXML xml
-	declare @scriptXML xml
-	declare @tag varchar(8)
-	set @tag = 'unk'
-	--
-	--
-	-- get contents of script and tag for results folder name
+	Declare @pXML xml
+	Declare @scriptXML xml
+	Declare @tag varchar(8) = 'unk'
+	
+    -- Get contents of script and tag for results folder name
+    --
 	SELECT @scriptXML = Contents, @tag = Results_Tag 
 	FROM T_Scripts 
 	WHERE Script = @scriptName
@@ -146,18 +144,21 @@ AS
 	End
 	
 	---------------------------------------------------
-	-- Obtain new job number
+	-- Obtain new job number (if not debugging)
 	---------------------------------------------------
 	--
-	exec @job = S_GetNewJobID 'Created in broker'
-	--
-	if @job = 0
-	begin
-		Set @myError = 50010
-		Set @msg = 'Could not get a valid job number from DMS'
-		RAISERROR (@msg, 15, 1)
-		return @myError
-	end
+    If @debugMode = 0
+    Begin
+	    exec @job = S_GetNewJobID 'Created in broker'
+	    --
+	    if @job = 0
+	    begin
+		    Set @myError = 50010
+		    Set @msg = 'Could not get a valid job number from DMS'
+		    RAISERROR (@msg, 15, 1)
+		    return @myError
+	    end
+    END
 
 	---------------------------------------------------
 	-- Note: @datasetID needs to be 0
@@ -166,8 +167,7 @@ AS
 	--  the job no-longer exists in DMS5 and thus should be deleted
 	---------------------------------------------------
 	
-	declare @datasetID int
-	SET @datasetID = 0
+	Declare @datasetID int = 0
 
 	---------------------------------------------------
 	-- Add job to temp table
@@ -178,7 +178,7 @@ AS
 
 
 	---------------------------------------------------
-	-- get results folder name (and store in #Jobs)
+	-- Get results folder name (and store in #Jobs)
 	---------------------------------------------------
 	-- 
 	exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
@@ -189,7 +189,7 @@ AS
 	End
 	
 	---------------------------------------------------
-	-- create the basic job structure (steps and dependencies)
+	-- Create the basic job structure (steps and dependencies)
 	-- Details are stored in #Job_Steps and #Job_Step_Dependencies
 	---------------------------------------------------
 	-- 
@@ -204,7 +204,7 @@ AS
 
 	
 	---------------------------------------------------
-	-- do special needs for local jobs that target other jobs
+	-- Do special needs for local jobs that target other jobs
 	---------------------------------------------------
 	EXEC AdjustParamsForLocalJob
 		@scriptName ,
@@ -226,7 +226,7 @@ AS
 	End
 
 	---------------------------------------------------
-	-- save job parameters as XML into temp table
+	-- Save job parameters as XML into temp table
 	---------------------------------------------------
 	-- FUTURE: need to get set of parameters normally provided by GetJobParamTable, 
 	-- except for the job specifc ones which need to be provided as initial content of @jobParamXML
@@ -246,7 +246,7 @@ AS
 	end
 			
 	---------------------------------------------------
-	-- handle any step cloning
+	-- Handle any step cloning
 	---------------------------------------------------
 	--
 	exec @myError = CloneJobStep @job, @jobParamXML, @message output
@@ -287,7 +287,7 @@ AS
 	end
 	
 	---------------------------------------------------
-	-- move temp tables to main tables
+	-- Move temp tables to main tables
 	---------------------------------------------------
 	
 	If @debugMode = 0
