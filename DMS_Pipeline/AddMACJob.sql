@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddMACJob
+
+CREATE PROCEDURE [dbo].[AddMACJob]
 /****************************************************
 **
 **  Desc: 
@@ -22,6 +23,7 @@ CREATE PROCEDURE AddMACJob
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			11/15/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**          03/09/2021 mem - Rename variable
 **
 *****************************************************/
 (
@@ -45,6 +47,7 @@ AS
 	
 	Declare @DebugMode tinyint = 0
 	Declare @logErrors tinyint = 1
+    Declare @result int = 0
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -53,14 +56,14 @@ AS
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'AddMACJob', @raiseError = 1;
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	Begin TRY
 
 		---------------------------------------------------
-		-- does data package exist?
+		-- Does data package exist?
 		---------------------------------------------------
 		
 		Declare 
@@ -80,7 +83,7 @@ AS
 			RAISERROR('Data package has no analysis jobs', 11, 21)
 												
 		---------------------------------------------------
-		-- get script
+		-- Get script
 		---------------------------------------------------
 		
 		Declare 
@@ -96,28 +99,27 @@ AS
 		WHERE Script = @scriptName
 		
 		If @scriptID IS NULL
-			 RAISERROR('Scrit "%s" could not be found', 11, 22, @scriptName)
+			 RAISERROR('Script "%s" could not be found', 11, 22, @scriptName)
 		
 		If @scriptEnabled = 'N'
 			 RAISERROR('Script "%s" is not enabled', 11, 23, @scriptName)
 
 		---------------------------------------------------
-		-- is data package set up correctly for the job?
+		-- Is data package set up correctly for the job?
 		---------------------------------------------------
 		
 		Declare 
 			@tool varchar(64) = '',			-- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-			@msg varchar(512) = '',	                 
-			@valid INT = 0
+			@msg varchar(512) = ''
 
-		EXEC @valid = dbo.ValidateDataPackageForMACJob
+		EXEC @result = dbo.ValidateDataPackageForMACJob
 								@DataPackageID,
 								@scriptName,						
 								@tool output,
 								'validate', 
 								@msg output
 		
-		If @valid <> 0
+		If @result <> 0
 		Begin
 			-- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
 			Set @logErrors = 0
@@ -126,7 +128,7 @@ AS
 		End
 		
 		---------------------------------------------------
-		-- get default job parameters from script
+		-- Get default job parameters from script
 		---------------------------------------------------
 
 		CREATE TABLE  #MACJobParams  (
@@ -149,11 +151,12 @@ AS
 			@scriptParameters.nodes('//Param') AS R(xmlNode)
 
 		---------------------------------------------------
-		-- parameter overrides for job
+		-- Parameter overrides for job
 		-- (directly modifies #MACJobParams)
 		---------------------------------------------------
 		
-		Declare @result INT = 0
+		Set @result = 0
+
 		Set @msg = ''		
 		
 		EXEC @result = MapMACJobParameters
@@ -168,7 +171,7 @@ AS
 			RAISERROR(@msg, 11, 25)
 						
 		---------------------------------------------------
-		-- build final job param XML for creating job
+		-- Build final job param XML for creating job
 		---------------------------------------------------
 		
 		Declare @jobParamXML XML
@@ -192,11 +195,11 @@ AS
 		End --<debug>               
 
 		---------------------------------------------------
-		-- add mode
+		-- Add mode
 		---------------------------------------------------
 
 		If @mode = 'add'
-		Begin --<add>
+		Begin -- <add>
 
 			Declare 
 					@datasetNum varchar(256) = 'Aggregation',
@@ -221,7 +224,7 @@ AS
 					@message output,
 					@callingUser
 
-		End --<add>
+		End -- </add>
 
 	End TRY
 	Begin CATCH 
