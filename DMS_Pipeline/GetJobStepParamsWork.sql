@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetJobStepParamsWork
+
+CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
 /****************************************************
 **
 **	Desc:
@@ -36,6 +37,7 @@ CREATE PROCEDURE GetJobStepParamsWork
 **			06/20/2016 mem - Update procedure name shown when using @debugMode
 **			05/13/2017 mem - Include info from T_Remote_Info if Remote_Info_ID is not 1
 **			05/16/2017 mem - Include RemoteTimestamp if defined
+**          03/12/2021 mem - Add ToolName (which tracks the pipeline script name) if not present in T_Job_Parameters
 **    
 *****************************************************/
 (
@@ -55,6 +57,7 @@ AS
 	Declare @outputFolderName varchar(128) = ''
 	
 	Declare @dataPackageID int = 0
+    Declare @scriptName varchar(128) = ''
 
 	Declare @remoteInfoId int
 	Declare @remoteInfo varchar(900) = ''
@@ -104,10 +107,11 @@ AS
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get shared results folder name list'
 
 	---------------------------------------------------
-	-- Lookup data package ID in T_Jobs
+	-- Lookup data package ID and script name in T_Jobs
 	---------------------------------------------------
 	--
-	SELECT @dataPackageID = DataPkgID
+	SELECT @dataPackageID = DataPkgID, 
+           @scriptName = Script
 	FROM T_Jobs 
 	WHERE Job = @jobNumber
 
@@ -219,6 +223,13 @@ AS
 	
 	INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
 	
+    -- Add ToolName if not present in T_Job_Parameters
+    -- This will be the case for jobs created directly in the pipeline database (including MAC jobs and MaxQuant_DataPkg jobs)
+    If Not Exists (Select * from #Tmp_JobParamsTable Where [Section] = 'JobParameters' and [Name] = 'ToolName')
+    Begin
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'ToolName', @scriptName)
+    End
+
 	If @debugMode <> 0
 		Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job parameters using cross apply'
 
