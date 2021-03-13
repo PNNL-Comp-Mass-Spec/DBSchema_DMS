@@ -51,7 +51,9 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          10/18/2018 mem - Add output parameter @message
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
-**          12/14/2020 mem - Added support for completion code 18 (SKIPPED_MZ_REFINERY)
+**          12/14/2020 mem - Add support for completion code 18 (CLOSEOUT_SKIPPED_MZ_REFINERY)
+**          03/12/2021 mem - Add support for completion codes 21 (CLOSEOUT_SKIPPED_MSXML_GEN) and 22 (CLOSEOUT_SKIPPED_MAXQUANT)
+**                         - Expand @completionMessage and @evaluationMessage to varchar(512)
 **
 *****************************************************/
 (
@@ -212,11 +214,25 @@ As
             Set @completionCodeDescription = 'Unable to use MZ_Refinery'
         End
 
-        If @completionCode = 18  -- SKIPPED_MZ_REFINERY
+        If @completionCode = 18  -- CLOSEOUT_SKIPPED_MZ_REFINERY
         Begin
             Set @stepState = 3 -- skipped
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Skipped MZ_Refinery'
+        End
+
+        If @completionCode = 21  -- CLOSEOUT_SKIPPED_MSXML_GEN
+        Begin
+            Set @stepState = 3 -- skipped
+            Set @handleSkippedStep = 1
+            Set @completionCodeDescription = 'Skipped MSXml_Gen'
+        End
+
+        If @completionCode = 22  -- CLOSEOUT_SKIPPED_MAXQUANT
+        Begin
+            Set @stepState = 3 -- skipped
+            Set @handleSkippedStep = 1
+            Set @completionCodeDescription = 'Skipped MaxQuant'
         End
 
         If @completionCode = 20  -- CLOSEOUT_NO_DATA
