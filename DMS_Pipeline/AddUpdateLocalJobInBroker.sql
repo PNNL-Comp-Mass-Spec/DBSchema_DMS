@@ -78,6 +78,7 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
     
+    Declare @msgForLog varchar(4000)
     Declare @jobParamXML XML
     Declare @logErrors tinyint = 1
     Declare @result int = 0

@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_Jobs](
 	[Runtime_Minutes] [real] NULL,
 	[Archive_Busy] [tinyint] NOT NULL,
 	[Transfer_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Storage_Server] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Special_Processing] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Owner] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
