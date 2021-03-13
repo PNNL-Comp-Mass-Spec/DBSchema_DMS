@@ -102,6 +102,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **                         - Use column ProcTimeMinutes_CompletedSteps in V_Job_Processing_Time
 **          05/10/2018 mem - Append to the job comment, rather than replacing it (provided the job completed successfully)
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          03/12/2021 mem - Expand @comment to varchar(1024)
 **    
 *****************************************************/
 (
@@ -164,8 +165,9 @@ As
     ---------------------------------------------------
 
     ---------------------------------------------------
-    -- table variable to hold state changes
+    -- Table variable to hold state changes
     ---------------------------------------------------
+    --
     CREATE TABLE #Tmp_ChangedJobs (
         Job int,
         NewState int,
@@ -207,7 +209,7 @@ As
            Dataset,
            Dataset_ID
     FROM (
-        -- look at the state of steps for active or failed jobs
+        -- Look at the state of steps for active or failed jobs
         -- and determine what the new state of each job should be
         SELECT 
           J.Job,
@@ -217,10 +219,10 @@ As
           CASE 
             WHEN JS_Stats.Failed > 0 THEN 5                                        -- Job Failed
             WHEN JS_Stats.FinishedOrSkipped = Total THEN 
-                CASE WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7    -- No Intermediate Files Created (all steps skipped)
-                Else 4                                                            -- Job Complete
+                CASE WHEN JS_Stats.FinishedOrSkipped = JS_Stats.Skipped THEN 7     -- No Intermediate Files Created (all steps skipped)
+                Else 4                                                             -- Job Complete
                 End            
-            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2                    -- Job In Progress
+            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2                      -- Job In Progress
             Else J.State
           End AS NewState,
           J.Dataset,
@@ -251,7 +253,7 @@ As
             FROM T_Job_Steps JS
                  INNER JOIN T_Jobs J
                    ON JS.Job = J.Job
-            WHERE (J.State IN (1,2,5,20))    -- Job state (not step state!) new, in progress, failed, or resuming state
+            WHERE (J.State IN (1,2,5,20))    -- Job state (not step state!): new, in progress, failed, or resuming state
             GROUP BY JS.Job, J.State
            ) AS JS_Stats 
            INNER JOIN T_Jobs AS J
@@ -338,7 +340,7 @@ As
             -- Roll up step completion comments
             ---------------------------------------------------
             --
-            Declare @comment varchar(512) = ''
+            Declare @comment varchar(1024) = ''
             --
             SELECT @comment = @comment + CASE 
                                             WHEN LTrim(RTrim(Completion_Message)) = '' 
@@ -399,7 +401,7 @@ As
                     Comment = 
                         CASE WHEN @newJobStateInBroker IN (5) THEN @Comment     -- 5=Failed                        
                         WHEN @newJobStateInBroker IN (4, 7)                     -- 4=Complete, 7=No Intermediate Files Created
-                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ', 512)
+                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ', 1024)
                         ELSE Comment
                         END,
                     Runtime_Minutes = @ProcessingTimeMinutes
@@ -509,6 +511,12 @@ As
                 -- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job
                 --  and if the values don't match, the update is not performed
                 
+                Declare @jobCommentAddnl varchar(512)
+                If Len(@comment) <= 512
+                    Set @jobCommentAddnl = @comment
+                Else
+                    Set @jobCommentAddnl = Substring(@comment, 1, 512)
+
                 If @Job % 2 = 0
                     Set @UpdateCode = (@Job % 220) + 14
                 Else
@@ -522,7 +530,7 @@ As
                         @JobFinish = @FinishMax,
                         @ResultsFolderName = @resultsFolderName,
                         @AssignedProcessor = 'Job_Broker',
-                        @JobCommentAddnl = @comment,
+                        @JobCommentAddnl = @jobCommentAddnl,
                         @OrganismDBName = @orgDBName,
                         @ProcessingTimeMinutes = @ProcessingTimeMinutes,
                         @UpdateCode = @UpdateCode,
@@ -579,7 +587,7 @@ As
     -- Also look for jobs listed as new that are actually in progress
     ---------------------------------------------------
     --    
-    If @BypassDMS = 0
+    If @bypassDMS = 0
     Begin -- <a2>
         Declare @JobsToReset AS Table (
             Job int not null, 

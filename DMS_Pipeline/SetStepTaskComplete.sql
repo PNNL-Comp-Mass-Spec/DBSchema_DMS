@@ -58,9 +58,9 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @job int,
     @step int,
     @completionCode int,
-    @completionMessage varchar(256) = '',
+    @completionMessage varchar(512) = '',
     @evaluationCode int = 0,
-    @evaluationMessage varchar(256) = '',
+    @evaluationMessage varchar(512) = '',
     @organismDBName varchar(128) = '',
     @remoteInfo varchar(900) = '',          -- Remote server info for jobs with @completionCode = 25
     @remoteTimestamp varchar(24) = null,    -- Timestamp for the .info file for remotely running jobs (e.g. "20170515_1532" in file Job1449504_Step03_20170515_1532.info)
