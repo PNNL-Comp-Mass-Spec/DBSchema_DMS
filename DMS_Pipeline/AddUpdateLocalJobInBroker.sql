@@ -351,7 +351,7 @@ AS
                 WHERE message = @logMessage AND
                       ABS(DATEDIFF(SECOND, posting_time, GetDate())) < 15
                 --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
+                SELECT @myRowCount = @@rowcount
 
                 If @myRowCount > 0
                     Exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'posting_time'
