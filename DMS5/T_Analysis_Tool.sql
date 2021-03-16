@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[T_Analysis_Tool](
 	[x_Unused_AJT_toolTag] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJT_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Use_SpecialProcWaiting] [tinyint] NOT NULL,
+	[SettingsFileRequired] [tinyint] NOT NULL,
+	[ParamFileRequired] [tinyint] NOT NULL,
  CONSTRAINT [T_Analysis_Tool_PK] PRIMARY KEY CLUSTERED 
 (
 	[AJT_toolID] ASC
@@ -51,6 +53,10 @@ GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_AJT_extractionRequired]  DEFAULT ('N') FOR [AJT_extractionRequired]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_Use_SpecialProcWaiting]  DEFAULT ((0)) FOR [Use_SpecialProcWaiting]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_SettingsFileRequired]  DEFAULT ((1)) FOR [SettingsFileRequired]
+GO
+ALTER TABLE [dbo].[T_Analysis_Tool] ADD  CONSTRAINT [DF_T_Analysis_Tool_ParamFileRequired]  DEFAULT ((1)) FOR [ParamFileRequired]
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_T_Param_File_Types] FOREIGN KEY([AJT_paramFileType])
 REFERENCES [dbo].[T_Param_File_Types] ([Param_File_Type_ID])
