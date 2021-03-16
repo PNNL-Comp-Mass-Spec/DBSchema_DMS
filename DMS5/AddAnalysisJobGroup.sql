@@ -502,6 +502,7 @@ As
             Declare @msXMLOutputType varchar(32) = ''
             Declare @centroidMSXML varchar(12) = ''
             Declare @centroidPeakCountToRetain varchar(12) = ''
+            Declare @cacheFolderRootPath varchar(128) = ''
 
             SELECT @msXmlGenerator = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
@@ -510,17 +511,28 @@ As
             SELECT @msXMLOutputType = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'MSXMLOutputType'
-            
+
             SELECT @centroidMSXML = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CentroidMSXML'
-                        
+
             SELECT @centroidPeakCountToRetain = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CentroidPeakCountToRetain'
 
+            SELECT @cacheFolderRootPath = Value
+            FROM #Tmp_SettingsFile_Values_DataPkgJob
+            WHERE KeyName = 'CacheFolderRootPath'
+
             If Len(@msXmlGenerator) > 0 And Len(@msXMLOutputType) > 0
+            Begin
                 Set @createMzMLFilesFlag= 'True'
+            End
+
+            If Len(@cacheFolderRootPath) = 0
+            Begin
+                RAISERROR ('%s settings file is missing parameter CacheFolderRootPath', 11, 9, @toolName)
+            End
 
             ---------------------------------------------------
             -- Add (or preview) a new aggregation job
@@ -530,8 +542,8 @@ As
             Declare @resultsFolderName varchar(128)
             Declare @jobParam varchar(8000) = '
                 <Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
-                <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\' + @toolName + '_Staging" />
                 <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
+                <Param Section="JobParameters" Name="CacheFolderRootPath" Value="' + @cacheFolderRootPath + '" />
                 <Param Section="MSXMLGenerator" Name="MSXMLGenerator" Value="' + @msXmlGenerator + '" />
                 <Param Section="MSXMLGenerator" Name="MSXMLOutputType" Value="' + @msXMLOutputType + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidMSXML" Value="' + @centroidMSXML + '" />
