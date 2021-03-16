@@ -463,33 +463,10 @@ As
             --
             If @myError <> 0
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
-            
+
             Set @requestStateID = IsNull(@requestStateID, 0)
 
-            If @requestStateID IN (1, 5)
-            Begin
-                -- Mark request as used
-                --
-                Set @requestStateID = 2
-                    
-                UPDATE T_Analysis_Job_Request
-                SET AJR_state = @requestStateID
-                WHERE AJR_requestID = @requestID
-                --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
-                --
-                If @myError <> 0
-                    RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
-                        
-                If Len(@callingUser) > 0
-                Begin
-                    -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
-                    -- to alter the Entered_By field in T_Event_Log
-                    --
-                    Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
-                End
-            End
-            Else
+            If Not @requestStateID IN (1, 5)
             Begin
                 -- Request ID is non-zero and request is not in state 1 or state 5
                 RAISERROR ('Request is not in state New; cannot create an aggregation job for request %d', 11, 9, @requestID)
@@ -615,12 +592,45 @@ As
 
         End
 
-        If @mode = 'add'
-            Set @message = ' Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
-        Else
-            Set @message = ' Would create an aggregation job for '
+        If @myError = 0 And @mode = 'add'
+        Begin
+            ---------------------------------------------------
+            -- Mark request as used
+            ---------------------------------------------------
+            --
+            Set @requestStateID = 2
 
-        Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' datasets'
+            UPDATE T_Analysis_Job_Request
+            SET AJR_state = @requestStateID
+            WHERE AJR_requestID = @requestID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            --
+            If @myError <> 0
+                RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
+
+            If Len(@callingUser) > 0
+            Begin
+                -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                -- to alter the Entered_By field in T_Event_Log
+                --
+                Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+            End
+
+            Set @message = ' Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
+        End
+        Else
+        Begin
+            If @myError = 0
+            Begin
+                Set @message = ' Would create an aggregation job for '
+            End
+        End
+
+        If @myError = 0
+        Begin
+            Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' datasets'
+        End
 
         Return @myError
     End
