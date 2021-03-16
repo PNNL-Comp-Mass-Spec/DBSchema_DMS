@@ -80,6 +80,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          03/10/2021 mem - Add logic for MaxQuant
+**          03/15/2021 mem - Validate that the settings file and/or parameter file are defined for tools that require them
 **
 *****************************************************/
 (
@@ -115,10 +116,14 @@ As
 
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
 
-    Declare @list varchar(1024)
-    Declare @ParamFileTool varchar(128) = '??NoMatch??'
-    Declare @SettingsFileTool varchar(128)
+    Declare @datasetList varchar(1024)
+    Declare @paramFileTool varchar(128) = '??NoMatch??'
+    Declare @settingsFileTool varchar(128)
     Declare @result int
+
+    Declare @toolActive tinyint = 0
+    Declare @settingsFileRequired tinyint = 0
+    Declare @paramFileRequired tinyint = 0
 
     ---------------------------------------------------
     -- Validate the datasets in #TD
@@ -185,10 +190,11 @@ As
     End
 
     ---------------------------------------------------
-    -- get analysis tool ID from tool name
+    -- Get analysis tool ID from tool name
     ---------------------------------------------------
     --
     execute @analysisToolID = GetAnalysisToolID @toolName
+
     If @analysisToolID = 0
     Begin
         Set @message = 'Could not find entry in database for analysis tool "' + @toolName + '"'
@@ -199,9 +205,19 @@ As
     End
 
     ---------------------------------------------------
+    -- Verify the tool name and get its requirements
+    ---------------------------------------------------
+    --
+    SELECT @toolActive = AJT_Active,
+           @settingsFileRequired = SettingsFileRequired,
+           @paramFileRequired = ParamFileRequired
+    FROM T_Analysis_Tool 
+    WHERE AJT_toolID = @analysisToolID
+
+    ---------------------------------------------------
     -- Make sure the analysis tool is active
     ---------------------------------------------------
-    If Not Exists (SELECT * FROM T_Analysis_Tool WHERE (AJT_toolID = @analysisToolID) AND (AJT_active > 0))
+    If @toolActive = 0
     Begin
         If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg')
         Begin
@@ -242,11 +258,13 @@ As
 
     -- Find datasets that are not compatible with tool
     --
-    Set @list = ''
+    Set @datasetList = ''
     --
-    SELECT @list = @list + CASE WHEN @list = '' THEN Dataset_Num
-                                ELSE ', ' + Dataset_Num
-                           END
+    SELECT @datasetList = @datasetList + 
+                          CASE WHEN @datasetList = '' 
+                               THEN Dataset_Num
+                               ELSE ', ' + Dataset_Num
+                          END
     FROM #TD
     WHERE IN_class NOT IN ( SELECT AIC.Instrument_Class
                             FROM T_Analysis_Tool AnTool
@@ -265,9 +283,9 @@ As
         return 51007
     End
 
-    If @list <> ''
+    If @datasetList <> ''
     Begin
-        Set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+        Set @message = 'The instrument class for the following datasets is not compatible with the analysis tool: "' + @datasetList + '"'
         If @showDebugMessages <> 0
             print @message
 
@@ -280,12 +298,13 @@ As
 
     -- find datasets that are not compatible with tool
     --
-    Set @list = ''
+    Set @datasetList = ''
     --
-    SELECT @list = @list + CASE WHEN @list = '' THEN Dataset_Num
-                                ELSE ', ' + Dataset_Num
-                           END
-
+    SELECT @datasetList = @datasetList + 
+                          CASE WHEN @datasetList = '' 
+                               THEN Dataset_Num
+                               ELSE ', ' + Dataset_Num
+                          END
     FROM #TD
     WHERE Dataset_Type NOT IN ( SELECT ADT.Dataset_Type
                                 FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
@@ -304,24 +323,45 @@ As
         return 51008
     End
 
-    If @list <> ''
+    If @datasetList <> ''
     Begin
-        Set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @list + '"'
+        Set @message = 'The dataset type for the following datasets is not compatible with the analysis tool: "' + @datasetList + '"'
         If @showDebugMessages <> 0
             print @message
 
         return 51008
     End
 
-
     ---------------------------------------------------
     -- Make sure settings for which 'na' is acceptable truly have lowercase 'na' and not 'NA' or 'n/a'
-    -- Note that Sql server string comparisons are not case-sensitive, but VB.NET string comparisons are
-    --  Therefore, @settingsFileName needs to be lowercase 'na' for compatibility with the analysis manager
     ---------------------------------------------------
     --
     Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
     Set @parmFileName =        dbo.ValidateNAParameter(@parmFileName, 1)
+
+    ---------------------------------------------------
+    -- Check for settings file or parameter file being 'na' when not allowed
+    ---------------------------------------------------
+    
+    If @settingsFileRequired > 0 And @settingsFileName = 'na'
+    Begin
+        Set @message = 'A settings file is required for analysis tool "' + @toolName + '"'
+        
+        If @showDebugMessages <> 0
+            print @message
+
+        return 51009
+    End
+
+    If @paramFileRequired > 0 And @parmFileName = 'na'
+    Begin
+        Set @message = 'A parameter file is required for analysis tool "' + @toolName + '"'
+        
+        If @showDebugMessages <> 0
+            print @message
+
+        return 51010
+    End
 
     ---------------------------------------------------
     -- Validate param file for tool
@@ -350,14 +390,14 @@ As
                       (ToolList.AJT_toolName = @toolName)
                 )
             Begin
-                SELECT TOP 1 @ParamFileTool = ToolList.AJT_toolName
+                SELECT TOP 1 @paramFileTool = ToolList.AJT_toolName
                 FROM T_Param_Files PF
                      INNER JOIN T_Analysis_Tool ToolList
                  ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
                 WHERE (PF.Param_File_Name = @parmFileName)
                 ORDER BY ToolList.AJT_toolID
 
-                Set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@ParamFileTool, '??') + '; not ' + IsNull(@toolName, '??')
+                Set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@paramFileTool, '??') + '; not ' + IsNull(@toolName, '??')
                 If @showDebugMessages <> 0
                     print @message
 
@@ -382,9 +422,6 @@ As
 
     ---------------------------------------------------
     -- Validate settings file for tool
-    -- We used to check for the existence of settings files on disk (in the DMS_Parameter_Files share)
-    -- However, settings files for tools that use the Job Broker now only live in the T_Settings_Files table,
-    --  so we will simply check for an entry in that table
     ---------------------------------------------------
 
     If @settingsFileName <> 'na'
@@ -402,7 +439,7 @@ As
                 print @message
 
             return 53108
-        end
+        End
 
         -- The specified settings file is valid
         -- Make sure the settings file tool corresponds to @toolName
@@ -415,14 +452,14 @@ As
             )
         Begin
 
-            SELECT TOP 1 @SettingsFileTool = SFP.Analysis_Tool
+            SELECT TOP 1 @settingsFileTool = SFP.Analysis_Tool
             FROM V_Settings_File_Picklist SFP
                     INNER JOIN T_Analysis_Tool ToolList
                     ON SFP.Analysis_Tool = ToolList.AJT_toolName
             WHERE (SFP.File_Name = @settingsFileName)
             ORDER BY ToolList.AJT_toolID
 
-            Set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @SettingsFileTool + '; not ' + @toolName
+            Set @message = 'Settings file "' + @settingsFileName + '" is for tool ' + @settingsFileTool + '; not ' + @toolName
             If @showDebugMessages <> 0
                 print @message
 
