@@ -79,7 +79,7 @@ FROM S_V_BTO_ID_to_Name AS BTO
                         ON DS.Exp_ID = E.Exp_ID
                       INNER JOIN T_Organisms ExpOrg
                         ON E.EX_organism_ID = ExpOrg.Organism_ID
-                      INNER JOIN V_Dataset_Folder_Paths AS DFP
+                      LEFT OUTER JOIN V_Dataset_Folder_Paths AS DFP
                         ON DFP.Dataset_ID = DS.Dataset_ID
                       INNER JOIN T_Storage_Path AS SPath
                         ON DS.DS_storage_path_ID = SPath.SP_path_ID

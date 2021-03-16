@@ -37,7 +37,7 @@ FROM dbo.T_Analysis_Job AJ
        ON AJ.AJ_analysisToolID = Tool.AJT_toolID
      INNER JOIN dbo.T_Analysis_State_Name ASN
        ON AJ.AJ_StateID = ASN.AJS_stateID
-     INNER JOIN V_Dataset_Folder_Paths DFP
+     LEFT OUTER JOIN V_Dataset_Folder_Paths DFP
        ON AJ.AJ_datasetID = DFP.Dataset_ID
 
 
