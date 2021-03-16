@@ -7,8 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 /****************************************************
 **
-**  Desc:   Create or edit analysis job directly in broker database 
-**    
+**  Desc:   Create or edit analysis job directly in broker database
+**
 **  Example contents of @jobParam
 **  Note that element and attribute names are case sensitive (use Value= and not value=)
 **  Default parameters for each job script are defined in the Parameters column of table T_Scripts
@@ -55,6 +55,8 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          01/21/2021 mem - Log @jobParam to T_Log_Entries when @debugMode is 2
 **          03/10/2021 mem - Make @jobParam an input/output variable when calling VerifyJobParameters
 **                         - Send @dataPackageID and @debugMode to VerifyJobParameters
+**          03/15/2021 mem - Fix bug in the Catch block that changed @myError
+**                         - If VerifyJobParameters returns an error, return the error message in @message
 **
 *****************************************************/
 (
@@ -74,20 +76,22 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
-    Declare @msgForLog varchar(4000)
+
     Declare @jobParamXML XML
     Declare @logErrors tinyint = 1
     Declare @result int = 0
 
+    Declare @tool varchar(64) = ''
+    Declare @msg varchar(512) = ''
+
     Set @dataPackageID = IsNull(@dataPackageID, 0)
-    
+
     Declare @reset CHAR(1) = 'N'
     If @mode = 'reset'
-    Begin 
+    Begin
         Set @mode = 'update'
         Set @reset = 'Y'
     End
@@ -100,21 +104,21 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     Begin TRY
 
         ---------------------------------------------------
         -- does job exist
         ---------------------------------------------------
-        
-        Declare 
+
+        Declare
             @id int = 0,
             @state int = 0
         --
@@ -123,13 +127,13 @@ AS
             @state = State
         FROM dbo.T_Jobs
         WHERE Job = @job
-        
+
         If @mode = 'update' AND @id = 0
             RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
         If @mode = 'update' AND @datasetNum <> 'Aggregation'
             RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
-            
+
         ---------------------------------------------------
         -- Verify parameters
         ---------------------------------------------------
@@ -144,14 +148,22 @@ AS
         -- exec PostLogEntry 'Debug', @jobParam, 'AddUpdateLocalJobInBroker'
         -- goto done
 
-        exec @myError = VerifyJobParameters @jobParam output, @scriptName, @dataPackageID, @message output, @debugMode
+        exec @myError = VerifyJobParameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
 
         If @myError > 0
         Begin
-            Set @message = 'Error message for job ' + Cast(@job as varchar(9)) + ' from VerifyJobParameters: ' + @message
+            Set @message = 'Error from VerifyJobParameters'
+            If @job > 0
+            Begin
+                Set @message = @message + ' (Job ' + Cast(@job as varchar(9)) + ')'
+            End
+
+            Set @message = @message + ': ' + @msg
+            print @message
+
             RAISERROR(@message, 11, @myError)
         End
-        
+
         If IsNull(@ownerPRN, '') = ''
         Begin
             -- Auto-define the owner
@@ -163,41 +175,38 @@ AS
             ---------------------------------------------------
             -- Is data package set up correctly for the job?
             ---------------------------------------------------
-            
-            Declare 
-                @tool VARCHAR(64) = '',            -- PSM analysis tool used by jobs in the data package; only used by scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-                @msg VARCHAR(512) = ''
 
+            -- Validate scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
             EXEC @result = dbo.ValidateDataPackageForMACJob
                                     @dataPackageID,
-                                    @scriptName,                        
+                                    @scriptName,
                                     @tool output,
-                                    'validate', 
+                                    'validate',
                                     @msg output
-            
+
             If @result <> 0
             Begin
                 -- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
                 Set @logErrors = 0
-                
+
                 RAISERROR('%s', 11, 24, @msg)
             End
         End
-        
+
         ---------------------------------------------------
-        -- update mode 
+        -- update mode
         -- restricted to certain job states and limited to certain fields
         -- force reset of job?
         ---------------------------------------------------
-        
+
         If @mode = 'update'
         Begin --<update>
             Declare @updateTran varchar(32) = 'Update PipelineJob'
 
             Begin Tran @updateTran
-            
+
             Set @jobParamXML = CONVERT(XML, @jobParam)
-            
+
             -- Update job and params
             --
             UPDATE   dbo.T_Jobs
@@ -230,14 +239,14 @@ AS
                 --   'CacheFolderPath'
                 --   'transferFolderPath'
                 ---------------------------------------------------
-                                
+
                 exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
-                
+
                 If @paramsUpdated <> 0
-                Begin 
+                Begin
                     Set @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
                 End
-                
+
             End
 
             If @state IN (1, 4, 5)
@@ -247,26 +256,26 @@ AS
                 UPDATE   dbo.T_Job_Parameters
                 SET      Parameters = @jobParamXML
                 WHERE    job = @job
-            
+
                 ---------------------------------------------------
                 -- Lookup the transfer folder path from the job parameters
                 ---------------------------------------------------
                 --
                 Declare @TransferFolderPath varchar(512) = ''
-            
+
                 SELECT @TransferFolderPath = [Value]
                 FROM dbo.GetJobParamTableLocal ( @Job )
                 WHERE [Name] = 'transferFolderPath'
-            
+
                 If IsNull(@TransferFolderPath, '') <> ''
                 Begin
                     UPDATE T_Jobs
                     SET Transfer_Folder_Path = @TransferFolderPath
                     WHERE Job = @Job
                 End
-            
+
                 ---------------------------------------------------
-                -- If a data package is defined, update entries for 
+                -- If a data package is defined, update entries for
                 -- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
                 ---------------------------------------------------
                 --
@@ -274,12 +283,12 @@ AS
                 Begin
                     Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
                 End
-            
+
                 If @reset = 'Y'
                 Begin --<reset>
-            
-                    exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output                            
-                
+
+                    exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output
+
                 END --<reset>
             End
             Else
@@ -290,7 +299,7 @@ AS
             Commit Tran @updateTran
 
         END --</update>
-        
+
         ---------------------------------------------------
         -- add mode
         ---------------------------------------------------
@@ -299,7 +308,7 @@ AS
         Begin --<add>
 
             Set @jobParamXML = CONVERT(XML, @jobParam)
-            
+
             If @debugMode <> 0
             Begin
                 Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
@@ -326,22 +335,24 @@ AS
         END --</add>
 
     END TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         Set @message = IsNull(@message, 'Unknown error message')
         Set @myError = IsNull(@myError, 'Unknown error details')
-        
-        Declare @LogMessage varchar(4096) = @message + '; error code ' + Convert(varchar(12), @myError)
-        
+
+        Declare @logMessage varchar(4096) = @message + '; error code ' + Convert(varchar(12), @myError)
+
+        Print 'Error caught: ' + @logMessage
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @LogMessage, 'AddUpdateLocalJobInBroker'
-              
+            Exec PostLogEntry 'Error', @logMessage, 'AddUpdateLocalJobInBroker'
+
             If Len(IsNull(@callingUser, '')) > 0
             Begin
                 Declare @logEntryID int
@@ -356,7 +367,7 @@ AS
                 If @myRowCount > 0
                     Exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'posting_time'
             End
-        End        
+        End
     END CATCH
 
 Done:
