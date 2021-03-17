@@ -69,6 +69,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          03/11/2021 mem - Associate new pipeline-based jobs with their analysis job request
 **          03/15/2021 mem - Read setting CacheFolderRootPath from MaxQuant settings files
 **                         - Update settings file, parameter file, protein collection, etc. in T_Analysis_Job for newly created MaxQuant jobs
+**          03/16/2021 mem - Add check for MSXMLGenerator being 'skip'
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-
+    
     Set @message = ''
 
     Declare @msg varchar(512)
@@ -106,27 +107,27 @@ As
     Declare @jobID int
     Declare @JobIDStart int
     Declare @JobIDEnd int
-
+        
     Declare @jobStateID int
     Declare @requestStateID int = 0
-
+    
     Declare @jobCountToBeCreated int = 0
     Declare @msgForLog varchar(2000)
     Declare @backfillError int
-
+    
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-
-    Declare @authorized tinyint = 0
+        
+    Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddAnalysisJobGroup', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY
-
+    BEGIN TRY 
+    
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -165,7 +166,7 @@ As
     Begin
         SELECT @gid = ID
         FROM T_Analysis_Job_Processor_Group
-        WHERE (Group_Name = @associatedProcessorGroup)
+        WHERE (Group_Name = @associatedProcessorGroup)    
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -176,7 +177,7 @@ As
             RAISERROR ('Processor group name not found for request %d', 11, 9, @requestID)
     End
     */
-
+    
     ---------------------------------------------------
     -- Create temporary table to hold list of datasets
     ---------------------------------------------------
@@ -184,8 +185,8 @@ As
     CREATE TABLE #TD (
         Dataset_Num varchar(128),
         Dataset_ID int NULL,
-        IN_class varchar(64) NULL,
-        DS_state_ID int NULL,
+        IN_class varchar(64) NULL, 
+        DS_state_ID int NULL, 
         AS_state_ID int NULL,
         Dataset_Type varchar(64) NULL,
         DS_rating smallint NULL,
@@ -219,7 +220,7 @@ As
         WHERE Data_Package_ID = @dataPackageID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-
+        
         Set @jobCountToBeCreated = @myRowCount
         --
         If @myError <> 0
@@ -231,7 +232,7 @@ As
     Else
     Begin
         ---------------------------------------------------
-        -- Populate table from dataset list
+        -- Populate table from dataset list  
         -- Using Select Distinct to make sure any duplicates are removed
         ---------------------------------------------------
         --
@@ -250,11 +251,11 @@ As
         Set @jobCountToBeCreated = @myRowCount
 
         -- Make sure the Dataset names do not have carriage returns or line feeds
-
+        
         UPDATE #td
         SET Dataset_Num = Replace(Dataset_Num, char(13), '')
         WHERE Dataset_Num LIKE '%' + char(13) + '%'
-
+    
         UPDATE #td
         SET Dataset_Num = Replace(Dataset_Num, char(10), '')
         WHERE Dataset_Num LIKE '%' + char(10) + '%'
@@ -274,7 +275,7 @@ As
 
         If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
             Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
-
+            
         If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
@@ -287,10 +288,10 @@ As
     Begin
         Declare @newPRN varchar(128) = @callinguser
         Declare @slashIndex int = CHARINDEX('\', @newPRN)
-
+        
         If @slashIndex > 0
             Set @newPRN = SUBSTRING(@newPRN, @slashIndex+1, LEN(@newPRN))
-
+        
         If Exists (SELECT * FROM T_Users Where U_PRN = @newPRN)
             Set @ownerPRN = @newPRN
     End
@@ -303,7 +304,7 @@ As
     ---------------------------------------------------
     --
     Declare @datasetCountToRemove INT = 0
-
+    
     Declare @removedDatasets VARCHAR(4096) = ''
     --
     If @dataPackageID = 0 And @removeDatasetsWithJobs <> 'N'
@@ -313,7 +314,7 @@ As
         )
         --
         INSERT INTO @matchingJobDatasets(Dataset)
-        SELECT
+        SELECT 
             DS.Dataset_Num AS Dataset
         FROM
             T_Dataset DS INNER JOIN
@@ -324,15 +325,15 @@ As
             #TD ON #TD.Dataset_Num = DS.Dataset_Num
         WHERE
             (NOT (AJ.AJ_StateID IN (5))) AND
-            AJT.AJT_toolName = @toolName AND
+            AJT.AJT_toolName = @toolName AND 
             AJ.AJ_parmFileName = @parmFileName AND
             (AJ.AJ_settingsFileName = @settingsFileName OR
-             AJ.AJ_settingsFileName = 'na' AND @settingsFileName = 'Decon2LS_DefSettings.xml') AND
-            ( (    @protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND
+             AJ.AJ_settingsFileName = 'na' AND @settingsFileName = 'Decon2LS_DefSettings.xml') AND 
+            ( (    @protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
                 Org.OG_name = IsNull(@organismName, Org.OG_name)
               ) OR
-              (    @protCollNameList <> 'na' AND
-                AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND
+              (    @protCollNameList <> 'na' AND 
+                AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
                 AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
               ) OR
               (
@@ -346,9 +347,9 @@ As
         --
         If @myError <> 0
             RAISERROR ('Error trying to find datasets with existing jobs for request %d', 11, 97, @requestID)
-
+        
         Set @datasetCountToRemove = @myRowCount
-
+        
         If @datasetCountToRemove > 0
         Begin --<remove-a>
             -- remove datasets from list that have existing jobs
@@ -359,7 +360,7 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             Set @jobCountToBeCreated = @jobCountToBeCreated - @myRowCount
-
+            
             -- make list of removed datasets
             --
             Declare @threshold SMALLINT
@@ -373,15 +374,15 @@ As
         End --<remove-a>
     End --<remove>
 
-
+    
     ---------------------------------------------------
-    -- Resolve propagation mode
+    -- Resolve propagation mode 
     ---------------------------------------------------
     Declare @propMode smallint
-    Set @propMode = CASE @propagationMode
-                        WHEN 'Export' THEN 0
-                        WHEN 'No Export' THEN 1
-                        ELSE 0
+    Set @propMode = CASE @propagationMode 
+                        WHEN 'Export' THEN 0 
+                        WHEN 'No Export' THEN 1 
+                        ELSE 0 
                     End
     ---------------------------------------------------
     -- validate job parameters
@@ -403,9 +404,9 @@ As
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
                             @ownerPRN = @ownerPRN output,
-                            @mode = @mode,
+                            @mode = @mode, 
                             @userID = @userID output,
-                            @analysisToolID = @analysisToolID output,
+                            @analysisToolID = @analysisToolID output, 
                             @organismID = @organismID output,
                             @message = @msg output,
                             @AutoRemoveNotReleasedDatasets = 0,
@@ -416,7 +417,7 @@ As
     --
     If @result <> 0
         RAISERROR ('ValidateAnalysisJobParameters: %s for request %d', 11, 8, @msg, @requestID)
-
+    
     If IsNull(@Warning, '') <> ''
     Begin
         Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
@@ -430,7 +431,7 @@ As
     Set @jobStateID = 1
     --
     If IsNull(@specialProcessing, '') <> '' AND
-       Exists (SELECT * FROM T_Analysis_Tool WHERE AJT_toolName = @toolName AND Use_SpecialProcWaiting > 0)
+       Exists (SELECT * FROM T_Analysis_Tool WHERE AJT_toolName = @toolName AND Use_SpecialProcWaiting > 0) 
     Begin
         Set @jobStateID = 19
     End
@@ -448,13 +449,13 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @dataPackageID > 0
-    Begin
+    Begin        
         If @mode = 'add'
         Begin
             ---------------------------------------------------
             -- Make sure the job request is in state 1=new or state 5=new (Review Required)
             ---------------------------------------------------
-            --
+            --                    
             SELECT @requestStateID = AJR_State
             FROM T_Analysis_Job_Request
             WHERE AJR_RequestID = @requestID
@@ -463,7 +464,7 @@ As
             --
             If @myError <> 0
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
-
+            
             Set @requestStateID = IsNull(@requestStateID, 0)
 
             If Not @requestStateID IN (1, 5)
@@ -485,7 +486,7 @@ As
 
             If @myRowCount = 0
                 RAISERROR ('Tool %s not found in T_analysis_tool', 11, 9, @toolName)
-
+                
             CREATE TABLE #Tmp_SettingsFile_Values_DataPkgJob (
                 KeyName varchar(512) NULL,
                 Value varchar(512) NULL
@@ -511,11 +512,11 @@ As
             SELECT @msXMLOutputType = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'MSXMLOutputType'
-
+            
             SELECT @centroidMSXML = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CentroidMSXML'
-
+                        
             SELECT @centroidPeakCountToRetain = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CentroidPeakCountToRetain'
@@ -524,7 +525,7 @@ As
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CacheFolderRootPath'
 
-            If Len(@msXmlGenerator) > 0 And Len(@msXMLOutputType) > 0
+            If Len(@msXmlGenerator) > 0 And Len(@msXMLOutputType) > 0 And @msXmlGenerator <> 'skip'
             Begin
                 Set @createMzMLFilesFlag= 'True'
             End
@@ -618,7 +619,7 @@ As
             ---------------------------------------------------
             --
             Set @requestStateID = 2
-
+                    
             UPDATE T_Analysis_Job_Request
             SET AJR_state = @requestStateID
             WHERE AJR_requestID = @requestID
@@ -627,7 +628,7 @@ As
             --
             If @myError <> 0
                 RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
-
+                        
             If Len(@callingUser) > 0
             Begin
                 -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -684,13 +685,13 @@ As
         Begin
             INSERT INTO T_Analysis_Job_Batches
                 (Batch_Description)
-            VALUES ('Auto')
+            VALUES ('Auto')    
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
                 RAISERROR ('Error trying to create new batch when making jobs for request %d', 11, 7, @requestID)
-
+            
             -- return ID of newly created batch
             --
             Set @batchID = SCOPE_IDENTITY()
@@ -707,7 +708,7 @@ As
         Else
         Begin
             -- make sure @requestID is in state 1=new or state 5=new (Review Required)
-
+                    
             SELECT @requestStateID = AJR_State
             FROM T_Analysis_Job_Request
             WHERE AJR_RequestID = @requestID
@@ -716,7 +717,7 @@ As
             --
             If @myError <> 0
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
-
+            
             Set @requestStateID = IsNull(@requestStateID, 0)
 
             If @requestStateID IN (1, 5)
@@ -724,7 +725,7 @@ As
                 -- Mark request as used
                 --
                 Set @requestStateID = 2
-
+                    
                 UPDATE T_Analysis_Job_Request
                 SET AJR_state = @requestStateID
                 WHERE AJR_requestID = @requestID
@@ -733,7 +734,7 @@ As
                 --
                 If @myError <> 0
                     RAISERROR ('Update operation failed setting state to %d for request %d', 11, 8, @requestStateID, @requestID)
-
+                        
                 If Len(@callingUser) > 0
                 Begin
                     -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -750,7 +751,7 @@ As
         End
 
         ---------------------------------------------------
-        -- Get new job number for every dataset
+        -- Get new job number for every dataset 
         -- in temporary table
         ---------------------------------------------------
 
@@ -764,18 +765,18 @@ As
         -- Use the job number information in #TmpNewJobIDs to update #TD
         -- If we know the first job number in #TmpNewJobIDs, then we can use
         --  the Row_Number() function to update #TD
-
+        
         Set @JobIDStart = 0
         Set @JobIDEnd = 0
-
-        SELECT @JobIDStart = MIN(ID),
+        
+        SELECT @JobIDStart = MIN(ID), 
                @JobIDEnd = MAX(ID)
         FROM #TmpNewJobIDs
 
         -- Make sure @JobIDStart and @JobIDEnd define a contiguous block of jobs
         If @JobIDEnd - @JobIDStart + 1 <> @numDatasets
             RAISERROR ('GetNewJobIDBlock did not return a contiguous block of jobs; requested %d jobs but job range is %d to %d', 11, 11, @numDatasets, @JobIDStart, @JobIDEnd)
-
+        
         -- The JobQ subquery uses Row_Number() and @JobIDStart to define the new job numbers for each entry in #TD
         UPDATE #TD
         SET Job = JobQ.ID
@@ -795,16 +796,16 @@ As
         --
         INSERT INTO T_Analysis_Job (
             AJ_jobID,
-            AJ_priority,
-            AJ_created,
-            AJ_analysisToolID,
-            AJ_parmFileName,
+            AJ_priority, 
+            AJ_created, 
+            AJ_analysisToolID, 
+            AJ_parmFileName, 
             AJ_settingsFileName,
-            AJ_organismDBName,
-            AJ_proteinCollectionList,
+            AJ_organismDBName, 
+            AJ_proteinCollectionList, 
             AJ_proteinOptionsList,
-            AJ_organismID,
-            AJ_datasetID,
+            AJ_organismID, 
+            AJ_datasetID, 
             AJ_comment,
             AJ_specialProcessing,
             AJ_owner,
@@ -815,16 +816,16 @@ As
             AJ_DatasetUnreviewed
         ) SELECT
             Job,
-            @priority,
-            getdate(),
-            @analysisToolID,
-            @parmFileName,
+            @priority, 
+            getdate(), 
+            @analysisToolID, 
+            @parmFileName, 
             @settingsFileName,
-            @organismDBName,
+            @organismDBName, 
             @protCollNameList,
             @protCollOptionsList,
-            @organismID,
-            #TD.Dataset_ID,
+            @organismID, 
+            #TD.Dataset_ID, 
             REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), #TD.Dataset_ID)),
             @specialProcessing,
             @ownerPRN,
@@ -833,7 +834,7 @@ As
             @requestID,
             @propMode,
             IsNull(Dataset_Unreviewed, 1)
-        FROM #TD
+        FROM #TD        
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -843,11 +844,11 @@ As
             If @requestID > 1
             Begin
                 Set @requestStateID = 4
-
+                
                 UPDATE    T_Analysis_Job_Request
                 SET        AJR_state = @requestStateID
                 WHERE    AJR_requestID = @requestID
-
+                
                 If Len(@callingUser) > 0
                 Begin
                     -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
@@ -921,7 +922,7 @@ As
             SET AJR_jobCount = StatQ.JobCount
             FROM T_Analysis_Job_Request AJR
                 INNER JOIN ( SELECT AJR.AJR_requestID,
-                                    SUM(CASE WHEN AJ.AJ_jobID IS NULL
+                                    SUM(CASE WHEN AJ.AJ_jobID IS NULL 
                                              THEN 0
                                              ELSE 1
                                         END) AS JobCount
@@ -935,12 +936,12 @@ As
                                 LEFT OUTER JOIN T_Analysis_Job AJ
                                     ON AJR.AJR_requestID = AJ.AJ_requestID
                             WHERE AJR.AJR_requestID = @requestID
-                            GROUP BY AJR.AJR_requestID
+                            GROUP BY AJR.AJR_requestID 
                             ) StatQ
                 ON AJR.AJR_requestID = StatQ.AJR_requestID
-            --
+            --    
             SELECT @myError = @@error, @myRowCount = @@rowcount
-
+            
             Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
 
         End
@@ -958,14 +959,14 @@ As
                 CREATE TABLE #TmpIDUpdateList (
                     TargetID int NOT NULL
                 )
-
+                
                 CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
-
+                
                 INSERT INTO #TmpIDUpdateList (TargetID)
                 SELECT DISTINCT AJ_jobID
                 FROM T_Analysis_Job
                 WHERE AJ_batchID = @batchID
-
+                    
                 Exec AlterEventLogEntryUserMultiID 5, @jobStateID, @callingUser, @EntryTimeWindowSeconds=45
             End
         End
@@ -994,13 +995,13 @@ Explain:
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
-
+        
         Set @msgForLog = ERROR_MESSAGE()
-
+        
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-
+        
         Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
     End Catch
     return @myError
