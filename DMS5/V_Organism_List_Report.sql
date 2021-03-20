@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE VIEW [dbo].[V_Organism_List_Report]
 AS
+
 SELECT O.Organism_ID AS ID,
        O.OG_name AS Name,
        O.OG_Genus AS Genus,
@@ -19,6 +18,7 @@ SELECT O.Organism_ID AS ID,
 	   NCBI.Name AS NCBI_Taxonomy,
 	   O.NCBI_Taxonomy_ID AS NCBI_Taxonomy_ID,
 	   NCBI.Synonyms AS NCBI_Synonyms,
+       O.OG_Storage_Location as Storage_Path,
        O.OG_Domain AS Domain,
        O.OG_Kingdom AS Kingdom,
        O.OG_Phylum AS Phylum,
@@ -37,7 +37,8 @@ FROM dbo.T_Organisms O
 		FROM T_Organism_DB_File ODF
 		WHERE (Active > 0) AND (Valid > 0)
 		GROUP BY Organism_ID) AS FASTALookupQ ON O.Organism_ID = FASTALookupQ.Organism_ID
-GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, O.OG_description, O.OG_organismDBName, O.OG_Short_Name,
+GROUP BY O.Organism_ID, O.OG_name, O.OG_Genus, O.OG_Species, O.OG_Strain, 
+         O.OG_description, O.OG_organismDBName, O.OG_Short_Name, O.OG_Storage_Location,
          O.OG_Domain, O.OG_Kingdom, O.OG_Phylum, O.OG_Class, O.OG_Order, O.OG_Family, O.OG_created, O.OG_Active,
 		 O.NCBI_Taxonomy_ID, NCBI.Name, NCBI.Synonyms, FASTALookupQ.Legacy_FASTA_Files
 
