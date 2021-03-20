@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure [dbo].[CreatePSMJobRequest]
 /****************************************************
 **
@@ -31,6 +32,7 @@ CREATE Procedure [dbo].[CreatePSMJobRequest]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
+**          03/19/2021 mem - Remove obsolete parameter from call to AddUpdateAnalysisJobRequest
 **    
 *****************************************************/
 (
@@ -73,9 +75,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'CreatePSMJobRequest', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 		
 	BEGIN TRY 
 
@@ -351,7 +353,6 @@ As
 				@requestorPRN = @ownerPRN,
 				@comment = @comment,
 				@specialProcessing = null,
-				@adminReviewReqd = 'No',
 				@state = 'New',
 				@requestID = @requestID output,
 				@mode = @mode,
