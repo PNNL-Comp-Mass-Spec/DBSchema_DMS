@@ -14,10 +14,13 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
 **  The StatusMessageDBUpdater caches the status messages from the managers, then
 **  periodically calls UpdateManagerAndTaskStatusXML to update T_Processor_Status
 **  with processor status information
+**
+**  If Analysis Manager parameter LogStatusToBrokerDB is set to true
+**  a call to method WriteStatusFile will cascade into
+**  method LogStatus, which calls this stored procedure
 **	####################################################
 **
 **  Desc:	Logs the current status of the given analysis manager
-**
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -41,20 +44,20 @@ CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
     @LastStartTime datetime,
 	@CPUUtilization real,
 	@FreeMemoryMB real,
-	
+
 	@ProcessID int = null,
 	@ProgRunnerProcessID int = null,
 	@ProgRunnerCoreUsage real = null,
-	
+
 	@MostRecentErrorMessage varchar(1024) = '',
-	
+
 	-- Task	items
 	@StepTool varchar(128),
 	@TaskStatusCode int,					-- See T_Processor_Task_Status_Codes;
 	@DurationHours real,
 	@Progress real,
 	@CurrentOperation varchar(256),
-	
+
 	-- Task detail items
 	@TaskDetailStatusCode int,				-- See T_Processor_Task_Detail_Status_Codes;
 	@Job int,
@@ -99,7 +102,7 @@ As
 	Set @DurationHours = IsNull(@DurationHours, Null)
 	Set @Progress = IsNull(@Progress, Null)
 	Set @CurrentOperation = IsNull(@CurrentOperation, '')
-	
+
 	Set @TaskDetailStatusCode = IsNull(@TaskDetailStatusCode, 0)
 	Set @Job = IsNull(@Job, Null)
 	Set @JobStep = IsNull(@JobStep, Null)
@@ -128,7 +131,7 @@ As
 
 
 	UPDATE T_Processor_Status
-	SET 
+	SET
 	    Remote_Manager = '',
 		Mgr_Status_Code = @MgrStatusCode,
 		Status_Date = @LastUpdate,
@@ -138,7 +141,7 @@ As
 		Process_ID = @ProcessID,
 		ProgRunner_ProcessID = @ProgRunnerProcessID,
 		ProgRunner_CoreUsage = @ProgRunnerCoreUsage,
-		
+
 		Most_Recent_Error_Message = CASE WHEN @MostRecentErrorMessage <> '' THEN @MostRecentErrorMessage ELSE Most_Recent_Error_Message END,
 
 		Step_Tool = @StepTool,
