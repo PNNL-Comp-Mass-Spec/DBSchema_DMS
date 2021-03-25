@@ -20,7 +20,7 @@ SELECT U.ID,
 	   U.U_Payroll AS Payroll,	   
        EU.PERSON_ID AS EUS_ID,
        ESS.Name AS EUS_Status,
-	   CASE When Len(U.U_email) < 25 THEN U_email Else Substring(U.U_email, 1, 22) + '...' END AS EMail
+	   U.U_email AS EMail
 FROM T_EUS_Site_Status ESS
      INNER JOIN T_EUS_Users EU
        ON ESS.ID = EU.Site_Status
