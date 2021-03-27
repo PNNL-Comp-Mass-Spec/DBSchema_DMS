@@ -1,7 +1,7 @@
 /****** Object:  Table [T_Processor_Tool_Group_Details] ******/
 /****** RowCount: 1725 ******/
 /****** Columns: Group_ID, Mgr_ID, Tool_Name, Priority, Enabled, Comment, Max_Step_Cost, Max_Job_Priority, Last_Affected ******/
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Cleanup',3,1,'',100,50,'3/12/2021 3:44:03 PM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Cleanup',3,-1,'',100,50,'3/23/2021 7:39:45 AM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,1,'Results_Transfer',3,1,'',100,50,'1/28/2021 4:44:46 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (1,2,'Results_Transfer',3,1,'',100,50,'1/28/2021 4:44:46 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (2,1,'DataExtractor',2,0,'',100,50,'12/15/2012 11:40:15 PM')
@@ -262,9 +262,9 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'LTQ_FTPEK',2,0,'Monro
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Mage',3,0,'Monroe test',100,50,'3/8/2021 1:27:13 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MASIC_Finnigan',1,0,'Monroe test',100,50,'8/12/2020 5:08:28 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqPeak',2,1,'Monroe test',100,50,'3/5/2021 12:31:58 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS1',3,1,'Monroe test',100,50,'3/16/2021 6:05:00 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS2',3,0,'Monroe test',100,50,'3/18/2021 10:37:04 PM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS3',3,0,'Monroe test',100,50,'3/18/2021 11:48:19 PM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS1',3,0,'Monroe test',100,50,'3/23/2021 7:44:39 AM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS2',3,0,'Monroe test',100,50,'3/23/2021 7:44:39 AM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MaxqS3',3,0,'Monroe test',100,50,'3/23/2021 7:44:39 AM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MODa',2,0,'Monroe test',100,50,'8/7/2018 4:15:25 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MODPlus',3,0,'Monroe test',100,50,'5/20/2015 8:28:42 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'MSAlign',2,0,'Monroe test',100,50,'4/18/2014 5:23:38 PM')
@@ -293,7 +293,7 @@ INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'ProMex',3,0,'Monroe t
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'ProSight_Quant',3,-1,'Monroe test',100,50,'8/23/2012 3:20:02 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'QC_ART',3,0,'Monroe test',100,50,'8/30/2017 1:06:56 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'RepoPkgr',3,0,'Monroe test',100,50,'10/3/2014 11:36:26 AM')
-INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Results_Cleanup',3,0,'Monroe test',100,50,'3/12/2021 3:44:03 PM')
+INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Results_Cleanup',3,1,'Monroe test',100,50,'3/23/2021 7:39:45 AM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Results_Transfer',3,0,'Monroe test',100,50,'1/28/2021 4:44:46 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'Sequest',1,0,'Monroe test',100,50,'2/10/2015 5:44:24 PM')
 INSERT INTO [T_Processor_Tool_Group_Details] VALUES (13,1,'SMAQC',3,0,'Monroe test',100,50,'9/6/2019 2:53:16 PM')

@@ -179,6 +179,7 @@ Done:
 	return @myError
 
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatus] TO [DDL_Viewer] AS [dbo]
 GO

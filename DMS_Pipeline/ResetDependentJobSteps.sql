@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ResetDependentJobSteps
+
+CREATE PROCEDURE [dbo].[ResetDependentJobSteps]
 /****************************************************
 **
 **	Desc:	Resets entries in T_Job_Steps and T_Job_Step_Dependencies for the given jobs
@@ -19,6 +20,7 @@ CREATE PROCEDURE dbo.ResetDependentJobSteps
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			05/12/2017 mem - Update Next_Try and Remote_Info_ID
 **			05/13/2017 mem - Treat state 9 (Running_Remote) as "In progress"
+**          03/22/2021 mem - Do not reset steps in state 7 (Holding)
 **    
 *****************************************************/
 (
@@ -96,7 +98,7 @@ As
 		          AND
 		          T_Job_Step_Dependencies.Target_Step_Number = JS_Target.Step_Number
 		WHERE JS.State >= 2 AND
-		      JS.State <> 3 AND
+		      JS.State Not In (3, 7) AND
 		      JS.Job IN ( SELECT Job
 		                  FROM #Tmp_Jobs ) AND
 		      (JS_Target.State IN (0, 1, 2, 4, 9) OR
