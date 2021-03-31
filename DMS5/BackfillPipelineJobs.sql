@@ -23,6 +23,7 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          03/09/2021 mem - Auto change script MaxQuant_DataPkg to MaxQuant
 **          03/10/2021 mem - Add argument @startJob
+**          03/31/2021 mem - Expand OrganismDBName to varchar(128)
 **    
 *****************************************************/
 (
@@ -100,7 +101,7 @@ AS
         AnalysisToolID int NOT NULL,
         ParmFileName varchar(255) NOT NULL,
         SettingsFileName varchar(255) NULL,
-        OrganismDBName varchar(64) NOT NULL,
+        OrganismDBName varchar(128) NOT NULL,
         OrganismID int NOT NULL,
         DatasetID int NOT NULL,
         Comment varchar(512) NULL,

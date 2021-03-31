@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateAnalysisJobsWork
+
+CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
 /****************************************************
 **
 **	Desc:
@@ -41,12 +42,13 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 **			03/12/2009 grk - Removed [no change] from @associatedProcessorGroup to allow dissasociation of jobs with groups
 **			07/16/2009 mem - Added missing rollback transaction statements when verifying @associatedProcessorGroup
 **			09/16/2009 mem - Extracted code from UpdateAnalysisJobs
-**						   - Added parameter @DisableRaiseError
+**						   - Added parameter @disableRaiseError
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			03/30/2015 mem - Tweak warning message grammar
 **			05/28/2015 mem - No longer updating processor group entries (thus @associatedProcessorGroup is ignored)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          03/31/2021 mem - Expand @organismName to varchar(128)
 **
 *****************************************************/
 (
@@ -61,57 +63,57 @@ CREATE PROCEDURE UpdateAnalysisJobsWork
 --
     @parmFileName varchar(255) = '[no change]',
     @settingsFileName varchar(255) = '[no change]',
-    @organismName varchar(64) = '[no change]',
+    @organismName varchar(128) = '[no change]',
     @protCollNameList varchar(4000) = '[no change]',
     @protCollOptionsList varchar(256) = '[no change]',
 --
     @mode varchar(12) = 'update',			-- 'update' or 'reset' to change data; otherwise, will simply validate parameters
     @message varchar(512) output,
 	@callingUser varchar(128) = '',
-	@DisableRaiseError tinyint = 0
+	@disableRaiseError tinyint = 0
 )
 As
 	set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @NoChangeText varchar(32)
-	set @NoChangeText = '[no change]'
-	set @message = ''
+	Declare @noChangeText varchar(32)
+	Set @noChangeText = '[no change]'
+	Set @message = ''
 
-	declare @msg varchar(512)
-	declare @list varchar(1024)
+	Declare @msg varchar(512)
+	Declare @list varchar(1024)
 
-	declare @AlterEventLogRequired tinyint
-	declare @AlterEnteredByRequired tinyint
-	set @AlterEventLogRequired = 0
-	set @AlterEnteredByRequired = 0
+	Declare @alterEventLogRequired tinyint
+	Declare @alterEnteredByRequired tinyint
+	Set @alterEventLogRequired = 0
+	Set @alterEnteredByRequired = 0
 
-	Declare @AlterData tinyint
-	Declare @JobCountToUpdate int
-	Declare @JobCountUpdated int
-	declare @ProcessorGroupAssociationsUpdated tinyint
+	Declare @alterData tinyint
+	Declare @jobCountToUpdate int
+	Declare @jobCountUpdated int
+	Declare @processorGroupAssociationsUpdated tinyint
 
-	Declare @Action varchar(256)
-	Declare @Action2 varchar(256)
+	Declare @action varchar(256)
+	Declare @action2 varchar(256)
 	
-	Set @AlterData = 0
-	Set @JobCountUpdated = 0
-	set @ProcessorGroupAssociationsUpdated = 0
+	Set @alterData = 0
+	Set @jobCountUpdated = 0
+	Set @processorGroupAssociationsUpdated = 0
 
-	set @Action = ''
-	set @Action2 = ''
-	set @message = ''
+	Set @action = ''
+	Set @action2 = ''
+	Set @message = ''
 
 
-	declare @stateID int
-	declare @NewPriority int
-	set @stateID = 0
-	set @NewPriority = 2
+	Declare @stateID int
+	Declare @newPriority int
+	Set @stateID = 0
+	Set @newPriority = 2
 	
-	declare @transName varchar(32)
-	set @transName = ''
+	Declare @transName varchar(32)
+	Set @transName = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -120,42 +122,42 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobsWork', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 	
 	---------------------------------------------------
 	-- Clean up null arguments
 	---------------------------------------------------
 	
-	set @state = isnull(@state, @NoChangeText)
-	set @priority = isnull(@priority, @NoChangeText)
-	set @comment = isnull(@comment, @NoChangeText)
-	set @findText = isnull(@findText, @NoChangeText)
-	set @replaceText = isnull(@replaceText, @NoChangeText)
-	set @assignedProcessor = isnull(@assignedProcessor, @NoChangeText)
-	set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
-	set @propagationMode = isnull(@propagationMode, @NoChangeText)
-    set @parmFileName = isnull(@parmFileName, @NoChangeText)
-    set @settingsFileName = isnull(@settingsFileName, @NoChangeText)
-    set @organismName = isnull(@organismName, @NoChangeText)
-    set @protCollNameList = isnull(@protCollNameList, @NoChangeText)
-    set @protCollOptionsList = isnull(@protCollOptionsList, @NoChangeText)
+	Set @state = isnull(@state, @noChangeText)
+	Set @priority = isnull(@priority, @noChangeText)
+	Set @comment = isnull(@comment, @noChangeText)
+	Set @findText = isnull(@findText, @noChangeText)
+	Set @replaceText = isnull(@replaceText, @noChangeText)
+	Set @assignedProcessor = isnull(@assignedProcessor, @noChangeText)
+	Set @associatedProcessorGroup = isnull(@associatedProcessorGroup, '')
+	Set @propagationMode = isnull(@propagationMode, @noChangeText)
+    Set @parmFileName = isnull(@parmFileName, @noChangeText)
+    Set @settingsFileName = isnull(@settingsFileName, @noChangeText)
+    Set @organismName = isnull(@organismName, @noChangeText)
+    Set @protCollNameList = isnull(@protCollNameList, @noChangeText)
+    Set @protCollOptionsList = isnull(@protCollOptionsList, @noChangeText)
     
     Set @callingUser = IsNull(@callingUser, '')
-    Set @DisableRaiseError = IsNull(@DisableRaiseError, 0)
+    Set @disableRaiseError = IsNull(@disableRaiseError, 0)
     
 	---------------------------------------------------
 	-- Validate the inputs
 	---------------------------------------------------
 
-	if (@findText = @NoChangeText and @replaceText <> @NoChangeText) OR (@findText <> @NoChangeText and @replaceText = @NoChangeText)
+	if (@findText = @noChangeText and @replaceText <> @noChangeText) OR (@findText <> @noChangeText and @replaceText = @noChangeText)
 	begin
-		set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
-		if @DisableRaiseError = 0
+		Set @msg = 'The Find In Comment and Replace In Comment enabled flags must both be enabled or disabled'
+		if @disableRaiseError = 0
 			RAISERROR (@msg, 10, 1)
 		else
-			set @message = @msg
+			Set @message = @msg
 		return 51001
 	end
 
@@ -163,7 +165,7 @@ As
 	-- Verify that all jobs exist 
 	---------------------------------------------------
 	--
-	set @list = ''
+	Set @list = ''
 	--
 	SELECT 
 		@list = @list + CASE 
@@ -179,13 +181,13 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @message = 'Error checking job existence'
+		Set @message = 'Error checking job existence'
 		return 51007
 	end
 	--
 	if @list <> ''
 	begin
-		set @message = 'The following jobs were not in the database: "' + @list + '"'
+		Set @message = 'The following jobs were not in the database: "' + @list + '"'
 		return 51007
 	end
 	
@@ -194,13 +196,13 @@ As
 	-- Define the job counts and initialize the action text
 	---------------------------------------------------
 	
-	SELECT @JobCountToUpdate = COUNT(*) FROM #TAJ
+	SELECT @jobCountToUpdate = COUNT(*) FROM #TAJ
 	
 	---------------------------------------------------
 	-- Resolve state name
 	---------------------------------------------------
 	--
-	if @state <> @NoChangeText
+	if @state <> @noChangeText
 	begin
 		--
 		SELECT @stateID = AJS_stateID
@@ -211,34 +213,33 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Error looking up state name'
-			if @DisableRaiseError = 0
+			Set @msg = 'Error looking up state name'
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 			return 51007
 		end
 		--
 		if @stateID = 0
 		begin
-			set @msg = 'State name not found: "' + @state + '"'
-			if @DisableRaiseError = 0
+			Set @msg = 'State name not found: "' + @state + '"'
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 			return 51007
 		end
 	end -- if @state
 
 
 	---------------------------------------------------
-	-- resolve organism ID
+	-- Resolve organism ID
 	---------------------------------------------------
 	--
-	declare @orgid int
-	set @orgid = 0
+	Declare @orgid int = 0
 	--
-	if @organismName <> @NoChangeText
+	if @organismName <> @noChangeText
 	begin
 		SELECT @orgid = ID
 		FROM V_Organism_List_Report
@@ -248,21 +249,21 @@ As
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Error trying to resolve organism name'
-			if @DisableRaiseError = 0
+			Set @msg = 'Error trying to resolve organism name'
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 			return 51014
 		end
 		--
 		if @orgid = 0
 		begin
-			set @msg = 'Organism name not found: "' + @organismName + '"'
-			if @DisableRaiseError = 0
+			Set @msg = 'Organism name not found: "' + @organismName + '"'
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 			return 51015
 		end
 	end
@@ -270,11 +271,11 @@ As
 	---------------------------------------------------
 	-- Validate param file for tool
 	---------------------------------------------------
-	declare @result int
+	Declare @result int
 	--
-	set @result = 0
+	Set @result = 0
 	--
-	if @parmFileName <> @NoChangeText
+	if @parmFileName <> @noChangeText
 	begin
 		SELECT @result = Param_File_ID
 		FROM T_Param_Files
@@ -282,22 +283,22 @@ As
 		--
 		if @result = 0
 		begin
-			set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+			Set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
 			return 51016
 		end
 	end
 
 	---------------------------------------------------
-	-- validate parameter file for tool
+	-- Validate parameter file for tool
 	---------------------------------------------------
 	--
-	if @parmFileName <> @NoChangeText
+	if @parmFileName <> @noChangeText
 	begin
-		declare @comma_list as varchar(4000)
-		declare @id as varchar(32)
-		set @comma_list = ''
+		Declare @comma_list as varchar(4000)
+		Declare @id as varchar(32)
+		Set @comma_list = ''
 
-		DECLARE cma_list_cursor CURSOR
+		Declare cma_list_cursor CURSOR
 		FOR SELECT TD.Job
 			FROM #TAJ TD
 			WHERE not exists (
@@ -315,10 +316,10 @@ As
 
 		FETCH NEXT FROM cma_list_cursor INTO @id
 
-		WHILE @@FETCH_STATUS = 0
+		WHILE @@fETCH_STATUS = 0
 		BEGIN
 
-			set @comma_list = @comma_list + @id + ','
+			Set @comma_list = @comma_list + @id + ','
 
 		FETCH NEXT FROM cma_list_cursor INTO @id
 
@@ -329,7 +330,7 @@ As
 
 		if @comma_list <> ''
 		begin
-			set @message = 'Based on the parameter file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @comma_list + '"'
+			Set @message = 'Based on the parameter file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @comma_list + '"'
 			return 51017
 		end
 	end
@@ -338,15 +339,15 @@ As
 	-- Validate settings file for tool
 	---------------------------------------------------
 	--
-	if @settingsFileName <> @NoChangeText
+	if @settingsFileName <> @noChangeText
 	begin
-		-- validate settings file for tool only
+		-- Validate settings file for tool only
 		--
-		declare @sf_comma_list as varchar(4000)
-		declare @sf_id as varchar(32)
-		set @sf_comma_list = ''
+		Declare @sf_comma_list as varchar(4000)
+		Declare @sf_id as varchar(32)
+		Set @sf_comma_list = ''
 
-		DECLARE cma_list_cursor CURSOR
+		Declare cma_list_cursor CURSOR
 		FOR SELECT TD.Job
 			FROM #TAJ TD
 			WHERE not exists (
@@ -363,10 +364,10 @@ As
 
 		FETCH NEXT FROM cma_list_cursor INTO @sf_id
 
-		WHILE @@FETCH_STATUS = 0
+		WHILE @@fETCH_STATUS = 0
 		BEGIN
 
-			set @sf_comma_list = @sf_comma_list + @sf_id + ','
+			Set @sf_comma_list = @sf_comma_list + @sf_id + ','
 
 		FETCH NEXT FROM cma_list_cursor INTO @sf_id
 
@@ -377,7 +378,7 @@ As
 
 		if @sf_comma_list <> ''
 		begin
-			set @message = 'Based on the settings file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @sf_comma_list + '"'
+			Set @message = 'Based on the settings file entered, the following Analysis Job(s) were not compatible with the the tool type' + ':"' + @sf_comma_list + '"'
 			return 51019
 		end
 
@@ -388,20 +389,20 @@ As
 	-- in cases where parameter has changed
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @mode = 'update' 
 	begin -- <update mode>
-		set @myError = 0
-		Set @AlterData = 1
+		Set @myError = 0
+		Set @alterData = 1
 		
 		---------------------------------------------------
-		set @transName = 'UpadateAnalysisJobs'
+		Set @transName = 'UpadateAnalysisJobs'
 		begin transaction @transName
 
 		-----------------------------------------------
-		if @state <> @NoChangeText
+		if @state <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_StateID = @stateID
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) And AJ_StateID <> @stateID
 			--
@@ -409,53 +410,53 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed when updating job state'
+				Set @msg = 'Update operation failed when updating job state'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51004
 			end
 
-			Set @AlterEventLogRequired = 1
+			Set @alterEventLogRequired = 1
 			
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update state to ' + Convert(varchar(12), @stateID)
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update state to ' + Convert(varchar(12), @stateID)
 		end
 
 		-----------------------------------------------
-		if @priority <> @NoChangeText
+		if @priority <> @noChangeText
 		begin
-			Set @NewPriority = cast(@priority as int)
+			Set @newPriority = cast(@priority as int)
 			
 			UPDATE T_Analysis_Job 
-			SET 
-				AJ_priority = @NewPriority
-			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_priority <> @NewPriority
+			Set 
+				AJ_priority = @newPriority
+			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_priority <> @newPriority
 			--
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed when updating job priority'
+				Set @msg = 'Update operation failed when updating job priority'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51004
 			end
 			
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update priority to ' + Convert(varchar(12), @NewPriority)
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update priority to ' + Convert(varchar(12), @newPriority)
 		end
 
 		-----------------------------------------------
-		if @comment <> @NoChangeText
+		if @comment <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_comment = AJ_comment + ' ' + @comment
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
 			--
@@ -463,24 +464,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed when appending new comment text'
+				Set @msg = 'Update operation failed when appending new comment text'
 				rollback transaction @transName
-			if @DisableRaiseError = 0
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 				return 51004
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Append comment text'			
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Append comment text'			
 		end
 
 		-----------------------------------------------
-		if @findText <> @NoChangeText and @replaceText <> @NoChangeText
+		if @findText <> @noChangeText and @replaceText <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_comment = replace(AJ_comment, @findText, @replaceText)
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
 			--
@@ -488,24 +489,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed when finding and replacing text in comment'
+				Set @msg = 'Update operation failed when finding and replacing text in comment'
 				rollback transaction @transName
-			if @DisableRaiseError = 0
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 				return 51004
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Replace comment text'
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Replace comment text'
 		end
 
 		-----------------------------------------------
-		if @assignedProcessor <> @NoChangeText
+		if @assignedProcessor <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_assignedProcessorName =  @assignedProcessor
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_assignedProcessorName <> @assignedProcessor
 			--
@@ -513,31 +514,31 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at assigned processor name update'
+				Set @msg = 'Update operation failed at assigned processor name update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51004
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update assigned processor to ' + @assignedProcessor
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update assigned processor to ' + @assignedProcessor
 		end
 
 		-----------------------------------------------
-		if @propagationMode <> @NoChangeText
+		if @propagationMode <> @noChangeText
 		begin
-			declare @propMode smallint
-			set @propMode = CASE @propagationMode 
+			Declare @propMode smallint
+			Set @propMode = CASE @propagationMode 
 								WHEN 'Export' THEN 0 
 								WHEN 'No Export' THEN 1 
 								ELSE 0 
 							END 
 			--
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_propagationMode =  @propMode
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_propagationMode <> @propMode
 			--
@@ -545,24 +546,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at propagation mode update'
+				Set @msg = 'Update operation failed at propagation mode update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51009
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update propagation mode to ' + @propagationMode
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update propagation mode to ' + @propagationMode
 		end
 
 		-----------------------------------------------
-		if @parmFileName <> @NoChangeText
+		if @parmFileName <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_parmFileName =  @parmFileName
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND aj_parmFileName <> '@parmFileName'
 			--
@@ -570,24 +571,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at parameter file name update'
+				Set @msg = 'Update operation failed at parameter file name update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51010
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update parameter file to ' + @parmFileName
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update parameter file to ' + @parmFileName
 		end
 
 		-----------------------------------------------
-		if @settingsFileName <> @NoChangeText
+		if @settingsFileName <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_settingsFileName =  @settingsFileName
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_settingsFileName <> @settingsFileName
 			--
@@ -595,24 +596,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at settings file name update'
+				Set @msg = 'Update operation failed at settings file name update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51011
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Update settings file to ' + @settingsFileName
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Update settings file to ' + @settingsFileName
 		end
 
 		-----------------------------------------------
-		if @organismName <> @NoChangeText
+		if @organismName <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_organismID =  @orgid
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_organismID <> @orgid
 			--
@@ -620,24 +621,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at organism name update'
+				Set @msg = 'Update operation failed at organism name update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51012
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Change organism to ' + @organismName
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Change organism to ' + @organismName
 		end
 
 		-----------------------------------------------
-		if @protCollNameList <> @NoChangeText
+		if @protCollNameList <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_proteinCollectionList = @protCollNameList
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_proteinCollectionList <> @protCollNameList
 			--
@@ -645,24 +646,24 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at protein collection update'
+				Set @msg = 'Update operation failed at protein collection update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51013
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Change protein collection list to ' + @protCollNameList
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Change protein collection list to ' + @protCollNameList
 		end
 
 		-----------------------------------------------
-		if @protCollOptionsList <> @NoChangeText
+		if @protCollOptionsList <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_proteinOptionsList =  @protCollOptionsList
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ)) AND AJ_proteinOptionsList <> @protCollOptionsList
 			--
@@ -670,17 +671,17 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed and protein collection options update'
+				Set @msg = 'Update operation failed and protein collection options update'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51014
 			end
 
-			Set @JobCountUpdated = @myRowCount
-			Set @Action = 'Change protein options list to ' + @protCollOptionsList
+			Set @jobCountUpdated = @myRowCount
+			Set @action = 'Change protein options list to ' + @protCollOptionsList
 		end
 
 	end -- </update mode>
@@ -689,20 +690,20 @@ As
 	-- Reset job to New state
 	---------------------------------------------------
 	--
-	if @Mode = 'reset' 
+	if @mode = 'reset' 
 	begin -- <reset mode>
 
-		Set @AlterData = 1
+		Set @alterData = 1
 		
 		---------------------------------------------------
-		set @transName = 'UpadateAnalysisJobs'
+		Set @transName = 'UpadateAnalysisJobs'
 		begin transaction @transName
-		set @myError = 0
+		Set @myError = 0
 		
 		Set @stateID = 1
 		
 		UPDATE T_Analysis_Job 
-		SET 
+		Set 
 			AJ_StateID = @stateID, 
 			AJ_start = NULL, 
 			AJ_finish = NULL,
@@ -710,61 +711,61 @@ As
 			AJ_extractionProcessor = '', 
 			AJ_extractionStart = NULL, 
 			AJ_extractionFinish = NULL,
-			AJ_parmFileName = CASE WHEN @parmFileName = @NoChangeText               THEN AJ_parmFileName ELSE @parmFileName END, 
-			AJ_settingsFileName = CASE WHEN @settingsFileName = @NoChangeText       THEN AJ_settingsFileName ELSE @settingsFileName END,
-			AJ_proteinCollectionList = CASE WHEN @protCollNameList = @NoChangeText  THEN AJ_proteinCollectionList ELSE @protCollNameList END, 
-			AJ_proteinOptionsList = CASE WHEN @protCollOptionsList = @NoChangeText  THEN AJ_proteinOptionsList ELSE @protCollOptionsList END,
-			AJ_organismID = CASE WHEN @organismName = @NoChangeText                 THEN AJ_organismID ELSE @orgid END, 
-			AJ_priority =  CASE WHEN @priority = @NoChangeText               THEN AJ_priority ELSE CAST(@priority AS int) END, 
-			AJ_comment = AJ_comment + CASE WHEN @comment = @NoChangeText            THEN '' ELSE ' ' + @comment END,
-			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = @NoChangeText THEN AJ_assignedProcessorName ELSE @assignedProcessor END
+			AJ_parmFileName = CASE WHEN @parmFileName = @noChangeText               THEN AJ_parmFileName ELSE @parmFileName END, 
+			AJ_settingsFileName = CASE WHEN @settingsFileName = @noChangeText       THEN AJ_settingsFileName ELSE @settingsFileName END,
+			AJ_proteinCollectionList = CASE WHEN @protCollNameList = @noChangeText  THEN AJ_proteinCollectionList ELSE @protCollNameList END, 
+			AJ_proteinOptionsList = CASE WHEN @protCollOptionsList = @noChangeText  THEN AJ_proteinOptionsList ELSE @protCollOptionsList END,
+			AJ_organismID = CASE WHEN @organismName = @noChangeText                 THEN AJ_organismID ELSE @orgid END, 
+			AJ_priority =  CASE WHEN @priority = @noChangeText               THEN AJ_priority ELSE CAST(@priority AS int) END, 
+			AJ_comment = AJ_comment + CASE WHEN @comment = @noChangeText            THEN '' ELSE ' ' + @comment END,
+			AJ_assignedProcessorName = CASE WHEN @assignedProcessor = @noChangeText THEN AJ_assignedProcessorName ELSE @assignedProcessor END
 		WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
-			set @msg = 'Update operation failed at bulk job info update for reset jobs'
+			Set @msg = 'Update operation failed at bulk job info update for reset jobs'
 			rollback transaction @transName
-			if @DisableRaiseError = 0
+			if @disableRaiseError = 0
 				RAISERROR (@msg, 10, 1)
 			else
-				set @message = @msg
+				Set @message = @msg
 			return 51004
 		end
 
-		Set @JobCountUpdated = @myRowCount
-		Set @Action = 'Reset job state'
+		Set @jobCountUpdated = @myRowCount
+		Set @action = 'Reset job state'
 		
-		If @parmFileName <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed param file to ' + @parmFileName
+		If @parmFileName <> @noChangeText
+			Set @action2 = @action2 + '; changed param file to ' + @parmFileName
 
-		If @settingsFileName <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed settings file to ' + @settingsFileName
+		If @settingsFileName <> @noChangeText
+			Set @action2 = @action2 + '; changed settings file to ' + @settingsFileName
 
-		If @protCollNameList <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed protein collection to ' + @protCollNameList
+		If @protCollNameList <> @noChangeText
+			Set @action2 = @action2 + '; changed protein collection to ' + @protCollNameList
 
-		If @protCollOptionsList <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed protein options to ' + @protCollOptionsList
+		If @protCollOptionsList <> @noChangeText
+			Set @action2 = @action2 + '; changed protein options to ' + @protCollOptionsList
 
-		If @organismName <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed organism name to ' + @organismName
+		If @organismName <> @noChangeText
+			Set @action2 = @action2 + '; changed organism name to ' + @organismName
 
-		If @priority <> @NoChangeText
-			Set @Action2 = @Action2 + '; changed priority to ' + @priority
+		If @priority <> @noChangeText
+			Set @action2 = @action2 + '; changed priority to ' + @priority
 
-		If @comment <> @NoChangeText
-			Set @Action2 = @Action2 + '; appended comment text'
+		If @comment <> @noChangeText
+			Set @action2 = @action2 + '; appended comment text'
 
-		If @assignedProcessor <> @NoChangeText
-			Set @Action2 = @Action2 + '; updated assigned processor to ' + @assignedProcessor
+		If @assignedProcessor <> @noChangeText
+			Set @action2 = @action2 + '; updated assigned processor to ' + @assignedProcessor
 		
 		-----------------------------------------------
-		if @findText <> @NoChangeText and @replaceText <> @NoChangeText
+		if @findText <> @noChangeText and @replaceText <> @noChangeText
 		begin
 			UPDATE T_Analysis_Job 
-			SET 
+			Set 
 				AJ_comment = replace(AJ_comment, @findText, @replaceText)
 			WHERE (AJ_jobID in (SELECT Job FROM #TAJ))
 			--
@@ -772,21 +773,21 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed at comment find/replace for reset jobs'
+				Set @msg = 'Update operation failed at comment find/replace for reset jobs'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51004
 			end
 
-			If @assignedProcessor <> @NoChangeText
-				Set @Action2 = @Action2 + '; replaced text in comment'
+			If @assignedProcessor <> @noChangeText
+				Set @action2 = @action2 + '; replaced text in comment'
 
 		end
 		
-		Set @AlterEventLogRequired = 1
+		Set @alterEventLogRequired = 1
 	end -- </reset mode>
 	
  	/*
@@ -795,14 +796,14 @@ As
 	-- Handle associated processor Group
 	-- (though only if we're actually performing an update or reset)
 	--
-	if @associatedProcessorGroup <> @NoChangeText and @transName <> ''
+	if @associatedProcessorGroup <> @noChangeText and @transName <> ''
 	begin -- <associated processor group>
 	
 		---------------------------------------------------
-		-- resolve processor group ID
+		-- Resolve processor group ID
 		--
-		declare @gid int
-		set @gid = 0
+		Declare @gid int
+		Set @gid = 0
 		--
 		if @associatedProcessorGroup <> ''
 		begin
@@ -814,30 +815,30 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Error trying to resolve processor group name'
+				Set @msg = 'Error trying to resolve processor group name'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51008
 			end
 			--
 			if @gid = 0
 			begin
-				set @msg = 'Processor group name not found: "' + @associatedProcessorGroup + '"'
+				Set @msg = 'Processor group name not found: "' + @associatedProcessorGroup + '"'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51009
 			end
 		end
 
 		if @gid = 0
 		begin
-			-- dissassociate given jobs from group
+			-- Dissassociate given jobs from group
 			--
 			DELETE FROM T_Analysis_Job_Processor_Group_Associations
 			WHERE (Job_ID in (SELECT Job FROM #TAJ))					
@@ -846,26 +847,26 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed removing job from processor group association'
+				Set @msg = 'Update operation failed removing job from processor group association'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51014
 			end
 
-			If @JobCountUpdated = 0
-				Set @JobCountUpdated = @myRowCount
+			If @jobCountUpdated = 0
+				Set @jobCountUpdated = @myRowCount
 
-			Set @Action2 = @Action2 + '; remove jobs from processor group'
+			Set @action2 = @action2 + '; remove jobs from processor group'
 		end
 		else
 		begin
-			-- for jobs with existing association, change it
+			-- For jobs with existing association, change it
 			--
 			UPDATE T_Analysis_Job_Processor_Group_Associations
-			SET	Group_ID = @gid,
+			Set	Group_ID = @gid,
 				Entered = GetDate(),
 				Entered_By = suser_sname()
 			WHERE (Job_ID in (SELECT Job FROM #TAJ)) AND Group_ID <> @gid				
@@ -874,19 +875,19 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed changing job to processor group association'
+				Set @msg = 'Update operation failed changing job to processor group association'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51015
 			end
 
 			If @myRowCount <> 0
-				Set @ProcessorGroupAssociationsUpdated = 1
+				Set @processorGroupAssociationsUpdated = 1
 
-			-- for jobs without existing association, create it
+			-- For jobs without existing association, create it
 			--
 			INSERT INTO T_Analysis_Job_Processor_Group_Associations
 								(Job_ID, Group_ID)
@@ -897,27 +898,27 @@ As
 			--
 			if @myError <> 0
 			begin
-				set @msg = 'Update operation failed assigning job to new processor group association'
+				Set @msg = 'Update operation failed assigning job to new processor group association'
 				rollback transaction @transName
-				if @DisableRaiseError = 0
+				if @disableRaiseError = 0
 					RAISERROR (@msg, 10, 1)
 				else
-					set @message = @msg
+					Set @message = @msg
 				return 51016
 			end
 
-			If @JobCountUpdated = 0
-				Set @JobCountUpdated = @myRowCount
+			If @jobCountUpdated = 0
+				Set @jobCountUpdated = @myRowCount
 
-			If @myRowCount <> 0 OR @ProcessorGroupAssociationsUpdated <> 0
-				Set @Action2 = @Action2 + '; associate jobs with processor group ' + @associatedProcessorGroup
+			If @myRowCount <> 0 OR @processorGroupAssociationsUpdated <> 0
+				Set @action2 = @action2 + '; associate jobs with processor group ' + @associatedProcessorGroup
 			
-			Set @AlterEnteredByRequired = 1
+			Set @alterEnteredByRequired = 1
 		end
 	end  -- </associated processor Group>
 	*/
 
- 	If Len(@callingUser) > 0 AND (@AlterEventLogRequired <> 0 OR @AlterEnteredByRequired <> 0)
+ 	If Len(@callingUser) > 0 AND (@alterEventLogRequired <> 0 OR @alterEnteredByRequired <> 0)
 	Begin
 		-- @callingUser is defined and items need to be updated in T_Event_Log and/or T_Analysis_Job_Processor_Group_Associations
 		--
@@ -932,7 +933,7 @@ As
 		SELECT DISTINCT Job
 		FROM #TAJ
 		
-		If @AlterEventLogRequired <> 0
+		If @alterEventLogRequired <> 0
 		Begin
 			-- Call AlterEventLogEntryUserMultiID
 			-- to alter the Entered_By field in T_Event_Log
@@ -940,12 +941,12 @@ As
 			Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
 		End
 
-		If @AlterEnteredByRequired <> 0
+		If @alterEnteredByRequired <> 0
 		Begin
 			-- Call AlterEnteredByUserMultiID
 			-- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
 		
-			Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @CallingUser
+			Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @callingUser
 		End
 	End
 
@@ -958,11 +959,11 @@ As
 		commit transaction @transName
 	end
 
-	Set @message = 'Number of jobs to update: ' + convert(varchar(12), @JobCountToUpdate)
+	Set @message = 'Number of jobs to update: ' + convert(varchar(12), @jobCountToUpdate)
 	
-	If @AlterData <> 0
+	If @alterData <> 0
 	Begin
-		If @JobCountUpdated = 0
+		If @jobCountUpdated = 0
 		Begin
 			If @action = ''
 				Set @message = 'No parameters were specified to be updated (' + @message + ')'
@@ -970,7 +971,7 @@ As
 				Set @message = @message + '; all jobs were already up-to-date (' + @action + ')'
 		End
 		else
-			Set @message = @message + '; ' + @action + ' for ' +  convert(varchar(12), @JobCountUpdated) + ' job(s)' + @Action2
+			Set @message = @message + '; ' + @action + ' for ' +  convert(varchar(12), @jobCountUpdated) + ' job(s)' + @action2
 	End
 	
 		

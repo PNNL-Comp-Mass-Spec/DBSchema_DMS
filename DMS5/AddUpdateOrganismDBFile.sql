@@ -15,18 +15,19 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganismDBFile]
 **
 **	Auth:	mem
 **  Date:	01/24/2014 mem - Initial version
-**			01/15/2015 mem - Added parameter @FileSizeKB
+**			01/15/2015 mem - Added parameter @fileSizeKB
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          03/31/2021 mem - Expand @organismName to varchar(128)
 **    
 *****************************************************/
 (
-	@FastaFileName varchar(128),
-	@OrganismName varchar(128),
-	@NumProteins int,
-	@NumResidues bigint,
-	@FileSizeKB int=0,
+	@fastaFileName varchar(128),
+	@organismName varchar(128),
+	@numProteins int,
+	@numResidues bigint,
+	@fileSizeKB int = 0,
 	@message varchar(512) = '' output,
     @returnCode varchar(64) = '' output
 )
@@ -54,39 +55,39 @@ As
 	-- Validate input fields
 	---------------------------------------------------
 
-	If IsNull(@FastaFileName, '') = ''
+	If IsNull(@fastaFileName, '') = ''
 	begin
-		Set @message = '@FastaFileName cannot be blank'
+		Set @message = '@fastaFileName cannot be blank'
 		Set @myError = 62000
 		Goto Done
 	End
 
-	If IsNull(@OrganismName, '') = ''
+	If IsNull(@organismName, '') = ''
 	begin
-		Set @message = '@OrganismName cannot be blank'
+		Set @message = '@organismName cannot be blank'
 		Set @myError = 62001
 		Goto Done
 	End
 
-	Set @NumProteins = IsNull(@NumProteins, 0)
-	Set @NumResidues = IsNull(@NumResidues, 0)
-	Set @FileSizeKB = IsNull(@FileSizeKB, 0)
+	Set @numProteins = IsNull(@numProteins, 0)
+	Set @numResidues = IsNull(@numResidues, 0)
+	Set @fileSizeKB = IsNull(@fileSizeKB, 0)
 	
 	---------------------------------------------------
-	-- Resolve @OrganismName to @OrganismID
+	-- Resolve @organismName to @organismID
 	---------------------------------------------------
 
-	Declare @OrganismID int = 0
+	Declare @organismID int = 0
 	
-	SELECT @OrganismID = Organism_ID
+	SELECT @organismID = Organism_ID
 	FROM T_Organisms
-	WHERE OG_name = @OrganismName
+	WHERE OG_name = @organismName
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	If @myRowCount = 0 Or IsNull(@OrganismID, 0) <= 0
+	If @myRowCount = 0 Or IsNull(@organismID, 0) <= 0
 	Begin
-		Set @message = 'Could not find organism in T_Organisms: ' + @OrganismName
+		Set @message = 'Could not find organism in T_Organisms: ' + @organismName
 		Set @myError = 62001
 		Goto Done
 	End
@@ -95,19 +96,19 @@ As
 	-- Add/Update T_Organism_DB_File
 	---------------------------------------------------
 	--
-	Declare @ExistingEntry tinyint = 0
+	Declare @existingEntry tinyint = 0
 	
-	If Exists (SELECT * FROM T_Organism_DB_File WHERE FileName = @FastaFileName)
-		Set @ExistingEntry = 1
+	If Exists (SELECT * FROM T_Organism_DB_File WHERE FileName = @fastaFileName)
+		Set @existingEntry = 1
 	
 	MERGE T_Organism_DB_File AS target
-	USING ( SELECT @FastaFileName AS FileName,
-				@OrganismID AS Organism_ID,
+	USING ( SELECT @fastaFileName AS FileName,
+				@organismID AS Organism_ID,
 				'Auto-created' AS Description,
 				0 AS Active,
-				@NumProteins AS NumProteins,
-				@NumResidues AS NumResidues,
-				@FileSizeKB AS FileSizeKB,
+				@numProteins AS NumProteins,
+				@numResidues AS NumResidues,
+				@fileSizeKB AS FileSizeKB,
 				1 AS Valid
 		) AS Source (FileName, Organism_ID, Description, Active, NumProteins, NumResidues, FileSizeKB, Valid)
 		ON (target.Filename = source.Filename)
@@ -127,10 +128,10 @@ As
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	
-	If @ExistingEntry = 1
-		Set @Message = 'Updated ' + @FastaFileName + ' in T_Organism_DB_File'
+	If @existingEntry = 1
+		Set @Message = 'Updated ' + @fastaFileName + ' in T_Organism_DB_File'
 	Else
-		Set @Message = 'Added ' + @FastaFileName + ' to T_Organism_DB_File'
+		Set @Message = 'Added ' + @fastaFileName + ' to T_Organism_DB_File'
 
 Done:
     Set @returnCode = Cast(@myError As varchar(64))

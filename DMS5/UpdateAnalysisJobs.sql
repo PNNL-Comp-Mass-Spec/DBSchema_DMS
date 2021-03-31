@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateAnalysisJobs
+
+CREATE Procedure [dbo].[UpdateAnalysisJobs]
 /****************************************************
 **
 **	Desc:
@@ -40,10 +41,11 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 **						   - Now calls UpdateAnalysisJobsWork to do the work
 **			08/19/2010 grk - try-catch for error handling
 **			09/02/2011 mem - Now calling PostUsageLogEntry
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          03/31/2021 mem - Expand @organismName to varchar(128)
 **
 *****************************************************/
 (
@@ -59,7 +61,7 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 --
     @parmFileName varchar(255) = '[no change]',
     @settingsFileName varchar(64) = '[no change]',
-    @organismName varchar(64) = '[no change]',
+    @organismName varchar(128) = '[no change]',
     @protCollNameList varchar(4000) = '[no change]',
     @protCollOptionsList varchar(256) = '[no change]',
 --
@@ -70,10 +72,10 @@ CREATE Procedure dbo.UpdateAnalysisJobs
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''
 
 	Declare @msg varchar(512)
 	Declare @JobCount int = 0
@@ -97,7 +99,7 @@ As
 
 	if IsNull(@JobList, '') = ''
 	begin
-		set @msg = 'Job list is empty'
+		Set @msg = 'Job list is empty'
 		RAISERROR (@msg, 11, 1)
 	end
 
@@ -113,7 +115,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Failed to create temporary job table'
+		Set @msg = 'Failed to create temporary job table'
 		RAISERROR (@msg, 11, 2)
 	end
 
@@ -130,7 +132,7 @@ As
 	--
 	if @myError <> 0
 	begin
-		set @msg = 'Error populating temporary job table'
+		Set @msg = 'Error populating temporary job table'
 		RAISERROR (@msg, 11, 3)
 	end
 

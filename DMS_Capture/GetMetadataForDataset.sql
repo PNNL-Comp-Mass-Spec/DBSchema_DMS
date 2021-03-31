@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **          05/04/2020 mem - Add fields LC_Cart_Name, LC_Cart_Config, and LC_Column
 **                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
 **          07/28/2020 mem - Add Dataset_ID
+**          03/31/2021 mem - Expand @organismName to varchar(128)
 **    
 *****************************************************/
 (
@@ -65,7 +66,7 @@ AS
     Declare @datasetWellNum varchar(64)
     Declare @experimentName varchar(64)
     Declare @experimentResearcherPRN varchar(64)
-    Declare @organismName varchar(64)
+    Declare @organismName varchar(128)
     Declare @experimentComment varchar(500)
     Declare @experimentSampleConc varchar(64)
     Declare @experimentLabelling varchar(64)
@@ -162,6 +163,7 @@ AS
     ORDER BY [Name]
 
     Return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMetadataForDataset] TO [DDL_Viewer] AS [dbo]

@@ -35,7 +35,8 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **          07/21/2016 mem - Log errors in PostLogEntry
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          08/29/2018 mem - Tabs to spaces
-**    
+**          03/31/2021 mem - Expand @organismName and @organismDBName to varchar(128)
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
@@ -130,8 +131,8 @@ As
     Declare @analysisToolName varchar(64)
     Declare @parmFileName varchar(255)
     Declare @settingsFileName varchar(255)
-    Declare @organismName varchar(64)
-    Declare @organismDBName varchar(64)
+    Declare @organismName varchar(128)
+    Declare @organismDBName varchar(128)
     Declare @proteinCollectionList varchar(4000)
     Declare @proteinOptionsList varchar(256)
     Declare @comment varchar(128)

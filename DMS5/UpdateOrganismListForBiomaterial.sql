@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateOrganismListForBiomaterial]
+CREATE PROCEDURE [dbo].[UpdateOrganismListForBiomaterial]
 /****************************************************
 **
 **  Desc: Updates organisms associated with a single biomaterial (cell_culture) item
@@ -16,10 +16,11 @@ CREATE Procedure [dbo].[UpdateOrganismListForBiomaterial]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/06/2018 mem - Fix delete bug in Merge statement
+**          03/31/2021 mem - Expand Organism_Name, @unknownOrganism, and @newOrganismName to varchar(128)
 **    
 *****************************************************/
 (
-    @biomaterialName varchar(64),    -- Biomaterial name, aka cell culture
+    @biomaterialName varchar(64),      -- Biomaterial name, aka cell culture
     @organismList varchar(max),        -- Comma-separated list of organism names.  Should be full organism name, but can also be short names, in which case AutoResolveOrganismName will try to resolve the short name to a full organsim name
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
@@ -33,13 +34,13 @@ AS
     set @message = ''
 
     Declare @biomaterialID int = 0
-    Declare @EntryID int
+    Declare @entryID int
     Declare @continue tinyint
     
-    Declare @MatchCount int
-    Declare @UnknownOrganism varchar(64)
-    Declare @NewOrganismName varchar(64)
-    Declare @NewOrganismID int
+    Declare @matchCount int
+    Declare @unknownOrganism varchar(128)
+    Declare @newOrganismName varchar(128)
+    Declare @newOrganismID int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -104,7 +105,7 @@ AS
     ---------------------------------------------------
     --
     CREATE TABLE #Tmp_BiomaterialOrganisms (
-        Organism_Name varchar(64) not null,
+        Organism_Name varchar(128) not null,
         Organism_ID int null,
         EntryID int Identity(1,1)
     )
@@ -149,36 +150,36 @@ AS
     -- try-to auto-resolve using the OG_Name column in T_Organisms
     ---------------------------------------------------
     
-    Set @EntryID = 0
+    Set @entryID = 0
     Set @continue = 1
     
-    While @Continue = 1
+    While @continue = 1
     Begin -- <a>
-        SELECT TOP 1 @EntryID = EntryID,
-                     @UnknownOrganism = Organism_Name
+        SELECT TOP 1 @entryID = EntryID,
+                     @unknownOrganism = Organism_Name
         FROM #Tmp_BiomaterialOrganisms
-        WHERE EntryID > @EntryID AND Organism_ID IS NULL
+        WHERE EntryID > @entryID AND Organism_ID IS NULL
         ORDER BY EntryID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         
         If @myRowCount = 0
         Begin
-            Set @Continue = 0
+            Set @continue = 0
         End
         Else
         Begin -- <b>
-            Set @MatchCount = 0
+            Set @matchCount = 0
             
-            exec AutoResolveOrganismName @UnknownOrganism, @MatchCount output, @NewOrganismName output, @NewOrganismID output
+            exec AutoResolveOrganismName @unknownOrganism, @matchCount output, @newOrganismName output, @newOrganismID output
                         
-            If @MatchCount = 1
+            If @matchCount = 1
             Begin
                 -- Single match was found; update Organism_Name and Organism_ID in #Tmp_BiomaterialOrganisms
                 UPDATE #Tmp_BiomaterialOrganisms
-                SET Organism_Name = @NewOrganismName,
-                    Organism_ID = @NewOrganismID
-                WHERE EntryID = @EntryID
+                SET Organism_Name = @newOrganismName,
+                    Organism_ID = @newOrganismID
+                WHERE EntryID = @entryID
 
             End
         End -- </b>
@@ -248,9 +249,9 @@ Done:
     -- Log SP usage
     ---------------------------------------------------
 
-    Declare @UsageMessage varchar(512) = ''
-    Set @UsageMessage = 'Biomaterial: ' + @biomaterialName
-    Exec PostUsageLogEntry 'UpdateOrganismListForBiomaterial', @UsageMessage
+    Declare @usageMessage varchar(512) = ''
+    Set @usageMessage = 'Biomaterial: ' + @biomaterialName
+    Exec PostUsageLogEntry 'UpdateOrganismListForBiomaterial', @usageMessage
 
     RETURN @myError
 
