@@ -22,7 +22,8 @@ SELECT PFMM.Mod_Entry_ID,
        MCF.Original_Source,
        MCF.Original_Source_Name,
        PF.Param_File_Name,
-       PF.Param_File_Description
+       PF.Param_File_Description,
+       Tool.AJT_toolName AS Primary_Tool
 FROM T_Param_File_Mass_Mods PFMM
      INNER JOIN T_Residues R
        ON PFMM.Residue_ID = R.Residue_ID
@@ -32,6 +33,10 @@ FROM T_Param_File_Mass_Mods PFMM
        ON PFMM.Local_Symbol_ID = SLS.Local_Symbol_ID
      INNER JOIN dbo.T_Param_Files PF
        ON PFMM.Param_File_ID = PF.Param_File_ID
+     INNER JOIN T_Param_File_Types PFT
+       ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID
+     INNER JOIN T_Analysis_Tool Tool       
+       ON PFT.Primary_Tool_ID = Tool.AJT_toolID
 )
 
 
