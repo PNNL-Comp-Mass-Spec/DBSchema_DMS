@@ -27,7 +27,7 @@ FROM T_Users U
                   FROM T_EUS_Site_Status ESS
                        INNER JOIN T_EUS_Users EU
                          ON ESS.ID = EU.Site_Status 
-                  WHERE NOT EU.HID IS Null 
+                  WHERE NOT EU.HID IS Null AND EU.Valid = 1
                 ) LookupQ
        ON LookupQ.EUS_Hanford_ID = U.U_HID AND LookupQ.RowRank = 1
 
