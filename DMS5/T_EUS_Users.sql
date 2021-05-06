@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_EUS_Users](
 	[Site_Status] [tinyint] NOT NULL,
 	[Last_Affected] [datetime] NULL,
 	[Last_Name]  AS (case when charindex(',',[NAME_FM])>(1) then substring([name_fm],(1),charindex(',',[NAME_FM])-(1)) else [NAME_FM] end) PERSISTED,
+	[Valid] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_EUS_Users] PRIMARY KEY CLUSTERED 
 (
 	[PERSON_ID] ASC
@@ -41,6 +42,8 @@ GO
 ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF_T_EUS_Users_Stie_Status]  DEFAULT ((2)) FOR [Site_Status]
 GO
 ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF_T_EUS_Users_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
+GO
+ALTER TABLE [dbo].[T_EUS_Users] ADD  CONSTRAINT [DF_T_EUS_Users_Valid]  DEFAULT ((1)) FOR [Valid]
 GO
 ALTER TABLE [dbo].[T_EUS_Users]  WITH CHECK ADD  CONSTRAINT [FK_T_EUS_Users_T_EUS_Site_Status] FOREIGN KEY([Site_Status])
 REFERENCES [dbo].[T_EUS_Site_Status] ([ID])
