@@ -11,11 +11,11 @@ SELECT U.PERSON_ID AS ID,
        SS.Name AS [Site Status],
        dbo.GetEUSUsersProposalList(U.PERSON_ID) AS Proposals,
        U.HID AS Hanford_ID,
+       U.Valid As Valid_EUS_ID,
        U.Last_Affected
 FROM T_EUS_Users U
      INNER JOIN T_EUS_Site_Status SS
        ON U.Site_Status = SS.ID
-
 
 
 GO

@@ -9,7 +9,8 @@ AS
 SELECT PERSON_ID AS [User ID],
        NAME_FM AS [User Name],
        HID AS Hanford_ID,
-       Name AS [Site Status]
+       Name AS [Site Status],
+       Valid As Valid_EUS_ID
 FROM T_EUS_Users U
      INNER JOIN T_EUS_Site_Status S
        ON U.Site_Status = S.ID
