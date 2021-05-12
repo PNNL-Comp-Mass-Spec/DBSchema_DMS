@@ -9,7 +9,8 @@ CREATE TABLE [dbo].[T_EUS_Users](
 	[HID] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Site_Status] [tinyint] NOT NULL,
 	[Last_Affected] [datetime] NULL,
-	[Last_Name]  AS (case when charindex(',',[NAME_FM])>(1) then substring([name_fm],(1),charindex(',',[NAME_FM])-(1)) else [NAME_FM] end) PERSISTED,
+	[Last_Name] [varchar](80) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[First_Name] [varchar](80) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Valid] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_EUS_Users] PRIMARY KEY CLUSTERED 
 (
