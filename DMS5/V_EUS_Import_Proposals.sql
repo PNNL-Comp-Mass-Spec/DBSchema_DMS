@@ -7,14 +7,13 @@ GO
 CREATE VIEW [dbo].[V_EUS_Import_Proposals]
 AS
 (
-SELECT PROPOSAL_ID,
+SELECT project_id As PROPOSAL_ID,
        TITLE,
-       PROPOSAL_TYPE,
+       proposal_type_display As PROPOSAL_TYPE,
        ACTUAL_END_DATE,
        ACTUAL_START_DATE
-FROM openquery ( EUS, 'SELECT * FROM VW_PROPOSALS' )
+FROM V_NEXUS_Import_Proposals
 )
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Import_Proposals] TO [DDL_Viewer] AS [dbo]
