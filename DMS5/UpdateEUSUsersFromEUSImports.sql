@@ -22,10 +22,12 @@ CREATE PROCEDURE [dbo].[UpdateEUSUsersFromEUSImports]
 **          03/19/2012 mem - Now populating T_EUS_Users.HID
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/12/2021 mem - Use new NEXUS-based views
+**                         - Add option to update EUS Users for Inactive proposals
 **
 *****************************************************/
 (
-	@message varchar(512)='' output
+    @updateUsersOnInactiveProposals tinyint = 0,
+    @message varchar(512) = '' output
 )
 As
     Set XACT_ABORT, nocount on
@@ -40,6 +42,7 @@ As
     Declare @callingProcName varchar(128)
     Declare @currentLocation varchar(128) = 'Start'
 
+    Set @updateUsersOnInactiveProposals = IsNull(@updateUsersOnInactiveProposals, 0)
 
     Begin Try
 
@@ -81,6 +84,7 @@ As
                     INNER JOIN ( SELECT PROPOSAL_ID
                                  FROM T_EUS_Proposals
                                  WHERE State_ID IN (1,2) Or 
+                                       @updateUsersOnInactiveProposals > 0 And State_ID <> 4   -- State for is "No Interest"
                                 ) DmsEUSProposals
                       ON Source.project_id = DmsEUSProposals.PROPOSAL_ID
             ) AS Source (Person_ID, name_fm, HID, Site_Status, first_name, last_name)
