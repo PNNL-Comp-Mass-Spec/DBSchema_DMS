@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 **          10/05/2016 mem - Update logic to allow for V_EUS_Import_Proposals to include inactive proposals
 **          11/09/2018 mem - Mark proposals as "Active" if their start date is in the future
 **          05/12/2021 mem - Use new NEXUS-based views
+**          05/14/2021 mem - Handle null values for actual_start_date
 **
 *****************************************************/
 (
@@ -71,8 +72,8 @@ As
                       proposal_type_display AS Proposal_Type,
                       actual_start_date AS Proposal_Start_Date,
                       actual_end_date AS Proposal_End_Date,
-                      CASE WHEN GetDate() < Source.actual_start_date THEN 1     -- Proposal start date is later than today; mark it active anyway
-                           WHEN GetDate() BETWEEN Source.actual_start_date AND DateAdd(Day, 1, Source.actual_end_date) THEN 1
+                      CASE WHEN Source.actual_start_date > GetDate() THEN 1     -- Proposal start date is later than today; mark it active anyway
+                           WHEN GetDate() BETWEEN IsNull(Source.actual_start_date, GetDate()) AND DateAdd(Day, 1, Source.actual_end_date) THEN 1
                            ELSE 0
                       END AS Active
                FROM dbo.V_NEXUS_Import_Proposals Source
