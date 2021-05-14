@@ -66,12 +66,13 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          04/23/2019 mem - Add support for MSFragger mod defs
 **          03/05/2021 mem - Add support for MaxQuant mod defs
+**          05/13/2021 mem - Fix handling of static MaxQuant mods that are N-terminal or C-terminal 
 **    
 *****************************************************/
 (
     @paramFileID int,            -- If 0 or a negative number, will validate the mods without updating any tables
     @mods varchar(max),
-    @infoOnly tinyint = 0,
+    @infoOnly tinyint = 0,       -- 1 to print @row, 2 to show #Tmp_Residues for each modification
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
     @paramFileType varchar(50) = '',    -- MSGFDB, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MS-GF+)
@@ -291,6 +292,11 @@ AS
         End
     End
 
+    If @infoOnly > 0
+    Begin
+        Select * From #Tmp_Mods
+    End
+
     Declare @entryID int = 0
     Declare @entryIDEnd int = 0
 
@@ -377,7 +383,7 @@ AS
         
         If @row <> ''
         Begin
-            If @infoOnly <> 0
+            If @infoOnly > 0
                 Print @row
 
             DELETE FROM #Tmp_ModDef
@@ -886,7 +892,7 @@ AS
                                 Begin
                                     Set @terminalMod = 1
                                     If IsNull(@affectedResidues, '') = '' Or Not @affectedResidues LIKE '[A-Z]'
-                                        Set @affectedResidues = '*'
+                                        Set @affectedResidues = '<'
 
                                     INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
                                 End
@@ -895,7 +901,7 @@ AS
                                 Begin
                                     Set @terminalMod = 1
                                     If IsNull(@affectedResidues, '') = '' Or Not @affectedResidues LIKE '[A-Z]'
-                                        Set @affectedResidues = '*'
+                                        Set @affectedResidues = '>'
 
                                     INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
                                 End                            
@@ -913,7 +919,7 @@ AS
                                 
                                     If @terminalMod = 1
                                     Begin
-                                        If @residueSymbol <> '*'
+                                        If Not @residueSymbol In ('*', '<', '>', '[', ']')
                                         Begin
                                             -- Terminal mod that targets specific residues
                                             -- Store this as a dynamic terminal mod
@@ -960,12 +966,17 @@ AS
                                      INNER JOIN T_Residues R
                                        ON R.Residue_Symbol = #Tmp_Residues.Residue_Symbol
 
-                                -- Look for symbols that did not resolve
-                                IF EXISTS (SELECT * FROM #Tmp_Residues WHERE Residue_ID IS NULL)
+                                If @infoOnly > 1
                                 Begin
-                                    Set @msgAddon = Null
+                                    Select * From #Tmp_Residues
+                                End
+
+                                -- Look for symbols that did not resolve
+                                IF EXISTS (SELECT * FROM #Tmp_Residues WHERE Residue_ID IS Null)
+                                Begin
+                                    Set @msgAddon = ''
                                 
-                                    SELECT @msgAddon = @msgAddon + Coalesce(@msgAddon + ', ', '') + Residue_Symbol
+                                    SELECT @msgAddon = @msgAddon + Case When @msgAddon = '' Then '' Else ', ' End + Residue_Symbol
                                     FROM #Tmp_Residues
                                     WHERE Residue_ID Is Null
                                 
