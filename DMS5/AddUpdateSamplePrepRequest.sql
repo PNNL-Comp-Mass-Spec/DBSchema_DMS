@@ -84,6 +84,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          01/13/2020 mem - Require @requestedPersonnel to include a sample prep staff member (no longer allow 'na' or 'any')
 **          08/12/2020 mem - Check for ValidateEUSUsage returning a message, even if it returns 0
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
+**          05/25/2021 mem - Set @samplePrepRequest to 1 when calling ValidateEUSUsage
 **
 *****************************************************/
 (
@@ -536,7 +537,9 @@ As
                         @eusProposalID output,
                         @eusUsersList output,
                         @eusUsageTypeID output,
-                        @msg output
+                        @msg Output,
+                        @autoPopulateUserListIfBlank = 0,
+                        @samplePrepRequest = 1
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
