@@ -81,6 +81,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          03/10/2021 mem - Add logic for MaxQuant
 **          03/15/2021 mem - Validate that the settings file and/or parameter file are defined for tools that require them
+**          05/26/2021 mem - Use @allowNonReleasedDatasets when calling ValidateAnalysisJobRequestDatasets
 **
 *****************************************************/
 (
@@ -124,16 +125,23 @@ As
     Declare @toolActive tinyint = 0
     Declare @settingsFileRequired tinyint = 0
     Declare @paramFileRequired tinyint = 0
+    Declare @allowNonReleasedDatasets Tinyint = 0
 
     ---------------------------------------------------
     -- Validate the datasets in #TD
     ---------------------------------------------------
+
+    If @mode In ('Update', 'PreviewUpdate')
+    Begin
+        Set @allowNonReleasedDatasets = 1
+    End
 
     exec @result = ValidateAnalysisJobRequestDatasets
                         @message output,
                         @autoRemoveNotReleasedDatasets=@autoRemoveNotReleasedDatasets,
                         @toolName=@toolName,
                         @allowNewDatasets=@allowNewDatasets,
+                        @allowNonReleasedDatasets=@allowNonReleasedDatasets,
                         @showDebugMessages=@showDebugMessages
 
     If @result <> 0

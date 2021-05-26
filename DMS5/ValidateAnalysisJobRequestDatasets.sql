@@ -36,13 +36,15 @@ CREATE Procedure [dbo].[ValidateAnalysisJobRequestDatasets]
 **          12/06/2017 mem - Add @allowNewDatasets
 **          07/30/2019 mem - Tabs to spaces
 **          03/10/2021 mem - Skip HMS vs. MS check when the tool is MaxQuant
+**          05/25/2021 mem - Add @allowNonReleasedDatasets
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @autoRemoveNotReleasedDatasets tinyint = 0,            -- When 1, then automatically removes datasets from #TD if they have an invalid rating
+    @autoRemoveNotReleasedDatasets tinyint = 0,           -- When 1, then automatically removes datasets from #TD if they have an invalid rating
     @toolName varchar(64) = 'unknown',
     @allowNewDatasets tinyint = 0,                        -- When 0, all datasets must have state 3 (Complete); when 1, will also allow datasets with state 1 or 2 (New or Capture In Progress)
+    @allowNonReleasedDatasets tinyint = 0,                -- When 1, allow datasets to have a rating of "Not Released"
     @showDebugMessages tinyint = 0                        -- 1 to print @message strings; 2 to also see the contents of #TD
 )
 As
@@ -106,7 +108,7 @@ As
     FROM #TD
     WHERE DS_Rating = -5
     
-    If @NotReleasedCount > 0
+    If @NotReleasedCount > 0 And @allowNonReleasedDatasets = 0
     Begin
         Set @list = ''
         
@@ -124,7 +126,7 @@ As
         If @autoRemoveNotReleasedDatasets = 0
         Begin
             if @NotReleasedCount = 1
-                set @message = 'dataset is "Not Released": ' + @list
+                set @message = 'Dataset is "Not Released": ' + @list
             else
                 set @message = Convert(varchar(12), @NotReleasedCount) + ' datasets are "Not Released": ' + @list
                 
