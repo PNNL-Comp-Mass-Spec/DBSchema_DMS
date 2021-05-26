@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 **          11/09/2018 mem - Mark proposals as "Active" if their start date is in the future
 **          05/12/2021 mem - Use new NEXUS-based views
 **          05/14/2021 mem - Handle null values for actual_start_date
+**          05/24/2021 mem - Add new proposal types to T_EUS_Proposal_Type
 **
 *****************************************************/
 (
@@ -136,6 +137,32 @@ As
 
             If @mergeDeleteCount > 0
                 Set @message = @message + '; ' + Convert(varchar(12), @mergeDeleteCount) + ' deleted'
+
+            Exec PostLogEntry 'Normal', @message, 'UpdateEUSProposalsFromEUSImports'
+            Set @message = ''
+        End
+
+        ---------------------------------------------------        
+        -- Add new proposal types to T_EUS_Proposal_Type
+        ---------------------------------------------------        
+
+        INSERT INTO T_EUS_Proposal_Type( Proposal_Type,
+                                         Proposal_Type_Name,
+                                         Abbreviation )
+        SELECT DISTINCT EUP.Proposal_Type,
+                        EUP.Proposal_Type,
+                        Replace(EUP.Proposal_Type, ' ', '')
+        FROM T_EUS_Proposals EUP
+             LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+               ON EUP.Proposal_Type = EPT.Proposal_Type
+        WHERE NOT EUP.Proposal_Type IS NULL AND
+              EPT.Proposal_Type_Name IS NULL
+	    --
+	    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount > 0
+        Begin
+            Set @message = 'Added ' + Cast(@myRowCount As Varchar(12)) + ' new proposal ' + dbo.CheckPlural(@myRowCount, 'type', 'types') + ' to T_EUS_Proposal_Type'
 
             Exec PostLogEntry 'Normal', @message, 'UpdateEUSProposalsFromEUSImports'
             Set @message = ''
