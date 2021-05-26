@@ -35,7 +35,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **     variable_mod_01 = 15.9949 M
 **     add_C_cysteine = 57.021464             # added to C - avg. 103.1429, mono. 103.00918
 **
-**  Format for MaxQuant:
+**  Format for MaxQuant when the run type is "Standard":
 **     <fixedModifications>
 **        <string>Carbamidomethyl (C)</string>
 **     </fixedModifications>
@@ -43,6 +43,22 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **        <string>Oxidation (M)</string>
 **        <string>Acetyl (Protein N-term)</string>
 **     </variableModifications>
+**
+**  Format for MaxQuant when the run type is "Reporter ion MS2":
+**     <fixedModifications>
+**        <string>Carbamidomethyl (C)</string>
+**     </fixedModifications>
+**     <variableModifications>
+**        <string>Oxidation (M)</string>
+**        <string>Acetyl (Protein N-term)</string>
+**     </variableModifications>
+**     <isobaricLabels>
+**        <IsobaricLabelInfo>
+**           <internalLabel>TMT6plex-Lys126</internalLabel>
+**           <terminalLabel>TMT6plex-Nter126</terminalLabel>
+**        </IsobaricLabelInfo>
+**     </isobaricLabels>
+**
 **
 **  To validate mods without storing them, set @paramFileID to 0 or a negative number
 **
@@ -67,6 +83,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          04/23/2019 mem - Add support for MSFragger mod defs
 **          03/05/2021 mem - Add support for MaxQuant mod defs
 **          05/13/2021 mem - Fix handling of static MaxQuant mods that are N-terminal or C-terminal 
+**          05/18/2021 mem - Add support for reporter ions in MaxQuant mod defs
 **    
 *****************************************************/
 (
@@ -252,6 +269,20 @@ AS
         SELECT 'variable' as ModType,
                Mods.ModInfo.value('.', 'varchar(128)')
         FROM   @xml.nodes('/MaxQuantParams/parameterGroups/parameterGroup/variableModifications/string') AS Mods(ModInfo)
+
+        If CharIndex('IsobaricLabelInfo', @mods) > 0
+        Begin
+            -- Reporter ions are defined (e.g. TMT or iTRAQ)
+            -- Treat these as fixed mods
+            INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
+            SELECT 'fixed' as ModType,
+                   Mods.ModInfo.value('.', 'varchar(128)')
+            FROM   @xml.nodes('/isobaricLabels/IsobaricLabelInfo/internalLabel') AS Mods(ModInfo)
+            UNION
+            SELECT 'fixed' as ModType,
+                   Mods.ModInfo.value('.', 'varchar(128)')
+            FROM   @xml.nodes('/isobaricLabels/IsobaricLabelInfo/terminalLabel') AS Mods(ModInfo)
+        End
 
         If Not Exists (SELECT * FROM #Tmp_MaxQuant_Mods)
         Begin
