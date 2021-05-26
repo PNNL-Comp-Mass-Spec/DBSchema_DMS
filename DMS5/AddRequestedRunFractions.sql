@@ -17,6 +17,8 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
+**                         - Expand @message to varchar(1024)
 **
 *****************************************************/
 (
@@ -36,8 +38,8 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
     @eusUserID varchar(512) = '',                   -- EUS User ID (integer); also supports the form "Baker, Erin (41136)"
     @mrmAttachment varchar(128),
     @mode varchar(12) = 'add',                      -- 'add' or 'preview'
-    @message varchar(512) output,
-    @autoPopulateUserListIfBlank tinyint = 0,       -- When 1, will auto-populate @eusUserID if it is empty and @eusUsageType = 'USER'
+    @message varchar(1024) output,
+    @autoPopulateUserListIfBlank tinyint = 0,       -- When 1, will auto-populate @eusUserID if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
     @logDebugMessages tinyint = 0
 )
@@ -47,7 +49,7 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @msg varchar(512)
     Declare @instrumentMatch varchar(64)
@@ -259,7 +261,7 @@ As
         --
         SELECT @requestorPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -386,6 +388,11 @@ As
     If @myError <> 0
         RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
+    If IsNull(@msg, '') <> ''
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+    End
+
     ---------------------------------------------------
     -- Validate EUS type, proposal, and user list
     ---------------------------------------------------
@@ -421,7 +428,9 @@ As
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
-        Set @message = @msg
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+    End
 
     Declare @commaPosition Int = CharIndex(',', @eusUserID)
     If @commaPosition > 1
@@ -514,12 +523,14 @@ As
     If @autoPopulateUserListIfBlank = 0
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 512)
+        Begin
+            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
+        End
         Else
         Begin
             If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
             Begin
-                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 512)
+                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
             End
         End
     End
@@ -568,7 +579,7 @@ As
         INSERT INTO #Tmp_NewRequests (Fraction_Number, Request_Name)
         VALUES (@fractionNumber, @requestName)
 
-        SET @fractionNumber = @fractionNumber + 1
+        Set @fractionNumber = @fractionNumber + 1
     End
 
     ---------------------------------------------------
@@ -591,7 +602,8 @@ As
         FROM #Tmp_NewRequests
         ORDER BY Fraction_Number DESC
 
-        SET @message = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest
+        Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest
+        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
     End
 
     ---------------------------------------------------
@@ -761,7 +773,8 @@ As
             End
         End
 
-        Set @message = 'Created new requested runs based on source request ' + CAST(@sourceRequestID as varchar(12)) + ', creating: ' + @requestIdList
+        Set @msg = 'Created new requested runs based on source request ' + CAST(@sourceRequestID as varchar(12)) + ', creating: ' + @requestIdList
+        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
 
         EXEC PostLogEntry 'Normal', @message, 'AddRequestedRunFractions'
 
@@ -777,7 +790,7 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Source Request ID ' + CAST(@sourceRequestID as varchar(12))
+            Declare @logMessage varchar(1500) = @message + '; Source Request ID ' + CAST(@sourceRequestID as varchar(12))
             exec PostLogEntry 'Error', @logMessage, 'AddRequestedRunFractions'
         End
 

@@ -91,6 +91,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
+**                         - Expand @message to varchar(1024)
 **
 *****************************************************/
 (
@@ -110,12 +112,12 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @eusUsersList varchar(1024) = '',           -- EUS User ID (integer); also supports the form "Baker, Erin (41136)". Prior to February 2020, supported a comma separated list of EUS user IDs
     @mode varchar(12) = 'add',                  -- 'add', 'check_add', 'update', 'check_update', or 'add-auto'
     @request int output,
-    @message varchar(512) output,
+    @message varchar(1024) output,
     @secSep varchar(64) = 'LC-Formic_100min',   -- Separation group
     @MRMAttachment varchar(128),
     @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
     @SkipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
-    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType = 'USER'
+    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
     @VialingConc varchar(32) = null,
     @VialingVol varchar(32) = null,
@@ -129,7 +131,7 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @msg varchar(512)
     Declare @InstrumentMatch varchar(64)
@@ -164,8 +166,8 @@ As
     --
     If @mode = 'add-auto'
     Begin
-        SET @mode = 'add'
-        SET @requestOrigin = 'auto'
+        Set @mode = 'add'
+        Set @requestOrigin = 'auto'
     END
 
     ---------------------------------------------------
@@ -198,13 +200,13 @@ As
         RAISERROR ('Work package was blank', 11, 116)
 
     Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
-        
+
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
     Set @comment = dbo.ReplaceCharacterCodes(@comment)
 
     -- Replace instances of CRLF (or LF) with semicolons
     Set @comment = dbo.RemoveCrLf(@comment)
-    
+
     If @comment like '%experiment_group/show/0000%'
         RAISERROR ('Please reference a valid experiment group ID, not 0000', 11, 116)
 
@@ -321,7 +323,7 @@ As
 
     -- need non-null request even if we are just checking
     --
-    set @request = @requestID
+    Set @request = @requestID
 
     -- cannot create an entry that already exists
     --
@@ -346,7 +348,7 @@ As
     Set @status = IsNull(@status, '')
 
     If @mode IN ('add', 'check_add') AND (@status = 'Completed' OR @status = '')
-        SET @status = 'Active'
+        Set @status = 'Active'
     --
     If @mode IN ('add', 'check_add') AND (NOT (@status IN ('Active', 'Inactive', 'Completed')))
         RAISERROR ('Status "%s" is not valid; must be Active, Inactive, or Completed', 11, 37, @status)
@@ -356,7 +358,7 @@ As
     --
     If @mode IN ('update', 'check_update') AND (@status = 'Completed' AND @oldStatus <> 'Completed' )
     Begin
-        set @msg = 'Cannot set status of request to "Completed" when existing status is "' + @oldStatus + '"'
+        Set @msg = 'Cannot set status of request to "Completed" when existing status is "' + @oldStatus + '"'
         RAISERROR (@msg, 11, 39)
     End
     --
@@ -364,10 +366,10 @@ As
         RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
 
     If IsNull(@wellplateNum, '') IN ('', 'na')
-        set @wellplateNum = null
+        Set @wellplateNum = null
 
     If IsNull(@wellNum, '') IN ('', 'na')
-        set @wellNum = null
+        Set @wellNum = null
 
     Declare @StatusID int = 0
 
@@ -419,7 +421,7 @@ As
         --
         SELECT @requestorPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -546,7 +548,7 @@ As
     --
     Declare @mrmAttachmentID int
     --
-    set @MRMAttachment = ISNULL(@MRMAttachment, '')
+    Set @MRMAttachment = ISNULL(@MRMAttachment, '')
     If @MRMAttachment <> ''
     Begin
         SELECT @mrmAttachmentID = ID
@@ -579,6 +581,11 @@ As
 
     If @myError <> 0
         RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
+
+    If IsNull(@msg, '') <> ''
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+    End
 
     ---------------------------------------------------
     -- Validate EUS type, proposal, and user list
@@ -615,7 +622,9 @@ As
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
-        Set @message = @msg
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+    End
 
     Declare @commaPosition Int = CharIndex(',', @eusUsersList)
     If @commaPosition > 1
@@ -713,11 +722,11 @@ As
     If @autoPopulateUserListIfBlank = 0
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 512)
+            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
         Else
         Begin
             If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
-                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 512)
+                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
         End
     End
 
@@ -856,7 +865,7 @@ As
     Begin -- <update>
         Begin transaction @transName
 
-        set @myError = 0
+        Set @myError = 0
         --
         UPDATE T_Requested_Run
         SET
@@ -929,7 +938,7 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Req Name ' + @reqName
+            Declare @logMessage varchar(1500) = @message + '; Req Name ' + @reqName
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateRequestedRun'
         End
 
