@@ -11,6 +11,8 @@ SELECT R.ID,
        R.Start,
        R.[Interval],
        R.[Comment],
+       'UserRemote:' + U.[UserRemote] + '%' + Case When U.[UserRemote] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
+       'UserOnsite:' + U.[UserOnsite] + '%' + Case When U.[UserOnsite] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
        'User:' + U.[User] + '%' + Case When U.[User] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
        'Broken:' + U.Broken + '%|' +
        'Maintenance:' + U.Maintenance + '%|' +

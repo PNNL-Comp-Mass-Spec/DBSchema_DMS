@@ -17,17 +17,17 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **
 **  Auth:   grk
 **  Date:   03/06/2012
-**          03/06/2012 grk - changed @mode to @outputFormat
-**          03/06/2012 grk - added long interval comment to 'detail' output format
-**          03/10/2012 grk - added '@OtherNotAvailable'
-**          03/15/2012 grk - added 'report' @outputFormat
-**          03/20/2012 grk - added users to 'report' @outputFormat
-**          03/21/2012 grk - added operator ID for ONSITE interval to 'report' @outputFormat
-**          08/21/2012 grk - added code to pull comment from dataset
-**          08/28/2012 grk - added code to clear comment from ONSITE capability type
-**          08/31/2012 grk - now removing 'Auto-switched dataset type ...' text from dataset comments
-**          09/11/2012 grk - added percent column to 'rollup' mode
-**          09/18/2012 grk - handling "Operator" and "PropUser" prorata comment fields
+**          03/06/2012 grk - Rename @mode to @outputFormat
+**          03/06/2012 grk - Add long interval comment to 'detail' output format
+**          03/10/2012 grk - Add '@OtherNotAvailable'
+**          03/15/2012 grk - Add 'report' @outputFormat
+**          03/20/2012 grk - Add users to 'report' @outputFormat
+**          03/21/2012 grk - Add operator ID for ONSITE interval to 'report' @outputFormat
+**          08/21/2012 grk - Add code to pull comment from dataset
+**          08/28/2012 grk - Add code to clear comment from ONSITE capability type
+**          08/31/2012 grk - Remove 'Auto-switched dataset type ...' text from dataset comments
+**          09/11/2012 grk - Add percent column to 'rollup' mode
+**          09/18/2012 grk - Handle "Operator" and "PropUser" prorata comment fields
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/03/2019 mem - Add parameter @eusInstrumentId, which is sent to GetRunTrackingMonthlyInfoByID if non-zero
@@ -35,6 +35,8 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **                           Use Dataset_ID instead of ID
 **          04/27/2020 mem - Update data validation checks
 **                         - Make several columns in the output table nullable
+**          05/26/2021 mem - Add support for usage types UserRemote and UserOnsite
+**                         - Use REMOTE when the usage has UserRemote
 **
 *****************************************************/
 (
@@ -247,7 +249,7 @@ As
         INSERT Into #TI (
             Dataset_ID,
             Start,
-            Breakdown,
+            Breakdown,  -- Holds usage
             Comment
         )
         SELECT
@@ -361,14 +363,21 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-        INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal, Users , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, Users, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
-            CONVERT(FLOAT, ISNULL(xmlNode.value('@User', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
+            (
+             CONVERT(FLOAT, ISNULL(xmlNode.value('@User', 'varchar(32)'), '0')) +
+             CONVERT(FLOAT, ISNULL(xmlNode.value('@UserRemote', 'varchar(32)'), '0')) +
+             CONVERT(FLOAT, ISNULL(xmlNode.value('@UserOnsite', 'varchar(32)'), '0'))
+            ) * #TR.[Interval] / 100 AS [Interval],
             xmlNode.value('@Proposal', 'varchar(32)') AS Proposal,
             xmlNode.value('@PropUser', 'varchar(32)') AS Users,
-            'ONSITE' AS Usage,                    -- This is defined in T_EMSL_Instrument_Usage_Type
+            Case When CONVERT(FLOAT, ISNULL(xmlNode.value('@UserRemote', 'varchar(32)'), '0')) > 0
+            Then 'REMOTE'       -- Defined in T_EMSL_Instrument_Usage_Type; means we analyzed a sample for a person outside PNNL, typically as part of an EMSL User Project
+            Else 'ONSITE'       -- Defined in T_EMSL_Instrument_Usage_Type; means we analyzed a sample for a PNNL staff member, or for an external collaborator who was actually onsite overseeing the data acquisition
+            End AS Usage,
             #TI.Comment
         FROM #TI
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
@@ -396,7 +405,7 @@ As
 
         UPDATE #TQ
         SET Comment = ''
-        WHERE Usage = 'ONSITE' OR Usage = 'CAP_DEV'
+        WHERE Usage In ('CAP_DEV', 'ONSITE', 'REMOTE')
 
         ---------------------------------------------------
         -- add apportioned long intervals to report table
@@ -448,10 +457,13 @@ As
         -- to EMSL usage categories
         ---------------------------------------------------
 
-        -- ToDo: remove this update since obsolete
         UPDATE #TR
         SET [Usage] = 'ONSITE'
-        WHERE [Usage] = 'USER'
+        WHERE [Usage] In ('USER', 'USER_ONSITE')
+
+        UPDATE #TR
+        SET [Usage] = 'REMOTE'
+        WHERE [Usage] = 'USER_REMOTE'
 
         ---------------------------------------------------
         -- Remove artifacts
@@ -464,8 +476,7 @@ As
         ---------------------------------------------------
 
         UPDATE #TR
-        SET
-            Duration = Duration + [Interval],
+        SET Duration = Duration + [Interval],
             [Interval] = 0
         WHERE [Type] = 'Dataset' AND [Normal] > 0
 
@@ -538,7 +549,7 @@ As
                    ON #TR.Dataset_ID = TRR.DatasetID
             WHERE #TR.[Type] = 'Dataset'
 
-            -- Get operator user ID for ONSITE intervals
+            -- Get operator user ID for ONSITE and REMOTE intervals
             UPDATE #TR
             SET Operator = TEU.PERSON_ID
             FROM #TR
@@ -549,7 +560,7 @@ As
                  INNER JOIN T_EUS_Users AS TEU
                    ON TU.U_HID = TEU.HID
             WHERE #TR.[Type] = 'Interval' AND
-                  #TR.[Usage] = 'ONSITE'
+                  #TR.[Usage] In ('ONSITE', 'REMOTE')
 
             -- output report rows
             SELECT

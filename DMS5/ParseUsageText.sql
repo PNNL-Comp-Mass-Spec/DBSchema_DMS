@@ -3,15 +3,22 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ParseUsageText
+
+CREATE PROCEDURE [dbo].[ParseUsageText]
 /****************************************************
 **
 **  Desc:
-**        Parse EMSL usage text in comment into XML
-**        Example usage values (note that each key can only be present once, so you cannot specify multiple proposals)
+**      Parse EMSL usage text in a comment to extract usage values and generate XML
 **
+**      Example usage values that can appear in @comment (note that each key can only be present once, so you cannot specify multiple proposals in a single @comment)
+**        'UserRemote[100%], Proposal[49361], PropUser[50082]'
+**        'UserOnsite[100%], Proposal[49361], PropUser[50082] Extra info about the interval'
+**        'Remote[100%], Proposal[49361], PropUser[50082]'
+**        'Onsite[100%], Proposal[49361], PropUser[50082]'
+**        'CapDev[10%], UserOnsite[90%], Proposal[49361], PropUser[50082]'
+**
+**      Legacy examples:
 **        'User[100%], Proposal[49361], PropUser[50082]'
-**        'User[100%], Proposal[49361], PropUser[50082] Extra info about the interval'
 **        'CapDev[10%], User[90%], Proposal[49361], PropUser[50082]'
 **
 **  Return values: 0: success, otherwise, error code
@@ -31,38 +38,37 @@ CREATE PROCEDURE dbo.ParseUsageText
 **                         - Rename temp tables
 **                         - Additional comment cleanup logic
 **          08/29/2017 mem - Direct users to http://prismwiki.pnl.gov/wiki/Long_Interval_Notes
+**          05/25/2021 mem - Add support for usage types UserOnsite and UserRemote
 **
 *****************************************************/
 (
-    @comment VARCHAR(4096) output,        -- Usage (input / output); see above for examples.  Usage keys and values will be removed from this string
-    @usageXML XML output,                -- Usage information, as XML.  Will be Null if @validateTotal is 1 and the percentages do not sum to 100%
+    @comment varchar(4096) output,      -- Usage (input / output); see above for examples.  Usage keys and values will be removed from this string
+    @usageXML XML output,               -- Usage information, as XML.  Will be Null if @validateTotal is 1 and the percentages do not sum to 100%
     @message varchar(512) output,
     @seq int = -1,
     @showDebug tinyint = 0,
-    @validateTotal tinyint = 1,            -- Raise an error (and do not update @comment or @usageXML) if the sum of the percentages is not 100
+    @validateTotal tinyint = 1,         -- Raise an error (and do not update @comment or @usageXML) if the sum of the percentages is not 100
     @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed; UpdateRunOpLog uses this to skip invalid entries (value passed back via AddUpdateRunInterval)
 )
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @comment = IsNull(@comment, '')
-    set @message = ''
+    Set @comment = Ltrim(Rtrim(IsNull(@comment, '')))
+    Set @message = ''
     Set @seq = IsNull(@seq, -1)
     Set @showDebug = IsNull(@showDebug, 0)
     Set @validateTotal = IsNull(@validateTotal, 1)
     Set @invalidUsage = 0
 
     If @showDebug > 0
-        Print 'Initial comment for ID ' + cast(@seq as varchar(9)) + ': ' + IsNull(@comment, '<Empty>')
+        Print 'Initial comment for ID ' + cast(@seq as varchar(9)) + ': ' + @comment
 
     Declare @logErrors tinyint = 1
 
@@ -72,7 +78,7 @@ AS
 
     CREATE TABLE #TmpUsageInfo (
         UsageKey varchar(32),
-        UsageValue VARCHAR(12) NULL,
+        UsageValue varchar(12) NULL,
         UniqueID int IDENTITY(1,1) NOT NULL
     )
 
@@ -89,19 +95,22 @@ AS
     )
 
     ---------------------------------------------------
-    -- usage keywords
+    -- Usage keywords
     ---------------------------------------------------
 
-    DECLARE @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, User'
-    DECLARE @nonPercentageKeys VARCHAR(256) = 'Operator, Proposal, PropUser'
+    Declare @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, UserOnsite, UserRemote, Onsite, Remote, User'
+    Declare @nonPercentageKeys VARCHAR(256) = 'Operator, Proposal, PropUser'
+    Declare @commentToSearch Varchar(4096)
 
     BEGIN TRY
         ---------------------------------------------------
         -- Normalize punctuation to remove spaces around commas
+        -- Furthermore, start @comment with a comma to allow for exact keyword matches
         ---------------------------------------------------
 
-        SET @comment = REPLACE(@comment, ', ', ',')
-        SET @comment = REPLACE(@comment, ' ,', ',')
+        Set @comment = REPLACE(@comment, ', ', ',')
+        Set @comment = REPLACE(@comment, ' ,', ',')
+        Set @commentToSearch = ',' + @comment
 
         ---------------------------------------------------
         -- Set up temp table with keywords
@@ -130,15 +139,17 @@ AS
         -- corresponding values
         ---------------------------------------------------
 
-        DECLARE @index int
-        DECLARE @eov int
-        DECLARE @val VARCHAR(24)
-        DECLARE @curVal VARCHAR(24)
-        DECLARE @bot INT = 0
+        Declare @index int
+        Declare @startOfValue int = 0
+        Declare @endOfValue Int
 
-        DECLARE @uniqueID INT = 0, @nextID INT = 0
-        DECLARE @kw VARCHAR(32)
-        DECLARE @done tinyint = 0
+        Declare @val varchar(24)
+        Declare @curVal varchar(24)
+        Declare @keywordStartIndex int = 0
+
+        Declare @uniqueID int = 0, @nextID int = 0
+        Declare @kw varchar(32)
+        Declare @done tinyint = 0
 
         WHILE @done = 0
         BEGIN -- <a>
@@ -146,15 +157,15 @@ AS
             -- Get next keyword to look for
             ---------------------------------------------------
 
-            SET @kw = ''
+            Set @kw = ''
             SELECT TOP 1
-                @kw = UsageKey + '[',
+                @kw = ',' + UsageKey + '[',
                 @curVal = UsageValue,
                 @uniqueID = UniqueID
             FROM #TmpUsageInfo
             WHERE UniqueID > @nextID
 
-            SET @nextID = @uniqueID
+            Set @nextID = @uniqueID
 
             ---------------------------------------------------
             -- Done if no more keywords,
@@ -162,10 +173,10 @@ AS
             ---------------------------------------------------
 
             IF @kw = ''
-                SET @done = 1
+                Set @done = 1
             ELSE
             BEGIN -- <b>
-                SET @index = CHARINDEX(@kw, @comment)
+                Set @index = CHARINDEX(@kw, @commentToSearch)
 
                 ---------------------------------------------------
                 -- If we found a keyword in the text
@@ -175,17 +186,17 @@ AS
                 IF @index = 0
                 BEGIN
                     if @showDebug > 0
-                        Print 'Keyword not found: ' + @kw
+                        Print '  keyword not found: ' + @kw
                 END
                 ELSE
                 BEGIN -- <c>
                     if @showDebug > 0
                         Print 'Parse keyword ' + @kw + ' at index ' + Cast(@index as varchar(9))
 
-                    SET @bot = @index
-                    SET @index = @index + LEN(@kw)
-                    SET @eov = CHARINDEX(']', @comment, @index)
-                    IF @eov = 0
+                    Set @keywordStartIndex = @index
+                    Set @startOfValue = @index + LEN(@kw)
+                    Set @endOfValue = CHARINDEX(']', @commentToSearch, @startOfValue)
+                    IF @endOfValue = 0
                     Begin
                         Set @logErrors = 0
                         Set @invalidUsage = 1
@@ -193,13 +204,13 @@ AS
                     End
 
                     INSERT INTO #TmpUsageText ( UsageText )
-                    VALUES (SUBSTRING(@comment, @bot, (@eov - @bot) + 1))
+                    VALUES (SUBSTRING(@commentToSearch, @keywordStartIndex + 1, (@endOfValue - @keywordStartIndex) + 1))
 
-                    SET @val = ''
-                    SET @val = SUBSTRING(@comment, @index, @eov - @index)
+                    Set @val = ''
+                    Set @val = SUBSTRING(@commentToSearch, @startOfValue, @endOfValue - @startOfValue)
 
-                    SET @val = REPLACE(@val, '%', '')
-                    SET @val = REPLACE(@val, ',', '')
+                    Set @val = REPLACE(@val, '%', '')
+                    Set @val = REPLACE(@val, ',', '')
 
                     If Try_Convert(int, @val) Is Null
                     Begin
@@ -217,17 +228,29 @@ AS
         END -- </a>
 
         ---------------------------------------------------
-        -- clear keywords not found from table
+        -- Clear keywords not found from table
         ---------------------------------------------------
 
         DELETE FROM #TmpUsageInfo WHERE UsageValue IS null
+
+        ---------------------------------------------------
+        -- Updated abbreviated keywords
+        ---------------------------------------------------
+
+        UPDATE #TmpUsageInfo
+        SET UsageKey = 'UserOnsite'
+        WHERE UsageKey = 'Onsite'
+
+        UPDATE #TmpUsageInfo
+        SET UsageKey = 'UserRemote'
+        WHERE UsageKey = 'Remote'
 
         ---------------------------------------------------
         -- Verify percentage total
         -- Skip keys in #TmpNonPercentageKeys ('Operator, Proposal, PropUser')
         ---------------------------------------------------
 
-        DECLARE @total INT = 0
+        Declare @total INT = 0
         SELECT @total = @total + CASE WHEN NOT UsageKey IN ( SELECT UsageKey FROM #TmpNonPercentageKeys )
                                       THEN COALESCE(Try_Convert(int, UsageValue), 0)
                                       ELSE 0
@@ -245,10 +268,10 @@ AS
         -- Verify proposal (if user present)
         ---------------------------------------------------
 
-        DECLARE @hasUser INT = 0
-        DECLARE @hasProposal INT = 0
+        Declare @hasUser INT = 0
+        Declare @hasProposal INT = 0
 
-        SELECT @hasUser = COUNT(*) FROM #TmpUsageInfo WHERE UsageKey = 'User'
+        SELECT @hasUser = COUNT(*) FROM #TmpUsageInfo WHERE UsageKey IN ('User', 'UserOnsite', 'UserRemote')
         SELECT @hasProposal = COUNT(*) FROM #TmpUsageInfo WHERE UsageKey = 'Proposal'
 
         IF (@hasUser > 0 ) AND (@hasProposal = 0)
@@ -262,12 +285,12 @@ AS
         -- Make XML
         ---------------------------------------------------
 
-        DECLARE @s VARCHAR(512) = ''
+        Declare @s VARCHAR(512) = ''
         --
         SELECT @s = @s + UsageKey + '="' + UsageValue + '" '
         FROM #TmpUsageInfo
         --
-        SET @usageXML = '<u ' + @s + ' />'
+        Set @usageXML = '<u ' + @s + ' />'
 
         ---------------------------------------------------
         -- Remove usage text from comment
@@ -276,18 +299,18 @@ AS
         SELECT @comment = REPLACE(@comment, UsageText, '')
         FROM #TmpUsageText
 
-        SET @comment = LTRIM(RTRIM(@comment))
+        Set @comment = LTRIM(RTRIM(@comment))
         If @comment LIKE ',%'
             Set @comment = LTRIM(Substring(@comment, 2, LEN(@Comment)-1))
 
         If @comment LIKE '%,'
             Set @comment = RTRIM(Substring(@comment, 1, LEN(@Comment)-1))
 
-        SET @comment = REPLACE(@comment, ',,', '')
-        SET @comment = REPLACE(@comment, ', ,', '')
-        SET @comment = REPLACE(@comment, '. ,', '. ')
-        SET @comment = REPLACE(@comment, '.,', '. ')
-        SET @comment = LTRIM(RTRIM(@comment))
+        Set @comment = REPLACE(@comment, ',,', '')
+        Set @comment = REPLACE(@comment, ', ,', '')
+        Set @comment = REPLACE(@comment, '. ,', '. ')
+        Set @comment = REPLACE(@comment, '.,', '. ')
+        Set @comment = LTRIM(RTRIM(@comment))
 
         If @comment = ','
             Set @comment =''
@@ -298,11 +321,11 @@ AS
     END TRY
     BEGIN CATCH
         --EXEC FormatErrorMessage @message output, @myError output
-        SET @myError = ERROR_NUMBER()
+        Set @myError = ERROR_NUMBER()
         IF @myError = 50000
-            SET @myError = ERROR_STATE()
+            Set @myError = ERROR_STATE()
 
-        SET @message = ERROR_MESSAGE() -- + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
+        Set @message = ERROR_MESSAGE() -- + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
 
         If @logErrors > 0
             Exec PostLogEntry 'Error', @message, 'ParseUsageText'

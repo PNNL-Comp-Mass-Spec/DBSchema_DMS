@@ -7,6 +7,8 @@ GO
 CREATE VIEW [dbo].[V_Run_Interval_Usage]
 AS
 SELECT ID, 
+       ISNULL(xmlNode.value('@UserRemote', 'nvarchar(256)'), 0) [UserRemote],
+       ISNULL(xmlNode.value('@UserOnsite', 'nvarchar(256)'), 0) [UserOnsite],
        ISNULL(xmlNode.value('@User', 'nvarchar(256)'), 0) [User],
        ISNULL(xmlNode.value('@Proposal', 'nvarchar(256)'), '') User_Proposal,
        ISNULL(xmlNode.value('@Broken', 'nvarchar(256)'), 0) Broken,
