@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[LookupEUSFromExperimentSamplePrep]
 **  Date:   07/11/2007 grk - Ticket #499
 **          07/16/2007 grk - Added check for "(lookup)"
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
+**          05/25/2021 mem - Change @eusUsageType to USER_REMOTE if the prep request has UsageType USER_REMOTE, even if @eusUsageType is already USER_ONSITE
 **
 *****************************************************/
 (
@@ -42,9 +43,9 @@ As
     -- Find associated sample prep request for experiment
     ---------------------------------------------------
     --
-    Declare @requestID int = 0
+    Declare @prepRequestID int = 0
     --
-    SELECT @requestID = EX_sample_prep_request_ID
+    SELECT @prepRequestID = EX_sample_prep_request_ID
     FROM T_Experiments
     WHERE Experiment_Num = @experimentNum
     --
@@ -52,7 +53,7 @@ As
     --
     if @myError <> 0
     begin
-      set @message = 'Error trying to find sample prep request'
+      Set @message = 'Error trying to find sample prep request'
       return  @myError
     end
 
@@ -61,7 +62,7 @@ As
     -- we are done
     ---------------------------------------------------
     --
-    if @requestID = 0
+    if @prepRequestID = 0
     begin
         return  0
     end
@@ -71,24 +72,24 @@ As
     ---------------------------------------------------
 
     Declare
-        @eUT varchar(50),
-        @ePID varchar(10),
-        @eUL varchar(1024)
+        @usageTypeSamplePrep varchar(50),
+        @proposalIdSamplePrep varchar(10),
+        @userListSamplePrep varchar(1024)
 
-    SELECT @eUT = ISNULL(EUS_UsageType, ''),
-           @ePID = ISNULL(EUS_Proposal_ID, ''),
-           @eUL = CASE
+    SELECT @usageTypeSamplePrep = ISNULL(EUS_UsageType, ''),
+           @proposalIdSamplePrep = ISNULL(EUS_Proposal_ID, ''),
+           @userListSamplePrep = CASE
                       WHEN EUS_User_ID IS NULL THEN ''
                       ELSE Cast(EUS_User_ID AS varchar(12))
                   END
     FROM T_Sample_Prep_Request
-    WHERE ID = @requestID
+    WHERE ID = @prepRequestID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-        set @message = 'Error looking up EUS fields'
+        Set @message = 'Error looking up EUS fields'
         return  @myError
     end
 
@@ -98,9 +99,15 @@ As
     --
     Declare @ovr varchar(10) = '(lookup)'
 
-    set @eusUsageType = CASE WHEN @eusUsageType = @ovr THEN @eUT ELSE @eusUsageType END
-    set @eusProposalID = CASE WHEN @eusProposalID = @ovr THEN @ePID ELSE @eusProposalID END
-    set @eusUsersList = CASE WHEN @eusUsersList = @ovr THEN @eUL ELSE @eusUsersList END
+    Set @eusUsageType = CASE WHEN @eusUsageType = @ovr THEN @usageTypeSamplePrep ELSE @eusUsageType END
+    Set @eusProposalID = CASE WHEN @eusProposalID = @ovr THEN @proposalIdSamplePrep ELSE @eusProposalID END
+    Set @eusUsersList = CASE WHEN @eusUsersList = @ovr THEN @userListSamplePrep ELSE @eusUsersList End
+
+    If @usageTypeSamplePrep = 'USER_REMOTE' And @eusUsageType In ('USER', 'USER_ONSITE')
+    Begin
+        Set @message = 'Changed Usage Type to USER_REMOTE based on Prep Request ID ' + Cast(@prepRequestID as varchar(12))
+        Set @eusUsageType = 'USER_REMOTE'
+    End
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [DDL_Viewer] AS [dbo]
