@@ -180,7 +180,7 @@ As
     -- if EUS usage type requires them
     ---------------------------------------------------
     --
-    If @eusUsageType <> 'USER'
+    If @eusUsageType Not In ('USER', 'USER_ONSITE', 'USER_REMOTE')
     Begin
         -- Make sure no proposal ID or users are specified
         If IsNull(@eusProposalID, '') <> '' OR @eusUsersList <> ''
@@ -189,12 +189,12 @@ As
         Set @eusProposalID = NULL
         Set @eusUsersList = ''
     End
-    
-    If @eusUsageType = 'USER'
+
+    If @eusUsageType In ('USER', 'USER_ONSITE', 'USER_REMOTE')
     Begin -- <a>
 
         ---------------------------------------------------
-        -- Proposal and user list cannot be blank when the usage type is 'USER'
+        -- Proposal and user list cannot be blank when the usage type is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
         ---------------------------------------------------
         If IsNull(@eusProposalID, '') = ''
         Begin
