@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
+CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
 /****************************************************
 **
-**  Desc: 
-**      Requested run admin operations 
+**  Desc:
+**      Requested run admin operations
 **      Will only update Active and Inactive requests
 **
 **      Example contents of @requestList:
@@ -33,7 +33,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
 **          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
 **          10/23/2020 mem - Allow updating 'fraction' based requests
-**    
+**
 *****************************************************/
 (
     @requestList text,                -- XML describing list of Requested Run IDs
@@ -42,7 +42,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunAdmin]
     @callingUser varchar(128) = ''
 )
 As
-    SET NOCOUNT ON 
+    SET NOCOUNT ON
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -51,7 +51,7 @@ As
     SET CONCAT_NULL_YIELDS_NULL ON
     SET ANSI_PADDING ON
 
-    SET @message = ''
+    Set @message = ''
 
     Declare @UsageMessage varchar(512) = ''
     Declare @stateID int = 0
@@ -59,29 +59,29 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAdmin', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Declare @logMessage varchar(4096)        
+    Declare @logMessage varchar(4096)
 
     -- Set to 1 to log the contents of @requestList
     Declare @debugEnabled tinyint = 0
-    
+
     If @debugEnabled > 0
     Begin
-        Set @logMessage = Cast(@requestList as varchar(4000))        
+        Set @logMessage = Cast(@requestList as varchar(4000))
         exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
 
         Declare @argLength Int = DataLength(@requestList)
         Set @logMessage = Cast(@argLength As Varchar(12)) + ' characters in @requestList'
         exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
     End
-    
+
     -----------------------------------------------------------
     -- temp table to hold list of requests
     -----------------------------------------------------------
@@ -92,7 +92,7 @@ As
         Origin VARCHAR(32) NULL,
         ItemID int NULL
     )
-    SET @xml = @requestList
+    Set @xml = @requestList
     --
     INSERT INTO #TMP
         ( Item )
@@ -104,7 +104,7 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error trying to convert list'
+        Set @message = 'Error trying to convert list'
         GOTO DoneNoLog
     End
 
@@ -129,28 +129,28 @@ As
     --
     If @myError <> 0
     Begin
-        set @message = 'Error trying to get status'
+        Set @message = 'Error trying to get status'
         GOTO DoneNoLog
     End
-    
+
     IF EXISTS (SELECT * FROM #TMP WHERE Status IS NULL)
     Begin
-        SET @myError = 51012
-        set @message = 'There were invalid request IDs'
+        Set @myError = 51012
+        Set @message = 'There were invalid request IDs'
         GOTO DoneNoLog
     End
 
     IF EXISTS (SELECT * FROM #TMP WHERE not Status IN ('Active', 'Inactive'))
     Begin
-        SET @myError = 51013
-        set @message = 'Cannot change requests that are in status other than "Active" or "Inactive"'
+        Set @myError = 51013
+        Set @message = 'Cannot change requests that are in status other than "Active" or "Inactive"'
         GOTO DoneNoLog
     End
 
     IF EXISTS (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction'))
     Begin
-        SET @myError = 51013
-        set @message = 'Cannot change requests that were not entered by user'
+        Set @myError = 51013
+        Set @message = 'Cannot change requests that were not entered by user'
         GOTO DoneNoLog
     End
 
@@ -160,7 +160,7 @@ As
     --
     UPDATE #TMP
     SET ItemID = Try_Convert(int, Item)
-    
+
     -----------------------------------------------------------
     -- Populate a temporary table with the list of Requested Run IDs to be updated or deleted
     -----------------------------------------------------------
@@ -168,9 +168,9 @@ As
     CREATE TABLE #TmpIDUpdateList (
         TargetID int NOT NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
-    
+
     INSERT INTO #TmpIDUpdateList (TargetID)
     SELECT DISTINCT ItemID
     FROM #TMP
@@ -192,7 +192,7 @@ As
         --
         If @myError <> 0
         Begin
-            set @message = 'Error trying to update status'
+            Set @message = 'Error trying to update status'
             GOTO done
         End
 
@@ -207,15 +207,15 @@ As
             SELECT @stateID = State_ID
             FROM T_Requested_Run_State_Name
             WHERE (State_Name = @mode)
-            
+
             Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
         End
-        
+
         -- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
         --
         Declare @continue tinyint = 1
         Declare @requestId int = -100000
-        
+
         While @continue = 1
         Begin
             SELECT TOP 1 @requestId = ItemID
@@ -224,7 +224,7 @@ As
             ORDER BY ItemID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
             Begin
                 Set @continue = 0
@@ -233,9 +233,9 @@ As
             Begin
                 Exec UpdateCachedRequestedRunEUSUsers @requestId
             End
-            
+
         End
-        
+
         GOTO Done
     END
 
@@ -253,7 +253,7 @@ As
         --
         If @myError <> 0
         Begin
-            set @message = 'Error trying to delete requests'
+            Set @message = 'Error trying to delete requests'
             GOTO done
         End
 
@@ -266,10 +266,10 @@ As
             -- This procedure uses #TmpIDUpdateList
             --
             Set @stateID = 0
-            
+
             Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
         End
-        
+
         -- Remove any cached EUS user lists
         DELETE FROM T_Active_Requested_Run_Cached_EUS_Users
         WHERE Request_ID IN ( SELECT ItemID
@@ -279,7 +279,7 @@ As
 
         GOTO Done
     END
-        
+
     -----------------------------------------------------------
     -- Unassign requests
     -----------------------------------------------------------
@@ -287,10 +287,10 @@ As
     If @mode = 'UnassignInstrument'
     Begin
         UPDATE T_Requested_Run
-        SET Queue_State = 1, 
+        SET Queue_State = 1,
             Queue_Instrument_ID = Null
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP ) AND 
+                      FROM #TMP ) AND
               RDS_Status <> 'Completed' AND
               (Queue_State = 2 OR Not Queue_Instrument_ID Is NULL)
         --
@@ -298,7 +298,7 @@ As
         --
         If @myError <> 0
         Begin
-            set @message = 'Error trying to unassign requests'
+            Set @message = 'Error trying to unassign requests'
             GOTO done
         End
 
@@ -311,7 +311,7 @@ Done:
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
-    
+
     Exec PostUsageLogEntry 'UpdateRequestedRunAdmin', @UsageMessage
 
 DoneNoLog:

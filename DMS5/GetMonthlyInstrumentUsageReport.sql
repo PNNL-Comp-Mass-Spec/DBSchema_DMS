@@ -7,16 +7,16 @@ GO
 CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 /****************************************************
 **
-**  Desc: 
-**    Create a monthly usage report for given  
-**    Instrument, year, and month 
+**  Desc:
+**    Create a monthly usage report for given
+**    Instrument, year, and month
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   03/06/2012 
+**  Date:   03/06/2012
 **          03/06/2012 grk - changed @mode to @outputFormat
 **          03/06/2012 grk - added long interval comment to 'detail' output format
 **          03/10/2012 grk - added '@OtherNotAvailable'
@@ -35,16 +35,14 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **                           Use Dataset_ID instead of ID
 **          04/27/2020 mem - Update data validation checks
 **                         - Make several columns in the output table nullable
-**    
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
+**
 *****************************************************/
 (
     @instrument varchar(64),
     @eusInstrumentId int = 0,               -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
     @year varchar(12),
     @month varchar(12),
-    @outputFormat varchar(12) = 'details',  -- 'details', 'rollup', 'check', 'report' 
+    @outputFormat varchar(12) = 'details',  -- 'details', 'rollup', 'check', 'report'
     @message varchar(512) = '' output
 )
 As
@@ -55,9 +53,9 @@ As
 
     Set @instrument = IsNull(@instrument, '')
     Set @eusInstrumentId = IsNull(@eusInstrumentId, 0)
-   
+
     Set @message = ''
-                
+
     Declare @processByEUS Tinyint = 0
 
     If @eusInstrumentId > 0
@@ -67,7 +65,7 @@ As
 
     ---------------------------------------------------
     ---------------------------------------------------
-    BEGIN TRY 
+    BEGIN TRY
 
         If @processByEUS = 0
         Begin
@@ -85,7 +83,7 @@ As
                               HAVING Count(*) > 1 ) LookupQ
                    ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID
             WHERE InstName.IN_name = @instrument
-            
+
             If @eusInstrumentId > 0
             Begin
                 Set @processByEUS = 1
@@ -97,14 +95,14 @@ As
         -- get maximum time available in month
         ---------------------------------------------------
 
-        DECLARE @date DATETIME = CONVERT(DATE, @month + '/1/' + @year, 101)
-        DECLARE @daysInMonth int
-        SET @daysInMonth =  DAY(DATEADD (m, 1, DATEADD (d, 1 - DAY(@date), @date)) - 1) 
-        DECLARE @minutesInMonth INT = @daysInMonth * 1440
+        Declare @date DATETIME = CONVERT(DATE, @month + '/1/' + @year, 101)
+        Declare @daysInMonth int
+        Set @daysInMonth =  DAY(DATEADD (m, 1, DATEADD (d, 1 - DAY(@date), @date)) - 1)
+        Declare @minutesInMonth INT = @daysInMonth * 1440
 
         ---------------------------------------------------
         -- create temporary table to contain report data
-        -- and populate with datasets in for the specified 
+        -- and populate with datasets in for the specified
         -- instrument and reporting month
         -- (the UDF returns intervals adjusted to monthly boundaries)
         ---------------------------------------------------
@@ -123,7 +121,7 @@ As
             Users VARCHAR(1024) NULL,
             Operator VARCHAR(128) NULL
         )
-        
+
         If @instrument = '' AND @eusInstrumentId = 0
         Begin
             INSERT INTO #TR (
@@ -174,7 +172,7 @@ As
         End;
         Else
         Begin;
-        
+
             INSERT INTO #TR (
                 Dataset_ID,
                 [Type],
@@ -205,7 +203,7 @@ As
         ---------------------------------------------------
         -- Pull comments from datasets
         --
-        -- The Common Table Expression (CTE) is used to create a cleaned up comment that removes 
+        -- The Common Table Expression (CTE) is used to create a cleaned up comment that removes
         --  text of the form Auto-switched dataset type from HMS-MSn to HMS-HCD-HMSn on 2012-01-01
         ---------------------------------------------------
 
@@ -219,23 +217,23 @@ As
                                           SUBSTRING(DS_Comment, AutoSwitchIndex, 200) AS AutoSwitchTextPortion
                                     FROM ( SELECT DS.Dataset_ID, DS_Comment,
                                                   PATINDEX('%Auto-switched dataset type from%to%on [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]%', DS_comment) AS AutoSwitchIndex
-                                            FROM T_Dataset DS INNER JOIN 
+                                            FROM T_Dataset DS INNER JOIN
                                                  #TR ON DS.Dataset_ID = #TR.Dataset_ID
                                           ) FilterQ
-                                    WHERE AutoSwitchIndex > 0 
-                                  ) FilterQ2 
-                           ) FilterQ3 
+                                    WHERE AutoSwitchIndex > 0
+                                  ) FilterQ2
+                           ) FilterQ3
                     ) FilterQ4
           )
         UPDATE #TR
         SET Comment = IsNull(DSCommentClean.Comment, IsNull(TDS.DS_comment, ''))
         FROM #TR INNER JOIN
-             T_Dataset AS TDS ON TDS.Dataset_ID = #TR.Dataset_ID LEFT OUTER JOIN 
+             T_Dataset AS TDS ON TDS.Dataset_ID = #TR.Dataset_ID LEFT OUTER JOIN
              DSCommentClean ON DSCommentClean.Dataset_ID = #TR.Dataset_ID;
 
         ---------------------------------------------------
         -- Make a temp table to work with long intervals
-        -- and populate it with long intervals for the datasets 
+        -- and populate it with long intervals for the datasets
         -- that were added to the temp report table
         ---------------------------------------------------
 
@@ -247,12 +245,12 @@ As
         )
 
         INSERT Into #TI (
-            Dataset_ID, 
+            Dataset_ID,
             Start,
             Breakdown,
             Comment
         )
-        SELECT  
+        SELECT
                 TRI.ID,
                 TRI.Start,
                 TRI.Usage,
@@ -261,8 +259,8 @@ As
                 INNER JOIN #TR ON TRI.ID = #TR.Dataset_ID
 
         ---------------------------------------------------
-        -- Mark datasets in temp report table 
-        -- that have long intervals 
+        -- Mark datasets in temp report table
+        -- that have long intervals
         ---------------------------------------------------
 
         UPDATE #TR
@@ -290,7 +288,7 @@ As
         ---------------------------------------------------
 
         INSERT INTO #TQ (Dataset_ID , Start , [Interval] , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@Broken', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
@@ -303,7 +301,7 @@ As
 
 
         INSERT INTO #TQ (Dataset_ID , Start , [Interval] , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@Maintenance', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
@@ -315,7 +313,7 @@ As
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
         INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@OtherNotAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
@@ -327,7 +325,7 @@ As
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
         INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@StaffNotAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
@@ -339,11 +337,11 @@ As
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
         INSERT INTO #TQ (Dataset_ID , Start, [Interval], Operator , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@CapDev', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
-            xmlNode.value('@Operator', 'varchar(32)') AS Operator,    
+            xmlNode.value('@Operator', 'varchar(32)') AS Operator,
             '' AS Proposal,
             'CAP_DEV' AS Usage,                    -- This is defined in T_EMSL_Instrument_Usage_Type
             #TI.Comment
@@ -352,7 +350,7 @@ As
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
         INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@InstrumentAvailable', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
@@ -364,12 +362,12 @@ As
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
         INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal, Users , [Usage], Comment)
-        SELECT 
+        SELECT
             #TI.Dataset_ID,
             #TI.Start,
             CONVERT(FLOAT, ISNULL(xmlNode.value('@User', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
             xmlNode.value('@Proposal', 'varchar(32)') AS Proposal,
-            xmlNode.value('@PropUser', 'varchar(32)') AS Users,    
+            xmlNode.value('@PropUser', 'varchar(32)') AS Users,
             'ONSITE' AS Usage,                    -- This is defined in T_EMSL_Instrument_Usage_Type
             #TI.Comment
         FROM #TI
@@ -385,10 +383,10 @@ As
 
 
         ---------------------------------------------------
-        -- debug 1        
-        ---------------------------------------------------                            
+        -- debug 1
+        ---------------------------------------------------
         IF @outputFormat = 'debug1'
-        BEGIN 
+        BEGIN
             SELECT * FROM #TQ
         END
 
@@ -416,7 +414,7 @@ As
             Users,
             Operator
         )
-        SELECT    
+        SELECT
             Dataset_ID ,
             'Interval' AS [Type] ,
             Start ,
@@ -430,10 +428,10 @@ As
         FROM      #TQ
 
         ---------------------------------------------------
-        -- debug 2        
-        ---------------------------------------------------                            
+        -- debug 2
+        ---------------------------------------------------
         IF @outputFormat = 'debug2'
-        BEGIN 
+        BEGIN
             SELECT * FROM #TR
         END
 
@@ -446,16 +444,17 @@ As
         WHERE [Type] = 'Dataset' AND [Normal] = 0
 
         ---------------------------------------------------
-        -- translate remaining DMS usage categories
+        -- Translate remaining DMS usage categories
         -- to EMSL usage categories
         ---------------------------------------------------
 
+        -- ToDo: remove this update since obsolete
         UPDATE #TR
         SET [Usage] = 'ONSITE'
         WHERE [Usage] = 'USER'
 
         ---------------------------------------------------
-        -- remove artifacts
+        -- Remove artifacts
         ---------------------------------------------------
 
         DELETE FROM #TR WHERE Duration = 0 AND [Interval] = 0
@@ -465,7 +464,7 @@ As
         ---------------------------------------------------
 
         UPDATE #TR
-        SET 
+        SET
             Duration = Duration + [Interval],
             [Interval] = 0
         WHERE [Type] = 'Dataset' AND [Normal] > 0
@@ -477,10 +476,10 @@ As
         --SELECT * FROM #TI
         --SELECT * FROM #TF
         ---------------------------------------------------
-        -- debug 3    
-        ---------------------------------------------------                            
+        -- debug 3
+        ---------------------------------------------------
         IF @outputFormat = 'debug3'
-        BEGIN 
+        BEGIN
             SELECT * FROM #TR
         END
 
@@ -489,7 +488,7 @@ As
         ---------------------------------------------------
 
         IF @outputFormat = 'report'
-        BEGIN 
+        BEGIN
             ---------------------------------------------------
             -- Return results as a report
             ---------------------------------------------------
@@ -553,7 +552,7 @@ As
                   #TR.[Usage] = 'ONSITE'
 
             -- output report rows
-            SELECT 
+            SELECT
                 @instrument AS Instrument,
                 @eusInstrumentId AS EMSL_Inst_ID,
                 CONVERT(VARCHAR(32), [Start], 100) AS [Start],
@@ -566,43 +565,43 @@ As
                 ISNULL(Comment, '') AS Comment,
                 @year AS [Year],
                 @month AS [Month],
-                #TR.Dataset_ID 
-             FROM #TR 
+                #TR.Dataset_ID
+             FROM #TR
              ORDER BY Start
-        END 
+        END
 
         IF @outputFormat = 'details' OR @outputFormat = '' -- default mode
-        BEGIN 
+        BEGIN
             ---------------------------------------------------
             -- Return usage details
             ---------------------------------------------------
 
-            SELECT 
+            SELECT
                 CONVERT(VARCHAR(32), [Start], 100) AS [Start],
                 [Type],
                 CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
                 Proposal ,
                 [Usage] ,
                 ISNULL(Comment, '') AS Comment,
-                Dataset_ID 
+                Dataset_ID
              FROM #TR ORDER BY Start
-        END 
+        END
 
         IF @outputFormat = 'rollup'
-        BEGIN 
+        BEGIN
             ---------------------------------------------------
             -- Rollup by type, category, and proposal
             ---------------------------------------------------
 
-            SELECT  
+            SELECT
                 [Type],
                 [Minutes],
                 CONVERT(DECIMAL(10,1), CONVERT(FLOAT, [Minutes])/@minutesInMonth * 100.0) AS [Percentage],
                 [Usage],
                 Proposal
-            FROM 
-            (                              
-            SELECT 
+            FROM
+            (
+            SELECT
                 [Type],
                 SUM(CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END) AS [Minutes],
                 [Usage],
@@ -611,33 +610,33 @@ As
             GROUP BY [Type], [Usage], Proposal
             ) TQZ
             ORDER BY [Type], [Usage], Proposal
-        END    
+        END
 
         IF @outputFormat = 'check'
-        BEGIN 
+        BEGIN
             ---------------------------------------------------
             -- Check grand totals against available
             ---------------------------------------------------
 
-            SELECT 
+            SELECT
                 @minutesInMonth AS 'Available',
                 SUM(Duration) AS Duration,
                 SUM([Interval]) AS [Interval],
                 SUM (Duration + INTERVAL) AS [Total],
                 CONVERT(DECIMAL(10,1), CONVERT(FLOAT, SUM (Duration + INTERVAL))/@minutesInMonth * 100.0) AS [Percentage]
             FROM #TR
-        END      
+        END
 
     ---------------------------------------------------
     ---------------------------------------------------
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'GetMonthlyInstrumentUsageReport'
     END CATCH
 
