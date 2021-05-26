@@ -1,5 +1,5 @@
 /****** Object:  Table [T_DatasetTypeName] ******/
-/****** RowCount: 54 ******/
+/****** RowCount: 55 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_DatasetTypeName] VALUES (52,'1D-C','NMR analysis',1)
 INSERT INTO [T_DatasetTypeName] VALUES (51,'1D-H','NMR analysis',1)
@@ -29,6 +29,7 @@ INSERT INTO [T_DatasetTypeName] VALUES (14,'HMS-HCD-CID/ETD-MSn','High res MS wi
 INSERT INTO [T_DatasetTypeName] VALUES (22,'HMS-HCD-ETD-HMSn','High res MS with high res HCD MSn and high res ETD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (15,'HMS-HCD-ETD-MSn','High res MS with high res HCD MSn and low res ETD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (13,'HMS-HCD-HMSn','High res MS with high res HCD MSn',1)
+INSERT INTO [T_DatasetTypeName] VALUES (54,'HMS-HCD-MSn','High res MS with low res HCD MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (5,'HMS-HMSn','High res MS with high res CID MSn (and possibly some low res MSn)',1)
 INSERT INTO [T_DatasetTypeName] VALUES (3,'HMS-MSn','High res MS with low res CID MSn',1)
 INSERT INTO [T_DatasetTypeName] VALUES (16,'HMS-PQD-CID/ETD-MSn','High res MS with low res PQD MSn and low res CID or ETD MSn (decision tree)',1)
