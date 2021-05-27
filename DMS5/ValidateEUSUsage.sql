@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          08/18/2020 mem - Add missing Else keyword
 **          08/20/2020 mem - When a circular reference exists, choose the proposal with the highest numeric ID
 **          05/25/2021 mem - Add parameter @samplePrepRequest
+**          05/26/2021 mem - Capitalize @eusUsageType
 **
 *****************************************************/
 (
@@ -59,6 +60,7 @@ As
     Declare @PersonID int
     Declare @NewUserList varchar(1024)
     Declare @enabledForPrepRequests tinyint = 0
+    Declare @eusUsageTypeName varchar(50)
 
     Declare @originalProposalID varchar(10)
     Declare @numericID int
@@ -120,7 +122,7 @@ As
 
     SELECT @validateEUSData = Value
     FROM T_MiscOptions
-    WHERE (Name = 'ValidateEUSData')
+    WHERE Name = 'ValidateEUSData'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -147,9 +149,11 @@ As
 
     Set @eusUsageTypeID = 0
     --
-    SELECT @eusUsageTypeID = ID, @enabledForPrepRequests = Enabled_Prep_Request
+    SELECT @eusUsageTypeID = ID, 
+           @eusUsageTypeName = Name,
+           @enabledForPrepRequests = Enabled_Prep_Request
     FROM T_EUS_UsageType
-    WHERE (Name = @eusUsageType)
+    WHERE Name = @eusUsageType
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -174,6 +178,8 @@ As
 
         return 51072
     End
+
+    Set @eusUsageType = @eusUsageTypeName
 
     ---------------------------------------------------
     -- Validate EUS proposal and user
@@ -359,7 +365,7 @@ As
             FROM T_EUS_Proposals EUSP
                 INNER JOIN T_EUS_Proposal_Users EUSU
                 ON EUSP.Proposal_ID = EUSU.Proposal_ID
-            WHERE (EUSP.Proposal_ID = @eusProposalID)
+            WHERE EUSP.Proposal_ID = @eusProposalID
 
             If IsNull(@PersonID, 0) > 0
             Begin
@@ -516,7 +522,7 @@ As
                     FROM T_EUS_Proposals EUSP
                         INNER JOIN T_EUS_Proposal_Users EUSU
                         ON EUSP.Proposal_ID = EUSU.Proposal_ID
-                    WHERE (EUSP.Proposal_ID = @eusProposalID)
+                    WHERE EUSP.Proposal_ID = @eusProposalID
 
                     If IsNull(@PersonID, 0) > 0
                         Set @NewUserList = Convert(varchar(12), @PersonID)
