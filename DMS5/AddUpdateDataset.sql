@@ -126,7 +126,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @requestID int = 0,                         -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'; ignored if @mode is 'update' or 'check_update'
     @workPackage varchar(50) = 'none',          -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'
     @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
-    @message varchar(512) output,
+    @message varchar(1024) output,
     @callingUser varchar(128) = '',
     @aggregationJobDataset tinyint = 0,      -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
     @captureSubfolder varchar(255) = '',     -- Only used when @mode is 'add' or 'bad'

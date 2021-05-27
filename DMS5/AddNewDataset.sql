@@ -47,12 +47,13 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          09/04/2020 mem - Rename variable and match both 'Capture Subfolder' and 'Capture Subdirectory' in @xmlDoc
 **          10/10/2020 mem - Rename variables
 **          12/17/2020 mem - Ignore @captureSubfolder if it is an absolute path to a network share (e.g. \\proto-2\External_Orbitrap_Xfer)
+**          05/26/2021 mem - Expand @message to varchar(1024)
 **    
 *****************************************************/
 (
     @xmlDoc varchar(4000),
     @mode varchar(24) = 'add', --  'add', 'parse_only', 'update', 'bad', 'check_add', 'check_update'
-    @message varchar(512) output,
+    @message varchar(1024) output,
     @logDebugMessages tinyint = 0
 )
 AS

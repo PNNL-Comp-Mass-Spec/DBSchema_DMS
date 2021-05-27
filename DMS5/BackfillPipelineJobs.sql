@@ -24,13 +24,14 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          03/09/2021 mem - Auto change script MaxQuant_DataPkg to MaxQuant
 **          03/10/2021 mem - Add argument @startJob
 **          03/31/2021 mem - Expand OrganismDBName to varchar(128)
+**          05/26/2021 mem - Expand @message to varchar(1024)
 **    
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @jobsToProcess int = 0,                    -- Set to a positive number to process a finite number of jobs
     @startJob int = 0,                         -- Set to a positive number to start with the given job number (useful if we know that a job was just created in the Pipeline database)
-    @message varchar(255) = '' OUTPUT
+    @message varchar(1024) = '' OUTPUT
 )
 AS
 
