@@ -93,6 +93,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
 **                         - Expand @message to varchar(1024)
+**          05/26/2021 mem - Check for undefined EUS Usage Type (ID = 1)
+**                     bcg - Bug fix: use @eusUsageTypeID to prevent use of EUS Usage Type "Undefined"
 **
 *****************************************************/
 (
@@ -117,7 +119,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @MRMAttachment varchar(128),
     @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
     @SkipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
-    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, then will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
+    @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
     @VialingConc varchar(32) = null,
     @VialingVol varchar(32) = null,
@@ -620,6 +622,11 @@ As
 
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+
+    If @eusUsageTypeID = 1
+    Begin
+        RAISERROR ('EUS Usage Type cannot be "undefined" for requested runs', 11, 1)
+    End
 
     If IsNull(@msg, '') <> ''
     Begin
