@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Campaign_Entry] as 
+CREATE VIEW [dbo].[V_Campaign_Entry] 
+AS
 SELECT C.Campaign_Num AS campaignNum,
        C.CM_Project_Num AS projectNum,
        dbo.GetCampaignRolePersonList(C.Campaign_ID, 'PI', 'PRN') AS piPRN,
@@ -21,12 +22,15 @@ SELECT C.Campaign_Num AS campaignNum,
        C.CM_EPR_List AS EPRList,
        C.CM_EUS_Proposal_List AS EUSProposalList,
        C.CM_Fraction_EMSL_Funded AS FractionEMSLFunded,
+       EUT.Name As EUSUsageType,
        C.CM_Organisms AS Organisms,
        C.CM_Experiment_Prefixes AS ExperimentPrefixes,
        T_Data_Release_Restrictions.Name AS DataReleaseRestrictions
 FROM T_Campaign C
      INNER JOIN T_Data_Release_Restrictions
        ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
+     INNER JOIN T_EUS_UsageType EUT
+       ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN T_Research_Team
        ON C.CM_Research_Team = T_Research_Team.ID
 

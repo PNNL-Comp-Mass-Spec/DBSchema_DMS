@@ -4,12 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Campaign_Detail_Report_Ex]
+CREATE VIEW [dbo].[V_Campaign_Detail_Report_Ex]
 AS
 SELECT C.Campaign_Num AS Campaign,
        C.CM_Project_Num AS Project,
        C.CM_State AS State,
-       T_Data_Release_Restrictions.Name AS [Data Release Restrictions],
+       RR.Name AS [Data Release Restrictions],
        C.CM_Description AS Description,
        C.CM_comment AS [Comment],
        dbo.GetResearchTeamMembershipList(C.CM_Research_Team) AS [Team Members],
@@ -18,6 +18,7 @@ SELECT C.Campaign_Num AS Campaign,
        C.CM_EPR_List AS [EPR List],
        C.CM_EUS_Proposal_List AS [EUS Proposal],
        C.CM_Fraction_EMSL_Funded AS [Fraction EMSL Funded],
+       EUT.Name As [EUS Usage Type],
        C.CM_Organisms AS Organisms,
        C.CM_Experiment_Prefixes AS [Experiment Prefixes],
        C.Campaign_ID AS ID,
@@ -40,12 +41,14 @@ SELECT C.Campaign_Num AS Campaign,
 	   CT.Data_Package_Count AS [Data Packages],
        dbo.GetCampaignWorkPackageList(C.Campaign_Num) AS [Work Packages]
 FROM T_Campaign AS C
+     INNER JOIN T_Data_Release_Restrictions RR
+       ON C.CM_Data_Release_Restrictions = RR.ID
+     INNER JOIN T_EUS_UsageType EUT
+       ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN T_Research_Team AS RT
        ON C.CM_Research_Team = RT.ID
      LEFT OUTER JOIN T_Campaign_Tracking AS CT
        ON CT.C_ID = C.Campaign_ID
-     INNER JOIN T_Data_Release_Restrictions
-       ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
 
 
 GO

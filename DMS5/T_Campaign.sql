@@ -22,7 +22,8 @@ CREATE TABLE [dbo].[T_Campaign](
 	[CM_Experiment_Prefixes] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CM_Research_Team] [int] NULL,
 	[CM_Data_Release_Restrictions] [int] NOT NULL,
-	[CM_Fraction_EMSL_Funded] [decimal](3, 2) NULL,
+	[CM_Fraction_EMSL_Funded] [decimal](3, 2) NOT NULL,
+	[CM_EUS_Usage_Type] [smallint] NOT NULL,
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY CLUSTERED 
 (
 	[Campaign_ID] ASC
@@ -51,14 +52,25 @@ CREATE NONCLUSTERED INDEX [IX_T_Campaign_CM_created] ON [dbo].[T_Campaign]
 	[CM_created] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_created]  DEFAULT (getdate()) FOR [CM_created]
+GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
 GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Fraction_EMSL_Funded]  DEFAULT ((0)) FOR [CM_Fraction_EMSL_Funded]
+GO
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_EUS_Usage_Type]  DEFAULT ((1)) FOR [CM_EUS_Usage_Type]
 GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions] FOREIGN KEY([CM_Data_Release_Restrictions])
 REFERENCES [dbo].[T_Data_Release_Restrictions] ([ID])
 GO
 ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions]
+GO
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_EUS_UsageType] FOREIGN KEY([CM_EUS_Usage_Type])
+REFERENCES [dbo].[T_EUS_UsageType] ([ID])
+GO
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_EUS_UsageType]
 GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Research_Team] FOREIGN KEY([CM_Research_Team])
 REFERENCES [dbo].[T_Research_Team] ([ID])
@@ -116,7 +128,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Campaign] on [dbo].[T_Campaign]
 For Insert
 /****************************************************
@@ -152,7 +163,6 @@ AS
 	FROM inserted
 	WHERE inserted.CM_Data_Release_Restrictions > 0
 	ORDER BY inserted.Campaign_ID
-	
 
 GO
 ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_i_Campaign]
@@ -162,7 +172,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Campaign] on [dbo].[T_Campaign]
 For Update
 /****************************************************
@@ -219,8 +228,6 @@ AS
 	FROM deleted INNER JOIN inserted ON deleted.Campaign_ID = inserted.Campaign_ID
 	WHERE ISNULL(inserted.CM_Data_Release_Restrictions, -1) <> ISNULL(deleted.CM_Data_Release_Restrictions, -2)
 	ORDER BY inserted.Campaign_ID
-
-
 
 GO
 ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_u_Campaign]
