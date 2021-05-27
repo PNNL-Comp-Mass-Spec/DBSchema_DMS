@@ -30,6 +30,7 @@ SELECT SPR.ID,
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
        SPR.EUS_Proposal_ID AS [EUS Proposal],
        EPT.Proposal_Type_Name AS [EUS Proposal Type],
+       IsNull(SPR.EUS_UsageType, '') AS [EUS Usage Type],
        SPR.Instrument_Group AS Instrument,
        SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
        SPR.Separation_Type AS [Separation Group],
@@ -39,7 +40,7 @@ SELECT SPR.ID,
        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 181 Then 1 Else 0 End) AS Experiments_Last_180Days,
        SUM (Case When Not E.EX_created Is Null Then 1 Else 0 End) AS Experiments_Total,
        Case 
-            When SPR.State In (4,5) Then 0           -- Request is complete or closed
+            When SPR.State In (4, 5) Then 0           -- Request is complete or closed
             When QT.[Days In Queue] <= 30 Then 30    -- Request is 0 to 30 days old
             When QT.[Days In Queue] <= 60 Then 60    -- Request is 30 to 60 days old
             When QT.[Days In Queue] <= 90 Then 90    -- Request is 60 to 90 days old
@@ -80,10 +81,9 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Pr
          QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
          QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign, SPR.[Comment],
          SPR.Work_Package_Number, SPR.Instrument_Group, SPR.Instrument_Analysis_Specifications,
-         SPR.Separation_Type, CC.Activation_State, CC.Activation_State_Name, SPR.EUS_Proposal_ID,
-         EPT.Proposal_Type_Name, BTO.Tissue, SPR.Material_Container_List
-
-
+         SPR.Separation_Type, CC.Activation_State, CC.Activation_State_Name, 
+         SPR.EUS_Proposal_ID, SPR.EUS_UsageType, EPT.Proposal_Type_Name, 
+         BTO.Tissue, SPR.Material_Container_List
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [DDL_Viewer] AS [dbo]
