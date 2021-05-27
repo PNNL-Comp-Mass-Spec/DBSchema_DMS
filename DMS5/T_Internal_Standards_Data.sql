@@ -1,8 +1,8 @@
 /****** Object:  Table [T_Internal_Standards] ******/
 /****** RowCount: 28 ******/
 SET IDENTITY_INSERT [T_Internal_Standards] ON
-INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (0,,'unknown','status uncertain','All','I')
-INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (1,,'none','Nothing added','All','A')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (0,null,'unknown','status uncertain','All','I')
+INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (1,null,'none','Nothing added','All','A')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (2,1,'PepChromeA','5 elution time marker peptides','Postdigest','A')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (3,2,'MiniProteomeA','5 proteins added prior to digestion (development work)','Predigest','I')
 INSERT INTO [T_Internal_Standards] (Internal_Std_Mix_ID, Internal_Std_Parent_Mix_ID, Name, Description, Type, Active) VALUES (4,3,'MiniProteomeB','3 proteins added prior to digestion; 6 peptides after digestion','Predigest','I')

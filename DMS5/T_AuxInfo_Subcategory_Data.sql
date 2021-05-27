@@ -1,10 +1,10 @@
 /****** Object:  Table [T_AuxInfo_Subcategory] ******/
-/****** RowCount: 47 ******/
+/****** RowCount: 43 ******/
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] ON
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (244,'General',1011,1)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (245,'Starter Culture Conditions',1011,2)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (246,'Sample Culture Growth Conditions',1011,3)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (247,'Protein Preparation',1011,4)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (245,'Starter Conditions',1011,2)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (246,'Growth Conditions',1011,3)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (247,'Isolation',1011,4)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (248,'Procedure',1013,0)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (249,'Bead Beating',1000,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (250,'Enzymatic Digest',1000,2)
@@ -29,7 +29,6 @@ INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (268,
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (269,'Conditions',1008,0)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (270,'Location',1009,0)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (271,'General',1014,0)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (273,'(placeholder)',1015,0)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (275,'Size Exclusion',1006,3)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (276,'Avidin',1006,4)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (277,'Thermal',1001,4)
@@ -44,8 +43,5 @@ INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (285,
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (286,'Well Plate',1009,1)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (287,'Barocycler',1000,7)
 INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (288,'Depletion',1004,4)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (289,'General',1012,6)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (290,'Starter Culture Conditions',1012,7)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (291,'Sample Culture Growth Conditions',1012,8)
-INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (292,'Protein Preparation',1012,9)
+INSERT INTO [T_AuxInfo_Subcategory] (ID, Name, Parent_ID, Sequence) VALUES (293,'Sample Relationships',1020,1)
 SET IDENTITY_INSERT [T_AuxInfo_Subcategory] OFF

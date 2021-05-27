@@ -3,8 +3,8 @@
 /****** Columns: ID, Name, Target_Entity_Type, Link_Template, Visible ******/
 INSERT INTO [T_Notification_Event_Type] VALUES (1,'Requested Run Batch Start',1,'requested_run_batch/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (2,'Requested Run Batch Finish',1,'requested_run_batch/show/@ID@','Y')
-INSERT INTO [T_Notification_Event_Type] VALUES (3,'Requested Run Batch Acq Time Ready',1,'','N')
-INSERT INTO [T_Notification_Event_Type] VALUES (4,'Analysis Job Request Start',2,'analysis_job_request/show/@ID@','Y')
+INSERT INTO [T_Notification_Event_Type] VALUES (3,'Requested Run Batch Acq Time Ready',1,null,'N')
+INSERT INTO [T_Notification_Event_Type] VALUES (4,'Analysis Job Request Start',2,'analysis_job_request/show/@ID@','N')
 INSERT INTO [T_Notification_Event_Type] VALUES (5,'Analysis Job Request Finish',2,'analysis_job_request/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (11,'Sample Prep Req (New)',3,'sample_prep_request/show/@ID@','Y')
 INSERT INTO [T_Notification_Event_Type] VALUES (12,'Sample Prep Req (Open)',3,'sample_prep_request/show/@ID@','Y')
