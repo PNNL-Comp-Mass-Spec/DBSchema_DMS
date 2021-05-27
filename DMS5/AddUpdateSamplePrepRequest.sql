@@ -85,6 +85,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          08/12/2020 mem - Check for ValidateEUSUsage returning a message, even if it returns 0
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          05/25/2021 mem - Set @samplePrepRequest to 1 when calling ValidateEUSUsage
+**          05/26/2021 mem - Override @eusUsageType if @mode is 'add' and the campaign has EUSUsageType = 'USER_REMOTE
 **
 *****************************************************/
 (
@@ -543,8 +544,10 @@ As
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
-    If LEN(IsNull(@msg, '')) > 0
-        Set @message = @msg
+    If IsNull(@msg, '') <> ''
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+    End
 
     If Len(IsNull(@eusUsersList, '')) > 0
     Begin
@@ -552,6 +555,35 @@ As
 
         If IsNull(@eusUserID, 0) <= 0
             Set @eusUserID = Null
+    End
+    
+    ---------------------------------------------------
+    -- Possibly override EUS Usage Type
+    ---------------------------------------------------
+
+    Declare @eusUsageTypeCampaign varchar(50)
+
+    SELECT @eusUsageTypeCampaign = EUT.Name
+    FROM T_Campaign C
+         INNER JOIN T_EUS_UsageType EUT
+           ON C.CM_EUS_Usage_Type = EUT.ID
+    WHERE C.Campaign_ID = @campaignID
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType = 'USER_ONSITE'
+    Begin
+        If @mode = 'add'
+        Begin
+            Set @eusUsageType = 'USER_REMOTE'
+            Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
+        End
+        Else
+        Begin
+            Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the prep request should likely also be of type USER_REMOTE'
+        End
+
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
     End
 
     ---------------------------------------------------
@@ -568,12 +600,16 @@ As
     If @myError <> 0
         RAISERROR ('ValidateWP: %s', 11, 1, @msg)
 
-    If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')       
+    If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')
+    Begin
         Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 1024)
+    End
     Else
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
+        Begin
             Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 1024)
+        End
     End
 
     -- Make sure the Work Package is capitalized properly

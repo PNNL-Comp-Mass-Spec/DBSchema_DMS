@@ -104,6 +104,8 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          02/25/2021 mem - Remove the requested run comment from the dataset comment if the dataset comment starts with the requested run comment
 **                         - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          05/26/2021 mem - When @mode is 'add', 'check_add', or 'add_trigger', possibly override the EUSUsageType based on the campaign's EUS Usage Type
+**                         - Expand @message to varchar(1024)
 **
 *****************************************************/
 (
@@ -1005,6 +1007,7 @@ As
             -- Lookup EUS field (only effective for experiments that have associated sample prep requests)
             -- This will update the data in @eusUsageType, @eusProposalID, or @eusUsersList if it is "(lookup)"
             ---------------------------------------------------
+
             exec @myError = LookupEUSFromExperimentSamplePrep
                             @experimentNum,
                             @eusUsageType output,
@@ -1015,9 +1018,15 @@ As
             If @myError <> 0
                 RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
 
+            If IsNull(@msg, '') <> ''
+            Begin
+                Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            End
+
             ---------------------------------------------------
-            -- validate EUS type, proposal, and user list
+            -- Validate EUS type, proposal, and user list
             ---------------------------------------------------
+
             Declare @eusUsageTypeID int
             exec @myError = ValidateEUSUsage
                             @eusUsageType output,
@@ -1031,7 +1040,73 @@ As
                 RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
             If IsNull(@msg, '') <> ''
-                Set @message = @msg
+            Begin
+                Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            End
+            
+            ---------------------------------------------------
+            -- Possibly override EUS Usage Type
+            ---------------------------------------------------
+
+            Declare @eusUsageTypeCampaign varchar(50)
+
+            SELECT @eusUsageTypeCampaign = EUT.Name
+            FROM T_Experiments E
+                 INNER JOIN T_Campaign C
+                   ON E.EX_campaign_ID = C.Campaign_ID
+                 INNER JOIN T_EUS_UsageType EUT
+                   ON C.CM_EUS_Usage_Type = EUT.ID
+            WHERE E.Exp_ID = @experimentID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType In ('USER_ONSITE', 'USER')
+            Begin
+                If @addingDataset = 1
+                Begin
+                    Set @eusUsageType = 'USER_REMOTE'
+                    Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
+
+                    SELECT @eusUsageTypeID = ID
+                    FROM T_EUS_UsageType
+                    WHERE Name = @eusUsageType
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                    If @myRowCount= 0
+                    Begin
+                        Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
+                        exec PostLogEntry 'Error', @msg, 'AddUpdateDataset'
+                    End
+                End
+                Else
+                Begin
+                    Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the dataset should likely also have USER_REMOTE'
+                End
+
+                Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            End
+
+            If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER'
+            Begin
+                Set @eusUsageType = 'USER_ONSITE'
+                Set @msg = 'Auto-updated EUS Usage Type to USER_ONSITE since the campaign has USER_ONSITE'
+
+                SELECT @eusUsageTypeID = ID
+                FROM T_EUS_UsageType
+                WHERE Name = @eusUsageType
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If @myRowCount= 0
+                Begin
+                    Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
+                    exec PostLogEntry 'Error', @msg, 'AddUpdateDataset'
+
+                    -- Only append @msg to @message if an error occurs
+                    Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+                End
+            End
 
         End -- </b1>
         else
