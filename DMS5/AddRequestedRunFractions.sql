@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
 **                         - Expand @message to varchar(1024)
+**          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling ValidateEUSUsage
 **
 *****************************************************/
 (
@@ -415,14 +416,25 @@ As
         Set @raiseErrorOnMultipleEUSUsers = 0
     End
 
-    Declare @eusUsageTypeID int
+    Declare @eusUsageTypeID Int
+
+    Declare @addingItem tinyint = 0
+    If @mode = 'add'
+    Begin
+        Set @addingItem = 1
+    End
+
     exec @myError = ValidateEUSUsage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUserID output,
                         @eusUsageTypeID output,
                         @msg output,
-                        @autoPopulateUserListIfBlank
+                        @autoPopulateUserListIfBlank,
+                        @samplePrepRequest = 0,
+                        @experimentID = @experimentID,
+                        @campaignID = 0, 
+                        @addingItem = @addingItem
 
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
