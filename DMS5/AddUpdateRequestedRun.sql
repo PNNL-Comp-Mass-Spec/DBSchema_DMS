@@ -96,6 +96,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          05/26/2021 mem - Check for undefined EUS Usage Type (ID = 1)
 **                     bcg - Bug fix: use @eusUsageTypeID to prevent use of EUS Usage Type "Undefined"
 **                     mem - When @mode is 'add', 'add-auto', or 'check_add', possibly override the EUSUsageType based on the campaign's EUS Usage Type
+**          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **
 *****************************************************/
 (
@@ -612,14 +613,26 @@ As
         Set @raiseErrorOnMultipleEUSUsers = 0
     End
 
-    Declare @eusUsageTypeID int
+    Declare @eusUsageTypeID Int
+
+    Declare @addingItem tinyint = 0
+    If @mode IN ('add', 'check_add')
+    Begin
+        Set @addingItem = 1
+    End
+
     exec @myError = ValidateEUSUsage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
                         @eusUsageTypeID output,
                         @msg output,
-                        @autoPopulateUserListIfBlank
+                        @autoPopulateUserListIfBlank,
+                        @samplePrepRequest = 0,
+                        @experimentID = @experimentID, 
+                        @campaignID = 0, 
+                        @addingItem = @addingItem
+
 
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
@@ -663,70 +676,6 @@ As
 
     If @myError <> 0
         RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)
-
-    ---------------------------------------------------
-    -- Possibly override EUS Usage Type
-    ---------------------------------------------------
-
-    Declare @eusUsageTypeCampaign varchar(50)
-
-    SELECT @eusUsageTypeCampaign = EUT.Name
-    FROM T_Experiments E
-         INNER JOIN T_Campaign C
-           ON E.EX_campaign_ID = C.Campaign_ID
-         INNER JOIN T_EUS_UsageType EUT
-           ON C.CM_EUS_Usage_Type = EUT.ID
-    WHERE E.Exp_ID = @experimentID
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-
-    If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType In ('USER_ONSITE', 'USER')
-    Begin
-        If @mode IN ('add', 'check_add')
-        Begin
-            Set @eusUsageType = 'USER_REMOTE'
-            Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
-
-            SELECT @eusUsageTypeID = ID
-            FROM T_EUS_UsageType
-            WHERE Name = @eusUsageType
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-
-            If @myRowCount= 0
-            Begin
-                Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
-                exec PostLogEntry 'Error', @msg, 'AddUpdateRequestedRun'
-            End
-        End
-        Else
-        Begin
-            Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the requested run should likely also be of type USER_REMOTE'
-        End
-
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
-    End
-
-    If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER'
-    Begin
-        Set @eusUsageType = 'USER_ONSITE'
-        Set @msg = 'Auto-updated EUS Usage Type to USER_ONSITE since the campaign has USER_ONSITE'
-
-        SELECT @eusUsageTypeID = ID
-        FROM T_EUS_UsageType
-        WHERE Name = @eusUsageType
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-
-        If @myRowCount= 0
-        Begin
-            Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
-            exec PostLogEntry 'Error', @msg, 'AddUpdateRequestedRun'
-
-            -- Only append @msg to @message if an error occurs
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
-        End
-    End
 
     ---------------------------------------------------
     -- Resolve staging location name to location ID

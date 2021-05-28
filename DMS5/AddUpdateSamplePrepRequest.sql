@@ -86,6 +86,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          05/25/2021 mem - Set @samplePrepRequest to 1 when calling ValidateEUSUsage
 **          05/26/2021 mem - Override @eusUsageType if @mode is 'add' and the campaign has EUSUsageType = 'USER_REMOTE
+**          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **
 *****************************************************/
 (
@@ -116,7 +117,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @priority varchar(12),
     @state varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
     @id int output,                             -- input/ouptut: Sample prep request ID
-    @separationGroup varchar(256),              -- Separation group    
+    @separationGroup varchar(256),              -- Separation group
     @blockAndRandomizeSamples char(3),          -- 'Yes', 'No', or 'na'
     @blockAndRandomizeRuns char(3),             -- 'Yes' or 'No'
     @reasonForHighPriority varchar(1024),
@@ -132,18 +133,18 @@ As
     Declare @myRowCount int = 0
 
     Set @message = ''
-    
-    Declare @msg varchar(512) 
+
+    Declare @msg varchar(512)
 
     Declare @currentStateID int
-    
+
     IF IsNull(@state, '') = 'Closed (containers and material)'
     Begin
         -- Prior to September 2018, we would also look for biomaterial (cell cultures)
         -- and would close them if @state was 'Closed (containers and material)'
         -- by calling DoSamplePrepMaterialOperation
         --
-        -- We stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017 
+        -- We stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
         -- so simply change the state to Closed
         SET @state = 'Closed'
     End
@@ -153,34 +154,34 @@ As
 
     If IsNull(@eusUserID, 0) <= 0
         Set @eusUserID = Null
- 
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateSamplePrepRequest', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin Try 
+    Begin Try
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
     --
     Set @instrumentGroup = IsNull(@instrumentGroup, '')
-    
+
     Set @datasetType = IsNull(@datasetType, '')
- 
+
     If Len(IsNull(@estimatedMSRuns, '')) < 1
         RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
 
     If IsNull(@blockAndRandomizeSamples, '') NOT IN ('Yes', 'No', 'NA')
         RAISERROR ('Block And Randomize Samples must be Yes, No, or NA', 11, 116)
-    
+
     If IsNull(@blockAndRandomizeRuns, '') NOT IN ('Yes', 'No')
         RAISERROR ('Block And Randomize Runs must be Yes or No', 11, 116)
 
@@ -193,10 +194,10 @@ As
 
     If @priority <> 'Normal' AND ISNULL(@reasonForHighPriority, '') = ''
         RAISERROR ('Priority "%s" requires justification reason to be provided', 11, 37, @priority)
-    
+
     If Not @priority IN ('Normal', 'High')
         RAISERROR ('Priority should be Normal or High', 11, 37)
-    
+
     ---------------------------------------------------
     -- Validate instrument group and dataset type
     ---------------------------------------------------
@@ -205,10 +206,10 @@ As
     Begin
         If @instrumentGroup IN ('none', 'na')
             RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @instrumentGroup)
-        
+
         If Try_Convert(int, @estimatedMSRuns) Is Null
             RAISERROR ('Estimated runs must be an integer or "none"', 11, 116)
-        
+
         If IsNull(@instrumentGroup, '') = ''
             RAISERROR ('Instrument group cannot be empty since the estimated MS run count is non-zero', 11, 117)
 
@@ -221,7 +222,7 @@ As
         ---------------------------------------------------
         -- Determine the Instrument Group
         ---------------------------------------------------
-                
+
         If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroup)
         Begin
             -- Try to update instrument group using T_Instrument_Name
@@ -235,19 +236,19 @@ As
         ---------------------------------------------------
         -- Validate instrument group and dataset type
         ---------------------------------------------------
-        
+
         Declare @datasetTypeID int
         --
         exec @myError = ValidateInstrumentGroupAndDatasetType
                                 @datasetType,
                                 @instrumentGroup,
                                 @datasetTypeID output,
-                                @msg output 
+                                @msg output
         If @myError <> 0
             RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
-    End                
-        
-                            
+    End
+
+
     ---------------------------------------------------
     -- Resolve campaign ID
     ---------------------------------------------------
@@ -276,7 +277,7 @@ As
 
     -- Get names of material containers from list argument into table
     --
-    INSERT INTO #MC ([name]) 
+    INSERT INTO #MC ([name])
     SELECT item FROM MakeTableFromList(@materialContainerList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -288,8 +289,8 @@ As
     --
     Declare @cnt int = -1
 
-    SELECT @cnt = count(*) 
-    FROM #MC 
+    SELECT @cnt = count(*)
+    FROM #MC
     WHERE [name] not in (
         SELECT Tag
         FROM T_Material_Containers
@@ -300,7 +301,7 @@ As
     If @myError <> 0
         RAISERROR ('Was not able to check for material containers in database', 11, 52)
     --
-    If @cnt <> 0 
+    If @cnt <> 0
         RAISERROR ('One or more material containers was not in database', 11, 53)
 
     ---------------------------------------------------
@@ -315,47 +316,47 @@ As
     ---------------------------------------------------
     -- Resolve @tissue to BTO identifier
     ---------------------------------------------------
-    
+
     Declare @tissueIdentifier varchar(24)
     Declare @tissueName varchar(128)
     Declare @errorCode int
 
-    EXEC @errorCode = GetTissueID 
+    EXEC @errorCode = GetTissueID
         @tissueNameOrID=@tissue,
         @tissueIdentifier=@tissueIdentifier output,
         @tissueName=@tissueName output
-    
+
     If @errorCode = 100
         RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
     Else If @errorCode > 0
         RAISERROR ('Could not resolve tissue name or id: "%s"', 11, 41, @tissue)
-    
+
     ---------------------------------------------------
     -- Convert estimated completion date
     ---------------------------------------------------
-    
+
     Declare @estimatedCompletionDate datetime
 
     If @estimatedCompletion <> ''
     Begin
         Set @estimatedCompletionDate = CONVERT(datetime, @estimatedCompletion)
     End
-  
+
     ---------------------------------------------------
     -- Force values of some properties for add mode
     ---------------------------------------------------
-  
+
     If @mode = 'add'
     Begin
         Set @state = 'New'
         Set @assignedPersonnel = 'na'
-    End    
-    
+    End
+
     ---------------------------------------------------
     -- Validate requested and assigned personnel
     -- Names should be in the form "Last Name, First Name (PRN)"
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_UserInfo (
         EntryID int identity(1,1),
         [Name_and_PRN] varchar(255) NOT NULL,
@@ -365,12 +366,12 @@ As
     Declare @nameValidationIteration int = 1
     Declare @userFieldName varchar(32) = ''
     Declare @cleanNameList varchar(255)
-    
+
     While @nameValidationIteration <= 2
     Begin -- <a>
-        
+
         DELETE FROM #Tmp_UserInfo
-        
+
         If @nameValidationIteration = 1
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
@@ -378,7 +379,7 @@ As
             FROM dbo.MakeTableFromListDelim(@requestedPersonnel, ';')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             Set @userFieldName = 'requested personnel'
         End
         Else
@@ -388,7 +389,7 @@ As
             FROM dbo.MakeTableFromListDelim(@assignedPersonnel, ';')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             Set @userFieldName = 'assigned personnel'
         End
 
@@ -399,25 +400,25 @@ As
             ON #Tmp_UserInfo.Name_and_PRN = U.Name_with_PRN
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         -- Use User_ID of 0 if the name is 'na'
         -- Set User_ID to 0
         UPDATE #Tmp_UserInfo
         SET [User_ID] = 0
         WHERE Name_and_PRN IN ('na')
-        
+
         ---------------------------------------------------
         -- Look for entries in #Tmp_UserInfo where Name_and_PRN did not resolve to a User_ID
         -- Try-to auto-resolve using the U_Name and U_PRN columns in T_Users
         ---------------------------------------------------
-        
+
         Declare @entryID int = 0
         Declare @continue tinyint = 1
         Declare @unknownUser varchar(255)
         Declare @matchCount tinyint
         Declare @newPRN varchar(64)
         Declare @newUserID int
-        
+
         While @continue = 1
         Begin -- <b>
             SELECT TOP 1 @entryID = EntryID,
@@ -427,15 +428,15 @@ As
             ORDER BY EntryID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
                 Set @continue = 0
             Else
             Begin -- <c>
                 Set @matchCount = 0
-                
+
                 exec AutoResolveNameToPRN @unknownUser, @matchCount output, @newPRN output, @newUserID output
-                            
+
                 If @matchCount = 1
                 Begin
                     -- Single match was found; update [User_ID] in #Tmp_UserInfo
@@ -445,20 +446,20 @@ As
 
                 End
             End -- </c>
-            
+
         End -- </b>
-        
+
         If Exists (SELECT * FROM #Tmp_UserInfo WHERE [User_ID] Is Null)
         Begin
             Declare @firstInvalidUser varchar(255) = ''
-            
+
             SELECT TOP 1 @firstInvalidUser = Name_and_PRN
             FROM #Tmp_UserInfo
             WHERE [USER_ID] IS NULL
-            
+
             RAISERROR ('Invalid username for %s: "%s"', 11, 37, @userFieldName, @firstInvalidUser)
         End
-                
+
         If @nameValidationIteration = 1 And Not Exists (Select * From #Tmp_UserInfo Where User_ID > 0)
         Begin
             -- Requested personnel person must be a specific person (or list of people)
@@ -473,9 +474,9 @@ As
             INNER JOIN T_Users U
             ON #Tmp_UserInfo.User_ID = U.ID
         WHERE #Tmp_UserInfo.User_ID <> 0
-            
+
         -- Regenerate the list of names
-        --        
+        --
         Set @cleanNameList = ''
 
         SELECT @cleanNameList = @cleanNameList + CASE
@@ -493,11 +494,11 @@ As
         Begin
             Set @assignedPersonnel = @cleanNameList
         End
-        
+
         Set @nameValidationIteration = @nameValidationIteration + 1
-        
-    End -- </a>        
-        
+
+    End -- </a>
+
     ---------------------------------------------------
     -- Convert state name to ID
     ---------------------------------------------------
@@ -515,17 +516,23 @@ As
     --
     If @stateID = 0
         RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @state)
-    
+
     ---------------------------------------------------
     -- Validate EUS type, proposal, and user list
     --
-    -- This procedure accepts a list of EUS User IDs, 
-    -- so we convert to a string before calling it, 
+    -- This procedure accepts a list of EUS User IDs,
+    -- so we convert to a string before calling it,
     -- then convert back to an integer afterward
     ---------------------------------------------------
 
     Declare @eusUsageTypeID int
     Declare @eusUsersList varchar(1024) = ''
+
+    Declare @addingItem tinyint = 0
+    If @mode = 'add'
+    Begin
+        Set @addingItem = 1
+    End
 
     If IsNull(@eusUserID, 0) > 0
     Begin
@@ -540,7 +547,11 @@ As
                         @eusUsageTypeID output,
                         @msg Output,
                         @autoPopulateUserListIfBlank = 0,
-                        @samplePrepRequest = 1
+                        @samplePrepRequest = 1,
+                        @experimentID = 0,
+                        @campaignID = @campaignID,
+                        @addingItem = @addingItem
+
     If @myError <> 0
         RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
 
@@ -556,42 +567,13 @@ As
         If IsNull(@eusUserID, 0) <= 0
             Set @eusUserID = Null
     End
-    
-    ---------------------------------------------------
-    -- Possibly override EUS Usage Type
-    ---------------------------------------------------
-
-    Declare @eusUsageTypeCampaign varchar(50)
-
-    SELECT @eusUsageTypeCampaign = EUT.Name
-    FROM T_Campaign C
-         INNER JOIN T_EUS_UsageType EUT
-           ON C.CM_EUS_Usage_Type = EUT.ID
-    WHERE C.Campaign_ID = @campaignID
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-
-    If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType = 'USER_ONSITE'
-    Begin
-        If @mode = 'add'
-        Begin
-            Set @eusUsageType = 'USER_REMOTE'
-            Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
-        End
-        Else
-        Begin
-            Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the prep request should likely also be of type USER_REMOTE'
-        End
-
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
-    End
 
     ---------------------------------------------------
     -- Validate the work package
     ---------------------------------------------------
 
     Declare @allowNoneWP tinyint = 0
-    
+
     exec @myError = ValidateWP
                         @workPackageNumber,
                         @allowNoneWP,
@@ -615,26 +597,26 @@ As
     -- Make sure the Work Package is capitalized properly
     --
     SELECT @workPackageNumber = Charge_Code
-    FROM T_Charge_Code 
+    FROM T_Charge_Code
     WHERE Charge_Code = @workPackageNumber
 
     ---------------------------------------------------
     -- Auto-change separation type to separation group, if applicable
     ---------------------------------------------------
-    --    
+    --
     If Not Exists (SELECT * FROM T_Separation_Group WHERE Sep_Group = @separationGroup)
     Begin
         Declare @separationGroupAlt varchar(64) = ''
-        
+
         SELECT @separationGroupAlt = Sep_Group
         FROM T_Secondary_Sep
         WHERE SS_Name = @separationGroup AND
               SS_Active = 1
-        
+
         If IsNull(@separationGroupAlt, '') <> ''
             Set @separationGroup = @separationGroupAlt
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -648,9 +630,9 @@ As
         Declare @requestTypeExisting varchar(16)
         Set @currentStateID = 0
         --
-        SELECT 
-            @tmp = ID, 
-            @currentStateID = State, 
+        SELECT
+            @tmp = ID,
+            @currentStateID = State,
             @currentAssignedPersonnel = Assigned_Personnel,
             @requestTypeExisting = Request_Type
         FROM  T_Sample_Prep_Request
@@ -666,11 +648,11 @@ As
         If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
-        -- Don't allow change to "Prep in Progress" 
+        -- Don't allow change to "Prep in Progress"
         -- unless someone has been assigned @assignedPersonnel @currentAssignedPersonnel
         If @state = 'Prep in Progress' AND ((@assignedPersonnel = '') OR (@assignedPersonnel = 'na'))
             RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
-    
+
         If @requestTypeExisting <> @requestType
             RAISERROR ('Cannot edit requests of type %s with the sample_prep_request page; use https://dms2.pnl.gov/rna_prep_request/report', 11, 7, @requestTypeExisting)
     End
@@ -679,12 +661,12 @@ As
     Begin
         If @estimatedCompletionDate < CONVERT(date, getdate())
             RAISERROR ('Cannot add: Estimated completion must be today or later', 11, 8)
-        
+
         -- Make sure the work package number is not inactive
         --
         Declare @activationState tinyint = 10
         Declare @activationStateName varchar(128)
-        
+
         SELECT @activationState = CCAS.Activation_State,
                @activationStateName = CCAS.Activation_State_Name
         FROM T_Charge_Code CC
@@ -710,12 +692,12 @@ As
     Begin
         IF EXISTS (SELECT * FROM T_Sample_Prep_Request WHERE Request_Name = @requestName AND ID <> @id)
             RAISERROR ('Cannot rename: Request "%s" already in database', 11, 8, @requestName)
-    End    
+    End
 
     Set @logErrors = 1
 
     Declare @transName varchar(32) = 'AddUpdateSamplePrepRequest'
-    
+
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
@@ -723,64 +705,64 @@ As
     If @mode = 'add'
     Begin
         Begin transaction @transName
-            
+
         INSERT INTO T_Sample_Prep_Request (
-            Request_Name, 
-            Requester_PRN, 
+            Request_Name,
+            Requester_PRN,
             Reason,
-            Organism, 
+            Organism,
             Tissue_ID,
-            Biohazard_Level, 
-            Campaign, 
-            Number_of_Samples, 
-            Sample_Name_List, 
-            Sample_Type, 
-            Prep_Method, 
-            Sample_Naming_Convention, 
+            Biohazard_Level,
+            Campaign,
+            Number_of_Samples,
+            Sample_Name_List,
+            Sample_Type,
+            Prep_Method,
+            Sample_Naming_Convention,
             Requested_Personnel,
-            Assigned_Personnel, 
+            Assigned_Personnel,
             Estimated_Completion,
             Estimated_MS_runs,
-            Work_Package_Number, 
-            EUS_UsageType, 
-            EUS_Proposal_ID, 
+            Work_Package_Number,
+            EUS_UsageType,
+            EUS_Proposal_ID,
             EUS_User_ID,
-            Instrument_Analysis_Specifications, 
+            Instrument_Analysis_Specifications,
             Comment,
-            Priority, 
-            State, 
-            Instrument_Group, 
+            Priority,
+            State,
+            Instrument_Group,
             Dataset_Type,
             Separation_Type,
             BlockAndRandomizeSamples,
             BlockAndRandomizeRuns,
             Reason_For_High_Priority,
             Request_Type,
-            Material_Container_List    
+            Material_Container_List
         ) VALUES (
-            @requestName, 
-            @requesterPRN, 
+            @requestName,
+            @requesterPRN,
             @reason,
-            @organism, 
+            @organism,
             @tissueIdentifier,
-            @biohazardLevel, 
-            @campaign, 
-            @numberofSamples, 
-            @sampleNameList, 
-            @sampleType, 
-            @prepMethod, 
-            @sampleNamingConvention, 
+            @biohazardLevel,
+            @campaign,
+            @numberofSamples,
+            @sampleNameList,
+            @sampleType,
+            @prepMethod,
+            @sampleNamingConvention,
             @requestedPersonnel,
-            @assignedPersonnel, 
+            @assignedPersonnel,
             @estimatedCompletionDate,
             @estimatedMSRuns,
-            @workPackageNumber, 
+            @workPackageNumber,
             @eusUsageType,
             @eusProposalID,
             @eusUserID,
-            @instrumentAnalysisSpecifications, 
+            @instrumentAnalysisSpecifications,
             @comment,
-            @priority, 
+            @priority,
             @stateID,
             @instrumentGroup,
             @datasetType,
@@ -800,12 +782,12 @@ As
         -- Return ID of newly created entry
         --
         Set @id = SCOPE_IDENTITY()
-        
+
         commit transaction @transName
-        
+
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser, 
+            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Date_of_Change', @enteredByColumnName='System_Account'
 
     End -- Add mode
@@ -817,35 +799,35 @@ As
     If @mode = 'update'
     Begin
         Begin transaction @transName
-        
-        UPDATE T_Sample_Prep_Request 
-        SET 
-            Request_Name = @requestName, 
-            Requester_PRN = @requesterPRN, 
+
+        UPDATE T_Sample_Prep_Request
+        SET
+            Request_Name = @requestName,
+            Requester_PRN = @requesterPRN,
             Reason = @reason,
             Material_Container_List = @materialContainerList,
-            Organism = @organism, 
+            Organism = @organism,
             Tissue_ID = @tissueIdentifier,
-            Biohazard_Level = @biohazardLevel, 
-            Campaign = @campaign, 
-            Number_of_Samples = @numberofSamples, 
-            Sample_Name_List = @sampleNameList, 
-            Sample_Type = @sampleType, 
-            Prep_Method = @prepMethod, 
-            Sample_Naming_Convention = @sampleNamingConvention, 
+            Biohazard_Level = @biohazardLevel,
+            Campaign = @campaign,
+            Number_of_Samples = @numberofSamples,
+            Sample_Name_List = @sampleNameList,
+            Sample_Type = @sampleType,
+            Prep_Method = @prepMethod,
+            Sample_Naming_Convention = @sampleNamingConvention,
             Requested_Personnel = @requestedPersonnel,
-            Assigned_Personnel = @assignedPersonnel, 
+            Assigned_Personnel = @assignedPersonnel,
             Estimated_Completion = @estimatedCompletionDate,
             Estimated_MS_runs = @estimatedMSRuns,
-            Work_Package_Number = @workPackageNumber, 
+            Work_Package_Number = @workPackageNumber,
             EUS_Proposal_ID = @eusProposalID,
             EUS_UsageType = @eusUsageType,
             EUS_User_ID = @eusUserID,
-            Instrument_Analysis_Specifications = @instrumentAnalysisSpecifications, 
-            Comment = @comment, 
-            Priority = @priority, 
+            Instrument_Analysis_Specifications = @instrumentAnalysisSpecifications,
+            Comment = @comment,
+            Priority = @priority,
             State = @stateID,
-            Instrument_Group = @instrumentGroup, 
+            Instrument_Group = @instrumentGroup,
             Instrument_Name = Null,
             Dataset_Type = @datasetType,
             Separation_Type = @separationGroup,
@@ -863,7 +845,7 @@ As
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser, 
+            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Date_of_Change', @enteredByColumnName='System_Account'
 
     End -- update mode
@@ -871,7 +853,7 @@ As
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
@@ -883,7 +865,7 @@ As
         End
 
     End Catch
-    
+
     return @myError
 
 

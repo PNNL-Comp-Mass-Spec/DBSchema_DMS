@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          08/20/2020 mem - When a circular reference exists, choose the proposal with the highest numeric ID
 **          05/25/2021 mem - Add parameter @samplePrepRequest
 **          05/26/2021 mem - Capitalize @eusUsageType
+**          05/27/2021 mem - Add parameters @experimentID, @campaignID, and @addingItem
 **
 *****************************************************/
 (
@@ -47,6 +48,9 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
     @message varchar(1024) output,
     @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @samplePrepRequest tinyint = 0,             -- When 1, validating EUS fields for a sample prep request
+    @experimentID int = 0,                      -- When non-zero, validate EUS Usage Type against the experiment's campaign
+    @campaignID int = 0,                        -- When non-zero, validate EUS Usage Type against the campaign
+    @addingItem tinyint = 0,                    -- When @experimentID or @campaignID is non-zero, set this to 1 if creating a new prep request or new requested run
     @infoOnly tinyint = 0                       -- When 1, show debug info
 )
 As
@@ -197,7 +201,7 @@ As
     End
 
     If @eusUsageType In ('USER', 'USER_ONSITE', 'USER_REMOTE')
-    Begin -- <a>
+    Begin -- <a1>
 
         ---------------------------------------------------
         -- Proposal and user list cannot be blank when the usage type is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
@@ -536,7 +540,84 @@ As
 
             End -- </f>
         End -- </e>
-    End -- </a>
+    End -- </a1>
+
+    If @campaignID > 0 OR @experimentID > 0
+    Begin -- <a2>
+        Declare @eusUsageTypeCampaign varchar(50)
+        Declare @msg varchar(1024)
+
+        If @campaignID > 0
+        Begin
+            SELECT @eusUsageTypeCampaign = EUT.Name
+            FROM T_Campaign C
+                 INNER JOIN T_EUS_UsageType EUT
+                   ON C.CM_EUS_Usage_Type = EUT.ID
+            WHERE C.Campaign_ID = @campaignID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
+        Else
+        Begin
+            SELECT @eusUsageTypeCampaign = EUT.Name
+            FROM T_Experiments E
+                 INNER JOIN T_Campaign C
+                   ON E.EX_campaign_ID = C.Campaign_ID
+                 INNER JOIN T_EUS_UsageType EUT
+                   ON C.CM_EUS_Usage_Type = EUT.ID
+            WHERE E.Exp_ID = @experimentID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
+
+        If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType In ('USER_ONSITE', 'USER')
+        Begin
+            If @addingItem > 0
+            Begin
+                Set @eusUsageType = 'USER_REMOTE'
+                Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
+
+                SELECT @eusUsageTypeID = ID
+                FROM T_EUS_UsageType
+                WHERE Name = @eusUsageType
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If @myRowCount= 0
+                Begin
+                    Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
+                    exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
+                End
+            End
+            Else
+            Begin
+                Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the new item should likely also be of type USER_REMOTE'
+            End
+
+            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        End
+
+        If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER'
+        Begin
+            Set @eusUsageType = 'USER_ONSITE'
+            Set @msg = 'Auto-updated EUS Usage Type to USER_ONSITE since the campaign has USER_ONSITE'
+
+            SELECT @eusUsageTypeID = ID
+            FROM T_EUS_UsageType
+            WHERE Name = @eusUsageType
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount= 0
+            Begin
+                Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
+                exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
+
+                -- Only append @msg to @message if an error occurs
+                Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            End
+        End
+    End
 
     return 0
 
