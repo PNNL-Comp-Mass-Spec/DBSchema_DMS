@@ -85,6 +85,8 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **                         - Call UpdateCachedJobRequestExistingJobs after creating / updating an analysis job request
 **          05/28/2020 mem - Auto-update the settings file if the samples used TMTpro
 **          03/10/2021 mem - Add @dataPackageID and remove @adminReviewReqd
+**          05/28/2021 mem - Add @mode 'append', which can be be used to add additional datasets to an existing analysis job request, regardless of state
+                           - When using append mode, optionally Set @state to 'new' to also reset the state
 **
 *****************************************************/
 (
@@ -101,9 +103,9 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @dataPackageID int = 0,
-    @state varchar(32),
+    @state varchar(32),                         -- Includes 'new', 'used', and 'inactive' (see T_Analysis_Job_Request_State)
     @requestID int output,
-    @mode varchar(12) = 'add',                    -- 'add', 'update', or 'PreviewAdd'
+    @mode varchar(12) = 'add',                  -- 'add', 'update', 'append', or 'PreviewAdd'
     @message varchar(512) output,
     @autoRemoveNotReleasedDatasets tinyint = 0,
     @callingUser varchar(128)=''
@@ -141,9 +143,9 @@ As
     ---------------------------------------------------
     
     Set @requestName = IsNull(@requestName, '')
-    set @comment = IsNull(@comment, '')
+    Set @comment = IsNull(@comment, '')
     
-    set @message = ''
+    Set @message = ''
 
     Declare @msg varchar(512)
 
@@ -169,7 +171,7 @@ As
     Declare @hit int
     Declare @curState int
 
-    -- cannot create an entry with a duplicate name
+    -- Cannot create an entry with a duplicate name
     --
     If @mode IN ('add', 'PreviewAdd')
     Begin
@@ -182,7 +184,7 @@ As
     --
     If @mode = 'update'
     Begin
-        set @hit = 0
+        Set @hit = 0
         SELECT @hit = AJR_requestID,
                @curState = AJR_state
         FROM T_Analysis_Job_Request
@@ -274,7 +276,7 @@ As
         WHERE Data_Package_ID = @dataPackageID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        SET @datasetCount = @myRowCount
+        Set @datasetCount = @myRowCount
         --
         If @myError <> 0
             RAISERROR ('Error populating temporary table', 11, 8)
@@ -294,7 +296,7 @@ As
         FROM MakeTableFromList ( @datasets )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        SET @datasetCount = @myRowCount
+        Set @datasetCount = @myRowCount
         --
         If @myError <> 0
             RAISERROR ('Error populating temporary table', 11, 8)
@@ -364,7 +366,7 @@ As
     --
     Declare @collectionCountAdded int
     Declare @result int
-    set @result = 0
+    Set @result = 0
     
     Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
     If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
@@ -389,7 +391,7 @@ As
     Declare @analysisToolID int
     Declare @organismID int
     --
-    set @result = 0
+    Set @result = 0
     --
     exec @result = ValidateAnalysisJobParameters
                             @toolName = @toolName,
@@ -630,7 +632,7 @@ As
         If @myError <> 0
             RAISERROR ('Insert operation failed for T_Analysis_Job_Request', 11, 9)
         --
-        set @newRequestNum = SCOPE_IDENTITY()
+        Set @newRequestNum = SCOPE_IDENTITY()
 
         INSERT INTO T_Analysis_Job_Request_Datasets( Request_ID,
                                                      Dataset_ID )
@@ -646,7 +648,7 @@ As
 
         -- return ID of the newly created request
         --
-        set @requestID = cast(@newRequestNum as varchar(32))
+        Set @requestID = cast(@newRequestNum as varchar(32))
 
         If Len(@callingUser) > 0
         Begin
@@ -672,10 +674,10 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode In ('update', 'append')
     Begin
         -- Update the request
-        set @myError = 0
+        Set @myError = 0
         
         Begin Tran
 
