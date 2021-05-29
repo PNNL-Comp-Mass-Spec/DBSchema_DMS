@@ -93,30 +93,30 @@ AS
 
         If Not Exists (Select * from #Tmp_DebugReports)
         Begin
-            set @message = 'To see debug reports, @message must have a comma separated list of integers'
+            Set @message = 'To see debug reports, @message must have a comma separated list of integers'
             RAISERROR (@message, 10, 1)
         End
     End
         
-    SET @message = ''
+    Set @message = ''
     
-    DECLARE @outputFormat varchar(12) = 'report'
+    Declare @outputFormat varchar(12) = 'report'
     
     ---------------------------------------------------
     ---------------------------------------------------
     BEGIN TRY 
-        DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+        Declare @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
         
-        DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain('')
+        Declare @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain('')
 
         ---------------------------------------------------
         -- figure out our time context
         ---------------------------------------------------
 
-        DECLARE @year INT = DATEPART(YEAR, @endDate)
-        DECLARE @month INT = DATEPART(MONTH, @endDate)
+        Declare @year INT = DATEPART(YEAR, @endDate)
+        Declare @month INT = DATEPART(MONTH, @endDate)
         
-        DECLARE @bom DATETIME = CONVERT(varchar(12), @month) + '/1/' + CONVERT(varchar(12), @year)
+        Declare @bom DATETIME = CONVERT(varchar(12), @month) + '/1/' + CONVERT(varchar(12), @year)
 
         ---------------------------------------------------
         -- temporary table for staging report rows
@@ -209,11 +209,11 @@ AS
         -- Add unique sequence tag to new report rows
         ---------------------------------------------------
 
-        DECLARE @seq INT = 0
+        Declare @seq INT = 0
         SELECT @seq = ISNULL(MAX(Seq), 0) FROM T_EMSL_Instrument_Usage_Report
         --
         UPDATE #STAGING
-        SET @seq = Seq = @seq + 1,
+        Set @seq = Seq = @seq + 1,
         [Mark] = 0
         FROM #STAGING
         WHERE [Mark] IS NULL
@@ -225,15 +225,15 @@ AS
         -- Cleanup: remove usage text from comments
         ---------------------------------------------------
         
-        SET @seq = 0
-        DECLARE @cleanedComment varchar(4096)
-        DECLARE @xml XML
-        DECLARE @num INT
-        DECLARE @count INT = 0
+        Set @seq = 0
+        Declare @cleanedComment varchar(4096)
+        Declare @xml XML
+        Declare @num INT
+        Declare @count INT = 0
         SELECT @num = COUNT(*) FROM #STAGING
         WHILE @count < @num
         BEGIN 
-            SET @cleanedComment = ''
+            Set @cleanedComment = ''
             SELECT TOP 1
                 @seq = Seq ,
                 @cleanedComment = Comment
@@ -259,7 +259,7 @@ AS
                 SET Comment = LTrim(RTrim(@cleanedComment))
                 WHERE Seq = @seq
             END 
-            SET @count = @count + 1
+            Set @count = @count + 1
         END
 
         If Exists (Select * from #Tmp_DebugReports Where Debug_ID = 4)

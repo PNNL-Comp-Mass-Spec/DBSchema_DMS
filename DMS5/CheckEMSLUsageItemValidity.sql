@@ -31,9 +31,9 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 RETURNS varchar(4096)
 AS
 	BEGIN
-		DECLARE @Message VARCHAR(4096) = ''
+		Declare @Message VARCHAR(4096) = ''
 
-		DECLARE @EMSLInstID INT ,
+		Declare @EMSLInstID INT ,
 			@Instrument VARCHAR(64) ,
 			@Type VARCHAR(128) ,
 			@Start DATETIME ,
@@ -47,7 +47,7 @@ AS
 			@Month INT ,
 			@DatasetID INT 
 
-		DECLARE @ProposalId VARCHAR(10) ,
+		Declare @ProposalId VARCHAR(10) ,
 			@Title VARCHAR(2048) ,
 			@StateID INT ,
 			@ImportDate DATETIME ,
@@ -78,16 +78,16 @@ AS
 		WHERE (InstUsage.Seq = @Seq)
 
 		IF @Usage = 'CAP_DEV' AND ISNULL(@Operator, '') = ''
-			SET @Message = @Message + 'Capability Development requires an operator' + ', ' 
+			Set @Message = @Message + 'Capability Development requires an operator' + ', ' 
 
 		IF NOT @Usage IN ('ONSITE', 'MAINTENANCE') AND ISNULL(@Comment, '') = ''
-			SET @Message = @Message + 'Missing Comment' + ', ' 
+			Set @Message = @Message + 'Missing Comment' + ', ' 
 
 		IF @Usage = 'OFFSITE' AND @Proposal = '' 
-			SET @Message = @Message + 'Missing Proposal' + ', ' 
+			Set @Message = @Message + 'Missing Proposal' + ', ' 
 
 		IF @Usage = 'ONSITE' AND Try_Convert(int, SUBSTRING(@Proposal, 1, 1)) Is Null
-			SET @Message = @Message + 'Preliminary Proposal number' + ', '
+			Set @Message = @Message + 'Preliminary Proposal number' + ', '
 
 		SELECT  @ProposalId = Proposal_ID ,
 				@Title = Title ,
@@ -101,18 +101,18 @@ AS
 		WHERE   Proposal_ID = @Proposal 
 
 		IF @Usage = 'ONSITE' AND @ProposalId IS null
-			SET @Message = @Message + 'Proposal number is not in ERS' + ', '
+			Set @Message = @Message + 'Proposal number is not in ERS' + ', '
 
 		IF NOT @ProposalId IS NULL
 		BEGIN 
 		IF @Usage = 'ONSITE' AND  NOT ( @Start BETWEEN @ProposalStartDate AND @ProposalEndDate )
-			SET @Message = @Message + 'Run start not between proposal start/end dates' + ', '
+			Set @Message = @Message + 'Run start not between proposal start/end dates' + ', '
 		END
 
 
 		IF NOT @ProposalId IS NULL
 		BEGIN 
-			DECLARE @hits INT = 0
+			Declare @hits INT = 0
 			If @Users Like '%,%'
 			Begin
 				SELECT @hits = COUNT(*)
@@ -131,7 +131,7 @@ AS
 			End
 			
 			IF @hits = 0
-				SET @Message = @Message + 'No users were listed for proposal' + ', '
+				Set @Message = @Message + 'No users were listed for proposal' + ', '
 		END
 				
 		RETURN @Message

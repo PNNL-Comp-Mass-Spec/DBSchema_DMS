@@ -8,7 +8,6 @@ CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfo]
 /****************************************************
 **
 **  Desc:   Returns run tracking information for given instrument
-**
 **    
 **  Auth:   grk   
 **          02/14/2012 grk - initial release
@@ -39,8 +38,8 @@ RETURNS @TX TABLE (
 )
 AS
     BEGIN
-        DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
-        DECLARE @message VARCHAR(512) = ''
+        Declare @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+        Declare @message VARCHAR(512) = ''
     
         ---------------------------------------------------
         -- check arguments
@@ -56,7 +55,7 @@ AS
         -- get instrument ID
         ---------------------------------------------------
         
-        DECLARE @instrumentID INT
+        Declare @instrumentID INT
         SELECT @instrumentID = Instrument_ID FROM T_Instrument_Name WHERE IN_name = @instrument
         IF ISNULL(@instrumentID, 0) = 0
         BEGIN
@@ -68,15 +67,15 @@ AS
         -- set up dates for beginning and end of month 
         ---------------------------------------------------
         
-        DECLARE @startDate VARCHAR(16) = @month + '/1/' + @year
-        DECLARE @firstDayOfStartingMonth DATETIME = CONVERT(DATETIME, @startDate, 102);
-        DECLARE @firstDayOfTrailingMonth DATETIME = DATEADD(MONTH, 1, @firstDayOfStartingMonth)
+        Declare @startDate VARCHAR(16) = @month + '/1/' + @year
+        Declare @firstDayOfStartingMonth DATETIME = CONVERT(DATETIME, @startDate, 102);
+        Declare @firstDayOfTrailingMonth DATETIME = DATEADD(MONTH, 1, @firstDayOfStartingMonth)
 
         ---------------------------------------------------
         -- get datasets whose start time falls within month 
         ---------------------------------------------------
-        DECLARE @seqIncrement INT = 1
-        DECLARE @seqOffset INT = 0
+        Declare @seqIncrement INT = 1
+        Declare @seqOffset INT = 0
 
         INSERT  INTO @TX
         (
@@ -114,25 +113,25 @@ AS
         -- close to beginning of month
         ---------------------------------------------------
 
-        DECLARE @firstRunSeq int
-        DECLARE @lastRunSeq int
+        Declare @firstRunSeq int
+        Declare @lastRunSeq int
         SELECT @firstRunSeq = MIN(Seq), @lastRunSeq = MAX(Seq) FROM @TX
         
-        DECLARE @firstStart DATETIME
+        Declare @firstStart DATETIME
         SELECT @firstStart = Time_Start FROM @TX WHERE Seq = @firstRunSeq
         
-        DECLARE @initialGap INT = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @firstStart)
+        Declare @initialGap INT = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @firstStart)
         
         -- get preceeding dataset (latest with starting time preceding this month)
         --
         IF DATEDIFF(MINUTE, @firstDayOfStartingMonth, @firstStart) > @maxNormalInterval
         BEGIN 
-            DECLARE @precID INT
-            DECLARE @precDataset VARCHAR(128) 
-            DECLARE @precStart DATETIME
-            DECLARE @precEnd DATETIME 
-            DECLARE @precDuration INT
-            DECLARE @precInterval INT 
+            Declare @precID INT
+            Declare @precDataset VARCHAR(128) 
+            Declare @precStart DATETIME
+            Declare @precEnd DATETIME 
+            Declare @precDuration INT
+            Declare @precInterval INT 
 
             SELECT TOP 1 
                 @precID = TD.Dataset_ID , 
@@ -155,12 +154,12 @@ AS
             --
             IF @precEnd < @firstDayOfStartingMonth
             BEGIN 
-                SET @precDuration = 0
-                SET @precInterval = @initialGap
+                Set @precDuration = 0
+                Set @precInterval = @initialGap
             END
             ELSE
             BEGIN 
-                SET @precDuration = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @precStart)
+                Set @precDuration = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @precStart)
             END 
 
             -- add preceeding dataset record (with truncated duration/interval)
@@ -180,9 +179,9 @@ AS
         -- otherwise, if interval hangs over succeeding month,
         -- truncate it
         --
-        DECLARE @lastRunStart DATETIME 
-        DECLARE @lastRunEnd DATETIME 
-        DECLARE @lastRunInterval INT
+        Declare @lastRunStart DATETIME 
+        Declare @lastRunEnd DATETIME 
+        Declare @lastRunInterval INT
         SELECT 
             @lastRunStart = Time_Start,
             @lastRunEnd = Time_End ,

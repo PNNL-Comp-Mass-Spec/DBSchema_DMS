@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 /****************************************************
 **
@@ -301,7 +300,7 @@ As
 
             EXEC UpdateDatasetInterval @instrument, @startOfMonth, @endOfMonth, @message output
     
-            SET @operation = 'refresh'            
+            Set @operation = 'refresh'            
         END 
 
         IF @operation = 'refresh'
@@ -320,16 +319,16 @@ As
 
                 WHILE @done = 0
                 BEGIN --<x>
-                    SET @inst = NULL 
+                    Set @inst = NULL 
                     SELECT TOP 1 @inst = Instrument
                     FROM #Tmp_Instruments 
                     WHERE Seq > @index
             
-                    SET @index = @index + 1
+                    Set @index = @index + 1
             
                     IF @inst IS NULL 
                     BEGIN 
-                        SET @done = 1
+                        Set @done = 1
                     END 
                     ELSE 
                     BEGIN --<y>

@@ -117,9 +117,9 @@ As
 		      NOT IN_Name IN ( SELECT Instrument
 		                       FROM #Tmp_InstrumentsToProcessByID )
 		
-		DECLARE @instrument varchar(64)
-		DECLARE @entryID int = -1
-		DECLARE @continue tinyint = 1
+		Declare @instrument varchar(64)
+		Declare @entryID int = -1
+		Declare @continue tinyint = 1
 		
 		---------------------------------------------------
 		-- Get usage data for instruments, by name
@@ -138,7 +138,7 @@ As
 			
 			If @myRowCount = 0
 			BEGIN 
-				SET @continue = 0
+				Set @continue = 0
 			END 
 			ELSE 
 			BEGIN
@@ -151,7 +151,7 @@ As
 		-- Get usage data for instruments, by EUS Instrument ID
 		---------------------------------------------------
 
-        DECLARE @eusInstrumentId As Int = -1
+        Declare @eusInstrumentId As Int = -1
 		Set @continue = 1
 
 		WHILE @continue > 0
@@ -167,7 +167,7 @@ As
 			
 			If @myRowCount = 0
 			BEGIN 
-				SET @continue = 0
+				Set @continue = 0
 			END 
 			ELSE 
 			BEGIN

@@ -158,19 +158,20 @@ As
                 [Normal]
             )
             SELECT GRTMI.ID,
-                    'Dataset' AS [Type],
-                    GRTMI.Time_Start AS Start,
-                    GRTMI.Duration,
-                    ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
-                    ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
-                    TRR.RDS_EUS_UsageType AS UsageID,
-                    TEUT.Name AS [Usage],
-                    1
+                   'Dataset' AS [Type],
+                   GRTMI.Time_Start AS Start,
+                   GRTMI.Duration,
+                   ISNULL(GRTMI.INTERVAL, 0) AS [Interval],
+                   ISNULL(TRR.RDS_EUS_Proposal_ID, '') AS Proposal,
+                   TRR.RDS_EUS_UsageType AS UsageID,
+                   TEUT.Name AS [Usage],
+                   1
             FROM dbo.GetRunTrackingMonthlyInfoByID ( @eusInstrumentId, @year, @month, '' ) AS GRTMI
-                    LEFT OUTER JOIN T_Requested_Run AS TRR
-                    ON GRTMI.ID = TRR.DatasetID
-                    INNER JOIN T_EUS_UsageType TEUT
-                    ON TRR.RDS_EUS_UsageType = TEUT.ID;
+                 LEFT OUTER JOIN T_Requested_Run AS TRR
+                   ON GRTMI.ID = TRR.DatasetID
+                 INNER JOIN T_EUS_UsageType TEUT
+                   ON TRR.RDS_EUS_UsageType = TEUT.ID;
+
         End;
         Else
         Begin;
@@ -200,6 +201,7 @@ As
                    ON GRTMI.ID = TRR.DatasetID
                  INNER JOIN T_EUS_UsageType TEUT
                    ON TRR.RDS_EUS_UsageType = TEUT.ID;
+
         End;
 
         ---------------------------------------------------
@@ -249,13 +251,13 @@ As
         INSERT Into #TI (
             Dataset_ID,
             Start,
-            Breakdown,  -- Holds usage
+            Breakdown,  -- Holds usage description, from T_Run_Interval.Comment
             Comment
         )
         SELECT
                 TRI.ID,
                 TRI.Start,
-                TRI.Usage,
+                TRI.Usage,  -- Examples: 'Maintenance[100%]' or 'UserOnsite[100%], Proposal[50587], PropUser[45631]' or 'User[100%], Proposal[51667], PropUser[48542]'
                 TRI.Comment
         FROM  T_Run_Interval TRI
                 INNER JOIN #TR ON TRI.ID = #TR.Dataset_ID

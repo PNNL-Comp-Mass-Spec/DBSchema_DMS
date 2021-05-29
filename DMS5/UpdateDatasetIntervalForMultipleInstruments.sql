@@ -214,7 +214,7 @@ As
 
 		WHILE @continue = 1
 		BEGIN -- <a>
-			SET @instrument = NULL 
+			Set @instrument = NULL 
 			SELECT TOP 1 @instrument = Instrument, 
                          @emslInstrument = EMSL, 
                          @tracked = Tracked,
@@ -223,11 +223,11 @@ As
 			FROM #Tmp_Instruments 
 			WHERE Seq > @index
 			
-			SET @index = @index + 1
+			Set @index = @index + 1
 			
 			IF @instrument IS NULL 
 			BEGIN 
-				SET @continue = 0
+				Set @continue = 0
 			END 
 			ELSE 
 			BEGIN -- <b>

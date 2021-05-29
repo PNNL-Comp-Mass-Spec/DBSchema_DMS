@@ -8,7 +8,7 @@ CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfoByID]
 /****************************************************
 **
 **  Desc:   Returns run tracking information for given EUS Instrument ID
-**          Modeled after GetRunTrackingMonthlyInfoByID
+**          Modeled after GetRunTrackingMonthlyInfo
 **    
 **  Auth:   mem
 **  Date:   02/14/2012 mem - Initial release
@@ -158,12 +158,12 @@ AS
             --
             IF @precEnd < @firstDayOfStartingMonth
             BEGIN 
-                SET @precDuration = 0
-                SET @precInterval = @initialGap
+                Set @precDuration = 0
+                Set @precInterval = @initialGap
             END
             ELSE
             BEGIN 
-                SET @precDuration = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @precStart)
+                Set @precDuration = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @precStart)
             END 
 
             -- Add preceeding dataset record (with truncated duration/interval)

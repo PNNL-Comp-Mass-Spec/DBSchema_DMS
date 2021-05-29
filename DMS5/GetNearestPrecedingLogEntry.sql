@@ -26,9 +26,9 @@ CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
 RETURNS varchar(4096)
 AS
 	BEGIN
-		DECLARE @Message VARCHAR(4096) = ''
+		Declare @Message VARCHAR(4096) = ''
 
-		DECLARE @EMSLInstID INT ,
+		Declare @EMSLInstID INT ,
 			@Instrument VARCHAR(64) ,
 			@Type VARCHAR(128) ,
 			@Start DATETIME ,
@@ -65,8 +65,8 @@ AS
 
 		IF @Usage <> 'ONSITE' AND ISNULL(@Comment, '') = ''
 		BEGIN 
-			DECLARE @opNote VARCHAR(4096) = '', @opNoteTime DATETIME , @opNoteID INT = 0
-			DECLARE @confNote VARCHAR(4096) = '', @confNoteTime DATETIME , @confNoteID INT = 0
+			Declare @opNote VARCHAR(4096) = '', @opNoteTime DATETIME , @opNoteID INT = 0
+			Declare @confNote VARCHAR(4096) = '', @confNoteTime DATETIME , @confNoteID INT = 0
 
 			SELECT TOP(1) 
 				@opNoteID = ID,
@@ -84,7 +84,7 @@ AS
 			WHERE Instrument = @Instrument AND Date_Of_Change < @Start
 			ORDER BY Date_Of_Change DESC
 			
-		   SET @message = CASE WHEN @opNoteTime > @confNoteTime
+		   Set @message = CASE WHEN @opNoteTime > @confNoteTime
 							   THEN '[Op Log:' + CONVERT(VARCHAR(128), @opNoteID)
 									+ '] ' + @opNote
 							   ELSE '[Config Log:' + CONVERT(VARCHAR(128), @confNoteID)

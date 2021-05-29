@@ -42,7 +42,7 @@ RETURNS @T_Report_Output TABLE
 AS 
 	BEGIN	
 		-- table for processing runs and intervals for reporting month
-		DECLARE @T_Working TABLE
+		Declare @T_Working TABLE
 		(
 			[Dataset_ID] INT NULL,
 			[EMSL_Inst_ID] INT NULL,
@@ -65,7 +65,7 @@ AS
 		)
 
 		-- intermediate storage for report entries 
-		DECLARE @T_Report_Accumulation TABLE
+		Declare @T_Report_Accumulation TABLE
 		(
 			[Start] DATETIME,
 			[DurationSeconds] INT,
@@ -114,8 +114,8 @@ AS
 		-- repetitive process to pull records out of working table
 		-- into accumulation table, allowing for durations that
 		-- cross daily boundaries
-		DECLARE @cnt INT = 1
-		DECLARE @done INT = 0
+		Declare @cnt INT = 1
+		Declare @done INT = 0
 		WHILE @done = 0
 		BEGIN --<loop>--
 
@@ -205,7 +205,7 @@ AS
 			
 			-- we are done when there is nothing left to process in working table
 			SELECT @cnt = COUNT(*) FROM @T_Working
-			IF @cnt = 0 SET @done = 1
+			IF @cnt = 0 Set @done = 1
 		END --<loop>					
 		
 		-- copy report entries from accumulation table to report output table

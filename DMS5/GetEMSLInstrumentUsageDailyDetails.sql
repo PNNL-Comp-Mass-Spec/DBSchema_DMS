@@ -52,7 +52,7 @@ RETURNS @T_Report_Output TABLE
 AS 
     BEGIN    
         -- Table for processing runs and intervals for reporting month
-        DECLARE @T_Working TABLE
+        Declare @T_Working TABLE
             (
               [Dataset_ID] INT NULL,
               [EMSL_Inst_ID] INT NULL,
@@ -80,7 +80,7 @@ AS
 
         -- Intermediate storage for report entries
         -- 
-        DECLARE @T_Report_Accumulation TABLE
+        Declare @T_Report_Accumulation TABLE
             (
               [Start] DATETIME,
               [DurationSeconds] INT,
@@ -153,7 +153,7 @@ AS
         --  a. starting at 11:40 pm on April 17 and lasting 20 minutes
         --  b. starting at 12:00 am on April 18 and lasting 10 minutes
 
-        DECLARE @done INT = 0
+        Declare @done INT = 0
         WHILE @done = 0 
         BEGIN -- <loop>
 
@@ -273,7 +273,7 @@ AS
             -- We are done when there is nothing left to process in working table
             IF NOT EXISTS (SELECT * FROM @T_Working)
             Begin
-                SET @done = 1
+                Set @done = 1
             End
 
         END -- </loop>

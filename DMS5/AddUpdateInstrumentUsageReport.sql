@@ -40,7 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 	@Month int,							-- Unused (not updatable)
 	@ID int,							-- Unused (not updatable)     -- Dataset_ID
 	@Proposal varchar(32),				-- Proposal for update
-	@Usage varchar(32),					-- Usage name for update
+	@Usage varchar(32),					-- Usage name for update (ONSITE, REMOTE, MAINTENANCE, BROKEN, etc.); corresponds to T_EMSL_Instrument_Usage_Type
 	@Users varchar(1024),				-- Users forupdate
 	@Operator varchar(64),				-- Operator for update
 	@Comment varchar(4096),				-- Comment for update
@@ -51,10 +51,10 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -101,7 +101,7 @@ As
 	begin
 		-- cannot update a non-existent entry
 		--
-		declare @tmp int = 0
+		Declare @tmp int = 0
 		--
 		SELECT @tmp = Dataset_ID
 		FROM  T_EMSL_Instrument_Usage_Report
@@ -128,7 +128,7 @@ As
 	--
 	if @mode = 'update' 
 	begin
-		set @myError = 0
+		Set @myError = 0
 		--
 		UPDATE T_EMSL_Instrument_Usage_Report 
 		SET 		

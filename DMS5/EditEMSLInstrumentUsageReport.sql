@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.EditEMSLInstrumentUsageReport
+
+CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
@@ -38,8 +39,8 @@ AS
 
 	Declare @myError int
 	Declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Set @myError = 0
+	Set @myRowCount = 0
 
 	---------------------------------------------------
 	-- Validate the inputs
