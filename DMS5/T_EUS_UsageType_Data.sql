@@ -1,7 +1,7 @@
 /****** Object:  Table [T_EUS_UsageType] ******/
 /****** RowCount: 8 ******/
 SET IDENTITY_INSERT [T_EUS_UsageType] ON
-INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (1,'Undefined','Undefined type; not valid for requested runs',1,1,0)
+INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (1,'Undefined','Undefined type',0,0,0)
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (10,'CAP_DEV','Capability Development',1,1,1)
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (12,'MAINTENANCE','Maintenance',1,0,0)
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (13,'BROKEN','Broken (out of Service)',1,0,0)
