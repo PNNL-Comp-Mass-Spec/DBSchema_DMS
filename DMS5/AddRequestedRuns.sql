@@ -59,7 +59,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
     @eusUsersList varchar(1024) = '',           -- Comma separated list of EUS user IDs (integers); also supports the form 'Baker, Erin (41136)'
     @internalStandard varchar(50) = 'na',
     @comment varchar(1024) = 'na',
-    @mode varchar(12) = 'add', -- or 'update'
+    @mode varchar(12) = 'add',                  -- or 'PreviewAdd'
     @message varchar(512) output,
     @separationGroup varchar(64) = 'LC-Formic_100min',      -- Separation group; could also contain '(lookup)'
     @mrmAttachment varchar(128),
@@ -300,6 +300,10 @@ As
     Declare @resolvedInstrumentInfo varchar(256) = ''
     Declare @resolvedInstrumentInfoCurrent varchar(256) = ''
 
+    If @mode = 'PreviewAdd'
+        Set @requestedRunMode = 'check_add'
+    Else
+        Set @requestedRunMode = 'add'
 
     While @done = 0 and @myError = 0
     Begin
@@ -335,7 +339,7 @@ As
                                     @eusProposalID = @eusProposalID,
                                     @eusUsageType = @eusUsageType,
                                     @eusUsersList = @eusUsersList,
-                                    @mode = 'add',
+                                    @mode = @requestedRunMode,
                                     @request = @request output,
                                     @message = @message output,
                                     @secSep = @separationGroup,
@@ -374,6 +378,19 @@ As
         End
     End
 
+    If @mode = 'PreviewAdd'
+    Begin
+        Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs'
+        
+        If @resolvedInstrumentInfo = ''
+            Set @message = @message + ' for instrument group ' + @instrumentName + ', type ' + @msType + ', with ' + @separationGroup
+        Else
+            Set @message = @message + ' for ' + @resolvedInstrumentInfo
+    End
+    Else
+    Begin
+        Set @message = 'Number of requested runs created: ' + cast(@count as varchar(12))
+    End
 
     If @myError = 0 And Len(@batchName) > 0
     Begin

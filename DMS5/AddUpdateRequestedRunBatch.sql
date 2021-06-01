@@ -31,6 +31,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          08/18/2017 mem - Log additional errors to T_Log_Entries
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          05/29/2021 mem - Refactor validation code into new stored procedure
+**          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
+**                         - Add @useRaiseError
 **
 *****************************************************/
 (
@@ -46,6 +48,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @comment varchar(512),
     @mode varchar(12) = 'add',                      -- or 'update' or 'PreviewAdd'
     @message varchar(512) Output,
+    @useRaiseError tinyint = 1                      -- When 1, use Raiserror; when 0, return a non-zero value if an error
 )
 As
     Set XACT_ABORT, nocount on
@@ -119,11 +122,15 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Failed to create temporary table for requests'
-        RAISERROR (@message, 11, 22)
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed to create temporary table for requests'
+
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 22)
+        Else
+            Return 50002      
+    End
 
     ---------------------------------------------------
     -- Populate temporary table from list
@@ -131,15 +138,19 @@ As
     --
     INSERT INTO #XR (RequestIDText)
     SELECT Item
-    FROM MakeTableFromList(@RequestedRunList)
+    FROM MakeTableFromList(@requestedRunList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Failed to populate temporary table for requests'
-        RAISERROR (@message, 11, 23)
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed to populate temporary table for requests'
+
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 23)
+        Else
+            Return 50003
+    End
 
     ---------------------------------------------------
     -- Convert Request IDs to integers
@@ -158,17 +169,21 @@ As
 
         Set @logErrors = 0
         Set @message = 'Requested runs must be integers, not names; first invalid item: ' + IsNull(@firstInvalid, '')
-        RAISERROR (@message, 11, 30)
+
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 30)
+        Else
+            Return 50004
     End
 
     ---------------------------------------------------
-    -- check status of prospective member requests
+    -- Check status of prospective member requests
     ---------------------------------------------------
-    declare @count int
+    Declare @count int
 
-    -- do all requests in list actually exist?
+    -- Do all requests in list actually exist?
     --
-    set @count = 0
+    Set @count = 0
     --
     SELECT @count = count(*)
     FROM #XR
@@ -180,14 +195,18 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Failed trying to check existence of requests in list'
-        RAISERROR (@message, 11, 24)
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed trying to check existence of requests in list'
 
-    if @count <> 0
-    begin
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 24)
+        Else
+            Return 50005
+    End
+
+    If @count <> 0
+    Begin
 
         Declare @invalidIDs varchar(64) = null
 
@@ -200,22 +219,36 @@ As
         )
 
         Set @logErrors = 0
-        set @message = 'Requested run list contains requests that do not exist: ' + @invalidIDs
-        RAISERROR (@message, 11, 25)
+        Set @message = 'Requested run list contains requests that do not exist: ' + @invalidIDs
 
-    end
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 25)
+        Else
+            Return 50006
+    End
 
-    -- start transaction
+    ---------------------------------------------------
+    -- Action for preview mode
+    ---------------------------------------------------
+    --    
+    If @mode = 'PreviewAdd'
+    Begin
+        Set @message = 'Would create batch "' + @name + '" with ' + Cast(@count As Varchar(12)) + ' requested runs'
+        Return 0
+    End
+
+    -- Start transaction
     --
-    declare @transName varchar(32)
-    set @transName = 'UpdateRequestState'
-    begin transaction @transName
+    Declare @transName varchar(32) = 'AddUpdateBatch'
+
+    Begin transaction @transName
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
-    if @Mode = 'add'
-    begin
+    --
+    If @mode = 'add'
+    Begin
 
         INSERT INTO T_Requested_Run_Batches (
             Batch,
@@ -229,115 +262,130 @@ As
             Requested_Instrument,
             Comment
         ) VALUES (
-            @Name,
-            @Description,
+            @name,
+            @description,
             @userID,
             'No',
-            @RequestedBatchPriority,
+            @requestedBatchPriority,
             'Normal',
-            @RequestedCompletionDate,
-            @JustificationHighPriority,
-            @InstrumentGroup,
-            @Comment
+            @requestedCompletionDate,
+            @justificationHighPriority,
+            @instrumentGroup,
+            @comment
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Insert operation failed'
-            RAISERROR (@message, 11, 26)
-        end
-
-        -- return ID of newly created entry
-        --
-        Set @ID = SCOPE_IDENTITY()
-
-        -- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Exp_ID
-        Declare @BatchIDConfirm int = 0
-
-        SELECT @BatchIDConfirm = ID
-        FROM T_Requested_Run_Batches
-        WHERE Batch = @Name
-
-        If @ID <> IsNull(@BatchIDConfirm, @ID)
+        If @myError <> 0
         Begin
-            Declare @DebugMsg varchar(512)
-            Set @DebugMsg = 'Warning: Inconsistent identity values when adding batch ' + @Name + ': Found ID ' +
-                            Cast(@BatchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
-                            Cast(@ID as varchar(12))
+            Set @message = 'Insert operation failed while adding new batch'
 
-            exec postlogentry 'Error', @DebugMsg, 'AddUpdateRequestedRunBatch'
-
-            Set @ID = @BatchIDConfirm
+            If @useRaiseError > 0
+                RAISERROR (@message, 11, 26)
+            Else
+                Return 50007
         End
 
+        -- Return ID of newly created entry
+        --
+        Set @id = SCOPE_IDENTITY()
 
-  end -- add mode
+        -- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Exp_ID
+        Declare @batchIDConfirm int = 0
+
+        SELECT @batchIDConfirm = ID
+        FROM T_Requested_Run_Batches
+        WHERE Batch = @name
+
+        If @id <> IsNull(@batchIDConfirm, @id)
+        Begin
+            Declare @debugMsg varchar(512)
+            Set @debugMsg = 'Warning: Inconsistent identity values when adding batch ' + @name + ': Found ID ' +
+                            Cast(@batchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
+                            Cast(@id as varchar(12))
+
+            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRunBatch'
+
+            Set @id = @batchIDConfirm
+        End
+
+    End -- add mode
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update'
-    begin
-        set @myError = 0
+    If @mode = 'update'
+    Begin
+        Set @myError = 0
         --
         UPDATE T_Requested_Run_Batches
-        SET Batch = @Name,
-            Description = @Description,
+        SET Batch = @name,
+            Description = @description,
             Owner = @userID,
-            Requested_Batch_Priority = @RequestedBatchPriority,
-            Requested_Completion_Date = @RequestedCompletionDate,
-            Justification_for_High_Priority = @JustificationHighPriority,
-            Requested_Instrument = @InstrumentGroup,
-            Comment = @Comment
-        WHERE (ID = @ID)
+            Requested_Batch_Priority = @requestedBatchPriority,
+            Requested_Completion_Date = @requestedCompletionDate,
+            Justification_for_High_Priority = @justificationHighPriority,
+            Requested_Instrument = @instrumentGroup,
+            Comment = @comment
+        WHERE (ID = @id)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Update operation failed: "' + @ID + '"'
-            RAISERROR (@message, 11, 27)
-        end
-    end -- update mode
+        If @myError <> 0
+        Begin
+            Set @message = 'Update operation failed, Batch ' + Cast(@id As Varchar(12))
 
-  ---------------------------------------------------
-  -- update member requests
-  ---------------------------------------------------
+            If @useRaiseError > 0
+                RAISERROR (@message, 11, 27)
+            Else
+                Return 50008
+        End
+    End -- update mode
 
-      if @Mode = 'add' OR @Mode = 'update'
-    begin
-        -- remove any existing references to the batch
+    ---------------------------------------------------
+    -- Update member requests
+    ---------------------------------------------------
+
+    If @mode In ('add', 'update')
+    Begin
+        -- Remove any existing references to the batch
         -- from requested runs
         --
         UPDATE T_Requested_Run
         SET RDS_BatchID = 0
-        WHERE RDS_BatchID = @ID
+        WHERE RDS_BatchID = @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Failed trying to remove batch reference from existing requests'
-            RAISERROR (@message, 11, 28)
-        end
+        If @myError <> 0
+        Begin
+            Set @message = 'Failed trying to remove batch reference from existing requests'
 
-        -- add reference to this batch to the requests in the list
+            If @useRaiseError > 0
+                RAISERROR (@message, 11, 28)
+            Else
+                Return 50009
+        End
+
+        -- Add reference to this batch to the requests in the list
         --
-         UPDATE T_Requested_Run
-        SET RDS_BatchID = @ID
+        UPDATE T_Requested_Run
+        SET RDS_BatchID = @id
         WHERE ID IN (Select Request_ID from #XR)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Failed trying to add batch reference to requests'
-            RAISERROR (@message, 11, 29)
-        end
-    end
+        If @myError <> 0
+        Begin
+            Set @message = 'Failed trying to add batch reference to requests'
+
+            If @useRaiseError > 0
+                RAISERROR (@message, 11, 29)
+            Else
+                Return 50010
+        End
+    End
 
     commit transaction @transName
 
@@ -345,8 +393,8 @@ As
     BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
-        -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        -- Rollback any open transactions
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
