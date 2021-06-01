@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **          05/29/2021 mem - Add parameters to allow also creating a batch
+**          06/01/2021 mem - Show names of the new requests when previewing updates
 **
 *****************************************************/
 (
@@ -281,6 +282,9 @@ As
     ---------------------------------------------------
 
     Declare @reqName varchar(64)
+    Declare @reqNameFirst varchar(64) = ''
+    Declare @reqNameLast varchar(64) = ''
+
     Declare @request int
     Declare @experimentName varchar(64)
 
@@ -324,6 +328,12 @@ As
         Begin
             Set @message = ''
             Set @reqName = @experimentName + @suffix
+            
+            If @count = 0
+                Set @reqNameFirst = @reqName
+            Else
+                Set @reqNameLast = @reqName
+
             EXEC @myError = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentName,
@@ -380,12 +390,12 @@ As
 
     If @mode = 'PreviewAdd'
     Begin
-        Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs'
+        Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @reqNameFirst + ' to ' + @reqNameLast + ')'
         
         If @resolvedInstrumentInfo = ''
-            Set @message = @message + ' for instrument group ' + @instrumentName + ', type ' + @msType + ', with ' + @separationGroup
+            Set @message = @message + ' with instrument group ' + @instrumentName + ', run type ' + @msType + ', and separation group ' + @separationGroup
         Else
-            Set @message = @message + ' for ' + @resolvedInstrumentInfo
+            Set @message = @message + ' with ' + @resolvedInstrumentInfo
     End
     Else
     Begin

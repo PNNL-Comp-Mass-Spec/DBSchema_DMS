@@ -98,6 +98,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **                     mem - When @mode is 'add', 'add-auto', or 'check_add', possibly override the EUSUsageType based on the campaign's EUS Usage Type
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          05/31/2021 mem - Add output parameter @resolvedInstrumentInfo
+**          06/01/2021 mem - Update the message stored in @resolvedInstrumentInfo
 **
 *****************************************************/
 (
@@ -129,7 +130,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @stagingLocation varchar(64) = null,
     @requestIDForUpdate int = null,             -- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
     @logDebugMessages tinyint = 0,
-    @resolvedInstrumentInfo varchar(256) = '' output      -- Updated to include the instrument name, run type, and separation group; used by AddRequestedRuns when previewing updates
+    @resolvedInstrumentInfo varchar(256) = '' output      -- Output parameter that lists the the instrument group, run type, and separation group; used by AddRequestedRuns when previewing updates
 )
 As
     Set XACT_ABORT, nocount on
@@ -754,7 +755,7 @@ As
         End
     End
 
-    Set @resolvedInstrumentInfo = 'instrument group ' + @instrumentGroup + ', run type ' + @msType + ', separation group ' + @separationGroup
+    Set @resolvedInstrumentInfo = 'instrument group ' + @instrumentGroup + ', run type ' + @msType + ', and separation group ' + @separationGroup
 
     -- Validation checks are complete; now enable @logErrors
     Set @logErrors = 1
