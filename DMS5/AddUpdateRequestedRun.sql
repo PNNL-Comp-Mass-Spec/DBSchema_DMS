@@ -64,7 +64,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          06/06/2013 mem - Now showing warning if the work package is deactivated
 **          11/12/2013 mem - Added @requestIDForUpdate
 **                         - Now auto-capitalizing @instrumentGroup
-**          08/19/2014 mem - Now copying @InstrumentName to @InstrumentGroup during the initial validation
+**          08/19/2014 mem - Now copying @instrumentName to @instrumentGroup during the initial validation
 **          09/17/2014 mem - Now auto-updating @status to 'Active' if adding a request yet @status is null
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -97,6 +97,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **                     bcg - Bug fix: use @eusUsageTypeID to prevent use of EUS Usage Type "Undefined"
 **                     mem - When @mode is 'add', 'add-auto', or 'check_add', possibly override the EUSUsageType based on the campaign's EUS Usage Type
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
+**          05/31/2021 mem - Add output parameter @resolvedInstrumentInfo
 **
 *****************************************************/
 (
@@ -118,16 +119,17 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @request int output,
     @message varchar(1024) output,
     @secSep varchar(64) = 'LC-Formic_100min',   -- Separation group
-    @MRMAttachment varchar(128),
+    @mrmAttachment varchar(128),
     @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
-    @SkipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
+    @skipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
     @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
-    @VialingConc varchar(32) = null,
-    @VialingVol varchar(32) = null,
+    @vialingConc varchar(32) = null,
+    @vialingVol varchar(32) = null,
     @stagingLocation varchar(64) = null,
     @requestIDForUpdate int = null,             -- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
-    @logDebugMessages tinyint = 0
+    @logDebugMessages tinyint = 0,
+    @resolvedInstrumentInfo varchar(256) = '' output      -- Updated to include the instrument name, run type, and separation group; used by AddRequestedRuns when previewing updates
 )
 As
     Set XACT_ABORT, nocount on
@@ -136,9 +138,11 @@ As
     Declare @myRowCount int = 0
 
     Set @message = ''
+    Set @resolvedInstrumentInfo = ''
 
     Declare @msg varchar(512)
-    Declare @InstrumentMatch varchar(64)
+    Declare @instrumentMatch varchar(64)
+    Declare @separationGroup varchar(64) = @secSep
 
     -- default priority at which new requests will be created
     Declare @defaultPriority int = 0
@@ -193,8 +197,8 @@ As
     If IsNull(@requestorPRN, '') = ''
         RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
     --
-    Declare @InstrumentGroup varchar(64) = @instrumentName
-    If IsNull(@InstrumentGroup, '') = ''
+    Declare @instrumentGroup varchar(64) = @instrumentName
+    If IsNull(@instrumentGroup, '') = ''
         RAISERROR ('Instrument group was blank', 11, 114)
     --
     If IsNull(@msType, '') = ''
@@ -255,7 +259,7 @@ As
     Declare @oldReqName varchar(128) = ''
     Declare @oldEusProposalID varchar(10) = ''
     Declare @oldStatus varchar(24) = ''
-    Declare @MatchFound tinyint = 0
+    Declare @matchFound tinyint = 0
 
     If @mode IN ('update', 'check_update')
     Begin
@@ -283,7 +287,7 @@ As
             End
 
             If @myRowCount > 0
-                Set @MatchFound = 1
+                Set @matchFound = 1
 
         End
         Else
@@ -302,11 +306,11 @@ As
                 RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
 
             If @myRowCount > 0
-                Set @MatchFound = 1
+                Set @matchFound = 1
         End
     End
 
-    If @MatchFound = 0
+    If @matchFound = 0
     Begin
         -- Match not found when filtering on Status
         -- Query again, but this time ignore RDS_Status
@@ -375,9 +379,9 @@ As
     If IsNull(@wellNum, '') IN ('', 'na')
         Set @wellNum = null
 
-    Declare @StatusID int = 0
+    Declare @statusID int = 0
 
-    SELECT @StatusID = State_ID
+    SELECT @statusID = State_ID
     FROM T_Requested_Run_State_Name
     WHERE (State_Name = @status)
 
@@ -432,15 +436,15 @@ As
         -- Could not find entry in database for PRN @requestorPRN
         -- Try to auto-resolve the name
 
-        Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @matchCount int
+        Declare @newPRN varchar(64)
 
-        exec AutoResolveNameToPRN @requestorPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @requestorPRN, @matchCount output, @newPRN output, @userID output
 
-        If @MatchCount = 1
+        If @matchCount = 1
         Begin
             -- Single match found; update @requestorPRN
-            Set @requestorPRN = @NewPRN
+            Set @requestorPRN = @newPRN
         End
         Else
         Begin
@@ -465,7 +469,7 @@ As
                         @instrumentGroup output,
                         @msType output,
                         @instrumentSettings output,
-                        @secSep output,
+                        @separationGroup output,
                         @msg output
     If @myError <> 0
         RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
@@ -475,12 +479,12 @@ As
     -- Determine the Instrument Group
     ---------------------------------------------------
 
-    If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+    If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroup)
     Begin
         -- Try to update instrument group using T_Instrument_Name
-        SELECT @InstrumentGroup = IN_Group
+        SELECT @instrumentGroup = IN_Group
         FROM T_Instrument_Name
-        WHERE IN_Name = @InstrumentGroup
+        WHERE IN_Name = @instrumentGroup
     End
 
     ---------------------------------------------------
@@ -504,32 +508,32 @@ As
         RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
 
     ---------------------------------------------------
-    -- Resolve ID for @secSep
+    -- Resolve ID for @separationGroup
     -- First look in T_Separation_Group
     ---------------------------------------------------
     --
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Resolve secondary separation: ' + @secSep
+        Set @debugMsg = 'Resolve separation group: ' + @separationGroup
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
     Declare @sepID int = 0
-    Declare @sepGroup varchar(64) = ''
+    Declare @matchedSeparationGroup varchar(64) = ''
 
-    SELECT @sepGroup = Sep_Group
+    SELECT @matchedSeparationGroup = Sep_Group
     FROM T_Separation_Group
-    WHERE Sep_Group = @secSep
+    WHERE Sep_Group = @separationGroup
 
-    If IsNull(@sepGroup, '') <> ''
-        Set @secSep = @sepGroup
+    If IsNull(@matchedSeparationGroup, '') <> ''
+        Set @separationGroup = @matchedSeparationGroup
     Else
     Begin
         -- Match not found; try T_Secondary_Sep
         --
-        SELECT @sepID = SS_ID, @sepGroup = Sep_Group
+        SELECT @sepID = SS_ID, @matchedSeparationGroup = Sep_Group
         FROM T_Secondary_Sep
-        WHERE SS_name = @secSep
+        WHERE SS_name = @separationGroup
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -539,10 +543,10 @@ As
         If @sepID = 0
             RAISERROR ('Separation group not recognized', 11, 99)
 
-        If IsNull(@sepGroup, '') <> ''
+        If IsNull(@matchedSeparationGroup, '') <> ''
         Begin
-            -- Auto-update @secSep to be @sepGroup
-            Set @secSep = @sepGroup
+            -- Auto-update @separationGroup to be @matchedSeparationGroup
+            Set @separationGroup = @matchedSeparationGroup
         End
     End
 
@@ -552,12 +556,12 @@ As
     --
     Declare @mrmAttachmentID int
     --
-    Set @MRMAttachment = ISNULL(@MRMAttachment, '')
-    If @MRMAttachment <> ''
+    Set @mrmAttachment = ISNULL(@mrmAttachment, '')
+    If @mrmAttachment <> ''
     Begin
         SELECT @mrmAttachmentID = ID
         FROM T_Attachments
-        WHERE Attachment_Name = @MRMAttachment
+        WHERE Attachment_Name = @mrmAttachment
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -750,6 +754,8 @@ As
         End
     End
 
+    Set @resolvedInstrumentInfo = 'instrument group ' + @instrumentGroup + ', run type ' + @msType + ', separation group ' + @separationGroup
+
     -- Validation checks are complete; now enable @logErrors
     Set @logErrors = 1
 
@@ -767,7 +773,7 @@ As
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    If @Mode = 'add'
+    If @mode = 'add'
     Begin -- <add>
 
         -- Start transaction
@@ -814,12 +820,12 @@ As
             @internalStandard,
             @eusProposalID,
             @eusUsageTypeID,
-            @secSep,
+            @separationGroup,
             @mrmAttachmentID,
             @requestOrigin,
             @status,
-            @VialingConc,
-            @VialingVol,
+            @vialingConc,
+            @vialingVol,
             @locationId
         )
         --
@@ -828,12 +834,12 @@ As
         If @myError <> 0
             RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
 
-        Set @Request = SCOPE_IDENTITY()
+        Set @request = SCOPE_IDENTITY()
 
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 11, @request, @StatusID, @callingUser
+            Exec AlterEventLogEntryUser 11, @request, @statusID, @callingUser
         End
 
         If @logDebugMessages > 0
@@ -902,12 +908,12 @@ As
             RDS_internal_standard = @internalStandard,
             RDS_EUS_Proposal_ID = @eusProposalID,
             RDS_EUS_UsageType = @eusUsageTypeID,
-            RDS_Sec_Sep = @secSep,
+            RDS_Sec_Sep = @separationGroup,
             RDS_MRM_Attachment = @mrmAttachmentID,
             RDS_Status = @status,
             RDS_created = CASE WHEN @oldStatus = 'Inactive' AND @status = 'Active' THEN GETDATE() ELSE RDS_created END,
-            Vialing_Conc = @VialingConc,
-            Vialing_Vol = @VialingVol,
+            Vialing_Conc = @vialingConc,
+            Vialing_Vol = @vialingVol,
             Location_Id = @locationId
         WHERE (ID = @requestID)
         --
@@ -919,7 +925,7 @@ As
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 11, @requestID, @StatusID, @callingUser
+            Exec AlterEventLogEntryUser 11, @requestID, @statusID, @callingUser
         End
 
         -- assign users to the request
@@ -953,7 +959,7 @@ As
         EXEC FormatErrorMessage @message output, @myError output
 
         -- rollback any open transactions
-        If (XACT_STATE()) <> 0 And IsNull(@SkipTransactionRollback, 0) = 0
+        If (XACT_STATE()) <> 0 And IsNull(@skipTransactionRollback, 0) = 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
