@@ -13,47 +13,48 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **
 **  Auth:   grk
 **  Date:   01/11/2006 - initial version
-**          09/15/06 jds - Added @RequestedBatchPriority, @ActualBathPriority, @RequestedCompletionDate, @JustificationHighPriority, and @Comment
-**          11/04/2006 grk - added @RequestedInstrument
-**          12/03/2009 grk - checking for presence of @JustificationHighPriority if priority is high
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @operPRN contains a person's real name rather than their username
+**          09/15/2006 jds - Added @requestedBatchPriority, @actualBathPriority, @requestedCompletionDate, @justificationHighPriority, and @comment
+**          11/04/2006 grk - added @requestedInstrument
+**          12/03/2009 grk - checking for presence of @justificationHighPriority If priority is high
+**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check If @operPRN contains a person's real name rather than their username
 **          08/04/2010 grk - try-catch for error handling
-**          08/27/2010 mem - Now auto-switching @RequestedInstrument to be instrument group instead of instrument name
-**                         - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
-**          05/14/2013 mem - Expanded @RequestedCompletionDate to varchar(32) to support long dates of the form 'Jan 29 2010 12:00:00:000AM'
+**          08/27/2010 mem - Now auto-switching @requestedInstrument to be instrument group instead of instrument name
+**                         - Expanded @requestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
+**          05/14/2013 mem - Expanded @requestedCompletionDate to varchar(32) to support long dates of the form 'Jan 29 2010 12:00:00:000AM'
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
-**          06/23/2017 mem - Check for @RequestedRunList containing request names instead of IDs
-**          08/01/2017 mem - Use THROW if not authorized
+**          06/23/2017 mem - Check for @requestedRunList containing request names instead of IDs
+**          08/01/2017 mem - Use THROW If not authorized
 **          08/18/2017 mem - Log additional errors to T_Log_Entries
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          05/29/2021 mem - Refactor
+**          05/29/2021 mem - Refactor validation code into new stored procedure
 **
 *****************************************************/
 (
-    @ID int output,
-    @Name varchar(50),
-    @Description varchar(256),
-    @RequestedRunList varchar(4000),                -- Requested run IDs
-    @OwnerPRN varchar(64),
-    @RequestedBatchPriority varchar(24),
-    @RequestedCompletionDate varchar(32),
-    @JustificationHighPriority varchar(512),
-    @RequestedInstrument varchar(64),                -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
-    @Comment varchar(512),
-    @mode varchar(12) = 'add', -- or 'update'
-    @message varchar(512) output
+    @id int output,                                 -- Batch ID to update if @mode is 'update'; otherwise, the ID of the newly created batch
+    @name varchar(50),
+    @description varchar(256),
+    @requestedRunList varchar(4000),                -- Requested run IDs
+    @ownerPRN varchar(64),
+    @requestedBatchPriority varchar(24),
+    @requestedCompletionDate varchar(32),
+    @justificationHighPriority varchar(512),
+    @requestedInstrument varchar(64),               -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+    @comment varchar(512),
+    @mode varchar(12) = 'add',                      -- or 'update' or 'PreviewAdd'
+    @message varchar(512) Output,
 )
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
+    Set @useRaiseError = IsNull(@useRaiseError, 1)
 
     Declare @logErrors tinyint = 0
 
@@ -64,9 +65,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatch', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY
 
@@ -74,145 +75,41 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    if len(@RequestedCompletionDate) < 1
-    begin
-        set @RequestedCompletionDate = null
-    end
-    Else
-        if (SELECT ISDATE(@RequestedCompletionDate)) = 0
-        begin
-            RAISERROR ('Requested completion date is not a valid date: %s', 11, 1, @RequestedCompletionDate)
-        end
-        
-    ---------------------------------------------------
-    -- Determine the Instrument Group
-    ---------------------------------------------------
+    Declare @instrumentGroup varchar(64)
+    Declare @userID int = 0
+    
+    Exec @myError = ValidateRequestedRunBatchParams
+            @id,
+            @name,
+            @description,
+            @ownerPRN,
+            @requestedBatchPriority,
+            @requestedCompletionDate,
+            @justificationHighPriority,
+            @requestedInstrument,           -- Will typically contain an instrument group, not an instrument name
+            @comment,
+            @mode,
+            @instrumentGroup = @instrumentGroup output,
+            @userID = @userID output,
+            @message = @message output
 
-    Declare @InstrumentGroup varchar(64) = ''
-
-    -- Set the instrument group to @RequestedInstrument for now
-    set @InstrumentGroup = @RequestedInstrument
-
-    IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup)
+    If @myError > 0
     Begin
-        -- Try to update instrument group using T_Instrument_Name
-        SELECT @InstrumentGroup = IN_Group
-        FROM T_Instrument_Name
-        WHERE IN_Name = @RequestedInstrument
-    End
-
-
-    ---------------------------------------------------
-    -- High priority requires justification
-    ---------------------------------------------------
-    --
-    IF @RequestedBatchPriority = 'High' AND ISNULL(@JustificationHighPriority, '') = ''
-    BEGIN
-        set @message = 'Justification must be entered if high priority is being requested'
-        RAISERROR (@message, 11, 15)
-    END
-
-    ---------------------------------------------------
-    -- Is entry already in database?
-    ---------------------------------------------------
-    declare @tmp int
-
-    if @mode = 'add'
-    begin
-        SELECT @tmp = ID
-        FROM  T_Requested_Run_Batches
-        WHERE  (Batch = @Name)
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            Set @logErrors = 1
-            set @message = 'Error trying to find existing entry'
-            RAISERROR (@message, 11, 16)
-        end
-
-        if @tmp <> 0
-        begin
-            set @message = 'Cannot add: entry already exists in database'
-            RAISERROR (@message, 11, 17)
-        end
-    end
-
-    -- cannot update a non-existent entry
-    --
-    if @mode = 'update'
-    begin
-        declare @lock varchar(12)
-        --
-        SELECT @tmp = ID, @lock = Locked
-        FROM  T_Requested_Run_Batches
-        WHERE  (ID = @ID)
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            Set @logErrors = 1
-            set @message = 'Error trying to find existing entry'
-            RAISERROR (@message, 11, 18)
-        end
-
-        if @tmp = 0
-        begin
-            set @message = 'Cannot update: entry does not exist in database'
-            RAISERROR (@message, 11, 19)
-        end
-
-        if @lock = 'yes'
-        begin
-            set @message = 'Cannot update: batch is locked'
-            RAISERROR (@message, 11, 20)
-        end
-    end
-
-    ---------------------------------------------------
-    -- Resolve user ID for owner PRN
-    ---------------------------------------------------
-
-    declare @userID int
-    execute @userID = GetUserID @OwnerPRN
-
-    If @userID > 0
-    Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @OwnerPRN contains simply the username
-        --
-        SELECT @OwnerPRN = U_PRN
-        FROM T_Users
-        WHERE ID = @userID
-    End
-    Else
-    Begin
-        -- Could not find entry in database for PRN @OwnerPRN
-        -- Try to auto-resolve the name
-
-        Declare @MatchCount int
-        Declare @NewPRN varchar(64)
-
-        exec AutoResolveNameToPRN @OwnerPRN, @MatchCount output, @NewPRN output, @userID output
-
-        If @MatchCount = 1
-        Begin
-            -- Single match found; update @OwnerPRN
-            Set @OwnerPRN = @NewPRN
-        End
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 1)
         Else
-        Begin
-            set @message = 'Could not find entry in database for operator PRN "' + @OwnerPRN + '"'
-            RAISERROR (@message, 11, 21)
-        End
+            Return @myError
+    End
+
+    If Len(IsNull(@requestedCompletionDate, '')) = 0
+    Begin
+        Set @requestedCompletionDate = null
     End
 
     Set @logErrors = 1
 
     ---------------------------------------------------
-    -- create temporary table for requests in list
+    -- Create temporary table for requests in list
     ---------------------------------------------------
     --
     CREATE TABLE #XR (
