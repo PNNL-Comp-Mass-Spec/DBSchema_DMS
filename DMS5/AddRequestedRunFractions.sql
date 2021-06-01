@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
 **                         - Expand @message to varchar(1024)
 **          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling ValidateEUSUsage
+**          06/01/2021 mem - Add newly created requested run fractions to the parent request's batch (which will be 0 if not in a batch)
 **
 *****************************************************/
 (
@@ -63,6 +64,7 @@ As
     Declare @raiseErrorOnMultipleEUSUsers tinyint = 1
 
     Declare @sourceRequestName varchar(128) = ''
+    Declare @sourceRequestBatchID int = 0
     Declare @instrumentGroup varchar(64)
     Declare @msType varchar(20)
     Declare @experimentID int
@@ -159,7 +161,8 @@ As
            @msType = T_DatasetTypeName.DST_name,
            @experimentID = RR.Exp_ID,
            @sourceSeparationGroup = RR.RDS_Sec_Sep,
-           @sourceStatus = RR.RDS_Status
+           @sourceStatus = RR.RDS_Status,
+           @sourceRequestBatchID = IsNull(RR.RDS_BatchID, 0)
     FROM T_Requested_Run RR INNER JOIN T_DatasetTypeName
            ON RR.RDS_type_ID = T_DatasetTypeName.DST_Type_ID
     WHERE RR.ID = @sourceRequestID
@@ -329,7 +332,7 @@ As
 
     If @fractionCount = 0
     Begin
-        RAISERROR ('Source request separation group has a fraction count of 0; cannot continue: %s', 11, 99, @sourceSeparationGroup)
+        RAISERROR ('Source request separation group should be fraction-based (LC-NanoHpH Or LC-NanoSCX); %s is invalid', 11, 99, @sourceSeparationGroup)
     End
 
     ---------------------------------------------------
@@ -655,6 +658,7 @@ As
                 RDS_priority,
                 Exp_ID,
                 RDS_WorkPackage,
+                RDS_BatchID,
                 RDS_Well_Plate_Num,
                 RDS_Well_Num,
                 RDS_internal_standard,
@@ -675,9 +679,10 @@ As
                 @instrumentGroup,
                 @datasetTypeID,
                 @instrumentSettings,
-                @defaultPriority, -- priority
+                @defaultPriority,
                 @experimentID,
                 @workPackage,
+                @sourceRequestBatchID,
                 @wellplateName,
                 @wellNumber,
                 'none',
