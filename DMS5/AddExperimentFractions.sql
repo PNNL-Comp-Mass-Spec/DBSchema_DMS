@@ -49,6 +49,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/15/2021 mem - If the parent experiment has a TissueID defined, use it, even if the Sample Prep Request is not "parent" (for @requestOverride)
 **                         - No longer copy the parent experiment concentration to the fractions
+**          06/01/2021 mem - Raise an error if @mode is invalid
 **
 *****************************************************/
 (
@@ -70,7 +71,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
     @wellNum varchar(8) output,
     @container varchar(128) = 'na',             -- na, "parent", "-20", or actual container ID
     @prepLCRunID int,
-    @mode varchar(12),                          -- 'preview' to preview the names of the new fractions; anything else to create the fractions
+    @mode varchar(12),                          -- 'add' or 'preview'; when previewing, will show the names of the new fractions
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
@@ -175,6 +176,13 @@ AS
     Set @researcher = LTrim(RTrim(IsNull(@researcher, 'parent')))
 
     Set @message = ''
+
+    Set @mode = ISNULL(@mode, '')
+
+    If Not @mode in ('add', 'preview')
+    Begin
+        RAISERROR ('Invalid mode: should be "add" or "preview", not "%s"', 11, 117, @mode)
+    End
 
     -- Create temporary tables to hold cell cultures and reference compounds associated with the parent experiment
     --
@@ -409,7 +417,7 @@ AS
             --
             SELECT @researcher = U_PRN
             FROM T_Users
-    	    WHERE ID = @userID
+            WHERE ID = @userID
         End
         Else
         Begin
@@ -438,8 +446,6 @@ AS
     ---------------------------------------------------
     -- Set up transaction around multiple table modifications
     ---------------------------------------------------
-
---RAISERROR ('Researcher:%s', 11, 40, @researcherPRN)
 
     Declare @transName varchar(32) = 'AddBatchExperimentEntry'
 
@@ -562,7 +568,7 @@ AS
             End
         End
 
-        If Not @mode LIKE '%preview%'
+        If @mode = 'add'
         Begin -- <AddFraction>
 
             -- Insert new experiment into database
@@ -714,7 +720,7 @@ AS
             End -- </CopyPlexInfo>
         End -- </AddFraction>
 
-        If Not @mode LIKE '%preview%'
+        If @mode = 'add'
         Begin
             ---------------------------------------------------
             -- Update the MemberCount field in T_Experiment_Groups

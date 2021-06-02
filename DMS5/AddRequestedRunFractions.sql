@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **                         - Expand @message to varchar(1024)
 **          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling ValidateEUSUsage
 **          06/01/2021 mem - Add newly created requested run fractions to the parent request's batch (which will be 0 if not in a batch)
+**                         - Raise an error if @mode is invalid
 **
 *****************************************************/
 (
@@ -127,6 +128,11 @@ As
         RAISERROR ('Work package was blank', 11, 116)
 
     Set @mode = ISNULL(@mode, '')
+
+    If Not @mode in ('add', 'preview')
+    Begin
+        RAISERROR ('Invalid mode: should be "add" or "preview", not "%s"', 11, 117, @mode)
+    End
 
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
     Set @comment = dbo.ReplaceCharacterCodes(@comment)

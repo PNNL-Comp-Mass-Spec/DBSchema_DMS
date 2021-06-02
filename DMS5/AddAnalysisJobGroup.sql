@@ -70,6 +70,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          03/15/2021 mem - Read setting CacheFolderRootPath from MaxQuant settings files
 **                         - Update settings file, parameter file, protein collection, etc. in T_Analysis_Job for newly created MaxQuant jobs
 **          03/16/2021 mem - Add check for MSXMLGenerator being 'skip'
+**          06/01/2021 mem - Raise an error if @mode is invalid
 **
 *****************************************************/
 (
@@ -139,6 +140,13 @@ As
         Set @dataPackageID = 0
 
     Set @datasetList = LTrim(RTrim(IsNull(@datasetList, '')))
+
+    Set @mode = ISNULL(@mode, '')
+
+    If Not @mode in ('add', 'preview')
+    Begin
+        RAISERROR ('Invalid mode: should be "add" or "preview", not "%s"', 11, 117, @mode)
+    End
 
     ---------------------------------------------------
     -- We either need datasets or a data package
@@ -383,7 +391,8 @@ As
                         WHEN 'Export' THEN 0 
                         WHEN 'No Export' THEN 1 
                         ELSE 0 
-                    End
+                    END
+
     ---------------------------------------------------
     -- validate job parameters
     ---------------------------------------------------
