@@ -33,13 +33,14 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          05/29/2021 mem - Refactor validation code into new stored procedure
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
 **                         - Add @useRaiseError
+**          06/02/2021 mem - Expand @requestedRunList to varchar(max)
 **
 *****************************************************/
 (
     @id int output,                                 -- Batch ID to update if @mode is 'update'; otherwise, the ID of the newly created batch
     @name varchar(50),
     @description varchar(256),
-    @requestedRunList varchar(4000),                -- Requested run IDs
+    @requestedRunList varchar(max),                 -- Requested run IDs
     @ownerPRN varchar(64),
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
@@ -137,8 +138,8 @@ As
     ---------------------------------------------------
     --
     INSERT INTO #XR (RequestIDText)
-    SELECT Item
-    FROM MakeTableFromList(@requestedRunList)
+    SELECT DISTINCT Value
+    FROM dbo.udfParseDelimitedList(@requestedRunList, ',', 'AddUpdateRequestedRunBatch')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --

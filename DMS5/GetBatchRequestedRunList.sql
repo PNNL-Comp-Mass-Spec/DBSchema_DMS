@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE FUNCTION [dbo].[GetBatchRequestedRunList]
 /****************************************************
 **
@@ -19,15 +18,16 @@ CREATE FUNCTION [dbo].[GetBatchRequestedRunList]
 **  Auth:   grk
 **  Date:   01/11/2006 grk - Initial version
 **          03/29/2019 mem - Return an empty string when @batchID is 0 (meaning "unassigned", no batch)            
+**          06/02/2021 mem - Expand the return value to varchar(max)
 **    
 *****************************************************/
 (
     @batchID int
 )
-RETURNS varchar(4000)
+RETURNS varchar(max)
 AS
 BEGIN
-    Declare @list varchar(4000) = ''
+    Declare @list varchar(max) = ''
         
     SELECT @list = @list + CASE
                                WHEN @list = '' THEN cast(ID as varchar(12))
