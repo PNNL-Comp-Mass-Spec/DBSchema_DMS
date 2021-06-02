@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report] as
+CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report]
+AS
 SELECT RRB.ID,
        RRB.Batch AS Name,
        ActiveReqSepTypes.Requests,      -- Active requests
@@ -116,7 +117,7 @@ FROM T_Requested_Run_Batches AS RRB
                        GROUP BY RR4.RDS_BatchID 
                      ) AS SPQ
        ON SPQ.BatchID = RRB.ID
-WHERE (RRB.ID > 0)
+WHERE RRB.ID > 0
 
 
 GO
