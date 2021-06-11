@@ -34,12 +34,14 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Priority] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
 	[State] [tinyint] NOT NULL,
+	[State_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[StateChanged] [datetime] NOT NULL,
 	[UseSingleLCColumn] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Internal_standard_ID] [int] NOT NULL,
 	[Postdigest_internal_std_ID] [int] NOT NULL,
 	[Estimated_Completion] [datetime] NULL,
+	[Estimated_Prep_Time_Days] [int] NOT NULL,
 	[Estimated_MS_runs] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_UsageType] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EUS_Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -121,6 +123,8 @@ GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Internal_standard_ID]  DEFAULT ((0)) FOR [Internal_standard_ID]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Postdigest_internal_std_ID]  DEFAULT ((0)) FOR [Postdigest_internal_std_ID]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Estimated_Prep_Time_Days]  DEFAULT ((1)) FOR [Estimated_Prep_Time_Days]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Factility]  DEFAULT ('EMSL') FOR [Facility]
 GO

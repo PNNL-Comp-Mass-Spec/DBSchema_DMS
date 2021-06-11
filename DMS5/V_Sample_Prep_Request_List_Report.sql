@@ -9,10 +9,11 @@ AS
 SELECT SPR.ID,
        SPR.Request_Name AS RequestName,
        SPR.Created,
-       SPR.Estimated_Completion AS [Est. Complete],
+       SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
        SPR.Priority,
        TA.Attachments AS Files,
        SN.State_Name AS [State],
+       SPR.State_Comment AS [State Comment],
        SPR.Reason,
        SPR.Number_of_Samples AS NumSamples,
        SPR.Estimated_MS_runs AS [MS Runs TBG],
@@ -76,8 +77,8 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.Tissue_ID = BTO.Identifier
 WHERE (SPR.State > 0) AND
       SPR.Request_Type = 'Default'
-GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, SPR.Priority, TA.Attachments,
-         SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
+GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days, SPR.Priority, TA.Attachments,
+         SPR.[State], SN.State_Name, SPR.State_Comment, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
          QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
          QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign, SPR.[Comment],
          SPR.Work_Package_Number, SPR.Instrument_Group, SPR.Instrument_Analysis_Specifications,

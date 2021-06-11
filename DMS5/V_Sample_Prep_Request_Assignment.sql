@@ -9,8 +9,9 @@ AS
 SELECT '' AS [Sel.],
        SPR.ID,
        SPR.Created,
-       SPR.Estimated_Completion AS [Est. Complete],
-       SN.State_Name AS State,
+       SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
+       SN.State_Name AS [State],
+       SPR.State_Comment AS [State Comment],
        SPR.Request_Name AS Name,
        QP.Name_with_PRN AS Requester,
        SPR.Priority,
@@ -51,7 +52,6 @@ FROM T_Sample_Prep_Request SPR
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
       ON SPR.Tissue_ID = BTO.Identifier
 WHERE (SPR.State > 0) And SPR.Request_Type = 'Default'
-
 
 
 GO
