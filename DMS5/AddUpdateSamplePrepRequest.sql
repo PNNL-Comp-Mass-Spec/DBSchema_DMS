@@ -87,6 +87,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          05/25/2021 mem - Set @samplePrepRequest to 1 when calling ValidateEUSUsage
 **          05/26/2021 mem - Override @eusUsageType if @mode is 'add' and the campaign has EUSUsageType = 'USER_REMOTE
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
+**          06/10/2021 mem - Add parameters @estimatedPrepTimeDays and @stateComment
 **
 *****************************************************/
 (
@@ -104,7 +105,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @sampleNamingConvention varchar(128),
     @assignedPersonnel varchar(256),
     @requestedPersonnel varchar(256),
-    @estimatedCompletion varchar(32),
+    @estimatedPrepTimeDays int,
     @estimatedMSRuns varchar(16),
     @workPackageNumber varchar(64),
     @eusProposalID varchar(10),
@@ -115,7 +116,8 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @instrumentAnalysisSpecifications varchar(512),
     @comment varchar(2048),
     @priority varchar(12),
-    @state varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
+    @state varchar(32),                         -- New, On Hold, Prep in Progress, Prep Complete, or Closed
+    @stateComment Varchar(512),
     @id int output,                             -- input/ouptut: Sample prep request ID
     @separationGroup varchar(256),              -- Separation group
     @blockAndRandomizeSamples char(3),          -- 'Yes', 'No', or 'na'
@@ -154,6 +156,8 @@ As
 
     If IsNull(@eusUserID, 0) <= 0
         Set @eusUserID = Null
+   
+    Set @estimatedPrepTimeDays = IsNull(@estimatedPrepTimeDays, 1)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -330,17 +334,6 @@ As
         RAISERROR ('Could not find entry in database for tissue "%s"', 11, 41, @tissue)
     Else If @errorCode > 0
         RAISERROR ('Could not resolve tissue name or id: "%s"', 11, 41, @tissue)
-
-    ---------------------------------------------------
-    -- Convert estimated completion date
-    ---------------------------------------------------
-
-    Declare @estimatedCompletionDate datetime
-
-    If @estimatedCompletion <> ''
-    Begin
-        Set @estimatedCompletionDate = CONVERT(datetime, @estimatedCompletion)
-    End
 
     ---------------------------------------------------
     -- Force values of some properties for add mode
@@ -659,9 +652,6 @@ As
 
     If @mode = 'add'
     Begin
-        If @estimatedCompletionDate < CONVERT(date, getdate())
-            RAISERROR ('Cannot add: Estimated completion must be today or later', 11, 8)
-
         -- Make sure the work package number is not inactive
         --
         Declare @activationState tinyint = 10
@@ -721,7 +711,7 @@ As
             Sample_Naming_Convention,
             Requested_Personnel,
             Assigned_Personnel,
-            Estimated_Completion,
+            Estimated_Prep_Time_Days,
             Estimated_MS_runs,
             Work_Package_Number,
             EUS_UsageType,
@@ -731,6 +721,7 @@ As
             Comment,
             Priority,
             State,
+            State_Comment,
             Instrument_Group,
             Dataset_Type,
             Separation_Type,
@@ -754,7 +745,7 @@ As
             @sampleNamingConvention,
             @requestedPersonnel,
             @assignedPersonnel,
-            @estimatedCompletionDate,
+            @estimatedPrepTimeDays,
             @estimatedMSRuns,
             @workPackageNumber,
             @eusUsageType,
@@ -764,6 +755,7 @@ As
             @comment,
             @priority,
             @stateID,
+            @stateComment,
             @instrumentGroup,
             @datasetType,
             @separationGroup,
@@ -817,7 +809,7 @@ As
             Sample_Naming_Convention = @sampleNamingConvention,
             Requested_Personnel = @requestedPersonnel,
             Assigned_Personnel = @assignedPersonnel,
-            Estimated_Completion = @estimatedCompletionDate,
+            Estimated_Prep_Time_Days = @estimatedPrepTimeDays,
             Estimated_MS_runs = @estimatedMSRuns,
             Work_Package_Number = @workPackageNumber,
             EUS_Proposal_ID = @eusProposalID,
@@ -827,6 +819,7 @@ As
             Comment = @comment,
             Priority = @priority,
             State = @stateID,
+            State_Comment = @stateComment,
             Instrument_Group = @instrumentGroup,
             Instrument_Name = Null,
             Dataset_Type = @datasetType,
