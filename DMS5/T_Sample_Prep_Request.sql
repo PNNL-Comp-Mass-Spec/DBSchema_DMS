@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[Prep_By_Robot] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Special_Instructions] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Naming_Convention] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Assigned_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Assigned_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Work_Package_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[User_Proposal_Number] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Replicates_of_Samples] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -64,6 +64,7 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[HPLC_Runs_Item_Count] [int] NULL,
 	[Total_Item_Count] [int] NULL,
 	[Material_Container_List] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Assigned_Personnel_SortKey]  AS (case when [Assigned_Personnel]='na' then 'zz_na' else substring([Assigned_Personnel],(1),(64)) end) PERSISTED,
  CONSTRAINT [PK_T_Sample_Prep_Request] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -107,6 +108,8 @@ CREATE NONCLUSTERED INDEX [IX_T_Sample_Prep_Request_EUS_User_ID] ON [dbo].[T_Sam
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Request_Type]  DEFAULT ('Default') FOR [Request_Type]
+GO
+ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Assigned_Personnel]  DEFAULT ('') FOR [Assigned_Personnel]
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ADD  CONSTRAINT [DF_T_Sample_Prep_Request_Dataset_Type]  DEFAULT ('Normal') FOR [Dataset_Type]
 GO
