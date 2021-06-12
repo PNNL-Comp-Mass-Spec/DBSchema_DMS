@@ -25,7 +25,7 @@ SELECT SPR.ID,
        SPR.Work_Package_Number AS WP,
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
        Case 
-            When SPR.State In (4, 5) Then 0           -- Request is complete or closed
+            When SPR.State In (4, 5) Then 0          -- Request is complete or closed
             When QT.[Days In Queue] <= 30 Then 30    -- Request is 0 to 30 days old
             When QT.[Days In Queue] <= 60 Then 60    -- Request is 30 to 60 days old
             When QT.[Days In Queue] <= 90 Then 90    -- Request is 60 to 90 days old
@@ -35,7 +35,8 @@ SELECT SPR.ID,
            WHEN SPR.State <> 5 AND
                 CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
            ELSE CC.Activation_State
-       END AS #WPActivationState
+       END AS #WPActivationState,
+       SPR.Assigned_Personnel_SortKey As #Assigned_SortKey
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name AS SN
        ON SPR.State = SN.State_ID
@@ -51,7 +52,8 @@ GROUP BY SPR.ID, U.U_Name, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Tim
          SPR.State_Comment, SPR.Priority, SN.State_Name, SPR.Number_of_Samples, 
          SPR.Estimated_MS_runs, QT.[Days In Queue], SPR.Requested_Personnel, 
          SPR.Assigned_Personnel, SPR.Prep_Method, SPR.Instrument_Group, SPR.Campaign, 
-         SPR.Work_Package_Number, CC.Activation_State_Name, SPR.State, CC.Activation_State
+         SPR.Work_Package_Number, CC.Activation_State_Name, SPR.State, 
+         CC.Activation_State, SPR.Assigned_Personnel_SortKey
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Planning_Report] TO [DDL_Viewer] AS [dbo]
