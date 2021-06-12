@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_File_Attachment](
 	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Entity_Type] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Entity_ID] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Entity_ID_Value] [int] NULL,
 	[Owner_PRN] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[File_Size_Bytes] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Created] [datetime] NOT NULL,
@@ -26,6 +27,17 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[T_File_Attachment] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_File_Attachment] TO [DMSWebUser] AS [dbo]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_File_Attachment_EntityType_Active_EntityIdValue] ******/
+CREATE NONCLUSTERED INDEX [IX_T_File_Attachment_EntityType_Active_EntityIdValue] ON [dbo].[T_File_Attachment]
+(
+	[Entity_Type] ASC,
+	[Active] ASC
+)
+INCLUDE([Entity_ID_Value]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
