@@ -59,11 +59,11 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.Requester_PRN = QP.U_PRN
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
        ON SPR.ID = QT.Request_ID
-     LEFT OUTER JOIN ( SELECT TRY_CAST(Entity_ID AS int) AS [Entity ID],
+     LEFT OUTER JOIN ( SELECT Entity_ID_Value AS [Entity ID],
                               COUNT(*) AS Attachments
                        FROM T_File_Attachment
                        WHERE Entity_Type = 'sample_prep_request' AND Active > 0
-                       GROUP BY TRY_CAST(Entity_ID AS int) ) AS TA
+                       GROUP BY Entity_ID_Value ) AS TA
        ON SPR.ID = TA.[Entity ID]
      LEFT OUTER JOIN T_Experiments E
        ON SPR.ID = E.EX_sample_prep_request_ID
@@ -85,6 +85,7 @@ GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days, SP
          SPR.Separation_Type, CC.Activation_State, CC.Activation_State_Name, 
          SPR.EUS_Proposal_ID, SPR.EUS_UsageType, EPT.Proposal_Type_Name, 
          BTO.Tissue, SPR.Material_Container_List
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_List_Report] TO [DDL_Viewer] AS [dbo]
