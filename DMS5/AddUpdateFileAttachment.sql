@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateFileAttachment
+
+CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 /****************************************************
 **
 **  Desc: Adds new or edits existing item in T_File_Attachment 
@@ -21,26 +22,27 @@ CREATE PROCEDURE AddUpdateFileAttachment
 **			06/13/2017 mem - Use SCOPE_IDENTITY
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          06/11/2021 mem - Store integers in Entity_ID_Value
 **    
 *****************************************************/
 (
-	@ID int,
-	@FileName varchar(256),
-	@Description varchar(1024),
-	@EntityType varchar(64),			-- campaign, experiment, sample_prep_request, lc_cart_configuration, etc.
-	@EntityID varchar(256),				-- Must be text because Experiment and Campaign file attachments are tracked via Experiment Name or Campaign Name
-	@FileSizeBytes varchar(12),			-- This file size is actually in KB
-	@ArchiveFolderPath varchar(256),	-- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function GetFileAttachmentPath in this database
-	@FileMimeType varchar(256),
-	@mode varchar(12) = 'add', -- or 'update'
+	@id int,
+	@fileName varchar(256),
+	@description varchar(1024),
+	@entityType varchar(64),			-- campaign, experiment, sample_prep_request, lc_cart_configuration, etc.
+	@entityID varchar(256),				-- Must be data type varchar since Experiment, Campaign, Cell Culture, and Material Container file attachments are tracked via Experiment Name, Campaign Name, etc.
+	@fileSizeBytes varchar(12),			-- This file size is actually in KB
+	@archiveFolderPath varchar(256),	-- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function GetFileAttachmentPath in this database
+	@fileMimeType varchar(256),
+	@mode varchar(12) = 'add',          -- or 'update'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''
 )
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	set @message = ''
 
@@ -51,16 +53,16 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'AddUpdateFileAttachment', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	BEGIN TRY 
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
-	declare @tmp int
+	Declare @tmp int
 
 	if @mode = 'update'
 	begin
@@ -68,7 +70,7 @@ As
 		--
 		SELECT @tmp = ID
 		FROM  T_File_Attachment		
-		WHERE (ID = @ID)
+		WHERE (ID = @id)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
@@ -84,16 +86,16 @@ As
 		SELECT @tmp = ID
 		FROM   T_File_Attachment
 		WHERE  
-			Entity_Type = @EntityType 
-			AND Entity_ID = @EntityID 
-			AND [File_Name] = @FileName 
+			Entity_Type = @entityType 
+			AND Entity_ID = @entityID 
+			AND [File_Name] = @fileName 
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		IF @tmp > 0
 		BEGIN
 			SET @mode = 'update'
-			SET @ID = @tmp
+			SET @id = @tmp
 		END
 	END 
 
@@ -108,19 +110,24 @@ As
 		Description,
 		Entity_Type,
 		Entity_ID,
+        Entity_ID_Value,
 		Owner_PRN,
 		File_Size_Bytes,
 		Archive_Folder_Path,
 		File_Mime_Type
 	 ) VALUES (
-		@FileName, 
-		IsNull(@Description, ''), 
-		@EntityType, 
-		@EntityID, 
+		@fileName, 
+		IsNull(@description, ''), 
+		@entityType, 
+		@entityID, 
+        Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
+             Then Null 
+             Else Try_Cast(@entityID As Int) 
+        End,
 		@callingUser, 
-		@FileSizeBytes,
-		@ArchiveFolderPath, 
-		@FileMimeType
+		@fileSizeBytes,
+		@archiveFolderPath, 
+		@fileMimeType
 	)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -130,7 +137,7 @@ As
 
 	-- Return ID of newly created entry
 	--
-	set @ID = SCOPE_IDENTITY()
+	set @id = SCOPE_IDENTITY()
 
 	end -- add mode
 
@@ -143,19 +150,24 @@ As
 		set @myError = 0
 		--
 		UPDATE T_File_Attachment
-		SET Description = IsNull(@Description, ''),
-		    Entity_Type = @EntityType,
-		    Entity_ID = @EntityID,
-		    File_Size_Bytes = @FileSizeBytes,
+		SET Description = IsNull(@description, ''),
+		    Entity_Type = @entityType,
+		    Entity_ID = @entityID,
+            Entity_ID_Value = 
+                Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
+                     Then Null 
+                     Else Try_Cast(@entityID As Int) 
+                End,
+		    File_Size_Bytes = @fileSizeBytes,
 		    Last_Affected = GETDATE(),
-		    Archive_Folder_Path = @ArchiveFolderPath,
-		    File_Mime_Type = @FileMimeType
-		WHERE (ID = @ID)
+		    Archive_Folder_Path = @archiveFolderPath,
+		    File_Mime_Type = @fileMimeType
+		WHERE (ID = @id)
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-			RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
+			RAISERROR ('Update operation failed: "%s"', 11, 4, @id)
 
 	end -- update mode
 
