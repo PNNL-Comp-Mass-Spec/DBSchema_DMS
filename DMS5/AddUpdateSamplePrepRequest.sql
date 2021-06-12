@@ -88,6 +88,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          05/26/2021 mem - Override @eusUsageType if @mode is 'add' and the campaign has EUSUsageType = 'USER_REMOTE
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          06/10/2021 mem - Add parameters @estimatedPrepTimeDays and @stateComment
+**          06/11/2021 mem - Auto-remove 'na' from @assignedPersonnel
 **
 *****************************************************/
 (
@@ -158,6 +159,12 @@ As
         Set @eusUserID = Null
    
     Set @estimatedPrepTimeDays = IsNull(@estimatedPrepTimeDays, 1)
+
+    Set @requestedPersonnel = Ltrim(Rtrim(IsNull(@requestedPersonnel, '')))
+    Set @assignedPersonnel = Ltrim(Rtrim(IsNull(@assignedPersonnel, 'na')))
+
+    If @assignedPersonnel = ''
+        Set @assignedPersonnel = 'na'
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -368,8 +375,8 @@ As
         If @nameValidationIteration = 1
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
-            SELECT Item AS Name_and_PRN
-            FROM dbo.MakeTableFromListDelim(@requestedPersonnel, ';')
+            SELECT Value
+	        FROM dbo.udfParseDelimitedList(@requestedPersonnel, ';', 'AddUpdateSamplePrepRequest')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -378,8 +385,8 @@ As
         Else
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
-            SELECT Item AS Name_and_PRN
-            FROM dbo.MakeTableFromListDelim(@assignedPersonnel, ';')
+            SELECT Value
+	        FROM dbo.udfParseDelimitedList(@assignedPersonnel, ';', 'AddUpdateSamplePrepRequest')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -453,12 +460,20 @@ As
             RAISERROR ('Invalid username for %s: "%s"', 11, 37, @userFieldName, @firstInvalidUser)
         End
 
-        If @nameValidationIteration = 1 And Not Exists (Select * From #Tmp_UserInfo Where User_ID > 0)
+        If @nameValidationIteration = 1 And Not Exists (SELECT * FROM #Tmp_UserInfo WHERE User_ID > 0)
         Begin
             -- Requested personnel person must be a specific person (or list of people)
             RAISERROR ('The Requested Personnel person must be a specific DMS user; "%s" is invalid', 11, 41, @requestedPersonnel)
         End
 
+        If @nameValidationIteration = 2
+           And Exists (SELECT * FROM #Tmp_UserInfo WHERE User_ID > 0)
+           And Exists (SELECT * FROM #Tmp_UserInfo WHERE Name_and_PRN = 'na')
+        Begin
+            -- Auto-remove the 'na' user since an actual person is defined
+            DELETE FROM #Tmp_UserInfo WHERE Name_and_PRN = 'na'
+        End
+        
         -- Make sure names are capitalized properly
         --
         UPDATE #Tmp_UserInfo
