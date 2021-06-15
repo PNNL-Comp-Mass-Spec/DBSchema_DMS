@@ -18,6 +18,7 @@ SELECT SPR.ID,
        SPR.Number_of_Samples AS NumSamples,
        SPR.Estimated_MS_runs AS [MS Runs TBG],
        QT.[Days In Queue],
+       Case When SPR.State In (0, 4, 5) Then Null Else QT.[Days In State] End As [Days In State],
        SPR.Prep_Method AS PrepMethod,
        SPR.Requested_Personnel AS RequestedPersonnel,
        SPR.Assigned_Personnel AS AssignedPersonnel,
@@ -41,7 +42,7 @@ SELECT SPR.ID,
        SUM (Case When DATEDIFF(day, E.EX_created, GETDATE()) < 181 Then 1 Else 0 End) AS Experiments_Last_180Days,
        SUM (Case When Not E.EX_created Is Null Then 1 Else 0 End) AS Experiments_Total,
        Case 
-            When SPR.State In (4, 5) Then 0           -- Request is complete or closed
+            When SPR.State In (4, 5) Then 0          -- Request is complete or closed
             When QT.[Days In Queue] <= 30 Then 30    -- Request is 0 to 30 days old
             When QT.[Days In Queue] <= 60 Then 60    -- Request is 30 to 60 days old
             When QT.[Days In Queue] <= 90 Then 90    -- Request is 60 to 90 days old
@@ -79,7 +80,7 @@ WHERE (SPR.State > 0) AND
       SPR.Request_Type = 'Default'
 GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days, SPR.Priority, TA.Attachments,
          SPR.[State], SN.State_Name, SPR.State_Comment, SPR.Reason, SPR.Number_of_Samples, SPR.Estimated_MS_runs,
-         QT.[Days In Queue], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
+         QT.[Days In Queue], QT.[Days In State], SPR.Prep_Method, SPR.Requested_Personnel, SPR.Assigned_Personnel,
          QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign, SPR.[Comment],
          SPR.Work_Package_Number, SPR.Instrument_Group, SPR.Instrument_Analysis_Specifications,
          SPR.Separation_Type, CC.Activation_State, CC.Activation_State_Name, 

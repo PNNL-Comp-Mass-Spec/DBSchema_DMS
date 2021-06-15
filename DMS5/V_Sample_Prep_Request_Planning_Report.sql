@@ -17,6 +17,7 @@ SELECT SPR.ID,
        SPR.Number_of_Samples AS [Num Samples],
        SPR.Estimated_MS_runs AS [MS Runs TBG],
        QT.[Days In Queue],
+       Case When SPR.State In (0, 4, 5) Then Null Else QT.[Days In State] End As [Days In State],
        SPR.Requested_Personnel AS [Req. Personnel],
        SPR.Assigned_Personnel AS [Assigned],
        SPR.Prep_Method AS [Prep Method],
@@ -50,8 +51,9 @@ WHERE (SPR.State > 0) And SPR.State < 5 AND
       SPR.Request_Type = 'Default'
 GROUP BY SPR.ID, U.U_Name, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days, 
          SPR.State_Comment, SPR.Priority, SN.State_Name, SPR.Number_of_Samples, 
-         SPR.Estimated_MS_runs, QT.[Days In Queue], SPR.Requested_Personnel, 
-         SPR.Assigned_Personnel, SPR.Prep_Method, SPR.Instrument_Group, SPR.Campaign, 
+         SPR.Estimated_MS_runs, QT.[Days In Queue], QT.[Days In State],
+         SPR.Requested_Personnel, SPR.Assigned_Personnel, SPR.Prep_Method, 
+         SPR.Instrument_Group, SPR.Campaign, 
          SPR.Work_Package_Number, CC.Activation_State_Name, SPR.State, 
          CC.Activation_State, SPR.Assigned_Personnel_SortKey
 

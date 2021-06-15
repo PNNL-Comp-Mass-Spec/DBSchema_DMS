@@ -14,7 +14,8 @@ SELECT Request_ID,
            WHEN State = 0 THEN NULL
            WHEN State IN (4, 5) THEN DateDiff(DAY, Created, [Complete or Closed])
            ELSE DateDiff(DAY, Created, ISNULL([Complete or Closed], GETDATE()))
-       END AS [Days In Queue]
+       END AS [Days In Queue],
+       DateDiff(DAY, StateFirstEntered, GETDATE()) AS [Days In State]       
 FROM ( SELECT SPR.ID AS Request_ID,
               SPR.Created,
               SPR.[State],
@@ -25,7 +26,8 @@ FROM ( SELECT SPR.ID AS Request_ID,
                   ELSE Closed
               END AS [Complete or Closed],
               ChangeQ.PrepComplete,
-              ChangeQ.Closed
+              ChangeQ.Closed,
+              StateEnteredQ.StateFirstEntered
        FROM T_Sample_Prep_Request SPR
             LEFT OUTER JOIN ( SELECT Request_ID,
                                      pvt.[4] AS PrepComplete,
@@ -52,6 +54,11 @@ FROM ( SELECT SPR.ID AS Request_ID,
                                    ) AS pvt 
                             ) ChangeQ
               ON ChangeQ.Request_ID = SPR.ID 
+            LEFT OUTER JOIN ( SELECT Request_ID, End_State_ID As State_ID, MIN(Date_of_Change) As StateFirstEntered
+                              FROM T_Sample_Prep_Request_Updates
+                              GROUP BY Request_ID, End_State_ID
+                            ) StateEnteredQ
+              ON StateEnteredQ.Request_ID = SPR.ID And StateEnteredQ.State_ID = SPR.[State]
        ) OuterQ
 
 
