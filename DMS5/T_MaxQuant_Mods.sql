@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_MaxQuant_Mods](
 	[Mod_Position] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Mass_Correction_ID] [int] NULL,
 	[Composition] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Isobaric_Mod_Ion_Number] [smallint] NOT NULL,
  CONSTRAINT [PK_T_MaxQuant_Mods] PRIMARY KEY CLUSTERED 
 (
 	[Mod_ID] ASC
@@ -17,6 +18,8 @@ CREATE TABLE [dbo].[T_MaxQuant_Mods](
 
 GO
 ALTER TABLE [dbo].[T_MaxQuant_Mods] ADD  CONSTRAINT [DF_T_MaxQuant_Mods_Mod_Position]  DEFAULT ('anywhere') FOR [Mod_Position]
+GO
+ALTER TABLE [dbo].[T_MaxQuant_Mods] ADD  CONSTRAINT [DF_T_MaxQuant_Mods_Isobaric_Mod_Ion_Number]  DEFAULT ((0)) FOR [Isobaric_Mod_Ion_Number]
 GO
 ALTER TABLE [dbo].[T_MaxQuant_Mods]  WITH CHECK ADD  CONSTRAINT [FK_T_MaxQuant_Mods_T_Mass_Correction_Factors] FOREIGN KEY([Mass_Correction_ID])
 REFERENCES [dbo].[T_Mass_Correction_Factors] ([Mass_Correction_ID])
