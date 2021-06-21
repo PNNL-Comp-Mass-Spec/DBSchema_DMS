@@ -84,6 +84,8 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          03/05/2021 mem - Add support for MaxQuant mod defs
 **          05/13/2021 mem - Fix handling of static MaxQuant mods that are N-terminal or C-terminal 
 **          05/18/2021 mem - Add support for reporter ions in MaxQuant mod defs
+**          06/15/2021 mem - Remove UNION statements to avoid sorting
+**                         - Collapse isobaric mods into a single entry
 **    
 *****************************************************/
 (
@@ -223,7 +225,7 @@ AS
     )
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_Residues ON #Tmp_Residues (Residue_Symbol)
-    
+        
     CREATE TABLE #Tmp_ModsToStore (
         Entry_ID int Identity(1,1),
         Mod_Name varchar(255),
@@ -234,7 +236,8 @@ AS
         Local_Symbol_ID int NULL,
         Residue_Desc varchar(64) Null,
         Monoisotopic_Mass float NULL,
-        MaxQuant_Mod_ID int NULL
+        MaxQuant_Mod_ID int Null,
+        Isobaric_Mod_Ion_Number Int Null
     )
     
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_ModsToStore ON #Tmp_ModsToStore (Entry_ID)
@@ -253,19 +256,25 @@ AS
         -- Parse the text as XML
         DECLARE @xml XML = @mods
      
+        -- Look for defined modifications
+        -- Do not use a UNION statement here, since sort order is lost
+
         INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
         SELECT 'fixed' as ModType,
                Mods.ModInfo.value('.', 'varchar(128)')
         FROM   @xml.nodes('/fixedModifications/string') AS Mods(ModInfo)
-        UNION
+        
+        INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
         SELECT 'fixed' as ModType,
                Mods.ModInfo.value('.', 'varchar(128)')
         FROM   @xml.nodes('/MaxQuantParams/parameterGroups/parameterGroup/fixedModifications/string') AS Mods(ModInfo)
-        UNION
+        
+        INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
         SELECT 'variable' as ModType,
                Mods.ModInfo.value('.', 'varchar(128)')
         FROM   @xml.nodes('/variableModifications/string') AS Mods(ModInfo)
-        UNION
+        
+        INSERT INTO #Tmp_MaxQuant_Mods (ModType, ModName)
         SELECT 'variable' as ModType,
                Mods.ModInfo.value('.', 'varchar(128)')
         FROM   @xml.nodes('/MaxQuantParams/parameterGroups/parameterGroup/variableModifications/string') AS Mods(ModInfo)
@@ -333,7 +342,7 @@ AS
 
     Declare @charIndex int
     Declare @rowCount int
-    Declare @validRow tinyint
+    Declare @validRow Tinyint
     
     Declare @row varchar(2048)
     Declare @rowKey varchar(1000)
@@ -346,11 +355,14 @@ AS
     Declare @modType varchar(128)
     Declare @modTypeSymbol varchar(1)
     Declare @massCorrectionID int
+
+    Declare @modTypeSymbolToStore varchar(1)
     
     Declare @modName varchar(255)
     Declare @modMass float
     Declare @modMassToFind float
     Declare @location varchar(128)
+    Declare @isobaricModIonNumber int
 
     Declare @maxQuantModID int
 
@@ -676,7 +688,8 @@ AS
                             Set @terminalMod = 0
                             Set @affectedResidues = ''
                             Set @maxQuantModID = NULL
-                            
+                            Set @isobaricModIonNumber = 0
+
                             DELETE FROM #Tmp_Residues
 
                             If @paramFileType In ('MSGFDB', 'TopPIC')
@@ -866,7 +879,8 @@ AS
 
                                 SELECT @maxQuantModID = Mod_ID,
                                        @location = Mod_Position,
-                                       @massCorrectionID = Mass_Correction_ID
+                                       @massCorrectionID = Mass_Correction_ID,
+                                       @isobaricModIonNumber = Isobaric_Mod_Ion_Number
                                 FROM T_MaxQuant_Mods
                                 WHERE Mod_Title = @field
                                 --
@@ -887,8 +901,8 @@ AS
                                 End
 
                                 SELECT TOP 1 @massCorrectionID = Mass_Correction_ID,
-                                                @modName = Mass_Correction_Tag,
-                                                @modMass = Monoisotopic_Mass
+                                             @modName = Mass_Correction_Tag,
+                                             @modMass = Monoisotopic_Mass
                                 FROM T_Mass_Correction_Factors
                                 WHERE Mass_Correction_ID = @massCorrectionID
                                 --
@@ -1053,32 +1067,66 @@ AS
                                     Set @localSymbolIDToStore = 0
                                 End
                             
-                                -----------------------------------------
-                                -- Append the mod defs to #Tmp_ModsToStore
-                                -----------------------------------------
-                                --
-                                INSERT INTO #Tmp_ModsToStore (
-                                        Mod_Name,
-                                        Mass_Correction_ID,
-                                        Mod_Type_Symbol,
-                                        Residue_Symbol,
-                                        Residue_ID,
-                                        Local_Symbol_ID,
-                                        Residue_Desc,
-                                        Monoisotopic_Mass,
-                                        MaxQuant_Mod_ID
-                                    )
-                                SELECT @modName AS Mod_Name,
-                                       @massCorrectionID AS MassCorrectionID,
-                                       CASE WHEN @modTypeSymbol = 'S' And Residue_Symbol IN ('<', '>') Then 'T' Else @modTypeSymbol End AS Mod_Type,
-                                       Residue_Symbol,
-                                       Residue_ID,
-                                       @localSymbolIDToStore as Local_Symbol_ID,
-                                       Residue_Desc,
-                                       @modMass,
-                                       @maxQuantModID
-                                FROM #Tmp_Residues
+                                If @isobaricModIonNumber > 0
+                                Begin
+                                    -----------------------------------------
+                                    -- Check whether this isobaric mod already exists in #Tmp_ModsToStore
+                                    -----------------------------------------
+                                    -- 
+                                    SELECT @modTypeSymbolToStore = CASE
+                                                                       WHEN @modTypeSymbol = 'S' AND
+                                                                            Residue_Symbol IN ('<', '>') THEN 'T'
+                                                                       ELSE @modTypeSymbol
+                                                                   END,
+                                           @residueSymbol = Residue_Symbol
+                                    FROM #Tmp_Residues
+                                    
+                                    If Exists(
+                                            SELECT *
+                                            FROM #Tmp_ModsToStore
+                                            WHERE Mod_Name = @modName AND
+                                                  Mass_Correction_ID = @massCorrectionID AND
+                                                  Mod_Type_Symbol = @modTypeSymbolToStore AND
+                                                  Residue_Symbol = @residueSymbol AND
+                                                  Abs(Monoisotopic_Mass - @modMass) < 0.0001 )
+                                    Begin
+                                        -- Mod already stored; skip it
+                                        Set @validRow = 0
 
+                                        Print 'Skipping row since the isobaric mod has already been stored: ' + @row
+                                    End
+                                End
+
+                                If @validRow > 0
+                                Begin
+                                    -----------------------------------------
+                                    -- Append the mod defs to #Tmp_ModsToStore
+                                    -----------------------------------------
+                                    --
+                                    INSERT INTO #Tmp_ModsToStore (
+                                            Mod_Name,
+                                            Mass_Correction_ID,
+                                            Mod_Type_Symbol,
+                                            Residue_Symbol,
+                                            Residue_ID,
+                                            Local_Symbol_ID,
+                                            Residue_Desc,
+                                            Monoisotopic_Mass,
+                                            MaxQuant_Mod_ID,
+                                            Isobaric_Mod_Ion_Number
+                                        )
+                                    SELECT @modName AS Mod_Name,
+                                           @massCorrectionID AS MassCorrectionID,
+                                           CASE WHEN @modTypeSymbol = 'S' And Residue_Symbol IN ('<', '>') Then 'T' Else @modTypeSymbol End AS Mod_Type,
+                                           Residue_Symbol,
+                                           Residue_ID,
+                                           @localSymbolIDToStore as Local_Symbol_ID,
+                                           Residue_Desc,
+                                           @modMass,
+                                           @maxQuantModID,
+                                           IsNull(@isobaricModIonNumber, 0)
+                                    FROM #Tmp_Residues
+                                End
                             End
                         End
                     End
@@ -1090,8 +1138,27 @@ AS
     If @infoOnly <> 0
     Begin
         -- Preview the mod defs
-        SELECT *, @paramFileID AS Param_File_ID, @paramFileName AS Param_File
+        SELECT #Tmp_ModsToStore.*,
+               @paramFileID AS Param_File_ID,
+               @paramFileName AS Param_File,
+               CASE
+                   WHEN LookupQ.Min_Isobaric_Mod_Ion_Number IS NULL THEN 
+                     'Duplicate isobaric mod that will be skipped'
+                   ELSE ''
+               END AS Isobaric_Mod_Comment
         FROM #Tmp_ModsToStore
+             LEFT OUTER JOIN ( SELECT Residue_ID,
+                                      Local_Symbol_ID,
+                                      Mass_Correction_ID,
+                                      Mod_Type_Symbol,
+                                      Min(Isobaric_Mod_Ion_Number) AS Min_Isobaric_Mod_Ion_Number
+                               FROM #Tmp_ModsToStore
+                               GROUP BY Residue_ID, Local_Symbol_ID, Mass_Correction_ID, Mod_Type_Symbol) AS LookupQ
+               ON #Tmp_ModsToStore.Residue_ID = LookupQ.Residue_ID AND
+                  #Tmp_ModsToStore.Local_Symbol_ID = LookupQ.Local_Symbol_ID AND
+                  #Tmp_ModsToStore.Mass_Correction_ID = LookupQ.Mass_Correction_ID AND
+                  #Tmp_ModsToStore.Mod_Type_Symbol = LookupQ.Mod_Type_Symbol AND
+                  #Tmp_ModsToStore.Isobaric_Mod_Ion_Number = LookupQ.Min_Isobaric_Mod_Ion_Number
     End
     
     If @infoOnly = 0 And @validateOnly = 0
@@ -1109,7 +1176,7 @@ AS
         
         INSERT INTO T_Param_File_Mass_Mods (Residue_ID, Local_Symbol_ID, Mass_Correction_ID, Param_File_ID, Mod_Type_Symbol, MaxQuant_Mod_ID)
         SELECT Residue_ID, Local_Symbol_ID, Mass_Correction_ID, @paramFileID, Mod_Type_Symbol, MaxQuant_Mod_ID
-        FROM #Tmp_ModsToStore
+        FROM #Tmp_ModsToStore        
     
         Commit Tran @storeMods
         
