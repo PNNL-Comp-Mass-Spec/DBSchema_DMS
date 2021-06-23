@@ -7,10 +7,10 @@ CREATE TABLE [dbo].[T_Enzymes](
 	[Enzyme_ID] [int] IDENTITY(10,1) NOT NULL,
 	[Enzyme_Name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[P1] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[P1_Exception] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[P2] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[P2_Exception] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[P1] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[P1_Exception] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[P2] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[P2_Exception] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Cleavage_Method] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Cleavage_Offset] [tinyint] NOT NULL,
 	[Sequest_Enzyme_Index] [int] NULL,
@@ -27,5 +27,5 @@ GRANT VIEW DEFINITION ON [dbo].[T_Enzymes] TO [DDL_Viewer] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Enzymes] ADD  CONSTRAINT [DF_T_Enzymes_Cleavage_Method]  DEFAULT ('Standard') FOR [Cleavage_Method]
 GO
-ALTER TABLE [dbo].[T_Enzymes] ADD  CONSTRAINT [DF_T_Enzymes_Cleavage_Offset]  DEFAULT (1) FOR [Cleavage_Offset]
+ALTER TABLE [dbo].[T_Enzymes] ADD  CONSTRAINT [DF_T_Enzymes_Cleavage_Offset]  DEFAULT ((1)) FOR [Cleavage_Offset]
 GO
