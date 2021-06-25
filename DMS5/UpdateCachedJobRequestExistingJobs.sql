@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
 **  Auth:   mem
 **  Date:   07/30/2019 mem - Initial version
 **          07/31/2019 mem - Add option to find existing job requests that match jobs created within the last @jobSearchHours
+**          06/25/2021 mem - Fix bug comparing legacy organism DB name in T_Analysis_Job to T_Analysis_Job_Request_Datasets
 **    
 *****************************************************/
 (
@@ -118,7 +119,7 @@ As
                 ) OR
                 (AJ.AJ_proteinCollectionList = 'na' AND
                  AJ.AJ_proteinCollectionList = AJR.AJR_proteinCollectionList AND
-                 AJ.AJ_organismDBName = AJR.AJR_proteinOptionsList AND
+                 AJ.AJ_organismDBName = AJR.AJR_organismDBName AND
                  AJ.AJ_organismID = AJR.AJR_organism_ID
                 )
                )
