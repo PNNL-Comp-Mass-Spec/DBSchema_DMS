@@ -238,6 +238,7 @@ AS
                 -- If this job has a 'DataPackageID' defined, update parameters
                 --   'CacheFolderPath'
                 --   'transferFolderPath'
+                --   'DataPackagePath'
                 ---------------------------------------------------
                                 
                 exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output

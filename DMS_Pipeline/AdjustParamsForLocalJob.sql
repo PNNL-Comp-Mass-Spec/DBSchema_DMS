@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AdjustParamsForLocalJob
+
+CREATE PROCEDURE [dbo].[AdjustParamsForLocalJob]
 /****************************************************
 **
 **	Desc: 
@@ -52,7 +53,7 @@ AS
 
 	INSERT INTO #PARAMS
 			(Name, Value, Section)
-	select
+	SELECT
 			xmlNode.value('@Name', 'nvarchar(256)') [Name],
 			xmlNode.value('@Value', 'nvarchar(256)') VALUE,
 			xmlNode.value('@Section', 'nvarchar(256)') [Section]
@@ -63,6 +64,7 @@ AS
 	-- If this job has a 'DataPackageID' defined, update parameters
 	--	 'CacheFolderPath'
 	--   'transferFolderPath'
+    --   'DataPackagePath'
 	---------------------------------------------------
 	
 	exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
