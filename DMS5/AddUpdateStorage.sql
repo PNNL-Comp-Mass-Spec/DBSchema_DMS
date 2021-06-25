@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[AddUpdateStorage]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/27/2020 mem - Add parameter @urlDomain and update SP_URL_Domain
+**          06/24/2021 mem - Add support for re-using an existing storage path when @mode is 'add'
 **
 *****************************************************/
 (
@@ -87,32 +88,32 @@ As
     ---------------------------------------------------
 
     If LEN(@path) < 1
-    begin
+    Begin
         Set @msg = 'path was blank'
         RAISERROR (@msg, 10, 1)
         return 51036
-    end
+    End
 
     If LEN(@instrumentName) < 1
-    begin
+    Begin
         Set @msg = 'instrumentName was blank'
         RAISERROR (@msg, 10, 1)
         return 51036
-    end
+    End
 
     If @storFunction not in ('inbox', 'old-storage', 'raw-storage')
-    begin
+    Begin
         Set @msg = 'Function "' + @storFunction + '" is not recognized'
         RAISERROR (@msg, 10, 1)
         return 51036
-    end
+    End
 
     If @mode not in ('add', 'update')
-    begin
+    Begin
         Set @msg = 'Function "' + @mode + '" is not recognized'
         RAISERROR (@msg, 10, 1)
         return 51036
-    end
+    End
     
     Set @urlDomain = ISNULL(@urlDomain, '')
 
@@ -122,7 +123,7 @@ As
     
     If @storFunction = 'inbox'
         Set @machineName = replace(@volNameServer, '\', '')
-    else
+    Else
         Set @machineName = replace(@volNameClient, '\', '')
     
     ---------------------------------------------------
@@ -151,11 +152,11 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
-    begin
+    Begin
         Set @msg = 'Could not check existing storage record'
         RAISERROR (@msg, 10, 1)
         return 51012
-    end
+    End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -172,7 +173,7 @@ As
     -- Cannot update a non-existent entry
     --
     If @mode = 'update'
-    begin
+    Begin
         SELECT 
             @tmpID = SP_path_ID,
             @oldFunction = SP_function
@@ -180,19 +181,19 @@ As
         WHERE (SP_path_ID = @spID)
         --
         If @tmpID = 0
-        begin    
+        Begin    
             Set @msg = 'Cannot update:  Storage path "' + @ID + '" is not in database '
             RAISERROR (@msg, 10, 1)
             return 51004
-        end
-    end
+        End
+    End
 
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
     
-    If @Mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
     
         -- Check for an existing row to avoid adding a duplicate
         Declare @existingID int = -1
@@ -207,189 +208,191 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         
+        Declare @storagePathID Int
+
         If @myRowCount > 0
         Begin
-            -- Do not add a duplicate row; just return the matched ID
-            Set @ID = @existingID
+            -- Do not add a duplicate row
+            Set @storagePathID = @existingID
             Set @message = 'Storage path already exists; ID ' + cast(@existingID as varchar(12))
-            Goto Done
         End
-        
-        ---------------------------------------------------
-        -- Begin transaction
-        ---------------------------------------------------
-        --
-        Declare @transName varchar(32)
-        Set @transName = 'AddUpdateStoragePath'
-        begin transaction @transName
-
-        ---------------------------------------------------
-        -- Save existing state of instrument and storage tables
-        ---------------------------------------------------
-        --
-        exec @result = BackUpStorageState @msg output
-        --
-        If @result <> 0
-        begin
-            rollback transaction @transName
-            Set @msg = 'Backup failed: ' + @msg
-            RAISERROR (@msg, 10, 1)
-            return 51028
-        end
-
-        ---------------------------------------------------
-        -- Clean up any existing raw-storage assignments 
-        -- for instrument
-        ---------------------------------------------------
-        --
-        If @storFunction = 'raw-storage'
-        begin
-
-            -- Build list of paths that will be changed
+        Else
+        Begin
+            ---------------------------------------------------
+            -- Begin transaction
+            ---------------------------------------------------
             --
-            Set @message = ''
-            --
-            SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
-            FROM T_Storage_Path
-            WHERE (SP_function = 'raw-storage') AND 
-               (SP_instrument_name = @instrumentName)            
+            Declare @transName varchar(32) = 'AddUpdateStoragePath'
+            Begin transaction @transName
 
-            -- Set any existing raw-storage paths for instrument 
-            -- already in storage table to old-storage
+            ---------------------------------------------------
+            -- Save existing state of instrument and storage tables
+            ---------------------------------------------------
             --
-            UPDATE T_Storage_Path
-            SET SP_function = 'old-storage'
-            WHERE 
-                (SP_function = 'raw-storage') AND 
-                (SP_instrument_name = @instrumentName)
+            exec @result = BackUpStorageState @msg output
             --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
+            If @result <> 0
+            Begin
+                rollback transaction @transName
+                Set @msg = 'Backup failed: ' + @msg
+                RAISERROR (@msg, 10, 1)
+                return 51028
+            End
+
+            ---------------------------------------------------
+            -- Clean up any existing raw-storage assignments 
+            -- for instrument
+            ---------------------------------------------------
+            --
+            If @storFunction = 'raw-storage'
+            Begin
+
+                -- Build list of paths that will be changed
+                --
+                Set @message = ''
+                --
+                SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
+                FROM T_Storage_Path
+                WHERE (SP_function = 'raw-storage') AND 
+                   (SP_instrument_name = @instrumentName)            
+
+                -- Set any existing raw-storage paths for instrument 
+                -- already in storage table to old-storage
+                --
+                UPDATE T_Storage_Path
+                SET SP_function = 'old-storage'
+                WHERE 
+                    (SP_function = 'raw-storage') AND 
+                    (SP_instrument_name = @instrumentName)
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                --
+                If @myError <> 0
+                Begin
+                    rollback transaction @transName
+                    Set @msg = 'Changing existing raw-storage failed'
+                    RAISERROR (@msg, 10, 1)
+                    return 51042
+                End
+
+                Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage' 
+            End
+
+            ---------------------------------------------------
+            -- Validate against any existing inbox assignments
+            ---------------------------------------------------
+
+            If @storFunction = 'inbox'
+            Begin
+                Set @tmpID = 0
+                --
+                SELECT @tmpID = SP_path_ID
+                FROM T_Storage_Path
+                WHERE 
+                    (SP_function = 'inbox') AND 
+                    (SP_instrument_name = @instrumentName)
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+                --
+                -- Future: error check
+                --
+                If @tmpID <> 0
+                Begin
+                    rollback transaction @transName
+                    Set @msg = 'Cannot add new inbox path if one (' + cast(@tmpID as varchar(12))+ ') already exists for instrument'
+                    RAISERROR (@msg, 10, 1)
+                    return 51036
+                End
+            End
+
+            ---------------------------------------------------
+            -- Add the new entry
+            ---------------------------------------------------
+            Declare @newID int
+            --
+            INSERT INTO T_Storage_Path (
+                SP_path, 
+                SP_vol_name_client, 
+                SP_vol_name_server, 
+                SP_function, 
+                SP_instrument_name, 
+                SP_description,
+                SP_machine_name,
+                SP_URL_Domain
+            ) VALUES (
+                @path,
+                @volNameClient,
+                @volNameServer,
+                @storFunction,
+                @instrumentName,
+                @description,
+                @machineName,
+                @urlDomain
+            )
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount, @newID = @@identity
             --
             If @myError <> 0
-            begin
+            Begin
                 rollback transaction @transName
-                Set @msg = 'Changing existing raw-storage failed'
+                Set @msg = 'Insert new operation failed'
                 RAISERROR (@msg, 10, 1)
-                return 51042
-            end
-
-            Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage' 
-        end
-
-        ---------------------------------------------------
-        -- Validate against any existing inbox assignments
-        ---------------------------------------------------
-
-        If @storFunction = 'inbox'
-        begin
-            Set @tmpID = 0
-            --
-            SELECT @tmpID = SP_path_ID
-            FROM T_Storage_Path
-            WHERE 
-                (SP_function = 'inbox') AND 
-                (SP_instrument_name = @instrumentName)
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
-            -- Future: error check
-            --
-            If @tmpID <> 0
-            begin
-                rollback transaction @transName
-                Set @msg = 'Cannot add new inbox path if one (' + cast(@tmpID as varchar(12))+ ') already exists for instrument'
-                RAISERROR (@msg, 10, 1)
-                return 51036
-            end
-        end
-
-        ---------------------------------------------------
-        -- Add the new entry
-        ---------------------------------------------------
-        Declare @newID int
-        --
-        INSERT INTO T_Storage_Path (
-            SP_path, 
-            SP_vol_name_client, 
-            SP_vol_name_server, 
-            SP_function, 
-            SP_instrument_name, 
-            SP_description,
-            SP_machine_name,
-            SP_URL_Domain
-        ) VALUES (
-            @path,
-            @volNameClient,
-            @volNameServer,
-            @storFunction,
-            @instrumentName,
-            @description,
-            @machineName,
-            @urlDomain
-        )
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount, @newID = @@identity
-        --
-        If @myError <> 0
-        begin
-            rollback transaction @transName
-            Set @msg = 'Insert new operation failed'
-            RAISERROR (@msg, 10, 1)
-            return 51007
-        end
+                return 51007
+            End
         
+            commit transaction @transName
+
+            Set @storagePathID = @newID
+        End
+
         ---------------------------------------------------
         -- Update the assigned storage for the instrument
         ---------------------------------------------------
         --
         If @storFunction = 'raw-storage'
-        begin
+        Begin
             UPDATE T_Instrument_Name
-            SET IN_storage_path_ID = @newID
+            SET IN_storage_path_ID = @storagePathID
             WHERE (IN_name = @instrumentName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
-            begin
-                rollback transaction @transName
+            Begin
                 Set @msg = 'Update of instrument assigned storage failed'
                 RAISERROR (@msg, 10, 1)
                 return 51043
-            end
-        end
+            End
+        End
 
         If @storFunction = 'inbox'
-        begin
+        Begin
             UPDATE T_Instrument_Name
-            SET IN_source_path_ID = @newID
+            SET IN_source_path_ID = @storagePathID
             WHERE (IN_name = @instrumentName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
-            begin
-                rollback transaction @transName
+            Begin
                 Set @msg = 'Update of instrument assigned source failed'
                 RAISERROR (@msg, 10, 1)
                 return 51043
-            end
-        end
+            End
+        End
 
-        -- Return job number of newly created job
+        -- Return storage path ID as text
         --
-        Set @ID = cast(@newID as varchar(32))
+        Set @ID = cast(@storagePathID as varchar(32))
 
-        commit transaction @transName
-
-    end -- add mode
+    End -- add mode
 
     ---------------------------------------------------
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
-    begin
+    If @mode = 'update' 
+    Begin
         Set @myError = 0
 
         ---------------------------------------------------
@@ -397,7 +400,7 @@ As
         ---------------------------------------------------
         --
         Set @transName = 'AddUpdateStoragePath'
-        begin transaction @transName
+        Begin transaction @transName
 
         ---------------------------------------------------
         -- Save existing state of instrument and storage tables
@@ -406,12 +409,12 @@ As
         exec @result = BackUpStorageState @msg output
         --
         If @result <> 0
-        begin
+        Begin
             rollback transaction @transName
             Set @msg = 'Backup failed: ' + @msg
             RAISERROR (@msg, 10, 1)
             return 51028
-        end
+        End
 
         ---------------------------------------------------
         -- Clean up any existing raw-storage assignments 
@@ -419,7 +422,7 @@ As
         ---------------------------------------------------
         --
         If @storFunction = 'raw-storage' and @oldFunction <> 'raw-storage'
-        begin
+        Begin
 
             -- Build list of paths that will be changed
             --
@@ -442,12 +445,12 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
-            begin
+            Begin
                 rollback transaction @transName
                 Set @msg = 'Changing existing raw-storage failed'
                 RAISERROR (@msg, 10, 1)
                 return 51042
-            end
+            End
 
             ---------------------------------------------------
             -- Update the assigned storage for the instrument
@@ -460,15 +463,15 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
-            begin
+            Begin
                 rollback transaction @transName
                 Set @msg = 'Update of instrument assigned storage failed'
                 RAISERROR (@msg, 10, 1)
                 return 51043
-            end
+            End
 
             Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage' 
-        end
+        End
 
         ---------------------------------------------------
         -- Validate against changing current raw-storage path
@@ -476,24 +479,24 @@ As
         ---------------------------------------------------
         --
         If @storFunction <> 'raw-storage' and @oldFunction = 'raw-storage'
-        begin
+        Begin
             rollback transaction @transName
             Set @msg = 'Cannot change existing raw-storage path to old-storage'
             RAISERROR (@msg, 10, 1)
             return 51037
-        end
+        End
 
         ---------------------------------------------------
         -- Validate against any existing inbox assignments
         ---------------------------------------------------
 
         If @storFunction <> 'inbox' and @oldFunction = 'inbox'
-        begin
+        Begin
             rollback transaction @transName
             Set @msg = 'Cannot change existing inbox path to another function'
             RAISERROR (@msg, 10, 1)
             return 51037
-        end
+        End
 
         ---------------------------------------------------
         -- 
@@ -513,16 +516,16 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-        begin
+        Begin
             rollback transaction @transName
             Set @msg = 'Update operation failed: "' + @ID + '"'
             RAISERROR (@msg, 10, 1)
             return 51004
-        end
+        End
         
         commit transaction @transName
 
-    end -- update mode
+    End -- update mode
 
 Done:
 
