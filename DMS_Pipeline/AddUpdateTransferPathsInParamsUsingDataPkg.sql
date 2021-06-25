@@ -12,7 +12,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 **      appropriate paths for 'CacheFolderPath' and 'transferFolderPath'
 **
 **      Updates #PARAMS to have these paths defined if not yet defined or if different
-**      If #PARAMS is upodated, @paramsUpdated will be set to 1
+**      If #PARAMS is updated, @paramsUpdated will be set to 1
 **
 **      The calling procedure must create and populate table #PARAMS
 **
@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 **  Auth:   mem
 **  Date:   06/16/2016 mem - Initial version
 **          06/09/2021 mem - Tabs to spaces
+**          06/24/2012 mem - Add parameter DataPackagePath
 **
 *****************************************************/
 (
@@ -136,8 +137,6 @@ As
                 --
                 INSERT INTO #PARAMS ( Section, Name, Value )
                 VALUES ( 'JobParameters', 'CacheFolderPath', @cacheFolderPath )
-                --
-                Set @paramsUpdated = 1
             End
         End
         
@@ -148,9 +147,15 @@ As
             --
             INSERT INTO #PARAMS ( Section, Name, Value )
             VALUES ( 'JobParameters', 'transferFolderPath', @xferPath )
-            --
-            Set @paramsUpdated = 1
         End
+
+        Delete From #PARAMS
+        Where Name = 'DataPackagePath'
+        --
+        INSERT INTO #PARAMS( Section, Name, Value )
+        VALUES('JobParameters', 'DataPackagePath', @dataPkgSharePath);
+
+        Set @paramsUpdated = 1
     End 
     
 Done:
