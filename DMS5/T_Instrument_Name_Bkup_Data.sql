@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 177 ******/
+/****** RowCount: 178 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -129,7 +129,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_5',126,'Triple_Quad',1504,3270
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF03',127,'LTQ_FT',1633,3755,'secfso',null,'EMSL 1526','Q-Exactive HF','2/19/2015 10:12:31 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactP04',128,'LTQ_FT',1662,3718,'secfso',null,'EMSL 1526','Q-Exactive Plus','4/8/2015 2:47:10 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_Agilent',129,'Agilent_Ion_Trap',1701,2,'secfso',null,'EMSL 1621','Agilent 12T FTICR magnet','6/13/2015 6:12:48 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05',130,'LTQ_FT',1706,3775,'secfso',null,'EMSL 1621','Coupled with the Agilent 12T magnet.  Will later be moved to the 21T magnet. (Jared Shaw)','6/29/2015 10:54:50 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05',130,'LTQ_FT',1706,3775,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can support MALDI (Spectroglyph), UVPD, ECD/ETD, depending on the connected hardware.  While the MALDI source is attached, use instrument QExactHF05_Imaging for new datasets','6/29/2015 10:54:50 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GC01',131,'Agilent_Ion_Trap',1754,2,'secfso',null,'BSF 1229','GC with FID','7/6/2015 4:23:30 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS01',132,'Agilent_Ion_Trap',1755,2,'secfso',null,'BSF 1229','GC-MS','7/6/2015 4:24:23 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS02',133,'Agilent_Ion_Trap',1756,2,'secfso',null,'BSF 1229','GC-MS','7/6/2015 4:24:34 PM')
@@ -171,10 +171,11 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QEHFX03',169,'LTQ_FT',3318,3723,'s
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_QEHFX',170,'LTQ_FT',3355,3358,'fso',null,'Offsite','QExactive HF-X data acquired outside PNNL','2/7/2020 3:10:04 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse01',171,'LTQ_FT',3525,3721,'secfso',null,'EMSL 1444','Orbitrap Eclipse Tribrid','9/4/2020 5:54:11 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS11_AgQTOF08',172,'IMS_Agilent_TOF_DotD',3526,3778,'secfso',null,'EMSL 1430','Agilent 6560 IM-QTOF','9/4/2020 6:01:52 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris01',173,'LTQ_FT',3535,3754,'secfso',null,'EMSL 1621','Thermo Exploris 480','9/18/2020 12:25:51 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris01',173,'LTQ_FT',3535,3754,'secfso',null,'EMSL 1621','Thermo Exploris 480; goal to eventually connect it to the 21T in place of the current Orbitrap Velos Pro hardware, with initial development on the Agilent 12T magnet.','9/18/2020 12:25:51 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('XevoG2_01',174,'Waters_TOF',3536,3779,'secfso',null,'BSF 1215','Transfer/Moved from BSEL in September 2020','9/23/2020 12:48:22 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QQQ',175,'Agilent_TOF_V2',3709,3714,'fso',null,'Offsite','Agilent triple-quad data acquired offsite','1/19/2021 8:47:37 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Eclipse',176,'LTQ_FT',3710,3780,'fso',null,'Offsite','Orbitrap Eclipse data acquired outside PNNL','1/26/2021 5:09:47 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap_Fusion',177,'LTQ_FT',3712,3713,'sec',null,'Offsite','Orbitrap Fusion data acquired outside PNNL','1/28/2021 10:35:08 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse02',178,'LTQ_FT',3789,3790,'secfso',null,'EMSL 1526','Orbitrap Eclipse Tribrid - CPTAC loan','4/29/2021 2:55:13 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,2,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,3792,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,2,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
