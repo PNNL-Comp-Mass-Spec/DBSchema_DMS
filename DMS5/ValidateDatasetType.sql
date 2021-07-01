@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **          10/13/2020 mem - Add support for datasets that only have MS2 spectra (they will be assigned dataset type HMS or MS, despite the fact that they have no MS1 spectra; this is by design)
 **          05/26/2021 mem - Add support for low res HCD
+**          07/01/2021 mem - Auto-switch from HMS-CID-MSn to HMS-MSn
 **
 *****************************************************/
 (
@@ -600,6 +601,11 @@ AutoDefineDSType:
                 Else
                     Set @datasetTypeAutoGen = 'HMS-HCD-HMSn'
             End
+
+            If @datasetTypeAutoGen = 'HMS-CID-MSn'
+            Begin
+                Set @datasetTypeAutoGen = 'HMS-MSn'
+            End
         End
     End
 
@@ -701,7 +707,6 @@ Done:
     End
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [DDL_Viewer] AS [dbo]
