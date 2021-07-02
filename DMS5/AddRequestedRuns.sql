@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
 **          07/27/2009 grk - removed autonumber for well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **          03/02/2010 grk - added status field to requested run
-**          08/27/2010 mem - Now referring to @instrumentName as an instrument group
+**          08/27/2010 mem - Now referring to @instrumentGroup as an instrument group
 **          09/29/2011 grk - fixed limited size of variable holding delimited list of experiments from group
 **          12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
 **          02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
@@ -44,6 +44,8 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **          05/29/2021 mem - Add parameters to allow also creating a batch
 **          06/01/2021 mem - Show names of the new requests when previewing updates
+**          07/01/2021 mem - Rename instrument parameter to be @instrumentGroup
+**                         - Add parameters @batchPriorityJustification and @batchComment
 **
 *****************************************************/
 (
@@ -51,7 +53,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
     @experimentList varchar(3500) = '',
     @requestNameSuffix varchar(32) = '',        -- Actually used as the request name Suffix
     @operPRN varchar(64),
-    @instrumentName varchar(64),                -- Instrument group; could also contain '(lookup)'
+    @instrumentGroup varchar(64),               -- Instrument group; could also contain '(lookup)'
     @workPackage varchar(50),                   -- Work Package; could also contain '(lookup)'
     @msType varchar(20),                        -- Run type; could also contain '(lookup)'
     @instrumentSettings varchar(512) = 'na',
@@ -70,8 +72,9 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
     @batchName varchar(50) = '',                -- If defined, create a new batch for the newly created requested runs
     @batchDescription Varchar(256) = '',
     @batchCompletionDate varchar(32) = '',
-    @batchPriority varchar(24) = '',
-    @batchInstrumentGroup varchar(64),
+    @batchPriority varchar(24) = '',    
+    @batchPriorityJustification varchar(512),
+    @batchComment varchar(512),
     @callingUser varchar(128) = ''
 )
 As
@@ -128,7 +131,7 @@ As
         RAISERROR ('Operator payroll number/HID was blank', 11, 22)
     End
     --
-    If LEN(@instrumentName) < 1
+    If LEN(@instrumentGroup) < 1
     Begin
         Set @myError = 51114
         RAISERROR ('Instrument group was blank', 11, 23)
@@ -246,7 +249,7 @@ As
     Declare @wellplateNum varchar(64) = '(lookup)'
     Declare @wellNum varchar(24) = '(lookup)'
     
-    Declare @instrumentGroup varchar(64)
+    Declare @instrumentGroupToUse varchar(64)
     Declare @userID int
 
     If Len(@batchName) > 0
@@ -262,11 +265,11 @@ As
                 @ownerPRN = @operPRN,
                 @requestedBatchPriority = @batchPriority,
                 @requestedCompletionDate = @batchCompletionDate,
-                @justificationHighPriority = @batchPriority,
-                @requestedInstrument = @batchInstrumentGroup,   -- Will typically contain an instrument group, not an instrument name
-                @comment = '',
+                @justificationHighPriority = @batchPriorityJustification,
+                @requestedInstrument = @instrumentGroup,              -- Will typically contain an instrument group, not an instrument name
+                @comment = @batchComment,
                 @mode = @mode,
-                @instrumentGroup = @instrumentGroup output,
+                @instrumentGroup = @instrumentGroupToUse output,
                 @userID = @userID output,
                 @message = @message output
 
@@ -338,7 +341,7 @@ As
                                     @reqName = @reqName,
                                     @experimentNum = @experimentName,
                                     @requestorPRN = @operPRN,
-                                    @instrumentName = @instrumentName,
+                                    @instrumentName = @instrumentGroupToUse,
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = @instrumentSettings,
@@ -393,7 +396,7 @@ As
         Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @reqNameFirst + ' to ' + @reqNameLast + ')'
         
         If @resolvedInstrumentInfo = ''
-            Set @message = @message + ' with instrument group ' + @instrumentName + ', run type ' + @msType + ', and separation group ' + @separationGroup
+            Set @message = @message + ' with instrument group ' + @instrumentGroupToUse + ', run type ' + @msType + ', and separation group ' + @separationGroup
         Else
             Set @message = @message + ' with ' + @resolvedInstrumentInfo
     End
@@ -420,9 +423,9 @@ As
                                            ,@ownerPRN = @operPRN
                                            ,@requestedBatchPriority = @batchPriority
                                            ,@requestedCompletionDate = @batchCompletionDate
-                                           ,@justificationHighPriority = @batchPriority
-                                           ,@requestedInstrument = @batchInstrumentGroup
-                                           ,@comment = ''
+                                           ,@justificationHighPriority = @batchPriorityJustification
+                                           ,@requestedInstrument = @instrumentGroupToUse
+                                           ,@comment = @batchComment
                                            ,@mode = @mode
                                            ,@message = @msg output
                                            ,@useRaiseError = 0
