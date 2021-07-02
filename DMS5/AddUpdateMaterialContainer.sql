@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **  Auth:   grk
 **  Date:   03/20/2008 grk - Initial release
 **          07/18/2008 grk - Added checking for location's container limit
-**          11/25/2008 grk - Corrected udpdate not to check for room if location doesn't change
+**          11/25/2008 grk - Corrected update not to check for room if location doesn't change
 **          07/28/2011 grk - Added owner field
 **          08/01/2011 grk - Always create new container if mode is "add"
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **          05/17/2018 mem - Validate inputs
 **          12/19/2018 mem - Standardize the researcher name
 **          11/11/2019 mem - If @researcher is 'na' or 'none', store an empty string in the Researcher column of T_Material_Containers
+**          07/02/2021 mem - Require that the researcher is a valid DMS user
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -138,35 +139,33 @@ As
 
     If @researcher In ('', 'na', 'none')
     Begin
-        Set @researcher = ''
+        Set @message = 'Researcher must be a valid DMS user'
+        Return 51011
+    End
+
+    exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
+
+    If @matchCount = 1
+    Begin
+        -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
+        
+        SELECT @researcher = Name_with_PRN
+        FROM T_Users
+        WHERE U_PRN = @researcherPRN
+
     End
     Else
     Begin
-        exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
+        -- Single match not found
 
-        If @matchCount = 1
-        Begin
-            -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
-        
-            SELECT @researcher = Name_with_PRN
-            FROM T_Users
-            WHERE U_PRN = @researcherPRN
+        Set @message = 'Researcher must be a valid DMS user'
 
-        End
+        If @matchCount = 0
+            Set @message = @message + '; ' + @researcher + ' is an unknown person'
         Else
-        Begin
-            -- Single match not found; use the @researcher name as-is but log an error
-            If @matchCount = 0
-                Set @message = 'Unrecognized researcher ' + @researcher + ' for material container ' + @container
-            Else
-                Set @message = 'Ambiguous researcher ' + @researcher + ' for material container ' + @container
+            Set @message = @message + '; ' + @researcher + ' is an ambiguous match to multiple people'
 
-            Exec PostLogEntry @type = 'Error'
-                             ,@message = @message
-                             ,@postedBy = 'AddUpdateMaterialContainer'
-
-            Set @message = ''
-        End
+        Return 51011
     End
 
     ---------------------------------------------------
