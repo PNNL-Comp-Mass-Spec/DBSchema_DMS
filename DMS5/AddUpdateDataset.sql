@@ -1315,7 +1315,7 @@ As
             Begin
                 If @eusProposalID = '' And @eusUsageType = '' and @eusUsersList = ''
                 Begin
-                    Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + '; EUS Proposal ID, Usage Type, and  Users list cannot all be blank ->' + @message
+                    Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + '; EUS Proposal ID, Usage Type, and Users list cannot all be blank ->' + @message
                 End
                 Else
                 Begin
