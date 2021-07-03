@@ -43,11 +43,13 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          04/25/2018 mem - Populate column Dataset_ID in T_Data_Package_Analysis_Jobs
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          07/17/2019 mem - Remove .raw and .d from the end of dataset names
+**          07/02/2021 mem - Update the package comment for any existing items when @mode is 'add' and @comment is not an empty string
+**          07/02/2021 mem - Change the default value for @mode from undefined mode 'update' to 'add'
 **
 *****************************************************/
 (
     @comment varchar(512),
-    @mode varchar(12) = 'update',            -- 'add', 'update', 'comment', 'delete'
+    @mode varchar(12) = 'add',               -- 'add', 'comment', 'delete'
     @removeParents tinyint = 0,              -- When 1, remove parent datasets and experiments for affected jobs (or experiments for affected datasets)
     @message varchar(512) = '' output,
     @callingUser varchar(128) = '',
@@ -238,7 +240,7 @@ As
         END -- </add_associated_items>
 
 
-        If @mode = 'Delete' And @removeParents > 0
+        If @mode = 'delete' And @removeParents > 0
         Begin
             -- Find Datasets, Experiments, Biomaterial, and Cell Culture items that we can safely delete
             -- after deleting the jobs and/or datasets in #TPI
@@ -1030,7 +1032,7 @@ As
             End
         END -- </add analysis_jobs>
 
-         ---------------------------------------------------
+        ---------------------------------------------------
         -- Update item counts for all data packages in the list
         ---------------------------------------------------
 
@@ -1082,7 +1084,7 @@ As
             Exec UpdateDataPackageEUSInfo @DataPackageList
         End -- </UpdateEUSInfo>
 
-         ---------------------------------------------------
+        ---------------------------------------------------
         -- Update the last modified date for affected data packages
         ---------------------------------------------------
         --
@@ -1106,8 +1108,6 @@ As
                 Set @message = 'No items were removed'            
         End
         
-     ---------------------------------------------------
-     ---------------------------------------------------
     END TRY
     BEGIN CATCH 
         EXEC FormatErrorMessage @message output, @myError output
@@ -1121,7 +1121,7 @@ As
         Exec PostLogEntry 'Error', @msgForLog, 'UpdateDataPackageItemsUtility'        
     END CATCH
     
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     return @myError
