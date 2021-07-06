@@ -70,18 +70,19 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          07/06/2021 mem - Expand @organismName and @labNotebookRef to varchar(128)
 **
 *****************************************************/
 (
     @experimentNum varchar(50),
     @campaignNum varchar(64),
     @researcherPRN varchar(50),
-    @organismName varchar(50),
+    @organismName varchar(128),
     @reason varchar(500) = 'na',
     @comment varchar(500) = '',
     @sampleConcentration varchar(32) = 'na',
     @enzymeName varchar(50) = 'Trypsin',
-    @labNotebookRef varchar(64) = 'na',
+    @labNotebookRef varchar(128) = 'na',
     @labelling varchar(64) = 'none',
     @cellCultureList varchar(2048) = '',
     @referenceCompoundList varchar(2048) = '',        -- Semicolon separated list of reference compound IDs; supports integers, or names of the form 3311:ANFTSQETQGAGK
@@ -147,22 +148,22 @@ As
     Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
 
-    if LEN(@experimentNum) < 1
+    If LEN(@experimentNum) < 1
         RAISERROR ('Experiment name must be defined', 11, 30)
     --
-    if LEN(@campaignNum) < 1
+    If LEN(@campaignNum) < 1
         RAISERROR ('Campaign name must be defined', 11, 31)
     --
-    if LEN(@researcherPRN) < 1
+    If LEN(@researcherPRN) < 1
         RAISERROR ('Researcher PRN must be defined', 11, 32)
     --
-    if LEN(@organismName) < 1
+    If LEN(@organismName) < 1
         RAISERROR ('Organism name must be defined', 11, 33)
     --
-    if LEN(@reason) < 1
+    If LEN(@reason) < 1
         RAISERROR ('Reason cannot be blank', 11, 34)
     --
-    if LEN(@labelling) < 1
+    If LEN(@labelling) < 1
         RAISERROR ('Labelling cannot be blank', 11, 35)
 
     If Not @alkylation IN ('Y', 'N')
@@ -186,19 +187,19 @@ As
     ---------------------------------------------------
 
     Declare @badCh varchar(128) = dbo.ValidateChars(@experimentNum, '')
-    if @badCh <> ''
-    begin
+    If @badCh <> ''
+    Begin
         If @badCh = '[space]'
             RAISERROR ('Experiment name may not contain spaces', 11, 36)
         Else
             RAISERROR ('Experiment name may not contain the character(s) "%s"', 11, 37, @badCh)
-    end
+    End
 
     If Len(@experimentNum) < 6
-    begin
+    Begin
         Set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentNum)) + ' characters'
         RAISERROR (@msg, 11, 37)
-    end
+    End
 
     ---------------------------------------------------
     -- Resolve @tissue to BTO identifier
@@ -233,7 +234,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error trying to resolve experiment name to ID', 11, 38)
 
     -- Cannot create an entry that already exists
@@ -261,7 +262,7 @@ As
 
     Declare @campaignID int
     execute @campaignID = GetCampaignID @campaignNum
-    if @campaignID = 0
+    If @campaignID = 0
         RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignNum)
 
     ---------------------------------------------------
@@ -309,7 +310,7 @@ As
 
     Declare @organismID int = 0
     exec @organismID = GetOrganismID @organismName
-    if @organismID = 0
+    If @organismID = 0
         RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
 
     ---------------------------------------------------
@@ -326,15 +327,15 @@ As
                         @totalCount,
                         @wellIndex output,
                         @msg  output
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('ValidateWellplateLoading: %s', 11, 44, @msg)
 
     -- make sure we do not put two experiments in the same place
     --
-    if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 45)
     --
-    if exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode In ('update', 'check_update')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode In ('update', 'check_update')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 46)
 
     ---------------------------------------------------
@@ -363,7 +364,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myRowCount = 0
+    If @myRowCount = 0
         RAISERROR ('Could not find entry in database for labelling "%s"; use "none" if unlabeled', 11, 48, @labelling)
 
     ---------------------------------------------------
@@ -379,10 +380,10 @@ As
     FROM T_Internal_Standards
     WHERE (Name = @internalStandard)
     --
-    if @internalStandardID = 0
+    If @internalStandardID = 0
         RAISERROR ('Could not find entry in database for predigestion internal standard "%s"', 11, 49, @internalStandard)
 
-    if (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
+    If (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
         RAISERROR ('Predigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @internalStandard)
 
     ---------------------------------------------------
@@ -397,10 +398,10 @@ As
     FROM T_Internal_Standards
     WHERE (Name = @postdigestIntStd)
     --
-    if @postdigestIntStdID = 0
+    If @postdigestIntStdID = 0
         RAISERROR ('Could not find entry in database for postdigestion internal standard "%s"', 11, 50, @postdigestIntStd)
 
-    if (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
+    If (@mode In ('add', 'check_add')) And @internalStandardState <> 'A'
         RAISERROR ('Postdigestion internal standard "%s" is not active; this standard cannot be used when creating a new experiment', 11, 49, @postdigestIntStd)
 
     ---------------------------------------------------
@@ -436,7 +437,7 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Error resolving name of current container', 11, 53)
     End
 
@@ -483,7 +484,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Could not populate temporary table for cell culture list', 11, 79)
 
     -- Verify that cell cultures exist
@@ -496,7 +497,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error resolving cell culture name to ID', 11, 80)
 
     SELECT @invalidCCList = Coalesce(@invalidCCList + ', ' + CC_Name, CC_Name)
@@ -505,10 +506,10 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error looking for unresolved cell culture names', 11, 80)
 
-    if IsNull(@invalidCCList, '') <> ''
+    If IsNull(@invalidCCList, '') <> ''
         RAISERROR ('Invalid cell culture name(s): %s', 11, 81, @invalidCCList)
 
     ---------------------------------------------------
@@ -539,7 +540,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Could not populate temporary table for reference compound list', 11, 90)
 
     -- Update entries in #Tmp_ExpToRefCompoundMap to remove extra text that may be present
@@ -564,7 +565,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error resolving reference compound name to ID', 11, 91)
 
     -- Delete any entries to where the name is '(none)'
@@ -591,7 +592,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myError <> 0
+    If @myError <> 0
         RAISERROR ('Error looking for unresolved reference compound names', 11, 92)
 
     If Len(IsNull(@invalidRefCompoundList, '')) > 0
@@ -624,8 +625,8 @@ As
     Declare @transName varchar(32)
     Set @logErrors = 1
 
-    if @Mode = 'add'
-    begin
+    If @Mode = 'add'
+    Begin
         ---------------------------------------------------
         -- Action for add mode
         ---------------------------------------------------
@@ -633,7 +634,7 @@ As
         -- Start transaction
         --
         Set @transName = 'AddNewExperiment'
-        begin transaction @transName
+        Begin transaction @transName
 
         INSERT INTO T_Experiments (
                 Experiment_Num,
@@ -683,7 +684,7 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
 
         -- Get the ID of newly created experiment
@@ -722,7 +723,7 @@ As
                                 @updateCachedInfo=0,
                                 @message=@msg output
         --
-        if @result <> 0
+        If @result <> 0
             RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
         -- Add the experiment to reference compound mapping
@@ -733,13 +734,13 @@ As
                                 @updateCachedInfo=1,
                                 @message=@msg output
         --
-        if @result <> 0
+        If @result <> 0
             RAISERROR ('Could not add experiment reference compounds to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
         -- Material movement logging
         --
-        if @curContainerID != @contID
-        begin
+        If @curContainerID != @contID
+        Begin
             exec PostMaterialLogEntry
                 'Experiment Move',
                 @experimentNum,
@@ -747,16 +748,16 @@ As
                 @container,
                 @callingUser,
                 'Experiment added'
-        end
+        End
 
         -- We made it this far, commit
         --
         commit transaction @transName
 
-    end -- add mode
+    End -- add mode
 
-    if @Mode = 'update'
-    begin
+    If @Mode = 'update'
+    Begin
         ---------------------------------------------------
         -- Action for update mode
         ---------------------------------------------------
@@ -764,7 +765,7 @@ As
         -- Start transaction
         --
         Set @transName = 'UpdateExperiment'
-        begin transaction @transName
+        Begin transaction @transName
 
         UPDATE T_Experiments Set
             EX_researcher_PRN = @researcherPRN,
@@ -800,7 +801,7 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Update operation failed: "%s"', 11, 4, @experimentNum)
 
         -- Update the experiment to cell culture mapping
@@ -811,7 +812,7 @@ As
                                 @updateCachedInfo=0,
                                 @message=@msg output
         --
-        if @result <> 0
+        If @result <> 0
             RAISERROR ('Could not update experiment cell culture mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
         -- Update the experiment to reference compound mapping
@@ -822,13 +823,13 @@ As
                                 @updateCachedInfo=1,
                                 @message=@msg output
         --
-        if @result <> 0
+        If @result <> 0
             RAISERROR ('Could not update experiment reference compound mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
 
         -- Material movement logging
         --
-        if @curContainerID != @contID
-        begin
+        If @curContainerID != @contID
+        Begin
             exec PostMaterialLogEntry
                 'Experiment Move',
                 @experimentNum,
@@ -836,13 +837,13 @@ As
                 @container,
                 @callingUser,
                 'Experiment updated'
-        end
+        End
 
         -- We made it this far, commit
         --
         commit transaction @transName
 
-    end -- update mode
+    End -- update mode
 
     END TRY
     BEGIN CATCH
