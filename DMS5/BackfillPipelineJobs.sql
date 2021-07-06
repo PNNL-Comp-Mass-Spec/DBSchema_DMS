@@ -25,6 +25,7 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          03/10/2021 mem - Add argument @startJob
 **          03/31/2021 mem - Expand OrganismDBName to varchar(128)
 **          05/26/2021 mem - Expand @message to varchar(1024)
+**          07/06/2021 mem - Extract parameter file name, protein collection list, and legacy FASTA file name from job parameters 
 **    
 *****************************************************/
 (
@@ -34,7 +35,6 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
     @message varchar(1024) = '' OUTPUT
 )
 AS
-
     Set XACT_ABORT, nocount on
 
     Declare @myRowCount int = 0 
@@ -59,8 +59,12 @@ AS
     Declare @peptideAtlasStagingTask tinyint = 0
     
     Declare @analysisToolID int
-    Declare @organismID int
-    
+    Declare @organismID Int
+
+    Declare @parameterFileName varchar(255)
+    Declare @proteinCollectionList varchar(2000)
+    Declare @legacyFastaFileName varchar(128)
+
     Declare @datasetID int
     Declare @datasetComment varchar(128)
     Declare @jobStr varchar(12)
@@ -267,7 +271,35 @@ AS
                 End
                 
                 ------------------------------------------------
-                -- Check whether dataset @dataset exists if @dataset is <> 'Aggregation'
+                -- Lookup parameter file name and protein collection, if defined
+                ------------------------------------------------
+                --
+                SELECT @parameterFileName = Param_Value
+                FROM S_V_Pipeline_Job_Parameters
+                WHERE job = 1914830 AND
+                      Param_Name = 'ParmFileName'
+
+                SELECT @proteinCollectionList = Param_Value
+                FROM S_V_Pipeline_Job_Parameters
+                WHERE job = 1914830 AND
+                      Param_Name = 'ProteinCollectionList'
+
+                SELECT @legacyFastaFileName = Param_Value
+                FROM S_V_Pipeline_Job_Parameters
+                WHERE job = 1914830 AND
+                      Param_Name = 'LegacyFastaFileName'
+
+                If IsNull(@parameterFileName, '') = ''
+                    Set @parameterFileName = 'na'
+
+                If IsNull(@proteinCollectionList, '') = ''
+                    Set @proteinCollectionList = 'na'
+
+                If IsNull(@legacyFastaFileName, '') = ''
+                    Set @legacyFastaFileName = 'na'
+
+                ------------------------------------------------
+                -- Check whether the dataset exists if it is not 'Aggregation'
                 ------------------------------------------------
                 --
                 Set @datasetID = -1
@@ -371,7 +403,6 @@ AS
                     If @myRowCount = 0
                         Set @datasetID = -1
 
-                
                     If @datasetID < 0
                     Begin -- <d3>
                         
@@ -514,9 +545,9 @@ AS
                                @start,                  -- start
                                @finish,                 -- finish
                                @analysisToolID,         -- analysisToolID
-                               'na',                    -- parmFileName
+                               @parameterFileName,      -- parmFileName
                                'na',                    -- settingsFileName
-                               'na',                    -- organismDBName
+                               @legacyFastaFileName,    -- organismDBName
                                @organismID,             -- organismID
                                @datasetID,              -- datasetID
                                IsNull(@comment, ''),    -- comment
@@ -524,7 +555,7 @@ AS
                                @state,                  -- StateID
                                'Job_Broker',            -- assignedProcessorName
                                @results_Folder_Name,    -- resultsFolderName
-                               'na',                    -- proteinCollectionList
+                               @proteinCollectionList,  -- proteinCollectionList
                                'na',                    -- proteinOptionsList
                                1,                       -- requestID
                                0,                       -- propagationMode                                
