@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          07/17/2019 mem - Remove .raw and .d from the end of dataset names
 **          07/02/2021 mem - Update the package comment for any existing items when @mode is 'add' and @comment is not an empty string
 **          07/02/2021 mem - Change the default value for @mode from undefined mode 'update' to 'add'
+**          07/06/2021 mem - Add support for dataset IDs when @mode is 'comment' or 'delete'
 **
 *****************************************************/
 (
@@ -126,27 +127,20 @@ As
             Update #TPI
             Set Identifier = Substring(Identifier, 1, Len(Identifier) - 2)
             Where [Type] = 'Dataset' And #TPI.Identifier Like '%.d'
-        End
 
-        -- Add parent items and associated items to list for items in the list
-        -- This process cascades up the DMS hierarchy of tracking entities, but not down
-        --
-        IF @mode = 'add'
-        BEGIN -- <add_associated_items>
-             
             -- Auto-convert dataset IDs to dataset names
             -- First look for dataset IDs
             INSERT INTO #Tmp_DatasetIDsToAdd( DataPackageID, DatasetID )
             SELECT DataPackageID,
                    DatasetID
             FROM ( SELECT DataPackageID,
-                          Try_Convert(int, Identifier) as DatasetID
+                          Try_Convert(INT, Identifier) AS DatasetID
                    FROM #TPI
                    WHERE [Type] = 'Dataset' AND
-                         Not DataPackageID Is Null) SourceQ
-            WHERE Not DatasetID Is Null
+                         NOT DataPackageID IS NULL ) SourceQ
+            WHERE NOT DatasetID IS NULL
             
-            If Exists (select * from #Tmp_DatasetIDsToAdd)
+            If Exists (SELECT * FROM #Tmp_DatasetIDsToAdd)
             Begin
                 -- Add the dataset names
                 INSERT INTO #TPI( DataPackageID,
@@ -156,10 +150,25 @@ As
                        'Dataset' AS [Type],
                        DL.Dataset
                 FROM #Tmp_DatasetIDsToAdd Source
-                 INNER JOIN S_V_Dataset_List_Report_2 DL
+                     INNER JOIN S_V_Dataset_List_Report_2 DL
                        ON Source.DatasetID = DL.ID
 
+                -- Update the Type of the Dataset IDs so that they will be ignored
+                UPDATE #TPI
+                SET [Type] = 'DatasetID'
+                FROM #TPI
+                     INNER JOIN #Tmp_DatasetIDsToAdd Source
+                       ON #TPI.Identifier = Cast(Source.DatasetID AS varchar(12))
+
             End
+
+        End
+
+        -- Add parent items and associated items to list for items in the list
+        -- This process cascades up the DMS hierarchy of tracking entities, but not down
+        --
+        IF @mode = 'add'
+        BEGIN -- <add_associated_items>
 
             -- Add datasets to list that are parents of jobs in the list
             -- (and are not already in the list)
@@ -393,7 +402,12 @@ As
         
         If @infoOnly <> 0
         Begin
-            SELECT * 
+            If Not @mode In ('add', 'comment', 'delete')
+            Begin
+                SELECT '@mode should be add, comment, or delete; ' + @mode + ' is invalid' As Warning
+            End
+
+            SELECT *
             FROM #TPI
             ORDER BY DataPackageID, [Type], Identifier
         End
@@ -402,7 +416,7 @@ As
         -- Biomaterial operations
         ---------------------------------------------------
         
-        IF @mode = 'delete'
+        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
         BEGIN -- <delete biomaterial>
             If @infoOnly > 0
             Begin
@@ -433,7 +447,7 @@ As
             End
         END -- </delete biomaterial>
 
-        IF @mode = 'comment'
+        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
         BEGIN -- <comment biomaterial>
             If @infoOnly > 0
             Begin
@@ -466,7 +480,7 @@ As
             End
         END -- </comment biomaterial>
         
-         IF @mode = 'add'
+        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
         BEGIN -- <add biomaterial>
 
             -- Delete extras
@@ -535,7 +549,7 @@ As
         -- EUS Proposal operations
         ---------------------------------------------------
 
-        IF @mode = 'delete'
+        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
         BEGIN -- <delete EUS Proposals>
             If @infoOnly > 0
             Begin
@@ -566,7 +580,7 @@ As
             End
         END -- </delete EUS Proposal>
 
-        IF @mode = 'comment'
+        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
         BEGIN -- <comment EUS Proposals>
             If @infoOnly > 0
             Begin
@@ -600,7 +614,7 @@ As
             End
         END -- </comment EUS Proposals>
         
-        IF @mode = 'add'
+        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
         BEGIN -- <add EUS Proposals>
         
             -- Delete extras 
@@ -653,7 +667,7 @@ As
         -- Experiment operations
         ---------------------------------------------------
 
-        IF @mode = 'delete'
+        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Experiment')
         BEGIN -- <delete experiments>
             If @infoOnly > 0
             Begin
@@ -685,7 +699,7 @@ As
             End
         END -- </delete experiments>
 
-        IF @mode = 'comment'
+        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Experiment')
         BEGIN -- <comment experiments>
             If @infoOnly > 0
             Begin
@@ -720,7 +734,7 @@ As
             End
         END -- </comment experiments>
         
-        IF @mode = 'add'
+        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Experiment')
         BEGIN -- <add experiments>
         
             -- Delete extras
@@ -784,7 +798,7 @@ As
         -- Dataset operations
         ---------------------------------------------------
 
-        IF @mode = 'delete'
+        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Dataset')
         BEGIN -- <delete datasets>
             If @infoOnly > 0
             Begin
@@ -816,7 +830,7 @@ As
             End
         END -- </delete datasets>
 
-        IF @mode = 'comment'
+        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Dataset')
         BEGIN -- <comment datasets>
             If @infoOnly > 0
             Begin
@@ -851,7 +865,7 @@ As
             End
         END -- </comment datasets>
 
-        IF @mode = 'add'
+        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Dataset')
         BEGIN -- <add datasets>
         
             -- Delete extras
@@ -915,7 +929,7 @@ As
         -- Analysis_job operations
         ---------------------------------------------------
 
-        IF @mode = 'delete'
+        IF @mode = 'delete' And Exists (Select * From #Tmp_JobsToAddOrDelete)
         BEGIN -- <delete analysis_jobs>
             If @infoOnly > 0
             Begin
@@ -944,7 +958,7 @@ As
             End
         END -- </delete analysis_jobs>
 
-        IF @mode = 'comment'
+        IF @mode = 'comment' And Exists (Select * From #Tmp_JobsToAddOrDelete)
         BEGIN -- <comment analysis_jobs>
             If @infoOnly > 0
             Begin
@@ -976,7 +990,7 @@ As
             End
         END -- </comment analysis_jobs>
 
-        IF @mode = 'add'
+        IF @mode = 'add' And Exists (Select * From #Tmp_JobsToAddOrDelete)
         BEGIN -- <add analysis_jobs>
 
             -- Delete extras
