@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Experiments](
 	[EX_comment] [varchar](500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_created] [datetime] NOT NULL,
 	[EX_sample_concentration] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[EX_lab_notebook_ref] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[EX_lab_notebook_ref] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_campaign_ID] [int] NOT NULL,
 	[EX_cell_culture_list] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[EX_Labelling] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,

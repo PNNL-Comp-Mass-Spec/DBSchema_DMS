@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          06/01/2021 mem - Show names of the new requests when previewing updates
 **          07/01/2021 mem - Rename instrument parameter to be @instrumentGroup
 **                         - Add parameters @batchPriorityJustification and @batchComment
+**          07/09/2021 mem - Fix bug handling instrument group name when @batchName is blank
 **
 *****************************************************/
 (
@@ -277,6 +278,10 @@ As
         Begin
             RAISERROR (@message, 11, 1)
         End
+    End
+    Else
+    Begin
+        Set @instrumentGroupToUse = @instrumentGroup
     End
 
     ---------------------------------------------------

@@ -11,7 +11,7 @@ INSERT INTO [T_Instrument_Group] VALUES ('Agilent_Ion_Trap','Research','',0,2,nu
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_QQQ','MRM','',1,9,'QQQ',1,1)
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF','Research','',0,1,null,0,1)
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF_V2','Research','',1,3,'TOF',0,0)
-INSERT INTO [T_Instrument_Group] VALUES ('Altis','MRM','',1,9,'QQQ',1,1)
+INSERT INTO [T_Instrument_Group] VALUES ('Altis','MRM','',0,9,'QQQ',0,0)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_Amazon_Ion_Trap','Research','',0,3,null,0,1)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_FTMS','Research','',1,1,'FT',1,1)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_QTOF','Research','',0,5,'TOF',0,0)
