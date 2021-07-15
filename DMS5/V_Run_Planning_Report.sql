@@ -24,7 +24,10 @@ SELECT  GroupQ.[Inst. Group],
         Convert(decimal(10, 1), TAC.Actual_Hours) As Actual_Hours,
         TIGA.Allocated_Hours,
         GroupQ.[Separation Group],
-        RequestLookupQ.RDS_comment AS [Comment],
+        Case When RequestLookupQ.RDS_BatchID > 0 
+             Then GroupQ.Batch_Comment
+             Else RequestLookupQ.RDS_comment
+        End As [Comment],
         GroupQ.[Min Request],
         GroupQ.[Work Package],
         GroupQ.[WP State],
@@ -60,6 +63,7 @@ FROM    ( SELECT    [Inst. Group],
                     Locked,
                     Batch_Prefix,
                     Requested_Batch_Priority,
+                    Batch_Comment,
                     [Last Ordered],
                     [Queue State],
                     [Queued Instrument],
@@ -85,6 +89,7 @@ FROM    ( SELECT    [Inst. Group],
                              RRB.Locked,
                              RRB.Requested_Batch_Priority,
                              RR.RDS_BatchID AS Batch,
+                             RRB.Comment As Batch_Comment,
                              QS.Queue_State_Name AS [Queue State],
                              CASE WHEN RR.Queue_State = 2 THEN ISNULL(AssignedInstrument.IN_name, '') ELSE '' END AS [Queued Instrument],
                              LEFT(RRB.Batch, 20) + CASE WHEN LEN(RRB.Batch) > 20 THEN '...'
@@ -150,7 +155,8 @@ FROM    ( SELECT    [Inst. Group],
                     [Queued Instrument],
                     Batch,
                     Batch_Prefix,
-                    Requested_Batch_Priority
+                    Requested_Batch_Priority,
+                    Batch_Comment
         ) AS GroupQ
         INNER JOIN T_Requested_Run AS RequestLookupQ ON GroupQ.[Min Request] = RequestLookupQ.ID
         INNER JOIN T_EUS_UsageType AS TEUT ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
@@ -162,8 +168,8 @@ FROM    ( SELECT    [Inst. Group],
                           FROM      T_Instrument_Group AS QG
                                     INNER JOIN T_Instrument_Allocation AS QIA ON QG.Allocation_Tag = QIA.Allocation_Tag
                           WHERE     ( QIA.Fiscal_Year = dbo.GetFYFromDate(GETDATE()) )
-                        ) AS TIGA ON TIGA.IN_Group = GroupQ.[Inst. Group]
-                                     AND TIGA.Proposal_ID = GroupQ.Proposal
+                        ) AS TIGA ON TIGA.IN_Group = GroupQ.[Inst. Group] AND
+                                     TIGA.Proposal_ID = GroupQ.Proposal
 
 
 GO
