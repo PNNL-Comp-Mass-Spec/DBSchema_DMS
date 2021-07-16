@@ -7,7 +7,8 @@ GO
 CREATE VIEW [dbo].[V_Scheduled_Run_Export]
 AS
 -- This view was superseded by V_Requested_Run_Active_Export in January 2021
-SELECT RR.ID AS Request,
+-- This view was updated in July 2021 to report adjusted Request IDs due to a bug in older versions of LCMS Net that could not handle request IDs over 999999
+SELECT RR.ID - 800000 AS Request,       -- Adjusted Request ID
        RR.RDS_Name AS Name,
        RR.RDS_priority AS Priority,
        RR.RDS_instrument_group AS Instrument,
@@ -34,7 +35,8 @@ SELECT RR.ID AS Request,
        RR.RDS_Run_Order AS RunOrder,
        RR.RDS_BatchID AS Batch,
        RR.Vialing_Conc,
-       RR.Vialing_Vol
+       RR.Vialing_Vol,
+       RR.ID As RequestID               -- Actual Request ID
 FROM T_DatasetTypeName DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
