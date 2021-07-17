@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Dataset_QC_Instruments] ******/
-/****** RowCount: 59 ******/
+/****** RowCount: 60 ******/
 /****** Columns: IN_name, Instrument_ID, Last_Updated ******/
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('21T_Agilent',106,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('AMOLF_VOrbiETD01',102,'11/4/2015 4:46:10 PM')
@@ -48,6 +48,7 @@ INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QEHFX03',169,'1/16/2020 9:37:49 
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExact01',103,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactHF03',127,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactHF05',130,'11/4/2015 4:46:10 PM')
+INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactHF05_Imaging',180,'7/16/2021 5:37:49 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactP02',121,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactP04',128,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('QExactP06',143,'10/24/2016 5:37:48 PM')
