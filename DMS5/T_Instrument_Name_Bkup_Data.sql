@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 178 ******/
+/****** RowCount: 179 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -52,7 +52,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_1',49,'Triple_Quad',2317,2845,
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Orb1',50,'LTQ_FT',218,1011,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute LTQ-Orbitrap','10/9/2006 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LTQ_Orb_3',51,'LTQ_FT',3846,3847,'fso',null,'EMSL 1444','LTQ XL with an LTQ Orbitrap, Returned to Thermo','7/26/2007 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LTQ_ETD_1',52,'Finnigan_Ion_Trap',221,3055,'secfso',null,'EMSL 1444','LTQ XL, Given to another group','11/15/2007 12:00:00 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_2',53,'Triple_Quad',242,241,'secfso',null,'EMSL 1521','TSQ Quantum Ultra for MRM-based experiments','12/29/2008 12:00:00 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_2',53,'Triple_Quad',242,241,'secfso',null,'EMSL 1521','TSQ Quantum Ultra for MRM-based experiments, Excessing July 2021','12/29/2008 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exact01',54,'Thermo_Exactive',244,1306,'secfso',null,'EMSL 1621','Fast scanning high resolution mass spectrometer','4/22/2009 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exact02',55,'Thermo_Exactive',250,249,'secfso',null,'EMSL 1526','Fast scanning high resolution mass spectrometer','6/1/2009 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_3',56,'Triple_Quad',252,3856,'secfso',null,'EMSL 1521','Thermo TSQ Vantage','5/29/2009 12:00:00 AM')
@@ -178,4 +178,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Eclipse',176,'LTQ_FT',371
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap_Fusion',177,'LTQ_FT',3712,3713,'sec',null,'Offsite','Orbitrap Fusion data acquired outside PNNL','1/28/2021 10:35:08 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse02',178,'LTQ_FT',3789,3818,'secfso',null,'EMSL 1526','Orbitrap Eclipse Tribrid - CPTAC loan','4/29/2021 2:55:13 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,3792,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,3794,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,3877,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',2,2,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. ','7/29/2021 5:51:13 PM')
