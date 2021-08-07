@@ -68,12 +68,13 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
 **          09/06/2019 mem - When updating a plex experiment that is a parent experiment of an experiment group, also update the members (fractions) of the experiment group
 **          03/02/2020 mem - Update to support TMT 16 by adding channels 12-16
+**          08/04/2021 mem - Rename @plexExperimentId to @plexExperimentIdOrName 
 **    
 *****************************************************/
 (
-	@plexExperimentId int output,       -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID
-    @plexMembers varchar(4000),         -- Table of Channel to Exp_ID mapping (see above for examples)
-    @expIdChannel1 varchar(130)='',     -- Experiment ID or Experiment Name or ExpID:ExperimentName
+	@plexExperimentIdOrName varchar(130) output, -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID.  Accepts name or ID as input, but the output is always ID
+    @plexMembers varchar(4000),                  -- Table of Channel to Exp_ID mapping (see above for examples)
+    @expIdChannel1 varchar(130)='',              -- Experiment ID or Experiment Name or ExpID:ExperimentName
     @expIdChannel2 varchar(130)='',
     @expIdChannel3 varchar(130)='',
     @expIdChannel4 varchar(130)='',
@@ -136,7 +137,7 @@ As
 	Declare @msg varchar(256)
 	Declare @logErrors tinyint = 0
 
-    Declare @plexExperimentIdText varchar(12) = Cast(@plexExperimentId As varchar(12))
+    Declare @plexExperimentId int
 
     Declare @experimentLabel varchar(64)
     Declare @expectedChannelCount tinyint = 0
@@ -172,11 +173,32 @@ As
 
 	-- Set @compoundName = LTrim(RTrim(IsNull(@compoundName, '')))	
 
-    If @plexExperimentId Is Null
+    If @plexExperimentIdOrName Is Null
     Begin
-        RAISERROR ('plexExperimentId cannot be null', 11, 118)
+        RAISERROR ('plexExperimentIdOrName cannot be null', 11, 118)
     End
 
+    Set @plexExperimentId = Try_Cast(@plexExperimentIdOrName As int)
+
+    If @plexExperimentId Is Null
+    Begin
+        -- Assume @plexExperimentIdOrName is an experiment name
+        SELECT @plexExperimentId = Exp_ID
+        FROM T_Experiments
+        WHERE Experiment_Num = @plexExperimentIdOrName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Invalid Experiment Name: ' + @plexExperimentIdOrName
+            RAISERROR (@message, 11, 118)
+        End
+    End
+
+    -- Assure that @plexExperimentIdOrName has Experiment ID 
+    Set @plexExperimentIdOrName = Cast(@plexExperimentId As varchar(12))
+    
     Set @plexMembers = IsNull(@plexMembers, '')
     
 	Set @mode = IsNull(@mode, 'check_add')
@@ -199,13 +221,13 @@ As
 
     If @myRowCount = 0
     Begin
-        Set @message = 'Invalid Plex Experiment ID ' + @plexExperimentIdText
+        Set @message = 'Invalid Plex Experiment ID ' + @plexExperimentIdOrName
         RAISERROR (@message, 11, 118)
     End
 
     If @experimentLabel In ('Unknown', 'None')
     Begin
-        Set @message = 'Plex Experiment ID ' + @plexExperimentIdText + ' needs to have its isobaric label properly defined (as TMT10, TMT11, iTRAQ, etc.); it is currently ' + @experimentLabel
+        Set @message = 'Plex Experiment ID ' + @plexExperimentIdOrName + ' needs to have its isobaric label properly defined (as TMT10, TMT11, iTRAQ, etc.); it is currently ' + @experimentLabel
         RAISERROR (@message, 11, 118)
     End
 
@@ -836,7 +858,7 @@ As
 
 		If @logErrors > 0
 		Begin
-			Declare @logMessage varchar(1024) = @message + '; Plex Exp ID ' + @plexExperimentIdText
+			Declare @logMessage varchar(1024) = @message + '; Plex Exp ID ' + @plexExperimentIdOrName
 			exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperimentPlexMembers'
 		End
 
