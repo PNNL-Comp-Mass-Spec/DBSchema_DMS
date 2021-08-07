@@ -179,4 +179,4 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap_Fusion',177,'LTQ
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse02',178,'LTQ_FT',3789,3818,'secfso',null,'EMSL 1526','Orbitrap Eclipse Tribrid - CPTAC loan','4/29/2021 2:55:13 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,3792,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,3877,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',2,2,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. ','7/29/2021 5:51:13 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',3878,2,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. 8890 GC coupled to a 5977 Inert Plus MSD','7/29/2021 5:51:13 PM')
