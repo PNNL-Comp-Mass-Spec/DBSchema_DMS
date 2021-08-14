@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 118 ******/
+/****** RowCount: 120 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -33,6 +33,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-AMOLF-Standard',65,'Datasets acquired 
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Broad-Phospho',49,'Datasets acquired at the Broad Institute',0,'Other',0,'1/13/2012 3:43:56 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Broad-Standard',10,'Datasets acquired at the Broad Institute',0,'Other',0,'10/9/2006 4:22:17 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Bruker-Advance',50,'Bruker Advance LC',0,'Other',0,'1/31/2012 12:15:48 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Acetylome-2hr',121,'Dionex LC, 2 hr separation',1,'LC-Acetylome',1,'8/11/2021 9:18:52 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_100min',87,'Dionex LC, formic acid, 100 minute separation',1,'LC-Formic_100min',1,'12/11/2014 3:31:52 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_2hr',117,'Dionex LC, formic acid, 2 hr separation',1,'LC-Formic_2hr',1,'10/9/2020 10:49:32 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_30min',115,'Dionex LC, formic acid, 30 minute separation',1,'LC-Formic_30min',1,'2/27/2020 10:00:00 AM')
@@ -92,6 +93,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish-Lipids_35min',98,'Vanquish hi
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanquish_Pentylammonium_highflow_High_pH',103,'Vanquish constant high flow, ion pairing pentylamine plus HFIP, high pH ',1,'LC-IonPairing',0,'2/24/2017 4:34:20 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-WashU-Standard',61,'CPTAC datasets acquired at Washington University in St. Louis',0,'Other',0,'5/14/2012 8:44:55 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-2D-Formic',33,'Waters constant flow, formic acid 2D-LC',1,'LC-2D-Formic',1,'2/19/2011 12:12:00 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Acetylome-2hr',120,'Waters LC, 2 hr separation',1,'LC-Acetylome',1,'8/11/2021 7:48:34 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_100min',37,'Waters constant flow, formic acid, 100 minute separation',0,'LC-Formic_2hr',1,'8/26/2010 12:24:53 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_10hr',45,'Waters constant flow, formic acid, 600 minute (10 hr) separation',0,'Other',1,'11/10/2011 7:38:11 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_20min',34,'Waters constant flow, formic acid, 20 minute separation',0,'LC-Formic_30min',0,'9/7/2010 10:08:49 PM')
