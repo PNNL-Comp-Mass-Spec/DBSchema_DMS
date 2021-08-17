@@ -19,7 +19,9 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **          03/15/2021 mem - Treat @errorNum as an input/output parameter
-**    
+**          08/17/2021 mem - If an exception is caught when calling PostLogEntry, append the text that would have been sent to PostLogEntry
+**                         - Rollback open transactions prior to calling PostLogEntry
+**
 *****************************************************/
 (
 	@callingProcName varchar(128)='',			-- Optionally provide the calling procedure name; if not provided then uses ERROR_PROCEDURE()
@@ -46,7 +48,8 @@ As
 	Declare @errorLine int
 	Declare @errorMessage varchar(256)
 	Declare @logErrorType varchar(64)
-	
+	Declare @messageToLog varchar(256) = ''
+
 	Begin Try
 		Set @currentLocation = 'Validating the inputs'
 		
@@ -108,12 +111,18 @@ As
 
 		If @logError <> 0
 		Begin
+            -- Rollback any open transactions
+            If (XACT_STATE()) <> 0
+                ROLLBACK TRANSACTION;
+
 			Set @currentLocation = 'Examining @logWarningErrorList'
 			If Exists (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@logWarningErrorList, ',') WHERE Value = @errorNum)
 				Set @logErrorType = 'Warning'
 			Else
 				Set @logErrorType = 'Error'
 				
+            Set @messageToLog = @message
+
 			Set @currentLocation = 'Calling PostLogEntry'
 			execute PostLogEntry @logErrorType, @message, @callingProcName, @duplicateEntryHoldoffHours
 		End
@@ -124,6 +133,11 @@ As
 	End Try
 	Begin Catch
 		Set @message = 'Error ' + @currentLocation + ' in LocalErrorHandler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Cast(IsNull(ERROR_NUMBER(), 0) as varchar(12))
+        If @messageToLog <> '' 
+        Begin
+            Set @message = @message + '; ' + @messageToLog
+        End
+
 		Set @myError = ERROR_NUMBER()
 		SELECT @message as Error_Description
 		Print @message
