@@ -28,14 +28,15 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 **          05/13/2017 mem - Add Remote_Info_Id
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
+**          08/17/2021 mem - Fix typo in argument @saveTimeOverride
 **    
 *****************************************************/
 (
     @job int,
     @jobState int,
     @message varchar(512) output,
-    @overrideSaveTime tinyint = 0,        -- Set to 1 to use @saveTiemOverride for the SaveTime instead of GetDate()
-    @saveTiemOverride datetime = Null
+    @overrideSaveTime tinyint = 0,        -- Set to 1 to use @saveTimeOverride for the SaveTime instead of GetDate()
+    @saveTimeOverride datetime = Null
 )
 As
     set nocount on
@@ -70,7 +71,7 @@ As
     Declare @saveTime datetime
     
     If IsNull(@overrideSaveTime, 0) <> 0
-        Set @SaveTime = IsNull(@saveTiemOverride, GetDate())
+        Set @SaveTime = IsNull(@saveTimeOverride, GetDate())
     Else
         set @saveTime = GetDate()
 
