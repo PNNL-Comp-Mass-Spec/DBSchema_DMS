@@ -17,9 +17,9 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Completion_Code] [int] NULL,
-	[Completion_Message] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Completion_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluation_Code] [int] NULL,
-	[Evaluation_Message] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Saved] [datetime] NULL,
 	[Tool_Version_ID] [int] NULL,
 	[Most_Recent_Entry] [tinyint] NOT NULL

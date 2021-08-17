@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Completion_Code] [int] NOT NULL,
 	[Completion_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluation_Code] [int] NULL,
-	[Evaluation_Message] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Job_Plus_Step]  AS ((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0))) PERSISTED,
 	[Holdoff_Interval_Minutes] [smallint] NULL,
 	[Next_Try] [datetime] NULL,
