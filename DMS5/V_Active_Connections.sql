@@ -6,18 +6,17 @@ GO
 
 CREATE VIEW [dbo].[V_Active_Connections]
 AS
-SELECT hostname AS Host,
-       program_name AS Application,
-       loginame AS LoginName,
+SELECT Rtrim(Cast(hostname AS nvarchar(128))) AS Host,
+       Rtrim(Cast(program_name AS nvarchar(128))) AS Application,
+       Rtrim(Cast(loginame AS nvarchar(128))) AS LoginName,
        DB_NAME(dbid) AS DBName,
        spid,
        login_time,
        last_batch,
-       cmd,
-       status
+       Rtrim(Cast(cmd AS nvarchar(32))) AS Cmd,
+       Rtrim(Cast(Status AS nvarchar(32))) Status
 FROM sys.sysprocesses
 WHERE dbid > 0 AND
       IsNull(hostname, '') <> ''
-
 
 GO
