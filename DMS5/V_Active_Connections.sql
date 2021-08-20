@@ -13,7 +13,7 @@ SELECT Rtrim(Cast(hostname AS nvarchar(128))) AS Host,
        spid,
        login_time,
        last_batch,
-       Rtrim(Cast(cmd AS nvarchar(32))) AS Cmd,
+       Rtrim(Cast(cmd AS nvarchar(32))) AS cmd,
        Rtrim(Cast(Status AS nvarchar(32))) Status
 FROM sys.sysprocesses
 WHERE dbid > 0 AND
