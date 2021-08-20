@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.UpdateResearchTeamForCampaign
+CREATE PROCEDURE [dbo].[UpdateResearchTeamForCampaign]
 /****************************************************
 **
 **	Desc:
-**    Updates membership of research team for given
-**    campaign
+**  Updates membership of research team for given campaign
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -26,6 +25,7 @@ CREATE Procedure dbo.UpdateResearchTeamForCampaign
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/22/2017 mem - Validate @campaignNum
+**          08/20/2021 mem - Use Select Distinct to avoid duplicates
 **    
 *****************************************************/
 (
@@ -63,9 +63,9 @@ AS
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamForCampaign', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 	
 	---------------------------------------------------
 	-- Validate the inputs
@@ -77,8 +77,8 @@ AS
 	-- Make new research team if ID is 0
 	---------------------------------------------------
 
-	IF @researchTeamID = 0 
-	BEGIN
+	If @researchTeamID = 0 
+	Begin
 		If @campaignNum = ''
 		Begin
 			Set @myerror = 51002
@@ -98,14 +98,14 @@ AS
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
-		begin
+		If @myError <> 0
+		Begin
 			set @message = 'Error creating new research team'
 			GOTO Done
-		end
+		End
 		--
 		SET @researchTeamID = SCOPE_IDENTITY()
-	END
+	End
 	Else
 	Begin
 		-- Update Collaborators
@@ -117,17 +117,17 @@ AS
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
 		if @myError <> 0
-		begin
+		Begin
 			set @message = 'Error updating collaborators'
 			GOTO Done
-		end
+		End
 	End
 	
-	IF @researchTeamID = 0 
-	begin
+	If @researchTeamID = 0 
+	Begin
 		set @message = 'Research team ID was not valid'
 		GOTO Done
-	end
+	End
 
 	---------------------------------------------------
 	-- temp table to hold new membership for team
@@ -145,80 +145,80 @@ AS
 	-- populate temp membership table from lists
 	---------------------------------------------------
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'Project Mgr' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'Project Mgr' AS [Role]
 	FROM dbo.MakeTableFromList(@progmgrPRN) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for Project Mgr'
 		GOTO Done
-	end
+	End
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'PI' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'PI' AS [Role]
 	FROM dbo.MakeTableFromList(@piPRN) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for PI'
 		GOTO Done
-	end
+	End
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'Technical Lead' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'Technical Lead' AS [Role]
 	FROM dbo.MakeTableFromList(@TechnicalLead) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for Technical Lead'
 		GOTO Done
-	end
+	End
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'Sample Preparation' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'Sample Preparation' AS [Role]
 	FROM dbo.MakeTableFromList(@SamplePreparationStaff) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for Sample Preparation'
 		GOTO Done
-	end
+	End
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'Dataset Acquisition' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'Dataset Acquisition' AS [Role]
 	FROM dbo.MakeTableFromList(@DatasetAcquisitionStaff) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for Dataset Acquisition'
 		GOTO Done
-	end
+	End
 	--
-	INSERT  INTO #Tmp_TeamMembers ( User_PRN, [Role] )
-	SELECT Item AS User_PRN, 'Informatics' AS [Role]
+	INSERT INTO #Tmp_TeamMembers ( User_PRN, [Role] )
+	SELECT DISTINCT Item AS User_PRN, 'Informatics' AS [Role]
 	FROM dbo.MakeTableFromList(@InformaticsStaff) AS member
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error populating temporary membership table for Informatics'
 		GOTO Done
-	end
-	--
+	End
+
 	---------------------------------------------------
-	-- resolve user PRN and role to respective IDs
+	-- Resolve user PRN and role to respective IDs
 	---------------------------------------------------
 	--
 	UPDATE #Tmp_TeamMembers
@@ -229,11 +229,11 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error resolving user ID'
 		GOTO Done
-	end
+	End
 
 	UPDATE #Tmp_TeamMembers
 	SET
@@ -249,11 +249,11 @@ AS
 	       ON T_Research_Team_Roles.ROLE = #Tmp_TeamMembers.ROLE
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error resolving role ID'
 		GOTO Done
-	end
+	End
 
 	---------------------------------------------------
 	-- Look for entries in #Tmp_TeamMembers where User_PRN did not resolve to a User_ID
@@ -295,7 +295,7 @@ AS
 	End
 	
 	---------------------------------------------------
-	-- error if any PRN or role did not resolve to ID
+	-- Error if any PRN or role did not resolve to ID
 	---------------------------------------------------
 	--
 	DECLARE @list VARCHAR(512) = ''
@@ -309,18 +309,18 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error checking for unresolved user ID'
 		GOTO Done
-	end
+	End
 	--
-	IF @list <> ''
-	begin
+	If @list <> ''
+	Begin
 		set @message = 'Could not resolve following payroll numbers to ID: ' + @list
 		set @myError = 51000
 		GOTO Done
-	end
+	End
 
 
 
@@ -336,22 +336,22 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error checking for unresolved role ID'
 		GOTO Done
-	end
+	End
 	--
-	IF @list <> ''
-	begin
+	If @list <> ''
+	Begin
 		set @message = 'Unknown role names: ' + @list
 		set @myError = 51001
 		GOTO Done
-	end
+	End
 	
  
 	---------------------------------------------------
-	-- clean out any existing membership
+	-- Clean out any existing membership
 	---------------------------------------------------
 	--
 	DELETE FROM T_Research_Team_Membership
@@ -360,31 +360,31 @@ AS
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error removing existing team membershipe'
 		GOTO Done
-	end
+	End
 
  	---------------------------------------------------
-	-- replace with new membership
+	-- Replace with new membership
 	---------------------------------------------------
 	--
 	INSERT INTO T_Research_Team_Membership( Team_ID,
 	                                        Role_ID,
 	                                        [User_ID] )
-	SELECT @researchTeamID,
+	SELECT DISTINCT @researchTeamID,
 	       Role_ID,
 	       [User_ID]
 	FROM #Tmp_TeamMembers
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error adding new membership'
 		return @myError
-	end
+	End
 
 Done:
 
