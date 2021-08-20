@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateResearchTeamObserver
+
+CREATE Procedure [dbo].[UpdateResearchTeamObserver]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +21,7 @@ CREATE Procedure dbo.UpdateResearchTeamObserver
 **			09/02/2011 mem - Now calling PostUsageLogEntry
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          08/20/2021 mem - Reformat queries
 **
 *****************************************************/
 (
@@ -31,13 +33,12 @@ CREATE Procedure dbo.UpdateResearchTeamObserver
 As
 	set nocount on
 
-	declare @myError int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @myRowCount int = 0
-
-	set @message = ''
+	Set @message = ''
 	
-	DECLARE @observerRoleID INT = 10
+	Declare @observerRoleID int = 10
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -46,112 +47,92 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamObserver', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
 	---------------------------------------------------
 	-- user id 
 	---------------------------------------------------
 	--
-	IF @callingUser = ''
-	BEGIN
-		SET @myError = 50
-		SET @message = 'User ID is missing'
+	If @callingUser = ''
+	Begin
+		Set @myError = 50
+		Set @message = 'User ID is missing'
 		GOTO Done
-	END
+	End
 	--
-	DECLARE @PRN varchar(15)
-	SET @PRN = @callingUser
+	Declare @PRN varchar(15) = @callingUser
 	
 	---------------------------------------------------
 	-- Resolve 
 	---------------------------------------------------
 	--
-	declare @campaignID int
-	set @campaignID = 0
+	Declare @campaignID Int = 0
 	--
-	DECLARE @researchTeamID INT
-	SET @researchTeamID = 0
+	Declare @researchTeamID Int = 0
 	--
-	SELECT
-		@campaignID = Campaign_ID, 
-		@researchTeamID = ISNULL(CM_Research_Team, 0)
-	FROM
-		T_Campaign
-	WHERE
-		Campaign_Num = @campaignNum
+	SELECT @campaignID = Campaign_ID,
+	       @researchTeamID = ISNULL(CM_Research_Team, 0)
+	FROM T_Campaign
+	WHERE Campaign_Num = @campaignNum
+
 	--
-	IF @campaignID = 0
-	BEGIN
-		SET @myError = 51
-		SET @message = 'Campaign "' + @campaignNum + '" is not valid'
+	If @campaignID = 0
+	Begin
+		Set @myError = 51
+		Set @message = 'Campaign "' + @campaignNum + '" is not valid'
 		GOTO Done
-	END
+	End
 
 	---------------------------------------------------
 	-- Resolve 
 	---------------------------------------------------
 	--
-	DECLARE @userID INT
-	SET @userID = 0
+	Declare @userID Int = 0
 	--
-	SELECT
-		@userID = ID
-	FROM
-		T_Users
-	WHERE
-		U_PRN = @PRN
+	SELECT @userID = ID
+	FROM T_Users
+	WHERE U_PRN = @PRN
 	--
-	IF @userID = 0
-	BEGIN
-		SET @myError = 52
-		SET @message = 'User "' + @PRN + '" is not valid'
+	If @userID = 0
+	Begin
+		Set @myError = 52
+		Set @message = 'User "' + @PRN + '" is not valid'
 		GOTO Done
-	END
+	End
 
 	---------------------------------------------------
-	-- is user already an observer?
+	-- Is user already an observer?
 	---------------------------------------------------
 	--
-	DECLARE @membershipExists TINYINT
+	Declare @membershipExists tinyint
 	--
-	SELECT
-		@membershipExists = COUNT(*)
-	FROM
-		T_Research_Team_Membership
-	WHERE
-		Team_ID = @researchTeamID
-		AND Role_ID = @observerRoleID
-		AND User_ID = @userID
+	SELECT @membershipExists = COUNT(*)
+	FROM T_Research_Team_Membership
+	WHERE Team_ID = @researchTeamID AND
+	      Role_ID = @observerRoleID AND
+	      User_ID = @userID
 		
 	---------------------------------------------------
-	-- 
+	-- Add / update the user
 	---------------------------------------------------
 	--
-	IF @membershipExists > 0 AND @mode = 'remove'
-	BEGIN
-		DELETE FROM
-			T_Research_Team_Membership
-		WHERE
-			Team_ID = @researchTeamID
-			AND Role_ID = @observerRoleID
-			AND User_ID = @userID
-	END 
+	If @membershipExists > 0 AND @mode = 'remove'
+	Begin
+		DELETE FROM T_Research_Team_Membership
+		WHERE Team_ID = @researchTeamID AND
+		      Role_ID = @observerRoleID AND
+		      User_ID = @userID
+	End 
 
-	IF @membershipExists = 0 AND @mode = 'add'
-	BEGIN
-	  INSERT  INTO dbo.T_Research_Team_Membership
-			  ( Team_ID,
-				Role_ID,
-				User_ID 
-			  )
-	  VALUES
-			  ( @researchTeamID,
-				@observerRoleID,
-				@userID
-			  )
-	END 
+	If @membershipExists = 0 AND @mode = 'add'
+	Begin
+	  INSERT INTO dbo.T_Research_Team_Membership( Team_ID,
+	                                              Role_ID,
+	                                              User_ID )
+	  VALUES(@researchTeamID, @observerRoleID, @userID)
+	End 
 	
 Done:
 
