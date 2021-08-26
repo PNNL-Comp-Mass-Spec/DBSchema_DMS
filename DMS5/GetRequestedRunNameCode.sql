@@ -7,58 +7,58 @@ GO
 CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 /****************************************************
 **
-**	Desc: 
-**		Generates the Name Code string for a given requested run
-**		This string is used when grouping requested runs for run planning purposes
+**  Desc: 
+**      Generates the Name Code string for a given requested run
+**      This string is used when grouping requested runs for run planning purposes
 **
-**		The request name code will be based on the request name, date, and requester PRN if @BatchName is empty
-**		Otherwise, if @BatchName is valid, then it is based on the batch name, date, and requester PRN
+**      The request name code will be based on the request name, date, requester PRN, dataset type, and separation type if @batchID = 0
+**      Otherwise, if @batchID is non-zero, it is based on the batch name, date, batch ID, dataset type, and separation type
 **
-**		Examples:
-**			Mix_20100805_R_D3X414
-**			She_20100805_B_D3X414
+**      Examples:
+**          GCM_20210825_R_POIR043_18_GC
+**          MoT_20210706_B_8050_13_LC-Acetylome
 **
-**	Return value: string
+**  Return value: string
 **
-**	Parameters: 
-**
-**	Auth:	mem
-**	Date:	08/05/2010
-**			08/10/2010 mem - Added @DatasetTypeID and @SeparationType
-**						   - Increased size of return string to varchar(64)
+**  Auth:   mem
+**  Date:   08/05/2010
+**          08/10/2010 mem - Added @datasetTypeID and @separationType
+**                         - Increased size of return string to varchar(64)
+**          08/26/2021 mem - Use Batch ID instead of PRN
+**            
 **    
 *****************************************************/
 (
-	@RequestName varchar(128),
-	@RequestCreated datetime,
-	@RequesterPRN varchar(64),
-	@BatchID int,
-	@BatchName varchar(128),
-	@BatchCreated datetime,
-	@BatchRequesterPRN varchar(64),
-	@DatasetTypeID int,
-	@SeparationType varchar(32)
+    @requestName varchar(128),
+    @requestCreated datetime,
+    @requesterPRN varchar(64),
+    @batchID int,
+    @batchName varchar(128),
+    @batchCreated datetime,
+    @batchRequesterPRN varchar(64),
+    @datasetTypeID int,
+    @separationType varchar(32)
 )
 RETURNS varchar(64)
 AS
 BEGIN
-    Return CASE WHEN @BatchID = 0 
+    Return CASE WHEN @batchID = 0 
                 THEN
-					SUBSTRING(@RequestName, 1, 3) + '_' + 
-					CONVERT(varchar(10), @RequestCreated, 112) + '_' + 
-					'R_' + 
-		            @RequesterPRN + '_' +
-		            CONVERT(varchar(4), ISNULL(@DatasetTypeID, 0)) + '_' +
-		            IsNull(@SeparationType, '')
-		        ELSE
-		            SUBSTRING(@BatchName, 1, 3) + '_' + 
-		            CONVERT(varchar(10), @BatchCreated, 112) + '_' + 
-		            'B_' + 
-		            @BatchRequesterPRN + '_' +
-		            CONVERT(varchar(4), ISNULL(@DatasetTypeID, 0)) + '_' +
-		            IsNull(@SeparationType, '')
-		            
-		   END
+                    SUBSTRING(@requestName, 1, 3) + '_' + 
+                    CONVERT(varchar(10), @requestCreated, 112) + '_' + 
+                    'R_' + 
+                    @requesterPRN + '_' +
+                    CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
+                    IsNull(@separationType, '')
+                ELSE
+                    SUBSTRING(@batchName, 1, 3) + '_' + 
+                    CONVERT(varchar(10), @batchCreated, 112) + '_' + 
+                    'B_' + 
+                    CAST(@batchID AS VarChar(12)) + '_' +
+                    CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
+                    IsNull(@separationType, '')
+                    
+           END
 END
 
 
