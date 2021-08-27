@@ -71,6 +71,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **                         - Update settings file, parameter file, protein collection, etc. in T_Analysis_Job for newly created MaxQuant jobs
 **          03/16/2021 mem - Add check for MSXMLGenerator being 'skip'
 **          06/01/2021 mem - Raise an error if @mode is invalid
+**          08/26/2021 mem - Add support for data package based MSFragger jobs
 **
 *****************************************************/
 (
@@ -211,8 +212,8 @@ As
 
     If @dataPackageID > 0
     Begin
-        If @toolName <> 'MaxQuant'
-            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tool is MaxQuant', 11, 7, @toolName)
+        If Not @toolName In ('MaxQuant', 'MSFragger')
+            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tools MaxQuant and MSFragger', 11, 7, @toolName)
 
         If @requestID <= 0
             RAISERROR ('Data-package based jobs must be associated with an analysis job request', 11, 7)
@@ -286,6 +287,14 @@ As
             
         If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
+    End
+
+    If (@toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @parmFileName Not Like '%[_]NoDecoy%'
+    Begin
+        Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
+
+        If IsNull(@message, '') = '' And @toolName LIKE 'MSFragger%'
+            Set @message = 'Note: changed protein options to decoy-mode since MSFragger expects the FASTA file to have decoy proteins'
     End
 
 
@@ -483,8 +492,8 @@ As
             End
         End
 
-        If @toolName = 'MaxQuant'
-        Begin -- <MaxQuant>
+        If @toolName In ('MaxQuant', 'MSFragger')
+        Begin -- <MaxQuant_MSFragger>
             Declare @parmFileStoragePath varchar(128)
 
             SELECT @parmFileStoragePath = AJT_parmFileStoragePath
@@ -503,7 +512,7 @@ As
 
             INSERT INTO #Tmp_SettingsFile_Values_DataPkgJob (KeyName, Value)
             SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
-                xmlNode.value('@value', 'nvarchar(512)') AS Value
+                   xmlNode.value('@value', 'nvarchar(512)') AS Value
             FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
             WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
 
@@ -568,10 +577,18 @@ As
             If @mode <> 'add'
                 Set @mode = 'previewAdd'
 
+            Declare @scriptName varchar(64) = 'Undefined_Script'
+            
+            If @toolName = 'MaxQuant'
+                Set @scriptName = 'MaxQuant_DataPkg'
+
+            If @toolName = 'MSFragger'
+                Set @scriptName = 'MSFragger_DataPkg'
+
             -- Call AddUpdateLocalJobInBroker
             exec @myError = dbo.S_Pipeline_AddUpdateLocalJob
                                 @job = @pipelineJob output,
-                                @scriptName = 'MaxQuant_DataPkg',
+                                @scriptName = @scriptName,
                                 @datasetNum = 'Aggregation',
                                 @priority = @priority,
                                 @jobParam = @jobParam,
@@ -619,7 +636,7 @@ As
                 End
             End
 
-        End -- </MaxQuant>
+        End -- </MaxQuant_MSFragger>
 
         If @myError = 0 And @mode = 'add'
         Begin

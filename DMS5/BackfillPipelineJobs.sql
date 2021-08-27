@@ -26,6 +26,7 @@ CREATE Procedure [dbo].[BackfillPipelineJobs]
 **          03/31/2021 mem - Expand OrganismDBName to varchar(128)
 **          05/26/2021 mem - Expand @message to varchar(1024)
 **          07/06/2021 mem - Extract parameter file name, protein collection list, and legacy FASTA file name from job parameters 
+**          08/26/2021 mem - Auto change script MSFragger_DataPkg to MSFragger
 **    
 *****************************************************/
 (
@@ -202,7 +203,12 @@ AS
                 If @script Like 'MaxQuant[_]%'
                 Begin
                     Set @script = 'MaxQuant'
-                END
+                End
+
+                If @script Like 'MSFragger[_]%'
+                Begin
+                    Set @script = 'MSFragger'
+                End
 
                 SELECT @analysisToolID = AJT_toolID
                 FROM T_Analysis_Tool

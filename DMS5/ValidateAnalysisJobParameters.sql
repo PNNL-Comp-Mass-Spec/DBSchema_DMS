@@ -82,6 +82,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          03/10/2021 mem - Add logic for MaxQuant
 **          03/15/2021 mem - Validate that the settings file and/or parameter file are defined for tools that require them
 **          05/26/2021 mem - Use @allowNonReleasedDatasets when calling ValidateAnalysisJobRequestDatasets
+**          08/26/2021 mem - Add logic for MSFragger
 **
 *****************************************************/
 (
@@ -227,7 +228,7 @@ As
     ---------------------------------------------------
     If @toolActive = 0
     Begin
-        If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg')
+        If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg' Or @toolName = 'MSFragger_DataPkg')
         Begin
             Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0

@@ -37,6 +37,7 @@ CREATE Procedure [dbo].[ValidateAnalysisJobRequestDatasets]
 **          07/30/2019 mem - Tabs to spaces
 **          03/10/2021 mem - Skip HMS vs. MS check when the tool is MaxQuant
 **          05/25/2021 mem - Add @allowNonReleasedDatasets
+**          08/26/2021 mem - Skip HMS vs. MS check when the tool is MSFragger
 **
 *****************************************************/
 (
@@ -243,7 +244,7 @@ As
 
     ---------------------------------------------------
     -- Do not allow high res datasets to be mixed with low res datasets
-    -- (though this is OK if the tool is MSXML_Gen or MaxQuant)
+    -- (though this is OK if the tool is MSXML_Gen or MaxQuant or MSFragger)
     ---------------------------------------------------
     --
     Declare @HMSCount int = 0
@@ -260,7 +261,7 @@ As
     WHERE Dataset_Type LIKE 'MS%' OR
           Dataset_Type LIKE 'IMS-MS%'
     
-    If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen', 'MaxQuant')
+    If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen', 'MaxQuant', 'MSFragger')
     Begin        
         Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests. You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
         if @showDebugMessages <> 0

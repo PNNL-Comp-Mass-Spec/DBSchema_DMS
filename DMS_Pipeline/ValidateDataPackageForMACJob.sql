@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          05/01/2019 mem - Fix typo counting SEQUEST jobs
 **          03/09/2021 mem - Add support for MaxQuant
+**          08/26/2021 mem - Add support for MSFragger
 **
 *****************************************************/
 (
@@ -136,7 +137,7 @@ AS
 
         DROP TABLE #Tmp_DataPackageItems
 
-        If @scriptName LIKE ('MaxQuant%')
+        If @scriptName LIKE ('MaxQuant%') Or @scriptName LIKE ('MSFragger%')
         Begin
             If @datasetCount = 0
             Begin
@@ -144,7 +145,7 @@ AS
             End
         End
 
-        If Not @scriptName In ('Global_Label-Free_AMT_Tag') AND Not @scriptName LIKE ('MaxQuant%')
+        If Not @scriptName In ('Global_Label-Free_AMT_Tag') AND Not @scriptName LIKE ('MaxQuant%') AND Not @scriptName LIKE ('MSFragger%')
         Begin
             If @scriptName = 'PRIDE_Converter'
             Begin
