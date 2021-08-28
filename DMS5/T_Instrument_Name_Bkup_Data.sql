@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 179 ******/
+/****** RowCount: 181 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -179,4 +179,6 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap_Fusion',177,'LTQ
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse02',178,'LTQ_FT',3789,3818,'secfso',null,'EMSL 1526','Orbitrap Eclipse Tribrid - CPTAC loan','4/29/2021 2:55:13 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,3792,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,3877,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',3878,2,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. 8890 GC coupled to a 5977 Inert Plus MSD, with a 7693A Autosampler','7/29/2021 5:51:13 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',3878,3880,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. 8890 GC coupled to a 5977 Inert Plus MSD, with a 7693A Autosampler','7/29/2021 5:51:13 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01',182,'BrukerFT_BAF',3881,3886,'secfso',null,'EMSL 1649','Bruker scimaX with ESI\MALDI source','8/25/2021 1:21:50 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01_Imaging',183,'BrukerMALDI_Imaging_V2',3881,2,'secfso',null,'EMSL 1649','Bruker scimaX with MALDI Imaging datasets','8/25/2021 1:23:06 PM')
