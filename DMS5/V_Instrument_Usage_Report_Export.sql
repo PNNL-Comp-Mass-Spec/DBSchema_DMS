@@ -15,18 +15,23 @@ SELECT InstUsage.EMSL_Inst_ID,
        InstUsageType.[Name] AS [Usage],
        InstUsage.Users,
        InstUsage.Operator,
+       IsNull(U.U_Name, EU.NAME_FM) AS Operator_Name,
        InstUsage.[Comment],
        InstUsage.[Year],
        InstUsage.[Month],
        InstUsage.Dataset_ID,
-	   InstUsage.Seq,       
+       InstUsage.Seq,
        InstUsage.Updated,
-	   InstUsage.UpdatedBy
+       InstUsage.UpdatedBy
 FROM T_EMSL_Instrument_Usage_Report InstUsage
      INNER JOIN T_Instrument_Name InstName
        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
      LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
        ON InstUsage.Usage_Type = InstUsageType.ID
+     LEFT OUTER JOIN T_EUS_Users EU
+       ON InstUsage.Operator = EU.PERSON_ID
+     LEFT OUTER JOIN T_Users U
+       ON EU.HID = U.U_HID
 
 
 GO
