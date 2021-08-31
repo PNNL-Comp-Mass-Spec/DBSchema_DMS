@@ -42,7 +42,8 @@ FROM ( SELECT PC.Name,
                   ELSE 0
               END AS TypeSortOrder
        FROM T_Cached_Protein_Collections PC INNER JOIN 
-	        T_Organisms Org ON PC.Organism_ID = Org.Organism_ID 
+	        T_Organisms Org ON PC.Organism_ID = Org.Organism_ID
+       WHERE IsNull(PC.State_Name, '') <> 'Retired'
        ) LookupQ
        LEFT JOIN dbo.T_Organisms Org ON LookupQ.[Organism Name] = Org.OG_Name
        LEFT OUTER JOIN T_Protein_Collection_Usage PCU ON LookupQ.ID = PCU.Protein_Collection_ID
