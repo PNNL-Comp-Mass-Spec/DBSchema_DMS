@@ -9,6 +9,7 @@ AS
 SELECT DISTINCT PC.Protein_Collection_ID,
                 PC.[FileName] + ' (' + CAST(PC.NumProteins AS varchar) + ' Entries)' AS [Display],
                 PC.[Description],
+                PC.Source,
                 PC.Collection_State_ID,
                 PCS.State AS State_Name,
                 PC.Collection_Type_ID,
