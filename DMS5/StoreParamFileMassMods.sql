@@ -32,8 +32,11 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **     DynamicMod=Methyl,14.015650,*,N-term,34
 **
 **  Format for MSFragger:
-**     variable_mod_01 = 15.9949 M
-**     add_C_cysteine = 57.021464             # added to C - avg. 103.1429, mono. 103.00918
+**     variable_mod_01 = 15.994900 M 3        # Oxidized methionine
+**     variable_mod_02 = 42.010600 [^ 1       # Acetylation protein N-term
+**     variable_mod_06 = 304.207146 n^ 1      # 16-plex TMT
+**     add_C_cysteine = 57.021464
+**     add_K_lysine = 304.207146              # 16-plex TMT
 **
 **  Format for MaxQuant when the run type is "Standard":
 **     <fixedModifications>
@@ -86,6 +89,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          05/18/2021 mem - Add support for reporter ions in MaxQuant mod defs
 **          06/15/2021 mem - Remove UNION statements to avoid sorting
 **                         - Collapse isobaric mods into a single entry
+**          09/07/2021 mem - Add support for dynamic N-terminal TMT mods in MSFragger (notated with n^)
 **    
 *****************************************************/
 (
@@ -593,7 +597,7 @@ AS
                         Where EntryID = 1
 
                         -- Assure that #Tmp_ModDef has at least 5 rows for MS-GF+ or TopPIC
-                        -- For MSFragger, require at least 2 row
+                        -- For MSFragger, require at least 2 rows
                         -- For MaxQuant, there will just be 1 row, which has the MaxQuant-tracked mod name
                         --
                         SELECT @rowCount = COUNT(*) 
@@ -857,10 +861,15 @@ AS
                                         INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
                                         Set @affectedResidues= '*'
                                     End
-                                    Else If @affectedResidues In ('[^',']^')
+                                    Else If @affectedResidues In ('[^', ']^', 'n^')
                                     Begin
                                         -- N or C terminal dynamic mod 
                                         Set @terminalMod = 1
+
+                                        -- Override 'n^' to instead use '[^'
+                                        If @affectedResidues = 'n^'
+                                            Set @affectedResidues = '[^'
+
                                         INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (Substring(@affectedResidues, 1, 1), 1)
                                         Set @affectedResidues= '*'
                                     End
