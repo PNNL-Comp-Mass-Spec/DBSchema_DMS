@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 52 ******/
+/****** RowCount: 58 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
@@ -33,6 +33,12 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-IonPairing','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_LipidSoluble','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_Oxylipids','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_WaterSoluble','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-12','Use for placeholder requested runs that can be converted into requested run fractions',1,0,12)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-24','Use for placeholder requested runs that can be converted into requested run fractions',1,0,24)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-6','Use for placeholder requested runs that can be converted into requested run fractions',1,0,6)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-96','Use for placeholder requested runs that can be converted into requested run fractions',1,0,96)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroSCX-12','Use for placeholder requested runs that can be converted into requested run fractions',1,0,12)
+INSERT INTO [T_Separation_Group] VALUES ('LC-MicroSCX-6 ','Use for placeholder requested runs that can be converted into requested run fractions',1,0,6)
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoHpH-12','Use for placeholder requested runs that can be converted into requested run fractions',1,0,12)
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoHpH-24','Use for placeholder requested runs that can be converted into requested run fractions',1,0,24)
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoHpH-6','Use for placeholder requested runs that can be converted into requested run fractions',1,0,6)
