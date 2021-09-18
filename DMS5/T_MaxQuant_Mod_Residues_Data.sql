@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MaxQuant_Mod_Residues] ******/
-/****** RowCount: 615 ******/
+/****** RowCount: 619 ******/
 /****** Columns: Mod_ID, Residue_ID ******/
 INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (1,1012)
 INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (2,1026)
@@ -616,3 +616,7 @@ INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (579,1012)
 INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (580,1012)
 INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (581,1012)
 INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (582,1012)
+INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (583,1004)
+INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (584,1012)
+INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (584,1017)
+INSERT INTO [T_MaxQuant_Mod_Residues] VALUES (584,1018)
