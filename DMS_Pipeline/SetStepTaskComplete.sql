@@ -54,6 +54,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          12/14/2020 mem - Add support for completion code 18 (CLOSEOUT_SKIPPED_MZ_REFINERY)
 **          03/12/2021 mem - Add support for completion codes 21 (CLOSEOUT_SKIPPED_MSXML_GEN) and 22 (CLOSEOUT_SKIPPED_MAXQUANT)
 **                         - Expand @completionMessage and @evaluationMessage to varchar(512)
+**          09/21/2021 mem - Add support for completion code 23 (CLOSEOUT_RESET_JOB_STEP)
 **
 *****************************************************/
 (
@@ -233,6 +234,13 @@ As
             Set @stepState = 3 -- skipped
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Skipped MaxQuant'
+        End
+        
+        If @completionCode = 23  -- CLOSEOUT_RESET_JOB_STEP
+        Begin
+            Set @stepState = 2 -- New
+            Set @handleSkippedStep = 0
+            Set @completionCodeDescription = 'Insufficient memory or free disk space; retry'
         End
 
         If @completionCode = 20  -- CLOSEOUT_NO_DATA
