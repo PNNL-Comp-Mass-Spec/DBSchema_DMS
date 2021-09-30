@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          05/25/2021 mem - Add parameter @samplePrepRequest
 **          05/26/2021 mem - Capitalize @eusUsageType
 **          05/27/2021 mem - Add parameters @experimentID, @campaignID, and @addingItem
+**          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **
 *****************************************************/
 (
@@ -68,6 +69,9 @@ As
 
     Declare @originalProposalID varchar(10)
     Declare @numericID int
+    Declare @proposalType varchar(100)
+    Declare @usageTypeUpdated tinyint = 0
+
     Declare @autoSupersedeProposalID varchar(10)
     Declare @checkSuperseded tinyint
     Declare @iterations tinyint
@@ -176,9 +180,14 @@ As
     If @samplePrepRequest > 0 And @enabledForPrepRequests = 0
     Begin
         If @eusUsageType = 'USER'
-            Set @message = 'Please choose usage type USER_ONSITE if processing a sample from an onsite user or USER_REMOTE if from a remote user'
+        Begin
+            Set @message = 'Please choose usage type USER_ONSITE if processing a sample from an onsite user or a sample for a Resource Owner project; ' + 
+                           'choose USER_REMOTE if processing a sample for an EMSL user'
+        End
         Else
+        Begin
             Set @message = 'EUS usage type: "' + @eusUsageType + '" is not allowed for Sample Prep Requests'
+        End
 
         return 51072
     End
@@ -213,10 +222,10 @@ As
         End
 
         ---------------------------------------------------
-        -- Verify EUS proposal ID and get the Numeric_ID value
+        -- Verify EUS proposal ID, get the Numeric_ID value, get the proposal type
         ---------------------------------------------------
 
-        SELECT @numericID = Numeric_ID
+        SELECT @numericID = Numeric_ID, @proposalType = Proposal_Type
         FROM T_EUS_Proposals
         WHERE Proposal_ID = @eusProposalID
         --
@@ -347,6 +356,12 @@ As
             ORDER BY Entry_ID
         End
 
+        If @eusProposalID <> @originalProposalID
+        Begin
+            SELECT @proposalType = Proposal_Type
+            FROM T_EUS_Proposals
+            WHERE Proposal_ID = @eusProposalID
+        End
         ---------------------------------------------------
         -- Check for a blank user list
         ---------------------------------------------------
@@ -570,24 +585,13 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
-        If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType In ('USER_ONSITE', 'USER')
+        If @eusUsageTypeCampaign = 'USER_REMOTE' And @eusUsageType In ('USER_ONSITE', 'USER') And @proposalType <> 'Resource Owner'
         Begin
             If @addingItem > 0
             Begin
                 Set @eusUsageType = 'USER_REMOTE'
                 Set @msg = 'Auto-updated EUS Usage Type to USER_REMOTE since the campaign has USER_REMOTE'
-
-                SELECT @eusUsageTypeID = ID
-                FROM T_EUS_UsageType
-                WHERE Name = @eusUsageType
-                --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
-
-                If @myRowCount= 0
-                Begin
-                    Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
-                    exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
-                End
+                Set @usageTypeUpdated = 1
             End
             Else
             Begin
@@ -597,25 +601,39 @@ As
             Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
         End
 
-        If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER'
+        If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER' And @proposalType <> 'Resource Owner'
         Begin
             Set @eusUsageType = 'USER_ONSITE'
             Set @msg = 'Auto-updated EUS Usage Type to USER_ONSITE since the campaign has USER_ONSITE'
+            Set @usageTypeUpdated = 1
+        End
+    End
 
-            SELECT @eusUsageTypeID = ID
-            FROM T_EUS_UsageType
-            WHERE Name = @eusUsageType
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
+    If @proposalType = 'Resource Owner' And @eusUsageType In ('USER_REMOTE', 'USER')
+    Begin
+        -- Requested runs for Resource Owner projects should always have EUS Usage Type 'USER_ONSITE'
+        Set @eusUsageType = 'USER_ONSITE'
+        Set @msg = 'Auto-updated EUS Usage Type to USER_ONSITE since associated with a Resource Owner project'
+        Set @usageTypeUpdated = 1
+    End
 
-            If @myRowCount= 0
-            Begin
-                Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
-                exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
+    If @usageTypeUpdated > 0
+    Begin
+        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
 
-                -- Only append @msg to @message if an error occurs
-                Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
-            End
+        SELECT @eusUsageTypeID = ID
+        FROM T_EUS_UsageType
+        WHERE Name = @eusUsageType
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount= 0
+        Begin
+            Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
+            exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
+
+            -- Only append @msg to @message if an error occurs
+            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
         End
     End
 

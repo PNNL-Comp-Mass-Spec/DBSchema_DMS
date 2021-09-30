@@ -40,6 +40,7 @@ CREATE Procedure [dbo].[AddUpdateCampaign]
 **			08/01/2017 mem - Use THROW if not authorized
 **			08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          05/26/2021 mem - Add @eusUsageType
+**          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **    
 *****************************************************/
 (
@@ -80,6 +81,7 @@ As
 	Declare @stateID int
     Declare @eusUsageTypeID int = 0
     Declare @eusUsageTypeEnabled Tinyint = 0
+    Declare @proposalType varchar(100)
 
 	Declare @percentEMSLFunded int
 
@@ -251,10 +253,29 @@ As
 		RAISERROR ('EUS Usage Type is not allowed for campaigns: %s', 11, 4, @eusUsageType)
     End
        
-    If Len(@eusProposalList) > 0 And @eusUsageType = 'CAP_DEV'
+    If Len(IsNull(@eusProposalList, '')) > 0
     Begin
-        -- CAP_DEV should not be used when one or more EUS proposals are defined for a campaign
-		RAISERROR ('Please choose usage type USER_ONSITE if this campaign''s samples are for an onsite user or USER_REMOTE if for a remote user', 11, 4)
+        If @eusUsageType = 'CAP_DEV'
+        Begin
+            -- CAP_DEV should not be used when one or more EUS proposals are defined for a campaign
+		    RAISERROR ('Please choose usage type USER_ONSITE if this campaign''s samples are for an onsite user or are for a Resource Owner project; choose USER_REMOTE if for an EMSL user', 11, 4)
+        End
+
+        -- If @eusProposalList has a single proposal, get the proposal type then validate @eusUsageType
+        -- If multiple proposals are defined, the validation is skipped
+        SELECT @proposalType = Proposal_Type
+        FROM T_EUS_Proposals
+        WHERE Proposal_ID = @eusProposalList
+
+        If IsNull(@proposalType, '') = 'Resource Owner' And @eusUsageType In ('USER_REMOTE', '')
+        Begin
+            Set @eusUsageType = 'USER_ONSITE'
+            Set @message = 'Auto-updated EUS usage type to USER_ONSITE since this campaign has a Resource Owner project'
+
+            SELECT @eusUsageTypeID = ID
+            FROM T_EUS_UsageType
+            WHERE Name = @eusUsageType
+        End
     End
     
 	---------------------------------------------------
@@ -303,10 +324,13 @@ As
 							@informaticsStaff,
 							@collaborators,
 							@researchTeamID output,
-							@message output
+							@msg output
 		--
 		If @myError <> 0
+        Begin
+            Set @message = @msg
 			RAISERROR (@message, 11, 11)
+        End
 
 		---------------------------------------------------
 		-- Create campaign
@@ -437,10 +461,13 @@ As
 							@informaticsStaff,
 							@collaborators,
 							@researchTeamID output,
-							@message output
+							@msg output
 		--
 		If @myError <> 0
+        Begin
+            Set @message = @msg
 			RAISERROR (@message, 11, 1)
+        End
 
 		commit transaction @transName
 		
