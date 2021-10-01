@@ -4,10 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Experiment_Entry] as 
-SELECT E.Experiment_Num AS experimentNum,
-       E.Exp_ID,
-       C.Campaign_Num AS campaignNum,
+CREATE VIEW [dbo].[V_Experiment_Entry]
+AS
+SELECT E.Experiment_Num AS Experiment,
+       E.Exp_ID As ID,
+       C.Campaign_Num AS Campaign,
        E.EX_researcher_PRN AS researcherPRN,
        Org.OG_name AS organismName,
        E.EX_reason AS reason,
@@ -22,7 +23,7 @@ SELECT E.Experiment_Num AS experimentNum,
        InstStd.Name AS internalStandard,
        PostDigestIntStd.Name AS postdigestIntStd,
        MC.Tag AS container,
-       E.EX_wellplate_num AS wellplateNum,
+       E.EX_wellplate_num AS Wellplate,
        E.EX_well_num AS wellNum,
        E.EX_Alkylation AS alkylation,
        BTO.Tissue AS tissue,

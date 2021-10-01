@@ -6,37 +6,37 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex] 
 AS 
-SELECT  E.Experiment_Num AS Experiment ,
-        U.Name_with_PRN AS Researcher ,
-        Org.OG_name AS Organism ,
-        E.EX_reason AS [Reason for Experiment] ,
-        E.EX_comment AS Comment ,
-        E.EX_created AS Created ,
-        E.EX_sample_concentration AS [Sample Concentration] ,
-        Enz.Enzyme_Name AS [Digestion Enzyme] ,
-        E.EX_lab_notebook_ref AS [Lab Notebook] ,
-        C.Campaign_Num AS Campaign ,
+SELECT  E.Experiment_Num AS Experiment,
+        U.Name_with_PRN AS Researcher,
+        Org.OG_name AS Organism,
+        E.EX_reason AS [Reason for Experiment],
+        E.EX_comment AS Comment,
+        E.EX_created AS Created,
+        E.EX_sample_concentration AS [Sample Concentration],
+        Enz.Enzyme_Name AS [Digestion Enzyme],
+        E.EX_lab_notebook_ref AS [Lab Notebook],
+        C.Campaign_Num AS Campaign,
         BTO.Tissue AS [Plant/Animal Tissue],
-        CEC.Cell_Culture_list AS [Cell Cultures] ,
-        CEC.Reference_Compound_list AS [Reference Compounds] ,
-        E.EX_Labelling AS Labelling ,
-        IntStdPre.Name AS [Predigest Int Std] ,
-        IntStdPost.Name AS [Postdigest Int Std] ,
-        E.EX_Alkylation AS Alkylated ,
-        E.EX_sample_prep_request_ID AS Request ,
+        CEC.Cell_Culture_list AS [Cell Cultures],
+        CEC.Reference_Compound_list AS [Reference Compounds],
+        E.EX_Labelling AS Labelling,
+        IntStdPre.Name AS [Predigest Int Std],
+        IntStdPost.Name AS [Postdigest Int Std],
+        E.EX_Alkylation AS Alkylated,
+        E.EX_sample_prep_request_ID AS Request,
 	   BTO.Identifier AS [Tissue ID],
-        dbo.GetExperimentGroupList(E.Exp_ID) AS [Experiment Groups] ,
-        ISNULL(DSCountQ.Datasets, 0) AS Datasets ,
-        DSCountQ.Most_Recent_Dataset AS [Most Recent Dataset] ,
-        ISNULL(FC.Factor_Count, 0) AS Factors ,
-        ISNULL(ExpFileCount.FileCount, 0) AS [Experiment Files] ,
-        ISNULL(ExpGroupFileCount.FileCount, 0) AS [Experiment Group Files] ,
-        E.Exp_ID AS ID ,
-        MC.Tag AS Container ,
-        ML.Tag AS Location ,
-        E.Ex_Material_Active AS [Material Status] ,
-        E.Last_Used AS [Last Used] ,
-        E.EX_wellplate_num AS [Wellplate Number] ,
+        dbo.GetExperimentGroupList(E.Exp_ID) AS [Experiment Groups],
+        ISNULL(DSCountQ.Datasets, 0) AS Datasets,
+        DSCountQ.Most_Recent_Dataset AS [Most Recent Dataset],
+        ISNULL(FC.Factor_Count, 0) AS Factors,
+        ISNULL(ExpFileCount.FileCount, 0) AS [Experiment Files],
+        ISNULL(ExpGroupFileCount.FileCount, 0) AS [Experiment Group Files],
+        E.Exp_ID AS ID,
+        MC.Tag AS Container,
+        ML.Tag AS Location,
+        E.Ex_Material_Active AS [Material Status],
+        E.Last_Used AS [Last Used],
+        E.EX_wellplate_num AS Wellplate,
         E.EX_well_num AS [Well Number],
         E.EX_Barcode AS Barcode
 FROM    T_Experiments AS E
@@ -48,26 +48,26 @@ FROM    T_Experiments AS E
         INNER JOIN T_Organisms AS Org ON E.EX_organism_ID = Org.Organism_ID
         INNER JOIN T_Material_Containers AS MC ON E.EX_Container_ID = MC.ID
         INNER JOIN T_Material_Locations AS ML ON MC.Location_ID = ML.ID
-        LEFT OUTER JOIN ( SELECT    COUNT(*) AS Datasets ,
-                                    MAX(DS_created) AS Most_Recent_Dataset ,
+        LEFT OUTER JOIN ( SELECT    COUNT(*) AS Datasets,
+                                    MAX(DS_created) AS Most_Recent_Dataset,
                                     Exp_ID
                           FROM      T_Dataset
                           GROUP BY  Exp_ID
                         ) AS DSCountQ ON DSCountQ.Exp_ID = E.Exp_ID
         LEFT OUTER JOIN V_Factor_Count_By_Experiment AS FC ON FC.Exp_ID = E.Exp_ID
-        LEFT OUTER JOIN ( SELECT    Entity_ID ,
+        LEFT OUTER JOIN ( SELECT    Entity_ID,
                                     COUNT(*) AS FileCount
                           FROM      T_File_Attachment
                           WHERE     ( Entity_Type = 'experiment' )
                                     AND ( Active > 0 )
                           GROUP BY  Entity_ID
                         ) AS ExpFileCount ON ExpFileCount.Entity_ID = E.Experiment_Num
-        LEFT OUTER JOIN ( SELECT    EGM.Exp_ID ,
-                                    EGM.Group_ID ,
+        LEFT OUTER JOIN ( SELECT    EGM.Exp_ID,
+                                    EGM.Group_ID,
                                     FA.FileCount
                           FROM      T_Experiment_Group_Members AS EGM
                                     INNER JOIN T_Experiment_Groups AS EG ON EGM.Group_ID = EG.Group_ID
-                                    INNER JOIN ( SELECT Entity_ID ,
+                                    INNER JOIN ( SELECT Entity_ID,
                                                         COUNT(*) AS FileCount
                                                  FROM   T_File_Attachment
                                                  WHERE  ( Entity_Type = 'experiment_group' )
