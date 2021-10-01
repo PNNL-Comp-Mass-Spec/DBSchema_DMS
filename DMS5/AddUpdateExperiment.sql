@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **                         - Updated to validate additional terms when @mode = 'check_add'
 **          11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
 **          04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
-**          05/09/2014 mem - Expanded @campaignNum from varchar(50) to varchar(64)
+**          05/09/2014 mem - Expanded @campaignName from varchar(50) to varchar(64)
 **          09/09/2014 mem - Added @barcode
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          07/31/2015 mem - Now updating Last_Used when key fields are updated
@@ -71,11 +71,15 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **          07/06/2021 mem - Expand @organismName and @labNotebookRef to varchar(128)
+**          09/30/2021 mem - Allow renaming an experiment if it does not have an associated requested run or dataset
+**                         - Move argument @experimentID, making it the first argument
+**                         - Rename the Experiment, Campaign, and Wellplate name arguments
 **
 *****************************************************/
 (
-    @experimentNum varchar(50),
-    @campaignNum varchar(64),
+    @experimentId int output,            -- Input/output; When copying an experiment, this will have the new experiment's ID; this is required if renaming an existing experiment
+    @experimentName varchar(50),         -- Experiment name
+    @campaignName varchar(64),
     @researcherPRN varchar(50),
     @organismName varchar(128),
     @reason varchar(500) = 'na',
@@ -89,11 +93,10 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
     @samplePrepRequest int = 0,
     @internalStandard varchar(50),
     @postdigestIntStd varchar(50),
-    @wellplateNum varchar(64),
+    @wellplateName varchar(64),
     @wellNum varchar(8),
     @alkylation varchar(1),
-    @experimentId int = null output,            -- Used by the ExperimentID page family when copying an experiment; this will have the new experiment's ID
-    @mode varchar(12) = 'add', -- or 'update', 'check_add', 'check_update'
+    @mode varchar(12) = 'add',                  -- 'add, 'update', 'check_add', 'check_update'
     @message varchar(512) output,
     @container varchar(128) = 'na',
     @barcode varchar(64) = '',
@@ -116,6 +119,12 @@ As
     Declare @invalidCCList varchar(512) = null
     Declare @invalidRefCompoundList varchar(512)
 
+    Declare @existingExperimentID int = 0
+    Declare @existingExperimentName Varchar(128) = ''
+    Declare @existingRequestedRun varchar(128) = ''
+    Declare @existingDataset varchar(128) = ''
+    Declare @curContainerID int = 0
+
     BEGIN TRY
 
     ---------------------------------------------------
@@ -133,8 +142,9 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @experimentNum = LTrim(RTrim(IsNull(@experimentNum, '')))
-    Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
+    Set @experimentID = IsNull(@experimentID, 0)
+    Set @experimentName = LTrim(RTrim(IsNull(@experimentName, '')))
+    Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
     Set @researcherPRN = LTrim(RTrim(IsNull(@researcherPRN, '')))
     Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
     Set @reason = LTrim(RTrim(IsNull(@reason, '')))
@@ -148,10 +158,10 @@ As
     Set @alkylation = LTrim(RTrim(IsNull(@alkylation, '')))
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
 
-    If LEN(@experimentNum) < 1
+    If LEN(@experimentName) < 1
         RAISERROR ('Experiment name must be defined', 11, 30)
     --
-    If LEN(@campaignNum) < 1
+    If LEN(@campaignName) < 1
         RAISERROR ('Campaign name must be defined', 11, 31)
     --
     If LEN(@researcherPRN) < 1
@@ -186,7 +196,7 @@ As
     -- Validate experiment name
     ---------------------------------------------------
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@experimentNum, '')
+    Declare @badCh varchar(128) = dbo.ValidateChars(@experimentName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -195,9 +205,9 @@ As
             RAISERROR ('Experiment name may not contain the character(s) "%s"', 11, 37, @badCh)
     End
 
-    If Len(@experimentNum) < 6
+    If Len(@experimentName) < 6
     Begin
-        Set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentNum)) + ' characters'
+        Set @msg = 'Experiment name must be at least 6 characters in length; currently ' + Convert(varchar(12), Len(@experimentName)) + ' characters'
         RAISERROR (@msg, 11, 37)
     End
 
@@ -222,38 +232,89 @@ As
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
+    
+    If @mode In ('update', 'check_update') And @experimentID > 0
+    Begin
+        Select
+            @existingExperimentID = Exp_ID,
+            @existingExperimentName = Experiment_Num,
+            @curContainerID = EX_Container_ID
+        FROM T_Experiments
+        WHERE Exp_ID = @experimentID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Error looking for Experiment ID %d', 11, 38, @experimentID)
 
-    Declare @existingExperimentID int = 0
-    Declare @curContainerID int = 0
-    --
-    SELECT
-        @existingExperimentID = Exp_ID,
-        @curContainerID = EX_Container_ID
-    FROM T_Experiments
-    WHERE (Experiment_Num = @experimentNum)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-        RAISERROR ('Error trying to resolve experiment name to ID', 11, 38)
+        If IsNull(@existingExperimentID, 0) = 0
+        Begin
+            RAISERROR ('Cannot update: Experiment ID %d is not in database', 11, 40, @experimentID)
+        End
+
+        If @existingExperimentName <> @experimentName
+        Begin
+            -- Allow renaming if the experiment is not associated with a dataset or requested run, and if the new name is unique
+          
+            If Exists (Select * From T_Experiments Where Experiment_Num = @experimentName)
+            Begin
+                SELECT
+                    @existingExperimentID = Exp_ID
+                FROM T_Experiments
+                WHERE Experiment_Num = @experimentName
+                --
+                RAISERROR ('Cannot rename: Experiment "%s" already exists, with ID %d', 11, 40, @experimentName, @existingExperimentID)
+            End
+                        
+            If Exists (Select * From T_Dataset Where Exp_ID = @experimentID)
+            Begin
+                SELECT @existingDataset = Dataset_Num
+                FROM T_Dataset
+                WHERE Exp_ID = @experimentID
+                --
+                RAISERROR ('Cannot rename: Experiment ID %d is associated with dataset "%s"', 11, 40, @experimentID, @existingDataset)
+            End
+            
+            If Exists (Select * From T_Requested_Run Where Exp_ID = @experimentID)
+            Begin
+                SELECT @existingRequestedRun = RDS_Name
+                FROM T_Requested_Run
+                WHERE Exp_ID = @experimentID
+                --
+                RAISERROR ('Cannot rename: Experiment ID %d is associated with requested run "%s"', 11, 40, @experimentID, @existingRequestedRun)
+            End
+        End
+    End
+    Else
+    Begin
+        -- Either @mode is 'add' or 'check_add' or @experimentID is null or 0
+        -- Look for the experiment by name
+
+        SELECT
+            @existingExperimentID = Exp_ID,
+            @curContainerID = EX_Container_ID
+        FROM T_Experiments
+        WHERE Experiment_Num = @experimentName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Error trying to resolve experiment name to ID', 11, 38)
+
+        If @mode In ('update', 'check_update') And @existingExperimentID = 0
+        Begin
+            RAISERROR ('Cannot update: Experiment "%s" is not in database', 11, 40, @experimentName)
+        End
+
+        -- Assure that @experimentId is up-to-date
+        Set @experimentId = @existingExperimentID
+    End
 
     -- Cannot create an entry that already exists
     --
     If @existingExperimentID <> 0 and (@mode In ('add', 'check_add'))
     Begin
-        RAISERROR ('Cannot add: Experiment "%s" already in database; cannot add', 11, 39, @experimentNum)
-    End
-
-    If @mode In ('update', 'check_update')
-    Begin
-        -- Cannot update a non-existent entry
-        If @existingExperimentID = 0
-        Begin
-            RAISERROR ('Cannot update: Experiment "%s" is not in database; cannot update (to rename an experiment, contact a DMS Admin)', 11, 40, @experimentNum)
-        End
-
-        -- Assure that experiment ID is up to date
-        Set @experimentId = @existingExperimentID
+        RAISERROR ('Cannot add: Experiment "%s" already in database; cannot add', 11, 39, @experimentName)
     End
 
     ---------------------------------------------------
@@ -261,9 +322,9 @@ As
     ---------------------------------------------------
 
     Declare @campaignID int
-    execute @campaignID = GetCampaignID @campaignNum
+    execute @campaignID = GetCampaignID @campaignName
     If @campaignID = 0
-        RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignNum)
+        RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignName)
 
     ---------------------------------------------------
     -- Resolve researcher PRN
@@ -322,7 +383,7 @@ As
     SELECT @totalCount = CASE WHEN @mode In ('add', 'check_add') THEN 1 ELSE 0 END
     --
     exec @myError = ValidateWellplateLoading
-                        @wellplateNum  output,
+                        @wellplateName  output,
                         @wellNum  output,
                         @totalCount,
                         @wellIndex output,
@@ -332,10 +393,10 @@ As
 
     -- make sure we do not put two experiments in the same place
     --
-    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 45)
     --
-    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateNum AND EX_well_num = @wellNum AND Experiment_Num <> @experimentNum) AND @mode In ('update', 'check_update')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNum AND Experiment_Num <> @experimentName) AND @mode In ('update', 'check_update')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 46)
 
     ---------------------------------------------------
@@ -659,7 +720,7 @@ As
                 EX_Tissue_ID,
                 Last_Used
             ) VALUES (
-                @experimentNum,
+                @experimentName,
                 @researcherPRN,
                 @organismID,
                 @reason,
@@ -674,7 +735,7 @@ As
                 @internalStandardID,
                 @postdigestIntStdID,
                 @contID,
-                @wellplateNum,
+                @wellplateName,
                 @wellNum,
                 @alkylation,
                 @barcode,
@@ -685,7 +746,7 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentNum)
+            RAISERROR ('Insert operation failed: "%s"', 11, 7, @experimentName)
 
         -- Get the ID of newly created experiment
         Set @experimentID = SCOPE_IDENTITY()
@@ -695,12 +756,12 @@ As
 
         SELECT @expIDConfirm = Exp_ID
         FROM T_Experiments
-        WHERE Experiment_Num = @experimentNum
+        WHERE Experiment_Num = @experimentName
 
         If @experimentID <> IsNull(@expIDConfirm, @experimentID)
         Begin
             Declare @debugMsg varchar(512)
-            Set @debugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentNum + ': Found ID ' +
+            Set @debugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentName + ': Found ID ' +
                             Cast(@expIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@experimentID as varchar(12))
 
@@ -724,7 +785,7 @@ As
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+            RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Add the experiment to reference compound mapping
         -- The stored procedure uses table #Tmp_ExpToRefCompoundMap
@@ -735,7 +796,7 @@ As
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not add experiment reference compounds to database for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+            RAISERROR ('Could not add experiment reference compounds to database for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Material movement logging
         --
@@ -743,7 +804,7 @@ As
         Begin
             exec PostMaterialLogEntry
                 'Experiment Move',
-                @experimentNum,
+                @experimentName,
                 'na',
                 @container,
                 @callingUser,
@@ -768,6 +829,7 @@ As
         Begin transaction @transName
 
         UPDATE T_Experiments Set
+            Experiment_Num = @experimentName,
             EX_researcher_PRN = @researcherPRN,
             EX_organism_ID = @organismID,
             EX_reason = @reason,
@@ -781,7 +843,7 @@ As
             EX_internal_standard_ID = @internalStandardID,
             EX_postdigest_internal_std_ID = @postdigestIntStdID,
             EX_Container_ID = @contID,
-            EX_wellplate_num = @wellplateNum,
+            EX_wellplate_num = @wellplateName,
             EX_well_num = @wellNum,
             EX_Alkylation = @alkylation,
             EX_Barcode = @barcode,
@@ -797,12 +859,12 @@ As
                              Then Cast(GetDate() as Date)
                              Else Last_Used
                         End
-        WHERE Experiment_Num = @experimentNum
+        WHERE Exp_ID = @experimentId
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Update operation failed: "%s"', 11, 4, @experimentNum)
+            RAISERROR ('Update operation failed: "%s"', 11, 4, @experimentName)
 
         -- Update the experiment to cell culture mapping
         -- The stored procedure uses table #Tmp_ExpToCCMap
@@ -813,7 +875,7 @@ As
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not update experiment cell culture mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+            RAISERROR ('Could not update experiment cell culture mapping for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Update the experiment to reference compound mapping
         -- The stored procedure uses table #Tmp_ExpToRefCompoundMap
@@ -824,7 +886,7 @@ As
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not update experiment reference compound mapping for experiment "%s" :%s', 11, 1, @experimentNum, @msg)
+            RAISERROR ('Could not update experiment reference compound mapping for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Material movement logging
         --
@@ -832,11 +894,16 @@ As
         Begin
             exec PostMaterialLogEntry
                 'Experiment Move',
-                @experimentNum,
+                @experimentName,
                 @curContainerName,
                 @container,
                 @callingUser,
                 'Experiment updated'
+        End
+                
+        If Len(@existingExperimentName) > 0 And @existingExperimentName <> @experimentName
+        Begin
+            Set @message = 'Renamed experiment from "' + @existingExperimentName + '" to "' + @experimentName + '"'
         End
 
         -- We made it this far, commit
@@ -855,7 +922,7 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentNum
+            Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentName
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
         End
 
