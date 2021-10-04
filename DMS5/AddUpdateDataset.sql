@@ -107,6 +107,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          05/26/2021 mem - When @mode is 'add', 'check_add', or 'add_trigger', possibly override the EUSUsageType based on the campaign's EUS Usage Type
 **                         - Expand @message to varchar(1024)
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
+**          10/01/2021 mem - Also check for a period when verifying that the dataset name does not end with .raw or .wiff
 **
 *****************************************************/
 (
@@ -337,7 +338,7 @@ As
         RAISERROR (@msg, 11, 1)
     End
 
-    If @aggregationJobDataset = 0 And (@datasetNum Like '%raw' Or @datasetNum Like '%wiff')
+    If @aggregationJobDataset = 0 And (@datasetNum Like '%[.]raw' Or @datasetNum Like '%[.]wiff')
     Begin
         Set @msg = 'Dataset name may not end in raw or wiff'
         RAISERROR (@msg, 11, 2)
@@ -766,7 +767,7 @@ As
         --
         SELECT @operPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
