@@ -83,6 +83,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          03/15/2021 mem - Validate that the settings file and/or parameter file are defined for tools that require them
 **          05/26/2021 mem - Use @allowNonReleasedDatasets when calling ValidateAnalysisJobRequestDatasets
 **          08/26/2021 mem - Add logic for MSFragger
+**          10/05/2021 mem - Show custom message if @toolName contains an inactive _dta.txt based MS-GF+ tool
 **
 *****************************************************/
 (
@@ -169,7 +170,7 @@ As
         --
         SELECT @ownerPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -226,9 +227,18 @@ As
     ---------------------------------------------------
     -- Make sure the analysis tool is active
     ---------------------------------------------------
+
     If @toolActive = 0
     Begin
-        If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg' Or @toolName = 'MSFragger_DataPkg')
+        If @toolName In ('MSGFPlus', 'MSGFPlus_DTARefinery')
+        Begin
+            Set @message = 'The MSGFPlus tool used concatenated _dta.txt files, which are PNNL-specific. Please use tool MSGFPlus_MzML instead (for example requests, see https://dms2.pnl.gov/analysis_job_request/report/-/-/-/-/StartsWith__MSGFPlus_MzML/-/- )'
+        End
+        Else If @toolName in ('MSGFPlus_SplitFasta', 'MSGFPlus_DTARefinery_SplitFasta')
+        Begin
+            Set @message = 'The MSGFPlus SplitFasta tool used concatenated _dta.txt files, which are PNNL-specific. Please use tool MSGFPlus_MzML instead (for example requests, see https://dms2.pnl.gov/analysis_job_request/report/-/-/-/-/StartsWith__MSGFPlus_MzML_SplitFasta/-/- )'
+        End
+        Else If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg' Or @toolName = 'MSFragger_DataPkg')
         Begin
             Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0
