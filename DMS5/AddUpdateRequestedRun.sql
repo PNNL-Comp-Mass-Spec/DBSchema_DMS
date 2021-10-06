@@ -99,6 +99,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          05/31/2021 mem - Add output parameter @resolvedInstrumentInfo
 **          06/01/2021 mem - Update the message stored in @resolvedInstrumentInfo
+**          10/06/2021 mem - Add @batch, @block, and @runOrder
 **
 *****************************************************/
 (
@@ -113,6 +114,9 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @wellNum varchar(24) = 'na',
     @internalStandard varchar(50) = 'na',
     @comment varchar(1024) = 'na',
+    @batch int = 0,                             -- When updating an existing requested run, if this is null or 0, the requested run will be removed from the batch
+    @block int = 0,                             -- When updating an existing requested run, if this is null, Block will be set to 0
+    @runOrder int = 0,                          -- When updating an existing requested run, if this is null, Run_Order will be set to 0
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50),
     @eusUsersList varchar(1024) = '',           -- EUS User ID (integer); also supports the form "Baker, Erin (41136)". Prior to February 2020, supported a comma separated list of EUS user IDs
@@ -147,6 +151,8 @@ As
 
     -- default priority at which new requests will be created
     Declare @defaultPriority int = 0
+    
+    Declare @currentBatch int = 0
 
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
@@ -222,8 +228,9 @@ As
     If @comment like '%experiment_group/show/0%'
         RAISERROR ('Please reference a valid experiment group ID', 11, 116)
 
-    If @myError <> 0
-        return @myError
+    Set @batch = IsNull(@batch, 0)
+    Set @block = IsNull(@block, 0)
+    Set @runOrder = IsNull(@runOrder, 0)
 
     ---------------------------------------------------
     -- Validate name
@@ -329,24 +336,23 @@ As
             RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
     End
 
-
-    -- need non-null request even if we are just checking
+    -- Need non-null request even if we are just checking
     --
     Set @request = @requestID
 
-    -- cannot create an entry that already exists
+    -- Cannot create an entry that already exists
     --
     If @requestID <> 0 and (@mode IN ('add', 'check_add'))
-        RAISERROR ('Cannot add: Requested Run "%s" already in database; cannot add', 11, 4, @reqName)
+        RAISERROR ('Cannot add: Requested Run "%s" already in the database; cannot add', 11, 4, @reqName)
 
-    -- cannot update a non-existent entry
+    -- Cannot update a non-existent entry
     --
     If @requestID = 0 and (@mode IN ('update', 'check_update'))
     Begin
         If @requestIDForUpdate > 0
-            RAISERROR ('Cannot update: Requested Run ID "%d" is not in database; cannot update', 11, 4, @requestIDForUpdate)
+            RAISERROR ('Cannot update: Requested Run ID "%d" is not in the database; cannot update', 11, 4, @requestIDForUpdate)
         Else
-            RAISERROR ('Cannot update: Requested Run "%s" is not in database; cannot update', 11, 4, @reqName)
+            RAISERROR ('Cannot update: Requested Run "%s" is not in the database; cannot update', 11, 4, @reqName)
     End
 
 
@@ -704,6 +710,20 @@ As
     End
 
     ---------------------------------------------------
+    -- Validate the batch ID
+    ---------------------------------------------------
+
+    If Not Exists (Select * FROM T_Requested_Run_Batches Where ID = @batch)
+    Begin
+        If @mode Like '%update%'
+            Set @mode = 'update'
+        Else
+            Set @mode = 'add'
+
+        RAISERROR ('Cannot %s: Batch ID "%d" is not in the database', 11, 4, @mode, @batch)
+    End
+
+    ---------------------------------------------------
     -- Validate the work package
     ---------------------------------------------------
 
@@ -796,6 +816,9 @@ As
             RDS_Well_Plate_Num,
             RDS_Well_Num,
             RDS_internal_standard,
+            RDS_BatchID,
+            RDS_Block,
+            RDS_Run_Order,
             RDS_EUS_Proposal_ID,
             RDS_EUS_UsageType,
             RDS_Sec_Sep,
@@ -819,6 +842,9 @@ As
             @wellplateNum,
             @wellNum,
             @internalStandard,
+            @batch,
+            @block,
+            @runOrder,
             @eusProposalID,
             @eusUsageTypeID,
             @separationGroup,
@@ -890,6 +916,14 @@ As
     --
     If @mode = 'update'
     Begin -- <update>
+
+        If @batch = 0
+        Begin
+            SELECT @currentBatch = RDS_BatchID
+            FROM T_Requested_Run
+            WHERE ID = @requestID
+        End
+
         Begin transaction @transName
 
         Set @myError = 0
@@ -907,6 +941,9 @@ As
             RDS_Well_Plate_Num = @wellplateNum,
             RDS_Well_Num = @wellNum,
             RDS_internal_standard = @internalStandard,
+            RDS_BatchID = @batch,
+            RDS_Block = @block,
+            RDS_Run_Order = @runOrder,
             RDS_EUS_Proposal_ID = @eusProposalID,
             RDS_EUS_UsageType = @eusUsageTypeID,
             RDS_Sec_Sep = @separationGroup,
@@ -916,7 +953,7 @@ As
             Vialing_Conc = @vialingConc,
             Vialing_Vol = @vialingVol,
             Location_Id = @locationId
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -953,6 +990,11 @@ As
         -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
         exec UpdateCachedRequestedRunEUSUsers @request
 
+        If @batch = 0 And @currentBatch <> 0
+        Begin
+            Set @msg = 'Removed request ' + Cast(@request As Varchar(12)) + ' from batch ' + Cast(@currentBatch As Varchar(12))
+            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)            
+        End
     End -- </update>
 
     END TRY
