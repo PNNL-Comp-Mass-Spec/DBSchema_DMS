@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          05/01/2019 mem - Fix typo counting SEQUEST jobs
 **          03/09/2021 mem - Add support for MaxQuant
 **          08/26/2021 mem - Add support for MSFragger
+**          10/02/2021 mem - No longer require that DeconTools jobs exist for MAC_iTRAQ jobs (similarly, MAC_TMT10Plex jobs don't need DeconTools)
 **
 *****************************************************/
 (
@@ -194,11 +195,17 @@ AS
         -- given job template
         ---------------------------------------------------
         
-        If @scriptName IN ('Isobaric_Labeling', 'MAC_iTRAQ')
+        If @scriptName IN ('Isobaric_Labeling')
         Begin 
             If @deconToolsCountNotOne > 0 
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
             
+            If @masicCountNotOne > 0
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
+        End 
+
+        If @scriptName IN ('MAC_iTRAQ', 'MAC_TMT10Plex')
+        Begin 
             If @masicCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
         End 
