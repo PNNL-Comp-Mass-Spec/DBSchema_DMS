@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 367 ******/
+/****** RowCount: 368 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -368,4 +368,5 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1365,'Muscle_Mock_TMT16','Created by experiment fraction entry (Muscle_Mock_TMT16)','1/13/2021 2:56:11 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1366,'Cpep_Sinai','Cpeptide prep of Mt Sinai samples and calibrators','2/22/2021 11:24:14 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1367,'Obesity_96SOP_P2','Prep 2 of Obesity 96-well plate, testing SOP','9/2/2021 1:11:53 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1368,'A2CPS Initial Test Plate','Initial prep plate of A2CPS/Pain samples (23 samples). 5 ul plasma processed (non-depleted)','10/6/2021 7:39:55 AM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
