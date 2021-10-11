@@ -89,6 +89,8 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          06/10/2021 mem - Add parameters @estimatedPrepTimeDays and @stateComment
 **          06/11/2021 mem - Auto-remove 'na' from @assignedPersonnel
+**          10/11/2021 mem - Clear @stateComment when @state is 'Closed'
+**                         - Only allow sample prep staff to update estimated prep time
 **
 *****************************************************/
 (
@@ -149,7 +151,7 @@ As
         --
         -- We stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
         -- so simply change the state to Closed
-        SET @state = 'Closed'
+        Set @state = 'Closed'
     End
 
     Declare @requestType varchar(16) = 'Default'
@@ -198,6 +200,27 @@ As
 
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
+    
+    If @state = 'Closed'
+    Begin
+        -- Always clear State Comment when the state is closed
+        Set @stateComment = ''
+    End
+
+    Declare @allowUpdateEstimatedPrepTime tinyint = 0
+
+    If Exists ( SELECT U.U_PRN
+                FROM dbo.T_Users U
+                     INNER JOIN dbo.T_User_Operations_Permissions UOP
+                       ON U.ID = UOP.U_ID
+                     INNER JOIN dbo.T_User_Operations UO
+                       ON UOP.Op_ID = UO.ID
+                WHERE U.U_Status = 'Active' AND
+                      UO.Operation = 'DMS_Sample_Preparation' AND 
+                      U_PRN = @callingUser)
+    Begin
+          Set @allowUpdateEstimatedPrepTime = 1
+    End
 
     ---------------------------------------------------
     -- Validate priority
@@ -760,7 +783,7 @@ As
             @sampleNamingConvention,
             @requestedPersonnel,
             @assignedPersonnel,
-            @estimatedPrepTimeDays,
+            Case When @allowUpdateEstimatedPrepTime > 0 Then @estimatedPrepTimeDays Else 0 End,
             @estimatedMSRuns,
             @workPackageNumber,
             @eusUsageType,
@@ -805,6 +828,12 @@ As
     --
     If @mode = 'update'
     Begin
+        Declare @currentEstimatedPrepTimeDays Int
+
+        SELECT @currentEstimatedPrepTimeDays = Estimated_Prep_Time_Days
+        FROM T_Sample_Prep_Request
+        WHERE ID = @id
+
         Begin transaction @transName
 
         UPDATE T_Sample_Prep_Request
@@ -824,7 +853,7 @@ As
             Sample_Naming_Convention = @sampleNamingConvention,
             Requested_Personnel = @requestedPersonnel,
             Assigned_Personnel = @assignedPersonnel,
-            Estimated_Prep_Time_Days = @estimatedPrepTimeDays,
+            Estimated_Prep_Time_Days = Case When @allowUpdateEstimatedPrepTime > 0 Then @estimatedPrepTimeDays Else Estimated_Prep_Time_Days End,
             Estimated_MS_runs = @estimatedMSRuns,
             Work_Package_Number = @workPackageNumber,
             EUS_Proposal_ID = @eusProposalID,
@@ -842,7 +871,7 @@ As
             BlockAndRandomizeSamples = @blockAndRandomizeSamples,
             BlockAndRandomizeRuns = @blockAndRandomizeRuns,
             Reason_For_High_Priority = @reasonForHighPriority
-        WHERE (ID = @id)
+        WHERE ID = @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -855,6 +884,12 @@ As
         If Len(@callingUser) > 0
             Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Date_of_Change', @enteredByColumnName='System_Account'
+
+        If @currentEstimatedPrepTimeDays <> @estimatedPrepTimeDays And @allowUpdateEstimatedPrepTime = 0
+        Begin
+            Set @msg = 'Not updating estimated prep time since user is not a sample prep request staff member'
+            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        End
 
     End -- update mode
 
